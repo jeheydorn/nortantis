@@ -176,7 +176,7 @@ public class RunSwing
 
 	private void createGUI()
 	{		
-		frame = new JFrame("Fantasy Map Creator");
+		frame = new JFrame("Nortantis Fantasy Map Generator");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter()
         {
