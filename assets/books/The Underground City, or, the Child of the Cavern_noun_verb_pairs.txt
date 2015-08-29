@@ -1,0 +1,3215 @@
+aberfoyle coal-mines	bearing
+aberfoyle coal-mines	come
+aberfoyle postmark	bearing
+alloa mines	border
+beds	exhausted
+butty	raised
+c.	appropriated
+colliery	raised
+consumption	increased
+curiosity	excited
+curiosity	occurred
+december	received
+dochart pit	support
+eastern indies	contributed
+edinburgh family	belonged
+engineer	known
+engineer	occurred
+engineer	termed
+english coal-mines	termed
+galleries	forsaken
+gas works	appropriated
+indies	call
+indies	contributed
+invitation secret	keep
+manager	known
+manu-factories	appropriated
+mastodon	taken
+mine	exhausted
+mineral fuel	want
+mr. f. r. starr	awaited
+mr. f. r. starr	belonged
+mr. f. r. starr	come
+mr. f. r. starr	held
+mr. f. r. starr	included
+mr. f. r. starr	received
+mr. f. r. starr	requested
+mr. f. r. starr	signed
+mr. f. r. starr	weighed
+overman simon ford	known
+pitch	excited
+post	received
+renown	acquired
+skeleton	remains
+stock	brought
+stock	working
+veins	exhausted
+yarrow shaft	left
+years	increased
+years	known
+years	weighed
+boy	employed
+boy	stood
+caps	waved
+character	wanting
+day	quitted
+dochart pit	extracted
+dochart pit	leading
+eye	keep
+family	disperse
+feet	tread
+friend	shake
+friends	come
+future	unite
+hands	emptied
+hat	took
+man	remained
+master	shake
+masters	forget
+members	scattered
+members	unite
+men	worked
+mine	emptied
+mine	heaped
+mine	lived
+mine	quitted
+overman	stood
+overmen	collected
+pieces	succeeded
+pits	constituted
+pits	succeeded
+pits	sunk
+recommendations	follow
+remembrance	leave
+sheds	marked
+sheds	sheltering
+silence	kept
+spot	marked
+time	come
+time	lived
+time	quitted
+time	resounded
+work	united
+workmen	lived
+workmen	quitted
+works	sheltering
+years	employed
+years	extracted
+years	lived
+years	superintended
+years	united
+boy	mean
+emotion	betrayed
+foreman	discovered
+foreman	returned
+hand	wrung
+head	patted
+head	shaking
+illusion	dispel
+letter	added
+letter	got
+letter	pondered
+letter	re-read
+milk	dried
+mr. starr	add
+mr. starr	added
+mr. starr	answered
+mr. starr	got
+mr. starr	heard
+mr. starr	know
+mr. starr	pondered
+mr. starr	proceeded
+mr. starr	re-read
+mr. starr	regretted
+mr. starr	remembered
+mr. starr	replied
+mr. starr	see
+mr. starr	wished
+overman	expressed
+overman	got
+overman	know
+overman	replied
+overman	see
+overman	take
+soil	burrowed
+soundings	proceeded
+till we meet again	's
+till we meet again	tell
+time starr	heard
+vein	discovered
+wife	mean
+aberfoyle colliery	abandoned
+aberfoyle postmark	bore
+conviction	abandoned
+copy book	torn
+dochart pit	repair
+dochart pit	visit
+engineer	appointed
+engineer	belonged
+engineer	contradicted
+engineer	go
+engineer	knew
+engineer	know
+engineer	living
+engineer	seen
+engineer james starr	abandoned
+engineer james starr	arrived
+engineer james starr	examined
+engineer james starr	got
+engineer james starr	keep
+engineer james starr	prevent
+engineer james starr	repeated
+engineer james starr	researches
+engineer james starr	took
+engineer james starr	tore
+engineer james starr	troubling
+engineer james starr	wrought
+envelope	enclosed
+envelope	examined
+envelope	torn
+hand	knew
+ideas	boiling
+ideas bubble	kettles
+incident	occurred
+invitation	contradicted
+invitation	keep
+letter	brought
+letter	contained
+letter	directed
+letter	enclosed
+letter	got
+letters	existed
+mine	abandoned
+mine	contain
+miner	knew
+miner	written
+others	kettles
+overman	know
+plans	thwart
+post	brought
+rendezvous	appointed
+road	stopped
+secret	knew
+sentence	worded
+sentence	written
+son	living
+wife	living
+yarrow shaft	appointed
+yarrow shaft	go
+absence	prolonged
+affair	warranted
+atmosphere	extracted
+atmosphere	impregnated
+atmosphere	saturated
+atmosphere	surrounded
+bag	pack
+bag	traveling
+canongate	left
+canongate	passing
+coal strata	superpose
+convulsions	caused
+credence	give
+crucible	accumulated
+crucible	sunk
+crust	allowed
+crust	hardened
+crust	spread
+crust	sunk
+day	jumped
+days	prolonged
+depths	sunk
+earthquake period	caused
+earthquake period	modified
+engagements	excuse
+epoch	surrounded
+evening	happen
+fires	maintained
+forests	bore
+forests	covered
+forests	submerged
+forth	take
+gateways	dressed
+gateways	stood
+granton pier	go
+heap	settling
+heat	collected
+hoax	prove
+hours	take
+house	left
+impression	left
+layers	hardened
+letter	give
+life	lived
+limestones	compose
+liquid	loaded
+liquid	maintained
+liquid	rushed
+mass	formed
+mineral	transformed
+narrative	understand
+ocean	filled
+products	mineralized
+products	pressed
+rain	falling
+rains	fell
+resolution	influence
+resting-place	found
+salt waters	contained
+salt waters	spread
+sandstones	compose
+schists	compose
+sea	filled
+sir w. elphiston	wrote
+soil	rushed
+state	maintained
+steamer	catch
+steamer	take
+strata	found
+time	appointed
+torrents	rushed
+vegetable	transformed
+vegetables	agglomerated
+waves	bore
+waves	deposited
+waves	roving
+words	hear
+aberfoyle colliery	directed
+aberfoyle colliery	lay
+anthracite	appears
+anthracite	contains
+beds	found
+cap	pouring
+cap	put
+coal	left
+communication	relate
+contrary	found
+day	forgotten
+dochart pit	good-by
+feet	discovered
+fossil wood	found
+lad	known
+letter	thought
+likeness	brought
+man	advanced
+part	played
+platform	set
+question james starr	advanced
+question james starr	asked
+question james starr	asking
+question james starr	called
+question james starr	cease
+question james starr	directed
+question james starr	known
+question james starr	retired
+question james starr	was
+rendezvous	appointed
+rendezvous	waiting
+seams	discovered
+shells	brought
+soundings	carried
+speculations	checked
+story	related
+subject	checked
+vein	exhausted
+water	brought
+weather	settled
+working	exhausted
+works	directed
+years	abandoned
+engineer	asked
+family	has
+father	send
+father	tell
+hurry	am
+mine	abandon
+mine	left
+miner	answered
+miner	replied
+minutes	left
+orders	am
+way	lead
+yarrow shaft	come
+agricultural life	taken
+air	filled
+bag	carrying
+blast-pipe	puffing
+chimney	vomited
+clouds	mingling
+colliery	abandoned
+comrades	noticed
+course	leaving
+course	winding
+day	exhausted
+depths	passed
+desert	traversing
+dochart pit harry ford	stopped
+education	begun
+eye	gazed
+eyes	accustomed
+farms	isolated
+father	begun
+father	guided
+father	managed
+father	succeeded
+fellows	make
+guide	kept
+horizon	hung
+horizon	mingling
+inclinations	impelled
+look	accustomed
+looks	noticed
+man	carrying
+man	followed
+manufacturer	loves
+miles	situated
+mind	changed
+mind	passing
+miner	felt
+miner	passed
+miner	raise
+miner	shared
+miner	waited
+miners	took
+mining population	filled
+pace	slackened
+railway trucks	emptied
+rate	worked
+road	took
+scene	filled
+season	filled
+side	lay
+stony roads	took
+though	succeeded
+time	regret
+trees	dripping
+vapor	puffing
+whistlings	filled
+wide fields	lay
+yarrow shaft	situated
+appearance	touched
+bit	passed
+day	utilized
+dochart pit	reached
+earth	passed
+engineer	added
+engineer	answered
+engineer	know
+engineer	replied
+forces	utilized
+forests	grow
+forests	reproduced
+forethought	shown
+frames	furnished
+fuel	exchanging
+globe	burning
+ground	hidden
+guide	continued
+hour	reached
+hydraulics	shown
+landings	separated
+lifts	furnished
+limestone	consume
+limestone	forming
+machines	used
+man	cried
+man-engines	called
+man-engines	permitted
+mine	worked
+mines	exhausted
+mines	happen
+movement	permitted
+mr. starr	burning
+mr. starr	continued
+mr. starr	ended
+mr. starr	mean
+pace	continued
+person	touched
+place	heard
+slides	called
+slides	oscillating
+slides	separated
+slides	working
+sphere	forming
+statistics	make
+trees	bordered
+use	produce
+use	wants
+ventilators	inhaled
+walk	continued
+whence ladders	gave
+yarrow shaft	remained
+air	interposing
+air	surrounding
+breath	gone
+companion	light
+danger	exist
+dozen ladders	descended
+explosion	feared
+flame	interposing
+gallery	led
+gas	prevents
+guide	descended
+head	held
+lad	follow
+lad	please
+lamp	have
+lamp	wish
+landing	arrived
+man	held
+man	precede
+man	signing
+mine	escapes
+minutes	halted
+mr. starr	examined
+mr. starr	please
+mr. starr	returned
+mr. starr	see
+obscurity	found
+obscurity	held
+obscurity	relieved
+oil lamp	provided
+platform	leave
+safety lamp	wish
+shaft	covered
+voice	heard
+bit	wait
+burst	broke
+engineer	turning
+eyes	accustomed
+eyes	smiling
+face	smiling
+intruder pass	let
+lamp	turning
+lantern	thrown
+mine	left
+miner	answered
+mining comrade	replied
+minutes	appeared
+mouth	laughing
+mouth	smiling
+mr. james starr	asked
+path	yield
+platform	leaning
+scotch song	broke
+speaking trumpet	carried
+voice	broke
+voice	carried
+yarrow shaft	going
+aberfoyle mines	like
+cottage	keep
+cottage to-day	taking
+disposition	changed
+engineer	answered
+galleries	radiated
+invitation	accept
+invitation	profit
+irvine games	come
+irvine games	meet
+ladder	descended
+lamp	disappeared
+melrose farm	like
+melrose farm	working
+mine	left
+one	forgotten
+pick	comes
+pit	vaulted
+place	thank
+roofs	vaulted
+shaft	lighted
+songs	echo
+time	last
+trade	changing
+visit	last
+week	meet
+week	settled
+yarrow shaft	radiated
+arm	seizing
+arm	take
+beams	shored
+chance	falling
+darkness	pierce
+direction embankments	supplied
+engineer	asked
+engineer	replied
+engineer	seizing
+feet	struck
+galleries	filled
+galleries	introduced
+galleries	lighted
+gallery	walked
+head	shaking
+labyrinth	find
+lad	daresay
+lad	follow
+lad	guide
+lad	replied
+lamp	lighted
+light	lighted
+man	asked
+man	replied
+mines	introduced
+mr. starr	follow
+mr. starr	take
+others	lined
+paces	gone
+quarries	neighboring
+rails	support
+step	making
+stone	fell
+use	introduced
+veins	excavated
+way	find
+way	light
+air	drawn
+ancestors	labored
+ancestors	lived
+ancestors	penetrated
+ancestors	worked
+arm	lean
+century	lived
+christian era	worked
+coal mines	worked
+collectors	rent
+companions-in-arms	divided
+convicts	labored
+density	owing
+dochart pit	established
+dwelling	hollowed
+dwelling	lived
+engineer	asked
+excavation	designate
+farrier houillos	derived
+farrier houillos	lived
+feet	buried
+fellows	supplies
+ford family	issued
+gallery	issued
+glade	penetrated
+glade	standing
+highland regiments	supplies
+ideas	having
+inhabitants	come
+mass	hollowed
+mass	stood
+measure	penetrated
+miner	added
+miner	heard
+miner	mistaken
+miner	replied
+miner	thought
+miner	use
+mining family	descended
+minutes	issued
+nave	continued
+noise	catch
+opinions	having
+overman	resided
+period	bore
+place	deprived
+rays	straggled
+shaft	deserted
+staff	use
+tastes	having
+trees	having
+yarrow shaft	drawn
+ancestors	wielded
+animation	missed
+birth	lived
+coal mine	exhausted
+coal mine	restore
+coal miners	believed
+crowbar	wielded
+day	return
+day	revive
+domain	leave
+duty	performed
+housekeeping	foraged
+husband	encouraged
+husband	talked
+husband	urged
+hydroscope	reveals
+instinct	assisted
+man	given
+mattock	wielded
+overman	endured
+pick	resumed
+pick	wielded
+pit	missed
+place	worked
+rock	attacked
+scotch miners	use
+scotch term	use
+seam	exhausted
+son harry	foraged
+son harry	refused
+splendor	restore
+stout arms	attacked
+trade	devoted
+works	abandoned
+years	performed
+appetite	given
+cold	catching
+cottage	buried
+cottage	welcome
+door	standing
+dwelling	ushered
+earth	buried
+feet	buried
+goodwife	surpass
+guest	ushered
+home	change
+host	held
+house	buried
+journey	given
+journey	raining
+lamp	announced
+months	pass
+others	satisfied
+portobello	go
+risk	run
+summer time	go
+table	see
+voice	echoing
+appetite	do
+boy	let
+engineer	answered
+engineer	resumed
+engineer	taking
+engineer	want
+hosts	taking
+letter	handing
+letter	told
+letter	took
+mr. starr	sit
+son	asked
+son	do
+son	turning
+yarrow shaft	met
+aberfoyle mine	prefer
+chair	drew
+clan	prefer
+cockyleeky	merited
+cockyleeky	stewed
+dish	consisted
+dish	inspired
+dish	passed
+dish	shared
+dream	passed
+example	followed
+father	think
+haggis	consisted
+hour	lasted
+house	left
+invitation	drew
+leeks	stewed
+letter	contributed
+miner	exclaimed
+miner	find
+miner	guessed
+miner	returned
+moment	re-entered
+place	coming
+poet burns	inspired
+repast	lasted
+reverie	aroused
+reverie	fell
+rival	knew
+son	leave
+son	replied
+table	left
+table	rose
+whole	washed
+yonder	love
+yonder	prefer
+beings	peopled
+beliefs	exist
+depths	haunted
+dochart pit	earned
+dochart pit	turned
+dress	put
+ears	need
+explosions	presides
+fields	peopled
+hand	kept
+hanging	kept
+highlands	exist
+legs	need
+lowlands	exist
+miners	puts
+mining population	furnish
+mr. starr	responded
+nights	shakes
+overman	returned
+pick	leaning
+pick	taking
+repertory	furnish
+right	armed
+safety lamps	carrying
+scotch	spread
+seam	shakes
+son	turning
+songs	earned
+songs	turned
+stick	armed
+woman	responded
+aberfoyle pits	bring
+aberfoyle pits	haunted
+accounts	transmitted
+ant-hill	compared
+beings	seen
+blow	sounding
+caves	bored
+comrades	affirmed
+comrades	talk
+convictions	missing
+cross-alley	seemed
+cross-alley	walking
+crypt	inhabit
+day	missing
+galleries	communicated
+highlands	seen
+lamps	took
+life	spent
+light	throwing
+men	resisted
+miners	belonging
+miners	met
+parts	play
+personages	come
+phenomena	sought
+phenomena	struck
+picks	took
+pits	belonging
+pits	communicated
+prosperity	bring
+rock	return
+rock	sounding
+search	succeed
+shadow	saw
+sound	return
+soundings	pushed
+sticks	took
+temptation	resisted
+times	seemed
+times	thought
+tract	compared
+tract	existed
+traditions	lost
+wall	thrown
+work	returning
+years	took
+aberfoyle mines	cost
+aberfoyle mines	remains
+care	searching
+cause	explained
+cause	talked
+companions	struck
+day	explained
+engineer	conduct
+engineer	darted
+engineer	extinguished
+engineer	going
+engineer	guided
+engineer	seemed
+explanation	admit
+exploration	seen
+explosion	attacked
+father	exposed
+father	known
+feet	extinguished
+gallery	followed
+gallery	following
+life	cost
+light	extinguished
+light	penetrated
+lights	seen
+miner	exploded
+month	heard
+moss	covered
+nave	rested
+occurrence	known
+overman	questioned
+phenomena	talked
+pillar	blown
+pit	prowled
+pursuit	evade
+question	answer
+reports	heard
+seam	exists
+time	researches
+trajectory	described
+trouble	found
+vein	discover
+earth	produce
+hand	pressed
+hand	wringing
+heart	beats
+heart	followed
+heart	re-echoed
+letter	mean
+man	uttered
+mine	beats
+mine	dare
+mine	know
+miners	abandoned
+picks	tore
+rock	re-echoed
+seam	exists
+seam	found
+seam	tore
+sentiments	sharing
+shaft	rolled
+signs	tell
+truck	followed
+truck	rolled
+truck	seemed
+vein	discovered
+vessel	leaves
+words	uttered
+air	accumulated
+buoyancy	collected
+catastrophe	followed
+catastrophes	prevented
+davy lamp	adopted
+dochart pit	discovered
+enemy	met
+engineer	asked
+excursions	observed
+explosion	betrays
+explosion	followed
+explosion	occurred
+explosions	cause
+explosions	dispersing
+explosions	prevent
+explosions	replied
+explosions	used
+explosions	wished
+firedamp	accumulated
+fires	did
+flame	burns
+flames	lighted
+gas	destroying
+gas	dispersing
+gas	filled
+gas	suppose
+ground	crawled
+hand	waved
+head	muffled
+head	waved
+mine	working
+miner	deceived
+miner	live
+miner	met
+mixture	detonating
+mixture	form
+monk	breathe
+monk	called
+monk	crawled
+monk	muffled
+monk	waved
+monk	wore
+mr. starr	owing
+mr. starr	replied
+mr. starr	seen
+mr. starr	tell
+operation	renewing
+overman	related
+place	took
+plan	knew
+robe	wore
+safety-lamp	invented
+torch	blazing
+torch	waved
+work	injured
+companions	gone
+cottage	leaving
+depth	find
+dochart pit	extracted
+dyke	attack
+end	come
+extent	occupying
+father	preceded
+gas	escaped
+heaven	thank
+holes	blasted
+holes	seen
+hour	gone
+jet	escaped
+lamp	bringing
+miner	exclaimed
+miner	told
+miners	gazed
+object	attain
+part	pierced
+part	took
+phenomenon	ceased
+pick	raising
+rock	blasted
+rock	found
+rock	seated
+sandstone	failed
+schist	failed
+sense	revealed
+shaft	pierced
+time	lose
+voice	trembled
+words	doubting
+works	come
+air	burned
+air	mingled
+air	snuffed
+air	surrounding
+anxiety	seemed
+arm	trembled
+coal dust	concealed
+cracks	escaping
+cracks	stopped
+cry	escaped
+evening	proved
+experiment	try
+father	escaping
+fist	clenching
+gas	mingled
+hand	trembling
+head	shook
+hydrogen	carburetted
+mark	concealed
+mark	leaving
+matter	's
+men	know
+movement	hand
+nothing	shook
+phenomenon	taken
+place	take
+rock	escaping
+rock	leaving
+safety lamp	hand
+schist	stopped
+times	snuffed
+voice	exclaimed
+wall	close
+wick	surrounded
+author	being
+bed	lies
+blows	attacked
+bottle	escaping
+coal seams	generated
+discovery	think
+domain	haunts
+domain	watched
+end	worked
+experiment	succeeded
+father	propped
+father	see
+father	threw
+firedamp	determined
+firedamp	generated
+firedamp	known
+flame	flickered
+ground	leaped
+hands	grasped
+hurrah	exclaiming
+instant	understood
+joy	contain
+lamp	held
+lamp	seized
+man	returned
+man	understood
+man	watched
+night	escaped
+opening	held
+pick	reach
+pick	take
+puff	expressed
+rock	flickered
+rock	propped
+shoulders	got
+shoulders	mount
+sound	heard
+time	worked
+times	watched
+years	deserted
+cottage	return
+crevices	escapes
+crowbar	brandished
+crowbar	grasped
+day	following
+day	took
+day	traversed
+dochart pit	paid
+dynamite	carried
+engineer	slept
+engineer	supped
+fire-damp	escapes
+friend	wear
+heaven	pray
+hours	burn
+instant	stop
+lantern	took
+machines	creaking
+memory	recurred
+mine	grow
+miner	overflowing
+miners	carried
+miners	looked
+months	passed
+mr. starr	answered
+mr. starr	entered
+mr. starr	form
+mr. starr	hope
+mr. starr	let
+overman	unfolded
+party	reached
+road	traversed
+rock	blast
+safety lamp	burn
+safety lamp	took
+seam	appears
+time	losing
+time	lost
+tools	carried
+vein	taken
+visit	paid
+wagons	creaking
+wall	blast
+working	supposing
+years	working
+air	grew
+air inside	formed
+alteration	undergone
+atmosphere	spreading
+blows	flew
+break	composed
+cavity	held
+cavity	surprised
+companions	proceed
+comparison	justified
+crevices	undergone
+depth	calculated
+door	broken
+engineer	held
+engineer	responded
+excavation	calculated
+excavation	observed
+fire-damp	spreading
+luck	go
+mixture	formed
+opening	spring
+overman	answered
+overman	shouted
+place	chosen
+place	discovered
+quantity	formed
+rock	flew
+rock	left
+rock	seated
+safety match	laid
+safety match	lighted
+splinters	flew
+spot	hastened
+vein	get
+yesterday	stopped
+avenues	contain
+bees	lodged
+caledonian canal	stretched
+cave	continued
+cave	introduced
+cavern	illuminated
+caverns	connected
+centuries	abandoned
+companions	reach
+crevice	fallen
+curves	allowed
+darkness	disappeared
+discovery	belonged
+engineers	found
+engineers	raised
+father	waited
+feet	given
+fields	extended
+fields	stretched
+gulfs	supports
+hive	called
+kind	researches
+lakes	supports
+lantern	continued
+lantern	fastened
+lantern	introduced
+light	appeared
+limit	stopped
+line	following
+mass	solidifying
+megatheriums	lodged
+miles	extended
+mine	deserted
+miner	fallen
+network	circulated
+others	failed
+pillars	sustaining
+power	raised
+riches	deserted
+rivers	supports
+rocks	composed
+roofs	allowed
+roofs	sustaining
+strata	packed
+termites	gnawed
+voice	heard
+voice	reach
+air	circulated
+banks	waved
+breeze	ruffled
+call	exploring
+castle	reflected
+cavern	ended
+chance	transported
+companions	felt
+contents	exhausted
+county	called
+day	find
+dochart pit	put
+ejaculations	overflowed
+entrance	followed
+exhalations	met
+explorers	question
+explorers	transported
+exterior atmosphere	placed
+gallery	ended
+granite rocks	cut
+height	calculated
+hollows	collected
+hour	stopping
+hours	insure
+joy	overflowed
+lakes	complete
+lakes	connected
+lakes	ruffled
+layers	left
+mine	followed
+mine	put
+mine	transported
+oak trees	waved
+passage	left
+phrases	overflowed
+place	inhabited
+ponds	forming
+population	inhabited
+refuge	find
+safety lamp	carried
+safety lamp	insure
+schist	filtered
+time	circulated
+time	placed
+torrent	cut
+torrent	dashed
+vents	placed
+aberfoyle mine	explore
+banks	lost
+centuries	last
+cottage	returning
+darkness	concealed
+dome	covered
+exploration	judge
+explorers	accustomed
+explorers	discover
+explorers	fall
+explorers	make
+explorers	rest
+friend	felt
+friends	rest
+halt	make
+hours	give
+lamp	give
+mine	taken
+pick	saying
+pit	fall
+scotchwoman	replied
+step	fall
+times	go
+walk	feel
+years	pass
+bearing	find
+coal	comes
+companions	hearing
+comparison	depreciate
+compass	am
+compass	find
+competition	entered
+crescendo	heard
+doubt	replied
+ears	caught
+engineer	replied
+entrance	following
+father	sounds
+firm ground	depreciate
+kettle	burn
+lad	am
+lad	find
+lad	replied
+lamp	close
+man	interrupting
+mine	extract
+mine	following
+miner	declare
+minutes	stood
+mr. starr	answered
+mr. starr	assert
+mr. starr	resumed
+murmur	caught
+new aberfoyle	sounds
+new aberfoyle mine	depreciate
+overman	answered
+overman	cried
+overman	mistaken
+pieces	comes
+position	calculate
+position	compare
+price outside	sell
+sea shore	rolling
+seam	entered
+sound	caught
+sound	heard
+sound	rolling
+stokers	quarrel
+stretch	stood
+word	uttering
+years	costs
+years	extract
+years	quarrel
+years	sell
+accident	being
+accident	occurred
+cavern	bathe
+cavern	see
+certainties	change
+companions	plunged
+cottage	build
+cottage	take
+day	create
+day	find
+depths	exist
+difficulties	create
+dochart pit	re-entered
+dochart pit	return
+dwelling	change
+dynamite	opened
+example	follow
+facts	spoke
+father	cried
+fellows	follow
+gallery	followed
+gallery	seemed
+ground	fell
+hand	pressed
+hands	escaped
+head	holding
+incident	occurred
+interest	had
+lamp	broken
+lamp	escaped
+lamp	fell
+lamp	holding
+lamp	raising
+lamps	supplied
+look	asked
+mile	occurred
+miners	losing
+miners	supplied
+necks	break
+picks	leave
+picks	let
+pieces	broken
+presumptions	change
+reality	return
+right	radiated
+road	take
+trenches	cut
+way	re-entered
+attacks	defend
+brains	crowded
+companions	walked
+cottage	reaching
+hand	felt
+hands	take
+hours	lasted
+ideas	crowded
+instinct	trust
+instructions	complied
+lamps	find
+men	grope
+mine	open
+miner	answered
+mr. starr	follow
+rear	bring
+return	lasted
+road	kept
+side opening	felt
+side opening	presented
+step	advanced
+way	grope
+way	losing
+absence	caused
+absence	explain
+absence	worried
+castle	haunted
+circumstances	proved
+colleagues	communicated
+cry	escaped
+dochart pit	go
+documents	proved
+dynamite	broken
+edinburgh nothing	left
+edinburgh nothing	talked
+engineer	disappeared
+engineer	left
+explorers	strayed
+fellow	prevented
+fellow	telling
+fellow	worried
+fire-maidens	haunted
+friends	learnt
+granton pier	embarked
+heads	took
+inhabitants	containing
+irvine merry-making	wanting
+legends	based
+letter	requested
+letters	produced
+life	cost
+light	threw
+notice	inserted
+orifice	broken
+orifice	stopped
+others	produced
+others	threw
+overman	escaped
+overman	felt
+overman	stepped
+papers	published
+people	thinking
+period dundonald castle	deserted
+period dundonald castle	stood
+period dundonald castle	took
+period dundonald castle	visited
+promise	keeping
+railway	take
+reason	brought
+remains	explore
+rock	broken
+rock	felt
+servant	embarked
+servant	questioning
+sir w. elphiston	communicated
+strangers	took
+thing	promised
+time	passed
+town	stood
+week	come
+apparitions	furnished
+auditors	transported
+auditors	worked
+barn	rushed
+beach	swept
+companions	gazed
+companions	ran
+companions	turned
+crew	heard
+dances	accompany
+darkness	gleamed
+evening	ending
+evening stories	furnished
+fire-maidens	given
+fire-maidens	performing
+fishermen	shouting
+flames	appeared
+flames	assume
+foremast	carried
+lights	seen
+man	interrupted
+mass	carried
+nights	performing
+orchestra	complete
+phenomenon	explained
+rocks	running
+shape	asserted
+shape	assume
+ship	warn
+shouts	heard
+shouts	warn
+strathspeys	performing
+text	furnished
+time	appeared
+way	appeared
+world	transported
+adventure	imbibed
+apparition	believed
+apparition	disappeared
+beach	dashed
+beach	hauled
+brig motala	bound
+brownies	imbibed
+coincidence	disappeared
+companions	believed
+crash	heard
+crew	composed
+danger	failed
+days	confined
+disgust	confined
+earth	plunged
+endeavors	succeeded
+fellow-creatures	save
+flame	appearing
+flame	disappeared
+flame	find
+flame	taken
+flame	twisted
+fog	lost
+gust	swept
+hurt	dashed
+hurt	rushed
+imagination	needed
+instant	broken
+melrose farm	echoed
+melrose farm	lavished
+men	cried
+north	thought
+point	dancing
+reasoning	believe
+reasoning	make
+reckoning	lost
+refuge	offered
+rocks	dashed
+rocks	lay
+rocks	wounded
+ropes	fastening
+ruins	appearing
+sea	rushed
+ship	taken
+side	heeled
+spars	washed
+tempest	deter
+time	disappeared
+time	shouted
+time	swept
+tower	going
+trouble	bore
+vessel	struck
+voice	echoed
+waists	round
+waves	dashed
+waves	rushed
+waves	washed
+absence	understand
+attention	attracted
+bed	confined
+bill	attracted
+chum	come
+chum	going
+coast	attracted
+day	disembarked
+days	left
+earth	preserved
+engineer james starr	embarked
+engineer james starr	knew
+engineer james starr	met
+engineer james starr	seen
+facts	explaining
+farm	hasten
+farm	left
+farm	resuming
+flame	imprisoned
+friend harry	go
+granton pier	embarked
+ground	bore
+indifference	believe
+irvine merry-making	come
+legend	added
+legend	confirm
+magistrate	wished
+magistrates	got
+magistrates	order
+magistrates	pleased
+mr. starr	exclaimed
+mr. starr	met
+notice	containing
+notice	following
+officials	proceeded
+papers	heard
+part jack	taken
+railway	take
+search	conduct
+tempest	bring
+time nothing	explains
+time nothing	heard
+time nothing	seen
+time nothing	taking
+trace	find
+train	jumped
+train	waiting
+trouble	got
+vestige	preserved
+via glasgow	take
+walls	containing
+walls	posted
+work	resuming
+abyss	gazed
+arms	folded
+arms	stood
+corner	deposited
+cottage	built
+cottage	effected
+cottage	finding
+darkness	pierce
+desert region	moving
+dochart pit	acquainted
+fall	entail
+foot	tried
+hour	arrived
+ladder	rung
+ladders	led
+landing	counted
+landing	got
+landing	passed
+living creature	moving
+mining habits	forgotten
+pit	visited
+round	tried
+shaft	led
+step	entail
+steps	hastening
+thirtieth	left
+time	considering
+time	occurred
+visit	effected
+yarrow shaft	arrived
+aberfoyle mines	set
+account	doubted
+account	given
+authorities	informed
+callander station	caught
+communication	interrupted
+cottage	get
+cottage	lead
+cottage	provisioned
+declaration	received
+descent	fastened
+disposal	placed
+evening	arrived
+expedition	arrived
+expedition	descended
+feet	imprisoned
+head	convinced
+hours	stopped
+intention	interrupted
+lad	lead
+ladders	ascended
+ladders	burning
+ladders	swinging
+ladders	wanting
+landing	descended
+landing	stopped
+men	fastened
+men	fixed
+men	placed
+mind	passed
+mind	saw
+moment	losing
+name	died
+name	echoed
+name	re-echoed
+others	fastened
+party	set
+pit	left
+rocks	re-echoed
+rope ladder	unrolled
+rope ladders	brought
+rope ladders	fastened
+rope ladders	lowered
+rope ladders	supplied
+ropes	fastened
+shaft	lowered
+shaft	met
+sir william elphiston	answered
+sir william elphiston	asked
+sir william elphiston	informed
+time	exhausted
+truth	ascertain
+voice	shouted
+absence	undertaken
+agility	carried
+almanac	accustomed
+almanac	pinned
+belief	gained
+companions	gone
+cottage	quitted
+cottage	stood
+cry	uttered
+days	last
+distance	moving
+door	darted
+engineer	undertaken
+example	following
+finger	pointing
+ford family	last
+habitation	examined
+lamp	taking
+lantern	seemed
+light	's
+light	moving
+light	pointing
+men	held
+men	standing
+others	followed
+party	arrived
+pillar	disappeared
+president	darted
+president	given
+pursuit sir william elphiston	began
+pursuit sir william elphiston	exclaimed
+pursuit sir william elphiston	gone
+region	accustomed
+step	proceeded
+turn	gained
+turn	place
+turn	seemed
+use	's
+use	catch
+wall	pinned
+wall	swear
+way	gone
+being	assume
+being	confess
+bodies	lay
+bodies	stretched
+companions	endeavored
+companions	entice
+companions	lay
+comrades	avoid
+comrades	catch
+comrades	escape
+comrades	found
+comrades	gone
+comrades	hear
+comrades	stopped
+cottage	assisted
+efforts	redoubled
+engineer	reanimate
+engineer	saved
+friend	throwing
+friends	reanimate
+ground	stretched
+head	turned
+lamp	turned
+lamp	wishes
+lamps	trim
+lives	owed
+men	redoubled
+occasions	found
+opening	found
+others	help
+others	see
+party	crossed
+passages	crossed
+people	allured
+people	dying
+people	found
+people	owed
+people	perished
+people	set
+people	shut
+pursuit	continuing
+refuge	retreating
+rocks	found
+sir william	endeavored
+sir william	entice
+sir william	thought
+sir william elphiston	endeavored
+sir william elphiston	entice
+sir william elphiston	exclaimed
+sir william elphiston	point
+sir william elphiston	thought
+sir william elphiston	wondered
+space	continued
+story	hear
+thought	crossed
+voice	heard
+wall	lay
+abode	took
+air	breathed
+air	deserted
+aspect	present
+battlements	adorned
+call	run
+cavern	exploring
+chapel	dedicated
+chapel	overlooked
+company	enabled
+contrary	exerted
+cottage	built
+cottage	exchanged
+cottage	took
+crypt	hollowed
+discs	hung
+discs	thrown
+dome	lay
+dwelling	situated
+entrance	adorned
+excavation	built
+eye	see
+fellow	thought
+guide-books	recommended
+habitation	erected
+hand	closed
+hour	plied
+houses	built
+houses	grew
+jack ryan remark	answer
+jack ryan remark	mentioned
+jack ryan remark	sung
+jack ryan remark	took
+life	deserted
+lungs	exerted
+machines	produced
+melrose farm	lost
+melrose farm	piper
+months	weaned
+night	produced
+overman	maintained
+part	played
+pillars	hanging
+pit	leave
+place	found
+rock	laved
+roofs	suspended
+town	justified
+town	lighted
+town	see
+trade	return
+tunnel	adorned
+tunnel	opened
+tunnel	sloped
+turrets	adorned
+village	plied
+visitor	found
+visitor	transported
+visitors	flocked
+waters	extended
+waters	looked
+way	closed
+windows	looked
+wires	disconnecting
+works	resumed
+brownie	found
+character	loved
+companion	being
+day	delay
+doubt	answered
+fellow	add
+fellow	broke
+fellow	hurried
+field	discovered
+gallery	found
+gallery	get
+goblin	add
+hand	grasping
+hand	skipping
+hour	delay
+hyperborean mythology	enriching
+ideas	shared
+invitation	accept
+lantern	skipping
+lives	owe
+mine	found
+mine	haunt
+months	begun
+mr. ford	cried
+mr. starr	forgotten
+old madge	loved
+overman	answered
+overman	forgotten
+room	accepted
+room	offered
+scrap	get
+shadow	vanishes
+son harry	owe
+thing	's
+way	accepted
+way	found
+works	begun
+wounds	healed
+attention	paid
+balloch railway	passed
+basement	served
+birds	introduced
+canoe	explored
+coal town	rested
+coast	ended
+columns	supported
+crowds	passed
+depths	penetrate
+discs	shed
+earth	brooded
+fogs	obscured
+ford family	led
+friends	finding
+friends	saved
+friends	walking
+gales	heard
+hat	stuck
+ins	know
+lamp	stuck
+life	led
+life above-ground	envy
+outs	know
+pond	passed
+ponds	explored
+rains	fell
+sea	began
+sea	heard
+seam	lay
+sun	envy
+sunday	walking
+temperature	existed
+times	stuck
+tumult	heard
+vapors	brooded
+vault	served
+visitors	passed
+visitors	visit
+waters	swarmed
+body	belong
+hand	delivered
+hand	shut
+hands	belong
+holes	live
+imagination	's
+imagination	exist
+imagination	has
+laugh	sticks
+lips	drawn
+one	seen
+passage	shut
+shoulders	shrugging
+spirits	discover
+spirits	seen
+thoughts	haunt
+throat	sticks
+works	reopened
+accomplishment	prevent
+being	given
+bird	got
+circumstances	linked
+companion	forced
+companion	impressed
+companion	mean
+conviction	feel
+convictions	found
+dochart pit	enter
+dochart pit	see
+entrance	blocked
+entrance	reaching
+examination	carried
+experiment	proved
+experiment	rendered
+galleries	lost
+intentions	given
+lamp	broken
+letter	proves
+letter	wished
+mr. starr	comes
+mr. starr	enter
+passage	make
+person	exists
+person	persist
+reason	keep
+reason	known
+reason	strove
+search	guide
+sound	detect
+spirit	calling
+stone	cast
+time	feel
+vein	descends
+vein	discovered
+way	make
+week	seemed
+week	sounding
+wings	beaten
+abyss	explore
+abyss	going
+attempt	aid
+beam	passed
+beam	passing
+beam	thrown
+cord	passed
+danger	expose
+friend	aid
+friend	depend
+friend	draw
+friend	fasten
+friend	go
+friend	let
+friend	looking
+friends	began
+head	shaking
+intentions	mentioned
+morning	arrived
+overman	mentioned
+providence	aid
+rope	fasten
+rope	let
+shaft	go
+signal	draw
+signal	given
+thighs	fastened
+tomorrow	go
+weight	sustain
+abyss	opened
+abyss	sought
+accident	dashed
+accident	flew
+accident	hovered
+accident	passed
+accident	paused
+accident	seemed
+arm	clasped
+ascent	began
+attack	ceased
+belt	taking
+bird	ceased
+bird	increased
+bird	seemed
+body	lay
+body	lie
+body	takes
+body	tell
+breast	clasped
+child	breathed
+child	carry
+child	clasped
+child	defended
+child	exclaiming
+child	fastened
+child	gave
+child	take
+comrades	making
+comrades	pulled
+comrades	sink
+creature	carry
+descent	continued
+descent	cut
+feet	touched
+gloom	perceive
+ground	lay
+hand	held
+hand	wield
+knife	drew
+knife	held
+knife	hold
+knife	wield
+lamp	seizing
+lamp	stuck
+lamp	taking
+lights	cast
+lips	escaped
+moment	breathed
+mother	take
+obstacle	arrested
+obstacle	touching
+passage	enter
+passage	followed
+passage	lay
+passage	led
+passage	look
+passage	opened
+pit coal	consisted
+place	walked
+point	slackened
+point	unwound
+presence	betray
+progress	arrested
+projection	seen
+reach	clinging
+rope	caused
+rope	pulled
+senses	deceived
+side walls	consisted
+signal	agreed
+struggle	prolonged
+turns	fell
+waist	clasped
+waist	stuck
+wings	flew
+abyss	plunge
+arm	supported
+bed	reclined
+bird	disappeared
+care	attended
+child	imagined
+child	placed
+child	supported
+companions	brought
+complexion	drawn
+complexion	tinged
+cord	suspended
+cottage	brought
+eyes	closed
+eyes	glanced
+eyes	wondering
+face	drawn
+face	gave
+family	spoken
+figure	drawn
+fingers	slipping
+food	brought
+girl	replied
+grasp	failing
+hand	catching
+idea	banished
+idea	crossed
+instant	banished
+iron grasp	held
+knife	caught
+knife	dropped
+knife	held
+knife	slipping
+language	spoken
+level ground	placed
+matter	feel
+men	seized
+moment	giving
+overman	listened
+pit	rescued
+question	understand
+race	belong
+reaction	took
+rope	giving
+sleep	awoke
+son	rescued
+son	wants
+strand	divided
+surface	drawn
+way	glanced
+way	puzzled
+words	uttered
+bed	fell
+brain	received
+coal mines	caused
+course james starr	informed
+day	catch
+days	signifying
+days	understand
+division	used
+event	caused
+features	expressed
+folks	brought
+folks	catch
+folks	inclined
+folks	shut
+girl	cried
+girl	fell
+girl	go
+girl	looked
+girl	question
+girl	raising
+girl	recovered
+girl	repeated
+girl	see
+girl	used
+hand	stroked
+hand	took
+hours	signifying
+ideas	wanting
+kingdom	caused
+lassie	asked
+lassie	smiling
+lip	curved
+manner	dilated
+mine	looked
+minutes	slept
+months	signifying
+mother	looked
+mother	took
+night	accustomed
+pillows	adjusted
+pupil	dilated
+rock	enclosed
+sensation	caused
+spirit	catch
+stony prison	released
+story	be
+strength	recovered
+wonder	knowing
+word	understand
+world	looked
+air	found
+astonishment	found
+attack	expected
+beauty	added
+bed	hollowed
+beings	concealed
+beings	concocted
+beings	warned
+castle	crowned
+coal mine	inspect
+coal-pit	concealed
+cottage	admired
+credulity	experienced
+crypt	hollowed
+days	engaged
+dwelling	quitting
+dwelling	remain
+friend jack	sang
+girl	comprehended
+girl	conveying
+girl	knew
+maiden	exclaimed
+meaning	conveying
+measure	weakened
+opening	inspect
+person	appeared
+place	existed
+place	explained
+question	exclaimed
+rock	branched
+shaft	communicated
+shock	experienced
+silence	feeling
+songs	preferred
+thing	regretted
+woman	doted
+world	known
+authorities	informed
+beings	reach
+beings	waved
+brilliance	darted
+circumstances	altered
+coast	attracted
+cottage	left
+day	led
+dome	supported
+father	believed
+interference	owed
+lurking-place	conceal
+lurking-place	feel
+mind	weighs
+motala	attracted
+mother	adores
+mr. starr	think
+mystery	penetrated
+occupants	mention
+opening	emerged
+passage	reach
+people	dreaded
+people	gone
+places	resounded
+precautions	renewed
+precautions	taken
+rays	interrupted
+right	abandoned
+secret	dares
+secret	weighs
+songs	resounded
+spot	visit
+subject	satisfied
+vessel	plundered
+villains	dislodged
+villains	left
+villains	suppose
+watchers	placed
+circles	intertwine
+circles	mingle
+communication	live
+depth	accustomed
+distance	saw
+dwelling	give
+eyes	bear
+eyes	beheld
+eyes	fit
+father	carried
+galleries	lost
+hollows	lie
+infant	carried
+life	save
+longs	follow
+maiden	murmured
+person	met
+shades	flit
+sun	describe
+sun	see
+voice	altered
+way	losing
+world	go
+years	spent
+comrade	befallen
+cottage	met
+cottage	quitting
+cutting	go
+days	imprisoned
+deliverers	led
+depths	stirred
+face	hid
+feelings	stirred
+food	brought
+girl	demanded
+guide	escaped
+guide	led
+hand	seized
+hands	hid
+head	shook
+life	added
+lives	owe
+miners	confess
+miners	met
+miners	take
+people	got
+people	lost
+pit	met
+place	took
+profits	shared
+tomb	escaped
+tomb	living
+visit	pay
+voice	trembling
+way	find
+way	got
+apparatus	lowered
+bonny nell	deserves
+bonny nell	marry
+bonny nell	spoke
+comrade	recognizing
+day	coming
+father	love
+feet	lowered
+friend	giving
+friends	gave
+friends	remained
+landing-place	perceived
+mine	brought
+month	hope
+morning jack ryan	cried
+morning jack ryan	descending
+morning jack ryan	know
+morning jack ryan	laughed
+morning jack ryan	looked
+morning jack ryan	lowered
+morning jack ryan	perceived
+old simon	love
+persons	enabled
+spinster	expect
+spinster	remain
+surface	led
+weeks	hope
+companion	detaining
+companion	stepping
+feet	fall
+girl	cured
+girl	marry
+ladder	goes
+ladder	moves
+machinery	's
+machinery	settle
+meaning	suppose
+minute	stop
+quarters	take
+reality	make
+sight	restored
+staircase	moving
+staircase	stepping
+subject	felt
+time	restored
+wife	make
+world	seem
+child	adopted
+child	attached
+child	continued
+condition	make
+deal	puzzle
+depths	plunge
+earth	seen
+fellow	laughed
+heights	soar
+hurrah	learnt
+hurrah	make
+hurrah	read
+hurrah	write
+imagination	giving
+ladder	rising
+machinery	moving
+platform	quitting
+rein	giving
+stars	like
+sun	like
+voice	died
+voices	sounded
+wonders	seen
+coal mine	seemed
+comrades	acknowledged
+comrades	envied
+cottage	setting
+cottage	think
+darkness	come
+darkness	flashing
+darkness	glide
+fist	shake
+fortune	deserved
+fortune	envied
+fragment	catch
+husband	hide
+ideas	communicated
+interests	connected
+lovers	appreciated
+lovers	brings
+lovers	loved
+marriage	brings
+motive	connected
+motive	desire
+motive	influenced
+nothing	appeared
+nothing	justify
+obstacles	place
+others	concealed
+paths	lead
+person	desire
+person	wished
+providence	led
+son	think
+steps	lead
+tourists	setting
+tourists	took
+wedding	take
+windows	bending
+words	catching
+words	issued
+childhood	connected
+clue	detecting
+clustering stars	spread
+coal mine	continue
+companions	convey
+companions	enliven
+companions	join
+companions	rewarding
+companions	traveling
+cottage	leave
+cottage	left
+day	quit
+days	last
+earth	spread
+evening	set
+expedition	planned
+gayety	enliven
+gayety	prove
+girl	experience
+girl	loved
+girl	pass
+heavens	spread
+home	quit
+life	continue
+maiden	replied
+man	replied
+minds	make
+mine	leave
+moon	veiled
+sun	spread
+trepidation	loved
+way	managed
+air	driven
+air	hurried
+beach	broke
+branches	waving
+breeze	driven
+brightness	affect
+brightness	endure
+clouds	hurried
+companions	respected
+dog	roamed
+eye	gaze
+eyes	endure
+feet	flowed
+friends	reaching
+glance	sparks
+gulf	opening
+gulf	resemble
+hours	convey
+ideas	arise
+impressions	left
+lake	is
+levels	passed
+lungs	inhaled
+mind	left
+night	promised
+platform	alighted
+questions	ask
+sea	flowing
+sensations	filled
+side	walking
+soul	arise
+starlight	reflecting
+station	left
+time	ceased
+train	quitting
+tree-tops	discerned
+trees	looking
+trees	see
+vision	affect
+waves	broke
+way	pursued
+whirl	carried
+wind	cleared
+wind	waving
+air	borne
+banks	rippled
+basin	destroyed
+boat	moored
+boat	sailed
+boatman	awaited
+breeze	filled
+clouds	fled
+clouds	lingering
+comparison	drop
+comparison	strike
+comparisons	strike
+forest	is
+friends	took
+glittering silver field	sailed
+hand	clasped
+hand	expressed
+hand	trembling
+heavens	ascended
+light	fled
+lips	raising
+movement	borne
+movement	gliding
+mr. starr	exclaimed
+mr. starr	going
+oar	betrayed
+oar	handled
+proportions	to-night
+river	flows
+sail	filled
+sail	spread
+scene	affected
+sea water	flows
+seats	took
+silver plate	looks
+silver plate	round
+sky	round
+sonnet	begin
+spectacle	gazed
+stars	collect
+stars	disappear
+time	felt
+water	raising
+wavelets	rippled
+way	sped
+west	sparkled
+atmosphere	promised
+boat	reached
+dawn	approached
+earth	touch
+eyelids	drooped
+feet	seem
+firmament	appears
+fishing boats	lay
+granton pier	reached
+hand	taking
+head	sank
+horizon	lay
+lights	gleamed
+maiden	exhibited
+moon	diffused
+moon	riding
+night	continued
+rays	diffused
+roof	gleamed
+sea coast	promised
+shoulder	sank
+streets	deserted
+streets	traversed
+sunbeam	dissipate
+walking	asked
+wind	fell
+advantage	seen
+bridge	reached
+building	pointed
+city	lay
+city	massed
+day breaks	look
+drive	passed
+eyes	behold
+eyes	put
+eyes	turned
+feelings	overpower
+hand	put
+heights	stands
+heights	surrounding
+hill-tops	illuminated
+hill-tops	increased
+hill-tops	rose
+historian	invoke
+horizon seaward	appear
+lights	twinkled
+lion	seen
+maiden	keeping
+maiden	observed
+maiden	turned
+mass	look
+park	entered
+scene	enacted
+sir walter scott	listen
+splendor	contemplate
+spot	choose
+sun	appear
+time	contemplate
+town	lay
+way	pursue
+west	seen
+world	used
+air	inhaled
+arms	fainting
+azure skies	rested
+bay	indented
+bay	seen
+capital	led
+child	knelt
+child	looked
+child	rose
+city	glanced
+city	outlines
+direction	turn
+disc	seemed
+eye	endure
+eyelids	exclude
+eyelids	raised
+eyes	closed
+eyes	drank
+eyes	learned
+eyes	used
+feet	extended
+fingers	pressed
+form	rose
+friends	conveyed
+glare	exclude
+gloom	emerged
+hands nell	perceived
+hands nell	rose
+heights	commanded
+highland lakes	make
+horizon	rose
+hotel	reached
+light	perceived
+lips	murmured
+lord god	knelt
+lord god	obtained
+maiden	entombed
+maiden	looked
+maiden	obtained
+monuments	commanded
+monuments	represent
+north	indented
+railway train	conveyed
+railway train	entered
+ray	struck
+roadways	led
+sight	struck
+sky	opened
+splendor	endure
+steeples	emerged
+street	ran
+strength	failed
+strength	restored
+summit	bearing
+summit	rounded
+sun	arose
+sun	touched
+sunshine	look
+train	carry
+trees	rested
+upwards	reflected
+word	murmured
+advantage	see
+ascent	led
+day	begun
+distance	dyed
+eilad-whow	passed
+eilad-whow	stand
+engineer	cried
+excursion	make
+harbor	form
+isles	appeared
+islets	appeared
+lake	narrowed
+lake	overshadow
+lake	stretched
+lakes	make
+legend	has
+luss	form
+moon	called
+moon	shines
+passengers	determined
+peak	see
+rocks	echo
+scenes	shines
+skies	veil
+songs	replied
+steamboat	floated
+steamboat	named
+steamer	passed
+stories	fighting
+tourists	gazed
+tourists	make
+trees	scattered
+voyage	displayed
+way	steamed
+bed	opened
+ejaculation	impress
+ejaculation	required
+eyes	raising
+fissure	opened
+friend jack	looked
+friend jack	see
+girl	replied
+god	help
+hand	rested
+home	go
+machines	loosened
+machines	perforating
+maiden	answered
+maiden	grounded
+maiden	move
+maiden	pronounced
+miles	exceeds
+phenomenon	took
+picture	framed
+rocks	blasted
+shade	believe
+shock	experienced
+stirling	return
+tie	bound
+tourists	meant
+travelers	want
+width	exceeds
+words	pronounced
+approach	warned
+arms	caught
+bank	swept
+bed	breaking
+bells	warned
+billow	unfurling
+case	flooded
+cottage	quitted
+couple	spoke
+couple	wondered
+dinner	finished
+engines	worked
+entrance	reached
+excavation	flooded
+feet	raise
+fissures	penetrating
+floods	rush
+friends	stop
+fugitives	encountered
+fugitives	reached
+galleries	rushed
+galleries	ventilating
+gusts	slammed
+hour	wasting
+hundreds	empty
+inhabitants	fled
+inundation	owing
+inundation	threatened
+man	appears
+man	shouted
+men	decide
+mine	rushing
+mine	stay
+miners	labored
+mining operations	carried
+moment	arose
+night	labored
+noises	resounded
+old simon ford	resting
+one	perished
+others	worked
+people	perceived
+people	rose
+refuge places	cower
+roaring noise	heard
+rock	penetrating
+rock	precipitating
+swing-doors	slammed
+trip	liked
+tunnel	reached
+tunnel	rushed
+tunnels	kept
+wave	broke
+wave	swept
+wave	unfurling
+wife	carried
+wife	caught
+workmen	penetrated
+workmen	warned
+advice	take
+being	carry
+boat	proceeded
+causes	explain
+columns	undermined
+cottage	discussed
+cottage	explain
+cottage	returning
+desire	showed
+domain	invaded
+engineer	cried
+evening	knew
+evening	think
+event	disappear
+fissure	broken
+friends	discovered
+friends	proceeded
+genius	was
+layer	reduced
+loch	left
+malefactor	believe
+malefactor	end
+malefactor	find
+man	discussed
+matter	discussed
+minds	harassed
+mine	broken
+mine	work
+news	confirmed
+one	mentioned
+overman	cried
+papers	published
+parents	adopted
+pillars	examine
+place	taken
+project	based
+project	mentioned
+question	recurred
+son	discussed
+suspicions	harassed
+travelers	confirmed
+travelers	learned
+waters	broken
+waters	subsided
+way	given
+witness	bore
+witness	countenance
+affection	doubt
+country	pillage
+defense	continued
+enemy	appears
+enemy	lays
+enemy	point
+enemy	seek
+enemy	sworn
+engineer	answered
+engineer	cried
+engineer	stopped
+foe	has
+foe	render
+foe	understand
+friends	eluded
+hatred	wreak
+head	raising
+incomprehensible	replied
+interest	urges
+matter	keep
+mind	engaged
+obtains contraband goods	conceal
+practices	carried
+schemes	lays
+silence	knows
+suspicions	point
+time	informs
+time	know
+vigilance	eluded
+witness	injured
+accident	regarded
+beam	laid
+catastrophe	provoked
+child	loved
+child	perceive
+child	restrain
+child	seemed
+child	yielded
+companions	extinguished
+complaint	yielded
+cottage	returned
+day	broke
+day	practicing
+day	watched
+day month	preceding
+day month	take
+days	met
+description	required
+doubt	ascertained
+duties	resumed
+engineer	answered
+engineer	reckon
+engineer	think
+entreaty	concealed
+flames	extinguished
+hands	lay
+interest	acted
+inundation	took
+lamp	used
+life	spent
+life	wedded
+line	laid
+manner	reserved
+marriage	approaching
+marriage	created
+marriage	take
+miners	keep
+miners	seized
+misfortunes	happened
+mr. starr	ascertained
+mr. starr	forbade
+night	watched
+nothing	discovered
+obstacle	met
+others	watch
+place	known
+rails	met
+remark	yielded
+ruffians	lay
+songs	practicing
+steam tramway	met
+step	taken
+time	took
+times	remind
+trucks	passing
+uneasiness	lasted
+view	acted
+visit	regretting
+wishes	poured
+wishes	yielded
+works	keep
+being	see
+ceremony	rising
+child	saved
+day	disappeared
+days	counted
+days	intervening
+days	known
+dwelling	heard
+engineer	known
+eyes	riveted
+father	looking
+fingers	pointed
+forebodings	suffered
+horror	expressing
+lines	traced
+lips	escaped
+maiden	looking
+man	calls
+man	disappeared
+man	know
+man	produce
+manner	see
+morning	rising
+mystery	explained
+night	traced
+occupation	assisted
+orphan girl	born
+overman	revealed
+owl	accompanied
+owl	called
+passages	produce
+safety-lamp	assisted
+safety-lamp	called
+safety-lamp	used
+sentences	read
+spot	hastening
+threshold	crossed
+voice	heard
+years	lived
+allowance	lived
+arrival	contradicting
+brain	unsettled
+grandfather	denounce
+harfang man	call
+harfang man	used
+harry	thrown
+intentions	acted
+mind	deranged
+mr. starr	am
+mr. starr	believed
+mr. starr	come
+mr. starr	demanded
+mr. starr	happened
+mr. starr	know
+mr. starr	mean
+mr. starr	resumed
+mr. starr	see
+mr. starr	shaking
+mr. starr	understand
+overman	replied
+secret	discovered
+words	mean
+words	robbed
+duty	dictated
+enemy	know
+engineer	replied
+expression	use
+father	continued
+father	knew
+gesture	arrested
+girl	arrested
+girl	continued
+hand	touched
+lamp	put
+lover	arrested
+manner	showed
+mind	make
+moment	entered
+mother	go
+mother	knew
+mother	needed
+mother	take
+mr. starr	catch
+mr. starr	feel
+mr. starr	listen
+plots	put
+room	take
+sake	put
+spirits	recover
+stop	put
+time	needed
+tone	decided
+voice	entered
+woman	knew
+woman	lived
+woman	saw
+woman	use
+abode	regarded
+affection	took
+animal	disappeared
+answer	gave
+bird	obeyed
+bird	took
+child	asked
+child	tremble
+creature	took
+days	obtaining
+distress	seeing
+domain	perceived
+eye	regarded
+face	grew
+girl	paused
+hands	expected
+idea	endure
+master	used
+mind	comes
+mine	reaching
+mine	regarded
+old aberfoyle	disappeared
+opening	stopped
+others	arrived
+people	asked
+refuge	chosen
+senses	lost
+thoughts	collect
+threats	used
+tools	heard
+child	took
+cottage	brought
+days	believed
+duty	perform
+god	praise
+god	pray
+goodness	praise
+hands	took
+heart	remains
+husband	saw
+letter	written
+life	respected
+life	saw
+maiden	continued
+maiden	taken
+man	bring
+point	deceived
+precautions	take
+proposal	accept
+retreats	seen
+sake	put
+sake	tell
+son loved	saw
+subjects	talk
+time	saw
+trust mr. starr	deceived
+trust mr. starr	discover
+trust mr. starr	put
+trust mr. starr	sees
+trust mr. starr	think
+trust mr. starr	used
+trust mr. starr	written
+truth	perceive
+words	started
+armed sentinels	posted
+building silfax	passed
+day	keep
+entrances	posted
+feelings	overcome
+fire-maidens	began
+fire-maidens	lighted
+friends	escape
+friends	open
+guard	possessed
+heart	open
+lips	blanched
+man	declared
+man	hesitate
+means	possessed
+mine	entering
+mine	posted
+miners	began
+mother	says
+overman	equaled
+overman	speak
+panic	recover
+son	marry
+union	hinder
+wedding	preceding
+wedding it	agreed
+abyss	disclosing
+abyss	plunging
+air	elevated
+air	penetrated
+arm	propelled
+arm	supporting
+atmosphere	diffused
+atmosphere	pervaded
+barometer	fallen
+barometer	remarked
+beard	fell
+blessing	invoked
+book	holding
+breast	fell
+bride	led
+calm	appeared
+canoe	appeared
+canoe	propelled
+canoe	seen
+cavities	accumulated
+clothes	put
+costume	following
+cottage	left
+davy safety lamp	bore
+davy safety lamp	lighted
+dome	rose
+group	advanced
+hair	bound
+hand	bore
+hand	holding
+instant	appeared
+instant	rushing
+kaleidoscopes	shone
+lamps	shed
+man	know
+man	shouted
+manner	fallen
+mantle	clothed
+men	owed
+men	persevering
+men	restored
+mine	means
+moment	diffused
+mother	supporting
+noise	resounded
+occasion	decorated
+occasion	put
+prosperity	restored
+rocks	shattered
+sentence	finish
+shafts	entered
+shafts	ventilating
+son	honor
+stained-glass windows	shed
+stained-glass windows	shone
+storm	burst
+suns	blazed
+tartan plaid	wearing
+temperature	elevated
+terrors	beat
+terrors	betray
+time	appointed
+time	left
+voice	shouted
+waters	plunging
+waves	rushing
+wife	take
+air	waved
+arms	sprang
+burning match	dropped
+burning wick	snatching
+burning wick	waved
+canoe	urging
+chapel	left
+chapel	quitted
+circle	describing
+dome	accumulating
+explosion	delayed
+faithful bird	appeared
+features	contracted
+feet	alighting
+fire-damp	comes
+flight	hesitate
+gas	accumulating
+hand	laid
+head	hovering
+lake	urging
+lives	fly
+madman	pointed
+madman	reach
+man	cast
+man	yelled
+match	claw
+match	lighted
+mine	fly
+multitude	fell
+others	rushed
+owl	marked
+owl	seen
+owl	seizing
+owl	soared
+roof	soared
+roof	vaulted
+roofs	echoed
+spots	marked
+threat	fulfill
+voice	dropped
+voice	recognizing
+water	dropped
+water	plunged
+achievement	astonished
+bird	seemed
+ceremony	followed
+ceremony	prolonged
+changes	following
+chanter	blew
+chapel	celebrated
+company	astonished
+cottage	returned
+couple	returned
+couple	wore
+day	following
+day	prolonged
+days	flew
+death	appeared
+death	attempted
+hearts	gone
+intervals	see
+longevity	attain
+master	engulfed
+occasion	blew
+overman	replied
+owl	keep
+page line original	changed
+prey	yielded
+time	show
+trials	gone
+union	found
+wedding	celebrating

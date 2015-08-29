@@ -1,0 +1,567 @@
+package cs673.nlp;
+import static java.lang.System.out;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import org.apache.commons.io.FilenameUtils;
+
+import util.*;
+import edu.stanford.nlp.dcoref.CorefChain;
+import edu.stanford.nlp.dcoref.CorefChain.CorefMention;
+import edu.stanford.nlp.dcoref.CorefCoreAnnotations.CorefChainAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.semgraph.SemanticGraph;
+import edu.stanford.nlp.semgraph.SemanticGraphCoreAnnotations.CollapsedCCProcessedDependenciesAnnotation;
+import edu.stanford.nlp.semgraph.SemanticGraphEdge;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.IntPair;
+
+
+public class Extractor 
+{
+	// Max number of sentences to process at once. This speeds up extraction, probably because it speeds up
+	// dependency parsing.
+	private static final int maxChunkSize = 10;
+	private static int numThreads = 4;
+	private static List<String> verbStopWords = Arrays.asList("be", "been", "become", "became", 
+			"was", "is", "went", "were", "said",
+			"say", "sayes", "made", "do", "done", "did", "doing", "unto", "have", "had", "hath",
+			"are", "came"); // note: came was added on 4/17 after extracting bible and BOM.
+	private static List<String> adjectiveStopWords = Arrays.asList("unto");
+	
+	public static void main(String[] args) throws IOException
+	{
+		if (args.length != 1)
+		{
+			out.println("usage: Extractor bookName.txt");
+			System.exit(1);
+		}
+		
+		String bookName = args[0];
+		
+		String baseName = FilenameUtils.getBaseName(bookName);
+		
+		out.println("baseName: " + baseName);
+		
+		//extract("The quick dog jumped over the large box.");
+		extractThreadedAndStore(Helper.readFile(bookName), baseName);
+		//extract("An account of Lehi and his wife Sariah, and his four sons, being called, (beginning at the eldest) Laman, Lemuel, Sam, and Nephi. The Lord warns Lehi to depart out of the land of Jerusalem, because he prophesieth unto the people concerning their iniquity and they seek to destroy his life. He taketh three days’ journey into the wilderness with his family. Nephi taketh his brethren and returneth to the land of Jerusalem after the record of the Jews. The account of their sufferings. They take the daughters of Ishmael to wife. They take their families and depart into the wilderness. Their sufferings and afflictions in the wilderness. The course of their travels. They come to the large waters. Nephi’s brethren rebel against him. He confoundeth them, and buildeth a ship. They call the name of the place Bountiful. They cross the large waters into the promised land, and so forth. This is according to the account of Nephi; or in other words, I, Nephi, wrote this record.");
+	}
+	
+	public static void extractThreadedAndStore(String text, String outputFilenamePrefix) throws IOException
+	{
+		Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> tuple = extractThreaded(text);
+		
+		// TODO Test this.
+		// Save the lists in text format.
+		try (PrintWriter w = new PrintWriter(outputFilenamePrefix + "_place_names.txt"))
+		{
+			for (String name : tuple.getFirst())
+			{
+				w.println(name);
+			}
+		}
+
+		try (PrintWriter w = new PrintWriter(outputFilenamePrefix + "_noun_adjective_pairs.txt"))
+		{
+			for (Pair<String, String> pair : tuple.getSecond())
+			{
+				w.println(pair.getFirst() + "\t" + pair.getSecond());
+			}
+		}
+		try (PrintWriter w = new PrintWriter(outputFilenamePrefix + "_noun_verb_pairs.txt"))
+		{
+			for (Pair<String, String> pair : tuple.getThird())
+			{
+				w.println(pair.getFirst() + "\t" + pair.getSecond());
+			}
+		}
+		
+	}
+	
+	public static Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> 
+		extractThreaded(String text) throws FileNotFoundException
+	{
+		double startTime = System.currentTimeMillis();
+
+		List<String> chunks = breakTextIntoChunks(text, numThreads);
+		out.println("Done chunking.");
+		out.println("Running on " + numThreads + " threads.");
+		ExecutorService exService = Executors.newFixedThreadPool(numThreads);
+		
+		try 
+		{
+			List<Future<Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> >> futures 
+			= new ArrayList<>();
+			
+			for (final String chunk : chunks)
+			{
+				out.println("Chunk size: (in characters)" + chunk.length());
+				Callable<Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> > callable = 
+						new Callable<Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>>>()
+				{						
+					@Override
+					public Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> call() 
+							throws Exception
+					{
+						return chunkAndExtract(chunk);
+					}
+				};
+				futures.add(exService.submit(callable));
+			}
+			
+			// Combine the results into one result.
+			Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> result = 
+					new Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>>(
+							new HashSet<String>(), 
+							new ArrayList<Pair<String, String>>(), 
+							new ArrayList<Pair<String, String>>());
+			for (Future<Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>>> future : futures)
+			{
+				Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> tuple;
+				try
+				{
+					tuple = future.get();
+					out.println("Chunk finished.");
+				} catch (InterruptedException e)
+				{
+					throw new RuntimeException(e);
+				} catch (ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+				result.getFirst().addAll(tuple.getFirst());
+				result.getSecond().addAll(tuple.getSecond());
+				result.getThird().addAll(tuple.getThird());
+			}
+			double elapsedTime = System.currentTimeMillis() - startTime;
+			out.println("Total time (in seconds): " + elapsedTime
+					/ 1000.0);
+			return result;
+		}		
+		finally
+		{
+			exService.shutdown();
+		}
+		
+	}
+	
+	private static Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> 
+		chunkAndExtract(String text) throws FileNotFoundException
+	{
+		Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> result = 
+				new Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>>(
+						new HashSet<String>(), 
+						new ArrayList<Pair<String, String>>(), 
+						new ArrayList<Pair<String, String>>());
+
+		List<String> chunks = breakTextIntoChunks(text, maxChunkSize);
+		for (String chunk : chunks)
+		{
+			Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> tuple =
+					extract(chunk);
+			
+			result.getFirst().addAll(tuple.getFirst());
+			result.getSecond().addAll(tuple.getSecond());
+			result.getThird().addAll(tuple.getThird());
+		}
+		return result;
+	}
+	
+	/**
+	 * @return The first item is a set of place names. The second is a list of noun-adjective pairs. The third
+	 * is a list of noun-verb pairs.
+	 * @throws FileNotFoundException
+	 */
+	private static Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>> 
+		extract(String text) throws FileNotFoundException
+	{
+		// creates a StanfordCoreNLP object, with POS tagging, lemmatization, NER, parsing, and coreference resolution 
+		Properties props = new Properties();
+		props.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+
+		// create an empty Annotation just with the given text
+		Annotation document = new Annotation(text);
+		
+
+		// run all Annotators on this text
+		pipeline.annotate(document);
+				
+		// these are all the sentences in this document
+		// a CoreMap is essentially a Map that uses class objects as keys and has values with custom types
+		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+				
+		List<String> nounTags = Arrays.asList("NN", "NNS", "NNP", "NNPS");
+		Set<Mention> nouns = new TreeSet<Mention>();
+		int sentenceNum = 0;
+		for(CoreMap sentence : sentences)
+		{
+			IntPair first = null;
+			sentenceNum++;
+			int tokenNum = 0;
+			// traversing the words in the current sentence
+			// a CoreLabel is a CoreMap with additional token-specific methods
+			tokenNum = 0;
+			for (CoreLabel token : sentence.get(TokensAnnotation.class)) 
+			{
+				tokenNum++;
+				String pos = token.getString(PartOfSpeechAnnotation.class);
+				
+				// this is the text of the token
+				//String word = token.get(TextAnnotation.class);
+				//out.println("word: " + word + ", pos: " + pos);
+
+				if (nounTags.contains(pos))
+				{
+					if (first == null)
+					{
+						first = new IntPair(sentenceNum, tokenNum);
+					}
+				}
+				else
+				{
+					if (first != null)
+					{
+						IntPair last = new IntPair(sentenceNum, tokenNum-1);
+						assert first.get(0) == last.get(0); // Same sentence.
+						String name = getMentionName(sentences, first, last);
+						Mention place = new Mention(first, last, name);
+						nouns.add(place);
+						first = null;
+					}
+				}
+			}
+			
+			if (first != null)
+			{
+				// The sentence ended with a noun.
+				
+				assert tokenNum > 0;
+				assert sentenceNum > 0;
+
+				IntPair last = new IntPair(sentenceNum, tokenNum-1);
+				assert first.get(0) == last.get(0); // Same sentence.
+				String name = getMentionName(sentences, first, last);
+				Mention place = new Mention(first, last, name);		
+				nouns.add(place);
+			}
+
+		}
+		
+		// Remove nouns that are entities.
+		Set<String> namedEntities = ExtractNER.extractPlaceNames(sentences, 
+				Arrays.asList("PERSON", "LOCATION", "ORGANIZATION", "MISC"));
+		Set<Mention> nounsFiltered = new TreeSet<>();
+		for (Mention m : nouns)
+		{
+			if (!namedEntities.contains(m.name))
+				nounsFiltered.add(m);
+		}
+		nouns = nounsFiltered;
+
+		//out.println();
+		//out.println("nouns: ");
+		//Helper.printMultiLine(nouns);
+				
+		Map<Mention, Set<Mention>> nounMentionMap = new TreeMap<Mention, Set<Mention>>();
+		
+		// Coreferences
+//		Map<Integer, CorefChain> graph = document.get(CorefChainAnnotation.class);
+//		for (Map.Entry<Integer, CorefChain> entry : graph.entrySet())
+//		{
+//			CorefChain refChain = entry.getValue();
+//			Mention nounMention = searchForMatchingPlaceEntities(refChain, nouns, sentences);
+//			if (nounMention == null)
+//				continue;
+//			
+//			Set<Mention> mentions = getMentions(nounMentionMap, nounMention);
+//			nounMentionMap.put(nounMention, mentions);
+//			
+//			for (Map.Entry<IntPair, Set<CorefMention>> corefEntry : refChain.getMentionMap().entrySet())
+//			{
+//				Set<CorefMention> mentionSet = corefEntry.getValue();
+//				
+//				for (CorefMention mention : mentionSet)
+//				{
+//					// Note: A bug causes mention.headIndex to always equal mention.endIndex - 1.
+//					IntPair first = new IntPair(mention.sentNum, mention.headIndex);
+//					IntPair last = new IntPair(mention.sentNum, mention.endIndex - 1);
+//					String name = getMentionName(sentences, first, last);
+//					Mention place = new Mention(first, last, name);
+//					
+//					// Expand the PlaceMention to the full name, if needed.
+//					Mention full = findPlace(place, nouns);
+//					if (full == null)
+//						mentions.add(place);
+//					else
+//						mentions.add(full);
+//					
+//				}				
+//			}
+//		}
+		//out.println("placeMentionsMap after coreferences: " + nounMentionMap);
+				
+		Set<Pair<String, String>> adjectiveSet = extractNounAndPOSPairs(sentences, nounMentionMap, 
+				Arrays.asList("JJ", "JJR", "JJS"), adjectiveStopWords);
+		//out.println("adjectiveSet: ");
+		//Helper.printMultiLine(adjectiveSet);
+		Set<Pair<String, String>> verbSet = extractNounAndPOSPairs(sentences, nounMentionMap,
+				Arrays.asList("VB", "VBD", "VBG", "VBN", "VBP", "VBZ"), verbStopWords);
+		//out.println("verbSet: ");
+		//Helper.printMultiLine(verbSet);
+				
+		// Find the place names.
+		Set<String> placeNames = ExtractNER.extractPlaceNames(document.get(SentencesAnnotation.class),
+				Arrays.asList("LOCATION"));
+
+		return new Tuple3<Set<String>, List<Pair<String, String>>, List<Pair<String, String>>>(
+				placeNames, new ArrayList<>(adjectiveSet), new ArrayList<>(verbSet));
+	}
+		
+	private static Set<Pair<String, String>> extractNounAndPOSPairs(List<CoreMap> sentences, 
+			Map<Mention, Set<Mention>> nounMentionMap, List<String> posTags, List<String> stopWords)
+	{
+		Map<Mention, Set<IntPair>> nounsToPOSWords = extractDependencies(sentences, nounMentionMap, posTags);
+		Set<Pair<String, String>> posSet = new TreeSet<>(generateListOutput(nounsToPOSWords, sentences));
+		{
+			// Remove stop words.
+			Set<Pair<String, String>> posFiltered = new TreeSet<>();
+			// Use a set to speed up look up time.
+			Set<String> vsw = new HashSet<String>(stopWords);
+			for (Pair<String, String> pair : posSet)
+			{
+				if (!vsw.contains(pair.getSecond()))
+				{
+					// Make lower case.
+					posFiltered.add(new Pair<>(pair.getFirst().toLowerCase(), pair.getSecond().toLowerCase()));
+				}
+			}
+			posSet = posFiltered;			
+		}
+		return posSet;
+	}
+	
+	/**
+	 * The coreference resolver takes too long with large inputs, so this breaks the inputs into
+	 * chunks along sentence boundaries.
+	 * @param text
+	 * @return A list of chunks.
+	 */
+	public static List<String> breakTextIntoChunks(String text, int numChunks)
+	{
+		Properties props = new Properties();
+		props.put("annotators", "tokenize, ssplit");
+		StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+
+		Annotation document = new Annotation(text);
+		pipeline.annotate(document);
+		List<CoreMap> sentences = document.get(SentencesAnnotation.class);
+
+		out.println("Total sentences: " + sentences.size());
+
+		List<List<String>> sentenceWords = new ArrayList<List<String>>();
+		
+		for(CoreMap sentence : sentences) 
+		{
+			sentenceWords.add(new ArrayList<String>());
+			for (CoreLabel token : sentence.get(TokensAnnotation.class)) 
+			{
+				String word = token.get(TextAnnotation.class);
+				sentenceWords.get(sentenceWords.size() - 1).add(word);
+			}
+		}
+		
+		int chunkSize = sentenceWords.size() / numChunks + 1;
+
+		List<String> chunks = new ArrayList<>();
+		StringBuilder b = new StringBuilder();
+		int sentenceNum = 0;
+		for(List<String> sentence : sentenceWords) 
+		{
+			int tokenNum = 0;
+			for (String token : sentence) 
+			{
+				if (!((token.equals(",") || token.equals("."))) && (tokenNum > 0 || sentenceNum > 0))
+				{
+					b.append(" ");
+				}
+				b.append(token);
+				tokenNum++;
+			}
+			sentenceNum++;
+			
+			if (sentenceNum % chunkSize == 0 || sentenceNum == sentenceWords.size())
+			{
+				chunks.add(b.toString());
+				b = new StringBuilder();
+			}
+		}
+		return chunks;
+	}
+	
+	public static Set<Mention> getMentions(Map<Mention, Set<Mention>> placeMentionMap,
+			Mention place)
+	{
+		Set<Mention> mentions = placeMentionMap.get(place);
+		if (mentions == null)
+		{
+			mentions = new TreeSet<Mention>();
+			placeMentionMap.put(place, mentions);
+		}
+		return mentions;
+	}
+		
+	/**
+	 * See if any of the references match a place entity. If so, return the place name, otherwise
+	 * return null.
+	 */
+	public static Mention searchForMatchingPlaceEntities(CorefChain refChain, 
+			Set<Mention> placeEntities, List<CoreMap> sentences)
+	{			
+		CorefMention repMention = refChain.getRepresentativeMention();
+		IntPair first = new IntPair(repMention.sentNum, repMention.headIndex);
+		IntPair last = new IntPair(repMention.sentNum, repMention.endIndex - 1);
+		String name = getMentionName(sentences, first, last);
+		Mention repPlace = new Mention(first, last, name);
+		
+		Mention placeFound = findPlace(repPlace, placeEntities);
+		return placeFound;
+	}
+	
+	/**
+	 * The Stanford coreference mentions don't include the entire entity, so here I check if the given PlaceMention
+	 * is contained (like a substring) in any of the given set of PlaceMentions.
+	 */
+	public static Mention findPlace(Mention place, Set<Mention> set)
+	{
+		for (Mention p : set)
+		{
+			if (p.first.get(0) != place.first.get(0))
+			{
+				// Different sentence.
+				continue;
+			}
+			if (place.first.get(1) >= p.first.get(1) && place.last.get(1) <= p.last.get(1))
+				return p;
+		}
+		return null;
+	}
+	
+	public static Map<Mention, Set<IntPair>> extractDependencies(List<CoreMap> sentences, 
+			Map<Mention, Set<Mention>> nounMentionsMap, List<String> posTagsToFind)
+	{		
+		Map<Mention, Set<IntPair>> nounTagMap = new TreeMap<Mention, Set<IntPair>>();
+		for (Mention noun : nounMentionsMap.keySet())
+		{
+			nounTagMap.put(noun, new TreeSet<IntPair>());
+		}
+		
+		for (Map.Entry<Mention, Set<Mention>> placeEntry : nounMentionsMap.entrySet())
+		{
+			Mention place = placeEntry.getKey();
+			Set<Mention> mentions = placeEntry.getValue();
+			
+			for (Mention mention : mentions)
+			{
+				// The stanford dependency parser attaches adjectives to the the last part of a noun phrase.
+				IntPair index = mention.last;
+				
+				int sentenceNum = index.get(0);
+				int tokenNum = index.get(1);
+				CoreMap sentence = sentences.get(sentenceNum - 1);
+				CoreLabel label = sentence.get(TokensAnnotation.class).get(tokenNum - 1);
+				
+				// this is the Stanford dependency graph of the current sentence
+				SemanticGraph dependencies = sentence.get(CollapsedCCProcessedDependenciesAnnotation.class);
+				
+				//out.println("dependencies: \n" + dependencies);
+				
+				for (SemanticGraphEdge edge : dependencies.edgeIterable())
+				{
+					if (edge.getTarget().word().equals(label.word())
+							&& edge.getTarget().index() == label.index()
+							&& posTagsToFind.contains(edge.getSource().tag()))
+					{
+						Set<IntPair> adjectives = nounTagMap.get(place);
+						adjectives.add(new IntPair(sentenceNum, edge.getSource().index()));						
+					}
+					if (edge.getSource().word().equals(label.word())
+							&& edge.getSource().index() == label.index()
+							&& posTagsToFind.contains(edge.getTarget().tag()))
+					{
+						Set<IntPair> adjectives = nounTagMap.get(place);
+						adjectives.add(new IntPair(sentenceNum, edge.getTarget().index()));						
+					}
+				}
+			}
+		}
+		
+		return nounTagMap;
+	}
+	
+	public static List<Pair<String, String>> generateListOutput(Map<Mention, Set<IntPair>> placeAdjectiveMap, 
+			List<CoreMap> sentences)
+	{
+		List<Pair<String, String>> result = new ArrayList<Pair<String, String>>();
+		for (Map.Entry<Mention, Set<IntPair>> entry : placeAdjectiveMap.entrySet())
+		{
+			Mention place = entry.getKey();
+			String placeName = getPlaceName(sentences, place);
+			
+			Set<IntPair> adjectiveMentions = entry.getValue();
+			
+			for (IntPair index : adjectiveMentions)
+			{
+				int sentenceNum = index.get(0);
+				int tokenNum = index.get(1);
+				CoreMap sentence = sentences.get(sentenceNum - 1);
+				CoreLabel label = sentence.get(TokensAnnotation.class).get(tokenNum - 1);
+				String adjective = label.word();
+				result.add(new Pair<String, String>(placeName, adjective));
+			}	
+		}
+		return result;
+	}
+	
+	/**
+	 * Extracts the name of a place from the given sentences using the given PlaceMention.
+	 */
+	public static String getPlaceName(List<CoreMap> sentences, Mention place)
+	{
+		return getMentionName(sentences, place.first, place.last);
+	}
+	
+	public static String getMentionName(List<CoreMap> sentences, IntPair first, IntPair last)
+	{
+		assert first.get(0) == last.get(0);
+		
+		String result = "";
+		int sentenceNum = first.get(0);
+		for (int tokenNum = first.get(1); tokenNum <= last.get(1); tokenNum++)
+		{
+			CoreMap sentence = sentences.get(sentenceNum - 1);
+			CoreLabel label = sentence.get(TokensAnnotation.class).get(tokenNum - 1);
+			result += label.word();
+			if (tokenNum + 1 <= last.get(1))
+				result += " ";
+		}
+		return result;
+		
+	}
+
+}

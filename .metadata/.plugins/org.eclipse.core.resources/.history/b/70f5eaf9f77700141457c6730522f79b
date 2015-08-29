@@ -1,0 +1,1162 @@
+package cs673;
+
+import java.awt.EventQueue;
+
+import javax.imageio.ImageIO;
+
+import java.awt.GridLayout;
+
+import javax.swing.*;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
+import java.util.TreeSet;
+import java.awt.ScrollPane;
+
+import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.FileChooserUI;
+
+import org.apache.commons.io.FilenameUtils;
+
+import util.JFontChooser;
+import util.Range;
+
+import javax.swing.BorderFactory;
+import javax.swing.JColorChooser;
+import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+
+import java.awt.Component;
+
+public class RunSwing
+{
+	private static JTextArea txtConsoleOutput;
+	private JFrame frame;
+	private JTextField randomSeedTextField;
+	private JTextField outputFolder;
+	private JTextField oceanBackgroundImageFilename;
+	private JTextField landBackgroundImageFilename;
+	JComboBox<String> formatComboBox;
+	JSlider scaleSlider;
+	JSlider forestDensitySlider;
+	JSlider edgeLandToWaterProbSlider;
+	JSlider centerLandToWaterProbSlider;
+	JSlider sizeSlider;
+	JSlider landBlurSlider;
+	JSlider oceanEffectsSlider;
+	JRadioButton wavesRadioButton;
+	JRadioButton blurRadioButton;
+	JPanel landBlurColorDisplay;
+	JPanel oceanEffectsColorDisplay;
+	JPanel riverColorDisplay;
+	JCheckBox drawTextCheckBox;
+	JPanel booksPanel;
+	JLabel titleFontDisplay;
+	JLabel regionFontDisplay;
+	JLabel mountainRangeFontDisplay;
+	JLabel otherMountainsFontDisplay;
+	JLabel riverFontDisplay;
+	JPanel textColorDisplay;
+	JPanel boldBackgroundColorDisplay;
+	JCheckBox chckbxSaveMasks;
+	JButton btnGenerate;
+	JButton btnPreview;
+	Path openSettingsFilePath;
+	MapSettings lastSettingsLoaded;
+	String defaultSettingsFile = "assets/old_paper.properties";
+	
+	public static boolean isRunning()
+	{
+		return txtConsoleOutput != null;
+	}
+	
+	public static JTextArea getConsoleOutputTextArea()
+	{
+		return txtConsoleOutput;
+	}
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args)
+	{
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException
+				| IllegalAccessException | UnsupportedLookAndFeelException e)
+		{
+			e.printStackTrace();
+		}
+		
+		EventQueue.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					RunSwing window = new RunSwing();
+					window.frame.setVisible(true);
+				} catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public RunSwing()
+	{
+		createGUI();
+		if (Files.exists(Paths.get(defaultSettingsFile)))
+		{
+			loadSettingsIntoGUI(defaultSettingsFile);
+			// If the user goes to File -> Save settings, bring up the save as dialog.
+			openSettingsFilePath = null;
+		}
+	}
+
+	private void createGUI()
+	{		
+		frame = new JFrame("Fantasy Map Creator");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.addWindowListener(new WindowAdapter()
+        {
+            @Override
+            public void windowClosing(WindowEvent e)
+            {
+                MapSettings currentSettings = getSettingsFromGUI();
+                if (!currentSettings.equals(lastSettingsLoaded))
+                {
+                	int n = JOptionPane.showConfirmDialog(
+                            frame, "Settings have been modfied. Save changes?", "",
+                            JOptionPane.YES_NO_OPTION);
+                    if (n == JOptionPane.YES_OPTION) 
+                    {
+                    	saveSettings(null);
+                    }
+                    
+                }
+            }
+        });
+		frame.getContentPane().setLayout(new BorderLayout());
+		
+		
+		JPanel topPanel = new JPanel();
+		topPanel.setLayout(null);
+		topPanel.setPreferredSize(new Dimension(935, 651));
+
+		JScrollPane topScrollPane = new JScrollPane(topPanel);
+		frame.getContentPane().add(topScrollPane, BorderLayout.CENTER);
+		
+
+		final JPanel generatePanel = new JPanel();
+		generatePanel.setBounds(new Rectangle(10, 320, 1057, 25));
+		generatePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		generatePanel.setLayout(null);
+		topPanel.add(generatePanel);
+
+		
+		btnGenerate = new JButton("Generate");
+		btnGenerate.setBounds(0, 0, 112, 25);
+		generatePanel.add(btnGenerate);
+		btnGenerate.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{	
+				btnGenerate.setEnabled(false);
+				btnPreview.setEnabled(false);
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+				// TODO Test to make sure this copy is actually different.
+				final MapSettings setting = getSettingsFromGUI();
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {
+						try
+						{
+							return new MapCreator().createMap(setting, 
+									Paths.get(outputFolder.getText().toString()), 
+									(String)formatComboBox.getSelectedItem(),
+									chckbxSaveMasks.isSelected(), seedFinal);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }			 
+
+			        @Override
+			        public void done()
+			        {
+						btnGenerate.setEnabled(true);
+						btnPreview.setEnabled(true);
+			        }
+			    };
+			    worker.execute();
+			 
+			}
+		});
+		
+		final ImagePanel previewPanel = new ImagePanel();
+		previewPanel.setBounds(411, 352, 512, 288);
+		topPanel.add(previewPanel);
+		previewPanel.setLayout(null);
+		previewPanel.setPreferredSize(new Dimension(512, 288));
+		previewPanel.setBackground(Color.WHITE);
+
+		btnPreview = new JButton("Preview");
+		btnPreview.setBounds(124, 0, 100, 25);
+		btnPreview.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				btnGenerate.setEnabled(false);
+				btnPreview.setEnabled(false);
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {	
+			        	MapSettings settings = getSettingsFromGUI();
+			        	settings.size = 0.25;
+
+						try
+						{
+							return new MapCreator().createMap(settings, null, "png", false, seedFinal);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }
+			        
+			        @Override
+			        public void done()
+			        {
+			        	BufferedImage map = null;
+			            try 
+			            {
+			                map = get();
+			            } 
+			            catch (InterruptedException e) 
+			            {
+			            	e.printStackTrace();
+			                throw new RuntimeException(e.getMessage());
+			            }
+			            catch (java.util.concurrent.ExecutionException e) 
+			            {
+			            	e.printStackTrace();
+			                throw new RuntimeException(e.getMessage());
+			            }
+			            if (map != null)
+			            {
+			            	previewPanel.image = map;
+			            	previewPanel.repaint();
+			            }
+						btnGenerate.setEnabled(true);
+						btnPreview.setEnabled(true);
+			        }
+			 
+			    };
+			    worker.execute();
+			 
+			}
+		});		
+		generatePanel.add(btnPreview);
+		
+		JLabel lblOutputFileName = new JLabel("Output folder:");
+		lblOutputFileName.setToolTipText("The folder in which to store output files.");
+		lblOutputFileName.setBounds(242, 1, 134, 22);
+		generatePanel.add(lblOutputFileName);
+		
+		outputFolder = new JTextField();
+		outputFolder.setBounds(359, 0, 203, 25);
+		generatePanel.add(outputFolder);
+		outputFolder.setToolTipText("Folder in which to save the map and masks.");
+		outputFolder.setColumns(10);
+		outputFolder.setText(Paths.get(".").toAbsolutePath().toString());
+		
+		chckbxSaveMasks = new JCheckBox("Save masks");
+		chckbxSaveMasks.setToolTipText("When checked, grayscale masks used to draw the map will be saved\n along side the map.");
+		chckbxSaveMasks.setBounds(809, 1, 129, 23);
+		generatePanel.add(chckbxSaveMasks);
+		
+		JButton btnChooseOutputFolder = new JButton("Browse");
+		btnChooseOutputFolder.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				File currentFolder = new File(outputFolder.getText());
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setCurrentDirectory(currentFolder);
+				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				fileChooser.setFileFilter(new FileFilter()
+				{
+					@Override
+					public String getDescription()
+					{
+						return null;
+					}
+					
+					@Override
+					public boolean accept(File f)
+					{
+						if (f.isDirectory())
+							return true;
+						return false;
+					}
+				});
+				int status = fileChooser.showOpenDialog(generatePanel);
+				if (status == JFileChooser.APPROVE_OPTION)
+				{
+					outputFolder.setText(fileChooser.getSelectedFile().toString());
+				}
+			}
+		});
+		btnChooseOutputFolder.setBounds(574, 0, 87, 25);
+		generatePanel.add(btnChooseOutputFolder);
+		
+		JLabel lblFormat = new JLabel("Format:");
+		lblFormat.setBounds(673, 5, 70, 15);
+		generatePanel.add(lblFormat);
+		
+		formatComboBox = new JComboBox<>();
+		formatComboBox.setToolTipText("Format of generated images.");
+		formatComboBox.addItem("png");
+		formatComboBox.addItem("jpg");
+		formatComboBox.setBounds(740, 0, 61, 24);
+		generatePanel.add(formatComboBox);
+		
+		JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.setLocation(0, 0);
+		tabbedPane.setSize(1067, 313);
+		topPanel.add(tabbedPane);
+						
+		final JPanel terrainPanel = new JPanel();
+		tabbedPane.addTab("Terrain", terrainPanel);
+		terrainPanel.setLayout(null);
+		
+		randomSeedTextField = new JTextField();
+		randomSeedTextField.setBounds(131, 10, 114, 25);
+		terrainPanel.add(randomSeedTextField);
+		randomSeedTextField.setColumns(10);
+		randomSeedTextField.setText(Math.abs(new Random(System.currentTimeMillis()).nextInt()) + "");
+		
+		JLabel lblRandomSeed = new JLabel("Random seed:");
+		lblRandomSeed.setBounds(12, 12, 122, 15);
+		terrainPanel.add(lblRandomSeed);
+				
+		JButton btnNewSeed = new JButton("New Seed");
+		btnNewSeed.setToolTipText("Generate a new random seed.");
+		btnNewSeed.setBounds(257, 8, 105, 25);
+		terrainPanel.add(btnNewSeed);
+		
+		scaleSlider = new JSlider();
+		scaleSlider.setValue(6000);
+		scaleSlider.setSnapToTicks(true);
+		scaleSlider.setMajorTickSpacing(5000);
+		scaleSlider.setMinorTickSpacing(1000);
+		scaleSlider.setPaintLabels(true);
+		scaleSlider.setPaintTicks(true);
+		scaleSlider.setMinimum(3000);
+		scaleSlider.setMaximum(18000);
+		scaleSlider.setBounds(131, 45, 245, 79);
+		terrainPanel.add(scaleSlider);
+		
+		JLabel lblScale = new JLabel("Scale:");
+		lblScale.setToolTipText("The size of the world in abstract units.");
+		lblScale.setBounds(12, 59, 70, 15);
+		terrainPanel.add(lblScale);
+		
+		JLabel lblForestDensity = new JLabel("Forest density:");
+		lblForestDensity.setBounds(12, 139, 134, 15);
+		terrainPanel.add(lblForestDensity);
+		
+		forestDensitySlider = new JSlider();
+		forestDensitySlider.setValue(3);
+		forestDensitySlider.setPaintTicks(true);
+		forestDensitySlider.setPaintLabels(true);
+		forestDensitySlider.setMinorTickSpacing(1);
+		forestDensitySlider.setMaximum(3);
+		forestDensitySlider.setMajorTickSpacing(1);
+		forestDensitySlider.setBounds(131, 111, 245, 79);
+		terrainPanel.add(forestDensitySlider);
+		
+		JLabel lblEdgeLandtowaterRatio = new JLabel("Edge land-to-water probability:");
+		lblEdgeLandtowaterRatio.setToolTipText("The probability that a tectonic plate touching the edge of the map will be land.");
+		lblEdgeLandtowaterRatio.setBounds(461, 12, 239, 22);
+		terrainPanel.add(lblEdgeLandtowaterRatio);
+		
+		edgeLandToWaterProbSlider = new JSlider();
+		edgeLandToWaterProbSlider.setValue(70);
+		edgeLandToWaterProbSlider.setPaintTicks(true);
+		edgeLandToWaterProbSlider.setPaintLabels(true);
+		edgeLandToWaterProbSlider.setMinorTickSpacing(25);
+		edgeLandToWaterProbSlider.setMajorTickSpacing(25);
+		edgeLandToWaterProbSlider.setBounds(565, 32, 245, 79);
+		{
+			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+			for (int i = edgeLandToWaterProbSlider.getMinimum(); i < edgeLandToWaterProbSlider.getMaximum() + 1;  i += edgeLandToWaterProbSlider.getMajorTickSpacing())
+			{
+				labelTable.put(i, new JLabel(Double.toString(i/100.0)));
+			}
+			edgeLandToWaterProbSlider.setLabelTable( labelTable );
+		}
+		terrainPanel.add(edgeLandToWaterProbSlider);
+		
+		JLabel lblCenterLandtowaterRatio = new JLabel("Center land-to-water probability:");
+		lblCenterLandtowaterRatio.setToolTipText("The probability that a tectonic plate not touching the edge of the map will be land.");
+		lblCenterLandtowaterRatio.setBounds(461, 111, 254, 22);
+		terrainPanel.add(lblCenterLandtowaterRatio);
+		
+		centerLandToWaterProbSlider = new JSlider();
+		centerLandToWaterProbSlider.setValue(70);
+		centerLandToWaterProbSlider.setPaintTicks(true);
+		centerLandToWaterProbSlider.setPaintLabels(true);
+		centerLandToWaterProbSlider.setMinorTickSpacing(25);
+		centerLandToWaterProbSlider.setMajorTickSpacing(25);
+		centerLandToWaterProbSlider.setBounds(565, 131, 245, 79);
+		terrainPanel.add(centerLandToWaterProbSlider);
+		
+		JLabel lblOceanBackgroundImage = new JLabel("Ocean background image:");
+		lblOceanBackgroundImage.setBounds(12, 207, 193, 15);
+		terrainPanel.add(lblOceanBackgroundImage);
+		
+		oceanBackgroundImageFilename = new JTextField();
+		oceanBackgroundImageFilename.setBounds(211, 205, 228, 25);
+		oceanBackgroundImageFilename.setText(Paths.get("assets/land.jpg").toAbsolutePath().toString());
+		terrainPanel.add(oceanBackgroundImageFilename);
+		oceanBackgroundImageFilename.setColumns(10);
+		
+		JButton btnBrowseOceanBackground = new JButton("Browse");
+		btnBrowseOceanBackground.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) {
+				String filename = chooseImageFile(terrainPanel, oceanBackgroundImageFilename.getText());
+				if (filename != null)
+					oceanBackgroundImageFilename.setText(filename);
+			}
+		});
+		btnBrowseOceanBackground.setBounds(451, 202, 87, 25);
+		terrainPanel.add(btnBrowseOceanBackground);
+		
+		JLabel lblLandBackgroundImage = new JLabel("Land background image:");
+		lblLandBackgroundImage.setBounds(12, 236, 193, 15);
+		terrainPanel.add(lblLandBackgroundImage);
+		
+		landBackgroundImageFilename = new JTextField();
+		landBackgroundImageFilename.setColumns(10);
+		landBackgroundImageFilename.setBounds(211, 234, 228, 25);
+		terrainPanel.add(landBackgroundImageFilename);
+		
+		JButton btnBrowseLandBackground = new JButton("Browse");
+		btnBrowseLandBackground.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				String filename = chooseImageFile(terrainPanel, landBackgroundImageFilename.getText());
+				if (filename != null)
+					landBackgroundImageFilename.setText(filename);
+
+			}
+		});
+		btnBrowseLandBackground.setBounds(451, 231, 87, 25);
+		terrainPanel.add(btnBrowseLandBackground);
+		
+		final JPanel renderPanel = new JPanel();
+		tabbedPane.addTab("Render", null, renderPanel, null);
+		renderPanel.setLayout(null);
+		
+		JLabel label = new JLabel("Size:");
+		label.setToolTipText("The resolution of the result will be multiplied by this value.");
+		label.setBounds(12, 12, 35, 15);
+		renderPanel.add(label);
+		
+		sizeSlider = new JSlider();
+		sizeSlider.setPaintLabels(true);
+		sizeSlider.setBounds(131, 12, 245, 79);
+		sizeSlider.setValue(100);
+		sizeSlider.setSnapToTicks(true);
+		sizeSlider.setPaintTicks(true);
+		sizeSlider.setMinorTickSpacing(25);
+		sizeSlider.setMinimum(25);
+		sizeSlider.setMaximum(200);
+		sizeSlider.setMajorTickSpacing(25);
+		{
+			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+			for (int i = sizeSlider.getMinimum(); i < sizeSlider.getMaximum() + 1;  i += sizeSlider.getMajorTickSpacing())
+			{
+				labelTable.put(i, new JLabel(Double.toString(i/100.0)));
+			}
+			sizeSlider.setLabelTable(labelTable);
+		}
+		renderPanel.add(sizeSlider);
+		
+		JLabel label_1 = new JLabel("Land blur:");
+		label_1.setToolTipText("Adds fading color to coastlines.");
+		label_1.setBounds(12, 129, 82, 15);
+		renderPanel.add(label_1);
+		
+		landBlurSlider = new JSlider();
+		landBlurSlider.setValue(30);
+		landBlurSlider.setPaintTicks(true);
+		landBlurSlider.setPaintLabels(true);
+		landBlurSlider.setMinorTickSpacing(1);
+		landBlurSlider.setMaximum(30);
+		landBlurSlider.setMajorTickSpacing(5);
+		landBlurSlider.setBounds(131, 95, 245, 79);
+		renderPanel.add(landBlurSlider);
+		
+		JLabel label_2 = new JLabel("Ocean effects:");
+		label_2.setToolTipText("Adds fading color or waves to oceans at coastlines.");
+		label_2.setBounds(12, 231, 122, 15);
+		renderPanel.add(label_2);
+		
+		oceanEffectsSlider = new JSlider();
+		oceanEffectsSlider.setValue(30);
+		oceanEffectsSlider.setPaintTicks(true);
+		oceanEffectsSlider.setPaintLabels(true);
+		oceanEffectsSlider.setMinorTickSpacing(1);
+		oceanEffectsSlider.setMaximum(30);
+		oceanEffectsSlider.setMajorTickSpacing(5);
+		oceanEffectsSlider.setBounds(131, 186, 245, 79);
+		renderPanel.add(oceanEffectsSlider);
+		
+		JLabel lblOceanEffectType = new JLabel("Ocean effect type:");
+		lblOceanEffectType.setBounds(461, 16, 134, 15);
+		renderPanel.add(lblOceanEffectType);
+		
+		wavesRadioButton = new JRadioButton("Waves");
+		wavesRadioButton.setBounds(597, 12, 185, 23);
+		renderPanel.add(wavesRadioButton);
+		
+		blurRadioButton = new JRadioButton("Blur");
+		blurRadioButton.setBounds(597, 34, 185, 23);
+		renderPanel.add(blurRadioButton);
+		
+		ButtonGroup group = new ButtonGroup();
+	    group.add(wavesRadioButton);
+	    group.add(blurRadioButton);
+		
+		JLabel label_4 = new JLabel("Land blur color:");
+		label_4.setBounds(461, 106, 134, 23);
+		renderPanel.add(label_4);
+		
+		landBlurColorDisplay = new JPanel();
+		landBlurColorDisplay.setBackground(new Color(119, 91, 36));
+		landBlurColorDisplay.setBounds(631, 103, 82, 23);
+		renderPanel.add(landBlurColorDisplay);
+		
+		JButton button = new JButton("Choose");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPicker(renderPanel, landBlurColorDisplay);
+			}
+		});
+		button.setBounds(725, 103, 87, 25);
+		renderPanel.add(button);
+		
+		JLabel label_5 = new JLabel("Ocean effects color:");
+		label_5.setBounds(461, 144, 152, 23);
+		renderPanel.add(label_5);
+		
+		oceanEffectsColorDisplay = new JPanel();
+		oceanEffectsColorDisplay.setBackground(Color.BLACK);
+		oceanEffectsColorDisplay.setBounds(631, 138, 82, 23);
+		renderPanel.add(oceanEffectsColorDisplay);
+		
+		JButton button_1 = new JButton("Choose");
+		button_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPicker(renderPanel, oceanEffectsColorDisplay);
+			}
+		});
+		button_1.setBounds(725, 138, 87, 25);
+		renderPanel.add(button_1);
+		
+		JLabel label_6 = new JLabel("River color:");
+		label_6.setToolTipText("Rivers will be drawn this color.");
+		label_6.setBounds(461, 173, 152, 23);
+		renderPanel.add(label_6);
+		
+		riverColorDisplay = new JPanel();
+		riverColorDisplay.setBackground(new Color(56, 48, 33));
+		riverColorDisplay.setBounds(631, 173, 82, 23);
+		renderPanel.add(riverColorDisplay);
+		
+		JButton button_2 = new JButton("Choose");
+		button_2.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				showColorPicker(renderPanel, riverColorDisplay);
+			}
+		});
+		button_2.setBounds(725, 173, 87, 25);
+		renderPanel.add(button_2);
+		
+		final JPanel textPanel = new JPanel();
+		tabbedPane.addTab("Text", textPanel);
+		textPanel.setLayout(null);
+				
+		JLabel lblBooks = new JLabel("Books:");
+		lblBooks.setToolTipText("Selected books will be used to generate (potentially) new names.");
+		lblBooks.setBounds(8, 39, 70, 15);
+		textPanel.add(lblBooks);
+		
+		JScrollPane booksScrollPane = new JScrollPane();
+		booksScrollPane.setBounds(96, 39, 300, 175);
+		textPanel.add(booksScrollPane);
+		
+		booksPanel = new JPanel();
+		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
+		booksScrollPane.setViewportView(booksPanel);
+				
+		JLabel lblFont = new JLabel("Region font:");
+		lblFont.setBounds(461, 68, 105, 15);
+		textPanel.add(lblFont);
+		
+		regionFontDisplay = new JLabel("");
+		regionFontDisplay.setBounds(623, 66, 195, 25);
+
+		textPanel.add(regionFontDisplay);
+
+		final JButton btnRegionFont = new JButton("Choose");
+		btnRegionFont.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				runFontChooser(textPanel, regionFontDisplay);
+			}
+		});
+		btnRegionFont.setBounds(836, 64, 87, 25);
+		textPanel.add(btnRegionFont);
+		
+		JLabel lblTitleFont = new JLabel("Title font:");
+		lblTitleFont.setBounds(461, 16, 105, 15);
+		textPanel.add(lblTitleFont);
+		
+		titleFontDisplay = new JLabel("");
+		titleFontDisplay.setBounds(623, 8, 195, 49);
+		textPanel.add(titleFontDisplay);
+		
+		final JButton btnTitleFont = new JButton("Choose");
+		btnTitleFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				runFontChooser(textPanel, titleFontDisplay);
+			}
+		});
+		btnTitleFont.setBounds(836, 12, 87, 25);
+		textPanel.add(btnTitleFont);
+		
+		JLabel lblMountainRangeFont = new JLabel("Mountain range font:");
+		lblMountainRangeFont.setBounds(461, 103, 161, 15);
+		textPanel.add(lblMountainRangeFont);
+		
+		mountainRangeFontDisplay = new JLabel("");
+		mountainRangeFontDisplay.setBounds(623, 99, 195, 25);
+		textPanel.add(mountainRangeFontDisplay);
+		
+		final JButton btnMountainRangeFont = new JButton("Choose");
+		btnMountainRangeFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, mountainRangeFontDisplay);
+			}
+		});
+		btnMountainRangeFont.setBounds(836, 99, 87, 25);
+		textPanel.add(btnMountainRangeFont);
+		
+		JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
+		lblMountainGroupFont.setBounds(461, 139, 161, 15);
+		textPanel.add(lblMountainGroupFont);
+		
+		otherMountainsFontDisplay = new JLabel("");
+		otherMountainsFontDisplay.setBounds(623, 135, 195, 25);
+		textPanel.add(otherMountainsFontDisplay);
+		
+		final JButton btnOtherMountainsFont = new JButton("Choose");
+		btnOtherMountainsFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, otherMountainsFontDisplay);
+			}
+		});
+		btnOtherMountainsFont.setBounds(836, 135, 87, 25);
+		textPanel.add(btnOtherMountainsFont);
+		
+		JLabel lblRiverFont = new JLabel("River font:");
+		lblRiverFont.setBounds(461, 175, 116, 15);
+		textPanel.add(lblRiverFont);
+		
+		riverFontDisplay = new JLabel("");
+		riverFontDisplay.setBounds(623, 171, 195, 25);
+		textPanel.add(riverFontDisplay);
+		
+		final JButton btnRiverFont = new JButton("Choose");
+		btnRiverFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, riverFontDisplay);
+			}
+		});
+		btnRiverFont.setBounds(836, 171, 87, 25);
+		textPanel.add(btnRiverFont);
+		
+		JLabel lblTextColor = new JLabel("Text color:");
+		lblTextColor.setBounds(461, 205, 134, 23);
+		textPanel.add(lblTextColor);
+		
+		textColorDisplay = new JPanel();
+		textColorDisplay.setBackground(Color.BLACK);
+		textColorDisplay.setBounds(690, 210, 82, 23);
+		textPanel.add(textColorDisplay);
+		
+		final JButton btnChooseTextColor = new JButton("Choose");
+		btnChooseTextColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPicker(textPanel, textColorDisplay);
+			}
+		});
+		btnChooseTextColor.setBounds(836, 208, 87, 25);
+		textPanel.add(btnChooseTextColor);
+		
+		JLabel lblBoldBackgroundColor = new JLabel("Bold background color:");
+		lblBoldBackgroundColor.setToolTipText("Title and region names be given a bold background in this color.");
+		lblBoldBackgroundColor.setBounds(461, 240, 186, 23);
+		textPanel.add(lblBoldBackgroundColor);
+		
+		boldBackgroundColorDisplay = new JPanel();
+		boldBackgroundColorDisplay.setBackground(new Color(244,226,194));
+		boldBackgroundColorDisplay.setBounds(690, 245, 82, 23);
+		textPanel.add(boldBackgroundColorDisplay);
+		
+		final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
+		btnChooseBoldBackgroundColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPicker(textPanel, boldBackgroundColorDisplay);
+			}
+		});
+		btnChooseBoldBackgroundColor.setBounds(836, 243, 87, 25);
+		textPanel.add(btnChooseBoldBackgroundColor);
+		
+		drawTextCheckBox = new JCheckBox("Draw text");
+		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
+		drawTextCheckBox.setBounds(8, 8, 125, 23);
+		textPanel.add(drawTextCheckBox);
+		drawTextCheckBox.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				btnTitleFont.setEnabled(drawTextCheckBox.isSelected());
+				booksPanel.setEnabled(drawTextCheckBox.isSelected());
+				for (Component component : booksPanel.getComponents())
+				{
+					if (component instanceof JCheckBox)
+					{
+						JCheckBox checkBox = (JCheckBox)component;
+						checkBox.setEnabled(drawTextCheckBox.isSelected());
+					}
+				}				
+				btnRegionFont.setEnabled(drawTextCheckBox.isSelected());
+				btnMountainRangeFont.setEnabled(drawTextCheckBox.isSelected());
+				btnOtherMountainsFont.setEnabled(drawTextCheckBox.isSelected());
+				btnRiverFont.setEnabled(drawTextCheckBox.isSelected());
+				btnChooseTextColor.setEnabled(drawTextCheckBox.isSelected());
+				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
+			}			
+		});
+		
+		if (TextDrawer.systemHasFont("URW Chancery L"))
+		{
+			regionFontDisplay.setFont(new Font("URW Chancery L", 0, 20));
+			regionFontDisplay.setText("URW Chancery L");
+			
+			titleFontDisplay.setFont(new Font("URW Chancery L", 0, 50));
+			titleFontDisplay.setText("URW Chancery L");
+
+			mountainRangeFontDisplay.setFont(new Font("URW Chancery L", 0, 16));
+			mountainRangeFontDisplay.setText("URW Chancery L");
+
+			otherMountainsFontDisplay.setFont(new Font("URW Chancery L", 0, 11));
+			otherMountainsFontDisplay.setText("URW Chancery L");
+
+			riverFontDisplay.setFont(new Font("URW Chancery L", 0, 11));
+			riverFontDisplay.setText("URW Chancery L");
+		}
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(10, 352, 389, 288);
+		topPanel.add(scrollPane);
+		txtConsoleOutput = new JTextArea();
+		scrollPane.setViewportView(txtConsoleOutput);
+		txtConsoleOutput.setEditable(false);
+														
+		btnNewSeed.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				randomSeedTextField.setText(Math.abs(new Random(System.currentTimeMillis()).nextInt()) + "");
+			}			
+		});
+		
+		JMenuBar menuBar = new JMenuBar();
+		frame.setJMenuBar(menuBar);
+		
+		JMenu fileMenu = new JMenu("File");
+		menuBar.add(fileMenu);
+		
+		final JMenuItem mntmLoadSettings = new JMenuItem("Open Settings");
+		fileMenu.add(mntmLoadSettings);
+		mntmLoadSettings.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
+				File currentFolder = new File(curPath.toString());
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setCurrentDirectory(currentFolder);
+				fileChooser.setFileFilter(new FileFilter()
+				{
+					@Override
+					public String getDescription()
+					{
+						return null;
+					}
+					
+					@Override
+					public boolean accept(File f)
+					{
+						return f.isDirectory() || f.getName().endsWith(".properties");
+					}
+				});
+				int status = fileChooser.showOpenDialog(mntmLoadSettings);
+				if (status == JFileChooser.APPROVE_OPTION)
+				{
+					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
+					loadSettingsIntoGUI(fileChooser.getSelectedFile().getAbsolutePath());
+				}
+			
+			}
+		});
+		
+		final JMenuItem mntmSave = new JMenuItem("Save Settings");
+		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
+		        java.awt.event.KeyEvent.VK_S, 
+		        java.awt.Event.CTRL_MASK));
+		fileMenu.add(mntmSave);
+		mntmSave.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				saveSettings(mntmSave);
+			}
+		});
+		
+		final JMenuItem mntmSaveAs = new JMenuItem("Save Settings As...");
+		fileMenu.add(mntmSaveAs);
+		mntmSaveAs.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				saveSettingsAs(mntmSaveAs);
+			}			
+		});
+		
+		JMenuBar menuBar_1 = new JMenuBar();
+		menuBar.add(menuBar_1);
+		
+		frame.pack();
+	}
+	
+	private void saveSettings(JComponent parent)
+	{
+		if (openSettingsFilePath == null)
+		{
+			saveSettingsAs(parent);
+		}
+		else
+		{
+			MapSettings settings = getSettingsFromGUI();
+			Properties props = settings.toPropertiesFile();
+			try
+			{
+				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
+			} catch (IOException e)
+			{
+				e.printStackTrace();
+		        JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+
+	}
+	
+	private void saveSettingsAs(JComponent parent)
+	{
+		Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
+		File currentFolder = new File(curPath.toString());
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(currentFolder);
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return null;
+			}
+			
+			@Override
+			public boolean accept(File f)
+			{
+				return f.isDirectory() || f.getName().endsWith(".properties");
+			}
+		});
+		int status = fileChooser.showSaveDialog(parent);
+		if (status == JFileChooser.APPROVE_OPTION)
+		{
+			openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
+			if (!openSettingsFilePath.getFileName().toString().contains("."))
+			{
+				openSettingsFilePath = Paths.get(openSettingsFilePath.toString() + ".properties");
+			}
+			
+			MapSettings settings = getSettingsFromGUI();
+			Properties props = settings.toPropertiesFile();
+			try
+			{
+				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
+			} catch (IOException e)
+			{
+				e.printStackTrace();
+		        JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.",
+		        		JOptionPane.ERROR_MESSAGE);
+			}
+		}		
+	}
+	
+	private static String chooseImageFile(JComponent parent, String curFolder)
+	{
+		File currentFolder = new File(curFolder);
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(currentFolder);
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return null;
+			}
+			
+			@Override
+			public boolean accept(File f)
+			{
+				return true;
+			}
+		});
+		int status = fileChooser.showOpenDialog(parent);
+		if (status == JFileChooser.APPROVE_OPTION)
+		{
+			return fileChooser.getSelectedFile().toString();
+		}
+		return null;
+	}
+	
+	private static void runFontChooser(JComponent parent, JLabel fontDisplay)
+	{
+		JFontChooser fontChooser = new JFontChooser();
+		fontChooser.setSelectedFont(fontDisplay.getFont());
+		int status = fontChooser.showDialog(parent);
+		if (status == JFontChooser.OK_OPTION)
+		{
+			Font font = fontChooser.getSelectedFont();
+			fontDisplay.setText(font.getFontName());
+			fontDisplay.setFont(font);
+		}		
+	}
+	
+	private static void showColorPicker(JComponent parent, JPanel colorDisplay)
+	{
+		Color c = JColorChooser.showDialog(parent, "", colorDisplay.getBackground());
+		if (c != null)
+			colorDisplay.setBackground(c);
+
+	}
+	
+	/**
+	 * Loads a map settings file into the GUI.
+	 * @param path
+	 */
+	private void loadSettingsIntoGUI(String propertiesFilePath)
+	{
+		MapSettings settings = new MapSettings(propertiesFilePath);
+		scaleSlider.setValue(settings.scale);
+		randomSeedTextField.setText(Integer.toString(settings.randomSeed));
+		forestDensitySlider.setValue(settings.forestDensity);
+		landBackgroundImageFilename.setText(settings.landBackgroundImage);
+		oceanBackgroundImageFilename.setText(settings.oceanBackgroundImage);
+		edgeLandToWaterProbSlider.setValue((int)(settings.edgeLandToWaterProbability * 100));
+		centerLandToWaterProbSlider.setValue((int)(settings.centerLandToWaterProbability * 100));
+		sizeSlider.setValue((int)(settings.size * 100));
+		landBlurSlider.setValue(settings.landBlur);
+		oceanEffectsSlider.setValue(settings.oceanEffects);
+		wavesRadioButton.setSelected(settings.addWavesToOcean);
+		blurRadioButton.setSelected(!settings.addWavesToOcean);
+		landBlurColorDisplay.setBackground(settings.landBlurColor);
+		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
+		riverColorDisplay.setBackground(settings.riverColor);
+		
+		booksPanel.removeAll();
+		for (String book : getAllBooks())
+		{
+			JCheckBox checkBox = new JCheckBox(book);
+			booksPanel.add(checkBox);
+			checkBox.setSelected(settings.books.contains(book));
+		}
+		
+		// Do a click here to update other components on the panel as enabled or disabled.
+		drawTextCheckBox.setSelected(!settings.drawText);
+		drawTextCheckBox.doClick();
+
+		titleFontDisplay.setFont(settings.titleFont);
+		titleFontDisplay.setText(settings.titleFont.getName());
+		regionFontDisplay.setFont(settings.regionFont);
+		regionFontDisplay.setText(settings.regionFont.getName());
+		mountainRangeFontDisplay.setFont(settings.mountainRangeFont);
+		mountainRangeFontDisplay.setText(settings.mountainRangeFont.getName());
+		otherMountainsFontDisplay.setFont(settings.otherMountainsFont);
+		otherMountainsFontDisplay.setText(settings.otherMountainsFont.getName());
+		riverFontDisplay.setFont(settings.riverFont);
+		riverFontDisplay.setText(settings.riverFont.getName());
+		textColorDisplay.setBackground(settings.textColor);
+		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
+
+		lastSettingsLoaded = settings;
+	}
+	
+	private List<String> getAllBooks()
+	{
+		// TODO Make sure this works if I launch from another folder.
+		String[] filenames = new File("assets").list(new FilenameFilter()
+		{
+			public boolean accept(File arg0, String name)
+			{
+				return name.endsWith("_place_names.txt");
+			}
+		});
+	
+		List<String> result = new ArrayList<>();
+		for (String filename : filenames)
+		{
+			result.add(filename.replace("_place_names.txt", ""));
+		}
+		return result;
+	}
+	
+	private MapSettings getSettingsFromGUI()
+	{
+		MapSettings settings = new MapSettings();
+		settings.scale = scaleSlider.getValue();
+		settings.randomSeed = Integer.parseInt(randomSeedTextField.getText());
+		settings.forestDensity = forestDensitySlider.getValue();
+		settings.landBackgroundImage = landBackgroundImageFilename.getText();
+		settings.oceanBackgroundImage = oceanBackgroundImageFilename.getText();
+		settings.edgeLandToWaterProbability = edgeLandToWaterProbSlider.getValue() / 100.0;
+		settings.centerLandToWaterProbability = centerLandToWaterProbSlider.getValue() / 100.0;
+		settings.size = sizeSlider.getValue() / 100.0;
+		settings.landBlur = landBlurSlider.getValue();
+		settings.oceanEffects = oceanEffectsSlider.getValue();
+		settings.addWavesToOcean = wavesRadioButton.isSelected();
+		settings.landBlurColor = landBlurColorDisplay.getBackground();
+		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();
+		settings.riverColor = riverColorDisplay.getBackground();
+		settings.drawText = drawTextCheckBox.isSelected();
+		
+		settings.books = new TreeSet<>();
+		for (Component component : booksPanel.getComponents())
+		{
+			if (component instanceof JCheckBox)
+			{
+				JCheckBox checkBox = (JCheckBox)component;
+				if (checkBox.isSelected())
+					settings.books.add(checkBox.getText());
+			}
+		}
+
+		settings.titleFont = titleFontDisplay.getFont();
+		settings.regionFont = regionFontDisplay.getFont();
+		settings.mountainRangeFont = mountainRangeFontDisplay.getFont();
+		settings.otherMountainsFont = otherMountainsFontDisplay.getFont();
+		settings.riverFont = riverFontDisplay.getFont();
+		settings.textColor = textColorDisplay.getBackground();
+		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
+		return settings;
+	}
+
+}

@@ -1,0 +1,46 @@
+package cs673;
+
+import java.awt.Color;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
+import javax.swing.*;
+
+
+public class ColorButtonListener implements MouseListener
+{	
+	private JPanel parent;
+	
+	public ColorButtonListener(JPanel parent)
+	{
+		this.parent = parent;
+	}
+	
+	@Override
+	public void mouseClicked(MouseEvent e)
+	{
+		JPanel source = (JPanel)e.getSource();
+		source.setBackground(JColorChooser.showDialog(parent, "Land blur color:", new Color(119,91,36)));
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e)
+	{		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e)
+	{
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e)
+	{
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e)
+	{
+	}
+
+}

@@ -1,0 +1,3834 @@
+accent	dmitrian
+accent	heavy
+area	still-contaminated
+bodies	certain
+bodies	dead
+bodies	gutted
+body	mangled
+bullets	identifiable
+captain	good
+cheek	right
+concentration	intense
+descriptions	able
+dislike	special
+enforcement candidates	good
+enforcement officer	active-duty
+enforcement officer	female
+enforcement officer	only
+enforcement officer	romantic
+fall new pennsylvania evening	late
+fight	first
+folder	more
+hands	minor
+hatred	special
+help	more
+hospital	convalescent
+hospital	half-ran
+injury	spinal
+kiss	congratulatory
+litter	careful
+lot	more
+mark	circled-triangle
+minimums	officer-cadet
+needs	physical
+operation	anti-brotherhood
+operations team	special
+orders	routine
+others	dead
+plagues	common
+rites	last
+salute	first
+schoolmates	former
+seconds	few
+so	special
+st. dmitri exchange troop	competent
+stats	physical
+stomachs	stronger
+survivors	other
+team	whole
+team members	other
+war	final
+woman	unconscious
+advantage	only
+arrangements	difficult
+briefing	temporary
+casualties	high
+clinic	local
+coffee shop	comfortable
+copter-lifts	command-van
+doctor	medevac
+doctors	several
+dozen nurses	many
+duty	special
+enemies	dangerous
+fusion	spinal
+hospital coffee shops	full
+incidents	other
+injuries	most
+injury	serious
+injury	spinal
+item	key
+killer	trained
+killer	upset
+landing	second
+leg	second
+life expectancy	average
+life expectancy	less
+man	suitable
+operations	special
+operations teams	special
+ops identification	special
+people	different
+plane	due
+plane	medevac
+population	third
+procedure	alternative
+rapes	multiple
+rapes	natural
+replacement	temporary
+ribs	assorted
+ribs	broken
+room	assigned
+shocks	more
+shower	due
+shower	interrupted
+smile	tilted
+snow	newly-fallen
+standards	serious
+table	empty
+walk	short
+year	less
+arm	most
+assurance	grateful
+assurance	last
+atomics	few
+aversion	overwhelming
+aversion	sudden
+beauties	fragile
+chapel	small
+clock	six-thirty
+clock	tangled
+concern	real
+desk	convenient
+disc	subject
+doctor egan	pale
+door	open
+efforts	best
+eyes	pale
+freedom raid points	other
+groups	most
+groups	restricted
+hand	good
+harshness	grim
+harshness	real
+holocaust	nuclear
+hospital floor	bloody
+hospital floor	broken
+hospital floor	different
+hours	several
+liturgy	familiar
+lot	better
+meeting	odd
+moments	several
+needs	spiritual
+neutron bombs	clean
+neutron bombs	most
+oddity	only
+operation	successful
+operations	special
+ops	eligible
+ops	outstanding
+ops	special
+ops officer	special
+paid-woman	fine
+part	most
+places	many
+prayer	brief
+recovery	complete
+reminders	such
+request	combined
+salute	sketchy
+scars	usual
+seat	half-bowed
+sweeps	anti-terrorist
+sweeps	necessary
+terrorists	worst
+time odeon	half-bowed
+time odeon	harsh
+time odeon	harsher
+time odeon	positive
+virgin	blessed
+vocation	dangerous
+vocation	military
+voice	soft
+war	final
+weapons	biological
+weapons	primary
+white fathers	several
+woman	real
+alternative	better
+break	cold
+breath	deep
+brother lawrence shannon	sure
+colonels	full
+combat	hand-to-hand
+combat training	much
+days	few
+decision	final
+disability discharge	eligible
+feeling	like
+feeling	strong
+hand	other
+hell-marks	rid
+hug people	good
+hunt	such
+moment	long
+notations	necessary
+office	private
+office workers	apprehensive
+officer	fellow
+offices	bare-bones
+ops	special
+ops man	apprehensive
+ops man	special
+ops man	upset
+personnel	interested
+prognosis	good
+question	first
+ribs	broken
+shock	unpleasant
+team	longest
+thing	first
+thing	oddest
+work	practical
+artist	able
+attention	non-standard
+authorities	civil
+breath	deep
+captain cortin	glad
+captain cortin	non-functional
+cases	reluctant
+chapter	next
+civilians	most
+danger	constant
+day	next
+days	holy
+distraction	more
+enforcement troops	fellow
+evenings	free
+face	unchecked
+facts	pertinent
+goodbye	bent
+hand	bandaged
+hand	other
+hopes	false
+knowledge	best
+lieutenant	more
+lieutenant	simple
+mind	numb
+minutes	few
+minutes	several
+morning	next
+news	bad
+news	easier
+night	entire
+officer	junior
+officer	unusual
+ops	special
+personnel	medical
+reaction	first
+recovery	complete
+skill	easier
+specialty	interested
+team	able
+techniques	basic
+techniques	first-stage
+techniques	memory-enhancing
+techniques	several
+time	able
+time	most
+tract	urinary
+trail	warm
+use	own
+voice	steady
+vulnerability	uncharacteristic
+witnesses	willing
+woman	more
+woman	real
+women	few
+brother lawrence shannon	best
+brother lawrence shannon	certain
+brother lawrence shannon	confident
+brother lawrence shannon	free
+brother lawrence shannon	glad
+brother lawrence shannon	more
+brother lawrence shannon	reasonable
+brother lawrence shannon	spare
+captain	mere
+captain odeon	worried
+day	first
+day cortin	alive
+day cortin	comfortable
+day cortin	flattered
+day cortin	pleased
+day cortin	sure
+day cortin	thankful
+desire	strong
+enforcement trooper	unarmed
+expressions	sympathetic
+grievances	personal
+groups	terrorist
+hands	gloved
+help	little
+help	unofficial
+herb tea	better
+herb tea	favorite
+herb tea	premature
+hours	few
+impact	psychological
+lot	better
+lot	comfortable
+minutes	few
+morning	big
+morning	next
+move	good
+operations	anti-brotherhood
+plumbing	free
+plumbing	medical
+quarters	comfortable
+reaction	much
+room	small
+scars	physical
+scars	psychological
+success	more
+success	real
+systems	entire
+thing	reasonable
+touches	such
+victims	other
+violation	unexpected
+way	same
+withdrawal	abrupt
+woman	more
+woman	real
+years	several
+areas	remote
+beds	few
+bishops	few
+cooperation	full
+corollary	enjoyable
+days	prewar
+dignity	proper
+end	real
+exception	general
+excuse	reasonable
+feeling	familiar
+hospital	good
+hospital status	great
+inquisitor	competent
+inquisitor	glad
+instruction	intensive
+instruction	more
+kiss	thorough
+kiss	undignified
+law officer	great
+lieutenant	first
+lieutenant odeon	afraid
+lieutenant odeon	safe
+load	10-mm
+men	few
+men	sterile
+morning	next
+ops	special
+position	right
+priest	mediocre
+priests	regular
+reason	meaningful
+records	other
+reminder	near-painful
+rhythm	eternal
+rites	last
+salute	first
+sections	operational
+side	dark
+skin	still-smooth
+sleep	deeper
+smile	unforced
+sortie	first
+stages	first
+strike	tactical
+student	promising
+students	other
+surroundings	such
+testing	severe
+things	few
+things	worse
+time	better
+time	easier
+time	first
+times	few
+try	worth
+tuesday	more
+uniform	gray
+uniform	immaculate
+work	theoretical
+areas	remote
+brotherhood	fond
+building	gray
+building	main
+building	windowless
+captain odeon	snowbound
+centis	slender
+church	full
+colonel	good
+combat skills	outstanding
+conditions	such
+consent	full
+criterion	additional
+december	past
+decision	wise
+evaluations	confident
+exemption	special
+expectations	accurate
+guess	best
+holy orders	full
+hospital	convalescent
+inquisitor-captain	best
+job	enough
+lieutenant	simple
+look	more-than-lieutenant
+missions	anti-brotherhood
+missions	hazardous
+moments	few
+operations personnel	special
+people	most
+periods	prolonged
+personnel	sufficient
+priest	civilian
+priesthood	interested
+priests	rare
+question	sufficient
+raid	abhorrent
+rate	current
+schoolchildren	full
+selectees	potential
+smile	raised-eyebrow
+smile	slow
+student	enthusiastic
+subject	first
+teachers	full
+time	much
+time	next
+whole	accurate
+answer	yes-or-no
+apprehension	own
+captain	young
+caution	final
+circumstances	certain
+confession	full
+crime	new
+danger	immediate
+deserter	new
+door	west
+enforcement service card	standard
+experience	first
+experience	little
+experience	practical
+feelings	certain
+folder	last
+folder	little
+glance	quick
+glance	startled
+hospital	convalescent
+information	significant
+information	useful
+interrogation	short
+look	curious
+minutes	few
+minutes	first
+moments	several
+nerve	incompetent
+officer	ranking
+operations stamp	special
+ordination st. thomas	cautious
+patch	so
+practitioners	outstanding
+push	real
+raid	available
+raid	upcoming
+requirements	special
+risk	low
+room	third-stage
+scores	perfect
+speculations	accurate
+stages	preliminary
+things	same
+trainees	most
+trainees	nervous
+tuesday	detectable
+use	best
+use	unconscious
+use	weak
+victim	first
+voice	low
+work	first
+work	nervous
+work	practical
+work	third-stage
+work	understandable
+bastard	other
+call	obvious
+call	primary
+captain cortin	best
+captain cortin	certain
+captain cortin	ready
+ceremony	brief
+colonel bradford	afraid
+colonel bradford	sure
+commanding officer	first
+commanding officer	new
+coverall	blood-spattered
+day	less
+effort	worth
+experience	little
+expression	sober
+hours	several
+idea	easy
+idea	real
+interrogation	third-stage
+job	professional
+methods	third-stage
+minute	last
+motive	primary
+ones	natural
+ones	second-stage
+ones	several
+opportunity	unfortunate
+ordination	civilian
+ordination	elaborate
+prediction	correct
+priest	good
+priest	harder
+priests	conceivable
+prisoner	surprised
+promise	little
+secret	all-systems
+sign	good
+subjects	first
+subjects	useful
+team	conceivable
+team	same
+team leader	useful
+tomorrow	mass
+way	own
+way	proper
+way	unsettling
+words	next
+years	younger
+beatings	methodical
+bit	surprised
+break	abrupt
+bruise	dark
+captain cortin	defiant
+captain cortin	easy
+captain cortin	less
+captain cortin	past
+captain cortin	true
+cool	human
+dagger	razor-sharp
+dagger	slender
+die	subject
+difficulty	particular
+dreads	particular
+dreads	sensitive
+face	pale
+flesh	sensitive
+folks	old
+god	more
+guest	afraid
+horrors	personal
+inquisitors	much
+interrogation	apt
+interrogations	second-stage
+knowledge	theoretical
+look	grateful
+master	easy
+master	present
+ones	sick
+pain	exquisite
+people	few
+persuasion	vulnerable
+prognosis	pleased
+reaction	normal
+room	outer
+sense	good
+skin	genital
+smile	little
+smile	surprised
+status	non-inquisitor
+stimuli	physical
+stimuli	psychological
+studies	short-sighted
+tactic	primary
+tactic	slow
+talent	less
+task	difficult
+technique	afraid
+technique	useful
+thanks	few
+thing	damn
+time	busy
+time	last
+time	optimum
+voice	inner
+way	good
+way	unpleasant
+arms	operational
+attention	full
+badge	new
+basis	individual
+bishops	most
+colleagues	several
+committments	other
+communion	first
+confession	first
+days	few
+diner	nearby
+effusiveness	embarrassing
+example	good
+field	new
+first lieutenant	young
+first mass	first
+functions	priestly
+hand signal	first-class
+intensity	uncomfortable
+key	fitting
+language	local
+lieutenant	anonymous
+mass.	first
+men	several
+news channels	normal
+operations priests	special
+ops patches	special
+pain	own
+place	private
+plaguer shannon	interested
+plate	empty
+pocket	tunic
+problem	first
+profession	profitable
+resentment	less
+server	strange
+service	profitable
+strike force selectees	newly-arrived
+subject	first
+subjects	first
+team leaders	prospective
+things	slow
+time	useful
+tips	several
+tips	useful-sounding
+touch	close
+touch	useful
+alternative	first
+animals	military
+animals	predatory
+area	most
+bonus	hazardous-duty
+breakfast	big
+buildings	separate
+clamor	second
+colonel bradford	available
+colonel bradford	interested
+colonel bradford	most
+combinations	leader-second
+debate	internal
+duty	available
+duty	most
+duty	primary
+ear	major
+expenses	interested
+expenses	personal
+fellow inquisitors	interested
+fellow inquisitors	possible
+gentles	bad
+groups	terrorist
+hand	bad
+hand	other
+hardship	much
+horror attacks	unprecedented
+intentions	open
+kingdoms	various
+leadership teams	pre-selected
+lobby	available
+minds	great
+missions	own
+name	such
+name	unlikely
+operations	special
+order	same
+orders	clear
+others	most
+others	paired
+pair	good
+pairs	leader-and-second
+pairs	leader-second
+pairs	several
+part	other
+personnel	possible
+point	strong
+procedures	normal
+purpose	primary
+radios	personal
+refreshments	available
+strike forces	possible
+suits	paired
+surprise	deliberate
+terror	early
+thing	same
+things	such
+time	last
+time	most
+updates	daily
+volunteers	eligible
+warrant	broader
+beliefs	hard
+body temperature	general
+body temperature	high
+call	unmistakable
+captain cortin	frightening
+captain cortin	god-loving
+captain cortin	surprised
+contact	brief
+day	first
+day	following
+description	classic
+description	cold
+disability	correctable
+disability	own
+effect	side
+enthusiasm	flattering
+enthusiasm	impossible
+facts	hard
+facts	mere
+genitals	cold
+genitals	willing
+kingdoms	various
+lieutenant	glad
+man	normal
+medic	several
+meters	tall
+motivations	good
+motivations	strong
+one	voluntary
+ops	special
+partners	willing
+power	latent
+powers	own
+qualifications	excellent
+qualifications	medical
+reaction	particular
+records	other
+records	third
+report	true
+risk	little
+risk	worth
+seat	own
+shelter parties	like
+sister mary piety	attractive
+sister mary piety	capable
+sister mary piety	idle
+sister-lieutenant eleanor mary piety chang	aware
+sister-lieutenant eleanor mary piety chang	certain
+sister-lieutenant eleanor mary piety chang	last
+sister-lieutenant eleanor mary piety chang	more
+sister-lieutenant eleanor mary piety chang	silent
+sister-lieutenant eleanor mary piety chang	unable
+sister-lieutenant eleanor mary piety chang	willing
+smile	brilliant
+surge	brief
+survival limits	high
+survival limits	human
+team	good
+time	right
+time	spare
+truthsense	certain
+witness	other
+witness	second
+area	interesting
+areas	populated
+areas	remote
+areas	rich
+assistant	second
+attention	own
+briefing	complete
+brothers	unfortunate
+burst	subject
+captain odeon	concerned
+captain odeon	second
+cases	most
+conduct	sexual
+courtesans	decent
+courtesans	reputable
+difference	primary
+doctor	civilian
+doctor	good
+examination	preliminary
+examination	simple
+front	hard
+front	possible
+function	useful
+grin	easy
+idea	good
+impact	psychological
+information	useful
+injuries	internal
+interrogation	extended
+interrogation	serious
+interrogation process	invaluable
+items	more
+kidneys	same
+lt. anthony degas	other
+lt. anthony degas	self-contained
+lt. david bain	strong
+man	young
+members	other
+methods	simple
+names	first
+names	proper
+nerves	rich
+ones	many
+ones	more
+ones	older
+ones	usual
+people	painful
+pleasure	incapable
+pressure	particular
+principle	same
+problems	other
+response	uncertain
+room	third-stage
+saturday	proper
+sex	unnatural
+sexuality	vulnerable
+slang	terran
+stages	preliminary
+subjects	stubborner
+table	surgical
+talk	private
+targets	easy
+team	complete
+team	proper
+wife	informal
+aphrodisiac	potent
+bed	wide
+bitch	alive
+bitch	interested
+blameworthy	more
+boy	innocent
+breath	deep
+brother	promiscuous
+cause	good
+chance	small
+chaplain	civilian
+circumstances	appropriate
+counts	wrong
+day	good
+day	next
+death	painful
+demonstration	distressing
+demonstration	practical
+distractions	interested
+distractions	minor
+dr. egan	emphatic
+dr. egan	good
+dr. egan	latter
+equipment	most
+eroticine	apprehensive
+eroticine	interested
+eroticine	noticeable
+eroticine	potent
+experiment	interesting
+experiment	reminiscent
+eyes	blue
+future	necessary
+future	possible
+impression	wrong
+influence	pleasant
+inquisitors	fellow
+instructors	gentle
+joy-house	exclusive
+joy-house	expensive
+level	enjoyable
+level	physical
+lips	dry
+lot	worth
+men	older
+minutes	several
+morning	first
+name	appropriate
+nerves	emphatic
+offer	other
+pairings	stable
+passage	more
+passage	synthetic
+passage	vaginal
+pastels	soft
+plans	important
+pleasure	drug-enforced
+privileges	special
+projects	own
+proprietor	reluctant
+prostitute	male
+prostitute	young
+purpose	different
+purposes	own
+reaction	negative
+reaction	strong
+regrowth	such
+results	actual
+smile	brief
+smile	reminiscent
+subject	next
+surroundings	appropriate
+sympathizers	infested
+sympathizers	terrorist
+table	surgical
+things	worse
+time	available
+time	spare
+tissue	necessary
+troopers	common
+vehicles	personal
+ward	disabled
+week	second
+welfare	interested
+woman	angry
+woman	incapable
+arrival	sudden
+awards	well-deserved
+baby ones	delightful
+cartridge	own
+case	early
+cat	best
+cat	formidable
+cat	own
+cat	pregnant
+dogs	formidable
+face	beautiful
+farmer projects	young
+hand	other
+meeting	happy
+minutes	few
+miracle	real
+morals	real
+name	holy
+name	most
+occasions	rare
+officer	fine
+ops	special
+organization	terrorist
+palomino colt	healthy
+palomino colt	long
+priest	old
+reasons	personal
+service obligation	complete
+smile	slow
+spot	shady
+team	fitting
+time	much
+times	several
+voice	familiar
+way	same
+yard	front
+blood type	same
+brother	public
+cases	many
+civs	interested
+confession	full
+criminals	other
+donor	suitable
+end	eager
+face	impassive
+face	straight
+february evening	late
+food	solid
+hand	other
+idea	bad
+idea	such
+information	necessary
+interrogations	useful
+items	external
+kingdoms	other
+look	dirty
+material	specialized
+morning sun	comfortable
+move	first
+murderers	like
+nerve layers	inverted
+organs	internal
+pain	extreme
+pain	such
+people	most
+period	adequate
+place	better
+quiet	pleasant
+reaction	same
+recuperation area	surgical
+royal retreat	deliberately-isolated
+royal retreat	well-secured
+rumor	original
+saddle pad	complete
+saddle pad	lambswool
+satisfaction	much
+satisfaction	professional
+situation	different
+skin	appropriate
+smile	brief
+spell	dry
+spell	long
+subject	recipient
+subject	useful
+talent	easier
+talent	satisfying
+temperature	comfortable
+time	more
+time	next
+time	useful
+time	warm
+times	few
+times	first
+virus	favorite
+way	odd
+word	occasional
+word	pleasant
+action	blameless
+activity	sexual
+briefing	quick
+bunch	sterile
+church law	blameless
+church law	civil
+civilians	normal
+co	certain
+co	happy
+commander	on-scene
+demonstration	standard
+duties	other
+effect	extreme
+effect	other
+enforcement personnel	civilian
+enforcement personnel	most
+environment	military
+environment	normal
+environment	strictly-military
+family	big
+family	great
+feel	emotional
+hours	few
+idea	good
+intentions	mass
+light	green-tinged
+look	full
+masses	extra
+meal	pre-surgery
+meal	unsatisfying
+medic	top-notch
+party	ambush
+patrol	remote
+prude	useful
+prude	virgin
+responsibilities	few
+rites	last
+searchers	other
+service	entire
+sisters	sterile
+stage	early
+stage	second
+stage	third
+sun	rapidly-warming
+team	ten-man
+teams	other
+things	other
+things	physical
+things	same
+things	several
+blessing	final
+bodies	blanket-covered
+brother	repentant
+brother	utmost
+captain	other
+confession	honest
+criminal	afraid
+criminal	enough
+criminal	royal
+criminal	safe
+criminal	wanted
+glance	sidelong
+god	right
+group	main
+hand	bare
+hits	more
+leaning	surprised
+life	acceptable
+life	useful
+look	final
+methods	usual
+minutes	few
+people	most
+plaguers	little
+precautions	few
+precautions	simple
+prisoner escorts	close
+problem	real
+questions	alive
+reaction	extreme
+reaction	guilty
+reputation	afraid
+residence	royal
+return fire	mixed
+royal family	alert
+seconds	few
+shots	rapidly-approaching
+side	other
+situations	similar
+tactic	obvious
+tactic	promising
+terrorists	more
+tracker	second
+tracks	other
+trees	good-sized
+victims	female
+victory	first
+victory	last
+voice	more
+ways	more
+whisper	more
+withers	low
+woods	open
+bit	disturbed
+danger	much
+dear god	human
+explanation	brief
+food	solid
+gait	smooth
+gardens	formal
+gelding	responsive
+guard post	main
+honor	certain
+horses	spare
+hunch	stronger
+idea	good
+idea	nice
+idea	vital
+indiscretion	youthful
+informality	non-regulation
+insubordination	angry
+lawns	immaculate
+lawns	past
+lieutenant	happy
+look	disgruntled
+majesty	infernal
+opinions	similar
+ops	special
+order	lawful
+parts	important
+procedures	fine
+procedures	standard
+puppets	ready
+quarters	normal
+reputation	helpful
+retreat	royal
+scenario	worst-case
+security people	many
+shelter	fine
+silence	brief
+target	prime
+targets	special
+time	allotted
+time	free
+times	helpful
+way	token
+assignment	nice
+assignment	productive
+assignment	safe
+attempt	useless
+brother	former
+cases	difficult
+civ	young
+civs	apprehensive
+effect	aware
+effect	conscious
+effect	routine
+enforcement officer	apprehensive
+evening	early
+function	sexual
+knowledge	wiser
+limit	daily
+look	innocent
+observations	accurate
+officer	commanding
+one	likely
+one	true
+possibilities	delicious
+possibilities	such
+prospects	nervous
+reason	same
+recruiters	bad
+research	best
+security area	remote
+sleep	natural
+student	second-semester
+talent	only
+team	new
+time	short
+trouble	back
+trouble	worse
+version	new
+version	virus-enhanced
+woman	second
+woman officer	only
+words	many
+authorities	temporal
+bit	cooler
+charisma	other
+clincher	attractive
+denial	instinctive
+destiny	unaware
+dream	glad
+dream	peculiar
+drink	necessary
+election	near-unanimous
+everyone	available
+face	tear-stained
+family	distinguished
+functions	priestly
+gifts	special
+immunity	temporary
+interpretations	human
+man	attractive
+man	free
+man	willing
+night	same
+night-lighting	careful
+night-lighting	dim
+officers	good-looking
+pain	emotional
+people	most
+phase	final
+police officer	skeptical
+power	mundane
+powers	latent
+precautions	unnecessary
+princess	present
+prophecies	accurate
+protector	true
+protectorship	temporary
+sake	own
+side	other
+smile	unable
+sound	ominous
+specialty	conscientious
+staff	other
+support	chief
+thing	attractive
+thing	peculiar
+time	same
+times	other
+uniform	white
+unity	right
+will	free
+apprehension	normal
+back	usual
+case	safe
+choice	natural
+experience	horrible
+experience	last
+experience	little
+experience	previous
+experience	sexual
+experience	true
+father	good
+feeling	physical
+grin	humorous
+hand	other
+limitation	absolute
+limitation	only
+lot	whole
+mechanism	arousal
+medic	available
+men	fertile
+moments	cynical
+night	last
+phenomenon	mental
+phenomenon	physical
+pleasure	difficult
+pleasure	evident
+pleasure	infectious
+relaxation	necessary
+sensations	accustomed
+sensations	different
+smile	elated
+smile	shaky
+someone	rude
+studies	such
+team	gentlest
+thing	good
+time	normal
+times	few
+times	interesting
+vision	false
+arousal	fast
+arousal	nice
+attitude	difficult
+attitude	sexual
+banter	familiar
+bottles	broken
+choice	reasonable
+couple	attractive
+couple	early
+couple	good
+couple	more
+dinner supper	festive
+dress uniforms	full
+enforcement men	compatible
+enforcement men	heterosexual
+enforcement men	most
+enforcement officer	female
+enforcement officer	only
+face	wry
+finery	comfortable
+gratification	possible
+job	safe
+man	big
+matter	personal
+minutes	more
+officers	superior
+reaction	normal
+relief	considerable
+sigh	theatrical
+soup	hot
+stalemate breaks	glad
+time	whole
+tiny	good
+tiny	misnamed
+tussle	friendly
+word	weak
+campaign	anti-terrorist
+capital	comfortable
+cider	freshly-pressed
+colonel cortin	comfortable
+colonel cortin	sure
+counsel	own
+criminals	worst
+czar nicholas	subject
+decisions	own
+duties	primary
+enforcement rank	highest
+experience	much
+field work	able
+gear	personal
+health	continued
+high king mark	subject
+home world	pleasant
+household members	prestigious
+interrogation suite	state-of-the-art
+job	good
+job	primary
+kingdom	whole
+kingdoms	other
+lives	private
+offer	justified
+operation	routine
+orders	lawful
+packhorse	single
+palace compound	close
+palace functions	important
+people	most
+position	new
+princess	unusual
+request	more
+skills	necessary
+systems	necessary
+systems	whole
+tastes	basic
+things	normal
+thought	little
+time	more
+time	most
+time	much
+toast	formal
+arrangements	such
+attention	full
+birthrate	average
+breath	deep
+children	better
+children	numerous
+children	young
+choice	much
+church	noble
+church	secular
+cities	unbearable
+conclusions	uncomfortable
+conditions	changed
+conference cabin	full
+couples	few
+couples	infertile
+death	tragic
+dispensation	sexual
+enforcement officer	necessary
+enforcement officer	noble
+family structure	necessary
+family structure	strong
+father	legal
+flight	first
+helpers	closest
+idea	good
+illness	most
+individuals	few
+male	adult
+male	only
+marriage	polygamous
+massacre	bloody
+massacre	final
+men	half
+moments	few
+monogamy	suicidal
+monogamy	tragic
+nobility	most
+number	critical
+objections	strong
+opinion	own
+population statistics	aware
+population statistics	pre-war
+position	awed
+position	new
+prince edward	afraid
+princess ursula	certain
+race	human
+race	suicidal
+raidmaster	chief
+recovery	drugged
+recovery	fair
+royal marriage	necessary
+satyr virus	high
+scale	high
+society	healthy
+society	necessary
+spouse	sterile
+though	powerless
+threat	bad
+threats	great
+time	first
+time	spare
+time	unbearable
+women	half
+women	other
+activity	sexual
+blessing	special
+breath	deep
+cabin	main
+castle	medieval
+choices	own
+door	main
+dungeon	desirable
+dungeon	honest-to-god
+entrance stairs	broad
+entrance stairs	sweeping
+equipment	sophisticated
+family structure	new
+floor	main
+floors	upper
+garden	formal
+hallucination	drug-induced
+hedges	thick
+home	new
+hope	personal
+inquisitor-colonel	fine
+interrogation suites	complete
+isolation	fine
+isolation	normal
+joy	eternal
+knowledge	best
+library	excellent
+life form	new
+names	first
+offices	public
+ones	conventional
+ones	other
+ones	state-of-the-art
+operations officers	special
+ops	special
+palace compound	close
+parties	many
+place	own
+place	private
+quarters	excellent
+quarters	recreational
+royal circles	new
+step	next
+thing	first
+trip	brief
+troopers	disciplined
+untouched	best
+vial	small
+way	different
+annunciation	25th
+approval	eager
+blue sisters	afraid
+captain cortin	re-conditioned
+captain odeon	wrong
+detention center	possible
+door	main
+enforcement service personnel	responsible
+entrance	main
+evaluation	preliminary
+feel	subject
+friend	young
+glass	one-way
+hand	other
+idea	good
+keys	spare
+life	good
+lot	more
+man	young
+office	simple
+one	big
+part	important
+phone	black
+puppy	eager
+revenge	simple
+seats	adjoining
+smile	tentative
+subject	first
+target	natural
+time	last
+ability	aware
+ability	best
+ability	new
+ability	stimulating
+bed	huge
+boots	criminal
+carpets	thick
+case	special
+circumstances	normal
+colonel	best
+colonel	less
+cooperation	full
+drive	self-regulating
+easy	effective
+experiment	successful
+floor	public
+floor	second
+fortune	small
+fortune	worth
+fox	little
+freedom	other
+freedom	terrorist
+indication	good
+information	good
+job	new
+level	normal
+light	different
+living conditions	average
+marksman	good
+morning	serious
+night	last
+night	nice
+others	able
+partners	interested
+people	many
+phone	own
+puppy	young
+qualification	main
+reports	immediate
+response	only
+response	pleased
+response	quick
+results	quick
+results	substantial
+rider	good
+seconds	several
+stimulus	sexual
+strike force criteria	normal
+time	first
+uniforms	own
+voice	half-familiar
+welfare	spiritual
+work	good
+absorption	normal
+absorption	noticeable
+answer	good
+attack	reasonable
+ceremony	beautiful
+colonel bradford	afraid
+colonel bradford	astonished
+colonel bradford	available
+colonel bradford	helpful
+colonel bradford	pleased
+colonel bradford	sure
+endowments	new
+experiences	recent
+expression	impassive
+floor	main
+information	useful
+job	thorough
+lieutenant powell	new
+lieutenant powell	wrong
+lovemaking	thorough
+lovemaking	unhurried
+matters	personal
+meditation	private
+missal	latter
+money	right
+movements	gentle
+night	last
+office	hard
+office	main-floor
+office	public
+office lighting	bright
+one	normal
+point	strong
+prayers	preliminary
+seating area	informal
+sedative injector	still-full
+sex	laughable
+sex life	incredible
+situations	first
+size	full
+size	solid
+surroundings	aware
+time	little
+time	whole
+weaknesses	individual
+women	other
+arrangement	normal
+enforcement uniform	white
+exceptions	few
+eyebrow	curious
+guess	bad
+interrogation	formal
+judgement	final
+look	speculative
+lot	challenging
+lot	more
+name	better
+night	last
+nobility	landfolk
+pleasure	incredible
+priority	first
+protector surfaces	incapable
+protector surfaces	late
+realization	joyous
+repetitions	prolonged
+role	temporary
+scale	different
+session	informal
+sex	opposite
+source	different
+staff	primary
+visit	early-hours
+women	own
+works	previous
+attacks	such
+convent job	likely
+coveralls	gray
+death	slow
+death	terrible
+farm life	boring
+fear	open
+function	primary
+hallucinogens	useful
+hope	small
+hospital	convalescent
+imagination	own
+interrogation	conventional
+interrogation drugs	afraid
+interrogation drugs	useful
+jars	little
+jars	various
+methods	conventional
+mood changes	rapid
+morning	good
+name	holy
+name	most
+night	previous
+objection	real
+phone	red
+positions	relative
+purposes	medical
+raid	major
+reaction	strong
+repentance	deathbed
+results	better
+room	dimly-lit
+room	third-stage
+session	ready
+struggles	ineffectual
+tactic	good
+techniques	advanced
+thought	cortin
+thought	impressive
+time	brief
+time	long
+time	same
+times	many
+trip	bad
+year	previous
+action	drastic
+areas	remote
+capacity	new
+commands	majesty
+company	normal
+complaints	justified
+conference	airborne
+courtesy call	odder
+crew	clean-up
+crucifix	obvious
+desire	personal
+dream	good
+enemies	personal
+field work	much
+frown	brief
+generations	few
+god	kinder
+guard	personal
+hand	other
+handgun	heavy-caliber
+head	thick
+high king	afraid
+high king	tired
+high king	uncomfortable
+inquisitors	disturbing
+inquisitors	male
+interest	personal
+issue	standard
+king mark	valuable
+lovemaking	first
+majesty	familiar
+men	most
+monarchs	lesser
+office desk	ground-floor
+officer	commanding
+officer	new
+ones	first
+outside	same
+photo	current
+protector	best
+protector	certain
+protector	enough
+protector	pleased
+qualities	popular
+qualities	unusual
+rank	same
+reporters	content
+reporters	safe
+room	third-stage
+smile	rueful
+subject	new
+terror attack	next
+troops	popular
+validity	certain
+version	traditional
+warmth	dark
+ways	worse
+altar	ceremonial
+altar	necessary
+altar	simple
+attack	bad
+bio-lab	prewar
+bit	much
+breathing	soft
+celebration	necessary
+child	able
+child	afraid
+concerns	main
+conditions	normal
+conference	airborne
+control	direct
+effort	conscientious
+father/husband	second
+form	new
+friends	close
+hand	sexual
+hesitation	brief
+home	real
+horror	human
+lot	better
+marriage	impossible
+marriage	mostly-male
+marriage	much
+minutes	few
+mistake	smallest
+moment	embarrassing
+moment	silent
+ops men	special
+ops troops	special
+option	willing
+prayers	content
+prayers	informal
+purpose	divine
+purpose	willing
+reaction	first
+ritual	religious
+sense	more
+silk sheet	white
+thought	frightening
+time	first
+time	good
+times	much
+vestments	fancy
+way	bad
+wife	generous
+wife	much
+wives	much
+women	other
+years	free
+ability	best
+actions	different
+actions	physical
+addition	excellent
+apprehension	nagging
+attention	full
+colonel bradford	worried
+competence	unobtrusive
+couple	royal
+days	few
+droplets	sweet
+feeling	sexual
+fluid	generous
+fluid	sweet
+highnesses	applicable
+holy	other
+hysteria	brief
+hysteria	sudden
+idea	frightening
+indication	obvious
+intensity	lesser
+interest	best
+king	powerful
+level	own
+limitations	applicable
+mess	horrendous
+miracle	major
+parents	expectant
+place	proper
+place	real
+pope	powerful
+power	unlimited
+prayer	final
+prayers	brief
+prayers	informal
+problem	only
+problems	serious
+prophecies	dmitrian
+prophecies	traditional
+question	same
+sign	good
+smile	serene
+son	eldest
+sperm count	lower
+spouses	other
+strike force troopers	fertile
+team	entire
+unity	full
+way bread	same
+apologies	necessary
+background	pre-academy
+brother	older
+childhood	painful
+claims	non-interference
+criminals	good
+delays	bureaucratic
+delays	grateful
+distractions	many
+excuse	many
+excuse	only
+experiences	different
+experiences	such
+family	adoptive
+family	biological
+fear	justified
+god	infallible
+heaven	sure
+hope	true
+instructor	able
+laws	invalid
+limits	present
+logic	beloved
+logic	simple
+marriage	valid
+modification	minor
+mysticism	ancestral
+mysticism	more
+mysticism	russian
+orphan	classic
+parents	biological
+people	many
+politics	straightforward
+pope anthony	worried
+pope lucius	conservative
+porch	front
+profession	obsolete
+questions	conventional
+questions	most
+sin	original
+subject	primary
+truthsense	reliable
+water	thigh-deep
+way	same
+way	sure
+writ	valid
+attention	useful
+audience	private
+cakes	small
+circle	immediate
+common-room	hungry
+details	logistic
+enemies	worst
+expression	bemused
+family name	new
+family structure	new
+fear	justified
+fear	stronger
+floor	third
+gamble	worth
+hand	holy
+hand	other
+hunch	mere
+hunch	stronger
+identity	true
+kids	good
+lieutenant chang	pregnant
+marriage	valid
+minutes	few
+mistress	faithful
+mistress	hostile
+nature	different
+nod	thoughtful
+office door	half-open
+ones	likely
+ones	non-human
+optimism	justified
+people	own
+pope anthony	holy
+raid scene	fresh
+reaction	mixed
+roman times	new
+son	pregnant
+sorry	dangerous
+strike team dangers	subject
+surprise	much
+time	enough
+time	faithful
+time	good
+time	short
+time	venial
+arrangements	complete
+breath	deep
+change	slight
+changes	major
+clothes	everyday
+counsel	own
+debate	intense
+discussion	heated
+door	open
+face	straight
+families	more
+families	such
+family life	happy
+family life	long
+family structure	extended
+interest	senior
+minutes	few
+mood	good
+names	excessive
+names	maiden-family
+news	good
+office	main-floor
+part	first
+person	close
+plans	close-mouthed
+prince edward	majesty
+reputation	established
+reputation	professional
+reputation	reasonable
+residents	new
+result	nervous
+service uniform	fine
+smile	delighted
+speed	more
+spouses	initial
+status	new
+subject	odd
+sword	flat
+system	new
+thing	good
+thing	late
+things	routine
+time	same
+title	proper
+way	senior
+wishes	best
+wishes	good
+appearance	imminent
+archduchy	new
+belief	misdirected
+benefit	extra
+captain cortin-odeon	true
+child	first
+choice	logical
+choice	reasonable
+circumstances	normal
+decrees	true
+degree	lesser
+duties	inquisitorial
+enforcement uniform	single
+enforcement uniform	white
+enforcement uniforms	white
+families	new
+family	conventional
+family	difficult
+family	entire
+family member	next-senior
+fief	major
+fief	new
+fief	safe
+friday evening	first
+glow	bright
+group	entire
+hand	tentative
+kiss	enjoyable
+kiss	thorough
+knowledge	best
+lieges	new
+lodge	ready
+majesty	true
+people	many
+plural	classical
+population	small
+position	more
+promotion	sudden
+ranks	lower
+reaction	glad
+sake	careful
+sake	sure
+silver star	single
+situations	difficult
+status	new
+suggestion	excellent
+time	same
+troopers	many
+way	remote
+words	new
+work	regular
+wounds	fewer
+wounds	less
+wounds	serious
+cat	contented
+cat	large
+hatred	intact
+impact	most
+instance	significant
+item	first
+item	other
+item	personal
+items	personal
+items	small
+mass	important
+mass	ready
+night	last
+ones	accurate
+people	more
+point	appropriate
+point	counterproductive
+pope	responsive
+powers	supernatural
+protection	grateful
+sealed	other
+seconds	few
+sin	mortal
+sister	blue
+situation	aware
+situation	desirable
+situation	grateful
+situation	necessary
+situation	true
+smile	brief
+stage	complete
+strength	warm
+surface	ready
+team	risky
+things	other
+thought	frightening
+time	last
+vision	possible
+way	better
+way	brotherly
+assault	direct
+assault	physical
+breath	deep
+briefing	thorough
+children	happy
+civs	most
+clothes	clean
+congregation	entire
+enforcement people	female
+enforcement people	male
+expression	grim
+faces	several
+families	certain
+family	large
+family structure	new
+floor	third
+help	spectacular
+household	bad
+household	civilian
+household	cortin
+household	few
+job	nice
+meantime	pointless
+meeting	next
+men	common
+men	most
+morale problem	major
+new eden ladies	welcome
+ops patches	special
+others	few
+place	proper
+prayers	after-mass
+prayers	other
+pronoun	male
+protection	better
+reaction	emphatic
+reason	obvious
+reason	other
+regulars	common
+regulars	most
+service	public
+sink	small
+state	bloody
+supervision	adult
+supervision	more
+support	unusual
+surprise	last
+symbols	burned-on
+table	small
+team	entire
+things	many
+time	big
+time	first
+time	proper
+tunic	free
+tunic	sticky
+uniform	bloody
+uniform	fresh
+woman	hard
+years	better
+boy	older
+child sis	sure
+conditioning	judicious
+god	willing
+guests	many
+hand	other
+hands	gloved
+hospitality	incredible
+identity	real
+inquisitors	general
+invitation	such
+invitation	valuable
+invitation monday	real
+joke	poor
+judgement	own
+life	risky
+matter	believable
+mind	vivid
+modifications	physical
+modifications	simple
+morning	good
+niceties	such
+parents	alive
+patron	busy
+power	noble
+reason	valid
+reporter	blatant
+scandal	minor
+shape	classical
+temptation	irresistible
+teton	high
+though	free
+though	likely
+time	first
+time	free
+time	sure
+time	third
+training	same
+visit	upcoming
+visitors	high-ranking
+week	bad
+week	good
+whole	safe
+wife	new
+assignment	dangerous
+attentions	professional
+blouse	open
+chattiness	peculiar-seeming
+choice	logical
+contact snap	sure
+contact snap	unpleasant
+decision	correct
+decision	final
+definition	classic
+draperies	dark
+draperies	rich
+eyes	slit-pupilled
+father mike odeon	hard
+father mike odeon	sure
+feathers	jet-black
+hall	great
+humans	most
+life	most
+moments	more
+moments	normal
+officer	senior
+officer	subject
+plaything	first
+plaything	human
+power	much
+purpose	similar
+questions	foolish
+reasons	obvious
+robes	ornate
+sins	committed
+sins	few
+smile	sardonic
+spouse	subject
+state	spiritual
+suit	proper
+survival	bodily
+testing	final
+thing	same
+things	weak
+thought	more
+thought	unwelcome
+time	first
+truth	painful
+welfare	important
+wings	huge
+wings	important
+agency	human
+agency	normal
+anguish	unnecessary
+anticipation	aware
+bed	own
+blankets	many
+breathing	regular
+bruises	simple
+circumstances	similar
+days	uncomfortable
+death	easy
+distress	obvious
+door	main
+door	open
+dream	bad
+dreams	troubling
+errand	unnecessary
+injuries	apparent
+man	alive
+men	aware
+mind	other
+minutes	few
+muscles	strained
+pain	essential
+pain	unendurable
+part	degrading
+part	worst
+people	wrong
+procedure	effective
+process	essential
+pulse	steady
+pulse	weak
+regret	aware
+regret	necessary
+seconds	several
+shackles	consistent
+shackles	padded
+sign	good
+surgery	mental
+tremors	tiny
+worry	serious
+worry	worse
+wounds	obvious
+action	direct
+action	due
+damage	obvious
+damage	physical
+day	new
+day	ready
+dream	normal
+dream	significant
+effect	side
+event	major
+event	public
+face	friendly
+fact	particular
+feeling	personal
+form	human
+functions	priestly
+humans	rare
+identity	real
+limits	utmost
+medics	best
+mind	side
+power-flow	good
+power-flow	much
+prerogative	unavoidable
+problem	life-threatening
+prophecies	ambiguous
+ranger	non-human
+teton	high
+thing	right
+time	bad
+time	first
+time	free
+time	horrible
+use	reliable
+weakness	much
+work	peculiar
+approximation	mortal
+armchair	seldom-used
+arrival	impending
+assistance	professional
+benefit	difficult
+benefit	ultimate
+body	non-human
+body	physical
+candidate	only
+candidate	qualified
+collar insignia	new
+colonel ivan petrovich illyanov	best
+colonel ivan petrovich illyanov	sure
+contact	single
+days	past
+expressions	disapproving
+expressions	uncertain
+fief	normal
+folks	sorry
+god	merciful
+gunbelt	good
+hand	other
+idea	good
+information	useful
+kid	new
+knowledge	best
+memories	worst
+mind	ready
+mistress	uncontaminated
+plans	other
+questions	definite
+sample	fair
+staff	suitable
+state	emotional
+state	frightening
+stay	longest
+stay	painful
+strike force people	coordinate
+subjects	few
+teton enforcement service	high
+thing	real
+time	extra
+time	free
+time	last
+way	self-compelled
+weekday	flattering
+weekday	unusual
+work	practical
+yesterday	late
+animals	fond
+benefit	chief
+breath	deep
+changes	other
+excellency	fond
+future	near
+god	willing
+hand	other
+head	thoughtful
+kingdom	earthly
+kittens	six-week-old
+lieutenant	young
+lot	better
+ops	special
+orange	combat-ready
+orange	little
+promotions	more
+promotions	open
+promotions	sudden
+protector	true
+rank	top
+shape	better
+staff	mortal
+state	constant
+strain	constant
+talent ivan	scared
+talent ivan	useful
+telepathy shayan	corrupt
+time	first
+time	tentative
+truthsense	sure
+word	better
+arms	strong
+ce blackfeather	adaptable
+ce blackfeather	own
+ce blackfeather	resilient
+compellor	chargeable
+compellor	surprised
+disclosures	sudden
+dozen planets	mere
+drugs	bad
+enforcement	gray
+enforcement killer	easy
+entrance	main
+excellency	specific
+expression	quizzical
+eye contact	necessary
+eyes	blue
+eyes	pale
+hand	other
+home	welcome
+hours	few
+list	inactive
+needleprick	immediate
+office	large
+operation	rough
+parade-rest	stiff
+pass	temporary
+person	good
+relief	distinct
+rest	brief
+seconds	few
+sins	normal
+sins	venial
+voice	soft
+attention	more
+captain odeon	able
+captain odeon	afraid
+captain odeon	grateful
+captain odeon	mild
+captain odeon	second
+captain odeon	sure
+children	fond
+children	hungry
+circumstances	same
+coming	final
+company	more
+conditioning	possible
+culprit	tiny
+darling	afraid
+darling	little
+excellency	eager
+existence	certain
+female enforcement officer	only
+floor	curious
+friend	little
+function	religious
+growl	sound
+hand	other
+hesitation	only
+kingdom systems	entire
+man	nude
+man	wise
+may i	nosy
+name	many
+name	pointless
+name	real
+pocket	unwrapped
+priests	real
+purr	loud
+purr	sound
+regulations	strictest
+reports	favorable
+reputation	useful
+revelations	whole
+rise	rapid
+rise	unprecedented
+rite	real
+rite	religious
+things	such
+time	first
+time	interested
+time	pointless
+topic	better
+topic	neutral
+topic	safe
+way	different
+way	free
+week	less
+while	dry
+words	many
+action	first
+action	official
+action	surprised
+approval	full
+attentions	inquisitorial
+attitude	former
+attitude	grateful
+attitude	understandable
+baby	surprised
+bicep	left
+buildings	public
+bullet	few
+casualties	heavier
+colonel	necessary
+convenience	earliest
+convent	airborne
+days	few
+enforcement medics	usual
+enforcement oath	valid
+evening	previous
+excellency care	necessary
+flesh wound	more
+hat	wide-brimmed
+incarnation	divine
+intervention	timely
+may	glad
+minutes	few
+morning	next
+movement orders	impossible
+nature	gentle
+notice	available
+officer	senior
+order	legal
+order	valid
+palace	archducal
+palace	decent
+perspective	familiar
+problems	unexpected
+radio	tactical
+reminder	obvious
+report	complete
+respect	considerable
+service uniform	easier
+sisters	holy
+surprise	airborne
+sympathy	more
+systems	religious
+systems	social
+thing	only
+thought	cortin
+thought	likely
+time	brief
+time	last
+time	obvious
+transmissions	further
+truthsense	new
+units	medevac
+way	airborne
+atrocities	worst
+attitude	easy
+breath	deep
+buildings	prewar
+ceremonies	right
+circumstances	different
+farmer	honest
+favor	last
+girl	little
+herald	frightening
+man	wounded
+minutes	few
+phrasing	odd
+prisoner	first
+prisoner	next
+problems	unexpected
+puzzlement	initial
+respects	proper
+success	important
+archduchy	new
+book	standard
+colonel cortin	willing
+concern	primary
+face	wry
+feelings	new
+field	particular
+hand	big
+hand	dependent
+hand	other
+hell	effective
+humans	fallible
+imagination	wild
+information	more
+inquisitors	amateur
+inquisitors	civil
+inquisitors	difficult
+inquisitors	likely
+inquisitors	necessary
+inquisitors	religious
+language	original
+lead	much
+lieutenant pritchett	little
+notches	several
+number	larger
+part	most
+people	other
+population explosion	effective
+population explosion	infernal
+press run	sure
+publisher	clear
+publisher	sure
+reporters	other
+revolution	major
+revolution	social
+sin	dependent
+stage	second
+stories	first
+subject	particular
+subjects	cooperative
+techniques	memory-enhancing
+terran holy inquisition	ancient
+theory	wrong
+things	other
+time	adequate
+time	first
+time	next
+tormentor	former
+way	other
+way	own
+advance warning	little
+altar	first
+barracks	spare
+business	best
+devotions	private
+devotions	public
+emblem	presumptuous
+emblem	territorial
+god	frightening
+hand	other
+identification	frightening
+insignia	new
+lovemaking	post-communion
+lovemaking	real
+ones	press-ganged
+orders	convincing
+others	several
+rescue teams	special
+situations	unpleasant
+support	moral
+sword	territorial
+team	flattering
+team	several
+thing	same
+time	next
+today	conscript
+today	first
+victims	pleasant
+way	better
+word	right
+ability	good
+archduchy	able
+archduchy	appropriate
+archduchy	good
+archduchy	new
+bitch	worst
+brother	more
+brother	tortured
+compassion	good
+component	personal
+death	easy
+defense	successful
+editorial writers	doubtful
+enforcement troopers	regular
+enforcement troops	sinful
+evaluation	preliminary
+evening	last
+family	good
+father	own
+grin	shaky
+group	current
+hand	other
+hand	unstinting
+help	big
+help	useful
+hypothesis	reasonable
+justice	swift
+knowledge	best
+manner	professional
+meat	own
+methods	different
+moment	quicker
+morning new denver times	past
+office	main-floor
+priests	more
+punishment	more
+reaction	cautious
+sense	appropriate
+service	fitting
+services	ready
+source	reliable
+spring	early
+subjects	earlier
+thing	same
+time	same
+type	normal
+type	squeamish
+unfortunate	unexpected
+victims	press-gang
+winter	late
+cassock	white
+communication	brief
+contact	direct
+desire	difficult
+desire	true
+discussion	free
+ends	own
+family	subject
+feeling	niggling
+hand	other
+lie	flat
+man	elderly
+man	slim
+men	such
+minutes	few
+miss blackfeather	able
+miss blackfeather	best
+miss blackfeather	wanted
+motives	own
+part	curious
+part	odd
+part	small
+prelude	brief
+results	minimal
+ruse	own
+rush	much
+selectees	other
+self-interest	own
+spot	empty
+support	unstinting
+acting	definite
+affairs	local
+beginning	destructive
+beginning	true
+breakfast	ready
+brotherhood	most
+captain odeon	positive
+case	small
+choice	likely
+choice	much
+colonel cortin	sure
+excellency	barely-audible
+excellency	confident
+expression	grim
+feeling	oddest
+gesture	abrupt
+history	destructive
+husbands	silent
+identity	true
+intentions	mass
+man	scar-faced
+mass	clean-up
+mass	early
+mass	necessary
+members	lesser
+minute	full
+minute	silent
+months	pregnant
+office	ground-floor
+outcome	best-case
+outcome	destructive
+pleasure	deep
+pleasure	usual
+policy	non-interference
+pope	certain
+reason	easy
+repentance	own
+response	confident
+scrutiny	other
+seconds	few
+smile	thin
+status	true
+status	unaware
+thing	great
+thing	whole
+time	proper
+umbrella government	benevolent
+war	destructive
+way	basic
+answer	negative
+boots	guilty
+breath	beautiful
+captain delayne	criminal
+captain delayne	protective
+fighters	few
+fur	soft
+grab	quick
+guest	other
+guest suite	small
+guests	casual
+guests	many
+imperial nobles	military
+information	basic
+leaves	major
+months	few
+ones	only
+people	most
+point	military
+position	protective
+position	such
+prisoners	other
+questions	yes-or-no
+ships	imperial
+showing	proper
+target	favorite
+team	prisoner-escort
+team	protective
+title	proper
+tone	insolent
+troopers	regular
+views	religious
+war	final
+war	ten-year-long
+woman	younger
+absorption	inevitable
+announcement	necessary
+breath	deep
+chair	nearby
+citizens	imperial
+colonel	interrupted
+experience	diplomatic
+home	mutual
+idea	good
+imperial english letters	odd
+imperial scouts	more
+kingdom systems	gracious
+number	private
+operator	human
+operator	interrupted
+others	okay
+screen	ultrawave
+seconds	few
+seconds	several
+table	small
+warriors	genetic
+wish	long
+woman	younger
+ability	best
+ally	reluctant
+assignment	temporary
+bow	courteous
+colonel	big
+colonel	sorry
+colonel cortin	sure
+courier	small
+empire	afraid
+empire	best
+empire	wise
+enemy	active
+entrance	main
+estate	ten-acre
+excellency	better
+experience	tricky
+group	first
+guest	sure
+hole	large
+idea	bad
+idea	good
+idea	prepared
+imperial officer	normal
+liaison	special
+man	young
+minutes	few
+name	first
+navy ship class	only
+negotiations	long-distance
+negotiations	productive
+ones	face-to-face
+ones	productive
+operations	anti-brotherhood
+phone	fierce
+places	most
+prisoners	former
+prisoners	free
+problem	personal
+problem	solid
+problems	transitional
+ranger james medart	able
+ship	enough
+subject	neutral
+subject	particular
+subject	religious
+tour	brief
+transition	peaceful
+treatments	anti-aging
+attentions	other
+blaster function	fine
+captain delayne	glad
+circumstances	welcome
+crimes	serious
+day	most
+day	only
+day	semi-free
+decision	final
+dispensations	civil
+effect	cortin
+effect	interesting
+effect	side
+engine shutdown	complete
+equipment	specified
+estate grounds	entire
+estate grounds	likely
+function	stun
+hatch	main
+headache medications	good
+headache medications	strong
+history	worst
+imperial ship classes	smallest
+intentions	mass
+lawn	beloved
+liaison	individual
+liaison	special
+mess	worst
+migraine	severe
+move	right
+move	sure
+notice	safe
+ones	few
+ones	low-ranking
+orders	necessary
+people	most
+power	own
+schedule	usual
+sin	more
+sin	venial
+spacecraft	large
+spacecraft	small
+spaceport	main
+standing	social
+story	different
+story	likely
+strike force troopers	enough
+strike force troopers	stupid
+target range	fine
+target range	standard
+test subject	suitable
+things	ready
+time	more
+time	next
+times	several
+transfer	permanent
+woman	young
+airplane	similar
+announcement	all-hands
+areas	public
+body scans	biochemical
+body scans	genetic
+brotherhood	dangerous
+building	large
+building	modern
+capacity	sexual
+case	disease-caused
+cells	inside
+comm intercepts	possible
+day	sick
+decades	last
+doctor	able
+doctors	several
+drops	few
+duty	primary
+equipment	medical
+guard	armed
+horse	healthy
+horse	proverbial
+individual	single
+information	good
+letters	most
+life	sick
+lockers	large
+marine	black
+medicine	funny
+men	noticeable
+month	annual
+month	due
+month	next
+month	physical
+officer	commanding
+ones	diagnostic
+people	medical
+priority	top
+procedures	other
+quarters	private
+question	nother
+question	whole
+records	fragmentary
+records	medical
+sample	big
+scouts	small
+security division	sorry
+tests	conclusive
+time	first
+trigger	genetic
+uniform	black
+alphabet	pre-imperial
+book	small
+captain	wrong
+class	higher
+computer	human
+computers	familiar
+cultures	own
+differences	cultural
+empire	afraid
+empire	early
+empire	only
+group	tolerant
+groups	different
+idea	best
+imperial ships	higher
+informant	considerable
+informant	primary
+intelligence	artificial
+items	small
+kingdom systems	clear
+kingdom systems	competent
+living area	small
+materials	raw
+models	older
+ones	new
+people	able
+people	most
+physics	molecular
+plate	small
+position	better
+reaction	individual
+reaction	mild
+reading tape	standard
+references	occasional
+right	afraid
+ship-comps	ai-level
+smile	brief
+sorry	artificial
+teaching tapes	slower
+thanks	okay
+thing	good
+time	same
+upheaval	major
+upheaval	social
+variant	catholic
+variant	roman
+words	many
+writer	twentieth-century
+adult	non-military
+adult	only
+answers	verbal
+aspect	immune
+aspect	particular
+battle cruisers	large
+bodyguard	full-time
+branch	traditional
+captain delayne	reluctant
+captain odeon	little
+care	advanced
+care	medical
+centis	good
+centis	taller
+centis	twenty-five
+century	mid-twenty-second
+changes	numerous
+changes	other
+christ	coming
+cult	heretic
+cultures	other
+family cortin	familiar
+family cortin	impressive
+family cortin	sure
+floors	private
+formation	military
+formation	proper
+friends	brown
+friends	ready
+ground floor	formal
+group	entire
+hand	other
+immunity	sure
+inquisitors	other
+lieutenant keith darelwyn	embarrassed
+lodge	alive
+matters	religious
+mind-probe	significant
+mind-screen	average
+name	full
+names	first
+note	mental
+notoriety	greater
+one	natural
+ones	human
+ones	sure
+pilot/bodyguard	single
+portion	small
+portion	untrained
+potential	good
+potential	strong
+potential	telepathic
+pretenses	false
+priest	new
+prisoner	anomalous
+prisoner	second
+privacy drive	strong
+reason	reflex
+records	medical
+records	most
+records	obscure
+roman catholic parish	large
+ships	large
+ships	well-equipped
+silence	brief
+spouses	senior
+story	average
+story	different
+tapes	familiar
+telepathy	minor
+time	deliberate
+type	worst
+uniform	gray
+war	final
+wife	civilian
+work	unpleasant
+anger	cold
+colleagues	free
+colonel	mind-shield
+communication link	simplest
+darelwyn	lieutenant
+debt	personal
+details	enough
+details	more
+door	massive
+emotion	primary
+entrance	cave-like
+excuse	reasonable
+hours	several
+idea	odd
+information	little
+information	other
+lights	small
+man	nervous
+man	sure
+men	several
+ones	stubborn
+passage	short
+patris	nomine
+responses	non-verbal
+room	first-stage
+room	third-stage
+scanning memories	deeper
+seconds	several
+set	relevant
+standard	bigger
+subjects	afraid
+surface	quick
+talent	unconscious
+thought	bitter
+thought	quick
+troopers	phony
+way	faster
+abilities	impressive
+blow	major
+bodyguard	only
+bodyguards	impressive
+brotherhood target	impressive
+brotherhood target	major
+captain odeon	able
+citizens	ordinary
+communion	effective
+communion	spiritual
+compulsions shannon	mind-touched
+environment	basic
+environment	secure
+environment	stable
+facilities	military
+hours	few
+impression	favorable
+leather items	other
+man	innocent
+moment	silent
+months	few
+morning	next
+office	ground-floor
+ones	familiar
+ones	impressive
+person	ideal
+policy	basic
+policy	simple
+prisoner	earlier
+rebels	proud
+sandemans	impressive
+sis	similar
+stay	indefinite
+talent	odd
+target	particular
+team	standard
+time	local
+toiletries	standard
+tongue	sure
+treatment cost	such
+trooper	restrained
+troopers	few
+witnesses	cooperative
+women	many
+approach	fast
+approach	sedate
+citizens	fellow
+citizens	most
+colonel david bradford	right
+debrief	thorough
+effect	favorable
+emergency services	local
+engines	null-grav
+examination	preliminary
+factors	several
+fear	major
+friends	such
+idea	good
+landing	dramatic
+life	entire
+morning	due
+ones	nasty
+ones	pregnant
+people	most
+series	particular
+side	positive
+smile	genuine
+speed	safe
+subject	good
+suite	underground
+teeth	shark-like
+time	genuine
+time	local
+wife	senior
+world	non-sandeman
+average	short
+bit	hard
+briefing medart	sure
+concept	odd
+cultures	many
+custom	silent
+date	effective
+decision	proper
+devil	actual
+devil	christian
+drama	primary
+ego points	powerful
+enemy	rough
+english	pre-imperial
+floor	main
+genitals	intact
+genitals	useful
+hand	other
+hand	respectful
+healing cortin	important
+hours	several
+man	hungry
+man	new
+microwave	instant
+mind-set	necessary
+names	many
+pain	physical
+pain	psychological
+point	focal
+point	true
+problem	biggest
+question	last
+questions	first
+questions	third
+revelations	inadvertent
+revelations	premature
+room	third-stage
+skepticism	refreshing
+smile	sardonic
+surroundings	inappropriate
+tattoo artists	much
+terms	omnist
+time	fresher
+time	necessary
+time	reasonable
+time	restricted
+time cortin	hungry
+universe	crucial
+universe	entire
+war	devastating
+white order revolt	brief
+beings	lesser
+beings	supernatural
+beliefs	primary
+bit	little
+change	only
+creations	fair
+faiths	christian
+faiths	other
+feelings	strong
+minute	full
+miracle	actual
+outlook	open
+people	various
+plane	supernatural
+point	basic
+ranger	certain
+ranger	good
+ranger	mind-touching
+religions	different
+step	next
+tea	clear
+tenet	primary
+territory	clear
+territory	unfamiliar
+time	restricted
+truth	painful
+truth	useful
+version	catholic
+version	traditional
+view	latter
+viewpoint	logical
+answers	professional
+arrangements	extra
+betrayal	close
+bit	latter
+circumstances	present
+creator	human
+creator	standard
+decision	good
+faith	religious
+feeling	horrible
+feelings	strong
+glow	blue
+hatred	particular
+help	easier
+help	professional
+imperial citizenship	recent
+individual	private
+information	same
+invasion	upcoming
+job	satisfying
+job	useful
+life	adult
+life	entire
+losses	aware
+moment	clear
+opinion	professional
+option	first
+orders	necessary
+people	few
+people	most
+plans	own
+problem	past
+problem	spiritual
+qualifications	widely-known
+sandeman warrior	human
+seconds	several
+situations	interesting
+spot	vulnerable
+subject	main
+traiti war	aware
+version	professional
+weeks	past
+white order rebellion	aware
+year	first
+abilities	new
+ability	best
+adjustments	necessary
+approval	other
+armchair	nearest
+chair	comfortable
+change	overt
+change	physical
+changes	hidden
+changes	major
+changes	mental
+changes	necessary
+citizens	newest
+clock	biological
+dear god	reluctant
+decision	obvious
+destroyers	heavy
+exceptions	minor
+goodbyes	brief
+group	entire
+hours	few
+hours	next
+identity	true
+impartiality	necessary
+imperial position	high
+lot	good
+manner	usual
+name changes	coming
+needs	primary
+night	last
+night	previous
+ones	minor
+others	true
+pain	present
+place	proper
+plate	own
+pocket	tunic
+priest	technical
+procedure	conscious
+protector	new
+rate	high
+rate	metabolic
+self	essential
+size	reasonable
+surgery	mental
+tech level	basic
+things	other
+transformation odeon	ready
+transformation odeon	sure
+abilities	ranger-level
+answer	obvious
+answer	unpleasant
+assignment	first
+assignment	urgent
+bitch	alive
+bitch	goddamned
+changes	necessary
+colleague	new
+contact	mental
+feel	different
+functions	priestly
+individual	private
+lot	better
+lot	whole
+mind-touch	different
+mind-touch	similar
+night	last
+people	most
+preparation	possible
+preparation	real
+priest	first
+priest	non-omnist
+ranger	new
+sense	much
+story	main
+talent version	better
+talent version	mind-touching
+thing	same
+thing	whole
+things	other
+thought	grim
+thoughts	rapid
+time	more
+times	dangerous
+warning	same
+activity	favorite
+activity	long
+activity	sado-sexual
+adjustments	certain
+chance	fair
+death	slow
+development	other
+dispensations	special
+end	same
+enforcement trooper	god-loving
+example	god-loving
+existence	continued
+existence	necessary
+eyes	blue
+face	good
+face paling	exclaimed
+facilities	recreational
+foulup	bad
+hand	other
+help	convenient
+hours	several
+humans	other
+humans	wrong
+inclinations	personal
+mission	last
+moment	harshest
+morality	prewar
+operations	special
+opportunities	long
+ops men	special
+others	concerned
+panic	sudden
+pleasure	little
+points	strong
+powers	many
+problems	serious
+punishments	own
+purposes	true
+raid-masters	subordinate
+report	first
+rest	welcome
+standards	old
+students	inquisitor-specialist
+subordinates	welcome
+terran game show	pre-empire
+thrusts	rapid
+thrusts	violent
+time	brief
+time	double
+toughness	capable
+toughness	necessary
+violation	real
+violence	capable
+violence	deliberate
+woman	attractive
+woman	better
+woman	less
+woman	normal
+women	attractive
+word	magic
+work	difficult
+work	theoretical
+ability	administrative
+act	entertaining
+advantage	illusory
+attack	aware
+attributes	physical
+bit	apprehensive
+bodies	human
+caresses	physical
+circumstances	unusual
+climax	own
+communion	spiritual
+companions	former
+compulsions	other
+concern	immediate
+conflict	illusory
+conflict	systems-wide
+curls	thick
+days	last
+decision	crucial
+deity	particular
+demonstration	easy
+demonstration	proper
+emotions	repulsive
+encounter	last
+enforcement post	nearest
+enforcement service officer	undistinguished
+excesses	worst
+excitement	same
+half centuries	last
+hour	late
+hours	like
+idea	intriguing
+joy	glorious
+joy	lesser
+kiss	long
+lot	nearest
+lover	able
+lover	easy
+lover	irritated
+lover	skillful
+lover	sure
+man	scar-faced
+memories	painful
+minutes	few
+moment	last
+moments	few
+necessity	aware
+office	private
+operation	dmitrian
+part	worst
+party	little
+piety	sweet
+powers	able
+prayer	proper
+prayers	final
+recreation	overdue
+resignation	superficial
+sacristy	possible
+sacristy	small
+sins	few
+size	full
+stomach	hard
+strength	mental
+time	last
+time	overdue
+times	several
+upheavals	emotional
+vestment	only
+victim	innocent
+voice	gentle
+way	same
+ability	best
+agenda	own
+answers	responsive
+aphrodisiac	male
+attention	primary
+breath	deep
+changes	permanent
+changes	physical
+choice	correct
+choice	critical
+combination	intriguing
+cooperation	easy
+cooperation	full
+cooperation	grudged
+crush	instant
+decision	correct
+delight	unconcealed
+dose	oral
+doses	small
+drugs	acceptable
+effect	enjoyable
+effect	side
+examination	preliminary
+family men	handsome
+guests	unusual
+harmony lodge	fine
+hours	several
+idea	difficult
+image	acceptable
+incidents	untoward
+information	useful
+inquisitors	unlikely
+leader	new
+leader	promising
+leader	still-anonymous
+lessons	pre-decision
+life	important
+means	normal
+mind	clear
+mind-probe	able
+murders	enjoyable
+murders	more
+ones	larger
+people	medical
+people	most
+piety	black
+piety	unspeakable
+points	good
+positions	public
+priority	first
+punishment	real
+question	delicate
+reasons	different
+reservations	private
+roman times	new
+room	same
+selves	pre-plague
+support	attractive
+support	proper
+support	unexpected
+targets	counterproductive
+targets	special
+thanks	good
+thought	repulsive
+thrill	particular
+time	most
+touch brough curses	light
+trip	ready
+victim	last
+weeks	next
+wetness	normal
+aspects	less
+aspects	pleasant
+attempt	first
+attention	close
+captain odeon	other
+colonel joan cortin	appropriate
+colonel joan cortin	hungry
+colonel joan cortin	own
+dose	fresh
+effect	enjoyable
+effect	side
+examination	preliminary
+experience	such
+fact	much
+honor	mine
+idea	plausible
+inquisitors	other
+lieutenant	wrong
+literature	professional
+man	new
+meantime	hungry
+minutes	few
+murders	enjoyable
+murders	more
+ones	enjoyable
+operating room	surgical
+operating room	twentieth-century
+opinion	valid
+purposes	present
+quirk	particular
+relief	temporary
+room	antiseptic
+room	larger
+room	third-stage
+seconds	several
+technique	new
+technique	standard
+technique	useful
+thanks	good
+thrill	particular
+victim	last
+ability	best
+actions	present
+aphrodisiac	male
+colonel joan cortin	appropriate
+colonel joan cortin	hungry
+colonel joan cortin	tight
+combination	intriguing
+death	agonizing
+death	possible
+death	prolonged
+degree	same
+dose	fresh
+dose	oral
+doses	small
+examination	preliminary
+experience	such
+extremes	due
+hours	several
+idea	plausible
+inclinations	such
+job	challenging
+lieutenant	wrong
+literature	professional
+man	new
+meantime	hungry
+method	direct
+method	usual
+ones	larger
+opinion	valid
+precision	cleaner
+precision	meticulous
+punishment	real
+purposes	present
+quirk	particular
+reasons	different
+relief	temporary
+sandeman tendency	due
+seconds	several
+sense	worse
+sort	practical
+talent	peculiar
+technique	standard
+technique	useful
+time	short
+touch brough curses	light
+violations	serious
+wetness	normal
+activities	devotional
+ally	reluctant
+ally	temporary
+aphrodisiac	male
+colonel joan cortin	appropriate
+colonel joan cortin	own
+colonel joan cortin	tight
+combination	intriguing
+dose	fresh
+dose	oral
+doses	small
+effect	enjoyable
+effect	side
+experience	such
+expression	direct
+hours	several
+idea	plausible
+lieutenant	wrong
+literature	professional
+man	new
+memories	recent
+method	direct
+method	usual
+murders	enjoyable
+murders	more
+muscle	extra
+ones	larger
+opinion	valid
+protector	true
+punishment	real
+purposes	present
+quirk	particular
+relief	temporary
+room	large
+seconds	several
+study	quick
+technique	standard
+technique	useful
+thrill	particular
+touch brough curses	light
+victim	last
+way odeon	sure
+wetness	normal
+admiration	strong
+aphrodisiac	male
+captain odeon	other
+change	drastic
+change	easy
+colonel joan cortin	hungry
+colonel joan cortin	tight
+combination	appropriate
+combination	intriguing
+condition	general
+dose	oral
+doses	small
+effect	enjoyable
+effect	side
+elation	improper
+experience	such
+expression	certain
+feeling	particular
+fondness	more
+fondness	strong
+hold	snug
+honor	mine
+hours	several
+idea	plausible
+inquisitors	other
+lieutenant	wrong
+literature	professional
+man	new
+meantime	hungry
+murders	enjoyable
+murders	more
+ones	larger
+pain	more
+painmaster	true
+preliminaries	interested
+punishment	real
+purposes	present
+rapist	appropriate
+region	genital
+relief	temporary
+room	antiseptic
+room	larger
+room	third-stage
+seconds	several
+sign	good
+smile	brief
+table	surgical
+thrill	particular
+touch brough curses	light
+turn	fortunate
+victim	last
+wetness	normal
+accord	own
+activity	sexual
+anesthetic	topical
+burden	more
+burden	unwanted
+change	drastic
+change	such
+discomfort	only
+domain ebooks	public
+domain print editions	public
+dose	fresh
+editions	old
+formats	various
+gods	generous
+keith knelt	fond
+meantime	hungry
+opinion	valid
+power	new
+quirk	particular
+rules	special
+self	other
+service	own
+skill	worthy
+surprise	easy
+surprise	gratified
+surprise	true
+technique	standard
+technique	useful
+things	such
+thought	aware
+time	aware
+trademark license	subject
+warrior	properly-raised
+works	electronic

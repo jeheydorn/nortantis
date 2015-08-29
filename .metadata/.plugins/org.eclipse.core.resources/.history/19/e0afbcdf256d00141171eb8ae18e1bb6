@@ -1,0 +1,396 @@
+package cs673;
+
+import java.awt.EventQueue;
+
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
+import javax.swing.JButton;
+
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.BoxLayout;
+import javax.swing.SwingWorker;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
+
+import java.awt.Color;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.Random;
+
+import javax.swing.JEditorPane;
+import javax.swing.JTextPane;
+import javax.swing.JTextArea;
+
+import java.awt.ScrollPane;
+
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.filechooser.FileFilter;
+
+import org.apache.commons.io.FilenameUtils;
+
+public class RunSwing
+{
+	private static JTextArea txtConsoleOutput;
+	private JFrame frame;
+	private JTextField randomSeedTextField;
+	private JFileChooser fileChooser;
+	private JTextField propertiesFileTextField;
+	private JTextField outputFilename;
+	
+	public static boolean isRunning()
+	{
+		return txtConsoleOutput != null;
+	}
+	
+	public static JTextArea getConsoleOutputTextArea()
+	{
+		return txtConsoleOutput;
+	}
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args)
+	{
+		try {
+            // Set cross-platform Java L&F (also called "Metal")
+			try
+			{
+				UIManager.setLookAndFeel(
+				UIManager.getSystemLookAndFeelClassName());
+			} catch (ClassNotFoundException | InstantiationException
+					| IllegalAccessException e)
+			{
+				e.printStackTrace();
+			}
+		} 
+		catch (UnsupportedLookAndFeelException e) {
+		       // handle exception
+		    }
+		
+		EventQueue.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					RunSwing window = new RunSwing();
+					window.frame.setVisible(true);
+				} catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public RunSwing()
+	{
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize()
+	{
+		frame = new JFrame("Fantasy Map Creator");
+		frame.setBounds(100, 100, 1081, 650);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.Y_AXIS));
+		// temp code.
+		
+		final JPanel buttonsPanel = new JPanel();
+		frame.getContentPane().add(buttonsPanel);
+		buttonsPanel.setLayout(null);
+		
+		randomSeedTextField = new JTextField();
+		randomSeedTextField.setBounds(131, 10, 114, 22);
+		buttonsPanel.add(randomSeedTextField);
+		randomSeedTextField.setColumns(10);
+		randomSeedTextField.setText(Math.abs(new Random(System.currentTimeMillis()).nextInt()) + "");
+		
+		JButton btnGenerate = new JButton("Generate");
+		btnGenerate.setBounds(12, 177, 114, 30);
+		buttonsPanel.add(btnGenerate);
+		
+		JLabel lblRandomSeed = new JLabel("Random seed:");
+		lblRandomSeed.setBounds(12, 12, 122, 15);
+		buttonsPanel.add(lblRandomSeed);
+		
+		JLabel lblPropertiesFile = new JLabel("Properties file:");
+		lblPropertiesFile.setBounds(12, 62, 122, 15);
+		buttonsPanel.add(lblPropertiesFile);
+		
+		propertiesFileTextField = new JTextField();
+		propertiesFileTextField.setBounds(131, 60, 214, 22);
+		buttonsPanel.add(propertiesFileTextField);
+		propertiesFileTextField.setColumns(10);
+		
+		fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(new File("."));
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return null;
+			}
+			
+			@Override
+			public boolean accept(File f)
+			{
+				if (FilenameUtils.getExtension(f.getName()).equals("properties") || f.isDirectory())
+					return true;
+				return false;
+			}
+		});
+
+		JButton btnBrowse = new JButton("Browse");
+		btnBrowse.setBounds(357, 57, 96, 25);
+		buttonsPanel.add(btnBrowse);
+		
+		outputFilename = new JTextField();
+		outputFilename.setBounds(171, 123, 114, 25);
+		buttonsPanel.add(outputFilename);
+		outputFilename.setColumns(10);
+		outputFilename.setText("map.png");
+		
+		JLabel lblOutputFileName = new JLabel("Output file name:");
+		lblOutputFileName.setBounds(12, 125, 134, 15);
+		buttonsPanel.add(lblOutputFileName);
+		
+		JButton outputFileQuestionBtn = new JButton("?");
+		outputFileQuestionBtn.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(null, "This is the file name of the output (not including the path). "
+						+ "The extension in this file name will determine the format of the output. Examples are map.png"
+						+ " and map.jpg.",
+						"Help", JOptionPane.INFORMATION_MESSAGE);
+			}
+		});
+		outputFileQuestionBtn.setBounds(486, 120, 51, 25);
+		buttonsPanel.add(outputFileQuestionBtn);
+		
+		JButton propertiesFileQuestionBtn = new JButton("?");
+		propertiesFileQuestionBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				JOptionPane.showMessageDialog(null, "This must be a .properties file which contains settings"
+						+ " for the map. For an example, see assets/old_paper.properties.",
+						"Help", JOptionPane.INFORMATION_MESSAGE);
+			}
+		});
+		propertiesFileQuestionBtn.setBounds(486, 57, 51, 25);
+		buttonsPanel.add(propertiesFileQuestionBtn);
+		
+		JButton btnNewSeed = new JButton("New Seed");
+		btnNewSeed.setBounds(357, 7, 105, 25);
+		buttonsPanel.add(btnNewSeed);
+		
+		JPanel panel_1 = new JPanel();
+		panel_1.setBounds(0, 0, 10, 10);
+		buttonsPanel.add(panel_1);
+		
+		final ImagePanel previewPanel = new ImagePanel();
+		previewPanel.setLocation(550, 0);
+		buttonsPanel.add(previewPanel);
+		previewPanel.setLayout(null);
+		previewPanel.setSize(512, 288);
+		previewPanel.setBackground(Color.white);
+		
+		btnNewSeed.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				randomSeedTextField.setText(Math.abs(new Random(System.currentTimeMillis()).nextInt()) + "");
+			}			
+		});
+				
+		btnBrowse.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{	
+				int returnVal = fileChooser.showOpenDialog(buttonsPanel);
+				 
+	            if (returnVal == JFileChooser.APPROVE_OPTION) 
+	            {
+	            	File file = fileChooser.getSelectedFile();
+	            	propertiesFileTextField.setText(file.getPath());
+	            }
+			}			
+		});
+		
+		btnGenerate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{	
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {
+			        	Properties props = new Properties();
+			        	
+			        	
+			        	try
+			        	{
+			        		props.load(new FileInputStream(propertiesFileTextField.getText()));
+			        	}
+			        	catch(IOException e)
+			        	{
+			        		JOptionPane.showMessageDialog(null, "Unable to load properties file " + propertiesFileTextField.getText() + ".",
+			        				"Error", JOptionPane.ERROR_MESSAGE);
+			        		return null;
+			        	}
+
+			        	if (outputFilename.getText().length() == 0)
+			        	{
+			        		JOptionPane.showMessageDialog(null, "Output file name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+			        		return null;
+			        	}
+			        	
+						try
+						{
+							return new MapCreator().createMap(props, outputFilename.getText(), seedFinal);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }			 
+			    };
+			    worker.execute();
+			 
+			}
+		});
+		
+		JButton btnPreview = new JButton("Preview");
+		btnPreview.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {
+			        	Properties props = new Properties();
+			        	
+			        	
+			        	try
+			        	{
+			        		props.load(new FileInputStream(propertiesFileTextField.getText()));
+			        	}
+			        	catch(IOException e)
+			        	{
+			        		JOptionPane.showMessageDialog(null, "Unable to load properties file " + propertiesFileTextField.getText() + ".",
+			        				"Error", JOptionPane.ERROR_MESSAGE);
+			        		return null;
+			        	}
+
+			        	props.setProperty("sizeMultiplier", 0.25 + "");
+
+						try
+						{
+							return new MapCreator().createMap(props, null, seedFinal);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }
+			        
+			        @Override
+			        public void done()
+			        {
+			        	BufferedImage map = null;
+			            try 
+			            {
+			                map = get();
+			            } 
+			            catch (InterruptedException e) 
+			            {
+			            	e.printStackTrace();
+			                throw new RuntimeException(e.getMessage());
+			            }
+			            catch (java.util.concurrent.ExecutionException e) 
+			            {
+			            	e.printStackTrace();
+			                throw new RuntimeException(e.getMessage());
+			            }
+			            if (map != null)
+			            {
+			            	previewPanel.image = map;
+			            	previewPanel.repaint();
+			            }
+			        }
+			 
+			    };
+			    worker.execute();
+			 
+			}
+		});
+		btnPreview.setBounds(138, 177, 122, 30);
+		buttonsPanel.add(btnPreview);
+
+		
+		JScrollPane scrollPane = new JScrollPane();
+		frame.getContentPane().add(scrollPane);
+		
+		txtConsoleOutput = new JTextArea();
+		txtConsoleOutput.setEditable(false);
+		scrollPane.setViewportView(txtConsoleOutput);
+	}
+}

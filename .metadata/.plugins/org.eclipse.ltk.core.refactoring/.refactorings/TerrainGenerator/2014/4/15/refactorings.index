@@ -1,0 +1,22 @@
+1396969991887	Rename field 'riverMinRating'
+1396972527372	Rename local variable 'headEdge'
+1396972538174	Rename local variable 'newHeadEdge'
+1396973984359	Rename method 'searchRec'
+1396980007528	Rename resource 'map.png'
+1396980135651	Rename resource 'map.png'
+1397057449307	Rename method 'drawNameWithBoldBackground'
+1397062357316	Delete elements
+1397062501125	Rename field 'maxGapSizeInMountainRanges'
+1397063148015	Rename local variable 'riseOffset'
+1397065569240	Rename resource 'map.png'
+1397065617091	Delete element
+1397066249731	Delete element
+1397144088430	Delete element
+1397145635981	Rename method 'increment'
+1397145800326	Delete element
+1397175311660	Rename field 'startTag'
+1397175317234	Rename field 'endTag'
+1397231214504	Rename method 'extractLocationNames'
+1397234249698	Delete element
+1397234483879	Move file
+1397263816694	Rename field 'nameGenerator'

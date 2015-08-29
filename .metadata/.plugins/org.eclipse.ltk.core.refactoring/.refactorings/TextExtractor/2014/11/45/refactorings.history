@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">&#x0A;<refactoring comment="Rename resource &apos;TextExtractor/books/bible.txt&apos; to &apos;Holy Bible.txt&apos;" description="Rename resource &apos;bible.txt&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="books/bible.txt" name="Holy Bible.txt" stamp="1415419726159" updateReferences="true"/>&#x0A;<refactoring comment="Rename resource &apos;TextExtractor/books/exodus.txt&apos; to &apos;Exodus.txt&apos;" description="Rename resource &apos;exodus.txt&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="books/exodus.txt" name="Exodus.txt" stamp="1415419736334" updateReferences="true"/>
+</session>

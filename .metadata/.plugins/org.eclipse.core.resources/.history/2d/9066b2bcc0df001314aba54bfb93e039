@@ -1,0 +1,21 @@
+import static java.lang.System.out;
+import hoten.voronoi.Center;
+
+import java.util.*;
+
+import org.apache.commons.math3.analysis.function.Sinc;
+
+import util.Range;
+
+public class Workbench
+{
+	static enum PlateType {Oceanic, Continental};
+	
+	public static void main(String[] args)
+	{
+		Boolean b = null;
+		out.println((boolean)b);
+	}
+	
+
+}

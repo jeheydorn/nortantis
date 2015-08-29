@@ -1,0 +1,2516 @@
+affinities	literary
+aristocracy	new
+aspect	national
+awakening	intellectual
+buccaneers	bold
+century	fifteenth
+century	sixteenth
+century	twelfth
+chivalry	ideal
+class	middle
+conditions	certain
+conditions	definite
+conditions	first
+conditions	national
+consciousness	national
+courtiers	gallant
+culture	classical
+curiosity	intense
+deeds	heroic
+drama	early
+drama	english
+drama	incomparable
+dream	gorgeous
+events	external
+faerie queene _	ideal
+faerie queene _	sixteenth
+feeling	good
+friends	many
+imperfections	many
+island	unhappy
+land	whole
+masterpieces	literary
+memory	idealized
+mystery	keen
+nation	english
+naturalness	fresh
+part	most
+people	english
+people	idealized
+period	elizabethan
+poetry	unexpressed
+questions	religious
+relation	intimate
+revival _	classical
+revival _	first
+scenes	whole
+scholars	conversant
+sea-kings	old
+spirit	romantic
+time	ripe
+times	modern
+wise	gallant
+zest	keen
+adventures	such
+age	old
+age	own
+beauty	unknown
+century gentleman	sixteenth
+classics	greek
+classics	latin
+clergy	worldly
+country	north
+country	wild
+country squire	generous
+duties	menial
+duties	other
+elegy	beautiful
+elegy	pastoral
+encounters	bold
+encounters	hair-breadth
+eyes	brown
+face	long
+face	spare
+faerie queene _ edmund spenser	older
+flight	last
+flight	sad
+forehead	dome-like
+forehead	fine
+friendships	helpful
+friendships	many
+genius	peculiar
+gifts	high
+gifts	poetic
+island	turbulent
+knight	noble
+knight	valorous
+lips	full
+lips	sensuous
+love affair	unrequited
+menalchas	successful
+mustache	full
+neighbor	fair
+notes	elaborate
+pageants	brilliant
+parents	poor
+patrons	powerful
+places	savage
+poem	great
+poem	important
+positions	civil
+positions	various
+recognition	highest
+recognition	scholastic
+scholar	classical
+scholar	famous
+scholarship	wide
+subjects	such
+years	early
+years	few
+years	older
+attraction	poetical
+auspices	such
+century show traces	many
+freshness	perfect
+hymns _	first
+life	domestic
+life	full
+life	happy
+life	public
+life	serene
+life	stormy
+love	second
+lycidas _	indebted
+maturer work	latter
+opportunity	favorable
+oppressors	foreign
+peasants	outraged
+poems	early
+poet	great
+poets	greatest
+poets	many
+qualities	poetical
+queen	great
+time	last
+time	same
+tomb	little
+tradition	old
+virtues	civic
+virtues	more
+virtues	private
+wife	beloved
+year	next
+adventures	many
+adventures	separate
+beauties	own
+books	extant
+century	nineteenth
+character	perfect
+digressions	several
+epic poets	great
+fairyland	mediaeval
+festival	feudal
+festival	solemn
+gift	poetic
+homer	less
+incidents	impossible
+incidents	improbable
+indebtedness	specific
+introduction	admirable
+knights	greatest
+language	archaic
+language	unfamiliar
+legends	arthurian
+moments	opportune
+mr. saintsbury	own
+myths	greek
+new learning	new
+parallels	many
+poem _	_
+poem _	romantic
+poets	english
+poets	other
+purists	classical
+stories	main
+vision	wondrous
+work	entire
+accents	alexandrine
+b rhymes	first
+bards	great
+century	sixteenth
+clergy	anglican
+contemporaries	chief
+contemporaries	many
+descriptions	voluptuous
+effect	peculiar
+elders	green
+face	fair
+fiction	historical
+government	civil
+hand	other
+intriguer	fascinating
+knight |	tle
+land	thirsty
+lesson	moral
+lesson	spiritual
+line	eighth
+line	end-stopped
+line	run-on
+lines	end-stopped
+lines	run-on
+manhood	young
+narrative poem	long
+pause	caesural
+pause	slight
+personal	true
+persons	certain
+persons	powerful
+protestantism	true
+purpose	central
+purpose	didactic
+queen	loving
+queen	vain
+quotation	last
+religious	religious
+religious	spiritual
+soul	human
+streams	quiet
+syllable	final
+syllables	fourth
+syllables	necessary
+syllables	second
+time	same
+tunes	solemn
+vehicle	suitable
+_	cheare
+adjective	comparative
+age	old
+atmosphere	enchanted
+atmosphere	luxuriant
+constructions	classical
+delight	new
+fascination	irresistible
+forms	dialectic
+forms	grammatical
+forms	modern
+forms	more
+forswat _	such
+gerundive	old
+lady	old
+letter	same
+melodies	new
+pagan dream	beautiful
+pageantry	dreamlike
+pageantry	gorgeous
+painter	great
+poet	romantic
+poets	great
+region	such
+renaissance	italian
+river	mighty
+subject	superior
+words	many
+words	obsolete
+epoch	admirable
+epoch	unique
+externals	italian
+fit	most
+intention	whole
+mens	many
+perfection	modern
+race	christian
+right noble	valorous
+seductions	sensuous
+time	present
+understanding	better
+work	whole
+workes	former
+adventures	many
+adventures	other
+adventures	severall
+againe	other
+antecedents	other
+asse	white
+booke	first
+booke	second
+booke	subject
+course	whole
+day	second
+day	third
+delight	deare
+education	long
+enchaunter	vile
+enchauntments	hard
+furnitures	due
+gaine-saying	much
+governour	good
+hands	bloody
+head	fruitfull
+historiographer	such
+homer	first
+king	ancient
+knight	gentle
+knights	other
+knights	severall
+lady	beautifull
+lady	faire
+lady	other
+lady	vertuous
+man	christian
+man	private
+man	vertuous
+middest	concerneth
+mightie	magnificent
+mightie	most
+morall vertues	private
+place	better
+poets	excellent
+showre	fruitfull
+showre	golden
+steed	warlike
+straunge courser	first
+vertues	other
+yeers	many
+younge man	clownish
+younge man	tall
+adventure	great
+backe	wearied
+badge	glorious
+bale	deadly
+bands	wicked
+beech	bitter
+beech	warlike
+bestedd	ill
+bitt	foming
+bloud	black
+body	beastly
+boughtes	many
+brood	scattred
+cave	hollow
+certeine perill	manly
+certeine perill	more
+constraint	sore
+dugs	ill
+dugs	poisnous
+dwarfe	dwarfe
+end	worthy
+entrance	wonted
+errours endlesse traine	wrapt
+eyne	feeble
+faerie knights	fairest
+fearefull	good
+fearefull	more
+force	manly
+forces	high
+gloriana	greatest
+gnattes	combrous
+gras	weedy
+halfe	other
+hand	free
+head	cursed
+heben bow	deadly
+hill	high
+ladie milde	lovely
+lambe	same
+lambe	white
+light	glooming
+light	litle
+lothsom	most
+man	wrapt
+maple seeldom	inward
+markes	cruel
+mart	triumphant
+maw	filthy
+monsters	deformed
+mothers blood	deadly
+mothers blood	full
+mothers blood	gathred
+mouth	wide
+muse areeds	sacred
+needments	wearied
+nigh	covert
+novice	weaker
+o goddesse	bright
+ones	yong
+pathes	many
+pine	sayling
+pray	fierce
+right faithfull	true
+rolles	antique
+rove	didst
+scryne	everlasting
+sence	dazd
+shade	hidden
+shapes	monstrous
+shapes	such
+shapes	sundry
+shapes	ugly
+shepheard	gentle
+shepheards weeds	lowly
+shield	fierce
+shield	scor
+sinke	hellish
+sound	obedient
+spoiles	murdrous
+spring gins	later
+staves	good
+steede	angry
+steppe	ere
+sterne arownd	wrethed
+sting	angry
+stings	feeble
+stinke	deadly
+storme	diverse
+storme	hideous
+supper	hasty
+taile	hideous
+taile	huge
+taile	long
+taske	unfitter
+thoughts	humble
+thoughts	vile
+thurst	bloudy
+thy	weaker
+tong	dull
+turnings	many
+uprore forwasted	foule
+vale	aegyptian
+vele	sad
+warres	fierce
+woods	thickest
+world doth	light
+xi	last
+xii	aware
+xiv	full
+yea	late
+adventures	straunge
+artes	hidden
+beard	hoarie
+boy	winged
+chappell edifyde	holy
+contentment	best
+creature	cursed
+cryes	troublous
+dewly wont	hermite
+dogges	wakeful
+dreame	false
+end	last
+enimie	strong
+eyes	bent
+father	godly
+feete	bare
+flowre	chastest
+flyes	little
+fountaine	sacred
+glas	smooth
+gorgon	great
+hart	manly
+head	heavie
+head	lumpish
+hermitage	little
+hermitage	lowly
+kindes	sundry
+lyes	quiet
+lyes	true-seeming
+maker selfe	nigh
+makers guile	full
+man	bad
+man	bold
+man	old
+man	silly
+messenger	mought
+messenger	sound
+mindes	sleepy
+night	dead
+night	ever-drouping
+night	highest
+night	sad
+night	same
+night	untroubled
+noyse	other
+rest	timely
+sence	weaker
+shewes	false
+sights	troubled
+sire	aged
+sleepe	gentle
+spright	other
+stubborne sprites	tame
+things	holy
+things	such
+towne	walled
+trouble	worldly
+whiles	sad
+winges	litle
+wood	last
+xxxi	evil
+xxxvii	bad
+xxxviii	other
+aire	subtile
+armes	mighty
+arts	divelish
+ayde	sure
+beast	slow
+bed	secret
+bloud	noble
+bookes againe	baleful
+brest	gentle
+chaine	shameful
+couple	false
+couple	full
+crosse	bloudy
+cruell fate	hidden
+cruelty	former
+dame	gentle
+dame	light
+despight	fierce
+destinie hath	hard
+faire	miscreated
+faire	tithones
+faire	weary
+faire hesperus	last
+feares	first
+feares	worldly
+feends	aghast
+fields	verdant
+gall	inward
+god	blind
+guest	beguiled
+guest	good
+guest	late
+hooke	bayted
+ire	furious
+lady	false
+limbes	weary
+maister	wicked
+man	old
+meanes	other
+meaning harts	true
+morning	rosy-fingred
+needlesse	smart
+night	ill
+night	wearie
+ocean waves	wet
+parts	double
+person	best
+pleasure	most
+robe	purple
+rocke	unmoved
+ruth	wofull
+saint george	true
+side	fierce
+sight	uncouth
+sights	troublous
+sire	aged
+skie	highest
+smarts	further
+snake	hissing
+speede	much
+spright	false
+spright	misformed
+spright	other
+sprights	aghast
+state	wretched
+steede	light-foot
+sword	old
+teares	long
+troubles	many
+truth	faigned
+twaine	unmoved
+wights	wicked
+words	doubtfull
+wroth	wondrous
+age	freshest
+beauties	former
+bee	encountred
+bee	mote
+blast	dull
+bleake	bitter
+bleake	full
+deare love	deare
+eares	dull
+eyes	mine
+faire lady	like
+flesh	fraile
+foe	old
+fone	accursed
+forehead fit	dainty
+fortune	harder
+foule	more
+friend	new
+girlond	rosy
+griefs	double
+hands	guilty
+heat	fierce
+hew	proper
+hind	striken
+honours	high
+howre hath	unhappy
+indeede	other
+indeede	such
+king	mighty
+king	rich
+knights	errant
+knights	many
+lady	gentle
+lady	new
+lady	wretched
+limbs	weary
+lord	dearest
+love	deare
+lovers	wretched
+makes	other
+man	wretched
+mist	foggy
+mist	hellish
+oaten pipe	mery
+opportunitie	safe
+person	comely
+plaines	open
+plight	evil
+plight	sad
+plight	unfortunate
+rynd embard	rough
+scowre	gan
+show	glorious
+sire	bad
+soule assaid	sad
+speaches	rare
+time	long
+towre	broken
+tree	seeming
+trees	goodly
+vaines	dry
+vaines	secret
+voyce	piteous
+wals	wooden
+weedes	ritch
+widow	virgin
+will	mighty
+wit	gentle
+witch	false
+witch	wicked
+woman	wretched
+xliii	long
+xxi	low
+xxxix	such
+yeares	prime
+yeares	youthly
+_ aves _	wont
+abhord	desolate
+agonie	great
+astonishment	dead
+astonishment	faint
+beast	unhastie
+breakes	open
+champion	strayed
+claws	rude
+dame	wearie
+day	broad
+devotions mart	blind
+doth surprize	suddaine
+dreriment	full
+dreriment	ghastly
+dreriment	good
+dreriment	innocent
+estate	sad
+fates	suffised
+fealtie	fast
+feet	wearie
+foot	lordly
+forse	furious
+fortunes freakes	unkind
+friends	fearefull
+friends	least
+gras	troden
+ground	innocent
+halfe	mad
+hands	lilly
+heard	false
+hope	furthest
+intents	good
+journey	former
+lady	dead
+lady	last
+land	thirsty
+load	heavy
+lord	noble
+mishappen	like
+mood	angry
+puissance doth abate	princely
+rage	adord
+rage	hungry
+reliefe	due
+rent	open
+rent	yeelded
+skin	wrinkled
+stelths	nightly
+teares	bitter
+vestiments	rich
+vision	late
+wandring greeke	long
+way	yrkesome
+well	wonted
+witches	vile
+woman	old
+woman day	old
+women none durst rize	fearfull
+wood	thickest
+wound	wooden
+xix	suddaine
+xvi	bare
+armd	full
+armes	mighty
+balefull beggerie	toilesome
+beast	servile
+beautie	bright
+building	goodly
+case	wretched
+chest	chaufed
+corse	mightie
+crew	noble
+day	bad
+day	bright
+day	chearefull
+day	sunny
+distresse	dreadful
+distresse	late
+eares	dull
+entertaines	vildly
+eyen	feeble
+faire windowes	full
+foe	beastly
+fortune favourd	whilest
+foundation	weake
+heart light	deare
+heart light	welcome
+heaven	highest
+howres	timely
+infernall furies	blacke
+infernall furies	sansloy
+joy	such
+knight	true
+knights	many
+knights	noblest
+knights	strong
+labours	long
+launce	charmed
+lazars	loathsome
+looke	sterne
+loth	other
+man	old
+marchant	glad
+marinere	beaten
+night	chearelesse
+oft soust	wide
+parts	old
+parts	ruinous
+peoples feet	bare
+perplexitie	more
+plaine	beaten
+plaine	welkin
+prevaile	nought
+recompence	due
+redcrosse knights	ensample
+reproches	foule
+royall robes	embellished
+ryder	hot
+servant	fierce
+servant	full
+shame	greater
+shew	sumptuous
+shone	rapt
+side	chauffed
+sight	joyous
+speare	bent
+speare	other
+speare	sharp-head
+stands	amased
+state	princely
+steed	enchaunted
+steed	fair
+steed	loftie
+steede	great
+steede	staggering
+stone	pretious
+stowre	woful
+teare	saltish
+thither duessa	bad
+throne	glorious
+throne	rich
+time	long
+titans ray	bright
+towres	loftie
+towres	many
+trayne	hideous
+troubles	new
+way	toilesome
+wheeles	whirling
+words	piteous
+xxvi ere	same
+xxxi	chearefull
+aire	open
+argus eyes	full
+asse	slouthful
+attire	gay
+beast	brutish
+beast	most
+beasts	little
+beasts	red
+beasts	unequall
+belly	up-blowne
+bookes	loving
+brother	eldest
+clothes	other
+corse	dronken
+day	next
+deeds	vertuous
+despight	bitter
+disease	vile
+diseases	full
+elfin knight	angry
+equall ballaunce waide	ylike
+evils	many
+eyne	long
+eyne	up-blowne
+faces	fairer
+faery champions page	same
+faire band	fourth
+faith	secret
+fit	furious
+fit	overpast
+girlonds	gay
+glitterand light	glorious
+gluttonie	excessive
+goat	bearded
+gout	grievous
+grace	other
+griefe	new
+hookes	fleshly
+house	high
+joy	new
+knight	good
+knight	recreant
+lecherie	third
+life	wretched
+lookes	secret
+love	dearest
+lucifera men	proud
+mind	bitter
+mischiefes	full
+mischiefes	many
+mist	foggy
+necke	long
+night	darkesome
+one	last
+one	such
+one	ungodly
+pall	purple
+pledge	sacred
+pride	greater
+proserpina	sad
+queene	great
+royall dame	dearest
+skye	brightest
+store	greatest
+thoughts	unkind
+throne	high
+throne	staire
+tire	last
+tire	ungodly
+tode	venemous
+unto deaths	nigh
+uptyes	taile
+vaine follies	full
+wage disdaind	warlike
+wayes	other
+wayne	evill
+wemens hearts	weak
+wight	most
+wight	wretched
+wolfe	ravenous
+writ _	red
+xix	bare
+xix	red
+xlii	litle
+xxiv	next
+armes	enchaunted
+ayre	widest
+battell	doubtfull
+blood	elfin
+brothers prayse	right
+clowd	darkesome
+doth assayle	other
+dowry	dead
+elfe perceiv	wakeful
+eye	many
+eye	suddein
+faery knight	devizing
+faery knight	full
+faytor	bare
+faytor	false
+fiers	full
+furrowes	deepe
+furrowes	dinted
+gan reare	high
+greene	sans-foy
+hand	heavie
+hart	noble
+hart	weaker
+heaven gan	greatest
+heavie stowre	full
+heavie stowre	many
+honour	greatest
+knight	prowest
+lake	stygian
+mayle	battred
+mens	open
+miscreant	proud
+need	like
+night	deadly
+orientall gate	golden
+orientall gate	last
+quickning faith	deadly
+sans foy	deare
+shield	charmed
+shield	worthy
+shores	doth
+shores	stygian
+sight	sad
+sonne	wretched
+soothsayer	wise
+vermillion	pure
+vi a shrilling trompet	bad
+vii the sarazin	strong
+vitall paines	past
+voyces	timely
+way	ydle
+whit reck	like
+woes	new
+wordes	gentle
+xiii	doth
+xiii	high
+ynd	furthest
+backe	aged
+bore	foming
+chevalree	gay
+child	welcome
+children	great
+children	nightes
+cliffs	ragged
+corps	dismembred
+corps	goodly
+corps	yrent
+creatures	cursed
+dame	dreary
+day	brightest
+duessa untill eventide	light
+eares	open
+element	fine
+eyes	bitter
+face	abhorred
+faire face	lurke
+forlorne	fowle
+fowle	filthy
+gold arrayd	gorgeous
+heare	evill
+hole	same
+house	high
+huntsman	jolly
+jove	high
+jove	old
+luckelesse fray	late
+man	foolish
+men	aghast
+men	ill
+monsters	straight
+mothers	great
+mouths	stubborne
+musicke	sweet
+night	griesly
+nile	broad
+nile	seven-mouthed
+others	great
+owle	ghastly
+round stone	huge
+ruines	great
+soules	many
+stepdame	wanton
+successes	good
+sweets	offred
+teme	twyfold
+termes	gealous
+typhoeus joynts	smart
+wandring wayes	perillous
+way	same
+wights	worldly
+witch	wicked
+wolves	hungry
+act behold	hideous
+beautie shyne	brightest
+beheast	wise
+carkases	dead
+cloud implyes	foggy
+comfortlesse	carefull
+comfortlesse	pitteous
+corses	many
+cround	girlond
+damzell	doubtfull
+distresse	great
+dolefull	desolate
+dolefull	late
+dolefull	more
+dolefull	virgin
+ensamples	sad
+face	blubbred
+fall	romaines
+fearefull fit	such
+feet	horned
+feete	kisse
+fire	heavenly
+foe	outrageous
+grace fayre una	wondrous
+guise	humble
+hanniball	stubborne
+hart	constant
+harts	glad
+kids	wanton
+knight	elfin
+ladies bowres	high
+ladies bowres	idle
+lentulus	lordly
+lyon looke	grim
+lyon spyes	grim
+meanes	dianes
+men	mightie
+men	murdred
+mightie monarch	low
+night	everlasting
+night	noyous
+noyce	far
+noyce	rebownded
+numbers	huge
+oversight	foole-happie
+paines	great
+pipes	merry
+plaine	lowly
+plaints	loud
+plight	wofull
+pompe	princely
+praise	greater
+pray	griped
+pride	great
+pride	princesse
+prime	joyous
+princes courts	high
+providence	eternal
+race	timely
+riches store	great
+rocke	hidden
+rocke	sad
+ruth	unwonted
+semblance	glad
+shriekes	thrilling
+sight	uncouth
+spring	pleasant
+state	unhappie
+steed	ready
+sterne marius	high
+stout scipio	high
+stowres	heavy
+thralles	wretched
+thrals	caytive
+thrals	wayled
+thrals	wretched
+truth	barbarous
+wagon	weary
+waves	westerne
+way	wonted
+wealthes decay	like
+wearie waine	nigh
+wemen	proud
+withold	long
+acquaintaunce	new
+amazd	burnt
+amazd	dryope
+amazd	long
+annoy	selfe-wild
+apace	runne
+armes	rugged
+beasts	angry
+beasts	wild
+bethinkes	selfe
+bore	tusked
+commeth	awaked
+commeth	noyse
+company	goodly
+courage stout	bold
+crueltie	hurtlesse
+dame	gentle
+eyes	feeble
+face	lovely
+feare	childish
+flesh	fearefull
+frayes	glorious
+god himselfe	burnt
+grace	heavenly
+griefe	hidden
+habiliment	straunge
+harts	stubborne
+intent	burnt
+kind	beastly
+knight	stoughtest
+law	tyrans
+lesson	hard
+limbes	wearie
+lips	sweet
+lord	dearest
+lore	sacred
+love	ancient
+mind	malitious
+miseries	many
+mood	sober
+mother	loving
+naiades	light-foot
+nymphes	wooddy
+owne faire	dryope
+pangs	lesser
+panther	spotted
+panther	tusked
+people	woodborne
+play-fellowes	other
+pourtraiture	alive
+red	croslet
+right	lignage
+sonne	little
+sorrowes rew	sad
+steps	weake
+sturdie courage	tame
+swayne	loose
+swayne	unruly
+troubles	such
+una gan	womanish
+unwares	chaunst
+vew	horrid
+worship	own
+worth	famous
+wounds	bloudy
+wyde	forrest
+xxxvi	inquerd
+afrayd	proud
+afrayd	sore
+apace	pursewd
+battell	doubtfull
+bellowing	loud
+bide	lenger
+blade	single
+cace	lamentable
+canto vii the redcrosse knight	captive
+canto vii the redcrosse knight	proud
+cause	such
+corage gan assaile	cold
+court	goodly
+decay	last
+drinke	faint
+drinke	feeble
+faire una	supprest
+forage	grassy
+force	puissant
+forces gan	manly
+fray	bloudy
+gestures	fitting
+glade	gloomy
+grownd	grassy
+hand	mortall
+heat	boyling
+hell	deepest
+intent	traiterous
+knight unweeting	gentle
+lusts	lewd
+make	looser
+meed	worthy
+mother	uncouth
+nitre	windy
+nymph	sacred
+o	greatest
+oke	snaggy
+opprest	proud
+orgoglio	great
+pagan	proud
+pate	token
+pilgrim	false
+redcrosse knight	noble
+selfe	such
+shade	joyous
+shield	three-square
+side	fountaine
+sides	gory
+speaches	bitter
+stowre	deadly
+stowre	wary
+train faire knighthood	trecherous
+traine	crafty
+traine	cunning
+treason	guilty
+treason	like
+untill duessa	false
+untill duessa	loud
+upbrayd	unkind
+waters	bad
+waters	such
+xlvi	bad
+yield	guilty
+aw	more
+bale	bitter
+beast	monstrous
+bras	scaly
+brest	sad
+coles	fresh
+comfort	last
+comfort	left
+comfort shewes	little
+dart	utmost
+day	dearer
+day	lightsome
+deedes	admirable
+discourse	whole
+distresse	great
+dongeon	deepest
+enemie	over-wrestled
+enemie	strong
+eternall night	sad
+feet	filthy
+fortune	tempestuous
+ghost	grieved
+gods	heavenly
+griefe	great
+guerdon	goodly
+harmes	further
+hart	dead
+hart	pitteous
+harts	faint
+haughtie helmet	horrid
+heads	great
+hills	high
+jove	highest
+keepe	better
+keepe	hidden
+knight	gentle
+knight	goodly
+lamps	ever-burning
+lights	lesser
+lookes subdew	prouder
+love	greater
+meed	deadly
+men	more
+mights	wondrous
+misfortunes	huge
+mould	entire
+newes	unhappie
+person	goodly
+place	bare
+plight	heavy
+plight	more
+ray	bare
+ray	brightest
+reliques	sad
+sencelesse corse	slombred
+shield	warlike
+silver shield	idle
+sorrow	secret
+sparkles	bright
+speare	poynant
+spectacle behold	deadly
+stout	gyant
+things	sacred
+thrall	caytive
+time	long
+tong	golden
+tongue	sad
+troubles	many
+tydings	deadly
+una	wofull
+unfould	carefull
+unfould	threeds
+wings	golden
+wound	first
+xl ah ladie deare	gentle
+xl ah ladie deare	great
+xxix	bare
+youth	gentle
+arme	left
+arme	manly
+atchievements	famous
+atchievements	hard
+balefull body	dead
+beast	many-headed
+bespake	faire
+blade	blood-thirstie
+blow	full
+brands	flaming
+came	late
+chance	faire
+chance	good
+clawes	bloody
+cloudes	riven
+club	boystrous
+clubbe	combred
+commers	answere
+crueltie	fierce
+cup	golden
+deare	disaventurous
+desires	unmeete
+destinies	equal
+disdaine	fierce
+enchauntment	false
+enemy	cursed
+eternall bale	inner
+fall	daily
+foe	onely
+foe	unequall
+geants gate	same
+hands	manly
+heart	stoutest
+heavens	favourable
+hornes	same
+knight	captive
+knight	fresh
+knight	noble
+knight	redoubted
+knight	such
+knight	unproved
+knights	doughty
+ladie stay	bad
+languor	captive
+loftie steede	bad
+magick artes	replete
+maine	monstrous
+man	righteous
+martiall crew	noble
+mothers	milkie
+order	noble
+parts	weaker
+passage	yeeld
+passage stay	angry
+powre	dreaded
+pride	foolish
+reason	goodly
+redcrosse knight	good
+right	unregarded
+sight	misaymed
+snubbes	ragged
+spright	chearelesse
+steps	staggering
+stocke forth	truncked
+storie	sad
+stownd	evil
+stroke	idle
+subtill sleights	last
+sword	byting
+things	right
+thought	gracious
+thunderbolts	such
+trees	highest
+vi	bloody
+waves	golden
+wordes	chearefull
+wound	deadly
+wound	desperate
+wound	gaping
+wrathfull spight	full
+xlv	greater
+altare	spilt
+bands	filthy
+beast	fruitfull-headed
+blade	sparkling
+blow	monstrous
+bodie	unweldy
+body	great
+body	huge
+christians bloud	spilt
+christians bloud	true
+cry	pitteous
+dayes	better
+downe falles	last
+drere	ghastly
+engins	slight
+engins	subtile
+eyen	dazed
+eyes	sad
+face	turnd
+face	wrincled
+fall	grievous
+field	durtie
+grate	little
+ground	lowest
+heart	hardest
+honord	much
+knight	answere
+knight	curteous
+knight	displeased
+knight	layd
+knight	same
+leg	right
+lites	heavie
+lord	dearest
+lord bethrall	better
+make	worth
+man	old
+martyrs	holy
+mas	monstrous
+meanes	hard
+mone	piteous
+name ignaro	dead
+o	welcome
+oake	strongest
+pace	untoward
+paines	long
+perceiv	proud
+plaints	pitteous
+princes	greatest
+selfe	simple
+shield	bright
+shield	sunshiny
+sight	uncouth
+silver	same
+steps	feeble
+thighes	unhable
+thrall	caytive
+traine	long
+tree	aged
+unto deaths	nigh
+warre	doubtfull
+weapon proov	angry
+weapon proov	wonted
+wherewith	past
+wherewith	perill
+wherewith	such
+xxx	staffe
+behest	wise
+behold	ill
+billowes	tombling
+bits	better
+bleeding wound	fresh
+brest	fleshly
+brest	riven
+castle	rare
+chaine	golden
+chaine	yfere
+couch	dight
+day	sunny
+dwelling	low
+embayd	sweet
+ensample	dayes
+evils priefe	good
+eyes	dull
+eyes	sad
+famine	long
+fiers intent	many
+flames	huge
+flowres	withered
+foe	avowed
+forest	wide
+fort	strong
+fowle duessa	such
+fury slake	fervent
+glee	goodly
+glee	most
+gras	verdant
+hag	loathly
+hag	wrinckled
+hands	favourable
+hands	friendly
+hart	stony
+heavens	light
+iii faire	virgin
+impe	worthy
+intent hath	high
+least	great
+life	looser
+looks	manly
+lord	dearest
+magicien merlin	great
+man	chearelesse
+manners	good
+mothers pap	soone
+musicke breeds delight	good
+neck	caytive
+parts	misshaped
+pits	hollow
+plates	steele
+prince	good
+reliefe	more
+shame	open
+showne	filthy
+showne	open
+sight	such
+sire	certain
+sports	for-wearied
+terme	just
+thewes	gentle
+thewes	upbrought
+timon	old
+unrest	great
+valley greene	low
+vow unbind	ni
+xliii	welcome
+xlvi	bad
+xlvi	naked
+youth	freshest
+amazment	first
+bale	inward
+bee	bloud-frosen
+bee	emboldned
+bloud	cold
+case	extremest
+case	fixt
+cave	darkesome
+cave	hollow
+cave	low
+cheekes	raw-bone
+clouts	many
+clouts	ragged
+course pursew	forward
+darts	deadly
+deedes	knightly
+degree	least
+eye	unlucky
+eyes	stony
+eyes	wide
+face	deadly
+feare	new
+fearfull	more
+flight	hasty
+grave	greedy
+hands	right
+hartie speach	bold
+heeles	winged
+hew	former
+hew	hollow
+hew	wide
+intent	high
+knight	weake
+knight	wearie
+ladies love	other
+letters	golden
+lov	againe
+man	cursed
+mister wight	dismayd
+o	happy
+owle	ghastly
+passion	great
+place	same
+queene	great
+recrosse knight	gentle
+redcrosse knight	gentle
+redcrosse knight	incontinent
+soules	able
+speeches	charmed
+thee	distraught
+thee	rash
+thiefe perswade	cunning
+tongue	subtill
+weedes	hidden
+wherein	closd
+wight	luckie
+wofull lover	more
+worthie	mote
+worthie	worthy
+xxi	aghast
+xxvi	sure
+battell	bright
+battell	horrible
+bloud	troubled
+breach	secret
+degree	last
+dragon	fire-mouthed
+ease	happy
+eternall rest	happy
+evill life forespent	enough
+eye	equall
+face	pale
+feet	free
+finall	smart
+ghosts	endlesse
+grace	greater
+grace	smart
+heaven	highest
+hunger	cold
+hunger	rife
+knife	cursed
+knife	rife
+knight	faint
+knight	harted
+li	seene
+life	loathsome
+lucklesse disaventures	more
+man	envious
+man	most
+mishaps	like
+need	greatest
+place	cursed
+remembraunce	fresh
+rimes	inchaunted
+sin	greater
+spright	constant
+state	chaunging
+wandring way	wearie
+wave	bitter
+way	further
+way	right
+armes	puissant
+beades	busy
+beames	sunny
+carle beheld	last
+court	spacious
+dame coelia	aged
+dame coelia	good
+dayes	wretched
+deedes	godly
+deedes	good
+eld	weaker
+eyes	dull
+feet	feeble
+feet	innocent
+foes	many
+grace	thorough
+guise	modest
+hand	other
+hand	right
+knight	unfit
+men	foolish
+mood	constant
+name	meeke
+nicetie	sweet
+nicetie	true
+owne decay	few
+parents head	woefull
+path	narrow
+persons	great
+pledges	many
+plight	decayed
+plight	late
+restraint	late
+seat	native
+sir	good
+sister	younger
+soles	weary
+soules	wretched
+speach	goodly
+spright	larger
+steps	feeble
+sweld	inly
+sweld	unwonted
+syre	aged
+syre	gray
+syre	many
+thewes	upbrought
+thewes	wise
+thing	goodly
+things	sundry
+way	broad
+way	high
+wayes	wicked
+well	beseemed
+world	wretched
+xix	able
+xxii	dearest
+xxii	wise
+xxiii	smart
+age	freshest
+age	great
+besought	good
+bone	red
+bowre	heavenly
+breares	ragged
+brest	carefull
+busines	other
+busines	worldly
+chappell	sacred
+charge sicke persons	dead
+cloths	spare
+corruption	ill
+corruption	inward
+dismay	most
+eyen	bad
+eyen	blunt
+eyen	earthly
+fire	bright
+gan faile	fordonne
+gan faile	weary
+guest	unacquainted
+hand doth lead	steady
+heare	golden
+hermitage	little
+hospitall	holy
+house	glorious
+house	most
+house	right
+jot	corrupted
+kist	joyous
+knight	soule-diseased
+lockes	snowy
+lowly place farre	darkesome
+man	aged
+man	happy
+man	holy
+men	mighty
+ne car	hungry
+necessitee	most
+nourse	carefull
+paire	gentle
+passage stay	ready
+path	ready
+presence	first
+repentance	sad
+rules	vertuous
+sire	aged
+sire	godly
+soule	righteous
+spirituall repast	full
+spouse	heavenly
+starres	bright
+steps	wandring
+stubborne malady	tame
+thornes	bushy
+thoughts	heavenly
+tree	low
+tyres	rich
+una	faire
+unto	first
+way	narrow
+way	wearie
+whip	yron
+wights	wretched
+xlviii	fast
+xxvii	wont
+xxxvi eftsoones	first
+xxxvii the	first
+angels	bright
+aright	red
+armes	puissaunt
+armes	vain
+battailes	bloody
+chaungelings	chang
+citie	fairest
+didst	late
+ditty	high
+doest	worthy
+faerie queene doth dwell	fairest
+favours	many
+feend emprisond	huge
+foe	cursed
+foeman	ready
+fordonne	desolate
+fordonne	virgin
+front	walled
+grace	great
+hill	sacred
+hope empare	present
+king	great
+lam	unspotted
+man	aged
+man	holy
+man	mighty
+man	same
+men	such
+nations frend	owne
+notes	heavenly
+overthrowes	third
+parents	captive
+path	litle
+pleasaunt mount	highest
+poets	famous
+reft	unweeting
+selfe	excellent
+sence	confound
+sence	feeble
+song	simple
+soule	feeble
+sound	hideous
+soyle	native
+sphere	starry
+spoyle	dayly
+stone	precious
+syre	good
+thankes	great
+time	high
+towres	loftie
+toyle	tedious
+trew	most
+unto	dayly
+voyage fare	last
+voyage fare	long
+watchman wayting tydings	glad
+aloofe	yede
+armes	godly
+backe	bras-scaly
+backe	long
+beacons	broad
+beast	furious
+blith	full
+bodies	late
+bodies	raw
+brest	broad
+brest	feeble
+brest	imperceable
+brest	speckled
+bride	aged
+cace	cruell
+champion	great
+champion	poysond
+crest	hardned
+cryde	lowdly
+cryde	smart
+cryde	uncouth
+doth vaunt	much
+fields	open
+furies	many
+garment	poysond
+glade	hollow
+glistring armes	soone
+gorge	stinking
+gras	brused
+greatnesse	wondrous
+grosse	assayd
+grosse	gryping
+hands	warlike
+head stucke	steely
+henge	steadfast
+heroes	great
+hill	great
+implyes	rash
+land	happy
+might	free
+might	hable
+might	more
+might	outrageous
+mischiefes	such
+monster	smart
+mote perce	nought
+necke	scaly
+nosethrill	large
+oven	wide
+overthrowen	same
+passage	unwonted
+pawes	ravenous
+pitch	wonted
+pounces	wearie
+pray	heavy
+push	puissaunt
+rage	mighty
+renew	sore
+sayles	broad
+scales	rouzed
+shields	bright
+shore	ragged
+side	sunny
+silver flood	full
+silver flood	great
+spau	german
+steed	froth-fomy
+steedes	faint
+steele	sharpest
+tayle	hideous
+tayle	huge
+tayle	long
+tenor rayse	second
+time	auncient
+vertues	full
+vertues	great
+wast	huge
+waves	sacred
+way	speedy
+wing	left
+wings	flaggy
+wyde	little
+wyde	safe
+wynd	hollow
+xvi	harder
+xxviii faint	emboyled
+xxviii faint	sore
+yron	hardned
+advauncing	same
+almighty hand	red
+barke	feeble
+beast	hell-bred
+beast durst	deadly
+blade	bright
+blade	deaw-burning
+cheekes	rosy
+cleft	sunder
+coleblacke clouds	enwrapt
+conquest	great
+consort	full
+darke	chearelesse
+day	joyous
+day gan	joyous
+defence	best
+doughtie knight	nought
+dragons fatall fall	horrible
+dragons fatall fall	huge
+dragons fatall fall	second
+dread dragon	dead
+dreriment	sad
+edge	sharper
+encounter	first
+encounter	wide
+entrailes	hellish
+fame	everlasting
+fathers	first
+feet	feeble
+feet	forwearied
+flames	huge
+foot	other
+gan	next
+gan reare	next
+god	highest
+head	high
+heate whereof	hellish
+jaw	greedy
+jaw	open
+joy	new
+knight	deare
+man	victorious
+mantle gan	sable
+maw	darksome
+maw	hollow
+men	tall
+men	young
+might	importune
+ne reard	firie-footed
+neare	advaunced
+neptune doth dismay	great
+night	noyous
+night	sad
+notes	attuned
+notes	lay
+o mornefull memory	good
+pace	manly
+pledge	warlike
+puissaunce	wondrous
+robes	antique
+rockie clift	huge
+salutes	loud
+scalpe	crested
+shield	sunne-bright
+sire	aged
+sleights	false
+smoke	deadly
+smoke	last
+smot	rude
+sports	wanton
+steele	light
+steele	lucky
+sting	intended
+string	knotty
+strokes	sturdy
+terrifide	sore
+tree	first
+tree	goodly
+trees	high
+vaine affright	off-shaking
+virgins	comely
+water dew	holy
+whoso	whereof
+wings	uneven
+withall	fast
+woe	great
+wounds	deadly
+adventurest	late
+arts	wicked
+babe revyld	little
+bands	guilty
+beautie	heavenly
+brest	hollow
+byting wordes	bitter
+dame	former
+daughter	onely
+daughter deare	onely
+daungers	deadly
+dishes	dainty
+distresse	great
+doth imbrace	dearely
+doughty knight	devize
+dragonets	many
+enterprise	late
+fidessa hight	easy
+footman	false
+god	high
+guest	renowmed
+heates	enraged
+journey	wearie
+king	fast
+king	godly
+king	mixt
+knight	gentle
+leaves	narrow
+life	lingring
+lineaments	heavenly
+lines addrest	sad
+lord	dearest
+lord gan fit occasion finde	auncient
+man	falsest
+manner	swollen
+mayd	sad
+morning starre appeare	bright
+nest	hidden
+paper spake	red
+people	joyous
+perjury	bold
+pompe	luxurious
+pompe	proud
+pompe	such
+rest i	devize
+rimes	ragged
+rimes	rude
+royall mayd	goodly
+seeme	wiser
+services	comely
+sight	weaker
+sorceresse	false
+state	lucklesse
+threats	idle
+time	astonished
+time	long
+treasons	secret
+vowes	bloody
+will	wicked
+withhold	dead
+woman	false
+wreakes	many
+wreakes	wrathfull
+abode	safe
+dungeon deepe	low
+envie	able
+envie	vile
+envie	wicked
+fire	housling
+hands	rude
+knots	holy
+noble	most
+noise	heavenly
+paines	deadly
+princess	british
+proceeded	eachone
+proceeded	sweet
+queen elizabeth	fairest
+skill	curious
+trains	subtile
+voyage whereto	bent
+voyage whereto	long
+xxxvi	full
+xxxvi	layd
+church	false
+church	roman
+dragon	great
+dragon	old
+enchanter	false
+enchanter	old
+faith	catholic
+king	spanish
+king	treacherous
+ladie	lovely
+mine afflicted stile	humble
+nation	english
+parents	captive
+pen	humble
+people	english
+religion	true
+apollo	sacred
+arms	other
+beech	warlike
+bows	best
+carver holme	good
+cypresse funerall	sacred
+danger	unseen
+evergreen oak	good
+games	pythian
+generals	roman
+gum	bitter
+gum	fragrant
+mirrhe	arabian
+mirrhe	bitter
+mirrhe	fragrant
+mythology	northern
+times	old
+tree	sad
+details	revolting
+dragon	man-eating
+elves	black
+elves	fair
+elves	teutonic
+monsters	similar
+myths	classical
+ones	young
+passage	entire
+passage	revolting
+serpents	young
+shapes	many
+simile	pastoral
+way	same
+adventures	successful
+art	black
+books	cabalistic
+century	sixteenth
+deaw	slombring
+enchanter	false
+humour	sad
+moisture	heavy
+news	foreign
+sin	latter
+world	lower
+brain	dry
+effects	exquisite
+ones	other
+ones	true
+physiology	old
+spirit	false
+technique	wonderful
+whose dryer braine	dry
+words	musical
+_	pastoral
+aphrodite	same
+borne without her dew	unnatural
+fayre venus	same
+fayre venus	sea-nymph
+god	blind
+hymen io hymen	nuptial
+hymen io hymen	old
+manner	unnatural
+song	nuptial
+song	old
+truth	feigned
+_	hebean
+character drawing objective	subjective
+deities	infernal
+language ll	own
+legends	mediaeval
+trees	many
+trees	shady
+wood	thick
+agencies	supernatural
+century	sixteenth
+court	spanish
+faith	romish
+faith	true
+formulas	magic
+mind	popular
+nation	english
+paynim brethren	faithless
+poets	ancient
+poets	other
+power	saracen
+religion	natural
+teme	sevenfold
+tithones	aged
+church	romish
+falsehoods	full
+glances	cruel
+interpretation	better
+lances	shattered
+piece	large
+share	large
+sides	armored
+story	full
+_ treen _	wooden
+courtesies	pleasant
+fraelissa	fair
+fraelissa	frail
+hands	guilty
+herb bath	enchanted
+infants	unbaptized
+my cheare	changed
+phrase	equivalent
+place	fair
+purposes	goodly
+romances	old
+stanza	whole
+testament saints	old
+couple	wretched
+epithets	costly
+shape	human
+words ll	own
+alliance	unnatural
+belief	ancient
+canto	whole
+day	next
+saracen knight	second
+scenes	similar
+sin	secret
+century pronunciation	16th
+country places	benighted
+mother	blind
+papists	irish
+passage	whole
+sin	secret
+wake	irish
+altar	funeral
+character	befitting
+character	gloomy
+cross	false
+cross	true
+orions	fierce
+powers	christian
+reflections	moral
+skill	kindly
+skill	natural
+stanza	introductory
+stars	brightest
+allegory	double
+balance	euphuistic
+construction	ambiguous
+court	sinful
+shold	tense
+style	homeric
+allegory	discontinuous
+allegory	political
+allegory	religious
+allegory	vague
+behests	similar
+bienvenu _	welcome
+century	late
+century	sixteenth
+church	false
+conference	secret
+goddess	sacred
+kind	similar
+neck	long
+peacock	sacred
+pleasures	sinful
+sins	deadly
+sins	mortal
+ants	enormous
+chance	good
+chance	unavoidable
+dropsie	dry
+duty	last
+elizabethan hall	typical
+unto him selfe unknowne	own
+wretchedness	own
+influence	classical
+marchen	_
+priesthood	romish
+words ll	own
+_ gryfon _	subject
+animal	fabulous
+device	similar
+latin proverb	old
+loves	famous
+loves	old
+motives	inferior
+motives	other
+sins	other
+suffix	anglo-saxon
+suffix	original
+words	encouraging
+ynd	furthest
+chain	golden
+crater	ancient
+ixion	chained
+poets	greek
+regions	infernal
+regions	lower
+shall	own
+sons	ill
+stone	huge
+successes	good
+term	legal
+term	old
+typhoeus	hundred-headed
+aesculapius	sad
+desert	libyan
+paines	great
+paines	greater
+patrician family	haughty
+romulus	great
+tale _	similar
+conspirators	other
+contests	such
+death	loathsome
+pride	inordinate
+semiramis	bold
+battle	bloody
+poets	greek
+allegory	religious
+court	coarse
+knees	bent
+minds	unregenerate
+sir john perrot	coarse
+sir john perrot	rude
+sylvanus	old
+their barbarous truth	savage
+apollo	beloved
+appetites	lower
+kind	own
+moment	right
+n'ould after joy	cheerful
+phrasing	euphuistic
+stag	favorite
+vew	horrid
+was	famous
+was	worth
+water nymphs	fresh
+water nymphs	light-foot
+glove	token
+her last decay	utter
+lover	lady-love
+passage	obscure
+romances	old
+condition	unarmed
+condition	unnerved
+fountain	enchanted
+fountain	weary
+honor	highest
+orgoglio	giant
+pleasures	sinful
+sense	common
+struggle	hopeless
+aeneid _	looser
+beast	monstrous
+commands	holy
+companion	dissolute
+heads	more
+invention	own
+onely breath	mere
+orgoglio	geant
+orgoglio	hideous
+pride	geant
+pride	inordinate
+relics	mournful
+relics	sorrowful
+powers	descriptive
+shield	warlike
+teaching	platonic
+belief	classical
+destinies	equal
+destinies	undisturbed
+destinies	whilest
+line	obscure
+oak	hollow
+orbits	undisturbed
+regions	infernal
+sorceress vivien	spellbound
+_ resolution _	second
+body	full
+book	whole
+brought not backe	full
+ebb	lowest
+my dolefull disadventurous deare	misadventurous
+my dolefull disadventurous deare	sad
+words	own
+beast	seven-headed
+clothes	gaudy
+cruell feast	late
+dungeon	foul
+half	better
+head	wounded
+horns	such
+people	english
+show	outward
+tauric chersonese	ancient
+arts	fine
+ashes	accursed
+bible	open
+bowrs	brawned
+bowrs	brawny
+crusades	holy
+day	common
+ear	troubled
+fortune	evil
+fortune	good
+fortune	great
+fortune maister	your
+hairs	gray
+interpretation	first
+interpretation	preferable
+knight	silent
+lives	human
+looks	venerable
+mind	troubled
+music	best
+princes	greatest
+shield	uncovered
+springs	good
+sufferings	past
+beauty	false
+figure	classical
+foulness	real
+punishment	adequate
+punishment	moral
+reflections	moral
+ring	magic
+sir trevisan	young
+times	classical
+times	modern
+_ morte d'arthur _	possessive
+action	good
+century	sixteenth
+escape	narrow
+life	own
+man	old
+reference	obscure
+romancers	older
+side	religious
+time	due
+knight	armed
+life	own
+moisture	sweet
+was firmest fixt	strongest
+argument	subtle
+charmed	as
+judgment	last
+man	due
+painters	catholic
+painters	mediaeval
+book	first
+failures	past
+life	holier
+man	holy
+significance	moral
+truths	powerful
+allegory	religious
+allusions	biblical
+allusions	full
+century	sixteenth
+dame coelia	heavenly
+day	long
+day	many
+deeds	good
+feet	weary
+gentleman	elizabethan
+house	auntient
+lady	heavenly
+long a day	many
+parallel	close
+power	higher
+power	spiritual
+subj	optative
+suggestions	many
+things	many
+body	unfed
+miracle play	old
+painting	famous
+prisons	saracen
+prisons	turkish
+testament saints	old
+_	merry
+babies	human
+battles	bloody
+battles	many
+battles	pitched
+man	contemplative
+structure	earthly
+virgins	betrothed
+allusions	biblical
+day	second
+day	third
+extent	remarkable
+keeping well	your
+queen elizabeth	complimentary
+stanza	complimentary
+sword-wounds	several
+tyranny	same
+beacons	as
+beacons	broad
+construction	nominative
+disseized	dispossessed
+does	greedy
+does	gulfe
+effect	awe-inspiring
+garment	charmed
+grip	dispossessed
+grip	rough
+hable might	capable
+hagard hauke	wild
+hillside	sunny
+language	simple
+strain	high-pitched
+tune	lower
+tune	second
+waters	greedy
+baths	medicinal
+belief	ancient
+deaw-burning blade	bright
+dragon	fire-spewing
+idiom	french
+orpheus	dead
+strength	diminished
+watering-places	german
+waters	healthful
+_	sound
+dragon	dead
+exaggeration _	_
+exaggeration _	characteristic
+exaggeration _	deficient
+exaggeration _	romantic
+gallicism	mistaken
+nature	brutal
+serpent attempts	winged
+attempt	frustrated
+attempt	wicked
+character	perfect
+confession	manly
+honors	great
+men	tall
+men	tallest
+men	young
+passage	whole
+people	common
+race	human
+race	whole
+self	proper
+sins	past
+slanders	false
+throng	great
+canto	first
+century customs	sixteenth
+figures	maritime
+floors	rush-strewn
+housling fire	sacramental
+places	various
+rigging	spent
+rigging	worn-out
+theologians	scholastic
+vein	humorous
+vein	lighter

@@ -1,0 +1,4583 @@
+1866	packed
+advent	tars
+affairs	take
+arizona cave	lay
+arizona hills ii	tars
+arizona mornings	lay
+arizona mornings	prospecting
+arizona mornings	tars
+body	lay
+book form	submitting
+character	reflecting
+chariots	departing
+chief xi	learn
+claim	hold
+commission	possessed
+conviction	determined
+cottage	situated
+day science	substantiate
+death	die
+death	died
+death	divulge
+demand	comply
+detail	followed
+door	equipped
+dreams	pictured
+eleven years	found
+equipment	return
+father caution	heard
+fortunes	fallen
+fortunes	retrieve
+heart failure	reached
+heavens	know
+heavens	looking
+heavens	stretched
+hog	topped
+income	receive
+instructions	related
+jury	reached
+man	asked
+man	replied
+man	sat
+man	talked
+manuscript years	read
+marble floor	drew
+mars	gained
+masterless	determined
+men	aged
+mind	believe
+mind	grasp
+mine	work
+months	returned
+new york market	visited
+night	retired
+night	sit
+nights	seen
+others	talk
+pack animals	picking
+phenomena	explain
+physician	directed
+physician	laid
+physician	told
+place	purchased
+police chief	discovered
+press	pilloried
+princess	believe
+property	attached
+property	found
+property	left
+provisions	packed
+public	pilloried
+pulpit	pilloried
+reason	surprise
+recklessness	heard
+river	overlooking
+skies	raised
+slaves	worshipped
+snow	stretched
+station	arrived
+story xvi	tells
+study	assembled
+study	left
+study	stood
+tarkas	finds
+telegram	received
+townspeople	assembled
+townspeople	discovered
+trip	make
+uncle jack	called
+war	broke
+watchman	seen
+watchman	showed
+way	picking
+way	work
+window standing	seen
+year	spent
+year	visited
+years	befell
+years	divulge
+years	receive
+years	see
+acts	placed
+arrows	fled
+arrows	pursued
+body	lay
+body	leaving
+bows	fled
+camp	occupied
+canter	mount
+carbine	arming
+cartridge belt	drew
+cave	crept
+cave	filling
+chamber	found
+cliff	arose
+clutches	fell
+colt revolvers	arming
+colt revolvers	whipped
+dangers	conjured
+day	following
+day	occur
+desire	resist
+direction	renewed
+direction	wished
+dots	note
+ears	reached
+effort	started
+endeavors	gave
+examination	continuing
+examination	failed
+eyes	met
+fact	removes
+feet	arose
+friend	seen
+ground	laid
+ground	reached
+heroes	constitutes
+heroes	placed
+horsemen	convinced
+horsemen	pursuing
+horsemen	wished
+horses	approaching
+hours	occurred
+housewife	conjured
+ledge	lay
+left	grow
+lives	taking
+location	felt
+man	defend
+man	saved
+men	convinced
+men	hurried
+men	pursued
+mind	constituted
+morning	taken
+muscle	move
+muscles	refused
+muscles	relaxed
+pace	hoping
+pace	urged
+pack animals	seen
+peak	neighboring
+peaks	surrounding
+period	found
+period	inhabited
+point	discovered
+ponies	galloping
+processes	constituted
+pursuit	organized
+rascals	attacked
+rascals	catch
+republics	bestowed
+rifle balls	pursued
+rifles	fled
+saddle	reached
+saddle horse	borne
+saddle horse	catching
+saddle horse	traveling
+saddle horse	urged
+savages	pursuing
+savages	yells
+scene	broke
+scene	charging
+side wall	started
+singlehanded	fled
+singlehanded	turned
+sounds	hearing
+speed	urged
+stories	ridicule
+suspense	endure
+table land	entering
+tactics	pursued
+target	moving
+tepees	notice
+thought	occur
+toll	taking
+tracks	joined
+trail	seemed
+trail	seen
+valley	carry
+valley	happened
+vapor	noticed
+walk	following
+warriors	clustered
+water hole	reached
+way	proceed
+years	befell
+years	following
+alternative	seemed
+apache warriors	turn
+apprehension	seemed
+arms	stretched
+back	lurked
+back	stood
+basin	lying
+body	lay
+body	lying
+body	strapped
+bonds	break
+breath	coming
+breeze	caused
+canopy	formed
+causes	resulted
+clay	looked
+companion	left
+consciousness	told
+coward	help
+decision	crystallized
+ears	broke
+effort	strove
+enclosure	appeared
+eyes	bulging
+eyes	looked
+face	appeared
+face	thrust
+fact	question
+fact	revealed
+faculties	retain
+fascination	overpowering
+feelings	measure
+feet	springing
+fellow	approaching
+fellow	stared
+fellow	stood
+finger	move
+foe	facing
+friend	lay
+gas	overcome
+gasps	coming
+ground	alighted
+hope	fallen
+hope	lay
+hope	pass
+horses	approaching
+imagination	seemed
+jaw	dropped
+judgment	molested
+landscape	opened
+leaders	passed
+ledge	pass
+ledge	staring
+life	fighting
+life	passed
+lodestone	attracts
+lungs	fill
+man	alighted
+man	apprised
+man	assume
+man	believe
+man	bring
+man	carried
+man	closed
+man	coursing
+man	creeping
+man	decided
+man	determined
+man	distinguish
+man	draw
+man	drawn
+man	endured
+man	experienced
+man	fallen
+man	feel
+man	felt
+man	fighting
+man	found
+man	gaze
+man	gazed
+man	have
+man	heard
+man	held
+man	hoped
+man	judged
+man	knew
+man	know
+man	lain
+man	lay
+man	leaped
+man	learn
+man	left
+man	lifted
+man	looked
+man	lure
+man	measure
+man	menaced
+man	molested
+man	move
+man	opened
+man	overcome
+man	passed
+man	placed
+man	question
+man	reasoned
+man	recalled
+man	received
+man	release
+man	relish
+man	remember
+man	retain
+man	saw
+man	see
+man	seemed
+man	seems
+man	speculating
+man	standing
+man	stood
+man	stretched
+man	strove
+man	thought
+man	told
+man	touch
+man	turned
+man	upbraided
+martian air	carried
+martian surprise	received
+metamorphosis	left
+mind	tells
+minutes	endured
+moonlight	flooded
+moonlight	lay
+moonlight	wrought
+morning	placed
+morning sun	falling
+morning sun	shining
+my advent on mars	felt
+my advent on mars	gazed
+my advent on mars	held
+my advent on mars	riveted
+my advent on mars	seemed
+nearness	apprised
+necks	craning
+night	gazed
+picture	form
+place	escape
+revolvers	strapped
+saddle	strapped
+sanity	question
+shadows	lurked
+sound	apprised
+sound	issued
+sound	moaning
+sound	reached
+sounds	heard
+spirit	prompted
+stars	formed
+sunlight	glistened
+surroundings	recalled
+term	measure
+thing	moving
+time	catching
+time	measure
+times	thought
+tomb	led
+tomb	living
+tonic	acted
+trail	led
+transition	left
+void	call
+void	lure
+wakefulness	question
+world	forgotten
+adults	deepens
+air	carried
+air pressure	cope
+antennae	protruding
+antics	played
+appearance	present
+arms	outstretched
+balance	preserve
+barrel	describe
+barrel	grasping
+barrel	held
+barrel	towered
+bodies	seemed
+center	set
+color	deepens
+direction	rode
+discovery	looked
+districts	cultivated
+districts	scattered
+earth man	lift
+effort	carried
+effort	crowned
+effort	landed
+effort	seemed
+enclosure	leaving
+enclosure	watching
+enemies	lined
+eyes	protruded
+eyes	set
+face	sprawling
+fastenings	swung
+favor	weighed
+feet	being
+feet	carried
+feet	gained
+feet	landed
+feet	towered
+fellows	exhibited
+ferocity	look
+force	warned
+gravitation	cope
+hardness	temper
+head	split
+head	turning
+horse	sit
+leap	gave
+legs	seemed
+life	hung
+limbs	grasping
+manner	progressing
+manner	stand
+mischief	played
+mold	cast
+moments	reached
+monsters	captured
+monsters	watching
+moss	alighted
+moss	covers
+muscles	played
+neck	split
+necks	seemed
+others	trailed
+picture	materialized
+pounds	weighed
+pursuers	landed
+queer animal	permitting
+reins	having
+sanity	doubt
+shells	break
+shoulder	towered
+snout	split
+sound	caused
+spear	charging
+spear	mount
+tail	held
+tail	towered
+thing	hung
+time	attempting
+time	conversing
+tones	conversing
+top	peered
+tusks	stand
+wall	given
+wall	lined
+warrior	watching
+weapons	present
+weight	lift
+words	describe
+actions	spoke
+animal	mounted
+area	covered
+arms	threw
+audience chamber	proceeded
+building	constructed
+building	covered
+building	halted
+building	projected
+buildings	belonged
+buildings	deserted
+buildings	surrounding
+canopy	form
+captors	camped
+capture	explained
+cavalcade	galloped
+cavalcade	turned
+ceremony	uttered
+chairs	dotted
+chairs	squeezed
+chieftain	signified
+chieftain	started
+chieftains	examined
+children	allowed
+children	go
+children	saw
+city	beheld
+city	ended
+clamor	stilled
+creatures	camped
+creatures	considered
+death loss	comes
+deaths	die
+desks	carved
+desks	dotted
+direction	moved
+duels	die
+ears	curving
+ears	pricking
+english tongue	replied
+entrance	halted
+entrance	projected
+expedition	connected
+eyes	cocking
+fact	adapted
+fact	struck
+feathers	set
+feet	projected
+feet	ranged
+feet	rose
+females	ranged
+followers	checked
+followers	motioned
+followers	started
+force	come
+galleries	encircled
+ground	began
+ground	lowered
+halt	come
+hand	placing
+hand	stretching
+hands	reached
+head	strapped
+heart	placing
+introduction	fought
+landscape	jump
+language	understand
+leather trappings	set
+leather trappings	wrought
+length	addressed
+life	come
+limbs	strapped
+males	lacking
+martian chieftain	addressed
+martian chieftain	approaching
+martian chieftain	repeated
+martian chieftain	rose
+martian chieftain	uttered
+martian laugh	blanch
+men	cause
+men	exchanged
+men	varied
+metal armlet	holding
+metal armlet	unclasped
+metal ornaments	squatted
+miles	gone
+muscles	feeling
+nails	lacking
+names	exchange
+observation	saw
+others	uttered
+party	halted
+pilgrimage	go
+pilgrimage	take
+platform	squatted
+plaza	considered
+plaza	discovered
+plaza	started
+position	moved
+presence	discovered
+reply	waiting
+river iss	go
+river iss	leads
+rostrum	strode
+run	started
+shots	exchanged
+smile	answering
+smile	locking
+spear	threw
+speech	carried
+sports	evidenced
+stones	set
+sunlight	sparkled
+time	gained
+time	motioned
+time	uttered
+title	followed
+victims	fall
+voice	addressed
+warriors	assembled
+warriors	examined
+weapons	held
+weapons	throwing
+women	varied
+words	exchanged
+words	followed
+words	uttered
+years	tenanted
+accord	broke
+applause	recognize
+arm	grasped
+arm	grasping
+arm	proffered
+atmosphere	fails
+balance	retain
+belief	felt
+building	crossed
+captive	remained
+care	saved
+chief	exchanged
+chieftain	ordered
+commands	ignored
+commands	repeated
+companion	belonged
+companion	conducted
+consideration	demand
+coverings	replenished
+customs	acquainted
+darkness	replace
+darkness	see
+day	preceding
+day	seen
+desk	expecting
+desk	wheeled
+device	produces
+device	requires
+dog sola	belonged
+dog sola	motioned
+dog sola	presumed
+dog sola	replenished
+dog sola	returned
+dog sola	watch
+equilibrium	lose
+exhibition	witnessed
+eyes	glued
+eyes	stared
+feet	banged
+feet	cleared
+feet	gained
+feet	jerked
+feet	landed
+fellows	give
+fist	swung
+floor	fronting
+floor	placed
+floor	sunk
+gardens	winding
+guardian	escape
+guardian	moved
+guardian	pursue
+guardian	seen
+hand	illuminated
+hand	pulled
+hand	reached
+hardships	saved
+hatred	kept
+head	bore
+hours	slept
+instructions	gave
+jaw	swung
+jaws	equipped
+jumper	see
+leap	repeating
+life	gave
+life	saving
+light	produces
+living animal	guess
+martian night	lighted
+martian nights	illumined
+martian scene	makes
+master hand	wrought
+mates	broke
+mates	repeated
+mates	tars
+men	left
+misfortunes	laughed
+moment	being
+moment	guarded
+moment	saving
+moment	surveying
+moon	separate
+motley array	piled
+mountains	winding
+mouth	motioned
+muscle	moved
+name	learned
+night	hurtling
+odds	permit
+one-quarter hours	revolves
+ox	felled
+plaza	crossed
+plaza	fronting
+plaza	proceeded
+progress	make
+quarts	give
+repetition	ordered
+resemblance	bore
+room	crossed
+room	decorated
+room	leave
+room	lighted
+runner	see
+shuffling gait	moving
+side	crossed
+side	moved
+signal failure	walk
+silks	stretched
+sister satellite	revolves
+starlight	diffuse
+stomach	rubbed
+street	deserted
+street	led
+threshold	lay
+time	learned
+torches	depending
+views	portrayed
+watcher	advanced
+wick	generates
+word	muttered
+word	repeating
+words	exchanged
+work	wrought
+absence	noted
+ado	threw
+ado	turned
+advantage	gave
+air	sprang
+animal	gazed
+appeal	fastened
+appeal	seemed
+applause	guarded
+arm	struck
+attack	recover
+attitude	seemed
+awakening	noted
+battle	witnessed
+beings	vouchsafed
+blow	break
+blow	delivered
+blow	delivering
+blow	descended
+body	bending
+body	examined
+body	expected
+body	leaping
+building	bolted
+building	looking
+bulk	advancing
+bulk	prove
+bull ape	bolted
+bull ape	fell
+bull ape	followed
+bull ape	gasping
+bull ape	infuriated
+bull ape	lunged
+bull ape	reeled
+bull ape	regain
+bull ape	struck
+bull ape	throwing
+bull ape	witnessed
+carcass	held
+chapter vi a fight	held
+chapter vi a fight	won
+charge	met
+cities	deserted
+cities	rove
+city	alighting
+clew	prove
+danger	confronted
+day	preceding
+death struggle	closed
+devices	left
+duty	prompt
+encounter	placed
+end	putting
+face	ended
+fall	ease
+fangs	sunk
+feet	gained
+feet	raising
+feet	regain
+fist	followed
+floor	fallen
+floor	stretched
+foot	pinioned
+forebodings	confess
+guardian	lay
+hand	grasped
+hand	taking
+hole	blowing
+holster	looking
+instance	perceived
+intelligence	owing
+knees	struck
+life	battled
+life	choking
+life	saved
+maneuver	gave
+mate	closed
+mate	glimpsed
+mate	perceived
+mate	reached
+mate	recovered
+mate	returned
+men	resembled
+mind	passed
+monster	finished
+mouth	frothing
+muscles	transcending
+neck	grasped
+nostrils	flowing
+others	annihilate
+pinnacle	placed
+position	maintains
+preserver	closed
+regard	placed
+rescuer	deserted
+room	dragged
+room	follow
+seat	gained
+sill	gained
+sill	grasping
+skull	crushing
+smashing	followed
+sockets	bulging
+sounds	uttering
+stone cudgel	bearing
+stone cudgel	fallen
+stone cudgel	held
+stone cudgel	intended
+stone cudgel	seized
+stone cudgel	swinging
+stone cudgel	ward
+street	gain
+strength	approached
+thing	follow
+thing	knelt
+thing	raising
+thing	won
+thoughts	passed
+tracks	doubling
+tusks	baring
+valley	overlooking
+wall	backing
+warriors	entered
+whereabouts	prove
+window	leaped
+window	make
+window	standing
+winds	threw
+abreast	brought
+ages	demonstrate
+ages	know
+ages	maintained
+ages	prove
+ages	regulate
+ages	shot
+ages	suffered
+ages	taught
+aisle	captured
+animal	drawn
+appearance	drawn
+attention	paid
+birth rate	offset
+breakfast	escorted
+cavalcade	broke
+cavalcade	took
+chariot	dragged
+chariot	found
+chariots	advanced
+chariots	decorated
+chariots	dismounted
+chariots	including
+chariots	leading
+chariots	parked
+chariots	perched
+chariots	returned
+chiefs	including
+chieftain	explaining
+chieftain	headed
+children	captured
+command	responding
+conversations	exchanged
+creature	found
+day	preceding
+days	hatching
+days	passed
+draft animals	guided
+draft animals	wore
+duties	doubled
+education	devolves
+eggs	chosen
+eggs	examined
+eggs	hatched
+eggs	hid
+eggs	kept
+eggs	remaining
+eggs	transported
+enclosure	left
+extent	communicate
+faithful creature	left
+fastnesses	built
+fathers	pointing
+feet	ranged
+gallop	broke
+glance	showed
+gravity tests	meet
+headquarters	lay
+hills	led
+incubators	built
+incubators	figure
+incubators	placed
+jewels	loaded
+jot	read
+journey	knew
+journey	placed
+journey	traversed
+lot	cast
+mars	spent
+martian conditions	walking
+martian driver	perched
+martian education	advanced
+martian education	took
+martian female	brings
+means	guided
+messages	catch
+mind	read
+morning	ridden
+mother love	know
+number	brought
+offspring	inherit
+offspring	transmit
+offspring	upset
+one	read
+opening	breaking
+operations	consisted
+operations	watch
+others	catch
+others	intended
+outriders	flanked
+part	formed
+planet	dying
+plaza	escorted
+plaza	traversed
+powers	developed
+prize	consisted
+procession	proceeded
+prowess	gave
+rays	hatched
+rear	brought
+satisfaction	gave
+side	flanked
+size	meet
+souls	arrange
+souls	bounded
+souls	composed
+souls	roamed
+souls	transported
+souls	walled
+supply	destroyed
+tax	means
+tendency	inherit
+time	captured
+time	mastered
+title	being
+title	jed
+tracts	bounded
+tribes	discovered
+tutelage	developed
+valley	led
+wagon train	drawn
+walls	formed
+walls	scampered
+warriors	mounted
+warriors	moving
+warriors	paid
+warriors	ranged
+warriors	rode
+warriors	stood
+warriors	turning
+way	led
+way	translate
+week	make
+women	captured
+women	caught
+women	fell
+women	lain
+women	loaded
+women	opening
+women	returned
+women	step
+women	talk
+women	use
+words	exchanged
+year	brings
+years	lain
+years	walled
+advent	seen
+air	soared
+air craft	neared
+air craft	owing
+armada	followed
+armada	retreating
+arms	consisted
+attention	concentrate
+balcony	see
+balcony	surmised
+balcony	walked
+banner	swung
+banners	dissolved
+boat	hauled
+building	dragged
+building	entered
+city	deserted
+city	looking
+city	neared
+city	remained
+course	swung
+craft	following
+craft	swung
+crews	depleted
+crews	seemed
+danger	passed
+day	given
+day	set
+deck	leave
+decks	crowding
+decks	reach
+decks	soared
+edifice	deserted
+effect	shone
+encounter	witnessed
+fellows	hauled
+figure	dragging
+finding	direct
+fire	diminished
+fire	given
+fire	returned
+fire	seemed
+firing line	position
+flames	ate
+flames	diminished
+flames	roaring
+fleet	attacked
+fleet	demand
+fleet	return
+fleet	swung
+floor	mounted
+foemen	felt
+ground	debouched
+ground	removed
+ground	sliding
+gunners	pick
+guns	bringing
+guy ropes	sliding
+hills	peered
+hooks	grappling
+hooks	thrown
+hope	surged
+hound	followed
+hours	carved
+hours	requisitioned
+hours	watched
+ignorance	prevented
+incubator ceremony	set
+legs	erect
+load	removed
+manner	circling
+march	returning
+mars	seen
+martian warriors	commenced
+martian warriors	dragging
+martian warriors	examining
+martian warriors	fired
+martian warriors	removed
+martian warriors	searched
+martian warriors	swarmed
+martian warriors	thrown
+minutes	swung
+missile	struck
+moment	gazed
+moments	thrown
+operation	concluded
+operation	required
+orders	given
+ornaments	wrought
+others	pick
+parts	ate
+place	followed
+plain	rushed
+plains	caught
+position	appeared
+prisoner	removed
+pyre	contemplated
+pyre	floating
+quotas	concentrate
+reception	received
+reckoning	return
+retreat	caused
+return	given
+sailors	examining
+scene	changed
+ships	advancing
+ships	managed
+side	swung
+sides	clambered
+sides	swarmed
+sight	met
+signal	answered
+sky	set
+southeast	drifted
+spears	swarmed
+steering gear	concentrate
+stone vessels	carved
+street	descended
+sunlight	gleamed
+valley	facing
+valley	peered
+vessel	searched
+vessel	swung
+vessel	threw
+vessels	followed
+volley	fired
+wake	followed
+warrior	caught
+warrior	has
+warriors	mounted
+warship	lightened
+warship	soared
+week	recommenced
+weight	diminished
+whole	filled
+works	concentrate
+works	swung
+yearning	felt
+agonies	exhibit
+arms	bearing
+audience chamber	conducted
+captive	recall
+chances	take
+city	leave
+city	peopled
+communities	warring
+confidence	take
+conversation	carry
+custom	ignoring
+customs	handed
+day	progressed
+day	spent
+days	mastered
+death	meets
+domicile	shared
+encounter	recall
+end	meets
+episode	accomplished
+existence	carries
+face	noted
+fate	mete
+females	occupied
+females	produced
+females	retired
+girl captive	escape
+guards	exchanged
+guards	treated
+hands	fallen
+hours	spent
+incentive	added
+incentive	drove
+individuals	fight
+kind	warring
+language	understand
+language	understood
+life	lead
+manner	progressed
+martian tongue	mastered
+men	arises
+men	fight
+men	make
+men	needed
+men	trained
+men	warring
+mold	fashioned
+necessity	arises
+needs	suffice
+night	retired
+occasions	observed
+opportunity	take
+ornaments	bearing
+peoples	sailed
+plaza	practicing
+powder	produced
+proportions	fit
+quarters	sleeping
+question	turned
+sentiments	hold
+sentiments	mark
+shell	break
+standards	judging
+subject	fell
+surprise	awaited
+trappings	remodeled
+ward	hatched
+warrior	approached
+warrior	presented
+woman	mete
+woman	see
+woman	thought
+words	exchanged
+words	presented
+work	completed
+act	perform
+act	required
+act	stung
+act	warmed
+adventure	decided
+adventure	result
+air currents	rechart
+antics	ceased
+appeal	decided
+arm	twisted
+arms	putting
+attention	paid
+audience chamber	enter
+audience chamber	entered
+back	presenting
+back	threw
+body	thrust
+boundary line woola	approached
+brutes	serve
+building	approached
+character	add
+character	advising
+character	approached
+character	attempt
+character	catch
+character	chanced
+character	chosen
+character	coaxed
+character	commanded
+character	convinced
+character	crawled
+character	decided
+character	developed
+character	disappointed
+character	explore
+character	fell
+character	follow
+character	fondled
+character	found
+character	gave
+character	halted
+character	hastened
+character	knew
+character	leave
+character	longed
+character	mastered
+character	occurred
+character	paid
+character	persist
+character	petted
+character	pleaded
+character	quieting
+character	ran
+character	realizing
+character	remembered
+character	resist
+character	reward
+character	rocked
+character	rolling
+character	rubbed
+character	sat
+character	saw
+character	seen
+character	sprang
+character	squirming
+character	stroked
+character	talked
+character	venture
+character	warned
+character	wish
+city limits	regain
+city sola	explained
+city sola	fail
+city sola	pleaded
+collie	smile
+collie	sprang
+collie	threw
+collie	wallowed
+council	squatted
+country	explore
+country	occurred
+day	preceding
+days	passed
+density tests	take
+expression	pleading
+eyes	hidden
+eyes	raised
+feet	exceed
+feet	wallowed
+flesh	sunk
+flowers	dotted
+flowers	formed
+girl	gave
+girl	standing
+girl	turned
+glance	gave
+ground	rolling
+ground	sat
+grounds	stamping
+guards	aroused
+guards	follow
+guards	standing
+guards	stood
+head	poking
+head	rubbed
+heart	warmed
+hills	encircling
+hills	saw
+hills	started
+injury	required
+language	know
+language	written
+legs	thrust
+life	saved
+life	support
+lips	passed
+loss	maintained
+loved	imposed
+loyalty	outweigh
+manner	twisted
+martian tongue	acquired
+martian tongue	mastered
+martian tongue	talking
+martian woman	desired
+martian woman	fail
+martian woman	perform
+masters	discovered
+masters	imposed
+men	talk
+minutes	talked
+morning powell	bucked
+morning powell	left
+mouth	stretched
+nails	sunk
+nature	arouse
+neck	putting
+night	reported
+north	stretching
+opportunity	prove
+owning nothing	resulted
+passions	aroused
+planet	dying
+planet	regenerate
+plaza	regaining
+pride	stung
+prisoner	address
+prisoner	addressing
+prisoner	follow
+prisoner	know
+prisoner	left
+prisoner	replied
+prisoner	stood
+proceedings	listen
+proceedings	view
+proficiency	know
+ravines	inviting
+ravines	saw
+sentiments	atrophied
+sides	holding
+snout	wrinkling
+spot	move
+street	chosen
+territory	forbidden
+tone	commanded
+treatment	received
+understanding	resulted
+view	shut
+warnings	ignoring
+warriors	know
+warriors	sat
+warriors	stood
+weight	rolling
+width	stretched
+woman	received
+years	backed
+accounting	making
+act	constituted
+acts	earned
+answering chord	strike
+arm	placed
+arms	raised
+ascendency	reasserted
+attempt	make
+attention	turned
+breast	sprang
+cape	tearing
+captors	permit
+chattels	receive
+chest	delivered
+chieftain	treated
+chieftains	save
+community	taken
+conscience	dictates
+consequences	befall
+council	assembled
+council	turning
+elbow	raised
+equipment	brought
+exit	turned
+eyes	looking
+eyes	staring
+face	bespoke
+faithful woola	followed
+feet	armed
+feet	assisting
+feet	believe
+feet	regained
+flash	answered
+floor	felled
+foot	placed
+form	placed
+form	replied
+form	suffice
+future	act
+hand	descended
+hand	grasping
+hand	placed
+home	claim
+honors	accorded
+injuries	amounted
+instant	thought
+juncture	interrupted
+justice	accorded
+justice	caused
+justice	marks
+laugh	rang
+life	risk
+lips	fallen
+look	lighted
+man	know
+manner	rested
+martian chieftain	accorded
+martian chieftain	accounted
+martian chieftain	addressed
+martian chieftain	am
+martian chieftain	believe
+martian chieftain	bore
+martian chieftain	brought
+martian chieftain	call
+martian chieftain	claim
+martian chieftain	cleared
+martian chieftain	crouched
+martian chieftain	delivered
+martian chieftain	dislodge
+martian chieftain	doubt
+martian chieftain	drew
+martian chieftain	endeavored
+martian chieftain	ere
+martian chieftain	fear
+martian chieftain	furnished
+martian chieftain	interfered
+martian chieftain	kill
+martian chieftain	killed
+martian chieftain	know
+martian chieftain	learned
+martian chieftain	noticed
+martian chieftain	permit
+martian chieftain	permitted
+martian chieftain	raised
+martian chieftain	read
+martian chieftain	realize
+martian chieftain	realized
+martian chieftain	refused
+martian chieftain	regained
+martian chieftain	replied
+martian chieftain	rested
+martian chieftain	saw
+martian chieftain	seen
+martian chieftain	sensed
+martian chieftain	sprang
+martian chieftain	spurs
+martian chieftain	struck
+martian chieftain	taken
+martian chieftain	tell
+martian chieftain	think
+martian chieftain	thought
+martian chieftain	turned
+martian chieftain	understand
+martian chieftain	won
+martian dealings	marks
+martian warrior	countenance
+men	consort
+minds	passing
+moments	taken
+mood	passed
+nostrils	staunch
+others	believe
+others	pushed
+purposes	save
+puzzle	cleared
+rights	deal
+sake	kill
+selves	reasserted
+short-sword	drew
+short-sword	use
+speeches	given
+spring	crouched
+teeth	armed
+temerity	cost
+thing	save
+things	caused
+time	realized
+warning cry	turned
+warrior	convince
+warrior	leaped
+warrior	sensing
+ways	am
+ways	know
+witticism	constituted
+woman	offer
+ancestor	heard
+ancestor	tell
+ancestors	kill
+arms	wore
+audience chamber	found
+bedding	bring
+behest	refuse
+belief	follow
+breast	reached
+building	found
+challenge	heard
+chieftain	carry
+chieftain	kill
+chieftain	know
+chieftain	rank
+child	felt
+child	shrank
+compositions	portrayed
+conversation	fell
+customs	know
+day	fell
+days	harbored
+demise	result
+denial	wring
+earnest	whispered
+eyes	filled
+eyes	gazed
+eyes	met
+eyes	opening
+face	upturned
+familiarity	questioned
+figures	portrayed
+flaws	pick
+gentleman	lie
+gentleman	save
+geography	knows
+gold chains	swinging
+hand	carried
+hands	clasped
+hands	fold
+hands	pressed
+hands	reached
+heart	tells
+heart	wring
+heaven	returned
+history	concerning
+iss	seen
+language	learned
+language	speak
+languages	differ
+languages	written
+light	filled
+lips	fell
+look	gave
+mars	kill
+mars	know
+men	kill
+men	take
+metal	wrought
+pardon	ask
+part	depicted
+people	see
+people	understand
+people	wrought
+planet earth	answered
+planet earth	concerning
+planet earth	hanging
+planet earth	revolves
+planet earth	takes
+plaza	overlooking
+position	understand
+presence	permitted
+prisoner escape	harbored
+prisoner escape	leave
+problem	bear
+protection	crave
+quarters	accompanied
+quarters	find
+quarters	found
+quarters	take
+questions	asking
+return	guard
+river iss	empties
+river iss	returning
+robes	flowing
+room	overlooking
+room	use
+scenes	depicted
+shoulder	slung
+side	asking
+sigh	drew
+smile	turned
+statement	believe
+statement	heard
+statements	confounded
+subject	changed
+sun	revolves
+things	questioned
+thoughts	ask
+threat	resulted
+tongue	speak
+truth	speak
+valley dor	am
+valley dor	empties
+voice	pleading
+warrior	lies
+warrior	look
+warrior	refuse
+warrior	wish
+warrior	won
+way	won
+women	informed
+women	kill
+women	waving
+world	am
+advice	ask
+allegiance	owe
+alliance	forced
+approach	mounted
+archives	lost
+areas	diminishing
+attempt	apprehended
+audience chamber	approached
+audience chamber	hastened
+audience chamber	left
+belongings	returned
+bodies	cover
+body	lay
+building	moved
+charges	occupied
+chieftain	continued
+chieftain	give
+chieftain	kill
+chieftain	reported
+chieftain	returned
+child	questioning
+cities	dotted
+cold	calculating
+conditions	approaching
+conditions	fitted
+conversation	engrossed
+doubt	cause
+dwellers	share
+earth men	answered
+earth men	asked
+earth men	decided
+earth men	dismissed
+earth men	occupying
+earth men	passed
+earth men	recall
+earth men	shows
+earth men	warned
+earthliness	cause
+eyes	fixing
+fate	awaited
+female	tars
+female	trusted
+forebodings	lost
+gates	passed
+girl	run
+girl	told
+harbor	built
+harbor	remained
+helium	saw
+land	fall
+land	took
+lives	took
+man	go
+martian breast	stilled
+martian protege	returned
+martian protege	stilled
+mind	putting
+moment	save
+moments	parted
+numbers	diminishing
+ones	diminishing
+ones	forced
+origin	touched
+ornaments	wore
+people	flourished
+people	found
+people	mixed
+people	perfecting
+people	throw
+people	used
+planet	dying
+point	reached
+point sola	asked
+point sola	described
+point sola	met
+point sola	mounted
+point sola	occupied
+point sola	returned
+point sola	surprised
+position	won
+prowess	won
+quarters	share
+race	told
+records	lost
+responsibility	ridding
+right	demonstrate
+rostrum	seated
+salvation	forced
+screen	throw
+shipping	passed
+sola farewell	hastened
+summons	bearing
+sweat	started
+tharkian warriors	found
+time	flourished
+tones	continued
+warrior	kill
+warriors	quartered
+waters	follow
+waters	receding
+way	approached
+afternoon	asked
+air ships	return
+apartments	living
+arm	run
+baths	dressing
+benches	bore
+body	burned
+body	gathered
+body	torn
+brutes	elect
+brutes	subdued
+buildings	occupying
+captive	give
+chieftains	accompanied
+chieftains	known
+chieftains	placed
+city	remained
+community	remained
+community interest	coupled
+confidence	won
+contraptions	bore
+court	formed
+court	given
+court	overgrown
+court	overlooked
+court	presented
+creatures	assume
+creatures	find
+creatures	known
+creatures	shown
+cruelty	risen
+customs	select
+days	remained
+degrees	won
+departure	preceding
+direction	placed
+dogs	follow
+ears	rapped
+existence	shown
+floor	chose
+floor	leaving
+floor	occupied
+fountains	bore
+frolicking children	filled
+homes	driven
+horde	presented
+laws	driven
+leg	presented
+life	take
+load	advised
+load	return
+march	abandoning
+martian vegetation	caused
+martian vegetation	filled
+martian warriors	caused
+mating	directed
+method	complicated
+methods	adopt
+moment	elect
+moment	marked
+needs	required
+ornaments	owned
+others	directed
+others	feel
+people	feel
+period	tars
+plains	caught
+prisoner	given
+protection	needed
+quarters	find
+relationship	known
+respect	adopt
+results	accomplish
+results	brought
+riders	dealt
+riders	showed
+riders	unseat
+room	chose
+room	flashed
+rooms	dressing
+scene	filled
+services	needed
+silks	sleeping
+snouts	rubbing
+streets	faced
+stuff	placed
+thoats	known
+thoats	marked
+thoats	obey
+thoats	respond
+thoughts	cut
+time	handle
+times	adopted
+times	presented
+treatment	continued
+trip	accompanied
+trip	seemed
+vocations	constituted
+warriors	assembled
+warriors	find
+warriors	occupied
+warriors	repeat
+ways	fight
+ways	select
+woman	give
+woman	given
+women	accompanied
+women	bring
+women	gone
+women	send
+word	meaning
+youths	formed
+youths	seemed
+ancestry	trace
+arm	rested
+arm	seemed
+arrival	face
+breath	caught
+buildings	investigating
+bullets	explode
+child	caught
+coating	broken
+day	given
+day	know
+decision	influence
+dimples	brought
+enemy	means
+enemy	understand
+errand	return
+explosion	results
+eye	looking
+eyes	dilated
+eyes	met
+fate	bow
+fates	hate
+friend	cease
+glass cylinder	exposing
+hand	placed
+hands	die
+head	shook
+heart	contrasted
+hopelessness	desisted
+impact	broken
+instant	rested
+laugh	brought
+laugh	shook
+lips	sealed
+love	tell
+manuscript	mentioned
+manuscript	spelled
+metal	change
+missiles	exploding
+moods	laughing
+moon	ere
+mothers	know
+night	fired
+night	preceding
+night battle	fired
+night battle	given
+night battle	note
+night battle	used
+object	strike
+planets	born
+plaza	venturing
+pride	harm
+projectiles	make
+projectiles	used
+quarters	return
+quarters	visited
+radium powder	describing
+radium powder	mix
+reason	desired
+reply	awaited
+respect	shared
+roof	born
+rule	used
+sentiments	shared
+shoulder	placed
+silks	removing
+sunlight	explodes
+thark warrior	take
+thrill pass	felt
+time	has
+time	know
+times	circled
+warrior	change
+warrior	stumbling
+word radium	used
+words	caught
+words	gazed
+world	dying
+action	urging
+blood	mount
+building	reached
+chains	throw
+chariot	approaching
+chariot	bristled
+chariot	cut
+chariot	glanced
+chariots	departing
+cheek	mount
+continents	roamed
+court	return
+decision	appeal
+direction	cast
+duty	dictated
+egg	hatched
+eyes	heaped
+eyes	seemed
+face	betokening
+fighter	shown
+flash	saw
+fool	asked
+fool	attempt
+fool	believe
+fool	believed
+fool	caught
+fool	ceased
+fool	confess
+fool	cried
+fool	drawing
+fool	effected
+fool	entered
+fool	escaped
+fool	feel
+fool	fought
+fool	glanced
+fool	held
+fool	knew
+fool	known
+fool	lived
+fool	noted
+fool	objected
+fool	rearranged
+fool	remained
+fool	roamed
+fool	sat
+fool	saw
+fool	see
+fool	sit
+fool	sought
+fool	started
+fool	suffering
+fool	turned
+fool	vary
+fool	venture
+girl	addressed
+girl	annoy
+girl	approaching
+girl	assume
+girl	attempt
+girl	entitled
+girl	felt
+girl	give
+girl	hated
+girl	killed
+girl	passed
+girl	replied
+girl	saw
+girl	slain
+girl	taken
+glances	cast
+horizon	raced
+hours	cross-legged
+hours	cross-tempered
+hours	felt
+house	entered
+inquiry	used
+lord	hated
+manacles	examining
+meaning	used
+memory	lived
+misery	suffering
+mouth	cut
+opportunity	urging
+parents	added
+peace	held
+people kiss	do
+pleasures	vary
+poles	melts
+prisoner	leave
+quarters	return
+queer freaks chance	meditating
+question	repeat
+responsibility	assume
+river iss	throw
+seas	encircling
+seas	roamed
+shoulder	drawing
+shoulder	turned
+silks	drawing
+sisters	added
+sky	raced
+snow	melts
+span	cover
+spring lock	fastened
+standards	vary
+sword	cut
+tharks	escape
+times	seems
+tone	added
+tongue	cut
+women	held
+word	give
+word	held
+years	intervened
+ability	prided
+adversary	locate
+animals	rest
+antagonist	took
+approach	see
+attention	gave
+battle	end
+blade	escape
+blade	seemed
+blindness	caused
+blow	aimed
+breast	descending
+breast	feeling
+breast	shielding
+cavalcade	join
+cement	walled
+chariot	stood
+chest	tear
+child	puzzled
+circumstances	recall
+cloths	changing
+cloths	riding
+community	surrounded
+dagger	whipped
+dozen warriors	took
+dozen warriors	tore
+effort	leap
+eggs	placed
+enclosure	belonged
+enclosure	dismounted
+enclosure	raced
+enemy	making
+enemy	recovered
+enemy	threw
+existence	realized
+eyes	struck
+face	leaping
+figures	intervening
+figures	stood
+firearms	use
+glance	swept
+ground	slept
+ground	spun
+halt	marched
+head	whirled
+heart	turned
+hour	broke
+incidents	broke
+incubator	hatching
+incubators	transporting
+insight	gain
+knees	felt
+life	lost
+life	took
+long-sword	drawn
+long-sword	held
+long-sword	struck
+long-sword	waiting
+martian women	bring
+martian women	grow
+martian women	keep
+mind	took
+mirror	struck
+name	spoke
+noon	espied
+noon	investigate
+pistol	drawing
+report	pondered
+ride	took
+shoes	polish
+short-sword	drawn
+short-sword	held
+short-sword	prided
+short-sword	worsted
+short-swords	demolished
+sight	met
+sorak	added
+sorak	admit
+sorak	approached
+sorak	blinded
+sorak	caused
+sorak	chose
+sorak	die
+sorak	divided
+sorak	engaged
+sorak	escape
+sorak	feel
+sorak	felt
+sorak	gave
+sorak	giving
+sorak	kill
+sorak	knew
+sorak	lent
+sorak	looked
+sorak	lost
+sorak	lunging
+sorak	need
+sorak	noticed
+sorak	obtain
+sorak	paid
+sorak	parry
+sorak	prevent
+sorak	refrain
+sorak	rush
+sorak	saw
+sorak	see
+sorak	seen
+sorak	side-stepped
+sorak	sought
+sorak	threw
+sorak	tiring
+sorak	use
+sorak	used
+sorak	wished
+sorak	worsted
+space	leaving
+spear	use
+steel	tear
+stillness	ringing
+sunlight	flashed
+sunlight	flashing
+sunlight	spun
+tableau	presented
+tactics	changed
+tharks	ask
+tharks	intervening
+thrust	deliver
+thrust	delivering
+thrust	recovered
+time	circled
+time	determined
+time	gain
+time	paid
+time	pondered
+time	prevent
+time	rushed
+time	side-stepped
+uncle	supposed
+vengeance	wreak
+vitals	feel
+wolf	attempted
+word	mean
+word	struck
+years	seen
+abreast	riding
+affections	held
+ambitions	talked
+arms	took
+bandages	swathed
+barsoom	continued
+barsoom	dragged
+barsoom	seen
+belongings	bore
+blade	removing
+body	removing
+breast	piercing
+carcass	turning
+chapter xv sola	tells
+chariot tonight	come
+chariots	colored
+chieftains	breed
+command	await
+days	approaching
+days	live
+days	require
+days	stems
+distance	standing
+distress	suffered
+dust	raised
+encounter	seemed
+existence living	admit
+face lighting	looked
+fate	known
+fate	live
+fate	looked
+fate	lost
+fate	wish
+feet	sprang
+flesh	piercing
+form	wracked
+glass vessel	hidden
+happenings	accustomed
+healing	applying
+hills	roamed
+hopes	talked
+hordes	assembled
+hordes	paid
+jeddaks	interpret
+landscape	strung
+legends	hold
+life	live
+likes	talked
+lips	break
+march	resume
+martian applause	give
+martian applause	wish
+martian woman	am
+martian woman	believe
+martian woman	care
+martian woman	give
+martian woman	known
+martian woman	learned
+martian woman	live
+martian woman	lost
+martian woman	promised
+martian woman	roamed
+martian woman	understand
+martian woman	wish
+martians converse	rumbling
+metal	lent
+metal	wearing
+mother	dared
+mother	feared
+mother	killed
+mother	known
+mother	roamed
+mother	visited
+muscles	cover
+muscles	passed
+night	camped
+people	am
+people	care
+people	live
+phantasmagoria	moved
+presence	notice
+race	hurt
+retinue	bore
+ribs	cover
+sea bottom	brought
+seat	take
+senses	regained
+shoulder	coming
+sign	leaving
+signal	given
+sobs	wracked
+splendor	lent
+spoor	left
+station	galloped
+stillness	broken
+sword	passed
+sword	searching
+tales	hold
+tears	saw
+teeth	polish
+thark	leaving
+thark	told
+thoat	hastened
+thoat	waiting
+thoats	fighting
+thoughts	thinking
+vehicle	standing
+warrior	met
+warrior	wearing
+warriors	formed
+warriors	surrounding
+ways	understand
+weapon	found
+women	accustomed
+women	dressed
+wound	inflicting
+wounds	dressed
+year	lay
+year	visited
+years	visited
+zitidar	goaded
+zitidars	known
+apes	thrown
+areas	cross
+astronomers	crossed
+avenue	entered
+being	perceive
+breast	hold
+buildings	disclosing
+canals	crossed
+caravan	approaching
+caravan	bearing
+caravan	returning
+center	cuts
+chance	lost
+chariot	swung
+chieftains	taken
+children	mixed
+community life	robbed
+day	come
+day	feel
+day	lost
+day	parceled
+death	struggles
+discovery	report
+district	cultivated
+district	cuts
+ear	whispered
+egg	hatched
+elbow	raised
+entrance	marked
+expedition	ordered
+extremity	neared
+face	look
+feet	shrieking
+fellow	paid
+fellow	raised
+fellow	sleeping
+field glass	required
+field glass	sent
+fields	disclosing
+foot	feel
+formation	breaking
+furs	despoil
+gates	led
+halt	make
+heart cold	turned
+heavens	hurtling
+hours	required
+imprecations	hastened
+intervals	cross
+lie	save
+lips	wring
+love	transfigured
+loved ones	robbed
+loved ones	save
+man	walked
+martian waterways	crossed
+metal	taken
+metal	wrest
+metal	wresting
+moments	sat
+moon	lit
+moon	swung
+name	know
+natives	despoil
+natives	make
+night	accounted
+night	consumed
+night	look
+night	saw
+night	told
+origin	suspects
+others	advance
+others	approach
+others	approached
+others	broke
+others	crossed
+others	hastened
+others	leaving
+others	save
+others	wrest
+period	gained
+plan	formed
+point	reach
+points	approached
+pride	kept
+responsibility	relinquish
+road	crossing
+road	fled
+road	passing
+road	sleeping
+roofs	overhanging
+room	fed
+room	herded
+scene	lit
+sea bottoms	crossing
+shadows	shrank
+south	ordered
+streets	descended
+sun	broke
+tailboard	am
+tailboard	awaiting
+tailboard	crouching
+tailboard	dare
+tailboard	disbelieved
+tailboard	guesses
+tailboard	hold
+tailboard	killed
+tailboard	mixed
+tailboard	saw
+tailboard	slipped
+tailboard	suspects
+tailboard	thrown
+tailboard	told
+tailboard	trailing
+time	come
+time	lit
+tongue	tell
+tower	keep
+tract	approach
+tract	cultivated
+trees	arranged
+truth	known
+truth	speak
+vengeance	wreak
+wall	scaling
+warrior	gained
+warrior	sent
+word	sent
+years	gone
+authority	bow
+balance	scattered
+building	occupied
+buildings	occupied
+carcass	threw
+chamber	entering
+charges	locating
+chieftains	has
+chieftains	occupied
+circle	converging
+communities	divided
+communities	make
+community	has
+conditions	settling
+creatures nothing	appealed
+days	entered
+death stills	lie
+diamond	taking
+districts	settled
+emperors	appealed
+escape	effecting
+escape	interfere
+expedition	returned
+fear	tempt
+feet	look
+fellow	devour
+floor	hurling
+floor	led
+forgiveness	ask
+games	assembled
+groups	inquiring
+hair	taking
+headquarters	make
+heart	lain
+heart	lie
+heart	lies
+heart	read
+height	rose
+helium	leads
+helium	reach
+horizon	disappearing
+hours	make
+house	nearing
+house	put
+interest	aroused
+invitation	waiting
+jed	has
+jeds	concerned
+jeds	occupying
+love	craves
+marble floor	drew
+master	am
+miles	murmured
+motives	prompted
+name	called
+nature	craves
+people	colored
+people	influenced
+people	prompt
+people	stolen
+quarters	assigned
+request	have
+service	accept
+supreme effort	accompany
+thoat	make
+thoughts	wronged
+truce	patching
+wishes	respect
+wishes	understand
+words	understand
+animals	called
+animals	led
+animals	mount
+animals	moving
+animals	urged
+apartment	enter
+apartment	leave
+avenues	crossing
+beasts	pass
+body	muzzles
+brutes	closed
+brutes	muzzles
+brutes	reward
+buildings	enter
+buildings	frequented
+buildings	occupied
+buildings	quartered
+bulks	saw
+bull thoat	take
+carcasses	commend
+cause	take
+chamber	require
+chamber	returns
+chapter xvii a costly	recapture
+charge	lead
+court	bordering
+court	entered
+court	hurried
+courtyard	entered
+courtyard	returned
+creatures	passed
+days	last
+departure	delayed
+desire	awaken
+desire	dispatch
+devil fish	squatted
+difficulty	find
+distance	urged
+doorway	appeared
+edge	meet
+enclosure	return
+entrance	make
+existence	passed
+exposures	fronting
+eyes	gloat
+eyes	put
+floor	towered
+food	gather
+furs	gather
+gates	moved
+gates	opening
+glance rest	let
+gutturals	grunting
+habit	moving
+habit	settling
+head	held
+helium	lead
+helium	pointed
+hour	passed
+idea	occurred
+jeddaks	felt
+light	discovered
+marble floor	drew
+martian moons	moved
+mean proportions	discovered
+mean proportions	hid
+mean proportions	return
+meeting place	appointed
+meeting place	reached
+men	discovered
+night	leave
+night	settling
+noise	increased
+noisiness	entering
+noisiness	increasing
+one	approaching
+orders	giving
+party	approaching
+party	knew
+plan	discovered
+portals	closed
+precaution	took
+quarters	bound
+room	drawing
+room	flooded
+room	occupied
+saddle trappings	removing
+scale	designed
+silks	gather
+soul	fill
+speaker	bound
+speaker	ceased
+speaker	comes
+speaker	disarm
+speaker	finds
+speaker	found
+speaker	giving
+speaker	meet
+speaker	permit
+speaker	returns
+speaker	speak
+speaker	spring
+speaker	turned
+square	crossing
+stories	glanced
+street	opened
+streets	deserted
+streets	moved
+tempers	awaken
+thark	crossed
+thark	leave
+thing	frequented
+thoats	calling
+thoats	overtake
+trip	crossed
+vaults	bound
+warning	proved
+warriors	dropped
+warriors	meet
+warriors	mounted
+warriors	passed
+warriors	warn
+way	forcing
+way	groped
+way	returned
+windows	advancing
+windows	reach
+years	given
+animals	fagged
+arm	grasped
+arms	putting
+beast	mounting
+beast	stood
+beasts	urged
+body	awakened
+breasts	stopped
+building	hastened
+chamber	cleared
+chamber	sped
+chambers	surrounding
+cheek	pressed
+chieftain	brings
+chieftain	charging
+chieftain	held
+chieftain	hesitated
+chieftain	join
+chieftain	lowered
+chieftain	pitched
+chieftain	shout
+chieftain	standing
+chieftain	wait
+chieftain	wheeled
+chieftains	melted
+city	left
+command	shout
+consternation	threw
+daughter	left
+day	guide
+day	preceding
+dejah thoris ride	making
+direction	headed
+direction	indicated
+direction	take
+direction	tearing
+direction	traveling
+distance	lay
+ear	spoken
+effort	make
+eyes	opening
+face	writhe
+fate	left
+fate	share
+fathers	tell
+feet	springing
+fellow	left
+floors	led
+formations	marching
+goal	reached
+hand	grasped
+heart	plunged
+hearts	stopped
+hiding place	find
+hills	gain
+hills	reach
+hills	rode
+hope	reach
+hours	slept
+instant	filed
+instant	lost
+intention	kill
+intention	thought
+intentions	anticipating
+jar	fell
+journey	taking
+manner	stumble
+martian rifle	sighted
+men	hate
+men	shudder
+miles	lay
+missile	reached
+moments	held
+moss	fell
+moss	lay
+moss	sped
+neck	putting
+night	fagged
+night	fell
+night	guide
+northeast	turned
+people	wring
+platform	sprang
+prisoners	left
+race	harbor
+ransom	wring
+rest	doubtless
+ridge	discern
+ridge	view
+room	strode
+sea bottom	scanned
+short-sword	plunged
+shoulder	resting
+side	lurched
+side	reached
+silence	grasped
+sound	slipped
+south	rode
+station	taking
+sweat start	feel
+thoat	commencing
+thoat	flung
+thoat	kill
+thoat	leave
+thoat	lurched
+thoat	pitched
+thoat	relieving
+thoat	revive
+thoat	take
+thoat	thrown
+thoat	urged
+thoat	wheeled
+thoughts	occupied
+thoughts	read
+tomorrow	art
+tomorrow	torture
+trappings	flung
+trappings	placing
+trappings	relieving
+trees	sighted
+warrior	halted
+warrior	proved
+warrior	threw
+waste	followed
+waste	struck
+waterway	discern
+waterway	missing
+way	progressed
+window	reached
+women	melted
+word	make
+word	spoken
+years	lived
+arms	throwing
+attempt	drew
+attention	distract
+beast	prevent
+charge	taken
+chieftain	looking
+chieftain	saw
+clinch	breaking
+column	mount
+command	mounted
+couch	replied
+creature	brought
+day	passed
+days	lay
+days	march
+dungeon	cast
+ear	missing
+ear	scarred
+effort	buried
+expedition	give
+eyes	fell
+eyes	opened
+fate	saved
+fellows	hold
+female	assured
+female	bending
+female	lying
+female	turned
+ferocity	indicate
+ferocity	transcends
+flesh	torn
+food	brought
+food	owing
+foot	placing
+foot	struck
+games	render
+games	turned
+glance	showing
+groin	buried
+gun	throwing
+hands	removed
+hands	tear
+heart	engraved
+helium	meet
+hills	disappeared
+hours	regained
+hours	remember
+injuries	plastered
+intervals	brought
+jeddak	ruled
+leader	proved
+leader	taken
+lips	pressing
+long-sword	drew
+march	delayed
+mind	give
+moment	saw
+months	lay
+neck	throwing
+o jed	assured
+o jed	brought
+o jed	decorated
+o jed	dried
+o jed	fell
+o jed	live
+o jed	ordered
+o jed	saw
+o jed	scarred
+powers	exercised
+princess	cried
+princess	escape
+princess	escaped
+princess	sprang
+princess	turned
+princess	whispered
+ridge	mounting
+ridge	return
+ruler	replied
+salutation	omitted
+seat	tossed
+slapping	give
+tis	render
+tones	commanding
+torrents	fell
+tusk	buried
+tusks	tore
+voice	exclaimed
+warhoon	ruled
+warhoon	turned
+warriors	beheld
+warriors	discovered
+warriors	saw
+weakling	ruled
+weapon	drawing
+weapons	ensued
+weeks	lay
+while	hold
+women	cremated
+words	engraved
+wounds	gave
+amphitheater	began
+amphitheater	conducted
+amphitheater	excavated
+animals	prevent
+audience	escaping
+body	reached
+boundary	landed
+bravery	won
+brutes	foaming
+brutes	growling
+brutes	rushed
+building stone	piled
+buildings	penetrated
+cages	constructed
+cages	filled
+calots	saw
+carcass	drag
+chapter xix battling	essayed
+chapter xix battling	regained
+composure	regained
+condition	held
+craft	kept
+dagger	given
+darkness	caught
+darkness	glanced
+darkness	gone
+darkness	locate
+darkness	reached
+darkness	speaks
+days	brought
+days	chased
+days	elapsed
+days	explored
+days	reached
+days	waiting
+death	meet
+distance	died
+dogs	loosed
+dungeons	explored
+enemies	attacked
+episode	brought
+eyes	fixed
+eyes	gleaming
+feast	drag
+feet	reached
+fleets	avenging
+fleets	dispatched
+food	brought
+food	place
+footsteps	died
+footsteps	retreating
+forebodings	feel
+form	fell
+friendship	formed
+games	dragged
+ground	place
+hand	held
+hands palms	holding
+head	swung
+head	turned
+heart	feel
+hills	entered
+hordes	assembled
+hordes	searching
+idiot	laughing
+incarceration	acquainted
+incarceration	formed
+jailer	bombarded
+keys	remove
+lair	devoured
+lair	neighboring
+links	crashed
+madman	approaching
+madman	gathering
+madman	slipped
+madman	stooped
+madman	waited
+martian communities	wiped
+martian females	driven
+messenger	appeared
+misfortune	discovered
+months	waiting
+morning	conducted
+morning	filled
+morning	following
+name	recall
+nights	explored
+others	lie
+place	filled
+place	knew
+place	placed
+platform	raised
+platform	sat
+plaza	surrounding
+princess	kept
+princess	missing
+princess	reached
+prisoner	brought
+prize	dragged
+quarters	explored
+quest	extended
+questions	bombarded
+reach	place
+reasoning man	assuring
+reasoning man	explored
+reasoning man	landed
+reasoning man	penetrated
+reference	omitting
+respect	won
+roaring	growling
+roaring	squealing
+sight	see
+skull	crashed
+sound	reached
+sound	retreated
+sound	slipped
+south	extended
+south	marching
+story	written
+tharks	limped
+throat	feeling
+torch	advanced
+torch	place
+torch light	saw
+truth	flashed
+vessel	chased
+vessel	escaped
+vessel	reached
+warhoon warriors	discovered
+warhoon warriors	passed
+warhoon warriors	used
+waterway	entered
+weeks	waiting
+women	rushed
+world	reached
+absence	account
+adversary	mowed
+adversary	outclassed
+air	towered
+amphitheater	cleared
+arena	taken
+arm	clasping
+arm	thrust
+arms	gave
+arrow	flew
+battle	prolong
+beast	exerting
+beasts	pitted
+blade	slipped
+body	thrust
+body	withdrawing
+calot	feed
+calot	followed
+carcass	devour
+caress	turned
+chamber	reached
+chest	depended
+chest	protruding
+conqueror	fight
+conqueror	mowed
+coup	perceived
+cross-examination	put
+cross-examination	searching
+day	mowed
+day	pitted
+days	waited
+death blow	gave
+diamonds	set
+dogs	loosed
+dogs	remaining
+door	opened
+door	receded
+door	slipped
+encounter	approached
+ends	fitted
+excavation	lay
+face	forced
+face	touched
+fangs	reach
+feet	towered
+fellow	threw
+fingers	closed
+fire	making
+flesh	eat
+floor	countersunk
+fluid	gave
+food	consisted
+foot	placed
+freedom	go
+grip	choke
+grip	kept
+grip	maintain
+ground	fell
+ground	pinioned
+hand	grasp
+heart	piercing
+hearts	fight
+horde	guessed
+horizon	hurtling
+host	engaged
+hunger	satisfy
+instance	slipped
+left	slid
+life	choke
+long-sword	armed
+long-sword	grasp
+long-sword	proved
+man	wore
+manner	rending
+meal	finished
+miles	covered
+moon	hurtling
+moon	lighting
+moon	showed
+moss	growling
+mouth	put
+neck	bury
+neck	placed
+noon	dragged
+noon	showed
+place	reached
+play	pitted
+play	proved
+plaza	lay
+plight	bring
+power	acquired
+power	warned
+rock	protruding
+scene	lighting
+shoulder	threw
+side	slipped
+stars	guided
+stone	occupied
+stone table	set
+struggle	gave
+sweep	hurled
+sword	thrust
+sword	withdrawing
+sword arm	threw
+thickness	noted
+thickness	reached
+thoughts	see
+throat	kept
+thrust	placed
+time	saw
+time	warned
+times	attacked
+truth	speaking
+vegetable milk	consisted
+vein	sever
+voice	asking
+voice	concluding
+voice	directed
+voice	issued
+warriors	pitted
+waterway	lay
+weeks	wandered
+windpipe	closed
+winner	accorded
+women	given
+zitidar	loosed
+accident	befall
+air craft	guarded
+apparatus	befall
+apparatus	pumping
+atmosphere compound	furnishing
+bed chamber	return
+body	color
+brothers	occupied
+chamber	led
+childhood	taught
+command	opened
+corridor	warned
+dagger	held
+dagger	sharpening
+days	spent
+deal	learned
+destination	reaching
+distance	standing
+doors	barred
+doors	manipulated
+doors	released
+dwellings	bothering
+enclosure	entering
+experiences	resting
+eyes	opened
+farm	occupied
+fear	told
+feet	raised
+friend	admitted
+friend	closed
+friend	continued
+friend	kill
+friend	smiled
+friend	told
+growlings	awakened
+hand	held
+hands	placing
+hands	trust
+helium	bound
+host	kill
+hours	talked
+houses	occupied
+labor	confirmed
+labor	performed
+lock	concentrating
+locks	adjusted
+man	answered
+man	apprise
+man	asked
+man	divulge
+man	managed
+man	sat
+man	surprise
+man	suspected
+man	talked
+manner	asked
+martian atmosphere	has
+martian atmosphere	led
+martian atmosphere	maintain
+martian atmosphere	taught
+martian atmosphere	told
+martian atmosphere	watched
+means	manipulated
+men	protects
+mind	concentrating
+mind	drove
+mind	leaped
+mind	read
+minutes	take
+morning	broken
+morning	reached
+night	kept
+night	raised
+night	retired
+night	run
+night	standing
+operations	sense
+others	give
+place	hiding
+place	stole
+plant	isolated
+plant	spend
+portals	remaining
+power	suspected
+product	incorporated
+product	treated
+pump-room	disappeared
+race	color
+race	resemble
+radium pumps	return
+radium pumps	take
+result	pumped
+result	released
+rifles	covering
+rifles	lowered
+room	stepping
+scheme	come
+secret	divulging
+shoulder	placing
+side	slid
+stone	sharpening
+story	heard
+stretch	used
+thoughts	cut
+thoughts	direct
+thoughts	saw
+thoughts	watched
+turnpike	strike
+walls	escape
+way	help
+words	formed
+years	watched
+accommodations	find
+accommodations	living
+adventures	outlined
+amount	works
+ancestors	departed
+animal	shape
+animals	peopled
+argument	prevailed
+armies	surrounding
+attention	arrested
+benefactors	filled
+birds	destroying
+body	anointed
+brothers	supplied
+buildings	bounded
+bull thoat	furnished
+centers	pumped
+chances	won
+city	gained
+color	change
+conduits	pumped
+creature	turn
+creditors	assured
+creditors	pays
+creditors	repay
+creditors	watched
+days	arrived
+displeasure	voicing
+districts	cultivated
+districts	lie
+doors	barred
+doors	bolted
+entrance	gained
+face	set
+faithful fellow	thought
+farms	works
+feet	carried
+fleet	attacked
+fleet	returning
+forces	took
+friends	won
+frowning walls	approached
+fruits	enjoyed
+gates	arrived
+government	owned
+government	pays
+government agents	given
+hair	banged
+hair	cut
+hair	grown
+hand	placed
+heels	stroll
+helium	based
+helium	boasts
+helium	reach
+helium	returning
+helium	speak
+helium	surrounding
+homes	raised
+individuals	issued
+individuals	require
+information	determined
+journey	proceeded
+kaor	paid
+kindness	repay
+lawns	carpeted
+leap	carried
+length	extending
+letters	given
+life	offered
+liquid	carried
+loss	walks
+man	elevate
+man	favors
+man	fighting
+man issues	redeem
+means	search
+men	domesticated
+men	wilder
+metal columns	raised
+mile	covers
+mines	owned
+mines	works
+night	raised
+paper money	issued
+paper money	redeemed
+paper money	require
+place	elevate
+plight	reduce
+power	lay
+ptor brothers	given
+ptor brothers	leaving
+reason	raised
+reply	need
+reservoirs	collected
+residences	raised
+rookeries	presented
+rookeries	resembled
+ruler	attacked
+sack	filled
+saddle purposes	used
+sea bottom	wandering
+shoulder	placed
+side	filled
+stop	met
+streets	deserted
+tale	believed
+thoats	found
+trip	tasted
+trustworthiness	proven
+uprights	presented
+vegetables	enjoyed
+way	find
+way	led
+zodanga	arrived
+zodanga	elevate
+zodanga	proceeded
+zodanga	set
+zodangan money	filled
+accidents	occurred
+aide	called
+air scout	join
+animals	hobbling
+barsoomian ray	consists
+body	hurled
+building	entered
+cafes	filling
+ceremony	approach
+choice	see
+choice	wed
+city	assembled
+city	hidden
+city	neared
+city	rose
+companion	signaled
+companion	unfurled
+conversation	ceased
+conversation	dismounted
+conversation	hear
+craft	bore
+damage	repairing
+days	spent
+demands	accede
+desires	indicate
+direction	enter
+directions	bolted
+distance	lay
+driver	sits
+earth sail	known
+effort	finishing
+emperor	wheeled
+fate	sealed
+father	love
+father	put
+feathers	colored
+fleet air craft	driving
+flier	lay
+flier	surrounded
+food	touched
+ground	fell
+guests	emerged
+hand	emerged
+hand	entered
+hand	touched
+heavens	hurtling
+honors	conferring
+hour	traversed
+identification data	check
+injuries	revealed
+instance	stored
+long-swords	advanced
+long-swords	drawn
+loyalty	know
+machine	dropping
+machine	hastening
+machine	running
+man	finishing
+man	raised
+man	wounded
+meal	took
+measurements	check
+men	decorated
+men	sailed
+metal ornament	placed
+miles	hurtling
+miles	traversed
+mission	accomplished
+moment	sealed
+months	accomplished
+months	check
+months	explained
+morning patrons	filling
+moss	sprawling
+officer	examining
+officer	placed
+officer	recited
+officer	representing
+officer	taking
+officers	sailed
+people	look
+people	love
+plain	assembled
+plane	sits
+planets	propels
+plaza	commencing
+prince	learn
+princess	know
+purpose	use
+quarters	included
+ray reservoirs	built
+repairs	finish
+repairs	needed
+rest	asserted
+return voyage	attempt
+right	leaned
+ruse	discovered
+shops	opening
+sky	flying
+soldier	commanded
+south	raced
+spears	leaned
+speed	diminishing
+speed	reducing
+state	entered
+straits	found
+strength	love
+sword	drove
+sword	fell
+tables	emerged
+thoats	refused
+thrust	deal
+times	circled
+trappings	bore
+troops	advanced
+troops	waited
+vessels	flying
+vessels	intended
+warrior	asserted
+warrior	felt
+warrior	sank
+warriors	turned
+weights	check
+weights	lift
+work	bring
+work	merited
+yards	approached
+zodangan navy	join
+apartments	search
+barsoom	listed
+ceremony	returned
+chamber	left
+corridors	winding
+days	look
+direction	joined
+door	lay
+ears	heard
+enemy	give
+entrance	perceive
+father	say
+fellow	asked
+figure	surrounding
+ground	dropped
+guards	followed
+guide	drew
+hangings	encircled
+happiness	hasten
+helium	offer
+life	believe
+life	heard
+life	offered
+machine	dropped
+machine	returned
+major-domo	left
+mind	change
+officer	addressed
+officer	halted
+officer	reported
+opening	slipping
+ornament	placing
+palace	quartered
+passageway	discovered
+place	hiding
+place	perceive
+post	deserted
+post	gained
+promise	recorded
+quarters	returned
+rash words	forget
+room	encircled
+room	lighted
+room	pushed
+room	took
+ruler	engaged
+ruler	guard
+ruler	perceive
+side	fell
+side	gave
+son	has
+steps	moving
+strife	end
+tapestry	gained
+time	comes
+truth	repeat
+visit	owe
+warriors	vanquishing
+woman	forgotten
+woman	given
+woman	left
+woman	repeat
+words	hear
+words	turned
+arms	take
+ashes	buried
+bedlam	producing
+body	promised
+bride	claim
+chief	given
+cut	brought
+day	spoke
+dejah thoris conversing	hear
+empire	given
+fighters	brave
+forgiveness	ask
+friend	am
+friend	answered
+friend	cherished
+friend	continued
+friend	hangs
+friend	harass
+friend	heard
+friend	replied
+guardsman	brought
+guardsman	give
+guardsman	stepped
+hands	ask
+hands	swayed
+hour	returned
+jeddak	place
+life	fighting
+long-sword	added
+long-sword	join
+long-sword	tapping
+long-sword	whipped
+man	address
+man	claim
+man	won
+martian princess	address
+martian princess	advanced
+martian princess	call
+martian princess	called
+martian princess	come
+martian princess	meant
+martian princess	stood
+men	brave
+minutes	fought
+misery	harass
+months	claimed
+months	continued
+night	remember
+noise	brought
+one	comes
+order	carrying
+order	let
+order	require
+others	calling
+people	save
+progress	barring
+promise	given
+promise	meant
+room	producing
+seconds	fell
+shoulder	peering
+side	hangs
+smile	added
+sword	throw
+sword	whipped
+tactics	changed
+temerity	explain
+time	backed
+today	promised
+veins	flows
+wall	backed
+way	reached
+way	worked
+ways	known
+weapons	drawn
+wife	ask
+wife	know
+woman	address
+woman	won
+yesterday	give
+zodangan prince	promised
+ability	fighting
+air patrol	quadruple
+ancestor	fits
+antechamber	butchered
+apartment	enter
+apartments	discovered
+ceremony	performed
+chambers	reach
+corridors	wandered
+court	crowded
+courtiers	ran
+death warrant	sealed
+description	fits
+enemy	reach
+eyes	keep
+faithful guardsmen	felled
+feet	swung
+floor	leading
+floor	swung
+greetings	making
+guardroom	left
+guardsmen	found
+guardsmen	ran
+guide	reach
+guides	left
+hall	passing
+hearers	impress
+hiding place	hiding
+hiding place	searched
+hiding place	stopped
+hope	lay
+husband	slays
+impressions	marked
+interest	awakened
+leap	make
+man	examined
+man	fought
+man	joined
+man	questioned
+man	read
+man	vanquished
+man	wearing
+man	wore
+messenger	entered
+notan	bringing
+officer	entered
+officer	ordered
+officers	ran
+opponent	paused
+opportunity	appeared
+opportunity	grasped
+palace	found
+palace	wandering
+passageways	winding
+past	told
+post	reach
+princess	hastened
+psychologist	comes
+psychologist	replied
+room	entered
+room	withdrew
+ruler	making
+scrutiny	subjected
+servants	ran
+slaves	ran
+sorrow	bear
+squad	left
+statement	credited
+stories	followed
+surpassing skill	vanquished
+tapestries	hung
+troubles	commence
+vase	settled
+warriors	rescued
+window	slipping
+windows	opened
+affair	question
+air sailors	hung
+avenue	sprang
+balcony	hastened
+bargain	assented
+barracks	hastened
+barracks	sheds
+chapter xxiii	lost
+day	fell
+difficulty	solve
+disgrace	save
+entrance	fell
+entrance	know
+entrance	loitered
+face	peering
+feet	projected
+feet	rearing
+feet	sprang
+feet	standing
+feet	topped
+fellow	chosen
+fellow	concluded
+fellow	left
+fellow	sprang
+fellow	try
+floor	filled
+glass wall	projected
+ground	standing
+guards	pass
+hall	left
+hand	go
+hand	promised
+head	rearing
+head	thought
+helium	concerned
+helium	save
+heliumite	contemplate
+heliumite	enlightened
+heliumite	exclaimed
+heliumite	expected
+heliumite	filled
+heliumite	find
+heliumite	knew
+heliumite	showed
+heliumite	stood
+hold	strengthen
+hook	dangled
+hook	found
+hook	pulled
+hook	swung
+kantos kan.	find
+landing parties	lowered
+loved princess	lost
+machine	get
+man	answered
+man	anticipated
+man	asked
+man	clung
+man	come
+man	dare
+man	decided
+man	encircled
+man	essayed
+man	eyed
+man	find
+man	found
+man	grasping
+man	hastened
+man	know
+man	love
+man	met
+man	prefer
+man	pulled
+man	reach
+man	repulses
+man	retraced
+man	solve
+man	swung
+man	take
+man	think
+man	unloosened
+mate	chosen
+matter	keep
+moment	raised
+moment	stood
+moment	thought
+notan	divulge
+notan	enlightened
+notan	expected
+notan	felt
+notan	find
+notan	hastened
+notan	hoped
+notan	judged
+notan	managed
+notan	neared
+notan	reached
+notan	saw
+notan	seemed
+notan	slipped
+notan	stood
+obstacle	met
+opening	find
+palace	knew
+palace	know
+palace	reach
+palace grounds today	left
+palace grounds today	sprang
+place	guarded
+place	hiding
+place	slipped
+plans	explain
+quarters	reach
+reasons	prefer
+room	stood
+shoulder	grasping
+sky	guarded
+sky	hastened
+street	retraced
+sword	raised
+task	essayed
+times	swung
+window	reached
+work	required
+accidents	barring
+adversaries	engaged
+air patrol	dove
+antagonists	engaged
+apartment	heard
+attention	paid
+battle	engaged
+body	launch
+body	slip
+body	swung
+chances	traveling
+chapter xxiv	tars
+chieftain	attended
+cities	consists
+cities	given
+cities	passing
+city	showed
+compass	flash
+compass	set
+concussion	capsized
+consternation	found
+course	decided
+course	raced
+craft	directed
+craft	ruined
+craft	seen
+cry	choked
+darkness	dropped
+death struggles	engaged
+description	resembling
+die	cast
+direction	turned
+eaves	peer
+eaves	supporting
+engagement	follows
+engine	started
+escape	exploded
+face	filled
+face	glanced
+fathers	gathered
+feature	distinguishing
+feet	gained
+fellow	acting
+fellow	discovered
+fellow	fell
+fellow	gagged
+fellow	grasped
+fellow	hung
+fellow	leaned
+fellow	stepped
+fellow	threw
+fingers	choked
+forenoon	passing
+form	sprung
+friend	finds
+gathering darkness	fled
+grasp	dropped
+grasp	releasing
+ground	sinking
+ground	struck
+guard	accounted
+guard	answered
+guard	bore
+guard	bound
+guard	call
+guard	come
+guard	decided
+guard	defend
+guard	directed
+guard	distance
+guard	dodge
+guard	dove
+guard	escape
+guard	fell
+guard	felt
+guard	flying
+guard	follow
+guard	found
+guard	gagged
+guard	gain
+guard	gave
+guard	given
+guard	glanced
+guard	grasped
+guard	hastened
+guard	heard
+guard	hung
+guard	knew
+guard	know
+guard	leave
+guard	left
+guard	losing
+guard	lost
+guard	making
+guard	managed
+guard	needed
+guard	paid
+guard	passed
+guard	plunged
+guard	raced
+guard	realized
+guard	reclining
+guard	recognized
+guard	regained
+guard	rose
+guard	rushed
+guard	sat
+guard	scanned
+guard	see
+guard	seen
+guard	set
+guard	settling
+guard	showed
+guard	skimmed
+guard	sped
+guard	speeding
+guard	sprung
+guard	started
+guard	struck
+guard	take
+guard	threw
+guard	told
+guard	traveling
+guard	turned
+guide	destroyed
+hail	paid
+hazard everything	decided
+heavens	scanned
+lamp	flash
+lights	making
+lip	touched
+long-swords	fighting
+look	gave
+machine	sank
+machine	twisting
+martian sky	raced
+men	carrying
+men	fighting
+men	sank
+mile	rising
+minute	settling
+moments	dodge
+morning	discovered
+morning	found
+morning	knew
+night	hurtled
+noon	finds
+one	come
+one	landed
+ornament	releasing
+ornament	supporting
+patrol	shot
+pistol arm	grasped
+plunge	hurtled
+prisoners	take
+projectiles	dodge
+pursuers	distance
+pursuers	left
+pursuers	scanned
+pursuit	carrying
+pursuit	joined
+quarter	asked
+quarters	gone
+route	lay
+sheds	hastened
+shoulder	touching
+side	asked
+side	gave
+side	stepped
+sister	marks
+smile	touched
+something move	heard
+stars	follow
+streets	lay
+streets	lighted
+struggle	engaged
+tactics	losing
+thoats	fell
+throat	grasped
+thrust	stepping
+time	lost
+tower	neared
+towers	marks
+undoing	stepped
+voice	roared
+watch	taken
+way	found
+weapon	dropped
+answer	wait
+calots	replied
+calots	see
+calots	stay
+calots	tars
+choice	take
+combat	tars
+combats	won
+council	assembled
+council	remains
+council	turning
+creature	bind
+dozen voices	echoed
+entrance	glowering
+eyes	burn
+eyes	riveted
+froth	froze
+hands	kill
+hands	laid
+head	burn
+helium	leads
+jeddak	brave
+justice	exclaimed
+lips	froze
+long-sword	drew
+march	told
+men	fight
+midget	felled
+morning sarkoja	gone
+night	told
+palace	hastened
+people	brave
+people	claim
+pillar	strap
+presence	admitted
+quarters	accompanied
+race	perpetuate
+request	accompanied
+return	cast
+sea bottom	told
+sola	cast
+sola	told
+sounds	tars
+suggestion	greeted
+suggestion	knows
+suggestion	remains
+swords	flashed
+thoat	tying
+today	fighting
+tortures	subjected
+warrior	shoulder
+weeks	won
+women	rends
+aisle	entered
+aisle	lined
+beats	encircles
+building	showed
+ceremony	presume
+ceremony	swung
+cities	deserted
+consort	surrounded
+council	addressing
+council	meets
+country	save
+couple standing	addressed
+dagger	flew
+dagger	sprang
+daylight hours	kept
+days	set
+delight	found
+diamonds	encrusted
+division	hold
+divisions	hold
+end	lowered
+end	passing
+escort	riding
+expanse	drew
+expedition	call
+faces	placing
+fact	presume
+fathers	dispatched
+feet	towered
+figure	adjusted
+figure	removed
+figure	turned
+fly	killed
+fly	rose
+gate	gave
+gate	swing
+gates	covered
+gates	opening
+gateway	hold
+ground	built
+ground	towered
+hall	crowded
+hand	held
+hand	killed
+hand	stayed
+heart	flew
+hilt	shattered
+hinges	swing
+hordes	call
+hour	passed
+incubators	despoiling
+instant	determined
+intervals	pierced
+long-sword	brought
+long-sword	raised
+marches	timing
+messengers	speeding
+mission	failed
+moment dejah thoris	joined
+neck	placed
+night	traveled
+nobles	crowded
+officers	advanced
+officers	removed
+opportunity	fight
+ornaments	drawn
+padlock	springing
+palace walls	considered
+palace walls	led
+palace walls	negotiated
+parties	halted
+parties	separated
+plans	worked
+proposal	put
+quarrels	submerged
+robe	removed
+salver	bearing
+salver	carrying
+sanction	meets
+sea bottoms	speeding
+sentries	built
+sentries	covered
+shoulders	mount
+side	lined
+sight	adjusted
+sight	seemed
+sight	shattered
+sight	swung
+sight	witnessed
+silks	enshrouding
+silks	removed
+strength	fighting
+swords	menaced
+tharks	led
+tharks	reached
+thrones	encrusted
+tier	ran
+walls	pierced
+warrior	passing
+warriors	built
+warriors	enlist
+warriors	ordered
+way	built
+women	crowded
+woola	trotted
+words	addressed
+words	explained
+words	hear
+wrist	grasping
+zodangan forces	hold
+air patrol	captured
+answer	knew
+arms	took
+assemblage	broke
+battleships	carrying
+battleships	escaped
+battleships	followed
+blade	swinging
+chance	strike
+chances	blocked
+city	left
+corridor	called
+destruction right	dealing
+doorway	stood
+dozen corpses	laid
+dozen warriors	took
+dungeons	hastened
+echoes	reached
+enemies	opened
+enemies	realize
+face	abash
+face	answered
+face	ask
+face	doubt
+face	dreamed
+face	listen
+father	aid
+father	joined
+father	raised
+father	rolled
+father	sprang
+feet	laid
+fight	reached
+fighters	join
+fighting	direct
+fleet	raked
+floor	rolled
+forces	captured
+forces	destroyed
+ground	left
+hands	rising
+harvest	reaping
+helium	make
+hordes	commenced
+hordes	quarreling
+instant	engaged
+intentions	realized
+jailer	found
+jeddak	tore
+labyrinthine prison	searched
+long-sword	drawn
+long-sword	stood
+longsword	hewed
+longsword	laid
+longsword	left
+longsword	stood
+man	brought
+man	joined
+marksmanship	raked
+martian people	opened
+martian warriors	left
+martian warriors	opened
+mean antagonist	found
+men	dared
+miracles	work
+moment	hurling
+moment	stood
+name	called
+officers	realized
+palace	hastened
+pathway	hewed
+places	applied
+platform	circled
+platform	stood
+platform	thrusting
+plea	knew
+princess	abash
+prison cell	reached
+resistance	decided
+resistance	make
+response	hearing
+sanity	doubt
+shoulders	rising
+shouts	mingled
+side	drew
+smile	greeted
+sound	guided
+steps	rushing
+stranger	hunted
+suggestion	held
+sword	found
+thoats	rode
+throne	stood
+throne room	join
+time	advanced
+time	rose
+torch	applied
+warriors	carrying
+warriors	commencing
+warriors	rode
+way	worked
+acclaim	took
+adversaries	poured
+altitude	circled
+animals	lower
+avenues	lined
+avenues	passed
+battle	remain
+battle	remained
+battle	won
+battle line	found
+beasts	unload
+bombs	exploding
+boon	lay
+campaign	won
+carnage	ceased
+charge	ordered
+city	gone
+city	put
+city	remain
+city	taken
+colors	holding
+command	gave
+cry	arose
+decks	drop
+distance	lay
+dozen officers	knew
+dozen officers	meet
+dozen officers	received
+dozen officers	sprang
+dozen officers	stopped
+duties	necessitated
+end	come
+excitement	caused
+fellows	holding
+fellows	leaped
+forces	circled
+gates	entered
+greetings	extended
+hand	lay
+heads	holding
+helium	marched
+helium	owes
+helium	remained
+heliumite squadron	arose
+heliumites	known
+heroes	conquering
+hole	torn
+honor	lay
+honor	meet
+jeds	requested
+keel bomb batteries	poured
+maneuver	gained
+manner	marked
+millstones	crushed
+moment	crushed
+moment	surged
+name	crying
+navy	having
+noon	heard
+north	crept
+others	attempted
+others	hung
+others	surrounded
+outposts	encountered
+palace	passed
+parties	boarding
+parties	drop
+parties	gave
+parties	napping
+party	stood
+pile	approached
+plain	unload
+plunge	took
+points	broke
+presence	influenced
+prisoners	marched
+prize crews	headed
+reinforcements	come
+riders	bore
+riders	crushed
+riders	fought
+sentiments	appreciate
+shambles	ere
+shelters	fighting
+shoulders	laid
+side	touched
+south	crept
+statesmen	extended
+steps	reached
+sunlight	unfurled
+task	began
+thanks	owe
+thark	extended
+tharks	caused
+thoat	fastened
+thoats	bore
+time	beleaguering
+time	repulsed
+vessel	vanquished
+victory today	owes
+warriors	carrying
+warriors	fell
+warriors	pitted
+warriors	remained
+warriors	stretched
+warriors	tore
+waterways	stretched
+ways	lend
+work	occupied
+works	broke
+wrecks	drifting
+zodangan camp	crept
+zodangan camp	torn
+zodangan fleet	fell
+zodangan squadron	risen
+airship	approaching
+allies	started
+arms	raised
+assassin	mutilated
+assistant keeper	concluded
+assistant keeper	hasten
+assistant keeper	need
+assistant keeper	searching
+atmosphere plant	hasten
+body	bearing
+body	found
+breast	drooping
+change	brought
+council chamber	called
+council chamber	found
+council chamber	rang
+councils	served
+cruisers	searching
+cry	sprang
+daughter	acknowledged
+daughter	escaped
+daughter	worshiped
+day	passed
+days	brought
+distance	circled
+distance	raced
+distance	saw
+dozen times	tried
+duties	go
+egg	lay
+example	allay
+eyes	fell
+eyes	looked
+eyes	opened
+farewell	bid
+future	break
+garden	collected
+gentlemen	go
+gentlemen	lay
+gratitude	express
+hand	laid
+happiness	augment
+head	drooping
+head	held
+helium	raced
+honors	heaping
+hopes	fulfill
+incubator	becoming
+incubator	brought
+instruments	show
+lands	started
+lips	mine
+lives	woven
+meeting	affected
+memories	peopled
+message	called
+minutes	touched
+months	penetrate
+morning	reached
+officers	returned
+palace	permits
+palace	returned
+palace	touched
+part	looked
+people	filled
+people	looked
+people	seemed
+pits	found
+presents	loaded
+return journey	started
+rumor	reached
+shell	break
+sight	attached
+significance	attached
+sola	accompanied
+sola	acknowledged
+sorrow gnawing	thank
+sounds	forgotten
+speed	bespoke
+sun	look
+sword	drawn
+sword	held
+thousands	sinking
+time	fetch
+veins	sprang
+voice	choked
+walls	penetrate
+way	find
+way	fought
+words	crept
+work	commenced
+years	lay
+years	served
+years	stood
+air	gone
+air	reach
+air	vitalizing
+aperture	showed
+arm	puts
+arms	burying
+belly	lying
+bench	huddled
+breast	clasped
+cave	appeared
+cave	stretching
+companion	cried
+companion	reach
+copper vessel	rested
+cord	touched
+course	took
+days men	fixed
+days men	receded
+days men	surged
+days men	waited
+dock	racing
+door	cried
+door	opened
+door	receded
+door	rise
+doorway	fell
+doorway	saw
+dozen times	kissing
+effort	hurled
+engines	start
+eyes	believe
+eyes	fixed
+eyes	met
+eyes	opened
+feet	rise
+figure	discovered
+flame	lighted
+ground	plunged
+ground	rise
+ground	sank
+ground	seen
+guard	racing
+head	burying
+heaven	met
+incubator	seen
+instant	racing
+knees	sank
+landscape	met
+look	turned
+love	clasped
+love	dying
+love	lost
+machine	launch
+men	awaken
+men	scratched
+mind	controlled
+mine	found
+moment	headed
+mystery	solve
+night	called
+notch	pushing
+ornaments	flung
+palace garden	left
+panel	fixed
+place	escape
+planet earth	live
+posture	rose
+posture	sitting
+pump room	reach
+rawhide thongs	depending
+roof	depending
+rooftop	gone
+sea bottom	took
+secret	holding
+side	crawled
+skeletons	swung
+sky	shining
+sleep	lay
+speed lever	pushing
+surface	scratched
+tableau	hastened
+thing	thought
+thud	plunged
+tomorrow	exist
+truth	forced
+wall	pierce
+waves	thought
+wheel	lying
+wheel	steering
+winds	throwing
+years	elapsed

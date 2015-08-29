@@ -1,0 +1,401 @@
+package cs673;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
+
+import util.Function0;
+import util.Helper;
+
+/**
+ * For parsing and storing map settings.
+ * @author joseph
+ *
+ */
+public class MapSettings
+{
+	int randomSeed;
+	double size;
+	int landBlur;
+	int oceanEffects;
+	boolean addWavesToOcean;
+	int scale;
+	int forestDensity;
+	Color riverColor;
+	Color landBlurColor;
+	Color oceanEffectsColor;
+	String landBackgroundImage;
+	String oceanBackgroundImage;
+	double centerLandToWaterProbability;
+	double edgeLandToWaterProbability;
+	
+	boolean drawText;
+	List<String> books;
+	Font titleFont;
+	Font regionFont;
+	Font mountainRangeFont;
+	Font otherMountainsFont;
+	Font riverFont;
+	Color boldBackgroundColor;
+	Color textColor;
+	
+	public MapSettings()
+	{
+	}
+	
+	public Properties toPropertiesFile()
+	{
+		Properties result = new Properties();
+		result.setProperty("randomSeed", randomSeed + "");
+		result.setProperty("size", size + "");
+		result.setProperty("landBlur", landBlur + "");
+		result.setProperty("oceanEffects", oceanEffects + "");
+		result.setProperty("addWavesToOcean", addWavesToOcean + "");
+		result.setProperty("scale", scale + "");
+		result.setProperty("forestDensity", forestDensity + "");
+		result.setProperty("riverColor", colorToString(riverColor));
+		result.setProperty("landBlurColor", colorToString(landBlurColor));
+		result.setProperty("oceanEffectsColor", colorToString(oceanEffectsColor));
+		result.setProperty("landBackgroundImage", landBackgroundImage);
+		result.setProperty("oceanBackgroundImage", oceanBackgroundImage);
+		result.setProperty("edgeLandToWaterProbability", edgeLandToWaterProbability + "");
+		result.setProperty("centerLandToWaterProbability", centerLandToWaterProbability + "");
+		
+		result.setProperty("drawText", drawText + "");
+		result.setProperty("books", Helper.toStringWithSeparator(books, "\t"));
+		result.setProperty("titleFont", fontToString(titleFont));
+		result.setProperty("regionFont", fontToString(regionFont));
+		result.setProperty("mountainRangeFont", fontToString(mountainRangeFont));
+		result.setProperty("otherMountainsFont", fontToString(otherMountainsFont));
+		result.setProperty("riverFont", fontToString(riverFont));
+		result.setProperty("boldBackgroundColor", colorToString(boldBackgroundColor));
+		result.setProperty("textColor", colorToString(textColor));
+		
+		return result;
+	}
+
+	private String colorToString(Color c)
+	{
+		return c.getRed() + "," + c.getGreen() + "," + c.getBlue();
+	}
+	
+	private String fontToString(Font font)
+	{
+		return font.getFontName() + "\t" + font.getStyle() + "\t" + font.getSize();
+	}
+		
+	public MapSettings(String propertiesFilename)
+	{
+		final Properties props = new Properties();
+		try
+		{
+			props.load(new FileInputStream(propertiesFilename));
+		} catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+
+		// Load parameters from the properties file.
+		
+		randomSeed = getProperty("randomSeed", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				return (int)(Integer.parseInt(props.getProperty("randomSeed")));
+			}
+		});
+		size = getProperty("size", new Function0<Double>()
+		{
+			public Double apply()
+			{
+				return Double.parseDouble(props.getProperty("size"));
+			}
+		});
+		landBlur = getProperty("landBlur", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				return (int)(Integer.parseInt(props.getProperty("landBlur")));
+			}
+		});
+		oceanEffects = getProperty("oceanEffects", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				return (int)(Integer.parseInt(props.getProperty("oceanEffects")));
+			}
+		});
+		scale = getProperty("scale", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				return (int)Integer.parseInt(props.getProperty("scale"));
+			}
+		});
+		forestDensity = getProperty("forestDensity", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				return (int)Integer.parseInt(props.getProperty("forestDensity"));
+			}
+		});
+		riverColor = getProperty("riverColor", new Function0<Color>()
+		{
+			public Color apply()
+			{
+				return parseColor(props.getProperty("riverColor"));
+			}
+		});
+		landBlurColor = getProperty("landBlurColor", new Function0<Color>()
+		{
+			public Color apply()
+			{
+				return parseColor(props.getProperty("landBlurColor"));
+			}
+		});
+		oceanEffectsColor = getProperty("oceanEffectsColor", new Function0<Color>()
+		{
+			public Color apply()
+			{
+				return parseColor(props.getProperty("oceanEffectsColor"));
+			}
+		});
+		landBackgroundImage = getProperty("landBackgroundImage", new Function0<String>()
+		{
+			public String apply()
+			{
+				String result = props.getProperty("landBackgroundImage");
+				if (result == null)
+					throw new NullPointerException();
+				return result;
+			}
+		});
+		oceanBackgroundImage = getProperty("oceanBackgroundImage", new Function0<String>()
+		{
+			public String apply()
+			{
+				String result = props.getProperty("oceanBackgroundImage");
+				if (result == null)
+					throw new NullPointerException();
+				return result;
+			}
+		});
+		addWavesToOcean = getProperty("addWavesToOcean", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String str = props.getProperty("addWavesToOcean");
+				if (str == null)
+					throw new NullPointerException();
+				if (!(str.equals("true") || str.equals("false")))
+					throw new IllegalArgumentException();
+				return (boolean)Boolean.parseBoolean(str);
+			}
+		});		
+		
+		centerLandToWaterProbability = getProperty("centerLandToWaterProbability", new Function0<Double>()
+		{
+			public Double apply()
+			{
+				return Double.parseDouble(props.getProperty("centerLandToWaterProbability"));
+			}
+		});
+	
+		edgeLandToWaterProbability = getProperty("edgeLandToWaterProbability", new Function0<Double>()
+		{
+			public Double apply()
+			{
+				return Double.parseDouble(props.getProperty("edgeLandToWaterProbability"));
+			}
+		});
+	
+		drawText = getProperty("drawText", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String str = props.getProperty("drawText");
+				if (str == null)
+					throw new NullPointerException();
+				if (!(str.equals("true") || str.equals("false")))
+					throw new IllegalArgumentException();
+				return (boolean)Boolean.parseBoolean(str);
+			}
+		});
+		
+		books = getProperty("books", new Function0<List<String>>()
+		{
+			public List<String> apply()
+			{
+				return Arrays.asList(props.getProperty("books").split("\t"));
+			}
+		});
+		
+		titleFont = getProperty("titleFont", new Function0<Font>()
+		{
+			public Font apply()
+			{
+				return parseFont(props.getProperty("titleFont"));
+			}
+		});	
+
+		titleFont = getProperty("titleFont", new Function0<Font>()
+		{
+			public Font apply()
+			{
+				return parseFont(props.getProperty("titleFont"));
+			}
+		});	
+
+		regionFont = getProperty("regionFont", new Function0<Font>()
+		{
+			public Font apply()
+			{
+				return parseFont(props.getProperty("regionFont"));
+			}
+		});	
+
+		mountainRangeFont = getProperty("mountainRangeFont", new Function0<Font>()
+		{
+			public Font apply()
+			{
+				return parseFont(props.getProperty("mountainRangeFont"));
+			}
+		});	
+
+		otherMountainsFont = getProperty("otherMountainsFont", new Function0<Font>()
+		{
+			public Font apply()
+			{
+				return parseFont(props.getProperty("otherMountainsFont"));
+			}
+		});	
+		
+		riverFont = getProperty("riverFont", new Function0<Font>()
+		{
+			public Font apply()
+			{
+				return parseFont(props.getProperty("riverFont"));
+			}
+		});	
+
+		boldBackgroundColor = getProperty("boldBackgroundColor", new Function0<Color>()
+		{
+			public Color apply()
+			{
+				return parseColor(props.getProperty("boldBackgroundColor"));
+			}
+		});
+
+		textColor = getProperty("textColor", new Function0<Color>()
+		{
+			public Color apply()
+			{
+				return parseColor(props.getProperty("textColor"));
+			}
+		});
+	}
+	
+	private static Color parseColor(String str)
+	{
+		if (str == null)
+			throw new NullPointerException("A color is null.");
+		String[] parts = str.split(",");
+		if (parts.length != 3)
+			throw new IllegalArgumentException("Unable to parse color from string: " + str);
+		return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+	}
+	
+	private static <T> T getProperty(String propName, Function0<T> getter)
+	{
+		try
+		{
+			return getter.apply();
+		}
+		catch (NullPointerException e)
+		{
+			throw new RuntimeException("Property \"" + propName + "\" is missing.", e);			
+		}
+		catch(NumberFormatException e)
+		{
+			if (e.getMessage().equals("null"))
+				throw new RuntimeException("Property \"" + propName + "\" is missing.", e);		
+			else
+				throw new RuntimeException("Property \"" + propName + "\" is invalid.", e);
+		}
+		catch (Exception e)
+		{
+			throw new RuntimeException("Property \"" + propName + "\" is invalid.", e);
+		}
+	}
+
+	public static Font parseFont(String str)
+	{
+		String[] parts = str.split("\t");
+		if (parts.length != 3)
+			throw new IllegalArgumentException("Unable to parse the value for titleFont");
+		return new Font(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+
+	}
+	
+	@Override
+	public boolean equals(Object other)
+	{
+		MapSettings o = (MapSettings)other;
+		if (randomSeed != o.randomSeed)
+			return false;
+		if (size != o.size)
+			return false;
+
+		if (landBlur != o.landBlur)
+			return false;
+		if (oceanEffects != o.oceanEffects)
+			return false;
+		if (addWavesToOcean != o.addWavesToOcean)
+			return false;
+		if (scale != o.scale)
+			return false;
+		if (forestDensity != o.forestDensity)
+			return false;
+		if (riverColor.getRGB() != o.riverColor.getRGB())
+			return false;
+		if (landBlurColor.getRGB() != o.landBlurColor.getRGB())
+			return false;
+		if (oceanEffectsColor.getRGB() != o.oceanEffectsColor.getRGB())
+			return false;
+		if (!landBackgroundImage.equals(o.landBackgroundImage))
+			return false;
+		if (!oceanBackgroundImage.equals(o.oceanBackgroundImage))
+			return false;
+		if (centerLandToWaterProbability != o.centerLandToWaterProbability)
+			return false;
+		if (edgeLandToWaterProbability != o.edgeLandToWaterProbability)
+			return false;
+		
+		if (drawText != o.drawText)
+			return false;
+		if (!books.equals(o.books))
+			return false;
+		if (edgeLandToWaterProbability != o.edgeLandToWaterProbability)
+			return false;
+		if (titleFont != o.titleFont)
+			return false;
+		if (regionFont != o.regionFont)
+			return false;
+		if (mountainRangeFont != o.mountainRangeFont)
+			return false;
+		if (otherMountainsFont != o.otherMountainsFont)
+			return false;
+		if (riverFont != o.riverFont)
+			return false;
+		if (boldBackgroundColor.getRGB() != boldBackgroundColor.getRGB())
+			return false;
+		if (textColor.getRGB() != textColor.getRGB())
+			return false;
+
+		return true;
+	}
+	
+
+}

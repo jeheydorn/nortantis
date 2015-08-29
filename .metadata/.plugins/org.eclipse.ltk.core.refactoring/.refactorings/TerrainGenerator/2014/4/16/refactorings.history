@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename local variable &apos;placeEntities&apos; in &apos;cs673.nlp.Extractor.extract(...)&apos; to &apos;nouns&apos;&#x0A;- Original project: &apos;TerrainGenerator&apos;&#x0A;- Original element: &apos;cs673.nlp.Extractor.extract(String).placeEntities&apos;&#x0A;- Renamed element: &apos;placeEntities&apos;&#x0A;- Update references to refactored element" description="Rename local variable &apos;placeEntities&apos;" id="org.eclipse.jdt.ui.rename.local.variable" input="/src&lt;cs673.nlp{Extractor.java[Extractor~extract~QString;@placeEntities!3716!3777!3734!3746!QSet\&lt;QPlaceMention;&gt;;!0!false" name="nouns" references="true" stamp="1397577026957" version="1.0"/>
+</session>

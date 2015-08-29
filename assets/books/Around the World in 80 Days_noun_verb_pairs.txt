@@ -1,0 +1,4930 @@
+air	held
+armchair	seated
+beverages	cooled
+business	going
+byronic	erect
+byronic	put
+capital	swarm
+change	seen
+cheques	paid
+claret	contained
+club	breakfasted
+club	got
+columns	supported
+conditions	know
+days	indicated
+degrees fahrenheit	brought
+destination	reached
+error	mention
+events	justify
+features	appeared
+figure	appeared
+friends	happen
+game	harmonised
+game	won
+guest	bringing
+habit	quit
+hair	tumbled
+hand	took
+hat	put
+hat	took
+haymarket taverns	passing
+heart	searched
+hours	indicated
+hours	passed
+houses	served
+information	apply
+insects	abolishing
+knees	resting
+lakes	brought
+last found	has
+leave	took
+leroy chronometer	regulated
+life	living
+london institution	take
+man mr. phileas fogg	agree
+man mr. phileas fogg	apply
+man mr. phileas fogg	asked
+man mr. phileas fogg	believe
+man mr. phileas fogg	breakfasted
+man mr. phileas fogg	chose
+man mr. phileas fogg	dined
+man mr. phileas fogg	got
+man mr. phileas fogg	hear
+man mr. phileas fogg	knew
+man mr. phileas fogg	known
+man mr. phileas fogg	lived
+man mr. phileas fogg	living
+man mr. phileas fogg	pardon
+man mr. phileas fogg	passed
+man mr. phileas fogg	played
+man mr. phileas fogg	put
+man mr. phileas fogg	reached
+man mr. phileas fogg	recommended
+man mr. phileas fogg	required
+man mr. phileas fogg	responded
+man mr. phileas fogg	rubbed
+man mr. phileas fogg	seated
+man mr. phileas fogg	seemed
+man mr. phileas fogg	seen
+man mr. phileas fogg	serve
+man mr. phileas fogg	served
+man mr. phileas fogg	settled
+man mr. phileas fogg	took
+man mr. phileas fogg	used
+man mr. phileas fogg	watching
+master	searched
+meals	taking
+members	provides
+members	taking
+minutes	indicated
+moment	reached
+money	needed
+money	supplied
+months	indicated
+motion	put
+mould	lost
+name	learned
+nature	agree
+nature	harmonised
+newcomer	clung
+newcomer	replied
+nights	passing
+nose	held
+occupant	awaiting
+occupant	dismissed
+one	seemed
+papers	reading
+passepartout accept each other	lived
+pastimes	playing
+pastimes	reading
+people	seen
+personage	known
+physiognomists	call
+port	contained
+predecessor	departing
+predecessor	heard
+predictions	justify
+probabilities	pointing
+purpose	needed
+question	solve
+remonstrance	took
+remonstrance	ventured
+rest	honoured
+room	fixed
+seconds	indicated
+servant	turn
+sherry	contained
+silver watch	drawing
+societies	learned
+spirit	travelled
+stores	crowd
+street door	shut
+style	live
+successor	awaiting
+table	crowd
+table	fixed
+toilet	completed
+toilet	sleeping
+travellers	advanced
+travellers	lost
+travellers	pointing
+tresses	arranging
+turn	departing
+valet	taking
+valet	took
+viands	proffered
+waiters	served
+walk	take
+whither none	penetrated
+windows	illumined
+windows	painted
+words	corrected
+words	pointing
+world account	taken
+years	indicated
+years	live
+youth	brought
+band	belong
+bank officials	being
+bank officials	discussing
+banknotes	exposed
+bedroom	constructed
+bedroom	stood
+breakfast	consisted
+burglars	defy
+burglars	get
+cards	handing
+clock	comprised
+clock	hung
+clock	stood
+coal fire	burning
+contrary	hope
+conversation	ceased
+conversation	entered
+conversation	takes
+crime	committed
+cut	added
+days	has
+description	got
+detectives	charged
+detectives	continued
+detectives	hastened
+detectives	left
+detectives	placed
+detectives	procured
+detectives	sent
+dining-room	repaired
+dinner hour	occupied
+discussion	fell
+examination	entered
+excitement	take
+features	overspread
+fellow	put
+fellow	sent
+fellow	slips
+fingers	slips
+fireplace	burning
+fireplace	drew
+flunkey	handed
+flunkey	proceeded
+foot	put
+friends	bowed
+game	proceeded
+game	revived
+gentleman	retired
+gentleman	says
+gold ingot	examine
+gold ingot	going
+gold ingot	transferred
+habits	betrayed
+hand	finished
+hands	put
+hands	rubbed
+head	raised
+house	found
+house	scrutinised
+inspection	begun
+inspection	scouring
+instance things	gone
+instant	beating
+machine	mind
+machine	serving
+man	go
+man	passed
+mansion	seemed
+manufacturer	's
+matter	argue
+millions	cost
+minutes	rose
+moment	being
+money	lose
+mushrooms	garnished
+neighbour	passed
+newspapers	emerged
+number	bore
+operation	betrayed
+paintings	adorned
+people	discussing
+place	took
+ports	hastened
+prize	offered
+quarter	absorbed
+reading-room	re-appeared
+rhubarb	garnished
+robbery	discovered
+rubber	fell
+rubber	took
+rubbers	excepting
+rubbers	revived
+servant	left
+servant	looking
+servant	required
+shell	lighted
+shell	seemed
+shell	sufficed
+shell	warmed
+shoes	applied
+smile	overspread
+speaking-tubes	afforded
+speaking-tubes	stood
+standard	occupied
+steps	directed
+story	reached
+story	satisfied
+subject	formed
+sum	recovered
+system	applied
+table	laid
+table	taken
+table	took
+thread	took
+times	handed
+times	proceeded
+town talk	formed
+treasures	protect
+way	proving
+weather	take
+world	grown
+antagonists	agitated
+appearance	know
+cards	threw
+chair	fell
+clock	struck
+clothes	buy
+composure	preserved
+contrary	make
+deal	's
+delay	lose
+discussion	play
+eyebrows	raised
+eyes	opened
+fool	was
+friend	betting
+game	suspend
+guineas	won
+half	expend
+hands	held
+head	swaying
+heaven	preserve
+hindoos	pull
+hour	appearing
+hour	repaired
+joke	's
+joke	mean
+joke	was
+luggage-vans	pillage
+minimum	exceed
+minimum	suffices
+minutes	start
+monsieur	going
+mr. stuart	gathered
+mr. stuart	replied
+name	deposited
+others	turning
+parties	agitated
+parties	preserved
+parties	signed
+party	offered
+passengers	stop
+pocket almanac	consulted
+preparations	make
+preparations	making
+project	carry
+rails	pull
+rails	replied
+room	mounted
+stout shoes	bring
+train	leaves
+train	take
+trains	stop
+voice	raising
+wager	talking
+watch	showing
+way	buy
+action	touched
+alabama claim	argued
+alms	asked
+arm	observed
+article	appeared
+backers	deprived
+beggar	handed
+beggar-woman	shrouded
+bets	stood
+bonds	issued
+bonnet	covered
+box	jumped
+cab	stopped
+cab	took
+cabman	paying
+carpet-bag	handing
+carpet-bag	opened
+carpet-bag	packed
+carpet-bag	slipped
+carpet-bag	take
+carpet-bag	took
+cause	copied
+chair	fastened
+change phileas fogg	asked
+change phileas fogg	burn
+change phileas fogg	declared
+change phileas fogg	declined
+change phileas fogg	dispatch
+change phileas fogg	ensconced
+change phileas fogg	find
+change phileas fogg	forgot
+change phileas fogg	found
+change phileas fogg	give
+change phileas fogg	miss
+change phileas fogg	offered
+change phileas fogg	open
+change phileas fogg	returned
+change phileas fogg	seated
+change phileas fogg	supported
+change phileas fogg	took
+characters	seemed
+company	belonging
+consul	replied
+corner	ensconced
+daily news	scouted
+days	appeared
+delay	suffice
+demand	began
+departure	recalled
+detective	inspired
+detectives	elude
+detectives	throw
+expense	returned
+feather	hung
+fogg party	dwindled
+gentleman	disappeared
+heads	shook
+heart	touched
+hour	miss
+hours	designated
+hours	reckon
+impatience	awaited
+incident	occurred
+individuals	espoused
+journey	agreed
+line	run
+lips	open
+lord	bet
+lord	fastened
+lord	given
+majority	declared
+majority	shook
+matter	's
+members	afforded
+men	betting
+men	promenading
+moment	stand
+morning post	scouted
+mr. fogg	accomplished
+mr. fogg	crossing
+mr. fogg	descended
+mr. fogg	forget
+mr. fogg	get
+mr. fogg	go
+mr. fogg	handed
+mr. fogg	met
+mr. fogg	passed
+mr. fogg	perceived
+mr. fogg	took
+mr. fogg	won
+packages	offered
+papers	got
+passport	examine
+personage	manifesting
+phileas fogg bonds	offered
+police	provided
+premium	offered
+project	scouted
+public	set
+question	appeared
+question	treated
+railway station	crossing
+railway station	enter
+railway station	glided
+railway station	shrouded
+railway station	stopped
+rain	falling
+reform club friends	blamed
+regulations	required
+resemblance	bore
+sensation	create
+sex	espoused
+shawl	shrouded
+shoulders	shrouded
+sides	took
+soil	set
+steamer	miss
+steamer mongolia	built
+steamer mongolia	gained
+steamer mongolia	plied
+stranger things	come
+stupefaction	recovered
+task	accomplishing
+times	scouted
+train	crossing
+train	perceived
+treasure	clung
+venture	devoted
+warmth	argued
+wharves	promenading
+winter	travelling
+woman	saying
+word	trust
+years	took
+banks	passing
+boats	coasting
+burglars	getting
+coal	get
+coal supply	take
+companion	returned
+countenances	unmask
+crowd	passed
+detective	admitted
+detective	narrated
+detective	remarked
+detective food	furnished
+document	read
+document	took
+door	heard
+dozen boats	disembarked
+dozen boats	pushed
+eleven	struck
+english consulate	point
+english criminal	concealed
+face	see
+fee	paid
+fellow	hung
+fellows	recognises
+fingers	slip
+folks	remarked
+folks	resemble
+glance	read
+glance	scrutinised
+houses	loomed
+hull	appeared
+identity	establish
+jetty pier	extended
+look-out	's
+mails	takes
+man	arrest
+man	feels
+man	keep
+man	recognise
+mr.	fix
+mr.	suppose
+mr.	think
+mr. phileas fogg	bowed
+mr. phileas fogg	followed
+mr. phileas fogg	paid
+mr. phileas fogg	replied
+observation	furnished
+office	admitted
+part	disembarked
+part	landed
+passenger	bowed
+passenger	returned
+passepartout	named
+passers-by	scrutinised
+passport	added
+passport	concerning
+passport	held
+passport	is
+passport	reading
+passport	required
+passport	sign
+passport	took
+passports	aiding
+port clock	struck
+position	took
+presentiment	having
+quay	landed
+quay	met
+quay	passed
+quay	rushed
+reflections	interrupted
+request	held
+road	anchored
+roadstead	extended
+robber	come
+robber	get
+robber	leave
+robber	left
+robber	obliged
+robber	take
+route	reach
+saturday	have
+scotland yard	received
+seal	added
+sentence	finish
+shore	pushed
+steamer	come
+steamer	expected
+steamer	go
+steamer	returned
+strangers	entered
+thief	slip
+thing	's
+thing	admit
+thing	unmask
+time	arrested
+visa	prove
+whistles	announced
+arrival	noted
+cabin	descended
+carpet-bag	show
+circus	seen
+columns	divided
+columns	giving
+columns	indicating
+consul	replied
+consulate	gave
+consulate	repaired
+countries	reach
+countries	see
+dates	inscribed
+day	entered
+descriptions	know
+doubt	carrying
+dream	journeying
+existence	lived
+fellow	returned
+fob	returned
+gentleman	resembles
+gesture	returned
+great-grandfather	come
+locality	suffered
+london time	kept
+man	looks
+master	believe
+master	going
+master	known
+master	seems
+minutes	's
+minutes silence	fix
+minutes silence	left
+money	spare
+month	indicating
+mr. fogg	carried
+mr. fogg	carrying
+mr. fogg	continued
+mr. fogg	descended
+mr. fogg	gets
+mr. fogg	knew
+mr. fogg	learned
+mr. fogg	offered
+mr. fogg	spare
+note-book	contained
+note-book	took
+one	knew
+orders	gave
+pere la chaise	seen
+quay	repaired
+record	contained
+reward	offered
+saturday	arrived
+saturday	sailed
+servant	help
+servant	seems
+service	entered
+space	giving
+steamer	lose
+sum	carrying
+theory	fix
+thursday	left
+time	known
+town	inspecting
+while	excuse
+air	uttered
+anxiety	watching
+arabic gulf	spoke
+billows	raging
+borders	raised
+brigade	rejoin
+cabin	took
+cabin tables	spread
+chronometers	surprise
+coffee-cup	looked
+coffee-fields	espied
+confidence	gain
+consul	returned
+consulate	hurried
+crown	give
+curiosity	go
+curiosity	has
+day	changed
+days	going
+deck	go
+delay	affect
+delay	foreseen
+delusion	consoled
+destination	reach
+detective	sent
+detective	took
+engine	aiding
+engineer	seemed
+english ground	follow
+equanimity	recovered
+errand	conceal
+exertions	seemed
+fact	betray
+fellow	's
+fellow	counts
+fellow	returned
+forces	attached
+gas	pay
+gas-burner	forgot
+gods	propitiating
+government	receiving
+gymnastics	cease
+habits	resume
+historians	spoke
+hours	allow
+hours	whirled
+incident	surprise
+interest	took
+journey	interrupt
+journey	understand
+ladies	changed
+ladies	disappeared
+ladies	reappeared
+life	spend
+london police office	seen
+man	counts
+man	passes
+man	spotted
+man	wants
+meeting	got
+miles	traverse
+mocha	sighted
+monsieur	fix
+navigators	ventured
+ogre	eat
+parish	returning
+partners	found
+peninsula	crosses
+personage	found
+personage	pass
+personage	pitching
+personage	played
+place	behold
+place	looked
+possibilities	thought
+programme	affect
+project	cogitating
+purchases	make
+quays	walked
+railway	crosses
+railway train	jumping
+rev. decimus smith	returning
+roadstead	moved
+rogue	follow
+sacrifices	propitiating
+salaries	receiving
+sea air	's
+sea air	eat
+sepoy troops	commanding
+ship	ploughed
+shop	hurried
+shop	left
+shop	reached
+sights	see
+sky	outlines
+speed	reach
+speed	slacken
+steamer	jumping
+steamer	miss
+steamer	returning
+steamer	rode
+steamer	rolled
+steamer bar-room	fix
+steamer point	put
+steamers	allow
+steamers	fuelling
+sub-lieutenants	get
+tax-collector	played
+telegraph office	repaired
+time	pass
+time	passed
+time	reach
+toilets	changed
+toilets	reappeared
+tone	fix
+track	putting
+trip	accomplished
+trouble	pay
+visa	procured
+visa	prove
+voyage	consoled
+voyage	fed
+voyage	lodged
+voyage	took
+walls whereon date-trees	growing
+whim	end
+words	uttered
+adventures	relate
+affair	delayed
+animals	considered
+basalt bases	entered
+bazaars	docks
+bird	flies
+body	took
+body	traversing
+business	transacted
+campaign	concluded
+cards	dealing
+carnival wind	seen
+carriage	entering
+carriage	rode
+cats	considered
+ceremonies	watched
+chiefs	appointed
+chiefs	paid
+chiefs	purchasing
+churches	docks
+circumference	describing
+clock	beat
+coaches	going
+coast	called
+continent	crossing
+conversation	fell
+conversation	observed
+corner	stood
+corps	join
+country	got
+crown	exercises
+crown	has
+curiosity	drew
+dancing-girls	clothed
+dancing-girls	looped
+day	proceeded
+delay	met
+demonstration	make
+departure	spent
+desire	seized
+dinner	continued
+dish	tasted
+dominion	exercises
+door	leaving
+errands	gave
+exclamations	beat
+exterior	beat
+eyes	fixing
+eyes	met
+eyes	staring
+fact	entered
+faithful	go
+foothold	gained
+forests	crowned
+gentleman	going
+gentleman	leave
+globe	traversing
+government	takes
+hands	rubbed
+harm	thinking
+heart	beat
+hour	passed
+hypogea	concealed
+hypogea	examine
+idea	struck
+indus	ply
+itinerary	entered
+journey	extended
+landlord	rang
+landlord	recommended
+legs	carry
+line	joining
+locomotive	gave
+london detective	known
+london detective	observe
+london detective	stood
+london office	concerned
+london office	deliver
+lord	killed
+lord	replied
+man	got
+matter	concerned
+miles	embraces
+miles	spread
+mind	calculating
+moment	doubt
+mosques	docks
+mountains	left
+night	left
+offence	committed
+orbit	traversing
+orders	heard
+pagoda	espy
+pagoda	having
+pagoda	rushing
+pains	took
+partner	finishing
+passenger	occupied
+passport office	directed
+passport office	reached
+passport office	transacted
+plan	alter
+plans	deranged
+ponies	cross
+priest	escaped
+priests	behold
+priests	fell
+promenade	took
+railway	run
+railway	traverses
+railway station	repaired
+rivers	watered
+robber	follow
+robber	supposed
+rogue	replied
+rogue	stayed
+rogue	swear
+sauce	found
+screech	gave
+sepoy revolt	distinguished
+servant	caught
+servant	condemned
+servant	punished
+shoes	leaving
+shoes	tore
+side	cross
+sir francis cromarty	concealed
+sir francis cromarty	distinguished
+sir francis cromarty	exchanged
+sir francis cromarty	met
+sir francis cromarty	observed
+sir francis cromarty	pursued
+sir francis cromarty	questioned
+sir francis cromarty	studying
+south	called
+spot	gained
+steamboats	ply
+steamer	entered
+steamer	left
+step	beat
+steps	directed
+steps	turning
+streams	watered
+streets	took
+subjects	inquire
+subordinates	appointed
+summits	crowned
+synagogues	docks
+temples	enter
+territory	watered
+time	arrive
+time	exchanged
+time	lost
+time	reached
+time	remember
+towers	docks
+train	got
+train	left
+train	passed
+train	start
+travelling-blanket	wrapped
+viaducts	passed
+victory	concluded
+villages	proceeded
+villages	straggling
+visits	paying
+warrant	arrived
+warrant	deliver
+whist partners	see
+word	followed
+words	exchanged
+advance	jumped
+bargain	make
+bond	united
+bundelcund	separate
+bungalows	seen
+carriages	passing
+change	come
+clove	threw
+conductor	proceeded
+conductor	replied
+conductor	shouted
+day sir francis cromarty	asked
+day sir francis cromarty	begged
+day sir francis cromarty	obtain
+day sir francis cromarty	reflect
+day sir francis cromarty	replied
+day sir francis cromarty	secure
+day sir francis cromarty	took
+days	gained
+days	passed
+delays	worry
+doubt	replied
+engineer	bribed
+engineer	guided
+evening	entered
+eyes	betrayed
+eyes	gazed
+eyes	glistening
+feet	encase
+gentleness	preserved
+greenwich meridian	regulated
+halt	meant
+hesitation	found
+hesitation	think
+hopes	entertained
+horizon	extending
+hours	took
+hut	enclosed
+hut	purchase
+journey	end
+line	begins
+locomotive	fed
+locomotive	guided
+locomotive	threw
+london time	kept
+maledictions	uttering
+males	sought
+meridian	regulated
+miles	stopped
+milligaum	crossed
+monasteries	abandoned
+murders	diminishing
+obstacle	arise
+one	harm
+owner	begun
+owner	feeding
+owner	impart
+owner	reared
+owner	receive
+pagodas	perambulating
+palings	enclosed
+papers	announced
+papers	mistaken
+passengers	get
+passengers	know
+passengers	look
+passengers	provide
+pearls	ornamented
+period	designated
+period	fail
+pounds sterling	supposing
+project	regard
+purposes	reared
+request	conducted
+river tapty	empties
+route	arise
+ruffians	strangled
+ruffians	united
+slippers	ornamented
+slippers	proceeded
+slippers	purchase
+smoke	threw
+spirals	curled
+steam	curled
+steamer	leaves
+steps	lives
+thought	losing
+thought	trembled
+thuggees	exist
+thuggees	pursue
+time	corrected
+time	doubtless
+time	kept
+timepiece	regulated
+times	pay
+travellers	began
+travellers	crossed
+travellers	started
+vagabond nature	impart
+vagabond nature	returned
+value	pay
+vehicles	engage
+village	provide
+village	searching
+animals	observed
+arms	stood
+aspect	presented
+back	covered
+bananas	appreciated
+bananas	partaken
+beast	deserved
+blood	issued
+body	coloured
+branches	distinguished
+branches	lit
+brass instruments	accompanied
+breakfast	preparing
+brigadier	accepted
+bungalow	lit
+bungalow	ruined
+cani	passed
+car	coloured
+car	drawn
+car	stood
+carpet-bag	extracted
+case	lose
+ceremonies	throw
+ceremony	performed
+companions	venture
+consideration	deserved
+contortions	hurried
+contrast	presented
+conversation	beginning
+conversation	gave
+corpse	bearing
+country	keep
+country	lies
+country	presented
+course	pursue
+cut	marching
+cuts	covered
+day	gone
+delay	regretted
+diamonds	sewed
+discomfort	endured
+distance	separated
+elephant	remained
+evening	crossed
+evening	reach
+fakirs	capering
+fakirs	drowned
+fanatics	capering
+fanatics	throw
+fellow	bounced
+fellow	gave
+fellow	inserted
+fellow	laughed
+fellow	took
+fellow	vaulted
+fire	lit
+foliage	concealed
+foliage	perceiving
+forests	venture
+gait	resuming
+ground	jumped
+guide	avoided
+guide	entered
+guide	find
+guide	gave
+guide	hoped
+guide	led
+guide	passed
+guide	stopped
+guide	turning
+guide	unloosed
+guide	watched
+haggard eyes	coloured
+head	putting
+hour	gave
+hours	stopped
+howdahs	attached
+howdahs	took
+iron	forged
+iron	replied
+journey	resumed
+journey	seemed
+journey	shorten
+lace robes	clothed
+line	owing
+line	pursue
+matter	's
+miles	extended
+miles	gain
+monkeys	grimaces
+monkeys	hurried
+morning	resumed
+mountain fastnesses	reach
+mr. fogg	accepted
+mr. fogg	carry
+mr. fogg	choose
+mr. fogg	extracted
+mr. fogg	got
+mr. fogg	held
+mr. fogg	led
+mr. fogg	lose
+mr. fogg	make
+mr. fogg	offered
+mr. fogg	paid
+mr. fogg	plunged
+mr. fogg	regretted
+mr. fogg	returned
+mr. fogg	sell
+mr. fogg	set
+mr. fogg	slumbered
+mr. fogg	thought
+mr. fogg	took
+mr. fogg	transporting
+mr. fogg	trod
+mr. fogg	venture
+mr. fogg	waited
+mr. fogg	worrying
+muslin robe	covered
+neck	bounced
+neck	perched
+neck	plunged
+night	occurred
+noon	gave
+notice	bestride
+palanquin	bearing
+path	hurried
+pearls	embroidered
+phrases	disconnected
+pistols	damascened
+places	inhabited
+pocket	took
+population	hardened
+population	inhabited
+priests	drawn
+priests	surrounded
+provisions	purchased
+red	coloured
+route	observed
+rump	bounced
+servant	troubled
+services	offered
+shrubs	dotted
+side	took
+silence	broke
+sir francis cromarty	asked
+sir francis cromarty	perched
+sir francis cromarty	plunged
+sir francis cromarty	regretted
+sir francis cromarty	slept
+sir francis cromarty	took
+sir francis cromarty	watched
+sir francis cromarty	whispered
+slumberers	disturb
+snores	gave
+spring	quenching
+statue	recognising
+statue	stood
+territory	secure
+territory	subjected
+thicket	led
+thicket	plunged
+thirst	quenching
+thoughts	cease
+time	worrying
+times	saw
+tongue	bitten
+tongue	keep
+tongue	protruding
+travellers	asking
+travellers	ate
+travellers	avoided
+travellers	concealed
+travellers	perceived
+travellers	perceiving
+travellers	saw
+tree	fastened
+trees	appeared
+trot	slackening
+trunk	inserted
+trunk	received
+turban	embroidered
+vindhias	gone
+vindhias	passed
+vindhias	separated
+vindhias	spurs
+vindhias	stopped
+waists	hung
+way	coming
+wheels	drawn
+woman	armed
+woman	presented
+word	waited
+zeal	stimulate
+zebus	drawn
+zebus	stood
+background	loomed
+body	burned
+brush	slipped
+change	took
+children	lay
+companions	concealed
+companions	confirmed
+companions	discussed
+companions	engaged
+companions	enter
+companions	halted
+companions	hear
+companions	led
+companions	slipped
+companions	stopped
+consultation	announced
+copse	halted
+corner	die
+creature	seem
+creatures	drives
+customs	exist
+design	confirmed
+direction	attempted
+distance	heard
+doors	watching
+dusk	deepening
+elephant	direct
+elephant	led
+entrance	force
+feet	halted
+finger	put
+fortune	favors
+glade	lit
+ground	covered
+hair	shave
+head	shook
+heart	perceived
+hours	devote
+icy exterior	perceived
+idea	charmed
+indignation	repress
+intervention	save
+lips	put
+lives	foreseen
+lives	risk
+lives	taken
+minarets	loomed
+minutes	found
+narrative	confirmed
+neck	leaped
+neutrality	assured
+night	fell
+night	pass
+night	wait
+observation	take
+officers	replied
+orphan	awaited
+orphan	escape
+orphan	escaped
+orphan	left
+orphan	married
+others	found
+others	leading
+others	perceived
+others	took
+place	determined
+plan	carried
+plan	remained
+priests	watching
+procession	disappeared
+procession	wound
+project	favors
+purpose	carried
+pyre	led
+question	put
+rajah	took
+ranks	disappeared
+reconnaissance	make
+relatives	devoted
+relatives	shave
+relatives	submit
+rosin torches	lighted
+rosin torches	lit
+sacrifice	returned
+sacrifices	occur
+scurvy dog	die
+sir francis cromarty	asked
+sir francis cromarty	observed
+sir francis cromarty	put
+sir francis cromarty	replied
+sir francis cromarty	returned
+sir francis cromarty	saw
+sir francis cromarty	speaking
+sir francis cromarty	turning
+sleep	covered
+sleep	plunged
+songs	died
+steps	stood
+stop	put
+thicket	led
+time	replied
+time	seemed
+times	shook
+to-morrow	take
+tortures	risk
+town	left
+trees	loomed
+trees	wound
+way	took
+widow	asked
+wife	burned
+will	married
+woman	imprisoned
+women	lay
+wood	crept
+abduction	taken
+account	reassured
+agency	owing
+appearance	heightened
+arms	took
+articles	sold
+attempt	resume
+audacity	playing
+body	appeared
+body	stretched
+brain	lodged
+branches	slipped
+brick	taken
+bricks	loosen
+burning pyre	appeared
+clouds	covered
+commerce	dwindled
+companions	followed
+companions	reassured
+corpse	lay
+county	scattered
+crowd	began
+crowd	passed
+cry	heard
+darkness	deepened
+darkness	overhanging
+darkness	profiting
+disturbance	ceased
+ears	formed
+earth	descends
+elephant	advancing
+elephant	bearing
+englishman thinking	planning
+executioner	escape
+executioners	snatch
+expression	resumed
+eyes	lift
+eyes	read
+eyes	resumed
+fakirs	escorted
+fakirs	lay
+fakirs	passed
+fanatics	recover
+fanatics	scattered
+feet	formed
+fists	shook
+flash	struck
+forest	advancing
+forest	hastened
+fort	defended
+fugitives	fired
+ground	prostrated
+groups	observe
+groups	sleeping
+guards	appeared
+guards	installed
+guards	reach
+guards	save
+guidance	advancing
+guide	echoed
+guide	gnashed
+guide	led
+guide	seized
+guide	stopped
+hand	clasp
+hand	pressed
+hand	seizing
+hat	whizzed
+head	bowed
+horizon	left
+hour passepartout	laughed
+hours	passed
+idea	struck
+jew	sold
+knife	found
+light	escaped
+light	swim
+look	take
+lotus-bud	formed
+mantle	purchased
+matter	reflect
+minutes	reached
+moment	began
+moment	present
+moment	seized
+moon	covered
+moon	left
+multitude	prostrated
+noon	left
+otter-skin pelisse	hesitate
+otter-skin pelisse	purchased
+outside	replying
+pace	bearing
+paces	stopped
+pagoda	leaving
+part	playing
+parts	divided
+pilgrims	attract
+plain	crossed
+police	recover
+priests	found
+priests	hastened
+priests	perceived
+priests	recovered
+prodigy	behold
+pyre	rush
+pyre	stopped
+rash	exploit
+reflections	swim
+regent street	used
+rest	yield
+rhapsody	applying
+scene	changed
+semi-obscurity	saw
+shades	announced
+songs	sounded
+spectre	rose
+state prison	has
+success	laughed
+surprise	prevent
+tambourines	cries
+tambourines	sounded
+teeth	gnashed
+temple walls	built
+terror	passed
+terror	recovered
+time	arrive
+torch	brought
+travelling-blanket	wrapped
+tresses	divided
+tresses	encircle
+tresses	shining
+trick	discovered
+vermilion hands	formed
+victim	borne
+victim	recover
+victim	seem
+victim	supported
+volley	fired
+waist	clasp
+waist	displays
+waist	folds
+walls	reach
+walls	reached
+wife	took
+woman	delivered
+woman	fallen
+woman	placed
+woods	disappeared
+work	interrupted
+ablutions	performing
+adventure	risked
+affair	hushed
+alligators	peopled
+animal	caressed
+animal	replaced
+banks	swarming
+bench	took
+brahmin legends	assert
+brick mansions	presented
+capital	ruined
+carriage	accomplished
+carriage	find
+carriage	installed
+carriage	stopped
+chair	falling
+charge	dare
+city	built
+clerk	followed
+companion	assisted
+companions	recounting
+companions	set
+companions	took
+complainants	dare
+days	gained
+debtor	cried
+debtor	giving
+debtor	take
+deliverers	thanked
+devotion	owed
+divinities	think
+door	closed
+door	opened
+equipages	dressed
+eyes	glistened
+eyes	interpreted
+eyes	passed
+fashion	come
+fate	leave
+flash	passed
+fortune	giving
+general	received
+gratitude	interpreted
+ground	replaced
+habiliments	dressed
+hall	led
+hand	pressed
+head	clasping
+head	put
+hong kong steamer	leaves
+hong kong steamer	proceed
+honour	giving
+hope	expressing
+horsemen	dressed
+horses	drawn
+horses	driven
+horses	took
+hours	accomplished
+house	stopped
+hugly	ruined
+journey	recovered
+lady	go
+life	risked
+lips	interpreted
+liquor	reviving
+locomotive	fled
+man	entered
+man	followed
+man	is
+master	owed
+master	replied
+masts	bristling
+masts	passing
+matter	tried
+means	reassured
+mind	passing
+monghir	discern
+morning	reached
+murshedabad	ruined
+nail	hanging
+noon	leaves
+one	spoke
+packet	left
+panorama	passed
+parsee relation	seems
+place	giving
+places	took
+price	agreed
+prisoners	conducted
+prisoners	requested
+question	determined
+railway	dressed
+railway	find
+railway	leaving
+railway	passed
+relief	presented
+satisfaction	clasping
+satisfaction	grunted
+season	performing
+senses	recovered
+sir	leave
+station	entered
+station	leaving
+steam	concealed
+stick	tapped
+surface	float
+suttee	preventing
+tears	thanked
+thoughts	recalled
+thoughts	strayed
+tomb	suspended
+train	entered
+train	passed
+train	stopped
+travellers	discern
+treatment	receive
+vengeance	escape
+view	concealed
+vishnu	being
+voyage	settled
+way	come
+way	led
+while	passed
+windows	barred
+woman	find
+woman	narrated
+woman	recovered
+woman	reviving
+woman	save
+words	thanked
+admitted	replied
+affair	forgotten
+arm	offering
+bank-bills	placing
+brahmin religion	consecrated
+capital	reached
+carpet-bag	taking
+carriage	leave
+carriage	took
+case	calling
+case	repeated
+charge	hear
+complainants	come
+composure	pay
+composure	resumed
+constable	shouted
+departure	delaying
+desk	placed
+desk	placing
+detective	fix
+detective	promised
+detective	sent
+door	's
+door	muttered
+door	swung
+english authorities	dealt
+english authorities	promised
+english authorities	sent
+english law	protects
+escapade	gave
+exclamation	permitting
+eyebrows	lift
+facts	admitted
+feet	pinch
+feet	stamped
+fellow	given
+fool	gone
+gentleman	took
+hand	putting
+harbour	moored
+head	putting
+hours	delaying
+hours	fix
+judge	announce
+judge	asked
+judge	condemn
+judge	continued
+judge	give
+judge	resumed
+judge	returned
+judge	stared
+judge	took
+judge obadiah	burn
+judge obadiah	caught
+judge obadiah	repeated
+lady	burn
+magistrates	arrest
+magistrates	arrive
+magistrates	warned
+man passepartout	admitted
+man passepartout	arrive
+man passepartout	asked
+man passepartout	burning
+man passepartout	cried
+man passepartout	departed
+man passepartout	escape
+man passepartout	espied
+man passepartout	gave
+man passepartout	handed
+man passepartout	muttered
+man passepartout	reach
+man passepartout	responded
+man passepartout	stupefied
+man passepartout	violated
+mast-head	hoisted
+mile	moored
+money	exhausted
+money	stolen
+mr. fogg	arrive
+mr. oysterpuff	demanded
+pagoda	gone
+party	landed
+place	held
+places	took
+policeman	hastened
+priests	admit
+priests	entered
+priests	going
+priests	looked
+priests	reached
+priests	seem
+priests	stupefied
+priests	took
+prisoner	required
+prisoners	looked
+proceedings	watching
+rascal	's
+rascal	exclaimed
+rascal	follow
+rascal	going
+rash exclamation	caught
+rash exclamation	given
+rate	going
+release	restored
+robber	leave
+robber	stopped
+robber	taken
+route	stopped
+servant	back
+servant	paid
+servant	reached
+shoes	back
+station	watched
+subject	am
+traces	issued
+train	sent
+turn	admit
+victim	burning
+voice	read
+warrant	failed
+watch	admit
+watch	consulting
+wigs	exchanged
+woman	accompanied
+acquaintance	renew
+anxieties	calm
+aouda company	kept
+appearance	make
+avail	result
+boat	jumping
+brain	cudgelled
+bribes	bails
+cabin	confined
+cabin	emerged
+cabin	kept
+cabin	spent
+cannibals	asserted
+cannibals	steamed
+century	cudgelled
+china seas	gave
+comfort	wanting
+companion	travelling
+conjecture	making
+cousin	hoped
+crime	implicated
+day	following
+day	visited
+days	occupying
+departure	delay
+departure	prevent
+destination	announced
+detectives	promised
+difficulties	create
+disappointment	concealing
+disclosure	enlightened
+dish	furnish
+emotion	betraying
+english authorities	warn
+expenses	travelling
+eyes	fastened
+fines	diminishing
+fix does not seem	fitted
+foreground	covered
+gentleman	listened
+gentleman	make
+gentleman	seemed
+gentleman	talk
+gentleman	treated
+gentleman	visited
+habit	confined
+hand	took
+history	recounted
+hours	hear
+hours	sit
+hours	visited
+idea	struck
+intrigue	supposed
+journey aouda	gave
+lake	throw
+life	owed
+listener	find
+man	arrest
+manner	betraying
+miles	comprised
+ocean	agree
+person	encountered
+person	met
+politeness	treated
+presence	conceal
+probabilities	thought
+protector	acquainted
+purpose	arranged
+rascal	arrest
+rascal	delay
+rascal	fail
+rascal	failed
+rascal	kept
+rascal	make
+rascal	prevent
+rascal	repeating
+rascal	spent
+rascal	succeed
+rascal	take
+rascal	tell
+reputation	lost
+resource	turn
+route	fix
+saddle peak	looming
+seas	plying
+servant	doubtless
+servant	implicated
+servant	renew
+servant	seen
+shoes	wager
+shores	passed
+sky	traced
+steamer	leave
+suspicions	awakening
+suspicions	thought
+talk	sit
+thousands	swarmed
+tons	weighing
+trouble	arrest
+voice	betraying
+warrant	arrive
+warrant	make
+waters	looming
+way	spent
+winds	passed
+woman	carry
+woman	married
+woman	place
+world	round
+accomplice	playing
+agile	skipped
+allusions	betray
+and fix go each about	fix
+astronomers	call
+astronomers	existed
+bands	grinning
+bands	skipped
+cabin	descended
+carriage	carried
+carriage	drawn
+case	knew
+cause	resulted
+cloves	form
+companion	laughed
+companion	looked
+coolness	preserved
+craft	blow
+crew	blamed
+day	gained
+day	leaning
+day	reach
+day	weighed
+days	accomplish
+desire	betrayed
+detective	discovered
+detective	followed
+detective	found
+discovery	enchanted
+disturbances	existed
+dog	're
+dozen mangoes	purchasing
+eleven	harbour
+engine	observing
+engine	threw
+engineer	blamed
+expense	travel
+eyes	read
+forests	inhabited
+friends	keep
+gain	noted
+gale	blew
+game	was
+gourmands	thanked
+gourmands	waiting
+hours	lost
+hours	turning
+indifference	moved
+islets	intercepted
+journal	noted
+journey	accomplish
+journey	awakened
+journey	believe
+jungles	wanting
+malays	disembarked
+man	meant
+mangoes	offer
+manoeuvres	fix
+manoeuvres	laughing
+master	affect
+master	fail
+master	knew
+master	offended
+master	told
+mind	spent
+movements	fix
+mr.	fix
+mr.	know
+mr. fogg	awakened
+mr. fogg	exclaimed
+mr. fogg	gravitated
+mr. fogg	hoped
+mr. fogg	leaning
+mr. fogg	moved
+mr. fogg	noted
+mr. fogg	observing
+mr. fogg	passing
+mr. fogg	returned
+mr. fogg	spying
+mr. fogg	thought
+mr. fogg	whereof
+operations	knew
+path	raised
+pepper	grows
+pepper plants	replaced
+perfume	penetrating
+progress	aided
+purpose	guessed
+reflections	gave
+reveries	existed
+rigging	proved
+robber	abandon
+robbery	knew
+screw	threw
+sea	rolled
+sensation	affords
+senses	drove
+ship	connected
+sleeve	laughing
+south-west	blew
+star	call
+star	produced
+storm	lasted
+storm	rose
+surprise	failed
+suspicions	betray
+things	turning
+tone	bantering
+tongue	hold
+town	returned
+trees	skipped
+valves	charged
+valves	hissing
+vessel	knocking
+vessel	sail
+walk	betrayed
+water	threw
+way	stop
+wonder	increasing
+world	believe
+ado	apprised
+allies	filled
+antipodes	transferred
+barometer	referred
+barometer	seemed
+body	writhing
+boilers	repairing
+bridge	remounted
+bridge	took
+broker	meeting
+business	attend
+cabins	engage
+captain	overwhelmed
+chagrin	perceived
+channels	guide
+city	created
+club hotel	remain
+club hotel	repaired
+club hotel	returned
+coast	separated
+conversation	begged
+cousin jeejeeh	engaged
+crew	lending
+crowd	noticed
+day	know
+days	found
+days	obliged
+days	remain
+delay	filled
+delight	shook
+departure	postponed
+depot	finds
+detective	pursued
+docks	give
+earth	seemed
+effects	writhing
+exchange	repaired
+forehead	passed
+fortune	retiring
+gentleman	intrude
+gentleman	responded
+hand	clasped
+hand	lending
+hand	passed
+hand	shook
+inquiry	learn
+inquiry	retiring
+inquiry	taken
+instant	countenance
+journey	continue
+journey	speed
+land	signalled
+magic	transferred
+maledictions	prevail
+men	permitted
+mind	change
+moment	remained
+moments	reflected
+morning	leave
+neck	twist
+officers	overwhelmed
+order	obey
+palanquin	conducted
+palanquin	repaired
+palanquins	betrayed
+parsee merchant	passed
+parsee merchant	reflected
+parterres	floating
+parterres	formed
+passengers	going
+place	finds
+place	took
+pocket	come
+port	created
+project	embarrass
+responses	won
+return	left
+return	remain
+robber	escape
+room	engaged
+sailors	help
+sailors	overwhelmed
+saloon	descending
+satisfaction	betrayed
+satisfaction	mattered
+sea	gazed
+sea	lash
+sea	seemed
+set teeth	returned
+smile	fix
+speed	resumed
+spirit	bounded
+steamer	leave
+tempest	lasted
+tempest	taking
+tranquillity	gazed
+victoria port	found
+victoria port	wandered
+warrant	come
+weather	cleared
+week	await
+woman	going
+yesterday	gone
+yokohama boat	crossed
+yokohama boat	left
+yokohama boat	making
+yokohama boat	missed
+yokohama boat	reached
+yokohama boat	reaching
+yokohama steamer	missed
+accomplice	help
+arm	caught
+arm	placed
+bah	think
+bed	laid
+bed	lay
+bed	supported
+chair	pushed
+classes	reserved
+clerk	gave
+clerk	informed
+cushions	furnished
+customers	drinking
+detective	help
+detective	listen
+detective	passed
+detective	spoke
+detective	think
+english merchants	sell
+evil	deal
+expense	put
+eye	caught
+feet	taking
+forehead	passed
+gentlemen	's
+gentlemen	blush
+gentlemen	count
+gentlemen	put
+gentlemen	satisfied
+gentlemen	try
+gentlemen	waylay
+glass	emptying
+glass	found
+government	attempted
+government	passed
+hand	passed
+hand	placed
+hand	pressing
+head	mounted
+head	taking
+idea	continue
+instant	continued
+instant	getting
+instant	losing
+journey	chatted
+journey	interrupt
+laws	deal
+liquor	mounted
+liquor	perceiving
+london office	sent
+man	following
+man	know
+man	makes
+man	tries
+moment	wait
+money	's
+money	cried
+money	put
+move	make
+move	seemed
+mr.	fix
+obligation	returning
+obstacles	put
+persons	lay
+pockets	put
+quay	caught
+ravages	arrested
+seat	resumed
+sleep	lay
+smoker	dies
+smoker	smoke
+steamer	leave
+steamer office	entered
+table	taking
+tickets	gave
+time	returning
+victims	dispense
+voice	lowering
+wager	makes
+way	put
+years	dies
+accomplice	arrested
+amount	carrying
+arm	offering
+banknotes	carrying
+bell	answer
+bill	paying
+boat	have
+boat	looking
+carpet-bag	make
+carpet-bag	taking
+commission	answers
+companion	confused
+complicity	securing
+conditions	travel
+departure	informed
+detective	answered
+detective	disappointed
+detective	excuse
+detective	look
+determination	docks
+document	displayed
+document	doubted
+english fashion	shaking
+evening	absorbed
+evening	sailed
+events	passing
+face	appeared
+fellow	failed
+fellow	keep
+fellow	repeated
+fellow	sent
+fellow	tracked
+fellow	want
+fist	striking
+fix	comes
+fix	fix
+fix	followed
+fix	left
+fix	seemed
+fix	served
+fix	stupefied
+genuineness	doubted
+hand	slipped
+hands	held
+hands	shaking
+harbour	leave
+heart leap	felt
+horror	imagined
+horror	seems
+hotel	returned
+hour	stepped
+hours	left
+hours phileas fogg	wandered
+lady	expected
+lips	put
+man	answer
+man	betray
+man	know
+man	separated
+matter	disturb
+mind	forced
+moment	approached
+morning	leave
+mr.	betray
+mr.	come
+mr.	deny
+mr.	fix
+mr.	got
+mr.	seen
+mr.	stammered
+mr. phileas fogg	absorbed
+mr. phileas fogg	accosted
+mr. phileas fogg	attached
+mr. phileas fogg	carry
+mr. phileas fogg	continuing
+mr. phileas fogg	detained
+mr. phileas fogg	disturb
+mr. phileas fogg	expected
+mr. phileas fogg	find
+mr. phileas fogg	forced
+mr. phileas fogg	got
+mr. phileas fogg	informed
+mr. phileas fogg	learned
+mr. phileas fogg	observing
+mr. phileas fogg	passing
+mr. phileas fogg	remarked
+mr. phileas fogg	replied
+mr. phileas fogg	wandered
+pretext	resumed
+protector	shaking
+puffs	drew
+quay whence	stepped
+return	see
+search	continuing
+servant	find
+table	fell
+table	lay
+table	striking
+table-d'hote	dined
+table-d'hote	served
+task	acquitted
+tavern	left
+thread	attached
+tide	being
+time	left
+time	stated
+vexation	answer
+village	come
+voice	heard
+wager	resumed
+week	detained
+wheelbarrow	brought
+yesterday	arrived
+accommodation	confined
+advantage	aid
+advantage	run
+air	flying
+anxiety	struggling
+cabin	bulged
+copper sheathing	betrayed
+copper sheathing	shining
+course	directed
+currents	aid
+currents	run
+description	gave
+detective	thought
+disappearance	disturbed
+distance	walked
+earnest-money	like
+favour	ask
+flag	hoisted
+formalities	gone
+glance	cast
+head	rustled
+honour	is
+honour	joking
+honour	put
+honour	risk
+honour	satisfied
+hour	go
+lamp	provided
+lamp	swinging
+light	die
+luggage	sent
+mariners	composed
+masts	leaned
+men	risk
+miles	make
+miles	reach
+minutes	hoisted
+moon	entering
+mr. fogg	cast
+mr. fogg	seated
+ocean	looked
+others	directed
+others	returned
+palanquin	stopped
+passengers	carry
+pilot	added
+pilot	gazed
+pilot	returned
+pilot	walked
+pilot-boat	repaired
+pilot-boat races	gaining
+poles	add
+poles	used
+police-station	directed
+prizes	gaining
+provisions	got
+provisions	stored
+quarter	entering
+quay	cast
+racing yacht	built
+railing	leaned
+sailor	are
+sailor	get
+sailor	leaned
+sailor	missed
+sailor	offer
+sailor	opened
+sailor	reach
+sailor	standing
+sails	hoisted
+sails	put
+sails	rustled
+sails	seemed
+san francisco steamer	puts
+san francisco steamer	start
+san francisco steamer	starts
+sea	got
+seagull	rode
+servant	treated
+state	fix
+steamer	take
+sum	gain
+tons	built
+trade	confide
+twilight	darkening
+twilight	ventured
+vessel	ventured
+voyage	attempt
+walls	bulged
+waters	staggering
+waters	swelling
+waves	bounded
+waves	rode
+way	arranged
+wharf	returned
+wind	carried
+wind	let
+wind	running
+wind	taking
+winds	impelled
+wings	seemed
+woman	affected
+woman	looked
+woman	seated
+woman	ventured
+appetite	ate
+bank	stolen
+barometer	announced
+bow	seated
+breeze	arose
+breeze	let
+breeze	set
+breeze	subsided
+cabin	descended
+change	announced
+change	rising
+clouds	overcast
+clouds	rising
+coast	separate
+confidences	fix
+consultation	think
+continent	gain
+counter-currents	formed
+course	broke
+course	held
+craft	rigged
+craft	shatter
+crew	asked
+crew	set
+day	borne
+day	kept
+day	preserving
+deck	leave
+end	fulfil
+evening	held
+evening	set
+evening	showed
+expense	travel
+expenses	enters
+extradition	fulfil
+extradition	secured
+feather	lifted
+fellow-travellers	kept
+future	thinking
+gale	bouncing
+gale	predict
+heavens	examining
+heavens	seemed
+honour	think
+hour	lose
+hours	freshened
+hours	took
+journey	affect
+lights	hung
+lips	scorched
+locomotive	going
+log	indicated
+log	showed
+matter	looking
+matter	seem
+means	admit
+meteorologist	passed
+miles	accomplished
+misgivings	saw
+moment	embarked
+mouth	open
+mr. fogg	ate
+mr. fogg	descended
+noon	subsided
+north-west	bore
+occurrences	going
+occurrences	shatter
+passengers	bathed
+passengers	requested
+passengers	submitted
+pilot	cried
+pilot	favours
+pilot	gave
+pilot	hung
+pilot	kept
+pilot	put
+pilot	realise
+pilot	reefed
+pilot	seem
+pilot	thinking
+pilot	took
+pole-masts	dispensed
+pole-masts	waited
+poles	put
+police	enjoy
+police	throwing
+precautions	took
+protector	fastened
+provisions	live
+reef	take
+repast	share
+reply	admit
+reward	inspired
+royal yacht regatta	contesting
+sail	hoisted
+sea	raised
+sea	struck
+share	pay
+share	speak
+shock	shatter
+south-east	raised
+speed	going
+storm-jib	hoisted
+sun	set
+suspicions	confirmed
+tankadere	accomplishing
+tankadere	bore
+tankadere	carried
+tankadere	crossed
+tankadere	drew
+tankadere	entered
+tankadere	held
+tankadere	kept
+tankadere	lifted
+tankadere	rose
+tankadere	saved
+tankadere	seemed
+tankadere	struck
+tastes	knowing
+teeth	muttering
+tempest	indicated
+times	assured
+times	compare
+times	seemed
+tone	admit
+tonnage	owing
+track	throwing
+villain	abandon
+villain	fix
+villain	traversed
+waves	broke
+waves	chopping
+way	take
+wind north	held
+wind north	is
+air	resounded
+air	sobered
+brass cannon	stood
+breeze	coming
+breeze	keep
+breeze	passed
+cabin	emerge
+cargo	carried
+change	bounded
+change	raged
+coal	apply
+coast	coming
+coast	espied
+coast	passed
+course	change
+course	directed
+currents john bunsby	found
+day	reappeared
+day	seen
+distance	accomplish
+dreams	pursued
+fellow	awoke
+fellow	struggled
+flag	hoist
+flag	run
+flag	succour
+fogs	making
+gentleman	has
+gentleman	interrupted
+heart	beat
+horizon	descended
+hours	lost
+hours	remained
+idea	fixed
+idea	pursued
+jerk	pushing
+miles	traverse
+moment	becoming
+mr. fogg	divulge
+mr. fogg	engaged
+mr. fogg	excepted
+mr. fogg	find
+mr. fogg	found
+mr. fogg	impart
+mr. fogg	looked
+mr. fogg	reached
+mr. fogg	rushed
+mr. fogg	wish
+murderer	am
+murderer	hope
+muzzle	loaded
+oath	swore
+opium den	left
+opium-house	fix
+pardon	beg
+partners	found
+passepartout	beg
+passepartout	carried
+passepartout	crossed
+passepartout	descended
+passepartout	feared
+passepartout	fell
+passepartout	finds
+passepartout	got
+passepartout	lifted
+passepartout	muttered
+passepartout	proceeded
+passepartout	saw
+pilot	escaping
+pilot	looked
+pilot	swore
+pilot-boat	succour
+plank	rushing
+purser	has
+purser	interrupted
+purser	know
+purser	replied
+quay	puffing
+rascal	hope
+repose	take
+rudder	pushing
+sailors	accustomed
+sailors	carried
+sails	caught
+saloon	descended
+sea	bounded
+sea	fell
+sea-breeze	inhaling
+seat	fell
+seat	saw
+sense	collect
+sense	found
+signals	making
+smokers	reserved
+south-east	returned
+storm	had
+storm	lost
+stream	situated
+sun	descended
+tankadere	bounded
+tankadere	kept
+task	found
+time	appointed
+time	leaving
+torpor	shook
+touchhole	apply
+track	kept
+walls	keeping
+waves	crossed
+waves	imparted
+wind	becoming
+wind	grew
+wind	returned
+world	round
+zephyrs	caught
+air	stood
+ambassadors	seemed
+apple trees	giving
+artist	dressed
+artist	wandering
+bamboo enclosures	giving
+bet	lost
+birds	protected
+birds	standing
+breakfast	eat
+buddhist priests	hid
+bushes	giving
+busts	begging
+butchers	stalls
+camellias	saw
+canvas shoes	wore
+care	being
+carnival	am
+cattle	knowing
+cattle	preserved
+cedar groves	beheld
+chests	displayed
+children	cut
+clothes	change
+clothes	discovered
+clown	followed
+coat	accoutred
+company	passed
+concert	get
+consuls	call
+costume	liked
+costumes	surrounded
+costumes	thought
+course	decide
+crowd	succeeded
+crows	consider
+crows	standing
+crows	symbolise
+dancers	executing
+dancers	looking
+dealer	discovered
+ducks	standing
+eagles	perched
+entertainer	change
+entertainer	dressed
+entertainer	get
+entertainer	occurred
+entertainer	pay
+entertainer	sauntering
+exchange	applied
+eyes	fell
+features	bearing
+feet	took
+fellow	craved
+fellow	found
+fellow	mistaken
+fellow	observed
+fellow	taken
+fellow	walking
+fields	found
+fronts	having
+fruit	giving
+garments	change
+gowns	crossed
+guards	carrying
+guards	enveloped
+guide	taking
+guns	bearing
+hair	tore
+harbour	lit
+hawks	standing
+head	lose
+heads	begging
+herons	standing
+hours	wait
+hours	wandered
+idea	directed
+idea	go
+idea	struck
+islands	put
+islands	worshipped
+ladies	seem
+lanterns	lit
+leg	standing
+legs	begging
+merchants	felt
+mind	grow
+minds	symbolise
+moment mr. fogg	ate
+moment mr. fogg	missed
+moment mr. fogg	ruined
+money	get
+morning	craved
+morning	following
+mr. fogg	ate
+mr. fogg	missed
+new world	lay
+office	absorbed
+ornaments	glittering
+outrageously long	becomes
+passage	paid
+passepartout	am
+passepartout	applied
+passepartout	appreciate
+passepartout	approached
+passepartout	asked
+passepartout	ate
+passepartout	began
+passepartout	beheld
+passepartout	bestowed
+passepartout	caught
+passepartout	chuckled
+passepartout	consider
+passepartout	discovered
+passepartout	eaten
+passepartout	entered
+passepartout	espied
+passepartout	fail
+passepartout	fell
+passepartout	find
+passepartout	followed
+passepartout	found
+passepartout	get
+passepartout	give
+passepartout	got
+passepartout	helped
+passepartout	imagine
+passepartout	issued
+passepartout	knew
+passepartout	liked
+passepartout	lose
+passepartout	occurred
+passepartout	offer
+passepartout	put
+passepartout	re-entered
+passepartout	reflecting
+passepartout	resolved
+passepartout	retain
+passepartout	saw
+passepartout	sell
+passepartout	starved
+passepartout	stopped
+passepartout	strolling
+passepartout	thought
+passepartout	tore
+passepartout	use
+passepartout	wandered
+patrol	succeeded
+people	crowded
+performances	giving
+pigeons	protected
+pilgrims	begging
+placard	fell
+placard	giving
+placard	read
+pocket	jingled
+priests	hid
+priests	passing
+processions	passing
+profession	despised
+profession	respected
+quarter	favour
+quarter	lit
+quarter	re-entered
+quarter	wandered
+ravens	protected
+resolution	carry
+resolution	remained
+resolution	taken
+sails	supplied
+scarfs	crossed
+scarfs	tied
+screens	cut
+sea	worshipped
+servant	like
+shrubs	espied
+situation	study
+slumbers	aroused
+smoking-houses	puffing
+soldiers	carrying
+soldiers	clad
+songs	knew
+sparrows	protected
+steamer	missed
+steps	took
+stout heart	keep
+straw sandals	wore
+streets	carrying
+streets	crowded
+streets	gathered
+streets	hid
+streets	wandered
+stripes	clad
+suites	surrounded
+tambourines	beating
+tea-houses	expanding
+tea-houses	puffing
+teeth	blackened
+telescopes	stood
+time	passed
+trees	giving
+trick	saw
+verandas	adorned
+violets	espied
+waists	hung
+watch	sell
+way	found
+willows	weeping
+women	barrows
+women	observe
+wood	worked
+absence	gave
+account	gave
+air	striking
+air	tossed
+air	tottered
+air	traced
+appendages	disposed
+appendages	fixed
+applause	lost
+arms	furrowed
+arms	holding
+artists	group
+audience	composed
+backs	lay
+balance	lost
+benches	precipitated
+bones	performing
+boxes	precipitated
+candles	extinguished
+candles	juggled
+candles	lighted
+capacity	giving
+cards	built
+ceiling	pointing
+chapter xxiv	guessed
+chin	hung
+clowns	exhibit
+company	form
+compliment	composed
+consuls	applied
+costume	adorned
+costume	donned
+course	directed
+craft	directed
+damages	demanded
+deck	rose
+destination	reached
+door	resounded
+drums	performing
+effects	produced
+emotion	betrayed
+end	worked
+engagement	concluded
+evening	leave
+exercises	performed
+faces	fastened
+fan	extinguished
+feature	fastened
+fellow	cheered
+fellow	donned
+fellow	fastened
+fellow	felt
+fellow	thought
+fellow	took
+fellow	winning
+flag	espying
+floor	stretched
+flutes	performing
+foot	spinning
+footlights	clearing
+friend	see
+gallery	clambering
+gallery	perceived
+general grant	cross
+general grant	named
+general grant	rigged
+gongs	performing
+grimaces	make
+hands	seemed
+hour	cut
+hours	gaining
+hurry	retained
+imitation warts	having
+jugglers	kept
+jugglers	put
+jugglers	threw
+jugglers	took
+jugglers	tossed
+juggling	interrupting
+ladders	crossed
+ladders	dispersed
+ladders	turning
+lightning-rods	represent
+lips	passed
+man	furnished
+master	fell
+masts	aiding
+masts	giving
+masts	rigged
+middle ages	bore
+motion	changing
+mr.	fix
+mr. batulcar	cried
+mr. fogg	applied
+mr. fogg	began
+mr. fogg	heard
+mr. fogg	help
+mr. fogg	led
+mr. fogg	passed
+mr. fogg	recognised
+mr. fogg	taken
+musicians	performing
+musicians	took
+nationality	cause
+nose	cut
+nose	donned
+nose	winning
+noses	arose
+noses	frolicked
+noses	group
+nourishment	serve
+officers	spending
+orchestra	striking
+others	curved
+others	dressed
+others	frolicked
+others	performed
+part	fill
+part	study
+pell-mell	bring
+performance	announced
+performance	close
+pipe-stems	stretched
+piston-rod	worked
+place	take
+place	took
+pockets	put
+position	abandoning
+position	took
+pyramid	forming
+pyramid	happened
+pyramid	tottered
+pyramid	vanished
+question	cause
+right	balanced
+sails	giving
+san francisco steamer	announced
+san francisco steamer	leave
+scene	announced
+servant	finding
+servant	missing
+servant	take
+shed	invaded
+shoulders	bore
+shoulders	mounting
+smoking opium	excused
+spectators	comprising
+spectators	invaded
+spectators	precipitated
+stage	bring
+stage	precipitated
+stage	stretched
+steam power	aiding
+steamer	stepped
+streets	sing
+streets	wandering
+tam-tams	performing
+tambourines	performing
+theatre	led
+time	arrived
+time	lost
+time	wandering
+tops	seemed
+troupe	act
+troupe	quitted
+vacation	spending
+walking-beam	fell
+walking-beam	rose
+way	dressed
+wings	adorned
+wings	parted
+wings	retained
+word	heard
+words	composed
+yokohama steamer	depart
+yokohama steamer	started
+adversary	am
+adversary	expected
+adversary	listen
+adversary	looking
+allies	replied
+amazement	recognised
+assassins	flocked
+assassins	gambled
+blows	proved
+bombay priests	sent
+box	mounted
+cabin	concealed
+californian capital	spend
+carriage	entered
+carriage	taking
+chronometers	agreed
+churches	docks
+churches	ranged
+circuits	make
+clocks	divided
+companion	attached
+companion	chatted
+companion	felt
+companion	telling
+companion	thought
+companion	yielded
+condition	got
+continent	set
+country	return
+cry	frightened
+cry	uttered
+day	lost
+day	meet
+day	regulate
+deck	face
+driver	mounted
+effect	comprehended
+effect	explain
+elephants	travelling
+english consulate	repaired
+english ground	left
+explanation	avoid
+extradition	procure
+family watch	agreed
+family watch	keeping
+family watch	regulate
+fellow	bet
+fellow	changed
+fellow	concealed
+fellow	found
+fellow	grasped
+fellow	hoped
+fellow	insisted
+fellow	liked
+fellow	met
+fellow	passed
+fellow	recognised
+fellow	spent
+fiftieth parallel	accomplished
+fists	listened
+game	am
+game	change
+game	changed
+general grant	decided
+general grant	entered
+general grant	passed
+general grant	reached
+hands	changed
+hour	left
+hours	divided
+international hotel	set
+journey	retard
+loading	facilitate
+london time	keeping
+manner	joined
+meridians	repeated
+moment	fix
+mr. fogg	arrived
+name	given
+name	justified
+nature	impressed
+neck	twist
+obstacles	keep
+obstacles	put
+outlaws	gambled
+paddles	sustained
+path	put
+planks	tumbling
+police	thrown
+quarter	appeared
+quays	facilitate
+quays	falling
+quays	perched
+quays	rising
+quays	unloading
+rascal	replied
+right-angles	cut
+right-angles	imported
+squares	appeared
+steamer	rolled
+steamer	sustained
+streets	ranged
+subject	joined
+sun	regulate
+sun	repeated
+thrashing	expected
+thrashing	given
+throat	grasped
+tide	rising
+ties	attached
+tour	complete
+track	thrown
+train	learned
+train	left
+tributaries	ply
+vessels	unloading
+voyage	happened
+way	keep
+way	put
+yokohama steamer	miss
+agitation	arose
+air	erected
+air	raised
+arm	leaning
+attempts	hustled
+bar	occupied
+bar	partake
+beef	dried
+beef	partake
+biscuits	partake
+blow	crushing
+blow	given
+blows	returned
+brows	knit
+bruise	bore
+business	recalled
+coal wharf	erected
+colonel proctor	seen
+companion	protect
+crowd	blocked
+crowd	collected
+crowd	mingle
+crowd	swayed
+din	mingling
+enemy	fix
+enemy	keeping
+english consulate	started
+expression	resumed
+feet	got
+fires	fix
+fist	raised
+fists	flew
+hand	gained
+honour	attacked
+honourable mr. camerfield	gained
+honourable mr. mandiboy	gained
+hubbub	arose
+hurrahs	heard
+instant	disappeared
+international hotel	reached
+international hotel	returned
+international hotel	seem
+look	darting
+lookers-on	tell
+luggage	convey
+mass	stir
+master	armed
+master	waiting
+men	going
+men	mingle
+mr. fogg	installing
+mr. fogg	served
+oyster soup	partake
+parts	divided
+party	took
+passengers	convey
+pawnees	listening
+petroleum warehouse	erected
+plates	served
+porter	called
+porter	replied
+posters	carrying
+precaution	thought
+purses	taking
+remark	smiled
+revolvers	armed
+revolvers	purchase
+rout	approached
+rout	flowed
+ruffian	darting
+scene	observed
+sentence	finish
+shoulders	fix
+shoulders	raised
+shoulders	received
+shoulders	seemed
+shouts	heard
+silk hat	smashed
+squall	agitated
+stairway	approached
+station	convey
+station	reached
+stead	received
+steamer	met
+step	flowed
+steps	proceeded
+steps	reached
+stores	exposed
+stores	lined
+surface	floundered
+table	installing
+tatters	reappeared
+thumps	exchanged
+tide	swept
+train	taking
+travellers	found
+travellers	reached
+trousers	divided
+vote	casting
+way	casting
+way	treated
+weapons	used
+wind	floating
+windows	exposed
+word	keeping
+words	told
+air	take
+aisles	circulating
+anger	arose
+angles	avoiding
+atlantic steamer	take
+balcony cars	supplied
+banks	passed
+beasts	ruminating
+bed	protected
+bell	emitting
+bellowings	interrupting
+bellowings	uttering
+berths	improvised
+branch	follows
+buffaloes	crushed
+buffaloes	get
+buffaloes	marched
+car	affixed
+car	transformed
+cattle	go
+cattle	stop
+chapter xxvi	compose
+churches	saw
+clergyman	taken
+companions	resumed
+conditions	consumed
+course	moderate
+cow-catcher	clear
+cow-catcher	crushed
+cow-catcher	extended
+cow-catcher	mingled
+cow-catcher	twined
+creeks	lining
+curtains	protected
+curves	avoiding
+dam	contain
+dam	seemed
+defiles	plunging
+defiles	seemed
+desert	plunges
+detective	found
+difficulty	succeeded
+direction	rose
+direction	runs
+direction	taken
+distance	massing
+distance	rose
+door	affixed
+dormitory	transformed
+elder william hitch	deliver
+elder william hitch	invited
+election	assembled
+evening	laid
+events	grown
+execution	affect
+eyes	protected
+fanatics	reducing
+feet	exceeding
+friend	strangle
+front	conducted
+gait	marched
+horizon	disappeared
+horizon	lining
+hotels	saw
+hour	fall
+hour elder william hitch	rose
+hours	accomplished
+hours	lasted
+laramie territory	crosses
+light	emitting
+lines	connect
+locomotive	brought
+locomotive	running
+metal ribbon	measures
+metal ribbon	united
+mile	grew
+miles	measures
+miles	passed
+minutes	transformed
+mishap	foresaw
+morning	reached
+morrow	laid
+mountain-sides	approaching
+mountain-sides	avoiding
+mountain-sides	suspended
+mr. fogg	asked
+mr. fogg	fix
+mr. fogg	foresaw
+mr. fogg	observed
+mr. fogg	resumed
+mr. fogg	travelling
+news	spread
+news dealers	book
+news dealers	circulating
+night	lasted
+oakland station	left
+obstacle	form
+obstacle	overcome
+obstacle	removed
+one	ventured
+passengers	contained
+passengers	ensconced
+places	resumed
+platforms	conducted
+platforms	found
+platforms	gazed
+point	kept
+point	passed
+point	reached
+point	turned
+pounds sterling	calculating
+prairies	grew
+prairies	passed
+precipices	suspended
+programme	foresaw
+provocation	strangle
+quays	saw
+railway	attempt
+railway	crosses
+railway	turned
+ranks	passing
+restaurants	supplied
+route	wished
+rule	reducing
+saloon cars	supplied
+salt lake	rose
+salt lake	turns
+smoking-cars	supplied
+snow	began
+snow	obstruct
+snow	started
+spectacle	gazed
+speed	slackening
+spur	extended
+squares	saw
+steward	announced
+steward	entered
+stoppages	counting
+streets	saw
+study	diverted
+system	remained
+system	rolled
+theatre cars	wanting
+time	designated
+time	lost
+time	regain
+trains	stop
+traveller	protected
+value	calculating
+visage	contrasted
+way	clear
+way	get
+weather	snowing
+windows	seen
+words	compose
+work	commenced
+work	pursued
+adversary	perceive
+arms	raising
+arsenal	surrounded
+artisans	counts
+artisans	engaged
+audience	grew
+auditor	fixing
+basin	arrive
+branch road	connected
+branch road	laying
+breadth	reduced
+breath	recovered
+brother	continued
+cause	experiencing
+chances	increase
+churches	saw
+clumps	seen
+colonel stamp proctor	recognised
+colony	established
+colony	flourished
+colony	practised
+community	founded
+conduct	account
+creatures	seemed
+creditors	gave
+creditors	ruined
+culverts	cross
+curve	described
+day	stopped
+december	stopped
+depth	increased
+direction	took
+discovery	feeling
+efforts	redoubled
+elder william hitch	added
+elder william hitch	continued
+engineers	avoided
+engineers	found
+enthusiast	disconcert
+enthusiast	gave
+enthusiast	proceeded
+expanse	encrusted
+expanse	framed
+expanse	increased
+expanse	reduced
+expectations	flourished
+extent	encrusted
+extent	increased
+extent	observe
+extent	reduced
+eyes	fixing
+farmers	cultivated
+farmers	spent
+fears	experiencing
+feet	situated
+forest	appeared
+forest	illuminated
+fort bridger station	stopped
+fright	behold
+gestures	emphasising
+glances	cast
+government	granted
+green river station	got
+green river station	stopped
+ground	covered
+groups	charged
+gymnast	watching
+hearers	left
+heart	sank
+hood	wore
+hours	connected
+hours	expresses
+hours	spent
+ladies	admitted
+lecture	continuing
+lecture	making
+lecture	reached
+locomotive wheels	began
+mansion	surrounded
+market	surrounded
+masks	disguised
+master	make
+master	waited
+messenger	appeared
+messenger	gave
+miles	completed
+miles	situated
+moment	cries
+mormon religion	admitted
+mr.	come
+mr.	fix
+mr.	perceive
+mr.	see
+mummy showman	received
+night	interrupt
+one	stop
+others	cross
+others	habited
+others	stopped
+palisades	surrounded
+party	connected
+party	found
+passengers	got
+passengers	observe
+passengers	recognised
+passengers	reduced
+passengers	walking
+passepartout	added
+passepartout	approached
+passepartout	assassinated
+passepartout	behold
+passepartout	cast
+passepartout	deal
+passepartout	does
+passepartout	felt
+passepartout	grew
+passepartout	imagined
+passepartout	insulted
+passepartout	learned
+passepartout	left
+passepartout	listening
+passepartout	mistaken
+passepartout	replied
+passepartout	seems
+passepartout	take
+passepartout	taken
+passepartout	thrown
+passepartout	ventured
+passepartout	watching
+pavilions	adorned
+pebble wall	built
+pebble wall	surrounded
+persecutions	reappeared
+place	populated
+places	took
+platforms	walking
+point	described
+point	took
+polygamists	supposed
+polygamy	practised
+professions	engaged
+progress	interrupt
+prophet	left
+prophet	revealed
+proselytes	bequeathed
+proselytes	make
+protector	called
+protector	inspired
+pursuit	honoured
+railway trains	make
+railway trains	stop
+region	get
+rocks	penetrating
+scene	taken
+sea	called
+sea	observe
+sea	situated
+season	waited
+sense	pitied
+silk dresses	wore
+snow	fallen
+station	found
+station	took
+story	reduced
+streams	descend
+temple	erected
+temple	reached
+tents	plant
+territory	find
+times	related
+town	built
+town	spent
+track	exhausted
+track	fell
+track	jumped
+track	rushed
+train	does
+train	entered
+train	leaving
+train	making
+train	reached
+train	rested
+train	stopped
+train	took
+travellers	promenading
+travellers	reached
+travellers	saw
+visit	pay
+voice	emphasising
+wahsatch range	included
+wahsatch range	spurs
+way	crossed
+weber	descend
+window	drew
+wives	conduct
+wives	seeing
+woman	attached
+woman	comprehend
+woman	drew
+woman	recognised
+woman	sank
+woman	seen
+women	accounted
+women	behold
+women	charged
+words	emphasising
+wyoming territory	entered
+years	left
+accident	mark
+attention	attracted
+beast	appeared
+birds	flew
+birds	frightened
+birds	rose
+boat	cross
+breakfast	resumed
+bridges	leaping
+car	leave
+car	stirring
+cards	buy
+colonel	asked
+colonel	launched
+colonel	replied
+colonel stamp proctor	cried
+colonel stamp proctor	found
+colonel stamp proctor	imagine
+conductor	denouncing
+conductor	replied
+conductor	returned
+conductor	urged
+conversation	dropped
+country	mark
+creek	swelled
+days	leave
+delay	cause
+delay	reckoning
+detective	whispered
+discussion	took
+distance	flew
+door	put
+door	take
+experiment	proposed
+ford	find
+frame	felt
+game	absorbed
+game	commenced
+game	playing
+group	joining
+head	put
+hours	crossed
+hours	reach
+iron road	laying
+journey	mark
+laramie peak	being
+laramie peak	formed
+locomotive	frightened
+madam	plays
+master	face
+master	leave
+master	prevent
+matter	replied
+matter	think
+miles	going
+miles	trudge
+north	make
+opponent	matched
+partners	plays
+partners	served
+partners	sold
+passage	risk
+passenger	asked
+passengers	attracted
+passengers	compelled
+passengers	descended
+passengers	drew
+passengers	grumbled
+passengers	protested
+passengers	saw
+passengers	took
+pastime	resume
+plain	appeared
+plains	extended
+plan	seems
+proposal	attracted
+railway	extended
+railway	passing
+railway	resume
+railway company	denouncing
+rains	swelled
+rapids	thrown
+right	rose
+rivers	leaping
+say	heard
+servant	saying
+shudder shoot	felt
+signal-man	sent
+signal-man	talking
+snow	ceased
+snow	take
+speed	putting
+streams	appeared
+teeth	listened
+teeth	set
+track	attained
+train	reached
+train	stopped
+train	telegraphed
+trains	leaping
+travellers	caught
+travellers	found
+way	's
+way	blocked
+way	found
+way	get
+way	occur
+window	looking
+arm	seized
+artery	empty
+artery	form
+back	know
+back	turning
+bank	followed
+bank	speak
+battle	performed
+blood	ran
+car	left
+cars	resumed
+cheers	given
+colonel	cried
+colonel	forget
+colonel	give
+colonel	insulted
+colonel	play
+colonel	replied
+colonel	throw
+conductor	cried
+conductor	prevent
+course	crossing
+course	passing
+course	pursued
+course	reaching
+crash	fell
+days	bring
+days	passed
+desert	thrown
+diamond	play
+doubtless	know
+doubtless	see
+doubtless	urged
+eleven	passed
+engineer	assures
+engineer	inaugurated
+evasion	cried
+evening	crossing
+evening	passing
+evening	reaching
+fellow	address
+fellow	know
+fireworks	let
+game	absorbed
+game	resumed
+guests	invited
+guineas	winning
+hands	showered
+heads	raised
+honours	showered
+inhabitants	settled
+jumper	backed
+justice	acknowledged
+leap	take
+left	passed
+locomotive	issued
+locomotive	whistle
+locomotive	whistled
+locomotives	carrying
+locomotives	stopped
+master	checked
+miles	gone
+miles	passed
+morning	favoured
+morning	left
+mr.	fix
+night camp walbach	passed
+nights	bring
+nights	passed
+one	heard
+one	saw
+opponent	staring
+partners	resumed
+passenger	replied
+passenger	turning
+passengers	resumed
+pawnees	performed
+people	show
+piston	worked
+places	resumed
+plains	descend
+plains	levelled
+platform	followed
+point	stopped
+rails	bore
+river	fell
+road	attained
+road	followed
+road	ran
+sage reflection	heard
+screech	issued
+seat	took
+shoulders	shrugging
+sir	am
+spade	play
+spade	playing
+speed	increased
+stamp proctor	cried
+stamp proctor	replied
+stamp proctor	seemed
+station	gone
+steam	reversing
+stroke	resolved
+strokes	worked
+train	bore
+train	rushing
+trumps	showered
+use	returned
+whist-players	absorbed
+whist-players	passed
+whist-players	perceived
+window	throw
+word	displeases
+word	seemed
+adversaries	march
+air	accompanied
+air	resounded
+arm	wounded
+baggage-car	penetrating
+baggage-car	pillaged
+ball	entered
+balls	whizzed
+bar	jolted
+blows	stunned
+body	decamped
+car	creeping
+car	entered
+car	issue
+car	occupied
+car	remained
+car	returning
+car	rush
+car	slipping
+car	taken
+cars	invaded
+cars	passed
+cars	worked
+cheeks	coursed
+colonel	asked
+colonel	going
+colonel proctor	appeared
+colonel proctor	carried
+colonel proctor	entered
+colonel proctor	fought
+colonel proctor	quitted
+colonel proctor	rushed
+combatants	passed
+combatants	stop
+detective	refuse
+doors	thrusting
+dozen passengers	asked
+dozen passengers	granted
+dozen passengers	occupied
+duel	approaching
+duel	fight
+duel	granted
+end	put
+engine	detached
+engine	mounted
+fort kearney station	carried
+forts	moving
+game	resumed
+gentlemen	crack
+gentlemen	get
+gentlemen	listening
+gentlemen	taken
+groin	entered
+ground	wounded
+guns	armed
+habit	jumped
+head	whizzed
+hearts	felt
+heroine	defended
+horse	mounting
+master	followed
+minutes	exchanged
+minutes	lasted
+minutes	moved
+minutes	remained
+minutes	stop
+minutes	stopped
+moment	cried
+moment	stopped
+moments	occupied
+muskets	stunned
+passengers	carried
+passengers	does
+passengers	killed
+passengers	lay
+passengers	taken
+passepartout	accompanied
+passepartout	cried
+passepartout	does
+passepartout	felt
+passepartout	go
+passepartout	thought
+phileas fogg simply	does
+plain	reach
+plum creek station	approaching
+prison	quitted
+prisoners	taken
+rails	fell
+regulator	work
+reports	continued
+reports	issue
+reports	responded
+revolver	defended
+revolver	shot
+revolver-shots	exchanged
+revolver-shots	responded
+revolvers	provided
+road	waylaid
+safety chains	loosened
+scratch	received
+seats	lay
+seconds	passed
+seconds	remaining
+seconds	shut
+shots	attracted
+siege	carried
+sioux chief	opened
+south	disappearing
+speed	increased
+speed	rushed
+station platform	counted
+stay	cried
+steam-valve	closing
+steps	jumped
+struggle	continued
+struggle	killed
+struggle	lasted
+struggle	put
+struggle	result
+tears	coursed
+time	invaded
+tone	jeering
+traction	owing
+trains	waylaid
+travellers	defended
+trunks	throwing
+way	worked
+wheels	crushed
+windows	shot
+worms	fell
+yoking-bar	unscrewing
+agitation	conceal
+arms	folded
+aspect	gave
+bet	lost
+calm	lowered
+carpet-bag	confided
+cars	found
+company	started
+composure	resumed
+conductor	asked
+confidences	receive
+day	teach
+day	thought
+desert	found
+desert	wander
+doom	pronounced
+doubtless	know
+eyes	lowered
+face	overspread
+footsteps	printed
+fort kearney station	leave
+fortune	sacrificed
+game	abandon
+hands	clasping
+head	placed
+hour	stopped
+hours	crept
+journey	pursue
+light	preceded
+look	understood
+men	pick
+miles	run
+moment	lose
+mr. fogg	added
+mr. fogg	folded
+mr. fogg	propose
+mystery	explained
+noon	pressed
+pallor	overspread
+passengers	disappeared
+place	resume
+platform	walked
+pressure	mounted
+prisoners	save
+route	continued
+sergeant	placed
+servant	find
+servant	living
+servant	rescue
+servant	risk
+shadow	advanced
+shadow	preceded
+sheet	effaced
+sir	disappeared
+snow	printed
+soldiers	save
+soldiers	turning
+station	defend
+station	hurried
+steam	slackened
+steamer	lose
+tears	covering
+train	expected
+travellers	continue
+waiting-room	retired
+whistles	approaching
+whistles	continued
+whistles	heard
+world	followed
+apprehensions	conceal
+band	returned
+beams	examined
+beams	raised
+brigantine sail	attached
+calm	troubled
+captain	alarmed
+captain	know
+captain	sacrifice
+captain	send
+captors	felled
+captors	struggle
+colonel proctor	taken
+companions	begun
+conductor	replied
+conductor	responded
+conversation	heard
+course	take
+dangers	showed
+detachment	arrived
+detachment	send
+detective	approached
+detective	looking
+detective	remained
+detective	replied
+detective	thought
+eleven hours	spare
+engineer	whistled
+face	looking
+feet	burned
+fists	felled
+fort	built
+fort	rushed
+frame	fixed
+gentleman	returned
+gunshots	heard
+hand	pressed
+hand	took
+head	marching
+head	shaking
+heart	stifled
+horizon	narrowed
+horizon	rose
+hours	found
+hours	passed
+hours	regain
+hours	suffered
+imagination	carried
+imagination	showed
+influence	take
+iron stay	held
+jib-sail	hoist
+journey	interrupted
+journey	proceeding
+lashings	held
+man	proposed
+man	spoke
+mast	fixed
+mast	held
+master	hastened
+master	ruined
+men	sacrifice
+method	proposed
+night	approached
+night	fix
+night	passed
+night aouda	go
+night aouda	kept
+night aouda	took
+night aouda	wandered
+objects	recognise
+passengers	taken
+places	taken
+plains	rested
+prisoners	interrupt
+prisoners	replied
+reconnaissance	ordering
+relief	hastened
+reward	distributed
+seat	take
+signal	was
+smoke	mingling
+snow	falling
+snow	fell
+sound	coming
+squad	gone
+station	walking
+station platform	burned
+steam	escaping
+steamer	leaves
+steamer	spare
+storm	kept
+time	found
+time	lost
+train pass	does
+travellers	marching
+trip	interrupt
+valves	escaping
+vehicle	examined
+waiting-room	coming
+word	saying
+accident	happened
+account	expended
+account	thought
+air	biting
+air	inhaled
+air	travelling
+ally	grasp
+atlantic seaboard	arrived
+band	left
+beasts	attacked
+birds	fly
+breeze	blew
+brigantine	screen
+cars	get
+conditions	proposed
+conviction	shaken
+course	gained
+course	held
+danger	held
+day	depart
+day	reached
+desire	felt
+distance	left
+earth	skimming
+evening	sailed
+face	sets
+fields	disappeared
+force	added
+force	lessening
+fortune	risked
+ground	lifted
+hamburg boats	go
+hand	grasp
+hope	carried
+hours	traversed
+inman steamer	cross
+inman steamer	depart
+island	formed
+jib	added
+jib	arranged
+jib	held
+journey	uttered
+lake	seemed
+landmarks	perceived
+lashings	held
+lashings	resounded
+life	risked
+limbs	stretched
+line	kept
+line	moving
+mast	bend
+master	ceased
+master	helping
+master	leave
+miles	separated
+mist	sets
+names	rushing
+nebraska town	ascended
+nebraska town	finds
+night	crossed
+night	entered
+obstacles	putting
+octave	give
+omaha railway station	directed
+omaha railway station	reached
+passengers	took
+passengers	wrapped
+path	putting
+pereire	leave
+places	took
+plain	deserted
+prairie	moving
+prairie	seemed
+presentiment	checked
+projects	serve
+railway	described
+rascal	completed
+rascal	think
+reserve	kept
+return	shaken
+route	proposed
+route	shortening
+rudder	left
+ruins	risen
+sails	added
+sails	furled
+sails	hoisted
+sails	lifted
+saint joseph	unites
+section	ran
+self-accusations	consult
+self-accusations	overwhelmed
+sights	see
+sledge	rigged
+sledges	make
+sloop	rigged
+snow	blocked
+snow	hardened
+snow	slid
+spirits	reach
+stake	added
+stake	ruin
+stations	passes
+steps	directed
+streams	disappeared
+struggle	engages
+sums	expended
+terminus	finds
+thing	forget
+thoughts	guess
+time	lost
+time	reaching
+time	recovered
+top-mast	hoisted
+tour	counted
+towns	rushing
+train	passed
+train	stopped
+trains	blocked
+trains	run
+trains	wanting
+travellers	attacked
+travellers	going
+travellers	held
+travellers	huddled
+travellers	speak
+travelling-cloaks	wrapped
+tree	rattled
+tree	sped
+tree	twisted
+union pacific road	formed
+vehicle	guide
+violin bow	vibrated
+wager	save
+west	blowing
+whiteness	disappeared
+winter	make
+wolves	gained
+woman	aided
+accident	happened
+adventure	ended
+affair	come
+anger	signified
+banknotes	managed
+battery	anchored
+boat	got
+boat	hailed
+boat	happened
+body	managed
+broadway	drove
+cabin	shut
+chapter xxxiii	directed
+chapter xxxiii	passed
+chapter xxxiii	put
+chapter xxxiii	skirted
+chapter xxxiii	turned
+craft	manage
+day	mounted
+deck	ascended
+disappointment	betray
+fire island	passed
+gamut	extended
+head	scratch
+jersey city ferryboat	crossed
+machinery	happened
+man	mounted
+means	found
+miles	cross
+morning tide	put
+night	passed
+noon	mounted
+others	permit
+others	rest
+others	slept
+party	crossed
+party	drove
+passepartout	abandoned
+passepartout	disembark
+passepartout	heard
+passepartout	thought
+passepartout	uttered
+passepartout instructions	await
+passepartout instructions	inform
+persons	carry
+position	ascertain
+prediction	confirmed
+reply	admit
+repugnance	conquering
+return	await
+river	moored
+rooms	engaged
+route	changing
+sea	throw
+st. nicholas hotel	left
+time money	smoothed
+trading vessel	belongs
+trading vessel	buy
+trading vessel	freight
+trading vessel	is
+use	make
+voyage	extended
+voyage	going
+wind	veer
+anger	permitted
+boat	managing
+bomb	appeared
+bomb	go
+breeze	swelled
+cabin	continued
+coal	exhausted
+coal	get
+coal	give
+coal	given
+coal	giving
+course	deviate
+course	kept
+craft	kept
+days	experienced
+deck	swamping
+delays	forgotten
+detective	began
+detective	continued
+detective	embarked
+detective	replied
+end	accomplished
+end	beating
+end	protruding
+end	thought
+epithet	resenting
+eye	confessed
+eye	fix
+eye	going
+eye	looking
+eye	understood
+feats	amazed
+fellow	amazed
+fellow	boiled
+fellow	commanded
+fellow	experienced
+fellow	forgotten
+fellow	formed
+fellow	looking
+fellow	revolved
+fellow	saying
+fellow	speak
+fellow	thought
+fires	kept
+fires	let
+friendships	formed
+gentlemen	managed
+heel	turning
+heroes	fired
+intimacy	existed
+localities	passed
+man	enchanted
+man	get
+man	heard
+man	help
+man	ignored
+man	muttered
+man	overheard
+man	recovered
+man	repeated
+mariner	kept
+mariner	knew
+meals	carry
+miles	replied
+misfortune	retarded
+moments	appeared
+night	varied
+noon phileas fogg	called
+noon phileas fogg	consider
+noon phileas fogg	continued
+noon phileas fogg	deviate
+noon phileas fogg	furled
+noon phileas fogg	go
+noon phileas fogg	imagined
+noon phileas fogg	increased
+noon phileas fogg	kept
+noon phileas fogg	knew
+noon phileas fogg	replied
+noon phileas fogg	seem
+noon phileas fogg	seemed
+noon phileas fogg	sell
+noon phileas fogg	sent
+past	forgotten
+pickaroon	sent
+pirate	turned
+poop-deck	appeared
+poop-deck	permitted
+position	ascertained
+precautions	took
+progress	retarded
+reflection	comforted
+robber	put
+robber	turned
+sailors	amazed
+sailors	formed
+sailors	managed
+sails	furled
+sails	hoisted
+screw	rose
+sea	maintain
+seaman	amazed
+seaman	confused
+seaman	managing
+self-esteem	humiliated
+shoulders	shrugging
+skies	darkened
+south-east	remained
+south-east	veered
+speed	slackened
+steam	count
+steam	decreasing
+steamer	ploughed
+stokers	fired
+temperature	varied
+tempest	swelled
+tiger	unchain
+valves	filled
+vessel	stealing
+vexations	forgotten
+visage	darkened
+water	rose
+waves	ploughed
+waves	raised
+waves	rise
+waves	upright
+wind	continued
+wind	failed
+wind	grow
+wind	remained
+wind	veered
+words	catch
+atlantic steamers	gain
+banknotes	seizing
+blow	failed
+boats	sent
+brains	blowing
+bunks	have
+bunks	sacrificed
+cabins	sacrificed
+charge	revolted
+coast	sighted
+compliment	considered
+crew	worked
+custom house clock	struck
+day	added
+day	burned
+day	sacrificed
+day	sighted
+day	transferred
+deck	sacrificed
+end	attain
+engine	agreed
+english soil	set
+evening	arriving
+evening	reach
+fastnet light	sighted
+features	betraying
+fires	keeping
+fit	having
+fittings	disappeared
+force	burst
+frames	have
+gentleman	ruined
+gentleman	sold
+hand	grasped
+hand	put
+hands	advancing
+hands	observed
+harbour	enter
+heart	arrested
+heart	revolted
+hours	gain
+hours	observed
+hours	put
+hours	reach
+hulk	disappeared
+iron rods	barred
+journal	drew
+last	reaches
+lights queenstown	passing
+lights queenstown	put
+lights queenstown	see
+lips	escaped
+liverpool quay	disembarked
+look	set
+mails	carried
+mails	put
+man	changed
+mind	changed
+moment	arrest
+moment	fix
+money	pocketed
+morning	entered
+name	arrest
+one	tell
+passenger	considered
+passenger	going
+passenger	paid
+pocket	consigned
+pocket	drew
+policemen	held
+poop	sacrificed
+prison	escaping
+project	commiserate
+protector	arrested
+protector	save
+quarter	reach
+railings	disappeared
+robber	arrested
+room	walked
+saturday	written
+seats	have
+shoulder	put
+sides	disappeared
+situation	stated
+stay	replied
+steam	keep
+steamer	gained
+steamer	missed
+steamers	stop
+table	put
+thing	know
+thought	struck
+time	lost
+train	got
+vessel	belongs
+warrant	showing
+waves	rise
+window	barred
+words	written
+affairs	putting
+arms	drew
+bankers	go
+breakfast	get
+cab	got
+chair	took
+course	decided
+credit	transferred
+dangers	braved
+day	surprised
+days	burning
+delays	forced
+deserts	received
+detective	walked
+detective passage	given
+dog	watched
+door	knocked
+door	listened
+door	swung
+door	watched
+dwellers	told
+eleven	struck
+engineer	stimulated
+evening	ask
+evening	sent
+evening	speak
+eyes	bending
+eyes	brightened
+eyes	close
+face	's
+face	looked
+faithful servant	set
+fellow	doomed
+fellow	found
+fellow	thought
+floor	found
+folly	ceased
+fortune	remained
+friend	going
+friend	left
+gas burner	burning
+gas burner	extinguished
+gas company	found
+goal	fail
+half	make
+heart	read
+hour phileas fogg	appeared
+hour phileas fogg	arresting
+hour phileas fogg	ask
+hour phileas fogg	asked
+hour phileas fogg	bore
+hour phileas fogg	bringing
+hour phileas fogg	busied
+hour phileas fogg	called
+hour phileas fogg	ceased
+hour phileas fogg	descended
+hour phileas fogg	desired
+hour phileas fogg	does
+hour phileas fogg	dropped
+hour phileas fogg	excuse
+hour phileas fogg	expected
+hour phileas fogg	fix
+hour phileas fogg	forgive
+hour phileas fogg	found
+hour phileas fogg	gave
+hour phileas fogg	get
+hour phileas fogg	go
+hour phileas fogg	gone
+hour phileas fogg	got
+hour phileas fogg	hurried
+hour phileas fogg	influenced
+hour phileas fogg	knew
+hour phileas fogg	knocked
+hour phileas fogg	left
+hour phileas fogg	lived
+hour phileas fogg	looked
+hour phileas fogg	lost
+hour phileas fogg	make
+hour phileas fogg	meditating
+hour phileas fogg	mistaken
+hour phileas fogg	ordered
+hour phileas fogg	present
+hour phileas fogg	read
+hour phileas fogg	receive
+hour phileas fogg	remain
+hour phileas fogg	remained
+hour phileas fogg	returned
+hour phileas fogg	sat
+hour phileas fogg	saw
+hour phileas fogg	seated
+hour phileas fogg	sent
+hour phileas fogg	set
+hour phileas fogg	shut
+hour phileas fogg	sleep
+hour phileas fogg	speak
+hour phileas fogg	stammered
+hour phileas fogg	stepped
+hour phileas fogg	told
+hour phileas fogg	took
+hour phileas fogg	understood
+hour phileas fogg	walked
+hour phileas fogg	warned
+hours	make
+instant	brightened
+journey	make
+keyhole	looked
+master	looked
+message	delivered
+minutes	sat
+misfortune	bore
+misfortune	overwhelmed
+moments	found
+morning	called
+motion	looked
+mr. fogg	blame
+mr. fogg	cried
+night	passed
+noise	heard
+obstacles	overcome
+one	blame
+one	influenced
+passepartout instructions	gave
+pounds	left
+project	meditating
+protection	arrange
+provisions	purchase
+railway arrangements	permit
+reform	present
+rights	putting
+stairs	descended
+station	descended
+station	leaving
+stop	put
+terminus	stepped
+time	absorbed
+time	thought
+train	ordered
+train	permit
+train	stepped
+train	taking
+tranquillity	bore
+wager	lost
+wager	ruined
+watch	kept
+way	found
+westminster clock	struck
+woman	looked
+barings to-morrow	present
+bet	regard
+bets	increased
+bets	laid
+brewer	waited
+change	took
+cheque	present
+clock	indicated
+comfort	secure
+crowd	collected
+crowd	keeping
+crowd	seemed
+days	existed
+days	passed
+death	rescuing
+detective	fix
+discussions	going
+disposal	putting
+disputes	going
+effort	abandoned
+evening	collected
+excitement	rose
+eyes	reappear
+eyes	shut
+face	looked
+fate	awaits
+fate	look
+favour	bet
+gentleman	replied
+gentlemen	assented
+gentlemen	got
+gentlemen	looked
+gentlemen	saying
+griefs	confide
+hand	pressing
+hand	rising
+heart	pressing
+instant	shut
+intelligence	received
+interest	revived
+journey	continuing
+kinswoman	love
+land	secure
+legs	carry
+lips	trembling
+london society	existed
+look	avoid
+lord albemarle	bet
+lord albemarle	lose
+madam	remain
+man	overtake
+marylebone parish	notify
+messengers	dispatched
+minute	appeared
+minutes	agreed
+minutes	arrive
+minutes	indicated
+minutes	pointed
+moment	pointed
+name	transpired
+pall mall	collected
+papers	resumed
+passepartout	appeared
+passepartout	carry
+passepartout	hurried
+passepartout	smiled
+passepartout	summoned
+persecutors	take
+pitch	rose
+police	followed
+punctuality	known
+punctuality	prevent
+racehorse	drawing
+safety	assured
+saturday	appear
+saturday	collected
+saville row morning	dispatched
+scent	followed
+service	left
+smile	smiled
+souls	shared
+streets	collected
+telegrams	sent
+time	agreed
+time	get
+time	got
+time	took
+train	arrive
+train	come
+transactions	going
+turn	ask
+turn	rose
+turning-point	drawing
+woman	dare
+woman	owed
+world	pursuing
+yesterday	arrived
+bride	gave
+bride	saved
+cab	jumped
+cabman	promised
+cards	left
+cards	took
+carriages	overturned
+clock	indicated
+clock	keep
+club doors	forced
+collar	seized
+contrary	lost
+cry	heard
+day	gained
+day	opened
+day	rapped
+day	take
+days	diminished
+days	marked
+dear mr. fogg	've
+dear mr. fogg	accomplished
+dear mr. fogg	am
+dear mr. fogg	appeared
+dear mr. fogg	arrived
+dear mr. fogg	asked
+dear mr. fogg	awaited
+dear mr. fogg	cherished
+dear mr. fogg	crossed
+dear mr. fogg	deducted
+dear mr. fogg	diminished
+dear mr. fogg	divided
+dear mr. fogg	employed
+dear mr. fogg	gained
+dear mr. fogg	going
+dear mr. fogg	gone
+dear mr. fogg	having
+dear mr. fogg	jumped
+dear mr. fogg	kidnapped
+dear mr. fogg	left
+dear mr. fogg	lost
+dear mr. fogg	opened
+dear mr. fogg	promised
+dear mr. fogg	reached
+dear mr. fogg	replied
+dear mr. fogg	returned
+dear mr. fogg	saved
+dear mr. fogg	saw
+dear mr. fogg	shut
+dear mr. fogg	spent
+dear mr. fogg	think
+dear mr. fogg	thought
+dear mr. fogg	travelled
+dear mr. fogg	won
+degrees	crossed
+degrees	gives
+direction	crossed
+direction	gone
+dogs	run
+door	rapped
+door	shut
+doubt	returned
+emotion	betrayed
+eyes	keep
+fact	betrayed
+fact	marked
+family watch	betrayed
+family watch	kept
+family watch	marked
+fifty-fifth	heard
+fortune	belongs
+game	suspended
+gentleman	brought
+gentleman	displayed
+gentleman	gained
+gentlemen	appeared
+grudge	cherished
+happiness yes	gained
+happiness yes	were
+honour	entitled
+hours	arrived
+hours	betrayed
+hours	burned
+hours	gives
+hours	took
+house	left
+house	reached
+journey	brought
+journey	gained
+london time	kept
+marriage ceremony	engage
+minutes	multiplied
+minutes	seemed
+minutes	waited
+monday	replied
+partners	suspended
+passers-by	overturning
+pendulum	beat
+player	listened
+players	felt
+players	keep
+players	rose
+players	seemed
+players	took
+quarter	indicated
+question	ask
+reader	remember
+reverend gentleman	left
+reverend samuel wilson	apprised
+room	burned
+room	staggered
+saloon	appeared
+seats	rose
+servant	gone
+sixtieth	appeared
+street	followed
+street	heard
+street	ran
+sun	gone
+sun	pass
+time	arrived
+time	think
+times	pass
+tour	nothing
+way	forced
+wife	saved
+words	saw
+world	nothing

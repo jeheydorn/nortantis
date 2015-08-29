@@ -1,0 +1,194 @@
+package cs673;
+
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JButton;
+
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
+
+import com.jgoodies.forms.layout.FormLayout;
+import com.jgoodies.forms.layout.ColumnSpec;
+import com.jgoodies.forms.layout.RowSpec;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.BoxLayout;
+import javax.swing.SwingWorker;
+
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+
+import javax.swing.JEditorPane;
+import javax.swing.JTextPane;
+import javax.swing.JTextArea;
+
+import java.awt.ScrollPane;
+
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+
+public class RunSwing
+{
+	private static JTextArea txtrText;
+	private JFrame frame;
+	private JTextField randomSeedTextField;
+	private JFileChooser fileChooser;
+	private JTextField textField;
+	
+	public static boolean isRunning()
+	{
+		return txtrText != null;
+	}
+	
+	public static JTextArea getTextArea()
+	{
+		return txtrText;
+	}
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args)
+	{
+		EventQueue.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					RunSwing window = new RunSwing();
+					window.frame.setVisible(true);
+				} catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public RunSwing()
+	{
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize()
+	{
+		frame = new JFrame("Fantasy Map Creator");
+		frame.setBounds(100, 100, 934, 555);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.X_AXIS));
+		
+		JPanel panel = new JPanel();
+		frame.getContentPane().add(panel);
+		panel.setLayout(null);
+		
+		randomSeedTextField = new JTextField();
+		randomSeedTextField.setBounds(131, 10, 114, 19);
+		panel.add(randomSeedTextField);
+		randomSeedTextField.setColumns(10);
+		randomSeedTextField.setText(System.currentTimeMillis() + "");
+		
+		JButton btnGenerate = new JButton("Generate");
+		btnGenerate.setBounds(99, 465, 101, 25);
+		panel.add(btnGenerate);
+		
+		JLabel lblRandomSeed = new JLabel("Random seed:");
+		lblRandomSeed.setBounds(12, 12, 122, 15);
+		panel.add(lblRandomSeed);
+		
+		JLabel lblPropertiesFile = new JLabel("Properties file:");
+		lblPropertiesFile.setBounds(12, 62, 122, 15);
+		panel.add(lblPropertiesFile);
+		
+		textField = new JTextField();
+		textField.setBounds(131, 60, 214, 19);
+		panel.add(textField);
+		textField.setColumns(10);
+		
+		JButton btnBrowse = new JButton("Browse");
+		btnBrowse.setBounds(357, 57, 96, 25);
+		panel.add(btnBrowse);
+		
+		btnBrowse.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{	
+				int returnVal = fileChooser.showOpenDialog(FileChooserDemo.this);
+				 
+	            if (returnVal == JFileChooser.APPROVE_OPTION) {
+	                File file = fileChooser.getSelectedFile();
+	                //This is where a real application would open the file.
+	                log.append("Opening: " + file.getName() + "." + newline);
+	            } else {
+	                log.append("Open command cancelled by user." + newline);
+	            }
+			}			
+		});
+		
+		btnGenerate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{	
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+			    //Background task for loading images.
+			    SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+			        @Override
+			        public Void doInBackground() 
+			        {
+			        	Properties props = new Properties();
+						try
+						{
+							
+							props.load(new FileInputStream("map_settings.properties"));
+							MapCreator.createMap(props, "map.png", seedFinal);
+						} 
+						catch (Exception e)
+						{
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }
+			 
+			    };
+			    worker.execute();
+			 
+			}
+		});
+		
+		JScrollPane scrollPane = new JScrollPane();
+		frame.getContentPane().add(scrollPane);
+		
+		txtrText = new JTextArea();
+		txtrText.setEditable(false);
+		scrollPane.setViewportView(txtrText);
+	}
+}

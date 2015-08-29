@@ -1,0 +1,8 @@
+package cs673;
+
+import java.awt.event.MouseAdapter;
+
+public class ColorButtonListener extends MouseAdapter
+{
+
+}

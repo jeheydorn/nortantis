@@ -1,0 +1,488 @@
+package cs673;
+
+import java.awt.EventQueue;
+
+import javax.imageio.ImageIO;
+
+import java.awt.GridLayout;
+
+import javax.swing.*;
+
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Properties;
+import java.util.Random;
+import java.awt.ScrollPane;
+
+import javax.swing.filechooser.FileFilter;
+
+import org.apache.commons.io.FilenameUtils;
+
+import util.Range;
+
+import javax.swing.BorderFactory;
+import javax.swing.JColorChooser;
+import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+
+import java.awt.Component;
+
+public class RunSwing
+{
+	private static JTextArea txtConsoleOutput;
+	private JFrame frame;
+	private JTextField randomSeedTextField;
+	private JFileChooser fileChooser;
+	private JTextField outputFilename;
+	
+	public static boolean isRunning()
+	{
+		return txtConsoleOutput != null;
+	}
+	
+	public static JTextArea getConsoleOutputTextArea()
+	{
+		return txtConsoleOutput;
+	}
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args)
+	{
+		try {
+            // Set cross-platform Java L&F (also called "Metal")
+			try
+			{
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (ClassNotFoundException | InstantiationException
+					| IllegalAccessException e)
+			{
+				e.printStackTrace();
+			}
+		} 
+		catch (UnsupportedLookAndFeelException e) {
+		       // handle exception
+		    }
+		
+		EventQueue.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				try
+				{
+					RunSwing window = new RunSwing();
+					window.frame.setVisible(true);
+				} catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public RunSwing()
+	{
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize()
+	{
+		frame = new JFrame("Fantasy Map Creator");
+		frame.setSize(1081, 790);
+		frame.setResizable(false);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+		
+		fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(new File("."));
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return null;
+			}
+			
+			@Override
+			public boolean accept(File f)
+			{
+				if (FilenameUtils.getExtension(f.getName()).equals("properties") || f.isDirectory())
+					return true;
+				return false;
+			}
+		});
+
+		
+		JPanel generatePanel = new JPanel();
+		generatePanel.setBounds(new Rectangle(12, 428, 1057, 25));
+		generatePanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+		generatePanel.setLayout(null);
+		frame.getContentPane().add(generatePanel);
+
+		
+		JButton btnGenerate = new JButton("Generate");
+		btnGenerate.setBounds(0, 0, 112, 25);
+		generatePanel.add(btnGenerate);
+		btnGenerate.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{	
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {
+			        	Properties props = new Properties();
+			        	
+			        	
+
+			        	if (outputFilename.getText().length() == 0)
+			        	{
+			        		JOptionPane.showMessageDialog(null, "Output file name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+			        		return null;
+			        	}
+			        	
+						try
+						{
+							return new MapCreator().createMap(props, outputFilename.getText(), seedFinal);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }			 
+			    };
+			    worker.execute();
+			 
+			}
+		});
+		
+		JButton btnPreview = new JButton("Preview");
+		btnPreview.setBounds(124, 0, 100, 25);
+		generatePanel.add(btnPreview);
+		
+		JLabel lblOutputFileName = new JLabel("Output file name:");
+		lblOutputFileName.setBounds(242, 1, 134, 22);
+		generatePanel.add(lblOutputFileName);
+		
+		outputFilename = new JTextField();
+		outputFilename.setBounds(379, 0, 114, 25);
+		generatePanel.add(outputFilename);
+		outputFilename.setToolTipText("This is the file name of the output (not including the path). The extension in this file name will determine the format of the output. Examples are map.png and map.jpg.");
+		outputFilename.setColumns(10);
+		outputFilename.setText("map.png");
+				// temp code.
+				
+				final JPanel buttonsPanel = new JPanel();
+				buttonsPanel.setBounds(12, 0, 1038, 416);
+				frame.getContentPane().add(buttonsPanel);
+				buttonsPanel.setLayout(null);
+				
+				randomSeedTextField = new JTextField();
+				randomSeedTextField.setBounds(131, 10, 114, 22);
+				buttonsPanel.add(randomSeedTextField);
+				randomSeedTextField.setColumns(10);
+				randomSeedTextField.setText(Math.abs(new Random(System.currentTimeMillis()).nextInt()) + "");
+				
+				JLabel lblRandomSeed = new JLabel("Random seed:");
+				lblRandomSeed.setBounds(12, 12, 122, 15);
+				buttonsPanel.add(lblRandomSeed);
+						
+						JButton btnNewSeed = new JButton("New Seed");
+						btnNewSeed.setBounds(257, 8, 105, 25);
+						buttonsPanel.add(btnNewSeed);
+						
+						JSlider slider = new JSlider();
+						slider.setValue(30);
+						slider.setSnapToTicks(true);
+						slider.setMajorTickSpacing(500);
+						slider.setMinorTickSpacing(100);
+						slider.setPaintLabels(true);
+						slider.setPaintTicks(true);
+						slider.setMinimum(300);
+						slider.setMaximum(1800);
+						slider.setBounds(131, 124, 245, 79);
+						buttonsPanel.add(slider);
+						
+						JLabel lblScale = new JLabel("Scale:");
+						lblScale.setBounds(12, 138, 70, 15);
+						buttonsPanel.add(lblScale);
+						
+						JLabel lblSize = new JLabel("Size:");
+						lblSize.setBounds(12, 50, 70, 15);
+						buttonsPanel.add(lblSize);
+						
+						// This tells the slider not to draw a value above the "thumb".
+						//UIManager.put("Slider.paintValue", false);
+						
+						JSlider slider_1 = new JSlider();
+						slider_1.setToolTipText("");
+						slider_1.setValue(100);
+						slider_1.setSnapToTicks(true);
+						slider_1.setPaintTicks(true);
+						slider_1.setPaintLabels(true);
+						slider_1.setMinorTickSpacing(25);
+						slider_1.setMinimum(100);
+						slider_1.setMaximum(200);
+						slider_1.setMajorTickSpacing(25);
+						slider_1.setBounds(131, 44, 245, 79);
+						{
+							Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+							for (int i = slider_1.getMinimum(); i < slider_1.getMaximum() + 1;  i += slider_1.getMajorTickSpacing())
+							{
+								labelTable.put(i, new JLabel(Double.toString(i/100.0)));
+							}
+							slider_1.setLabelTable( labelTable );
+						}
+						buttonsPanel.add(slider_1);
+						
+						JLabel lblLandBlur = new JLabel("Land blur:");
+						lblLandBlur.setBounds(12, 227, 82, 15);
+						buttonsPanel.add(lblLandBlur);
+						
+						JLabel lblOceanBlur = new JLabel("Ocean blur:");
+						lblOceanBlur.setBounds(12, 318, 82, 15);
+						buttonsPanel.add(lblOceanBlur);
+						
+						JSlider slider_2 = new JSlider();
+						slider_2.setValue(30);
+						slider_2.setPaintTicks(true);
+						slider_2.setPaintLabels(true);
+						slider_2.setMinorTickSpacing(1);
+						slider_2.setMaximum(30);
+						slider_2.setMajorTickSpacing(5);
+						slider_2.setBounds(131, 193, 245, 79);
+						buttonsPanel.add(slider_2);
+						
+						JSlider slider_3 = new JSlider();
+						slider_3.setValue(30);
+						slider_3.setPaintTicks(true);
+						slider_3.setPaintLabels(true);
+						slider_3.setMinorTickSpacing(1);
+						slider_3.setMaximum(30);
+						slider_3.setMajorTickSpacing(5);
+						slider_3.setBounds(131, 273, 245, 79);
+						buttonsPanel.add(slider_3);
+						
+						JRadioButton rdbtnOceanEffects = new JRadioButton("Waves");
+						rdbtnOceanEffects.setBounds(564, 10, 185, 23);
+						buttonsPanel.add(rdbtnOceanEffects);
+						
+						JRadioButton rdbtnAddBlurTo = new JRadioButton("Blur");
+						rdbtnAddBlurTo.setBounds(564, 32, 185, 23);
+						buttonsPanel.add(rdbtnAddBlurTo);
+						
+						JLabel lblOceaEffects = new JLabel("Ocean effects:");
+						lblOceaEffects.setBounds(428, 14, 110, 15);
+						buttonsPanel.add(lblOceaEffects);
+						
+						JLabel lblForestDensity = new JLabel("Forest density:");
+						lblForestDensity.setBounds(428, 89, 134, 15);
+						buttonsPanel.add(lblForestDensity);
+						
+						JSlider slider_4 = new JSlider();
+						slider_4.setValue(3);
+						slider_4.setPaintTicks(true);
+						slider_4.setPaintLabels(true);
+						slider_4.setMinorTickSpacing(1);
+						slider_4.setMaximum(3);
+						slider_4.setMajorTickSpacing(1);
+						slider_4.setBounds(564, 63, 245, 79);
+						buttonsPanel.add(slider_4);
+						
+						JLabel lblEdgeLandtowaterRatio = new JLabel("Edge land-to-water ratio:");
+						lblEdgeLandtowaterRatio.setBounds(428, 134, 210, 22);
+						buttonsPanel.add(lblEdgeLandtowaterRatio);
+						
+						JSlider slider_5 = new JSlider();
+						slider_5.setValue(70);
+						slider_5.setToolTipText("");
+						slider_5.setPaintTicks(true);
+						slider_5.setPaintLabels(true);
+						slider_5.setMinorTickSpacing(25);
+						slider_5.setMajorTickSpacing(25);
+						slider_5.setBounds(564, 154, 245, 79);
+						{
+							Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+							for (int i = slider_5.getMinimum(); i < slider_5.getMaximum() + 1;  i += slider_5.getMajorTickSpacing())
+							{
+								labelTable.put(i, new JLabel(Double.toString(i/100.0)));
+							}
+							slider_5.setLabelTable( labelTable );
+						}
+						buttonsPanel.add(slider_5);
+						
+						JLabel lblCenterLandtowaterRatio = new JLabel("Center land-to-water ratio:");
+						lblCenterLandtowaterRatio.setBounds(428, 234, 210, 22);
+						buttonsPanel.add(lblCenterLandtowaterRatio);
+						
+						JSlider slider_6 = new JSlider();
+						slider_6.setValue(70);
+						slider_6.setToolTipText("");
+						slider_6.setPaintTicks(true);
+						slider_6.setPaintLabels(true);
+						slider_6.setMinorTickSpacing(25);
+						slider_6.setMajorTickSpacing(25);
+						slider_6.setBounds(564, 254, 245, 79);
+						buttonsPanel.add(slider_6);
+						
+						JColorChooser tcc = new JColorChooser(new Color(119,91,36));
+				        //tcc.getSelectionModel().addChangeListener(this);
+				        tcc.setBorder(BorderFactory.createTitledBorder(
+
+										
+						JScrollPane scrollPane = new JScrollPane();
+						scrollPane.setBounds(12, 465, 544, 288);
+						frame.getContentPane().add(scrollPane);
+														
+						final ImagePanel previewPanel = new ImagePanel();
+						previewPanel.setBounds(557, 465, 512, 288);
+						frame.getContentPane().add(previewPanel);
+						previewPanel.setLayout(null);
+						previewPanel.setPreferredSize(new Dimension(512, 288));
+						previewPanel.setBackground(Color.red); // TODO change back to white
+						try
+						{
+							previewPanel.image = ImageIO.read(new File("map_small.png"));
+							//		scrollPane.setPreferredSize(new Dimension((frame.getWidth() - previewPanel.getWidth(), 100));
+									txtConsoleOutput = new JTextArea();
+									txtConsoleOutput.setBounds(12, 465, 512, 288);
+									frame.getContentPane().add(txtConsoleOutput);
+									txtConsoleOutput.setEditable(false);
+						} catch (IOException e1)
+						{
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+				
+		btnNewSeed.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				randomSeedTextField.setText(Math.abs(new Random(System.currentTimeMillis()).nextInt()) + "");
+			}			
+		});
+		btnPreview.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				long randomSeed;
+				try
+				{
+					randomSeed = Long.parseLong(randomSeedTextField.getText());
+				}
+				catch(NumberFormatException e)
+				{
+			        JOptionPane.showMessageDialog(null, "The random seed must be an integer.", "Format Error", JOptionPane.ERROR_MESSAGE);
+			        return;
+				}
+				final long seedFinal = randomSeed;
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {
+			        	Properties props = new Properties();
+			        	
+			        	
+			        	props.setProperty("sizeMultiplier", 0.25 + "");
+
+						try
+						{
+							return new MapCreator().createMap(props, null, seedFinal);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						} 
+			        	
+			        	return null;
+			        }
+			        
+			        @Override
+			        public void done()
+			        {
+			        	BufferedImage map = null;
+			            try 
+			            {
+			                map = get();
+			            } 
+			            catch (InterruptedException e) 
+			            {
+			            	e.printStackTrace();
+			                throw new RuntimeException(e.getMessage());
+			            }
+			            catch (java.util.concurrent.ExecutionException e) 
+			            {
+			            	e.printStackTrace();
+			                throw new RuntimeException(e.getMessage());
+			            }
+			            if (map != null)
+			            {
+			            	previewPanel.image = map;
+			            	previewPanel.repaint();
+			            }
+			        }
+			 
+			    };
+			    worker.execute();
+			 
+			}
+		});		
+		
+		JMenuBar menuBar = new JMenuBar();
+		frame.setJMenuBar(menuBar);
+		
+		JMenu File = new JMenu("File");
+		menuBar.add(File);
+		
+		JMenuItem mntmLoadSettings = new JMenuItem("Open Settings");
+		File.add(mntmLoadSettings);
+		
+		JMenuItem mntmSave = new JMenuItem("Save Settings");
+		File.add(mntmSave);
+		
+		JMenuItem mntmSaveAs = new JMenuItem("Save Settings As...");
+		File.add(mntmSaveAs);
+		
+		JMenuBar menuBar_1 = new JMenuBar();
+		menuBar.add(menuBar_1);
+	}
+}
