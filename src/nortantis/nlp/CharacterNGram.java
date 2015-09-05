@@ -1,4 +1,4 @@
-package cs673.nlp;
+package nortantis.nlp;
 
 import java.util.Arrays;
 import java.util.Collection;

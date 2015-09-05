@@ -4,7 +4,7 @@ import hoten.geom.Point;
 
 import java.util.ArrayList;
 
-import cs673.TectonicPlate;
+import nortantis.TectonicPlate;
 
 /**
  * Center.java

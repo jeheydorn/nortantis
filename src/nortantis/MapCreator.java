@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
@@ -31,6 +31,8 @@ import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 
+import nortantis.GraphImpl.ColorData;
+
 import org.apache.commons.io.FilenameUtils;
 import org.jtransforms.utils.ConcurrencyUtils;
 
@@ -41,7 +43,6 @@ import util.ListMap;
 import util.Logger;
 import util.Range;
 import util.Tuple2;
-import cs673.GraphImpl.ColorData;
 
 public class MapCreator
 {

@@ -2,10 +2,9 @@ package test;
 
 import static org.junit.Assert.assertEquals;
 import hoten.geom.Point;
+import nortantis.PolarCoordinate;
 
 import org.junit.Test;
-
-import cs673.PolarCoordinate;
 
 public class PolarCoordinateTest
 {

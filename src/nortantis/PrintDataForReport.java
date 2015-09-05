@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import static java.lang.System.out;
 
@@ -20,6 +20,7 @@ public class PrintDataForReport
 		}
 	}
 	
+	@SuppressWarnings("unchecked")
 	private static void printBookData(String bookName)
 	{
 		String placeNameFilename = "assets/" + bookName + "_place_names.ser";

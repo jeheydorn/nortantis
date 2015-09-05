@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
-import cs673.RunSwing;
+import nortantis.RunSwing;
 
 public class Logger
 {

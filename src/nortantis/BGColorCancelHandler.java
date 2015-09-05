@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;

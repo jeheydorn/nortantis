@@ -3,11 +3,10 @@ package test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import hoten.geom.Point;
+import nortantis.GraphImpl;
+import nortantis.PolarCoordinate;
 
 import org.junit.Test;
-
-import cs673.GraphImpl;
-import cs673.PolarCoordinate;
 
 public class GraphImplTest 
 {	

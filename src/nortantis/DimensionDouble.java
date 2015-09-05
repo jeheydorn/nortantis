@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 public class DimensionDouble implements Comparable<DimensionDouble>
 {

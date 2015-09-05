@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -1026,6 +1026,22 @@ public class RunSwing
 		textRandomSeedTextField.setColumns(10);
 		textRandomSeedTextField.setBounds(647, 12, 141, 25);
 		textPanel.add(textRandomSeedTextField);
+		
+		JButton btnEditText = new JButton("Edit Text");
+		btnEditText.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+		        Dialog dialog = new EditTextDialog();
+		        dialog.setVisible(true);
+			}
+		});
+		btnEditText.setBounds(8, 314, 117, 25);
+		textPanel.add(btnEditText);
+		
+		JButton btnClearTextEdits = new JButton("Clear Text Edits");
+		btnClearTextEdits.setBounds(137, 314, 161, 25);
+		textPanel.add(btnClearTextEdits);
 						
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(10, 417, 389, 260);

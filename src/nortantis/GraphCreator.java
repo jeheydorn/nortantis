@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 

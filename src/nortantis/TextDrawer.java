@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;

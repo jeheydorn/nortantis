@@ -1,4 +1,4 @@
-package cs673;
+package nortantis;
 
 import static java.lang.System.out;
 

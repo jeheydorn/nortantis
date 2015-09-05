@@ -17,14 +17,14 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import nortantis.DimensionDouble;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.analysis.function.Sinc;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
-
-import cs673.DimensionDouble;
 
 public class ImageHelper
 {
@@ -905,11 +905,23 @@ public class ImageHelper
 		return result;
 	}
 	
-	public static void writeImage(BufferedImage image, String fileName)
+	public static void write(BufferedImage image, String fileName)
 	{
 		try
 		{
 			ImageIO.write(image, FilenameUtils.getExtension(fileName), new File(fileName));
+		} 
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static BufferedImage read(String fileName)
+	{
+		try
+		{
+			return ImageIO.read(new File(fileName));
 		} 
 		catch (IOException e)
 		{
