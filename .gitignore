@@ -13,7 +13,7 @@ river_mask.png
 *.class
 /bin
 biomes.png
-map_creator.jar
+nortantis_map_generator.jar
 fantasy_map_creator/*
 matched_*.png
 experiment*.png
