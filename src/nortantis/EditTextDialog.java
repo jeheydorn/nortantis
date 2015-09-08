@@ -60,7 +60,7 @@ public class EditTextDialog extends JDialog
 	 * Create the dialog.
 	 * @throws IOException 
 	 */
-	public EditTextDialog(MapSettings settings, final RunSwing runSwing)
+	public EditTextDialog(final MapSettings settings, final RunSwing runSwing)
 	{
 		final EditTextDialog thisDialog = this;
 		this.settings = settings;
@@ -107,6 +107,7 @@ public class EditTextDialog extends JDialog
 			public void mouseClicked(MouseEvent e)
 			{
 				handleMouseClickOnMap(e);
+				runSwing.btnClearTextEdits.setEnabled(!settings.edits.editedText.isEmpty());
 			}
 		});
 		
@@ -136,6 +137,8 @@ public class EditTextDialog extends JDialog
 					// Save
 					runSwing.saveSettings(mapDisplayPanel);
 				}
+				
+				runSwing.btnClearTextEdits.setEnabled(!settings.edits.editedText.isEmpty());
 			}
 		});
 		

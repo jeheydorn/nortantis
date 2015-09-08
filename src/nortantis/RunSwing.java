@@ -112,7 +112,7 @@ public class RunSwing
 	float fractalPower;
 	private JTextField textRandomSeedTextField;
 	private JButton btnEditText;
-	private JButton btnClearTextEdits;
+	public JButton btnClearTextEdits;
 	MapEdits edits;
 	
 	public static boolean isRunning()
@@ -1005,6 +1005,7 @@ public class RunSwing
 	            if (n == JOptionPane.YES_OPTION) 
 	            {
 					edits = new MapEdits();
+					btnClearTextEdits.setEnabled(false);
 	            }
 
 			}
@@ -1389,6 +1390,7 @@ public class RunSwing
 		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
 		
 		edits = settings.edits;
+		btnClearTextEdits.setEnabled(!edits.editedText.isEmpty());
 		
 		lastSettingsLoadedOrSaved = settings;
 	}

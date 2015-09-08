@@ -128,7 +128,7 @@ public class MapSettings implements Serializable
 			b.append(entry.getKey());
 			b.append(",");
 			b.append(entry.getValue().text);
-			b.append("\n");
+			b.append("<end>");
 		}
 		return b.toString();
 	}
@@ -442,15 +442,16 @@ public class MapSettings implements Serializable
 				String str = props.getProperty("editedText");
 				if (str == null || str.isEmpty())
 					return result;
-				for (String part : str.split("\n"))
+				for (String part : str.split("<end>"))
 				{
 					if (part.isEmpty())
 						continue;
-					int i = str.indexOf(',');
+					int i = part.indexOf(',');
 					if (i == -1)
 						throw new IllegalArgumentException("Unable to read edited text because ',' could not be found.");
 					int id = Integer.parseInt(part.substring(0, i));
-					result.put(id, new MapText(id, part.substring(i+1, part.length()), null));
+					String name = part.substring(i+1, part.length());
+					result.put(id, new MapText(id, name, null));
 				}
 				return result;
 			}
