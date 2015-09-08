@@ -35,13 +35,13 @@ public class PrintDataForReport
 			throw new RuntimeException(e);
 		} 
 		
-		List<Pair<String, String>> nounAdjectivePairs = null;
-		List<Pair<String, String>> nounVerbPairs = null;
+		List<Pair<String>> nounAdjectivePairs = null;
+		List<Pair<String>> nounVerbPairs = null;
 		try
 		{
-			nounAdjectivePairs = (List<Pair<String, String>>) SerializationUtilities.deserialize(
+			nounAdjectivePairs = (List<Pair<String>>) SerializationUtilities.deserialize(
 					"assets/" + bookName + "_noun_adjective_pairs.ser");
-			nounVerbPairs = (List<Pair<String, String>>) SerializationUtilities.deserialize(
+			nounVerbPairs = (List<Pair<String>>) SerializationUtilities.deserialize(
 					"assets/" + bookName + "_noun_verb_pairs.ser");
 		} 
 		catch (ClassNotFoundException | IOException e)

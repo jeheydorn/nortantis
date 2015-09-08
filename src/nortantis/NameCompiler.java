@@ -27,15 +27,15 @@ import util.Range;
 public class NameCompiler
 {
 	// The first part of each pair is the noun.
-	List<Pair<String, String>> nounAdjectivePairs;
-	List<Pair<String, String>> nounVerbPairs;
+	List<Pair<String>> nounAdjectivePairs;
+	List<Pair<String>> nounVerbPairs;
 	// Used to decide whether to return a result from nounAdjectivePairs or nounVerbPairs.
 	private Counter<String> counter;
 	Random r;
 	private Set<String> dict;
 
-	public NameCompiler(Random r, List<Pair<String, String>> nounAdjectivePairs, 
-			List<Pair<String, String>> nounVerbPairs)
+	public NameCompiler(Random r, List<Pair<String>> nounAdjectivePairs, 
+			List<Pair<String>> nounVerbPairs)
 	{		
 		// Load the word dictionary.
 		List<String> lines;
@@ -74,10 +74,10 @@ public class NameCompiler
 		
 	}
 	
-	private List<Pair<String, String>> convertToPresentTense(List<Pair<String, String>> verbPairs)
+	private List<Pair<String>> convertToPresentTense(List<Pair<String>> verbPairs)
 	{
 		// Convert verbs to present tense.
-		List<Pair<String, String>> result = new ArrayList<>();
+		List<Pair<String>> result = new ArrayList<>();
 		for (int i : new Range(verbPairs.size()))
 		{
 			String verb = verbPairs.get(i).getSecond();
@@ -87,14 +87,14 @@ public class NameCompiler
 		return result;
 	}
 	
-	private List<Pair<String, String>> capitalizeFirstLetters(List<Pair<String, String>> pairs)
+	private List<Pair<String>> capitalizeFirstLetters(List<Pair<String>> pairs)
 	{
-		List<Pair<String, String>> result = new ArrayList<>();
+		List<Pair<String>> result = new ArrayList<>();
 		for (int i : new Range(pairs.size()))
 		{
 			String noun = capitalizeAllFirstLetter(pairs.get(i).getFirst());
 			String pos = capitalizeAllFirstLetter(pairs.get(i).getSecond());
-			result.add(new Pair<String, String>(noun, pos));
+			result.add(new Pair<>(noun, pos));
 		}
 		return result;
 	}
@@ -116,7 +116,7 @@ public class NameCompiler
 	{
 		if (counter.sample(r).equals("adjectives"))
 		{
-			Pair<String, String> pair = nounAdjectivePairs.get(r.nextInt(nounAdjectivePairs.size()));
+			Pair<String> pair = nounAdjectivePairs.get(r.nextInt(nounAdjectivePairs.size()));
 			double d = r.nextDouble();
 			String result;
 			if (d < 1.0/3.0)
@@ -138,7 +138,7 @@ public class NameCompiler
 		}
 		else
 		{
-			Pair<String, String> pair = nounVerbPairs.get(r.nextInt(nounVerbPairs.size()));
+			Pair<String> pair = nounVerbPairs.get(r.nextInt(nounVerbPairs.size()));
 			double d = r.nextDouble();
 			String result;
 			if (d < 0.5) 
@@ -255,8 +255,8 @@ public class NameCompiler
 	
 	public static void test()
 	{
-		final NameCompiler compiler = new NameCompiler(new Random(), new ArrayList<Pair<String, String>>(),
-				new ArrayList<Pair<String, String>>());
+		final NameCompiler compiler = new NameCompiler(new Random(), new ArrayList<Pair<String>>(),
+				new ArrayList<Pair<String>>());
 		// My examples.
 		{
 			List<String> before = Arrays.asList(

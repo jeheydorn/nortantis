@@ -2,10 +2,16 @@ package util;
 
 import static java.lang.System.out;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -264,6 +270,39 @@ public class Helper
 			System.out.println("Helper.writeToFile caught error: " + ex.getMessage());
 		}
 	}
+	
+	/**
+	 * Creates a deep copy of an object using serialization.
+	 */
+	public static Object deepCopy(Object toCopy)
+	{
+		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+		byte[] storedObjectArray;
+		{
+			try (ObjectOutputStream p = new ObjectOutputStream(new BufferedOutputStream(ostream)))
+			{
+				p.writeObject(toCopy);
+				p.flush();
+			} catch (IOException e)
+			{
+				throw new RuntimeException(e);
+			}
+			storedObjectArray = ostream.toByteArray();
+		}
+
+		Object toReturn = null;
+		try (ByteArrayInputStream istream = new ByteArrayInputStream(storedObjectArray))
+		{
+			ObjectInputStream p;
+			p = new ObjectInputStream(new BufferedInputStream(istream));
+			toReturn = p.readObject();
+		} catch (IOException | ClassNotFoundException e)
+		{
+			throw new RuntimeException(e);
+		}
+		return toReturn;
+	}
+
 	
 }
 

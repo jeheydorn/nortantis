@@ -4,10 +4,14 @@ import java.awt.Color;
 import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import util.Function0;
@@ -18,7 +22,8 @@ import util.Helper;
  * @author joseph
  *
  */
-public class MapSettings
+@SuppressWarnings("serial")
+public class MapSettings implements Serializable
 {
 	long randomSeed;
 	double resolution;
@@ -56,9 +61,11 @@ public class MapSettings
 	Font riverFont;
 	Color boldBackgroundColor;
 	Color textColor;
+	MapEdits edits;
 	
 	public MapSettings()
 	{
+		edits = new MapEdits();
 	}
 	
 	public Properties toPropertiesFile()
@@ -102,9 +109,30 @@ public class MapSettings
 		result.setProperty("boldBackgroundColor", colorToString(boldBackgroundColor));
 		result.setProperty("textColor", colorToString(textColor));
 		
+		// User edits.
+		result.setProperty("hiddenTextIds", Helper.toStringWithSeparator(edits.hiddenTextIds, ","));
+		result.setProperty("editedText", editedTextToString());
+		
 		return result;
 	}
-
+	
+	/**
+	 * Stores editedText as a '\n' delimited list of pairs, each delimited by ',';
+	 * @return
+	 */
+	private String editedTextToString()
+	{
+		StringBuilder b = new StringBuilder();
+		for (Entry<Integer, MapText> entry : edits.editedText.entrySet())
+		{
+			b.append(entry.getKey());
+			b.append(",");
+			b.append(entry.getValue().text);
+			b.append("\n");
+		}
+		return b.toString();
+	}
+	
 	private String colorToString(Color c)
 	{
 		return c.getRed() + "," + c.getGreen() + "," + c.getBlue();
@@ -385,6 +413,48 @@ public class MapSettings
 			{
 				return parseColor(props.getProperty("textColor"));
 			}
+		});
+		
+		edits = new MapEdits();
+		// hiddenTextIds is a comma seperated list.
+		edits.hiddenTextIds = getProperty("hiddenTextIds", new Function0<Set<Integer>>()
+		{
+			@Override
+			public Set<Integer> apply()
+			{
+				String str = props.getProperty("hiddenTextIds");
+				Set<Integer> result = new TreeSet<>();
+				if (str == null || str.isEmpty())
+					return result;
+				for (String part : str.split(","))
+					result.add(Integer.parseInt(part));
+				return result;
+			}	
+		});
+				
+		edits.editedText = getProperty("editedText", new Function0<Map<Integer, MapText>>()
+		{
+	
+			@Override
+			public Map<Integer, MapText> apply()
+			{
+				Map<Integer, MapText> result = new TreeMap<>();
+				String str = props.getProperty("editedText");
+				if (str == null || str.isEmpty())
+					return result;
+				for (String part : str.split("\n"))
+				{
+					if (part.isEmpty())
+						continue;
+					int i = str.indexOf(',');
+					if (i == -1)
+						throw new IllegalArgumentException("Unable to read edited text because ',' could not be found.");
+					int id = Integer.parseInt(part.substring(0, i));
+					result.put(id, new MapText(id, part.substring(i+1, part.length()), null));
+				}
+				return result;
+			}
+	
 		});
 	}
 	

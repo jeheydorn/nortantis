@@ -111,6 +111,9 @@ public class RunSwing
 	private int backgroundDisplayCenterX = 667;
 	float fractalPower;
 	private JTextField textRandomSeedTextField;
+	private JButton btnEditText;
+	private JButton btnClearTextEdits;
+	MapEdits edits;
 	
 	public static boolean isRunning()
 	{
@@ -176,6 +179,7 @@ public class RunSwing
 
 	private void createGUI()
 	{		
+		final RunSwing runSwing = this;
 		frame = new JFrame("Nortantis Fantasy Map Generator");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter()
@@ -199,7 +203,7 @@ public class RunSwing
 		
 		JPanel topPanel = new JPanel();
 		topPanel.setLayout(null);
-		topPanel.setPreferredSize(new Dimension(935, 683));
+		topPanel.setPreferredSize(new Dimension(935, 713));
 
 		JScrollPane topScrollPane = new JScrollPane(topPanel);
 		frame.getContentPane().add(topScrollPane, BorderLayout.CENTER);
@@ -233,7 +237,7 @@ public class RunSwing
 			        {
 						try
 						{
-							BufferedImage map = new MapCreator().createMap(settings, null);
+							BufferedImage map = new MapCreator().createMap(settings, null, null);
 							
 							// Save the map to a file.
 							String format = "png";
@@ -303,7 +307,7 @@ public class RunSwing
 
 						try
 						{
-							return new MapCreator().createMap(settings, bounds);
+							return new MapCreator().createMap(settings, bounds, null);
 						} 
 						catch (Exception e)
 						{
@@ -979,6 +983,35 @@ public class RunSwing
 		btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
 		textPanel.add(btnNewTextRandomSeed);
 		
+		btnEditText = new JButton("Edit Text");
+		btnEditText.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+		        Dialog dialog;
+						dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
+					dialog.setVisible(true);
+			}
+		});
+		btnEditText.setBounds(8, 314, 117, 25);
+		textPanel.add(btnEditText);
+		
+		btnClearTextEdits = new JButton("Clear Text Edits");
+		btnClearTextEdits.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+	        	int n = JOptionPane.showConfirmDialog(
+	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
+	                    JOptionPane.YES_NO_OPTION);
+	            if (n == JOptionPane.YES_OPTION) 
+	            {
+					edits = new MapEdits();
+	            }
+
+			}
+		});
+		btnClearTextEdits.setBounds(137, 314, 161, 25);
+		textPanel.add(btnClearTextEdits);
+		
 		drawTextCheckBox = new JCheckBox("Draw text");
 		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
 		drawTextCheckBox.setBounds(8, 8, 125, 23);
@@ -1004,6 +1037,8 @@ public class RunSwing
 				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
 				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
 				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
+				btnEditText.setEnabled(drawTextCheckBox.isSelected());
+				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected());
 			}			
 		});
 		textPanel.add(drawTextCheckBox);
@@ -1026,23 +1061,7 @@ public class RunSwing
 		textRandomSeedTextField.setColumns(10);
 		textRandomSeedTextField.setBounds(647, 12, 141, 25);
 		textPanel.add(textRandomSeedTextField);
-		
-		JButton btnEditText = new JButton("Edit Text");
-		btnEditText.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-		        Dialog dialog = new EditTextDialog();
-		        dialog.setVisible(true);
-			}
-		});
-		btnEditText.setBounds(8, 314, 117, 25);
-		textPanel.add(btnEditText);
-		
-		JButton btnClearTextEdits = new JButton("Clear Text Edits");
-		btnClearTextEdits.setBounds(137, 314, 161, 25);
-		textPanel.add(btnClearTextEdits);
-						
+								
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(10, 417, 389, 260);
 		topPanel.add(scrollPane);
@@ -1173,7 +1192,7 @@ public class RunSwing
 		landDisplayPanel.repaint();
 	}
 	
-	private void saveSettings(JComponent parent)
+	public void saveSettings(JComponent parent)
 	{
 		if (openSettingsFilePath == null)
 		{
@@ -1369,6 +1388,8 @@ public class RunSwing
 		textColorDisplay.setBackground(settings.textColor);
 		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
 		
+		edits = settings.edits;
+		
 		lastSettingsLoadedOrSaved = settings;
 	}
 	
@@ -1442,6 +1463,8 @@ public class RunSwing
 		settings.riverFont = riverFontDisplay.getFont();
 		settings.textColor = textColorDisplay.getBackground();
 		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
+		
+		settings.edits = edits;
 		return settings;
 	}
 	

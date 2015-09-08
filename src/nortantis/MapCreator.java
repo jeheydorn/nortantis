@@ -41,6 +41,7 @@ import util.Helper;
 import util.ImageHelper;
 import util.ListMap;
 import util.Logger;
+import util.Pair;
 import util.Range;
 import util.Tuple2;
 
@@ -61,14 +62,7 @@ public class MapCreator
 	// Mountain images are scaled by this.
 	private final double mountainScale = 1.0;
 	// Hill images are scaled by this.
-	private final double hillScale = 0.5;
-	
-	// All mountain ranges and smaller groups of mountains (include mountains that are alone).
-	private List<Set<Center>> mountainGroups;
-	
-	// All mountain ranges and smaller groups of mountains extended to include nearby hills.
-	private List<Set<Center>> mountainAndHillGroups;
-	
+	private final double hillScale = 0.5;	
 	
 	private List<IconDrawTask> iconsToDraw;
 	
@@ -86,10 +80,10 @@ public class MapCreator
 	 * @param settings
 	 * @param maxResolution The maximun width and height (in pixels) at which to draw the map.
 	 * This is needed for creating previews. null means draw at normal resolution.
+	 * @param mapParts If not null, then parts of the map created while generating will be stored in it.
 	 * @return
-	 * @throws IOException
 	 */
-	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions)
+	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
 			throws IOException
 	{		
 		if (!Files.exists(Paths.get(settings.landBackgroundImage)))
@@ -161,12 +155,16 @@ public class MapCreator
 		double sizeMultiplyer = (bounds.getWidth() / baseResolution);
 		
 		
-		TextDrawer textDrawer = settings.drawText ? new TextDrawer(settings, sizeMultiplyer) : null;
+		TextDrawer textDrawer = settings.drawText || mapParts != null ? new TextDrawer(settings, sizeMultiplyer) : null;
+		if (mapParts != null)
+			mapParts.textDrawer = textDrawer;
 		
 		GraphImpl graph = GraphCreator.createGraph(bounds.getWidth(), bounds.getHeight(),
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
-				sizeMultiplyer);		
+				sizeMultiplyer);	
+		if (mapParts != null)
+			mapParts.graph = graph;
 		
 		// Find the mean polygon width.
 		meanPolygonWidth = findMeanPolygonWidth(graph);
@@ -240,19 +238,19 @@ public class MapCreator
 		
 		// Add rivers.
 		Logger.println("Adding rivers.");
-		BufferedImage riverMask = new BufferedImage(graph.getWidth(),
-				graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 		{
-			Graphics2D g = riverMask.createGraphics();
-			// Draw rivers thin.
-			graph.paint(g, false, false, false, false, false, false, true, sizeMultiplyer/2.0);
-			map = ImageHelper.maskWithColor(map, settings.riverColor, riverMask, true);
-			if (saveMasks)
-				ImageIO.write(riverMask, "png", new File("river_mask_" + settings.randomSeed + "." + "png"));
+			drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
 		}
 	
 		Logger.println("Adding mountains and hills.");
-		addMountainsAndHills(graph);
+		Pair<List<Set<Center>>> pair = findMountainAndHillGroups(graph);
+		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
+		List<Set<Center>> mountainGroups = pair.getFirst();
+		// All mountain ranges and smaller groups of mountains extended to include nearby hills.
+		List<Set<Center>> mountainAndHillGroups = pair.getSecond();
+		addMountainsAndHills(graph, mountainAndHillGroups);
+		if (mapParts != null)
+			mapParts.mountainGroups = mountainGroups;
 
 		Logger.println("Adding sand dunes.");
 		addSandDunes(graph);
@@ -325,12 +323,15 @@ public class MapCreator
 			graph.drawCoastline(g, sizeMultiplyer);
 		}
 		
+		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
+		// because I might draw the text later.
+		drawRivers(graph, landBackground, sizeMultiplyer, settings.riverColor);
+		if (mapParts != null)
+			mapParts.landBackground = landBackground;
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
-			// Add the rivers to landBackground so that the text doesn't erase them.
-			landBackground = ImageHelper.maskWithColor(landBackground, settings.riverColor, riverMask, true);
-
+						
 			textDrawer.drawText(graph, map, landBackground, mountainGroups);
 		}
 		landBackground = null;
@@ -369,6 +370,14 @@ public class MapCreator
 		
 		return map;
 
+	}
+		
+	private void drawRivers(GraphImpl graph, BufferedImage map, double sizeMultiplyer, Color riverColor)
+	{
+		Graphics2D g = map.createGraphics();
+		g.setColor(riverColor);
+		// Draw rivers thin.
+		graph.drawRivers(g, sizeMultiplyer/2.0);
 	}
 		
 	private double findMeanPolygonWidth(GraphImpl graph)
@@ -419,9 +428,9 @@ public class MapCreator
 	/**
 	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
 	 */
-	private void findMountainAndHillGroups(GraphImpl graph)
+	private Pair<List<Set<Center>>> findMountainAndHillGroups(GraphImpl graph)
 	{
-		mountainGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
+		List<Set<Center>> mountainGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
 				{
 					public Boolean apply(Center center)
 					{
@@ -429,7 +438,7 @@ public class MapCreator
 					}
 				});
 		
-		mountainAndHillGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
+		List<Set<Center>> mountainAndHillGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
 		{
 			public Boolean apply(Center center)
 			{
@@ -447,6 +456,8 @@ public class MapCreator
 			}
 			curId++;
 		}
+		
+		return new Pair<>(mountainGroups, mountainAndHillGroups);
 		
 }
 
@@ -642,7 +653,7 @@ public class MapCreator
 	}
 
 
-	private void addMountainsAndHills(GraphImpl graph)
+	private void addMountainsAndHills(GraphImpl graph, List<Set<Center>> mountainAndHillGroups)
 	{		
         // Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
         ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups("mountain");
@@ -1030,7 +1041,7 @@ public class MapCreator
 		MapCreator creator = new MapCreator();
 		try
 		{
-			map = creator.createMap(settings, null);
+			map = creator.createMap(settings, null, null);
 		} catch(Exception e)
 		{
 			ConcurrencyUtils.shutdownAndAwaitTermination();

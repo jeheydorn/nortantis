@@ -18,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,25 +54,31 @@ public class TextDrawer
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 	
 	private BufferedImage landAndOceanBackground;
-	private List<Area> textBounds;
+	private List<MapText> mapTexts;
 	Random r;
+	long originalSeed;
+	// Note: Do not generate/compile names with nameGenerator or nameCompiler directly. Instead call methods
+	// in this class to generate/compile names.
 	private NameGenerator nameGenerator;
 	private NameCompiler nameCompiler;
 	Area graphBounds;
 	private double sizeMultiplyer;
+	private TextCounter textCounter;
 	
 	public TextDrawer(MapSettings settings, double sizeMultiplyer)
 	{
 		this.settings = settings;
 		this.sizeMultiplyer = sizeMultiplyer;
-		textBounds = new ArrayList<>();
+		mapTexts = new ArrayList<>();
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.
 		this.r = new Random(settings.textRandomSeed);
+		this.originalSeed = settings.textRandomSeed;
+		textCounter = new TextCounter();
 				
 		List<String> placeNames = new ArrayList<>();
-		List<Pair<String, String>> nounAdjectivePairs = new ArrayList<>();
-		List<Pair<String, String>> nounVerbPairs = new ArrayList<>();
+		List<Pair<String>> nounAdjectivePairs = new ArrayList<>();
+		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : settings.books)
 		{
 			String placeNameFilename = "assets/books/" + book + "_place_names.txt";
@@ -120,10 +127,20 @@ public class TextDrawer
 //		out.println("noun verb pairs: ");
 //		Helper.printMultiLine(nounVerbPairs);
 	}
-	
-	private List<Pair<String, String>> readStringPairs(String filename)
+
+	/**
+	 * Resets the internal state such that if drawText() is called, it will draw the exact same text again.
+	 */
+	public void reset()
 	{
-		List<Pair<String, String>> result = new ArrayList<>();
+		this.r.setSeed(originalSeed);
+		this.mapTexts.clear();
+		textCounter.clear();
+	}
+	
+	private List<Pair<String>> readStringPairs(String filename)
+	{
+		List<Pair<String>> result = new ArrayList<>();
 		try(BufferedReader br = new BufferedReader(new FileReader(new File(filename)))) 
 		{
 			int lineNum = 0;
@@ -183,7 +200,7 @@ public class TextDrawer
 				// The regression requires at least 3 points.
 				if (plateCenters.size() >= 3)
 				{
-					drawNameHorizontal(map, g, nameGenerator.generateName(), locations, graph, true);
+					drawNameHorizontal(map, g, generateName("",""), locations, graph, true);
 				}
 			}
 		}
@@ -194,7 +211,7 @@ public class TextDrawer
 			{
 				g.setFont(settings.mountainRangeFont);
 				Set<Point> locations = extractLocationsFromCenters(mountainRange);
-				drawNameRotated(map, g, nameCompiler.compileName() + " Range", locations);
+				drawNameRotated(map, g, compileName(""," Range"), locations);
 				// This check is necessary because I'm doing a regression of the Center locations.
 				// The regression requires at least 3 points.
 			}
@@ -204,19 +221,19 @@ public class TextDrawer
 				if (mountainRange.size() >= 2)
 				{
 					if (mountainRange.size() == 2)
-						drawNameHorizontal(map, g, nameCompiler.compileName() + " Twin Peaks", 
+						drawNameHorizontal(map, g, compileName(""," Twin Peaks"), 
 								extractLocationsFromCenters(mountainRange), 
 								graph, false, mountainGroupYOffset * sizeMultiplyer);
 					else
 					{
-						drawNameRotated(map, g, nameCompiler.compileName() + "  Mountains", 
+						drawNameRotated(map, g, compileName("", "  Mountains"), 
 								extractLocationsFromCenters(mountainRange),
 								mountainGroupYOffset * sizeMultiplyer);
 					}
 				}
 				else
 				{
-					drawNameHorizontal(map, g, nameCompiler.compileName() + " Peak",
+					drawNameHorizontal(map, g, compileName("", " Peak"),
 							extractLocationsFromCenters(mountainRange), graph,
 							false, mountainGroupYOffset * sizeMultiplyer);
 				}
@@ -229,13 +246,54 @@ public class TextDrawer
 			if (river.size() >= riverMinLength)
 			{
 				Set<Point> locations = extractLocationsFromCorners(river);
-				drawNameRotated(map, g, nameCompiler.compileName() + " River", locations,
+				drawNameRotated(map, g, compileName("", " River"), locations,
 						riverNameRiseHeight * sizeMultiplyer);
 			}
 			
 		}
 		
 		g.dispose();
+	}
+	
+	
+	public String compileName(String prefix, String suffix)
+	{
+		textCounter.increment();
+		if (settings.edits.hiddenTextIds.contains(textCounter.getCount()))
+		{
+			// Compile a name and throw it away to keep the random names the same.
+			nameCompiler.compileName();
+			return "";
+		}
+		// Check for edited text.
+		MapText mp = settings.edits.editedText.get(textCounter.getCount());
+		if (mp != null)
+		{
+			// Compile a name and throw it away to keep the random names the same.
+			nameCompiler.compileName();
+			return mp.text;
+		}
+		return prefix + nameCompiler.compileName() + suffix;
+	}
+	
+	public String generateName(String prefix, String suffix)
+	{
+		textCounter.increment();
+		if (settings.edits.hiddenTextIds.contains(textCounter.getCount()))
+		{
+			// Generate a name and throw it away to keep the random names the same.
+			nameGenerator.generateName();
+			return "";
+		}
+		// Check for edited text.
+		MapText mp = settings.edits.editedText.get(textCounter.getCount());
+		if (mp != null)
+		{
+			// Generate a name and throw it away to keep the random names the same.
+			nameGenerator.generateName();
+			return mp.text;
+		}
+		return prefix + nameGenerator.generateName() + suffix;
 	}
 	
 	private void addTitle(BufferedImage map, GraphImpl graph, Graphics2D g)
@@ -261,17 +319,17 @@ public class TextDrawer
 			titlePlate = Helper.argmax(oceanPlateWidths);
 		}
 				
-		if (!drawNameHorizontal(map, g, "The Land of " + nameGenerator.generateName(),
+		if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
 				extractLocationsFromCenters(titlePlate.centers), graph, true))
 		{
 			// The title didn't fit. Try drawing it without "The Land of".
-			drawNameHorizontal(map, g, nameGenerator.generateName(),
+			drawNameHorizontal(map, g, generateName("",""),
 					extractLocationsFromCenters(titlePlate.centers), graph, true);
 		}
 		else
 		{
 			// Generate a name and throw it away to make sure names don't change when settings.size changes.
-			nameGenerator.generateName();
+			generateName("","");
 		}
 	}
 	
@@ -512,7 +570,10 @@ public class TextDrawer
 	}
 
 	private void drawNameHorizontalAtPoint(Graphics2D g, String name, Point location, boolean boldBackground)
-	{		
+	{	
+		if (name.length() == 0)
+			return;
+		
 		Font original = g.getFont();
 		Color originalColor = g.getColor();
 		Font background = g.getFont().deriveFont(1, (int)(g.getFont().getSize()));
@@ -547,6 +608,9 @@ public class TextDrawer
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
 			GraphImpl graph, boolean boldBackground, double yOffset)
 	{
+		if (name.length() == 0)
+			return false;
+
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
 		int width = metrics.stringWidth(name);
 		int height = metrics.getHeight();
@@ -593,16 +657,21 @@ public class TextDrawer
 //			g.drawRect(bounds1.x, bounds1.y, bounds1.width, bounds1.height);
 			Area area1 = new Area(bounds1);
 			if (overlapsExistingTextOrIsOffMap(area1))
+			{
+				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
+			}
 			// Check line 2.
 			java.awt.Rectangle bounds2 = new java.awt.Rectangle((int)ulCorner2.x, 
 					(int)ulCorner2.y, metrics.stringWidth(nameLine2), metrics.getHeight());
 //			g.drawRect(bounds2.x, bounds2.y, bounds2.width, bounds2.height);
 			Area area2 = new Area(bounds2);
 			if (overlapsExistingTextOrIsOffMap(area2))
+			{
+				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
-			textBounds.add(area1);
-			textBounds.add(area2);
+			}
+			mapTexts.add(new MapText(textCounter.getCount(), name, Arrays.asList(area1, area2)));
 
 			drawBackgroundBlending(map, g, (int)bounds1.getWidth(), (int)bounds1.getHeight(), ulCorner1, 0);
 			drawNameHorizontalAtPoint(g, nameLine1, new Point(ulCorner1.x, 
@@ -620,8 +689,11 @@ public class TextDrawer
 			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 			Area area = new Area(bounds);
 			if (overlapsExistingTextOrIsOffMap(area))
+			{
+				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
-			textBounds.add(area);
+			}
+			mapTexts.add(new MapText(textCounter.getCount(), name, Collections.singletonList(area)));
 			
 			Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
 			
@@ -649,6 +721,8 @@ public class TextDrawer
 	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
 			double riseOffset)
 	{
+		if (name.length() == 0)
+			return;
 		
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
 		int width = metrics.stringWidth(name);
@@ -700,10 +774,11 @@ public class TextDrawer
 				// Give up.
 				//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 				g.setTransform(orig);
+				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return;
 			}
 		}
-		textBounds.add(area);
+		mapTexts.add(new MapText(textCounter.getCount(), name, Collections.singletonList(area)));
 		
 		Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
 		
@@ -743,13 +818,48 @@ public class TextDrawer
 	
 	private boolean overlapsExistingTextOrIsOffMap(Area bounds)
 	{
-		for (Area a : textBounds)
+		if (settings.edits.editedText.containsKey(textCounter.getCount()))
 		{
-			Area aCopy = new Area(a);
-			aCopy.intersect(bounds);
-			if (!aCopy.isEmpty())
-				return true;
+			// Text edited by users is always shown.
+			return false;
+		}
+		for (MapText mp : mapTexts)
+		{
+			// Ignore empty text and ignore edited text.
+			if (mp.text.length() > 0 && !settings.edits.editedText.containsKey(mp.id))
+			{
+				for (Area a : mp.areas)
+				{
+					Area aCopy = new Area(a);
+					aCopy.intersect(bounds);
+					if (!aCopy.isEmpty())
+						return true;
+				}
+			}
 		}
 		return !graphBounds.contains(bounds.getBounds2D());
+	}
+	
+	/**
+	 * If the given point lands within the bounding box of a piece of text, this
+	 * returns the first one found. Else null is returned.
+	 */
+	public MapText findTextPicked(java.awt.Point point)
+	{
+		for (MapText mp : mapTexts)
+		{
+			if (mp.text.length() > 0)
+				for (Area a : mp.areas)
+				{
+					if (a.contains(point))
+						return mp;
+				}
+		}
+		return null;
+	}
+	
+	public void setSettings(MapSettings mapSettings)
+	{
+		this.settings = mapSettings;
 	}
 }

@@ -181,13 +181,13 @@ public abstract class VoronoiGraph {
     	boolean drawVoronoi = false; 
         paint(g, drawBioms, drawRivers, drawSites, drawCorners, drawDeluanay, drawVoronoi, drawPlates,
         		drawElevations, drawNoisyEdges, drawLandAndOceanBlackAndWhiteOnly, drawCoastlineOnly,
-        		drawRiverMaskOnly, widthMultipierForMasks);
+        		widthMultipierForMasks);
     }
 
     public void paint(Graphics2D g, boolean drawBiomes, boolean drawRivers, boolean drawSites, 
     		boolean drawCorners, boolean drawDelaunay, boolean drawVoronoi, boolean drawPlates,
     		boolean drawElevation, boolean drawNoisyEdges, final boolean drawLandAndOceanBlackAndWhiteOnly,
-    		boolean drawCoastlineOnly, boolean drawRiverMaskOnly, double widthMultipierForMasks)
+    		boolean drawCoastlineOnly, double widthMultipierForMasks)
     {
         final int numSites = centers.size();
 
@@ -208,22 +208,6 @@ public abstract class VoronoiGraph {
         	return;
         }
         
-        if (drawRiverMaskOnly)
-        {
-        	for (Edge e : edges) 
-        	{
-        		if (e.river > 2) 
-        		{
-        			int width = Math.max(1, (int)(widthMultipierForMasks + Math.sqrt(e.river * 0.1)));
-        			g.setStroke(new BasicStroke(width));
-        			g.setColor(Color.white);
-        			drawPath(g, noisyEdges.path0.get(e.index));
-        			drawPath(g, noisyEdges.path1.get(e.index));
-        		}       	
-        	}
-    		return;
-       }
-
         //draw via triangles
         for (Center c : centers) 
         {
@@ -260,17 +244,17 @@ public abstract class VoronoiGraph {
 			});
         }
         
+        if (drawRivers && !drawLandAndOceanBlackAndWhiteOnly)
+        {
+            g.setColor(RIVER);
+        	drawRivers(g, widthMultipierForMasks);
+        }
+        
         for (Edge e : edges) {
             if (drawDelaunay) {
                 g.setStroke(new BasicStroke(1));
                 g.setColor(Color.YELLOW);
                 g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
-            }
-            if (drawRivers && !drawLandAndOceanBlackAndWhiteOnly && e.river > 2) {
-                g.setStroke(new BasicStroke(1 + (int) Math.sqrt(e.river * 0.5)));
-                g.setColor(RIVER);
-                drawPath(g, noisyEdges.path0.get(e.index));
-                drawPath(g, noisyEdges.path1.get(e.index));
             }
             if (drawPlates && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
             {
@@ -318,6 +302,20 @@ public abstract class VoronoiGraph {
         		}
         	}
         	
+        }
+    }
+    
+    public void drawRivers(Graphics2D g, double riverWidthScale)
+    {
+        for (Edge e : edges) 
+        {
+        	if (e.river > 2)
+        	{
+        		int width = Math.max(1, (int)(riverWidthScale + Math.sqrt(e.river * 0.1)));
+                g.setStroke(new BasicStroke(width));
+                drawPath(g, noisyEdges.path0.get(e.index));
+                drawPath(g, noisyEdges.path1.get(e.index));
+        	}
         }
     }
         
