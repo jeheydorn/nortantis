@@ -48,7 +48,7 @@ import util.Tuple2;
 public class EditTextDialog extends JDialog
 {
 
-	private final ImagePanel mapDisplayPanel;
+	private final TextEditingPanel mapDisplayPanel;
 	private JTextField editTextField;
 	private MapSettings settings;
 	private BufferedImage mapWithoutText;
@@ -64,10 +64,10 @@ public class EditTextDialog extends JDialog
 	{
 		final EditTextDialog thisDialog = this;
 		this.settings = settings;
-		BufferedImage placeHolder = ImageHelper.read("/home/joseph/Documents/FantasyMapCreator/workspace/nortantis/assets/drawing_map.jpg");
+		BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.jpg");
 		setBounds(100, 100, placeHolder.getWidth(), placeHolder.getHeight());
 		
-		mapDisplayPanel = new ImagePanel(placeHolder);
+		mapDisplayPanel = new TextEditingPanel(placeHolder);
 		//contentPanel.setPreferredSize(new Dimension(map.getWidth(), map.getHeight()));
 		createMapWithoutTextAndDisplayMapWithText(settings);
 		
@@ -163,10 +163,19 @@ public class EditTextDialog extends JDialog
 	private void handleUpdate(MapText selectedText)
 	{
 		
+		mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
 		if (lastSelected != null && !editTextField.getText().equals(lastSelected.text))
 		{
 			lastSelected.text = editTextField.getText();
 			settings.edits.editedText.put(lastSelected.id, lastSelected);
+
+			// Need to re-draw all of the text.
+			updateTextInBackgroundThread(selectedText);
+		}
+		else
+		{
+			// Just a quick highlights update.
+			mapDisplayPanel.repaint();
 		}
 		
 		if (selectedText == null)
@@ -178,7 +187,6 @@ public class EditTextDialog extends JDialog
 			editTextField.setText(selectedText.text);
 		}
 		
-		updateTextInBackgroundThread(selectedText);
 		
 		lastSelected = selectedText;
 	}
@@ -197,16 +205,6 @@ public class EditTextDialog extends JDialog
 				try
 				{
 					BufferedImage map = drawMapWithText();
-					
-					if (selectedText != null)
-					{
-						// Highlight the text the click was on.
-						Graphics2D g = map.createGraphics();
-						g.setColor(highlightColor);
-						for (Area a : selectedText.areas)
-							g.draw(a);
-					
-					}
 					
 					return map;
 				} 
@@ -248,7 +246,7 @@ public class EditTextDialog extends JDialog
 		final MapSettings settingsFinal = settings;
 		final MapSettings settingsCopy = (MapSettings)Helper.deepCopy(settings);
 		settings = null;
-		settingsCopy.resolution /= 2.0; // TODO make this an option.
+		settingsCopy.resolution /= 1.0; // TODO make this an option.
 		settingsCopy.landBlur = 0;
 		settingsCopy.oceanEffects = 0;
 		settingsCopy.frayedBorder = false;

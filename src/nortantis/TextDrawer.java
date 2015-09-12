@@ -64,11 +64,17 @@ public class TextDrawer
 	Area graphBounds;
 	private double sizeMultiplyer;
 	private TextCounter textCounter;
+	private Font titleFontScaled;
+	private Font regionFontScaled;
+	private Font mountainRangeFontScaled;
+	private Font otherMountainsFontScaled;
+	private Font riverFontScaled;
 	
 	public TextDrawer(MapSettings settings, double sizeMultiplyer)
 	{
 		this.settings = settings;
 		this.sizeMultiplyer = sizeMultiplyer;
+		System.out.println("sizeMultiplyer: " + sizeMultiplyer);
 		mapTexts = new ArrayList<>();
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.
@@ -109,16 +115,15 @@ public class TextDrawer
 			
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 		
-		// Scale the fonts based on settings.size.
-		settings.titleFont = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
+		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
 				(int)(settings.titleFont.getSize() * sizeMultiplyer));
-		settings.regionFont = settings.regionFont.deriveFont(settings.regionFont.getStyle(),
+		regionFontScaled = settings.regionFont.deriveFont(settings.regionFont.getStyle(),
 				(int)(settings.regionFont.getSize() * sizeMultiplyer));
-		settings.mountainRangeFont = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
+		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
 				(int)(settings.mountainRangeFont.getSize() * sizeMultiplyer));
-		settings.otherMountainsFont = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
+		otherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
 				(int)(settings.otherMountainsFont.getSize() * sizeMultiplyer));
-		settings.riverFont = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
+		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
 				(int)(settings.riverFont.getSize() * sizeMultiplyer));
 
 		
@@ -184,12 +189,12 @@ public class TextDrawer
 
 		Graphics2D g = map.createGraphics();
 		
-		g.setFont(settings.titleFont);
+		g.setFont(titleFontScaled);
 		g.setColor(settings.textColor);
 		
 		addTitle(map, graph, g);
 		
-		g.setFont(settings.regionFont);
+		g.setFont(regionFontScaled);
 		for (TectonicPlate plate : graph.plates)
 		{
 			if (plate.type == PlateType.Continental)
@@ -209,7 +214,7 @@ public class TextDrawer
 		{
 			if (mountainRange.size() >= mountainRangeMinSize)
 			{
-				g.setFont(settings.mountainRangeFont);
+				g.setFont(mountainRangeFontScaled);
 				Set<Point> locations = extractLocationsFromCenters(mountainRange);
 				drawNameRotated(map, g, compileName(""," Range"), locations);
 				// This check is necessary because I'm doing a regression of the Center locations.
@@ -217,7 +222,7 @@ public class TextDrawer
 			}
 			else
 			{
-				g.setFont(settings.otherMountainsFont);
+				g.setFont(otherMountainsFontScaled);
 				if (mountainRange.size() >= 2)
 				{
 					if (mountainRange.size() == 2)
@@ -240,6 +245,7 @@ public class TextDrawer
 			}
 		}
 		
+		g.setFont(riverFontScaled);
 		List<Set<Corner>> rivers = findRivers(graph);
 		for (Set<Corner> river : rivers)
 		{
@@ -656,7 +662,7 @@ public class TextDrawer
 					(int)ulCorner1.y, metrics.stringWidth(nameLine1), metrics.getHeight());
 //			g.drawRect(bounds1.x, bounds1.y, bounds1.width, bounds1.height);
 			Area area1 = new Area(bounds1);
-			if (overlapsExistingTextOrIsOffMap(area1))
+			if (overlapsExistingTextOrIsOffMap(area1, false))
 			{
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
@@ -666,7 +672,7 @@ public class TextDrawer
 					(int)ulCorner2.y, metrics.stringWidth(nameLine2), metrics.getHeight());
 //			g.drawRect(bounds2.x, bounds2.y, bounds2.width, bounds2.height);
 			Area area2 = new Area(bounds2);
-			if (overlapsExistingTextOrIsOffMap(area2))
+			if (overlapsExistingTextOrIsOffMap(area2, false))
 			{
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
@@ -688,7 +694,7 @@ public class TextDrawer
 					(int)centroid.y - height/2, metrics.stringWidth(name), height);
 			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 			Area area = new Area(bounds);
-			if (overlapsExistingTextOrIsOffMap(area))
+			if (overlapsExistingTextOrIsOffMap(area, false))
 			{
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
@@ -756,7 +762,7 @@ public class TextDrawer
 				(int)(pivot.y - height/2), width, height);
 		Area area = new Area(bounds);
 		area = area.createTransformedArea(g.getTransform());
-		if (overlapsExistingTextOrIsOffMap(area))
+		if (overlapsExistingTextOrIsOffMap(area, true))
 		{
 			// If there is a riseOffset, try negating it to put the name below the object instead of above.
 			offset = new Point(-riseOffset * Math.sin(angle), riseOffset * Math.cos(angle));
@@ -769,7 +775,7 @@ public class TextDrawer
 			g.rotate(angle, pivot.x, pivot.y);
 			area = new Area(bounds);
 			area = area.createTransformedArea(g.getTransform());
-			if (overlapsExistingTextOrIsOffMap(area))
+			if (overlapsExistingTextOrIsOffMap(area, false))
 			{
 				// Give up.
 				//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -816,9 +822,9 @@ public class TextDrawer
 		return centroid;
 	}
 	
-	private boolean overlapsExistingTextOrIsOffMap(Area bounds)
+	private boolean overlapsExistingTextOrIsOffMap(Area bounds, boolean checkEditedText)
 	{
-		if (settings.edits.editedText.containsKey(textCounter.getCount()))
+		if (!checkEditedText && settings.edits.editedText.containsKey(textCounter.getCount()))
 		{
 			// Text edited by users is always shown.
 			return false;
@@ -826,7 +832,7 @@ public class TextDrawer
 		for (MapText mp : mapTexts)
 		{
 			// Ignore empty text and ignore edited text.
-			if (mp.text.length() > 0 && !settings.edits.editedText.containsKey(mp.id))
+			if (mp.text.length() > 0 && (checkEditedText || !settings.edits.editedText.containsKey(mp.id)))
 			{
 				for (Area a : mp.areas)
 				{
