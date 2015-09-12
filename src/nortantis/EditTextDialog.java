@@ -35,6 +35,8 @@ import javax.swing.JSeparator;
 import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.Box;
 
@@ -44,6 +46,9 @@ import util.Helper;
 import util.ImageHelper;
 import util.Logger;
 import util.Tuple2;
+
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
 
 public class EditTextDialog extends JDialog
 {
@@ -55,6 +60,7 @@ public class EditTextDialog extends JDialog
 	private MapParts mapParts;
 	private Color highlightColor = new Color(255,227,74);
 	private MapText lastSelected;
+	private double zoom;
 
 	/**
 	 * Create the dialog.
@@ -64,12 +70,10 @@ public class EditTextDialog extends JDialog
 	{
 		final EditTextDialog thisDialog = this;
 		this.settings = settings;
-		BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.jpg");
-		setBounds(100, 100, placeHolder.getWidth(), placeHolder.getHeight());
+		final BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.png");
+		setBounds(100, 100, 935, 584); // I am hard coding the dimensions of placeHolder so that Window Builder will still work.
 		
 		mapDisplayPanel = new TextEditingPanel(placeHolder);
-		//contentPanel.setPreferredSize(new Dimension(map.getWidth(), map.getHeight()));
-		createMapWithoutTextAndDisplayMapWithText(settings);
 		
 		getContentPane().setLayout(new BorderLayout());
 		mapDisplayPanel.setLayout(new BorderLayout());
@@ -99,6 +103,35 @@ public class EditTextDialog extends JDialog
 				buttonPane.add(doneButton, BorderLayout.EAST);
 				
 			}
+			
+			JPanel panel = new JPanel();
+			buttonPane.add(panel, BorderLayout.CENTER);
+			
+			JLabel lblZoom = new JLabel("Zoom:");
+			panel.add(lblZoom);
+			
+			final JComboBox<String> zoomComboBox = new JComboBox<>();
+			zoomComboBox.addItem("50%");
+			zoomComboBox.addItem("75%");
+			zoomComboBox.addItem("100%");
+			zoomComboBox.setSelectedItem("50%"); // TODO load from a setting.
+			panel.add(zoomComboBox);
+			setZoom((String)zoomComboBox.getSelectedItem());
+			zoomComboBox.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					setZoom((String)zoomComboBox.getSelectedItem());
+					mapDisplayPanel.setImage(placeHolder);
+					mapDisplayPanel.setAreasToDraw(new ArrayList<Area>(0));
+					mapParts = null;
+					
+					mapDisplayPanel.repaint();
+					createMapWithoutTextAndDisplayMapWithText(settings);
+				}
+			});
+			
 		}
 		
 		mapDisplayPanel.addMouseListener(new MouseAdapter()
@@ -142,6 +175,16 @@ public class EditTextDialog extends JDialog
 			}
 		});
 		
+		createMapWithoutTextAndDisplayMapWithText(settings);
+	}
+	
+	/**
+	 * Sets the zoom field according to the string selected from the zoom combo box.
+	 */
+	private void setZoom(String zoomStr)
+	{
+		double zoomPercent = Double.parseDouble(zoomStr.substring(0, zoomStr.length() - 1));
+		zoom = 100.0 / zoomPercent;
 	}
 		
 	private void handleMouseClickOnMap(MouseEvent e)
@@ -246,7 +289,7 @@ public class EditTextDialog extends JDialog
 		final MapSettings settingsFinal = settings;
 		final MapSettings settingsCopy = (MapSettings)Helper.deepCopy(settings);
 		settings = null;
-		settingsCopy.resolution /= 1.0; // TODO make this an option.
+		settingsCopy.resolution /= zoom;
 		settingsCopy.landBlur = 0;
 		settingsCopy.oceanEffects = 0;
 		settingsCopy.frayedBorder = false;

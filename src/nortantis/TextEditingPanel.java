@@ -14,7 +14,6 @@ public class TextEditingPanel extends ImagePanel
 	
 	public void setAreasToDraw(List<Area> areas)
 	{
-		System.out.println("area: " + areas);
 		this.areas = areas;
 	}
 	

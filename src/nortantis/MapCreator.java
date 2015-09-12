@@ -91,10 +91,7 @@ public class MapCreator
 		if (!Files.exists(Paths.get(settings.oceanBackgroundImage)))
 			throw new IllegalArgumentException("Ocean background image file does not exists: " + settings.oceanBackgroundImage);
 		
-		double startTime = System.currentTimeMillis();
-		
-		final boolean saveMasks = false;
-				
+		double startTime = System.currentTimeMillis();				
 						
         Logger.println("Seed: " + settings.randomSeed);
         r = new Random(settings.randomSeed);
@@ -181,8 +178,6 @@ public class MapCreator
 		{
 			Graphics2D g = landMask.createGraphics();
 			graph.paint(g, false, false, false, true, true, false, false);
-			if (saveMasks)
-				ImageIO.write(landMask, "png", new File("land_mask_" + settings.randomSeed + "." + "png"));
 		}
 
 		BufferedImage map = null;
@@ -203,8 +198,6 @@ public class MapCreator
 		{
 			Graphics2D g = coastlineMask.createGraphics();
 			graph.paint(g, false, false, false, false, false, true, false, sizeMultiplyer);
-			if (saveMasks)
-				ImageIO.write(coastlineMask, "png", new File("coastline_mask_" + settings.randomSeed + "." + "png"));
 		}
 		
 
@@ -215,22 +208,16 @@ public class MapCreator
 		{
 			BufferedImage landBlur;
 			int blurLevel = (int) (settings.landBlur * sizeMultiplyer);
-			if (blurLevel == 0)
-			{
-				landBlur = new BufferedImage(map.getWidth(), map.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-			}
-			else
+			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 				landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
 				ImageHelper.maximizeContrastGrayscale(landBlur);
 				// Remove the land blur from the ocean side of the borders.
 				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+				map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
 			}
 
-			map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
-			if (saveMasks)
-				ImageIO.write(landBlur, "png", new File("land_blur_" + settings.randomSeed + "." + "png"));
 		}
 
 		// Store the current version of the map for a background when drawing icons later.
@@ -238,10 +225,12 @@ public class MapCreator
 		
 		// Add rivers.
 		Logger.println("Adding rivers.");
-		{
-			drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
-		}
+//		StopWatch riverSw = new StopWatch();
+		drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
+//		System.out.println("Time to add rivers in seconds: " + riverSw.getElapsedSeconds());
+		
 	
+//		StopWatch mhdSw = new StopWatch();
 		Logger.println("Adding mountains and hills.");
 		Pair<List<Set<Center>>> pair = findMountainAndHillGroups(graph);
 		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
@@ -254,12 +243,16 @@ public class MapCreator
 
 		Logger.println("Adding sand dunes.");
 		addSandDunes(graph);
+//		System.out.println("Time to add mountains, hills, and dunes in seconds: " + mhdSw.getElapsedSeconds());
 		
+//		StopWatch treeSW = new StopWatch();
 		Logger.println("Adding trees.");
 		addTrees(graph);
+//		System.out.println("Time to add trees in seconds: " + treeSW.getElapsedSeconds());
 		
 		Logger.println("Drawing all icons.");
 		drawAllIcons(map, landBackground);
+		
 		
 		Logger.println("Drawing ocean.");
 		{
@@ -284,11 +277,7 @@ public class MapCreator
 		{
 			BufferedImage oceanBlur;
 			int blurLevel = (int) (settings.oceanEffects * sizeMultiplyer);
-			if (blurLevel == 0)
-			{
-				oceanBlur = new BufferedImage(map.getWidth(), map.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-			}
-			else
+			if (blurLevel > 0)
 			{
 				float[][] kernel;
 				if (settings.addWavesToOcean)
@@ -302,12 +291,11 @@ public class MapCreator
 				ImageHelper.maximizeContrastGrayscale(oceanBlur);
 				// Remove the ocean blur from the land side of the borders.
 				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
+
+				map = ImageHelper.maskWithColor(map, settings.oceanEffectsColor, oceanBlur, true);
+				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
 			}
 				
-			if (saveMasks)
-				ImageIO.write(oceanBlur, "png", new File("ocean_blur_" + settings.randomSeed + "." + "png"));
-			map = ImageHelper.maskWithColor(map, settings.oceanEffectsColor, oceanBlur, true);
-			landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
 		}
 		coastlineMask = null;
 		
@@ -342,8 +330,6 @@ public class MapCreator
 			BufferedImage borderMask = new BufferedImage(graph.getWidth(),
 					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
 			graph.drawBorderWhite(borderMask.createGraphics());
-			if (saveMasks)
-				ImageIO.write(borderMask, "png", Paths.get("border_mask_" + settings.randomSeed + ".png").toFile());
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
 			if (blurLevel > 0)
@@ -354,8 +340,6 @@ public class MapCreator
 			
 				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, borderBlur, true);
 
-				if (saveMasks)
-					ImageIO.write(borderBlur, "png", new File("border_blur_" + settings.randomSeed + "." + "png"));
 			}
 			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
 		}
@@ -364,7 +348,7 @@ public class MapCreator
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 		
 		Logger.println("Shutting down thread pool.");
-		ConcurrencyUtils.shutdownAndAwaitTermination();
+		ImageHelper.shutdownThreadPools();
 
 		Logger.println("Done creating map.");
 		
@@ -628,6 +612,7 @@ public class MapCreator
 	 */
 	private void drawAllIcons(BufferedImage map, BufferedImage background)
 	{
+//		StopWatch sw = new StopWatch();
 		Collections.sort(iconsToDraw);
 
 //		 Scale the icons and masks in parallel.
@@ -650,6 +635,7 @@ public class MapCreator
 			drawIconWithBackgroundAndMask(map, task.icon, task.mask, background, (int)task.centerLoc.x,
 					(int)task.centerLoc.y);
 		}		
+//		System.out.println("Time to draw icons in seconds: " + sw.getElapsedSeconds());
 	}
 
 
@@ -1044,7 +1030,7 @@ public class MapCreator
 			map = creator.createMap(settings, null, null);
 		} catch(Exception e)
 		{
-			ConcurrencyUtils.shutdownAndAwaitTermination();
+			ImageHelper.shutdownThreadPools();
 			throw e;
 		}
 		

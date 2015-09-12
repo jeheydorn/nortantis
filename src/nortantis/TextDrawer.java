@@ -74,7 +74,6 @@ public class TextDrawer
 	{
 		this.settings = settings;
 		this.sizeMultiplyer = sizeMultiplyer;
-		System.out.println("sizeMultiplyer: " + sizeMultiplyer);
 		mapTexts = new ArrayList<>();
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.

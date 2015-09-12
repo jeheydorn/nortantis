@@ -259,7 +259,7 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ConcurrencyUtils.shutdownAndAwaitTermination();
+							ImageHelper.shutdownThreadPools();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						}
 			        	
@@ -312,7 +312,7 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ConcurrencyUtils.shutdownAndAwaitTermination();
+							ImageHelper.shutdownThreadPools();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						} 
 			        	
