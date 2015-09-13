@@ -1,6 +1,8 @@
 package nortantis;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -25,10 +27,16 @@ public class MapEdits implements Serializable
 	 */
 	Map<Integer, MapText> editedText;
 	
+	/**
+	 * Text added using the Add tool. The key is the text id.
+	 */
+	Map<Integer, MapText> addedText;
+	
 	public MapEdits()
 	{
 		hiddenTextIds = new TreeSet<>();
 		editedText = new TreeMap<>();
+		addedText = new TreeMap<>();
 	}
 
 }

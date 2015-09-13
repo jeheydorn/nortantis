@@ -26,10 +26,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import util.Helper;
@@ -57,8 +59,8 @@ public class TextDrawer
 	private List<MapText> mapTexts;
 	Random r;
 	long originalSeed;
-	// Note: Do not generate/compile names with nameGenerator or nameCompiler directly. Instead call methods
-	// in this class to generate/compile names.
+	// Note: When initially generating text, do not generate/compile names with nameGenerator or nameCompiler
+	// directly. Instead call methods in this class to generate/compile names.
 	private NameGenerator nameGenerator;
 	private NameCompiler nameCompiler;
 	Area graphBounds;
@@ -110,8 +112,7 @@ public class TextDrawer
 		}
 				
 		this.nameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage);
-
-			
+	
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 		
 		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
@@ -188,7 +189,6 @@ public class TextDrawer
 
 		Graphics2D g = map.createGraphics();
 		
-		g.setFont(titleFontScaled);
 		g.setColor(settings.textColor);
 		
 		addTitle(map, graph, g);
@@ -200,12 +200,7 @@ public class TextDrawer
 			{
 				Set<Center> plateCenters = findPlateCentersLandOnly(graph, plate);
 				Set<Point> locations = extractLocationsFromCenters(plateCenters);
-				// This check is necessary because I'm doing a regression of the center locations.
-				// The regression requires at least 3 points.
-				if (plateCenters.size() >= 3)
-				{
-					drawNameHorizontal(map, g, generateName("",""), locations, graph, true);
-				}
+				drawNameHorizontal(map, g, generateName("",""), locations, graph, true, true);
 			}
 		}
 		
@@ -215,9 +210,7 @@ public class TextDrawer
 			{
 				g.setFont(mountainRangeFontScaled);
 				Set<Point> locations = extractLocationsFromCenters(mountainRange);
-				drawNameRotated(map, g, compileName(""," Range"), locations);
-				// This check is necessary because I'm doing a regression of the Center locations.
-				// The regression requires at least 3 points.
+				drawNameRotated(map, g, compileName(""," Range"), locations, true);
 			}
 			else
 			{
@@ -227,19 +220,19 @@ public class TextDrawer
 					if (mountainRange.size() == 2)
 						drawNameHorizontal(map, g, compileName(""," Twin Peaks"), 
 								extractLocationsFromCenters(mountainRange), 
-								graph, false, mountainGroupYOffset * sizeMultiplyer);
+								graph, false, mountainGroupYOffset * sizeMultiplyer, true);
 					else
 					{
-						drawNameRotated(map, g, compileName("", "  Mountains"), 
+						drawNameRotated(map, g, compileName("", " Mountains"), 
 								extractLocationsFromCenters(mountainRange),
-								mountainGroupYOffset * sizeMultiplyer);
+								mountainGroupYOffset * sizeMultiplyer, true);
 					}
 				}
 				else
 				{
 					drawNameHorizontal(map, g, compileName("", " Peak"),
 							extractLocationsFromCenters(mountainRange), graph,
-							false, mountainGroupYOffset * sizeMultiplyer);
+							false, mountainGroupYOffset * sizeMultiplyer, true);
 				}
 			}
 		}
@@ -252,16 +245,117 @@ public class TextDrawer
 			{
 				Set<Point> locations = extractLocationsFromCorners(river);
 				drawNameRotated(map, g, compileName("", " River"), locations,
-						riverNameRiseHeight * sizeMultiplyer);
+						riverNameRiseHeight * sizeMultiplyer, true);
 			}
 			
 		}
 		
+		drawUserAddedText(map, graph, g);
+		
 		g.dispose();
 	}
 	
+	/**
+	 * Draw text which was added by the user.
+	 * @param map
+	 * @param graph
+	 * @param g
+	 */
+	public void drawUserAddedText(BufferedImage map, GraphImpl graph, Graphics2D g)
+	{
+		// Draw all user-added text.
+		for (MapText addedText : settings.edits.addedText.values())
+		{
+			// Increment the text counter so that if the user adds more text, it will be given unique ids.
+			textCounter.increment();	
+
+			if (addedText.type == TextType.Title)
+			{
+				g.setFont(titleFontScaled);
+				TectonicPlate plate = graph.getTectonicPlateAt(addedText.location.x, addedText.location.y);
+				if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
+						extractLocationsFromCenters(plate.centers), graph, true, addedText.location, true))
+				{
+					// The title didn't fit. Try drawing it without "The Land of".
+					drawNameHorizontal(map, g, generateName("",""),
+							extractLocationsFromCenters(plate.centers), graph, true, addedText.location, false);
+				}
+			}
+			else if (addedText.type == TextType.Region)
+			{
+				g.setFont(regionFontScaled);
+				Center center = graph.getCenterAt(addedText.location.x, addedText.location.y);
+				Set<Center> plateCenters;
+				if (center.ocean)
+				{
+					plateCenters = findPlateCentersWaterOnly(graph, center.tectonicPlate);
+				}
+				else
+				{
+					plateCenters = findPlateCentersLandOnly(graph, center.tectonicPlate);
+				}
+				Set<Point> locations = extractLocationsFromCenters(plateCenters);
+				drawNameHorizontal(map, g, generateName("",""), locations, graph, true, addedText.location, false);
+			}
+			else if (addedText.type == TextType.Mountain_range)
+			{
+				g.setFont(mountainRangeFontScaled);
+				drawNameRotated(map, g, addedText.text, 0, false, addedText.location, addedText.angle);
+			}
+			else if (addedText.type == TextType.Other_mountains)
+			{
+				g.setFont(otherMountainsFontScaled);
+				drawNameRotated(map, g, addedText.text, 0, false, addedText.location, addedText.angle);				
+			}
+			else if (addedText.type == TextType.River)
+			{
+				g.setFont(riverFontScaled);
+				drawNameRotated(map, g, addedText.text, 0, false, addedText.location, addedText.angle);				
+			}
+			
+			// TODO This is just a hack to keep these fields in the newly created MapText object. Make it prettier.
+			MapText mapText = mapTexts.get(mapTexts.size() - 1);
+			mapText.angle = addedText.angle;
+			mapText.location = addedText.location;
+			mapText.type = addedText.type;
+		}
+
+	}
 	
-	public String compileName(String prefix, String suffix)
+	/**
+	 * Generates a name of the specified type. This is for when the user adds new text to the map.
+	 * It is not used when the map text is first generated.
+
+	 */
+	public String generateNameOfType(TextType type)
+	{
+		if (type.equals(TextType.Title) || type.equals(TextType.Region))
+		{
+			return generateName("", "");
+		}
+		else if (type.equals(TextType.Mountain_range))
+		{
+			nameCompiler.setSeed(System.currentTimeMillis());
+			return compileName(""," Range");
+		}
+		else if (type.equals(TextType.Other_mountains))
+		{
+			nameCompiler.setSeed(System.currentTimeMillis());
+			return compileName("", " Mountains");
+		}
+		else if (type.equals(TextType.River))
+		{
+			nameCompiler.setSeed(System.currentTimeMillis());
+			return compileName("", " River");
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Unknown text type: " + type);
+		}
+	}
+	
+	
+	private String compileName(String prefix, String suffix)
 	{
 		textCounter.increment();
 		if (settings.edits.hiddenTextIds.contains(textCounter.getCount()))
@@ -281,7 +375,7 @@ public class TextDrawer
 		return prefix + nameCompiler.compileName() + suffix;
 	}
 	
-	public String generateName(String prefix, String suffix)
+	private String generateName(String prefix, String suffix)
 	{
 		textCounter.increment();
 		if (settings.edits.hiddenTextIds.contains(textCounter.getCount()))
@@ -303,6 +397,8 @@ public class TextDrawer
 	
 	private void addTitle(BufferedImage map, GraphImpl graph, Graphics2D g)
 	{
+		g.setFont(titleFontScaled);
+
 		// Find the widest ocean plate.
 		Map<TectonicPlate, Double> oceanPlateWidths = new HashMap<>();
 		for (TectonicPlate p : graph.plates)
@@ -325,19 +421,15 @@ public class TextDrawer
 		}
 				
 		if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
-				extractLocationsFromCenters(titlePlate.centers), graph, true))
+				extractLocationsFromCenters(titlePlate.centers), graph, true, true));
 		{
 			// The title didn't fit. Try drawing it without "The Land of".
 			drawNameHorizontal(map, g, generateName("",""),
-					extractLocationsFromCenters(titlePlate.centers), graph, true);
+					extractLocationsFromCenters(titlePlate.centers), graph, true, true);
 		}
-		else
-		{
-			// Generate a name and throw it away to make sure names don't change when settings.size changes.
-			generateName("","");
-		}
+
 	}
-	
+		
 	private double findWidth(Set<Center> centers)
 	{
 		double min = Collections.min(centers, new Comparator<Center>()
@@ -601,9 +693,9 @@ public class TextDrawer
 	}
 
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
-			GraphImpl graph, boolean boldBackground)
+			GraphImpl graph, boolean boldBackground, boolean enableBoundsChecking)
 	{
-		return drawNameHorizontal(map, g, name, locations, graph, boldBackground, 0);
+		return drawNameHorizontal(map, g, name, locations, graph, boldBackground, 0, enableBoundsChecking);
 	}
 	
 	/**
@@ -611,27 +703,38 @@ public class TextDrawer
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
-			GraphImpl graph, boolean boldBackground, double yOffset)
+			GraphImpl graph, boolean boldBackground, double yOffset, boolean enableBoundsChecking)
 	{
 		if (name.length() == 0)
 			return false;
-
-		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int width = metrics.stringWidth(name);
-		int height = metrics.getHeight();
-		
 		
 		Point centroid = findCentroid(locations);
 		
 		centroid.y += yOffset;
 		
+		return drawNameHorizontal(map, g, name, locations, graph, boldBackground, centroid, enableBoundsChecking);
+	}
+	
+	/**
+	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still
+	 * fit with the given locations, then it will be drawn on 2 lines.
+	 * @return True iff text was drawn.
+	 */
+	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, String name, 
+			Set<Point> locations, GraphImpl graph, boolean boldBackground, Point centroid,
+			boolean enableBoundsChecking)
+	{	
+		FontMetrics metrics = g.getFontMetrics(g.getFont());
+		int width = metrics.stringWidth(name);
+		int height = metrics.getHeight();
+
 		String[] parts = name.split(" ");
 		
 		if (parts.length > 1 && (
-			   !locations.contains(graph.getCenterOf((int)centroid.x - width/2, (int)centroid.y - height/2).loc)
-			|| !locations.contains(graph.getCenterOf((int)centroid.x - width/2, (int)centroid.y + height/2).loc)
-			|| !locations.contains(graph.getCenterOf((int)centroid.x + width/2, (int)centroid.y - height/2).loc)
-			|| !locations.contains(graph.getCenterOf((int)centroid.x + width/2, (int)centroid.y + height/2).loc)))
+			   !locations.contains(graph.getCenterAt((int)centroid.x - width/2, (int)centroid.y - height/2).loc)
+			|| !locations.contains(graph.getCenterAt((int)centroid.x - width/2, (int)centroid.y + height/2).loc)
+			|| !locations.contains(graph.getCenterAt((int)centroid.x + width/2, (int)centroid.y - height/2).loc)
+			|| !locations.contains(graph.getCenterAt((int)centroid.x + width/2, (int)centroid.y + height/2).loc)))
 		{		
 			// One or more of the corners doesn't fit in the region. Draw it on 2 lines.
 			int start = name.length()/2;
@@ -661,7 +764,7 @@ public class TextDrawer
 					(int)ulCorner1.y, metrics.stringWidth(nameLine1), metrics.getHeight());
 //			g.drawRect(bounds1.x, bounds1.y, bounds1.width, bounds1.height);
 			Area area1 = new Area(bounds1);
-			if (overlapsExistingTextOrIsOffMap(area1, false))
+			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area1, false))
 			{
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
@@ -671,7 +774,7 @@ public class TextDrawer
 					(int)ulCorner2.y, metrics.stringWidth(nameLine2), metrics.getHeight());
 //			g.drawRect(bounds2.x, bounds2.y, bounds2.width, bounds2.height);
 			Area area2 = new Area(bounds2);
-			if (overlapsExistingTextOrIsOffMap(area2, false))
+			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area2, false))
 			{
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
@@ -693,7 +796,7 @@ public class TextDrawer
 					(int)centroid.y - height/2, metrics.stringWidth(name), height);
 			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 			Area area = new Area(bounds);
-			if (overlapsExistingTextOrIsOffMap(area, false))
+			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area, false))
 			{
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
@@ -710,9 +813,10 @@ public class TextDrawer
 		return true;
 	}
 
-	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations)
+	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, 
+			boolean enableBoundsChecking)
 	{
-		drawNameRotated(map, g, name, locations, 0.0);
+		drawNameRotated(map, g, name, locations, 0.0, enableBoundsChecking);
 	}
 
 	/**
@@ -724,14 +828,11 @@ public class TextDrawer
 	 *  I try negating the riseOffset to draw the name below it. Positive y is down.
 	 */
 	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
-			double riseOffset)
+			double riseOffset, boolean enableBoundsChecking)
 	{
 		if (name.length() == 0)
 			return;
 		
-		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int width = metrics.stringWidth(name);
-		int height = metrics.getHeight();
 				
 		Point centroid = findCentroid(locations);
 		
@@ -740,16 +841,42 @@ public class TextDrawer
 		{
 			regression.addObservation(new double[]{p.x}, p.y);
 		}
-		regression.regress();
+		double angle;
+		try
+		{
+			regression.regress();
+			
+			// Find the angle to rotate the text to.
+			double y0 = regression.predict(0);
+			double y1 = regression.predict(1);
+			// Move the intercept to the origin.
+			y1 -= y0;
+			y0 = 0;
+			angle = Math.atan(y1/1.0);
+		}
+		catch(NoDataException e)
+		{
+			// This happens if the regression had only 2 or fewer points.
+			angle = 0;
+		}
 				
-		// Find the angle to rotate the text to.
-		double y0 = regression.predict(0);
-		double y1 = regression.predict(1);
-		// Move the intercept to the origin.
-		y1 -= y0;
-		y0 = 0;
-		double angle = Math.atan(y1/1.0);
-		
+		drawNameRotated(map, g, name, riseOffset, enableBoundsChecking, centroid, angle);
+	}
+	
+	/**
+	 * Draws the given name at the given location (centroid), at the given angle. This does not break text
+	 * into multiple lines.
+	 * @param riseOffset The text will be raised (positive y) by this much distance above the centroid when
+	 *  drawn. The rotation will be applied to this location. If there is already a name drawn above the object,
+	 *  I try negating the riseOffset to draw the name below it. Positive y is down.
+	 */
+	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, 
+			double riseOffset, boolean enableBoundsChecking, Point centroid, double angle)
+	{
+		FontMetrics metrics = g.getFontMetrics(g.getFont());
+		int width = metrics.stringWidth(name);
+		int height = metrics.getHeight();
+
 		Point offset = new Point(riseOffset * Math.sin(angle), -riseOffset * Math.cos(angle));		
 		Point pivot = new Point(centroid.x - offset.x, centroid.y - offset.y);
 		
@@ -761,7 +888,7 @@ public class TextDrawer
 				(int)(pivot.y - height/2), width, height);
 		Area area = new Area(bounds);
 		area = area.createTransformedArea(g.getTransform());
-		if (overlapsExistingTextOrIsOffMap(area, true))
+		if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area, true))
 		{
 			// If there is a riseOffset, try negating it to put the name below the object instead of above.
 			offset = new Point(-riseOffset * Math.sin(angle), riseOffset * Math.cos(angle));
@@ -774,7 +901,7 @@ public class TextDrawer
 			g.rotate(angle, pivot.x, pivot.y);
 			area = new Area(bounds);
 			area = area.createTransformedArea(g.getTransform());
-			if (overlapsExistingTextOrIsOffMap(area, false))
+			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area, false))
 			{
 				// Give up.
 				//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -807,6 +934,17 @@ public class TextDrawer
 		return plateCenters;
 	}
 
+	private Set<Center> findPlateCentersWaterOnly(final GraphImpl graph, final TectonicPlate plate)
+	{		
+		Set<Center> plateCenters = new HashSet<Center>();
+		for (Center c : plate.centers)
+		{
+			if (c.water)
+				plateCenters.add(c);
+		}
+		return plateCenters;
+	}
+
 	public Point findCentroid(Collection<Point> plateCenters)
 	{
 		Point centroid = new Point(0, 0);
@@ -825,7 +963,7 @@ public class TextDrawer
 	{
 		if (!checkEditedText && settings.edits.editedText.containsKey(textCounter.getCount()))
 		{
-			// Text edited by users is always shown.
+			// The current text being generated is user edited. Text edited by the user is always shown.
 			return false;
 		}
 		for (MapText mp : mapTexts)
@@ -866,5 +1004,21 @@ public class TextDrawer
 	public void setSettings(MapSettings mapSettings)
 	{
 		this.settings = mapSettings;
+	}
+
+	/**
+	 * Adds text that the user is manually creating.
+	 */
+	public MapText createUserAddedText(TextType type, Point location)
+	{
+		String name = generateNameOfType(type);
+		// Getting the id must be done after calling generateNameOfType because said method increments textCounter
+		// before generating the name.
+		int id = textCounter.getCount();
+		MapText mapText = new MapText(id, name, null);
+		mapText.location = location;
+		mapText.type = type;
+		mapText.angle = 0.0;
+		return mapText;
 	}
 }

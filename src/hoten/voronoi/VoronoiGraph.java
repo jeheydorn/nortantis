@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.TreeMap;
 
+import nortantis.TectonicPlate;
 import util.Function;
 import util.Range;
 
@@ -95,7 +96,7 @@ public abstract class VoronoiGraph {
 
     abstract protected Color getColor(Enum<?> biome);
 
-    public Center getCenterOf(int x, int y) 
+    public Center getCenterAt(double x, double y) 
     {
     	// Joseph note: img is not setup, so I'm re-writing this.
         //return centers.get(img.getRGB(x, y) & 0xffffff);
@@ -109,6 +110,11 @@ public abstract class VoronoiGraph {
 						return -Double.compare(Point.distance(p, c1.loc), Point.distance(p, c2.loc));
 					}
     			});
+    }
+    
+    public TectonicPlate getTectonicPlateAt(double x, double y)
+    {
+    	return getCenterAt(x, y).tectonicPlate;
     }
 
     /* an additional smoothing method across corners */

@@ -32,6 +32,10 @@ public class NameCompiler
 	// Used to decide whether to return a result from nounAdjectivePairs or nounVerbPairs.
 	private Counter<String> counter;
 	Random r;
+	public void setSeed(long seed)
+	{
+		r.setSeed(seed);
+	}
 	private Set<String> dict;
 
 	public NameCompiler(Random r, List<Pair<String>> nounAdjectivePairs, 

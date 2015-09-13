@@ -40,27 +40,5 @@ public class ImagePanel extends JPanel
 		return image == null ? super.getPreferredSize() : new Dimension(image.getWidth(), image.getHeight());
 	}
 
-	// From http://stackoverflow.com/questions/25255287/mouse-coordinates-relative-to-imageicon-within-a-jscrollpane
-	protected Point getImageLocation() {
-
-        Point p = null;
-        if (image != null) {
-            int x = (getWidth() - image.getWidth()) / 2;
-            int y = (getHeight() - image.getHeight()) / 2;
-            p = new Point(x, y);
-        }
-        return p;
-    }
-	
-	// From http://stackoverflow.com/questions/25255287/mouse-coordinates-relative-to-imageicon-within-a-jscrollpane
-    public Point toImageContext(Point p) 
-    {
-        Point imgLocation = getImageLocation();
-        Point relative = new Point(p);
-        relative.x -= imgLocation.x;
-        relative.y -= imgLocation.y;
-        return relative;
-    }
-
 }
 

@@ -348,7 +348,7 @@ public class MapCreator
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 		
 		Logger.println("Shutting down thread pool.");
-		ImageHelper.shutdownThreadPools();
+		ImageHelper.shutdownThreadPool();
 
 		Logger.println("Done creating map.");
 		
@@ -941,16 +941,16 @@ public class MapCreator
            	y += r.nextGaussian() * sqrtSize*2.0;
         	
            	// Make sure we don't draw trees in water.
-           	Center center = graph.getCenterOf(x + (int)image.getWidth()/2, y + image.getHeight()/2);
+           	Center center = graph.getCenterAt(x + (int)image.getWidth()/2, y + image.getHeight()/2);
            	if (center.water)
            		continue;
-           	center = graph.getCenterOf(x + (int)image.getWidth()/2, y - image.getHeight()/2);
+           	center = graph.getCenterAt(x + (int)image.getWidth()/2, y - image.getHeight()/2);
            	if (center.water)
            		continue;
-           	center = graph.getCenterOf(x - (int)image.getWidth()/2, y + image.getHeight()/2);
+           	center = graph.getCenterAt(x - (int)image.getWidth()/2, y + image.getHeight()/2);
            	if (center.water)
            		continue;
-           	center = graph.getCenterOf(x - (int)image.getWidth()/2, y - image.getHeight()/2);
+           	center = graph.getCenterAt(x - (int)image.getWidth()/2, y - image.getHeight()/2);
            	if (!center.water)
            	{
            		iconsToDraw.add(new IconDrawTask(image, mask, new Point(x, y), (int)image.getWidth(), false));	           	
@@ -1030,7 +1030,7 @@ public class MapCreator
 			map = creator.createMap(settings, null, null);
 		} catch(Exception e)
 		{
-			ImageHelper.shutdownThreadPools();
+			ImageHelper.shutdownThreadPool();
 			throw e;
 		}
 		

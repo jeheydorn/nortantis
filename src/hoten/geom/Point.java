@@ -1,12 +1,15 @@
 package hoten.geom;
 
+import java.io.Serializable;
+
 
 /**
  * Point.java
  *
  * @author Connor
  */
-public class Point implements Comparable<Point> 
+@SuppressWarnings("serial")
+public class Point implements Comparable<Point>, Serializable
 {
 
     public static double distance(Point _coord, Point _coord0) {

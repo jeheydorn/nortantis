@@ -259,7 +259,7 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ImageHelper.shutdownThreadPools();
+							ImageHelper.shutdownThreadPool();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						}
 			        	
@@ -312,7 +312,7 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ImageHelper.shutdownThreadPools();
+							ImageHelper.shutdownThreadPool();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						} 
 			        	
@@ -989,8 +989,9 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e)
 			{
 		        Dialog dialog;
-						dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
-					dialog.setVisible(true);
+		        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
+				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+				dialog.setVisible(true);
 			}
 		});
 		btnEditText.setBounds(8, 314, 117, 25);

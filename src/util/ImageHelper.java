@@ -13,18 +13,10 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import javax.imageio.ImageIO;
 
 import nortantis.DimensionDouble;
-import nortantis.StopWatch;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.analysis.function.Sinc;
@@ -36,47 +28,15 @@ import org.jtransforms.utils.ConcurrencyUtils;
 
 public class ImageHelper
 {
-	private static ExecutorService exService;
-	
 	/**
 	 * This should be called before closing the program if methods have been
 	 *  called which use jTransforms or other thread pools.
 	 */
-	public static void shutdownThreadPools()
+	public static void shutdownThreadPool()
 	{
 		ConcurrencyUtils.shutdownAndAwaitTermination();
-		exService.shutdown();
-		exService = null;
 	}
-	
-	public static void processInParallel(List<Runnable> jobs)
-	{
-		List<Future<?>> futures = new ArrayList<Future<?>>();
-		if (exService == null)
-			exService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-
-		for (Runnable job : jobs)
-		{
-			futures.add(exService.submit(job));
-		}
-
-		for (int i : new Range(jobs.size()))
-		{
-			try
-			{
-				futures.get(i).get();
-			}
-			catch(ExecutionException e)
-			{
-				throw new RuntimeException(e);
-			}
-			catch(InterruptedException e)
-			{
-				throw new RuntimeException(e);
-			}
-		}
-	}
-	
+		
 	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
 	{
 		double width = originalWidth;
@@ -376,7 +336,6 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image1.getWidth(),
 				image1.getHeight(), image1.getType());
 		Raster mRaster = mask.getRaster();
-		StopWatch sw = new StopWatch();
 		for (int y = 0; y < image1.getHeight(); y++)
 			for (int x = 0; x < image1.getWidth(); x++)
 			{
@@ -395,7 +354,6 @@ public class ImageHelper
 				int combined = (r << 16) | (g << 8) | b;
 				result.setRGB(x, y, combined);
 			}
-		System.out.println("Time to mask with image: " + sw.getElapsedSeconds());
 		return result;
 	}
 
@@ -420,7 +378,6 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image.getWidth(),
 				image.getHeight(), image.getType());
 		Raster mRaster = mask.getRaster();
-		StopWatch sw = new StopWatch();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
@@ -453,7 +410,6 @@ public class ImageHelper
 				}
 				
 			}
-		System.out.println("Time to mask with color: " + sw.getElapsedSeconds());
 		return result;
 	}
 	

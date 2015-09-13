@@ -16,7 +16,12 @@ public class TextEditingPanel extends ImagePanel
 	{
 		this.areas = areas;
 	}
-	
+
+	public void clearAreasToDraw()
+	{
+		this.areas = null;
+	}
+
 	public TextEditingPanel(BufferedImage image)
 	{
 		super(image);
