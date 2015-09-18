@@ -312,12 +312,6 @@ public class TextDrawer
 				g.setFont(riverFontScaled);
 				drawNameRotated(map, g, addedText.text, 0, false, addedText.location, addedText.angle);				
 			}
-			
-			// TODO This is just a hack to keep these fields in the newly created MapText object. Make it prettier.
-			MapText mapText = mapTexts.get(mapTexts.size() - 1);
-			mapText.angle = addedText.angle;
-			mapText.location = addedText.location;
-			mapText.type = addedText.type;
 		}
 
 	}
@@ -779,7 +773,7 @@ public class TextDrawer
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
 			}
-			mapTexts.add(new MapText(textCounter.getCount(), name, Arrays.asList(area1, area2)));
+			addMapText(textCounter.getCount(), name, Arrays.asList(area1, area2));
 
 			drawBackgroundBlending(map, g, (int)bounds1.getWidth(), (int)bounds1.getHeight(), ulCorner1, 0);
 			drawNameHorizontalAtPoint(g, nameLine1, new Point(ulCorner1.x, 
@@ -801,7 +795,7 @@ public class TextDrawer
 				settings.edits.hiddenTextIds.add(textCounter.getCount());
 				return false;
 			}
-			mapTexts.add(new MapText(textCounter.getCount(), name, Collections.singletonList(area)));
+			addMapText(textCounter.getCount(), name, Collections.singletonList(area));
 			
 			Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
 			
@@ -910,7 +904,7 @@ public class TextDrawer
 				return;
 			}
 		}
-		mapTexts.add(new MapText(textCounter.getCount(), name, Collections.singletonList(area)));
+		addMapText(textCounter.getCount(), name, Collections.singletonList(area));
 		
 		Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
 		
@@ -921,6 +915,40 @@ public class TextDrawer
 		
 		g.drawString(name, (int)(boundsLocation.x), (int)(boundsLocation.y + metrics.getAscent()));
 		g.setTransform(orig);
+	}
+	
+	/**
+	 * If a MapText with the next text id (textCounter.getCount()) exists in settings as a text edit or added text,
+	 * then this will update that MapText with the given areas and add it to mapTexts. Else this will create
+	 * a new MapText and add it to mapTexts.
+	 * 
+	 * The reason I set the areas if the the MapText was user edited or added is because the map settings file
+	 * does not store them. They are created when text is drawn, and so must be added here.
+	 * 
+	 * @param name The generated name.
+	 * @param areas Bounding polygons of the text to draw.
+	 */
+	private void addMapText(int textId, String name, List<Area> areas)
+	{
+		MapText mapText = settings.edits.editedText.get(textId);
+		if (mapText == null)
+		{
+			mapText = settings.edits.addedText.get(textId);
+			if (mapText == null)
+			{
+				// This text was generated and not edited or added by the user.
+				mapText = new MapText(textId, name, areas);
+			}
+			else
+			{
+				mapText.areas = areas;
+			}
+		}
+		else
+		{
+			mapText.areas = areas;
+		}
+		mapTexts.add(mapText);
 	}
 
 	private Set<Center> findPlateCentersLandOnly(final GraphImpl graph, final TectonicPlate plate)
