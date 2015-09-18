@@ -328,6 +328,7 @@ public class EditTextDialog extends JDialog
 	            }
 	            
               	mapDisplayPanel.image = map;
+              	// TODO Fix bug where updated text still shows old bounding box. I think it needs to be fixed here.
             	mapDisplayPanel.repaint();
             	// Tell the scroll pane to update itself.
             	mapDisplayPanel.revalidate();	        
