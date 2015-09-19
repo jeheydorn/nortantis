@@ -110,7 +110,6 @@ public class MapSettings implements Serializable
 		result.setProperty("textColor", colorToString(textColor));
 		
 		// User edits.
-		result.setProperty("hiddenTextIds", Helper.toStringWithSeparator(edits.hiddenTextIds, ","));
 		result.setProperty("editedText", editedTextToString());
 		
 		return result;
@@ -123,11 +122,11 @@ public class MapSettings implements Serializable
 	private String editedTextToString()
 	{
 		StringBuilder b = new StringBuilder();
-		for (Entry<Integer, MapText> entry : edits.editedText.entrySet())
+		for (Entry<Integer, MapText> entry : edits.text.entrySet())
 		{
 			b.append(entry.getKey());
 			b.append(",");
-			b.append(entry.getValue().text);
+			b.append(entry.getValue().value);
 			b.append("<end>");
 		}
 		return b.toString();
@@ -417,22 +416,8 @@ public class MapSettings implements Serializable
 		
 		edits = new MapEdits();
 		// hiddenTextIds is a comma seperated list.
-		edits.hiddenTextIds = getProperty("hiddenTextIds", new Function0<Set<Integer>>()
-		{
-			@Override
-			public Set<Integer> apply()
-			{
-				String str = props.getProperty("hiddenTextIds");
-				Set<Integer> result = new TreeSet<>();
-				if (str == null || str.isEmpty())
-					return result;
-				for (String part : str.split(","))
-					result.add(Integer.parseInt(part));
-				return result;
-			}	
-		});
 				
-		edits.editedText = getProperty("editedText", new Function0<Map<Integer, MapText>>()
+		edits.text = getProperty("editedText", new Function0<Map<Integer, MapText>>()
 		{
 	
 			@Override
@@ -451,7 +436,7 @@ public class MapSettings implements Serializable
 						throw new IllegalArgumentException("Unable to read edited text because ',' could not be found.");
 					int id = Integer.parseInt(part.substring(0, i));
 					String name = part.substring(i+1, part.length());
-					result.put(id, new MapText(id, name, null));
+					// result.put(id, new MapText(id, name, null)); TODO
 				}
 				return result;
 			}

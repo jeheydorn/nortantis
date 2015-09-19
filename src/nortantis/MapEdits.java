@@ -17,26 +17,13 @@ import java.util.TreeSet;
 public class MapEdits implements Serializable
 {
 	/**
-	 * The ids of text which was not drawn when text was generated because it would have overlapped another
-	 * text box on the map. It is necessary to store this to avoid the user seeing new text boxes suddenly appear
-	 * when the remove an existing text box.
+	 * Text the user has edited, added, moved, or rotated. The key is the text id.
 	 */
-	Set<Integer> hiddenTextIds;
-	/**
-	 * Text the user has edited. The key is the text id.
-	 */
-	Map<Integer, MapText> editedText;
-	
-	/**
-	 * Text added using the Add tool. The key is the text id.
-	 */
-	Map<Integer, MapText> addedText;
-	
+	Map<Integer, MapText> text; // TODO rename to text
+		
 	public MapEdits()
 	{
-		hiddenTextIds = new TreeSet<>();
-		editedText = new TreeMap<>();
-		addedText = new TreeMap<>();
+		text = new TreeMap<>();
 	}
 
 }

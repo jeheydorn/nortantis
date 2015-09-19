@@ -1391,7 +1391,7 @@ public class RunSwing
 		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
 		
 		edits = settings.edits;
-		btnClearTextEdits.setEnabled(!edits.editedText.isEmpty());
+		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
 		
 		lastSettingsLoadedOrSaved = settings;
 	}

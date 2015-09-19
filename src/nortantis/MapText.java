@@ -14,8 +14,7 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class MapText implements Serializable
 {
-	int id;
-	String text;
+	String value;
 	/**
 	 * The (possibly rotated) bounding boxes of the text. This only has size 2 if the text has 2 lines.
 	 */
@@ -23,20 +22,31 @@ public class MapText implements Serializable
 	
 	TextType type;
 	/**
-	 * If the user has rotated the text, then this stores the angle. null means let the generated determine the angle.
-	 * Zero means horizontal.
+	 * If the user has rotated the text, then this stores the angle. 0 means horizontal.
 	 */
-	Double angle;
+	double angle;
 	/**
 	 * If the user has moved the text, then this store the location. null means let the generator determine the location.
-	 * The text will be draw such that the center of it's bounding box is at this location.
+	 * For text that can be rotated, the text will be draw such that the center of it's bounding box is at this location.
+	 * For text that cannot be rotated (title and region names), the bounding box of the text will be determined by
+	 * font metrics added to this location.
 	 */
 	Point location;
 	
-	public MapText(int id, String text, List<Area> areas)
+	public MapText(String text, Point location, double angle, TextType type, List<Area> areas)
 	{
-		this.id = id;
-		this.text = text;
+		this.value = text;
 		this.areas = areas;
+		this.location = location;
+		this.angle = angle;
+		this.type = type;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location="
+				+ location + "]";
+	}
+
 }
