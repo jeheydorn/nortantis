@@ -2,7 +2,6 @@ package nortantis;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Point;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;

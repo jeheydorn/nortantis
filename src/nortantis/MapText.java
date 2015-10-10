@@ -41,7 +41,12 @@ public class MapText implements Serializable
 		this.angle = angle;
 		this.type = type;
 	}
-	
+
+	public MapText(String text, Point location, double angle, TextType type)
+	{
+		this(text, location, angle, type, null);
+	}
+
 	@Override
 	public String toString()
 	{

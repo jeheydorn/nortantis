@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Random;
 
 import nortantis.nlp.CharacterNGram;
-import util.Logger;
 import util.Range;
 
 public class NameGenerator

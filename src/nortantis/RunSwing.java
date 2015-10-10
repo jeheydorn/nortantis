@@ -58,8 +58,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 
-import org.jtransforms.utils.ConcurrencyUtils;
-
 import util.ImageHelper;
 import util.JFontChooser;
 import util.Range;

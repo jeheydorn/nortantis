@@ -7,11 +7,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import util.Function0;
@@ -26,6 +23,9 @@ import util.Helper;
 public class MapSettings implements Serializable
 {
 	long randomSeed;
+	/**
+	 *  A scalar multiplied by the map height and width to get the final resolution.
+	 */
 	double resolution;
 	int landBlur;
 	int oceanEffects;
@@ -122,13 +122,13 @@ public class MapSettings implements Serializable
 	private String editedTextToString()
 	{
 		StringBuilder b = new StringBuilder();
-		for (Entry<Integer, MapText> entry : edits.text.entrySet())
-		{
-			b.append(entry.getKey());
-			b.append(",");
-			b.append(entry.getValue().value);
-			b.append("<end>");
-		}
+//		for (Entry<Integer, MapText> entry : edits.text) TODO
+//		{
+//			b.append(entry.getKey());
+//			b.append(",");
+//			b.append(entry.getValue().value);
+//			b.append("<end>");
+//		}
 		return b.toString();
 	}
 	
@@ -417,31 +417,31 @@ public class MapSettings implements Serializable
 		edits = new MapEdits();
 		// hiddenTextIds is a comma seperated list.
 				
-		edits.text = getProperty("editedText", new Function0<Map<Integer, MapText>>()
-		{
-	
-			@Override
-			public Map<Integer, MapText> apply()
-			{
-				Map<Integer, MapText> result = new TreeMap<>();
-				String str = props.getProperty("editedText");
-				if (str == null || str.isEmpty())
-					return result;
-				for (String part : str.split("<end>"))
-				{
-					if (part.isEmpty())
-						continue;
-					int i = part.indexOf(',');
-					if (i == -1)
-						throw new IllegalArgumentException("Unable to read edited text because ',' could not be found.");
-					int id = Integer.parseInt(part.substring(0, i));
-					String name = part.substring(i+1, part.length());
-					// result.put(id, new MapText(id, name, null)); TODO
-				}
-				return result;
-			}
-	
-		});
+//		edits.text = getProperty("editedText", new Function0<Map<Integer, MapText>>() TODO
+//		{
+//	
+//			@Override
+//			public Map<Integer, MapText> apply()
+//			{
+//				Map<Integer, MapText> result = new TreeMap<>();
+//				String str = props.getProperty("editedText");
+//				if (str == null || str.isEmpty())
+//					return result;
+//				for (String part : str.split("<end>"))
+//				{
+//					if (part.isEmpty())
+//						continue;
+//					int i = part.indexOf(',');
+//					if (i == -1)
+//						throw new IllegalArgumentException("Unable to read edited text because ',' could not be found.");
+//					int id = Integer.parseInt(part.substring(0, i));
+//					String name = part.substring(i+1, part.length());
+//					// result.put(id, new MapText(id, name, null)); TODO
+//				}
+//				return result;
+//			}
+//	
+//		});
 	}
 	
 	private static boolean parseBoolean(String str)

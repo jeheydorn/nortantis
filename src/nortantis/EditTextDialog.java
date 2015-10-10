@@ -1,20 +1,9 @@
 package nortantis;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Point;
-
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
-
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -24,12 +13,21 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
-
-import javax.swing.JTextField;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 
 import org.jtransforms.utils.ConcurrencyUtils;
 
@@ -37,37 +35,40 @@ import util.Helper;
 import util.ImageHelper;
 import util.Tuple2;
 
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-
 @SuppressWarnings("serial")
 public class EditTextDialog extends JDialog
 {
 	private final TextEditingPanel mapDisplayPanel;
 	private JTextField editTextField;
-	private MapSettings settings;
+	private final MapSettings settings;
 	private BufferedImage mapWithoutText;
 	private MapParts mapParts;
 	private MapText lastSelected;
 	private double zoom;
+	private double initialResolution;
 	JScrollPane scrollPane;
 	private JComboBox<ToolType> toolComboBox;
 	JComboBox<TextType>textTypeComboBox;
 	private Point mousePressedLocation;
 
 	/**
-	 * Create the dialog.
+	 * Creates a dialog for editing text.
+	 * @param settings Settings for the map. The user's edits will be stored in settigns.edits.
+	 * Other fields in settings may be modified in the editing process.
 	 * @throws IOException 
 	 */
 	public EditTextDialog(final MapSettings settings, final RunSwing runSwing)
 	{
 		final EditTextDialog thisDialog = this;
 		this.settings = settings;
+		this.initialResolution = settings.resolution;
 		final BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.png");
 		setBounds(100, 100, 935, 584);
 		
 		mapDisplayPanel = new TextEditingPanel(placeHolder);
 		
+		runSwing.btnClearTextEdits.setEnabled(true);
+
 		getContentPane().setLayout(new BorderLayout());
 		mapDisplayPanel.setLayout(new BorderLayout());
 		mapDisplayPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -133,7 +134,7 @@ public class EditTextDialog extends JDialog
 			textTypeComboBox.setSelectedItem(TextType.Other_mountains);
 			panel.add(textTypeComboBox);
 			textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
-			toolComboBox.setSelectedItem(ToolType.Move); // TODO set default to edit when done testing.		
+			toolComboBox.setSelectedItem(ToolType.Add); // TODO set default to edit when done testing.		
 			JLabel lblZoom = new JLabel("Zoom:");
 			panel.add(lblZoom);
 			
@@ -156,7 +157,7 @@ public class EditTextDialog extends JDialog
 					mapParts = null;
 					
 					mapDisplayPanel.repaint();
-					createAndShowMap(settings);
+					createAndShowMap();
 				}
 			});
 			
@@ -168,7 +169,6 @@ public class EditTextDialog extends JDialog
 			public void mouseClicked(MouseEvent e)
 			{
 				handleMouseClickOnMap(e);
-				runSwing.btnClearTextEdits.setEnabled(!settings.edits.text.isEmpty());
 			}
 			
 			@Override
@@ -181,7 +181,6 @@ public class EditTextDialog extends JDialog
 			public void mouseReleased(MouseEvent e)
 			{
 				handleMouseReleasedOnMap(e);
-				runSwing.btnClearTextEdits.setEnabled(!settings.edits.text.isEmpty());				
 			}
 		});
 		
@@ -227,11 +226,10 @@ public class EditTextDialog extends JDialog
 					runSwing.saveSettings(mapDisplayPanel);
 				}
 				
-				runSwing.btnClearTextEdits.setEnabled(!settings.edits.text.isEmpty());
 			}
 		});
 		
-		createAndShowMap(settings);
+		createAndShowMap();
 	}
 	
 	/**
@@ -271,18 +269,16 @@ public class EditTextDialog extends JDialog
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
-				
-				// TODO
+				lastSelected = selectedText;
 			}
-			// Handle any edits the user might have made before selecting selectedText. This will also 
-			// highlight selectedText.
-			handleTextEdit(selectedText);
+			mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
+			mapDisplayPanel.repaint();
 		}
 	}
 	
 	private void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		if (lastSelected != null)
+		if (lastSelected != null && toolComboBox.getSelectedItem().equals(ToolType.Move))
 		{
 			// The user dragged and dropped text.
 			
@@ -307,7 +303,7 @@ public class EditTextDialog extends JDialog
 			{
 				MapText addedText = mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 						new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
-				settings.edits.text.put(addedText.id, addedText);
+				settings.edits.text.add(addedText);
 				
 				updateTextInBackgroundThread(null);
 			}
@@ -392,16 +388,14 @@ public class EditTextDialog extends JDialog
 	    worker.execute();
 	}
 	
-	private void createAndShowMap(MapSettings settings)
+	private void createAndShowMap()
 	{
-		final MapSettings settingsFinal = settings;
-		final MapSettings settingsCopy = (MapSettings)Helper.deepCopy(settings);
-		settings = null;
-		settingsCopy.resolution /= zoom;
-		settingsCopy.landBlur = 0;
-		settingsCopy.oceanEffects = 0;
-		settingsCopy.frayedBorder = false;
-		settingsCopy.drawText = false;
+		// Change a few settings to make map creation faster.
+		settings.resolution = initialResolution / zoom;
+		settings.landBlur = 0;
+		settings.oceanEffects = 0;
+		settings.frayedBorder = false;
+		settings.drawText = false;
 
 		SwingWorker<Tuple2<BufferedImage, MapParts>, Void> worker = new SwingWorker<Tuple2<BufferedImage, MapParts>, Void>() 
 	    {
@@ -411,7 +405,7 @@ public class EditTextDialog extends JDialog
 				try
 				{
 					MapParts parts = new MapParts();
-					BufferedImage map = new MapCreator().createMap(settingsCopy, null, parts);
+					BufferedImage map = new MapCreator().createMap(settings, null, parts);
 					return new Tuple2<>(map, parts);
 				} 
 				catch (Exception e)
@@ -441,15 +435,11 @@ public class EditTextDialog extends JDialog
 	            {
 	            	mapWithoutText = tuple.getFirst();
 	            	mapParts = tuple.getSecond();
-	            	// I need to the mapParts textDrawer to have the original settings object, not a copy,
+	            	// I need the textDrawer to have the original settings object, not a copy,
 	            	// so that when the user edits text, the changes are displayed.
-	            	mapParts.textDrawer.setSettings(settingsFinal);
-	            	if (settingsFinal.edits.text.isEmpty())
-	            	{
-	            		// This is the first time the user has edited text (or they cleared their edits). Store the
-	            		// generated text so it can be edited and later saved.
-            			settingsFinal.edits.text = mapParts.textDrawer.getMapTexts();
-	            	}
+	            	//mapParts.textDrawer.setSettings(settings);
+	            	
+	            	settings.edits.text = mapParts.textDrawer.getMapTexts();
 	            
 	            	// Display the map with text.
 	            	BufferedImage mapWithText = drawMapWithText();
@@ -468,7 +458,6 @@ public class EditTextDialog extends JDialog
 	private BufferedImage drawMapWithText()
 	{		
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
-		mapParts.textDrawer.reset();
 		mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups);
 		return mapWithText;
 	}
