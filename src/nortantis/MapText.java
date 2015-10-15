@@ -4,6 +4,7 @@ import hoten.geom.Point;
 
 import java.awt.geom.Area;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,7 +45,7 @@ public class MapText implements Serializable
 
 	public MapText(String text, Point location, double angle, TextType type)
 	{
-		this(text, location, angle, type, null);
+		this(text, location, angle, type, new ArrayList<Area>(0));
 	}
 
 	@Override
