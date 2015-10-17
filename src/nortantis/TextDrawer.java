@@ -1024,4 +1024,9 @@ public class TextDrawer
 	{
 		return mapTexts;
 	}
+
+	public void setMapTexts(List<MapText> text)
+	{
+		this.mapTexts = text;
+	}
 }

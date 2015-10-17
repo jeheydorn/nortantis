@@ -439,11 +439,16 @@ public class EditTextDialog extends JDialog
 	            	// so that when the user edits text, the changes are displayed.
 	            	//mapParts.textDrawer.setSettings(settings);
 	            	
-	            	settings.edits.text = mapParts.textDrawer.getMapTexts();
+	            	// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
+	            	// This makes it so that any edits done to the settings will automatically be reflected
+	            	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
+	            	// map texts, which are needed to make them clickable in this editing panel.
+            		mapParts.textDrawer.setMapTexts(settings.edits.text);
 	            
 	            	// Display the map with text.
 	            	BufferedImage mapWithText = drawMapWithText();
-	               	mapDisplayPanel.image = mapWithText;
+	            	
+	            	mapDisplayPanel.image = mapWithText;
 	            	mapDisplayPanel.repaint();
 	            	// Tell the scroll pane to update itself.
 	            	mapDisplayPanel.revalidate();
