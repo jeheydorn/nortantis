@@ -18,10 +18,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -38,6 +40,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -56,6 +59,8 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 import util.ImageHelper;
@@ -69,7 +74,7 @@ public class RunSwing
 	private JTextField randomSeedTextField;
 	private JTextField oceanBackgroundImageFilename;
 	private JTextField landBackgroundImageFilename;
-	JSlider sizelider;
+	JSlider sizeSlider;
 	JSlider edgeLandToWaterProbSlider;
 	JSlider centerLandToWaterProbSlider;
 	JSlider scaleSlider;
@@ -112,6 +117,12 @@ public class RunSwing
 	private JButton btnEditText;
 	public JButton btnClearTextEdits;
 	MapEdits edits;
+	private boolean showTextWarning = true;
+	/**
+	 * A flag to prevent warnings about text edits while loading settings into the gui.
+	 */
+	boolean loadingSettings;
+
 	
 	public static boolean isRunning()
 	{
@@ -374,17 +385,18 @@ public class RunSwing
 		btnNewSeed.setBounds(284, 10, 105, 25);
 		terrainPanel.add(btnNewSeed);
 		
-		sizelider = new JSlider();
-		sizelider.setValue(6000);
-		sizelider.setSnapToTicks(true);
-		sizelider.setMajorTickSpacing(5000);
-		sizelider.setMinorTickSpacing(1000);
-		sizelider.setPaintLabels(true);
-		sizelider.setPaintTicks(true);
-		sizelider.setMinimum(2000);
-		sizelider.setMaximum(18000);
-		sizelider.setBounds(131, 45, 245, 79);
-		terrainPanel.add(sizelider);
+		sizeSlider = new JSlider();
+		sizeSlider.setValue(6000);
+		sizeSlider.setSnapToTicks(true);
+		sizeSlider.setMajorTickSpacing(5000);
+		sizeSlider.setMinorTickSpacing(1000);
+		sizeSlider.setPaintLabels(true);
+		sizeSlider.setPaintTicks(true);
+		sizeSlider.setMinimum(2000);
+		sizeSlider.setMaximum(18000);
+		sizeSlider.setBounds(131, 45, 245, 79);
+		terrainPanel.add(sizeSlider);
+		sizeSlider.addChangeListener(new SliderChangeListener());
 		
 		JLabel lblSize = new JLabel("World size:");
 		lblSize.setToolTipText("The size of the world.");
@@ -411,6 +423,7 @@ public class RunSwing
 			}
 			edgeLandToWaterProbSlider.setLabelTable( labelTable );
 		}
+		edgeLandToWaterProbSlider.addChangeListener(new SliderChangeListener());
 		terrainPanel.add(edgeLandToWaterProbSlider);
 		
 		JLabel lblCenterLandtowaterRatio = new JLabel("Center land probability:");
@@ -434,6 +447,7 @@ public class RunSwing
 			}
 			centerLandToWaterProbSlider.setLabelTable( labelTable );
 		}
+		centerLandToWaterProbSlider.addChangeListener(new SliderChangeListener());
 		terrainPanel.add(centerLandToWaterProbSlider);
 		
 		
@@ -477,11 +491,13 @@ public class RunSwing
 		oceanBackgroundImageFilename.setText(Paths.get("assets/land.jpg").toAbsolutePath().toString());
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
-		
+
 		final JButton btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
 		{
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				warnOfTextEdits();
 				String filename = chooseImageFile(backgroundPanel, oceanBackgroundImageFilename.getText());
 				if (filename != null)
 					oceanBackgroundImageFilename.setText(filename);
@@ -503,6 +519,7 @@ public class RunSwing
 		btnBrowseLandBackground.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
+				warnOfTextEdits();
 				String filename = chooseImageFile(backgroundPanel, landBackgroundImageFilename.getText());
 				if (filename != null)
 					landBackgroundImageFilename.setText(filename);
@@ -612,10 +629,11 @@ public class RunSwing
 		dimensionsComboBox.addItem("4096 x 2531 (golden ratio)");
 		dimensionsComboBox.setBounds(131, 93, 220, 28);
 		dimensionsComboBox.addActionListener(new ActionListener()
-		{
+		{	
 			public void actionPerformed(ActionEvent e)
 			{
-				updateBackgroundImageDisplays();				
+				warnOfTextEdits();
+				updateBackgroundImageDisplays();		
 			}
 		});
 		backgroundPanel.add(dimensionsComboBox);
@@ -624,6 +642,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
+				warnOfTextEdits();
 				btnChooseLandColor.setEnabled(rdbtnGenerated.isSelected());
 				btnChooseOceanColor.setEnabled(rdbtnGenerated.isSelected());
 				btnNewBackgroundSeed.setEnabled(rdbtnGenerated.isSelected());
@@ -974,6 +993,7 @@ public class RunSwing
 		btnNewTextRandomSeed.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
+				warnOfTextEdits();
 				textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 			}
 		});
@@ -1038,7 +1058,7 @@ public class RunSwing
 				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
 				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
 				btnEditText.setEnabled(drawTextCheckBox.isSelected());
-				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected());
+				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
 			}			
 		});
 		textPanel.add(drawTextCheckBox);
@@ -1073,6 +1093,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
+				warnOfTextEdits();
 				int seed = Math.abs(new Random().nextInt());
 				randomSeedTextField.setText(seed + "");
 				textRandomSeedTextField.setText(seed + "");
@@ -1155,6 +1176,26 @@ public class RunSwing
 		frame.pack();
 	}
 	
+	/**
+	 * Informs the user that if they continue an action they must delete text edits.
+	 * @return true if the action should continue. false if the user canceled the action to keep text edits.
+	 */
+	private void warnOfTextEdits()
+	{
+		
+		if (!loadingSettings && showTextWarning  && edits != null && !edits.text.isEmpty())
+		{
+	        int n = JOptionPane.showOptionDialog(frame, "You have edited text and performed an action which will likely change \n"
+                    + "the generated map. This could cause the edited text to not fit the map. \n"
+                    + "You can clear text edits by going to Text -> " + btnClearTextEdits.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+	        if (n == JOptionPane.NO_OPTION)
+	        {
+	        	showTextWarning = false;
+	        }
+		}
+	}
+	
+		
 	private Dimension getGeneratedBackgroundDimensionsFromGUI()
 	{
 		String selected = (String)dimensionsComboBox.getSelectedItem();
@@ -1330,8 +1371,10 @@ public class RunSwing
 	 */
 	private void loadSettingsIntoGUI(String propertiesFilePath)
 	{
+		loadingSettings = true;
+		
 		MapSettings settings = new MapSettings(propertiesFilePath);
-		sizelider.setValue(settings.worldSize);
+		sizeSlider.setValue(settings.worldSize);
 		randomSeedTextField.setText(Long.toString(settings.randomSeed));
 		edgeLandToWaterProbSlider.setValue((int)(settings.edgeLandToWaterProbability * 100));
 		centerLandToWaterProbSlider.setValue((int)(settings.centerLandToWaterProbability * 100));
@@ -1365,9 +1408,17 @@ public class RunSwing
 		booksPanel.removeAll();
 		for (String book : getAllBooks())
 		{
-			JCheckBox checkBox = new JCheckBox(book);
+			final JCheckBox checkBox = new JCheckBox(book);
 			booksPanel.add(checkBox);
 			checkBox.setSelected(settings.books.contains(book));
+			checkBox.addActionListener(new ActionListener()
+			{			
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					warnOfTextEdits();
+				}
+			});
 		}
 		
 		// Do a click to update other components on the panel as enabled or disabled.
@@ -1392,6 +1443,7 @@ public class RunSwing
 		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
 		
 		lastSettingsLoadedOrSaved = settings;
+		loadingSettings = false;
 	}
 	
 	private List<String> getAllBooks()
@@ -1416,7 +1468,7 @@ public class RunSwing
 	private MapSettings getSettingsFromGUI()
 	{
 		MapSettings settings = new MapSettings();
-		settings.worldSize = sizelider.getValue();
+		settings.worldSize = sizeSlider.getValue();
 		settings.randomSeed = Long.parseLong(randomSeedTextField.getText());
 		settings.landBackgroundImage = landBackgroundImageFilename.getText();
 		settings.oceanBackgroundImage = oceanBackgroundImageFilename.getText();
@@ -1485,4 +1537,14 @@ public class RunSwing
             
         }
 	}
+	
+	private class SliderChangeListener implements ChangeListener
+	{
+		@Override
+		public void stateChanged(ChangeEvent e)
+		{
+			warnOfTextEdits();
+		}
+	}
+	
 }

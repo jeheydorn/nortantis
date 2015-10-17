@@ -1,15 +1,24 @@
 package nortantis;
 
+import hoten.geom.Point;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import util.Function0;
 import util.Helper;
@@ -119,17 +128,23 @@ public class MapSettings implements Serializable
 	 * Stores editedText as a '\n' delimited list of pairs, each delimited by ',';
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	private String editedTextToString()
 	{
-		StringBuilder b = new StringBuilder();
-//		for (Entry<Integer, MapText> entry : edits.text) TODO
-//		{
-//			b.append(entry.getKey());
-//			b.append(",");
-//			b.append(entry.getValue().value);
-//			b.append("<end>");
-//		}
-		return b.toString();
+		JSONArray list = new JSONArray();
+		for (MapText text : edits.text)
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("text", text.value);
+			mpObj.put("locationX", text.location.x);
+			mpObj.put("locationY", text.location.y);
+			mpObj.put("angle", text.angle);
+			mpObj.put("type", text.type.toString());
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+
 	}
 	
 	private String colorToString(Color c)
@@ -417,31 +432,31 @@ public class MapSettings implements Serializable
 		edits = new MapEdits();
 		// hiddenTextIds is a comma seperated list.
 				
-//		edits.text = getProperty("editedText", new Function0<Map<Integer, MapText>>() TODO
-//		{
-//	
-//			@Override
-//			public Map<Integer, MapText> apply()
-//			{
-//				Map<Integer, MapText> result = new TreeMap<>();
-//				String str = props.getProperty("editedText");
-//				if (str == null || str.isEmpty())
-//					return result;
-//				for (String part : str.split("<end>"))
-//				{
-//					if (part.isEmpty())
-//						continue;
-//					int i = part.indexOf(',');
-//					if (i == -1)
-//						throw new IllegalArgumentException("Unable to read edited text because ',' could not be found.");
-//					int id = Integer.parseInt(part.substring(0, i));
-//					String name = part.substring(i+1, part.length());
-//					// result.put(id, new MapText(id, name, null)); TODO
-//				}
-//				return result;
-//			}
-//	
-//		});
+		edits.text = getProperty("editedText", new Function0<List<MapText>>()
+		{
+	
+			@Override
+			public List<MapText> apply()
+			{
+				String str = props.getProperty("editedText");
+				if (str == null || str.isEmpty())
+					return new ArrayList<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				List<MapText> result = new ArrayList<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					String text = (String) jsonObj.get("text");
+					Point location = new Point((Double)jsonObj.get("locationX"), (Double)jsonObj.get("locationY"));
+					double angle = (Double)jsonObj.get("angle");
+					TextType type = Enum.valueOf(TextType.class, ((String)jsonObj.get("type")).replace(" ", "_"));
+					MapText mp = new MapText(text, location, angle, type);
+					result.add(mp);
+				}
+				return result;
+			}
+	
+		});
 	}
 	
 	private static boolean parseBoolean(String str)
@@ -471,7 +486,7 @@ public class MapSettings implements Serializable
 		}
 		catch (NullPointerException e)
 		{
-			throw new RuntimeException("Property \"" + propName + "\" is missing.", e);			
+			throw new RuntimeException("Property \"" + propName + "\" is missing or cannot be read.", e);			
 		}
 		catch(NumberFormatException e)
 		{

@@ -9,5 +9,6 @@
 	<classpathentry kind="lib" path="libraries/imgscalr-lib-4.2.jar"/>
 	<classpathentry kind="lib" path="libraries/junit.jar"/>
 	<classpathentry kind="lib" path="libraries/org.hamcrest.core_1.3.0.v201303031735.jar"/>
+	<classpathentry kind="lib" path="libraries/json-simple-1.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
