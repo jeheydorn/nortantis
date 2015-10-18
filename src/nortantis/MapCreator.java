@@ -77,8 +77,9 @@ public class MapCreator
 	/**
 	 * 
 	 * @param settings
-	 * @param maxResolution The maximun width and height (in pixels) at which to draw the map.
-	 * This is needed for creating previews. null means draw at normal resolution.
+	 * @param maxDimensions The maximum width and height (in pixels) at which to draw the map.
+	 * This is needed for creating previews. null means draw at normal resolution. Warning: If 
+	 * maxDimensions is specified, then settings.resolution will be modified to fit that size.
 	 * @param mapParts If not null, then parts of the map created while generating will be stored in it.
 	 * @return
 	 */
@@ -105,8 +106,11 @@ public class MapCreator
 					settings.generatedHeight * settings.resolution);
 			if (maxDimensions != null)
 			{
-				bounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, bounds.getWidth(),
+				DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, bounds.getWidth(),
 						bounds.getHeight());
+				// Change the resolution to match the new bounds.
+				settings.resolution *= newBounds.width / bounds.width;
+				bounds = newBounds;
 			}			
 			
 			BufferedImage fractalBG = FractalBGGenerator.generate(

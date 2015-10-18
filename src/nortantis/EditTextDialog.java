@@ -134,7 +134,7 @@ public class EditTextDialog extends JDialog
 			textTypeComboBox.setSelectedItem(TextType.Other_mountains);
 			panel.add(textTypeComboBox);
 			textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
-			toolComboBox.setSelectedItem(ToolType.Add); // TODO set default to edit when done testing.		
+			toolComboBox.setSelectedItem(ToolType.Rotate); // TODO set default to edit when done testing.		
 			JLabel lblZoom = new JLabel("Zoom:");
 			panel.add(lblZoom);
 			
@@ -240,26 +240,7 @@ public class EditTextDialog extends JDialog
 		double zoomPercent = Double.parseDouble(zoomStr.substring(0, zoomStr.length() - 1));
 		zoom = 100.0 / zoomPercent;
 	}
-	
-	private void handleMouseDraggedOnMap(MouseEvent e)
-	{
-		if (lastSelected != null)
-		{
-			// The user is dragging a text box.
-			List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
-			for (Area area : lastSelected.areas)
-			{
-				Area areaCopy = new Area(area);
-				AffineTransform t = new AffineTransform();
-				t.translate(e.getX() - mousePressedLocation.x, e.getY() - mousePressedLocation.y);
-				areaCopy.transform(t);
-				transformedAreas.add(areaCopy);
-			}
-			mapDisplayPanel.setAreasToDraw(transformedAreas);
-			mapDisplayPanel.repaint();
-		}
-	}
-	
+		
 	private void handleMousePressedOnMap(MouseEvent e)
 	{
 		if (toolComboBox.getSelectedItem().equals(ToolType.Move))
@@ -274,18 +255,107 @@ public class EditTextDialog extends JDialog
 			mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
 			mapDisplayPanel.repaint();
 		}
+		else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
+		{
+			lastSelected = mapParts.textDrawer.findTextPicked(e.getPoint());
+			if (lastSelected != null)
+			{
+				// Region and title names cannot be rotated.
+				if (lastSelected.type != TextType.Region && lastSelected.type != TextType.Title)
+				{
+					mapDisplayPanel.setAreasToDraw(lastSelected.areas);
+				}
+				else
+				{
+					lastSelected = null;				
+				}
+			}
+			else
+			{
+				mapDisplayPanel.setAreasToDraw(null);
+			}
+			mapDisplayPanel.repaint();
+		}
+	}
+	
+	private void handleMouseDraggedOnMap(MouseEvent e)
+	{
+		if (lastSelected != null)
+		{
+			if (toolComboBox.getSelectedItem().equals(ToolType.Move))
+			{
+				// The user is dragging a text box.
+				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
+				for (Area area : lastSelected.areas)
+				{
+					Area areaCopy = new Area(area);
+					AffineTransform t = new AffineTransform();
+					t.translate(e.getX() - mousePressedLocation.x, e.getY() - mousePressedLocation.y);
+					areaCopy.transform(t);
+					transformedAreas.add(areaCopy);
+				}
+				mapDisplayPanel.setAreasToDraw(transformedAreas);
+				mapDisplayPanel.repaint();
+			}
+			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
+			{
+				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
+				for (Area area : lastSelected.areas)
+				{
+					double centerX = lastSelected.location.x / zoom;
+					double centerY = lastSelected.location.y / zoom;
+					Area areaCopy = new Area(area);
+					
+					// Undo previous rotation.
+					AffineTransform t0 = new AffineTransform();
+					t0.rotate(-lastSelected.angle, centerX, centerY);
+					areaCopy.transform(t0);
+					
+					// Add new rotation.
+					AffineTransform t = new AffineTransform();
+					double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
+					t.rotate(angle, centerX, centerY);
+					
+					areaCopy.transform(t);
+					transformedAreas.add(areaCopy);
+				}
+				mapDisplayPanel.setAreasToDraw(transformedAreas);
+				mapDisplayPanel.repaint();				
+			}
+		}
 	}
 	
 	private void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		if (lastSelected != null && toolComboBox.getSelectedItem().equals(ToolType.Move))
+		if (lastSelected != null)
 		{
-			// The user dragged and dropped text.
-			
-			Point translation = new Point(e.getX() - mousePressedLocation.x, e.getY() - mousePressedLocation.y);
-			lastSelected.location = new hoten.geom.Point(lastSelected.location.x + translation.x,
-					+ lastSelected.location.y + translation.y);
-			updateTextInBackgroundThread(lastSelected);
+			if (toolComboBox.getSelectedItem().equals(ToolType.Move))
+			{
+				// The user dragged and dropped text.
+				
+				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * zoom), 
+						(int)((e.getY() - mousePressedLocation.y) * zoom));
+				lastSelected.location = new hoten.geom.Point(lastSelected.location.x + translation.x,
+						+ lastSelected.location.y + translation.y);
+				updateTextInBackgroundThread(lastSelected);
+			}
+			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
+			{
+				double centerX = lastSelected.location.x / zoom;
+				double centerY = lastSelected.location.y / zoom;
+				double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
+				// No upside-down text.
+				if (angle > Math.PI/2)
+				{
+					angle -= Math.PI;
+				}
+				else if (angle < -Math.PI/2)
+				{
+					angle += Math.PI;				
+				}
+				lastSelected.angle = angle;
+				updateTextInBackgroundThread(lastSelected);
+			}
 		}
 	}
 		

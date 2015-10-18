@@ -43,14 +43,14 @@ public class TextDrawer
 	private MapSettings settings;
 	private final int mountainRangeMinSize = 50;
 	// y offset added to names of mountain groups smaller than a range.
-	private final double mountainGroupYOffset = 25;
+	private final double mountainGroupYOffset = 67;
 	private final int backGroundBlendKernelBaseSize = 10;
 	// How big a river must be , in terms of edge.river, to be considered for labeling.
 	private final int riverMinWidth = 3;
 	// Rivers shorter than this will not be named. This must be at least 3.
 	private final int riverMinLength = 3;
 	// This is how far away from a river it's name will be drawn.
-	private final double riverNameRiseHeight = -12;
+	private final double riverNameRiseHeight = -32;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 	
@@ -71,8 +71,8 @@ public class TextDrawer
 	/**
 	 * 
 	 * @param settings The map settings to use. Some of these settings are for text drawing.
-	 * @param sizeMultiplyer The x and y position of text drawn will be multiplied by this value, as will the
-	 * font sizes. This allows the map to be scaled larger or smaller.
+	 * @param sizeMultiplyer The font size of text drawn will be multiplied by this value.
+	 *  This allows the map to be scaled larger or smaller.
 	 */
 	public TextDrawer(MapSettings settings, double sizeMultiplyer)
 	{
@@ -227,7 +227,7 @@ public class TextDrawer
 					{
 						Point location = findCentroid(extractLocationsFromCenters(mountainRange));
 						MapText text = createMapText(nameCompiler.compileName() + " Twin Peaks", location, 0.0, TextType.Other_mountains);
-						if (drawNameRotated(map, g, mountainGroupYOffset * sizeMultiplyer, true, text))
+						if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text))
 						{
 							mapTexts.add(text);
 						}
@@ -236,14 +236,14 @@ public class TextDrawer
 					{
 						drawNameRotated(map, g, nameCompiler.compileName() + " Mountains", 
 								extractLocationsFromCenters(mountainRange),
-								mountainGroupYOffset * sizeMultiplyer, true, TextType.Other_mountains);
+								mountainGroupYOffset * settings.resolution, true, TextType.Other_mountains);
 					}
 				}
 				else
 				{
 					Point location = findCentroid(extractLocationsFromCenters(mountainRange));
 					MapText text = createMapText(nameCompiler.compileName() + " Peak", location, 0.0, TextType.Other_mountains);
-					if (drawNameRotated(map, g, mountainGroupYOffset * sizeMultiplyer, true, text))
+					if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text))
 					{
 						mapTexts.add(text);
 					}
@@ -259,7 +259,7 @@ public class TextDrawer
 			{
 				Set<Point> locations = extractLocationsFromCorners(river);
 				drawNameRotated(map, g, nameCompiler.compileName() + " River", locations,
-						riverNameRiseHeight * sizeMultiplyer, true, TextType.River);
+						riverNameRiseHeight * settings.resolution, true, TextType.River);
 			}
 			
 		}
@@ -281,7 +281,7 @@ public class TextDrawer
 		// Draw all text the user has (potentially) modified.
 		for (MapText text : settings.edits.text)
 		{
-			Point textLocation = new Point(text.location.x * sizeMultiplyer, text.location.y * sizeMultiplyer);
+			Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 			
 			if (text.type == TextType.Title)
 			{
@@ -707,7 +707,7 @@ public class TextDrawer
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
 		int width = metrics.stringWidth(text.value);
 		int height = metrics.getHeight();
-		Point textLocation = new Point(text.location.x * sizeMultiplyer, text.location.y * sizeMultiplyer);
+		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		String[] parts = text.value.split(" ");
 		
@@ -863,7 +863,7 @@ public class TextDrawer
 		int width = metrics.stringWidth(text.value);
 		int height = metrics.getHeight();
 		
-		Point textLocation = new Point(text.location.x * sizeMultiplyer, text.location.y * sizeMultiplyer);
+		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		Point offset = new Point(riseOffset * Math.sin(text.angle), -riseOffset * Math.cos(text.angle));		
 		Point pivot = new Point(textLocation.x - offset.x, textLocation.y - offset.y);
@@ -899,7 +899,7 @@ public class TextDrawer
 		}
 		text.areas = Collections.singletonList(area);
 		// Update the text location with the offset.
-		text.location = new Point(pivot.x / sizeMultiplyer, pivot.y / sizeMultiplyer);
+		text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
 		
 		Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
 		
@@ -970,7 +970,7 @@ public class TextDrawer
 	}
 	
 	/**
-	 * Creates a new MapText, taking this.sizeMultiplyer into account.
+	 * Creates a new MapText, taking settings.resolution into account.
 	 */
 	private MapText createMapText(String text, Point location, double angle, TextType type)
 	{
@@ -978,11 +978,11 @@ public class TextDrawer
 	}
 	
 	/**
-	 * Creates a new MapText, taking this.sizeMultiplyer into account.
+	 * Creates a new MapText, taking settings.resolution into account.
 	 */
 	private MapText createMapText(String text, Point location, double angle, TextType type, List<Area> areas)
 	{
-		return new MapText(text, new Point(location.x / sizeMultiplyer, location.y / sizeMultiplyer), angle, type, areas);
+		return new MapText(text, new Point(location.x / settings.resolution, location.y / settings.resolution), angle, type, areas);
 	}
 
 	/**
@@ -1029,4 +1029,5 @@ public class TextDrawer
 	{
 		this.mapTexts = text;
 	}
+	
 }
