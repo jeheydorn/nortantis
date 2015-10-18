@@ -250,8 +250,8 @@ public class EditTextDialog extends JDialog
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
-				lastSelected = selectedText;
 			}
+			lastSelected = selectedText;
 			mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
 			mapDisplayPanel.repaint();
 		}
