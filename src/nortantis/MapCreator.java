@@ -502,7 +502,6 @@ public class MapCreator
 				
 			}
 		}
-		
 		return groups;
 	}
 

@@ -4,6 +4,7 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 enum PlateType {Oceanic, Continental};
@@ -25,11 +26,12 @@ public class TectonicPlate
 		nextID = 0;
 	}
 	
-	public TectonicPlate(double growthProbability)
+	public TectonicPlate(double growthProbability, List<Center> allCenters)
 	{
 		this.growthProbability = growthProbability;
 		this.id = nextID++;
-		centers = new HashSet<>();
+		// Using CenterSet instead of HashSet here saves about 0.4 seconds when generating on graph with 18000 Centers.
+		centers = new CenterSet(allCenters);
 	}
 	
 	@Override

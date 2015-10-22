@@ -67,13 +67,14 @@ public class CenterSet implements Set<Center>
 		public Center next()
 		{
 			Center result = centers.get(i);
+			i++;
 			findNext();
 			return result;
 		}
 		
 		private void findNext()
 		{
-			for (i = 0; i < bitSet.size(); i++)
+			for (;i < bitSet.size(); i++)
 			{
 				if (bitSet.get(i))
 					break;

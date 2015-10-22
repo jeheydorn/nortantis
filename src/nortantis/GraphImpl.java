@@ -530,7 +530,7 @@ public class GraphImpl extends VoronoiGraph
 		BetaDistribution betaDist = new BetaDistribution(randomData, 1, 3, BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
     	for (Center c : centers)
     	{
-    		c.tectonicPlate = new TectonicPlate(betaDist.sample());
+    		c.tectonicPlate = new TectonicPlate(betaDist.sample(), centers);
        	}
     	
    		for (Center c : centers)

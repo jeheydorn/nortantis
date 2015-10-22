@@ -303,6 +303,13 @@ public class Helper
 		return toReturn;
 	}
 
+	public static <T> List<T> iteratorToList(Iterator<T> iter)
+	{
+		ArrayList<T> result = new ArrayList<>();
+		while(iter.hasNext())
+			result.add(iter.next());
+		return result;
+	}
 	
 }
 
