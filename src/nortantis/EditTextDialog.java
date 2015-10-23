@@ -50,6 +50,7 @@ public class EditTextDialog extends JDialog
 	private JComboBox<ToolType> toolComboBox;
 	JComboBox<TextType>textTypeComboBox;
 	private Point mousePressedLocation;
+	ToolType lastTool;
 
 	/**
 	 * Creates a dialog for editing text.
@@ -114,11 +115,18 @@ public class EditTextDialog extends JDialog
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
+					// Keep any text edits being done.
+					if (lastSelected != null && lastTool == ToolType.Edit)
+					{
+						handleTextEdit(lastSelected);
+					}
+					
 					mapDisplayPanel.clearAreasToDraw();
 					lastSelected = null;
 					mapDisplayPanel.repaint();
 					textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 					editTextField.setText("");
+					lastTool = (ToolType)toolComboBox.getSelectedItem();
 				}
 			});
 			panel.add(toolComboBox);
@@ -135,6 +143,7 @@ public class EditTextDialog extends JDialog
 			panel.add(textTypeComboBox);
 			textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 			toolComboBox.setSelectedItem(ToolType.Rotate); // TODO set default to edit when done testing.		
+			lastTool = (ToolType)toolComboBox.getSelectedItem();
 			JLabel lblZoom = new JLabel("Zoom:");
 			panel.add(lblZoom);
 			
@@ -225,6 +234,31 @@ public class EditTextDialog extends JDialog
 					// Save
 					runSwing.saveSettings(mapDisplayPanel);
 				}
+				else if ((e.getKeyCode() == KeyEvent.VK_A) 
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+				{
+					toolComboBox.setSelectedItem(ToolType.Add);
+				}
+				else if ((e.getKeyCode() == KeyEvent.VK_E) 
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+				{
+					toolComboBox.setSelectedItem(ToolType.Edit);
+				}
+				else if ((e.getKeyCode() == KeyEvent.VK_R) 
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+				{
+					toolComboBox.setSelectedItem(ToolType.Rotate);
+				}
+				else if ((e.getKeyCode() == KeyEvent.VK_G) 
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+				{
+					toolComboBox.setSelectedItem(ToolType.Move);
+				}
+				else if ((e.getKeyCode() == KeyEvent.VK_D) 
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+				{
+					toolComboBox.setSelectedItem(ToolType.Delete);
+				}
 				
 			}
 		});
@@ -275,6 +309,15 @@ public class EditTextDialog extends JDialog
 				mapDisplayPanel.setAreasToDraw(null);
 			}
 			mapDisplayPanel.repaint();
+		}
+		else if (toolComboBox.getSelectedItem().equals(ToolType.Delete))
+		{
+			MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
+			if (selectedText != null)
+			{
+				selectedText.value = "";
+				updateTextInBackgroundThread(null);
+			}
 		}
 	}
 	
@@ -542,7 +585,8 @@ public class EditTextDialog extends JDialog
 		Edit,
 		Move,
 		Add,
-		Rotate
+		Rotate,
+		Delete,
 	}
 
 }
