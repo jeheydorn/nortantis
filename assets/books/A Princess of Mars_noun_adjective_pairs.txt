@@ -1,5 +1,4 @@
 age	own
-arizona mornings	clear
 body	dead
 character	loyal
 character	strong
@@ -12,7 +11,6 @@ door	massive
 dreams	wildest
 equipment	crude
 eyes	gray
-fighting man	trained
 horsemen	magnificent
 income	entire
 instructions	further
@@ -27,14 +25,11 @@ mind	human
 months	several
 mortality	convinced
 nights	other
-pack animals	little
 personality	relative
 personality	remarkable
 physician	local
 place	little
-police chief	local
 property	adjoining
-recapture xviii chained	costly
 recklessness	wild
 station	little
 steel	gray
@@ -90,8 +85,6 @@ kings	several
 lips	dead
 location	present
 men	red
-mountain trail	difficult
-mountain trail	narrow
 pace	dangerous
 period	remote
 ponies	unshod
@@ -102,7 +95,6 @@ rascals	red
 ravine	rocky
 ride	long
 ride	strenuous
-rock formation	jagged
 sounds	further
 speed	topmost
 sword	red
@@ -122,12 +114,7 @@ warriors	red
 wont	careless
 wont	extreme
 alternative	only
-apache warriors	ferocious
 apprehension	unwarranted
-arizona desert	greater
-arizona desert	intense
-arizona desert	naked
-arizona night	clear
 basin	circular
 basin	deep
 body	lifeless
@@ -188,14 +175,12 @@ man	sure
 man	thirsty
 man	unable
 man	utter
-martian surprise	first
 metamorphosis	strange
 miles	interminable
 mind	conscious
 minutes	few
 minutes	next
 morning	early
-morning sun	early
 night	far-gone
 odor	pungent
 physique	powerful
@@ -220,12 +205,9 @@ tonic	immediate
 transition	sudden
 transition	unexpected
 void	unthinkable
-western wonders	few
-western wonders	inspiring
 world	dead
 wraith	other
 agility	unexpected
-air pressure	lower
 animal	other
 antennae	cup-shaped
 antennae	small
@@ -250,7 +232,6 @@ color	yellowish-green
 details	most
 discovery	new
 discovery	wonderful
-earth man	agile
 eggs	large
 eggs	round
 eggs	uniform
@@ -294,7 +275,6 @@ problem	immediate
 pupil	dark
 reason	efficient
 skins	olive
-slate color	dark
 snowiest	gleaming
 sound	little
 spear	great
@@ -313,8 +293,6 @@ time	same
 time	short
 tip	larger
 tones	low
-tusks curve	fearsome
-tusks curve	terrible
 wall	further
 warrior	foremost
 weight	own
@@ -335,13 +313,10 @@ chieftain	principal
 children	light
 city	enormous
 communities	various
-death loss	greatest
 deaths	violent
 desks	wooden
 ears	antennae-like
 ears	high-set
-english tongue	good
-english tongue	old
 entrance	main
 entrance	proper
 eyes	strange-looking
@@ -354,9 +329,7 @@ hilarity	wildest
 language	needless
 legs	long
 life	human
-martian smile	perfunctory
 men	strong
-metal armlet	enormous
 missions	peaceful
 moment	present
 observation	closer
@@ -400,7 +373,6 @@ color	olive-green
 companion	fair
 companion	tall
 creations	wondrous
-darkness results	total
 desk	nearest
 device	last
 eyes	brute
@@ -423,12 +395,6 @@ legs	short
 light	brilliant
 light	far-reaching
 light	white
-living animal	brute
-living animal	human
-martian nights	cold
-martian nights	dark
-martian scene	nocturnal
-martian wonder	new
 men	green
 men	wiser
 monstrosity	ferocious-looking
@@ -439,7 +405,6 @@ puppy	obedient
 resemblance	slight
 room	adjoining
 side	far
-signal failure	first
 sound	hissing
 sound	peculiar
 taste	unpleasant
@@ -464,7 +429,6 @@ beings	few
 blow	first
 blow	second
 body	prostrate
-bull ape	close
 carcass	poor
 carcass	ugly
 city	possible
@@ -477,7 +441,6 @@ creatures	upper
 danger	new
 day	previous
 death	certain
-death struggle	terrific
 devices	own
 ears	located
 effect	marvelous
@@ -504,7 +467,6 @@ pinnacle	high
 prowess	physical
 seat	secure
 sounds	strange
-stone cudgel	mighty
 tactics	earthly
 thing	fearsome-looking
 time	second
@@ -544,26 +506,17 @@ deer	wild
 devils	alive
 devils	hideous
 devils	little
-draft animals	heavier
 eggs	perfect
 extent	greater
 extent	less
 fastnesses	remote
 foresight	supernatural
 gallop	mad
-gravity tests	specific
 incubator	alien
 incubators	air-tight
 infancy	earliest
 journey	tremendous
 life	additional
-martian driver	young
-martian female	adult
-martian language	simple
-martian mysteries	many
-martian mysteries	other
-martian mysteries	unsolvable
-martian mysteries	unsolved
 means	telepathic
 men	young
 messages	telepathic
@@ -582,17 +535,13 @@ tribes	other
 valley	little
 vault	subterranean
 vaults	subterranean
-wagon train	entire
 walls	solid
 women	younger
-air craft	several
 banner	strange
 boat	big
 building	nearby
 buildings	nearby
 carboys	various
-copper color	light
-copper color	reddish
 craft	gray-painted
 craft	huge
 craft	low
@@ -615,13 +564,10 @@ figure	slender
 figure	symmetrical
 finding	wireless
 fire	own
-firing line	more
-firing line	opposite
 fleet	great
 floor	upper
 foemen	unknown
 ground	open
-guy ropes	simultaneous
 hallucination	seeming
 hand	free
 hill	nearest
@@ -637,9 +583,6 @@ manner	erratic
 manner	pitiful
 march	homeward
 marksmen	best
-martian females	green
-martian warriors	green
-martian warriors	tall
 moments	few
 parts	wooden
 place	accustomed
@@ -672,10 +615,8 @@ yearning	strange
 adults	customary
 agonies	last
 audience	present
-audience chamber	great
 captive	beautiful
 captive	relative
-chapter x champion	chief
 communities	own
 conversation	passable
 days	few
@@ -690,8 +631,6 @@ hours	several
 kind	own
 language	common
 manner	satisfactory
-martian civilization	ancient
-martian tongue	little
 meeting	first
 men	earthly
 men	red
@@ -731,7 +670,6 @@ ancestors	common
 ancestors	fierce
 animals	lower
 attention	further
-boundary line woola	bare
 brutes	dumb
 character	favored
 character	free
@@ -741,11 +679,8 @@ character	only
 character	ready
 character	safe
 character	sure
-city sola	good
-community idea	horrible
 days	many
 degree	remarkable
-density tests	atmospheric
 dimensions	respectable
 distortion	facial
 extinction	final
@@ -770,7 +705,6 @@ loved	brute
 man	earthly
 man	normal
 manner	painful
-martian woman	green
 masters	cruel
 masters	erstwhile
 masters	loveless
@@ -834,15 +768,6 @@ hand	left
 justice	crude
 laugh	hideous
 manner	quizzical
-martian chieftain	apparent
-martian chieftain	aware
-martian chieftain	close
-martian chieftain	inactive
-martian chieftain	little
-martian chieftain	more
-martian chieftain	present
-martian chieftain	successful
-martian warrior	green
 men	green
 men	older
 nosebleed	more
@@ -888,7 +813,6 @@ familiarity	seeming
 figures	human
 figures	many
 floor	second
-gold chains	enormous
 habitation	former
 hair	luxuriant
 hand	other
@@ -905,8 +829,6 @@ men	beardless
 men	good
 north	ice-clad
 part	most
-planet earth	own
-planet earth	plain
 quarters	new
 quarters	other
 questions	many
@@ -964,9 +886,6 @@ land	lost
 lieutenant	ablest
 lives	own
 man	better
-martian canals	so-called
-martian protege	so-called
-martian protege	young
 men	green
 men	incessant
 men	red
@@ -985,7 +904,6 @@ races	own
 races	various
 responsibility	great
 salvation	ultimate
-sea bottom	old
 seas	ancient
 stars	many
 sweat	cold
@@ -1027,7 +945,6 @@ floor	second
 floor	third
 floor	vacant
 fountains	numerous
-frolicking children	happy
 laws	cosmic
 laws	stern
 laws	unalterable
@@ -1035,7 +952,6 @@ leg	own
 life	human
 load	second
 march	homeward
-martian vegetation	luxuriant
 masters	dangerous
 men	handsome
 moment	crucial
@@ -1087,7 +1003,6 @@ errand	trivial
 eye	green
 eye	luminous
 fates	horrid
-glass cylinder	solid
 hand	little
 hand	right
 heart	soft
@@ -1095,7 +1010,6 @@ impulse	first
 laugh	little
 laugh	odd
 magnitude	first
-martian warfare	interested
 men	civilized
 months	many
 moon	further
@@ -1105,7 +1019,6 @@ position	unbearable
 princess	much
 projectiles	non-exploding
 projectiles	terrible
-radium powder	awful
 roof	same
 shoulder	left
 shoulder	naked
@@ -1133,7 +1046,6 @@ misery	greatest
 moments	few
 silks	cross-legged
 sky	western
-spring lock	massive
 thing	such
 times	such
 tone	low
@@ -1156,11 +1068,7 @@ eggs	such
 enclosure	little
 episodes	interesting
 face	fierce
-fighting man	healthy
-fighting man	tired
 glance	fleeting
-goose egg	larger
-goose egg	ordinary
 ground	moon-haunted
 halt	single
 hand	big
@@ -1168,11 +1076,7 @@ hour	early
 incubator	small
 insight	slight
 lovers	other
-martian women	green
-martian women	large
-martian women	red
 mirror	tiny
-new-laid egg	larger
 people	smaller
 shoulder	left
 sorak	able
@@ -1202,34 +1106,18 @@ carcass	ugly
 chariots	ornate
 claim	highest
 days	tiny
-dejah thoris sleeps	lonely
 distance	short
 distress	great
-draught animals	heavy
-east indian potentate	green
 encounter	worse
 fate	sad
-flesh wound	slight
 form	lithe
 formation	same
-glass vessel	great
 happenings	such
 healing	wonderful
 hills	nearby
 landscape	yellow
 lips	cold
 lips	hard
-martian applause	green
-martian applause	most
-martian woman	cold
-martian woman	cruel
-martian woman	glad
-martian woman	green
-martian woman	lonely
-martian woman	sure
-martian women	green
-martian women	most
-martians converse	green
 metal	gleaming
 metal	own
 monosyllables	low
@@ -1241,8 +1129,6 @@ people	own
 phantasmagoria	huge
 race	proud
 sea	particular
-sea bottom	ancient
-sea bottom	moss-covered
 seat	back
 senses	full
 silks	magnificent
@@ -1290,12 +1176,10 @@ expedition	long
 extremity	southern
 face	other
 farms	earthly
-field glass	powerful
 fields	high-walled
 fields	walled
 guardians	free
 halt	single
-heart cold	young
 heavens	barsoomian
 imprecations	final
 intervals	regular
@@ -1304,10 +1188,6 @@ light	wondrous
 love	great
 love	strong
 man	real
-martian troops	red
-martian waterways	famous
-martian waterways	red
-martian waterways	wild
 men	green
 moments	few
 moon	ceaseless
@@ -1336,7 +1216,6 @@ tailboard	sure
 tower	old
 trees	many
 vengeance	terrible
-virginia gentlemen	own
 wall	nearby
 years	short
 arena	great
@@ -1387,7 +1266,6 @@ quarters	suitable
 race	own
 rank	lesser
 request	possible
-residence purposes	unfitted
 scale	larger
 scale	possible
 scale	richer
@@ -1405,12 +1283,10 @@ brutes	wild
 buildings	adjacent
 buildings	outlying
 bulks	huge
-bull thoat	great
 cause	slightest
 chambers	dark
 cities	other
 court	inner
-devil fish	huge
 doorway	first
 enclosure	own
 end	fearful
@@ -1423,7 +1299,6 @@ floor	first
 floor	third
 floor	unlighted
 gates	great
-glance rest	haughty
 gutturals	low
 gutturals	quieter
 gutturals	restless
@@ -1437,9 +1312,6 @@ hour	half
 household	same
 manner	horrible
 manner	startling
-martian cities	ancient
-martian moons	ancient
-mean proportions	able
 men	green
 night	same
 noise	hideous
@@ -1485,7 +1357,6 @@ face	beautiful
 fellow	poor
 hand	right
 heart	putrid
-hiding place	temporary
 hour	mine
 hour	short
 intention	cruel
@@ -1493,7 +1364,6 @@ intention	first
 line	last
 loathing	undisguised
 manner	pitiful
-martian rifle	strange
 men	green
 men	red
 miles	dangerous
@@ -1515,7 +1385,6 @@ ridge	friendly
 ridge	providential
 short-sword	gleaming
 short-sword	sharp
-sweat start	cold
 thoughts	own
 trees	distant
 warrior	last
@@ -1545,7 +1414,6 @@ hands	bare
 hours	several
 jeddak	real
 lieutenant	old
-o jed	huge
 pace	furious
 party	entire
 people	bloodthirsty
@@ -1570,7 +1438,6 @@ tusks	gleaming
 voice	loud
 voice	menacing
 walls	chained
-warhoon communities	various
 warriors	green
 warriors	several
 weakling	water-hearted
@@ -1608,23 +1475,18 @@ hordes	northern
 hordes	other
 jailer	former
 madman	cunning
-martian communities	green
-martian females	green
 messenger	new
 night	moonless
 place	horrible
 platform	large
 princess	beloved
 prisoner	chained
-reasoning man	daring
 respect	greatest
 sight	horrid
 sound	grating
 sound	strange
 throat	dead
 torch	dim
-torch light	dim
-war ships	mighty
 warriors	green
 waterway	great
 women	defenseless
@@ -1646,7 +1508,6 @@ day	horrible
 day	hot
 day	long
 day	ninth
-death blow	final
 diamonds	huge
 door	second
 door	similar
@@ -1682,7 +1543,6 @@ scene	barsoomian
 self	former
 statements	remarkable
 stone	strange
-stone table	great
 struggle	unequal
 sweep	mighty
 thickness	great
@@ -1715,8 +1575,6 @@ doors	great
 doors	heavy
 doors	impassable
 doors	outer
-earth hours	little
-earth hours	one-half
 enclosure	first
 experiences	arduous
 experiences	long
@@ -1737,10 +1595,6 @@ man	demented
 man	old
 man	red
 manner	casual
-martian atmosphere	nearest
-martian atmosphere	present
-martian atmosphere	red
-martian city	nearest
 means	telepathic
 men	green
 morning	early
@@ -1770,8 +1624,6 @@ blunders	awful
 body	entire
 buildings	principal
 buildings	public
-bull thoat	domestic
-bull thoat	small
 centers	populated
 centers	various
 chances	small
@@ -1785,10 +1637,8 @@ conflict	bloody
 effect	similar
 entrance	immediate
 farewell	affectionate
-farm houses	several
 fleet	disabled
 fruits	luscious
-government officers	more
 happiness	less
 happiness	momentary
 helium	exquisite
@@ -1823,11 +1673,7 @@ accidents	strange
 act	heroic
 aid	timely
 aid	warm
-air craft	one-man
-air vessels	low-lying
 arrival	timely
-barsoomian ray	eighth
-barsoomian ray	unknown
 body	headless
 buttons	tiny
 craft	own
@@ -1842,21 +1688,17 @@ feet	wide
 flier	tiny
 flight	first
 hour	little
-identification data	other
-identification data	personal
 inches	thick
 injuries	mortal
 machine	damaged
 man	lucky
 marriage	voluntary
 months	several
-morning patrons	early
 person	single
 planets	various
 princess	own
 ray	ninth
 ray	unknown
-ray reservoirs	eighth
 rest	brief
 silks	gay-colored
 spears	great
@@ -1908,7 +1750,6 @@ hands	outstretched
 hour	late
 hour	little
 man	other
-martian princess	dead
 men	red
 metal	strange
 metal	worthy
@@ -1924,7 +1765,6 @@ smile	grim
 sword	own
 temerity	unwarranted
 way	other
-zodangan army	victorious
 ability	short
 ancestor	first
 apartment	large
@@ -1939,7 +1779,6 @@ friend	useless
 greetings	formal
 guardsmen	dead
 hall	great
-hiding place	past
 hope	only
 man	blank
 man	tall
@@ -1955,7 +1794,6 @@ savior	erstwhile
 scrutiny	closest
 squadron	air-scout
 stories	several
-surpassing skill	endurance
 tapestries	transparent
 vase	bowl-like
 warriors	green
@@ -1972,7 +1810,6 @@ entrance	secret
 feet	few
 fellow	splendid
 floor	top
-force patrols	quadruple
 head	lofty
 hook	great
 man	resourceful
@@ -2034,7 +1871,6 @@ struggle	titanic
 time	most
 tower	high
 towers	immense
-warhoon horde	fierce
 warrior	green
 watch	hopeless
 watch	pathetic
@@ -2051,7 +1887,6 @@ jeddak	mighty
 life	long
 man	noble
 monster	dead
-morning sarkoja	next
 pilgrimage	short
 return	accidental
 thoat	wild
@@ -2094,13 +1929,10 @@ men	red
 monsters	ferocious
 monsters	green
 ornaments	nuptial
-palace grounds	enormous
-police patrol	metropolitan
 quarrels	personal
 robe	scarlet
 salver	huge
 salver	similar
-sea bottoms	dead
 sight	fiendish
 strength	equivalent
 tharks	enthusiastic
@@ -2138,9 +1970,6 @@ jeddak	new
 longsword	mighty
 man	such
 marksmanship	uncanny
-martian people	green
-martian people	red
-martian warriors	green
 men	wiser
 miracles	greater
 overspread	flush
@@ -2161,18 +1990,15 @@ time	short
 vessels	many
 warriors	green
 woman	such
-zodangan prisoners	possible
 acclaim	wild
 allies	wild
 altitude	same
 avenues	broad
 batteries	useless
-battle line	well-entrenched
 boon	greater
 camp	main
 cry	great
 death	awful
-dozen officers	astonished
 excitement	wildest
 fire	effective
 fire	small-arm
@@ -2196,7 +2022,6 @@ plunge	fearful
 race	garrulous
 reinforcements	much-needed
 riders	terrible
-sea bottom	ancient
 shambles	veritable
 side	pathetic
 steps	lower
@@ -2213,12 +2038,10 @@ warriors	green
 waterways	ribbon-like
 works	upper
 wrecks	hopeless
-zodangan squadron	victorious
 allies	wild
 body	dead
 calamity	impending
 change	noticeable
-day breathing	difficult
 days	next
 doom	unalterable
 egg	snow-white
@@ -2242,16 +2065,11 @@ speed	very
 walls	mighty
 years	useful
 air	thin
-air supply	unreplenished
 aperture	ragged
-arizona cave	dark
-atmosphere plant	dark
 attempts	vain
 bench	tiny
 cave	huge
-chapter xxviii	dark
 conditions	worse
-copper vessel	round
 course	straight
 courtyard	inner
 dock	nearest
@@ -2285,7 +2103,6 @@ notch	last
 panel	single
 place	gruesome
 planet	entire
-sea bottom	old
 secret	awful
 skeletons	human
 sleep	last

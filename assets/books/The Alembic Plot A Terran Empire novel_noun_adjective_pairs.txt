@@ -11,12 +11,6 @@ cheek	right
 concentration	intense
 descriptions	able
 dislike	special
-enforcement candidates	good
-enforcement officer	active-duty
-enforcement officer	female
-enforcement officer	only
-enforcement officer	romantic
-fall new pennsylvania evening	late
 fight	first
 folder	more
 hands	minor
@@ -32,7 +26,6 @@ mark	circled-triangle
 minimums	officer-cadet
 needs	physical
 operation	anti-brotherhood
-operations team	special
 orders	routine
 others	dead
 plagues	common
@@ -41,12 +34,10 @@ salute	first
 schoolmates	former
 seconds	few
 so	special
-st. dmitri exchange troop	competent
 stats	physical
 stomachs	stronger
 survivors	other
 team	whole
-team members	other
 war	final
 woman	unconscious
 advantage	only
@@ -54,15 +45,12 @@ arrangements	difficult
 briefing	temporary
 casualties	high
 clinic	local
-coffee shop	comfortable
 copter-lifts	command-van
 doctor	medevac
 doctors	several
-dozen nurses	many
 duty	special
 enemies	dangerous
 fusion	spinal
-hospital coffee shops	full
 incidents	other
 injuries	most
 injury	serious
@@ -72,12 +60,8 @@ killer	trained
 killer	upset
 landing	second
 leg	second
-life expectancy	average
-life expectancy	less
 man	suitable
 operations	special
-operations teams	special
-ops identification	special
 people	different
 plane	due
 plane	medevac
@@ -111,35 +95,27 @@ clock	tangled
 concern	real
 desk	convenient
 disc	subject
-doctor egan	pale
 door	open
 efforts	best
 eyes	pale
-freedom raid points	other
 groups	most
 groups	restricted
 hand	good
 harshness	grim
 harshness	real
 holocaust	nuclear
-hospital floor	bloody
-hospital floor	broken
-hospital floor	different
 hours	several
 liturgy	familiar
 lot	better
 meeting	odd
 moments	several
 needs	spiritual
-neutron bombs	clean
-neutron bombs	most
 oddity	only
 operation	successful
 operations	special
 ops	eligible
 ops	outstanding
 ops	special
-ops officer	special
 paid-woman	fine
 part	most
 places	many
@@ -153,10 +129,6 @@ seat	half-bowed
 sweeps	anti-terrorist
 sweeps	necessary
 terrorists	worst
-time odeon	half-bowed
-time odeon	harsh
-time odeon	harsher
-time odeon	positive
 virgin	blessed
 vocation	dangerous
 vocation	military
@@ -164,34 +136,25 @@ voice	soft
 war	final
 weapons	biological
 weapons	primary
-white fathers	several
 woman	real
 alternative	better
 break	cold
 breath	deep
-brother lawrence shannon	sure
 colonels	full
 combat	hand-to-hand
-combat training	much
 days	few
 decision	final
-disability discharge	eligible
 feeling	like
 feeling	strong
 hand	other
 hell-marks	rid
-hug people	good
 hunt	such
 moment	long
 notations	necessary
 office	private
-office workers	apprehensive
 officer	fellow
 offices	bare-bones
 ops	special
-ops man	apprehensive
-ops man	special
-ops man	upset
 personnel	interested
 prognosis	good
 question	first
@@ -205,8 +168,6 @@ artist	able
 attention	non-standard
 authorities	civil
 breath	deep
-captain cortin	glad
-captain cortin	non-functional
 cases	reluctant
 chapter	next
 civilians	most
@@ -214,7 +175,6 @@ danger	constant
 day	next
 days	holy
 distraction	more
-enforcement troops	fellow
 evenings	free
 face	unchecked
 facts	pertinent
@@ -256,34 +216,15 @@ witnesses	willing
 woman	more
 woman	real
 women	few
-brother lawrence shannon	best
-brother lawrence shannon	certain
-brother lawrence shannon	confident
-brother lawrence shannon	free
-brother lawrence shannon	glad
-brother lawrence shannon	more
-brother lawrence shannon	reasonable
-brother lawrence shannon	spare
 captain	mere
-captain odeon	worried
 day	first
-day cortin	alive
-day cortin	comfortable
-day cortin	flattered
-day cortin	pleased
-day cortin	sure
-day cortin	thankful
 desire	strong
-enforcement trooper	unarmed
 expressions	sympathetic
 grievances	personal
 groups	terrorist
 hands	gloved
 help	little
 help	unofficial
-herb tea	better
-herb tea	favorite
-herb tea	premature
 hours	few
 impact	psychological
 lot	better
@@ -324,17 +265,13 @@ exception	general
 excuse	reasonable
 feeling	familiar
 hospital	good
-hospital status	great
 inquisitor	competent
 inquisitor	glad
 instruction	intensive
 instruction	more
 kiss	thorough
 kiss	undignified
-law officer	great
 lieutenant	first
-lieutenant odeon	afraid
-lieutenant odeon	safe
 load	10-mm
 men	few
 men	sterile
@@ -377,11 +314,9 @@ brotherhood	fond
 building	gray
 building	main
 building	windowless
-captain odeon	snowbound
 centis	slender
 church	full
 colonel	good
-combat skills	outstanding
 conditions	such
 consent	full
 criterion	additional
@@ -391,7 +326,6 @@ evaluations	confident
 exemption	special
 expectations	accurate
 guess	best
-holy orders	full
 hospital	convalescent
 inquisitor-captain	best
 job	enough
@@ -400,7 +334,6 @@ look	more-than-lieutenant
 missions	anti-brotherhood
 missions	hazardous
 moments	few
-operations personnel	special
 people	most
 periods	prolonged
 personnel	sufficient
@@ -430,7 +363,6 @@ crime	new
 danger	immediate
 deserter	new
 door	west
-enforcement service card	standard
 experience	first
 experience	little
 experience	practical
@@ -449,8 +381,6 @@ minutes	first
 moments	several
 nerve	incompetent
 officer	ranking
-operations stamp	special
-ordination st. thomas	cautious
 patch	so
 practitioners	outstanding
 push	real
@@ -479,14 +409,7 @@ work	understandable
 bastard	other
 call	obvious
 call	primary
-captain cortin	best
-captain cortin	certain
-captain cortin	ready
 ceremony	brief
-colonel bradford	afraid
-colonel bradford	sure
-commanding officer	first
-commanding officer	new
 coverall	blood-spattered
 day	less
 effort	worth
@@ -518,7 +441,6 @@ subjects	first
 subjects	useful
 team	conceivable
 team	same
-team leader	useful
 tomorrow	mass
 way	own
 way	proper
@@ -529,11 +451,6 @@ beatings	methodical
 bit	surprised
 break	abrupt
 bruise	dark
-captain cortin	defiant
-captain cortin	easy
-captain cortin	less
-captain cortin	past
-captain cortin	true
 cool	human
 dagger	razor-sharp
 dagger	slender
@@ -597,22 +514,15 @@ diner	nearby
 effusiveness	embarrassing
 example	good
 field	new
-first lieutenant	young
-first mass	first
 functions	priestly
-hand signal	first-class
 intensity	uncomfortable
 key	fitting
 language	local
 lieutenant	anonymous
 mass.	first
 men	several
-news channels	normal
-operations priests	special
-ops patches	special
 pain	own
 place	private
-plaguer shannon	interested
 plate	empty
 pocket	tunic
 problem	first
@@ -620,10 +530,8 @@ profession	profitable
 resentment	less
 server	strange
 service	profitable
-strike force selectees	newly-arrived
 subject	first
 subjects	first
-team leaders	prospective
 things	slow
 time	useful
 tips	several
@@ -638,9 +546,6 @@ bonus	hazardous-duty
 breakfast	big
 buildings	separate
 clamor	second
-colonel bradford	available
-colonel bradford	interested
-colonel bradford	most
 combinations	leader-second
 debate	internal
 duty	available
@@ -649,17 +554,13 @@ duty	primary
 ear	major
 expenses	interested
 expenses	personal
-fellow inquisitors	interested
-fellow inquisitors	possible
 gentles	bad
 groups	terrorist
 hand	bad
 hand	other
 hardship	much
-horror attacks	unprecedented
 intentions	open
 kingdoms	various
-leadership teams	pre-selected
 lobby	available
 minds	great
 missions	own
@@ -681,7 +582,6 @@ procedures	normal
 purpose	primary
 radios	personal
 refreshments	available
-strike forces	possible
 suits	paired
 surprise	deliberate
 terror	early
@@ -693,12 +593,7 @@ updates	daily
 volunteers	eligible
 warrant	broader
 beliefs	hard
-body temperature	general
-body temperature	high
 call	unmistakable
-captain cortin	frightening
-captain cortin	god-loving
-captain cortin	surprised
 contact	brief
 day	first
 day	following
@@ -734,21 +629,8 @@ report	true
 risk	little
 risk	worth
 seat	own
-shelter parties	like
-sister mary piety	attractive
-sister mary piety	capable
-sister mary piety	idle
-sister-lieutenant eleanor mary piety chang	aware
-sister-lieutenant eleanor mary piety chang	certain
-sister-lieutenant eleanor mary piety chang	last
-sister-lieutenant eleanor mary piety chang	more
-sister-lieutenant eleanor mary piety chang	silent
-sister-lieutenant eleanor mary piety chang	unable
-sister-lieutenant eleanor mary piety chang	willing
 smile	brilliant
 surge	brief
-survival limits	high
-survival limits	human
 team	good
 time	right
 time	spare
@@ -764,8 +646,6 @@ attention	own
 briefing	complete
 brothers	unfortunate
 burst	subject
-captain odeon	concerned
-captain odeon	second
 cases	most
 conduct	sexual
 courtesans	decent
@@ -785,12 +665,8 @@ information	useful
 injuries	internal
 interrogation	extended
 interrogation	serious
-interrogation process	invaluable
 items	more
 kidneys	same
-lt. anthony degas	other
-lt. anthony degas	self-contained
-lt. david bain	strong
 man	young
 members	other
 methods	simple
@@ -840,9 +716,6 @@ demonstration	distressing
 demonstration	practical
 distractions	interested
 distractions	minor
-dr. egan	emphatic
-dr. egan	good
-dr. egan	latter
 equipment	most
 eroticine	apprehensive
 eroticine	interested
@@ -907,7 +780,6 @@ woman	angry
 woman	incapable
 arrival	sudden
 awards	well-deserved
-baby ones	delightful
 cartridge	own
 case	early
 cat	best
@@ -916,7 +788,6 @@ cat	own
 cat	pregnant
 dogs	formidable
 face	beautiful
-farmer projects	young
 hand	other
 meeting	happy
 minutes	few
@@ -928,11 +799,8 @@ occasions	rare
 officer	fine
 ops	special
 organization	terrorist
-palomino colt	healthy
-palomino colt	long
 priest	old
 reasons	personal
-service obligation	complete
 smile	slow
 spot	shady
 team	fitting
@@ -941,7 +809,6 @@ times	several
 voice	familiar
 way	same
 yard	front
-blood type	same
 brother	public
 cases	many
 civs	interested
@@ -951,7 +818,6 @@ donor	suitable
 end	eager
 face	impassive
 face	straight
-february evening	late
 food	solid
 hand	other
 idea	bad
@@ -962,10 +828,8 @@ items	external
 kingdoms	other
 look	dirty
 material	specialized
-morning sun	comfortable
 move	first
 murderers	like
-nerve layers	inverted
 organs	internal
 pain	extreme
 pain	such
@@ -974,12 +838,7 @@ period	adequate
 place	better
 quiet	pleasant
 reaction	same
-recuperation area	surgical
-royal retreat	deliberately-isolated
-royal retreat	well-secured
 rumor	original
-saddle pad	complete
-saddle pad	lambswool
 satisfaction	much
 satisfaction	professional
 situation	different
@@ -1006,8 +865,6 @@ action	blameless
 activity	sexual
 briefing	quick
 bunch	sterile
-church law	blameless
-church law	civil
 civilians	normal
 co	certain
 co	happy
@@ -1016,8 +873,6 @@ demonstration	standard
 duties	other
 effect	extreme
 effect	other
-enforcement personnel	civilian
-enforcement personnel	most
 environment	military
 environment	normal
 environment	strictly-military
@@ -1078,15 +933,12 @@ people	most
 plaguers	little
 precautions	few
 precautions	simple
-prisoner escorts	close
 problem	real
 questions	alive
 reaction	extreme
 reaction	guilty
 reputation	afraid
 residence	royal
-return fire	mixed
-royal family	alert
 seconds	few
 shots	rapidly-approaching
 side	other
@@ -1107,13 +959,11 @@ withers	low
 woods	open
 bit	disturbed
 danger	much
-dear god	human
 explanation	brief
 food	solid
 gait	smooth
 gardens	formal
 gelding	responsive
-guard post	main
 honor	certain
 horses	spare
 hunch	stronger
@@ -1139,7 +989,6 @@ quarters	normal
 reputation	helpful
 retreat	royal
 scenario	worst-case
-security people	many
 shelter	fine
 silence	brief
 target	prime
@@ -1159,7 +1008,6 @@ civs	apprehensive
 effect	aware
 effect	conscious
 effect	routine
-enforcement officer	apprehensive
 evening	early
 function	sexual
 knowledge	wiser
@@ -1175,7 +1023,6 @@ prospects	nervous
 reason	same
 recruiters	bad
 research	best
-security area	remote
 sleep	natural
 student	second-semester
 talent	only
@@ -1186,7 +1033,6 @@ trouble	worse
 version	new
 version	virus-enhanced
 woman	second
-woman officer	only
 words	many
 authorities	temporal
 bit	cooler
@@ -1215,7 +1061,6 @@ officers	good-looking
 pain	emotional
 people	most
 phase	final
-police officer	skeptical
 power	mundane
 powers	latent
 precautions	unnecessary
@@ -1288,13 +1133,6 @@ couple	attractive
 couple	early
 couple	good
 couple	more
-dinner supper	festive
-dress uniforms	full
-enforcement men	compatible
-enforcement men	heterosexual
-enforcement men	most
-enforcement officer	female
-enforcement officer	only
 face	wry
 finery	comfortable
 gratification	possible
@@ -1307,7 +1145,6 @@ reaction	normal
 relief	considerable
 sigh	theatrical
 soup	hot
-stalemate breaks	glad
 time	whole
 tiny	good
 tiny	misnamed
@@ -1316,22 +1153,13 @@ word	weak
 campaign	anti-terrorist
 capital	comfortable
 cider	freshly-pressed
-colonel cortin	comfortable
-colonel cortin	sure
 counsel	own
 criminals	worst
-czar nicholas	subject
 decisions	own
 duties	primary
-enforcement rank	highest
 experience	much
-field work	able
 gear	personal
 health	continued
-high king mark	subject
-home world	pleasant
-household members	prestigious
-interrogation suite	state-of-the-art
 job	good
 job	primary
 kingdom	whole
@@ -1341,8 +1169,6 @@ offer	justified
 operation	routine
 orders	lawful
 packhorse	single
-palace compound	close
-palace functions	important
 people	most
 position	new
 princess	unusual
@@ -1370,15 +1196,10 @@ church	secular
 cities	unbearable
 conclusions	uncomfortable
 conditions	changed
-conference cabin	full
 couples	few
 couples	infertile
 death	tragic
 dispensation	sexual
-enforcement officer	necessary
-enforcement officer	noble
-family structure	necessary
-family structure	strong
 father	legal
 flight	first
 helpers	closest
@@ -1398,19 +1219,13 @@ nobility	most
 number	critical
 objections	strong
 opinion	own
-population statistics	aware
-population statistics	pre-war
 position	awed
 position	new
-prince edward	afraid
-princess ursula	certain
 race	human
 race	suicidal
 raidmaster	chief
 recovery	drugged
 recovery	fair
-royal marriage	necessary
-satyr virus	high
 scale	high
 society	healthy
 society	necessary
@@ -1432,10 +1247,7 @@ choices	own
 door	main
 dungeon	desirable
 dungeon	honest-to-god
-entrance stairs	broad
-entrance stairs	sweeping
 equipment	sophisticated
-family structure	new
 floor	main
 floors	upper
 garden	formal
@@ -1444,27 +1256,22 @@ hedges	thick
 home	new
 hope	personal
 inquisitor-colonel	fine
-interrogation suites	complete
 isolation	fine
 isolation	normal
 joy	eternal
 knowledge	best
 library	excellent
-life form	new
 names	first
 offices	public
 ones	conventional
 ones	other
 ones	state-of-the-art
-operations officers	special
 ops	special
-palace compound	close
 parties	many
 place	own
 place	private
 quarters	excellent
 quarters	recreational
-royal circles	new
 step	next
 thing	first
 trip	brief
@@ -1474,12 +1281,7 @@ vial	small
 way	different
 annunciation	25th
 approval	eager
-blue sisters	afraid
-captain cortin	re-conditioned
-captain odeon	wrong
-detention center	possible
 door	main
-enforcement service personnel	responsible
 entrance	main
 evaluation	preliminary
 feel	subject
@@ -1529,7 +1331,6 @@ information	good
 job	new
 level	normal
 light	different
-living conditions	average
 marksman	good
 morning	serious
 night	last
@@ -1549,7 +1350,6 @@ results	substantial
 rider	good
 seconds	several
 stimulus	sexual
-strike force criteria	normal
 time	first
 uniforms	own
 voice	half-familiar
@@ -1560,20 +1360,12 @@ absorption	noticeable
 answer	good
 attack	reasonable
 ceremony	beautiful
-colonel bradford	afraid
-colonel bradford	astonished
-colonel bradford	available
-colonel bradford	helpful
-colonel bradford	pleased
-colonel bradford	sure
 endowments	new
 experiences	recent
 expression	impassive
 floor	main
 information	useful
 job	thorough
-lieutenant powell	new
-lieutenant powell	wrong
 lovemaking	thorough
 lovemaking	unhurried
 matters	personal
@@ -1585,14 +1377,10 @@ night	last
 office	hard
 office	main-floor
 office	public
-office lighting	bright
 one	normal
 point	strong
 prayers	preliminary
-seating area	informal
-sedative injector	still-full
 sex	laughable
-sex life	incredible
 situations	first
 size	full
 size	solid
@@ -1602,7 +1390,6 @@ time	whole
 weaknesses	individual
 women	other
 arrangement	normal
-enforcement uniform	white
 exceptions	few
 eyebrow	curious
 guess	bad
@@ -1616,8 +1403,6 @@ night	last
 nobility	landfolk
 pleasure	incredible
 priority	first
-protector surfaces	incapable
-protector surfaces	late
 realization	joyous
 repetitions	prolonged
 role	temporary
@@ -1630,11 +1415,9 @@ visit	early-hours
 women	own
 works	previous
 attacks	such
-convent job	likely
 coveralls	gray
 death	slow
 death	terrible
-farm life	boring
 fear	open
 function	primary
 hallucinogens	useful
@@ -1642,12 +1425,9 @@ hope	small
 hospital	convalescent
 imagination	own
 interrogation	conventional
-interrogation drugs	afraid
-interrogation drugs	useful
 jars	little
 jars	various
 methods	conventional
-mood changes	rapid
 morning	good
 name	holy
 name	most
@@ -1681,13 +1461,11 @@ commands	majesty
 company	normal
 complaints	justified
 conference	airborne
-courtesy call	odder
 crew	clean-up
 crucifix	obvious
 desire	personal
 dream	good
 enemies	personal
-field work	much
 frown	brief
 generations	few
 god	kinder
@@ -1695,19 +1473,14 @@ guard	personal
 hand	other
 handgun	heavy-caliber
 head	thick
-high king	afraid
-high king	tired
-high king	uncomfortable
 inquisitors	disturbing
 inquisitors	male
 interest	personal
 issue	standard
-king mark	valuable
 lovemaking	first
 majesty	familiar
 men	most
 monarchs	lesser
-office desk	ground-floor
 officer	commanding
 officer	new
 ones	first
@@ -1725,7 +1498,6 @@ reporters	safe
 room	third-stage
 smile	rueful
 subject	new
-terror attack	next
 troops	popular
 validity	certain
 version	traditional
@@ -1761,8 +1533,6 @@ minutes	few
 mistake	smallest
 moment	embarrassing
 moment	silent
-ops men	special
-ops troops	special
 option	willing
 prayers	content
 prayers	informal
@@ -1771,7 +1541,6 @@ purpose	willing
 reaction	first
 ritual	religious
 sense	more
-silk sheet	white
 thought	frightening
 time	first
 time	good
@@ -1789,7 +1558,6 @@ actions	physical
 addition	excellent
 apprehension	nagging
 attention	full
-colonel bradford	worried
 competence	unobtrusive
 couple	royal
 days	few
@@ -1826,12 +1594,9 @@ question	same
 sign	good
 smile	serene
 son	eldest
-sperm count	lower
 spouses	other
-strike force troopers	fertile
 team	entire
 unity	full
-way bread	same
 apologies	necessary
 background	pre-academy
 brother	older
@@ -1865,8 +1630,6 @@ orphan	classic
 parents	biological
 people	many
 politics	straightforward
-pope anthony	worried
-pope lucius	conservative
 porch	front
 profession	obsolete
 questions	conventional
@@ -1886,8 +1649,6 @@ common-room	hungry
 details	logistic
 enemies	worst
 expression	bemused
-family name	new
-family structure	new
 fear	justified
 fear	stronger
 floor	third
@@ -1898,25 +1659,19 @@ hunch	mere
 hunch	stronger
 identity	true
 kids	good
-lieutenant chang	pregnant
 marriage	valid
 minutes	few
 mistress	faithful
 mistress	hostile
 nature	different
 nod	thoughtful
-office door	half-open
 ones	likely
 ones	non-human
 optimism	justified
 people	own
-pope anthony	holy
-raid scene	fresh
 reaction	mixed
-roman times	new
 son	pregnant
 sorry	dangerous
-strike team dangers	subject
 surprise	much
 time	enough
 time	faithful
@@ -1935,9 +1690,6 @@ door	open
 face	straight
 families	more
 families	such
-family life	happy
-family life	long
-family structure	extended
 interest	senior
 minutes	few
 mood	good
@@ -1948,13 +1700,11 @@ office	main-floor
 part	first
 person	close
 plans	close-mouthed
-prince edward	majesty
 reputation	established
 reputation	professional
 reputation	reasonable
 residents	new
 result	nervous
-service uniform	fine
 smile	delighted
 speed	more
 spouses	initial
@@ -1974,7 +1724,6 @@ appearance	imminent
 archduchy	new
 belief	misdirected
 benefit	extra
-captain cortin-odeon	true
 child	first
 choice	logical
 choice	reasonable
@@ -1982,18 +1731,13 @@ circumstances	normal
 decrees	true
 degree	lesser
 duties	inquisitorial
-enforcement uniform	single
-enforcement uniform	white
-enforcement uniforms	white
 families	new
 family	conventional
 family	difficult
 family	entire
-family member	next-senior
 fief	major
 fief	new
 fief	safe
-friday evening	first
 glow	bright
 group	entire
 hand	tentative
@@ -2012,7 +1756,6 @@ ranks	lower
 reaction	glad
 sake	careful
 sake	sure
-silver star	single
 situations	difficult
 status	new
 suggestion	excellent
@@ -2072,13 +1815,10 @@ children	happy
 civs	most
 clothes	clean
 congregation	entire
-enforcement people	female
-enforcement people	male
 expression	grim
 faces	several
 families	certain
 family	large
-family structure	new
 floor	third
 help	spectacular
 household	bad
@@ -2090,9 +1830,6 @@ meantime	pointless
 meeting	next
 men	common
 men	most
-morale problem	major
-new eden ladies	welcome
-ops patches	special
 others	few
 place	proper
 prayers	after-mass
@@ -2125,7 +1862,6 @@ uniform	fresh
 woman	hard
 years	better
 boy	older
-child sis	sure
 conditioning	judicious
 god	willing
 guests	many
@@ -2136,7 +1872,6 @@ identity	real
 inquisitors	general
 invitation	such
 invitation	valuable
-invitation monday	real
 joke	poor
 judgement	own
 life	risky
@@ -2173,16 +1908,12 @@ attentions	professional
 blouse	open
 chattiness	peculiar-seeming
 choice	logical
-contact snap	sure
-contact snap	unpleasant
 decision	correct
 decision	final
 definition	classic
 draperies	dark
 draperies	rich
 eyes	slit-pupilled
-father mike odeon	hard
-father mike odeon	sure
 feathers	jet-black
 hall	great
 humans	most
@@ -2304,9 +2035,6 @@ body	non-human
 body	physical
 candidate	only
 candidate	qualified
-collar insignia	new
-colonel ivan petrovich illyanov	best
-colonel ivan petrovich illyanov	sure
 contact	single
 days	past
 expressions	disapproving
@@ -2331,9 +2059,7 @@ state	emotional
 state	frightening
 stay	longest
 stay	painful
-strike force people	coordinate
 subjects	few
-teton enforcement service	high
 thing	real
 time	extra
 time	free
@@ -2368,28 +2094,19 @@ shape	better
 staff	mortal
 state	constant
 strain	constant
-talent ivan	scared
-talent ivan	useful
-telepathy shayan	corrupt
 time	first
 time	tentative
 truthsense	sure
 word	better
 arms	strong
-ce blackfeather	adaptable
-ce blackfeather	own
-ce blackfeather	resilient
 compellor	chargeable
 compellor	surprised
 disclosures	sudden
-dozen planets	mere
 drugs	bad
 enforcement	gray
-enforcement killer	easy
 entrance	main
 excellency	specific
 expression	quizzical
-eye contact	necessary
 eyes	blue
 eyes	pale
 hand	other
@@ -2409,12 +2126,6 @@ sins	normal
 sins	venial
 voice	soft
 attention	more
-captain odeon	able
-captain odeon	afraid
-captain odeon	grateful
-captain odeon	mild
-captain odeon	second
-captain odeon	sure
 children	fond
 children	hungry
 circumstances	same
@@ -2426,17 +2137,14 @@ darling	afraid
 darling	little
 excellency	eager
 existence	certain
-female enforcement officer	only
 floor	curious
 friend	little
 function	religious
 growl	sound
 hand	other
 hesitation	only
-kingdom systems	entire
 man	nude
 man	wise
-may i	nosy
 name	many
 name	pointless
 name	real
@@ -2481,18 +2189,13 @@ colonel	necessary
 convenience	earliest
 convent	airborne
 days	few
-enforcement medics	usual
-enforcement oath	valid
 evening	previous
-excellency care	necessary
-flesh wound	more
 hat	wide-brimmed
 incarnation	divine
 intervention	timely
 may	glad
 minutes	few
 morning	next
-movement orders	impossible
 nature	gentle
 notice	available
 officer	senior
@@ -2506,7 +2209,6 @@ radio	tactical
 reminder	obvious
 report	complete
 respect	considerable
-service uniform	easier
 sisters	holy
 surprise	airborne
 sympathy	more
@@ -2543,7 +2245,6 @@ respects	proper
 success	important
 archduchy	new
 book	standard
-colonel cortin	willing
 concern	primary
 face	wry
 feelings	new
@@ -2563,14 +2264,10 @@ inquisitors	necessary
 inquisitors	religious
 language	original
 lead	much
-lieutenant pritchett	little
 notches	several
 number	larger
 part	most
 people	other
-population explosion	effective
-population explosion	infernal
-press run	sure
 publisher	clear
 publisher	sure
 reporters	other
@@ -2582,7 +2279,6 @@ stories	first
 subject	particular
 subjects	cooperative
 techniques	memory-enhancing
-terran holy inquisition	ancient
 theory	wrong
 things	other
 time	adequate
@@ -2591,7 +2287,6 @@ time	next
 tormentor	former
 way	other
 way	own
-advance warning	little
 altar	first
 barracks	spare
 business	best
@@ -2608,7 +2303,6 @@ lovemaking	real
 ones	press-ganged
 orders	convincing
 others	several
-rescue teams	special
 situations	unpleasant
 support	moral
 sword	territorial
@@ -2633,9 +2327,6 @@ compassion	good
 component	personal
 death	easy
 defense	successful
-editorial writers	doubtful
-enforcement troopers	regular
-enforcement troops	sinful
 evaluation	preliminary
 evening	last
 family	good
@@ -2653,7 +2344,6 @@ manner	professional
 meat	own
 methods	different
 moment	quicker
-morning new denver times	past
 office	main-floor
 priests	more
 punishment	more
@@ -2686,9 +2376,6 @@ man	elderly
 man	slim
 men	such
 minutes	few
-miss blackfeather	able
-miss blackfeather	best
-miss blackfeather	wanted
 motives	own
 part	curious
 part	odd
@@ -2707,11 +2394,9 @@ beginning	destructive
 beginning	true
 breakfast	ready
 brotherhood	most
-captain odeon	positive
 case	small
 choice	likely
 choice	much
-colonel cortin	sure
 excellency	barely-audible
 excellency	confident
 expression	grim
@@ -2747,22 +2432,17 @@ status	unaware
 thing	great
 thing	whole
 time	proper
-umbrella government	benevolent
 war	destructive
 way	basic
 answer	negative
 boots	guilty
 breath	beautiful
-captain delayne	criminal
-captain delayne	protective
 fighters	few
 fur	soft
 grab	quick
 guest	other
-guest suite	small
 guests	casual
 guests	many
-imperial nobles	military
 information	basic
 leaves	major
 months	few
@@ -2794,9 +2474,6 @@ colonel	interrupted
 experience	diplomatic
 home	mutual
 idea	good
-imperial english letters	odd
-imperial scouts	more
-kingdom systems	gracious
 number	private
 operator	human
 operator	interrupted
@@ -2814,7 +2491,6 @@ assignment	temporary
 bow	courteous
 colonel	big
 colonel	sorry
-colonel cortin	sure
 courier	small
 empire	afraid
 empire	best
@@ -2830,12 +2506,10 @@ hole	large
 idea	bad
 idea	good
 idea	prepared
-imperial officer	normal
 liaison	special
 man	young
 minutes	few
 name	first
-navy ship class	only
 negotiations	long-distance
 negotiations	productive
 ones	face-to-face
@@ -2848,7 +2522,6 @@ prisoners	free
 problem	personal
 problem	solid
 problems	transitional
-ranger james medart	able
 ship	enough
 subject	neutral
 subject	particular
@@ -2857,8 +2530,6 @@ tour	brief
 transition	peaceful
 treatments	anti-aging
 attentions	other
-blaster function	fine
-captain delayne	glad
 circumstances	welcome
 crimes	serious
 day	most
@@ -2869,16 +2540,10 @@ dispensations	civil
 effect	cortin
 effect	interesting
 effect	side
-engine shutdown	complete
 equipment	specified
-estate grounds	entire
-estate grounds	likely
 function	stun
 hatch	main
-headache medications	good
-headache medications	strong
 history	worst
-imperial ship classes	smallest
 intentions	mass
 lawn	beloved
 liaison	individual
@@ -2902,11 +2567,6 @@ spaceport	main
 standing	social
 story	different
 story	likely
-strike force troopers	enough
-strike force troopers	stupid
-target range	fine
-target range	standard
-test subject	suitable
 things	ready
 time	more
 time	next
@@ -2916,15 +2576,12 @@ woman	young
 airplane	similar
 announcement	all-hands
 areas	public
-body scans	biochemical
-body scans	genetic
 brotherhood	dangerous
 building	large
 building	modern
 capacity	sexual
 case	disease-caused
 cells	inside
-comm intercepts	possible
 day	sick
 decades	last
 doctor	able
@@ -2959,7 +2616,6 @@ records	fragmentary
 records	medical
 sample	big
 scouts	small
-security division	sorry
 tests	conclusive
 time	first
 trigger	genetic
@@ -2978,14 +2634,10 @@ empire	only
 group	tolerant
 groups	different
 idea	best
-imperial ships	higher
 informant	considerable
 informant	primary
 intelligence	artificial
 items	small
-kingdom systems	clear
-kingdom systems	competent
-living area	small
 materials	raw
 models	older
 ones	new
@@ -2996,13 +2648,11 @@ plate	small
 position	better
 reaction	individual
 reaction	mild
-reading tape	standard
 references	occasional
 right	afraid
 ship-comps	ai-level
 smile	brief
 sorry	artificial
-teaching tapes	slower
 thanks	okay
 thing	good
 time	same
@@ -3017,11 +2667,8 @@ adult	only
 answers	verbal
 aspect	immune
 aspect	particular
-battle cruisers	large
 bodyguard	full-time
 branch	traditional
-captain delayne	reluctant
-captain odeon	little
 care	advanced
 care	medical
 centis	good
@@ -3033,20 +2680,15 @@ changes	other
 christ	coming
 cult	heretic
 cultures	other
-family cortin	familiar
-family cortin	impressive
-family cortin	sure
 floors	private
 formation	military
 formation	proper
 friends	brown
 friends	ready
-ground floor	formal
 group	entire
 hand	other
 immunity	sure
 inquisitors	other
-lieutenant keith darelwyn	embarrassed
 lodge	alive
 matters	religious
 mind-probe	significant
@@ -3068,12 +2710,10 @@ pretenses	false
 priest	new
 prisoner	anomalous
 prisoner	second
-privacy drive	strong
 reason	reflex
 records	medical
 records	most
 records	obscure
-roman catholic parish	large
 ships	large
 ships	well-equipped
 silence	brief
@@ -3091,7 +2731,6 @@ work	unpleasant
 anger	cold
 colleagues	free
 colonel	mind-shield
-communication link	simplest
 darelwyn	lieutenant
 debt	personal
 details	enough
@@ -3114,7 +2753,6 @@ patris	nomine
 responses	non-verbal
 room	first-stage
 room	third-stage
-scanning memories	deeper
 seconds	several
 set	relevant
 standard	bigger
@@ -3129,20 +2767,15 @@ abilities	impressive
 blow	major
 bodyguard	only
 bodyguards	impressive
-brotherhood target	impressive
-brotherhood target	major
-captain odeon	able
 citizens	ordinary
 communion	effective
 communion	spiritual
-compulsions shannon	mind-touched
 environment	basic
 environment	secure
 environment	stable
 facilities	military
 hours	few
 impression	favorable
-leather items	other
 man	innocent
 moment	silent
 months	few
@@ -3164,7 +2797,6 @@ team	standard
 time	local
 toiletries	standard
 tongue	sure
-treatment cost	such
 trooper	restrained
 troopers	few
 witnesses	cooperative
@@ -3173,10 +2805,8 @@ approach	fast
 approach	sedate
 citizens	fellow
 citizens	most
-colonel david bradford	right
 debrief	thorough
 effect	favorable
-emergency services	local
 engines	null-grav
 examination	preliminary
 factors	several
@@ -3202,7 +2832,6 @@ wife	senior
 world	non-sandeman
 average	short
 bit	hard
-briefing medart	sure
 concept	odd
 cultures	many
 custom	silent
@@ -3211,7 +2840,6 @@ decision	proper
 devil	actual
 devil	christian
 drama	primary
-ego points	powerful
 enemy	rough
 english	pre-imperial
 floor	main
@@ -3219,7 +2847,6 @@ genitals	intact
 genitals	useful
 hand	other
 hand	respectful
-healing cortin	important
 hours	several
 man	hungry
 man	new
@@ -3240,17 +2867,14 @@ room	third-stage
 skepticism	refreshing
 smile	sardonic
 surroundings	inappropriate
-tattoo artists	much
 terms	omnist
 time	fresher
 time	necessary
 time	reasonable
 time	restricted
-time cortin	hungry
 universe	crucial
 universe	entire
 war	devastating
-white order revolt	brief
 beings	lesser
 beings	supernatural
 beliefs	primary
@@ -3297,7 +2921,6 @@ glow	blue
 hatred	particular
 help	easier
 help	professional
-imperial citizenship	recent
 individual	private
 information	same
 invasion	upcoming
@@ -3316,15 +2939,12 @@ plans	own
 problem	past
 problem	spiritual
 qualifications	widely-known
-sandeman warrior	human
 seconds	several
 situations	interesting
 spot	vulnerable
 subject	main
-traiti war	aware
 version	professional
 weeks	past
-white order rebellion	aware
 year	first
 abilities	new
 ability	best
@@ -3340,7 +2960,6 @@ changes	mental
 changes	necessary
 citizens	newest
 clock	biological
-dear god	reluctant
 decision	obvious
 destroyers	heavy
 exceptions	minor
@@ -3350,10 +2969,8 @@ hours	few
 hours	next
 identity	true
 impartiality	necessary
-imperial position	high
 lot	good
 manner	usual
-name changes	coming
 needs	primary
 night	last
 night	previous
@@ -3371,10 +2988,7 @@ rate	metabolic
 self	essential
 size	reasonable
 surgery	mental
-tech level	basic
 things	other
-transformation odeon	ready
-transformation odeon	sure
 abilities	ranger-level
 answer	obvious
 answer	unpleasant
@@ -3401,8 +3015,6 @@ priest	non-omnist
 ranger	new
 sense	much
 story	main
-talent version	better
-talent version	mind-touching
 thing	same
 thing	whole
 things	other
@@ -3420,13 +3032,11 @@ death	slow
 development	other
 dispensations	special
 end	same
-enforcement trooper	god-loving
 example	god-loving
 existence	continued
 existence	necessary
 eyes	blue
 face	good
-face paling	exclaimed
 facilities	recreational
 foulup	bad
 hand	other
@@ -3440,7 +3050,6 @@ moment	harshest
 morality	prewar
 operations	special
 opportunities	long
-ops men	special
 others	concerned
 panic	sudden
 pleasure	little
@@ -3455,7 +3064,6 @@ rest	welcome
 standards	old
 students	inquisitor-specialist
 subordinates	welcome
-terran game show	pre-empire
 thrusts	rapid
 thrusts	violent
 time	brief
@@ -3497,11 +3105,8 @@ demonstration	easy
 demonstration	proper
 emotions	repulsive
 encounter	last
-enforcement post	nearest
-enforcement service officer	undistinguished
 excesses	worst
 excitement	same
-half centuries	last
 hour	late
 hours	like
 idea	intriguing
@@ -3567,9 +3172,7 @@ drugs	acceptable
 effect	enjoyable
 effect	side
 examination	preliminary
-family men	handsome
 guests	unusual
-harmony lodge	fine
 hours	several
 idea	difficult
 image	acceptable
@@ -3598,7 +3201,6 @@ punishment	real
 question	delicate
 reasons	different
 reservations	private
-roman times	new
 room	same
 selves	pre-plague
 support	attractive
@@ -3610,7 +3212,6 @@ thanks	good
 thought	repulsive
 thrill	particular
 time	most
-touch brough curses	light
 trip	ready
 victim	last
 weeks	next
@@ -3619,10 +3220,6 @@ aspects	less
 aspects	pleasant
 attempt	first
 attention	close
-captain odeon	other
-colonel joan cortin	appropriate
-colonel joan cortin	hungry
-colonel joan cortin	own
 dose	fresh
 effect	enjoyable
 effect	side
@@ -3640,8 +3237,6 @@ minutes	few
 murders	enjoyable
 murders	more
 ones	enjoyable
-operating room	surgical
-operating room	twentieth-century
 opinion	valid
 purposes	present
 quirk	particular
@@ -3659,9 +3254,6 @@ victim	last
 ability	best
 actions	present
 aphrodisiac	male
-colonel joan cortin	appropriate
-colonel joan cortin	hungry
-colonel joan cortin	tight
 combination	intriguing
 death	agonizing
 death	possible
@@ -3692,7 +3284,6 @@ purposes	present
 quirk	particular
 reasons	different
 relief	temporary
-sandeman tendency	due
 seconds	several
 sense	worse
 sort	practical
@@ -3700,16 +3291,12 @@ talent	peculiar
 technique	standard
 technique	useful
 time	short
-touch brough curses	light
 violations	serious
 wetness	normal
 activities	devotional
 ally	reluctant
 ally	temporary
 aphrodisiac	male
-colonel joan cortin	appropriate
-colonel joan cortin	own
-colonel joan cortin	tight
 combination	intriguing
 dose	fresh
 dose	oral
@@ -3742,17 +3329,12 @@ study	quick
 technique	standard
 technique	useful
 thrill	particular
-touch brough curses	light
 victim	last
-way odeon	sure
 wetness	normal
 admiration	strong
 aphrodisiac	male
-captain odeon	other
 change	drastic
 change	easy
-colonel joan cortin	hungry
-colonel joan cortin	tight
 combination	appropriate
 combination	intriguing
 condition	general
@@ -3794,7 +3376,6 @@ sign	good
 smile	brief
 table	surgical
 thrill	particular
-touch brough curses	light
 turn	fortunate
 victim	last
 wetness	normal
@@ -3806,13 +3387,10 @@ burden	unwanted
 change	drastic
 change	such
 discomfort	only
-domain ebooks	public
-domain print editions	public
 dose	fresh
 editions	old
 formats	various
 gods	generous
-keith knelt	fond
 meantime	hungry
 opinion	valid
 power	new
@@ -3829,6 +3407,5 @@ technique	useful
 things	such
 thought	aware
 time	aware
-trademark license	subject
 warrior	properly-raised
 works	electronic

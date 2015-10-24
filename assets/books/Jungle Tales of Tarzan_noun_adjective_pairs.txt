@@ -15,10 +15,6 @@ brain	little
 branch	low-swinging
 bulk	lesser
 bull	young
-bull ape	huge
-bull ape	other
-bull ape	somber
-bull ape	sullen
 bulls	sullen
 bulls	young
 cabin	little
@@ -26,10 +22,8 @@ charge	sudden
 chest	cavernous
 circle	little
 circle	round
-course kala	beautiful
 dream	delectable
 duelists	close
-english lady	gentle
 eyes	blood-shot
 eyes	gray
 eyes	keen
@@ -43,13 +37,7 @@ fingers	muscular
 fingers	quick
 fingers	ready
 fingers	strong
-first love teeka	beautiful
-first love teeka	feminine
-first love teeka	own
-first love teeka	squat
-first love teeka	young
 forest	tropical
-grass rope	long
 growl	deep
 hairs	short
 hands	mighty
@@ -89,8 +77,6 @@ ancestor	fearless
 ape-boy	different
 beast	big
 beauties	many
-blood-shot eyes	beautiful
-blood-shot eyes	own
 boughs	leafy
 bounds	graceful
 branches	dead
@@ -100,7 +86,6 @@ bulls	other
 cat	enraged
 charge	hideous
 chest	great
-drinking pool	many
 enemy	ancient
 eyes	glaring
 fangs	beautiful
@@ -112,8 +97,6 @@ glance	quick
 growlings	strange
 hand	right
 head	savage
-hunting knife	long
-hunting knife	sharp
 jaws	gaping
 jaws	powerful
 leap	sinuous
@@ -151,7 +134,6 @@ ape	great
 bird	feathered
 blacks	delighted
 bodies	naked
-bull ape	victorious
 cat	great
 catch	delighted
 clearing	little
@@ -169,7 +151,6 @@ hours	few
 hours	past
 idea	sole
 lair	strange
-limb numa	great
 man	young
 mane	shaggy
 mate	somber-hued
@@ -198,7 +179,6 @@ time	considerable
 times	many
 times	more
 tree	near-by
-tree man	hairy
 woman	other
 woman	young
 women	black
@@ -221,15 +201,12 @@ fingers	heavy-nailed
 fingers	mighty
 fingers	nimble
 fingers	relentless
-game trail	age-old
-game trail	ancient
 grip	deadly
 grunt	disgusted
 grunt	low
 head	massive
 health	uncontaminated
 hole	great
-jungle side	primeval
 labor	great
 legs	powerful
 life	myriad
@@ -251,7 +228,6 @@ smile	happy
 stakes	long
 teeth	strong
 tongue	swollen
-tree limb	leafy
 trees	near-by
 universe	great
 vengeance	pent
@@ -276,13 +252,11 @@ distance	great
 distances	short
 ears	great
 ears	keen
-elephant trail	well-worn
 eyes	little
 eyes	supple
 eyes	weak
 fear	sudden
 fellows	hairy
-figure halted	ponderous
 flight	rapid
 foods	such
 friend	mighty
@@ -300,8 +274,6 @@ horn	long
 horn	threatening
 journey	interrupted
 jowls	heavy
-jungle folk	greatest
-jungle invective	apelike
 labor	arduous
 labor	omnivorous
 labor	smaller
@@ -323,7 +295,6 @@ pate	rough
 pit	covered
 power	inexplicable
 purpose	true
-rhino birds	little
 sentinels	little
 signal	low
 stakes	sharpened
@@ -337,8 +308,6 @@ terraces	middle
 terraces	upper
 thews	mighty
 toes	bare
-tree limb	small
-tree limb	sudden
 trees	certain
 trees	great
 trunk	uplifted
@@ -384,7 +353,6 @@ eyes	weak
 flight	undignified
 foot	great
 foot	left
-forest god	unconscious
 friend	old
 giant	strange
 giant	white
@@ -392,7 +360,6 @@ hand	upraised
 jaws	heavy
 jungle	primeval
 jungle	untouched
-jungle tantor	better
 life	own
 man	heavy
 men	black
@@ -411,7 +378,6 @@ steps	few
 steps	more
 teeth	white
 thews	mighty
-tree folk	hairy
 warriors	successful
 way	noisy
 wounds	ugly
@@ -420,15 +386,9 @@ wrench	single
 yards	few
 ancestors	english
 ape	heavy
-ape mothers	young
 arm	injured
 baby	first-born
 back	huge
-balu teeka	closer
-balu teeka	fond
-balu teeka	gentle
-balu teeka	keen
-balu teeka	suspicious
 beast	ungainly
 boy	brown
 boy	little
@@ -439,7 +399,6 @@ bull	young
 cast	black
 cast	first
 chills	cold
-choice names	such
 cub	new-born
 days	few
 days	suspicious
@@ -448,11 +407,8 @@ delight	delighted
 delight	keen
 desire	stronger
 distance	short
-elephant spears	heavy
 escape	good
 eyes	greedy
-fact taug	first-born
-fact taug	hideous
 fingers	brown
 growl	hideous
 growl	savage
@@ -462,7 +418,6 @@ hands	mighty
 head	broad
 instinct	parental
 jerk	quick
-jungle beast	fellow
 kind	own
 lip	upper
 man-brain	fertile
@@ -499,8 +454,6 @@ beast	good-natured
 beast	great
 beast	savage
 branch	stout
-breast swell	savage
-bull ape	victorious
 bulls	other
 bulls	several
 challenges	uncanny
@@ -596,7 +549,6 @@ fangs	great
 fangs	long
 fangs	yellow
 father	dead
-fighting fangs	long
 foe	ancestral
 forbears	english
 fur	soft
@@ -610,12 +562,10 @@ harbor	land-locked
 head	young
 heavens	equatorial
 hold	former
-hunting expeditions	strange
 individual	all-powerful
 individual	great
 instant	brief
 invention	own
-jungle giant	tallest
 language	silent
 letters	lower-case
 life	long
@@ -649,21 +599,15 @@ weight	great
 winds	mighty
 word	descriptive
 word	new
-word god	great
-word god	mightier
-word god	mighty
 wounds	frightful
 ape	old
-ape folk	male
 apes	small
 arms	brown
 arrow	efficacious
 arrow	straightest
 arrow	taller
-blood enemies	fearless
 bodies	dead
 chest	giant
-chin shot	square
 coward	great
 creature	strange
 deal	great
@@ -678,13 +622,10 @@ fingers	mighty
 foe	efficacious
 foe	unfamiliar
 god	belligerent
-grass rope	efficacious
 growl	low
 head	shapely
 ills	many
 interruption	timely
-jungle god	strange
-jungle god	white
 laugh	piercing
 laugh	shrill
 letters	lower-case
@@ -716,18 +657,14 @@ teeth	white
 thing	other
 upheaval	hysteric
 village	entire
-war spear	efficacious
-war spears	first
 warriors	helpless
 warriors	many
 witch-doctor	best
 witch-doctor	profitable
 word	entire
 air	high
-ape-man thought	greater
 belief	self-hypnotized
 boo	loud
-bull ape	victorious
 cast	poor
 charlatanry	own
 chest	deep
@@ -747,7 +684,6 @@ faith	much
 fangs	bared
 finger	cold
 fires	small
-foot touches	dead
 god	greater
 gomangani	greater
 hand	heavy
@@ -755,8 +691,6 @@ hand	other
 hands	own
 hut	nearest
 hut	own
-jungle creatures	keen-eared
-jungle demon	weird
 knife	keen
 knife	long
 leaps	catlike
@@ -777,7 +711,6 @@ spear	heavy
 steps	few
 steps	strange
 village	african
-war spears	heavy
 warriors	bold
 water	big
 water	little
@@ -789,7 +722,6 @@ years	many
 aim	sole
 ancestors	civilized
 apes	great
-baby hair	red
 balu	little
 balu	tiny
 birds	young
@@ -820,7 +752,6 @@ frame	giant
 grass	soft
 hand	brown
 head	close
-hunting knife	heavy
 jungle	fearsome
 jungle	nocturnal
 light	welcome
@@ -839,7 +770,6 @@ reptile	slimy
 reptile	terrifying
 retreat	shady
 she-ape	adult
-slaying mbonga	unharmed
 snake	mighty
 terraces	middle
 things	such
@@ -876,9 +806,7 @@ fawn	young
 feast	formidable
 feast	less
 feet	very
-field mouse	tiny
 fields	strange
-fighting fangs	untried
 force	inexplicable
 force	strange
 giant	young
@@ -886,7 +814,6 @@ god	all-powerful
 god	new-found
 god	old
 god	sure
-grass rope	new
 hand	small
 hands	content
 head	lowered
@@ -894,9 +821,6 @@ head	noble
 heritage	rightful
 hills	rocky
 hunter	blood-thirsty
-hunting knife	slender
-jungle path	deep-worn
-jungle patriarch	sturdy
 limbs	lower
 love	first
 mane	shaggy
@@ -911,7 +835,6 @@ past	near
 precepts	old
 rage	great
 rope	original
-rubber ball	animated
 sake	own
 sire	own
 sire	surly
@@ -959,8 +882,6 @@ evils	lesser
 expression	fiendish
 fangs	puny
 flight	incontinent
-forest god	bad
-forest god	white
 form	terrifying
 god	great
 god	white
@@ -988,8 +909,6 @@ nose	slit
 place	lying-up
 points	sharp
 ribs	own
-river life	fascinating
-river winds	close
 savagery	indomitable
 savagery	own
 scream	terrifying
@@ -998,7 +917,6 @@ slit	slit
 slit	wooden
 sticks	short
 sun	hot
-surface vegetation	high
 terraces	upper
 thigh	open
 times	many
@@ -1037,8 +955,6 @@ hills	distant
 jungle	fierce
 jungle	helpless
 jungle	lesser
-jungle creatures	helpless
-jungle creatures	lesser
 lair	evil
 lips	upcurled
 magic	black
@@ -1048,7 +964,6 @@ mind	negroid
 moment	helpless
 moment	irksome
 mother	black
-mother love	great
 muscles	mighty
 parent	foster
 parent	savage
@@ -1065,15 +980,11 @@ temper	short
 thing	difficult
 time	first
 tongue	shrewish
-tree men	hairy
-tree men	horrid
-tree tops	dizzy
 watchfulness	constant
 witch-doctor	tribal
 women	weak
 adventure	dangerous
 adventure	foolish
-ape speech	meager
 apes	adult
 apes	most
 art	black
@@ -1086,7 +997,6 @@ boy	black
 boy	little
 boy	lonely
 boy	sad
-brain half	paralyzed
 branches	apelike
 cannibal	young
 cavern	black
@@ -1131,7 +1041,6 @@ hunting	black
 hunting	little
 interest	greater
 jungle	tropical
-jungle god	great
 love	great
 manner	satisfactory
 medicine	better
@@ -1141,7 +1050,6 @@ menace	adult
 menace	constant
 menace	most
 mind	objective
-mother cat	huge
 nose	pendulous
 parent	foster
 parent	mighty
@@ -1167,7 +1075,6 @@ weeks	few
 witch-doctor	jealous
 witch-doctor	local
 witch-doctor	old
-arm flash	great
 arms	strong
 attempt	vain
 barterers	black
@@ -1183,7 +1090,6 @@ cat	frenzied
 charge	short
 companions	constant
 companions	only
-country lane	lazy
 creature	wiry
 cry	gasping
 dangers	apparent
@@ -1202,7 +1108,6 @@ goats	fat
 goats	scarce
 ground	paralyzed
 humans	repulsive
-hunting spear	heavy
 hyenas	only
 leap	long
 limb	closer
@@ -1290,12 +1195,8 @@ termination	violent
 thirst	black
 times	many
 title	noble
-tree men	hairy
 trees	high
 type	prehistoric
-witch-doctor seeks vengeance lord greystoke	accurate
-witch-doctor seeks vengeance lord greystoke	other
-witch-doctor seeks vengeance lord greystoke	real
 women	other
 woodcraft	uncanny
 beasts	many
@@ -1323,14 +1224,11 @@ floor	smooth
 floor	trodden
 goats	fat
 hills	rocky
-hyenas pacing	hideous
 inequalities	few
 jaws	fleshless
 jungle	dark
 jungle	terrible
 jungle	worst
-jungle god	great
-jungle god	white
 kill	human
 lane	familiar
 man	black
@@ -1346,10 +1244,6 @@ mother	sympathetic
 ones	thin
 opening	low
 opening	narrow
-pace bukawai	cunning
-pace bukawai	necessary
-pace bukawai	shrewd
-pace bukawai	unclean
 pair	human
 passage	dark
 passage	narrow
@@ -1369,7 +1263,6 @@ teeth	sharp-filed
 temper	angelic
 thing	fearsome
 tree	great
-tree men	hairy
 walls	rough
 warrior	hostile
 way	late
@@ -1435,7 +1328,6 @@ devil-god	white
 gesture	impatient
 goats	fat
 grimaces	frightful
-jungle god	white
 leaves	dry
 magic	best
 magic	little
@@ -1475,7 +1367,6 @@ goats	fat
 grimaces	unseemly
 hands	human
 heart	savage
-home swinging	much
 interruption	sudden
 lair	distant
 legs	old
@@ -1505,7 +1396,6 @@ trot	rapid
 troubles	most
 wall	low
 ways	new
-young lord greystoke	noble
 age	far-gone
 air	clean-washed
 apes	young
@@ -1542,13 +1432,10 @@ fee	fat
 feeling	strange
 floor	rocky
 form	lifeless
-grass rope	long
-grass rope	own
 growl	low
 hyenas	more
 hyenas	sole
 jungle	revivified
-jungle male	mighty
 knob-stick	heavy
 leper	sole
 lion	hungry
@@ -1561,12 +1448,6 @@ minutes	several
 moaning	low
 mothers	surly
 mothers	suspicious
-occasion tarzan	broad
-occasion tarzan	close
-occasion tarzan	closer
-occasion tarzan	dead
-occasion tarzan	jealous
-occasion tarzan	prostrate
 palm	flat
 pits	lava-rimmed
 powers	immeasurable
@@ -1594,7 +1475,6 @@ apartments	subterranean
 arms	free
 assault	savage
 beast	other
-beast spring	second
 beasts	horselike
 beasts	little
 beasts	plump
@@ -1603,8 +1483,6 @@ body	great
 body	smooth-skinned
 body	tawny
 breeze	gentle
-canon close	little
-cave mouth	outer
 centuries	countless
 charge	sudden
 creature	unarmed
@@ -1613,7 +1491,6 @@ creatures	many
 creatures	other
 dash	growling
 dash	quick
-drinking pool	close
 eyes	ferocious
 face	raw
 ground	high
@@ -1621,8 +1498,6 @@ hand	other
 herbivora	timorous
 hyena	second
 life	other
-lion numa	hungry
-lion numa	silent
 medicine	strong
 muscles	great
 piles	great
@@ -1636,9 +1511,7 @@ strength	great
 throat	unprotected
 times	many
 trail	well-worn
-tree bark	rough
 vengeance	final
-walls bukawai	cold
 witch-doctor	prostrate
 yours	weak
 accuracy	greater
@@ -1659,7 +1532,6 @@ bulls	accustomed
 bulls	other
 bulls	younger
 cat	great
-cement sidewalk	obvious
 charge	swift
 charge	young
 charges	sudden
@@ -1695,7 +1567,6 @@ lion	hungry
 lion	single
 lion	undisputed
 love	first
-man scent	ape-thing
 maw	ravenous
 mind	different
 missile	occasional
@@ -1787,7 +1658,6 @@ street	single
 sun	brilliant
 sun	high
 sun	hot
-tail shot	more
 time	long
 time	short
 times	many
@@ -1840,8 +1710,6 @@ hunger	great
 hyena	ashamed
 hyena	disgusting
 ideals	true
-jungle creatures	dreaded
-jungle hunters	greatest
 legs	skinny
 lesson	other
 limbs	broken
@@ -1897,7 +1765,6 @@ deer	frightened
 defense	own
 difficulty	utmost
 dream	first
-elephant meat	sick
 eyes	blood-shot
 eyes	glassy
 eyes	jungle-trained
@@ -1917,10 +1784,8 @@ head	tousled
 height	great
 jaws	awful
 jungle	distant
-jungle silence	momentary
 light	hungry
 lion	particular
-lord greystoke	young
 madness	sudden
 man	black
 man	old
@@ -1974,16 +1839,13 @@ always	wild
 ape	hairless
 ape-man	young
 assistance	mean
-balu playing	young
 beast	great
 blood	hot
 body	dead
 breeze	cool
 bugs	little
 bugs	such
-bull ape	huge
 cabin	small
-cabin door	open
 community	primitive
 custom	tribal
 distance	real
@@ -1994,8 +1856,6 @@ eye	quick
 eyes	open
 eyes	red-rimmed
 eyes	wicked
-eyes half	blood-shot
-eyes half	wicked
 fangs	great
 fangs	smaller
 figure	sinister
@@ -2021,8 +1881,6 @@ jungle	hate-filled
 jungle	strange
 jungle	sullen
 jungle	terrible
-jungle folk	other
-lord greystoke	young
 male	other
 males	fiercer
 males	greedy
@@ -2041,9 +1899,6 @@ shoulder	sleek
 shriek	frightful
 shriek	single
 side	safe
-sleep adventure	sure
-sleep adventures	former
-sleep adventures	realistic
 steps	few
 strength	mighty
 sun	equatorial
@@ -2063,7 +1918,6 @@ vein	vital
 wrist	steel-thewed
 ability	own
 ape	young
-ape clung	young
 ape-man	orderly
 arms	great
 attention	more
@@ -2082,8 +1936,6 @@ cradle	rude
 danger	own
 direction	opposite
 distance	little
-english bones	clean
-english bones	sturdy
 father	other
 fellow	little
 female	fleet
@@ -2096,14 +1948,12 @@ growl	angry
 hands	powerful
 hold	new
 hour	many
-instant toog	same
 insult	ill-timed
 knuckles	calloused
 kreeg-ah	quick
 legs	mighty
 lips	broad
 lips	flat
-lord greystoke	former
 male	heavy
 muzzle	ugly
 paces	few
@@ -2145,7 +1995,6 @@ bulls	swift
 child	little
 clearing	small
 coat	rumpled
-community interests	foreign
 cover	loose
 creature	beautiful
 creature	cute
@@ -2168,8 +2017,6 @@ hyena	surprised
 idea	new
 jungle	full
 jungle	unprotected
-lady alice	beautiful
-lady alice	mortal
 lips	savage
 man	white
 orders	imaginative
@@ -2186,7 +2033,6 @@ thought	first
 thought	natural
 voice	own
 ape	hairless
-ape scent	strong
 balu	own
 boulders	huge
 bulls	larger
@@ -2208,7 +2054,6 @@ fangs	long
 feet	hind
 foot	handlike
 foot	huge
-foot imprint	great
 friends	larger
 gems	scintillant
 gray-beard	little
@@ -2270,9 +2115,6 @@ apes	great
 blade	sharp
 bravos	primitive
 bull	great
-bull ape	big
-bull ape	own
-bull apes	huge
 cylinders	shiny
 edge	fine
 edge	sharp
@@ -2290,11 +2132,7 @@ hand	brown
 hand	left
 hills	distant
 invention	own
-jungle grasses	tall
-jungle people	mightiest
-lord greystoke	young
 mass	great
-metal cylinders	shiny
 mind	active
 mind	busy
 missiles	good
@@ -2359,7 +2197,6 @@ glance	single
 ground	impassable
 home	old
 hunter	wild
-hunting knife	jugular
 huts	straw-thatched
 image	graven
 insect	poisonous
@@ -2367,12 +2204,9 @@ jaws	strong
 joke	last
 joke	practical
 jungle	untracked
-jungle breeze	gentle
 lid	lower
 life	old
-lion hunt	successful
 lives	miserable
-o rabba kega	last
 occasions	other
 oppressors	heartless
 position	such
@@ -2412,7 +2246,6 @@ cat	lazy
 chagrin	greatest
 civilization	highest
 dread	especial
-elephant path	broad
 fate	slight
 fears	superstitious
 fellow	erstwhile
@@ -2438,7 +2271,6 @@ look	devil-god
 look	square
 look	white
 luminosity	faint
-man rest	slight
 matters	fastidious
 matters	such
 order	different
@@ -2478,12 +2310,10 @@ emergency	attuned
 festivities	dark
 gates	open
 head	great
-heart failure	subject
 hut	near-by
 huts	nearest
 instant	astonished
 joke	little
-jungle demon	fearsome
 kind	subject
 legs	hind
 lines	identical
@@ -2496,7 +2326,6 @@ move	next
 nerves	attuned
 occasion	memorable
 paces	few
-path opening	broad
 paw	great
 roar	frightful
 scream	hideous
@@ -2509,8 +2338,6 @@ tree	hollow
 trick	old
 twig	dry
 village	entire
-war spear	heavy
-war spears	many
 warrior	arrow-straight
 warrior	full-muscled
 warrior	graceful
@@ -2543,7 +2370,6 @@ creatures	other
 crotch	familiar
 dangers	richer
 day	ready
-daylight aspects	familiar
 desire	intense
 devil-god	wicked
 eyes	other
@@ -2571,7 +2397,6 @@ minutes	several
 moon	endowed
 muscles	giant
 night	fixed
-night wind	gentle
 nostrils	keen
 numbers	richer
 occasions	innumerable
@@ -2591,7 +2416,6 @@ side	opposite
 speculation	profound
 stars	fierce
 tail	nervous
-thorn wall	low
 time	fixed
 time	long
 tragedy	former
@@ -2624,19 +2448,14 @@ flowers	open
 grasses	rich
 grubworm	fattest
 head	black-thatched
-hunting grounds	propitious
 hypothesis	unlovely
 hypothesis	unpoetical
 imagination	fertile
-jungle blooms	gorgeous
 lair	strange
 miles	several
 night	black
-night numa	angry
-night numa	hungry
 process	laborious
 process	mental
-queer thoughts	such
 shadows	cool
 stick	sharp
 summons	nocturnal
@@ -2682,8 +2501,6 @@ trail	broad
 trail	tree-arched
 tree	adjacent
 tree	near-by
-tree people	hairy
-war cry	ready
 warrior	black
 warrior	lone
 warrior	well-knit

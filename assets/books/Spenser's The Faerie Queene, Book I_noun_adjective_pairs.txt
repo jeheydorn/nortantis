@@ -22,8 +22,6 @@ drama	english
 drama	incomparable
 dream	gorgeous
 events	external
-faerie queene _	ideal
-faerie queene _	sixteenth
 feeling	good
 friends	many
 imperfections	many
@@ -41,8 +39,6 @@ period	elizabethan
 poetry	unexpressed
 questions	religious
 relation	intimate
-revival _	classical
-revival _	first
 scenes	whole
 scholars	conversant
 sea-kings	old
@@ -55,13 +51,11 @@ adventures	such
 age	old
 age	own
 beauty	unknown
-century gentleman	sixteenth
 classics	greek
 classics	latin
 clergy	worldly
 country	north
 country	wild
-country squire	generous
 duties	menial
 duties	other
 elegy	beautiful
@@ -71,7 +65,6 @@ encounters	hair-breadth
 eyes	brown
 face	long
 face	spare
-faerie queene _ edmund spenser	older
 flight	last
 flight	sad
 forehead	dome-like
@@ -86,7 +79,6 @@ knight	noble
 knight	valorous
 lips	full
 lips	sensuous
-love affair	unrequited
 menalchas	successful
 mustache	full
 neighbor	fair
@@ -110,9 +102,7 @@ years	few
 years	older
 attraction	poetical
 auspices	such
-century show traces	many
 freshness	perfect
-hymns _	first
 life	domestic
 life	full
 life	happy
@@ -120,8 +110,6 @@ life	public
 life	serene
 life	stormy
 love	second
-lycidas _	indebted
-maturer work	latter
 opportunity	favorable
 oppressors	foreign
 peasants	outraged
@@ -147,7 +135,6 @@ books	extant
 century	nineteenth
 character	perfect
 digressions	several
-epic poets	great
 fairyland	mediaeval
 festival	feudal
 festival	solemn
@@ -162,12 +149,8 @@ language	archaic
 language	unfamiliar
 legends	arthurian
 moments	opportune
-mr. saintsbury	own
 myths	greek
-new learning	new
 parallels	many
-poem _	_
-poem _	romantic
 poets	english
 poets	other
 purists	classical
@@ -175,7 +158,6 @@ stories	main
 vision	wondrous
 work	entire
 accents	alexandrine
-b rhymes	first
 bards	great
 century	sixteenth
 clergy	anglican
@@ -189,7 +171,6 @@ fiction	historical
 government	civil
 hand	other
 intriguer	fascinating
-knight |	tle
 land	thirsty
 lesson	moral
 lesson	spiritual
@@ -199,7 +180,6 @@ line	run-on
 lines	end-stopped
 lines	run-on
 manhood	young
-narrative poem	long
 pause	caesural
 pause	slight
 personal	true
@@ -234,12 +214,10 @@ forms	dialectic
 forms	grammatical
 forms	modern
 forms	more
-forswat _	such
 gerundive	old
 lady	old
 letter	same
 melodies	new
-pagan dream	beautiful
 pageantry	dreamlike
 pageantry	gorgeous
 painter	great
@@ -259,7 +237,6 @@ intention	whole
 mens	many
 perfection	modern
 race	christian
-right noble	valorous
 seductions	sensuous
 time	present
 understanding	better
@@ -302,17 +279,13 @@ man	vertuous
 middest	concerneth
 mightie	magnificent
 mightie	most
-morall vertues	private
 place	better
 poets	excellent
 showre	fruitfull
 showre	golden
 steed	warlike
-straunge courser	first
 vertues	other
 yeers	many
-younge man	clownish
-younge man	tall
 adventure	great
 backe	wearied
 badge	glorious
@@ -327,17 +300,13 @@ body	beastly
 boughtes	many
 brood	scattred
 cave	hollow
-certeine perill	manly
-certeine perill	more
 constraint	sore
 dugs	ill
 dugs	poisnous
 dwarfe	dwarfe
 end	worthy
 entrance	wonted
-errours endlesse traine	wrapt
 eyne	feeble
-faerie knights	fairest
 fearefull	good
 fearefull	more
 force	manly
@@ -348,34 +317,25 @@ gras	weedy
 halfe	other
 hand	free
 head	cursed
-heben bow	deadly
 hill	high
-ladie milde	lovely
 lambe	same
 lambe	white
 light	glooming
 light	litle
 lothsom	most
 man	wrapt
-maple seeldom	inward
 markes	cruel
 mart	triumphant
 maw	filthy
 monsters	deformed
-mothers blood	deadly
-mothers blood	full
-mothers blood	gathred
 mouth	wide
-muse areeds	sacred
 needments	wearied
 nigh	covert
 novice	weaker
-o goddesse	bright
 ones	yong
 pathes	many
 pine	sayling
 pray	fierce
-right faithfull	true
 rolles	antique
 rove	didst
 scryne	everlasting
@@ -386,17 +346,14 @@ shapes	such
 shapes	sundry
 shapes	ugly
 shepheard	gentle
-shepheards weeds	lowly
 shield	fierce
 shield	scor
 sinke	hellish
 sound	obedient
 spoiles	murdrous
-spring gins	later
 staves	good
 steede	angry
 steppe	ere
-sterne arownd	wrethed
 sting	angry
 stings	feeble
 stinke	deadly
@@ -413,12 +370,10 @@ thurst	bloudy
 thy	weaker
 tong	dull
 turnings	many
-uprore forwasted	foule
 vale	aegyptian
 vele	sad
 warres	fierce
 woods	thickest
-world doth	light
 xi	last
 xii	aware
 xiv	full
@@ -427,11 +382,9 @@ adventures	straunge
 artes	hidden
 beard	hoarie
 boy	winged
-chappell edifyde	holy
 contentment	best
 creature	cursed
 cryes	troublous
-dewly wont	hermite
 dogges	wakeful
 dreame	false
 end	last
@@ -452,8 +405,6 @@ hermitage	lowly
 kindes	sundry
 lyes	quiet
 lyes	true-seeming
-maker selfe	nigh
-makers guile	full
 man	bad
 man	bold
 man	old
@@ -475,7 +426,6 @@ sights	troubled
 sire	aged
 sleepe	gentle
 spright	other
-stubborne sprites	tame
 things	holy
 things	such
 towne	walled
@@ -493,22 +443,18 @@ ayde	sure
 beast	slow
 bed	secret
 bloud	noble
-bookes againe	baleful
 brest	gentle
 chaine	shameful
 couple	false
 couple	full
 crosse	bloudy
-cruell fate	hidden
 cruelty	former
 dame	gentle
 dame	light
 despight	fierce
-destinie hath	hard
 faire	miscreated
 faire	tithones
 faire	weary
-faire hesperus	last
 feares	first
 feares	worldly
 feends	aghast
@@ -525,19 +471,16 @@ limbes	weary
 maister	wicked
 man	old
 meanes	other
-meaning harts	true
 morning	rosy-fingred
 needlesse	smart
 night	ill
 night	wearie
-ocean waves	wet
 parts	double
 person	best
 pleasure	most
 robe	purple
 rocke	unmoved
 ruth	wofull
-saint george	true
 side	fierce
 sight	uncouth
 sights	troublous
@@ -567,14 +510,11 @@ bee	mote
 blast	dull
 bleake	bitter
 bleake	full
-deare love	deare
 eares	dull
 eyes	mine
-faire lady	like
 flesh	fraile
 foe	old
 fone	accursed
-forehead fit	dainty
 fortune	harder
 foule	more
 friend	new
@@ -585,7 +525,6 @@ heat	fierce
 hew	proper
 hind	striken
 honours	high
-howre hath	unhappy
 indeede	other
 indeede	such
 king	mighty
@@ -603,18 +542,15 @@ makes	other
 man	wretched
 mist	foggy
 mist	hellish
-oaten pipe	mery
 opportunitie	safe
 person	comely
 plaines	open
 plight	evil
 plight	sad
 plight	unfortunate
-rynd embard	rough
 scowre	gan
 show	glorious
 sire	bad
-soule assaid	sad
 speaches	rare
 time	long
 towre	broken
@@ -636,7 +572,6 @@ xxi	low
 xxxix	such
 yeares	prime
 yeares	youthly
-_ aves _	wont
 abhord	desolate
 agonie	great
 astonishment	dead
@@ -647,8 +582,6 @@ champion	strayed
 claws	rude
 dame	wearie
 day	broad
-devotions mart	blind
-doth surprize	suddaine
 dreriment	full
 dreriment	ghastly
 dreriment	good
@@ -659,7 +592,6 @@ fealtie	fast
 feet	wearie
 foot	lordly
 forse	furious
-fortunes freakes	unkind
 friends	fearefull
 friends	least
 gras	troden
@@ -677,7 +609,6 @@ load	heavy
 lord	noble
 mishappen	like
 mood	angry
-puissance doth abate	princely
 rage	adord
 rage	hungry
 reliefe	due
@@ -688,20 +619,16 @@ stelths	nightly
 teares	bitter
 vestiments	rich
 vision	late
-wandring greeke	long
 way	yrkesome
 well	wonted
 witches	vile
 woman	old
-woman day	old
-women none durst rize	fearfull
 wood	thickest
 wound	wooden
 xix	suddaine
 xvi	bare
 armd	full
 armes	mighty
-balefull beggerie	toilesome
 beast	servile
 beautie	bright
 building	goodly
@@ -718,16 +645,10 @@ distresse	late
 eares	dull
 entertaines	vildly
 eyen	feeble
-faire windowes	full
 foe	beastly
-fortune favourd	whilest
 foundation	weake
-heart light	deare
-heart light	welcome
 heaven	highest
 howres	timely
-infernall furies	blacke
-infernall furies	sansloy
 joy	such
 knight	true
 knights	many
@@ -742,18 +663,14 @@ man	old
 marchant	glad
 marinere	beaten
 night	chearelesse
-oft soust	wide
 parts	old
 parts	ruinous
-peoples feet	bare
 perplexitie	more
 plaine	beaten
 plaine	welkin
 prevaile	nought
 recompence	due
-redcrosse knights	ensample
 reproches	foule
-royall robes	embellished
 ryder	hot
 servant	fierce
 servant	full
@@ -775,11 +692,9 @@ steede	staggering
 stone	pretious
 stowre	woful
 teare	saltish
-thither duessa	bad
 throne	glorious
 throne	rich
 time	long
-titans ray	bright
 towres	loftie
 towres	many
 trayne	hideous
@@ -787,10 +702,8 @@ troubles	new
 way	toilesome
 wheeles	whirling
 words	piteous
-xxvi ere	same
 xxxi	chearefull
 aire	open
-argus eyes	full
 asse	slouthful
 attire	gay
 beast	brutish
@@ -808,19 +721,14 @@ deeds	vertuous
 despight	bitter
 disease	vile
 diseases	full
-elfin knight	angry
-equall ballaunce waide	ylike
 evils	many
 eyne	long
 eyne	up-blowne
 faces	fairer
-faery champions page	same
-faire band	fourth
 faith	secret
 fit	furious
 fit	overpast
 girlonds	gay
-glitterand light	glorious
 gluttonie	excessive
 goat	bearded
 gout	grievous
@@ -835,7 +743,6 @@ lecherie	third
 life	wretched
 lookes	secret
 love	dearest
-lucifera men	proud
 mind	bitter
 mischiefes	full
 mischiefes	many
@@ -850,7 +757,6 @@ pledge	sacred
 pride	greater
 proserpina	sad
 queene	great
-royall dame	dearest
 skye	brightest
 store	greatest
 thoughts	unkind
@@ -859,17 +765,12 @@ throne	staire
 tire	last
 tire	ungodly
 tode	venemous
-unto deaths	nigh
 uptyes	taile
-vaine follies	full
-wage disdaind	warlike
 wayes	other
 wayne	evill
-wemens hearts	weak
 wight	most
 wight	wretched
 wolfe	ravenous
-writ _	red
 xix	bare
 xix	red
 xlii	litle
@@ -878,28 +779,19 @@ armes	enchaunted
 ayre	widest
 battell	doubtfull
 blood	elfin
-brothers prayse	right
 clowd	darkesome
-doth assayle	other
 dowry	dead
-elfe perceiv	wakeful
 eye	many
 eye	suddein
-faery knight	devizing
-faery knight	full
 faytor	bare
 faytor	false
 fiers	full
 furrowes	deepe
 furrowes	dinted
-gan reare	high
 greene	sans-foy
 hand	heavie
 hart	noble
 hart	weaker
-heaven gan	greatest
-heavie stowre	full
-heavie stowre	many
 honour	greatest
 knight	prowest
 lake	stygian
@@ -908,10 +800,6 @@ mens	open
 miscreant	proud
 need	like
 night	deadly
-orientall gate	golden
-orientall gate	last
-quickning faith	deadly
-sans foy	deare
 shield	charmed
 shield	worthy
 shores	doth
@@ -920,12 +808,8 @@ sight	sad
 sonne	wretched
 soothsayer	wise
 vermillion	pure
-vi a shrilling trompet	bad
-vii the sarazin	strong
-vitall paines	past
 voyces	timely
 way	ydle
-whit reck	like
 woes	new
 wordes	gentle
 xiii	doth
@@ -944,22 +828,18 @@ corps	yrent
 creatures	cursed
 dame	dreary
 day	brightest
-duessa untill eventide	light
 eares	open
 element	fine
 eyes	bitter
 face	abhorred
-faire face	lurke
 forlorne	fowle
 fowle	filthy
-gold arrayd	gorgeous
 heare	evill
 hole	same
 house	high
 huntsman	jolly
 jove	high
 jove	old
-luckelesse fray	late
 man	foolish
 men	aghast
 men	ill
@@ -972,7 +852,6 @@ nile	broad
 nile	seven-mouthed
 others	great
 owle	ghastly
-round stone	huge
 ruines	great
 soules	many
 stepdame	wanton
@@ -980,17 +859,12 @@ successes	good
 sweets	offred
 teme	twyfold
 termes	gealous
-typhoeus joynts	smart
-wandring wayes	perillous
 way	same
 wights	worldly
 witch	wicked
 wolves	hungry
-act behold	hideous
-beautie shyne	brightest
 beheast	wise
 carkases	dead
-cloud implyes	foggy
 comfortlesse	carefull
 comfortlesse	pitteous
 corses	many
@@ -1004,27 +878,20 @@ dolefull	virgin
 ensamples	sad
 face	blubbred
 fall	romaines
-fearefull fit	such
 feet	horned
 feete	kisse
 fire	heavenly
 foe	outrageous
-grace fayre una	wondrous
 guise	humble
 hanniball	stubborne
 hart	constant
 harts	glad
 kids	wanton
 knight	elfin
-ladies bowres	high
-ladies bowres	idle
 lentulus	lordly
-lyon looke	grim
-lyon spyes	grim
 meanes	dianes
 men	mightie
 men	murdred
-mightie monarch	low
 night	everlasting
 night	noyous
 noyce	far
@@ -1042,10 +909,8 @@ pray	griped
 pride	great
 pride	princesse
 prime	joyous
-princes courts	high
 providence	eternal
 race	timely
-riches store	great
 rocke	hidden
 rocke	sad
 ruth	unwonted
@@ -1055,8 +920,6 @@ sight	uncouth
 spring	pleasant
 state	unhappie
 steed	ready
-sterne marius	high
-stout scipio	high
 stowres	heavy
 thralles	wretched
 thrals	caytive
@@ -1066,8 +929,6 @@ truth	barbarous
 wagon	weary
 waves	westerne
 way	wonted
-wealthes decay	like
-wearie waine	nigh
 wemen	proud
 withold	long
 acquaintaunce	new
@@ -1084,7 +945,6 @@ bore	tusked
 commeth	awaked
 commeth	noyse
 company	goodly
-courage stout	bold
 crueltie	hurtlesse
 dame	gentle
 eyes	feeble
@@ -1092,7 +952,6 @@ face	lovely
 feare	childish
 flesh	fearefull
 frayes	glorious
-god himselfe	burnt
 grace	heavenly
 griefe	hidden
 habiliment	straunge
@@ -1113,7 +972,6 @@ mood	sober
 mother	loving
 naiades	light-foot
 nymphes	wooddy
-owne faire	dryope
 pangs	lesser
 panther	spotted
 panther	tusked
@@ -1123,13 +981,10 @@ pourtraiture	alive
 red	croslet
 right	lignage
 sonne	little
-sorrowes rew	sad
 steps	weake
-sturdie courage	tame
 swayne	loose
 swayne	unruly
 troubles	such
-una gan	womanish
 unwares	chaunst
 vew	horrid
 worship	own
@@ -1145,18 +1000,13 @@ bellowing	loud
 bide	lenger
 blade	single
 cace	lamentable
-canto vii the redcrosse knight	captive
-canto vii the redcrosse knight	proud
 cause	such
-corage gan assaile	cold
 court	goodly
 decay	last
 drinke	faint
 drinke	feeble
-faire una	supprest
 forage	grassy
 force	puissant
-forces gan	manly
 fray	bloudy
 gestures	fitting
 glade	gloomy
@@ -1165,7 +1015,6 @@ hand	mortall
 heat	boyling
 hell	deepest
 intent	traiterous
-knight unweeting	gentle
 lusts	lewd
 make	looser
 meed	worthy
@@ -1179,7 +1028,6 @@ orgoglio	great
 pagan	proud
 pate	token
 pilgrim	false
-redcrosse knight	noble
 selfe	such
 shade	joyous
 shield	three-square
@@ -1188,13 +1036,10 @@ sides	gory
 speaches	bitter
 stowre	deadly
 stowre	wary
-train faire knighthood	trecherous
 traine	crafty
 traine	cunning
 treason	guilty
 treason	like
-untill duessa	false
-untill duessa	loud
 upbrayd	unkind
 waters	bad
 waters	such
@@ -1208,7 +1053,6 @@ brest	sad
 coles	fresh
 comfort	last
 comfort	left
-comfort shewes	little
 dart	utmost
 day	dearer
 day	lightsome
@@ -1218,7 +1062,6 @@ distresse	great
 dongeon	deepest
 enemie	over-wrestled
 enemie	strong
-eternall night	sad
 feet	filthy
 fortune	tempestuous
 ghost	grieved
@@ -1229,7 +1072,6 @@ harmes	further
 hart	dead
 hart	pitteous
 harts	faint
-haughtie helmet	horrid
 heads	great
 hills	high
 jove	highest
@@ -1239,7 +1081,6 @@ knight	gentle
 knight	goodly
 lamps	ever-burning
 lights	lesser
-lookes subdew	prouder
 love	greater
 meed	deadly
 men	more
@@ -1254,13 +1095,10 @@ plight	more
 ray	bare
 ray	brightest
 reliques	sad
-sencelesse corse	slombred
 shield	warlike
-silver shield	idle
 sorrow	secret
 sparkles	bright
 speare	poynant
-spectacle behold	deadly
 stout	gyant
 things	sacred
 thrall	caytive
@@ -1274,15 +1112,12 @@ unfould	carefull
 unfould	threeds
 wings	golden
 wound	first
-xl ah ladie deare	gentle
-xl ah ladie deare	great
 xxix	bare
 youth	gentle
 arme	left
 arme	manly
 atchievements	famous
 atchievements	hard
-balefull body	dead
 beast	many-headed
 bespake	faire
 blade	blood-thirstie
@@ -1304,11 +1139,9 @@ destinies	equal
 disdaine	fierce
 enchauntment	false
 enemy	cursed
-eternall bale	inner
 fall	daily
 foe	onely
 foe	unequall
-geants gate	same
 hands	manly
 heart	stoutest
 heavens	favourable
@@ -1320,32 +1153,24 @@ knight	redoubted
 knight	such
 knight	unproved
 knights	doughty
-ladie stay	bad
 languor	captive
-loftie steede	bad
-magick artes	replete
 maine	monstrous
 man	righteous
-martiall crew	noble
 mothers	milkie
 order	noble
 parts	weaker
 passage	yeeld
-passage stay	angry
 powre	dreaded
 pride	foolish
 reason	goodly
-redcrosse knight	good
 right	unregarded
 sight	misaymed
 snubbes	ragged
 spright	chearelesse
 steps	staggering
-stocke forth	truncked
 storie	sad
 stownd	evil
 stroke	idle
-subtill sleights	last
 sword	byting
 things	right
 thought	gracious
@@ -1357,7 +1182,6 @@ wordes	chearefull
 wound	deadly
 wound	desperate
 wound	gaping
-wrathfull spight	full
 xlv	greater
 altare	spilt
 bands	filthy
@@ -1367,11 +1191,8 @@ blow	monstrous
 bodie	unweldy
 body	great
 body	huge
-christians bloud	spilt
-christians bloud	true
 cry	pitteous
 dayes	better
-downe falles	last
 drere	ghastly
 engins	slight
 engins	subtile
@@ -1393,14 +1214,12 @@ knight	same
 leg	right
 lites	heavie
 lord	dearest
-lord bethrall	better
 make	worth
 man	old
 martyrs	holy
 mas	monstrous
 meanes	hard
 mone	piteous
-name ignaro	dead
 o	welcome
 oake	strongest
 pace	untoward
@@ -1418,10 +1237,7 @@ thighes	unhable
 thrall	caytive
 traine	long
 tree	aged
-unto deaths	nigh
 warre	doubtfull
-weapon proov	angry
-weapon proov	wonted
 wherewith	past
 wherewith	perill
 wherewith	such
@@ -1430,7 +1246,6 @@ behest	wise
 behold	ill
 billowes	tombling
 bits	better
-bleeding wound	fresh
 brest	fleshly
 brest	riven
 castle	rare
@@ -1441,18 +1256,14 @@ day	sunny
 dwelling	low
 embayd	sweet
 ensample	dayes
-evils priefe	good
 eyes	dull
 eyes	sad
 famine	long
-fiers intent	many
 flames	huge
 flowres	withered
 foe	avowed
 forest	wide
 fort	strong
-fowle duessa	such
-fury slake	fervent
 glee	goodly
 glee	most
 gras	verdant
@@ -1462,18 +1273,13 @@ hands	favourable
 hands	friendly
 hart	stony
 heavens	light
-iii faire	virgin
 impe	worthy
-intent hath	high
 least	great
 life	looser
 looks	manly
 lord	dearest
-magicien merlin	great
 man	chearelesse
 manners	good
-mothers pap	soone
-musicke breeds delight	good
 neck	caytive
 parts	misshaped
 pits	hollow
@@ -1491,8 +1297,6 @@ thewes	gentle
 thewes	upbrought
 timon	old
 unrest	great
-valley greene	low
-vow unbind	ni
 xliii	welcome
 xlvi	bad
 xlvi	naked
@@ -1510,7 +1314,6 @@ cave	low
 cheekes	raw-bone
 clouts	many
 clouts	ragged
-course pursew	forward
 darts	deadly
 deedes	knightly
 degree	least
@@ -1523,7 +1326,6 @@ fearfull	more
 flight	hasty
 grave	greedy
 hands	right
-hartie speach	bold
 heeles	winged
 hew	former
 hew	hollow
@@ -1531,29 +1333,22 @@ hew	wide
 intent	high
 knight	weake
 knight	wearie
-ladies love	other
 letters	golden
 lov	againe
 man	cursed
-mister wight	dismayd
 o	happy
 owle	ghastly
 passion	great
 place	same
 queene	great
-recrosse knight	gentle
-redcrosse knight	gentle
-redcrosse knight	incontinent
 soules	able
 speeches	charmed
 thee	distraught
 thee	rash
-thiefe perswade	cunning
 tongue	subtill
 weedes	hidden
 wherein	closd
 wight	luckie
-wofull lover	more
 worthie	mote
 worthie	worthy
 xxi	aghast
@@ -1565,8 +1360,6 @@ breach	secret
 degree	last
 dragon	fire-mouthed
 ease	happy
-eternall rest	happy
-evill life forespent	enough
 eye	equall
 face	pale
 feet	free
@@ -1583,7 +1376,6 @@ knight	faint
 knight	harted
 li	seene
 life	loathsome
-lucklesse disaventures	more
 man	envious
 man	most
 mishaps	like
@@ -1594,17 +1386,13 @@ rimes	inchaunted
 sin	greater
 spright	constant
 state	chaunging
-wandring way	wearie
 wave	bitter
 way	further
 way	right
 armes	puissant
 beades	busy
 beames	sunny
-carle beheld	last
 court	spacious
-dame coelia	aged
-dame coelia	good
 dayes	wretched
 deedes	godly
 deedes	good
@@ -1623,8 +1411,6 @@ mood	constant
 name	meeke
 nicetie	sweet
 nicetie	true
-owne decay	few
-parents head	woefull
 path	narrow
 persons	great
 pledges	many
@@ -1667,7 +1453,6 @@ brest	carefull
 busines	other
 busines	worldly
 chappell	sacred
-charge sicke persons	dead
 cloths	spare
 corruption	ill
 corruption	inward
@@ -1676,10 +1461,7 @@ eyen	bad
 eyen	blunt
 eyen	earthly
 fire	bright
-gan faile	fordonne
-gan faile	weary
 guest	unacquainted
-hand doth lead	steady
 heare	golden
 hermitage	little
 hospitall	holy
@@ -1690,16 +1472,13 @@ jot	corrupted
 kist	joyous
 knight	soule-diseased
 lockes	snowy
-lowly place farre	darkesome
 man	aged
 man	happy
 man	holy
 men	mighty
-ne car	hungry
 necessitee	most
 nourse	carefull
 paire	gentle
-passage stay	ready
 path	ready
 presence	first
 repentance	sad
@@ -1707,11 +1486,9 @@ rules	vertuous
 sire	aged
 sire	godly
 soule	righteous
-spirituall repast	full
 spouse	heavenly
 starres	bright
 steps	wandring
-stubborne malady	tame
 thornes	bushy
 thoughts	heavenly
 tree	low
@@ -1724,8 +1501,6 @@ whip	yron
 wights	wretched
 xlviii	fast
 xxvii	wont
-xxxvi eftsoones	first
-xxxvii the	first
 angels	bright
 aright	red
 armes	puissaunt
@@ -1736,9 +1511,7 @@ citie	fairest
 didst	late
 ditty	high
 doest	worthy
-faerie queene doth dwell	fairest
 favours	many
-feend emprisond	huge
 foe	cursed
 foeman	ready
 fordonne	desolate
@@ -1746,7 +1519,6 @@ fordonne	virgin
 front	walled
 grace	great
 hill	sacred
-hope empare	present
 king	great
 lam	unspotted
 man	aged
@@ -1754,12 +1526,10 @@ man	holy
 man	mighty
 man	same
 men	such
-nations frend	owne
 notes	heavenly
 overthrowes	third
 parents	captive
 path	litle
-pleasaunt mount	highest
 poets	famous
 reft	unweeting
 selfe	excellent
@@ -1779,9 +1549,6 @@ towres	loftie
 toyle	tedious
 trew	most
 unto	dayly
-voyage fare	last
-voyage fare	long
-watchman wayting tydings	glad
 aloofe	yede
 armes	godly
 backe	bras-scaly
@@ -1803,19 +1570,16 @@ crest	hardned
 cryde	lowdly
 cryde	smart
 cryde	uncouth
-doth vaunt	much
 fields	open
 furies	many
 garment	poysond
 glade	hollow
-glistring armes	soone
 gorge	stinking
 gras	brused
 greatnesse	wondrous
 grosse	assayd
 grosse	gryping
 hands	warlike
-head stucke	steely
 henge	steadfast
 heroes	great
 hill	great
@@ -1827,7 +1591,6 @@ might	more
 might	outrageous
 mischiefes	such
 monster	smart
-mote perce	nought
 necke	scaly
 nosethrill	large
 oven	wide
@@ -1845,8 +1608,6 @@ scales	rouzed
 shields	bright
 shore	ragged
 side	sunny
-silver flood	full
-silver flood	great
 spau	german
 steed	froth-fomy
 steedes	faint
@@ -1854,7 +1615,6 @@ steele	sharpest
 tayle	hideous
 tayle	huge
 tayle	long
-tenor rayse	second
 time	auncient
 vertues	full
 vertues	great
@@ -1867,30 +1627,19 @@ wyde	little
 wyde	safe
 wynd	hollow
 xvi	harder
-xxviii faint	emboyled
-xxviii faint	sore
 yron	hardned
 advauncing	same
-almighty hand	red
 barke	feeble
 beast	hell-bred
-beast durst	deadly
 blade	bright
 blade	deaw-burning
 cheekes	rosy
 cleft	sunder
-coleblacke clouds	enwrapt
 conquest	great
 consort	full
 darke	chearelesse
 day	joyous
-day gan	joyous
 defence	best
-doughtie knight	nought
-dragons fatall fall	horrible
-dragons fatall fall	huge
-dragons fatall fall	second
-dread dragon	dead
 dreriment	sad
 edge	sharper
 encounter	first
@@ -1903,34 +1652,27 @@ feet	forwearied
 flames	huge
 foot	other
 gan	next
-gan reare	next
 god	highest
 head	high
-heate whereof	hellish
 jaw	greedy
 jaw	open
 joy	new
 knight	deare
 man	victorious
-mantle gan	sable
 maw	darksome
 maw	hollow
 men	tall
 men	young
 might	importune
-ne reard	firie-footed
 neare	advaunced
-neptune doth dismay	great
 night	noyous
 night	sad
 notes	attuned
 notes	lay
-o mornefull memory	good
 pace	manly
 pledge	warlike
 puissaunce	wondrous
 robes	antique
-rockie clift	huge
 salutes	loud
 scalpe	crested
 shield	sunne-bright
@@ -1949,9 +1691,7 @@ terrifide	sore
 tree	first
 tree	goodly
 trees	high
-vaine affright	off-shaking
 virgins	comely
-water dew	holy
 whoso	whereof
 wings	uneven
 withall	fast
@@ -1959,22 +1699,16 @@ woe	great
 wounds	deadly
 adventurest	late
 arts	wicked
-babe revyld	little
 bands	guilty
 beautie	heavenly
 brest	hollow
-byting wordes	bitter
 dame	former
 daughter	onely
-daughter deare	onely
 daungers	deadly
 dishes	dainty
 distresse	great
-doth imbrace	dearely
-doughty knight	devize
 dragonets	many
 enterprise	late
-fidessa hight	easy
 footman	false
 god	high
 guest	renowmed
@@ -1987,24 +1721,18 @@ knight	gentle
 leaves	narrow
 life	lingring
 lineaments	heavenly
-lines addrest	sad
 lord	dearest
-lord gan fit occasion finde	auncient
 man	falsest
 manner	swollen
 mayd	sad
-morning starre appeare	bright
 nest	hidden
-paper spake	red
 people	joyous
 perjury	bold
 pompe	luxurious
 pompe	proud
 pompe	such
-rest i	devize
 rimes	ragged
 rimes	rude
-royall mayd	goodly
 seeme	wiser
 services	comely
 sight	weaker
@@ -2021,7 +1749,6 @@ woman	false
 wreakes	many
 wreakes	wrathfull
 abode	safe
-dungeon deepe	low
 envie	able
 envie	vile
 envie	wicked
@@ -2034,11 +1761,8 @@ paines	deadly
 princess	british
 proceeded	eachone
 proceeded	sweet
-queen elizabeth	fairest
 skill	curious
 trains	subtile
-voyage whereto	bent
-voyage whereto	long
 xxxvi	full
 xxxvi	layd
 church	false
@@ -2051,7 +1775,6 @@ faith	catholic
 king	spanish
 king	treacherous
 ladie	lovely
-mine afflicted stile	humble
 nation	english
 parents	captive
 pen	humble
@@ -2061,10 +1784,7 @@ apollo	sacred
 arms	other
 beech	warlike
 bows	best
-carver holme	good
-cypresse funerall	sacred
 danger	unseen
-evergreen oak	good
 games	pythian
 generals	roman
 gum	bitter
@@ -2107,24 +1827,16 @@ ones	true
 physiology	old
 spirit	false
 technique	wonderful
-whose dryer braine	dry
 words	musical
 _	pastoral
 aphrodite	same
-borne without her dew	unnatural
-fayre venus	same
-fayre venus	sea-nymph
 god	blind
-hymen io hymen	nuptial
-hymen io hymen	old
 manner	unnatural
 song	nuptial
 song	old
 truth	feigned
 _	hebean
-character drawing objective	subjective
 deities	infernal
-language ll	own
 legends	mediaeval
 trees	many
 trees	shady
@@ -2137,7 +1849,6 @@ faith	true
 formulas	magic
 mind	popular
 nation	english
-paynim brethren	faithless
 poets	ancient
 poets	other
 power	saracen
@@ -2153,33 +1864,25 @@ piece	large
 share	large
 sides	armored
 story	full
-_ treen _	wooden
 courtesies	pleasant
 fraelissa	fair
 fraelissa	frail
 hands	guilty
-herb bath	enchanted
 infants	unbaptized
-my cheare	changed
 phrase	equivalent
 place	fair
 purposes	goodly
 romances	old
 stanza	whole
-testament saints	old
 couple	wretched
 epithets	costly
 shape	human
-words ll	own
 alliance	unnatural
 belief	ancient
 canto	whole
 day	next
-saracen knight	second
 scenes	similar
 sin	secret
-century pronunciation	16th
-country places	benighted
 mother	blind
 papists	irish
 passage	whole
@@ -2208,7 +1911,6 @@ allegory	political
 allegory	religious
 allegory	vague
 behests	similar
-bienvenu _	welcome
 century	late
 century	sixteenth
 church	false
@@ -2225,17 +1927,12 @@ chance	good
 chance	unavoidable
 dropsie	dry
 duty	last
-elizabethan hall	typical
-unto him selfe unknowne	own
 wretchedness	own
 influence	classical
 marchen	_
 priesthood	romish
-words ll	own
-_ gryfon _	subject
 animal	fabulous
 device	similar
-latin proverb	old
 loves	famous
 loves	old
 motives	inferior
@@ -2262,9 +1959,7 @@ aesculapius	sad
 desert	libyan
 paines	great
 paines	greater
-patrician family	haughty
 romulus	great
-tale _	similar
 conspirators	other
 contests	such
 death	loathsome
@@ -2276,24 +1971,17 @@ allegory	religious
 court	coarse
 knees	bent
 minds	unregenerate
-sir john perrot	coarse
-sir john perrot	rude
 sylvanus	old
-their barbarous truth	savage
 apollo	beloved
 appetites	lower
 kind	own
 moment	right
-n'ould after joy	cheerful
 phrasing	euphuistic
 stag	favorite
 vew	horrid
 was	famous
 was	worth
-water nymphs	fresh
-water nymphs	light-foot
 glove	token
-her last decay	utter
 lover	lady-love
 passage	obscure
 romances	old
@@ -2306,13 +1994,11 @@ orgoglio	giant
 pleasures	sinful
 sense	common
 struggle	hopeless
-aeneid _	looser
 beast	monstrous
 commands	holy
 companion	dissolute
 heads	more
 invention	own
-onely breath	mere
 orgoglio	geant
 orgoglio	hideous
 pride	geant
@@ -2330,25 +2016,18 @@ line	obscure
 oak	hollow
 orbits	undisturbed
 regions	infernal
-sorceress vivien	spellbound
-_ resolution _	second
 body	full
 book	whole
-brought not backe	full
 ebb	lowest
-my dolefull disadventurous deare	misadventurous
-my dolefull disadventurous deare	sad
 words	own
 beast	seven-headed
 clothes	gaudy
-cruell feast	late
 dungeon	foul
 half	better
 head	wounded
 horns	such
 people	english
 show	outward
-tauric chersonese	ancient
 arts	fine
 ashes	accursed
 bible	open
@@ -2360,7 +2039,6 @@ ear	troubled
 fortune	evil
 fortune	good
 fortune	great
-fortune maister	your
 hairs	gray
 interpretation	first
 interpretation	preferable
@@ -2380,10 +2058,8 @@ punishment	adequate
 punishment	moral
 reflections	moral
 ring	magic
-sir trevisan	young
 times	classical
 times	modern
-_ morte d'arthur _	possessive
 action	good
 century	sixteenth
 escape	narrow
@@ -2396,7 +2072,6 @@ time	due
 knight	armed
 life	own
 moisture	sweet
-was firmest fixt	strongest
 argument	subtle
 charmed	as
 judgment	last
@@ -2413,7 +2088,6 @@ allegory	religious
 allusions	biblical
 allusions	full
 century	sixteenth
-dame coelia	heavenly
 day	long
 day	many
 deeds	good
@@ -2421,7 +2095,6 @@ feet	weary
 gentleman	elizabethan
 house	auntient
 lady	heavenly
-long a day	many
 parallel	close
 power	higher
 power	spiritual
@@ -2429,11 +2102,9 @@ subj	optative
 suggestions	many
 things	many
 body	unfed
-miracle play	old
 painting	famous
 prisons	saracen
 prisons	turkish
-testament saints	old
 _	merry
 babies	human
 battles	bloody
@@ -2446,8 +2117,6 @@ allusions	biblical
 day	second
 day	third
 extent	remarkable
-keeping well	your
-queen elizabeth	complimentary
 stanza	complimentary
 sword-wounds	several
 tyranny	same
@@ -2461,8 +2130,6 @@ effect	awe-inspiring
 garment	charmed
 grip	dispossessed
 grip	rough
-hable might	capable
-hagard hauke	wild
 hillside	sunny
 language	simple
 strain	high-pitched
@@ -2471,7 +2138,6 @@ tune	second
 waters	greedy
 baths	medicinal
 belief	ancient
-deaw-burning blade	bright
 dragon	fire-spewing
 idiom	french
 orpheus	dead
@@ -2480,13 +2146,8 @@ watering-places	german
 waters	healthful
 _	sound
 dragon	dead
-exaggeration _	_
-exaggeration _	characteristic
-exaggeration _	deficient
-exaggeration _	romantic
 gallicism	mistaken
 nature	brutal
-serpent attempts	winged
 attempt	frustrated
 attempt	wicked
 character	perfect
@@ -2504,10 +2165,8 @@ sins	past
 slanders	false
 throng	great
 canto	first
-century customs	sixteenth
 figures	maritime
 floors	rush-strewn
-housling fire	sacramental
 places	various
 rigging	spent
 rigging	worn-out

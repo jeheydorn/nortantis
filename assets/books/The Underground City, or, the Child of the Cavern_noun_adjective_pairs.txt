@@ -3,20 +3,15 @@ beds	certain
 butty	last
 day	whole
 december	3rd
-dochart pit	interesting
-edinburgh family	old
 galleries	subterranean
-gas works	different
 indies	black
 ladders	long
 ladders	wooden
 manu-factories	likely
 mastodon	fantastically-shaped
 mastodon	huge
-mr. f. r. starr	strongly-constituted
 name	significant
 nature	interesting
-overman simon ford	old
 period	distant
 pitch	highest
 post	first
@@ -48,25 +43,19 @@ vein	new
 work	common
 works	outside
 years	many
-aberfoyle colliery	old
 foreman	old
 letter	possible
-mr. starr	good-by
-mr. starr	laconic
 names	past
 nature	interesting
 nurse	good
 nurse	old
 overman	glad
 soundings	lowest
-till we meet again	good-by
 times	old
 vein	new
 communication	first
 conviction	absolute
-copy book	old
 engineer	worthy
-engineer james starr	useless
 envelope	coarse
 fire	hot
 hand	other
@@ -83,7 +72,6 @@ sandstone	devonian
 sandstone	red
 sentence	single
 atmosphere	thick
-chemical operation	regular
 contradictor	anonymous
 convulsions	internal
 credence	more
@@ -110,7 +98,6 @@ rains	condensed
 rains	diluvial
 reaction	irresistible
 reaction	slow
-salt waters	fresh
 sandstone	compact
 sandstone	friable
 soil	deep
@@ -124,7 +111,6 @@ words	few
 beds	higher
 circumstances	plain
 coal	soft
-coal beds	scottish
 event	important
 event	plain
 letter	anonymous
@@ -136,7 +122,6 @@ part	considerable
 period	geological
 seams	new
 shells	star-fish
-treasure fields	rich
 vein	smallest
 working	rapid
 letter	anonymous
@@ -148,13 +133,10 @@ apprentices	more
 chimney	cylindrical
 chimney	prismatic
 chimney	tall
-coal dust	black
 contrast	greater
 cows	hornless
 days	accustomed
 days	earliest
-dochart pit harry ford	hardy
-dochart pit harry ford	strong
 expression	passive
 eye	saddened
 eyes	blue
@@ -167,7 +149,6 @@ look	bright
 looks	grave
 man	young
 miner	young
-mining tramways	old
 sleepers	rotten
 vapor	white
 whistlings	distant
@@ -185,9 +166,7 @@ lifts	automatic
 machines	ingenious
 man	young
 movement	simple
-mr. starr	own
 nations	other
-opinion england	wrong
 pace	rapid
 person	indifferent
 slides	wooden
@@ -205,17 +184,13 @@ landing	fifteenth
 man	young
 miner	habitual
 minutes	few
-mr. starr	stout
 obscurity	profound
-oil lamp	simple
 shaft	dark
 act	first
 burst	magnificent
 face	merry
 miner	young
-mining comrade	old
 minutes	few
-speaking trumpet	vast
 galleries	empty
 galleries	numerous
 ladder	last
@@ -255,15 +230,12 @@ mine	happy
 mine	preferred
 miner	young
 miners	plain
-mining family	old
 nave	dark
 noise	distant
 opinions	same
 overman	old
 rays	few
-aberfoyle colliery	important
 animation	former
-coal miners	actual
 day	wearied
 domain	black
 galleries	dark
@@ -303,8 +275,6 @@ letter	anonymous
 letter	interesting
 miner	hungry
 nature	interesting
-aberfoyle mine	old
-capital whisky	usquebaugh
 cockyleeky	same
 dish	principal
 dish	remarkable
@@ -314,34 +284,28 @@ letter	anonymous
 letter	more
 miner	old
 pudding	national
-scotch dinner	good
 son	affectionate
 son	good
 soup	cold
 beings	imaginary
 beliefs	superstitious
 depths	lowest
-dochart pit	partisan
-dochart pit	supernatural
 explosions	terrible
 father	other
 hand	left
 hanging	third
 mines	dark
-mr. starr	prudent
 nights	tempestuous
 overman	old
 pick	strong
 reason	bad
 reason	good
 repertory	mythological
-safety lamps	light
 scotch	superstitious
 stick	long
 supper	good
 vein	unworked
 woman	good
-aberfoyle pits	extraordinary
 ant-hill	enormous
 beings	certain
 beings	strange
@@ -421,7 +385,6 @@ gas	injurious
 gases	inflammable
 hand	right
 miner	old
-mr. starr	young
 name	proper
 overman	old
 robe	long
@@ -454,7 +417,6 @@ mark	whitish
 movement	sudden
 nothing	crackling
 nothing	peculiar
-safety lamp	open
 stream	small
 times	several
 voice	altered
@@ -555,7 +517,6 @@ tunnel	unknown
 vein	new
 vents	certain
 vents	natural
-aberfoyle mine	old
 banks	picturesque
 banks	rocky
 days	whole
@@ -581,7 +542,6 @@ mine	new
 miner	young
 murmur	distant
 overman	old
-price outside	less
 sound	dull
 sound	feeble
 weather	bad
@@ -602,7 +562,6 @@ road	easy
 use	further
 wings	invisible
 attacks	mysteriously-prepared
-degree pierce	slightest
 ideas	disquieting
 meantime	bad
 men	blind
@@ -611,8 +570,6 @@ miner	young
 nature	second
 return	difficult
 road	right
-side opening	main
-side opening	narrow
 situation	bad
 step	firm
 walking	rapid
@@ -628,7 +585,6 @@ fire-maidens	certain
 habits	usual
 legends	several
 letters	similar
-melrose farm	many
 orifice	narrow
 overman	old
 people	many
@@ -657,8 +613,6 @@ side	starboard
 strathspeys	wild
 world	phantom
 adventure	vain
-brig motala	laden
-brig motala	norwegian
 coincidence	strange
 crash	frightful
 credulity	possible
@@ -688,8 +642,6 @@ chum	old
 constitution	strong
 day	same
 december	4th
-dochart pit	necessary
-engineer james starr	sure
 feet	other
 legend	new
 overman	old
@@ -704,7 +656,6 @@ fall	deadly
 ladder	topmost
 ladder	twenty-seventh
 landing	twenty-sixth
-mining habits	old
 nuisance	dark
 passage	principal
 regions	infernal
@@ -789,8 +740,6 @@ town	underground
 trade	old
 tunnel	lofty
 tunnel	slanting
-ventilation shafts	numerous
-ventilation shafts	sufficient
 waters	dark
 brownie	certain
 character	fine
@@ -1010,7 +959,6 @@ fellow	good
 intentions	uneasy
 lamps	electric
 landing-place	narrow
-morning jack ryan	interrupted
 tone	serious
 deal	great
 deal	sure
@@ -1096,11 +1044,7 @@ light	pleasant
 light	silvery
 magnitude	sixth
 quarter	last
-sea water	smooth
 sensation	new
-silver plate	big
-silver plate	fine
-silver plate	grand
 spectacle	glorious
 stream	bent
 sun	opposite
@@ -1124,8 +1068,6 @@ advantage	greatest
 advantage	possible
 building	large
 city	silent
-coal pit	dark
-country house	handsome
 dawn	gray
 feet	high
 hill-tops	many
@@ -1164,7 +1106,6 @@ splendor	dazzling
 steeples	lofty
 steeples	slender
 sun	white
-thy creation	beautiful
 trees	green
 advantage	best
 ascent	steep
@@ -1216,7 +1157,6 @@ moment	same
 noises	cavernous
 noises	hollow
 people	old
-roaring noise	terrific
 rock	solid
 swing-doors	wooden
 tunnels	lower
@@ -1304,36 +1244,26 @@ man	old
 manner	troubled
 mystery	whole
 occupation	perilous
-orphan girl	little
 overman	full
 overman	old
 owl	monstrous
 pit	old
-places silfax	unable
 sentences	threatening
 time	same
 allowance	small
 deliverance	short
-harfang man	dead
-harfang man	old
-harfang man	older
 imprisonment	short
 man	old
 mine	old
-mr. starr	savage
 owl	savage
 time	long
 vengeance	dead
 vengeance	miserable
-yarrow shaft	short
 years	dead
 years	older
-coal mine	own
 interest	own
 manner	whole
 mother	right
-mr. starr	able
-mr. starr	ignorant
 plots	insane
 sake	own
 silence	reasonable
@@ -1370,8 +1300,6 @@ proposal	generous
 sake	own
 subjects	lofty
 time	first
-trust mr. starr	invisible
-trust mr. starr	revere
 wretches	wicked
 colony	subterranean
 entrances	various
@@ -1403,7 +1331,6 @@ lamps	electric
 maidens	scottish
 man	fierce
 man	old
-man standing upright	old
 manner	remarkable
 mantle	dark
 men	bold
@@ -1425,7 +1352,6 @@ atmosphere	lower
 circle	wide
 efforts	useless
 explosion	inevitable
-faithful bird	surprised
 features	wild
 gas	lighter
 gas	lower

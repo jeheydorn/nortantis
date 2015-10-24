@@ -19,10 +19,6 @@ branch	squatted
 brows	beetling
 brows	contracted
 bull	turned
-bull ape	come
-bull ape	forbidding
-bull ape	quarreled
-bull ape	replied
 bulls	contemplating
 bulls	known
 charge	preparing
@@ -33,7 +29,6 @@ cowardice	hurled
 diet	confine
 direction	lumbered
 dream	abandon
-english lady	born
 eyes	left
 eyes	turned
 eyes	winked
@@ -48,36 +43,7 @@ female	retained
 fight	break
 fight	sensed
 fingers	running
-first love teeka	absorbed
-first love teeka	beetling
-first love teeka	brought
-first love teeka	called
-first love teeka	continued
-first love teeka	crouching
-first love teeka	drawn
-first love teeka	flattered
-first love teeka	glanced
-first love teeka	guess
-first love teeka	hurled
-first love teeka	insulted
-first love teeka	longed
-first love teeka	look
-first love teeka	looked
-first love teeka	moved
-first love teeka	noted
-first love teeka	passed
-first love teeka	pause
-first love teeka	raised
-first love teeka	reached
-first love teeka	sat
-first love teeka	scratched
-first love teeka	seen
-first love teeka	squatted
-first love teeka	stretched
-first love teeka	threatened
-first love teeka	watched
 forest	presented
-grass rope	coiled
 ground	slipped
 growl	rumbled
 hands	lay
@@ -88,7 +54,6 @@ head	turned
 hope	harbored
 insults	screaming
 jowls	drooled
-jungle grasses	reddened
 legs	rose
 life	occurred
 lips	flecked
@@ -116,7 +81,6 @@ stand	make
 stooped	growls
 stooped	turned
 tactics	followed
-taug press	watched
 taunts	hurled
 thing	occurred
 time	seemed
@@ -126,7 +90,6 @@ turf	rolled
 vaingloriousness	absorbed
 water	squatted
 weapon	dodge
-wound taug	backed
 air	raked
 air	straightening
 armament	fitted
@@ -143,12 +106,6 @@ boy	swung
 branches	using
 brows	beetling
 brows	let
-bull ape	charged
-bull ape	countenance
-bull ape	drew
-bull ape	falling
-bull ape	follow
-bull ape	reached
 bulls	aroused
 bulls	cried
 bulls	engaged
@@ -163,7 +120,6 @@ chest	expanded
 day	building
 eyes	met
 eyes	rove
-eyes rest	let
 faces	making
 feet	saw
 fellows	satisfied
@@ -176,8 +132,6 @@ fruits	using
 glade	swung
 glance	saw
 glance	shot
-grass rope	snapping
-grass rope	swung
 growlings	making
 hand	faced
 hand	grasped
@@ -185,13 +139,11 @@ hand	swung
 head	hovered
 head	swung
 hunting	returned
-hunting knife	nicked
 instant	hovered
 jaws	hovered
 jaws	lashing
 jaws	lined
 jaws	snarling
-jungle billingsgate	hurling
 leap	rose
 legs	rolled
 life	risk
@@ -229,7 +181,6 @@ throat	making
 time	ran
 time	reach
 tongue	fell
-turn tail	doubtless
 warning	proclaimed
 wits	mustering
 air	sniffed
@@ -273,10 +224,6 @@ dream	shattered
 dreams	filled
 ears	pricked
 efforts	forge
-english boy	known
-english boy	looked
-english boy	realized
-english boy	represented
 expression	saw
 family	surprised
 fate	told
@@ -301,15 +248,8 @@ idea	forge
 idea	overcome
 lair	found
 laugh	followed
-leafy branches	covering
-leafy screen	drag
-leafy screen	strip
-leafy screen	tore
-limb numa	swung
 lion	passed
 lioness	passed
-lord greystoke	put
-male bird	bore
 males	differed
 man	saw
 mate	licked
@@ -348,7 +288,6 @@ trail	covering
 trap	built
 trap	reached
 tree	swing
-tree man	built
 tribe	return
 tribe	turned
 village	followed
@@ -364,8 +303,6 @@ wrongs	thought
 advance	rustled
 air	sniffed
 anthropoid	awaken
-ape brushing	lordling
-ape brushing	took
 ape-boy	dragged
 ape-boy	followed
 ape-boy	imagine
@@ -398,7 +335,6 @@ fingers	increased
 fingers	scooped
 fingers	worked
 forest	taken
-game trail	tampered
 grip	closed
 ground	threw
 grunt	rose
@@ -410,7 +346,6 @@ head	raised
 hole	yawned
 intervals	set
 journey	completed
-jungle side	passed
 labors	ceased
 legs	wound
 loam	loosened
@@ -434,21 +369,17 @@ pit	concealed
 plan	put
 pressure	increased
 prey	sprang
-reed buck	halted
-reed buck	stepping
 rest	making
 shade	lolling
 shade	stifling
 shoulder	fastened
 side	cocked
-side bars	propped
 skins	glistened
 sleepers	awaken
 smile	lighted
 sockets	started
 sorrow	learning
 stakes	cut
-steel fingers	circled
 teeth	fastened
 terror	imagine
 test	put
@@ -458,14 +389,12 @@ throat	circled
 time	hold
 tongue	protruded
 torso	wound
-tree limb	balanced
 trees	moved
 trees	took
 vegetation	rotting
 vengeance	permit
 vengeance	wreak
 village	lay
-war spears	loosened
 warrior	eyeing
 accident	started
 air	raked
@@ -484,7 +413,6 @@ ape-man	sprung
 ape-man	struck
 ape-man	turned
 appreciation	swaying
-association tarzan	discovered
 back	borne
 back	sprawled
 beast	designed
@@ -501,22 +429,16 @@ clearing	entered
 clearing	seek
 companions	satisfying
 conclusions	reaching
-dancing figure	glared
-digging blacks	cogitated
-digging blacks	left
 direction	charged
 direction	continued
 distance	come
 distance	moved
 ears	scratched
 ears	thrown
-elephant trail	converged
-elephant trail	moved
 enemy	discerned
 eyes	discerned
 eyes	peered
 eyes	sees
-figure halted	seized
 fingers	scratched
 foe	departing
 foe	grimace
@@ -536,7 +458,6 @@ hopes	pour
 horn	carried
 horn	inclined
 hour	foraged
-hour tarzan	sprawled
 hunger	satisfy
 hunting	busied
 journey	continued
@@ -547,14 +468,11 @@ judgments	compared
 jungle	busied
 jungle	knows
 jungle	roamed
-jungle trail	forging
-jungle trail	lumbered
 labor	tarzan
 leaves	appealed
 legs	scrambled
 life	consisted
 life	saw
-living thing	craved
 love	commanded
 man	dispute
 man	entered
@@ -579,10 +497,7 @@ pit	puzzled
 place	found
 positions	passed
 power	possessed
-purpose god	intended
 questions	troubled
-rhino birds	circled
-rhino birds	fluttered
 rider	bade
 rider	go
 score	chattered
@@ -595,12 +510,10 @@ subjects	busied
 surface	precluded
 surfaces	scratched
 tail	dropped
-tender plantain	found
 terraces	raced
 terraces	scurrying
 thews	kept
 toes	drummed
-tree limb	broke
 trees	denuded
 trees	grew
 trees	uproot
@@ -648,7 +561,6 @@ captors	set
 captors	shouted
 charge	turned
 chills	sent
-cooking fires	laying
 courage	rendered
 creature	appeared
 creature	disappeared
@@ -679,8 +591,6 @@ foemen	pushed
 foemen	taste
 foot	put
 foot	threw
-forest god	glimpsed
-forest god	pierced
 friend	confronted
 friend	recognize
 gate	reached
@@ -693,21 +603,6 @@ head	struck
 heavens	fallen
 intelligence	rendered
 jaws	fell
-jungle forest	racing
-jungle heat	carrying
-jungle tantor	attempted
-jungle tantor	coming
-jungle tantor	eluded
-jungle tantor	fled
-jungle tantor	hear
-jungle tantor	knew
-jungle tantor	precipitate
-jungle tantor	saw
-jungle tantor	scattered
-jungle tantor	see
-jungle tantor	stood
-jungle tantor	turned
-jungle tantor	understood
 life	doubt
 life	risked
 lips	licked
@@ -747,7 +642,6 @@ steps	precipitate
 thews	tensed
 time	believed
 time	reached
-tree folk	consorted
 trees	flew
 trunk	raised
 trunk	stood
@@ -758,12 +652,10 @@ victim	spear
 village	approached
 village	heard
 village	surrounding
-village street	fallen
 villagers	assembled
 villagers	infuriated
 villagers	lived
 wake	screaming
-war spears	waving
 warriors	cries
 warriors	dawned
 warriors	disappeared
@@ -789,30 +681,10 @@ ape	overtook
 ape	see
 ape	turn
 ape	were
-ape mothers	seen
 attack	open
 baby	carrying
 back	rode
 balu	harm
-balu teeka	alter
-balu teeka	bared
-balu teeka	carrying
-balu teeka	changed
-balu teeka	commanded
-balu teeka	covered
-balu teeka	cuddled
-balu teeka	drew
-balu teeka	fear
-balu teeka	harm
-balu teeka	held
-balu teeka	look
-balu teeka	overtake
-balu teeka	pursued
-balu teeka	retained
-balu teeka	rolled
-balu teeka	sat
-balu teeka	strained
-balu teeka	turned
 barrier	topping
 beast	eluded
 bit	edged
@@ -825,28 +697,17 @@ bull	danced
 bull	heard
 cast	miss
 chills	sent
-choice names	calling
 combatants	growls
 combatants	scuffling
 crowd	fleeing
 delight	retained
 desire	rose
 distance	pursued
-distance mbonga	rallied
-distance mbonga	urged
-distance tarzan	recognize
-distance tarzan	stopped
-distance tarzan	turned
-elephant hunters	aver
 eyes	noted
 eyes	rolled
 eyes	turned
 eyes	vanquish
 faces	making
-fact taug	chanced
-fact taug	depended
-fact taug	face
-fact taug	seemed
 fangs	bared
 fingers	ran
 growl	apprised
@@ -884,7 +745,6 @@ noose	widening
 obligation	discharged
 offspring	protect
 opening	found
-palisade belly	saw
 pastime	play
 play-fellow	fear
 play-fellow	harm
@@ -908,13 +768,11 @@ succor	coming
 teeth	open
 teeth	sank
 time	charged
-tree tops	play
 trees	retreated
 trunk	encircled
 trunk	hurled
 trunk	lifted
 trunk	weaving
-warning snarl	drew
 warrior	towered
 warrior	turned
 warriors	rallied
@@ -942,7 +800,6 @@ balu	placed
 balu	seize
 beast	transformed
 branch	stopped
-breast swell	did
 bulls	barking
 bulls	closed
 bulls	growling
@@ -1011,12 +868,10 @@ opponent	stopped
 perch	pulled
 perch	swept
 pleas	turned
-point close	descended
 powers	pitting
 predicament	sat
 prey	robbing
 prey	snatch
-reason tarzan	hesitated
 rope	gave
 rope	secured
 scalp	bristled
@@ -1024,7 +879,6 @@ side	reached
 side	unloosed
 spell	held
 spring	crouched
-stout limb	secured
 tail	moved
 teeth	buried
 thing	handle
@@ -1037,14 +891,11 @@ way	snatch
 alphabet	constituted
 antagonist	dislodge
 ape	being
-ape words tar	derived
 ape-boy	understand
 apes	encircling
 apes	refought
 apes	wrought
 ara	sends
-arms beat	clawed
-arms beat	placed
 arrow	rose
 attack	meet
 attention	wrest
@@ -1096,7 +947,6 @@ fangs	rending
 fangs	sink
 females	being
 females	commenced
-fighting fangs	buried
 foot	placed
 frequency	increasing
 fur	clawed
@@ -1105,33 +955,28 @@ future	adhere
 g-bug	commenced
 game	preserves
 game	required
-gender prefix	giving
 giant	rose
 glances	shot
 ground	viewed
 hand	drove
 head	puzzle
 hold	regain
-hunting expeditions	devoted
 imagination	excited
 imagination	stimulating
 instant	swung
 jungle	acknowledged
 jungle	following
 jungle	reigned
-jungle breeze	flew
 la	named
 la	pronounced
 language	spoke
 life	battled
 life	imperil
 melee	leap
-midday slumber	rose
 monsters	battled
 moon	held
 moon	investigate
 name	pronounce
-name bumude-mutomuro	wrote
 names	pronounced
 neck	burying
 night	clambered
@@ -1158,7 +1003,6 @@ risk	knew
 scratches	escaped
 shreds	torn
 side	drove
-silver orb	raised
 soul	filling
 struggles	ceased
 surprise	discovered
@@ -1178,12 +1022,6 @@ word	grasped
 word	occurred
 word	preserves
 word	required
-word god	arrived
-word god	evolved
-word god	found
-word god	grasped
-word god	pronounce
-word god	worshiped
 wounds	licked
 ankles	dangled
 ape	shook
@@ -1193,13 +1031,10 @@ approach	fall
 arrow	poisoned
 beads	received
 betters	leave
-blood enemies	held
 bodies	dropped
 bow	strung
-buffalo head	stepped
 bulamutumumo	cried
 bulamutumumo	kill
-bull ape	leaped
 chest	swelled
 cloud	obscured
 coward	come
@@ -1239,7 +1074,6 @@ men	fall
 men	stood
 mind	plumbed
 minutes	looked
-moment tarzan	stood
 mouths	stop
 neck	clutching
 nerves	reverberated
@@ -1250,7 +1084,6 @@ palisade	overhung
 palisade	roared
 place	sought
 provocation	fought
-ro y	meant
 roar	reverberated
 shoulder	buried
 sky	frightened
@@ -1265,13 +1098,7 @@ tail	dipped
 teeth	exposing
 things	living
 tooth-hold	released
-tu o	meant
 village	recognized
-village street	drop
-village street	dropped
-village street	leaped
-village street	saw
-war spears	receive
 warriors	doubtless
 warriors	slain
 warriors	wrought
@@ -1298,7 +1125,6 @@ cast	make
 charlatanry	faced
 chest	rumbled
 chief	convinced
-cooking pots	leaped
 creature	closing
 death	come
 effort	ran
@@ -1326,12 +1152,10 @@ head	pass
 hearts	live
 hut	crept
 hut	leaped
-hut doorways	frightened
 huts	scattering
 instant	intended
 instant	remained
 judgment	warned
-jungle demon	filled
 knife	drew
 leaps	covered
 life	pleaded
@@ -1365,16 +1189,11 @@ spoils	divided
 steps	danced
 stranger	fall
 stranger	slay
-tarzan half	kneeled
-tarzan half	rose
 temper	lost
 throat	exposing
 village	retraced
-village street	walked
 voodoo	eat
 voodoo	live
-war spear	raised
-war spears	grasping
 warriors	painted
 warriors	terrified
 warriors	watched
@@ -1384,8 +1203,6 @@ weapon	hurl
 wisdom	believed
 witch-doctor	fallen
 witch-doctor	leaped
-witch-doctor bit	brought
-witch-doctor bit	scratched
 witch-doctors	believed
 wrench	twisted
 years	brought
@@ -1405,9 +1222,6 @@ chill	sent
 contempt	filled
 couch	sought
 couch	swaying
-death throes	dispatch
-death wound	inflicted
-dozen efforts tarzan	succeeded
 eggs	sought
 eggs	surrounded
 enemy	sent
@@ -1426,17 +1240,13 @@ hand	stayed
 head	brought
 head	popped
 hilt	drove
-hunting knife	drove
 interruption	occurred
 jungle	cast
-keener interest	aroused
 kill	make
 knife	drawn
 light	cast
 limbs	bending
 lungs	followed
-matter thought	gave
-matter thought	occurred
 maw	accommodate
 maw	yawned
 mind	reverted
@@ -1449,7 +1259,6 @@ offspring	encircled
 offspring	tear
 one	conceive
 palisade	overhung
-parting glance	cast
 petals	unfolding
 point	water
 preoccupation	startled
@@ -1461,7 +1270,6 @@ retreat	penetrated
 scene	broke
 sensation	claimed
 she-ape	leaped
-slaying mbonga	prevented
 snake	dying
 snake	fear
 snake	touched
@@ -1475,7 +1283,6 @@ trees	shot
 trees	sought
 tribe	water
 victims	crush
-victory cry	give
 village	walked
 vision	broke
 way	differed
@@ -1518,31 +1325,17 @@ feast	found
 feeding	looked
 feet	leaped
 feet	overhauled
-field mouse	go
 fields	does
-fighting fangs	bared
 giant	muscled
 god	accomplishes
 god	does
 god	found
 god	look
 god	see
-grass rope	added
-grass rope	braiding
-grass rope	coiled
-grass rope	drop
-grass rope	held
-grass rope	rescuing
-grass rope	steal
-grass rope	worked
 hand	grasping
-handicap tarzan	completed
 head	shook
 hills	lie
-hunting knife	armed
 jungle	swung
-jungle path	spread
-jungle patriarch	slashing
 knife	held
 labor	resumed
 life	enjoyed
@@ -1661,17 +1454,12 @@ mamma	cried
 man	seen
 man-eaters	expect
 man-thing	pitting
-mangani talking	hear
 meat	makes
 meat	stinks
-metal ornaments	dangled
-mien tarzan	saw
-mien tarzan	shrink
 mother	carried
 mother	saw
 mother	threatened
 mother	turned
-mud close	found
 muscles	pitting
 name	using
 negroes	reached
@@ -1688,7 +1476,6 @@ prize	melted
 prize	struggling
 ribs	keep
 river	squatted
-river bank	found
 rope	uncoiled
 savagery	pitting
 scream	enjoy
@@ -1699,7 +1486,6 @@ sides	pinioning
 speech	sounded
 struggles	ceased
 sun	basked
-surface vegetation	tossed
 teeth	filed
 times	climbed
 trees	climbed
@@ -1762,7 +1548,6 @@ go-bu-balu	saw
 gunto	kill
 gunto	tell
 hides	rolling
-jungle days	feared
 matter	take
 medicine	make
 mien	snarling
@@ -1773,8 +1558,6 @@ moment	survived
 moment	teach
 mother	drew
 mother	shown
-mother love	drives
-mother love	taxed
 muscles	noted
 muscles	tensed
 neck	fastening
@@ -1798,15 +1581,11 @@ time	entered
 time	gave
 times	surprised
 tongue	loosed
-tree men	tore
-tree tops	feared
-tribe fed	dropping
 village	watched
 witch-doctor	consulted
 adventure	abandon
 air	sniffed
 anguish	read
-ape speech	supplementing
 balu	ceased
 beasts	close
 body	grown
@@ -1878,24 +1657,17 @@ jungle	festooned
 jungle	inhabited
 jungle	slipped
 jungle	turned
-jungle god	bring
-jungle god	go
-jungle god	hidden
-jungle god	stolen
 labor	was
-leafy branches	drew
 lion	sought
 manner	converse
 medicine	knew
 menace	ceased
 menace	dared
 menace	finding
-mother cat	come
 muzzle	raising
 neck	hung
 night	bided
 north	set
-orthodox church	wrapped
 parent	follow
 perch	clung
 punishment	threatening
@@ -1934,8 +1706,6 @@ terror	control
 things	noticed
 time	bided
 time	sought
-time momaya	recognized
-town tribe	return
 unloveliness	saw
 vision	snapped
 voice	queried
@@ -1973,7 +1743,6 @@ ape-man	reached
 ape-man	shook
 ape-man	turned
 apes	terrified
-arm flash	filtered
 arms	caught
 attempt	pierced
 attorney	knew
@@ -1982,7 +1751,6 @@ back	dangled
 bid	raised
 blows	twisted
 body	caught
-boy close	hugged
 breast	protruded
 breeze	carried
 breeze	swirling
@@ -1997,7 +1765,6 @@ child	hid
 child	lose
 chops	licked
 compromise	reached
-country lane	strolled
 creature	eluded
 creature	moving
 cry	tumbled
@@ -2017,13 +1784,8 @@ hand	throwing
 haunches	brought
 head	shook
 heels	stalk
-hunting blade	fell
-hunting blade	flashed
-hunting spear	hurtle
 hyenas	growled
 hyenas	sniffed
-jungle foliage	dappling
-jungle foliage	pushed
 leap	carry
 lion	charging
 mat	bring
@@ -2037,7 +1799,6 @@ naught	set
 naught	tickled
 perch	tumbled
 place	hiding
-pocket handkerchief	take
 price	haggling
 rumors	heard
 shoulder	grazed
@@ -2048,7 +1809,6 @@ sleep	arose
 sounds	approached
 sounds	heard
 spear	raised
-spear point	weakening
 spine	pierced
 tears	flowed
 thong	took
@@ -2084,9 +1844,7 @@ blacks	baiting
 blacks	gather
 blood	felt
 body	picking
-breakfast table	arisen
 cheek	stroking
-chief screamer	throttle
 cry	leaped
 darkness	leaped
 darkness	surrounding
@@ -2095,8 +1853,6 @@ day	ate
 dinner	finishing
 distance	growing
 doorway	burned
-drinking place	moved
-drinking place	took
 ears	fell
 excitement	derived
 eyes	gleamed
@@ -2132,9 +1888,7 @@ jerks	existed
 jungle	fallen
 jungle	gone
 jungle	moved
-jungle night	swinging
 king	drink
-leopard skin	left
 lion	coughed
 lion	moaned
 lion	prowling
@@ -2142,7 +1896,6 @@ lip	depending
 lip	dragged
 lips	mutilated
 lips	patted
-man standing	saw
 mat	sleeping
 moment	looked
 morning	following
@@ -2185,16 +1938,7 @@ thirst	rumbling
 time	treated
 trees	composed
 veins	tingling
-way lord greystoke	experiencing
-way lord greystoke	felt
 window	meowed
-witch-doctor seeks vengeance lord greystoke	crawled
-witch-doctor seeks vengeance lord greystoke	disrobed
-witch-doctor seeks vengeance lord greystoke	excited
-witch-doctor seeks vengeance lord greystoke	felt
-witch-doctor seeks vengeance lord greystoke	garbed
-witch-doctor seeks vengeance lord greystoke	hunted
-witch-doctor seeks vengeance lord greystoke	moaned
 women	come
 women	rose
 women	saw
@@ -2239,7 +1983,6 @@ face	hide
 face	laughed
 face	rotting
 face	stinking
-face half	eaten
 fat	come
 fate	eradicated
 father	owned
@@ -2253,7 +1996,6 @@ hyenas	arrived
 hyenas	gone
 hyenas	held
 hyenas	told
-hyenas pacing	muffling
 incredulity	puzzled
 incredulity	scratched
 inequalities	remained
@@ -2262,9 +2004,6 @@ jungle	muffling
 jungle	prowling
 jungle	snapping
 jungle	snarling
-jungle god	come
-jungle god	commanded
-jungle god	gave
 labyrinth	forbidden
 lane	traverse
 leprosy	eaten
@@ -2296,22 +2035,9 @@ ones	get
 opening	closed
 orgy	pictured
 outcast	shunned
-pace bukawai	back
-pace bukawai	brought
-pace bukawai	come
-pace bukawai	cuffed
-pace bukawai	dragging
-pace bukawai	gave
-pace bukawai	jerked
-pace bukawai	reiterated
-pace bukawai	returning
-pace bukawai	set
-pace bukawai	throw
-pace bukawai	walked
 passage	dragged
 place	ventured
 places	obliterated
-plantain field	working
 references	caught
 references	repeated
 road	finding
@@ -2330,11 +2056,9 @@ tales	whispered
 teeth	lurked
 temper	possessing
 thing	face
-tibo close	clasping
 time	stolen
 time	thought
 tracks	fell
-tree men	consorted
 victims	inflicted
 way	forced
 witch-doctor	dreaded
@@ -2378,13 +2102,9 @@ creatures	stood
 cudgel	striking
 darkness	blazing
 distance	held
-earth floor	threw
 efforts	renewed
 execrations	mumbling
 eyes	see
-eyes tibo	opened
-eyes tibo	saw
-eyes tibo	tear
 fabric	fall
 fangs	baring
 feet	lead
@@ -2420,8 +2140,6 @@ lattice	dragged
 lattice	forced
 lattice	give
 lattice	stood
-lattice sag	fall
-lattice sag	saw
 laughs	laughing
 legs	snapped
 man	taken
@@ -2464,7 +2182,6 @@ stick	seized
 superstition	added
 things	get
 throat	spring
-time tibo	slept
 tongue	lashing
 wall	driving
 way	dragged
@@ -2489,7 +2206,6 @@ eyes	opened
 face	put
 faces	marked
 fact	called
-faux pas	discovered
 feet	sneered
 fire	dispatched
 fire	returned
@@ -2500,11 +2216,6 @@ goats	paid
 goats	repeated
 hands	laying
 hands	prevent
-jungle god	gone
-jungle god	return
-jungle god	returned
-jungle god	steal
-jungle god	stole
 leaves	commenced
 leaves	see
 leprosy	prevent
@@ -2581,7 +2292,6 @@ door	hurling
 end	taking
 face	buried
 family	surrounding
-family escutcheon	stain
 feet	standing
 floor	picked
 foes	brought
@@ -2598,10 +2308,8 @@ hands	felt
 head	settled
 heart	beat
 heart	found
-hunting knife	draw
 intruders	lock
 inventions	found
-jungle creatures	feared
 lad	crept
 lad	glaring
 lair	carry
@@ -2626,8 +2334,6 @@ offspring	adding
 offspring	imagined
 opening	sprang
 oscillation	diminish
-passive enemies	cared
-passive enemies	planned
 place	winding
 prey	holding
 rage	worked
@@ -2640,26 +2346,18 @@ shoulders	lifted
 snarls	listening
 son	sees
 story	told
-swinging motion	impart
 things	learned
 thirst	quench
 time	felt
 time	question
 times	swung
-village witch-doctor	boded
-village witch-doctor	saw
 ways	inventing
 woman	shrieked
-young lord greystoke	drank
-young lord greystoke	know
-young lord greystoke	planned
-young lord greystoke	slept
 air	filled
 air	found
 air	sniffing
 apes	romping
 arms	bound
-beating rain	look
 beauty	found
 blacks	called
 bounds	knew
@@ -2686,7 +2384,6 @@ devil-god	saw
 devil-god	seen
 distance	seen
 ear	placed
-eye bukawai	see
 eyes	baffled
 fangs	approached
 fathers	hated
@@ -2702,7 +2399,6 @@ friction	wear
 god	peopled
 god	pressed
 god	stretched
-grass rope	lay
 growl	uttered
 hand	stretched
 hands	leaving
@@ -2724,7 +2420,6 @@ hyenas	slunk
 hyenas	stepped
 hyenas	waited
 insects	stilled
-jungle craft	guided
 knob-stick	rushed
 leaf	quivered
 life	saving
@@ -2736,46 +2431,8 @@ man	raised
 medicine	making
 minutes	took
 moaning	heard
-months bukawai	nursed
 mothers	grown
 mothers	guarding
-occasion tarzan	approached
-occasion tarzan	believe
-occasion tarzan	brought
-occasion tarzan	cheated
-occasion tarzan	cried
-occasion tarzan	disentangle
-occasion tarzan	drag
-occasion tarzan	dreamed
-occasion tarzan	escape
-occasion tarzan	fallen
-occasion tarzan	fatted
-occasion tarzan	felt
-occasion tarzan	found
-occasion tarzan	guided
-occasion tarzan	halted
-occasion tarzan	heard
-occasion tarzan	hunted
-occasion tarzan	injured
-occasion tarzan	keep
-occasion tarzan	killed
-occasion tarzan	knew
-occasion tarzan	lay
-occasion tarzan	learned
-occasion tarzan	like
-occasion tarzan	look
-occasion tarzan	lying
-occasion tarzan	murmured
-occasion tarzan	protected
-occasion tarzan	robbed
-occasion tarzan	saw
-occasion tarzan	see
-occasion tarzan	seen
-occasion tarzan	shielded
-occasion tarzan	stood
-occasion tarzan	thought
-occasion tarzan	wandered
-occasion tarzan	whispered
 opportunity	come
 palm	pressed
 passageways	winding
@@ -2792,7 +2449,6 @@ scene	looked
 side	lay
 soil	enrich
 spite	vent
-steep walls	rimmed
 storm	broke
 storm	passed
 streamers	whipped
@@ -2801,9 +2457,6 @@ surface	closed
 temper	mauled
 things	failed
 throat	held
-torn clouds	fled
-torn clouds	whipped
-tree tops	fled
 trees	grew
 trees	stunted
 trees	waving
@@ -2823,13 +2476,9 @@ years	wear
 animal	seize
 animals	existed
 apartments	passed
-application tarzan	looked
-application tarzan	opened
 arms	struck
 assault	gathering
 beast	tore
-beast spring	reached
-beast spring	saw
 beasts	gained
 beasts	give
 beasts	growing
@@ -2843,12 +2492,9 @@ branches	shut
 breeze	sniff
 brim	broadened
 brim	come
-canon close	rose
 captive	attack
 cave	leading
 cave	shut
-cave mouth	returned
-cavern bukawai	fell
 charge	gathering
 companion	dragged
 companion	howling
@@ -2871,7 +2517,6 @@ fingers	fastened
 forces	going
 ground	hurtle
 hand	reached
-hand tarzan	held
 harem	lead
 head	hurled
 head	turn
@@ -2893,17 +2538,9 @@ hyenas	struck
 kick	sent
 knee	rose
 knob-stick	brandishing
-latticework barrier	pulled
 leader	paused
 legs	sniffed
 life	known
-lion numa	hold
-lion numa	lie
-lion numa	moaned
-lion numa	moved
-lion numa	neared
-lion numa	restrain
-lion numa	roared
 man-mind	admitted
 mat	brought
 mat	got
@@ -2920,25 +2557,21 @@ piles	shot
 pit	returned
 pit	shut
 quarters	drawing
-rope part	hurtle
 servants	prevail
 shoulder	saw
 shriek	rising
 silence	shot
 stallion	gathering
 stallion	neared
-thorn bush	crouched
 throat	leaping
 time	gained
 time	thought
 trail	broadened
 trail	hesitating
-tree trunk	draw
 vengeance	forego
 vessel	filled
 victim	give
 voice	rising
-walls bukawai	trembled
 water	approached
 water	lead
 yours	tied
@@ -2995,7 +2628,6 @@ eyes	fell
 fate	cast
 feast	delayed
 feast	partake
-feeding lion	wrest
 feet	walked
 filly	burned
 filly	charged
@@ -3024,13 +2656,10 @@ lion	make
 lithe	elude
 males	collected
 man-mind	looked
-mating season	aroused
-mating season	loved
 meal	snatch
 means	saw
 missile	suffered
 missiles	reach
-mother ape	seized
 muscles	respected
 necessity	saw
 others	approached
@@ -3070,7 +2699,6 @@ trees	surrounding
 twig	robbed
 twig	snapped
 twig	snapping
-velvet muzzle	dipped
 voice	aroused
 volley	smothered
 water	dipped
@@ -3091,8 +2719,6 @@ attention	attracted
 attention	turn
 balu	snatched
 balus	feed
-bean pods	discarded
-bean pods	dropping
 beast-youth	gave
 branch	closed
 buffalo	amused
@@ -3103,7 +2729,6 @@ bull	shot
 bull	turned
 bulls	appeared
 burden	leaped
-burning planets	looking
 cabin	visiting
 cat	scampered
 corpse	carried
@@ -3139,7 +2764,6 @@ insults	barking
 kill	robbed
 kill	turned
 kreeg-ah	brought
-leathern lungs	brought
 limb	wresting
 lion	looked
 lion	paused
@@ -3161,7 +2785,6 @@ night	lay
 others	need
 others	sought
 others	watch
-others feed	keep
 palisade	overhangs
 panic	sent
 parading	see
@@ -3226,7 +2849,6 @@ breast	waxed
 cats	increased
 challenge	shrieked
 chest	issued
-childhood playmate	struck
 conviction	increased
 cough	issued
 cough	moan
@@ -3239,7 +2861,6 @@ day	proved
 days	died
 defense	risked
 doubts	assailed
-dozen times	hit
 ear	seized
 elephant	died
 example	chastened
@@ -3267,7 +2888,6 @@ head	revealing
 head	shook
 head	tugged
 hunger	satisfy
-hunting dance	renewed
 instant	fell
 instant	paused
 knees	crawl
@@ -3279,7 +2899,6 @@ life	risked
 line	draw
 lion	fallen
 lion	rushed
-lion standing	see
 lips	raised
 mass	dropped
 meat	turned
@@ -3291,14 +2910,12 @@ oath	swore
 odor	gave
 opportunity	given
 others	followed
-part tarzan	fed
 place	taking
 prey	frightened
 rat	swelled
 receptacle	reach
 rocks	gathered
 side	sprang
-steel fingers	closed
 stomachs	seemed
 stones	menaced
 stuff	spat
@@ -3331,7 +2948,6 @@ warriors	surrounded
 watcher	remain
 way	barred
 way	eat
-whereat numa	started
 years	left
 afternoon	persisted
 ape-man	clambered
@@ -3426,15 +3042,12 @@ hold	relaxed
 hold	seemed
 hours	carried
 hours	waking
-hunting blade	drove
-hunting blade	snatched
 instant	rest
 instant	toppled
 jaws	drag
 jaws	opened
 jowls	drooping
 jungle	hurtling
-jungle silence	leaped
 knowledge	spoken
 language	spoken
 life	come
@@ -3505,39 +3118,21 @@ beast	gripped
 beast	growled
 blade	plunged
 blood	faded
-blood gorilla	stood
 body	touched
 book	fell
 breeze	tempered
 bugs	bring
 bugs	thought
-bull ape	attempted
-bull ape	battered
-bull ape	bring
-bull ape	contended
-bull ape	dared
-bull ape	maddened
-bull ape	return
-bull ape	roamed
-bull ape	sought
-bull ape	submit
-bull ape	wronged
 cabin	cooped
 cabin	find
 cabin	gained
 cabin	shot
 cabin	turned
-cabin door	closed
-cabin door	open
-cabin door	saw
 cheek	fanned
 correspondent	favor
 custom	fixed
 custom	relaxed
 decision	come
-dream gorilla	buried
-dream gorilla	seized
-dream gorilla	turned
 effort	wrenched
 enemy	trespassed
 eye	noted
@@ -3545,7 +3140,6 @@ eyes	brushed
 eyes	feast
 eyes	fell
 eyes	glowering
-eyes half	closed
 face	bared
 face	raising
 fangs	bared
@@ -3585,18 +3179,12 @@ hands	seized
 heart	rested
 heavens	raising
 hold	loosed
-hunting knife	fingered
-hunting knife	found
-hunting knife	lain
-hunting knife	reached
 incident	awaited
 instant	paused
 instincts	aroused
 instincts	fighting
-interruption tarzan	amazed
 intruders	close
 jungle	roamed
-jungle folk	hide
 kill	looking
 letters	commenced
 letters	thought
@@ -3607,7 +3195,6 @@ male	claim
 males	foraged
 manner	run
 mate	enter
-mating time	arrived
 matter	retained
 mind	arose
 moment	amazed
@@ -3635,8 +3222,6 @@ shoulder	loosed
 shoulder	slip
 shoulder	whirling
 shriek	voiced
-sleep adventure	grinned
-sleep adventures	sleep
 steps	staggered
 stranger	fight
 table	lain
@@ -3645,7 +3230,6 @@ thought	glanced
 thoughts	befuddling
 throat	get
 time	wriggled
-time bolgani	alter
 torso	push
 treasures	make
 trees	racing
@@ -3662,7 +3246,6 @@ week	roamed
 whim	seized
 anger	fled
 ape	squatted
-ape clung	snapping
 apes	dropped
 arms	lift
 arms	look
@@ -3725,18 +3308,12 @@ hands	seized
 hold	clutching
 hold	loosen
 hour	passed
-instant toog	lift
 insult	screamed
-jungle breeze	scent
-jungle haunts	strewed
-jungle opprobrium	applied
 knuckles	beat
 kreeg-ah	warned
 legs	look
 limb	swaying
 lips	clucking
-lord greystoke	fashioned
-lord greystoke	remained
 methods	altered
 morning	gone
 muzzle	broke
@@ -3748,7 +3325,6 @@ pages	turned
 pictures	glanced
 pieces	contained
 place	returned
-quasi submission	lapsed
 race	come
 right	prove
 sea	gone
@@ -3796,7 +3372,6 @@ back	lie
 bag	contained
 bag	returned
 balu	loved
-balus feed	let
 bed	looked
 bed	rolled
 body	hurled
@@ -3805,8 +3380,6 @@ branches	reached
 breakfast	digested
 breast	placed
 bulk	launched
-bull ape	chanced
-bull ape	wandering
 bulls	appealed
 bulls	commenced
 bulls	overhaul
@@ -3821,8 +3394,6 @@ characters	protect
 characters	thought
 characters	work
 coat	caressed
-community instinct	ingrained
-community instinct	sent
 creature	seemed
 cry	giving
 cry	turned
@@ -3837,10 +3408,6 @@ enemy	overhaul
 enemy	protect
 enemy	require
 enemy	watching
-enemy offender	following
-enemy offender	punish
-enemy offender	pursue
-enemy offender	wrest
 feet	leaping
 feet	sprang
 figures	arrange
@@ -3848,11 +3415,8 @@ fingers	closed
 foe	told
 form	saw
 form	sniffed
-gold piece	found
-gold piece	lost
 grass	lay
 ground	lay
-ground step	examining
 growl	broke
 heads	scratched
 hunter	found
@@ -3867,9 +3431,7 @@ lips	broke
 maid	carry
 man	seeing
 man	seen
-mangy neck	snapped
 matron	carry
-moment taug	sniffed
 muzzle	smoothed
 nose	placing
 off-spring	called
@@ -3884,7 +3446,6 @@ pieces	torn
 place	paralyzed
 place	reached
 prize	wrest
-rescue teeka	overhaul
 return	heard
 rim	projecting
 senses	told
@@ -3896,7 +3457,6 @@ sound	told
 speed	hurried
 speed	increased
 speed	warned
-stranger bull	occur
 surface	leaving
 table	arrange
 things	happen
@@ -3931,7 +3491,6 @@ apes	waited
 approach	waited
 balu	held
 bark	find
-bertillon measurements	equipped
 boulders	dotted
 branch	scolding
 branch	swaying
@@ -3961,16 +3520,10 @@ fate	resigned
 feet	erect
 fellows	exhibit
 fellows	squawked
-foliage branches	followed
-foliage branches	passed
-foliage branches	swinging
 forest	reverberated
-forest giants	bending
-forest giants	spills
 friends	come
 friends	recognized
 friends	wait
-game trail	followed
 glaciers	rolled
 gorilla	walk
 gray-beard	looked
@@ -3994,9 +3547,6 @@ judgment	told
 jungle	beats
 jungle	leading
 jungle	shot
-jungle trail	flew
-jungle trail	follow
-jungle trail	took
 king	forgotten
 king	wish
 leaf	brushed
@@ -4047,8 +3597,6 @@ shoulder	holding
 shrubbery	hid
 spoor	becoming
 spoor	told
-stranger bull	showed
-stranger bulls	pass
 sun	beats
 sun	overcast
 things	helped
@@ -4090,19 +3638,7 @@ branch	huddled
 bravos	shrilling
 bull	dying
 bull	relaxed
-bull ape	brushed
-bull ape	cared
-bull ape	grasped
-bull ape	picked
-bull ape	possessed
-bull ape	rubbed
-bull ape	seemed
-bull ape	sought
-bull ape	tested
-bull ape	turned
-bull ape	worked
 charge	eluded
-childhood playmate	learned
 clearing	claiming
 clinches	broken
 ease	dealt
@@ -4124,12 +3660,10 @@ fighters	seen
 forbear	transmitted
 form	dodging
 form	inflicting
-granite boulder	battling
 graybeard	care
 graybeard	leaped
 graybeard	wanted
 groan	relaxed
-grove tarzan	forced
 hand	shot
 hand	toss
 hand	wrenched
@@ -4139,10 +3673,7 @@ head	scratched
 head	shook
 head	toss
 hills	awakening
-hunting knife	free
-hunting knife	stuck
 jungle	reverberated
-jungle grasses	screaming
 knife	held
 knife	picked
 knife	saw
@@ -4150,14 +3681,11 @@ knife	seen
 knife	used
 knife	wrenched
 life	saved
-lord greystoke	know
-lord greystoke	turned
 mass	rolling
 minutes	torn
 missiles	gathered
 missiles	throw
 moment	falling
-moment tarzan	torn
 monkey	danced
 monkey	screamed
 noise	heard
@@ -4185,14 +3713,10 @@ spirits	forgot
 spirits	understand
 stone	rubbed
 strands	hanging
-stranger bulls	fled
-stranger bulls	hurled
-stranger bulls	leaped
 strangers	need
 strokes	relaxed
 swift	relaxed
 task	labored
-teeka standing	seen
 throat	clutched
 trail	rolled
 tribe	arose
@@ -4205,7 +3729,6 @@ ways	understand
 youth	forgot
 animal	quieted
 animals	trapped
-antennae brushing	stopped
 ape-man	buried
 ape-man	concerned
 ape-man	crouched
@@ -4265,9 +3788,6 @@ fellows	ripened
 fellows	sang
 fellows	watched
 fetes	rendered
-fiber cord	adjusted
-fiber cord	disturbing
-fiber cord	tucked
 fingers	removed
 forehead	felt
 forest	moved
@@ -4279,9 +3799,6 @@ ground	choked
 ground	dropping
 hole	scraping
 home	learned
-hunting knife	dragged
-hunting knife	quieted
-hunting knife	removed
 huts	put
 idea	permitted
 image	crouched
@@ -4300,8 +3817,6 @@ kid	tying
 lids	narrowed
 lids	watched
 life	trapped
-lion hunt	organized
-living bait	loosened
 man-mind	entertain
 moment	buzzed
 moment	heard
@@ -4313,7 +3828,6 @@ moment	struck
 morrow	come
 mud	scraping
 north	coming
-o rabba kega	rest
 occasions	freed
 occasions	watched
 oppressors	seek
@@ -4326,10 +3840,7 @@ scream	essayed
 shoulder	swinging
 smile	kept
 smile	touched
-steel fingers	throttled
 steps	retraced
-tarzan half	kneeled
-tarzan half	rose
 things	grow
 things	spelled
 throat	paused
@@ -4358,13 +3869,10 @@ body	broke
 captive	find
 cat	stretched
 chagrin	cause
-cold sweat	broke
 dancing	worked
 determination	formed
 doom	sealed
 door	dropped
-drinking hole	approaching
-elephant path	dragged
 entertainment	needed
 explanation	find
 fact	gathered
@@ -4377,8 +3885,6 @@ hands	washed
 heart	rose
 heart	sank
 heavens	tinged
-honey bird	attracted
-honey bird	led
 horror	saw
 hours	elapsed
 hunger	satisfy
@@ -4459,7 +3965,6 @@ warrior	organized
 warrior	remained
 warrior	sent
 warriors	placed
-water hole	swung
 whites	showed
 witch-doctor	altered
 witch-doctor	forgotten
@@ -4501,9 +4006,6 @@ dancer	searched
 dancers	centered
 dancers	take
 dances	seen
-dancing warriors	paused
-dancing warriors	saw
-dancing warriors	stand
 density	held
 design	carry
 designs	glistened
@@ -4516,10 +4018,6 @@ devil-god	menacing
 devil-god	show
 devil-god	think
 door	raised
-dozen men	mauled
-dusky audience	centered
-dusky audience	stood
-ebon body	glistened
 ebony	muscled
 example	following
 exteriors	lurked
@@ -4532,27 +4030,21 @@ firelight	leaped
 firelight	step
 forefront	stood
 forest	dragged
-forest trees	saw
-forest trees	ventured
 game	come
 gates	move
 guards	dozing
-haunting fear	lurked
 head	peered
 head	saw
 hour	napping
 hut	peered
 huts	circled
-instant tarzan	gave
 intention	abandon
-jungle demon	rid
 kill	come
 kind	resumed
 legs	erect
 lion	charging
 lion	lay
 lion	leaving
-lion head	fell
 man	changed
 matter	placed
 moment	break
@@ -4562,7 +4054,6 @@ opportunity	waited
 paces	stood
 palisade	overhung
 palisade	ranging
-path opening	leaving
 paw	splintering
 paw	swept
 places	take
@@ -4585,18 +4076,14 @@ tawny	saw
 thing	fear
 thing	gathered
 treasures	kept
-tree tarzan	saw
-tree tarzan	smiled
 victim	rolled
 village	escape
 village	leaped
 village	remained
 village	returned
 village	stolen
-village street	move
 villagers	fled
 villagers	paid
-war spear	swept
 warrior	crouched
 warrior	leaped
 warrior	struck
@@ -4606,7 +4093,6 @@ warriors	left
 warriors	summoning
 warriors	surrounded
 warriors	swung
-wide eyes	rolled
 wits	gathered
 woman	saw
 woman	screamed
@@ -4626,7 +4112,6 @@ blackness	continued
 blacks	saw
 blacks	shivered
 blaze	huddled
-boma wall	cleared
 brain	comprehend
 brain	roused
 brain	transmitted
@@ -4657,9 +4142,7 @@ darkness	flamed
 darkness	lurking
 day	fed
 day	ruled
-daylight aspects	differ
 desire	goaded
-differences tarzan	loved
 displeasure	evidenced
 displeasure	increasing
 entertainment	beginning
@@ -4700,7 +4183,6 @@ lion	coming
 lion	surmised
 lions	glowed
 lions	halted
-living creature	ruled
 man	called
 man	cast
 man	doomed
@@ -4712,13 +4194,11 @@ moment	stood
 moon	ruled
 moon	shone
 moon	watched
-moon personalities	attribute
 muscles	directed
 muscles	pit
 night	differ
 night	investigate
 night	ruled
-night wind	borne
 north	rounding
 occasions	investigated
 origin	strengthen
@@ -4730,18 +4210,12 @@ reason	saw
 retreats	paid
 roar	followed
 sensation	imparted
-sense perceptions	translated
-sense perceptions	transmitted
 shades	has
 side	cleared
 speculation	caused
 stars	watched
 sun	attribute
 sun	ruled
-thorn boma	advanced
-thorn boma	circling
-thorn boma	constructed
-thorn boma	faced
 thought	passing
 thoughts	roused
 throat	considered
@@ -4750,8 +4224,6 @@ time	lay
 times	brought
 tragedy	reenacted
 tree	bolted
-tree tops	brush
-tree tops	crooning
 trees	encircling
 trees	sleeping
 tribe	sleeping
@@ -4772,7 +4244,6 @@ ape	freed
 ape	gaze
 ape	scratched
 ape	wondered
-ape-man dancing	seen
 apes	danced
 apes	speak
 apes	understand
@@ -4815,7 +4286,6 @@ habit	fought
 head	filled
 head	scratched
 heavens	looked
-horny finger	bit
 imagination	appealed
 imagination	sprang
 impression	carried
@@ -4834,7 +4304,6 @@ moon	charge
 moon	talked
 night	deserted
 night	sleeps
-night numa	leap
 nose	see
 nuts	given
 opinion	voiced
@@ -4874,11 +4343,8 @@ stars	watching
 summons	sensing
 sun	attributed
 sun	turned
-tarzan half	glanced
-tarzan ride	seeing
 things	tarzan
 things	thought
-things apes	speak
 thought	overwhelmed
 time	lay
 time	saw
@@ -4919,11 +4385,6 @@ cranium	resting
 cry	halted
 directions	followed
 dirt	groveled
-dozen bulls	saw
-dozen bulls	work
-dozen bulls	worked
-dozen bulls	working
-dozen times	repeat
 elbows	resting
 eyes	facing
 feet	groveled
@@ -4968,19 +4429,14 @@ picture-books	learned
 possibility	admit
 prey	tearing
 prowess	recounted
-scream tarzan	hated
-scream tarzan	slain
-scream tarzan	sprang
 side	hanging
 spear	trembling
 tactics	repeat
-tender branch	pluck
 tip	caress
 trail	commanding
 trail	moved
 tree	leaped
 tree	pluck
-tree people	ran
 trunk	curled
 tusker	moved
 tusker	turned
@@ -4992,7 +4448,6 @@ warrior	stepped
 way	go
 way	lurk
 aid	go
-answering lion	devoured
 anthropoids	cries
 ape-man	aimed
 ape-man	caress
@@ -5025,7 +4480,6 @@ call	voiced
 challenge	shrilled
 death	face
 devil-god	run
-dozen times	determined
 face	shrilled
 fang	enter
 feast	watching
@@ -5050,7 +4504,6 @@ night	trembled
 others	keep
 piece	eaten
 point	aimed
-rate goro	gone
 scream	leaped
 scream	screaming
 shaft	drawing
@@ -5060,7 +4513,6 @@ spear	couched
 spots	devour
 stride	took
 surface	shining
-tarzan names	called
 thing	happened
 thing	interfered
 thought	gave

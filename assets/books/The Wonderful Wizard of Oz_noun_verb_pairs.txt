@@ -5,10 +5,7 @@ aunt	follow
 baby	rocked
 balloon	going
 beds	looking
-cooking stove	looking
 cradle	rocked
-cyclone cellar	called
-cyclone cellar	go
 direction	coming
 dishes	washing
 door-step	sat
@@ -66,17 +63,6 @@ thing	happened
 times	whirled
 trap-door	closing
 trap-door	got
-uncle henry	called
-uncle henry	know
-uncle henry	laughed
-uncle henry	lived
-uncle henry	looked
-uncle henry	ran
-uncle henry	sat
-uncle henry	see
-uncle henry	spoke
-uncle henry	stood
-uncle henry	worked
 voice	reached
 waves	bowed
 wife	called
@@ -128,7 +114,6 @@ shock	awakened
 shoulders	hung
 sights	looking
 sights	saw
-silver shoes	rested
 sorceress	calling
 speech	listened
 sun	glistened
@@ -140,10 +125,8 @@ woman	walked
 wrinkles	covered
 years	held
 aunt	get
-aunt em	told
 cap	changed
 cap	took
-chalk marks	written
 child	answered
 countries	believe
 dust	shaking
@@ -154,14 +137,11 @@ head	bowed
 heads	shook
 house	carried
 magicians	believe
-name dorothy	asked
 nose	took
 people	love
 point	balanced
 question	ask
 shout	gave
-silver shoes	carried
-silver shoes	picked
 slate	changed
 slate	read
 slate	took
@@ -227,12 +207,10 @@ house	pass
 journey	bowed
 journey	walked
 kiss	give
-leather shoes	took
 lips	touched
 man	get
 man	seen
 man	tell
-moment dorothy	saw
 night	pass
 nod	gave
 one	dare
@@ -290,7 +268,6 @@ figure	nodded
 figure	raised
 freedom	celebrate
 friends	gathered
-friends good-bye	bade
 girl	asked
 girl	back
 girl	going
@@ -310,20 +287,14 @@ man	walk
 miles	gone
 morning	slept
 munchkin	belonged
-munchkin baby	played
-munchkin baby	pulled
-munchkin baby	watched
 night	pass
 people	greeted
 people	invited
 people	pass
-people dance	watched
 queer	looking
 queer	painted
 rug	curled
 settee	sat
-silver shoes	saw
-silver shoes	wear
 sorceress	saw
 sorceresses	wear
 supper	ate
@@ -333,7 +304,6 @@ way	nodded
 witch	killed
 witch	know
 witch	think
-witch color	know
 witches	know
 addition	like
 brains	give
@@ -495,10 +465,8 @@ party	join
 passage	cleared
 place	ran
 release	thanked
-scarecrow brains	give
 steps	discovered
 teeth	hurt
-tin legs	hurt
 travellers	pass
 tree	leaned
 trees	fell
@@ -506,7 +474,6 @@ trees	walked
 year	groaning
 action	angered
 arms	cut
-aunt em	get
 axe	cut
 axe	enchanted
 axe	slipped
@@ -551,14 +518,6 @@ love	kill
 marriage	prevent
 misfortune	knew
 misfortune	seemed
-munchkin girl	come
-munchkin girl	living
-munchkin girl	lost
-munchkin girl	married
-munchkin girl	marry
-munchkin maiden	go
-munchkin maiden	kill
-munchkin maiden	marry
 oil-can	kept
 oil-can	needed
 oil-can	protect
@@ -569,7 +528,6 @@ road	paved
 sheep	promised
 side	walked
 story	tell
-tin ones	replaced
 tin-smith	make
 tinner	happened
 trees	hidden
@@ -611,7 +569,6 @@ life	makes
 lion	thought
 man	striking
 man	stuffed
-meat dog	's
 nose	help
 nose	hit
 nose	know
@@ -633,9 +590,6 @@ woodman	fell
 woodman	helped
 woodman	lay
 woodman	struck
-ant toiling	harm
-ant toiling	saw
-ant toiling	step
 axe	chopped
 basket	enabled
 basket	fill
@@ -644,7 +598,6 @@ basket	put
 basket	seized
 basket	took
 beasts	keep
-beetle i	cry
 brains	give
 brook	bathed
 brook	rippling
@@ -786,11 +739,6 @@ moment	seemed
 moment	think
 moments	sat
 noises	heard
-queer bridge	cross
-rate idea	chop
-rate idea	fall
-rate idea	standing
-rate idea	walk
 river	cross
 rocks	dented
 side	fall
@@ -818,36 +766,6 @@ bottom	touch
 brains	get
 cornfield	make
 courage	get
-cowardly lion	began
-cowardly lion	carried
-cowardly lion	cheer
-cowardly lion	drawn
-cowardly lion	enchant
-cowardly lion	felt
-cowardly lion	gazed
-cowardly lion	get
-cowardly lion	got
-cowardly lion	knew
-cowardly lion	know
-cowardly lion	lay
-cowardly lion	look
-cowardly lion	looked
-cowardly lion	make
-cowardly lion	pull
-cowardly lion	reached
-cowardly lion	remarked
-cowardly lion	rested
-cowardly lion	sat
-cowardly lion	saw
-cowardly lion	seeing
-cowardly lion	shook
-cowardly lion	started
-cowardly lion	stepped
-cowardly lion	swim
-cowardly lion	think
-cowardly lion	tipped
-cowardly lion	tired
-cowardly lion	walked
 crows	save
 discouragements	suffered
 edge	rest
@@ -881,7 +799,6 @@ pole	stuck
 pole	took
 poles	push
 poles	touch
-queer party	looked
 raft	build
 raft	floated
 raft	make
@@ -893,8 +810,6 @@ river	breakfasted
 river	carried
 river	cut
 river	looked
-river bank	found
-river bank	walk
 shore	reached
 shore	swim
 side	float
@@ -929,7 +844,6 @@ distance	fallen
 dog	keep
 dog	put
 ears	lying
-emerald city	find
 eyes	closed
 eyes	dazzled
 eyes	glowed
@@ -961,16 +875,6 @@ growl	heard
 hands	make
 head	turning
 hinges	worked
-kind stork	carry
-kind stork	find
-kind stork	flew
-kind stork	flying
-kind stork	go
-kind stork	hope
-kind stork	like
-kind stork	saved
-kind stork	thank
-kind stork	try
 lap	put
 mistress	fallen
 odor	breathes
@@ -990,8 +894,6 @@ arms	get
 bow	making
 chorus	cried
 coward	declared
-cowardly lion	carry
-cowardly lion	lay
 deed	brave
 dog	caught
 enemy	freed
@@ -1023,9 +925,6 @@ mouth	brought
 orders	heard
 sleep	awakened
 sleep	woke
-tin man	killed
-tin man	saved
-tin man	serve
 trees	go
 truck	draw
 truck	fasten
@@ -1059,9 +958,6 @@ day	sits
 dinner	ate
 door	walked
 eyes	open
-farm house	entered
-farm house	look
-farm house	sized
 farmer	lived
 field-mice	told
 fields	breathe
@@ -1092,12 +988,8 @@ mice	scampered
 mice	stayed
 mice	thanked
 mice	unharnessed
-munchkins blue	allow
-munchkins blue	stop
-munchkins blue	wish
 night	pass
 one	spoke
-oz dwelt	reached
 peep	taking
 people	dressed
 people	fall
@@ -1109,7 +1001,6 @@ people	seem
 people	wore
 place	give
 poppies	stayed
-poppy bed	rolled
 presence	come
 queen	feared
 queen	gave
@@ -1190,7 +1081,6 @@ spectacles	put
 supper	get
 table	gathered
 tail	wagged
-tinkle sound	heard
 way	has
 way	started
 way	try
@@ -1236,13 +1126,6 @@ girl	follow
 girl	replied
 girl	show
 glasses	put
-great oz	ordered
-great oz	see
-great oz	seen
-great oz	send
-great oz	tell
-great wizard	carry
-green candy	offered
 head	locked
 horses	seemed
 joints	moving
@@ -1252,8 +1135,6 @@ lion	saw
 maiden	dressed
 man	fitted
 man	selling
-marble basin	carved
-marble basin	fall
 mat	wipe
 men	carried
 men	led
@@ -1266,7 +1147,6 @@ mothers	hid
 neck	wore
 one	spoke
 palace	show
-palace gates	passed
 passages	followed
 pennies	paid
 place	bought
@@ -1287,7 +1167,6 @@ scarecrow	wasted
 screen	sat
 shoes	offered
 shops	stood
-silk gown	dressed
 spectacles	fitted
 spectacles	wear
 spot	stood
@@ -1300,7 +1179,6 @@ web	weaving
 windows	stood
 yourselves	go
 answer	give
-aunt em	worried
 bell	rang
 chair	shaped
 charm	bear
@@ -1344,15 +1222,6 @@ girl	sobbed
 girl	took
 girl	wish
 great	moved
-great oz	am
-great oz	answered
-great oz	asked
-great oz	felt
-great oz	help
-great oz	killed
-great oz	moved
-great oz	see
-great oz	wanted
 head	come
 head	give
 head	help
@@ -1378,8 +1247,6 @@ ribbon	tied
 signal	looked
 signal	rang
 signal	told
-silk apron	put
-silver shoes	mentioned
 times	winked
 truth	telling
 voice	continued
@@ -1405,20 +1272,6 @@ head	feel
 head	find
 head	has
 head	taken
-head dorothy	answered
-head dorothy	help
-head dorothy	kill
-head dorothy	killed
-head dorothy	kills
-head dorothy	lay
-head dorothy	left
-head dorothy	needs
-head dorothy	seen
-head dorothy	send
-head dorothy	sent
-head dorothy	sleep
-head dorothy	surprised
-head dorothy	told
 heart	beg
 heart	desire
 heart	earn
@@ -1442,10 +1295,6 @@ roar	spake
 shoulders	growing
 thick	covered
 throne	sitting
-throne room	admitted
-throne room	entered
-throne room	left
-throne room	saw
 uncle	know
 uncle	see
 weight	hold
@@ -1454,7 +1303,6 @@ witch	dies
 witch	kill
 witch	remember
 wizard	seen
-aunt em	see
 axe	sharpened
 beast	come
 beast	give
@@ -1520,8 +1368,6 @@ road	answered
 room	reached
 room	roll
 room	rushed
-silk gown	fall
-silk gown	try
 slaves	replied
 spectacles	unlocked
 spot	crept
@@ -1530,9 +1376,7 @@ streets	led
 surprise	gaze
 surprise	glancing
 tears	fall
-throne room	led
 time	burned
-uncle henry	see
 voice	bring
 voice	give
 voice	seek
@@ -1568,7 +1412,6 @@ crows	stretched
 directions	running
 distance	blew
 dog	scatter
-emerald city	left
 eyes	peck
 faces	shone
 flock	flew
@@ -1593,9 +1436,6 @@ head	caught
 head	chopped
 heap	lying
 journey	started
-king crow	flew
-king crow	fly
-king crow	peck
 lion	got
 lion	lay
 lion	tired
@@ -1621,7 +1461,6 @@ strangers	travelling
 straw	covered
 straw	put
 straw	take
-sun sets	shone
 teeth	gnashed
 times	blew
 times	killed
@@ -1649,19 +1488,9 @@ commands	obeyed
 country	rule
 court-yard	amuse
 court-yard	go
-cowardly lion	bounded
-cowardly lion	destroy
-cowardly lion	gave
-cowardly lion	ran
-cowardly lion	scared
-cowardly lion	shut
-cowardly lion	sprang
-cowardly lion	threw
-cowardly lion	tied
 creatures	command
 crows	gone
 distance	fell
-door step	set
 eyes	look
 feet	looked
 feet	stood
@@ -1705,8 +1534,6 @@ roar	gave
 rocks	covered
 rocks	fell
 shoulders	surrounded
-silver shoes	gave
-silver shoes	seeing
 sky	darkened
 slave	make
 sound	heard
@@ -1754,7 +1581,6 @@ head	put
 heaps	lying
 holiday	kept
 hours	cry
-kitchen floor	walked
 leg	bit
 lion	answer
 lion	bite
@@ -1769,9 +1595,6 @@ shoe	back
 shoe	retorted
 shoe	take
 shoes	take
-silver shoe	dried
-silver shoe	picking
-silver shoe	put
 time	spent
 troubles	talked
 voice	asked
@@ -1822,7 +1645,6 @@ days	spent
 days	twisting
 days	worked
 diamonds	studded
-emerald city to-morrow	start
 eyes	wiped
 fields	lost
 flowers	smelling
@@ -1858,13 +1680,8 @@ others	reunited
 others	stuffed
 others	thanking
 oz	go
-people tinsmiths	are
-people tinsmiths	told
 place	come
 room	walked
-silver oil-can	inlaid
-silver oil-can	offered
-silver oil-can	set
 sun	go
 sun	rising
 sunbonnet	carry
@@ -1896,15 +1713,8 @@ travellers	started
 travellers	walk
 tree	chop
 tree	fell
-walking stick	gave
 way	started
-winged monkeys	remember
-winged monkeys	sent
-winged monkeys	tossed
 wishes	gave
-yellow castle	carried
-yellow castle	spent
-anybody master	calling
 birds	chasing
 bit	grumble
 brains	get
@@ -1924,7 +1734,6 @@ directions	read
 dog	bite
 dog	tried
 feet	standing
-field mice	call
 foot	standing
 forest	living
 forest	walked
@@ -1960,10 +1769,6 @@ tongue	put
 voice	asked
 way	find
 way	lost
-winged monkeys	call
-winged monkeys	carry
-winged monkeys	hurt
-winged monkeys	treated
 wings	flapping
 arms	carried
 band	dropped
@@ -1987,15 +1792,11 @@ land	rule
 lion	replied
 man	grew
 monkey	replied
-monkey king	bowed
-monkey king	finished
-monkey king	flew
 north	lived
 people	help
 princess	brought
 princess	dropped
 princess	knew
-princess half	cost
 river	dropped
 river	drown
 river	ruined
@@ -2021,7 +1822,6 @@ wings	tied
 winkies	enslave
 wishes	lay
 word	flew
-aunt em	telling
 axe	raising
 brains	give
 corner	stood
@@ -2053,7 +1853,6 @@ roar	gave
 rooms	showed
 row	stood
 spot	standing
-throne room	come
 toto	jumped
 toto	tipped
 travellers	come
@@ -2062,10 +1861,6 @@ travellers	passed
 voice	trembling
 waiting	wearing
 way	looked
-winged monkeys	find
-winged monkeys	help
-winged monkeys	meet
-winged monkeys	met
 air	travelled
 balloonist	tired
 bit	hurt
@@ -2153,7 +1948,6 @@ subjects	see
 tears	wiping
 things	speak
 thread	pulled
-throne room	letting
 time	tired
 way	led
 way	step
@@ -2164,7 +1958,6 @@ balloon	brought
 brains	give
 brains	has
 brains	stuff
-courage to-morrow	come
 desert	carry
 east	live
 guests	treated
@@ -2206,9 +1999,6 @@ promises	keep
 secret	keep
 spectacles	see
 spectacles	wear
-tin woodman	asked
-tin woodman	bear
-tin woodman	give
 wish	obey
 witch	melted
 witches	found
@@ -2240,8 +2030,6 @@ heart	put
 heart	stuffed
 heart	took
 hole	cut
-kind heart	cut
-kind heart	put
 kindness	forget
 kindness	speak
 lion	get
@@ -2260,8 +2048,6 @@ patch	put
 place	put
 room	entered
 straw	emptied
-throne room	rapped
-throne room	walked
 window	engaged
 window	sitting
 balloon	come
@@ -2276,7 +2062,6 @@ courage	get
 cyclone	carried
 cyclone	make
 day	sent
-days dorothy	heard
 desert	come
 desert	cross
 dish	poured
@@ -2302,10 +2087,7 @@ scarecrow	told
 shelf	reaching
 success	take
 success	think
-throne room	entered
 way	get
-way home	find
-aunt em	live
 bag	caught
 balloon	carried
 balloon	fly
@@ -2317,12 +2099,6 @@ balloon	ran
 balloon	rose
 balloon	swelled
 balloon	work
-clothes basket	fastened
-clothes basket	got
-clothes basket	help
-clothes basket	riding
-clothes basket	sent
-clothes basket	touched
 clouds	lived
 crowd	run
 days	grieved
@@ -2367,12 +2143,10 @@ soldier	sent
 tears	watched
 tears	wipe
 throne	sat
-throne room	met
 towel	brought
 towel	wiped
 travellers	met
 travellers	talked
-uncle henry	live
 visit	make
 whiskers	sent
 advice	ask
@@ -2398,11 +2172,6 @@ girl	wishes
 head	bulged
 head	shook
 lion	declared
-monkey king	flew
-monkey king	fly
-monkey king	shook
-monkey king	spread
-monkey king	suppose
 purpose	wasted
 quadlings	left
 quadlings	think
@@ -2410,11 +2179,6 @@ strangers	cross
 tender	burst
 tender	hearted
 window	flew
-winged monkeys	call
-winged monkeys	called
-winged monkeys	carry
-winged monkeys	help
-winged monkeys	thought
 wings	spread
 words	spoke
 air	sniffed
@@ -2424,11 +2188,8 @@ box	put
 branches	seized
 branches	tossed
 city	leave
-city life	agree
 country	being
 faces	turned
-fighting trees	attacked
-fighting trees	seem
 forest	get
 friends	laughed
 friends	ran
@@ -2437,14 +2198,10 @@ friends	took
 friends	turned
 friends	walked
 gate	walked
-girl good-bye	kissed
 grass	slept
 ground	raised
 hands	shook
 look	took
-morning dorothy	going
-morning dorothy	kissed
-morning dorothy	travelled
 night	slept
 oz	kept
 oz	taken
@@ -2456,9 +2213,6 @@ soldier	shook
 spectacles	unlocked
 spreading-branches	discovered
 tail	whisked
-to-morrow morning	go
-to-morrow morning	started
-to-morrow morning	stop
 travellers	flung
 tree	began
 tree	discovered
@@ -2477,14 +2231,8 @@ branch	chopped
 branches	bend
 caps	ruffled
 cast	left
-china cow	broken
-china cow	drew
-china cow	led
-china cow	milking
 colours	painted
 doublets	wearing
-elbow close	holding
-elbow close	nicked
 feet	get
 feet	hurt
 floor	hurt
@@ -2532,7 +2280,6 @@ pins	get
 place	cross
 power	given
 purpose	answer
-queer country	lived
 robes	wearing
 shepherds	dressed
 shop	glued
@@ -2575,16 +2322,6 @@ animals	scampered
 basket	carry
 beast	wish
 cheeks	puffing
-china church	smashed
-china church	upset
-china country	walked
-china girl	asked
-china girl	cried
-china lady	continued
-china lady	trying
-china princess	answered
-china wall	climbing
-china wall	jumped
 church	breaking
 clown	covered
 clown	declared
@@ -2610,12 +2347,6 @@ legs	gathered
 life	answered
 life	like
 mantle-shelf	stand
-mr. joker	broken
-mr. joker	comes
-mr. joker	cracked
-mr. joker	look
-mr. joker	mended
-mr. joker	mind
 pieces	smashed
 place	seen
 places	mended
@@ -2632,9 +2363,7 @@ back	landed
 beasts	bowed
 body	joined
 body	knocked
-cannon ball	struck
 claws	armed
-comrades good-bye	bade
 creature	attack
 creature	prevent
 end	put
@@ -2694,10 +2423,6 @@ lion	waiting
 lion	watched
 meeting	holding
 mishap	caused
-moment dorothy	helped
-moment dorothy	ran
-moment dorothy	saw
-moment dorothy	thought
 monster	crawls
 monster	eaten
 monster	fight
@@ -2726,11 +2451,9 @@ travellers	passed
 travellers	seen
 voice	cross
 voice	replied
-voice cry	heard
 way	followed
 adventures	met
 air	rose
-aunt em	think
 axe	leaned
 band	stood
 bridges	walked
@@ -2743,16 +2466,12 @@ cyclone	brought
 door	knocked
 dust	shook
 face	washed
-farm house	answered
-farm house	gave
-farm house	opened
 fields	walked
 girl	answered
 girl	looked
 girl	returned
 girls	dressed
 girls	trimmed
-gold braid	trimmed
 grain	showed
 grass	showed
 hair	combed
@@ -2772,32 +2491,18 @@ road	take
 room	followed
 service	need
 shape	patted
-soldier girl	asked
-soldier girl	followed
 south	take
-south country	come
 times	command
 toto	caught
 travellers	caught
 travellers	knocked
 travellers	walked
-uncle henry	afford
 uniforms	dressed
 wife	answered
 wife	come
 wife	opened
 wish	make
 witch	died
-witch glinda	answered
-witch glinda	ask
-witch glinda	give
-witch glinda	kissed
-witch glinda	leaned
-witch glinda	receive
-witch glinda	replied
-witch glinda	sat
-witch glinda	see
-witch glinda	tell
 woman	eat
 woman	thanking
 words	uttered
@@ -2806,8 +2511,6 @@ air	fallen
 arms	jumped
 arms	threw
 arms	took
-aunt em	come
-aunt em	take
 barn	running
 barnyard	milking
 cabbages	water
@@ -2834,13 +2537,11 @@ forest	lies
 forest	stood
 friends	shown
 girl	give
-good-bye kiss	give
 head	patting
 heels	knock
 home	returned
 house	come
 joints	weeping
-kansas prairie	sitting
 kindness	thanked
 kingdom	rule
 kisses	covering
@@ -2850,12 +2551,7 @@ lion	declared
 lion	lived
 lion	looked
 neck	threw
-silver shoes	carry
-silver shoes	fallen
-silver shoes	lost
-silver shoes	took
 times	clapped
 times	knock
 times	rolled
-winged monkeys	carry
 witch	thanked

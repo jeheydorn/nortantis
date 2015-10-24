@@ -5,13 +5,11 @@ club	exclusive
 columns	ionic
 columns	red
 comb	large-tooth
-complexion rubicund	blue
 contest	congenial
 contrary	avaricious
 credit	open
 cut	shortest
 days	younger
-degrees fahrenheit	shaving-water
 employment	public
 eye	clear
 face	light
@@ -36,16 +34,6 @@ insects	pernicious
 lakes	american
 life	daily
 life	tranquil
-man mr. phileas fogg	absented
-man mr. phileas fogg	best
-man mr. phileas fogg	doubtful
-man mr. phileas fogg	economical
-man mr. phileas fogg	exact
-man mr. phileas fogg	prompt
-man mr. phileas fogg	ready
-man mr. phileas fogg	regular
-man mr. phileas fogg	rich
-man mr. phileas fogg	slow
 manner	mysterious
 manner	taciturn
 master	as
@@ -70,10 +58,8 @@ purpose	noble
 purpose	useful
 remonstrance	mild
 room	same
-round head	good
 sculptors	ancient
 servant	new
-silver watch	enormous
 soles	swan-skin
 step	many
 steps	economical
@@ -98,10 +84,7 @@ years	early
 years	many
 youth	luckless
 air	well-to-do
-autumn colouring	gilded
 band	professional
-bank officials	full
-bank officials	several
 books	useless
 clock	electric
 comer	first
@@ -175,7 +158,6 @@ response	tranquil
 room	good
 room	own
 saturday	due
-saville row	due
 thing	serious
 wednesday	2nd
 wednesday	due
@@ -188,7 +170,6 @@ canal	abridged
 canal	great
 carpet-bag	modest
 cause	popular
-change phileas fogg	servant
 characters	suspicious
 company	oriental
 consul	british
@@ -211,12 +192,7 @@ individuals	rash
 lord	noble
 majority	large
 men	moneyed
-mr. fogg	due
-mr. fogg	glad
-mr. fogg	ready
 night	dark
-ocean steamers	best
-ocean steamers	uncommon
 october	9th
 personage	other
 personage	slight-built
@@ -240,7 +216,6 @@ winter	uncommon
 woman	good
 yesterday	bespoken
 art	real
-coal supply	fresh
 countenances	honest
 crowd	busy
 crowd	half-past
@@ -283,11 +258,7 @@ gentleman	phlegmatic
 gesture	defiant
 hurry	great
 man	honest
-minutes silence	few
-mr. fogg	behind-hand
-mr. fogg	rich
 october	9th
-point paris	principal
 rain	driving
 record	methodical
 reward	large
@@ -349,12 +320,10 @@ body	solid
 bonnets	square
 campaign	fine
 caps	pointed
-carnival wind	parsee
 carriage	same
 ceremonies	curious
 chiefs	native
 churches	armenian
-city hall	famous
 clock	astronomical
 coaches	unwieldy
 coast	eastern
@@ -409,10 +378,7 @@ rogue	mysterious
 sauce	spiced
 sciences	exact
 screech	sharp
-sepoy insurrection	great
-sepoy revolt	last
 side	other
-sir francis cromarty	last
 steamboats	fast
 step	regular
 streams	limpid
@@ -435,9 +401,6 @@ breakfast	hasty
 bungalows	picturesque
 bungalows	several
 change	sudden
-circus shows	suitable
-day sir francis cromarty	necessary
-day sir francis cromarty	next
 days	shorter
 delays	possible
 engineer	english
@@ -458,13 +421,11 @@ owner	irritating
 pagodas	graceful
 palings	high
 pearls	false
-pounds sterling	alluring
 purposes	warlike
 railway	more
 remark	same
 response	confident
 rites	horrible
-river tapty	small
 shoes	frail
 shoes	indian
 shoes	magnificent
@@ -473,7 +434,6 @@ time	long
 timepiece	famous
 timepiece	slow
 travellers	whirling
-vagabond nature	old
 vehicles	such
 wager	interested
 watches	premature
@@ -496,7 +456,6 @@ country	open
 course	straight
 cut	shortest
 distance	equal
-elephant driver	accomplished
 face	intelligent
 fanatics	stupid
 fellow	worthy
@@ -514,13 +473,6 @@ mansion	serene
 miles	several
 motions	angry
 motions	threatening
-mountain fastnesses	inaccessible
-mr. fogg	careful
-mr. fogg	embarrassed
-mr. fogg	expensive
-mr. fogg	present
-mr. fogg	ready
-muslin robe	light
 night	cold
 plains	dry
 plains	vast
@@ -548,7 +500,6 @@ woman	young
 zebus	caparisoned
 ally	enthusiastic
 attempt	ready
-bombay merchant	wealthy
 consultation	last
 creature	unclean
 creature	wretched
@@ -567,7 +518,6 @@ rajah	independent
 ranks	last
 sabres	naked
 sacrifice	human
-sir francis cromarty	burned
 sleep	drunken
 stream	small
 territories	savage
@@ -577,7 +527,6 @@ way	roundabout
 widow	young
 woman	young
 years	several
-allahabad tomorrow	due
 appearance	ghostly
 arms	vigorous
 articles	second-hand
@@ -590,7 +539,6 @@ clouds	heavy
 day	next
 drama	terrible
 ears	curved
-englishman thinking	cool
 expression	indian
 expression	soft
 eyes	clear
@@ -617,7 +565,6 @@ moments	few
 multitude	whole
 night	dark
 noon	due
-otter-skin pelisse	fine
 pace	rapid
 plain	vast
 police	english
@@ -643,7 +590,6 @@ woman	young
 ablutions	pious
 alligators	green
 arrival	actual
-brick mansions	bright
 capital	ancient
 case	first
 city	english
@@ -677,10 +623,8 @@ morning	early
 october	25th
 october	actual
 river	sacred
-rose-water factories	famous
 season	advanced
 seat	best
-sir francis cromarty	whirling
 town	european
 train	more
 villages	neat
@@ -693,9 +637,6 @@ exclamation	imprudent
 fellow	poor
 fool	precious
 lady	young
-man passepartout	crestfallen
-man passepartout	less
-man passepartout	nervous
 october	20th
 pagoda	abominable
 people	indian
@@ -717,7 +658,6 @@ dish	luxurious
 emotion	slightest
 events	familiar
 events	last
-extradition warrant	necessary
 eyes	great
 fortunes	great
 gentleman	mysterious
@@ -734,14 +674,12 @@ man	relative
 mimosa	gigantic
 ocean	indian
 october	30th
-parsee merchants	many
 person	amiable
 person	complacent
 police	local
 politeness	strictest
 refuge	certain
 resource	last
-saddle peak	picturesque
 seas	chinese
 seas	japanese
 servant	worthy
@@ -757,14 +695,12 @@ wire	telegraphic
 woman	difficult
 woman	young
 allusions	mysterious
-and fix go each about	bad
 apples	good-sized
 apples	large
 branches	gorgeous
 carriage	handsome
 clime	tropical
 coast	chinese
-colour outside	dark-brown
 companion	serene
 coolness	practicable
 craft	american
@@ -788,10 +724,6 @@ islets	craggy
 islets	mountainous
 man	honourable
 master	servant
-mr. fogg	anxious
-mr. fogg	heartless
-mr. fogg	ignorant
-mr. fogg	undecided
 november	6th
 occupation	present
 october	30th
@@ -813,7 +745,6 @@ ado	more
 city	important
 coast	opposite
 connection	direct
-cousin jeejeeh	young
 days	several
 detective	disappointed
 detective	disturbed
@@ -823,7 +754,6 @@ fellows	good
 fortune	immense
 gait	brisk
 goods	chinese
-imperial colour	old
 light	same
 magic	strange
 men	ancient
@@ -848,11 +778,7 @@ smile	merry
 speed	rapid
 steamer	next
 streets	macadamised
-tide to-morrow morning	high
 trade	chinese
-trading vessels	chinese
-trading vessels	japanese
-trading vessels	men-of-war
 tranquillity	habitual
 voice	simple
 voice	soft
@@ -895,9 +821,6 @@ man	honest
 man	honourable
 men	honourable
 morning	next
-mr. phileas fogg	capable
-mr. phileas fogg	domestic
-mr. phileas fogg	unconscious
 presumptions	many
 pretext	foolish
 puffs	several
@@ -990,7 +913,6 @@ air	pure
 antipodes	convenient
 behaviour	singular
 boat	wrong
-brass cannon	small
 breeze	capricious
 cabin	second
 cannon	booming
@@ -1014,9 +936,6 @@ miles	due
 mist	broken
 mist	visible
 moment	calmer
-mr. fogg	due
-mr. fogg	more
-mr. fogg	tranquil
 night	quiet
 night	terrible
 oath	angry
@@ -1039,8 +958,6 @@ beverage	odorous
 birds	other
 birds	voracious
 birds	wild
-buddhist priests	shaded
-buddhist priests	sheltered
 cabin	large
 camellias	dazzling
 care	first
@@ -1110,7 +1027,6 @@ profession	military
 quarter	european
 quarter	native
 rice	little
-rice plantations	vast
 saki	drunk
 scarfs	silken
 screens	japanese
@@ -1187,7 +1103,6 @@ wings	vari-coloured
 words	blue
 amazement	utter
 bank	rich
-brick warehouses	wooden
 churches	gothic
 churches	wooden
 circuits	long
@@ -1205,11 +1120,9 @@ deck	forward
 discovery	joyful
 domestics	faithful
 effect	physical
-eightieth meridian	23rd
 emporium	commercial
 emporium	great
 explanation	awkward
-family watch	famous
 fellow	obstinate
 fellow	theatrical
 fellow	unperceived
@@ -1249,7 +1162,6 @@ bruise	black
 bruise	blue
 bruise	enormous
 clothes	tattered
-coal wharf	opposite
 companion	fair
 crowd	great
 expression	placid
@@ -1257,9 +1169,6 @@ fist	clenched
 hand	upper
 hats	black
 hats	many
-honourable mr. camerfield	other
-honourable mr. mandiboy	other
-hotel refreshment-rooms	comfortable
 hubbub	terrific
 hue	darkest
 look	contemptuous
@@ -1267,7 +1176,6 @@ lookers-on	mere
 mass	human
 parts	unequal
 people	full
-petroleum warehouse	large
 plates	diminutive
 posters	large
 precaution	useless
@@ -1342,13 +1250,10 @@ provocation	slightest
 quays	fine
 ranks	compact
 route	southerly
-salt lake	great
 sheet	vast
 sheet	white
 sheets	clean
 sheets	soft
-silk hat	black
-silk hat	white
 snow	fine
 spectacle	curious
 speed	sufficient
@@ -1371,7 +1276,6 @@ cause	different
 centuries	many
 cereals	other
 churches	few
-colonel stamp proctor	same
 colony	new
 country	strange
 creatures	poor
@@ -1398,7 +1302,6 @@ gymnast	amateur
 joys	highest
 ladies	maiden
 messenger	celestial
-mummy showman	simple
 narrative	interested
 narrative	missionary
 paradise	mormon
@@ -1422,7 +1325,6 @@ scene	unpleasant
 sea	interior
 season	good
 sense	common
-silk dresses	black
 story	wearisome
 streams	other
 street	principal
@@ -1443,9 +1345,6 @@ beast	vast
 beast	wild
 birds	large
 breakfast	comfortable
-colonel stamp proctor	conspicuous
-colonel stamp proctor	delighted
-colonel stamp proctor	insolent
 condition	ruinous
 condition	several
 country	difficult
@@ -1476,7 +1375,6 @@ artery	large
 artery	single
 bank	left
 battle	indian
-country round	rich
 engineer	chief
 fellow	poor
 guineas	likely
@@ -1499,7 +1397,6 @@ car	convenient
 car	last
 car	next
 car	vacant
-colonel proctor	second
 door	unperceived
 duel	second
 experience	acrobatic
@@ -1541,7 +1438,6 @@ journey	interrupted
 light	wild
 miles	several
 moments	few
-mr. fogg	motionless
 noon	little
 noon	past
 pallor	sudden
@@ -1560,9 +1456,7 @@ whistles	long
 band	little
 beams	long
 boiler	over-heated
-brigantine sail	large
 calm	perfect
-colonel proctor	serious
 dangers	innumerable
 fellow-travellers	unfortunate
 forebodings	full
@@ -1580,7 +1474,6 @@ place	same
 place	stationary
 smoke	white
 sound	welcome
-train pass	next
 travellers	other
 vehicle	curious
 weather	cold
@@ -1614,7 +1507,6 @@ limbs	stiffened
 line	straight
 melody	intense
 names	antique
-nebraska town	important
 obstacles	clear
 octave	fifth
 plains	frozen
@@ -1642,8 +1534,6 @@ struggle	direct
 train	ready
 trains	express
 trains	numerous
-transatlantic company	equal
-transatlantic company	french
 tree	phantom-like
 whiteness	uniform
 woman	young
@@ -1661,7 +1551,6 @@ port	immense
 sea	boisterous
 terms	best
 time	brief
-trading vessel	most
 voice	growling
 voyage	last
 world	least
@@ -1714,7 +1603,6 @@ fit	apoplectic
 force	irresistible
 heart	guilty
 hulk	flat
-lights queenstown	opposite
 look	stern
 masts	19th
 misfortune	new
@@ -1746,8 +1634,6 @@ fellow	worthy
 folly	miserable
 heart	full
 heart	tortured
-hour phileas fogg	behind-hand
-hour phileas fogg	free
 lady	young
 master	imperturbable
 minutes	behind-hand
@@ -1778,10 +1664,8 @@ departure	seventy-sixth
 evening	late
 existence	free
 existence	happy
-journey round	eccentric
 land	foreign
 lines	telegraphic
-lord albemarle	old
 minute	last
 name	more
 pitch	highest
@@ -1807,9 +1691,7 @@ cry	loud
 cry	shrill
 day	light
 day	next
-dear mr. fogg	phlegmatic
 direction	opposite
-family watch	famous
 gain	pecuniary
 gain	small
 gentleman	eccentric
@@ -1817,7 +1699,6 @@ gentleman	happiest
 hours	twenty-four
 journey	long
 journey	weary
-marriage ceremony	certain
 men	happiest
 minutes	good
 saloon	great

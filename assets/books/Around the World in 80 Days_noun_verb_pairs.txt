@@ -13,7 +13,6 @@ club	got
 columns	supported
 conditions	know
 days	indicated
-degrees fahrenheit	brought
 destination	reached
 error	mention
 events	justify
@@ -28,7 +27,6 @@ hair	tumbled
 hand	took
 hat	put
 hat	took
-haymarket taverns	passing
 heart	searched
 hours	indicated
 hours	passed
@@ -37,42 +35,8 @@ information	apply
 insects	abolishing
 knees	resting
 lakes	brought
-last found	has
 leave	took
-leroy chronometer	regulated
 life	living
-london institution	take
-man mr. phileas fogg	agree
-man mr. phileas fogg	apply
-man mr. phileas fogg	asked
-man mr. phileas fogg	believe
-man mr. phileas fogg	breakfasted
-man mr. phileas fogg	chose
-man mr. phileas fogg	dined
-man mr. phileas fogg	got
-man mr. phileas fogg	hear
-man mr. phileas fogg	knew
-man mr. phileas fogg	known
-man mr. phileas fogg	lived
-man mr. phileas fogg	living
-man mr. phileas fogg	pardon
-man mr. phileas fogg	passed
-man mr. phileas fogg	played
-man mr. phileas fogg	put
-man mr. phileas fogg	reached
-man mr. phileas fogg	recommended
-man mr. phileas fogg	required
-man mr. phileas fogg	responded
-man mr. phileas fogg	rubbed
-man mr. phileas fogg	seated
-man mr. phileas fogg	seemed
-man mr. phileas fogg	seen
-man mr. phileas fogg	serve
-man mr. phileas fogg	served
-man mr. phileas fogg	settled
-man mr. phileas fogg	took
-man mr. phileas fogg	used
-man mr. phileas fogg	watching
 master	searched
 meals	taking
 members	provides
@@ -95,7 +59,6 @@ occupant	awaiting
 occupant	dismissed
 one	seemed
 papers	reading
-passepartout accept each other	lived
 pastimes	playing
 pastimes	reading
 people	seen
@@ -115,11 +78,9 @@ room	fixed
 seconds	indicated
 servant	turn
 sherry	contained
-silver watch	drawing
 societies	learned
 spirit	travelled
 stores	crowd
-street door	shut
 style	live
 successor	awaiting
 table	crowd
@@ -136,18 +97,14 @@ valet	took
 viands	proffered
 waiters	served
 walk	take
-whither none	penetrated
 windows	illumined
 windows	painted
 words	corrected
 words	pointing
-world account	taken
 years	indicated
 years	live
 youth	brought
 band	belong
-bank officials	being
-bank officials	discussing
 banknotes	exposed
 bedroom	constructed
 bedroom	stood
@@ -158,7 +115,6 @@ cards	handing
 clock	comprised
 clock	hung
 clock	stood
-coal fire	burning
 contrary	hope
 conversation	ceased
 conversation	entered
@@ -175,7 +131,6 @@ detectives	placed
 detectives	procured
 detectives	sent
 dining-room	repaired
-dinner hour	occupied
 discussion	fell
 examination	entered
 excitement	take
@@ -194,9 +149,6 @@ game	proceeded
 game	revived
 gentleman	retired
 gentleman	says
-gold ingot	examine
-gold ingot	going
-gold ingot	transferred
 habits	betrayed
 hand	finished
 hands	put
@@ -206,7 +158,6 @@ house	found
 house	scrutinised
 inspection	begun
 inspection	scouring
-instance things	gone
 instant	beating
 machine	mind
 machine	serving
@@ -261,7 +212,6 @@ table	took
 thread	took
 times	handed
 times	proceeded
-town talk	formed
 treasures	protect
 way	proving
 weather	take
@@ -298,8 +248,6 @@ minimum	exceed
 minimum	suffices
 minutes	start
 monsieur	going
-mr. stuart	gathered
-mr. stuart	replied
 name	deposited
 others	turning
 parties	agitated
@@ -307,14 +255,12 @@ parties	preserved
 parties	signed
 party	offered
 passengers	stop
-pocket almanac	consulted
 preparations	make
 preparations	making
 project	carry
 rails	pull
 rails	replied
 room	mounted
-stout shoes	bring
 train	leaves
 train	take
 trains	stop
@@ -323,7 +269,6 @@ wager	talking
 watch	showing
 way	buy
 action	touched
-alabama claim	argued
 alms	asked
 arm	observed
 article	appeared
@@ -345,28 +290,10 @@ carpet-bag	take
 carpet-bag	took
 cause	copied
 chair	fastened
-change phileas fogg	asked
-change phileas fogg	burn
-change phileas fogg	declared
-change phileas fogg	declined
-change phileas fogg	dispatch
-change phileas fogg	ensconced
-change phileas fogg	find
-change phileas fogg	forgot
-change phileas fogg	found
-change phileas fogg	give
-change phileas fogg	miss
-change phileas fogg	offered
-change phileas fogg	open
-change phileas fogg	returned
-change phileas fogg	seated
-change phileas fogg	supported
-change phileas fogg	took
 characters	seemed
 company	belonging
 consul	replied
 corner	ensconced
-daily news	scouted
 days	appeared
 delay	suffice
 demand	began
@@ -376,7 +303,6 @@ detectives	elude
 detectives	throw
 expense	returned
 feather	hung
-fogg party	dwindled
 gentleman	disappeared
 heads	shook
 heart	touched
@@ -399,37 +325,17 @@ members	afforded
 men	betting
 men	promenading
 moment	stand
-morning post	scouted
-mr. fogg	accomplished
-mr. fogg	crossing
-mr. fogg	descended
-mr. fogg	forget
-mr. fogg	get
-mr. fogg	go
-mr. fogg	handed
-mr. fogg	met
-mr. fogg	passed
-mr. fogg	perceived
-mr. fogg	took
-mr. fogg	won
 packages	offered
 papers	got
 passport	examine
 personage	manifesting
-phileas fogg bonds	offered
 police	provided
 premium	offered
 project	scouted
 public	set
 question	appeared
 question	treated
-railway station	crossing
-railway station	enter
-railway station	glided
-railway station	shrouded
-railway station	stopped
 rain	falling
-reform club friends	blamed
 regulations	required
 resemblance	bore
 sensation	create
@@ -439,10 +345,6 @@ shoulders	shrouded
 sides	took
 soil	set
 steamer	miss
-steamer mongolia	built
-steamer mongolia	gained
-steamer mongolia	plied
-stranger things	come
 stupefaction	recovered
 task	accomplishing
 times	scouted
@@ -460,22 +362,16 @@ banks	passing
 boats	coasting
 burglars	getting
 coal	get
-coal supply	take
 companion	returned
 countenances	unmask
 crowd	passed
 detective	admitted
 detective	narrated
 detective	remarked
-detective food	furnished
 document	read
 document	took
 door	heard
-dozen boats	disembarked
-dozen boats	pushed
 eleven	struck
-english consulate	point
-english criminal	concealed
 face	see
 fee	paid
 fellow	hung
@@ -488,7 +384,6 @@ glance	scrutinised
 houses	loomed
 hull	appeared
 identity	establish
-jetty pier	extended
 look-out	's
 mails	takes
 man	arrest
@@ -498,10 +393,6 @@ man	recognise
 mr.	fix
 mr.	suppose
 mr.	think
-mr. phileas fogg	bowed
-mr. phileas fogg	followed
-mr. phileas fogg	paid
-mr. phileas fogg	replied
 observation	furnished
 office	admitted
 part	disembarked
@@ -519,7 +410,6 @@ passport	required
 passport	sign
 passport	took
 passports	aiding
-port clock	struck
 position	took
 presentiment	having
 quay	landed
@@ -538,7 +428,6 @@ robber	obliged
 robber	take
 route	reach
 saturday	have
-scotland yard	received
 seal	added
 sentence	finish
 shore	pushed
@@ -578,31 +467,18 @@ gentleman	resembles
 gesture	returned
 great-grandfather	come
 locality	suffered
-london time	kept
 man	looks
 master	believe
 master	going
 master	known
 master	seems
 minutes	's
-minutes silence	fix
-minutes silence	left
 money	spare
 month	indicating
-mr. fogg	carried
-mr. fogg	carrying
-mr. fogg	continued
-mr. fogg	descended
-mr. fogg	gets
-mr. fogg	knew
-mr. fogg	learned
-mr. fogg	offered
-mr. fogg	spare
 note-book	contained
 note-book	took
 one	knew
 orders	gave
-pere la chaise	seen
 quay	repaired
 record	contained
 reward	offered
@@ -621,12 +497,10 @@ town	inspecting
 while	excuse
 air	uttered
 anxiety	watching
-arabic gulf	spoke
 billows	raging
 borders	raised
 brigade	rejoin
 cabin	took
-cabin tables	spread
 chronometers	surprise
 coffee-cup	looked
 coffee-fields	espied
@@ -647,7 +521,6 @@ detective	sent
 detective	took
 engine	aiding
 engineer	seemed
-english ground	follow
 equanimity	recovered
 errand	conceal
 exertions	seemed
@@ -673,7 +546,6 @@ ladies	changed
 ladies	disappeared
 ladies	reappeared
 life	spend
-london police office	seen
 man	counts
 man	passes
 man	spotted
@@ -699,15 +571,10 @@ project	cogitating
 purchases	make
 quays	walked
 railway	crosses
-railway train	jumping
-rev. decimus smith	returning
 roadstead	moved
 rogue	follow
 sacrifices	propitiating
 salaries	receiving
-sea air	's
-sea air	eat
-sepoy troops	commanding
 ship	ploughed
 shop	hurried
 shop	left
@@ -721,13 +588,10 @@ steamer	miss
 steamer	returning
 steamer	rode
 steamer	rolled
-steamer bar-room	fix
-steamer point	put
 steamers	allow
 steamers	fuelling
 sub-lieutenants	get
 tax-collector	played
-telegraph office	repaired
 time	pass
 time	passed
 time	reach
@@ -743,13 +607,11 @@ voyage	consoled
 voyage	fed
 voyage	lodged
 voyage	took
-walls whereon date-trees	growing
 whim	end
 words	uttered
 adventures	relate
 affair	delayed
 animals	considered
-basalt bases	entered
 bazaars	docks
 bird	flies
 body	took
@@ -757,7 +619,6 @@ body	traversing
 business	transacted
 campaign	concluded
 cards	dealing
-carnival wind	seen
 carriage	entering
 carriage	rode
 cats	considered
@@ -819,11 +680,6 @@ landlord	recommended
 legs	carry
 line	joining
 locomotive	gave
-london detective	known
-london detective	observe
-london detective	stood
-london office	concerned
-london office	deliver
 lord	killed
 lord	replied
 man	got
@@ -844,9 +700,6 @@ pagoda	rushing
 pains	took
 partner	finishing
 passenger	occupied
-passport office	directed
-passport office	reached
-passport office	transacted
 plan	alter
 plans	deranged
 ponies	cross
@@ -856,7 +709,6 @@ priests	fell
 promenade	took
 railway	run
 railway	traverses
-railway station	repaired
 rivers	watered
 robber	follow
 robber	supposed
@@ -865,21 +717,12 @@ rogue	stayed
 rogue	swear
 sauce	found
 screech	gave
-sepoy revolt	distinguished
 servant	caught
 servant	condemned
 servant	punished
 shoes	leaving
 shoes	tore
 side	cross
-sir francis cromarty	concealed
-sir francis cromarty	distinguished
-sir francis cromarty	exchanged
-sir francis cromarty	met
-sir francis cromarty	observed
-sir francis cromarty	pursued
-sir francis cromarty	questioned
-sir francis cromarty	studying
 south	called
 spot	gained
 steamboats	ply
@@ -914,7 +757,6 @@ villages	straggling
 visits	paying
 warrant	arrived
 warrant	deliver
-whist partners	see
 word	followed
 words	exchanged
 advance	jumped
@@ -928,13 +770,6 @@ clove	threw
 conductor	proceeded
 conductor	replied
 conductor	shouted
-day sir francis cromarty	asked
-day sir francis cromarty	begged
-day sir francis cromarty	obtain
-day sir francis cromarty	reflect
-day sir francis cromarty	replied
-day sir francis cromarty	secure
-day sir francis cromarty	took
 days	gained
 days	passed
 delays	worry
@@ -947,7 +782,6 @@ eyes	gazed
 eyes	glistening
 feet	encase
 gentleness	preserved
-greenwich meridian	regulated
 halt	meant
 hesitation	found
 hesitation	think
@@ -961,7 +795,6 @@ line	begins
 locomotive	fed
 locomotive	guided
 locomotive	threw
-london time	kept
 maledictions	uttering
 males	sought
 meridian	regulated
@@ -987,11 +820,9 @@ passengers	provide
 pearls	ornamented
 period	designated
 period	fail
-pounds sterling	supposing
 project	regard
 purposes	reared
 request	conducted
-river tapty	empties
 route	arise
 ruffians	strangled
 ruffians	united
@@ -1015,8 +846,6 @@ times	pay
 travellers	began
 travellers	crossed
 travellers	started
-vagabond nature	impart
-vagabond nature	returned
 value	pay
 vehicles	engage
 village	provide
@@ -1032,7 +861,6 @@ blood	issued
 body	coloured
 branches	distinguished
 branches	lit
-brass instruments	accompanied
 breakfast	preparing
 brigadier	accepted
 bungalow	lit
@@ -1093,7 +921,6 @@ guide	stopped
 guide	turning
 guide	unloosed
 guide	watched
-haggard eyes	coloured
 head	putting
 hour	gave
 hours	stopped
@@ -1104,7 +931,6 @@ iron	replied
 journey	resumed
 journey	seemed
 journey	shorten
-lace robes	clothed
 line	owing
 line	pursue
 matter	's
@@ -1113,32 +939,6 @@ miles	gain
 monkeys	grimaces
 monkeys	hurried
 morning	resumed
-mountain fastnesses	reach
-mr. fogg	accepted
-mr. fogg	carry
-mr. fogg	choose
-mr. fogg	extracted
-mr. fogg	got
-mr. fogg	held
-mr. fogg	led
-mr. fogg	lose
-mr. fogg	make
-mr. fogg	offered
-mr. fogg	paid
-mr. fogg	plunged
-mr. fogg	regretted
-mr. fogg	returned
-mr. fogg	sell
-mr. fogg	set
-mr. fogg	slumbered
-mr. fogg	thought
-mr. fogg	took
-mr. fogg	transporting
-mr. fogg	trod
-mr. fogg	venture
-mr. fogg	waited
-mr. fogg	worrying
-muslin robe	covered
 neck	bounced
 neck	perched
 neck	plunged
@@ -1165,14 +965,6 @@ services	offered
 shrubs	dotted
 side	took
 silence	broke
-sir francis cromarty	asked
-sir francis cromarty	perched
-sir francis cromarty	plunged
-sir francis cromarty	regretted
-sir francis cromarty	slept
-sir francis cromarty	took
-sir francis cromarty	watched
-sir francis cromarty	whispered
 slumberers	disturb
 snores	gave
 spring	quenching
@@ -1254,7 +1046,6 @@ hair	shave
 head	shook
 heart	perceived
 hours	devote
-icy exterior	perceived
 idea	charmed
 indignation	repress
 intervention	save
@@ -1297,19 +1088,8 @@ reconnaissance	make
 relatives	devoted
 relatives	shave
 relatives	submit
-rosin torches	lighted
-rosin torches	lit
 sacrifice	returned
 sacrifices	occur
-scurvy dog	die
-sir francis cromarty	asked
-sir francis cromarty	observed
-sir francis cromarty	put
-sir francis cromarty	replied
-sir francis cromarty	returned
-sir francis cromarty	saw
-sir francis cromarty	speaking
-sir francis cromarty	turning
 sleep	covered
 sleep	plunged
 songs	died
@@ -1345,7 +1125,6 @@ brain	lodged
 branches	slipped
 brick	taken
 bricks	loosen
-burning pyre	appeared
 clouds	covered
 commerce	dwindled
 companions	followed
@@ -1363,7 +1142,6 @@ ears	formed
 earth	descends
 elephant	advancing
 elephant	bearing
-englishman thinking	planning
 executioner	escape
 executioners	snatch
 expression	resumed
@@ -1401,7 +1179,6 @@ hand	seizing
 hat	whizzed
 head	bowed
 horizon	left
-hour passepartout	laughed
 hours	passed
 idea	struck
 jew	sold
@@ -1420,8 +1197,6 @@ moon	covered
 moon	left
 multitude	prostrated
 noon	left
-otter-skin pelisse	hesitate
-otter-skin pelisse	purchased
 outside	replying
 pace	bearing
 paces	stopped
@@ -1440,7 +1215,6 @@ pyre	rush
 pyre	stopped
 rash	exploit
 reflections	swim
-regent street	used
 rest	yield
 rhapsody	applying
 scene	changed
@@ -1448,13 +1222,11 @@ semi-obscurity	saw
 shades	announced
 songs	sounded
 spectre	rose
-state prison	has
 success	laughed
 surprise	prevent
 tambourines	cries
 tambourines	sounded
 teeth	gnashed
-temple walls	built
 terror	passed
 terror	recovered
 time	arrive
@@ -1464,7 +1236,6 @@ tresses	divided
 tresses	encircle
 tresses	shining
 trick	discovered
-vermilion hands	formed
 victim	borne
 victim	recover
 victim	seem
@@ -1489,8 +1260,6 @@ animal	caressed
 animal	replaced
 banks	swarming
 bench	took
-brahmin legends	assert
-brick mansions	presented
 capital	ruined
 carriage	accomplished
 carriage	find
@@ -1530,8 +1299,6 @@ hall	led
 hand	pressed
 head	clasping
 head	put
-hong kong steamer	leaves
-hong kong steamer	proceed
 honour	giving
 hope	expressing
 horsemen	dressed
@@ -1565,7 +1332,6 @@ noon	leaves
 one	spoke
 packet	left
 panorama	passed
-parsee relation	seems
 place	giving
 places	took
 price	agreed
@@ -1615,7 +1381,6 @@ admitted	replied
 affair	forgotten
 arm	offering
 bank-bills	placing
-brahmin religion	consecrated
 capital	reached
 carpet-bag	taking
 carriage	leave
@@ -1636,10 +1401,6 @@ detective	sent
 door	's
 door	muttered
 door	swung
-english authorities	dealt
-english authorities	promised
-english authorities	sent
-english law	protects
 escapade	gave
 exclamation	permitting
 eyebrows	lift
@@ -1663,34 +1424,14 @@ judge	resumed
 judge	returned
 judge	stared
 judge	took
-judge obadiah	burn
-judge obadiah	caught
-judge obadiah	repeated
 lady	burn
 magistrates	arrest
 magistrates	arrive
 magistrates	warned
-man passepartout	admitted
-man passepartout	arrive
-man passepartout	asked
-man passepartout	burning
-man passepartout	cried
-man passepartout	departed
-man passepartout	escape
-man passepartout	espied
-man passepartout	gave
-man passepartout	handed
-man passepartout	muttered
-man passepartout	reach
-man passepartout	responded
-man passepartout	stupefied
-man passepartout	violated
 mast-head	hoisted
 mile	moored
 money	exhausted
 money	stolen
-mr. fogg	arrive
-mr. oysterpuff	demanded
 pagoda	gone
 party	landed
 place	held
@@ -1711,8 +1452,6 @@ rascal	's
 rascal	exclaimed
 rascal	follow
 rascal	going
-rash exclamation	caught
-rash exclamation	given
 rate	going
 release	restored
 robber	leave
@@ -1737,7 +1476,6 @@ wigs	exchanged
 woman	accompanied
 acquaintance	renew
 anxieties	calm
-aouda company	kept
 appearance	make
 avail	result
 boat	jumping
@@ -1750,7 +1488,6 @@ cabin	spent
 cannibals	asserted
 cannibals	steamed
 century	cudgelled
-china seas	gave
 comfort	wanting
 companion	travelling
 conjecture	making
@@ -1768,11 +1505,9 @@ disappointment	concealing
 disclosure	enlightened
 dish	furnish
 emotion	betraying
-english authorities	warn
 expenses	travelling
 eyes	fastened
 fines	diminishing
-fix does not seem	fitted
 foreground	covered
 gentleman	listened
 gentleman	make
@@ -1788,7 +1523,6 @@ hours	sit
 hours	visited
 idea	struck
 intrigue	supposed
-journey aouda	gave
 lake	throw
 life	owed
 listener	find
@@ -1818,7 +1552,6 @@ rascal	tell
 reputation	lost
 resource	turn
 route	fix
-saddle peak	looming
 seas	plying
 servant	doubtless
 servant	implicated
@@ -1847,7 +1580,6 @@ world	round
 accomplice	playing
 agile	skipped
 allusions	betray
-and fix go each about	fix
 astronomers	call
 astronomers	existed
 bands	grinning
@@ -1875,7 +1607,6 @@ detective	found
 discovery	enchanted
 disturbances	existed
 dog	're
-dozen mangoes	purchasing
 eleven	harbour
 engine	observing
 engine	threw
@@ -1912,23 +1643,9 @@ mind	spent
 movements	fix
 mr.	fix
 mr.	know
-mr. fogg	awakened
-mr. fogg	exclaimed
-mr. fogg	gravitated
-mr. fogg	hoped
-mr. fogg	leaning
-mr. fogg	moved
-mr. fogg	noted
-mr. fogg	observing
-mr. fogg	passing
-mr. fogg	returned
-mr. fogg	spying
-mr. fogg	thought
-mr. fogg	whereof
 operations	knew
 path	raised
 pepper	grows
-pepper plants	replaced
 perfume	penetrating
 progress	aided
 purpose	guessed
@@ -1980,12 +1697,8 @@ captain	overwhelmed
 chagrin	perceived
 channels	guide
 city	created
-club hotel	remain
-club hotel	repaired
-club hotel	returned
 coast	separated
 conversation	begged
-cousin jeejeeh	engaged
 crew	lending
 crowd	noticed
 day	know
@@ -2029,8 +1742,6 @@ order	obey
 palanquin	conducted
 palanquin	repaired
 palanquins	betrayed
-parsee merchant	passed
-parsee merchant	reflected
 parterres	floating
 parterres	formed
 passengers	going
@@ -2052,7 +1763,6 @@ satisfaction	mattered
 sea	gazed
 sea	lash
 sea	seemed
-set teeth	returned
 smile	fix
 speed	resumed
 spirit	bounded
@@ -2060,20 +1770,11 @@ steamer	leave
 tempest	lasted
 tempest	taking
 tranquillity	gazed
-victoria port	found
-victoria port	wandered
 warrant	come
 weather	cleared
 week	await
 woman	going
 yesterday	gone
-yokohama boat	crossed
-yokohama boat	left
-yokohama boat	making
-yokohama boat	missed
-yokohama boat	reached
-yokohama boat	reaching
-yokohama steamer	missed
 accomplice	help
 arm	caught
 arm	placed
@@ -2092,7 +1793,6 @@ detective	listen
 detective	passed
 detective	spoke
 detective	think
-english merchants	sell
 evil	deal
 expense	put
 eye	caught
@@ -2123,7 +1823,6 @@ journey	interrupt
 laws	deal
 liquor	mounted
 liquor	perceiving
-london office	sent
 man	following
 man	know
 man	makes
@@ -2146,7 +1845,6 @@ sleep	lay
 smoker	dies
 smoker	smoke
 steamer	leave
-steamer office	entered
 table	taking
 tickets	gave
 time	returning
@@ -2177,7 +1875,6 @@ detective	look
 determination	docks
 document	displayed
 document	doubted
-english fashion	shaking
 evening	absorbed
 evening	sailed
 events	passing
@@ -2201,13 +1898,11 @@ hand	slipped
 hands	held
 hands	shaking
 harbour	leave
-heart leap	felt
 horror	imagined
 horror	seems
 hotel	returned
 hour	stepped
 hours	left
-hours phileas fogg	wandered
 lady	expected
 lips	put
 man	answer
@@ -2225,28 +1920,9 @@ mr.	fix
 mr.	got
 mr.	seen
 mr.	stammered
-mr. phileas fogg	absorbed
-mr. phileas fogg	accosted
-mr. phileas fogg	attached
-mr. phileas fogg	carry
-mr. phileas fogg	continuing
-mr. phileas fogg	detained
-mr. phileas fogg	disturb
-mr. phileas fogg	expected
-mr. phileas fogg	find
-mr. phileas fogg	forced
-mr. phileas fogg	got
-mr. phileas fogg	informed
-mr. phileas fogg	learned
-mr. phileas fogg	observing
-mr. phileas fogg	passing
-mr. phileas fogg	remarked
-mr. phileas fogg	replied
-mr. phileas fogg	wandered
 pretext	resumed
 protector	shaking
 puffs	drew
-quay whence	stepped
 return	see
 search	continuing
 servant	find
@@ -2274,8 +1950,6 @@ advantage	run
 air	flying
 anxiety	struggling
 cabin	bulged
-copper sheathing	betrayed
-copper sheathing	shining
 course	directed
 currents	aid
 currents	run
@@ -2306,8 +1980,6 @@ miles	make
 miles	reach
 minutes	hoisted
 moon	entering
-mr. fogg	cast
-mr. fogg	seated
 ocean	looked
 others	directed
 others	returned
@@ -2318,7 +1990,6 @@ pilot	gazed
 pilot	returned
 pilot	walked
 pilot-boat	repaired
-pilot-boat races	gaining
 poles	add
 poles	used
 police-station	directed
@@ -2327,7 +1998,6 @@ provisions	got
 provisions	stored
 quarter	entering
 quay	cast
-racing yacht	built
 railing	leaned
 sailor	are
 sailor	get
@@ -2341,9 +2011,6 @@ sails	hoisted
 sails	put
 sails	rustled
 sails	seemed
-san francisco steamer	puts
-san francisco steamer	start
-san francisco steamer	starts
 sea	got
 seagull	rode
 servant	treated
@@ -2434,8 +2101,6 @@ miles	accomplished
 misgivings	saw
 moment	embarked
 mouth	open
-mr. fogg	ate
-mr. fogg	descended
 noon	subsided
 north-west	bore
 occurrences	going
@@ -2466,7 +2131,6 @@ reef	take
 repast	share
 reply	admit
 reward	inspired
-royal yacht regatta	contesting
 sail	hoisted
 sea	raised
 sea	struck
@@ -2506,11 +2170,8 @@ villain	traversed
 waves	broke
 waves	chopping
 way	take
-wind north	held
-wind north	is
 air	resounded
 air	sobered
-brass cannon	stood
 breeze	coming
 breeze	keep
 breeze	passed
@@ -2524,7 +2185,6 @@ coast	espied
 coast	passed
 course	change
 course	directed
-currents john bunsby	found
 day	reappeared
 day	seen
 distance	accomplish
@@ -2546,21 +2206,10 @@ idea	pursued
 jerk	pushing
 miles	traverse
 moment	becoming
-mr. fogg	divulge
-mr. fogg	engaged
-mr. fogg	excepted
-mr. fogg	find
-mr. fogg	found
-mr. fogg	impart
-mr. fogg	looked
-mr. fogg	reached
-mr. fogg	rushed
-mr. fogg	wish
 murderer	am
 murderer	hope
 muzzle	loaded
 oath	swore
-opium den	left
 opium-house	fix
 pardon	beg
 partners	found
@@ -2625,25 +2274,20 @@ world	round
 zephyrs	caught
 air	stood
 ambassadors	seemed
-apple trees	giving
 artist	dressed
 artist	wandering
-bamboo enclosures	giving
 bet	lost
 birds	protected
 birds	standing
 breakfast	eat
-buddhist priests	hid
 bushes	giving
 busts	begging
 butchers	stalls
 camellias	saw
-canvas shoes	wore
 care	being
 carnival	am
 cattle	knowing
 cattle	preserved
-cedar groves	beheld
 chests	displayed
 children	cut
 clothes	change
@@ -2711,18 +2355,11 @@ legs	begging
 merchants	felt
 mind	grow
 minds	symbolise
-moment mr. fogg	ate
-moment mr. fogg	missed
-moment mr. fogg	ruined
 money	get
 morning	craved
 morning	following
-mr. fogg	ate
-mr. fogg	missed
-new world	lay
 office	absorbed
 ornaments	glittering
-outrageously long	becomes
 passage	paid
 passepartout	am
 passepartout	applied
@@ -2808,8 +2445,6 @@ songs	knew
 sparrows	protected
 steamer	missed
 steps	took
-stout heart	keep
-straw sandals	wore
 streets	carrying
 streets	crowded
 streets	gathered
@@ -2858,7 +2493,6 @@ candles	lighted
 capacity	giving
 cards	built
 ceiling	pointing
-chapter xxiv	guessed
 chin	hung
 clowns	exhibit
 company	form
@@ -2897,16 +2531,12 @@ footlights	clearing
 friend	see
 gallery	clambering
 gallery	perceived
-general grant	cross
-general grant	named
-general grant	rigged
 gongs	performing
 grimaces	make
 hands	seemed
 hour	cut
 hours	gaining
 hurry	retained
-imitation warts	having
 jugglers	kept
 jugglers	put
 jugglers	threw
@@ -2923,18 +2553,8 @@ master	fell
 masts	aiding
 masts	giving
 masts	rigged
-middle ages	bore
 motion	changing
 mr.	fix
-mr. batulcar	cried
-mr. fogg	applied
-mr. fogg	began
-mr. fogg	heard
-mr. fogg	help
-mr. fogg	led
-mr. fogg	passed
-mr. fogg	recognised
-mr. fogg	taken
 musicians	performing
 musicians	took
 nationality	cause
@@ -2970,8 +2590,6 @@ pyramid	vanished
 question	cause
 right	balanced
 sails	giving
-san francisco steamer	announced
-san francisco steamer	leave
 scene	announced
 servant	finding
 servant	missing
@@ -2979,14 +2597,12 @@ servant	take
 shed	invaded
 shoulders	bore
 shoulders	mounting
-smoking opium	excused
 spectators	comprising
 spectators	invaded
 spectators	precipitated
 stage	bring
 stage	precipitated
 stage	stretched
-steam power	aiding
 steamer	stepped
 streets	sing
 streets	wandering
@@ -3008,8 +2624,6 @@ wings	parted
 wings	retained
 word	heard
 words	composed
-yokohama steamer	depart
-yokohama steamer	started
 adversary	am
 adversary	expected
 adversary	listen
@@ -3019,10 +2633,8 @@ amazement	recognised
 assassins	flocked
 assassins	gambled
 blows	proved
-bombay priests	sent
 box	mounted
 cabin	concealed
-californian capital	spend
 carriage	entered
 carriage	taking
 chronometers	agreed
@@ -3049,13 +2661,8 @@ driver	mounted
 effect	comprehended
 effect	explain
 elephants	travelling
-english consulate	repaired
-english ground	left
 explanation	avoid
 extradition	procure
-family watch	agreed
-family watch	keeping
-family watch	regulate
 fellow	bet
 fellow	changed
 fellow	concealed
@@ -3068,26 +2675,18 @@ fellow	met
 fellow	passed
 fellow	recognised
 fellow	spent
-fiftieth parallel	accomplished
 fists	listened
 game	am
 game	change
 game	changed
-general grant	decided
-general grant	entered
-general grant	passed
-general grant	reached
 hands	changed
 hour	left
 hours	divided
-international hotel	set
 journey	retard
 loading	facilitate
-london time	keeping
 manner	joined
 meridians	repeated
 moment	fix
-mr. fogg	arrived
 name	given
 name	justified
 nature	impressed
@@ -3129,7 +2728,6 @@ vessels	unloading
 voyage	happened
 way	keep
 way	put
-yokohama steamer	miss
 agitation	arose
 air	erected
 air	raised
@@ -3146,8 +2744,6 @@ blows	returned
 brows	knit
 bruise	bore
 business	recalled
-coal wharf	erected
-colonel proctor	seen
 companion	protect
 crowd	blocked
 crowd	collected
@@ -3156,7 +2752,6 @@ crowd	swayed
 din	mingling
 enemy	fix
 enemy	keeping
-english consulate	started
 expression	resumed
 feet	got
 fires	fix
@@ -3164,14 +2759,9 @@ fist	raised
 fists	flew
 hand	gained
 honour	attacked
-honourable mr. camerfield	gained
-honourable mr. mandiboy	gained
 hubbub	arose
 hurrahs	heard
 instant	disappeared
-international hotel	reached
-international hotel	returned
-international hotel	seem
 look	darting
 lookers-on	tell
 luggage	convey
@@ -3180,14 +2770,10 @@ master	armed
 master	waiting
 men	going
 men	mingle
-mr. fogg	installing
-mr. fogg	served
-oyster soup	partake
 parts	divided
 party	took
 passengers	convey
 pawnees	listening
-petroleum warehouse	erected
 plates	served
 porter	called
 porter	replied
@@ -3207,7 +2793,6 @@ shoulders	raised
 shoulders	received
 shoulders	seemed
 shouts	heard
-silk hat	smashed
 squall	agitated
 stairway	approached
 station	convey
@@ -3240,8 +2825,6 @@ air	take
 aisles	circulating
 anger	arose
 angles	avoiding
-atlantic steamer	take
-balcony cars	supplied
 banks	passed
 beasts	ruminating
 bed	protected
@@ -3257,7 +2840,6 @@ car	affixed
 car	transformed
 cattle	go
 cattle	stop
-chapter xxvi	compose
 churches	saw
 clergyman	taken
 companions	resumed
@@ -3285,8 +2867,6 @@ distance	massing
 distance	rose
 door	affixed
 dormitory	transformed
-elder william hitch	deliver
-elder william hitch	invited
 election	assembled
 evening	laid
 events	grown
@@ -3301,16 +2881,12 @@ horizon	disappeared
 horizon	lining
 hotels	saw
 hour	fall
-hour elder william hitch	rose
 hours	accomplished
 hours	lasted
-laramie territory	crosses
 light	emitting
 lines	connect
 locomotive	brought
 locomotive	running
-metal ribbon	measures
-metal ribbon	united
 mile	grew
 miles	measures
 miles	passed
@@ -3321,17 +2897,8 @@ morrow	laid
 mountain-sides	approaching
 mountain-sides	avoiding
 mountain-sides	suspended
-mr. fogg	asked
-mr. fogg	fix
-mr. fogg	foresaw
-mr. fogg	observed
-mr. fogg	resumed
-mr. fogg	travelling
 news	spread
-news dealers	book
-news dealers	circulating
 night	lasted
-oakland station	left
 obstacle	form
 obstacle	overcome
 obstacle	removed
@@ -3346,7 +2913,6 @@ point	kept
 point	passed
 point	reached
 point	turned
-pounds sterling	calculating
 prairies	grew
 prairies	passed
 precipices	suspended
@@ -3360,9 +2926,6 @@ ranks	passing
 restaurants	supplied
 route	wished
 rule	reducing
-saloon cars	supplied
-salt lake	rose
-salt lake	turns
 smoking-cars	supplied
 snow	began
 snow	obstruct
@@ -3378,7 +2941,6 @@ streets	saw
 study	diverted
 system	remained
 system	rolled
-theatre cars	wanting
 time	designated
 time	lost
 time	regain
@@ -3401,8 +2963,6 @@ artisans	engaged
 audience	grew
 auditor	fixing
 basin	arrive
-branch road	connected
-branch road	laying
 breadth	reduced
 breath	recovered
 brother	continued
@@ -3410,7 +2970,6 @@ cause	experiencing
 chances	increase
 churches	saw
 clumps	seen
-colonel stamp proctor	recognised
 colony	established
 colony	flourished
 colony	practised
@@ -3427,8 +2986,6 @@ depth	increased
 direction	took
 discovery	feeling
 efforts	redoubled
-elder william hitch	added
-elder william hitch	continued
 engineers	avoided
 engineers	found
 enthusiast	disconcert
@@ -3450,13 +3007,10 @@ fears	experiencing
 feet	situated
 forest	appeared
 forest	illuminated
-fort bridger station	stopped
 fright	behold
 gestures	emphasising
 glances	cast
 government	granted
-green river station	got
-green river station	stopped
 ground	covered
 groups	charged
 gymnast	watching
@@ -3470,7 +3024,6 @@ ladies	admitted
 lecture	continuing
 lecture	making
 lecture	reached
-locomotive wheels	began
 mansion	surrounded
 market	surrounded
 masks	disguised
@@ -3481,12 +3034,10 @@ messenger	gave
 miles	completed
 miles	situated
 moment	cries
-mormon religion	admitted
 mr.	come
 mr.	fix
 mr.	perceive
 mr.	see
-mummy showman	received
 night	interrupt
 one	stop
 others	cross
@@ -3523,8 +3074,6 @@ passepartout	thrown
 passepartout	ventured
 passepartout	watching
 pavilions	adorned
-pebble wall	built
-pebble wall	surrounded
 persecutions	reappeared
 place	populated
 places	took
@@ -3542,8 +3091,6 @@ proselytes	make
 protector	called
 protector	inspired
 pursuit	honoured
-railway trains	make
-railway trains	stop
 region	get
 rocks	penetrating
 scene	taken
@@ -3552,7 +3099,6 @@ sea	observe
 sea	situated
 season	waited
 sense	pitied
-silk dresses	wore
 snow	fallen
 station	found
 station	took
@@ -3582,8 +3128,6 @@ travellers	reached
 travellers	saw
 visit	pay
 voice	emphasising
-wahsatch range	included
-wahsatch range	spurs
 way	crossed
 weber	descend
 window	drew
@@ -3599,7 +3143,6 @@ women	accounted
 women	behold
 women	charged
 words	emphasising
-wyoming territory	entered
 years	left
 accident	mark
 attention	attracted
@@ -3616,9 +3159,6 @@ cards	buy
 colonel	asked
 colonel	launched
 colonel	replied
-colonel stamp proctor	cried
-colonel stamp proctor	found
-colonel stamp proctor	imagine
 conductor	denouncing
 conductor	replied
 conductor	returned
@@ -3644,10 +3184,7 @@ group	joining
 head	put
 hours	crossed
 hours	reach
-iron road	laying
 journey	mark
-laramie peak	being
-laramie peak	formed
 locomotive	frightened
 madam	plays
 master	face
@@ -3680,14 +3217,12 @@ proposal	attracted
 railway	extended
 railway	passing
 railway	resume
-railway company	denouncing
 rains	swelled
 rapids	thrown
 right	rose
 rivers	leaping
 say	heard
 servant	saying
-shudder shoot	felt
 signal-man	sent
 signal-man	talking
 snow	ceased
@@ -3775,7 +3310,6 @@ miles	passed
 morning	favoured
 morning	left
 mr.	fix
-night camp walbach	passed
 nights	bring
 nights	passed
 one	heard
@@ -3798,7 +3332,6 @@ river	fell
 road	attained
 road	followed
 road	ran
-sage reflection	heard
 screech	issued
 seat	took
 shoulders	shrugging
@@ -3806,9 +3339,6 @@ sir	am
 spade	play
 spade	playing
 speed	increased
-stamp proctor	cried
-stamp proctor	replied
-stamp proctor	seemed
 station	gone
 steam	reversing
 stroke	resolved
@@ -3849,26 +3379,16 @@ cars	worked
 cheeks	coursed
 colonel	asked
 colonel	going
-colonel proctor	appeared
-colonel proctor	carried
-colonel proctor	entered
-colonel proctor	fought
-colonel proctor	quitted
-colonel proctor	rushed
 combatants	passed
 combatants	stop
 detective	refuse
 doors	thrusting
-dozen passengers	asked
-dozen passengers	granted
-dozen passengers	occupied
 duel	approaching
 duel	fight
 duel	granted
 end	put
 engine	detached
 engine	mounted
-fort kearney station	carried
 forts	moving
 game	resumed
 gentlemen	crack
@@ -3905,9 +3425,7 @@ passepartout	does
 passepartout	felt
 passepartout	go
 passepartout	thought
-phileas fogg simply	does
 plain	reach
-plum creek station	approaching
 prison	quitted
 prisoners	taken
 rails	fell
@@ -3921,7 +3439,6 @@ revolver-shots	exchanged
 revolver-shots	responded
 revolvers	provided
 road	waylaid
-safety chains	loosened
 scratch	received
 seats	lay
 seconds	passed
@@ -3929,11 +3446,9 @@ seconds	remaining
 seconds	shut
 shots	attracted
 siege	carried
-sioux chief	opened
 south	disappearing
 speed	increased
 speed	rushed
-station platform	counted
 stay	cried
 steam-valve	closing
 steps	jumped
@@ -3974,7 +3489,6 @@ doubtless	know
 eyes	lowered
 face	overspread
 footsteps	printed
-fort kearney station	leave
 fortune	sacrificed
 game	abandon
 hands	clasping
@@ -3987,9 +3501,6 @@ look	understood
 men	pick
 miles	run
 moment	lose
-mr. fogg	added
-mr. fogg	folded
-mr. fogg	propose
 mystery	explained
 noon	pressed
 pallor	overspread
@@ -4027,7 +3538,6 @@ apprehensions	conceal
 band	returned
 beams	examined
 beams	raised
-brigantine sail	attached
 calm	troubled
 captain	alarmed
 captain	know
@@ -4035,7 +3545,6 @@ captain	sacrifice
 captain	send
 captors	felled
 captors	struggle
-colonel proctor	taken
 companions	begun
 conductor	replied
 conductor	responded
@@ -4049,7 +3558,6 @@ detective	looking
 detective	remained
 detective	replied
 detective	thought
-eleven hours	spare
 engineer	whistled
 face	looking
 feet	burned
@@ -4073,7 +3581,6 @@ hours	suffered
 imagination	carried
 imagination	showed
 influence	take
-iron stay	held
 jib-sail	hoist
 journey	interrupted
 journey	proceeding
@@ -4089,10 +3596,6 @@ method	proposed
 night	approached
 night	fix
 night	passed
-night aouda	go
-night aouda	kept
-night aouda	took
-night aouda	wandered
 objects	recognise
 passengers	taken
 places	taken
@@ -4110,14 +3613,12 @@ snow	fell
 sound	coming
 squad	gone
 station	walking
-station platform	burned
 steam	escaping
 steamer	leaves
 steamer	spare
 storm	kept
 time	found
 time	lost
-train pass	does
 travellers	marching
 trip	interrupt
 valves	escaping
@@ -4131,7 +3632,6 @@ air	biting
 air	inhaled
 air	travelling
 ally	grasp
-atlantic seaboard	arrived
 band	left
 beasts	attacked
 birds	fly
@@ -4155,12 +3655,9 @@ force	added
 force	lessening
 fortune	risked
 ground	lifted
-hamburg boats	go
 hand	grasp
 hope	carried
 hours	traversed
-inman steamer	cross
-inman steamer	depart
 island	formed
 jib	added
 jib	arranged
@@ -4181,14 +3678,10 @@ master	leave
 miles	separated
 mist	sets
 names	rushing
-nebraska town	ascended
-nebraska town	finds
 night	crossed
 night	entered
 obstacles	putting
 octave	give
-omaha railway station	directed
-omaha railway station	reached
 passengers	took
 passengers	wrapped
 path	putting
@@ -4212,7 +3705,6 @@ sails	added
 sails	furled
 sails	hoisted
 sails	lifted
-saint joseph	unites
 section	ran
 self-accusations	consult
 self-accusations	overwhelmed
@@ -4254,9 +3746,7 @@ travelling-cloaks	wrapped
 tree	rattled
 tree	sped
 tree	twisted
-union pacific road	formed
 vehicle	guide
-violin bow	vibrated
 wager	save
 west	blowing
 whiteness	disappeared
@@ -4275,24 +3765,16 @@ boat	happened
 body	managed
 broadway	drove
 cabin	shut
-chapter xxxiii	directed
-chapter xxxiii	passed
-chapter xxxiii	put
-chapter xxxiii	skirted
-chapter xxxiii	turned
 craft	manage
 day	mounted
 deck	ascended
 disappointment	betray
-fire island	passed
 gamut	extended
 head	scratch
-jersey city ferryboat	crossed
 machinery	happened
 man	mounted
 means	found
 miles	cross
-morning tide	put
 night	passed
 noon	mounted
 others	permit
@@ -4305,8 +3787,6 @@ passepartout	disembark
 passepartout	heard
 passepartout	thought
 passepartout	uttered
-passepartout instructions	await
-passepartout instructions	inform
 persons	carry
 position	ascertain
 prediction	confirmed
@@ -4317,12 +3797,6 @@ river	moored
 rooms	engaged
 route	changing
 sea	throw
-st. nicholas hotel	left
-time money	smoothed
-trading vessel	belongs
-trading vessel	buy
-trading vessel	freight
-trading vessel	is
 use	make
 voyage	extended
 voyage	going
@@ -4394,21 +3868,6 @@ miles	replied
 misfortune	retarded
 moments	appeared
 night	varied
-noon phileas fogg	called
-noon phileas fogg	consider
-noon phileas fogg	continued
-noon phileas fogg	deviate
-noon phileas fogg	furled
-noon phileas fogg	go
-noon phileas fogg	imagined
-noon phileas fogg	increased
-noon phileas fogg	kept
-noon phileas fogg	knew
-noon phileas fogg	replied
-noon phileas fogg	seem
-noon phileas fogg	seemed
-noon phileas fogg	sell
-noon phileas fogg	sent
 past	forgotten
 pickaroon	sent
 pirate	turned
@@ -4458,7 +3917,6 @@ wind	grow
 wind	remained
 wind	veered
 words	catch
-atlantic steamers	gain
 banknotes	seizing
 blow	failed
 boats	sent
@@ -4470,7 +3928,6 @@ charge	revolted
 coast	sighted
 compliment	considered
 crew	worked
-custom house clock	struck
 day	added
 day	burned
 day	sacrificed
@@ -4479,10 +3936,8 @@ day	transferred
 deck	sacrificed
 end	attain
 engine	agreed
-english soil	set
 evening	arriving
 evening	reach
-fastnet light	sighted
 features	betraying
 fires	keeping
 fit	having
@@ -4503,14 +3958,9 @@ hours	observed
 hours	put
 hours	reach
 hulk	disappeared
-iron rods	barred
 journal	drew
 last	reaches
-lights queenstown	passing
-lights queenstown	put
-lights queenstown	see
 lips	escaped
-liverpool quay	disembarked
 look	set
 mails	carried
 mails	put
@@ -4571,7 +4021,6 @@ days	burning
 delays	forced
 deserts	received
 detective	walked
-detective passage	given
 dog	watched
 door	knocked
 door	listened
@@ -4588,7 +4037,6 @@ eyes	brightened
 eyes	close
 face	's
 face	looked
-faithful servant	set
 fellow	doomed
 fellow	found
 fellow	thought
@@ -4597,68 +4045,9 @@ folly	ceased
 fortune	remained
 friend	going
 friend	left
-gas burner	burning
-gas burner	extinguished
-gas company	found
 goal	fail
 half	make
 heart	read
-hour phileas fogg	appeared
-hour phileas fogg	arresting
-hour phileas fogg	ask
-hour phileas fogg	asked
-hour phileas fogg	bore
-hour phileas fogg	bringing
-hour phileas fogg	busied
-hour phileas fogg	called
-hour phileas fogg	ceased
-hour phileas fogg	descended
-hour phileas fogg	desired
-hour phileas fogg	does
-hour phileas fogg	dropped
-hour phileas fogg	excuse
-hour phileas fogg	expected
-hour phileas fogg	fix
-hour phileas fogg	forgive
-hour phileas fogg	found
-hour phileas fogg	gave
-hour phileas fogg	get
-hour phileas fogg	go
-hour phileas fogg	gone
-hour phileas fogg	got
-hour phileas fogg	hurried
-hour phileas fogg	influenced
-hour phileas fogg	knew
-hour phileas fogg	knocked
-hour phileas fogg	left
-hour phileas fogg	lived
-hour phileas fogg	looked
-hour phileas fogg	lost
-hour phileas fogg	make
-hour phileas fogg	meditating
-hour phileas fogg	mistaken
-hour phileas fogg	ordered
-hour phileas fogg	present
-hour phileas fogg	read
-hour phileas fogg	receive
-hour phileas fogg	remain
-hour phileas fogg	remained
-hour phileas fogg	returned
-hour phileas fogg	sat
-hour phileas fogg	saw
-hour phileas fogg	seated
-hour phileas fogg	sent
-hour phileas fogg	set
-hour phileas fogg	shut
-hour phileas fogg	sleep
-hour phileas fogg	speak
-hour phileas fogg	stammered
-hour phileas fogg	stepped
-hour phileas fogg	told
-hour phileas fogg	took
-hour phileas fogg	understood
-hour phileas fogg	walked
-hour phileas fogg	warned
 hours	make
 instant	brightened
 journey	make
@@ -4671,19 +4060,15 @@ misfortune	overwhelmed
 moments	found
 morning	called
 motion	looked
-mr. fogg	blame
-mr. fogg	cried
 night	passed
 noise	heard
 obstacles	overcome
 one	blame
 one	influenced
-passepartout instructions	gave
 pounds	left
 project	meditating
 protection	arrange
 provisions	purchase
-railway arrangements	permit
 reform	present
 rights	putting
 stairs	descended
@@ -4702,9 +4087,7 @@ wager	lost
 wager	ruined
 watch	kept
 way	found
-westminster clock	struck
 woman	looked
-barings to-morrow	present
 bet	regard
 bets	increased
 bets	laid
@@ -4749,13 +4132,9 @@ kinswoman	love
 land	secure
 legs	carry
 lips	trembling
-london society	existed
 look	avoid
-lord albemarle	bet
-lord albemarle	lose
 madam	remain
 man	overtake
-marylebone parish	notify
 messengers	dispatched
 minute	appeared
 minutes	agreed
@@ -4764,7 +4143,6 @@ minutes	indicated
 minutes	pointed
 moment	pointed
 name	transpired
-pall mall	collected
 papers	resumed
 passepartout	appeared
 passepartout	carry
@@ -4780,7 +4158,6 @@ racehorse	drawing
 safety	assured
 saturday	appear
 saturday	collected
-saville row morning	dispatched
 scent	followed
 service	left
 smile	smiled
@@ -4810,7 +4187,6 @@ cards	took
 carriages	overturned
 clock	indicated
 clock	keep
-club doors	forced
 collar	seized
 contrary	lost
 cry	heard
@@ -4820,40 +4196,6 @@ day	rapped
 day	take
 days	diminished
 days	marked
-dear mr. fogg	've
-dear mr. fogg	accomplished
-dear mr. fogg	am
-dear mr. fogg	appeared
-dear mr. fogg	arrived
-dear mr. fogg	asked
-dear mr. fogg	awaited
-dear mr. fogg	cherished
-dear mr. fogg	crossed
-dear mr. fogg	deducted
-dear mr. fogg	diminished
-dear mr. fogg	divided
-dear mr. fogg	employed
-dear mr. fogg	gained
-dear mr. fogg	going
-dear mr. fogg	gone
-dear mr. fogg	having
-dear mr. fogg	jumped
-dear mr. fogg	kidnapped
-dear mr. fogg	left
-dear mr. fogg	lost
-dear mr. fogg	opened
-dear mr. fogg	promised
-dear mr. fogg	reached
-dear mr. fogg	replied
-dear mr. fogg	returned
-dear mr. fogg	saved
-dear mr. fogg	saw
-dear mr. fogg	shut
-dear mr. fogg	spent
-dear mr. fogg	think
-dear mr. fogg	thought
-dear mr. fogg	travelled
-dear mr. fogg	won
 degrees	crossed
 degrees	gives
 direction	crossed
@@ -4866,9 +4208,6 @@ emotion	betrayed
 eyes	keep
 fact	betrayed
 fact	marked
-family watch	betrayed
-family watch	kept
-family watch	marked
 fifty-fifth	heard
 fortune	belongs
 game	suspended
@@ -4877,8 +4216,6 @@ gentleman	displayed
 gentleman	gained
 gentlemen	appeared
 grudge	cherished
-happiness yes	gained
-happiness yes	were
 honour	entitled
 hours	arrived
 hours	betrayed
@@ -4889,8 +4226,6 @@ house	left
 house	reached
 journey	brought
 journey	gained
-london time	kept
-marriage ceremony	engage
 minutes	multiplied
 minutes	seemed
 minutes	waited
@@ -4907,8 +4242,6 @@ players	took
 quarter	indicated
 question	ask
 reader	remember
-reverend gentleman	left
-reverend samuel wilson	apprised
 room	burned
 room	staggered
 saloon	appeared

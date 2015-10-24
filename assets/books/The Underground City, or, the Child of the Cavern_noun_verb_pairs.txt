@@ -1,7 +1,3 @@
-aberfoyle coal-mines	bearing
-aberfoyle coal-mines	come
-aberfoyle postmark	bearing
-alloa mines	border
 beds	exhausted
 butty	raised
 c.	appropriated
@@ -10,33 +6,16 @@ consumption	increased
 curiosity	excited
 curiosity	occurred
 december	received
-dochart pit	support
-eastern indies	contributed
-edinburgh family	belonged
 engineer	known
 engineer	occurred
 engineer	termed
-english coal-mines	termed
 galleries	forsaken
-gas works	appropriated
 indies	call
 indies	contributed
-invitation secret	keep
 manager	known
 manu-factories	appropriated
 mastodon	taken
 mine	exhausted
-mineral fuel	want
-mr. f. r. starr	awaited
-mr. f. r. starr	belonged
-mr. f. r. starr	come
-mr. f. r. starr	held
-mr. f. r. starr	included
-mr. f. r. starr	received
-mr. f. r. starr	requested
-mr. f. r. starr	signed
-mr. f. r. starr	weighed
-overman simon ford	known
 pitch	excited
 post	received
 renown	acquired
@@ -44,7 +23,6 @@ skeleton	remains
 stock	brought
 stock	working
 veins	exhausted
-yarrow shaft	left
 years	increased
 years	known
 years	weighed
@@ -53,8 +31,6 @@ boy	stood
 caps	waved
 character	wanting
 day	quitted
-dochart pit	extracted
-dochart pit	leading
 eye	keep
 family	disperse
 feet	tread
@@ -111,20 +87,6 @@ letter	got
 letter	pondered
 letter	re-read
 milk	dried
-mr. starr	add
-mr. starr	added
-mr. starr	answered
-mr. starr	got
-mr. starr	heard
-mr. starr	know
-mr. starr	pondered
-mr. starr	proceeded
-mr. starr	re-read
-mr. starr	regretted
-mr. starr	remembered
-mr. starr	replied
-mr. starr	see
-mr. starr	wished
 overman	expressed
 overman	got
 overman	know
@@ -133,17 +95,9 @@ overman	see
 overman	take
 soil	burrowed
 soundings	proceeded
-till we meet again	's
-till we meet again	tell
-time starr	heard
 vein	discovered
 wife	mean
-aberfoyle colliery	abandoned
-aberfoyle postmark	bore
 conviction	abandoned
-copy book	torn
-dochart pit	repair
-dochart pit	visit
 engineer	appointed
 engineer	belonged
 engineer	contradicted
@@ -152,24 +106,11 @@ engineer	knew
 engineer	know
 engineer	living
 engineer	seen
-engineer james starr	abandoned
-engineer james starr	arrived
-engineer james starr	examined
-engineer james starr	got
-engineer james starr	keep
-engineer james starr	prevent
-engineer james starr	repeated
-engineer james starr	researches
-engineer james starr	took
-engineer james starr	tore
-engineer james starr	troubling
-engineer james starr	wrought
 envelope	enclosed
 envelope	examined
 envelope	torn
 hand	knew
 ideas	boiling
-ideas bubble	kettles
 incident	occurred
 invitation	contradicted
 invitation	keep
@@ -194,8 +135,6 @@ sentence	worded
 sentence	written
 son	living
 wife	living
-yarrow shaft	appointed
-yarrow shaft	go
 absence	prolonged
 affair	warranted
 atmosphere	extracted
@@ -206,7 +145,6 @@ bag	pack
 bag	traveling
 canongate	left
 canongate	passing
-coal strata	superpose
 convulsions	caused
 credence	give
 crucible	accumulated
@@ -218,8 +156,6 @@ crust	sunk
 day	jumped
 days	prolonged
 depths	sunk
-earthquake period	caused
-earthquake period	modified
 engagements	excuse
 epoch	surrounded
 evening	happen
@@ -230,7 +166,6 @@ forests	submerged
 forth	take
 gateways	dressed
 gateways	stood
-granton pier	go
 heap	settling
 heat	collected
 hoax	prove
@@ -254,12 +189,9 @@ rain	falling
 rains	fell
 resolution	influence
 resting-place	found
-salt waters	contained
-salt waters	spread
 sandstones	compose
 schists	compose
 sea	filled
-sir w. elphiston	wrote
 soil	rushed
 state	maintained
 steamer	catch
@@ -273,8 +205,6 @@ waves	bore
 waves	deposited
 waves	roving
 words	hear
-aberfoyle colliery	directed
-aberfoyle colliery	lay
 anthracite	appears
 anthracite	contains
 beds	found
@@ -284,24 +214,13 @@ coal	left
 communication	relate
 contrary	found
 day	forgotten
-dochart pit	good-by
 feet	discovered
-fossil wood	found
 lad	known
 letter	thought
 likeness	brought
 man	advanced
 part	played
 platform	set
-question james starr	advanced
-question james starr	asked
-question james starr	asking
-question james starr	called
-question james starr	cease
-question james starr	directed
-question james starr	known
-question james starr	retired
-question james starr	was
 rendezvous	appointed
 rendezvous	waiting
 seams	discovered
@@ -328,8 +247,6 @@ miner	replied
 minutes	left
 orders	am
 way	lead
-yarrow shaft	come
-agricultural life	taken
 air	filled
 bag	carrying
 blast-pipe	puffing
@@ -342,7 +259,6 @@ course	winding
 day	exhausted
 depths	passed
 desert	traversing
-dochart pit harry ford	stopped
 education	begun
 eye	gazed
 eyes	accustomed
@@ -370,26 +286,20 @@ miner	raise
 miner	shared
 miner	waited
 miners	took
-mining population	filled
 pace	slackened
-railway trucks	emptied
 rate	worked
 road	took
 scene	filled
 season	filled
 side	lay
-stony roads	took
 though	succeeded
 time	regret
 trees	dripping
 vapor	puffing
 whistlings	filled
-wide fields	lay
-yarrow shaft	situated
 appearance	touched
 bit	passed
 day	utilized
-dochart pit	reached
 earth	passed
 engineer	added
 engineer	answered
@@ -418,10 +328,6 @@ mine	worked
 mines	exhausted
 mines	happen
 movement	permitted
-mr. starr	burning
-mr. starr	continued
-mr. starr	ended
-mr. starr	mean
 pace	continued
 person	touched
 place	heard
@@ -436,14 +342,11 @@ use	produce
 use	wants
 ventilators	inhaled
 walk	continued
-whence ladders	gave
-yarrow shaft	remained
 air	interposing
 air	surrounding
 breath	gone
 companion	light
 danger	exist
-dozen ladders	descended
 explosion	feared
 flame	interposing
 gallery	led
@@ -460,16 +363,10 @@ man	precede
 man	signing
 mine	escapes
 minutes	halted
-mr. starr	examined
-mr. starr	please
-mr. starr	returned
-mr. starr	see
 obscurity	found
 obscurity	held
 obscurity	relieved
-oil lamp	provided
 platform	leave
-safety lamp	wish
 shaft	covered
 voice	heard
 bit	wait
@@ -478,37 +375,25 @@ engineer	turning
 eyes	accustomed
 eyes	smiling
 face	smiling
-intruder pass	let
 lamp	turning
 lantern	thrown
 mine	left
 miner	answered
-mining comrade	replied
 minutes	appeared
 mouth	laughing
 mouth	smiling
-mr. james starr	asked
 path	yield
 platform	leaning
-scotch song	broke
-speaking trumpet	carried
 voice	broke
 voice	carried
-yarrow shaft	going
-aberfoyle mines	like
 cottage	keep
-cottage to-day	taking
 disposition	changed
 engineer	answered
 galleries	radiated
 invitation	accept
 invitation	profit
-irvine games	come
-irvine games	meet
 ladder	descended
 lamp	disappeared
-melrose farm	like
-melrose farm	working
 mine	left
 one	forgotten
 pick	comes
@@ -522,13 +407,11 @@ trade	changing
 visit	last
 week	meet
 week	settled
-yarrow shaft	radiated
 arm	seizing
 arm	take
 beams	shored
 chance	falling
 darkness	pierce
-direction embankments	supplied
 engineer	asked
 engineer	replied
 engineer	seizing
@@ -548,8 +431,6 @@ light	lighted
 man	asked
 man	replied
 mines	introduced
-mr. starr	follow
-mr. starr	take
 others	lined
 paces	gone
 quarries	neighboring
@@ -567,26 +448,19 @@ ancestors	penetrated
 ancestors	worked
 arm	lean
 century	lived
-christian era	worked
-coal mines	worked
 collectors	rent
 companions-in-arms	divided
 convicts	labored
 density	owing
-dochart pit	established
 dwelling	hollowed
 dwelling	lived
 engineer	asked
 excavation	designate
-farrier houillos	derived
-farrier houillos	lived
 feet	buried
 fellows	supplies
-ford family	issued
 gallery	issued
 glade	penetrated
 glade	standing
-highland regiments	supplies
 ideas	having
 inhabitants	come
 mass	hollowed
@@ -598,7 +472,6 @@ miner	mistaken
 miner	replied
 miner	thought
 miner	use
-mining family	descended
 minutes	issued
 nave	continued
 noise	catch
@@ -611,13 +484,9 @@ shaft	deserted
 staff	use
 tastes	having
 trees	having
-yarrow shaft	drawn
 ancestors	wielded
 animation	missed
 birth	lived
-coal mine	exhausted
-coal mine	restore
-coal miners	believed
 crowbar	wielded
 day	return
 day	revive
@@ -637,13 +506,8 @@ pick	wielded
 pit	missed
 place	worked
 rock	attacked
-scotch miners	use
-scotch term	use
 seam	exhausted
-son harry	foraged
-son harry	refused
 splendor	restore
-stout arms	attacked
 trade	devoted
 works	abandoned
 years	performed
@@ -667,7 +531,6 @@ months	pass
 others	satisfied
 portobello	go
 risk	run
-summer time	go
 table	see
 voice	echoing
 appetite	do
@@ -680,12 +543,9 @@ hosts	taking
 letter	handing
 letter	told
 letter	took
-mr. starr	sit
 son	asked
 son	do
 son	turning
-yarrow shaft	met
-aberfoyle mine	prefer
 chair	drew
 clan	prefer
 cockyleeky	merited
@@ -709,7 +569,6 @@ miner	guessed
 miner	returned
 moment	re-entered
 place	coming
-poet burns	inspired
 repast	lasted
 reverie	aroused
 reverie	fell
@@ -724,8 +583,6 @@ yonder	prefer
 beings	peopled
 beliefs	exist
 depths	haunted
-dochart pit	earned
-dochart pit	turned
 dress	put
 ears	need
 explosions	presides
@@ -736,15 +593,12 @@ highlands	exist
 legs	need
 lowlands	exist
 miners	puts
-mining population	furnish
-mr. starr	responded
 nights	shakes
 overman	returned
 pick	leaning
 pick	taking
 repertory	furnish
 right	armed
-safety lamps	carrying
 scotch	spread
 seam	shakes
 son	turning
@@ -752,8 +606,6 @@ songs	earned
 songs	turned
 stick	armed
 woman	responded
-aberfoyle pits	bring
-aberfoyle pits	haunted
 accounts	transmitted
 ant-hill	compared
 beings	seen
@@ -798,8 +650,6 @@ traditions	lost
 wall	thrown
 work	returning
 years	took
-aberfoyle mines	cost
-aberfoyle mines	remains
 care	searching
 cause	explained
 cause	talked
@@ -870,8 +720,6 @@ air	accumulated
 buoyancy	collected
 catastrophe	followed
 catastrophes	prevented
-davy lamp	adopted
-dochart pit	discovered
 enemy	met
 engineer	asked
 excursions	observed
@@ -908,10 +756,6 @@ monk	crawled
 monk	muffled
 monk	waved
 monk	wore
-mr. starr	owing
-mr. starr	replied
-mr. starr	seen
-mr. starr	tell
 operation	renewing
 overman	related
 place	took
@@ -924,7 +768,6 @@ work	injured
 companions	gone
 cottage	leaving
 depth	find
-dochart pit	extracted
 dyke	attack
 end	come
 extent	occupying
@@ -961,7 +804,6 @@ air	snuffed
 air	surrounding
 anxiety	seemed
 arm	trembled
-coal dust	concealed
 cracks	escaping
 cracks	stopped
 cry	escaped
@@ -983,7 +825,6 @@ phenomenon	taken
 place	take
 rock	escaping
 rock	leaving
-safety lamp	hand
 schist	stopped
 times	snuffed
 voice	exclaimed
@@ -993,7 +834,6 @@ author	being
 bed	lies
 blows	attacked
 bottle	escaping
-coal seams	generated
 discovery	think
 domain	haunts
 domain	watched
@@ -1036,7 +876,6 @@ crowbar	grasped
 day	following
 day	took
 day	traversed
-dochart pit	paid
 dynamite	carried
 engineer	slept
 engineer	supped
@@ -1053,17 +892,10 @@ miner	overflowing
 miners	carried
 miners	looked
 months	passed
-mr. starr	answered
-mr. starr	entered
-mr. starr	form
-mr. starr	hope
-mr. starr	let
 overman	unfolded
 party	reached
 road	traversed
 rock	blast
-safety lamp	burn
-safety lamp	took
 seam	appears
 time	losing
 time	lost
@@ -1075,7 +907,6 @@ wall	blast
 working	supposing
 years	working
 air	grew
-air inside	formed
 alteration	undergone
 atmosphere	spreading
 blows	flew
@@ -1103,15 +934,12 @@ quantity	formed
 rock	flew
 rock	left
 rock	seated
-safety match	laid
-safety match	lighted
 splinters	flew
 spot	hastened
 vein	get
 yesterday	stopped
 avenues	contain
 bees	lodged
-caledonian canal	stretched
 cave	continued
 cave	introduced
 cavern	illuminated
@@ -1167,15 +995,12 @@ companions	felt
 contents	exhausted
 county	called
 day	find
-dochart pit	put
 ejaculations	overflowed
 entrance	followed
 exhalations	met
 explorers	question
 explorers	transported
-exterior atmosphere	placed
 gallery	ended
-granite rocks	cut
 height	calculated
 hollows	collected
 hour	stopping
@@ -1188,22 +1013,18 @@ layers	left
 mine	followed
 mine	put
 mine	transported
-oak trees	waved
 passage	left
 phrases	overflowed
 place	inhabited
 ponds	forming
 population	inhabited
 refuge	find
-safety lamp	carried
-safety lamp	insure
 schist	filtered
 time	circulated
 time	placed
 torrent	cut
 torrent	dashed
 vents	placed
-aberfoyle mine	explore
 banks	lost
 centuries	last
 cottage	returning
@@ -1241,7 +1062,6 @@ ears	caught
 engineer	replied
 entrance	following
 father	sounds
-firm ground	depreciate
 kettle	burn
 lad	am
 lad	find
@@ -1252,20 +1072,13 @@ mine	extract
 mine	following
 miner	declare
 minutes	stood
-mr. starr	answered
-mr. starr	assert
-mr. starr	resumed
 murmur	caught
-new aberfoyle	sounds
-new aberfoyle mine	depreciate
 overman	answered
 overman	cried
 overman	mistaken
 pieces	comes
 position	calculate
 position	compare
-price outside	sell
-sea shore	rolling
 seam	entered
 sound	caught
 sound	heard
@@ -1289,8 +1102,6 @@ day	create
 day	find
 depths	exist
 difficulties	create
-dochart pit	re-entered
-dochart pit	return
 dwelling	change
 dynamite	opened
 example	follow
@@ -1339,12 +1150,9 @@ lamps	find
 men	grope
 mine	open
 miner	answered
-mr. starr	follow
 rear	bring
 return	lasted
 road	kept
-side opening	felt
-side opening	presented
 step	advanced
 way	grope
 way	losing
@@ -1355,11 +1163,8 @@ castle	haunted
 circumstances	proved
 colleagues	communicated
 cry	escaped
-dochart pit	go
 documents	proved
 dynamite	broken
-edinburgh nothing	left
-edinburgh nothing	talked
 engineer	disappeared
 engineer	left
 explorers	strayed
@@ -1368,10 +1173,8 @@ fellow	telling
 fellow	worried
 fire-maidens	haunted
 friends	learnt
-granton pier	embarked
 heads	took
 inhabitants	containing
-irvine merry-making	wanting
 legends	based
 letter	requested
 letters	produced
@@ -1387,10 +1190,6 @@ overman	felt
 overman	stepped
 papers	published
 people	thinking
-period dundonald castle	deserted
-period dundonald castle	stood
-period dundonald castle	took
-period dundonald castle	visited
 promise	keeping
 railway	take
 reason	brought
@@ -1399,7 +1198,6 @@ rock	broken
 rock	felt
 servant	embarked
 servant	questioning
-sir w. elphiston	communicated
 strangers	took
 thing	promised
 time	passed
@@ -1417,7 +1215,6 @@ crew	heard
 dances	accompany
 darkness	gleamed
 evening	ending
-evening stories	furnished
 fire-maidens	given
 fire-maidens	performing
 fishermen	shouting
@@ -1446,7 +1243,6 @@ apparition	believed
 apparition	disappeared
 beach	dashed
 beach	hauled
-brig motala	bound
 brownies	imbibed
 coincidence	disappeared
 companions	believed
@@ -1469,8 +1265,6 @@ hurt	dashed
 hurt	rushed
 imagination	needed
 instant	broken
-melrose farm	echoed
-melrose farm	lavished
 men	cried
 north	thought
 point	dancing
@@ -1509,46 +1303,31 @@ coast	attracted
 day	disembarked
 days	left
 earth	preserved
-engineer james starr	embarked
-engineer james starr	knew
-engineer james starr	met
-engineer james starr	seen
 facts	explaining
 farm	hasten
 farm	left
 farm	resuming
 flame	imprisoned
-friend harry	go
-granton pier	embarked
 ground	bore
 indifference	believe
-irvine merry-making	come
 legend	added
 legend	confirm
 magistrate	wished
 magistrates	got
 magistrates	order
 magistrates	pleased
-mr. starr	exclaimed
-mr. starr	met
 notice	containing
 notice	following
 officials	proceeded
 papers	heard
-part jack	taken
 railway	take
 search	conduct
 tempest	bring
-time nothing	explains
-time nothing	heard
-time nothing	seen
-time nothing	taking
 trace	find
 train	jumped
 train	waiting
 trouble	got
 vestige	preserved
-via glasgow	take
 walls	containing
 walls	posted
 work	resuming
@@ -1560,8 +1339,6 @@ cottage	built
 cottage	effected
 cottage	finding
 darkness	pierce
-desert region	moving
-dochart pit	acquainted
 fall	entail
 foot	tried
 hour	arrived
@@ -1570,8 +1347,6 @@ ladders	led
 landing	counted
 landing	got
 landing	passed
-living creature	moving
-mining habits	forgotten
 pit	visited
 round	tried
 shaft	led
@@ -1581,12 +1356,9 @@ thirtieth	left
 time	considering
 time	occurred
 visit	effected
-yarrow shaft	arrived
-aberfoyle mines	set
 account	doubted
 account	given
 authorities	informed
-callander station	caught
 communication	interrupted
 cottage	get
 cottage	lead
@@ -1621,17 +1393,9 @@ others	fastened
 party	set
 pit	left
 rocks	re-echoed
-rope ladder	unrolled
-rope ladders	brought
-rope ladders	fastened
-rope ladders	lowered
-rope ladders	supplied
 ropes	fastened
 shaft	lowered
 shaft	met
-sir william elphiston	answered
-sir william elphiston	asked
-sir william elphiston	informed
 time	exhausted
 truth	ascertain
 voice	shouted
@@ -1650,7 +1414,6 @@ door	darted
 engineer	undertaken
 example	following
 finger	pointing
-ford family	last
 habitation	examined
 lamp	taking
 lantern	seemed
@@ -1664,9 +1427,6 @@ party	arrived
 pillar	disappeared
 president	darted
 president	given
-pursuit sir william elphiston	began
-pursuit sir william elphiston	exclaimed
-pursuit sir william elphiston	gone
 region	accustomed
 step	proceeded
 turn	gained
@@ -1720,15 +1480,6 @@ people	shut
 pursuit	continuing
 refuge	retreating
 rocks	found
-sir william	endeavored
-sir william	entice
-sir william	thought
-sir william elphiston	endeavored
-sir william elphiston	entice
-sir william elphiston	exclaimed
-sir william elphiston	point
-sir william elphiston	thought
-sir william elphiston	wondered
 space	continued
 story	hear
 thought	crossed
@@ -1763,15 +1514,9 @@ hand	closed
 hour	plied
 houses	built
 houses	grew
-jack ryan remark	answer
-jack ryan remark	mentioned
-jack ryan remark	sung
-jack ryan remark	took
 life	deserted
 lungs	exerted
 machines	produced
-melrose farm	lost
-melrose farm	piper
 months	weaned
 night	produced
 overman	maintained
@@ -1814,7 +1559,6 @@ goblin	add
 hand	grasping
 hand	skipping
 hour	delay
-hyperborean mythology	enriching
 ideas	shared
 invitation	accept
 lantern	skipping
@@ -1822,27 +1566,21 @@ lives	owe
 mine	found
 mine	haunt
 months	begun
-mr. ford	cried
-mr. starr	forgotten
-old madge	loved
 overman	answered
 overman	forgotten
 room	accepted
 room	offered
 scrap	get
 shadow	vanishes
-son harry	owe
 thing	's
 way	accepted
 way	found
 works	begun
 wounds	healed
 attention	paid
-balloch railway	passed
 basement	served
 birds	introduced
 canoe	explored
-coal town	rested
 coast	ended
 columns	supported
 crowds	passed
@@ -1850,7 +1588,6 @@ depths	penetrate
 discs	shed
 earth	brooded
 fogs	obscured
-ford family	led
 friends	finding
 friends	saved
 friends	walking
@@ -1859,7 +1596,6 @@ hat	stuck
 ins	know
 lamp	stuck
 life	led
-life above-ground	envy
 outs	know
 pond	passed
 ponds	explored
@@ -1904,8 +1640,6 @@ companion	impressed
 companion	mean
 conviction	feel
 convictions	found
-dochart pit	enter
-dochart pit	see
 entrance	blocked
 entrance	reaching
 examination	carried
@@ -1916,8 +1650,6 @@ intentions	given
 lamp	broken
 letter	proves
 letter	wished
-mr. starr	comes
-mr. starr	enter
 passage	make
 person	exists
 person	persist
@@ -2022,7 +1754,6 @@ passage	lay
 passage	led
 passage	look
 passage	opened
-pit coal	consisted
 place	walked
 point	slackened
 point	unwound
@@ -2033,7 +1764,6 @@ reach	clinging
 rope	caused
 rope	pulled
 senses	deceived
-side walls	consisted
 signal	agreed
 struggle	prolonged
 turns	fell
@@ -2068,13 +1798,11 @@ hand	catching
 idea	banished
 idea	crossed
 instant	banished
-iron grasp	held
 knife	caught
 knife	dropped
 knife	held
 knife	slipping
 language	spoken
-level ground	placed
 matter	feel
 men	seized
 moment	giving
@@ -2094,8 +1822,6 @@ way	puzzled
 words	uttered
 bed	fell
 brain	received
-coal mines	caused
-course james starr	informed
 day	catch
 days	signifying
 days	understand
@@ -2136,7 +1862,6 @@ pupil	dilated
 rock	enclosed
 sensation	caused
 spirit	catch
-stony prison	released
 story	be
 strength	recovered
 wonder	knowing
@@ -2151,7 +1876,6 @@ beings	concealed
 beings	concocted
 beings	warned
 castle	crowned
-coal mine	inspect
 coal-pit	concealed
 cottage	admired
 credulity	experienced
@@ -2159,7 +1883,6 @@ crypt	hollowed
 days	engaged
 dwelling	quitting
 dwelling	remain
-friend jack	sang
 girl	comprehended
 girl	conveying
 girl	knew
@@ -2195,7 +1918,6 @@ lurking-place	feel
 mind	weighs
 motala	attracted
 mother	adores
-mr. starr	think
 mystery	penetrated
 occupants	mention
 opening	emerged
@@ -2274,9 +1996,6 @@ voice	trembling
 way	find
 way	got
 apparatus	lowered
-bonny nell	deserves
-bonny nell	marry
-bonny nell	spoke
 comrade	recognizing
 day	coming
 father	love
@@ -2287,14 +2006,6 @@ friends	remained
 landing-place	perceived
 mine	brought
 month	hope
-morning jack ryan	cried
-morning jack ryan	descending
-morning jack ryan	know
-morning jack ryan	laughed
-morning jack ryan	looked
-morning jack ryan	lowered
-morning jack ryan	perceived
-old simon	love
 persons	enabled
 spinster	expect
 spinster	remain
@@ -2343,7 +2054,6 @@ sun	like
 voice	died
 voices	sounded
 wonders	seen
-coal mine	seemed
 comrades	acknowledged
 comrades	envied
 cottage	setting
@@ -2383,8 +2093,6 @@ words	catching
 words	issued
 childhood	connected
 clue	detecting
-clustering stars	spread
-coal mine	continue
 companions	convey
 companions	enliven
 companions	join
@@ -2471,7 +2179,6 @@ comparison	strike
 comparisons	strike
 forest	is
 friends	took
-glittering silver field	sailed
 hand	clasped
 hand	expressed
 hand	trembling
@@ -2480,8 +2187,6 @@ light	fled
 lips	raising
 movement	borne
 movement	gliding
-mr. starr	exclaimed
-mr. starr	going
 oar	betrayed
 oar	handled
 proportions	to-night
@@ -2489,10 +2194,7 @@ river	flows
 sail	filled
 sail	spread
 scene	affected
-sea water	flows
 seats	took
-silver plate	looks
-silver plate	round
 sky	round
 sonnet	begin
 spectacle	gazed
@@ -2510,8 +2212,6 @@ earth	touch
 eyelids	drooped
 feet	seem
 firmament	appears
-fishing boats	lay
-granton pier	reached
 hand	taking
 head	sank
 horizon	lay
@@ -2522,7 +2222,6 @@ moon	riding
 night	continued
 rays	diffused
 roof	gleamed
-sea coast	promised
 shoulder	sank
 streets	deserted
 streets	traversed
@@ -2534,7 +2233,6 @@ bridge	reached
 building	pointed
 city	lay
 city	massed
-day breaks	look
 drive	passed
 eyes	behold
 eyes	put
@@ -2547,7 +2245,6 @@ hill-tops	illuminated
 hill-tops	increased
 hill-tops	rose
 historian	invoke
-horizon seaward	appear
 lights	twinkled
 lion	seen
 maiden	keeping
@@ -2556,7 +2253,6 @@ maiden	turned
 mass	look
 park	entered
 scene	enacted
-sir walter scott	listen
 splendor	contemplate
 spot	choose
 sun	appear
@@ -2567,7 +2263,6 @@ west	seen
 world	used
 air	inhaled
 arms	fainting
-azure skies	rested
 bay	indented
 bay	seen
 capital	led
@@ -2591,24 +2286,17 @@ form	rose
 friends	conveyed
 glare	exclude
 gloom	emerged
-hands nell	perceived
-hands nell	rose
 heights	commanded
-highland lakes	make
 horizon	rose
 hotel	reached
 light	perceived
 lips	murmured
-lord god	knelt
-lord god	obtained
 maiden	entombed
 maiden	looked
 maiden	obtained
 monuments	commanded
 monuments	represent
 north	indented
-railway train	conveyed
-railway train	entered
 ray	struck
 roadways	led
 sight	struck
@@ -2666,8 +2354,6 @@ ejaculation	impress
 ejaculation	required
 eyes	raising
 fissure	opened
-friend jack	looked
-friend jack	see
 girl	replied
 god	help
 hand	rested
@@ -2724,17 +2410,13 @@ men	decide
 mine	rushing
 mine	stay
 miners	labored
-mining operations	carried
 moment	arose
 night	labored
 noises	resounded
-old simon ford	resting
 one	perished
 others	worked
 people	perceived
 people	rose
-refuge places	cower
-roaring noise	heard
 rock	penetrating
 rock	precipitating
 swing-doors	slammed
@@ -2817,7 +2499,6 @@ incomprehensible	replied
 interest	urges
 matter	keep
 mind	engaged
-obtains contraband goods	conceal
 practices	carried
 schemes	lays
 silence	knows
@@ -2840,8 +2521,6 @@ cottage	returned
 day	broke
 day	practicing
 day	watched
-day month	preceding
-day month	take
 days	met
 description	required
 doubt	ascertained
@@ -2865,8 +2544,6 @@ marriage	take
 miners	keep
 miners	seized
 misfortunes	happened
-mr. starr	ascertained
-mr. starr	forbade
 night	watched
 nothing	discovered
 obstacle	met
@@ -2876,7 +2553,6 @@ rails	met
 remark	yielded
 ruffians	lay
 songs	practicing
-steam tramway	met
 step	taken
 time	took
 times	remind
@@ -2913,7 +2589,6 @@ morning	rising
 mystery	explained
 night	traced
 occupation	assisted
-orphan girl	born
 overman	revealed
 owl	accompanied
 owl	called
@@ -2930,22 +2605,9 @@ allowance	lived
 arrival	contradicting
 brain	unsettled
 grandfather	denounce
-harfang man	call
-harfang man	used
 harry	thrown
 intentions	acted
 mind	deranged
-mr. starr	am
-mr. starr	believed
-mr. starr	come
-mr. starr	demanded
-mr. starr	happened
-mr. starr	know
-mr. starr	mean
-mr. starr	resumed
-mr. starr	see
-mr. starr	shaking
-mr. starr	understand
 overman	replied
 secret	discovered
 words	mean
@@ -2969,9 +2631,6 @@ mother	go
 mother	knew
 mother	needed
 mother	take
-mr. starr	catch
-mr. starr	feel
-mr. starr	listen
 plots	put
 room	take
 sake	put
@@ -3005,7 +2664,6 @@ master	used
 mind	comes
 mine	reaching
 mine	regarded
-old aberfoyle	disappeared
 opening	stopped
 others	arrived
 people	asked
@@ -3036,20 +2694,10 @@ proposal	accept
 retreats	seen
 sake	put
 sake	tell
-son loved	saw
 subjects	talk
 time	saw
-trust mr. starr	deceived
-trust mr. starr	discover
-trust mr. starr	put
-trust mr. starr	sees
-trust mr. starr	think
-trust mr. starr	used
-trust mr. starr	written
 truth	perceive
 words	started
-armed sentinels	posted
-building silfax	passed
 day	keep
 entrances	posted
 feelings	overcome
@@ -3073,7 +2721,6 @@ panic	recover
 son	marry
 union	hinder
 wedding	preceding
-wedding it	agreed
 abyss	disclosing
 abyss	plunging
 air	elevated
@@ -3097,8 +2744,6 @@ cavities	accumulated
 clothes	put
 costume	following
 cottage	left
-davy safety lamp	bore
-davy safety lamp	lighted
 dome	rose
 group	advanced
 hair	bound
@@ -3127,11 +2772,8 @@ sentence	finish
 shafts	entered
 shafts	ventilating
 son	honor
-stained-glass windows	shed
-stained-glass windows	shone
 storm	burst
 suns	blazed
-tartan plaid	wearing
 temperature	elevated
 terrors	beat
 terrors	betray
@@ -3143,16 +2785,12 @@ waves	rushing
 wife	take
 air	waved
 arms	sprang
-burning match	dropped
-burning wick	snatching
-burning wick	waved
 canoe	urging
 chapel	left
 chapel	quitted
 circle	describing
 dome	accumulating
 explosion	delayed
-faithful bird	appeared
 features	contracted
 feet	alighting
 fire-damp	comes
@@ -3207,7 +2845,6 @@ master	engulfed
 occasion	blew
 overman	replied
 owl	keep
-page line original	changed
 prey	yielded
 time	show
 trials	gone

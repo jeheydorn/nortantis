@@ -1,21 +1,13 @@
 1866	packed
 advent	tars
 affairs	take
-arizona cave	lay
-arizona hills ii	tars
-arizona mornings	lay
-arizona mornings	prospecting
-arizona mornings	tars
 body	lay
-book form	submitting
 character	reflecting
 chariots	departing
-chief xi	learn
 claim	hold
 commission	possessed
 conviction	determined
 cottage	situated
-day science	substantiate
 death	die
 death	died
 death	divulge
@@ -23,12 +15,9 @@ demand	comply
 detail	followed
 door	equipped
 dreams	pictured
-eleven years	found
 equipment	return
-father caution	heard
 fortunes	fallen
 fortunes	retrieve
-heart failure	reached
 heavens	know
 heavens	looking
 heavens	stretched
@@ -40,8 +29,6 @@ man	asked
 man	replied
 man	sat
 man	talked
-manuscript years	read
-marble floor	drew
 mars	gained
 masterless	determined
 men	aged
@@ -49,18 +36,15 @@ mind	believe
 mind	grasp
 mine	work
 months	returned
-new york market	visited
 night	retired
 night	sit
 nights	seen
 others	talk
-pack animals	picking
 phenomena	explain
 physician	directed
 physician	laid
 physician	told
 place	purchased
-police chief	discovered
 press	pilloried
 princess	believe
 property	attached
@@ -76,7 +60,6 @@ skies	raised
 slaves	worshipped
 snow	stretched
 station	arrived
-story xvi	tells
 study	assembled
 study	left
 study	stood
@@ -85,13 +68,11 @@ telegram	received
 townspeople	assembled
 townspeople	discovered
 trip	make
-uncle jack	called
 war	broke
 watchman	seen
 watchman	showed
 way	picking
 way	work
-window standing	seen
 year	spent
 year	visited
 years	befell
@@ -107,14 +88,11 @@ bows	fled
 camp	occupied
 canter	mount
 carbine	arming
-cartridge belt	drew
 cave	crept
 cave	filling
 chamber	found
 cliff	arose
 clutches	fell
-colt revolvers	arming
-colt revolvers	whipped
 dangers	conjured
 day	following
 day	occur
@@ -157,7 +135,6 @@ muscles	refused
 muscles	relaxed
 pace	hoping
 pace	urged
-pack animals	seen
 peak	neighboring
 peaks	surrounding
 period	found
@@ -169,25 +146,18 @@ pursuit	organized
 rascals	attacked
 rascals	catch
 republics	bestowed
-rifle balls	pursued
 rifles	fled
 saddle	reached
-saddle horse	borne
-saddle horse	catching
-saddle horse	traveling
-saddle horse	urged
 savages	pursuing
 savages	yells
 scene	broke
 scene	charging
-side wall	started
 singlehanded	fled
 singlehanded	turned
 sounds	hearing
 speed	urged
 stories	ridicule
 suspense	endure
-table land	entering
 tactics	pursued
 target	moving
 tepees	notice
@@ -201,12 +171,10 @@ valley	happened
 vapor	noticed
 walk	following
 warriors	clustered
-water hole	reached
 way	proceed
 years	befell
 years	following
 alternative	seemed
-apache warriors	turn
 apprehension	seemed
 arms	stretched
 back	lurked
@@ -330,8 +298,6 @@ man	told
 man	touch
 man	turned
 man	upbraided
-martian air	carried
-martian surprise	received
 metamorphosis	left
 mind	tells
 minutes	endured
@@ -339,13 +305,6 @@ moonlight	flooded
 moonlight	lay
 moonlight	wrought
 morning	placed
-morning sun	falling
-morning sun	shining
-my advent on mars	felt
-my advent on mars	gazed
-my advent on mars	held
-my advent on mars	riveted
-my advent on mars	seemed
 nearness	apprised
 necks	craning
 night	gazed
@@ -380,7 +339,6 @@ wakefulness	question
 world	forgotten
 adults	deepens
 air	carried
-air pressure	cope
 antennae	protruding
 antics	played
 appearance	present
@@ -397,7 +355,6 @@ direction	rode
 discovery	looked
 districts	cultivated
 districts	scattered
-earth man	lift
 effort	carried
 effort	crowned
 effort	landed
@@ -443,7 +400,6 @@ others	trailed
 picture	materialized
 pounds	weighed
 pursuers	landed
-queer animal	permitting
 reins	having
 sanity	doubt
 shells	break
@@ -470,7 +426,6 @@ actions	spoke
 animal	mounted
 area	covered
 arms	threw
-audience chamber	proceeded
 building	constructed
 building	covered
 building	halted
@@ -497,7 +452,6 @@ city	ended
 clamor	stilled
 creatures	camped
 creatures	considered
-death loss	comes
 deaths	die
 desks	carved
 desks	dotted
@@ -505,7 +459,6 @@ direction	moved
 duels	die
 ears	curving
 ears	pricking
-english tongue	replied
 entrance	halted
 entrance	projected
 expedition	connected
@@ -533,24 +486,13 @@ heart	placing
 introduction	fought
 landscape	jump
 language	understand
-leather trappings	set
-leather trappings	wrought
 length	addressed
 life	come
 limbs	strapped
 males	lacking
-martian chieftain	addressed
-martian chieftain	approaching
-martian chieftain	repeated
-martian chieftain	rose
-martian chieftain	uttered
-martian laugh	blanch
 men	cause
 men	exchanged
 men	varied
-metal armlet	holding
-metal armlet	unclasped
-metal ornaments	squatted
 miles	gone
 muscles	feeling
 nails	lacking
@@ -567,8 +509,6 @@ plaza	started
 position	moved
 presence	discovered
 reply	waiting
-river iss	go
-river iss	leads
 rostrum	strode
 run	started
 shots	exchanged
@@ -622,12 +562,6 @@ desk	expecting
 desk	wheeled
 device	produces
 device	requires
-dog sola	belonged
-dog sola	motioned
-dog sola	presumed
-dog sola	replenished
-dog sola	returned
-dog sola	watch
 equilibrium	lose
 exhibition	witnessed
 eyes	glued
@@ -662,11 +596,6 @@ leap	repeating
 life	gave
 life	saving
 light	produces
-living animal	guess
-martian night	lighted
-martian nights	illumined
-martian scene	makes
-master hand	wrought
 mates	broke
 mates	repeated
 mates	tars
@@ -677,14 +606,12 @@ moment	guarded
 moment	saving
 moment	surveying
 moon	separate
-motley array	piled
 mountains	winding
 mouth	motioned
 muscle	moved
 name	learned
 night	hurtling
 odds	permit
-one-quarter hours	revolves
 ox	felled
 plaza	crossed
 plaza	fronting
@@ -698,12 +625,9 @@ room	decorated
 room	leave
 room	lighted
 runner	see
-shuffling gait	moving
 side	crossed
 side	moved
-signal failure	walk
 silks	stretched
-sister satellite	revolves
 starlight	diffuse
 stomach	rubbed
 street	deserted
@@ -745,20 +669,7 @@ building	bolted
 building	looking
 bulk	advancing
 bulk	prove
-bull ape	bolted
-bull ape	fell
-bull ape	followed
-bull ape	gasping
-bull ape	infuriated
-bull ape	lunged
-bull ape	reeled
-bull ape	regain
-bull ape	struck
-bull ape	throwing
-bull ape	witnessed
 carcass	held
-chapter vi a fight	held
-chapter vi a fight	won
 charge	met
 cities	deserted
 cities	rove
@@ -766,7 +677,6 @@ city	alighting
 clew	prove
 danger	confronted
 day	preceding
-death struggle	closed
 devices	left
 duty	prompt
 encounter	placed
@@ -822,13 +732,6 @@ skull	crushing
 smashing	followed
 sockets	bulging
 sounds	uttering
-stone cudgel	bearing
-stone cudgel	fallen
-stone cudgel	held
-stone cudgel	intended
-stone cudgel	seized
-stone cudgel	swinging
-stone cudgel	ward
 street	gain
 strength	approached
 thing	follow
@@ -859,7 +762,6 @@ aisle	captured
 animal	drawn
 appearance	drawn
 attention	paid
-birth rate	offset
 breakfast	escorted
 cavalcade	broke
 cavalcade	took
@@ -883,8 +785,6 @@ creature	found
 day	preceding
 days	hatching
 days	passed
-draft animals	guided
-draft animals	wore
 duties	doubled
 education	devolves
 eggs	chosen
@@ -896,13 +796,11 @@ eggs	remaining
 eggs	transported
 enclosure	left
 extent	communicate
-faithful creature	left
 fastnesses	built
 fathers	pointing
 feet	ranged
 gallop	broke
 glance	showed
-gravity tests	meet
 headquarters	lay
 hills	led
 incubators	built
@@ -915,16 +813,10 @@ journey	placed
 journey	traversed
 lot	cast
 mars	spent
-martian conditions	walking
-martian driver	perched
-martian education	advanced
-martian education	took
-martian female	brings
 means	guided
 messages	catch
 mind	read
 morning	ridden
-mother love	know
 number	brought
 offspring	inherit
 offspring	transmit
@@ -966,7 +858,6 @@ tracts	bounded
 tribes	discovered
 tutelage	developed
 valley	led
-wagon train	drawn
 walls	formed
 walls	scampered
 warriors	mounted
@@ -995,8 +886,6 @@ years	lain
 years	walled
 advent	seen
 air	soared
-air craft	neared
-air craft	owing
 armada	followed
 armada	retreating
 arms	consisted
@@ -1035,7 +924,6 @@ fire	diminished
 fire	given
 fire	returned
 fire	seemed
-firing line	position
 flames	ate
 flames	diminished
 flames	roaring
@@ -1050,7 +938,6 @@ ground	removed
 ground	sliding
 gunners	pick
 guns	bringing
-guy ropes	sliding
 hills	peered
 hooks	grappling
 hooks	thrown
@@ -1060,20 +947,11 @@ hours	carved
 hours	requisitioned
 hours	watched
 ignorance	prevented
-incubator ceremony	set
 legs	erect
 load	removed
 manner	circling
 march	returning
 mars	seen
-martian warriors	commenced
-martian warriors	dragging
-martian warriors	examining
-martian warriors	fired
-martian warriors	removed
-martian warriors	searched
-martian warriors	swarmed
-martian warriors	thrown
 minutes	swung
 missile	struck
 moment	gazed
@@ -1108,8 +986,6 @@ signal	answered
 sky	set
 southeast	drifted
 spears	swarmed
-steering gear	concentrate
-stone vessels	carved
 street	descended
 sunlight	gleamed
 valley	facing
@@ -1133,7 +1009,6 @@ works	swung
 yearning	felt
 agonies	exhibit
 arms	bearing
-audience chamber	conducted
 captive	recall
 chances	take
 city	leave
@@ -1157,7 +1032,6 @@ fate	mete
 females	occupied
 females	produced
 females	retired
-girl captive	escape
 guards	exchanged
 guards	treated
 hands	fallen
@@ -1170,7 +1044,6 @@ language	understand
 language	understood
 life	lead
 manner	progressed
-martian tongue	mastered
 men	arises
 men	fight
 men	make
@@ -1212,18 +1085,14 @@ act	stung
 act	warmed
 adventure	decided
 adventure	result
-air currents	rechart
 antics	ceased
 appeal	decided
 arm	twisted
 arms	putting
 attention	paid
-audience chamber	enter
-audience chamber	entered
 back	presenting
 back	threw
 body	thrust
-boundary line woola	approached
 brutes	serve
 building	approached
 character	add
@@ -1276,10 +1145,6 @@ character	talked
 character	venture
 character	warned
 character	wish
-city limits	regain
-city sola	explained
-city sola	fail
-city sola	pleaded
 collie	smile
 collie	sprang
 collie	threw
@@ -1289,7 +1154,6 @@ country	explore
 country	occurred
 day	preceding
 days	passed
-density tests	take
 expression	pleading
 eyes	hidden
 eyes	raised
@@ -1326,18 +1190,10 @@ loss	maintained
 loved	imposed
 loyalty	outweigh
 manner	twisted
-martian tongue	acquired
-martian tongue	mastered
-martian tongue	talking
-martian woman	desired
-martian woman	fail
-martian woman	perform
 masters	discovered
 masters	imposed
 men	talk
 minutes	talked
-morning powell	bucked
-morning powell	left
 mouth	stretched
 nails	sunk
 nature	arouse
@@ -1345,7 +1201,6 @@ neck	putting
 night	reported
 north	stretching
 opportunity	prove
-owning nothing	resulted
 passions	aroused
 planet	dying
 planet	regenerate
@@ -1384,7 +1239,6 @@ years	backed
 accounting	making
 act	constituted
 acts	earned
-answering chord	strike
 arm	placed
 arms	raised
 ascendency	reasserted
@@ -1408,7 +1262,6 @@ exit	turned
 eyes	looking
 eyes	staring
 face	bespoke
-faithful woola	followed
 feet	armed
 feet	assisting
 feet	believe
@@ -1437,56 +1290,6 @@ lips	fallen
 look	lighted
 man	know
 manner	rested
-martian chieftain	accorded
-martian chieftain	accounted
-martian chieftain	addressed
-martian chieftain	am
-martian chieftain	believe
-martian chieftain	bore
-martian chieftain	brought
-martian chieftain	call
-martian chieftain	claim
-martian chieftain	cleared
-martian chieftain	crouched
-martian chieftain	delivered
-martian chieftain	dislodge
-martian chieftain	doubt
-martian chieftain	drew
-martian chieftain	endeavored
-martian chieftain	ere
-martian chieftain	fear
-martian chieftain	furnished
-martian chieftain	interfered
-martian chieftain	kill
-martian chieftain	killed
-martian chieftain	know
-martian chieftain	learned
-martian chieftain	noticed
-martian chieftain	permit
-martian chieftain	permitted
-martian chieftain	raised
-martian chieftain	read
-martian chieftain	realize
-martian chieftain	realized
-martian chieftain	refused
-martian chieftain	regained
-martian chieftain	replied
-martian chieftain	rested
-martian chieftain	saw
-martian chieftain	seen
-martian chieftain	sensed
-martian chieftain	sprang
-martian chieftain	spurs
-martian chieftain	struck
-martian chieftain	taken
-martian chieftain	tell
-martian chieftain	think
-martian chieftain	thought
-martian chieftain	turned
-martian chieftain	understand
-martian chieftain	won
-martian dealings	marks
-martian warrior	countenance
 men	consort
 minds	passing
 moments	taken
@@ -1508,7 +1311,6 @@ temerity	cost
 thing	save
 things	caused
 time	realized
-warning cry	turned
 warrior	convince
 warrior	leaped
 warrior	sensing
@@ -1520,7 +1322,6 @@ ancestor	heard
 ancestor	tell
 ancestors	kill
 arms	wore
-audience chamber	found
 bedding	bring
 behest	refuse
 belief	follow
@@ -1552,7 +1353,6 @@ flaws	pick
 gentleman	lie
 gentleman	save
 geography	knows
-gold chains	swinging
 hand	carried
 hands	clasped
 hands	fold
@@ -1580,16 +1380,9 @@ part	depicted
 people	see
 people	understand
 people	wrought
-planet earth	answered
-planet earth	concerning
-planet earth	hanging
-planet earth	revolves
-planet earth	takes
 plaza	overlooking
 position	understand
 presence	permitted
-prisoner escape	harbored
-prisoner escape	leave
 problem	bear
 protection	crave
 quarters	accompanied
@@ -1598,8 +1391,6 @@ quarters	found
 quarters	take
 questions	asking
 return	guard
-river iss	empties
-river iss	returning
 robes	flowing
 room	overlooking
 room	use
@@ -1618,8 +1409,6 @@ thoughts	ask
 threat	resulted
 tongue	speak
 truth	speak
-valley dor	am
-valley dor	empties
 voice	pleading
 warrior	lies
 warrior	look
@@ -1638,9 +1427,6 @@ approach	mounted
 archives	lost
 areas	diminishing
 attempt	apprehended
-audience chamber	approached
-audience chamber	hastened
-audience chamber	left
 belongings	returned
 bodies	cover
 body	lay
@@ -1659,15 +1445,6 @@ conditions	fitted
 conversation	engrossed
 doubt	cause
 dwellers	share
-earth men	answered
-earth men	asked
-earth men	decided
-earth men	dismissed
-earth men	occupying
-earth men	passed
-earth men	recall
-earth men	shows
-earth men	warned
 earthliness	cause
 eyes	fixing
 fate	awaited
@@ -1684,9 +1461,6 @@ land	fall
 land	took
 lives	took
 man	go
-martian breast	stilled
-martian protege	returned
-martian protege	stilled
 mind	putting
 moment	save
 moments	parted
@@ -1703,13 +1477,6 @@ people	throw
 people	used
 planet	dying
 point	reached
-point sola	asked
-point sola	described
-point sola	met
-point sola	mounted
-point sola	occupied
-point sola	returned
-point sola	surprised
 position	won
 prowess	won
 quarters	share
@@ -1721,10 +1488,8 @@ rostrum	seated
 salvation	forced
 screen	throw
 shipping	passed
-sola farewell	hastened
 summons	bearing
 sweat	started
-tharkian warriors	found
 time	flourished
 tones	continued
 warrior	kill
@@ -1733,7 +1498,6 @@ waters	follow
 waters	receding
 way	approached
 afternoon	asked
-air ships	return
 apartments	living
 arm	run
 baths	dressing
@@ -1750,7 +1514,6 @@ chieftains	known
 chieftains	placed
 city	remained
 community	remained
-community interest	coupled
 confidence	won
 contraptions	bore
 court	formed
@@ -1775,7 +1538,6 @@ floor	chose
 floor	leaving
 floor	occupied
 fountains	bore
-frolicking children	filled
 homes	driven
 horde	presented
 laws	driven
@@ -1784,9 +1546,6 @@ life	take
 load	advised
 load	return
 march	abandoning
-martian vegetation	caused
-martian vegetation	filled
-martian warriors	caused
 mating	directed
 method	complicated
 methods	adopt
@@ -1868,7 +1627,6 @@ eyes	met
 fate	bow
 fates	hate
 friend	cease
-glass cylinder	exposing
 hand	placed
 hands	die
 head	shook
@@ -1889,10 +1647,6 @@ moon	ere
 mothers	know
 night	fired
 night	preceding
-night battle	fired
-night battle	given
-night battle	note
-night battle	used
 object	strike
 planets	born
 plaza	venturing
@@ -1901,8 +1655,6 @@ projectiles	make
 projectiles	used
 quarters	return
 quarters	visited
-radium powder	describing
-radium powder	mix
 reason	desired
 reply	awaited
 respect	shared
@@ -1912,14 +1664,11 @@ sentiments	shared
 shoulder	placed
 silks	removing
 sunlight	explodes
-thark warrior	take
-thrill pass	felt
 time	has
 time	know
 times	circled
 warrior	change
 warrior	stumbling
-word radium	used
 words	caught
 words	gazed
 world	dying
@@ -2009,15 +1758,12 @@ mouth	cut
 opportunity	urging
 parents	added
 peace	held
-people kiss	do
 pleasures	vary
 poles	melts
 prisoner	leave
 quarters	return
-queer freaks chance	meditating
 question	repeat
 responsibility	assume
-river iss	throw
 seas	encircling
 seas	roamed
 shoulder	drawing
@@ -2027,7 +1773,6 @@ sisters	added
 sky	raced
 snow	melts
 span	cover
-spring lock	fastened
 standards	vary
 sword	cut
 tharks	escape
@@ -2062,8 +1807,6 @@ cloths	changing
 cloths	riding
 community	surrounded
 dagger	whipped
-dozen warriors	took
-dozen warriors	tore
 effort	leap
 eggs	placed
 enclosure	belonged
@@ -2096,9 +1839,6 @@ long-sword	drawn
 long-sword	held
 long-sword	struck
 long-sword	waiting
-martian women	bring
-martian women	grow
-martian women	keep
 mind	took
 mirror	struck
 name	spoke
@@ -2195,8 +1935,6 @@ blade	removing
 body	removing
 breast	piercing
 carcass	turning
-chapter xv sola	tells
-chariot tonight	come
 chariots	colored
 chieftains	breed
 command	await
@@ -2208,8 +1946,6 @@ distance	standing
 distress	suffered
 dust	raised
 encounter	seemed
-existence living	admit
-face lighting	looked
 fate	known
 fate	live
 fate	looked
@@ -2218,7 +1954,6 @@ fate	wish
 feet	sprang
 flesh	piercing
 form	wracked
-glass vessel	hidden
 happenings	accustomed
 healing	applying
 hills	roamed
@@ -2232,21 +1967,6 @@ life	live
 likes	talked
 lips	break
 march	resume
-martian applause	give
-martian applause	wish
-martian woman	am
-martian woman	believe
-martian woman	care
-martian woman	give
-martian woman	known
-martian woman	learned
-martian woman	live
-martian woman	lost
-martian woman	promised
-martian woman	roamed
-martian woman	understand
-martian woman	wish
-martians converse	rumbling
 metal	lent
 metal	wearing
 mother	dared
@@ -2266,7 +1986,6 @@ presence	notice
 race	hurt
 retinue	bore
 ribs	cover
-sea bottom	brought
 seat	take
 senses	regained
 shoulder	coming
@@ -2320,7 +2039,6 @@ chance	lost
 chariot	swung
 chieftains	taken
 children	mixed
-community life	robbed
 day	come
 day	feel
 day	lost
@@ -2340,15 +2058,12 @@ feet	shrieking
 fellow	paid
 fellow	raised
 fellow	sleeping
-field glass	required
-field glass	sent
 fields	disclosing
 foot	feel
 formation	breaking
 furs	despoil
 gates	led
 halt	make
-heart cold	turned
 heavens	hurtling
 hours	required
 imprecations	hastened
@@ -2356,10 +2071,7 @@ intervals	cross
 lie	save
 lips	wring
 love	transfigured
-loved ones	robbed
-loved ones	save
 man	walked
-martian waterways	crossed
 metal	taken
 metal	wrest
 metal	wresting
@@ -2398,7 +2110,6 @@ roofs	overhanging
 room	fed
 room	herded
 scene	lit
-sea bottoms	crossing
 shadows	shrank
 south	ordered
 streets	descended
@@ -2447,9 +2158,7 @@ communities	divided
 communities	make
 community	has
 conditions	settling
-creatures nothing	appealed
 days	entered
-death stills	lie
 diamond	taking
 districts	settled
 emperors	appealed
@@ -2483,7 +2192,6 @@ jed	has
 jeds	concerned
 jeds	occupying
 love	craves
-marble floor	drew
 master	am
 miles	murmured
 motives	prompted
@@ -2496,7 +2204,6 @@ people	stolen
 quarters	assigned
 request	have
 service	accept
-supreme effort	accompany
 thoat	make
 thoughts	wronged
 truce	patching
@@ -2521,12 +2228,10 @@ buildings	frequented
 buildings	occupied
 buildings	quartered
 bulks	saw
-bull thoat	take
 carcasses	commend
 cause	take
 chamber	require
 chamber	returns
-chapter xvii a costly	recapture
 charge	lead
 court	bordering
 court	entered
@@ -2538,7 +2243,6 @@ days	last
 departure	delayed
 desire	awaken
 desire	dispatch
-devil fish	squatted
 difficulty	find
 distance	urged
 doorway	appeared
@@ -2554,7 +2258,6 @@ food	gather
 furs	gather
 gates	moved
 gates	opening
-glance rest	let
 gutturals	grunting
 habit	moving
 habit	settling
@@ -2565,13 +2268,6 @@ hour	passed
 idea	occurred
 jeddaks	felt
 light	discovered
-marble floor	drew
-martian moons	moved
-mean proportions	discovered
-mean proportions	hid
-mean proportions	return
-meeting place	appointed
-meeting place	reached
 men	discovered
 night	leave
 night	settling
@@ -2589,7 +2285,6 @@ quarters	bound
 room	drawing
 room	flooded
 room	occupied
-saddle trappings	removing
 scale	designed
 silks	gather
 soul	fill
@@ -2662,7 +2357,6 @@ consternation	threw
 daughter	left
 day	guide
 day	preceding
-dejah thoris ride	making
 direction	headed
 direction	indicated
 direction	take
@@ -2684,7 +2378,6 @@ goal	reached
 hand	grasped
 heart	plunged
 hearts	stopped
-hiding place	find
 hills	gain
 hills	reach
 hills	rode
@@ -2698,7 +2391,6 @@ intentions	anticipating
 jar	fell
 journey	taking
 manner	stumble
-martian rifle	sighted
 men	hate
 men	shudder
 miles	lay
@@ -2721,7 +2413,6 @@ rest	doubtless
 ridge	discern
 ridge	view
 room	strode
-sea bottom	scanned
 short-sword	plunged
 shoulder	resting
 side	lurched
@@ -2730,7 +2421,6 @@ silence	grasped
 sound	slipped
 south	rode
 station	taking
-sweat start	feel
 thoat	commencing
 thoat	flung
 thoat	kill
@@ -2823,15 +2513,6 @@ mind	give
 moment	saw
 months	lay
 neck	throwing
-o jed	assured
-o jed	brought
-o jed	decorated
-o jed	dried
-o jed	fell
-o jed	live
-o jed	ordered
-o jed	saw
-o jed	scarred
 powers	exercised
 princess	cried
 princess	escape
@@ -2875,14 +2556,11 @@ bravery	won
 brutes	foaming
 brutes	growling
 brutes	rushed
-building stone	piled
 buildings	penetrated
 cages	constructed
 cages	filled
 calots	saw
 carcass	drag
-chapter xix battling	essayed
-chapter xix battling	regained
 composure	regained
 condition	held
 craft	kept
@@ -2921,7 +2599,6 @@ friendship	formed
 games	dragged
 ground	place
 hand	held
-hands palms	holding
 head	swung
 head	turned
 heart	feel
@@ -2941,8 +2618,6 @@ madman	gathering
 madman	slipped
 madman	stooped
 madman	waited
-martian communities	wiped
-martian females	driven
 messenger	appeared
 misfortune	discovered
 months	waiting
@@ -2967,10 +2642,6 @@ quarters	explored
 quest	extended
 questions	bombarded
 reach	place
-reasoning man	assuring
-reasoning man	explored
-reasoning man	landed
-reasoning man	penetrated
 reference	omitting
 respect	won
 roaring	growling
@@ -2987,14 +2658,10 @@ tharks	limped
 throat	feeling
 torch	advanced
 torch	place
-torch light	saw
 truth	flashed
 vessel	chased
 vessel	escaped
 vessel	reached
-warhoon warriors	discovered
-warhoon warriors	passed
-warhoon warriors	used
 waterway	entered
 weeks	waiting
 women	rushed
@@ -3030,7 +2697,6 @@ cross-examination	searching
 day	mowed
 day	pitted
 days	waited
-death blow	gave
 diamonds	set
 dogs	loosed
 dogs	remaining
@@ -3097,12 +2763,10 @@ shoulder	threw
 side	slipped
 stars	guided
 stone	occupied
-stone table	set
 struggle	gave
 sweep	hurled
 sword	thrust
 sword	withdrawing
-sword arm	threw
 thickness	noted
 thickness	reached
 thoughts	see
@@ -3112,7 +2776,6 @@ time	saw
 time	warned
 times	attacked
 truth	speaking
-vegetable milk	consisted
 vein	sever
 voice	asking
 voice	concluding
@@ -3126,11 +2789,8 @@ winner	accorded
 women	given
 zitidar	loosed
 accident	befall
-air craft	guarded
 apparatus	befall
 apparatus	pumping
-atmosphere compound	furnishing
-bed chamber	return
 body	color
 brothers	occupied
 chamber	led
@@ -3181,12 +2841,6 @@ man	surprise
 man	suspected
 man	talked
 manner	asked
-martian atmosphere	has
-martian atmosphere	led
-martian atmosphere	maintain
-martian atmosphere	taught
-martian atmosphere	told
-martian atmosphere	watched
 means	manipulated
 men	protects
 mind	concentrating
@@ -3214,8 +2868,6 @@ product	treated
 pump-room	disappeared
 race	color
 race	resemble
-radium pumps	return
-radium pumps	take
 result	pumped
 result	released
 rifles	covering
@@ -3252,7 +2904,6 @@ birds	destroying
 body	anointed
 brothers	supplied
 buildings	bounded
-bull thoat	furnished
 centers	pumped
 chances	won
 city	gained
@@ -3271,19 +2922,16 @@ doors	barred
 doors	bolted
 entrance	gained
 face	set
-faithful fellow	thought
 farms	works
 feet	carried
 fleet	attacked
 fleet	returning
 forces	took
 friends	won
-frowning walls	approached
 fruits	enjoyed
 gates	arrived
 government	owned
 government	pays
-government agents	given
 hair	banged
 hair	cut
 hair	grown
@@ -3312,23 +2960,16 @@ loss	walks
 man	elevate
 man	favors
 man	fighting
-man issues	redeem
 means	search
 men	domesticated
 men	wilder
-metal columns	raised
 mile	covers
 mines	owned
 mines	works
 night	raised
-paper money	issued
-paper money	redeemed
-paper money	require
 place	elevate
 plight	reduce
 power	lay
-ptor brothers	given
-ptor brothers	leaving
 reason	raised
 reply	need
 reservoirs	collected
@@ -3337,8 +2978,6 @@ rookeries	presented
 rookeries	resembled
 ruler	attacked
 sack	filled
-saddle purposes	used
-sea bottom	wandering
 shoulder	placed
 side	filled
 stop	met
@@ -3355,12 +2994,9 @@ zodanga	arrived
 zodanga	elevate
 zodanga	proceeded
 zodanga	set
-zodangan money	filled
 accidents	occurred
 aide	called
-air scout	join
 animals	hobbling
-barsoomian ray	consists
 body	hurled
 building	entered
 cafes	filling
@@ -3385,14 +3021,12 @@ direction	enter
 directions	bolted
 distance	lay
 driver	sits
-earth sail	known
 effort	finishing
 emperor	wheeled
 fate	sealed
 father	love
 father	put
 feathers	colored
-fleet air craft	driving
 flier	lay
 flier	surrounded
 food	touched
@@ -3404,7 +3038,6 @@ hand	touched
 heavens	hurtling
 honors	conferring
 hour	traversed
-identification data	check
 injuries	revealed
 instance	stored
 long-swords	advanced
@@ -3420,7 +3053,6 @@ meal	took
 measurements	check
 men	decorated
 men	sailed
-metal ornament	placed
 miles	hurtling
 miles	traversed
 mission	accomplished
@@ -3428,7 +3060,6 @@ moment	sealed
 months	accomplished
 months	check
 months	explained
-morning patrons	filling
 moss	sprawling
 officer	examining
 officer	placed
@@ -3446,11 +3077,9 @@ prince	learn
 princess	know
 purpose	use
 quarters	included
-ray reservoirs	built
 repairs	finish
 repairs	needed
 rest	asserted
-return voyage	attempt
 right	leaned
 ruse	discovered
 shops	opening
@@ -3483,7 +3112,6 @@ weights	lift
 work	bring
 work	merited
 yards	approached
-zodangan navy	join
 apartments	search
 barsoom	listed
 ceremony	returned
@@ -3524,7 +3152,6 @@ post	deserted
 post	gained
 promise	recorded
 quarters	returned
-rash words	forget
 room	encircled
 room	lighted
 room	pushed
@@ -3556,7 +3183,6 @@ bride	claim
 chief	given
 cut	brought
 day	spoke
-dejah thoris conversing	hear
 empire	given
 fighters	brave
 forgiveness	ask
@@ -3583,13 +3209,6 @@ long-sword	whipped
 man	address
 man	claim
 man	won
-martian princess	address
-martian princess	advanced
-martian princess	call
-martian princess	called
-martian princess	come
-martian princess	meant
-martian princess	stood
 men	brave
 minutes	fought
 misery	harass
@@ -3628,9 +3247,7 @@ wife	know
 woman	address
 woman	won
 yesterday	give
-zodangan prince	promised
 ability	fighting
-air patrol	quadruple
 ancestor	fits
 antechamber	butchered
 apartment	enter
@@ -3640,11 +3257,9 @@ chambers	reach
 corridors	wandered
 court	crowded
 courtiers	ran
-death warrant	sealed
 description	fits
 enemy	reach
 eyes	keep
-faithful guardsmen	felled
 feet	swung
 floor	leading
 floor	swung
@@ -3656,9 +3271,6 @@ guide	reach
 guides	left
 hall	passing
 hearers	impress
-hiding place	hiding
-hiding place	searched
-hiding place	stopped
 hope	lay
 husband	slays
 impressions	marked
@@ -3698,7 +3310,6 @@ sorrow	bear
 squad	left
 statement	credited
 stories	followed
-surpassing skill	vanquished
 tapestries	hung
 troubles	commence
 vase	settled
@@ -3706,13 +3317,11 @@ warriors	rescued
 window	slipping
 windows	opened
 affair	question
-air sailors	hung
 avenue	sprang
 balcony	hastened
 bargain	assented
 barracks	hastened
 barracks	sheds
-chapter xxiii	lost
 day	fell
 difficulty	solve
 disgrace	save
@@ -3731,7 +3340,6 @@ fellow	left
 fellow	sprang
 fellow	try
 floor	filled
-glass wall	projected
 ground	standing
 guards	pass
 hall	left
@@ -3755,9 +3363,6 @@ hook	dangled
 hook	found
 hook	pulled
 hook	swung
-kantos kan.	find
-landing parties	lowered
-loved princess	lost
 machine	get
 man	answered
 man	anticipated
@@ -3811,8 +3416,6 @@ opening	find
 palace	knew
 palace	know
 palace	reach
-palace grounds today	left
-palace grounds today	sprang
 place	guarded
 place	hiding
 place	slipped
@@ -3831,7 +3434,6 @@ window	reached
 work	required
 accidents	barring
 adversaries	engaged
-air patrol	dove
 antagonists	engaged
 apartment	heard
 attention	paid
@@ -3840,7 +3442,6 @@ body	launch
 body	slip
 body	swung
 chances	traveling
-chapter xxiv	tars
 chieftain	attended
 cities	consists
 cities	given
@@ -3857,7 +3458,6 @@ craft	ruined
 craft	seen
 cry	choked
 darkness	dropped
-death struggles	engaged
 description	resembling
 die	cast
 direction	turned
@@ -3884,7 +3484,6 @@ fingers	choked
 forenoon	passing
 form	sprung
 friend	finds
-gathering darkness	fled
 grasp	dropped
 grasp	releasing
 ground	sinking
@@ -3955,7 +3554,6 @@ guard	traveling
 guard	turned
 guide	destroyed
 hail	paid
-hazard everything	decided
 heavens	scanned
 lamp	flash
 lights	making
@@ -3964,7 +3562,6 @@ long-swords	fighting
 look	gave
 machine	sank
 machine	twisting
-martian sky	raced
 men	carrying
 men	fighting
 men	sank
@@ -3981,7 +3578,6 @@ one	landed
 ornament	releasing
 ornament	supporting
 patrol	shot
-pistol arm	grasped
 plunge	hurtled
 prisoners	take
 projectiles	dodge
@@ -4000,7 +3596,6 @@ side	gave
 side	stepped
 sister	marks
 smile	touched
-something move	heard
 stars	follow
 streets	lay
 streets	lighted
@@ -4029,7 +3624,6 @@ council	assembled
 council	remains
 council	turning
 creature	bind
-dozen voices	echoed
 entrance	glowering
 eyes	burn
 eyes	riveted
@@ -4045,7 +3639,6 @@ long-sword	drew
 march	told
 men	fight
 midget	felled
-morning sarkoja	gone
 night	told
 palace	hastened
 people	brave
@@ -4056,7 +3649,6 @@ quarters	accompanied
 race	perpetuate
 request	accompanied
 return	cast
-sea bottom	told
 sola	cast
 sola	told
 sounds	tars
@@ -4081,10 +3673,8 @@ consort	surrounded
 council	addressing
 council	meets
 country	save
-couple standing	addressed
 dagger	flew
 dagger	sprang
-daylight hours	kept
 days	set
 delight	found
 diamonds	encrusted
@@ -4128,7 +3718,6 @@ long-sword	raised
 marches	timing
 messengers	speeding
 mission	failed
-moment dejah thoris	joined
 neck	placed
 night	traveled
 nobles	crowded
@@ -4137,9 +3726,6 @@ officers	removed
 opportunity	fight
 ornaments	drawn
 padlock	springing
-palace walls	considered
-palace walls	led
-palace walls	negotiated
 parties	halted
 parties	separated
 plans	worked
@@ -4149,7 +3735,6 @@ robe	removed
 salver	bearing
 salver	carrying
 sanction	meets
-sea bottoms	speeding
 sentries	built
 sentries	covered
 shoulders	mount
@@ -4179,8 +3764,6 @@ words	addressed
 words	explained
 words	hear
 wrist	grasping
-zodangan forces	hold
-air patrol	captured
 answer	knew
 arms	took
 assemblage	broke
@@ -4192,10 +3775,7 @@ chance	strike
 chances	blocked
 city	left
 corridor	called
-destruction right	dealing
 doorway	stood
-dozen corpses	laid
-dozen warriors	took
 dungeons	hastened
 echoes	reached
 enemies	opened
@@ -4229,7 +3809,6 @@ instant	engaged
 intentions	realized
 jailer	found
 jeddak	tore
-labyrinthine prison	searched
 long-sword	drawn
 long-sword	stood
 longsword	hewed
@@ -4239,10 +3818,6 @@ longsword	stood
 man	brought
 man	joined
 marksmanship	raked
-martian people	opened
-martian warriors	left
-martian warriors	opened
-mean antagonist	found
 men	dared
 miracles	work
 moment	hurling
@@ -4257,7 +3832,6 @@ platform	stood
 platform	thrusting
 plea	knew
 princess	abash
-prison cell	reached
 resistance	decided
 resistance	make
 response	hearing
@@ -4273,7 +3847,6 @@ suggestion	held
 sword	found
 thoats	rode
 throne	stood
-throne room	join
 time	advanced
 time	rose
 torch	applied
@@ -4290,7 +3863,6 @@ avenues	passed
 battle	remain
 battle	remained
 battle	won
-battle line	found
 beasts	unload
 bombs	exploding
 boon	lay
@@ -4306,11 +3878,6 @@ command	gave
 cry	arose
 decks	drop
 distance	lay
-dozen officers	knew
-dozen officers	meet
-dozen officers	received
-dozen officers	sprang
-dozen officers	stopped
 duties	necessitated
 end	come
 excitement	caused
@@ -4324,14 +3891,12 @@ heads	holding
 helium	marched
 helium	owes
 helium	remained
-heliumite squadron	arose
 heliumites	known
 heroes	conquering
 hole	torn
 honor	lay
 honor	meet
 jeds	requested
-keel bomb batteries	poured
 maneuver	gained
 manner	marked
 millstones	crushed
@@ -4357,7 +3922,6 @@ plunge	took
 points	broke
 presence	influenced
 prisoners	marched
-prize crews	headed
 reinforcements	come
 riders	bore
 riders	crushed
@@ -4380,7 +3944,6 @@ thoats	bore
 time	beleaguering
 time	repulsed
 vessel	vanquished
-victory today	owes
 warriors	carrying
 warriors	fell
 warriors	pitted
@@ -4392,26 +3955,14 @@ ways	lend
 work	occupied
 works	broke
 wrecks	drifting
-zodangan camp	crept
-zodangan camp	torn
-zodangan fleet	fell
-zodangan squadron	risen
 airship	approaching
 allies	started
 arms	raised
 assassin	mutilated
-assistant keeper	concluded
-assistant keeper	hasten
-assistant keeper	need
-assistant keeper	searching
-atmosphere plant	hasten
 body	bearing
 body	found
 breast	drooping
 change	brought
-council chamber	called
-council chamber	found
-council chamber	rang
 councils	served
 cruisers	searching
 cry	sprang
@@ -4423,7 +3974,6 @@ days	brought
 distance	circled
 distance	raced
 distance	saw
-dozen times	tried
 duties	go
 egg	lay
 example	allay
@@ -4465,14 +4015,12 @@ people	looked
 people	seemed
 pits	found
 presents	loaded
-return journey	started
 rumor	reached
 shell	break
 sight	attached
 significance	attached
 sola	accompanied
 sola	acknowledged
-sorrow gnawing	thank
 sounds	forgotten
 speed	bespoke
 sun	look
@@ -4503,13 +4051,8 @@ cave	appeared
 cave	stretching
 companion	cried
 companion	reach
-copper vessel	rested
 cord	touched
 course	took
-days men	fixed
-days men	receded
-days men	surged
-days men	waited
 dock	racing
 door	cried
 door	opened
@@ -4517,7 +4060,6 @@ door	receded
 door	rise
 doorway	fell
 doorway	saw
-dozen times	kissing
 effort	hurled
 engines	start
 eyes	believe
@@ -4552,23 +4094,17 @@ mystery	solve
 night	called
 notch	pushing
 ornaments	flung
-palace garden	left
 panel	fixed
 place	escape
-planet earth	live
 posture	rose
 posture	sitting
-pump room	reach
-rawhide thongs	depending
 roof	depending
 rooftop	gone
-sea bottom	took
 secret	holding
 side	crawled
 skeletons	swung
 sky	shining
 sleep	lay
-speed lever	pushing
 surface	scratched
 tableau	hastened
 thing	thought

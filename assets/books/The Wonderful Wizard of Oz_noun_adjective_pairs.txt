@@ -9,7 +9,6 @@ hole	small
 house	dull
 house	gray
 house	small
-kansas prairies	great
 mass	gray
 miles	many
 north	far
@@ -19,7 +18,6 @@ shriek	great
 surroundings	other
 thing	strange
 trap-door	open
-uncle henry	gray
 voice	merry
 wife	gaunt
 wife	thin
@@ -52,15 +50,12 @@ sights	wonderful
 sunshine	bright
 thing	same
 toes	pointed
-uncle henry	old
 voice	sweet
 witch	real
 woman	little
 woman	old
 years	many
 years	older
-chalk marks	big
-chalk marks	white
 countries	civilized
 country	civilized
 desert	great
@@ -107,7 +102,6 @@ heel	left
 journey	pleasant
 journey	ready
 land	strange
-leather shoes	old
 man	good
 nod	friendly
 nod	little
@@ -140,7 +134,6 @@ hat	pointed
 land	strange
 man	new
 miles	several
-munchkin baby	wee
 rug	blue
 smile	tedious
 sorceress	great
@@ -150,7 +143,6 @@ voice	husky
 way	friendly
 witch	friendly
 witch	wicked
-witch color	white
 witches	white
 brick	uneven
 brick	yellow
@@ -159,7 +151,6 @@ brook	little
 country	beautiful
 fool	sorry
 friend	new
-fruit trees	fewer
 hours	few
 houses	fewer
 life	short
@@ -219,8 +210,6 @@ meal	worried
 misfortune	great
 moment	next
 mother	old
-munchkin girl	pretty
-munchkin maiden	beautiful
 roar	terrible
 walking	good
 way	new
@@ -238,7 +227,6 @@ horse	small
 sorrow	great
 thing	little
 adventure	other
-ant toiling	tiny
 beasts	other
 beasts	wild
 bread	last
@@ -303,8 +291,6 @@ mind	own
 moment	next
 moments	few
 noises	strange
-rate idea	first
-rate idea	great
 river	broad
 rocks	sharp
 side	other
@@ -318,8 +304,6 @@ travellers	pleased
 tree	big
 trees	thinner
 bank	grassy
-cowardly lion	cowardly
-cowardly lion	happy
 discouragements	many
 flower	beautiful
 forest	dark
@@ -342,7 +326,6 @@ side	other
 sun	dry
 travellers	ready
 trees	small
-wizard oz	good
 beast	huge
 beast	strong
 bird	big
@@ -381,7 +364,6 @@ wildcat	yellow
 animal	little
 chorus	shrill
 courtesy	friendly
-cowardly lion	heavy
 deed	great
 end	other
 girl	friendly
@@ -395,7 +377,6 @@ mouse	dignified
 mouse	little
 sleep	long
 times	bigger
-tin man	funny
 tree-trunk	big
 truck	bigger
 truck	ready
@@ -422,11 +403,6 @@ hats	peaked
 house	small
 houses	several
 mice	little
-munchkins blue	afraid
-munchkins blue	friendly
-munchkins blue	great
-munchkins blue	tame
-oz dwelt	great
 place	beautiful
 place	wonderful
 shades	gloomy
@@ -463,7 +439,6 @@ room	arched
 room	high
 size	same
 supper	good
-tinkle sound	silvery
 tint	greenish
 way	own
 years	many
@@ -493,21 +468,18 @@ man	green
 man	ready
 marble	green
 marble	same
-marble basin	green
 mat	green
 morning	next
 pennies	green
 sense	much
 shoes	green
 shops	many
-silk gown	green
 skins	greenish
 spider	little
 time	long
 tint	green
 toto	little
 uniform	green
-velvet counterpane	green
 charm	powerful
 costumes	rich
 country	beautiful
@@ -522,7 +494,6 @@ girl	small
 girl	strong
 girl	sure
 girl	weak
-great oz	terrible
 hall	great
 head	big
 head	enormous
@@ -535,7 +506,6 @@ power	magic
 ribbon	green
 roof	arched
 roof	high
-silk apron	green
 sun	bright
 voice	awful
 voice	such
@@ -554,8 +524,6 @@ friends	sorry
 growl	low
 head	own
 head	sure
-head dorothy	dead
-head dorothy	great
 i	much
 lady	lovely
 legs	slim
@@ -568,8 +536,6 @@ room	own
 throne	emerald
 throne	green
 throne	strong
-throne room	big
-throne room	great
 whiskers	green
 witch	wicked
 wizard	great
@@ -593,11 +559,9 @@ lion	much
 morning	next
 oz	terrible
 ribbon	green
-silk gown	green
 speech	angry
 things	good
 thought	first
-throne room	great
 voice	low
 voice	quiet
 voice	terrible
@@ -632,7 +596,6 @@ coils	many
 creatures	strange
 crows	wild
 distance	great
-door step	front
 fingers	long
 foot	left
 foot	right
@@ -717,11 +680,9 @@ travellers	sure
 tree	smooth
 tree	tall
 trunk	smooth
-walking stick	gold-headed
 way	right
 wishes	good
 witch	wicked
-yellow castle	yellow
 chattering	great
 feet	tiny
 fields	yellow
@@ -740,7 +701,6 @@ monkey	little
 story	long
 times	full
 voice	little
-winged monkeys	full
 beauty	great
 beauty	manly
 bride	afraid
@@ -839,7 +799,6 @@ fortune	good
 heart	pretty
 hole	small
 hole	square
-kind heart	soldering
 man	little
 men	other
 morning	next
@@ -867,8 +826,6 @@ shelf	high
 way	best
 bag	silken
 balloon	ready
-clothes basket	big
-clothes basket	ready
 days	many
 dog	little
 heart	lovely
@@ -904,7 +861,6 @@ branches	first
 city	beautiful
 courage	same
 fields	green
-girl good-bye	green
 look	last
 luck	due
 luck	good
@@ -912,8 +868,6 @@ pace	brisk
 spirits	best
 spreading-branches	such
 spreading-branches	wide
-to-morrow morning	long
-to-morrow morning	ready
 travellers	fellow
 tree	big
 wall	outer
@@ -931,7 +885,6 @@ bodices	bright-colored
 branch	small
 caps	pointed
 cast	milk-maid
-china cow	frightening
 clatter	great
 colours	brightest
 cows	many
@@ -973,8 +926,6 @@ animals	little
 animals	many
 animals	wild
 beast	wild
-china country	wilder
-china princess	unhappy
 clown	little
 country	disagreeable
 country	full
@@ -988,9 +939,6 @@ grass	thick
 holes	muddy
 home	pleasanter
 lives	pleasanter
-mr. joker	foolish
-mr. joker	old
-mr. joker	poor
 people	brittle
 people	little
 place	beautiful
@@ -1016,7 +964,6 @@ legs	big
 legs	long
 lion	angry
 lion	great
-moment dorothy	afraid
 monster	tremendous
 mouth	great
 path	well-trodden
@@ -1028,7 +975,6 @@ spring	great
 tigers	biggest
 time	good
 voice	same
-voice cry	rough
 waist	slender
 way	best
 adventures	wonderful
@@ -1040,7 +986,6 @@ companions	last
 dress	white
 eyes	beautiful
 eyes	blue
-farm house	great
 girl	little
 girl	loving
 girls	young
@@ -1052,13 +997,10 @@ quadlings	blue
 room	big
 ruler	wonderful
 shape	best
-soldier girl	beautiful
-soldier girl	young
 uniforms	handsome
 uniforms	red
 wish	greatest
 witch	wicked
-witch glinda	sure
 woman	good
 words	magic
 band	free
@@ -1074,7 +1016,6 @@ good-bye	last
 head	big
 heart	lovely
 home	own
-kansas prairie	broad
 life	whole
 lion	big
 lion	shaggy

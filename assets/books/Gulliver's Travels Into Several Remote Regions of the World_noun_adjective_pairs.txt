@@ -10,8 +10,6 @@ expressions	obscure
 illustrations	full-page
 imagination	childish
 inventory	exact
-lady chapter vii	great
-lady chapter vii	thereon
 majesty	imperial
 manner	uncommon
 maps	modern
@@ -23,7 +21,6 @@ passages	few
 reading	unsuitable
 scholars	great
 storm	great
-story books	delightful
 stratagem	extraordinary
 style	objective
 teacher	necessary
@@ -51,8 +48,6 @@ friends	few
 house	convenient
 house	small
 illustrations	full-page
-made a prisoner	safe
-mr. lemuel gulliver	dissatisfied
 offer	advantageous
 parts	other
 patients	several
@@ -198,7 +193,6 @@ years	polluted
 board	whole
 carcase	large
 commission	imperial
-complexion olive	strong
 computation	same
 council-chamber	great
 councils	frequent
@@ -232,7 +226,6 @@ officers	certain
 officers	proper
 people	delighted
 person	prodigious
-petticoat spread	embroidered
 pocket	secret
 rabble	impatient
 soldiers	delighted
@@ -285,13 +278,11 @@ search	strictest
 side	larger
 side	left
 side	transparent
-silver chest	huge
 substance	lucid
 substance	round
 substance	white
 terms	gentle
 use	same
-waistcoat pocket	right
 watch	curious
 accidents	fatal
 affairs	private
@@ -371,7 +362,6 @@ leader	experienced
 majesty	imperial
 manner	extraordinary
 manner	singular
-mighty emperor	most
 mile	english
 oath	solemn
 order	express
@@ -421,7 +411,6 @@ streets	principal
 towers	strong
 town	capable
 waistcoat	short
-_ tramecksan _	majesty
 account	personal
 affairs	private
 apartments	desirous
@@ -472,7 +461,6 @@ powers	mighty
 practice	ancient
 press	ready
 princes	young
-prophet lustrog	great
 space	wide
 stick	hooked
 stories	middle
@@ -511,7 +499,6 @@ manner	hostile
 moons	six-and-thirty
 necessaries	little
 necessaries	other
-perspective glass	small
 pocket	private
 prince	great
 prince	majesty
@@ -646,7 +633,6 @@ stories	frightful
 toys	like
 understanding	common
 wife	young
-women attendants	aged
 years	last
 years	old
 beef	excellent
@@ -697,7 +683,6 @@ arrows	sharp-pointed
 articles	other
 board	honorable
 board	whole
-capital crimes	other
 children	royal
 consort	imperial
 custom	usual
@@ -717,7 +702,6 @@ flesh	own
 friend	true
 heart	big-endian
 heresy	big-endian
-impeachment against quinbus flestrin	majesty
 juice	poisonous
 justiciary	grand
 lenity	great
@@ -737,7 +721,6 @@ princes	greatest
 proceedings	whole
 resolution	full
 salutations	common
-secretary durst presume	unprincipled
 servant	trusty
 servants	imperial
 strength	bodily
@@ -765,7 +748,6 @@ fortune	good
 juncture	critical
 man-of-war	large
 name	same
-native country	native
 paddles	certain
 prince	great
 prince	own
@@ -849,7 +831,6 @@ road	high
 rocks	full
 rocks	pointed
 sea	full
-sea thereabouts	full
 ship	staunch
 side	other
 storm	fierce
@@ -867,21 +848,18 @@ bulk	savage
 children	fatherless
 condition	suitable
 creature	huge
-creature trod short	huge
 creatures	human
 curiosity	much
 degrees	many
 farmer	substantial
 fear	utmost
 fleet	imperial
-forbear groaning	able
 fortune	good
 hand	right
 meantime	able
 noise	high
 people	clad
 reaping-hook	squashed
-spire steeple	ordinary
 star	good
 straw	small
 time	same
@@ -899,7 +877,6 @@ cider	small
 coins	smaller
 creature	high
 creature	rational
-dram cup	small
 elephants	equal
 feet	high
 finger	little
@@ -917,7 +894,6 @@ nurse	quiet
 ox	larger
 people	good
 pieces	spanish
-puppy dogs	whereof
 reader	indulgent
 room	taller
 room	usual
@@ -937,7 +913,6 @@ creatures	vast
 days	able
 days	few
 degrees	convenient
-drawer cabinet	small
 feet	high
 feet	wide
 freckles	wide
@@ -1013,7 +988,6 @@ reports	wonderful
 respects	humble
 spectacle	public
 speeches	other
-stool close	low
 storm	great
 times	several
 town	big
@@ -1050,7 +1024,6 @@ vehicle	convenient
 villages	many
 violence	much
 weeks	few
-_ splacnuck _	fond
 accent	foreign
 animal	carnivorous
 animal	diminutive
@@ -1092,7 +1065,6 @@ respect	utmost
 scholars	great
 scholars	weekly
 stature	own
-this gracious princess	gracious
 wit	much
 words	few
 account	best
@@ -1136,7 +1108,6 @@ issue	royal
 judgment	exact
 loaves	big
 loaves	twelve-penny
-london bed-chamber	square
 minister	first
 month	younger
 months	several
@@ -1180,7 +1151,6 @@ creatures	large
 curiosities	other
 damage	other
 days	fair
-dunstable lark	big
 error	great
 figure	ridiculous
 humming	continual
@@ -1194,8 +1164,6 @@ partridges	large
 people	common
 rivers	full
 rivers	large
-rivers issue	full
-rivers issue	rough
 rocks	full
 rocks	pointed
 satisfaction	great
@@ -1211,7 +1179,6 @@ accidents	several
 accidents	troublesome
 artist	same
 box	smaller
-bristol barrel	large
 closet	exact
 closet	latticed
 coach	cumbersome
@@ -1227,7 +1194,6 @@ feet	high
 feet	thick
 grass-plot	smooth
 hurt	other
-iron wire	latticed
 journeys	long
 journeys	weary
 kingdom	highest
@@ -1244,12 +1210,10 @@ palace	regular
 particulars	many
 particulars	other
 people	curious
-pinnacle top	highest
 reader	curious
 representation	diminutive
 representation	false
 rogue	malicious
-salisbury steeple	equal
 side	fourth
 staples	strong
 times	barefoot
@@ -1294,7 +1258,6 @@ wherry	smallest
 workman	ingenious
 animal	odious
 animal	such
-animal frisking	frolicsome
 boat	dry
 box	bigger
 country	own
@@ -1321,10 +1284,8 @@ tone	firm
 weather	warm
 while	good
 windows	open
-army beating	royal
 artists	other
 attempt	vain
-awl round	fine
 chair-frames	larger
 coins	larger
 concerts	frequent
@@ -1338,7 +1299,6 @@ holes	little
 jobs	little
 keys	proper
 labor	great
-leisure hours	many
 manner	same
 noise	great
 orders	general
@@ -1401,7 +1361,6 @@ persons	several
 points	several
 prince	vicious
 prince	weak
-prostitute chaplains	slavish
 purse	strong
 resort	last
 sect	religious
@@ -1615,7 +1574,6 @@ rest	little
 sailors	first
 sense	good
 senses	much
-shropshire man	worthy
 size	larger
 size	usual
 time	much
@@ -1656,7 +1614,6 @@ wife	able
 world	public
 approach	conscious
 clergy	irish
-college career	creditable
 encounters	perilous
 library	noble
 life	early

@@ -1,6 +1,3 @@
-amenemhat ii	established
-antef i.	known
-bahr yousouf	known
 belief	reconciled
 blossom	terminates
 cataract	scooped
@@ -8,16 +5,11 @@ centre	govern
 construction	displayed
 corpse	comes
 cruelty	involved
-date palm	trees
 dependency	becomes
 desert	met
 difficult	involved
 difficult	realize
-eastern colossus	hunts
 fight	taken
-first revolt	suppressed
-foreign help	needed
-frontispiece _ dom	trees
 great	known
 greatness	appreciated
 khuenaten	traced
@@ -26,17 +18,14 @@ labyrinth	connected
 light	goes
 lion	being
 lion	called
-menephthah i.	repulse
 mercenaries	assigned
 miles	enlarges
 monarchy	re-established
-nile valley	shut
 patriarch	drove
 pharaoh	restores
 prosperity	restoring
 pyramid	realize
 races	conquering
-ramesses iii.	taken
 rome	_
 sculptor	given
 side	terminates
@@ -47,13 +36,10 @@ son	terminates
 state	save
 state	sinking
 success	attains
-term ethiopia	assisted
-theban king	known
 west	rendered
 west	shut
 width	shaped
 wings	shadowing
-_ fjord _	pouring
 access	stretched
 age	contained
 age	deserved
@@ -83,7 +69,6 @@ deposits	gone
 description	objected
 description	presents
 desert	separated
-desert blossom	make
 diameter	belongs
 disappearance	explain
 distance	penetrating
@@ -105,7 +90,6 @@ furlongs	grow
 garden	make
 glance	seems
 gorges	hanging
-great festivals	kept
 hand	growing
 heads	raise
 heart	rejoices
@@ -130,7 +114,6 @@ land	showest
 land	watering
 lap	dropping
 lentils	formed
-lower egypt	known
 map-makers	draw
 maps	give
 mazor	called
@@ -144,7 +127,6 @@ mizraim	means
 monotony	surrounds
 mortals	extol
 name	thought
-nile sediment	bearing
 number	called
 observer	impresses
 occupying	covers
@@ -161,7 +143,6 @@ places	grown
 places	scooped
 plain	canopied
 plain	stretching
-pleasure boat	passing
 quantities	produced
 ranges	approaches
 reader	presents
@@ -176,27 +157,7 @@ rills	rise
 river	speculated
 rock	cut
 rule	called
-scilly islands	brought
 seasons	tinged
-sense egypt	acknowledged
-sense egypt	assigned
-sense egypt	crowned
-sense egypt	declared
-sense egypt	deified
-sense egypt	disappears
-sense egypt	enlighten
-sense egypt	enters
-sense egypt	exposed
-sense egypt	giving
-sense egypt	known
-sense egypt	left
-sense egypt	mark
-sense egypt	presents
-sense egypt	reckoned
-sense egypt	reclaims
-sense egypt	recovers
-sense egypt	speculated
-sense egypt	stretched
 ships	issue
 ships	works
 shores	running
@@ -240,12 +201,8 @@ yards	grow
 year	bore
 year	disappears
 year	growing
-_ cyperus papyrus _	lotus
-_ nymphaea	lotus
-acacia seyal	furnishes
 after-glow	gives
 agates	yields
-antelope tribe	scared
 appearance	presents
 atmosphere	rests
 banquets	wore
@@ -256,7 +213,6 @@ blue-grey	gives
 blushes	burning
 branches	curved
 branches	dividing
-breccia verde	yields
 calamities	arise
 carnelians	yields
 castles	shining
@@ -272,15 +228,11 @@ country	rejoices
 crocodile	hunted
 crops	begin
 crops	reaped
-crops spring	bloom
 danger	brings
-date palms	resembling
 day	follows
 day	relieve
 day	show
-day gazelles	chased
 desert	yields
-desert region	found
 distance	veils
 effects	produced
 elevations	crowned
@@ -313,7 +265,6 @@ inhabitants	wade
 intervals	stud
 inundation	begins
 inundation	brings
-iron mine	shows
 islands	interspersed
 jaspers	yields
 king	built
@@ -327,7 +278,6 @@ land	dug
 land	flowed
 land	obtained
 landscape	chase
-length spring	retires
 light	diffuses
 light	makes
 march	ripen
@@ -345,7 +295,6 @@ morning	comes
 morning	relieve
 mosques	shining
 night	brings
-nile valley	inclose
 numbers	rescue
 obelisks	shining
 one	recognizing
@@ -437,7 +386,6 @@ gazelles	represented
 gods	addressed
 hand	see
 hands	clapping
-harem interior	represented
 heaps	driving
 individuals	accentuated
 inhabitants	challenging
@@ -461,9 +409,6 @@ men	sang
 men	sit
 men	threshed
 men	trod
-men piping	covered
-modern theorists	evolved
-modern theorists	please
 monarch	erects
 monkey	reveals
 monkey	transformed
@@ -471,7 +416,6 @@ monuments	see
 nausaas	pays
 nebhept	offering
 nebhept	pays
-negro type	produced
 negroes	attenuated
 negroes	bore
 nephthys	erects
@@ -497,7 +441,6 @@ physique	affect
 pig	transformed
 pilgrimage	ends
 place	taking
-place doth	know
 pleasure	felt
 prayers	addressed
 proposals	mocking
@@ -527,16 +470,12 @@ statement	please
 statement	took
 task	ended
 thoughts	know
-thy soul	hast
 tide	having
 time	received
 times	covered
 tomb	begin
 tombs	allowed
 tombs	attached
-traverse egypt	defy
-traverse egypt	painted
-traverse egypt	says
 twill	loved
 type	existed
 type	produced
@@ -551,8 +490,6 @@ world	belonging
 writer	enumerates
 writer	gives
 yourselves	thresh
-_ deities	challenged
-_ deities	invited
 aahlu	deserved
 aahlu	needed
 abode	known
@@ -566,7 +503,6 @@ animals	pay
 approach	invited
 arms	raised
 arts	instructed
-bacis bulls	shut
 beasts	declared
 beasts	treated
 beings	concentrated
@@ -596,9 +532,6 @@ deities	declared
 deities	given
 deity	set
 deserts	sentenced
-divine essence	absorbed
-divine essence	emanated
-divine wisdom	personified
 dog	died
 doubt	admits
 dwarf	represented
@@ -606,7 +539,6 @@ dwellings	come
 ears	represented
 elements	personified
 end	attaining
-eternal godhead	turned
 evil	personified
 father	avenge
 favour	attributes
@@ -618,13 +550,11 @@ galleries	cut
 genii	guarded
 glory	turned
 god	find
-god incarnate	shut
 gods	contained
 gods	resolved
 gods	tired
 gods	understood
 goodness	hated
-granite sarcophagus	embalmed
 hand	record
 hands	carrying
 head	drove
@@ -648,15 +578,6 @@ kings	taught
 knives	carrying
 life	attributes
 lips	failed
-living horus	called
-living horus	drove
-living horus	engaged
-living horus	enraged
-living horus	held
-living horus	invoked
-living horus	renewed
-living horus	took
-living horus	tore
 localities	continued
 maut	offered
 maut	represented
@@ -702,9 +623,6 @@ sea	floated
 sentence	underwent
 shore	found
 shrine	found
-sister nephthys	conveying
-sister nephthys	sought
-sister nephthys	stole
 soul	allowed
 soul	blessed
 soul	conducted
@@ -736,7 +654,6 @@ time	sought
 time	take
 tons	weighing
 torrent	come
-trials purity	attained
 turns	take
 vase	containing
 vine	cultivate
@@ -799,7 +716,6 @@ land	befell
 land	smite
 life	adopt
 life	recommended
-lower country	master
 luck	brought
 m'na	called
 m'na	represented
@@ -818,7 +734,6 @@ narratives	find
 nature	pointed
 number	employed
 offering	brought
-official class	employed
 one	died
 oppressor	took
 others	pursued
@@ -847,7 +762,6 @@ social	ranks
 sons	bred
 sons	does
 sons	obliged
-state employment	entered
 stick	used
 stop	put
 subjects	advise
@@ -863,9 +777,7 @@ time	hatched
 tombs	plundering
 tracts	symbolized
 truth	speaking
-upper country	ruled
 vanity	sacrificed
-waxen effigies	wasting
 way	kept
 way	make
 widow	gave
@@ -892,7 +804,6 @@ capital	building
 capitals	placed
 cathedrals	grew
 centre	gravitated
-centuries power	gravitated
 chambers	speaking
 channel	enter
 chronology	assign
@@ -902,11 +813,7 @@ city	known
 city	received
 coeval	lay
 colonists	expatriated
-compound sound	express
-compound sound	represents
 condition	exist
-criticism doubts	enlightened
-criticism doubts	placed
 critics	asked
 critics	have
 critics	placed
@@ -935,7 +842,6 @@ founder	required
 founder	undertook
 glory	saw
 government	established
-great ramesses	prostrate
 hieroglyphics	used
 hippopotamus	devoured
 hippopotamus	erect
@@ -951,9 +857,6 @@ labours	pursue
 letters	express
 libations	poured
 living	acting
-lower country	hold
-lower country	included
-lower country	visited
 mace	incised
 man	believed
 materials	composed
@@ -963,7 +866,6 @@ moderns	attest
 moderns	regarded
 nations	found
 needs	supply
-neter aa _	_
 offerings	regarded
 offerings	secured
 order	agree
@@ -971,7 +873,6 @@ peninsula	seen
 people	attained
 people	becoming
 people	placed
-picture writing	attaches
 plain	debouching
 practices	took
 protection	watered
@@ -1016,7 +917,6 @@ view	concealed
 windows	resembling
 words	_
 work	undertook
-_ imagination	requires
 acres	covered
 amulet	suspended
 ankles	reached
@@ -1042,7 +942,6 @@ contents	amounted
 contents	calculated
 costume	speaking
 countries	claim
-country houses	lived
 decoration	speaking
 discoverers	found
 distance	brought
@@ -1068,16 +967,12 @@ head	shave
 height	reckon
 households	maintaining
 inferiors	belabouring
-iron cramps	fastened
 kings	treated
 land	owned
 limestone	brought
 limestone	built
-linen tunic	doffing
 lines	following
-lone columns	traceried
 lord	seated
-lord houghton	endeavoured
 manners	prevailed
 masses	gathered
 monarch	pleased
@@ -1089,9 +984,6 @@ name	perpetuate
 nature	rivalled
 neck	reached
 neck	round
-new world	allowed
-new world	found
-new world	held
 nobles	lived
 passage	used
 passages	connected
@@ -1113,8 +1005,6 @@ rock	excavated
 rock	fastened
 romans	adopted
 roods	covered
-royal family	connected
-royal family	ruled
 sarcophagus	contained
 scale	being
 seat	seated
@@ -1208,7 +1098,6 @@ feet	measured
 feet	measures
 gallery	leads
 granite	blocks
-granite sarcophagus	contained
 heap	pile
 height	exceeded
 houses	pull
@@ -1217,8 +1106,6 @@ inhabitants	known
 inhabitants	pile
 king	happened
 kings	belonged
-loftier gallery	connected
-loftier gallery	continues
 mass	pressed
 moderns	regard
 mystery	solve
@@ -1246,14 +1133,9 @@ reign	making
 rock	tunnelled
 sarcophagi	held
 shafra	read
-side walls	formed
 sides	rose
 sites	occupy
-sloping blocks	coated
-sloping blocks	meet
-sloping blocks	support
 speculations	indulge
-stone house	built
 supposition	solve
 telescopes	designed
 theorists	delighted
@@ -1276,12 +1158,6 @@ year	making
 year	pushed
 years	employed
 age	handed
-ages travellers	astonished
-ages travellers	expressed
-ages travellers	felt
-ages travellers	furnished
-ages travellers	impressed
-ages travellers	reckoned
 ambition	possessed
 anubis	cast
 anubis	seen
@@ -1305,18 +1181,12 @@ code	seems
 condition	improving
 conduct	influenced
 construction	displayed
-courts observation	eludes
 crew	bewilder
 crew	hated
 crew	perplex
 crew	vex
 dependents	shown
 design	conceive
-drive cattle	engage
-drive cattle	reap
-drive cattle	store
-drive cattle	winnow
-earth she	listening
 edges	bevelled
 ends	secure
 enemies	destroying
@@ -1343,7 +1213,6 @@ heaven	engendered
 height	coated
 height	exceed
 history	has
-impressiveness increases	gazes
 interests	secured
 inundation	save
 joints	detected
@@ -1358,9 +1227,7 @@ kings	steeled
 lane	neath
 lion	being
 lotuses	gather
-material prosperity	increasing
 measure	failed
-metal ornamentation	let
 moderns	doubted
 moderns	possess
 monarch	regarded
@@ -1368,14 +1235,7 @@ monarchs	rivalled
 monument	aimed
 monument	coated
 monuments	caused
-mother nut	born
-mother nut	stretches
 names	handed
-o king menkaura	giving
-o king menkaura	regarded
-o king menkaura	stretches
-o osiris	renders
-o osiris	stretches
 object	groans
 oppression	fell
 oppressor	regarded
@@ -1387,7 +1247,6 @@ people	oppressed
 phrase	telling
 pyramid	finish
 pyramid	impress
-pyramid builder	leave
 pyramids	apply
 pyramids	burying
 quarters	secured
@@ -1402,8 +1261,6 @@ service	impressed
 shadows	cast
 shafts	ventilating
 skill	struck
-slumber snatching	brave
-slumber snatching	couched
 smile	frozen
 soldiers	look
 spectator	gazes
@@ -1430,16 +1287,11 @@ virtues	prevented
 weight	detected
 wonders	hid
 world-loser	died
-year hast	kept
 _	armed
-abakaru _	called
 afflictions	cease
 amphitheatre	leave
 animals	opened
 animals	rouse
-antef i.	seem
-antef i.	thought
-antef s rule	reached
 antefs	continued
 antelope	called
 appellation	transferred
@@ -1460,7 +1312,6 @@ chase	delighted
 chest	drooping
 civilization	set
 claim	implied
-coast lakes	sent
 collars	wear
 communications	opened
 conquests	making
@@ -1468,20 +1319,14 @@ country	suited
 court	lay
 crocodile	attacked
 crocodile	spearing
-crocodile home	brought
 crown	fought
-dalmatian hound	resemble
 date	prevailed
-date palms	dotted
 days	come
-desert tracts	haunted
 diadem	bore
 dog	compared
 dogs	bears
-dom _	dotted
 doubt	lay
 doubt	reached
-dr. birch	supposed
 dynasties	bore
 dynasty	regard
 ears	has
@@ -1494,17 +1339,12 @@ foxhound	resembles
 frontier	constructed
 frontiers	guarded
 gate	keep
-great stream	receives
 gulf	lay
 hand	reached
 head	joins
-hitherto egypt	regard
-hitherto egypt	ruled
 hook	throw
-hunter king	buried
 incursions	harassed
 inhabitants	accompanied
-inhabitants ape	called
 interior	seem
 isolation	acquired
 keeper	appointed
@@ -1513,14 +1353,11 @@ kingdom	sank
 lairs	rouse
 legs	has
 legs	walks
-level character	maintains
 limbs	drooping
 lion	hunted
 lions	represent
 mark	leaving
 masters	accompanied
-mentu-hotep i.	known
-mentu-hotep i.	succeeded
 messengers	regard
 messengers	sent
 monarch	subordinated
@@ -1553,7 +1390,6 @@ projects	occupied
 purpose	achieved
 quarrymen	protect
 range	gathers
-red sea waters	launched
 sakti	come
 sakti	harassed
 sakti	keep
@@ -1589,7 +1425,6 @@ affairs	brought
 affairs	coming
 amenemhat	exhibited
 amenemhat	induced
-amenemhat ii.	associated
 anklets	wearing
 ass	carrying
 ass	precedes
@@ -1630,8 +1465,6 @@ decree	issued
 diadem	wearing
 dogs	followed
 dress	wears
-egypt cattle	drowned
-egypt cattle	importing
 eyes	consult
 eyes	gaze
 fact	marked
@@ -1648,8 +1481,6 @@ forts	bear
 forts	established
 foundations	laid
 fringe	ornamented
-glories nothing	catching
-glories nothing	remains
 goats	importing
 government	drew
 heads	round
@@ -1657,7 +1488,6 @@ hearing	solicit
 homage	offer
 hook	attached
 hook	drew
-household goods	washed
 houses	built
 houses	erected
 hundreds	drowned
@@ -1681,8 +1511,6 @@ master	unrolls
 men	kill
 men	represented
 men	solicit
-mineral _ mastemut _	brought
-mineral _ mastemut _	thought
 monarch	advanced
 monarch	conquering
 months	rise
@@ -1691,7 +1519,6 @@ mounds	surmounted
 mounds	washed
 myths	gathered
 name	gathered
-nile valley	enclose
 occurrence	represent
 offering	presents
 official	named
@@ -1699,7 +1526,6 @@ official	receives
 operations	began
 pannier	carrying
 part	taking
-pasture lands	protect
 pen	holding
 peninsula	found
 pharaoh	poured
@@ -1731,7 +1557,6 @@ sculptures	adorned
 scythia	found
 sesostris	softened
 shield	carrying
-sixteenth year	proceeded
 skin	dying
 soil	covering
 son	associated
@@ -1767,7 +1592,6 @@ year	began
 year	established
 years	reigned
 years	reigning
-_ savant _	supposed
 accession	assumed
 admiration	excited
 admiration	passed
@@ -1797,9 +1621,6 @@ canal	leaving
 centuries	held
 chambers	passed
 chambers	speak
-city home	quitted
-city life	divorced
-city usages	divorced
 cloud	enjoyed
 cloud	follow
 cloud	impending
@@ -1823,17 +1644,13 @@ design	adopt
 dispute	set
 doubt	begun
 downs	quitted
-dozen words	places
-dr. birch	observes
 dynasty	passed
 dynasty	show
 edifice	intended
-eleven miles	varying
 evils	remedy
 expedition	enable
 expedition	ere
 eyes	saw
-famine set	want
 feet	stood
 figures	carved
 floods	passed
@@ -1861,7 +1678,6 @@ labyrinth	speak
 labyrinth	surpass
 labyrinth	surpasses
 lake	covered
-lake moeris	called
 land	effected
 land	knew
 lands	covet
@@ -1872,9 +1688,7 @@ men	covet
 merits	enumerating
 miles	containing
 miles	prolonging
-mr. cope whitehouse	believes
 niggard	gives
-nile water	given
 occurrence	preventing
 one	starved
 opening	applied
@@ -1903,13 +1717,11 @@ sea	flowing
 sea	lost
 seed	promised
 situations	storing
-spring rains	want
 stones	built
 stones	fitted
 store	suffice
 stream	flowed
 stream	formed
-sub judice _	admitted
 terms	recorded
 tomb	enumerating
 valleys	blocked
@@ -1949,9 +1761,6 @@ day	kept
 deceit	reproached
 dependents	leave
 desert	wended
-desert journey	entail
-desert journey	groan
-desert journey	trying
 diamonds	sown
 displeasure	required
 dynasty	lasted
@@ -1975,9 +1784,7 @@ home	needing
 homes	find
 house	born
 house	brought
-household stuff	carry
 households	remark
-i. viii	col.
 in-comers	receive
 infancy	pass
 influx	welcome
@@ -2043,8 +1850,6 @@ report	forwarded
 reports	sent
 river	gave
 secret	kept
-semitic wanderers	imposed
-semitic wanderers	increased
 seraglio	taken
 servants	born
 sister	art
@@ -2126,7 +1931,6 @@ god	seen
 ground	covered
 habits	settled
 hands	suffered
-hyksos yoke	throw
 independence	qualified
 independence	retained
 influences	assimilated
@@ -2141,7 +1945,6 @@ invaders	characterized
 invaders	concluded
 invasion	led
 invasion	received
-lower nile valley	confined
 men	delivered
 mit-fares	called
 model	build
@@ -2170,12 +1973,6 @@ residence	fixed
 respect	failed
 sanctity	violated
 sati	characterized
-sethroite nome	called
-sethroite nome	found
-sethroite nome	guarded
-sethroite nome	rebuilt
-sethroite nome	strengthened
-sethroite nome	visited
 shepherds	acknowledged
 shepherds	build
 shock	destroyed
@@ -2227,8 +2024,6 @@ years	covering
 zan	seems
 zan	situated
 account	gives
-act whereof apepi	awoke
-act whereof apepi	has
 age	assign
 arms	practised
 army	bringing
@@ -2298,7 +2093,6 @@ god	acknowledged
 habits	maintain
 half	amounted
 hands	committed
-hyksos monarchs	acknowledged
 invaders	concentrated
 invaders	established
 invaders	kept
@@ -2306,8 +2100,6 @@ invaders	remained
 jealousy	provoked
 king	advanced
 lake	bordered
-lake menzaleh	bordering
-land force	engaged
 limbs	elongated
 limbs	sees
 lives	bracing
@@ -2319,8 +2111,6 @@ motive	assume
 name	bore
 nation	shows
 neighbourhood	settle
-nile valley	re-descend
-nile valley	reduced
 numbers	perished
 numbers	slain
 oars	rest
@@ -2329,7 +2119,6 @@ officer	accompanied
 officer	bore
 officer	rode
 ones	admired
-outrance _	_
 panic	seized
 people	acquires
 people	assimilates
@@ -2371,8 +2160,6 @@ side	marching
 space	occupies
 spirit	die
 stand	took
-standing army	disposed
-standing army	kept
 stragglers	cutting
 subjection	indicated
 subjects	feel
@@ -2385,7 +2172,6 @@ syncellus	says
 synchronism	accepted
 system	improved
 taa	called
-theban king	contracted
 third	called
 thousands	carried
 throne	held
@@ -2404,8 +2190,6 @@ year	lost
 adversaries	regarded
 aggressor	inflicted
 aggressor	suffer
-amenemhat i.	adding
-amenemhat i.	begun
 army	carry
 army	lost
 arrow	directed
@@ -2414,7 +2198,6 @@ arrow	placing
 arrow	struck
 artifices	arte
 ashes	laid
-asia minor	grew
 asshur	dwelt
 attack	organized
 attention	turned
@@ -2426,7 +2209,6 @@ boats	passed
 borders	driven
 borders	exercised
 bowstring	placing
-capital cities	beautifying
 career	began
 cataract	placed
 centuries	remained
@@ -2436,7 +2218,6 @@ character	built
 character	called
 character	erected
 character	set
-chariot force	organizing
 check	received
 chief	directed
 chief	struck
@@ -2490,7 +2271,6 @@ grandfather	served
 gripe	escape
 guilt	expiate
 hair	escape
-head downwards	hanging
 hills	rounded
 historians	recognized
 hittites	assumed
@@ -2506,7 +2286,6 @@ kings	given
 kings	taken
 knee	bow
 knee	fixed
-land forces	supporting
 lands	scattered
 life	lost
 limits	exercised
@@ -2563,29 +2342,11 @@ riders	accustomed
 ridges	rounded
 ship	carried
 ship	hanging
-sister kingdom	established
 spirit	inhabited
 stench	filled
 style	show
 supply	carry
 suzerainty	exercised
-syria thothmes	accompanied
-syria thothmes	adorned
-syria thothmes	advanced
-syria thothmes	affronted
-syria thothmes	began
-syria thothmes	come
-syria thothmes	crossed
-syria thothmes	declares
-syria thothmes	engaged
-syria thothmes	exacted
-syria thothmes	fell
-syria thothmes	placed
-syria thothmes	proceed
-syria thothmes	returned
-syria thothmes	set
-syria thothmes	settled
-syria thothmes	sought
 temple	adorned
 terminus	pushed
 terms	couched
@@ -2599,8 +2360,6 @@ title	govern
 tribes	conquering
 tribes	engaged
 tribes	inhabited
-upper nile	began
-upper nile	placed
 usurtasen	continued
 valley	blocked
 valley	contains
@@ -2621,14 +2380,11 @@ year	set
 years	associated
 years	feel
 years	sway
-zagros mountains	extended
 advances	making
 ambassador	instructed
 anomaly	appears
 apartments	supported
-aquiline nose	has
 architects	attracted
-as she	appeared
 authority	exercise
 awning	screened
 beach	brought
@@ -2651,7 +2407,6 @@ court	gave
 crew	formed
 daughter	left
 day	engaged
-death hatasu	showed
 decks	piled
 decks	placed
 departure	accompanied
@@ -2675,13 +2430,9 @@ forms	mixed
 friendliness	prevailed
 gifts	abounding
 gifts	presented
-god ammon	presented
 head	holds
 hostility	showed
-household troops	accompanied
 husband	reigned
-incense forests	enter
-incense trees	interspersed
 inscription	quoted
 instances	shown
 king	spoken
@@ -2690,7 +2441,6 @@ law	passed
 legs	deformed
 leopard	followed
 lip	has
-living horus	calls
 man	regarded
 memory	showed
 men-at-arms	consisted
@@ -2747,12 +2497,8 @@ sacks	tied
 sea-shore	carried
 ships	sailed
 slaves	accompanied
-sloping sides	built
-sloping sides	exceeding
 soldiers	followed
 steps	imposed
-stone piers	emplaced
-stone piers	supported
 stream	flowed
 structure	covered
 structure	imposed
@@ -2783,8 +2529,6 @@ years	continue
 years	reigned
 adiabene	crossed
 alluvium	ruled
-amenemhat i.	delighted
-amenemhat i.	found
 army	invading
 army	opened
 attack	avoid
@@ -2797,7 +2541,6 @@ campaigns	traced
 challenge	accept
 chief	forced
 chisels	marred
-coast route	took
 constructions	missed
 contribution	supply
 counsel	scorned
@@ -2828,7 +2571,6 @@ field	took
 figs	kept
 food	supply
 fortieth	led
-fruit trees	cut
 garrisons	occupied
 gates	opened
 generals	liked
@@ -2837,7 +2579,6 @@ gifts	accepted
 gifts	conveyed
 god	lost
 god	promised
-gold habergeon	beaten
 hands	fell
 hands	lay
 herd	turned
@@ -2850,12 +2591,9 @@ hostages	obtain
 intelligence	brought
 king	scattered
 level	reducing
-lower egypt	bathed
 march	arrived
 march	continuing
 march	took
-marsh region	exists
-merchant fleet	missed
 monarch	drawn
 monarch	engaged
 monarch	ran
@@ -2882,10 +2620,7 @@ return	passed
 risk	ran
 road	kept
 road	supply
-roundabout road	take
 route	march
-royal brother	admitting
-royal brother	kept
 scouts	brought
 scouts	consisted
 scouts	march
@@ -2893,7 +2628,6 @@ scouts	met
 scouts	posted
 ships	carry
 ships	returning
-silver ornaments	find
 sister	held
 slaves	returning
 sportsman	fallen
@@ -2902,9 +2636,6 @@ struggle	captured
 struggle	overpowered
 system	owing
 tahai	fell
-thothmes iii	reigned
-thothmes iii.	assigned
-thothmes iii.	rebelled
 throne	deprived
 time	embark
 time	engaged
@@ -2922,8 +2653,6 @@ troops	embark
 trunk	drawn
 tusk	gored
 tusks	obtain
-usurtasen i.	begun
-usurtasen i.	delighted
 victim	gored
 victim	trampled
 warrior	follow
@@ -2939,7 +2668,6 @@ year	undertaken
 years	exercising
 years	kept
 years	led
-zab country	crossed
 zahi	fell
 addition	vent
 adornments	behold
@@ -2963,7 +2691,6 @@ centuries	continued
 centuries	endured
 centuries	stood
 clerestory	lighted
-companion monument	having
 conquerors	defeating
 constantinople	holds
 country	introduce
@@ -2979,8 +2706,6 @@ elephantine	adorned
 embankment	put
 empire	subduing
 expeditions	used
-father ammon	offering
-father ammon	says
 feet	diminishing
 feet	has
 feet	scattered
@@ -2988,7 +2713,6 @@ fleet	placed
 flowers	figure
 force	maintained
 force	plunging
-fruit trees	live
 fruits	figure
 goose	found
 goose	transported
@@ -3006,17 +2730,13 @@ holiness	behold
 holiness	look
 holiness	regard
 holiness	see
-holy land	discovered
 horns	approach
 importance	recognizing
 inches	diminishing
 inscription	tells
-khabour river	governed
 lands	hinder
 lazuli	bows
 lion	see
-maritime forces	plundered
-maritime forces	reduced
 material	reproducing
 millenium	lasted
 monarch	allow
@@ -3038,7 +2758,6 @@ novelties	introduce
 obelisk	possesses
 obelisks	adorned
 pair	shrank
-petty chiefs	governed
 pictures	intermixed
 pictures	portrayed
 populations	display
@@ -3050,7 +2769,6 @@ propylaea	proceeded
 propylaea	re-erected
 propylaea	render
 propylaea	resolved
-rameses ii.	excepting
 regions	governed
 regions	marched
 residents	teaches
@@ -3063,8 +2781,6 @@ sanctuary	reconstruct
 sanctuary	render
 soil	brings
 spot	found
-star canopus	behold
-star canopus	sends
 store-chambers	form
 style	worked
 successors	known
@@ -3155,8 +2871,6 @@ pipe	introduced
 place	raised
 places	set
 points	seen
-portrait statues	carried
-portrait statues	possess
 power	exercised
 practices	secured
 priests	found
@@ -3167,7 +2881,6 @@ quarter	terrify
 reason	arisen
 reckoning	exercised
 rocks	given
-roman soldier	heard
 satisfaction	explain
 sculptor	belongs
 sculptor	turned
@@ -3185,17 +2898,14 @@ sovereignty	re-establish
 stones	_
 suggestion	affected
 temple	emplaced
-temple tower	dwarfed
 theory	disproved
 third	make
-thothmes iii.	increasing
 throne-seats	placed
 time	looked
 times	heard
 tone	emitted
 travellers	drew
 travellers	heard
-twin colossi	rests
 victories	secured
 visit	make
 voice	desired
@@ -3209,14 +2919,9 @@ years	mouldering
 years	wore
 account	heard
 adhesion	desired
-amenhotep iii.	embraced
-amenhotep iii.	found
-amenhotep iii.	known
-amenhotep iii.	shocked
 arban	found
 attendants	dressed
 attendants	negro
-blagdon hills	sent
 blocks	quarried
 boys	dressed
 boys	negro
@@ -3247,10 +2952,6 @@ eyes	covered
 face	plunged
 fire	drooped
 frontier	advancing
-great king	caught
-great king	presented
-great king	resist
-great king	states
 hall	standing
 halls	meant
 hand	gained
@@ -3258,7 +2959,6 @@ hands	presented
 hands	terminating
 head	drooped
 historians	reproached
-hunting men	engaged
 idea	find
 image	contain
 khnum	raised
@@ -3266,7 +2966,6 @@ kingdoms	recognized
 light	plunged
 lions	abounded
 manner	dressed
-marlen bells	ceased
 maut	built
 memnon	issued
 minutes	passed
@@ -3291,7 +2990,6 @@ portion	deferred
 princesses	influence
 propylon	embellished
 races	sought
-rameses ii.	assigned
 rate	obtained
 razzias	resulted
 residence	meant
@@ -3316,9 +3014,6 @@ taurus	extend
 temperature	found
 temples	built
 temples	raised
-third thothmes	attained
-third thothmes	conducted
-thothmes iii.	established
 throne	mounted
 tools	shaped
 traps	caught
@@ -3356,7 +3051,6 @@ chin	developed
 circumstance	favoured
 circumstances	admitted
 city	ruined
-coelesyrian valley	occupied
 contact	permit
 country	attacked
 country	brought
@@ -3371,7 +3065,6 @@ desert	drawn
 disadvantage	attacked
 dominion	established
 dominions	plunged
-dramatis personae	changed
 dust	prostrate
 epithet	took
 expeditions	ceased
@@ -3390,16 +3083,7 @@ gifts	showered
 god	posed
 god	showered
 god	worshipped
-grandson mautenar	agreed
-grandson mautenar	attacked
-grandson mautenar	died
-grandson mautenar	expected
-grandson mautenar	gave
-grandson mautenar	left
-grandson mautenar	organized
-grandson mautenar	taken
 grave	descended
-great thothmes	besieged
 greatness	permit
 ground	thrown
 heavens	perform
@@ -3409,11 +3093,6 @@ henceforth	show
 herdsmen	pasturing
 herdsmen	startled
 hitherto	engaged
-hittite king	accepted
-hittite kingdom	left
-hittite land	leaping
-hittite picture-writing	leaping
-hittite throne	sat
 horus	called
 influence	found
 invaders	gave
@@ -3421,13 +3100,11 @@ invasion	accepted
 kharu	fell
 kings	burst
 kings	placed
-kings xi	prevailed
 land	show
 men	bestow
 men	receive
 men	veil
 mi-harmakhu	took
-mieux sauter	pour
 moment	rushed
 monarch	associated
 monarch	cleared
@@ -3437,14 +3114,12 @@ monarch	save
 monuments	mutilated
 monuments	raised
 mortals	binding
-mountain fastnesses	descending
 names	obliterated
 nations	bound
 neck	represented
 numbers	attracted
 obelisk	erected
 occasion	composed
-orontes valley	lay
 others	defended
 palaces	raised
 parallels	drawn
@@ -3486,25 +3161,16 @@ result	followed
 revolution	brought
 sceptre	left
 seat	settle
-seti-menephthah i.	succeeded
-shepherd kings	arose
-shepherd kings	prevailed
-shepherd kings	succeeding
 side	fought
 son	associated
 sphere	showered
-spindle shanks	adapted
 steeds	prancing
 struggle	engaged
 struggle	followed
 successors	attached
-supreme god	associated
 tabernacle	placed
-taurus range	reigned
 temples	raised
 temples	represented
-thothmes i.	conquered
-thothmes iii	conquered
 throne	associated
 thrones	occupied
 time	brought
@@ -3521,7 +3187,6 @@ act	deferred
 act	fell
 advance	learning
 adversary	recognized
-alabaster sarcophagus	lies
 allegiance	change
 ambush	quitted
 arms	turned
@@ -3549,7 +3214,6 @@ companions	forced
 companions	found
 companions	sped
 conclusion	acquiescing
-contracting powers	established
 crocodiles	fall
 dart	hurl
 dart	hurled
@@ -3587,7 +3251,6 @@ field	driven
 fight	called
 fight	commenced
 fight	enabled
-flank movement	commenced
 flight	carried
 foes	raised
 foot	gave
@@ -3597,11 +3260,6 @@ friends	exhausted
 frontier	anticipated
 galleries	extending
 glance	taken
-god mentu	come
-god mentu	fought
-god mentu	hurled
-god mentu	killed
-great king	returned
 grounds	afforded
 groups	divided
 hair	hangs
@@ -3616,15 +3274,12 @@ hand	hurled
 heart	shrank
 hearts	passed
 hearts	struck
-hittite army	retired
-hittite chariot line	forced
 host	carried
 hosts	met
 hours	seemed
 idea	embody
 infantry	make
 interests	giving
-intervals monarchs	asserted
 king	ordered
 lake	raised
 language	convey
@@ -3687,11 +3342,6 @@ river	cross
 river	perished
 rock	hewn
 rock-tombs	seen
-roman province	protect
-roman wall	built
-roman wall	intended
-roman wall	protect
-roman wall	recalls
 roof	covered
 sanctions	established
 sanctions	placed
@@ -3699,37 +3349,10 @@ scouts	believed
 shore	reached
 side	supported
 sight	lost
-son ramesses	anticipated
-son ramesses	believed
-son ramesses	borne
-son ramesses	carried
-son ramesses	claims
-son ramesses	concluded
-son ramesses	confronted
-son ramesses	culminated
-son ramesses	effect
-son ramesses	endeavoured
-son ramesses	failed
-son ramesses	fallen
-son ramesses	found
-son ramesses	gave
-son ramesses	held
-son ramesses	informed
-son ramesses	known
-son ramesses	led
-son ramesses	marched
-son ramesses	obtained
-son ramesses	received
-son ramesses	requested
-son ramesses	separated
-son ramesses	suffered
-son ramesses	turned
 south	entering
 south	turned
 spear	thrust
 steeds	dashed
-stone columns	divided
-stone columns	supported
 struggle	submitted
 student	look
 success	crowned
@@ -3779,7 +3402,6 @@ chin	rounded
 clothes	swaddling
 coasts	plundering
 contingents	consisted
-copper swords	armed
 country	bring
 danger	apprehended
 danger	escaped
@@ -3796,7 +3418,6 @@ frontier	adjoined
 frontier	secured
 generation	grown
 generation	recover
-great king	stands
 hebrews	mentioned
 identifications	accepted
 importance	regarded
@@ -3866,7 +3487,6 @@ sovereignty	held
 state	broke
 time	lead
 time	passed
-time expeditions	lead
 tribes	began
 tribes	weakening
 triumphs	seem
@@ -3926,7 +3546,6 @@ desert	marching
 director	established
 disaster	paralyzed
 edge	reaching
-emissaries into asia	introduced
 enemies	mutilated
 enemy	disciplined
 enemy	proceed
@@ -3944,14 +3563,10 @@ force	gather
 forces	overthrown
 forces	put
 forces	sent
-frontier towns	taken
-frontier towns	turned
 fugitives	following
 fugitives	valued
 gale	driven
 geese	trembled
-god phthah	standing
-god phthah	viewed
 ground	entered
 grounds	laid
 halls	impress
@@ -3989,7 +3604,6 @@ messenger	told
 mind	underwent
 monarch	paralyzed
 morning	dawned
-mr. fergusson	asserts
 names	repeat
 october	followed
 ooze	sank
@@ -4006,7 +3620,6 @@ pharaoh	delayed
 place	hold
 position	menaced
 position	taken
-position memphis	menaced
 prince	conducted
 protector	viewed
 ramesses	declined
@@ -4017,7 +3630,6 @@ return	delayed
 revolution	produced
 scene	adding
 sea	perished
-sebennytic branches	lay
 service	entered
 services	valued
 shardana	struck
@@ -4035,12 +3647,7 @@ space	covering
 spot	fixed
 state	weakened
 styles	put
-summer temperature	gave
 tents	fell
-theban palace-temples	acquainted
-theban palace-temples	design
-theban palace-temples	make
-theban palace-temples	unite
 throne	contested
 tides	communicated
 time	address
@@ -4071,8 +3678,6 @@ arm	grows
 arms	crowned
 arms	stood
 army	shattered
-asia minor	accompanied
-asia minor	marched
 auseis	exercising
 banner	unfurled
 barriers	overleaps
@@ -4092,10 +3697,7 @@ cantons	broke
 cartouches	chisel
 cattle	capturing
 cattle	presented
-change stalks	coming
-chariot wheels	passed
 cities	took
-coast route	encountering
 coasts	land
 confederates	remaining
 conquerors	pushed
@@ -4180,7 +3782,6 @@ medinet-abou	accomplished
 men	armed
 men	fighting
 mire	trampled
-mountain goats	tremble
 mountains	shake
 movements	begin
 mutterings	bursts
@@ -4245,30 +3846,6 @@ shore	coasted
 slaves	attached
 snake	killed
 snake	scotched
-son ramesses	associated
-son ramesses	attached
-son ramesses	attacked
-son ramesses	awaited
-son ramesses	began
-son ramesses	called
-son ramesses	caused
-son ramesses	defeated
-son ramesses	destroyed
-son ramesses	informed
-son ramesses	invaded
-son ramesses	kept
-son ramesses	marched
-son ramesses	placed
-son ramesses	portrays
-son ramesses	presented
-son ramesses	resisted
-son ramesses	says
-son ramesses	selected
-son ramesses	set
-son ramesses	strengthened
-son ramesses	taken
-son ramesses	took
-son ramesses	viceroy
 spirit	appears
 squadrons	combined
 square-sail	carry
@@ -4289,7 +3866,6 @@ time	commenced
 time	found
 time	preserve
 time	unfurled
-time burst	restrained
 top	hung
 tremor	goes
 veins	ran
@@ -4307,9 +3883,6 @@ yard	constructed
 yard	has
 years	forced
 years	reigned
-_ faineants	_
-_ faineants	devolved
-_ faineants	play
 arm	stretches
 arms	carried
 art	sell
@@ -4327,15 +3900,12 @@ banks	lined
 belief	spread
 bidder	sell
 blank	spared
-body politic	shows
 booty	contain
 capital	fixed
 caste	formed
 caste	recruited
 caste	separated
 ceremony	adds
-chariot force	led
-chariot force	selected
 colleges	directed
 colleges	held
 columns	makes
@@ -4357,7 +3927,6 @@ drawings	satirized
 duties	devolved
 eclipse	undergoing
 edge	fall
-encouragement authors	devoted
 engagements	defeated
 expeditions	disturbing
 father	regards
@@ -4392,7 +3961,6 @@ infantry	overturned
 infantry	placed
 infantry	says
 influence	exercised
-inhabitants rest	give
 initiative	passed
 inscription	says
 inscription	set
@@ -4417,7 +3985,6 @@ nations	reached
 nations	severed
 nations	trample
 nations	traversed
-nile mud	stuck
 oasis	stain
 order	reversed
 order	seems
@@ -4438,7 +4005,6 @@ privileges	separated
 proceedings	implicated
 reign	commenced
 reservoir	dug
-royal abode	desisted
 rule	acquiesced
 shade	give
 ships	floating
@@ -4449,7 +4015,6 @@ skill	sell
 society	settles
 sons	recruited
 soul	taken
-southern asia minor	belong
 spirit	annihilated
 struggle	ended
 struggle	reached
@@ -4460,8 +4025,6 @@ temple	attached
 throne	force
 throne	occupied
 time	re-establishing
-time morals	displays
-time morals	fall
 tombs	rifling
 tone	prevails
 trees	turned
@@ -4474,8 +4037,6 @@ wars	commenced
 waves	sank
 worth	knows
 yoke	resulting
-_ corps d'armee	sent
-_ eclat _	attended
 ambition	displayed
 amnesty	granting
 assistance	come
@@ -4498,7 +4059,6 @@ crown	seemed
 daughter-in-law	connected
 descent	trace
 doubt	surrendered
-dozen names	manufacture
 dynasties	continued
 dynasties	seeking
 dynasty	preceding
@@ -4509,7 +4069,6 @@ empire	inherited
 empire	required
 entrance	stood
 extent	established
-father namrut	descended
 fellow-townsmen	dare
 fellow-townsmen	executed
 functions	abandon
@@ -4517,7 +4076,6 @@ glory	seeking
 grandfather	bore
 grandmother	connected
 hand	promoted
-her-hor si-ammon	called
 highness	called
 historian	expected
 historian	supplies
@@ -4527,15 +4085,7 @@ houses	derived
 imagination	entitled
 impulse	gave
 instance	appeared
-king solomon	brought
-king solomon	effect
-king solomon	loved
-king solomon	offend
-king solomon	regarded
-king solomon	took
 kingdom	succeeded
-kings iv	gave
-kings iv	inherited
 legitimacy	gave
 marriage	contracting
 match	allowed
@@ -4579,22 +4129,12 @@ priest-kings	held
 prince	received
 princess	took
 quarter	held
-ramesside period assyria	contemplate
-ramesside period assyria	derived
-ramesside period assyria	enjoyed
-ramesside period assyria	extended
-ramesside period assyria	increased
-ramesside period assyria	interfere
-ramesside period assyria	lost
-ramesside period assyria	recover
 rank	enjoyed
 reception	accorded
 refugees	allowing
 reproach	escape
 reproach	rests
 rivals	deter
-royal commissioner	entrusted
-royal commissioner	visits
 rule	prospered
 side	supported
 singles	dare
@@ -4621,7 +4161,6 @@ women	loved
 writers	manufacture
 writers	mould
 achievements	commemorate
-arab tribes	make
 armies	joined
 arms	placed
 army	having
@@ -4629,9 +4168,6 @@ army	levied
 army	proceeded
 aroer	trace
 arrival	awaiting
-asiatic dominion	established
-asiatic dominion	involved
-asiatic dominion	seems
 attack	anticipated
 base	shaken
 battle	fell
@@ -4639,7 +4175,6 @@ battle	seems
 borders	lighted
 camp	taking
 capital	led
-captive judaean kingdom	figuring
 care	fortified
 centuries	put
 century	appeared
@@ -4667,13 +4202,6 @@ east	look
 edomites	subdued
 empire	establishing
 end	put
-expedition were-not	lighted
-expedition were-not	looked
-expedition were-not	make
-expedition were-not	proceeded
-expedition were-not	set
-expedition were-not	used
-expedition were-not	ventured
 eye	regarded
 field	brought
 foreigners	used
@@ -4682,7 +4210,6 @@ glory	enjoy
 hebrews	confronted
 hebrews	met
 henceforth	averted
-holy land	proceeded
 host	placed
 host	proceeded
 host	set
@@ -4691,9 +4218,7 @@ ib	destroyed
 imaginations	dazzled
 inhabitants	carry
 instrument	used
-judaea by shishak	shattered
 king	met
-kings iv	trembled
 march	appeared
 master	carried
 medes	brought
@@ -4713,7 +4238,6 @@ parts	fell
 power	appeared
 power	conquering
 power	establishing
-princess keramat	married
 prisoners	seemed
 record	commemorate
 resistance	organized
@@ -4741,7 +4265,6 @@ words	echoed
 years	broken
 years	live
 yoke	shook
-yuteh malek	bears
 abode	deposited
 advances	making
 allegiance	throwing
@@ -4769,16 +4292,12 @@ enemy	despised
 expedition	left
 eyes	fall
 eyes	falls
-fall blood	grows
-fall blood	lets
-fall blood	produces
 favour	received
 forces	concentrated
 foreigner	regarded
 forms	repeated
 generals	send
 glory	sought
-god apis	carried
 gods	worshipped
 governments	broke
 grains	take
@@ -4786,7 +4305,6 @@ grave	laid
 herdsmen	divided
 herhor	remove
 highlands	stretched
-horns weeps	grows
 house	deposited
 house	reigning
 influence	establish
@@ -4803,13 +4321,10 @@ mercenaries	reckoned
 mixture	apply
 mixture	art
 mixture	make
-month mechir	carried
-month mechir	laid
 name	included
 negro	allied
 neighbours	allied
 neighbours	included
-nile valley	establish
 north	broke
 nose	lets
 oases	interspersed
@@ -4821,10 +4336,6 @@ pharaoh	reigning
 point	divided
 presence	bring
 princes	threatened
-rebel chiefs	awaited
-rebel chiefs	concentrated
-rebel chiefs	fell
-rebel chiefs	included
 region	spread
 resistance	offered
 rest	carried
@@ -4832,22 +4343,16 @@ revolt	suppress
 river	advancing
 section	described
 sessoun	commanded
-sheshonk dynasty	declined
-sheshonk i.	left
 shrines	adorned
 shrines	worshipped
 shupot	named
 south	broke
-stone sarcophagus	rest
 streams	abounded
 streams	watered
 taxes	receive
-tefnut weep	changes
-tefnut weep	falls
 temple	built
 temples	built
 texts	called
-thothmes iii.	remove
 time	conducted
 time	emboldened
 time	form
@@ -4863,7 +4368,6 @@ tract	formed
 tract	held
 tributaries	stretched
 troubles	broke
-usurtasen iii	began
 wars	maintain
 years	amounted
 acclamations	received
@@ -4913,11 +4417,7 @@ forms	prevailed
 fortifications	scaled
 gates	shut
 god	approach
-god phthah	sacrificed
 hand	leading
-hermopolitan monarch	quitted
-hermopolitan prince	treated
-historian manetho	declared
 homage	renewed
 horus	hailing
 hosts	met
@@ -4932,7 +4432,6 @@ kingdom	restored
 kings	consisted
 kings	governed
 kings	held
-kings xvii	occupied
 lake	bathe
 machines	threw
 majesty	sailed
@@ -4951,7 +4450,6 @@ nile	descended
 nile	returned
 nile	sailed
 north	continuing
-o king	sang
 people	received
 philistines	fled
 place	hold
@@ -4977,17 +4475,12 @@ side	commanded
 siege	commenced
 siege	reduced
 sistrum	holding
-son shabatok	averted
-son shabatok	held
-son shabatok	ruled
-son shabatok	succeeded
 south	bordered
 south	synchronized
 sovereignty	throw
 stables	examined
 step	brought
 store-houses	examined
-stout resistance	offered
 submission	ensure
 success	followed
 summons	set
@@ -4999,7 +4492,6 @@ territory	absorbed
 territory	interposed
 thousands	slaughtering
 throne	mounted
-thy victory	endure
 time	insisted
 time	lost
 time	reinstate
@@ -5017,11 +4509,6 @@ walls	threw
 war-horse	leading
 watch	kept
 women	madest
-year sargon	commanded
-year sargon	died
-year sargon	subjected
-year sargon	threatened
-year sargon	took
 advantage	destined
 agency	employed
 ardour	threw
@@ -5033,7 +4520,6 @@ army	destroyed
 army	led
 arrangements	satisfied
 arrest	check
-assyrian court	communicated
 attempt	expected
 attempt	invite
 attempt	promised
@@ -5050,7 +4536,6 @@ cavalry	stormed
 cavalry	took
 centuries	enriched
 chains	loaded
-chariot force	including
 co-operation	invite
 command	given
 commandants	arrested
@@ -5099,7 +4584,6 @@ host	routed
 infantry	consisting
 instances	given
 intrigue	detected
-kings xxiii	bore
 malady	seized
 malcontents	joined
 march	facilitate
@@ -5115,15 +4599,11 @@ neighbourhood	collected
 night	destroyed
 nomes	thrown
 nomes	united
-north-east frontier	collected
 others	arrested
 panoplies	covered
 part	kept
 path	swept
 pestilence	caused
-petty kings	began
-petty kings	make
-petty kings	promised
 pitch	exalted
 plains	accoutred
 policy	modified
@@ -5139,18 +4619,10 @@ result	expected
 rival	relinquish
 rivers	situate
 rocks	sculptured
-roman principle	broke
 shields	carried
 simoon	caused
 simoon	explained
 son	conferred
-son esarhaddon	broke
-son esarhaddon	brought
-son esarhaddon	leave
-son esarhaddon	re-established
-son esarhaddon	seized
-son esarhaddon	set
-son esarhaddon	succeeded
 south-west	extend
 spears	carried
 struggle	relinquish
@@ -5164,13 +4636,9 @@ territory	disputed
 territory	possessed
 time	encountered
 time	passed
-time asia	issued
-time asia	stood
 towns	stormed
 troops	marched
 truth	written
-waste tract	known
-waste tract	proceeding
 wife	left
 writers	explained
 yoke	imposed
@@ -5187,8 +4655,6 @@ armies	traversed
 arms	oppose
 arms	took
 army	formed
-asia minor	dispatched
-asia minor	grown
 attention	taken
 attention	turn
 authority	acknowledged
@@ -5226,7 +4692,6 @@ difficulties	immersed
 difficulties	threatened
 direction	assume
 distance	stationed
-divine providence	sent
 elephantine	quartered
 embassy	dispatched
 end	put
@@ -5250,7 +4715,6 @@ frontiers	guarding
 gates	opened
 governments	retain
 greatness	restore
-holy ritual	fulfilled
 images	honour
 independence	tremble
 instances	cast
@@ -5270,7 +4734,6 @@ moment	found
 moment	watched
 monuments	allowed
 neighbours	keep
-nile valley	advanced
 observer	ventured
 one	opposed
 patient	cure
@@ -5278,10 +4741,6 @@ patient	expiring
 perils	surrounding
 period	cast
 period	lose
-petty princes	crush
-petty princes	gathered
-petty princes	swept
-petty princes	took
 place	established
 policy	met
 population	enslaved
@@ -5299,8 +4758,6 @@ requirements	answer
 resistance	ceased
 result	accomplished
 son	saved
-son neco	comes
-son neco	put
 south	quartered
 south	threatened
 south-east	threatened
@@ -5315,8 +4772,6 @@ suzerain	throw
 sword	kept
 sword	won
 temple	visit
-temple revenues	confiscated
-temple revenues	given
 temples	allowed
 temples	inflicted
 temples	restored
@@ -5358,17 +4813,13 @@ bireme	introduced
 bottoms	carried
 campaign	undertake
 change	required
-chief nobles	recovered
 circumstances	required
-coast route	took
 colonnade	surrounded
 conquest	dreamt
 corpse	revivify
 country	submitted
 creatures	living
 decease	met
-desert sand	combined
-dozen times	pillaged
 edifices	enlarge
 effect	produced
 effort	determined
@@ -5396,7 +4847,6 @@ groove	shaking
 harvests	teemed
 hint	improving
 land	returned
-land force	regarding
 lands	devastated
 life	awakened
 life	follow
@@ -5404,7 +4854,6 @@ life	produced
 life	put
 life	stir
 limbs	put
-linen fabrics	exported
 mariners	dispatched
 mariners	fixed
 mariners	manning
@@ -5419,8 +4868,6 @@ monarchs	pleased
 monarchs	settle
 months	lasted
 nemesis	swooped
-nile mud	combined
-nile mud	silt
 oars	shipping
 ocean	communicated
 ocean	flowed
@@ -5449,8 +4896,6 @@ projects	concerned
 projects	relinquish
 provinces	recover
 purpose	effecting
-ramesses ii.	constructed
-reserve chariot	conveyed
 residence	assigned
 right	keeping
 roads	re-established
@@ -5458,12 +4903,10 @@ scale	commenced
 scale	meet
 scale	widening
 sequel	determined
-seti i.	constructed
 settlements	make
 ships	anticipated
 ships	manning
 ships	returned
-side egypt	exported
 success	met
 task	accomplish
 tenderness	impressed
@@ -5486,10 +4929,7 @@ way	wounded
 wines	imported
 women	concerning
 works	undertook
-year _	reach
 years	resisted
-years egypt	enjoyed
-years egypt	felt
 adhesion	secure
 andro-sphinxes	conducting
 anger	deprecate
@@ -5547,19 +4987,14 @@ horses	harness
 host	met
 idols	destroyed
 impulse	gave
-industry general	making
 inhabitants	destroy
 invasion	took
 land	filled
-land side	strengthen
 law	show
 living	getting
 losses	repair
-malice prepense	sent
 man	stumbled
 means	show
-men escape	fall
-men escape	stumble
 monarch	allow
 money	employ
 money	wasted
@@ -5567,8 +5002,6 @@ monument	set
 myth	based
 nations	heard
 nature	seemed
-nile valley	advanced
-nile valley	returning
 north	stumble
 ones	beaten
 ones	fled
@@ -5587,8 +5020,6 @@ realization	attempted
 result	cost
 result	suggest
 revolt	took
-river euphrates	met
-river euphrates	stumble
 rivers	moved
 safety	threatened
 settlers	held
@@ -5597,7 +5028,6 @@ shame	heard
 shield	accept
 shield	handle
 siege	raised
-state finances	improved
 statuary	flourished
 statues	erected
 strength	nursed
@@ -5605,7 +5035,6 @@ succession	secure
 successors	continued
 sword	devour
 temple	added
-temple precincts	erected
 temples	building
 termination	suggest
 thmuis	found
@@ -5638,17 +5067,11 @@ armies	contend
 arms	inured
 army	levied
 army	suffered
-baggage animals	required
 battle	decided
 blood	infuse
 camp-followers	required
 capital	reached
 capital	returned
-carian mercenaries	depend
-carian mercenaries	depended
-carian mercenaries	gathered
-carian mercenaries	maintained
-carian mercenaries	recruited
 character	care
 cities	blockaded
 cities	threatening
@@ -5675,23 +5098,14 @@ enemy	threatened
 existence	launch
 expedition	send
 expeditions	employing
-extent phoenician	saw
 face	looked
 families	interconnected
-father cyrus	conducted
-father cyrus	congratulated
-father cyrus	fell
-father cyrus	march
-father cyrus	remind
-father cyrus	succeeded
-finesse _	escaped
 fleet	bring
 force	posted
 fortune	befell
 fugitives	reached
 fugitives	shut
 fugitives	stop
-grecian civilization	personified
 inexperience	taken
 invader	protect
 invasion	conducted
@@ -5700,8 +5114,6 @@ islanders	taken
 king	escaped
 kingdom	passed
 kingdom	protect
-land force	superseded
-land side	threatening
 laurels	gaining
 life	lost
 means	introduced
@@ -5710,12 +5122,10 @@ messengers	sent
 midst	expand
 monarch	declare
 monarch	prevent
-monarch prisoner	taking
 monarchs	continued
 monarchy	brought
 monarchy	lasted
 months	died
-mountain race	overthrown
 movements	hindered
 nation	compelled
 nation	received
@@ -5744,9 +5154,7 @@ progress	resist
 prosperity	conceal
 race	personified
 region	undertook
-river halys	crossing
 rout	fled
-saite kings	introduced
 section	see
 services	gave
 ships	gave
@@ -5810,7 +5218,6 @@ field	defeated
 fleet	found
 fleet	swept
 foundations	broken
-grecian vessels	captured
 hand	learn
 hatred	allay
 host	invades
@@ -5847,9 +5254,6 @@ multitude	take
 mummies	examining
 mummies	exhumed
 nation	awaited
-nile marshes	took
-nile waters	diverted
-nile waters	moored
 number	attacked
 obelisk	adorn
 obstacle	swept
@@ -5865,20 +5269,11 @@ others	defeated
 others	sent
 outrage	committed
 path	swept
-persian army	drew
-persian army	invested
-persian fleet	returned
-persian military expeditions	showed
-persian rule	detested
 plataens	defeated
 preparations	making
 presence	honoured
 priest-class	conciliate
 priest-class	given
-prophet ezekiel	break
-prophet ezekiel	make
-prophet ezekiel	put
-prophet ezekiel	set
 prosopitis	called
 province	placed
 question	defeat
@@ -5954,7 +5349,6 @@ alliance	entered
 alliances	courting
 alliances	entangling
 allies	enrol
-apis repository	set
 armament	sent
 army	collected
 army	march
@@ -6029,9 +5423,6 @@ nekht-horheb	entangling
 nekht-horheb	rely
 obelisks	erected
 offer	declined
-persian garrison	defeated
-persian garrison	gave
-persian soldiery	commanded
 position	restore
 precautions	multiplied
 precautions	taken
@@ -6043,9 +5434,7 @@ prince	multiplied
 prince	seduced
 prince	set
 proceeding	justify
-ramesses xii	erected
 ranks	enrol
-rebel confederacy	join
 recriminations	took
 reduction	attempt
 regent	entrusted
@@ -6097,7 +5486,6 @@ troops	taken
 troops	wait
 war	commenced
 war	plunged
-way midsummer	reached
 winds	began
 years	lasted
 accomplishment	sufficed
@@ -6124,7 +5512,6 @@ calamities	brought
 capital	defend
 captains	asking
 cause	ruined
-chief reliance	placed
 city	left
 colleague	sent
 colleagues	divided
@@ -6144,11 +5531,6 @@ ends	gained
 engines	brought
 envoy	sent
 envoy	surrender
-eunuch bagoas	attempt
-eunuch bagoas	captured
-eunuch bagoas	demurred
-eunuch bagoas	established
-eunuch bagoas	obliged
 existence	pretended
 fleet	manned
 foot	succeeded
@@ -6159,7 +5541,6 @@ frontier	guarding
 generals	abandoned
 generals	sending
 gods	robbed
-great king	conduct
 hercules	regarded
 horse	succeeded
 houses	setting
@@ -6196,8 +5577,6 @@ nile	taking
 north	brought
 north	passing
 people	treated
-persian attack	guarding
-persian generals	divided
 place	led
 plans	come
 proceeding	suit
@@ -6225,8 +5604,6 @@ though	refused
 though	succeeded
 time	baffle
 time	gone
-time mentor	laid
-time mentor	proceeded
 towers	advance
 towers	prepared
 town	destroying
@@ -6248,5 +5625,4 @@ walls	ventured
 wars	committing
 way	lay
 while	lay
-wind setting	brought
 writers	showed

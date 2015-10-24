@@ -8,19 +8,11 @@ book	appropriated
 book	beguiled
 book	combines
 book	provoked
-chapter iii	carried
-chapter iii	described
-chapter viii	makes
-chief temple	described
 children	appropriated
 children	combines
 children	continued
-conditions chapter	granted
-country chapter ii	carried
-country chapter ii	seized
 design	informed
 disposition	gains
-dwarf chapter	quarrels
 ears	offend
 end	beguiled
 escape	makes
@@ -29,22 +21,16 @@ foot-notes	added
 generals	commanded
 invasion	prevents
 life	swims
-lilliput part ii a voyage	lay
 list	leave
 majesty	pleased
 manner	diverts
 maps	correcting
-matter appeals	read
 meaning	read
 mind	adapted
 narrative	underlies
-part i a voyage	commanded
 passages	omitted
-peace chapter vi	shows
-peace chapter vi	sue
 pockets	searched
 scholars	disputes
-school year	found
 skill	shows
 storm	described
 storm	goes
@@ -59,8 +45,6 @@ authors	provided
 authors	reading
 birds	appear
 business	began
-captain william prichard	accepted
-captain william prichard	making
 churchyard	observed
 condition	alter
 conscience	suffer
@@ -105,7 +89,6 @@ curiosity	see
 daughter	kneeled
 father	continued
 father	sent
-father dwelt	heard
 finger	held
 fortune	got
 friends	having
@@ -114,19 +97,8 @@ half	continued
 language	learning
 levant	making
 life	swims
-made a prisoner	carried
-made a prisoner	is
 mistakes	commit
 months	studied
-mr. james bates	bound
-mr. lemuel gulliver	born
-mr. lemuel gulliver	coming
-mr. lemuel gulliver	heard
-mr. lemuel gulliver	left
-mr. lemuel gulliver	lives
-mr. lemuel gulliver	quitted
-mr. lemuel gulliver	spoken
-mrs. mary burton	married
 offer	accepted
 parts	making
 patients	recommended
@@ -147,7 +119,6 @@ thing	affirmed
 things	mend
 times	perused
 tombs	observed
-uncle john	got
 voyage	making
 voyages	relating
 wapping	removed
@@ -165,8 +136,6 @@ arm-pits	felt
 body	felt
 bottom	feel
 breast	advancing
-buff jerkin	fell
-buff jerkin	pierce
 companions	lost
 computation	rowed
 condition	observe
@@ -201,7 +170,6 @@ intelligence	provided
 ladders	applied
 ladders	mount
 leg	moving
-legs drop	let
 ligatures	felt
 lord	call
 lord	learned
@@ -272,14 +240,12 @@ witness	calling
 words	answered
 words	explained
 words	repeated
-_ hurgo _	withdrew
 air	saw
 behavior	interpreted
 body	mount
 body	passing
 bonds	break
 breast	danced
-capital city	carry
 circumstances	added
 cords	relaxing
 countenances	withdrew
@@ -328,7 +294,6 @@ people	being
 people	found
 people	slung
 people	warning
-peplom selan _	_
 perfection	arrived
 physicians	mingled
 pint	hold
@@ -366,7 +331,6 @@ wonders	performed
 words	answered
 attendants	held
 attendants	ran
-author their language	teach
 awe	strike
 bandages	fastened
 bandages	girt
@@ -376,14 +340,12 @@ body	girt
 body	mounted
 body	mounting
 bridle	held
-carriage stopt	stood
 chairs	;[
 cords	draw
 cords	fastened
 disposition	gains
 distance	sat
 edifice	determined
-eleven chains	conveyed
 empress	attended
 empress	sat
 engine	climbed
@@ -391,7 +353,6 @@ engine	slung
 face	put
 face	tickled
 feet	reared
-feet distance	found
 fields	intermingled
 garden	appeared
 garden	continued
@@ -410,8 +371,6 @@ legs	girt
 liquor	infused
 march	continued
 means	suffer
-men appointed	gains
-men appointed	teach
 metropolis	draw
 morning	continued
 mountain	moved
@@ -626,7 +585,6 @@ globes	required
 hand	required
 hundreds	fell
 hundreds	struck
-imprimis _	found
 man	fastened
 man	sticking
 man-mountain	used
@@ -637,8 +595,6 @@ men	conceive
 men	lift
 men	marked
 men	tied
-mine eyes	dazzled
-mine eyes	fixed
 opinion	consulting
 oracle	called
 orders	obliged
@@ -661,7 +617,6 @@ search	found
 shoulders	bear
 side	hung
 silver	appeared
-silver chest	saw
 substance	appeared
 substance	stopped
 sun	cast
@@ -671,7 +626,6 @@ time	recover
 use	served
 waist	divided
 waist	observed
-waistcoat pocket	found
 watch	bear
 watch	delivered
 words	_
@@ -687,7 +641,6 @@ caper	cut
 carriages	conveyed
 ceremony	performed
 consequence	being
-copper money	gave
 courser	held
 court	jumps
 court	succeeds
@@ -714,7 +667,6 @@ hand	dance
 hand	held
 hand	leap
 handkerchief	gave
-him upon certain conditions	granted
 horizon	parallel
 inches	extended
 language	speaking
@@ -752,7 +704,6 @@ threads	lays
 threads	proposed
 time	getting
 year	broke
-_ blustrugs _	extend
 accident	happened
 adventure	took
 affairs	versed
@@ -841,9 +792,6 @@ liberty	mentioned
 liberty	recovered
 liberty	sent
 license	depart
-living creature	apprehended
-living creature	found
-living creature	seen
 majesty	intreated
 man	rising
 man-mountain	belonging
@@ -911,7 +859,6 @@ expressions	repeat
 feet	driven
 feet	flanked
 feet	prostrating
-feet distance	flanked
 fleet	destroy
 fleet	preparing
 friend	asking
@@ -944,8 +891,6 @@ towers	flanked
 town	visit
 waistcoat	sideling
 workmen	aiding
-_ tramecksan _	compute
-_ tramecksan _	gives
 account	consented
 account	lost
 account	raised
@@ -1033,7 +978,6 @@ walls	built
 weight	bear
 work	reserve
 world	inhabited
-_ glumgluffs	_
 ambassadors	arrive
 anchors	fastened
 anchors	held
@@ -1044,11 +988,9 @@ arrows	discharged
 arrows	stuck
 author	prevents
 cables	fixed
-capital ships	lost
 cargo	waded
 coast	walked
 coat	putting
-conferred upon him	is
 cord	go
 court	stood
 credit	found
@@ -1062,7 +1004,6 @@ exiles	equipped
 exiles	found
 exiles	preparing
 expedient	thought
-extraordinary stratagem	prevents
 extremities	bending
 eyes	lost
 fears	eased
@@ -1097,7 +1038,6 @@ needle	knitting
 parties	interfere
 people	brave
 people	break
-perspective glass	took
 pocket	escaped
 pocket	kept
 ports	bringing
@@ -1205,14 +1145,12 @@ manner	mentioned
 manner	performed
 manner	resent
 manner	wait
-maritime parts	dwell
 matter	debated
 meantime	leave
 minutes	extinguished
 monarch	pleased
 monarch	wait
 months	broke
-moonshine night	being
 natives	see
 needle	threading
 nobility	send
@@ -1250,7 +1188,6 @@ way	being
 way	clear
 way	making
 weeks	found
-word _ burglum	reading
 world	filled
 world	seeing
 accuser	put
@@ -1259,8 +1196,6 @@ age	born
 ages	flourished
 benefactor	makes
 business	employed
-capital crime	fit
-capital crime	read
 children	bred
 children	dressed
 children	employed
@@ -1354,7 +1289,6 @@ virtues	qualify
 visit	suffered
 women	enjoined
 women	relating
-women attendants	perform
 year	imprisoned
 year	see
 years	lessened
@@ -1382,7 +1316,6 @@ country	give
 court	fill
 day	call
 discount	take
-dishes a-piece	prepared
 earth	cultivate
 eleven	kept
 end	held
@@ -1447,15 +1380,11 @@ arms	pull
 arrows	armed
 arrows	discharging
 arrows	poisoned
-article i.	enacted
 board	received
 board	think
 bones	cut
 books	entered
 c.	lift
-capital crimes	allowed
-capital crimes	extenuate
-capital crimes	prepared
 cart-loads	take
 chair	put
 chairmen	dismissed
@@ -1499,12 +1428,10 @@ hands	lay
 hands	shoot
 hatred	increased
 head	venture
-hear him	would
 heart	appears
 heart	begins
 heresy	forsake
 honor	concerned
-impeachment against quinbus flestrin	pull
 incident	commanded
 juice	strew
 license	received
@@ -1529,8 +1456,6 @@ province	reduce
 reason	inquiring
 revenue	reduced
 secret	kept
-secretary durst presume	extinguished
-secretary durst presume	give
 sentiments	offer
 servant	giving
 service	venture
@@ -1563,8 +1488,6 @@ bottom	turn
 cable	tied
 cables	stowed
 cables	took
-capital city	direct
-capital city	returned
 censure	incur
 ceremony	ended
 chin	hold
@@ -1603,7 +1526,6 @@ house	want
 illustration	conceive
 judges	thought
 juncture	rely
-kind expostulation	pleased
 kingdom	published
 ladies	alighted
 league	observed
@@ -1618,8 +1540,6 @@ metropolis	pelt
 minutes	rested
 monarch	offer
 monarch	seeing
-native country	fit
-native country	return
 necessity	advanced
 object	found
 opportunity	elapsed
@@ -1634,7 +1554,6 @@ people	let
 people	signify
 people	terrify
 pieces	pelt
-preserving mine eyes	owe
 prince	introduced
 promise	come
 prow	drawing
@@ -1645,13 +1564,11 @@ qualities	known
 rashness	owe
 resentment	gratify
 resolution	fixed
-royal family	attended
 secret	discover
 secretary	send
 seventies	acquitted
 shift	turn
 ship	driven
-some difficulties	leave
 speech	published
 state-trials	observed
 state-trials	perused
@@ -1665,7 +1582,6 @@ traitor	punished
 treasurer	consulting
 trial	standing
 yards	advanced
-_ sprugs	_
 accident	discovered
 anchor	served
 boat	greasing
@@ -1686,7 +1602,6 @@ court	contributed
 days	taken
 departure	hasten
 directions	make
-drink proportionable	stored
 envoy	returned
 envoy	told
 face	lay
@@ -1703,7 +1618,6 @@ island	seemed
 league	descried
 leagues	gone
 leave	take
-lee side	cast
 linen	folds
 obligations	owed
 orders	given
@@ -1730,14 +1644,11 @@ stone	happened
 stone	served
 vessel	found
 workmen	employed
-_ sprugs	_
-_ sprugs	promised
 adventure	took
 bones	found
 breed	increased
 captain	allowed
 captain	falling
-captain john nicholas	bound
 children	has
 contrary	feared
 countries	seeing
@@ -1746,7 +1657,6 @@ family	leaving
 flesh	picked
 food	mingled
 food	rubbed
-fore down-haul	belayed
 foresail	hand
 foresail	reefed
 foresheet	hauled
@@ -1775,7 +1685,6 @@ sea	spooning
 seas	observed
 ship	got
 ship	wore
-son johnny	named
 sprit-sail	set
 sprit-sail	took
 storm	bid
@@ -1797,7 +1706,6 @@ distress	lay
 feet	rising
 footpath	served
 fore-top-sail	set
-frozen sea	brought
 gap	find
 helm	helped
 hill	gave
@@ -1838,8 +1746,6 @@ tack	hauled
 topmast	being
 topmast	get
 topmast	scudded
-weather bowlings	belayed
-weather bowlings	hauled
 wind	followed
 body	betwixt
 children	bemoaned
@@ -1869,15 +1775,10 @@ farmer	presented
 farmer	thought
 farmer	took
 fear	struck
-fear i	slip
 fields	seen
 fingers	slip
 fleet	draw
 flesh	pierced
-forbear groaning	know
-forbear groaning	seemed
-forbear groaning	shedding
-forbear groaning	turning
 fortune	gave
 ground	dash
 ground	lay
@@ -1912,14 +1813,12 @@ servants	seemed
 shape	behold
 sides	pinched
 sides	turning
-spire steeple	appeared
 step	advance
 stile	looking
 sun	raise
 talk	suppose
 tears	shedding
 time	heard
-undoubtedly philosophers	tell
 voice	call
 voyage	attempting
 widow	bemoaned
@@ -1982,9 +1881,6 @@ creature	trembled
 creature	walked
 crust	stumble
 degrees	grew
-dram cup	filled
-dram cup	held
-dram cup	sent
 ear	laid
 ears	pierced
 earth	felled
@@ -2028,7 +1924,6 @@ noise	deafened
 noise	heard
 noise	proceeded
 nurse	fastened
-palm upwards	placed
 people	observing
 plaything	get
 pocket	put
@@ -2073,7 +1968,6 @@ appearance	astonished
 author	carried
 bed	put
 belt	taken
-blood run	trickling
 boar	bristles
 carcase	draw
 carcase	lay
@@ -2085,7 +1979,6 @@ comrade	trickling
 creatures	deformed
 curtains	crept
 drawer	placed
-drawer cabinet	put
 face	appeared
 family	took
 feet	fell
@@ -2099,12 +1992,10 @@ handkerchief	covered
 hands	washed
 holes	discover
 hours	slept
-household affairs	gone
 inch	wanting
 kingdom	took
 language	learn
 language	teach
-material circumstance	omit
 minds	grovelling
 mistress	covered
 mistress	drew
@@ -2112,7 +2003,6 @@ mistress	gone
 mistress	locked
 mistress	perceiving
 mistress	put
-my hanger	defend
 neck	slash
 night	fit
 particulars	excuse
@@ -2138,7 +2028,6 @@ view	took
 wife	gave
 world	presenting
 _	call
-_ grultrud _	hired
 actions	imitated
 animal	found
 benches	set
@@ -2153,7 +2042,6 @@ daughter	took
 day	recover
 distress	undergone
 doors	break
-english _ mannikin _	_
 eyes	appeared
 farmer	lived
 fellow	deserved
@@ -2176,8 +2064,6 @@ guest	told
 hands	taking
 hanger	drew
 health	drank
-her my glumdalclitch	called
-homunceletino _	_
 honor	regarded
 hope	left
 house	riding
@@ -2225,7 +2111,6 @@ respects	paid
 sight	show
 spectacle	exposed
 speeches	used
-stool close	stood
 storm	trotted
 straw	exercised
 table	asked
@@ -2272,7 +2157,6 @@ hazel-nut	flourished
 hazel-nut	knocked
 head	aimed
 head	missed
-high favor	is
 house	rode
 house	see
 illustration	arrived
@@ -2282,7 +2166,6 @@ lap	carried
 legs	stand
 letters	giving
 lodging	took
-lorbrulgrud _	called
 luggage	rode
 market-day	show
 meantime	prepared
@@ -2309,7 +2192,6 @@ wife	carried
 wife	took
 word	speak
 words	interpreted
-_ lusus naturae	_
 animal	viewed
 answer	took
 answers	received
@@ -2328,7 +2210,6 @@ conclusion	entreated
 consent	got
 country	arrived
 creature	found
-digging holes	framed
 earth	framed
 favor	admitted
 favor	beg
@@ -2359,7 +2240,6 @@ lip	put
 manner	asked
 month	live
 obligation	owed
-out her little finger	held
 part	framed
 perfection	arrived
 person	learned
@@ -2387,9 +2267,6 @@ table	put
 table	set
 teeth	observed
 teeth	viewed
-this gracious princess	commanded
-this gracious princess	held
-this gracious princess	set
 travels	answered
 voice	heard
 wit	surprised
@@ -2400,7 +2277,6 @@ apartment	provided
 artist	according
 artist	finished
 bed-chamber	serve
-birthday clothes	beheld
 box	contrive
 box	serve
 cabinet-maker	commanded
@@ -2424,7 +2300,6 @@ cup	drank
 day	gone
 degrees	dwindled
 dozen	lifted
-dozen english farmers	eat
 draught	drank
 dwarf	being
 dwarf	mortified
@@ -2444,8 +2319,6 @@ instant	happened
 key	keep
 lesson	instructed
 littleness	failed
-london bed-chamber	seen
-london toy-shop	seen
 majesty	ate
 majesty	began
 manners	inquiring
@@ -2488,7 +2361,6 @@ sabbath	observed
 scythe	handle
 scythe	set
 sight	beheld
-silver box	kept
 size	dwindled
 staff	waited
 swimmer	accustomed
@@ -2612,15 +2484,12 @@ people	feed
 philosophers	determined
 plate	taken
 princes	get
-queen a-laughing	set
-queen a-laughing	vexed
 rarity	passed
 reader	give
 reasons	determined
 remedy	cut
 resentment	carried
 rest	got
-revenge myself by calling him brother	could
 rivers	abound
 rocks	dashed
 rocks	feed
@@ -2629,8 +2498,6 @@ satisfaction	saw
 school-boys	cut
 school-boys	flew
 school-boys	let
-scurvy trick	served
-scurvy trick	set
 sea	get
 shoulders	carry
 sideboard	gone
@@ -2663,7 +2530,6 @@ box	carried
 ceiling	hung
 censure	avoid
 chairs	hung
-chief temple	see
 cities	contains
 city	contains
 city	stands
@@ -2692,7 +2558,6 @@ governess	walked
 grass-plot	left
 grave	confide
 grave	pay
-hail stones	gave
 half	measured
 hammock	hung
 hand	hold
@@ -2709,7 +2574,6 @@ journeys	prevent
 kitchen	vaulted
 kitchen-grate	describe
 lap	held
-leathern belt	put
 life	acknowledge
 littleness	exposed
 lorbrulgrud	describe
@@ -2727,14 +2591,11 @@ order	extended
 order	laid
 people	heard
 people	view
-pinnacle top	reckoning
-pinnacle top	vaulted
 pocket	carried
 provocation	given
 reader	satisfy
 return	measured
 scale	computing
-sea voyages	used
 sedan	crowd
 shops	go
 side	fixed
@@ -2845,7 +2706,6 @@ accident	met
 air	held
 animal	given
 animal	kept
-animal frisking	saw
 art	showed
 bed	conceal
 bed	keep
@@ -2865,10 +2725,6 @@ chamber	poked
 child	does
 closet	carried
 closet	locked
-closet door	interrupted
-closet window	come
-closet window	leaped
-closet window	left
 courage	called
 diversion	entertained
 diversion	row
@@ -2935,7 +2791,6 @@ paw	stroking
 recovery	attended
 relief	ran
 resting-place	seeing
-ridge tile	drop
 sail	blow
 sail	put
 seat	stirring
@@ -2943,7 +2798,6 @@ servants	ran
 shirt	passed
 shriek	give
 side	balance
-something bounce	heard
 speech	produced
 stomacher	stuck
 stones	threw
@@ -2961,9 +2815,6 @@ activity	leap
 activity	try
 air	take
 arms	extended
-army beating	equal
-army beating	trumpets
-awl round	bore
 bass	play
 bench	placed
 bench	put
@@ -2996,8 +2847,6 @@ friend	make
 genius	kept
 girl	carried
 girls	hear
-gold letters	deciphered
-gold letters	gave
 hand	seen
 holes	bore
 holes	wove
@@ -3035,7 +2884,6 @@ week	attended
 week	shaved
 window-curtains	draw
 window-curtains	found
-yards distance	sit
 abilities	culled
 assembly	admitted
 assembly	allowed
@@ -3156,9 +3004,6 @@ man	spoke
 manners	consist
 memory	failed
 men	ennobled
-military affairs	applied
-military affairs	explained
-military affairs	interpreted
 millions	computed
 nations	prevail
 neighbors	live
@@ -3211,8 +3056,6 @@ books	amount
 books	placed
 bounds	governing
 brook	drowned
-capital crime	expressed
-capital crime	write
 chain	linked
 commands	dispute
 comment	write
@@ -3224,7 +3067,6 @@ engines	given
 expressions	using
 face	turning
 favor	make
-feet distance	placed
 force	sustain
 gentlewoman	belonged
 gentlewoman	dealt
@@ -3277,7 +3119,6 @@ scruple	let
 secret	commanded
 secret	lose
 splinters	throw
-standing ladder	formed
 style	smooth
 subjects	adored
 terms	expressed
@@ -3406,8 +3247,6 @@ hold	shut
 hole	saw
 hour	divided
 hours	preserve
-leathern belt	buckle
-leathern belt	put
 mouth	putting
 noise	heard
 noise	passed
@@ -3554,7 +3393,6 @@ captain	sent
 captain	understood
 closet	seen
 comparison	gave
-course west-south-west	kept
 days	meeting
 eyes	accustomed
 fall	seen
@@ -3578,13 +3416,8 @@ men	wondered
 mirth	continuing
 mistake	drawn
 mouth	reach
-my daughter	arose
-my daughter	kneeled
-my daughter	see
-my daughter	take
 objects	accustomed
 opinion	thanked
-pay goods	leave
 people	abound
 people	observing
 people	stand
@@ -3623,12 +3456,10 @@ wife	told
 world	oblige
 world	putting
 writers	abound
-_ english humorists _	found
 author	wrote
 children	read
 curse	repeated
 degree	took
-dr. johnson	characterized
 hero	discovers
 legacy	left
 library	found

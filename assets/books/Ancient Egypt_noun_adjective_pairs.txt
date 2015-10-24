@@ -1,5 +1,4 @@
 allies	mediterranean
-animal worship	melancholic
 belief	popular
 blossom	broad
 border	egyptian
@@ -17,12 +16,8 @@ dependency	assyrian
 dependency	more
 diffusion	present
 diffusion	wide
-dread anxiety	unfaithfully
-evil gods	melancholic
 fleet	earliest
 forces	persian
-hunting expeditions	earliest
-hyksos king	first
 immigrants	other
 inundation	excessive
 kingdom	own
@@ -42,7 +37,6 @@ prosperity	former
 pyramid	great
 pyramid	second
 pyramids	incipient
-ramesses i.	saplal
 ramessides	later
 reality	probable
 religion	egyptian
@@ -53,7 +47,6 @@ stem	crooked
 success	certain
 treaty	new
 troubles	israelite
-warrior king	great
 wars	other
 works	architectural
 works	earliest
@@ -61,7 +54,6 @@ world	ancient
 world	eastern
 xii	second
 year	thirty-third
-_ fjord _	latter
 age	flourishing
 alluvium	rich
 aspect	stern
@@ -116,7 +108,6 @@ monotony	absolute
 monuments	old
 name	greek
 night	leadest
-nile sediment	precious
 number	singular
 ones	terrible
 part	most
@@ -146,12 +137,6 @@ river	mysterious
 rule	general
 scene	new
 seasons	other
-sense egypt	happy
-sense egypt	later
-sense egypt	leadest
-sense egypt	own
-sense egypt	true
-sense egypt	unaware
 shores	flat
 sides	craggy
 situation	advantageous
@@ -170,7 +155,6 @@ times	imperial
 town	great
 tract	broad
 tract	depressed
-tynan robes	purple
 vale	narrow
 vases	etruscan
 vegetables	esculent
@@ -179,10 +163,7 @@ vegetables	nutritive
 view	extensive
 world	whole
 yards	content
-_ persea _	ancient
-acacia seyal	larger
 after-glow	olive
-antelope tribe	whole
 appearance	astonishing
 atmosphere	bright
 atmosphere	lucid
@@ -198,7 +179,6 @@ country	entire
 country	flat
 country	other
 country	strange
-crops spring	mid-winter
 danger	immediate
 day	fiercer
 day	hotter
@@ -225,7 +205,6 @@ king	egyptian
 lake	vast
 light	ruddy
 moon	yellow
-nile waters	abundant
 obelisks	tall
 pace	good
 papyrus	characteristic
@@ -241,7 +220,6 @@ productiveness	equable
 quantities	small
 red	deep
 reed	smooth
-region sandstone	central
 regions	secondary
 river	broad
 river	single
@@ -277,9 +255,6 @@ works	gigantic
 works	great
 affinities	diverse
 angle	facial
-aquiline nose	high
-aquiline nose	large
-aquiline nose	well-formed
 attributes	distinct
 buildings	other
 conjecture	more
@@ -340,7 +315,6 @@ wooer	kingly
 world	next
 writer	modern
 yourselves	thresh
-_ deities	principal
 affections	religious
 animal-cult	local
 animals	less
@@ -392,12 +366,10 @@ fury	utmost
 galleries	long
 galleries	several
 genii	ape-faced
-god incarnate	further
 gods	evil
 gods	malignant
 gods	other
 gods	popular
-granite sarcophagus	polished
 hand	creative
 heart	doest
 hesitation	apt
@@ -408,8 +380,6 @@ inhabitants	neighbouring
 jewels	magnificent
 legend	osirid
 life	long
-living horus	general
-living horus	victorious
 localities	several
 mind	creative
 myth	chief
@@ -480,7 +450,6 @@ class	respectable
 classes	upper
 day	next
 day	present
-delta plain	first
 domain	royal
 education	same
 egg	mundane
@@ -513,13 +482,10 @@ ministers	successful
 myth	subject
 natures	different
 nefer-hotep	deceased
-nile valley	long
-nile valley	narrow
 nobles	great
 novelettes	egyptian
 novelettes	full
 number	greater
-official class	numerous
 order	sacerdotal
 people	devoid
 person	hungry
@@ -543,11 +509,9 @@ thieves	numerous
 things	evil
 thought	first
 tombs	royal
-upper country	narrow
 vanity	inordinate
 way	indecent
 _	satu
-_ neb mat _	egyptian
 abode	good
 alluvium	productive
 alluvium	richest
@@ -557,18 +521,15 @@ breezes	northern
 capital	new
 capitals	few
 cathedrals	medieval
-centuries power	few
 ceremonies	various
 chambers	actual
 chambers	mortuary
 channel	new
 chapels	mortuary
 city	new
-compound sound	whole
 condition	excellent
 creatures	manifest
 criticism	sternest
-criticism doubts	severe
 critics	modern
 cubits	high
 descendants	such
@@ -649,9 +610,6 @@ tomb	pretentious
 town	old
 winter	warm
 work	gigantic
-_ imagination	_
-_ imagination	lively
-_ imagination	well-instructed
 account	little
 age	egyptian
 air	open
@@ -695,7 +653,6 @@ height	considerable
 height	original
 households	large
 limestone	compact
-london square	ordinary
 masonry	excellent
 monuments	early
 necropolis	memphian
@@ -780,8 +737,6 @@ gallery	horizontal
 gallery	lofty
 gallery	long
 gallery	low
-granite sarcophagus	plain
-great gallery	great
 half	double
 height	original
 height	perpendicular
@@ -789,10 +744,6 @@ houses	such
 inhabitants	dead
 line	more
 line	same
-loftier gallery	longer
-loftier gallery	much
-london square	ordinary
-london square	square
 man	single
 mass	superincumbent
 monarch	decrepid
@@ -816,8 +767,6 @@ roof	sepulchral
 roof	upper
 side	north
 side	other
-sloping blocks	huge
-sloping surface	uniform
 squares	cubic
 stones	small
 surface	external
@@ -879,7 +828,6 @@ moderns	unsurpassed
 monarch	ill-used
 monarch	mild
 monarch	religious
-o osiris	divine
 part	most
 passages	mysterious
 pride	overweening
@@ -897,7 +845,6 @@ side	north
 size	moderate
 skill	mechanical
 skill	wonderful
-slumber snatching	faithless
 sphinx	great
 sphinx	second
 tasks	various
@@ -912,19 +859,14 @@ weight	superincumbent
 wonders	awful
 _	khopesh
 _	tekal
-abakaru _	unknown
 aims	far-sighted
-amenemhat i.	evident
 amphitheatre	broad
 animal	heavy
 animals	strange
-antef s rule	likely
 antefs	other
 apes	cynocephalous
 appellation	familiar
-arabia felix	odoriferous
 assailants	treacherous
-breccia verde _	other
 capital	ancient
 character	productive
 chest	deep
@@ -934,10 +876,8 @@ country	somauli
 country	whole
 date	later
 days	many
-desert tracts	entire
 diadem	royal
 dog	german
-dr. birch	late
 dynasties	distinct
 dynasties	several
 dynasty	twelfth
@@ -950,8 +890,6 @@ fortresses	strong
 frontier	north-eastern
 frontier	own
 gums	odoriferous
-hitherto egypt	frequent
-hitherto egypt	separate
 inhabitants	ancient
 interior	african
 interior	libyan
@@ -959,21 +897,17 @@ kingdom	northern
 kingdoms	separate
 kings	earlier
 legs	heavy
-level character	humble
-level character	usual
 limbs	thick
 lists	dynastic
 lists	egyptian
 lists	later
 maxyes	north-west
-mentu-hotep i.	shadowy
 monarch	first
 monarch	known
 monarch	theban
 monkeys	long-tailed
 monument	sepulchral
 namesake	swift
-nile valley	lower
 nimrod	egyptian
 nose	pointed
 object	primary
@@ -1081,7 +1015,6 @@ results	calamitous
 results	terrible
 rise	excessive
 river	great
-sixteenth year	eighth
 soil	entire
 statue	own
 statues	colossal
@@ -1102,7 +1035,6 @@ year	eighth
 year	nineteenth
 year	same
 year	third
-_ savant _	french
 admiration	infinite
 basins	land-locked
 bottom	rocky
@@ -1126,7 +1058,6 @@ dams	massive
 depression	natural
 design	bold
 downs	open
-dr. birch	late
 dynasty	twelfth
 edifice	enlarged
 edifice	likely
@@ -1185,7 +1116,6 @@ seasons	dry
 sheikh	nomadic
 sheikh	syrian
 situations	convenient
-spring rains	ordinary
 stones	white
 terms	similar
 times	ancient
@@ -1194,7 +1124,6 @@ wall	single
 woman	married
 work	difficult
 work	enormous
-_ entourage	smaller
 ages	dominant
 ages	later
 anxiety	fresh
@@ -1293,7 +1222,6 @@ avaris	theological
 barbarians	northern
 branch	easterly
 branch	next
-bubastite branch	east
 capital	principal
 capital	southern
 capitals	southern
@@ -1361,7 +1289,6 @@ subjects	unresisting
 suzerain	lawful
 temple	great
 term	shorter
-theban monuments	undisturbed
 thousands	countless
 time	same
 times	later
@@ -1399,7 +1326,6 @@ desires	content
 deterioration	moral
 deterioration	physical
 dimensions	considerable
-ebon blackness	ethiopian
 efforts	frantic
 element	important
 element	numerous
@@ -1423,7 +1349,6 @@ name	same
 nation	energetic
 nation	unresting
 nation	willing
-nile valley	northern
 numbers	vast
 officer	favourite
 ones	dark
@@ -1448,7 +1373,6 @@ repute	much
 resistance	considerable
 resistance	desperate
 sense	certain
-shepherd kings	later
 shepherds	last
 space	long
 spirit	belligerent
@@ -1481,7 +1405,6 @@ cataract	second
 cell	central
 character	due
 character	similar
-chariot force	large
 check	severe
 chief	nubian
 chief	own
@@ -1514,7 +1437,6 @@ difficulties	topographical
 dimensions	extraordinary
 direction	new
 distinction	military
-earth _	whole
 enemies	distinguishing
 enterprize	adventurous
 enterprize	grander
@@ -1532,7 +1454,6 @@ khabour	western
 kingdom	eternal
 kings	many
 kings	rich
-land forces	dark
 limits	natural
 limits	own
 lips	thick
@@ -1578,9 +1499,6 @@ style	official
 style	old
 submission	general
 supply	own
-syria thothmes	aware
-syria thothmes	sixth
-syria thothmes	unaccustomed
 terminus	egyptian
 terms	inflated
 thoughts	such
@@ -1598,7 +1516,6 @@ vehicle	such
 victories	asiatic
 victories	nubian
 warrior	young
-warrior king	great
 year	seventh
 year	sixth
 years	few
@@ -1611,9 +1528,7 @@ ambassador	royal
 anomaly	curious
 apartments	pillared
 appearance	extraordinary
-aquiline nose	bold
 authority	sovereign
-barbarian chiefs	furnished
 beard	artificial
 boats	large
 boy	soft
@@ -1655,9 +1570,6 @@ gifts	valuable
 leopard	tame
 lip	short
 lip	upper
-living horus	golden
-marriage law	admissible
-marriage law	egyptian
 mind	clever
 mind	masculine
 models	previous
@@ -1690,7 +1602,6 @@ reception	good
 result	delighted
 roots	possible
 ships	sea-going
-stone piers	square
 stream	copious
 structure	new
 temper	amiable
@@ -1722,7 +1633,6 @@ behaviour	good
 camp	syrian
 campaign	syrian
 campaigns	other
-coast route	ordinary
 constructions	great
 contribution	yearly
 counsel	prudent
@@ -1739,17 +1649,13 @@ fortieth	thirty-eighth
 fortieth	thirty-fifth
 fortieth	thirty-fourth
 fortieth	thirty-ninth
-fortieth year	intact
 garrisons	permanent
 gifts	rich
 god	great
 hostage	good
-kileh sherghat	lower
 king	egyptian
 king	victorious
 leagues	many
-marsh region	babylonian
-marsh region	lower
 monarch	egyptian
 monuments	common
 nations	palestinian
@@ -1772,7 +1678,6 @@ risk	great
 road	military
 route	circuitous
 route	undefended
-royal brother	galling
 ships	female
 slaves	female
 sovereigns	egyptian
@@ -1783,8 +1688,6 @@ stones	other
 stones	precious
 struggle	short
 system	judicious
-thothmes iii.	less
-thothmes iii.	likely
 time	same
 time	short
 town	great
@@ -1792,8 +1695,6 @@ town	hittite
 trees	mulberry
 tribute	light
 troops	egyptian
-war contributions	exact
-war contributions	heavy
 warrior	intrepid
 woman	ambitious
 woman	bold
@@ -1951,7 +1852,6 @@ regard	favourable
 reign	short
 rest	brief
 rocks	natural
-roman soldier	common
 satisfaction	entire
 scholar	greek
 scholar	roman
@@ -1974,8 +1874,6 @@ time	first
 time	vocal
 times	sound
 tone	musical
-twin colossi	grandest
-twin colossi	largest
 visit	disappointed
 visit	first
 visit	fourth
@@ -2011,7 +1909,6 @@ features	good
 features	remarkable
 forehead	pensive
 frontier	egyptian
-great king	first
 hall	great
 hall	pillared
 halls	smaller
@@ -2024,8 +1921,6 @@ kingdoms	old
 lip	pensive
 lip	upper
 manner	fanciful
-marlen bells	old
-material sun	visible
 memnon	vocal
 men	similar
 nations	neighbouring
@@ -2041,7 +1936,6 @@ race	foreign
 races	black
 rate	cheap
 recreation	favourite
-shepherd king	last
 slave-market	egyptian
 slaves	valuable
 sounds	actual
@@ -2053,16 +1947,13 @@ successes	military
 sun-gods	distinct
 sun-gods	other
 taste	similar
-tenth year	first
 tools	human
 women	similar
 world	old
 writer	gifted
-_ physique	extraordinary
 act	second
 adon	same
 allies	subject
-aquiline nose	long
 attacks	egyptian
 battles	pitched
 battles	several
@@ -2074,7 +1965,6 @@ character	pure
 cheeks	rosy
 city	new
 coast	syrian
-coelesyrian valley	lower
 conqueror	open
 country	own
 country	philistine
@@ -2089,8 +1979,6 @@ expeditions	egyptian
 eyes	blue
 faith	good
 feet	broad
-festival day	proper
-festival day	special
 field	open
 fight	desperate
 forehead	slanting
@@ -2099,10 +1987,8 @@ friends	henceforth
 furniture	sacred
 gains	ill-gotten
 god	benevolent
-grandson mautenar	weak
 herdsmen	peaceful
 hieroglyphics	egyptian
-hittite picture-writing	well-known
 horns	sharpened
 influence	powerful
 instances	few
@@ -2119,8 +2005,6 @@ monuments	other
 mortals	ordinary
 mouth	flexible
 neck	equal
-neighbour lands	other
-orontes valley	whole
 parallels	curious
 pause	brief
 peace	close
@@ -2151,7 +2035,6 @@ rival	distrustful
 sphere	superior
 struggle	short
 successors	immediate
-supreme god	new
 terms	unknown
 tradition	prevalent
 victory	great
@@ -2159,7 +2042,6 @@ views	religious
 acknowledgments	such
 act	third
 adversary	former
-alabaster sarcophagus	immense
 army	confederate
 army	egyptian
 army	whole
@@ -2177,7 +2059,6 @@ companions	sovereign
 conceptions	artistic
 confusion	general
 constructions	magnificent
-contracting powers	high
 corridors	long
 countries	conquered
 danger	greatest
@@ -2213,7 +2094,6 @@ halls	further
 halls	pillared
 hand	left
 hand	right
-hittite chariot line	first
 host	entire
 hosts	adverse
 idea	simple
@@ -2265,9 +2145,6 @@ run	ordinary
 sanctions	sacred
 shore	eastern
 sizes	different
-son ramesses	certain
-son ramesses	unable
-stone columns	massive
 struggle	short
 student	historical
 style	individual
@@ -2303,8 +2180,6 @@ auspices	fair
 auspices	such
 buildings	countless
 campaign	regular
-century b.c.	early
-century b.c.	fourteenth
 characteristics	asiatic
 characters	harsh
 characters	weak
@@ -2331,7 +2206,6 @@ forces	native
 fortresses	strong
 frontier	eastern
 generation	new
-great king	superhuman
 helmet	royal
 importance	utmost
 interest	peculiar
@@ -2445,7 +2319,6 @@ fellahin	wretched
 force	powerful
 forces	mercenary
 forces	native
-frontier towns	small
 generals	content
 generals	egyptian
 gods	egyptian
@@ -2526,7 +2399,6 @@ battles	principal
 buildings	instrumental
 buildings	magnificent
 coasts	egyptian
-country subject	whole
 crowd	unwieldy
 crowd	vast
 day	memorable
@@ -2596,10 +2468,6 @@ service	naval
 sharpshooters	own
 shore	syrian
 slaves	sacred
-son ramesses	content
-son ramesses	much
-son ramesses	new
-son ramesses	unheard-of
 spirit	restless
 square-sail	large
 square-sail	single
@@ -2616,7 +2484,6 @@ violence	less
 way	graphic
 yard	single
 years	few
-_ faineants	absolute
 antiquity	remote
 arms	severe
 art	black
@@ -2627,7 +2494,6 @@ beings	superior
 belief	fullest
 bidder	highest
 blank	dumb
-body politic	entire
 booty	rich
 buildings	new
 ceremony	final
@@ -2643,7 +2509,6 @@ divinity	own
 drawings	indecent
 dynasties	nineteenth
 dynasty	twentieth
-eastern conquests	specious
 eclipse	complete
 edifice	sacred
 estates	priestly
@@ -2652,7 +2517,6 @@ functionaries	high
 functionaries	judicial
 gardens	fresh
 generations	several
-god mentu	warlike
 gods	greater
 gods	other
 groups	religious
@@ -2732,24 +2596,17 @@ entrance	principal
 expedition	unnoticed
 expeditions	military
 extent	certain
-family names	assyrian
-family names	babylonian
-family names	possible
 functions	priestly
 glory	own
 halls	pillared
 hand	other
-hebrew scriptures	unnoticed
 houses	mesopotamian
 houses	other
 inhabitants	canaanite
 instance	first
 king	last
-king solomon	great
-king solomon	israelite
 kings	hebrew
 kings	other
-kings iv	former
 legitimacy	additional
 mercenaries	libyan
 monarchs	egyptian
@@ -2768,7 +2625,6 @@ office	military
 pardon	royal
 part	important
 pattern	egyptian
-pinetem ii.	second
 policy	bolder
 policy	far-seeing
 policy	wise
@@ -2813,10 +2669,8 @@ works	great
 xix	decorative
 account	own
 ages	former
-arab tribes	adjoining
 armies	egyptian
 army	egyptian
-asiatic dominion	asiatic
 attack	possible
 borders	own
 capital	jewish
@@ -2838,7 +2692,6 @@ king	jewish
 king	undaunted
 kingdom	northern
 kings	egyptian
-kings iv	trained
 levies	accustomed
 levies	jewish
 levies	little
@@ -2932,7 +2785,6 @@ name	single
 neighbours	coarser
 neighbours	cognate
 neighbours	darker
-nile valley	entire
 office	priestly
 part	most
 pasture-ground	excellent
@@ -2950,8 +2802,6 @@ region	same
 resistance	strenuous
 revolts	serious
 section	last
-sheshonk iii.	serious
-sheshonk iv.	serious
 shrines	egyptian
 shrines	new
 son	eldest
@@ -2966,7 +2816,6 @@ system	hereditary
 temples	fresh
 texts	magical
 thes-bast-per	high-priest
-thothmes iii.	eighteenth
 time	second
 time	short
 times	ancient
@@ -3038,7 +2887,6 @@ rebellion	alive
 rebellion	successful
 region	upper
 resources	own
-ruder fibre	coarser
 shrine	central
 son	such
 sovereignty	ethiopian
@@ -3070,8 +2918,6 @@ cataract	first
 catastrophe	extraordinary
 cause	ethiopic
 cavalry	powerful
-chariot force	infantry
-chariot force	strong
 children	several
 commandants	assyrian
 concubines	several
@@ -3111,7 +2957,6 @@ north	east
 number	greater
 panoplies	complete
 part	most
-petty kings	petty
 pharaoh	great
 plains	egyptian
 princes	captive
@@ -3142,7 +2987,6 @@ allies	subject
 armies	huge
 arms	assyrian
 army	single
-asia minor	jealous
 authority	independent
 auxiliary	best
 battle	great
@@ -3253,7 +3097,6 @@ harvests	rich
 invasions	many
 invasions	other
 land	own
-land force	sufficient
 lands	cultivable
 language	greek
 life	fresh
@@ -3301,7 +3144,6 @@ vessels	foreign
 wars	incessant
 wines	greek
 works	extensive
-year _	third
 activity	architectural
 andro-sphinxes	numerous
 antagonist	direct
@@ -3384,13 +3226,8 @@ armies	largest
 army	large
 army	native
 battle	single
-bedouin tribe	powerful
 blood	little
 blood	new
-camel corps	indispensable
-camel corps	numerous
-carian mercenaries	carian
-carian mercenaries	greek
 character	nominal
 cities	great
 cities	phoenician
@@ -3402,11 +3239,7 @@ end	violent
 enemy	alive
 enemy	common
 existence	own
-extent phoenician	large
 families	royal
-father cyrus	magnanimous
-father cyrus	merciful
-father cyrus	noble
 force	entire
 force	intact
 fortune	good
@@ -3418,7 +3251,6 @@ ideas	liberal
 invasion	sure
 islanders	unfortunate
 king	egyptian
-land force	ordinary
 laurels	cheap
 levies	native
 masters	egyptian
@@ -3427,18 +3259,15 @@ monarch	anxious
 monarch	egyptian
 monarch	independent
 monarch	unwise
-monarch prisoner	median
 monarchs	amusing
 monarchs	contented
 monarchs	merry
 monarchs	quiescent
 monarchy	chaldaean
-mountain race	powerful
 movements	cramped
 nation	foreign
 others	defensible
 path	new
-pelusiac branch	intact
 peril	new
 personage	important
 plain	ample
@@ -3458,7 +3287,6 @@ progress	further
 prosperity	apparent
 race	greek
 rout	complete
-saite kings	saite
 satraps	babylonian
 section	next
 security	own
@@ -3474,7 +3302,6 @@ throne	babylonian
 time	little
 traditions	own
 tribute	small
-warrior king	great
 water-skins	abundant
 water-skins	convenient
 years	above
@@ -3510,7 +3337,6 @@ monarch	unable
 monuments	egyptian
 mummies	numerous
 nation	entire
-nile whence	east
 obelisk	new
 ooze	soft
 opportunity	excellent
@@ -3687,12 +3513,10 @@ severity	utmost
 siege	difficult
 temper	unrelenting
 time	considerable
-time mentor	same
 towers	movable
 towns	egyptian
 traitor	cowardly
 troops	best
 troops	few
-wind setting	strong
 writers	greek
 years	later
