@@ -127,6 +127,7 @@ public class EditTextDialog extends JDialog
 					textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 					editTextField.setText("");
 					lastTool = (ToolType)toolComboBox.getSelectedItem();
+					updateToolText();
 				}
 			});
 			panel.add(toolComboBox);
@@ -264,6 +265,30 @@ public class EditTextDialog extends JDialog
 		});
 		
 		createAndShowMap();
+	}
+	
+	private void updateToolText()
+	{
+		if (toolComboBox.getSelectedItem() == ToolType.Add)
+		{
+			toolComboBox.setToolTipText("Add new text of the selected text type (ctrl+shift+A)");
+		}
+		else if (toolComboBox.getSelectedItem() == ToolType.Edit)
+		{
+			toolComboBox.setToolTipText("Edit text (ctrl+shift+E)");			
+		}
+		else if (toolComboBox.getSelectedItem() == ToolType.Move)
+		{
+			toolComboBox.setToolTipText("Move text (ctrl+shift+G)");			
+		}
+		else if (toolComboBox.getSelectedItem() == ToolType.Rotate)
+		{
+			toolComboBox.setToolTipText("Rotate text (ctrl+shift+R)");			
+		}
+		else if (toolComboBox.getSelectedItem() == ToolType.Delete)
+		{
+			toolComboBox.setToolTipText("Delete text (ctrl+shift+D)");			
+		}
 	}
 	
 	/**
