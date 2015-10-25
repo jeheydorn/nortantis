@@ -388,12 +388,12 @@ public class RunSwing
 		sizeSlider = new JSlider();
 		sizeSlider.setValue(6000);
 		sizeSlider.setSnapToTicks(true);
-		sizeSlider.setMajorTickSpacing(5000);
+		sizeSlider.setMajorTickSpacing(8000);
 		sizeSlider.setMinorTickSpacing(1000);
 		sizeSlider.setPaintLabels(true);
 		sizeSlider.setPaintTicks(true);
 		sizeSlider.setMinimum(2000);
-		sizeSlider.setMaximum(18000);
+		sizeSlider.setMaximum(30000);
 		sizeSlider.setBounds(131, 45, 245, 79);
 		terrainPanel.add(sizeSlider);
 		sizeSlider.addChangeListener(new SliderChangeListener());
