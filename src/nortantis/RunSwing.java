@@ -738,7 +738,7 @@ public class RunSwing
 		JButton button = new JButton("Choose");
 		button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(renderPanel, landBlurColorDisplay);
+		        showColorPicker(renderPanel, landBlurColorDisplay, "Land blur color");
 			}
 		});
 		button.setBounds(725, 79, 87, 25);
@@ -756,7 +756,7 @@ public class RunSwing
 		JButton button_1 = new JButton("Choose");
 		button_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(renderPanel, oceanEffectsColorDisplay);
+				showColorPicker(renderPanel, oceanEffectsColorDisplay, "Ocean effects color");
 			}
 		});
 		button_1.setBounds(725, 114, 87, 25);
@@ -777,7 +777,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e) 
 			{
-				showColorPicker(renderPanel, riverColorDisplay);
+				showColorPicker(renderPanel, riverColorDisplay, "River color");
 			}
 		});
 		button_2.setBounds(725, 149, 87, 25);
@@ -800,7 +800,7 @@ public class RunSwing
 		frayedBorderChooseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				showColorPicker(renderPanel, frayedBorderColorDisplay);
+				showColorPicker(renderPanel, frayedBorderColorDisplay, "Frayed border color");
 			}
 		});
 		frayedBorderChooseButton.setBounds(725, 221, 87, 25);
@@ -835,7 +835,7 @@ public class RunSwing
 		renderPanel.add(buttonChooseCoastlineColor);
 		buttonChooseCoastlineColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(renderPanel, coastlineColorDisplay);
+				showColorPicker(renderPanel, coastlineColorDisplay, "Coastline color");
 			}
 		});
 		
@@ -964,7 +964,7 @@ public class RunSwing
 		final JButton btnChooseTextColor = new JButton("Choose");
 		btnChooseTextColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(textPanel, textColorDisplay);
+				showColorPickerWithPreviewPanel(textPanel, textColorDisplay, "Text color");
 			}
 		});
 		btnChooseTextColor.setBounds(383, 210, 87, 25);
@@ -983,7 +983,7 @@ public class RunSwing
 		final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
 		btnChooseBoldBackgroundColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(textPanel, boldBackgroundColorDisplay);
+				showColorPickerWithPreviewPanel(textPanel, boldBackgroundColorDisplay, "Bold background color");
 			}
 		});
 		btnChooseBoldBackgroundColor.setBounds(383, 245, 87, 25);
@@ -1343,14 +1343,33 @@ public class RunSwing
 		}		
 	}
 	
-	private static void showColorPicker(JComponent parent, JPanel colorDisplay)
+	private static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title)
+	{
+		final JColorChooser colorChooser = new JColorChooser(colorDisplay.getBackground());
+		colorChooser.setPreviewPanel(new JPanel());
+
+		ActionListener okHandler = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				colorDisplay.setBackground(colorChooser.getColor());
+			}
+			
+		};
+        Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false,
+        		colorChooser, okHandler, null);
+        dialog.setVisible(true);
+
+	}
+
+	private static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
 	{
 		Color c = JColorChooser.showDialog(parent, "", colorDisplay.getBackground());
 		if (c != null)
 			colorDisplay.setBackground(c);
-
 	}
-	
+
 	private int getDimensionIndexFromDimensions(int generatedWidth, int generatedHeight)
 	{
 		for (int i : new Range(dimensionsComboBox.getItemCount()))
