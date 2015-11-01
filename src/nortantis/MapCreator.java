@@ -1015,6 +1015,7 @@ public class MapCreator
 	{
 		if (args.length > 1)
 			Logger.println("usage: MapCreator.java properties_filename");
+		
 		String propsFilename = "map_settings.properties";
 		if (args.length > 0)
 			propsFilename = args[0];
@@ -1027,6 +1028,7 @@ public class MapCreator
 
 		BufferedImage map;
 		MapCreator creator = new MapCreator();
+		
 		try
 		{
 			map = creator.createMap(settings, null, null);
@@ -1036,9 +1038,11 @@ public class MapCreator
 			throw e;
 		}
 		
-		Path outputPath = Paths.get("map_" + settings.randomSeed + ".png");
-		ImageIO.write(map, "png", outputPath.toFile());
-		Logger.println("Map written to " + outputPath.toAbsolutePath());
+//		Path outputPath = Paths.get("map_" + settings.randomSeed + ".png");
+//		ImageIO.write(map, "png", outputPath.toFile());
+//		Logger.println("Map written to " + outputPath.toAbsolutePath());
+		
+		ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
 
 	}
 

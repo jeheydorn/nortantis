@@ -143,7 +143,7 @@ public class EditTextDialog extends JDialog
 			textTypeComboBox.setSelectedItem(TextType.Other_mountains);
 			panel.add(textTypeComboBox);
 			textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
-			toolComboBox.setSelectedItem(ToolType.Rotate); // TODO set default to edit when done testing.		
+			toolComboBox.setSelectedItem(ToolType.Edit); 		
 			lastTool = (ToolType)toolComboBox.getSelectedItem();
 			JLabel lblZoom = new JLabel("Zoom:");
 			panel.add(lblZoom);

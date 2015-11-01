@@ -3,6 +3,7 @@ package util;
 import hoten.geom.Point;
 
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -936,6 +937,26 @@ public class ImageHelper
 			throw new RuntimeException(e);
 		}
 	}
+	
+	public static void openImageInSystemDefaultEditor(BufferedImage map, String filenameWithoutExtension) throws IOException
+	{
+		// Save the map to a file.
+		String format = "png";
+		File tempFile = File.createTempFile(filenameWithoutExtension, "." + format);
+		ImageIO.write(map, format, tempFile);
+		
+		// Attempt to open the map in the system's default image viewer.
+		if (Desktop.isDesktopSupported())
+		{
+			Desktop desktop = Desktop.getDesktop();
+			if (Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.OPEN))
+			{
+				desktop.open(tempFile);
+			}
+		}
+
+	}
+	
 
 	public static void main(String[] args) throws IOException
 	{

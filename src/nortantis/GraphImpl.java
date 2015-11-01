@@ -527,6 +527,9 @@ public class GraphImpl extends VoronoiGraph
     	// First, assign a unique plate id and a random growth probability to each center.
     	RandomGenerator randomData = new JDKRandomGenerator(); 
     	randomData.setSeed(rand.nextLong());
+    	// A beta distribution is nice because (with the parameters I use) it creates a few plates
+    	// with high growth probabilities and many with low growth probabilities. This makes plate creation
+    	// faster and creates a larger variety of plate sizes than a uniform distribution would.
 		BetaDistribution betaDist = new BetaDistribution(randomData, 1, 3, BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
     	for (Center c : centers)
     	{

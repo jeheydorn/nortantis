@@ -69,7 +69,7 @@ public class CharacterNGram
 	public String generateName()
 	{
 		if (lcMap.size() == 0)
-			throw new IllegalStateException("Call addData(...) before calling this method.");
+			throw new IllegalStateException("At least one book must be selected to draw text.");
 		List<Character> lastChars = new ComparableList<>();
 		for (@SuppressWarnings("unused") int i : new Range(n - 1))
 		{

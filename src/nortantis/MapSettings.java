@@ -71,6 +71,7 @@ public class MapSettings implements Serializable
 	Color boldBackgroundColor;
 	Color textColor;
 	MapEdits edits;
+	boolean drawBoldBackground;
 	
 	public MapSettings()
 	{
@@ -116,6 +117,7 @@ public class MapSettings implements Serializable
 		result.setProperty("otherMountainsFont", fontToString(otherMountainsFont));
 		result.setProperty("riverFont", fontToString(riverFont));
 		result.setProperty("boldBackgroundColor", colorToString(boldBackgroundColor));
+		result.setProperty("drawBoldBackground", drawBoldBackground + "");
 		result.setProperty("textColor", colorToString(textColor));
 		
 		// User edits.
@@ -419,6 +421,16 @@ public class MapSettings implements Serializable
 			public Color apply()
 			{
 				return parseColor(props.getProperty("boldBackgroundColor"));
+			}
+		});
+		drawBoldBackground = getProperty("drawBoldBackground", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String value = props.getProperty("drawBoldBackground");
+				if (value == null)
+					return true; // default value
+				return  parseBoolean(value);
 			}
 		});
 		textColor = getProperty("textColor", new Function0<Color>()

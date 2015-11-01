@@ -7,14 +7,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-enum PlateType {Oceanic, Continental};
-
 public class TectonicPlate
 {
-	PlateType type;
+	public PlateType type;
 	double growthProbability;
 	PolarCoordinate velocity;
-	Set<Center> centers;
+	public Set<Center> centers;
 	
 	// This is needed to give the object a deterministic hash code. If I use the object's address as the hash
 	// code, it may change from one run to the next, and so HashSet iterates over the objects in a different

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.TreeMap;
 
+import nortantis.PlateType;
 import nortantis.TectonicPlate;
 import util.Function;
 import util.Range;
@@ -43,6 +44,7 @@ public abstract class VoronoiGraph {
      */
 	private double riverDensity = 1.0/14.0;
 	private double scaleMultiplyer;
+	private int riversThinnerThanThisWillNotBeDrawn = 2;
 
 
     public VoronoiGraph(Random r, double scaleMultiplyer) {
@@ -210,7 +212,7 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	drawCoastline(g, Math.max(1, (int) widthMultipierForMasks));
+        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.coastline);
         	return;
         }
         
@@ -315,7 +317,7 @@ public abstract class VoronoiGraph {
     {
         for (Edge e : edges) 
         {
-        	if (e.river > 2)
+        	if (e.river > riversThinnerThanThisWillNotBeDrawn)
         	{
         		int width = Math.max(1, (int)(riverWidthScale + Math.sqrt(e.river * 0.1)));
                 g.setStroke(new BasicStroke(width));
@@ -474,21 +476,49 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double widthMultipierForMasks)
     {
-    	drawCoastline(g, Math.max(1, (int) widthMultipierForMasks));
+    	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.coastline);
     }
     
-	private void drawCoastline(Graphics2D g, int coastlineWidth)
+    private enum EdgeSelect
+    {
+    	coastline,
+    	landContenents
+    }
+        
+	private void drawSpecifiedEdges(Graphics2D g, int width, EdgeSelect edgeSelect)
 	{
-		g.setStroke(new BasicStroke(coastlineWidth));
+		//final int minPlateSizeToDrawEdges = 3;
+		
+		g.setStroke(new BasicStroke(width));
+		//g.setColor(Color.RED);
 		
 		for (final Center p : centers)
 		{
 			for (final Center r : p.neighbors)
 			{
-				if (p.ocean == r.ocean)
-					continue;
-					
+				if (edgeSelect == EdgeSelect.coastline)
+				{
+					if (p.ocean == r.ocean)
+						continue;
+				}
+				else if (edgeSelect == EdgeSelect.landContenents)
+				{
+					if (p.ocean || r.ocean 
+							|| p.tectonicPlate == r.tectonicPlate
+							|| p.tectonicPlate.type == PlateType.Oceanic 
+							|| r.tectonicPlate.type == PlateType.Oceanic)
+//							|| p.tectonicPlate.centers.size() < minPlateSizeToDrawEdges
+//							|| r.tectonicPlate.centers.size() < minPlateSizeToDrawEdges)
+						continue;
+				}
+				
 				Edge edge = lookupEdgeFromCenter(p, r);
+				
+				if (edgeSelect == EdgeSelect.landContenents && edge.river > riversThinnerThanThisWillNotBeDrawn)
+				{
+					// Don't draw region boundaries where there are rivers.
+					continue;
+				}
 
 				if (noisyEdges.path0.get(edge.index) == null
 						|| noisyEdges.path1.get(edge.index) == null)

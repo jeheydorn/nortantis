@@ -206,7 +206,8 @@ public class TextDrawer
 			{
 				Set<Center> plateCenters = findPlateCentersLandOnly(graph, plate);
 				Set<Point> locations = extractLocationsFromCenters(plateCenters);
-				drawNameHorizontal(map, g, generateName("",""), locations, graph, true, true, TextType.Region);
+				drawNameHorizontal(map, g, generateName("",""), locations, graph, settings.drawBoldBackground,
+						true, TextType.Region);
 			}
 		}
 		
@@ -288,7 +289,7 @@ public class TextDrawer
 				g.setFont(titleFontScaled);
 				TectonicPlate plate = graph.getTectonicPlateAt(textLocation.x, textLocation.y);
 				drawNameHorizontal(map, g, extractLocationsFromCenters(plate.centers), 
-						graph, true, false, text);
+						graph, settings.drawBoldBackground, false, text);
 			}
 			else if (text.type == TextType.Region)
 			{
@@ -304,7 +305,7 @@ public class TextDrawer
 					plateCenters = findPlateCentersLandOnly(graph, center.tectonicPlate);
 				}
 				Set<Point> locations = extractLocationsFromCenters(plateCenters);
-				drawNameHorizontal(map, g, locations, graph, true, false, text);
+				drawNameHorizontal(map, g, locations, graph, settings.drawBoldBackground, false, text);
 			}
 			else if (text.type == TextType.Mountain_range)
 			{
@@ -389,11 +390,13 @@ public class TextDrawer
 		}
 				
 		if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
-				extractLocationsFromCenters(titlePlate.centers), graph, true, true, TextType.Title));
+				extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground, 
+				true, TextType.Title));
 		{
 			// The title didn't fit. Try drawing it without "The Land of".
 			drawNameHorizontal(map, g, generateName("",""),
-					extractLocationsFromCenters(titlePlate.centers), graph, true, true, TextType.Title);
+					extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground,
+					true, TextType.Title);
 		}
 
 	}
