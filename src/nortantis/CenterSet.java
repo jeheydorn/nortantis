@@ -18,12 +18,26 @@ public class CenterSet implements Set<Center>
 	private BitSet bitSet;
 	private List<Center> centers;
 	
-	public CenterSet(List<Center> centers)
+	/**
+	 * Creates an empty set of centers.
+	 * @param allCenters All Centers that could ever be part of this set.
+	 */
+	public CenterSet(List<Center> allCenters)
 	{
 		bitSet = new BitSet(centers.size());
-		this.centers = centers;
+		this.centers = allCenters;
 	}
-	
+
+	/**
+	 * Creates a set of centers containing all centers in toAdd.
+	 * @param allCenters All Centers that could ever be part of this set.
+	 */
+	public CenterSet(List<Center> allCenters, Collection<Center> toAdd)
+	{
+		this(allCenters);
+		addAll(toAdd);
+	}
+
 	@Override
 	public int size()
 	{

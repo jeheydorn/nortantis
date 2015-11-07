@@ -40,17 +40,7 @@ public class TectonicPlate
 	
 	public Point findCentroid()
 	{
-		Point centroid = new Point(0, 0);
-		for (Center c : centers)
-		{
-			Point p = c.loc;
-			centroid.x += p.x;
-			centroid.y += p.y;
-		}
-		centroid.x /= centers.size();
-		centroid.y /= centers.size();
-		
-		return centroid;
+		return GraphImpl.findCentroid(centers);
 	}
 
 		

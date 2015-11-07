@@ -222,9 +222,17 @@ public class MapCreator
 			}
 
 		}
-
+		
 		// Store the current version of the map for a background when drawing icons later.
 		BufferedImage landBackground = ImageHelper.deepCopy(map);
+		
+		// TODO Make this a setting.
+		Logger.println("Adding region borders");
+		{
+			Graphics2D g = map.createGraphics();
+			g.setColor(Color.red);
+			graph.drawRegionBorders(g, sizeMultiplyer * 2);
+		}
 		
 		// Add rivers.
 		Logger.println("Adding rivers.");

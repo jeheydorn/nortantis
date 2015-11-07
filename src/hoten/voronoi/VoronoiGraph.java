@@ -212,7 +212,7 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.coastline);
+        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.COASTLINE);
         	return;
         }
         
@@ -474,47 +474,47 @@ public abstract class VoronoiGraph {
         }    	
     }
     
-    public void drawCoastline(Graphics2D g, double widthMultipierForMasks)
+    public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.coastline);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.COASTLINE);
     }
-    
+
+    public void drawRegionBorders(Graphics2D g, double width)
+    {
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.REGION_BORDERS);
+    }
+   
     private enum EdgeSelect
     {
-    	coastline,
-    	landContenents
+    	COASTLINE,
+    	REGION_BORDERS
     }
         
 	private void drawSpecifiedEdges(Graphics2D g, int width, EdgeSelect edgeSelect)
-	{
-		//final int minPlateSizeToDrawEdges = 3;
-		
+	{		
 		g.setStroke(new BasicStroke(width));
-		//g.setColor(Color.RED);
 		
 		for (final Center p : centers)
 		{
 			for (final Center r : p.neighbors)
 			{
-				if (edgeSelect == EdgeSelect.coastline)
+				if (edgeSelect == EdgeSelect.COASTLINE)
 				{
 					if (p.ocean == r.ocean)
 						continue;
 				}
-				else if (edgeSelect == EdgeSelect.landContenents)
+				else if (edgeSelect == EdgeSelect.REGION_BORDERS)
 				{
 					if (p.ocean || r.ocean 
 							|| p.tectonicPlate == r.tectonicPlate
 							|| p.tectonicPlate.type == PlateType.Oceanic 
 							|| r.tectonicPlate.type == PlateType.Oceanic)
-//							|| p.tectonicPlate.centers.size() < minPlateSizeToDrawEdges
-//							|| r.tectonicPlate.centers.size() < minPlateSizeToDrawEdges)
 						continue;
 				}
 				
 				Edge edge = lookupEdgeFromCenter(p, r);
 				
-				if (edgeSelect == EdgeSelect.landContenents && edge.river > riversThinnerThanThisWillNotBeDrawn)
+				if (edgeSelect == EdgeSelect.REGION_BORDERS && edge.river > riversThinnerThanThisWillNotBeDrawn)
 				{
 					// Don't draw region boundaries where there are rivers.
 					continue;
