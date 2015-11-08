@@ -10,6 +10,8 @@ import java.util.Set;
 
 /**
  * A set of Center, designed be extra fast by using a bit set internally.
+ * 
+ * TODO I tested this and found it isn't faster than HashSet. Consider removing it.
  * @author joseph
  *
  */
@@ -24,7 +26,7 @@ public class CenterSet implements Set<Center>
 	 */
 	public CenterSet(List<Center> allCenters)
 	{
-		bitSet = new BitSet(centers.size());
+		bitSet = new BitSet(allCenters.size());
 		this.centers = allCenters;
 	}
 
@@ -154,7 +156,12 @@ public class CenterSet implements Set<Center>
 	@Override
 	public boolean removeAll(Collection<?> c)
 	{
-		throw new UnsupportedOperationException();
+		boolean changed = false;
+		for (Object item : c)
+		{
+			changed |= remove(item);
+		}
+		return changed;
 	}
 
 	@Override

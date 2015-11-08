@@ -186,7 +186,7 @@ public abstract class VoronoiGraph {
     	boolean drawSites = false; 
     	boolean drawCorners = false; 
     	boolean drawDeluanay = false;  
-    	boolean drawVoronoi = false; 
+    	boolean drawVoronoi = false; // TODO change back to false 
         paint(g, drawBioms, drawRivers, drawSites, drawCorners, drawDeluanay, drawVoronoi, drawPlates,
         		drawElevations, drawNoisyEdges, drawLandAndOceanBlackAndWhiteOnly, drawCoastlineOnly,
         		widthMultipierForMasks);
@@ -199,6 +199,8 @@ public abstract class VoronoiGraph {
     {
         final int numSites = centers.size();
 
+        drawPlates = true; // TODO remove
+        
         Color[] defaultColors = null;
         if (!drawBiomes) {
             defaultColors = new Color[numSites];
@@ -219,8 +221,20 @@ public abstract class VoronoiGraph {
         //draw via triangles
         for (Center c : centers) 
         {
+        	// TODO put back
+//        	if (drawLandAndOceanBlackAndWhiteOnly && !c.border)
+//        	{
+//        		// Drawing noisy edges draws everything but the polygons on the edges.
+//        		continue;
+//        	}
+        	
          	if (drawLandAndOceanBlackAndWhiteOnly)
-        		g.setColor(getColor(c.biome) == OCEAN ? Color.black : Color.white);
+         	{
+         		// TODO change back
+        		//g.setColor(getColor(c.biome) == OCEAN ? Color.black : Color.white);
+         		int level = c.region != null ? c.region.hashCode() % 256 : 0;
+         		g.setColor(c.region != null ? new Color(level, level, level) : Color.black);
+         	}
         	else
         	{
                 g.setColor(drawBiomes ? getColor(c.biome) : defaultColors[c.index]);       		
@@ -245,9 +259,13 @@ public abstract class VoronoiGraph {
 				public Color apply(Center c)
 				{
 					if (drawLandAndOceanBlackAndWhiteOnly)
+					{
 						return getColor(c.biome) == OCEAN ? Color.black : Color.white;
+					}
 					else
+					{
 						return getColor(c.biome);
+					}
 				}
 			});
         }
@@ -505,10 +523,10 @@ public abstract class VoronoiGraph {
 				}
 				else if (edgeSelect == EdgeSelect.REGION_BORDERS)
 				{
-					if (p.ocean || r.ocean 
-							|| p.tectonicPlate == r.tectonicPlate
-							|| p.tectonicPlate.type == PlateType.Oceanic 
-							|| r.tectonicPlate.type == PlateType.Oceanic)
+					if (//p.ocean || r.ocean 
+							p.region == r.region)
+							//|| p.tectonicPlate.type == PlateType.Oceanic 
+							//|| r.tectonicPlate.type == PlateType.Oceanic)
 						continue;
 				}
 				

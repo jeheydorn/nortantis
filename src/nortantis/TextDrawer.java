@@ -35,6 +35,7 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import util.Helper;
 import util.ImageHelper;
+import util.Logger;
 import util.Pair;
 import util.Range;
 
@@ -194,21 +195,18 @@ public class TextDrawer
 		graphBounds = new Area(new java.awt.Rectangle(0, 0, graph.getWidth(), graph.getHeight()));
 
 		Graphics2D g = map.createGraphics();
-		
 		g.setColor(settings.textColor);
 		
 		addTitle(map, graph, g);
 		
 		g.setFont(regionFontScaled);
-		for (TectonicPlate plate : graph.plates)
+		for (PoliticalRegion region : graph.politicalRegions)
 		{
-			if (plate.type == PlateType.Continental)
-			{
-				Set<Center> plateCenters = findPlateCentersLandOnly(graph, plate);
-				Set<Point> locations = extractLocationsFromCenters(plateCenters);
-				drawNameHorizontal(map, g, generateName("",""), locations, graph, settings.drawBoldBackground,
-						true, TextType.Region);
-			}
+			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
+			String name = generateName("","");
+			//Logger.println("Region " + (region.hashCode() % 256) + " name: " + name); // TODO remove
+			drawNameHorizontal(map, g, name, locations, graph, settings.drawBoldBackground,
+					true, TextType.Region);
 		}
 		
 		for (Set<Center> mountainRange : mountainRanges)
@@ -302,7 +300,7 @@ public class TextDrawer
 				}
 				else
 				{
-					plateCenters = findPlateCentersLandOnly(graph, center.tectonicPlate);
+					plateCenters = center.region.getCenters();
 				}
 				Set<Point> locations = extractLocationsFromCenters(plateCenters);
 				drawNameHorizontal(map, g, locations, graph, settings.drawBoldBackground, false, text);
@@ -917,17 +915,6 @@ public class TextDrawer
 		return true;
 	}
 	
-	private Set<Center> findPlateCentersLandOnly(final GraphImpl graph, final TectonicPlate plate)
-	{		
-		Set<Center> plateCenters = new HashSet<Center>();
-		for (Center c : plate.centers)
-		{
-			if (!c.water)
-				plateCenters.add(c);
-		}
-		return plateCenters;
-	}
-
 	private Set<Center> findPlateCentersWaterOnly(final GraphImpl graph, final TectonicPlate plate)
 	{		
 		Set<Center> plateCenters = new HashSet<Center>();

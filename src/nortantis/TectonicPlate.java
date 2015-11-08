@@ -28,8 +28,7 @@ public class TectonicPlate
 	{
 		this.growthProbability = growthProbability;
 		this.id = nextID++;
-		// Using CenterSet instead of HashSet here saves about 0.4 seconds when generating on graph with 18000 Centers.
-		centers = new CenterSet(allCenters);
+		centers = new HashSet<>();
 	}
 	
 	@Override
