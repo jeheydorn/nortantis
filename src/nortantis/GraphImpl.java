@@ -138,6 +138,8 @@ public class GraphImpl extends VoronoiGraph
         		assert !c.ocean;
         		assert c.region == region;
         	}
+        	
+        	assert centers.stream().filter(c -> c.region == region).count() == region.size();
         }
         assert new HashSet<>(politicalRegions).size() == politicalRegions.size();
         for (Center c : centers)
@@ -150,7 +152,14 @@ public class GraphImpl extends VoronoiGraph
         	{
         		assert c.region == null;
         	}
+        	
+        	if (c.region != null)
+        	{
+        		assert politicalRegions.stream().filter(reg -> reg.contains(c)).count() == 1;
+        	}
         }
+        assert politicalRegions.stream().mapToInt(reg -> reg.size()).sum() 
+        		+ centers.stream().filter(c -> c.region == null).count() == centers.size();
     }
     
     /**
@@ -262,7 +271,7 @@ public class GraphImpl extends VoronoiGraph
     private PoliticalRegion findClosestRegion(Point point)
     {
     	Optional<Center> opt = centers.stream().filter(c -> c.region != null)
-    		.max((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+    		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
     	
     	if (opt.isPresent())
     	{

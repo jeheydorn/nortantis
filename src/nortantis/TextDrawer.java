@@ -35,7 +35,6 @@ import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import util.Helper;
 import util.ImageHelper;
-import util.Logger;
 import util.Pair;
 import util.Range;
 
@@ -204,7 +203,7 @@ public class TextDrawer
 		{
 			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
 			String name = generateName("","");
-			//Logger.println("Region " + (region.hashCode() % 256) + " name: " + name); // TODO remove
+			System.out.println("Region " + (region.hashCode() % 256) + " name: " + name); // TODO remove
 			drawNameHorizontal(map, g, name, locations, graph, settings.drawBoldBackground,
 					true, TextType.Region);
 		}

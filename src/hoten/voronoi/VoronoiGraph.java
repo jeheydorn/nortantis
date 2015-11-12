@@ -217,23 +217,30 @@ public abstract class VoronoiGraph {
         	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.COASTLINE);
         	return;
         }
-        
+       
         //draw via triangles
         for (Center c : centers) 
         {
         	// TODO put back
-//        	if (drawLandAndOceanBlackAndWhiteOnly && !c.border)
-//        	{
-//        		// Drawing noisy edges draws everything but the polygons on the edges.
-//        		continue;
-//        	}
+        	if (drawLandAndOceanBlackAndWhiteOnly && !c.border)
+        	{
+        		// Drawing noisy edges draws everything but the polygons on the edges.
+        		continue;
+        	}
         	
          	if (drawLandAndOceanBlackAndWhiteOnly)
          	{
-         		// TODO change back
-        		//g.setColor(getColor(c.biome) == OCEAN ? Color.black : Color.white);
-         		int level = c.region != null ? c.region.hashCode() % 256 : 0;
-         		g.setColor(c.region != null ? new Color(level, level, level) : Color.black);
+         		// TODO Put the line below in instead of the code below it.
+        		g.setColor(c.water ? Color.black : Color.white);
+//         		if (c.region == null)
+//         		{
+//         			g.setColor(Color.white);
+//         		}
+//         		else
+//         		{
+//	         		int level = (c.region.hashCode() + new Random(c.region.hashCode() + 1000).nextInt(1024)) % 256;
+//	         		g.setColor(new Color(level, level, level));
+//         		}
          	}
         	else
         	{
