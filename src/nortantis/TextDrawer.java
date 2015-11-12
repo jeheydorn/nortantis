@@ -203,7 +203,6 @@ public class TextDrawer
 		{
 			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
 			String name = generateName("","");
-			System.out.println("Region " + (region.hashCode() % 256) + " name: " + name); // TODO remove
 			drawNameHorizontal(map, g, name, locations, graph, settings.drawBoldBackground,
 					true, TextType.Region);
 		}

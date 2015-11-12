@@ -177,11 +177,10 @@ public class MapCreator
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
 		BufferedImage landMask = new BufferedImage(graph.getWidth(),
-				graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY); // TODO change back to TYPE_BYTE_BINARY
+				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
 		{
 			Graphics2D g = landMask.createGraphics();
-			graph.paint(g, false, false, false, false, true, false, false); // TODO change 4th back to true
-			//ImageHelper.write(landMask, "landMask.png"); // TODO remove
+			graph.paint(g, false, false, false, true, true, false, false);
 		}
 
 		BufferedImage map = null;
@@ -354,12 +353,6 @@ public class MapCreator
 
 			}
 			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
-		}
-		
-		// TODO remove
-		{
-			Graphics2D g = map.createGraphics();
-			//graph.paint(g, false, false, false, true, true, false, false, false, false, false, false, 1.0);
 		}
 		
 		double elapsedTime = System.currentTimeMillis() - startTime;

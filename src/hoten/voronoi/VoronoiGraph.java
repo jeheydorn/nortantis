@@ -186,7 +186,7 @@ public abstract class VoronoiGraph {
     	boolean drawSites = false; 
     	boolean drawCorners = false; 
     	boolean drawDeluanay = false;  
-    	boolean drawVoronoi = false; // TODO change back to false 
+    	boolean drawVoronoi = false;  
         paint(g, drawBioms, drawRivers, drawSites, drawCorners, drawDeluanay, drawVoronoi, drawPlates,
         		drawElevations, drawNoisyEdges, drawLandAndOceanBlackAndWhiteOnly, drawCoastlineOnly,
         		widthMultipierForMasks);
@@ -198,8 +198,6 @@ public abstract class VoronoiGraph {
     		boolean drawCoastlineOnly, double widthMultipierForMasks)
     {
         final int numSites = centers.size();
-
-        drawPlates = true; // TODO remove
         
         Color[] defaultColors = null;
         if (!drawBiomes) {
@@ -221,7 +219,6 @@ public abstract class VoronoiGraph {
         //draw via triangles
         for (Center c : centers) 
         {
-        	// TODO put back
         	if (drawLandAndOceanBlackAndWhiteOnly && !c.border)
         	{
         		// Drawing noisy edges draws everything but the polygons on the edges.
@@ -230,17 +227,7 @@ public abstract class VoronoiGraph {
         	
          	if (drawLandAndOceanBlackAndWhiteOnly)
          	{
-         		// TODO Put the line below in instead of the code below it.
         		g.setColor(c.water ? Color.black : Color.white);
-//         		if (c.region == null)
-//         		{
-//         			g.setColor(Color.white);
-//         		}
-//         		else
-//         		{
-//	         		int level = (c.region.hashCode() + new Random(c.region.hashCode() + 1000).nextInt(1024)) % 256;
-//	         		g.setColor(new Color(level, level, level));
-//         		}
          	}
         	else
         	{

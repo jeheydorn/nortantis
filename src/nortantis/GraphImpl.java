@@ -59,8 +59,7 @@ public class GraphImpl extends VoronoiGraph
 	// This controlls how smooth the plates boundaries are. Higher is smoother. 1 is minumum. Larger values
 	// will slow down plate generation.
 	final int plateBoundarySmoothness = 20;
-	final int minPoliticalRegionSize = 10; // TODO put back to 10.
-	final double maxLandMassRatioInRegion = 5.0;
+	final int minPoliticalRegionSize = 10;
 	    
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
@@ -128,8 +127,11 @@ public class GraphImpl extends VoronoiGraph
         RIVER = new Color(0x225588);
         createPoliticalRegions();
         
-        // TODO remove
-        // Test the regions
+     }
+    
+    @SuppressWarnings("unused")
+	private void testPoliticalRegions()
+    {
         for (PoliticalRegion region : politicalRegions)
         {
         	for (Center c : region.getCenters())
@@ -159,7 +161,7 @@ public class GraphImpl extends VoronoiGraph
         	}
         }
         assert politicalRegions.stream().mapToInt(reg -> reg.size()).sum() 
-        		+ centers.stream().filter(c -> c.region == null).count() == centers.size();
+        		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
     }
     
     /**
@@ -182,37 +184,29 @@ public class GraphImpl extends VoronoiGraph
     	    	    	
        	for (PoliticalRegion region : politicalRegions)
     	{
-       		// TODO remove all Logging statements from this file.
-       		Logger.println("\nProcessing region " + (region.hashCode() % 256));
-    		Logger.println("Size: " + region.size());
     		// For each region, divide it by land masses separated by water.
     		List<Set<Center>> dividedRegion = divideRegionByLand(region);
-    		Logger.println("Number of parts: " + dividedRegion.size());
     		
         	if (dividedRegion.size() > 1)
 	    	{
-	    		// If one land mass is 80% bigger than all others... 
+	    		// The region gets to keep only the largest land mass.
 	    		Set<Center> biggest = dividedRegion.stream().max((l1, l2) -> Integer.compare(l1.size(), l2.size())).get();
-	    		Set<Center> secondBiggest = dividedRegion.stream().filter(l -> l != biggest)
-	    				.max((l1, l2) -> Integer.compare(l1.size(), l2.size())).get();
 	    		
-	    		//if (((double)biggest.size())/secondBiggest.size() > maxLandMassRatioInRegion) TODO  put back
-	    		{
-	    			// then for each small land mass:
-	    			for (Set<Center> regionPart : dividedRegion)
+    			// then for each small land mass:
+    			for (Set<Center> regionPart : dividedRegion)
+    			{
+    				if (regionPart == biggest)
+    					continue;
+		        	// If that small land mass is connected by land to a different region, then add that land mass to that region.
+	    			PoliticalRegion touchingRegion = findRegionTouching(regionPart);
+	    			if (touchingRegion != null)
 	    			{
-			        	//	- If that small land mass is connected by land to a different region, then add that land mass to that region.
-		    			PoliticalRegion touchingRegion = findRegionTouching(regionPart);
-		    			Logger.println("touchingRegion: " + touchingRegion);
-		    			if (touchingRegion != null)
-		    			{
-		    				assert region != touchingRegion;
-		    	        	region.removeAll(regionPart);
-		    				touchingRegion.addAll(regionPart);
-		    			}
-			        	//	- Else leave it in this region
-	 	    		}
-	    		}
+	    				assert region != touchingRegion;
+	    	        	region.removeAll(regionPart);
+	    				touchingRegion.addAll(regionPart);
+	    			}
+		        	//Else leave it in this region
+ 	    		}
 	    	}
     	}
        	
@@ -257,7 +251,6 @@ public class GraphImpl extends VoronoiGraph
     		else
     		{
     			// This will probably never happen because it means there are no regions on the map at all.
-    			//assert false; // TODO remove
     			PoliticalRegion region = new PoliticalRegion();
     			region.addAll(landMass);
     			politicalRegions.add(region);
