@@ -72,6 +72,7 @@ public class MapSettings implements Serializable
 	Color textColor;
 	MapEdits edits;
 	boolean drawBoldBackground;
+	boolean drawRegionColors = true; // TODO make this save and load
 	
 	public MapSettings()
 	{

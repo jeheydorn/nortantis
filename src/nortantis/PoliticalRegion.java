@@ -3,16 +3,23 @@ package nortantis;
 import hoten.geom.Point;
 import hoten.voronoi.Center;
 
+import java.awt.Color;
 import java.util.*;
+
+import util.Pair;
 
 public class PoliticalRegion
 {
 	private Set<Center> centers;
 	public Set<Center> getCenters() { return Collections.unmodifiableSet(centers); }
+	public int id;
+	public Set<PoliticalRegion> neighbors;
+	public Pair<Color> colors;
 	
 	public PoliticalRegion()
 	{
 		this.centers = new HashSet<>();
+		this.neighbors = new HashSet<>();
 	}
 	
 	public void addAll(Collection<Center> toAdd)
@@ -67,6 +74,21 @@ public class PoliticalRegion
 	public Point findCentroid()
 	{
 		return GraphImpl.findCentroid(centers);
+	}
+	
+	public void findNeighbors()
+	{
+		neighbors.clear();
+		for (Center c : centers)
+		{
+			for (Center n : c.neighbors)
+			{
+				if (n.region != this && n.region != null)
+				{
+					neighbors.add(n.region);
+				}
+			}
+		}
 	}
 
 }

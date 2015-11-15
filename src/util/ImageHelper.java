@@ -361,7 +361,7 @@ public class ImageHelper
 
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in
-	 * combineWithMask(...);
+	 * maskWithImage(...);
 	 */
 	public static BufferedImage maskWithColor(BufferedImage image,
 			Color color, BufferedImage mask, boolean invertMask)
@@ -416,6 +416,67 @@ public class ImageHelper
 	}
 	
 	/**
+	 * Like maskWithColor except multiple colors can be specified.
+	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 */
+	public static BufferedImage maskWithMultipleColors(BufferedImage image,
+			Color[] colors, BufferedImage colorIndexes, BufferedImage mask, boolean invertMask)
+	{
+		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY 
+				&& mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
+			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY or BufferedImage.TYPE_BYTE_BINARY.");
+		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
+			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
+
+		if (image.getWidth() != mask.getWidth())
+			throw new IllegalArgumentException("Mask width is "
+					+ mask.getWidth() + " but image has width "
+					+ image.getWidth() + ".");
+		if (image.getHeight() != mask.getHeight())
+			throw new IllegalArgumentException();
+
+		BufferedImage result = new BufferedImage(image.getWidth(),
+				image.getHeight(), image.getType());
+		Raster mRaster = mask.getRaster();
+		Raster colorIndexesRaster = colorIndexes.getRaster();
+		for (int y = 0; y < image.getHeight(); y++)
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				Color col = new Color(image.getRGB(x, y));
+				Color color = colors[colorIndexesRaster.getSample(x, y, 0)];
+				
+				int maskLevel = mRaster.getSample(x, y, 0);
+				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+				{
+					if (invertMask)
+						maskLevel = 255 - maskLevel;
+
+					int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed())/255;
+					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen())/255;
+					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue())/255;
+					int combined = (r << 16) | (g << 8) | b;
+					result.setRGB(x, y, combined);					
+				}
+				else
+				{
+					// TYPE_BYTE_BINARY
+	
+					if (invertMask)
+						maskLevel = 255 - maskLevel;
+
+					int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+					int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+					int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+					int combined = (r << 16) | (g << 8) | b;
+					result.setRGB(x, y, combined);					
+				}
+				
+			}
+		return result;
+	}
+
+	
+	/**
 	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
 	 * @param image
 	 * @param alphaMask Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the
@@ -462,46 +523,6 @@ public class ImageHelper
 	}
 
 	
-//	/**
-//	 * Applies the given mask to an area of the given map, in the given location. Everywhere that the 
-//	 * mask is zero, the map is drawn. Everywhere that the mask is 255, the background is drawn.
-//	 * Everywhere in between is a linear combination of the map and background.
-//	 */
-//	public static void combineImagesWithMaskInRegion(BufferedImage image1, BufferedImage image2,
-//			BufferedImage mask,  int xLoc, int yLoc, boolean invertMask)
-//	{
-//		
-//		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY)
-//			throw new IllegalArgumentException("Expected mask to be type BufferedImage.TYPE_BYTE_GRAY.");
-//    	
-//    	if (image1.getWidth() != image2.getWidth())
-//    		throw new IllegalArgumentException();
-//       	if (image1.getHeight() != image2.getHeight())
-//    		throw new IllegalArgumentException();
-//       	
-//		Raster mRaster = mask.getRaster();
-//		for (int x : new Range(mask.getWidth()))
-//			for (int y : new Range(mask.getHeight()))
-//			{				
-//				double m = ((double) mRaster.getSampleDouble(x, y, 0)) / 255.0;
-//				if (invertMask)
-//					m = 1.0 - m;
-//				try
-//				{
-//					Color c1 = new Color(image1.getRGB(xLoc + x, yLoc + y));
-//					Color c2 = new Color(image2.getRGB(xLoc + x, yLoc + y));
-//					Color drawColor = new Color((int)(m*c1.getRed() + (1-m)*c2.getRed()), 
-//							(int)(m*c1.getGreen() + (1-m)*c2.getGreen()),
-//							(int)(m*c1.getBlue() + (1-m)*c2.getBlue()));
-//					image1.setRGB(x + xLoc, y + yLoc, drawColor.getRGB());				
-//				}
-//				catch (IndexOutOfBoundsException e)
-//				{
-//					// Skip this pixel.
-//				}
-//			}
-//	}
-
 	/**
 	 * Extracts the specified region from image2, then makes the given mask be the alpha channel
 	 * of that extracted region, then draws the extracted region onto image1.
@@ -914,6 +935,54 @@ public class ImageHelper
 		return result;
 	}
 	
+	/**
+	 * Like colorify2 but for multiple colors. Colorifies an image using a an array of colors and
+	 * a second image which maps those colors to pixels. This way you can specify multiple colors for the resulting image.
+	 * @param image The image to colorify
+	 * @param colors Used as a map from region index (in politicalRegions) to region color. The 
+	 * index of each color corresponds to a pixel level in pixelColors.
+	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 */
+	public static BufferedImage colorify2Multi(BufferedImage image, Color[] colors,
+			BufferedImage colorIndexes)
+	{
+		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
+			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
+					+ bufferedImageTypeToString(image.getType()));
+		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
+			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
+
+		BufferedImage result = new BufferedImage(image.getWidth(),
+				image.getHeight(), BufferedImage.TYPE_INT_RGB);
+		Raster raster = image.getRaster();
+		Raster colorIndexesRaster = colorIndexes.getRaster();
+		
+		float[][] hsb = new float[colors.length][3];
+		for (int i : new Range(colors.length))
+		{
+			Color.RGBtoHSB(colors[i].getRed(), colors[i].getGreen(), colors[i].getBlue(), hsb[i]);
+		}
+		
+		for (int y = 0; y < result.getHeight(); y++)
+			for (int x = 0; x < result.getWidth(); x++)
+			{
+				float level = raster.getSampleFloat(x, y, 0);
+				int colorIndex = colorIndexesRaster.getSample(x, y, 0);
+
+				float I = hsb[colorIndex][2] * 255f;
+				float overlay = (I/255f) * (I + ((2*level)/255f) * (255f - I));
+				result.setRGB(x, y, Color.HSBtoRGB(hsb[colorIndex][0], hsb[colorIndex][1],
+						overlay/255f));
+			}
+		
+		return result;
+	}
+	
+	public static Color colorFromHSB(float hue, float saturation, float brightness)
+	{
+		return new Color(Color.HSBtoRGB(hue/360f, saturation/255f, brightness/255f));
+	}
+	
 	public static void write(BufferedImage image, String fileName)
 	{
 		try
@@ -955,6 +1024,11 @@ public class ImageHelper
 			}
 		}
 
+	}
+	
+	public static int bound(int value)
+	{
+		return Math.min(255, Math.max(0, value));
 	}
 	
 

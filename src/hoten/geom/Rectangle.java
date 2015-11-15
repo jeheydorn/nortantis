@@ -18,8 +18,8 @@ public class Rectangle {
         bottom = y + height;
     }
 
-    public boolean liesOnAxes(Point p) {
-        return GenUtils.closeEnough(p.x, x, 1) || GenUtils.closeEnough(p.y, y, 1) || GenUtils.closeEnough(p.x, right, 1) || GenUtils.closeEnough(p.y, bottom, 1);
+    public boolean liesOnAxes(Point p, double closeEnoughDistance) {
+        return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance) || GenUtils.closeEnough(p.x, right, closeEnoughDistance) || GenUtils.closeEnough(p.y, bottom, closeEnoughDistance);
     }
 
     public boolean inBounds(Point p) {

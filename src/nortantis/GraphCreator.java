@@ -42,18 +42,18 @@ public class GraphCreator
 		Logger.println("Time to generate graph (in seconds): " + elapsedTime
 				/ 1000.0);
 
-        // Draw elevation map with tectonic plate boundaries. TODO comment out
-        {
-	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
-	        Graphics2D g = elevationImg.createGraphics();
-	        g.setColor(Color.BLACK);
-	        g.fillRect(0, 0, (int)width, (int)height);
-	        graph.paintWithTectonicPlateVelocity(g);
-	        File elevationfile = new File("elevation.png");
-	        ImageIO.write(elevationImg, "png", elevationfile);
-       }
-
-//        final BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        // Draw elevation map with tectonic plate boundaries. 
+//        {
+//	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
+//	        Graphics2D g = elevationImg.createGraphics();
+//	        g.setColor(Color.BLACK);
+//	        g.fillRect(0, 0, (int)width, (int)height);
+//	        graph.paintWithTectonicPlateVelocity(g);
+//	        File elevationfile = new File("elevation.png");
+//	        ImageIO.write(elevationImg, "png", elevationfile);
+//       }
+//
+//        final BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
 //        Graphics2D g = img.createGraphics();
 //        boolean drawPlates = false;
 //        boolean drawElevations = false;

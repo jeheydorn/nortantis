@@ -164,6 +164,11 @@ public class GraphImpl extends VoronoiGraph
         		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
     }
     
+	public void drawRegionIndexes(Graphics2D g)
+	{       
+       	renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+	}
+    
     /**
      * Creates political regions. When done, all non-ocean centers will have a political region
      * assigned.
@@ -256,6 +261,15 @@ public class GraphImpl extends VoronoiGraph
     			politicalRegions.add(region);
     		}
     	}
+    	
+    	// Set the id of each region.
+    	for (int i : new Range(politicalRegions.size()))
+    	{
+    		politicalRegions.get(i).id = i;
+    	}
+    	
+    	// Find neighbors of each region.
+    	politicalRegions.stream().forEach(reg -> reg.findNeighbors());
 	}
     
     /**
@@ -926,6 +940,5 @@ public class GraphImpl extends VoronoiGraph
 		
 		return centroid;
 	}
-
 
 }

@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.TreeMap;
 
 import nortantis.PlateType;
+import nortantis.StopWatch;
 import nortantis.TectonicPlate;
 import util.Function;
 import util.Range;
@@ -212,35 +213,22 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.COASTLINE);
+        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.COASTLINE, false);
         	return;
         }
        
-        //draw via triangles
-        for (Center c : centers) 
+        if (drawElevation)
         {
-        	if (drawLandAndOceanBlackAndWhiteOnly && !c.border)
-        	{
-        		// Drawing noisy edges draws everything but the polygons on the edges.
-        		continue;
-        	}
-        	
-         	if (drawLandAndOceanBlackAndWhiteOnly)
-         	{
-        		g.setColor(c.water ? Color.black : Color.white);
-         	}
-        	else
-        	{
-                g.setColor(drawBiomes ? getColor(c.biome) : defaultColors[c.index]);       		
-        	}
-                        
-            if (drawElevation)
-            {
+	        for (Center c : centers) 
+	        {
             	float grayLevel = (float) (float)c.elevation;
-            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));
-            }
-            
-            drawUsingTriangles(g, c);
+            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
+	            drawUsingTriangles(g, c);
+	        }
+        }
+        else if (drawBiomes)
+        {
+        	drawBiomes(g);
         }
 
         if (drawNoisyEdges)
@@ -323,6 +311,14 @@ public abstract class VoronoiGraph {
         	}
         	
         }
+    }
+    
+    public void drawBiomes(Graphics2D g)
+    {
+    	renderPolygons(g, (center) -> 
+    	{
+    		return getColor(center.biome);
+    	});
     }
     
     public void drawRivers(Graphics2D g, double riverWidthScale)
@@ -488,12 +484,12 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.COASTLINE);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.COASTLINE, false);
     }
 
-    public void drawRegionBorders(Graphics2D g, double width)
+    public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.REGION_BORDERS);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.REGION_BORDERS, ignoreRiverEdges);
     }
    
     private enum EdgeSelect
@@ -502,7 +498,7 @@ public abstract class VoronoiGraph {
     	REGION_BORDERS
     }
         
-	private void drawSpecifiedEdges(Graphics2D g, int width, EdgeSelect edgeSelect)
+	private void drawSpecifiedEdges(Graphics2D g, int width, EdgeSelect edgeSelect, boolean ignoreRiverEdges)
 	{		
 		g.setStroke(new BasicStroke(width));
 		
@@ -517,16 +513,13 @@ public abstract class VoronoiGraph {
 				}
 				else if (edgeSelect == EdgeSelect.REGION_BORDERS)
 				{
-					if (//p.ocean || r.ocean 
-							p.region == r.region)
-							//|| p.tectonicPlate.type == PlateType.Oceanic 
-							//|| r.tectonicPlate.type == PlateType.Oceanic)
+					if (p.region == r.region || p.region == null || r.region == null) // null means water
 						continue;
 				}
 				
 				Edge edge = lookupEdgeFromCenter(p, r);
 				
-				if (edgeSelect == EdgeSelect.REGION_BORDERS && edge.river > riversThinnerThanThisWillNotBeDrawn)
+				if (ignoreRiverEdges && edge.river > riversThinnerThanThisWillNotBeDrawn)
 				{
 					// Don't draw region boundaries where there are rivers.
 					continue;
@@ -572,54 +565,73 @@ public abstract class VoronoiGraph {
 
 	}
     
-    // Render the interior of polygons.
+    /**
+     * Render the interior of polygons including noisy edges.
+     * @param g
+     * @param colorChooser Decides the color for each polygons. If it returns null, then the
+     * polygons will not be drawn.
+     */
     protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser) 
-    {
-      
-      for (final Center p : centers) 
-      {
-          for (final Center r : p.neighbors) 
-          {
-              Edge edge = lookupEdgeFromCenter(p, r);
-              
-              g.setColor(colorChooser.apply(p));
-              
-              if (noisyEdges.path0.get(edge.index) == null
-                  || noisyEdges.path1.get(edge.index) == null) 
-              {
-                // It's at the edge of the map, where we don't have
-                // the noisy edges computed. TODOO: figure out how to
-                // fill in these edges from the voronoi library.
-                continue;
-              }
+    {    	
+    	for (Center c : centers)
+    	{
+    		if (c.border)
+    		{
+				Color color = colorChooser.apply(c);
+				if (color != null)
+				{
+					g.setColor(color);
+					drawUsingTriangles(g, c);
+				}
+    		}
+    	}
+    	
+    	// Draw noisy edges.
+		for (final Center p : centers)
+		{
+			for (final Center r : p.neighbors)
+			{
+				Edge edge = lookupEdgeFromCenter(p, r);
 
- 
-            // Draw path0.
-            {
-	            List<Point> path = noisyEdges.path0.get(edge.index);
-	            java.awt.Polygon shape = new java.awt.Polygon();
-	            shape.addPoint((int)p.loc.x, (int)p.loc.y);
-	            for (Point point : path)
-	            {
-	            	shape.addPoint((int)point.x, (int)point.y);
-	            }
-	            g.fillPolygon(shape);
-            }
- 
-            // Draw path1.
-            {
-            	List<Point> path = noisyEdges.path1.get(edge.index);
-	            java.awt.Polygon shape = new java.awt.Polygon();
-	            shape.addPoint((int)p.loc.x, (int)p.loc.y);
-	            for (Point point : path)
-	            {
-	            	shape.addPoint((int)point.x, (int)point.y);
-	            }
-	            g.fillPolygon(shape);
-            }
+				Color color = colorChooser.apply(p);
+				if (color != null)
+				{
+					g.setColor(color);
 
-            }
-        }
+					if (noisyEdges.path0.get(edge.index) == null || noisyEdges.path1.get(edge.index) == null)
+					{
+						// It's at the edge of the map, where we don't have
+						// the noisy edges computed. TODOO: figure out how to
+						// fill in these edges from the voronoi library.
+						continue;
+					}
+
+					// Draw path0.
+					{
+						List<Point> path = noisyEdges.path0.get(edge.index);
+						java.awt.Polygon shape = new java.awt.Polygon();
+						shape.addPoint((int) p.loc.x, (int) p.loc.y);
+						for (Point point : path)
+						{
+							shape.addPoint((int) point.x, (int) point.y);
+						}
+						g.fillPolygon(shape);
+					}
+
+					// Draw path1.
+					{
+						List<Point> path = noisyEdges.path1.get(edge.index);
+						java.awt.Polygon shape = new java.awt.Polygon();
+						shape.addPoint((int) p.loc.x, (int) p.loc.y);
+						for (Point point : path)
+						{
+							shape.addPoint((int) point.x, (int) point.y);
+						}
+						g.fillPolygon(shape);
+					}
+				}
+			}
+		}
     }
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi
@@ -746,7 +758,7 @@ public abstract class VoronoiGraph {
         if (c == null) {
             c = new Corner();
             c.loc = p;
-            c.border = bounds.liesOnAxes(p);
+            c.border = bounds.liesOnAxes(p, scaleMultiplyer);
             c.index = corners.size();
             corners.add(c);
             pointCornerMap.put(key, c);

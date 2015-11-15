@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -100,6 +101,7 @@ public class MapCreator
 		BufferedImage land;
 		BufferedImage ocean;
 		DimensionDouble bounds;
+		BufferedImage fractalBG = null;
 		if (settings.generateBackground)
 		{
 			bounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
@@ -113,10 +115,19 @@ public class MapCreator
 				bounds = newBounds;
 			}			
 			
-			BufferedImage fractalBG = FractalBGGenerator.generate(
+			fractalBG = FractalBGGenerator.generate(
 					new Random(settings.backgroundRandomSeed), settings.fractalPower, 
 					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
-			land = ImageHelper.colorify2(fractalBG, settings.landColor);
+			if (!settings.drawRegionColors)
+			{
+				land = ImageHelper.colorify2(fractalBG, settings.landColor);
+				fractalBG = null;
+			}
+			else
+			{
+				// Drawing region colors must be done later because it depends on the graph.
+				land = null; // To make the compiler not complain.
+			}
 			ocean = ImageHelper.colorify2(fractalBG, settings.oceanColor);
 		}
 		else
@@ -166,6 +177,68 @@ public class MapCreator
 		if (mapParts != null)
 			mapParts.graph = graph;
 		
+		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
+		BufferedImage regionIndexes = null;
+		
+		if (settings.drawRegionColors)
+		{
+			// TODO Make colors a setting
+			Random r = new Random(settings.randomSeed);
+			float hVarience = 9;
+			float sVarience = 10;
+			float bVarience = 10;
+			
+			float[] hsb = new float[3];
+			Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), hsb);
+			
+			List<Color> colors = new ArrayList<>();
+			colors.add(ImageHelper.colorFromHSB(hsb[0]*360, hsb[1] * 255, hsb[2] * 255));
+			for (int i : new Range(255))
+			{				
+				colors.add(ImageHelper.colorFromHSB(hsb[0]*360 + (float)r.nextGaussian() * hVarience, 
+						ImageHelper.bound((int)(hsb[1] * 255 + r.nextGaussian() * sVarience)), 
+						ImageHelper.bound((int)(hsb[2] * 255 + r.nextGaussian() * bVarience))));
+			}
+			
+			double scale = 0.7;
+			List<Pair<Color>> regionColorOptions = colors.stream().map(
+					color -> new Pair<Color>(color, new Color((int)(color.getRed() * scale), 
+							(int)(color.getGreen() * scale), (int)(color.getBlue() * scale)))).collect(Collectors.toList());
+					
+			
+//			List<Pair<Color>> regionColorOptions = Arrays.asList(
+//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
+//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
+//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
+//					, Color.red),
+//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
+//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
+//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
+//					, Color.blue),
+//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
+//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
+//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
+//					, Color.yellow),
+//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
+//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
+//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
+//					, Color.orange),
+//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
+//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
+//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
+//					, Color.cyan),
+//					new Pair<>(new Color(173, 148, 98), Color.black));
+
+			assignRegionColors(graph, new Random(settings.randomSeed), regionColorOptions);
+			
+			regionIndexes = new BufferedImage(fractalBG.getWidth(), fractalBG.getHeight(), 
+					BufferedImage.TYPE_BYTE_GRAY);
+			graph.drawRegionIndexes(regionIndexes.createGraphics());
+			
+			land = drawRegionColors(graph, fractalBG, regionIndexes);
+		}
+		fractalBG = null;
+		
 		// Find the mean polygon width.
 		meanPolygonWidth = findMeanPolygonWidth(graph);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
@@ -214,11 +287,30 @@ public class MapCreator
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
-				ImageHelper.maximizeContrastGrayscale(landBlur);
-				// Remove the land blur from the ocean side of the borders.
-				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-				map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
+				
+				if (settings.drawRegionColors)
+				{
+					BufferedImage coastlineAndRegionBorders = ImageHelper.deepCopy(coastlineMask);
+					Graphics2D g = coastlineAndRegionBorders.createGraphics();
+					g.setColor(Color.white);
+					graph.drawRegionBorders(g, sizeMultiplyer, false);
+					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel);
+					ImageHelper.maximizeContrastGrayscale(landBlur);
+					// Remove the land blur from the ocean side of the borders and color the blur
+					// according to each region's blur color.
+					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+					Color[] colors = graph.politicalRegions.stream().map(reg -> reg.colors.getSecond())
+							.toArray(size -> new Color[size]);
+					map = ImageHelper.maskWithMultipleColors(map, colors, regionIndexes, landBlur, true);
+				}
+				else
+				{
+					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
+					ImageHelper.maximizeContrastGrayscale(landBlur);
+					// Remove the land blur from the ocean side of the borders.
+					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
+				}
 			}
 
 		}
@@ -230,8 +322,8 @@ public class MapCreator
 		Logger.println("Adding region borders");
 		{
 			Graphics2D g = map.createGraphics();
-			g.setColor(Color.red);
-			graph.drawRegionBorders(g, sizeMultiplyer * 2);
+			g.setColor(Color.black);
+			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
 		
 		// Add rivers.
@@ -367,6 +459,47 @@ public class MapCreator
 
 	}
 		
+	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
+	{	
+		Color[] regionBackgroundColors = graph.politicalRegions.stream().map(
+				reg -> reg.colors.getFirst()).toArray(size -> new Color[size]);
+		
+		return ImageHelper.colorify2Multi(fractalBG, regionBackgroundColors, pixelColors);
+	}
+	
+	/**
+	 * Determines the color of each political region.
+	 */
+	private void assignRegionColors(GraphImpl graph, Random rand, List<Pair<Color>> colorsOptions)
+	{
+		if (colorsOptions.isEmpty())
+			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
+		for (PoliticalRegion region : graph.politicalRegions)
+		{
+			// Find the set of colors of the region's neighbors.
+			Set<Pair<Color>> neighborColors = new HashSet<>();
+			for (PoliticalRegion neighbor : region.neighbors)
+			{
+				if (neighbor.colors != null)
+				{
+					neighborColors.add(neighbor.colors);
+				}
+			}
+			
+			Set<Pair<Color>> remainingColors = new HashSet<>(colorsOptions);
+			remainingColors.removeAll(neighborColors);
+			List<Pair<Color>> remainingColorsList = new ArrayList<>(remainingColors);
+			if (remainingColors.isEmpty())
+			{
+				region.colors = colorsOptions.get(rand.nextInt(colorsOptions.size()));
+			}
+			else
+			{
+				region.colors = remainingColorsList.get(rand.nextInt(remainingColorsList.size()));
+			}
+		}
+	}
+
 	private void drawRivers(GraphImpl graph, BufferedImage map, double sizeMultiplyer, Color riverColor)
 	{
 		Graphics2D g = map.createGraphics();
