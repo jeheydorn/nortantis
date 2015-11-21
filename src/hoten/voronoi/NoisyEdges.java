@@ -31,7 +31,7 @@ public class NoisyEdges
     }
 
     // Build noisy line paths for each of the Voronoi edges. There are
-    // two noisy line paths for each edge, each covering half the
+    // two noisy line paths for each edge, each covering half0 the
     // distance: path0 is from v0 to the midpoint and path1 is from v1
     // to the midpoint. When drawing the polygons, one or the other
     // must be drawn in reverse order.
@@ -51,7 +51,7 @@ public class NoisyEdges
 				Point s = Point.interpolate(edge.v1.loc, edge.d1.loc, f);
 
 				int minLength = 100;
-				if (edge.d0.region != edge.d1.region) minLength = 4;
+				if (edge.d0.region != edge.d1.region) minLength = 3;
 				if (edge.d0.border != edge.d1.border) minLength = 3;
 				if (edge.d0.coast || edge.d1.coast) minLength = 3;
 				if (edge.river != 0) minLength = 2;

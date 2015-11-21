@@ -270,18 +270,17 @@ public class MapCreator
 			}
 
 		}
-		
-		// Store the current version of the map for a background when drawing icons later.
-		BufferedImage landBackground = ImageHelper.deepCopy(map);
-		
-		// TODO Make this a setting.
-		Logger.println("Adding region borders");
+			
+		if (settings.drawRegionColors)
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
 			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
-		
+
+		// Store the current version of the map for a background when drawing icons later.
+		BufferedImage landBackground = ImageHelper.deepCopy(map);
+
 		// Add rivers.
 		Logger.println("Adding rivers.");
 //		StopWatch riverSw = new StopWatch();
@@ -450,10 +449,11 @@ public class MapCreator
 	/**
 	 * Determines the color of each political region.
 	 */
-	private void assignRegionColors(GraphImpl graph, Random rand, List<Color> colorsOptions)
+	private void assignRegionColors(GraphImpl graph, Random rand, List<Color> colorOptions)
 	{
-		if (colorsOptions.isEmpty())
+		if (colorOptions.isEmpty())
 			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
+		List<Color> notSampled = new ArrayList<>(colorOptions);
 		for (PoliticalRegion region : graph.politicalRegions)
 		{
 			// Find the set of colors of the region's neighbors.
@@ -466,16 +466,27 @@ public class MapCreator
 				}
 			}
 			
-			Set<Color> remainingColors = new HashSet<>(colorsOptions);
+			Set<Color> remainingColors = new HashSet<>(notSampled);
 			remainingColors.removeAll(neighborColors);
 			List<Color> remainingColorsList = new ArrayList<>(remainingColors);
 			if (remainingColors.isEmpty())
 			{
-				region.backgroundColor = colorsOptions.get(rand.nextInt(colorsOptions.size()));
+				// The neighbors have taken all of the colors.;
+				int index = rand.nextInt(notSampled.size());
+				region.backgroundColor = notSampled.get(index);
+				notSampled.remove(index); // sample without replacement
 			}
 			else
 			{
-				region.backgroundColor = remainingColorsList.get(rand.nextInt(remainingColorsList.size()));
+				int index = rand.nextInt(remainingColorsList.size());
+				region.backgroundColor = remainingColorsList.get(index);
+				notSampled.remove(remainingColorsList.get(index));
+			}
+			
+			if (notSampled.isEmpty())
+			{
+				// Refill
+				notSampled = new ArrayList<>(colorOptions);
 			}
 		}
 	}

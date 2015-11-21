@@ -18,11 +18,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.TreeMap;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import nortantis.PlateType;
 import nortantis.StopWatch;
 import nortantis.TectonicPlate;
-import util.Function;
 import util.Range;
 
 /**
@@ -39,12 +40,12 @@ public abstract class VoronoiGraph {
     final protected Random rand;
     public BufferedImage img;
     protected Color OCEAN, RIVER, LAKE, BEACH;
-    NoisyEdges noisyEdges;
+    protected NoisyEdges noisyEdges;
     /**
      * This controls how many rivers there are. Bigger means more.
      */
 	private double riverDensity = 1.0/14.0;
-	private double scaleMultiplyer;
+	protected double scaleMultiplyer;
 	private int riversThinnerThanThisWillNotBeDrawn = 2;
 
 
@@ -91,8 +92,7 @@ public abstract class VoronoiGraph {
         redistributeMoisture(landCorners());
         assignPolygonMoisture();
         assignBiomes();
-        noisyEdges = new NoisyEdges(scaleMultiplyer);  
-        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
+        // Joseph note: I moved noisy edge building code to GraphImpl because it now depends on the political regions.
     }
     
     abstract protected Enum<?> getBiome(Center p);
@@ -213,7 +213,8 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), EdgeSelect.COASTLINE, false);
+        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.ocean != edge.d1.ocean;
+        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), shouldDraw);
         	return;
         }
        
@@ -242,7 +243,7 @@ public abstract class VoronoiGraph {
 				{
 					if (drawLandAndOceanBlackAndWhiteOnly)
 					{
-						return getColor(c.biome) == OCEAN ? Color.black : Color.white;
+						return c.ocean ? Color.black : Color.white;
 					}
 					else
 					{
@@ -484,21 +485,25 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.COASTLINE, false);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.ocean != edge.d1.ocean);
     }
 
     public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), EdgeSelect.REGION_BORDERS, ignoreRiverEdges);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> 
+    	{
+			if (ignoreRiverEdges && edge.river > riversThinnerThanThisWillNotBeDrawn)
+			{
+				// Don't draw region boundaries where there are rivers.
+				return false;
+			}
+
+    		return edge.d0.region != edge.d1.region;
+    	});
     }
-   
-    private enum EdgeSelect
-    {
-    	COASTLINE,
-    	REGION_BORDERS
-    }
-        
-	private void drawSpecifiedEdges(Graphics2D g, int width, EdgeSelect edgeSelect, boolean ignoreRiverEdges)
+           
+	private void drawSpecifiedEdges(Graphics2D g, int width, 
+			Function<Edge, Boolean> shouldDraw)
 	{		
 		g.setStroke(new BasicStroke(width));
 		
@@ -506,24 +511,11 @@ public abstract class VoronoiGraph {
 		{
 			for (final Center r : p.neighbors)
 			{
-				if (edgeSelect == EdgeSelect.COASTLINE)
-				{
-					if (p.ocean == r.ocean)
-						continue;
-				}
-				else if (edgeSelect == EdgeSelect.REGION_BORDERS)
-				{
-					if (p.region == r.region || p.region == null || r.region == null) // null means water
-						continue;
-				}
 				
 				Edge edge = lookupEdgeFromCenter(p, r);
 				
-				if (ignoreRiverEdges && edge.river > riversThinnerThanThisWillNotBeDrawn)
-				{
-					// Don't draw region boundaries where there are rivers.
+				if (!shouldDraw.apply(edge))
 					continue;
-				}
 
 				if (noisyEdges.path0.get(edge.index) == null
 						|| noisyEdges.path1.get(edge.index) == null)
@@ -573,6 +565,7 @@ public abstract class VoronoiGraph {
      */
     protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser) 
     {    	
+    	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
     	for (Center c : centers)
     	{
     		if (c.border)
@@ -601,8 +594,7 @@ public abstract class VoronoiGraph {
 					if (noisyEdges.path0.get(edge.index) == null || noisyEdges.path1.get(edge.index) == null)
 					{
 						// It's at the edge of the map, where we don't have
-						// the noisy edges computed. TODOO: figure out how to
-						// fill in these edges from the voronoi library.
+						// the noisy edges computed. These are already drawn using triangles previously in this method.
 						continue;
 					}
 

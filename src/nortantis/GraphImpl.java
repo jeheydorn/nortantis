@@ -4,6 +4,7 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
+import hoten.voronoi.NoisyEdges;
 import hoten.voronoi.VoronoiGraph;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 
@@ -126,7 +127,8 @@ public class GraphImpl extends VoronoiGraph
         BEACH = ColorData.BEACH.color;
         RIVER = new Color(0x225588);
         createPoliticalRegions();
-        
+        noisyEdges = new NoisyEdges(scaleMultiplyer);  
+        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
      }
     
     @SuppressWarnings("unused")
@@ -360,16 +362,6 @@ public class GraphImpl extends VoronoiGraph
     	
     	return explored;
     }
-    
-    private class BFSException extends Exception
-    {
-    	public Center center;
-
-		public BFSException(Center c)
-    	{
-    		this.center = c;
-    	}
-    }
 
 	public void paintWithTectonicPlateVelocity(Graphics2D g)
     {
@@ -401,13 +393,7 @@ public class GraphImpl extends VoronoiGraph
             drawUsingTriangles(g, c);
         } 	
         
-        renderPolygons(g, new Function<Center, Color>() 
-    		{
-				public Color apply(Center c)
-				{
-					return c.border ? Color.white : Color.black;
-				}        			
-    		});
+        renderPolygons(g, c -> c.border ? Color.white : Color.black);
     }
     
     public int getWidth()
