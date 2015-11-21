@@ -14,7 +14,7 @@ public class PoliticalRegion
 	public Set<Center> getCenters() { return Collections.unmodifiableSet(centers); }
 	public int id;
 	public Set<PoliticalRegion> neighbors;
-	public Pair<Color> colors;
+	public Color backgroundColor;
 	
 	public PoliticalRegion()
 	{

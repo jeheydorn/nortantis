@@ -63,6 +63,8 @@ public class MapCreator
 	private final double mountainScale = 1.0;
 	// Hill images are scaled by this.
 	private final double hillScale = 0.5;	
+	private final double regionBlurColorScale = 0.7;
+
 	
 	private List<IconDrawTask> iconsToDraw;
 	
@@ -182,54 +184,7 @@ public class MapCreator
 		
 		if (settings.drawRegionColors)
 		{
-			// TODO Make colors a setting
-			Random r = new Random(settings.randomSeed);
-			float hVarience = 9;
-			float sVarience = 10;
-			float bVarience = 10;
-			
-			float[] hsb = new float[3];
-			Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), hsb);
-			
-			List<Color> colors = new ArrayList<>();
-			colors.add(ImageHelper.colorFromHSB(hsb[0]*360, hsb[1] * 255, hsb[2] * 255));
-			for (int i : new Range(255))
-			{				
-				colors.add(ImageHelper.colorFromHSB(hsb[0]*360 + (float)r.nextGaussian() * hVarience, 
-						ImageHelper.bound((int)(hsb[1] * 255 + r.nextGaussian() * sVarience)), 
-						ImageHelper.bound((int)(hsb[2] * 255 + r.nextGaussian() * bVarience))));
-			}
-			
-			double scale = 0.7;
-			List<Pair<Color>> regionColorOptions = colors.stream().map(
-					color -> new Pair<Color>(color, new Color((int)(color.getRed() * scale), 
-							(int)(color.getGreen() * scale), (int)(color.getBlue() * scale)))).collect(Collectors.toList());
-					
-			
-//			List<Pair<Color>> regionColorOptions = Arrays.asList(
-//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
-//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
-//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
-//					, Color.red),
-//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
-//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
-//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
-//					, Color.blue),
-//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
-//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
-//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
-//					, Color.yellow),
-//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
-//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
-//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
-//					, Color.orange),
-//					new Pair<Color>(new Color(ImageHelper.bound(173 + (int)(r.nextGaussian()*varience)),
-//							ImageHelper.bound(148 + (int)(r.nextGaussian()*varience)), 
-//							ImageHelper.bound(98 + (int)(r.nextGaussian()*varience)))
-//					, Color.cyan),
-//					new Pair<>(new Color(173, 148, 98), Color.black));
-
-			assignRegionColors(graph, new Random(settings.randomSeed), regionColorOptions);
+			assignRandomRegionColors(graph, settings);
 			
 			regionIndexes = new BufferedImage(fractalBG.getWidth(), fractalBG.getHeight(), 
 					BufferedImage.TYPE_BYTE_GRAY);
@@ -299,7 +254,8 @@ public class MapCreator
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-					Color[] colors = graph.politicalRegions.stream().map(reg -> reg.colors.getSecond())
+					Color[] colors = graph.politicalRegions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
+							(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale)))
 							.toArray(size -> new Color[size]);
 					map = ImageHelper.maskWithMultipleColors(map, colors, regionIndexes, landBlur, true);
 				}
@@ -322,7 +278,7 @@ public class MapCreator
 		Logger.println("Adding region borders");
 		{
 			Graphics2D g = map.createGraphics();
-			g.setColor(Color.black);
+			g.setColor(settings.coastlineColor);
 			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
 		
@@ -462,40 +418,64 @@ public class MapCreator
 	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
 	{	
 		Color[] regionBackgroundColors = graph.politicalRegions.stream().map(
-				reg -> reg.colors.getFirst()).toArray(size -> new Color[size]);
+				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
 		
 		return ImageHelper.colorify2Multi(fractalBG, regionBackgroundColors, pixelColors);
+	}
+	
+	private void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
+	{
+		// TODO Make color ranges a setting
+		float hVarience = 0;
+		float sVarience = 10;
+		float bVarience = 30;
+		
+		float[] hsb = new float[3];
+		Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), hsb);
+		
+		List<Color> regionColorOptions = new ArrayList<>();
+		regionColorOptions.add(ImageHelper.colorFromHSB(hsb[0]*360, hsb[1] * 255, hsb[2] * 255));
+		Random rand = new Random(settings.backgroundRandomSeed);
+		// 255 is because indexes to the region colors will later be stored in an image.
+		for (@SuppressWarnings("unused") int i : new Range(255)) 
+		{				
+			regionColorOptions.add(ImageHelper.colorFromHSB(hsb[0]*360 + (float)rand.nextGaussian() * hVarience, 
+					ImageHelper.bound((int)(hsb[1] * 255 + rand.nextGaussian() * sVarience)), 
+					ImageHelper.bound((int)(hsb[2] * 255 + rand.nextGaussian() * bVarience))));
+		}					
+		
+		assignRegionColors(graph, new Random(settings.randomSeed), regionColorOptions);
 	}
 	
 	/**
 	 * Determines the color of each political region.
 	 */
-	private void assignRegionColors(GraphImpl graph, Random rand, List<Pair<Color>> colorsOptions)
+	private void assignRegionColors(GraphImpl graph, Random rand, List<Color> colorsOptions)
 	{
 		if (colorsOptions.isEmpty())
 			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
 		for (PoliticalRegion region : graph.politicalRegions)
 		{
 			// Find the set of colors of the region's neighbors.
-			Set<Pair<Color>> neighborColors = new HashSet<>();
+			Set<Color> neighborColors = new HashSet<>();
 			for (PoliticalRegion neighbor : region.neighbors)
 			{
-				if (neighbor.colors != null)
+				if (neighbor.backgroundColor != null)
 				{
-					neighborColors.add(neighbor.colors);
+					neighborColors.add(neighbor.backgroundColor);
 				}
 			}
 			
-			Set<Pair<Color>> remainingColors = new HashSet<>(colorsOptions);
+			Set<Color> remainingColors = new HashSet<>(colorsOptions);
 			remainingColors.removeAll(neighborColors);
-			List<Pair<Color>> remainingColorsList = new ArrayList<>(remainingColors);
+			List<Color> remainingColorsList = new ArrayList<>(remainingColors);
 			if (remainingColors.isEmpty())
 			{
-				region.colors = colorsOptions.get(rand.nextInt(colorsOptions.size()));
+				region.backgroundColor = colorsOptions.get(rand.nextInt(colorsOptions.size()));
 			}
 			else
 			{
-				region.colors = remainingColorsList.get(rand.nextInt(remainingColorsList.size()));
+				region.backgroundColor = remainingColorsList.get(rand.nextInt(remainingColorsList.size()));
 			}
 		}
 	}
