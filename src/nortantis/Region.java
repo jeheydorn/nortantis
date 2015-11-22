@@ -8,15 +8,20 @@ import java.util.*;
 
 import util.Pair;
 
-public class PoliticalRegion
+/**
+ * Represents a political region on the map.
+ * @author joseph
+ *
+ */
+public class Region
 {
 	private Set<Center> centers;
 	public Set<Center> getCenters() { return Collections.unmodifiableSet(centers); }
 	public int id;
-	public Set<PoliticalRegion> neighbors;
+	public Set<Region> neighbors;
 	public Color backgroundColor;
 	
-	public PoliticalRegion()
+	public Region()
 	{
 		this.centers = new HashSet<>();
 		this.neighbors = new HashSet<>();

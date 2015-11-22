@@ -5,7 +5,7 @@ import hoten.geom.Point;
 import java.util.ArrayList;
 import java.util.Set;
 
-import nortantis.PoliticalRegion;
+import nortantis.Region;
 import nortantis.TectonicPlate;
 
 /**
@@ -29,7 +29,7 @@ public class Center
 	public Enum<?> biome;
     public double area;
     public TectonicPlate tectonicPlate;
-    public PoliticalRegion region;
+    public Region region;
     // neighborsNotInSamePlateCount is only here to make GraphImpl.createTectonicPlates faster.
     public int neighborsNotInSamePlateCount;
     public Integer mountainRangeId;

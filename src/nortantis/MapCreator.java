@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
@@ -120,6 +121,7 @@ public class MapCreator
 			fractalBG = FractalBGGenerator.generate(
 					new Random(settings.backgroundRandomSeed), settings.fractalPower, 
 					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
+			ocean = ImageHelper.colorify2(fractalBG, settings.oceanColor);
 			if (!settings.drawRegionColors)
 			{
 				land = ImageHelper.colorify2(fractalBG, settings.landColor);
@@ -130,7 +132,6 @@ public class MapCreator
 				// Drawing region colors must be done later because it depends on the graph.
 				land = null; // To make the compiler not complain.
 			}
-			ocean = ImageHelper.colorify2(fractalBG, settings.oceanColor);
 		}
 		else
 		{
@@ -254,7 +255,7 @@ public class MapCreator
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-					Color[] colors = graph.politicalRegions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
+					Color[] colors = graph.regions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
 							(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale)))
 							.toArray(size -> new Color[size]);
 					map = ImageHelper.maskWithMultipleColors(map, colors, regionIndexes, landBlur, true);
@@ -416,7 +417,7 @@ public class MapCreator
 		
 	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
 	{	
-		Color[] regionBackgroundColors = graph.politicalRegions.stream().map(
+		Color[] regionBackgroundColors = graph.regions.stream().map(
 				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
 		
 		return ImageHelper.colorify2Multi(fractalBG, regionBackgroundColors, pixelColors);
@@ -424,26 +425,23 @@ public class MapCreator
 	
 	private void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
 	{
-		// TODO Make color ranges a setting
-		float hVarience = 0;
-		float sVarience = 10;
-		float bVarience = 30;
 		
-		float[] hsb = new float[3];
-		Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), hsb);
+		float[] landHsb = new float[3];
+		Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), landHsb);
 		
 		List<Color> regionColorOptions = new ArrayList<>();
-		regionColorOptions.add(ImageHelper.colorFromHSB(hsb[0]*360, hsb[1] * 255, hsb[2] * 255));
-		Random rand = new Random(settings.backgroundRandomSeed);
-		// 255 is because indexes to the region colors will later be stored in an image.
-		for (@SuppressWarnings("unused") int i : new Range(255)) 
+		Random rand = new Random(settings.regionsRandomSeed);
+		for (@SuppressWarnings("unused") int i : new Range(graph.regions.size())) 
 		{				
-			regionColorOptions.add(ImageHelper.colorFromHSB(hsb[0]*360 + (float)rand.nextGaussian() * hVarience, 
-					ImageHelper.bound((int)(hsb[1] * 255 + rand.nextGaussian() * sVarience)), 
-					ImageHelper.bound((int)(hsb[2] * 255 + rand.nextGaussian() * bVarience))));
-		}					
+			float hue = (float)(landHsb[0] * 360 + (rand.nextDouble() - 0.5) * settings.hueRange);
+			float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * settings.saturationRange));
+			float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * settings.brightnessRange));
+			regionColorOptions.add(ImageHelper.colorFromHSB(hue, saturation, brightness));
+		}	
 		
-		assignRegionColors(graph, new Random(settings.randomSeed), regionColorOptions);
+		
+		// Create a new Random object so that changes 
+		assignRegionColors(graph, new Random(settings.regionsRandomSeed), regionColorOptions);
 	}
 	
 	/**
@@ -454,11 +452,11 @@ public class MapCreator
 		if (colorOptions.isEmpty())
 			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
 		List<Color> notSampled = new ArrayList<>(colorOptions);
-		for (PoliticalRegion region : graph.politicalRegions)
+		for (Region region : graph.regions)
 		{
 			// Find the set of colors of the region's neighbors.
 			Set<Color> neighborColors = new HashSet<>();
-			for (PoliticalRegion neighbor : region.neighbors)
+			for (Region neighbor : region.neighbors)
 			{
 				if (neighbor.backgroundColor != null)
 				{
@@ -468,16 +466,16 @@ public class MapCreator
 			
 			Set<Color> remainingColors = new HashSet<>(notSampled);
 			remainingColors.removeAll(neighborColors);
-			List<Color> remainingColorsList = new ArrayList<>(remainingColors);
 			if (remainingColors.isEmpty())
 			{
-				// The neighbors have taken all of the colors.;
+				// The neighbors have taken all of the colors.
 				int index = rand.nextInt(notSampled.size());
 				region.backgroundColor = notSampled.get(index);
 				notSampled.remove(index); // sample without replacement
 			}
 			else
 			{
+				List<Color> remainingColorsList = new ArrayList<>(remainingColors);
 				int index = rand.nextInt(remainingColorsList.size());
 				region.backgroundColor = remainingColorsList.get(index);
 				notSampled.remove(remainingColorsList.get(index));

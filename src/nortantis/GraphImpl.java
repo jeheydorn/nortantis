@@ -64,7 +64,7 @@ public class GraphImpl extends VoronoiGraph
 	    
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
-    List<PoliticalRegion> politicalRegions;
+    List<Region> regions;
        
     /*
        Colors converted to rgb:
@@ -134,7 +134,7 @@ public class GraphImpl extends VoronoiGraph
     @SuppressWarnings("unused")
 	private void testPoliticalRegions()
     {
-        for (PoliticalRegion region : politicalRegions)
+        for (Region region : regions)
         {
         	for (Center c : region.getCenters())
         	{
@@ -145,7 +145,7 @@ public class GraphImpl extends VoronoiGraph
         	
         	assert centers.stream().filter(c -> c.region == region).count() == region.size();
         }
-        assert new HashSet<>(politicalRegions).size() == politicalRegions.size();
+        assert new HashSet<>(regions).size() == regions.size();
         for (Center c : centers)
         {
         	if (!c.water)
@@ -159,10 +159,10 @@ public class GraphImpl extends VoronoiGraph
         	
         	if (c.region != null)
         	{
-        		assert politicalRegions.stream().filter(reg -> reg.contains(c)).count() == 1;
+        		assert regions.stream().filter(reg -> reg.contains(c)).count() == 1;
         	}
         }
-        assert politicalRegions.stream().mapToInt(reg -> reg.size()).sum() 
+        assert regions.stream().mapToInt(reg -> reg.size()).sum() 
         		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
     }
     
@@ -178,18 +178,18 @@ public class GraphImpl extends VoronoiGraph
     private void createPoliticalRegions()
 	{
 		// Regions start as land Centers on continental plates.
-    	politicalRegions = new ArrayList<>();
+    	regions = new ArrayList<>();
     	for (TectonicPlate plate : plates)
     	{
     		if (plate.type == PlateType.Continental)
     		{
-    			PoliticalRegion region = new PoliticalRegion();	
+    			Region region = new Region();	
     			plate.centers.stream().filter(c -> !c.water).forEach(c -> region.add(c));
-    			politicalRegions.add(region);
+    			regions.add(region);
     		}
     	}
     	    	    	
-       	for (PoliticalRegion region : politicalRegions)
+       	for (Region region : regions)
     	{
     		// For each region, divide it by land masses separated by water.
     		List<Set<Center>> dividedRegion = divideRegionByLand(region);
@@ -205,7 +205,7 @@ public class GraphImpl extends VoronoiGraph
     				if (regionPart == biggest)
     					continue;
 		        	// If that small land mass is connected by land to a different region, then add that land mass to that region.
-	    			PoliticalRegion touchingRegion = findRegionTouching(regionPart);
+	    			Region touchingRegion = findRegionTouching(regionPart);
 	    			if (touchingRegion != null)
 	    			{
 	    				assert region != touchingRegion;
@@ -230,27 +230,27 @@ public class GraphImpl extends VoronoiGraph
        	
     	// For each region, if region is smaller than minPoliticalRegionSize, make it not a region and add it to smallLandMasses.
     	List<Integer> toRemove = new ArrayList<>();
-    	for (int i : new Range(politicalRegions.size()))
+    	for (int i : new Range(regions.size()))
     	{
-    		if (politicalRegions.get(i).size() < minPoliticalRegionSize)
+    		if (regions.get(i).size() < minPoliticalRegionSize)
     		{
     			toRemove.add(i);
-    			Set<Center> smallLandMass = new HashSet<>(politicalRegions.get(i).getCenters());
+    			Set<Center> smallLandMass = new HashSet<>(regions.get(i).getCenters());
     			smallLandMasses.add(smallLandMass);
     		}
     	}
     	Collections.reverse(toRemove);
     	for (int i : toRemove)
     	{
-    		politicalRegions.get(i).clear(); // This updates the region pointers in the Centers.
-    		politicalRegions.remove(i);
+    		regions.get(i).clear(); // This updates the region pointers in the Centers.
+    		regions.remove(i);
     	}
 
     	// For each land mass in smallLandMasses, add it to the region nearest its centroid.
     	for (Set<Center> landMass : smallLandMasses)
     	{
     		Point centroid = GraphImpl.findCentroid(landMass);
-    		PoliticalRegion closest = findClosestRegion(centroid);
+    		Region closest = findClosestRegion(centroid);
     		if (closest != null)
     		{
     			closest.addAll(landMass);
@@ -258,26 +258,26 @@ public class GraphImpl extends VoronoiGraph
     		else
     		{
     			// This will probably never happen because it means there are no regions on the map at all.
-    			PoliticalRegion region = new PoliticalRegion();
+    			Region region = new Region();
     			region.addAll(landMass);
-    			politicalRegions.add(region);
+    			regions.add(region);
     		}
     	}
     	
     	// Set the id of each region.
-    	for (int i : new Range(politicalRegions.size()))
+    	for (int i : new Range(regions.size()))
     	{
-    		politicalRegions.get(i).id = i;
+    		regions.get(i).id = i;
     	}
     	
     	// Find neighbors of each region.
-    	politicalRegions.stream().forEach(reg -> reg.findNeighbors());
+    	regions.stream().forEach(reg -> reg.findNeighbors());
 	}
     
     /**
      * Finds the region closest (in terms of Cartesian distance) to the given point.
      */
-    private PoliticalRegion findClosestRegion(Point point)
+    private Region findClosestRegion(Point point)
     {
     	Optional<Center> opt = centers.stream().filter(c -> c.region != null)
     		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
@@ -298,7 +298,7 @@ public class GraphImpl extends VoronoiGraph
      * 
      * Assumes all Centers in landMass either all have the same region, or are all null.
      */
-    private PoliticalRegion findRegionTouching(Set<Center> landMass)
+    private Region findRegionTouching(Set<Center> landMass)
     {
     	for (Center center : landMass)
     	{
@@ -318,7 +318,7 @@ public class GraphImpl extends VoronoiGraph
      * @param region
      * @return
      */
-    private List<Set<Center>> divideRegionByLand(PoliticalRegion region)
+    private List<Set<Center>> divideRegionByLand(Region region)
     {
     	Set<Center> remaining = new HashSet<>(region.getCenters());
     	List<Set<Center>> dividedRegion = new ArrayList<>();

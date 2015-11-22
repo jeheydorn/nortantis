@@ -199,7 +199,7 @@ public class TextDrawer
 		addTitle(map, graph, g);
 		
 		g.setFont(regionFontScaled);
-		for (PoliticalRegion region : graph.politicalRegions)
+		for (Region region : graph.regions)
 		{
 			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
 			String name = generateName("","");
