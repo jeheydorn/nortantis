@@ -650,6 +650,14 @@ public class RunSwing
 				btnBrowseOceanBackground.setEnabled(!rdbtnGenerated.isSelected());
 				oceanBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
 				landBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
+				
+				drawRegionsCheckBox.setEnabled(rdbtnGenerated.isSelected());
+				boolean regionControlsSelected = rdbtnGenerated.isSelected() && drawRegionsCheckBox.isSelected();
+				hueSlider.setEnabled(regionControlsSelected);
+				saturationSlider.setEnabled(regionControlsSelected);
+				brightnessSlider.setEnabled(regionControlsSelected);
+				regionsSeedTextField.setEnabled(regionControlsSelected);
+				newRegionSeedButton.setEnabled(regionControlsSelected);
 			}		
 		};
 		
@@ -677,7 +685,7 @@ public class RunSwing
 		regionsPanel.setLayout(null);
 		
 		drawRegionsCheckBox = new JCheckBox("Draw Regions");
-		drawRegionsCheckBox.setToolTipText("When checked, political region borders and background colors will be drawn.");
+		drawRegionsCheckBox.setToolTipText("When checked, political region borders and background colors will be drawn. This will only work with generated background image.");
 		drawRegionsCheckBox.setBounds(8, 0, 129, 23);
 		drawRegionsCheckBox.addActionListener(new ActionListener()
 		{

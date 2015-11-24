@@ -236,27 +236,27 @@ public class EditTextDialog extends JDialog
 					runSwing.saveSettings(mapDisplayPanel);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_A) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Add);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_E) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Edit);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_R) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Rotate);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_G) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Move);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_D) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK | KeyEvent.SHIFT_DOWN_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Delete);
 				}
@@ -271,23 +271,23 @@ public class EditTextDialog extends JDialog
 	{
 		if (toolComboBox.getSelectedItem() == ToolType.Add)
 		{
-			toolComboBox.setToolTipText("Add new text of the selected text type (ctrl+shift+A)");
+			toolComboBox.setToolTipText("Add new text of the selected text type (ctrl+A)");
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Edit)
 		{
-			toolComboBox.setToolTipText("Edit text (ctrl+shift+E)");			
+			toolComboBox.setToolTipText("Edit text (ctrl+E)");			
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Move)
 		{
-			toolComboBox.setToolTipText("Move text (ctrl+shift+G)");			
+			toolComboBox.setToolTipText("Move text (ctrl+G)");			
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Rotate)
 		{
-			toolComboBox.setToolTipText("Rotate text (ctrl+shift+R)");			
+			toolComboBox.setToolTipText("Rotate text (ctrl+R)");			
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Delete)
 		{
-			toolComboBox.setToolTipText("Delete text (ctrl+shift+D)");			
+			toolComboBox.setToolTipText("Delete text (ctrl+D)");			
 		}
 	}
 	

@@ -272,15 +272,15 @@ public class MapCreator
 
 		}
 			
+		// Store the current version of the map for a background when drawing icons later.
+		BufferedImage landBackground = ImageHelper.deepCopy(map);
+		
 		if (settings.drawRegionColors)
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
 			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
-
-		// Store the current version of the map for a background when drawing icons later.
-		BufferedImage landBackground = ImageHelper.deepCopy(map);
 
 		// Add rivers.
 		Logger.println("Adding rivers.");
@@ -370,11 +370,20 @@ public class MapCreator
 			graph.drawCoastline(g, sizeMultiplyer);
 		}
 		
+		// TODO
+//		if (settings.drawRegionColors)
+//		{
+//			Graphics2D g = landBackground.createGraphics();
+//			g.setColor(settings.coastlineColor);
+//			graph.drawRegionBorders(g, sizeMultiplyer, true);
+//		}
+		
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
 		// because I might draw the text later.
 		drawRivers(graph, landBackground, sizeMultiplyer, settings.riverColor);
 		if (mapParts != null)
 			mapParts.landBackground = landBackground;
+		
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
