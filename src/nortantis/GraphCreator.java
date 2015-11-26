@@ -2,8 +2,14 @@ package nortantis;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+
+import javax.imageio.ImageIO;
 
 import util.Logger;
 
@@ -36,7 +42,7 @@ public class GraphCreator
 		Logger.println("Time to generate graph (in seconds): " + elapsedTime
 				/ 1000.0);
 
-        // Draw elevation map with tectonic plate boundaries.
+        // Draw elevation map with tectonic plate boundaries. 
 //        {
 //	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
 //	        Graphics2D g = elevationImg.createGraphics();
@@ -46,8 +52,8 @@ public class GraphCreator
 //	        File elevationfile = new File("elevation.png");
 //	        ImageIO.write(elevationImg, "png", elevationfile);
 //       }
-
-//        final BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+//
+//        final BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
 //        Graphics2D g = img.createGraphics();
 //        boolean drawPlates = false;
 //        boolean drawElevations = false;

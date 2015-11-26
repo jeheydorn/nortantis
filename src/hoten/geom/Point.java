@@ -21,6 +21,11 @@ public class Point implements Comparable<Point>, Serializable
         this.x = x;
         this.y = y;
     }
+    
+    public double distanceTo(Point other)
+    {
+    	return distance(this, other);
+    }
         
     /**
      * Returns a new point whose value is this point minus other.

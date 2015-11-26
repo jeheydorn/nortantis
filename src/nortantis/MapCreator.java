@@ -28,6 +28,8 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -62,6 +64,8 @@ public class MapCreator
 	private final double mountainScale = 1.0;
 	// Hill images are scaled by this.
 	private final double hillScale = 0.5;	
+	private final double regionBlurColorScale = 0.7;
+
 	
 	private List<IconDrawTask> iconsToDraw;
 	
@@ -100,6 +104,7 @@ public class MapCreator
 		BufferedImage land;
 		BufferedImage ocean;
 		DimensionDouble bounds;
+		BufferedImage fractalBG = null;
 		if (settings.generateBackground)
 		{
 			bounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
@@ -113,11 +118,20 @@ public class MapCreator
 				bounds = newBounds;
 			}			
 			
-			BufferedImage fractalBG = FractalBGGenerator.generate(
+			fractalBG = FractalBGGenerator.generate(
 					new Random(settings.backgroundRandomSeed), settings.fractalPower, 
 					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
-			land = ImageHelper.colorify2(fractalBG, settings.landColor);
 			ocean = ImageHelper.colorify2(fractalBG, settings.oceanColor);
+			if (!settings.drawRegionColors)
+			{
+				land = ImageHelper.colorify2(fractalBG, settings.landColor);
+				fractalBG = null;
+			}
+			else
+			{
+				// Drawing region colors must be done later because it depends on the graph.
+				land = null; // To make the compiler not complain.
+			}
 		}
 		else
 		{
@@ -166,6 +180,21 @@ public class MapCreator
 		if (mapParts != null)
 			mapParts.graph = graph;
 		
+		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
+		BufferedImage regionIndexes = null;
+		
+		if (settings.drawRegionColors)
+		{
+			assignRandomRegionColors(graph, settings);
+			
+			regionIndexes = new BufferedImage(fractalBG.getWidth(), fractalBG.getHeight(), 
+					BufferedImage.TYPE_BYTE_GRAY);
+			graph.drawRegionIndexes(regionIndexes.createGraphics());
+			
+			land = drawRegionColors(graph, fractalBG, regionIndexes);
+		}
+		fractalBG = null;
+		
 		// Find the mean polygon width.
 		meanPolygonWidth = findMeanPolygonWidth(graph);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
@@ -177,7 +206,7 @@ public class MapCreator
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
 		BufferedImage landMask = new BufferedImage(graph.getWidth(),
-				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
 		{
 			Graphics2D g = landMask.createGraphics();
 			graph.paint(g, false, false, false, true, true, false, false);
@@ -214,18 +243,45 @@ public class MapCreator
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
-				ImageHelper.maximizeContrastGrayscale(landBlur);
-				// Remove the land blur from the ocean side of the borders.
-				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-				map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
+				
+				if (settings.drawRegionColors)
+				{
+					BufferedImage coastlineAndRegionBorders = ImageHelper.deepCopy(coastlineMask);
+					Graphics2D g = coastlineAndRegionBorders.createGraphics();
+					g.setColor(Color.white);
+					graph.drawRegionBorders(g, sizeMultiplyer, false);
+					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel);
+					ImageHelper.maximizeContrastGrayscale(landBlur);
+					// Remove the land blur from the ocean side of the borders and color the blur
+					// according to each region's blur color.
+					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+					Color[] colors = graph.regions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
+							(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale)))
+							.toArray(size -> new Color[size]);
+					map = ImageHelper.maskWithMultipleColors(map, colors, regionIndexes, landBlur, true);
+				}
+				else
+				{
+					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
+					ImageHelper.maximizeContrastGrayscale(landBlur);
+					// Remove the land blur from the ocean side of the borders.
+					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
+				}
 			}
 
 		}
-
+			
 		// Store the current version of the map for a background when drawing icons later.
 		BufferedImage landBackground = ImageHelper.deepCopy(map);
 		
+		if (settings.drawRegionColors)
+		{
+			Graphics2D g = map.createGraphics();
+			g.setColor(settings.coastlineColor);
+			graph.drawRegionBorders(g, sizeMultiplyer, true);
+		}
+
 		// Add rivers.
 		Logger.println("Adding rivers.");
 //		StopWatch riverSw = new StopWatch();
@@ -313,12 +369,13 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			graph.drawCoastline(g, sizeMultiplyer);
 		}
-		
+				
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
 		// because I might draw the text later.
 		drawRivers(graph, landBackground, sizeMultiplyer, settings.riverColor);
 		if (mapParts != null)
 			mapParts.landBackground = landBackground;
+		
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
@@ -359,6 +416,80 @@ public class MapCreator
 
 	}
 		
+	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
+	{	
+		Color[] regionBackgroundColors = graph.regions.stream().map(
+				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
+		
+		return ImageHelper.colorify2Multi(fractalBG, regionBackgroundColors, pixelColors);
+	}
+	
+	private void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
+	{
+		
+		float[] landHsb = new float[3];
+		Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), landHsb);
+		
+		List<Color> regionColorOptions = new ArrayList<>();
+		Random rand = new Random(settings.regionsRandomSeed);
+		for (@SuppressWarnings("unused") int i : new Range(graph.regions.size())) 
+		{				
+			float hue = (float)(landHsb[0] * 360 + (rand.nextDouble() - 0.5) * settings.hueRange);
+			float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * settings.saturationRange));
+			float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * settings.brightnessRange));
+			regionColorOptions.add(ImageHelper.colorFromHSB(hue, saturation, brightness));
+		}	
+		
+		
+		// Create a new Random object so that changes 
+		assignRegionColors(graph, new Random(settings.regionsRandomSeed), regionColorOptions);
+	}
+	
+	/**
+	 * Determines the color of each political region.
+	 */
+	private void assignRegionColors(GraphImpl graph, Random rand, List<Color> colorOptions)
+	{
+		if (colorOptions.isEmpty())
+			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
+		List<Color> notSampled = new ArrayList<>(colorOptions);
+		for (Region region : graph.regions)
+		{
+			// Find the set of colors of the region's neighbors.
+			Set<Color> neighborColors = new HashSet<>();
+			for (Region neighbor : region.neighbors)
+			{
+				if (neighbor.backgroundColor != null)
+				{
+					neighborColors.add(neighbor.backgroundColor);
+				}
+			}
+			
+			Set<Color> remainingColors = new HashSet<>(notSampled);
+			remainingColors.removeAll(neighborColors);
+			if (remainingColors.isEmpty())
+			{
+				// The neighbors have taken all of the colors.
+				int index = rand.nextInt(notSampled.size());
+				region.backgroundColor = notSampled.get(index);
+				notSampled.remove(index); // sample without replacement
+			}
+			else
+			{
+				List<Color> remainingColorsList = new ArrayList<>(remainingColors);
+				int index = rand.nextInt(remainingColorsList.size());
+				region.backgroundColor = remainingColorsList.get(index);
+				notSampled.remove(remainingColorsList.get(index));
+			}
+			
+			if (notSampled.isEmpty())
+			{
+				// Refill
+				notSampled = new ArrayList<>(colorOptions);
+			}
+		}
+	}
+
 	private void drawRivers(GraphImpl graph, BufferedImage map, double sizeMultiplyer, Color riverColor)
 	{
 		Graphics2D g = map.createGraphics();

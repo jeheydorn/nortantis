@@ -123,6 +123,12 @@ public class RunSwing
 	 */
 	boolean loadingSettings;
 	private JCheckBox chckbxDrawBoldBackground;
+	private JSlider hueSlider;
+	private JSlider saturationSlider;
+	private JSlider brightnessSlider;
+	private JCheckBox drawRegionsCheckBox;
+	private JTextField regionsSeedTextField;
+	private JButton newRegionSeedButton;
 
 	
 	public static boolean isRunning()
@@ -181,6 +187,8 @@ public class RunSwing
 		randomSeedTextField.setText(seed + "");
 		lastSettingsLoadedOrSaved.randomSeed = seed;
 		backgroundSeedTextField.setText(seed + "");
+		regionsSeedTextField.setText(seed + "");
+		lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
 		lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
 		updateBackgroundImageDisplays();
 		textRandomSeedTextField.setText(seed + "");
@@ -642,6 +650,14 @@ public class RunSwing
 				btnBrowseOceanBackground.setEnabled(!rdbtnGenerated.isSelected());
 				oceanBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
 				landBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
+				
+				drawRegionsCheckBox.setEnabled(rdbtnGenerated.isSelected());
+				boolean regionControlsSelected = rdbtnGenerated.isSelected() && drawRegionsCheckBox.isSelected();
+				hueSlider.setEnabled(regionControlsSelected);
+				saturationSlider.setEnabled(regionControlsSelected);
+				brightnessSlider.setEnabled(regionControlsSelected);
+				regionsSeedTextField.setEnabled(regionControlsSelected);
+				newRegionSeedButton.setEnabled(regionControlsSelected);
 			}		
 		};
 		
@@ -664,14 +680,98 @@ public class RunSwing
 		lblDimensions.setBounds(12, 93, 122, 15);
 		backgroundPanel.add(lblDimensions);
 		
-		final JPanel renderPanel = new JPanel();
-		tabbedPane.addTab("Render", null, renderPanel, null);
-		renderPanel.setLayout(null);
+		JPanel regionsPanel = new JPanel();
+		tabbedPane.addTab("Regions", null, regionsPanel, null);
+		regionsPanel.setLayout(null);
+		
+		drawRegionsCheckBox = new JCheckBox("Draw Regions");
+		drawRegionsCheckBox.setToolTipText("When checked, political region borders and background colors will be drawn. This will only work with generated background image.");
+		drawRegionsCheckBox.setBounds(8, 0, 129, 23);
+		drawRegionsCheckBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				hueSlider.setEnabled(drawRegionsCheckBox.isSelected());
+				saturationSlider.setEnabled(drawRegionsCheckBox.isSelected());
+				brightnessSlider.setEnabled(drawRegionsCheckBox.isSelected());
+				regionsSeedTextField.setEnabled(drawRegionsCheckBox.isSelected());
+				newRegionSeedButton.setEnabled(drawRegionsCheckBox.isSelected());
+			}
+		});
+		regionsPanel.add(drawRegionsCheckBox);
+		
+		hueSlider = new JSlider();
+		hueSlider.setPaintTicks(true);
+		hueSlider.setPaintLabels(true);
+		hueSlider.setMinorTickSpacing(20);
+		hueSlider.setMajorTickSpacing(100);
+		hueSlider.setMaximum(360);
+		hueSlider.setBounds(150, 82, 245, 79);
+		regionsPanel.add(hueSlider);
+		
+		JLabel lblHueRange = new JLabel("Hue range:");
+		lblHueRange.setToolTipText("The possible range of hue values for generated region colors. The range is centered at the land color hue.");
+		lblHueRange.setBounds(12, 94, 101, 23);
+		regionsPanel.add(lblHueRange);
+		
+		JLabel lblSaturationRange = new JLabel("Saturation range:");
+		lblSaturationRange.setToolTipText("The possible range of saturation values for generated region colors. The range is centered at the land color saturation.");
+		lblSaturationRange.setBounds(12, 175, 129, 23);
+		regionsPanel.add(lblSaturationRange);
+		
+		saturationSlider = new JSlider();
+		saturationSlider.setPaintTicks(true);
+		saturationSlider.setPaintLabels(true);
+		saturationSlider.setMinorTickSpacing(20);
+		saturationSlider.setMaximum(255);
+		saturationSlider.setMajorTickSpacing(100);
+		saturationSlider.setBounds(150, 163, 245, 79);
+		regionsPanel.add(saturationSlider);
+		
+		JLabel lblBrightnessRange = new JLabel("Brightness range:");
+		lblBrightnessRange.setToolTipText("The possible range of brightness values for generated region colors. The range is centered at the land color brightness.");
+		lblBrightnessRange.setBounds(12, 255, 129, 23);
+		regionsPanel.add(lblBrightnessRange);
+		
+		brightnessSlider = new JSlider();
+		brightnessSlider.setPaintTicks(true);
+		brightnessSlider.setPaintLabels(true);
+		brightnessSlider.setMinorTickSpacing(20);
+		brightnessSlider.setMaximum(255);
+		brightnessSlider.setMajorTickSpacing(100);
+		brightnessSlider.setBounds(150, 243, 245, 79);
+		regionsPanel.add(brightnessSlider);
+		
+		JLabel regionsRandomSeedLabel = new JLabel("Random seed:");
+		regionsRandomSeedLabel.setToolTipText("The random seed for region colors.");
+		regionsRandomSeedLabel.setBounds(12, 36, 122, 15);
+		regionsPanel.add(regionsRandomSeedLabel);
+		
+		regionsSeedTextField = new JTextField();
+		regionsSeedTextField.setText("844645077");
+		regionsSeedTextField.setColumns(10);
+		regionsSeedTextField.setBounds(131, 34, 141, 25);
+		regionsPanel.add(regionsSeedTextField);
+		
+		newRegionSeedButton = new JButton("New Seed");
+		newRegionSeedButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				regionsSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+			}
+		});
+		newRegionSeedButton.setToolTipText("Generate a new random seed for the terrain and text.");
+		newRegionSeedButton.setBounds(284, 34, 105, 25);
+		regionsPanel.add(newRegionSeedButton);
+		
+		final JPanel effectsPanel = new JPanel();
+		tabbedPane.addTab("Effects", null, effectsPanel, null);
+		effectsPanel.setLayout(null);
 				
 		JLabel label_1 = new JLabel("Land blur:");
 		label_1.setToolTipText("Adds fading color to coastlines.");
 		label_1.setBounds(12, 23, 82, 15);
-		renderPanel.add(label_1);
+		effectsPanel.add(label_1);
 		
 		landBlurSlider = new JSlider();
 		landBlurSlider.setValue(30);
@@ -681,12 +781,12 @@ public class RunSwing
 		landBlurSlider.setMaximum(100);
 		landBlurSlider.setMajorTickSpacing(20);
 		landBlurSlider.setBounds(131, 12, 245, 79);
-		renderPanel.add(landBlurSlider);
+		effectsPanel.add(landBlurSlider);
 		
 		JLabel label_2 = new JLabel("Ocean effects:");
 		label_2.setToolTipText("Adds fading color or waves to oceans at coastlines.");
 		label_2.setBounds(12, 96, 122, 15);
-		renderPanel.add(label_2);
+		effectsPanel.add(label_2);
 		
 		oceanEffectsSlider = new JSlider();
 		oceanEffectsSlider.setValue(30);
@@ -696,19 +796,19 @@ public class RunSwing
 		oceanEffectsSlider.setMaximum(100);
 		oceanEffectsSlider.setMajorTickSpacing(20);
 		oceanEffectsSlider.setBounds(131, 84, 245, 79);
-		renderPanel.add(oceanEffectsSlider);
+		effectsPanel.add(oceanEffectsSlider);
 		
 		JLabel lblOceanEffectType = new JLabel("Ocean effect type:");
 		lblOceanEffectType.setBounds(12, 171, 134, 15);
-		renderPanel.add(lblOceanEffectType);
+		effectsPanel.add(lblOceanEffectType);
 		
 		wavesRadioButton = new JRadioButton("Waves");
 		wavesRadioButton.setBounds(148, 167, 185, 23);
-		renderPanel.add(wavesRadioButton);
+		effectsPanel.add(wavesRadioButton);
 		
 		blurRadioButton = new JRadioButton("Blur");
 		blurRadioButton.setBounds(148, 189, 185, 23);
-		renderPanel.add(blurRadioButton);
+		effectsPanel.add(blurRadioButton);
 		
 		ButtonGroup group = new ButtonGroup();
 	    group.add(wavesRadioButton);
@@ -716,88 +816,88 @@ public class RunSwing
 		
 		JLabel label_4 = new JLabel("Land blur color:");
 		label_4.setBounds(461, 82, 134, 23);
-		renderPanel.add(label_4);
+		effectsPanel.add(label_4);
 		
 		landBlurColorDisplay = new JPanel();
 		landBlurColorDisplay.setBackground(new Color(119, 91, 36));
 		landBlurColorDisplay.setBounds(631, 79, 82, 23);
-		renderPanel.add(landBlurColorDisplay);
+		effectsPanel.add(landBlurColorDisplay);
 		
 		JButton button = new JButton("Choose");
 		button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-		        showColorPicker(renderPanel, landBlurColorDisplay, "Land blur color");
+		        showColorPicker(effectsPanel, landBlurColorDisplay, "Land blur color");
 			}
 		});
 		button.setBounds(725, 79, 87, 25);
-		renderPanel.add(button);
+		effectsPanel.add(button);
 		
 		JLabel label_5 = new JLabel("Ocean effects color:");
 		label_5.setBounds(461, 120, 152, 23);
-		renderPanel.add(label_5);
+		effectsPanel.add(label_5);
 		
 		oceanEffectsColorDisplay = new JPanel();
 		oceanEffectsColorDisplay.setBackground(Color.BLACK);
 		oceanEffectsColorDisplay.setBounds(631, 114, 82, 23);
-		renderPanel.add(oceanEffectsColorDisplay);
+		effectsPanel.add(oceanEffectsColorDisplay);
 		
 		JButton button_1 = new JButton("Choose");
 		button_1.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(renderPanel, oceanEffectsColorDisplay, "Ocean effects color");
+				showColorPicker(effectsPanel, oceanEffectsColorDisplay, "Ocean effects color");
 			}
 		});
 		button_1.setBounds(725, 114, 87, 25);
-		renderPanel.add(button_1);
+		effectsPanel.add(button_1);
 		
 		JLabel label_6 = new JLabel("River color:");
 		label_6.setToolTipText("Rivers will be drawn this color.");
 		label_6.setBounds(461, 149, 152, 23);
-		renderPanel.add(label_6);
+		effectsPanel.add(label_6);
 		
 		riverColorDisplay = new JPanel();
 		riverColorDisplay.setBackground(new Color(56, 48, 33));
 		riverColorDisplay.setBounds(631, 149, 82, 23);
-		renderPanel.add(riverColorDisplay);
+		effectsPanel.add(riverColorDisplay);
 		
 		JButton button_2 = new JButton("Choose");
 		button_2.addActionListener(new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent e) 
 			{
-				showColorPicker(renderPanel, riverColorDisplay, "River color");
+				showColorPicker(effectsPanel, riverColorDisplay, "River color");
 			}
 		});
 		button_2.setBounds(725, 149, 87, 25);
-		renderPanel.add(button_2);
+		effectsPanel.add(button_2);
 		
 		frayedBorderCheckbox = new JCheckBox("Frayed border");
 		frayedBorderCheckbox.setBounds(461, 194, 134, 23);
-		renderPanel.add(frayedBorderCheckbox);
+		effectsPanel.add(frayedBorderCheckbox);
 		
 		JLabel frayedBorderColorLabel = new JLabel("Frayed border color:");
 		frayedBorderColorLabel.setToolTipText("Rivers will be drawn this color.");
 		frayedBorderColorLabel.setBounds(461, 221, 152, 23);
-		renderPanel.add(frayedBorderColorLabel);
+		effectsPanel.add(frayedBorderColorLabel);
 		
 		frayedBorderColorDisplay = new JPanel();
 		frayedBorderColorDisplay.setBounds(631, 221, 82, 23);
-		renderPanel.add(frayedBorderColorDisplay);
+		effectsPanel.add(frayedBorderColorDisplay);
 		
 		final JButton frayedBorderChooseButton= new JButton("Choose");
 		frayedBorderChooseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				showColorPicker(renderPanel, frayedBorderColorDisplay, "Frayed border color");
+				showColorPicker(effectsPanel, frayedBorderColorDisplay, "Frayed border color");
 			}
 		});
 		frayedBorderChooseButton.setBounds(725, 221, 87, 25);
-		renderPanel.add(frayedBorderChooseButton);
+		effectsPanel.add(frayedBorderChooseButton);
 		
 		JLabel frayedBorderBlurLevelLabel = new JLabel("Frayed border blur:");
 		frayedBorderBlurLevelLabel.setToolTipText("Adds fading color or waves to oceans at coastlines.");
 		frayedBorderBlurLevelLabel.setBounds(461, 267, 152, 15);
-		renderPanel.add(frayedBorderBlurLevelLabel);
+		effectsPanel.add(frayedBorderBlurLevelLabel);
 		
 		frayedBorderBlurSlider = new JSlider();
 		frayedBorderBlurSlider.setValue(30);
@@ -807,20 +907,20 @@ public class RunSwing
 		frayedBorderBlurSlider.setMaximum(500);
 		frayedBorderBlurSlider.setMajorTickSpacing(100);
 		frayedBorderBlurSlider.setBounds(627, 249, 245, 79);
-		renderPanel.add(frayedBorderBlurSlider);
+		effectsPanel.add(frayedBorderBlurSlider);
 		
 		JLabel lblCoastlineColor = new JLabel("Coastline color:");
 		lblCoastlineColor.setBounds(461, 47, 134, 23);
-		renderPanel.add(lblCoastlineColor);
+		effectsPanel.add(lblCoastlineColor);
 		
 		coastlineColorDisplay = new JPanel();
 		//coastlineColorDisplay.setBackground(settings.);
 		coastlineColorDisplay.setBounds(631, 44, 82, 23);
-		renderPanel.add(coastlineColorDisplay);
+		effectsPanel.add(coastlineColorDisplay);
 		
 		JButton buttonChooseCoastlineColor = new JButton("Choose");
 		buttonChooseCoastlineColor.setBounds(725, 44, 87, 25);
-		renderPanel.add(buttonChooseCoastlineColor);
+		effectsPanel.add(buttonChooseCoastlineColor);
 		
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -1069,7 +1169,7 @@ public class RunSwing
 						textPanel.add(chckbxDrawBoldBackground);
 		buttonChooseCoastlineColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				showColorPicker(renderPanel, coastlineColorDisplay, "Coastline color");
+				showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline color");
 			}
 		});
 		
@@ -1427,6 +1527,13 @@ public class RunSwing
 		dimensionsComboBox.setSelectedIndex(getDimensionIndexFromDimensions(settings.generatedWidth, settings.generatedHeight));
 		fractalPower = settings.fractalPower;
 		
+		drawRegionsCheckBox.setSelected(!settings.drawRegionColors);
+		regionsSeedTextField.setText(String.valueOf(settings.regionsRandomSeed));
+		drawRegionsCheckBox.doClick();
+		hueSlider.setValue(settings.hueRange);
+		saturationSlider.setValue(settings.saturationRange);
+		brightnessSlider.setValue(settings.brightnessRange);
+		
 		booksPanel.removeAll();
 		for (String book : getAllBooks())
 		{
@@ -1520,6 +1627,12 @@ public class RunSwing
 		settings.generatedWidth = (int)generatedDimensions.getWidth();
 		settings.generatedHeight = (int)generatedDimensions.getHeight();
 		settings.fractalPower = fractalPower;
+		
+		settings.regionsRandomSeed = Long.parseLong(regionsSeedTextField.getText());
+		settings.drawRegionColors = drawRegionsCheckBox.isSelected();
+		settings.hueRange = hueSlider.getValue();
+		settings.saturationRange = saturationSlider.getValue();
+		settings.brightnessRange = brightnessSlider.getValue();
 		
 		settings.books = new TreeSet<>();
 		for (Component component : booksPanel.getComponents())

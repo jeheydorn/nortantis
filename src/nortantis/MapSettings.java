@@ -59,6 +59,9 @@ public class MapSettings implements Serializable
 	float fractalPower;
 	String landBackgroundImage;
 	String oceanBackgroundImage;
+	int hueRange;
+	int saturationRange;
+	int brightnessRange;
 	
 	boolean drawText;
 	long textRandomSeed;
@@ -72,6 +75,8 @@ public class MapSettings implements Serializable
 	Color textColor;
 	MapEdits edits;
 	boolean drawBoldBackground;
+	boolean drawRegionColors;
+	long regionsRandomSeed;
 	
 	public MapSettings()
 	{
@@ -107,6 +112,14 @@ public class MapSettings implements Serializable
 		result.setProperty("fractalPower", fractalPower + "");
 		result.setProperty("landBackgroundImage", landBackgroundImage);
 		result.setProperty("oceanBackgroundImage", oceanBackgroundImage);
+		
+		// Region settings
+		result.setProperty("drawRegionColors", drawRegionColors + "");
+		result.setProperty("regionsRandomSeed", regionsRandomSeed + "");
+		result.setProperty("hueRange", hueRange + "");
+		result.setProperty("saturationRange", saturationRange + "");
+		result.setProperty("brightnessRange", brightnessRange + "");
+		
 
 		result.setProperty("drawText", drawText + "");
 		result.setProperty("textRandomSeed", textRandomSeed + "");
@@ -347,6 +360,32 @@ public class MapSettings implements Serializable
 					throw new NullPointerException();
 				return result;
 			}
+		});
+		
+		drawRegionColors = getProperty("drawRegionColors", () ->
+		{
+			String str = props.getProperty("drawRegionColors");
+			return str == null ? true : parseBoolean(str);
+		});
+		regionsRandomSeed = getProperty("regionsRandomSeed", () ->
+		{
+			String str = props.getProperty("regionsRandomSeed");
+			return str == null ? 0 : (long)Long.parseLong(str);			
+		});
+		hueRange = getProperty("hueRange", () -> 
+		{
+			String str = props.getProperty("hueRange");
+			return str == null ? 13 : Integer.parseInt(str); // default value
+		});
+		saturationRange = getProperty("saturationRange", () -> 
+		{
+			String str = props.getProperty("saturationRange");
+			return str == null ? 20 : Integer.parseInt(str); // default value
+		});
+		brightnessRange = getProperty("brightnessRange", () -> 
+		{
+			String str = props.getProperty("brightnessRange");
+			return str == null ? 25 : Integer.parseInt(str); // default value
 		});
 		
 	

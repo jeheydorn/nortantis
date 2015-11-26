@@ -18,4 +18,10 @@ public class StopWatch
 	{
 		return (System.currentTimeMillis() - startTime) / 1000.0;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return "Elapsed time (in seconds): " + getElapsedSeconds();
+	}
 }
