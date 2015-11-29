@@ -375,7 +375,7 @@ public class MapSettings implements Serializable
 		hueRange = getProperty("hueRange", () -> 
 		{
 			String str = props.getProperty("hueRange");
-			return str == null ? 13 : Integer.parseInt(str); // default value
+			return str == null ? 20 : Integer.parseInt(str); // default value
 		});
 		saturationRange = getProperty("saturationRange", () -> 
 		{
