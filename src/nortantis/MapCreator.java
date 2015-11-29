@@ -232,17 +232,28 @@ public class MapCreator
 			graph.paint(g, false, false, false, false, false, true, false, sizeMultiplyer);
 		}
 		
-
-		Logger.println("Creating masks for darkening land near shores and for effects in ocean along coastlines.");
-
-		// Darken the land next to borders.
-		Logger.println("Darkening land near shores.");
+		// Darken the land next to coast lines and optionally region borders.
 		{
 			BufferedImage landBlur;
 			int blurLevel = (int) (settings.landBlur * sizeMultiplyer);
 			if (blurLevel > 0)
 			{
+				Logger.println("Darkening land near shores.");
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
+				// TODO remove
+//				for (int i : new Range(kernel.length))
+//				{
+//					for (int j : new Range(kernel[0].length))
+//					{
+//						System.out.print(kernel[i][j]);
+//					}
+//					System.out.println();												
+//				}
+				// TODO remove
+				ImageHelper.setContrast(kernel, 0, 255);
+				BufferedImage tmp = ImageHelper.arrayToImage(kernel);
+				ImageHelper.maximizeContrastGrayscale(tmp);
+				ImageHelper.write(tmp, "kernel.png"); // TODO remove
 				
 				if (settings.drawRegionColors)
 				{
@@ -388,7 +399,7 @@ public class MapCreator
 		{
 			Logger.println("Adding frayed border.");
 			BufferedImage borderMask = new BufferedImage(graph.getWidth(),
-					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+					graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			graph.drawBorderWhite(borderMask.createGraphics());
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
