@@ -251,24 +251,35 @@ public class ImageHelper
 	 */
 	public static void setContrast(float[][] array, float targetMin, float targetMax)
 	{
+		setContrast(array, targetMin, targetMax, 0, array.length, 0, array[0].length);
+	}
+	
+	public static void setContrast(float[][] array, float targetMin, float targetMax,
+			int rowStart, int rows, int colStart, int cols)
+	{
 		float min = Float.POSITIVE_INFINITY;
 		float max = Float.NEGATIVE_INFINITY;
-		for (int r = 0; r < array.length; r++)
-			for (int c = 0; c < array[0].length; c++)
-			{
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{			
 				float value = array[r][c];
 				if (value < min)
 					min = value;
 				if (value > max)
 					max = value;
 			}
-		for (int r = 0; r < array.length; r++)
-			for (int c = 0; c < array[0].length; c++)
-			{
+		}
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{			
 				float value = array[r][c];
 				array[r][c] = (((value - min)/(max - min))) * (targetMax - targetMin) + targetMin;
 			}
+		}
 	}
+	
 
 	/** 
 	 * Multiplies each pixel by the given scale. The image must be BufferedImage.TYPE_BYTE_GRAY.
@@ -617,10 +628,16 @@ public class ImageHelper
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 * @param img
-	 * @param kernel
+	 * @param kernel The kernel to convolve with.
+	 * @param maximizeContrast Iff true, the contrast of the convolved image
+	 * will be maximized while it is still in floating point representation.
+	 * In the result the pixel values will range from 0 to 255.
+	 * This is better than maximizing the contrast of the result because the result
+	 * is a BufferedImage, which is more discretized.
 	 * @return
 	 */
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel)
+	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel,
+			boolean maximizeContrast)
 	{
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
@@ -690,6 +707,9 @@ public class ImageHelper
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
 		swapQuadrantsOfLeftSideInPlace(data);
+		
+		if (maximizeContrast)
+			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
 		
 		BufferedImage result = arrayToImage(data, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
 		return result;

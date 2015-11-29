@@ -240,20 +240,6 @@ public class MapCreator
 			{
 				Logger.println("Darkening land near shores.");
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				// TODO remove
-//				for (int i : new Range(kernel.length))
-//				{
-//					for (int j : new Range(kernel[0].length))
-//					{
-//						System.out.print(kernel[i][j]);
-//					}
-//					System.out.println();												
-//				}
-				// TODO remove
-				ImageHelper.setContrast(kernel, 0, 255);
-				BufferedImage tmp = ImageHelper.arrayToImage(kernel);
-				ImageHelper.maximizeContrastGrayscale(tmp);
-				ImageHelper.write(tmp, "kernel.png"); // TODO remove
 				
 				if (settings.drawRegionColors)
 				{
@@ -261,8 +247,7 @@ public class MapCreator
 					Graphics2D g = coastlineAndRegionBorders.createGraphics();
 					g.setColor(Color.white);
 					graph.drawRegionBorders(g, sizeMultiplyer, false);
-					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel);
-					ImageHelper.maximizeContrastGrayscale(landBlur);
+					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel, true);
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
@@ -273,8 +258,7 @@ public class MapCreator
 				}
 				else
 				{
-					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
-					ImageHelper.maximizeContrastGrayscale(landBlur);
+					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true);
 					// Remove the land blur from the ocean side of the borders.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
 					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
@@ -357,8 +341,7 @@ public class MapCreator
 				{
 					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffects * sizeMultiplyer));
 				}
-				oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
-				ImageHelper.maximizeContrastGrayscale(oceanBlur);
+				oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true);
 				// Remove the ocean blur from the land side of the borders.
 				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
 
@@ -406,8 +389,7 @@ public class MapCreator
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel);
-				ImageHelper.maximizeContrastGrayscale(borderBlur);
+				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel, true);
 			
 				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, borderBlur, true);
 

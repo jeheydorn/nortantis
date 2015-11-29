@@ -626,8 +626,7 @@ public class TextDrawer
 		bG.fillRect(padding, padding, width, height);
 		
 		// Use convolution to make a hazy background for the text.
-		BufferedImage haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize));
-		ImageHelper.maximizeContrastGrayscale(haze);
+		BufferedImage haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize), true);
 								
 		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, 
 				((int)upperLeftCorner.x) - padding, (int)(upperLeftCorner.y) - padding, angle);
