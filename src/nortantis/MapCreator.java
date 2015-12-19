@@ -6,9 +6,11 @@ import hoten.voronoi.Corner;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
@@ -373,6 +375,14 @@ public class MapCreator
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
+			
+			// Draw region borders into the land mask so that names don't make region borders fade away when drawn on top of them.
+			if (settings.drawRegionColors)
+			{
+				Graphics2D g = landBackground.createGraphics();
+				g.setColor(settings.coastlineColor);
+				graph.drawRegionBorders(g, sizeMultiplyer, true);
+			}
 						
 			textDrawer.drawText(graph, map, landBackground, mountainGroups);
 		}
@@ -397,6 +407,24 @@ public class MapCreator
 			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
 		}
 		
+		// TODO Make this an option
+		{
+			// TODO make these options or settings
+			// + 104567 is an arbitrary number added so that the grung is not the same pattern as
+			// the background.
+			BufferedImage clouds = FractalBGGenerator.generate(
+					new Random(settings.backgroundRandomSeed + 104567), 1.3f, 
+					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
+			// Whiten the middle of clouds.
+			ImageHelper.write(clouds, "clounds_before.png"); // TODO remove
+			whitenMiddleOfImage(settings.resolution, clouds);
+			ImageHelper.write(clouds, "clounds_after.png"); // TODO remove
+			
+			// Add the cloud mask to the map.
+			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, clouds, true);
+		}
+		
+		
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 		
@@ -407,6 +435,44 @@ public class MapCreator
 		
 		return map;
 
+	}
+	
+	/**
+	 * Makes the middle area of a gray scale image whiter.
+	 */
+	private void whitenMiddleOfImage(double resolutionScale, BufferedImage image)
+	{
+		// Draw a white box.
+		BufferedImage blurBox = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY); // TODO try byte binary
+		int blurLevel = (int)(500 * resolutionScale);
+		assert blurLevel <= Math.min(image.getWidth(), image.getHeight());
+		Graphics g = blurBox.getGraphics();
+		g.setColor(Color.white);
+		g.fillRect(0, 0, blurBox.getWidth(), blurBox.getHeight());
+		g.setColor(Color.black);
+		int edge = blurLevel/60;
+		g.fillRect(edge, edge, blurBox.getWidth() - edge*2, blurBox.getHeight() - edge*2);
+		ImageHelper.write(blurBox, "rectangle.png"); // TODO remove
+		
+		// Use Gaussian blur on the box.
+		float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
+//		ImageHelper.maximizeContrast(kernel); // TODO remove
+//		ImageHelper.write(ImageHelper.arrayToImage(kernel), "kernel.png"); // TODO remove
+		blurBox = ImageHelper.convolveGrayscale(blurBox, kernel, true);
+		ImageHelper.write(blurBox, "blurBox.png"); // TODO remove
+
+		// Multiply the image by blurBox.
+		assert image.getType() == BufferedImage.TYPE_BYTE_GRAY;
+		WritableRaster imageRaster = image.getRaster();
+		Raster blurBoxRaster = blurBox.getRaster();
+		for (int y = 0; y < image.getHeight(); y++)
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				float imageLevel = imageRaster.getSample(x, y, 0);
+				float blurBoxLevel = blurBoxRaster.getSample(x, y, 0);
+				
+				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel)/255f);
+			}
 	}
 		
 	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
@@ -431,55 +497,22 @@ public class MapCreator
 			float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * settings.saturationRange));
 			float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * settings.brightnessRange));
 			regionColorOptions.add(ImageHelper.colorFromHSB(hue, saturation, brightness));
-		}	
-		
-		
+		}
+				
 		// Create a new Random object so that changes 
-		assignRegionColors(graph, new Random(settings.regionsRandomSeed), regionColorOptions);
+		assignRegionColors(graph, regionColorOptions);
 	}
 	
 	/**
-	 * Determines the color of each political region.
+	 * Assigns the color of each political region.
 	 */
-	private void assignRegionColors(GraphImpl graph, Random rand, List<Color> colorOptions)
+	private void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
 	{
 		if (colorOptions.isEmpty())
 			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
-		List<Color> notSampled = new ArrayList<>(colorOptions);
-		for (Region region : graph.regions)
+		for (int i : new Range(graph.regions.size()))
 		{
-			// Find the set of colors of the region's neighbors.
-			Set<Color> neighborColors = new HashSet<>();
-			for (Region neighbor : region.neighbors)
-			{
-				if (neighbor.backgroundColor != null)
-				{
-					neighborColors.add(neighbor.backgroundColor);
-				}
-			}
-			
-			Set<Color> remainingColors = new HashSet<>(notSampled);
-			remainingColors.removeAll(neighborColors);
-			if (remainingColors.isEmpty())
-			{
-				// The neighbors have taken all of the colors.
-				int index = rand.nextInt(notSampled.size());
-				region.backgroundColor = notSampled.get(index);
-				notSampled.remove(index); // sample without replacement
-			}
-			else
-			{
-				List<Color> remainingColorsList = new ArrayList<>(remainingColors);
-				int index = rand.nextInt(remainingColorsList.size());
-				region.backgroundColor = remainingColorsList.get(index);
-				notSampled.remove(remainingColorsList.get(index));
-			}
-			
-			if (notSampled.isEmpty())
-			{
-				// Refill
-				notSampled = new ArrayList<>(colorOptions);
-			}
+			graph.regions.get(i).backgroundColor = colorOptions.get(i % colorOptions.size());
 		}
 	}
 

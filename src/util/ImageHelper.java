@@ -15,6 +15,7 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+import java.util.function.BiFunction;
 
 import javax.imageio.ImageIO;
 
@@ -138,6 +139,11 @@ public class ImageHelper
 		return scaled;
 	}
 
+	/**
+	 * 
+	 * @param size Number of pixels from 3 standard deviations from once side of the Guassian to the other.
+	 * @return
+	 */
 	public static float[][] createGaussianKernel(int size)
 	{
 		// I want the edge of the kernel to be 3 standard deviations away from
@@ -145,14 +151,15 @@ public class ImageHelper
 		// divide by 2 to get half of the size (the length from center to edge).
 		double sd = size / (2.0 * 3.0);
 		NormalDistribution dist = new NormalDistribution(0, sd);
+		int resultSize = size * 2;
 
-		float[][] kernel = new float[size][size];
-		for (int x : new Range(size))
+		float[][] kernel = new float[resultSize][resultSize];
+		for (int x : new Range(resultSize))
 		{
-			double xDistanceFromCenter = Math.abs(size / 2.0 - x);
-			for (int y : new Range(size))
+			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - x);
+			for (int y : new Range(resultSize))
 			{
-				double yDistanceFromCenter = Math.abs(size / 2.0 - y);
+				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - y);
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math.sqrt(xDistanceFromCenter
 						* xDistanceFromCenter + yDistanceFromCenter
@@ -369,10 +376,21 @@ public class ImageHelper
 			}
 		return result;
 	}
+	
+//	/**
+//	 * Like masWithImage(...) except this takes a function that defines the masking level.
+//	 * This way you don't have to create another image to create a simple mask.
+//	 * @return
+//	 */
+//	public static BufferedImage maskWithColorAndFunction(BufferedImage image1, BufferedImage image2, 
+//			BiFunction<Integer, Integer, Integer> maskFun)
+//	{
+//		return null; // TODO
+//	}
 
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in
-	 * maskWithImage(...);
+	 * maskWithImage(...) except this way is more efficient.
 	 */
 	public static BufferedImage maskWithColor(BufferedImage image,
 			Color color, BufferedImage mask, boolean invertMask)
@@ -391,6 +409,7 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image.getWidth(),
 				image.getHeight(), image.getType());
 		Raster mRaster = mask.getRaster();
+		Raster alphaRaster = image.getAlphaRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
@@ -405,8 +424,8 @@ public class ImageHelper
 					int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed())/255;
 					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen())/255;
 					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue())/255;
-					int combined = (r << 16) | (g << 8) | b;
-					result.setRGB(x, y, combined);					
+					Color combined = new Color(r,g,b,alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+					result.setRGB(x, y, combined.getRGB());					
 				}
 				else
 				{
@@ -418,8 +437,8 @@ public class ImageHelper
 					int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
 					int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
 					int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-					int combined = (r << 16) | (g << 8) | b;
-					result.setRGB(x, y, combined);					
+					Color combined = new Color(r,g,b,alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+					result.setRGB(x, y, combined.getRGB());					
 				}
 				
 			}
@@ -485,8 +504,7 @@ public class ImageHelper
 			}
 		return result;
 	}
-
-	
+		
 	/**
 	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
 	 * @param image
