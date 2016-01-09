@@ -15,7 +15,6 @@ import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
-import java.util.function.BiFunction;
 
 import javax.imageio.ImageIO;
 
@@ -27,7 +26,6 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
-import org.jtransforms.utils.ConcurrencyUtils;
 
 public class ImageHelper
 {
@@ -37,7 +35,7 @@ public class ImageHelper
 	 */
 	public static void shutdownThreadPool()
 	{
-		ConcurrencyUtils.shutdownAndAwaitTermination();
+		//ConcurrencyUtils.shutdownAndAwaitTermination(); TODO Remove this and all references to it
 	}
 		
 	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
@@ -689,7 +687,6 @@ public class ImageHelper
 		
 		// convert the kernel to the format required by JTransforms.
 		float[][] kernelData = new float[rows][2 * cols];
-
 		{
 			int rowPadding = rows - kernel.length;
 			int colPadding = cols - kernel[0].length;
@@ -722,7 +719,8 @@ public class ImageHelper
 //		 Do the inverse DFT on the product.
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
-		//swapQuadrantsOfLeftSideInPlace(data);
+		//data = shiftLeftSideDownAndRightOnePixel(data);
+		swapQuadrantsOfLeftSideInPlace(data); // TODO put back
 		
 		if (maximizeContrast)
 			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
@@ -731,14 +729,35 @@ public class ImageHelper
 		return result;
 	}
 	
+	// TODO remove when done debugging if I don't need this.
+	public static float[][] shiftLeftSideDownAndRightOnePixel(float[][] data)
+	{
+		float[][] result = new float[data.length][data[0].length]; // TODO use data[0].length/2
+		for (int rDest = data.length - 1; rDest >= 0; rDest--)
+		{
+			int rSource = rDest - 1;
+			if (rSource == -1)
+					rSource = data.length - 1;
+
+			for (int cDest = data[0].length/2 - 1; cDest >= 0; cDest--)
+			{
+				int cSource = cDest - 1;
+				if (cSource == - 1)
+					cSource = data[0].length/2 - 1;
+				result[rDest][cDest] = data[rSource][cSource];
+			}
+		}
+		return result;
+	}
+	
 	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
 	{
 		int rows = data.length;
 		int cols = data[0].length/2;
 		for (int r = 0; r < rows/2; r++)
-		{
+		{			
 			for (int c = 0; c < cols; c++)
-			{
+			{				
 				if (c < cols/2)
 				{
 					float temp = data[r + rows/2][c + cols/2];
@@ -1070,14 +1089,14 @@ public class ImageHelper
 
 	public static void main(String[] args) throws IOException
 	{
-		BufferedImage in = new BufferedImage(8, 8, BufferedImage.TYPE_BYTE_GRAY);
+		BufferedImage in = new BufferedImage(128, 128, BufferedImage.TYPE_BYTE_GRAY);
 		Graphics2D g = in.createGraphics();
 		g.setColor(Color.white);
 		g.fillRect(0, 0, in.getWidth(), in.getHeight());
 		g.setColor(Color.black);
-		g.fillRect(1, 1, in.getWidth() - 2, in.getHeight() - 2);
+		g.fillRect(3, 3, in.getWidth() - 6, in.getHeight() - 6);
 		ImageHelper.write(in, "in.png");
-		BufferedImage result = convolveGrayscale(in, new float[][] {{1f}}, false);
+		BufferedImage result = convolveGrayscale(in, new float[][] {{0.25f, 0.25f}, {0.25f, 0.25f}}, false);
 		ImageHelper.write(result, "result.png");
 		shutdownThreadPool();
 		System.out.println("Done");

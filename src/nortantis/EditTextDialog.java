@@ -29,8 +29,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
-import org.jtransforms.utils.ConcurrencyUtils;
-
 import util.Helper;
 import util.ImageHelper;
 import util.Tuple2;
@@ -496,7 +494,7 @@ public class EditTextDialog extends JDialog
 				catch (Exception e)
 				{
 					e.printStackTrace();
-					ConcurrencyUtils.shutdownAndAwaitTermination();
+					//ConcurrencyUtils.shutdownAndAwaitTermination();
 			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				} 
 	        	
@@ -549,7 +547,7 @@ public class EditTextDialog extends JDialog
 				catch (Exception e)
 				{
 					e.printStackTrace();
-					ConcurrencyUtils.shutdownAndAwaitTermination();
+					//ConcurrencyUtils.shutdownAndAwaitTermination();
 			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				} 
 	        	
