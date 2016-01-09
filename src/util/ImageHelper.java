@@ -682,14 +682,14 @@ public class ImageHelper
 					data[r + imgRowPadding/2][c + imgColPadding/2] = grayLevel;
 				}
 	
-
 			// Do the forward FFT.
 			fft.realForwardFull(data);
 		}
+
 		
 		// convert the kernel to the format required by JTransforms.
 		float[][] kernelData = new float[rows][2 * cols];
-		
+
 		{
 			int rowPadding = rows - kernel.length;
 			int colPadding = cols - kernel[0].length;
@@ -701,8 +701,6 @@ public class ImageHelper
 	
 			// Do the forward FFT.
 			fft.realForwardFull(kernelData);
-			//fft.complexInverse(kernelData, true);
-
 		}
 				
 		// Multiply the convolved image and kernel in the frequency domain.
@@ -724,7 +722,7 @@ public class ImageHelper
 //		 Do the inverse DFT on the product.
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
-		swapQuadrantsOfLeftSideInPlace(data);
+		//swapQuadrantsOfLeftSideInPlace(data);
 		
 		if (maximizeContrast)
 			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
@@ -1072,13 +1070,18 @@ public class ImageHelper
 
 	public static void main(String[] args) throws IOException
 	{
-		BufferedImage in = ImageIO.read(new File("assets/ocean_3072.jpg"));
-		BufferedImage inBW = convertToGrayscale(in);
-		long startTime = System.currentTimeMillis();
-		BufferedImage colorified = colorify2(inBW, new Color(0xc69b47));
-		System.out.println("Time to colorify: " + ((double) System.currentTimeMillis() - startTime)/1000.0);
-		ImageIO.write(colorified, "png", new File("colorized.png"));
+		BufferedImage in = new BufferedImage(8, 8, BufferedImage.TYPE_BYTE_GRAY);
+		Graphics2D g = in.createGraphics();
+		g.setColor(Color.white);
+		g.fillRect(0, 0, in.getWidth(), in.getHeight());
+		g.setColor(Color.black);
+		g.fillRect(1, 1, in.getWidth() - 2, in.getHeight() - 2);
+		ImageHelper.write(in, "in.png");
+		BufferedImage result = convolveGrayscale(in, new float[][] {{1f}}, false);
+		ImageHelper.write(result, "result.png");
+		shutdownThreadPool();
 		System.out.println("Done");
+		
 	}
 	
 }
