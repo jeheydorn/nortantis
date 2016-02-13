@@ -139,15 +139,15 @@ public class ImageHelper
 
 	/**
 	 * 
-	 * @param size Number of pixels from 3 standard deviations from once side of the Guassian to the other.
+	 * @param size Number of pixels from the center of the result to one side. This is also 3 standard
+	 * deviations from the center. 
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
 	{
 		// I want the edge of the kernel to be 3 standard deviations away from
 		// the middle. I also
-		// divide by 2 to get half of the size (the length from center to edge).
-		double sd = size / (2.0 * 3.0);
+		double sd = size / 3.0;
 		NormalDistribution dist = new NormalDistribution(0, sd);
 		int resultSize = size * 2;
 
@@ -171,6 +171,7 @@ public class ImageHelper
 	
 	public static float[][] createFractalKernel(int size, double p)
 	{
+		// If I ever want to use this, I should change it so that size is half the final dimension to be consitant.
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
@@ -189,11 +190,16 @@ public class ImageHelper
 		return kernel;
 	}
 
-
+	/**
+	 * 
+	 * @param size Half of one dimension of the result (which is square).
+	 */
 	public static float[][] createPositiveSincKernel(int size, double scale)
 	{
 		Sinc dist = new Sinc();
-
+		
+		size *= 2; // Makes sure size is even
+		
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
@@ -375,17 +381,6 @@ public class ImageHelper
 		return result;
 	}
 	
-//	/**
-//	 * Like masWithImage(...) except this takes a function that defines the masking level.
-//	 * This way you don't have to create another image to create a simple mask.
-//	 * @return
-//	 */
-//	public static BufferedImage maskWithColorAndFunction(BufferedImage image1, BufferedImage image2, 
-//			BiFunction<Integer, Integer, Integer> maskFun)
-//	{
-//		return null; // TODO
-//	}
-
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in
 	 * maskWithImage(...) except this way is more efficient.
@@ -719,8 +714,7 @@ public class ImageHelper
 //		 Do the inverse DFT on the product.
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
-		//data = shiftLeftSideDownAndRightOnePixel(data);
-		swapQuadrantsOfLeftSideInPlace(data); // TODO put back
+		swapQuadrantsOfLeftSideInPlace(data); 
 		
 		if (maximizeContrast)
 			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
@@ -730,25 +724,25 @@ public class ImageHelper
 	}
 	
 	// TODO remove when done debugging if I don't need this.
-	public static float[][] shiftLeftSideDownAndRightOnePixel(float[][] data)
-	{
-		float[][] result = new float[data.length][data[0].length]; // TODO use data[0].length/2
-		for (int rDest = data.length - 1; rDest >= 0; rDest--)
-		{
-			int rSource = rDest - 1;
-			if (rSource == -1)
-					rSource = data.length - 1;
-
-			for (int cDest = data[0].length/2 - 1; cDest >= 0; cDest--)
-			{
-				int cSource = cDest - 1;
-				if (cSource == - 1)
-					cSource = data[0].length/2 - 1;
-				result[rDest][cDest] = data[rSource][cSource];
-			}
-		}
-		return result;
-	}
+//	public static float[][] shiftLeftSideDownAndRightOnePixel(float[][] data)
+//	{
+//		float[][] result = new float[data.length][data[0].length]; // TODO use data[0].length/2
+//		for (int rDest = data.length - 1; rDest >= 0; rDest--)
+//		{
+//			int rSource = rDest - 1;
+//			if (rSource == -1)
+//					rSource = data.length - 1;
+//
+//			for (int cDest = data[0].length/2 - 1; cDest >= 0; cDest--)
+//			{
+//				int cSource = cDest - 1;
+//				if (cSource == - 1)
+//					cSource = data[0].length/2 - 1;
+//				result[rDest][cDest] = data[rSource][cSource];
+//			}
+//		}
+//		return result;
+//	}
 	
 	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
 	{
@@ -1094,9 +1088,9 @@ public class ImageHelper
 		g.setColor(Color.white);
 		g.fillRect(0, 0, in.getWidth(), in.getHeight());
 		g.setColor(Color.black);
-		g.fillRect(3, 3, in.getWidth() - 6, in.getHeight() - 6);
+		g.fillRect(1, 1, in.getWidth() - 2, in.getHeight() - 2);
 		ImageHelper.write(in, "in.png");
-		BufferedImage result = convolveGrayscale(in, new float[][] {{0.25f, 0.25f}, {0.25f, 0.25f}}, false);
+		BufferedImage result = convolveGrayscale(in, createGaussianKernel(3), false);
 		ImageHelper.write(result, "result.png");
 		shutdownThreadPool();
 		System.out.println("Done");
