@@ -407,18 +407,16 @@ public class MapCreator
 			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
 		}
 		
-		// TODO Make this an option
+		if (settings.grungeWidth > 0)
 		{
 			// TODO make these options or settings
-			// + 104567 is an arbitrary number added so that the grung is not the same pattern as
+			// 104567 is an arbitrary number added so that the grung is not the same pattern as
 			// the background.
 			BufferedImage clouds = FractalBGGenerator.generate(
-					new Random(settings.backgroundRandomSeed + 104567), 1.3f, 
+					new Random(settings.backgroundRandomSeed + 104567), settings.fractalPower, 
 					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
 			// Whiten the middle of clouds.
-			ImageHelper.write(clouds, "clounds_before.png"); // TODO remove
-			whitenMiddleOfImage(settings.resolution, clouds);
-			ImageHelper.write(clouds, "clounds_after.png"); // TODO remove
+			whitenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);
 			
 			// Add the cloud mask to the map.
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, clouds, true);
@@ -440,28 +438,31 @@ public class MapCreator
 	/**
 	 * Makes the middle area of a gray scale image whiter.
 	 */
-	private void whitenMiddleOfImage(double resolutionScale, BufferedImage image)
+	private void whitenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
 	{
 		// Draw a white box.
-		BufferedImage blurBox = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY); // TODO try byte binary
-		int blurLevel = (int)(500 * resolutionScale);
+		// TODO make this a settings
+		int blurLevel = (int)(grungeWidth * resolutionScale);
+		if (blurLevel == 0)
+			blurLevel = 1; // Avoid an exception later.
 		assert blurLevel <= Math.min(image.getWidth(), image.getHeight());
+		BufferedImage blurBox = new BufferedImage(image.getWidth() + blurLevel*2, image.getHeight() + blurLevel*2, BufferedImage.TYPE_BYTE_BINARY);
 		Graphics g = blurBox.getGraphics();
 		g.setColor(Color.white);
-		g.fillRect(0, 0, blurBox.getWidth(), blurBox.getHeight());
+		g.fillRect(blurLevel, blurLevel, image.getWidth(), image.getHeight());
+		
+		int rectWidth = (int)(resolutionScale);
+		if (rectWidth == 0)
+			rectWidth = 1;
+		
 		g.setColor(Color.black);
-		int edge = blurLevel/60;
-		g.fillRect(edge, edge, blurBox.getWidth() - edge*2, blurBox.getHeight() - edge*2);
-		ImageHelper.write(blurBox, "rectangle.png"); // TODO remove
+		g.fillRect(rectWidth + blurLevel, rectWidth + blurLevel, image.getWidth() - rectWidth*2, image.getHeight() - rectWidth*2);
 		
 		// Use Gaussian blur on the box.
 		float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-//		ImageHelper.maximizeContrast(kernel); // TODO remove
-//		ImageHelper.write(ImageHelper.arrayToImage(kernel), "kernel.png"); // TODO remove
 		blurBox = ImageHelper.convolveGrayscale(blurBox, kernel, true);
-		ImageHelper.write(blurBox, "blurBox.png"); // TODO remove
 
-		// Multiply the image by blurBox.
+		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
 		assert image.getType() == BufferedImage.TYPE_BYTE_GRAY;
 		WritableRaster imageRaster = image.getRaster();
 		Raster blurBoxRaster = blurBox.getRaster();
@@ -469,7 +470,7 @@ public class MapCreator
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				float imageLevel = imageRaster.getSample(x, y, 0);
-				float blurBoxLevel = blurBoxRaster.getSample(x, y, 0);
+				float blurBoxLevel = blurBoxRaster.getSample(x + blurLevel, y + blurLevel, 0);
 				
 				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel)/255f);
 			}

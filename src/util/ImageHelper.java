@@ -139,25 +139,25 @@ public class ImageHelper
 
 	/**
 	 * 
-	 * @param size Number of pixels from the center of the result to one side. This is also 3 standard
-	 * deviations from the center. 
+	 * @param size Number of pixels from 3 standard deviations from once side of the Guassian to the other.
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
 	{
 		// I want the edge of the kernel to be 3 standard deviations away from
 		// the middle. I also
-		double sd = size / 3.0;
+		// divide by 2 to get half of the size (the length from center to edge).
+		double sd = size / (2.0 * 3.0);
 		NormalDistribution dist = new NormalDistribution(0, sd);
-		int resultSize = size * 2;
+		int resultSize = (size * 2);
 
 		float[][] kernel = new float[resultSize][resultSize];
 		for (int x : new Range(resultSize))
 		{
-			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - x);
+			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - (x));
 			for (int y : new Range(resultSize))
 			{
-				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - y);
+				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - (y));
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math.sqrt(xDistanceFromCenter
 						* xDistanceFromCenter + yDistanceFromCenter
@@ -171,7 +171,6 @@ public class ImageHelper
 	
 	public static float[][] createFractalKernel(int size, double p)
 	{
-		// If I ever want to use this, I should change it so that size is half the final dimension to be consitant.
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
@@ -190,16 +189,10 @@ public class ImageHelper
 		return kernel;
 	}
 
-	/**
-	 * 
-	 * @param size Half of one dimension of the result (which is square).
-	 */
 	public static float[][] createPositiveSincKernel(int size, double scale)
 	{
 		Sinc dist = new Sinc();
-		
-		size *= 2; // Makes sure size is even
-		
+
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
@@ -649,7 +642,7 @@ public class ImageHelper
 	 */
 	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel,
 			boolean maximizeContrast)
-	{
+	{		
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
 		// Make sure rows and cols are greater than 1 for jtransforms.
@@ -678,7 +671,6 @@ public class ImageHelper
 			// Do the forward FFT.
 			fft.realForwardFull(data);
 		}
-
 		
 		// convert the kernel to the format required by JTransforms.
 		float[][] kernelData = new float[rows][2 * cols];
@@ -694,7 +686,7 @@ public class ImageHelper
 			// Do the forward FFT.
 			fft.realForwardFull(kernelData);
 		}
-				
+						
 		// Multiply the convolved image and kernel in the frequency domain.
 		for (int r = 0; r < rows; r++)
 			for (int c = 0; c < cols; c++)
@@ -710,7 +702,7 @@ public class ImageHelper
 				data[r][c*2 + 1] = imaginary;
 			}
 		kernelData = null;
-
+		
 //		 Do the inverse DFT on the product.
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
@@ -1083,14 +1075,16 @@ public class ImageHelper
 
 	public static void main(String[] args) throws IOException
 	{
-		BufferedImage in = new BufferedImage(128, 128, BufferedImage.TYPE_BYTE_GRAY);
+		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
 		Graphics2D g = in.createGraphics();
+		int blurLevel = 10;
 		g.setColor(Color.white);
-		g.fillRect(0, 0, in.getWidth(), in.getHeight());
+		g.fillRect(blurLevel, blurLevel, in.getWidth() - blurLevel*2, in.getHeight() - blurLevel*2);
 		g.setColor(Color.black);
-		g.fillRect(1, 1, in.getWidth() - 2, in.getHeight() - 2);
+		int edge = 2;
+		g.fillRect(edge + blurLevel, edge + blurLevel, in.getWidth() - (edge + blurLevel)*2, in.getHeight() - (edge + blurLevel)*2);
 		ImageHelper.write(in, "in.png");
-		BufferedImage result = convolveGrayscale(in, createGaussianKernel(3), false);
+		BufferedImage result = convolveGrayscale(in, createGaussianKernel(blurLevel), false);
 		ImageHelper.write(result, "result.png");
 		shutdownThreadPool();
 		System.out.println("Done");

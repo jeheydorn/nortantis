@@ -49,6 +49,7 @@ public class MapSettings implements Serializable
 	boolean frayedBorder;
 	Color frayedBorderColor;
 	int frayedBorderBlurLevel;
+	public int grungeWidth;
 	
 	boolean generateBackground;
 	long backgroundRandomSeed;
@@ -101,6 +102,7 @@ public class MapSettings implements Serializable
 		result.setProperty("frayedBorder", frayedBorder + "");
 		result.setProperty("frayedBorderColor", colorToString(frayedBorderColor));
 		result.setProperty("frayedBorderBlurLevel", frayedBorderBlurLevel + "");
+		result.setProperty("grungeWidth", grungeWidth + "");
 
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
@@ -288,6 +290,14 @@ public class MapSettings implements Serializable
 			public Integer apply()
 			{
 				return (int)(Integer.parseInt(props.getProperty("frayedBorderBlurLevel")));
+			}
+		});
+		grungeWidth = getProperty("grungeWidth", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				String str = props.getProperty("grungeWidth");
+				return str == null ? 0 : (int)(Integer.parseInt(str));
 			}
 		});
 		
