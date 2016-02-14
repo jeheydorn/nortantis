@@ -26,7 +26,8 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
-import org.jtransforms.utils.ConcurrencyUtils;
+
+import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
 {
@@ -36,7 +37,7 @@ public class ImageHelper
 	 */
 	public static void shutdownThreadPool()
 	{
-		ConcurrencyUtils.shutdownAndAwaitTermination();
+		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination(); 
 	}
 		
 	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
@@ -138,6 +139,11 @@ public class ImageHelper
 		return scaled;
 	}
 
+	/**
+	 * 
+	 * @param size Number of pixels from 3 standard deviations from once side of the Guassian to the other.
+	 * @return
+	 */
 	public static float[][] createGaussianKernel(int size)
 	{
 		// I want the edge of the kernel to be 3 standard deviations away from
@@ -145,14 +151,15 @@ public class ImageHelper
 		// divide by 2 to get half of the size (the length from center to edge).
 		double sd = size / (2.0 * 3.0);
 		NormalDistribution dist = new NormalDistribution(0, sd);
+		int resultSize = (size * 2);
 
-		float[][] kernel = new float[size][size];
-		for (int x : new Range(size))
+		float[][] kernel = new float[resultSize][resultSize];
+		for (int x : new Range(resultSize))
 		{
-			double xDistanceFromCenter = Math.abs(size / 2.0 - x);
-			for (int y : new Range(size))
+			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - (x));
+			for (int y : new Range(resultSize))
 			{
-				double yDistanceFromCenter = Math.abs(size / 2.0 - y);
+				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - (y));
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math.sqrt(xDistanceFromCenter
 						* xDistanceFromCenter + yDistanceFromCenter
@@ -183,7 +190,6 @@ public class ImageHelper
 		normalize(kernel);
 		return kernel;
 	}
-
 
 	public static float[][] createPositiveSincKernel(int size, double scale)
 	{
@@ -251,24 +257,35 @@ public class ImageHelper
 	 */
 	public static void setContrast(float[][] array, float targetMin, float targetMax)
 	{
+		setContrast(array, targetMin, targetMax, 0, array.length, 0, array[0].length);
+	}
+	
+	public static void setContrast(float[][] array, float targetMin, float targetMax,
+			int rowStart, int rows, int colStart, int cols)
+	{
 		float min = Float.POSITIVE_INFINITY;
 		float max = Float.NEGATIVE_INFINITY;
-		for (int r = 0; r < array.length; r++)
-			for (int c = 0; c < array[0].length; c++)
-			{
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{			
 				float value = array[r][c];
 				if (value < min)
 					min = value;
 				if (value > max)
 					max = value;
 			}
-		for (int r = 0; r < array.length; r++)
-			for (int c = 0; c < array[0].length; c++)
-			{
+		}
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{			
 				float value = array[r][c];
 				array[r][c] = (((value - min)/(max - min))) * (targetMax - targetMin) + targetMin;
 			}
+		}
 	}
+	
 
 	/** 
 	 * Multiplies each pixel by the given scale. The image must be BufferedImage.TYPE_BYTE_GRAY.
@@ -358,10 +375,10 @@ public class ImageHelper
 			}
 		return result;
 	}
-
+	
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in
-	 * maskWithImage(...);
+	 * maskWithImage(...) except this way is more efficient.
 	 */
 	public static BufferedImage maskWithColor(BufferedImage image,
 			Color color, BufferedImage mask, boolean invertMask)
@@ -380,6 +397,7 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image.getWidth(),
 				image.getHeight(), image.getType());
 		Raster mRaster = mask.getRaster();
+		Raster alphaRaster = image.getAlphaRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
@@ -394,8 +412,8 @@ public class ImageHelper
 					int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed())/255;
 					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen())/255;
 					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue())/255;
-					int combined = (r << 16) | (g << 8) | b;
-					result.setRGB(x, y, combined);					
+					Color combined = new Color(r,g,b,alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+					result.setRGB(x, y, combined.getRGB());					
 				}
 				else
 				{
@@ -407,8 +425,8 @@ public class ImageHelper
 					int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
 					int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
 					int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-					int combined = (r << 16) | (g << 8) | b;
-					result.setRGB(x, y, combined);					
+					Color combined = new Color(r,g,b,alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+					result.setRGB(x, y, combined.getRGB());					
 				}
 				
 			}
@@ -474,8 +492,7 @@ public class ImageHelper
 			}
 		return result;
 	}
-
-	
+		
 	/**
 	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
 	 * @param image
@@ -617,11 +634,17 @@ public class ImageHelper
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 * @param img
-	 * @param kernel
+	 * @param kernel The kernel to convolve with.
+	 * @param maximizeContrast Iff true, the contrast of the convolved image
+	 * will be maximized while it is still in floating point representation.
+	 * In the result the pixel values will range from 0 to 255.
+	 * This is better than maximizing the contrast of the result because the result
+	 * is a BufferedImage, which is more discretized.
 	 * @return
 	 */
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel)
-	{
+	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel,
+			boolean maximizeContrast)
+	{		
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
 		// Make sure rows and cols are greater than 1 for jtransforms.
@@ -647,14 +670,12 @@ public class ImageHelper
 					data[r + imgRowPadding/2][c + imgColPadding/2] = grayLevel;
 				}
 	
-
 			// Do the forward FFT.
 			fft.realForwardFull(data);
 		}
 		
 		// convert the kernel to the format required by JTransforms.
 		float[][] kernelData = new float[rows][2 * cols];
-		
 		{
 			int rowPadding = rows - kernel.length;
 			int colPadding = cols - kernel[0].length;
@@ -666,10 +687,8 @@ public class ImageHelper
 	
 			// Do the forward FFT.
 			fft.realForwardFull(kernelData);
-			//fft.complexInverse(kernelData, true);
-
 		}
-				
+						
 		// Multiply the convolved image and kernel in the frequency domain.
 		for (int r = 0; r < rows; r++)
 			for (int c = 0; c < cols; c++)
@@ -685,24 +704,27 @@ public class ImageHelper
 				data[r][c*2 + 1] = imaginary;
 			}
 		kernelData = null;
-
+		
 //		 Do the inverse DFT on the product.
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
-		swapQuadrantsOfLeftSideInPlace(data);
+		swapQuadrantsOfLeftSideInPlace(data); 
+		
+		if (maximizeContrast)
+			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
 		
 		BufferedImage result = arrayToImage(data, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
 		return result;
 	}
-	
+		
 	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
 	{
 		int rows = data.length;
 		int cols = data[0].length/2;
 		for (int r = 0; r < rows/2; r++)
-		{
+		{			
 			for (int c = 0; c < cols; c++)
-			{
+			{				
 				if (c < cols/2)
 				{
 					float temp = data[r + rows/2][c + cols/2];
@@ -1034,13 +1056,20 @@ public class ImageHelper
 
 	public static void main(String[] args) throws IOException
 	{
-		BufferedImage in = ImageIO.read(new File("assets/ocean_3072.jpg"));
-		BufferedImage inBW = convertToGrayscale(in);
-		long startTime = System.currentTimeMillis();
-		BufferedImage colorified = colorify2(inBW, new Color(0xc69b47));
-		System.out.println("Time to colorify: " + ((double) System.currentTimeMillis() - startTime)/1000.0);
-		ImageIO.write(colorified, "png", new File("colorized.png"));
+		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
+		Graphics2D g = in.createGraphics();
+		int blurLevel = 10;
+		g.setColor(Color.white);
+		g.fillRect(blurLevel, blurLevel, in.getWidth() - blurLevel*2, in.getHeight() - blurLevel*2);
+		g.setColor(Color.black);
+		int edge = 2;
+		g.fillRect(edge + blurLevel, edge + blurLevel, in.getWidth() - (edge + blurLevel)*2, in.getHeight() - (edge + blurLevel)*2);
+		ImageHelper.write(in, "in.png");
+		BufferedImage result = convolveGrayscale(in, createGaussianKernel(blurLevel), false);
+		ImageHelper.write(result, "result.png");
+		shutdownThreadPool();
 		System.out.println("Done");
+		
 	}
 	
 }

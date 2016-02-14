@@ -19,9 +19,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,6 +132,7 @@ public class RunSwing
 	private JCheckBox drawRegionsCheckBox;
 	private JTextField regionsSeedTextField;
 	private JButton newRegionSeedButton;
+	private JSlider grungeSlider;
 
 	
 	public static boolean isRunning()
@@ -875,8 +879,8 @@ public class RunSwing
 		frayedBorderCheckbox.setBounds(461, 194, 134, 23);
 		effectsPanel.add(frayedBorderCheckbox);
 		
-		JLabel frayedBorderColorLabel = new JLabel("Frayed border color:");
-		frayedBorderColorLabel.setToolTipText("Rivers will be drawn this color.");
+		JLabel frayedBorderColorLabel = new JLabel("Border/grunge color:");
+		frayedBorderColorLabel.setToolTipText("Frayed border and grunge will be this color");
 		frayedBorderColorLabel.setBounds(461, 221, 152, 23);
 		effectsPanel.add(frayedBorderColorLabel);
 		
@@ -895,7 +899,7 @@ public class RunSwing
 		effectsPanel.add(frayedBorderChooseButton);
 		
 		JLabel frayedBorderBlurLevelLabel = new JLabel("Frayed border blur:");
-		frayedBorderBlurLevelLabel.setToolTipText("Adds fading color or waves to oceans at coastlines.");
+		frayedBorderBlurLevelLabel.setToolTipText("The width of color drawn around frayed edges");
 		frayedBorderBlurLevelLabel.setBounds(461, 267, 152, 15);
 		effectsPanel.add(frayedBorderBlurLevelLabel);
 		
@@ -921,6 +925,21 @@ public class RunSwing
 		JButton buttonChooseCoastlineColor = new JButton("Choose");
 		buttonChooseCoastlineColor.setBounds(725, 44, 87, 25);
 		effectsPanel.add(buttonChooseCoastlineColor);
+		
+		JLabel lblGrunge = new JLabel("Grunge:");
+		lblGrunge.setToolTipText("Determines the width of grunge on the edges of the map. 0 means none. ");
+		lblGrunge.setBounds(12, 267, 152, 23);
+		effectsPanel.add(lblGrunge);
+		
+		grungeSlider = new JSlider();
+		grungeSlider.setValue(0);
+		grungeSlider.setPaintTicks(true);
+		grungeSlider.setPaintLabels(true);
+		grungeSlider.setMinorTickSpacing(100);
+		grungeSlider.setMaximum(2000);
+		grungeSlider.setMajorTickSpacing(500);
+		grungeSlider.setBounds(131, 249, 245, 79);
+		effectsPanel.add(grungeSlider);
 		
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -1180,7 +1199,6 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e) 
 			{
 				frayedBorderBlurSlider.setEnabled(frayedBorderCheckbox.isSelected());
-				frayedBorderColorDisplay.setEnabled(frayedBorderCheckbox.isSelected());
 				frayedBorderChooseButton.setEnabled(frayedBorderCheckbox.isSelected());
 			}
 		});
@@ -1514,6 +1532,7 @@ public class RunSwing
 		frayedBorderCheckbox.doClick();
 		frayedBorderColorDisplay.setBackground(settings.frayedBorderColor);
 		frayedBorderBlurSlider.setValue(settings.frayedBorderBlurLevel);
+		grungeSlider.setValue(settings.grungeWidth);
 		
 		// Settings for background images.
 		rdbtnGenerated.setSelected(settings.generateBackground);
@@ -1617,6 +1636,7 @@ public class RunSwing
 		settings.frayedBorder = frayedBorderCheckbox.isSelected();
 		settings.frayedBorderColor = frayedBorderColorDisplay.getBackground();
 		settings.frayedBorderBlurLevel = frayedBorderBlurSlider.getValue();
+		settings.grungeWidth = grungeSlider.getValue();
 		
 		// Background image settings
 		settings.generateBackground = rdbtnGenerated.isSelected();

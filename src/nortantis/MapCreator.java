@@ -6,9 +6,11 @@ import hoten.voronoi.Corner;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
@@ -232,16 +234,13 @@ public class MapCreator
 			graph.paint(g, false, false, false, false, false, true, false, sizeMultiplyer);
 		}
 		
-
-		Logger.println("Creating masks for darkening land near shores and for effects in ocean along coastlines.");
-
-		// Darken the land next to borders.
-		Logger.println("Darkening land near shores.");
+		// Darken the land next to coast lines and optionally region borders.
 		{
 			BufferedImage landBlur;
 			int blurLevel = (int) (settings.landBlur * sizeMultiplyer);
 			if (blurLevel > 0)
 			{
+				Logger.println("Darkening land near shores.");
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 				
 				if (settings.drawRegionColors)
@@ -250,8 +249,7 @@ public class MapCreator
 					Graphics2D g = coastlineAndRegionBorders.createGraphics();
 					g.setColor(Color.white);
 					graph.drawRegionBorders(g, sizeMultiplyer, false);
-					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel);
-					ImageHelper.maximizeContrastGrayscale(landBlur);
+					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel, true);
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
@@ -262,8 +260,7 @@ public class MapCreator
 				}
 				else
 				{
-					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
-					ImageHelper.maximizeContrastGrayscale(landBlur);
+					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true);
 					// Remove the land blur from the ocean side of the borders.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
 					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
@@ -346,8 +343,7 @@ public class MapCreator
 				{
 					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffects * sizeMultiplyer));
 				}
-				oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel);
-				ImageHelper.maximizeContrastGrayscale(oceanBlur);
+				oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true);
 				// Remove the ocean blur from the land side of the borders.
 				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
 
@@ -379,6 +375,14 @@ public class MapCreator
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
+			
+			// Draw region borders into the land mask so that names don't make region borders fade away when drawn on top of them.
+			if (settings.drawRegionColors)
+			{
+				Graphics2D g = landBackground.createGraphics();
+				g.setColor(settings.coastlineColor);
+				graph.drawRegionBorders(g, sizeMultiplyer, true);
+			}
 						
 			textDrawer.drawText(graph, map, landBackground, mountainGroups);
 		}
@@ -388,21 +392,35 @@ public class MapCreator
 		{
 			Logger.println("Adding frayed border.");
 			BufferedImage borderMask = new BufferedImage(graph.getWidth(),
-					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+					graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			graph.drawBorderWhite(borderMask.createGraphics());
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel);
-				ImageHelper.maximizeContrastGrayscale(borderBlur);
+				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel, true);
 			
 				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, borderBlur, true);
 
 			}
 			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
 		}
+		
+		if (settings.grungeWidth > 0)
+		{
+			// 104567 is an arbitrary number added so that the grung is not the same pattern as
+			// the background.
+			BufferedImage clouds = FractalBGGenerator.generate(
+					new Random(settings.backgroundRandomSeed + 104567), settings.fractalPower, 
+					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
+			// Whiten the middle of clouds.
+			whitenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);
+			
+			// Add the cloud mask to the map.
+			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, clouds, true);
+		}
+		
 		
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
@@ -414,6 +432,46 @@ public class MapCreator
 		
 		return map;
 
+	}
+	
+	/**
+	 * Makes the middle area of a gray scale image whiter.
+	 */
+	private void whitenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
+	{
+		// Draw a white box.
+		int blurLevel = (int)(grungeWidth * resolutionScale);
+		if (blurLevel == 0)
+			blurLevel = 1; // Avoid an exception later.
+		assert blurLevel <= Math.min(image.getWidth(), image.getHeight());
+		BufferedImage blurBox = new BufferedImage(image.getWidth() + blurLevel*2, image.getHeight() + blurLevel*2, BufferedImage.TYPE_BYTE_BINARY);
+		Graphics g = blurBox.getGraphics();
+		g.setColor(Color.white);
+		g.fillRect(blurLevel, blurLevel, image.getWidth(), image.getHeight());
+		
+		int rectWidth = (int)(resolutionScale);
+		if (rectWidth == 0)
+			rectWidth = 1;
+		
+		g.setColor(Color.black);
+		g.fillRect(rectWidth + blurLevel, rectWidth + blurLevel, image.getWidth() - rectWidth*2, image.getHeight() - rectWidth*2);
+		
+		// Use Gaussian blur on the box.
+		float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
+		blurBox = ImageHelper.convolveGrayscale(blurBox, kernel, true);
+
+		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
+		assert image.getType() == BufferedImage.TYPE_BYTE_GRAY;
+		WritableRaster imageRaster = image.getRaster();
+		Raster blurBoxRaster = blurBox.getRaster();
+		for (int y = 0; y < image.getHeight(); y++)
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				float imageLevel = imageRaster.getSample(x, y, 0);
+				float blurBoxLevel = blurBoxRaster.getSample(x + blurLevel, y + blurLevel, 0);
+				
+				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel)/255f);
+			}
 	}
 		
 	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
@@ -438,55 +496,22 @@ public class MapCreator
 			float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * settings.saturationRange));
 			float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * settings.brightnessRange));
 			regionColorOptions.add(ImageHelper.colorFromHSB(hue, saturation, brightness));
-		}	
-		
-		
+		}
+				
 		// Create a new Random object so that changes 
-		assignRegionColors(graph, new Random(settings.regionsRandomSeed), regionColorOptions);
+		assignRegionColors(graph, regionColorOptions);
 	}
 	
 	/**
-	 * Determines the color of each political region.
+	 * Assigns the color of each political region.
 	 */
-	private void assignRegionColors(GraphImpl graph, Random rand, List<Color> colorOptions)
+	private void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
 	{
 		if (colorOptions.isEmpty())
 			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
-		List<Color> notSampled = new ArrayList<>(colorOptions);
-		for (Region region : graph.regions)
+		for (int i : new Range(graph.regions.size()))
 		{
-			// Find the set of colors of the region's neighbors.
-			Set<Color> neighborColors = new HashSet<>();
-			for (Region neighbor : region.neighbors)
-			{
-				if (neighbor.backgroundColor != null)
-				{
-					neighborColors.add(neighbor.backgroundColor);
-				}
-			}
-			
-			Set<Color> remainingColors = new HashSet<>(notSampled);
-			remainingColors.removeAll(neighborColors);
-			if (remainingColors.isEmpty())
-			{
-				// The neighbors have taken all of the colors.
-				int index = rand.nextInt(notSampled.size());
-				region.backgroundColor = notSampled.get(index);
-				notSampled.remove(index); // sample without replacement
-			}
-			else
-			{
-				List<Color> remainingColorsList = new ArrayList<>(remainingColors);
-				int index = rand.nextInt(remainingColorsList.size());
-				region.backgroundColor = remainingColorsList.get(index);
-				notSampled.remove(remainingColorsList.get(index));
-			}
-			
-			if (notSampled.isEmpty())
-			{
-				// Refill
-				notSampled = new ArrayList<>(colorOptions);
-			}
+			graph.regions.get(i).backgroundColor = colorOptions.get(i % colorOptions.size());
 		}
 	}
 
