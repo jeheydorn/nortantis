@@ -37,7 +37,7 @@ public class ImageHelper
 	 */
 	public static void shutdownThreadPool()
 	{
-		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination(); 
+		//ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination(); 
 	}
 		
 	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
