@@ -27,6 +27,8 @@ import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
+import pl.edu.icm.jlargearrays.ConcurrencyUtils;
+
 public class ImageHelper
 {
 	/**
@@ -35,7 +37,7 @@ public class ImageHelper
 	 */
 	public static void shutdownThreadPool()
 	{
-		//ConcurrencyUtils.shutdownAndAwaitTermination(); TODO Remove this and all references to it
+		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination(); 
 	}
 		
 	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
@@ -714,28 +716,7 @@ public class ImageHelper
 		BufferedImage result = arrayToImage(data, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
 		return result;
 	}
-	
-	// TODO remove when done debugging if I don't need this.
-//	public static float[][] shiftLeftSideDownAndRightOnePixel(float[][] data)
-//	{
-//		float[][] result = new float[data.length][data[0].length]; // TODO use data[0].length/2
-//		for (int rDest = data.length - 1; rDest >= 0; rDest--)
-//		{
-//			int rSource = rDest - 1;
-//			if (rSource == -1)
-//					rSource = data.length - 1;
-//
-//			for (int cDest = data[0].length/2 - 1; cDest >= 0; cDest--)
-//			{
-//				int cSource = cDest - 1;
-//				if (cSource == - 1)
-//					cSource = data[0].length/2 - 1;
-//				result[rDest][cDest] = data[rSource][cSource];
-//			}
-//		}
-//		return result;
-//	}
-	
+		
 	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
 	{
 		int rows = data.length;

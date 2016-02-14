@@ -409,7 +409,6 @@ public class MapCreator
 		
 		if (settings.grungeWidth > 0)
 		{
-			// TODO make these options or settings
 			// 104567 is an arbitrary number added so that the grung is not the same pattern as
 			// the background.
 			BufferedImage clouds = FractalBGGenerator.generate(
@@ -441,7 +440,6 @@ public class MapCreator
 	private void whitenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
 	{
 		// Draw a white box.
-		// TODO make this a settings
 		int blurLevel = (int)(grungeWidth * resolutionScale);
 		if (blurLevel == 0)
 			blurLevel = 1; // Avoid an exception later.
