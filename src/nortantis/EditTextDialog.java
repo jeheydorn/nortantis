@@ -532,6 +532,7 @@ public class EditTextDialog extends JDialog
 		settings.oceanEffects = 0;
 		settings.frayedBorder = false;
 		settings.drawText = false;
+		settings.grungeWidth = 0;
 
 		SwingWorker<Tuple2<BufferedImage, MapParts>, Void> worker = new SwingWorker<Tuple2<BufferedImage, MapParts>, Void>() 
 	    {

@@ -268,7 +268,6 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ImageHelper.shutdownThreadPool();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						}
 			        	
@@ -321,7 +320,6 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ImageHelper.shutdownThreadPool();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						} 
 			        	
@@ -1199,7 +1197,6 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e) 
 			{
 				frayedBorderBlurSlider.setEnabled(frayedBorderCheckbox.isSelected());
-				frayedBorderChooseButton.setEnabled(frayedBorderCheckbox.isSelected());
 			}
 		});
 								
