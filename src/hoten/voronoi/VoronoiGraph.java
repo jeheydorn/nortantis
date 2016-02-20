@@ -18,11 +18,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import nortantis.PlateType;
-import nortantis.StopWatch;
 import nortantis.TectonicPlate;
 import util.Range;
 

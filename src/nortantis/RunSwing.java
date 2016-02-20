@@ -3,7 +3,6 @@ package nortantis;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -18,15 +17,10 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.Serializable;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -34,7 +28,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -43,7 +36,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -268,7 +260,6 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ImageHelper.shutdownThreadPool();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						}
 			        	
@@ -321,7 +312,6 @@ public class RunSwing
 						catch (Exception e)
 						{
 							e.printStackTrace();
-							ImageHelper.shutdownThreadPool();
 					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						} 
 			        	
@@ -1199,7 +1189,6 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e) 
 			{
 				frayedBorderBlurSlider.setEnabled(frayedBorderCheckbox.isSelected());
-				frayedBorderChooseButton.setEnabled(frayedBorderCheckbox.isSelected());
 			}
 		});
 								

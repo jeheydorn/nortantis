@@ -34,6 +34,8 @@ public class ImageHelper
 	/**
 	 * This should be called before closing the program if methods have been
 	 *  called which use jTransforms or other thread pools.
+	 *  
+	 *  For some reason this doesn't need to be called when running a GUI, and will throw an errror if you do.
 	 */
 	public static void shutdownThreadPool()
 	{
@@ -141,14 +143,13 @@ public class ImageHelper
 
 	/**
 	 * 
-	 * @param size Number of pixels from 3 standard deviations from once side of the Guassian to the other.
+	 * @param size Number of pixels from 3 standard deviations from one side of the Guassian to the other.
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
 	{
 		// I want the edge of the kernel to be 3 standard deviations away from
-		// the middle. I also
-		// divide by 2 to get half of the size (the length from center to edge).
+		// the middle. I also divide by 2 to get half of the size (the length from center to edge).
 		double sd = size / (2.0 * 3.0);
 		NormalDistribution dist = new NormalDistribution(0, sd);
 		int resultSize = (size * 2);

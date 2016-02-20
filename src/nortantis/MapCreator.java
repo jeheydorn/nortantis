@@ -30,8 +30,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -409,13 +407,14 @@ public class MapCreator
 		
 		if (settings.grungeWidth > 0)
 		{
+			Logger.println("Adding grunge.");
 			// 104567 is an arbitrary number added so that the grung is not the same pattern as
 			// the background.
 			BufferedImage clouds = FractalBGGenerator.generate(
 					new Random(settings.backgroundRandomSeed + 104567), settings.fractalPower, 
 					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
 			// Whiten the middle of clouds.
-			whitenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);
+			darkenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);
 			
 			// Add the cloud mask to the map.
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, clouds, true);
@@ -426,7 +425,6 @@ public class MapCreator
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 		
 		Logger.println("Shutting down thread pool.");
-		ImageHelper.shutdownThreadPool();
 
 		Logger.println("Done creating map.");
 		
@@ -435,27 +433,36 @@ public class MapCreator
 	}
 	
 	/**
-	 * Makes the middle area of a gray scale image whiter.
+	 * Makes the middle area of a gray scale image darker following a Gauisian blur drop off.
 	 */
-	private void whitenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
+	private void darkenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
 	{
 		// Draw a white box.
+		
 		int blurLevel = (int)(grungeWidth * resolutionScale);
 		if (blurLevel == 0)
 			blurLevel = 1; // Avoid an exception later.
 		assert blurLevel <= Math.min(image.getWidth(), image.getHeight());
-		BufferedImage blurBox = new BufferedImage(image.getWidth() + blurLevel*2, image.getHeight() + blurLevel*2, BufferedImage.TYPE_BYTE_BINARY);
+		// Create a white no-filled in rectangle, then blur it. To be much more efficient, I only create
+		// the upper left corner plus 1 pixel in both directions since the corners and edges are all the
+		// rotated and the edges are all the same except some longer than others.
+		int blurBoxWidth = blurLevel*2 + 1;
+		// There is a blurLevel wide buffer below is so that in the convolution the border from one side of the box won't spread (wrap) to the other side.
+		// I would be especially bad if it did because ImageHelper.convolveGrayscale pads images to be powers of 2 in the width and height.
+		// The white rectangleis also drawn an extra blurLevel from blurBoxWidth, totaling blurLevel*2.
+		BufferedImage blurBox = new BufferedImage(blurBoxWidth + blurLevel*2, blurBoxWidth + blurLevel*2, BufferedImage.TYPE_BYTE_BINARY);
 		Graphics g = blurBox.getGraphics();
 		g.setColor(Color.white);
-		g.fillRect(blurLevel, blurLevel, image.getWidth(), image.getHeight());
+		g.fillRect(0, 0, blurBoxWidth + blurLevel, blurBoxWidth + blurLevel);
 		
 		int rectWidth = (int)(resolutionScale);
 		if (rectWidth == 0)
 			rectWidth = 1;
 		
+		// Erase the white rectangle border from the right and button sides.
 		g.setColor(Color.black);
-		g.fillRect(rectWidth + blurLevel, rectWidth + blurLevel, image.getWidth() - rectWidth*2, image.getHeight() - rectWidth*2);
-		
+		g.fillRect(rectWidth, rectWidth, blurBoxWidth + blurLevel, blurBoxWidth + blurLevel);
+				
 		// Use Gaussian blur on the box.
 		float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 		blurBox = ImageHelper.convolveGrayscale(blurBox, kernel, true);
@@ -468,7 +475,48 @@ public class MapCreator
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				float imageLevel = imageRaster.getSample(x, y, 0);
-				float blurBoxLevel = blurBoxRaster.getSample(x + blurLevel, y + blurLevel, 0);
+				
+				// Retrieve the blur level as though blurBox has all 4 quadrants and middle created, even has only the upper left.
+				int blurBoxX;
+				if (x > blurLevel)
+				{
+					if (image.getWidth() - x < blurLevel)
+					{
+						// x is under the right corner.
+						blurBoxX = image.getWidth() - x;
+					}
+					else
+					{
+						// x is between the corners.
+						blurBoxX = blurBoxWidth + 1;
+					}
+				}
+				else
+				{
+					// x is under the left corner.
+					blurBoxX = x;
+				}
+				
+				int blurBoxY;
+				if (y > blurLevel)
+				{
+					if (image.getHeight() - y < blurLevel)
+					{
+						// y is under the right corner.
+						blurBoxY = image.getHeight() - y;
+					}
+					else
+					{
+						// x is between the corners.
+						blurBoxY = blurBoxWidth + 1;
+					}
+				}
+				else
+				{
+					// y is under the left corner.
+					blurBoxY = y;
+				}
+				float blurBoxLevel = blurBoxRaster.getSample(blurBoxX, blurBoxY, 0);
 				
 				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel)/255f);
 			}
@@ -1188,10 +1236,10 @@ public class MapCreator
 		try
 		{
 			map = creator.createMap(settings, null, null);
-		} catch(Exception e)
+		} 
+		finally
 		{
 			ImageHelper.shutdownThreadPool();
-			throw e;
 		}
 		
 //		Path outputPath = Paths.get("map_" + settings.randomSeed + ".png");

@@ -1,14 +1,16 @@
 package nortantis;
 
 import java.awt.BorderLayout;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -29,7 +32,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
-import util.Helper;
 import util.ImageHelper;
 import util.Tuple2;
 
@@ -76,101 +78,100 @@ public class EditTextDialog extends JDialog
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		
 		getContentPane().add(scrollPane);
+		
+		JPanel buttonPane = new JPanel();
+		buttonPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+		getContentPane().add(buttonPane, BorderLayout.SOUTH);
 		{
-			JPanel buttonPane = new JPanel();
-			buttonPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-			getContentPane().add(buttonPane, BorderLayout.SOUTH);
-			{
-				JButton doneButton = new JButton("Done");
-				doneButton.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e){
-						thisDialog.dispatchEvent(new WindowEvent(
-			                    thisDialog, WindowEvent.WINDOW_CLOSING));
-					}
-				});
-				buttonPane.setLayout(new BorderLayout(0, 0));
+			JButton doneButton = new JButton("Done");
+			doneButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e){
+					thisDialog.dispatchEvent(new WindowEvent(
+		                    thisDialog, WindowEvent.WINDOW_CLOSING));
+				}
+			});
+			buttonPane.setLayout(new BorderLayout(0, 0));
 
-				editTextField = new JTextField();
-				buttonPane.add(editTextField, BorderLayout.WEST);
-				editTextField.setColumns(20);
-				buttonPane.add(doneButton, BorderLayout.EAST);
-				
-			}
-			
-			JPanel panel = new JPanel();
-			buttonPane.add(panel, BorderLayout.CENTER);
-			
-			JLabel lblTools = new JLabel("Tool:");
-			panel.add(lblTools);
-			
-			toolComboBox = new JComboBox<>();
-			for (ToolType toolType : ToolType.values())
-			{
-				toolComboBox.addItem(toolType);
-			}
-			toolComboBox.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					// Keep any text edits being done.
-					if (lastSelected != null && lastTool == ToolType.Edit)
-					{
-						handleTextEdit(lastSelected);
-					}
-					
-					mapDisplayPanel.clearAreasToDraw();
-					lastSelected = null;
-					mapDisplayPanel.repaint();
-					textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
-					editTextField.setText("");
-					lastTool = (ToolType)toolComboBox.getSelectedItem();
-					updateToolText();
-				}
-			});
-			panel.add(toolComboBox);
-			
-			JLabel lblTextType = new JLabel("Text type:");
-			panel.add(lblTextType);
-			
-			textTypeComboBox= new JComboBox<>();
-			for (TextType type : TextType.values())
-			{
-				textTypeComboBox.addItem(type);				
-			}
-			textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-			panel.add(textTypeComboBox);
-			textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
-			toolComboBox.setSelectedItem(ToolType.Edit); 		
-			lastTool = (ToolType)toolComboBox.getSelectedItem();
-			JLabel lblZoom = new JLabel("Zoom:");
-			panel.add(lblZoom);
-			
-			final JComboBox<String> zoomComboBox = new JComboBox<>();
-			zoomComboBox.addItem("25%");
-			zoomComboBox.addItem("50%");
-			zoomComboBox.addItem("75%");
-			zoomComboBox.addItem("100%");
-			zoomComboBox.setSelectedItem("50%");
-			panel.add(zoomComboBox);
-			setZoom((String)zoomComboBox.getSelectedItem());
-			zoomComboBox.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					setZoom((String)zoomComboBox.getSelectedItem());
-					mapDisplayPanel.setImage(placeHolder);
-					mapDisplayPanel.clearAreasToDraw();
-					mapParts = null;
-					
-					mapDisplayPanel.repaint();
-					createAndShowMap();
-				}
-			});
+			editTextField = new JTextField();
+			buttonPane.add(editTextField, BorderLayout.WEST);
+			editTextField.setColumns(20);
+			buttonPane.add(doneButton, BorderLayout.EAST);
 			
 		}
 		
+		JPanel panel = new JPanel();
+		buttonPane.add(panel, BorderLayout.CENTER);
+		
+		JLabel lblTools = new JLabel("Tool:");
+		panel.add(lblTools);
+		
+		toolComboBox = new JComboBox<>();
+		for (ToolType toolType : ToolType.values())
+		{
+			toolComboBox.addItem(toolType);
+		}
+		toolComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				// Keep any text edits being done.
+				if (lastSelected != null && lastTool == ToolType.Edit)
+				{
+					handleTextEdit(lastSelected);
+				}
+				
+				mapDisplayPanel.clearAreasToDraw();
+				lastSelected = null;
+				mapDisplayPanel.repaint();
+				textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
+				editTextField.setText("");
+				lastTool = (ToolType)toolComboBox.getSelectedItem();
+				updateToolText();
+			}
+		});
+		panel.add(toolComboBox);
+		
+		JLabel lblTextType = new JLabel("Text type:");
+		panel.add(lblTextType);
+		
+		textTypeComboBox= new JComboBox<>();
+		for (TextType type : TextType.values())
+		{
+			textTypeComboBox.addItem(type);				
+		}
+		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
+		panel.add(textTypeComboBox);
+		textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
+		toolComboBox.setSelectedItem(ToolType.Edit); 		
+		lastTool = (ToolType)toolComboBox.getSelectedItem();
+		JLabel lblZoom = new JLabel("Zoom:");
+		panel.add(lblZoom);
+		
+		final JComboBox<String> zoomComboBox = new JComboBox<>();
+		zoomComboBox.addItem("25%");
+		zoomComboBox.addItem("50%");
+		zoomComboBox.addItem("75%");
+		zoomComboBox.addItem("100%");
+		zoomComboBox.setSelectedItem("25%"); // TODO change back to 50%
+		panel.add(zoomComboBox);
+		setZoom((String)zoomComboBox.getSelectedItem());
+		zoomComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				setZoom((String)zoomComboBox.getSelectedItem());
+				mapDisplayPanel.setImage(placeHolder);
+				mapDisplayPanel.clearAreasToDraw();
+				mapParts = null;
+				
+				mapDisplayPanel.repaint();
+				createAndShowMap();
+				editTextField.requestFocus();
+			}
+		});			
+			
 		mapDisplayPanel.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -207,20 +208,12 @@ public class EditTextDialog extends JDialog
 			}
 		});
 		
-		editTextField.addKeyListener(new KeyListener()
-		{	
-			@Override
-			public void keyTyped(KeyEvent e)
-			{
-			}
-			
-			@Override
-			public void keyReleased(KeyEvent e)
-			{
-			}
-			
-			@Override
-			public void keyPressed(KeyEvent e)
+		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
+		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
+		{
+			private boolean isSaving;
+
+			public boolean dispatchKeyEvent(KeyEvent e)
 			{
 				if (e.getKeyCode() == KeyEvent.VK_ENTER)
 				{
@@ -228,37 +221,60 @@ public class EditTextDialog extends JDialog
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0))
 				{
-					handleTextEdit(lastSelected);	
+					// Prevent multiple "save as" popups.
+					if (isSaving)
+					{
+						return false;
+					}
+					isSaving = true;
 					
-					// Save
-					runSwing.saveSettings(mapDisplayPanel);
+					try
+					{
+						handleTextEdit(lastSelected);	
+						// Save
+						runSwing.saveSettings(mapDisplayPanel);
+					}
+					finally
+					{
+						isSaving = false;
+					}
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_A) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Add);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_E) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Edit);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_R) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Rotate);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_G) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Move);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_D) 
-						&& ((e.getModifiers() & (KeyEvent.CTRL_MASK)) != 0))
+						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
 					toolComboBox.setSelectedItem(ToolType.Delete);
 				}
 				
+				return false;
+			}
+		};
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
+		
+		addWindowListener(new WindowAdapter()
+		{
+			public void windowClosing(WindowEvent e)
+			{
+				KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(myKeyEventDispatcher);
 			}
 		});
 		
@@ -269,23 +285,23 @@ public class EditTextDialog extends JDialog
 	{
 		if (toolComboBox.getSelectedItem() == ToolType.Add)
 		{
-			toolComboBox.setToolTipText("Add new text of the selected text type (ctrl+A)");
+			toolComboBox.setToolTipText("Add new text of the selected text type (alt+A)");
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Edit)
 		{
-			toolComboBox.setToolTipText("Edit text (ctrl+E)");			
+			toolComboBox.setToolTipText("Edit text (alt+E)");			
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Move)
 		{
-			toolComboBox.setToolTipText("Move text (ctrl+G)");			
+			toolComboBox.setToolTipText("Move text (alt+G)");			
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Rotate)
 		{
-			toolComboBox.setToolTipText("Rotate text (ctrl+R)");			
+			toolComboBox.setToolTipText("Rotate text (alt+R)");			
 		}
 		else if (toolComboBox.getSelectedItem() == ToolType.Delete)
 		{
-			toolComboBox.setToolTipText("Delete text (ctrl+D)");			
+			toolComboBox.setToolTipText("Delete text (alt+D)");			
 		}
 	}
 	
@@ -532,6 +548,7 @@ public class EditTextDialog extends JDialog
 		settings.oceanEffects = 0;
 		settings.frayedBorder = false;
 		settings.drawText = false;
+		settings.grungeWidth = 0;
 
 		SwingWorker<Tuple2<BufferedImage, MapParts>, Void> worker = new SwingWorker<Tuple2<BufferedImage, MapParts>, Void>() 
 	    {
