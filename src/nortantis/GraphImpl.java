@@ -12,13 +12,11 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -26,7 +24,6 @@ import org.apache.commons.math3.random.RandomGenerator;
 
 import util.Function;
 import util.Helper;
-import util.Logger;
 import util.Range;
 
 /**

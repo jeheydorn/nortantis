@@ -7,6 +7,7 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
+@SuppressWarnings("serial")
 public class TextEditingPanel extends ImagePanel
 {
 	private Color highlightColor = new Color(255,227,74);

@@ -3,7 +3,6 @@ package hoten.voronoi;
 import hoten.geom.Point;
 
 import java.util.ArrayList;
-import java.util.Set;
 
 import nortantis.Region;
 import nortantis.TectonicPlate;
