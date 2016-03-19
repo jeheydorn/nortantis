@@ -27,8 +27,6 @@ import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
-import pl.edu.icm.jlargearrays.ConcurrencyUtils;
-
 public class ImageHelper
 {
 	/**
