@@ -459,7 +459,7 @@ public class RunSwing
 		scaleSlider.setPaintTicks(true);
 		scaleSlider.setMinorTickSpacing(25);
 		scaleSlider.setMinimum(25);
-		scaleSlider.setMaximum(200);
+		scaleSlider.setMaximum(300);
 		scaleSlider.setMajorTickSpacing(50);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
