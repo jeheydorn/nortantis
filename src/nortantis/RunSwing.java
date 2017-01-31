@@ -332,7 +332,7 @@ public class RunSwing
 			            }
 			            catch (java.util.concurrent.ExecutionException e) 
 			            {
-			                throw new RuntimeException(e.getMessage());
+			                throw new RuntimeException(e);
 			            }
 			            if (map != null)
 			            {
@@ -637,7 +637,6 @@ public class RunSwing
 				btnChooseOceanColor.setEnabled(rdbtnGenerated.isSelected());
 				btnNewBackgroundSeed.setEnabled(rdbtnGenerated.isSelected());
 				dimensionsComboBox.setEnabled(rdbtnGenerated.isSelected());
-				scaleSlider.setEnabled(rdbtnGenerated.isSelected());
 				backgroundSeedTextField.setEnabled(rdbtnGenerated.isSelected());
 
 				btnBrowseLandBackground.setEnabled(!rdbtnGenerated.isSelected());

@@ -99,6 +99,8 @@ public class MapCreator
 						
         Logger.println("Seed: " + settings.randomSeed);
         r = new Random(settings.randomSeed);
+        
+        boolean shouldDrawRegionColors = settings.drawRegionColors && settings.generateBackground;
 
 		
 		BufferedImage land;
@@ -122,7 +124,7 @@ public class MapCreator
 					new Random(settings.backgroundRandomSeed), settings.fractalPower, 
 					(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
 			ocean = ImageHelper.colorify2(fractalBG, settings.oceanColor);
-			if (!settings.drawRegionColors)
+			if (!shouldDrawRegionColors)
 			{
 				land = ImageHelper.colorify2(fractalBG, settings.landColor);
 				fractalBG = null;
@@ -183,7 +185,7 @@ public class MapCreator
 		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
 		BufferedImage regionIndexes = null;
 		
-		if (settings.drawRegionColors)
+		if (shouldDrawRegionColors)
 		{
 			assignRandomRegionColors(graph, settings);
 			
@@ -241,7 +243,7 @@ public class MapCreator
 				Logger.println("Darkening land near shores.");
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 				
-				if (settings.drawRegionColors)
+				if (shouldDrawRegionColors)
 				{
 					BufferedImage coastlineAndRegionBorders = ImageHelper.deepCopy(coastlineMask);
 					Graphics2D g = coastlineAndRegionBorders.createGraphics();
@@ -270,7 +272,7 @@ public class MapCreator
 		// Store the current version of the map for a background when drawing icons later.
 		BufferedImage landBackground = ImageHelper.deepCopy(map);
 		
-		if (settings.drawRegionColors)
+		if (shouldDrawRegionColors)
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
@@ -375,7 +377,7 @@ public class MapCreator
 			Logger.println("Adding text.");
 			
 			// Draw region borders into the land mask so that names don't make region borders fade away when drawn on top of them.
-			if (settings.drawRegionColors)
+			if (shouldDrawRegionColors)
 			{
 				Graphics2D g = landBackground.createGraphics();
 				g.setColor(settings.coastlineColor);
@@ -442,7 +444,6 @@ public class MapCreator
 		int blurLevel = (int)(grungeWidth * resolutionScale);
 		if (blurLevel == 0)
 			blurLevel = 1; // Avoid an exception later.
-		assert blurLevel <= Math.min(image.getWidth(), image.getHeight());
 		// Create a white no-filled in rectangle, then blur it. To be much more efficient, I only create
 		// the upper left corner plus 1 pixel in both directions since the corners and edges are all the
 		// rotated and the edges are all the same except some longer than others.

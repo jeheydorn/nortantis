@@ -148,6 +148,11 @@ public class ImageHelper
 	 */
 	public static float[][] createGaussianKernel(int size)
 	{
+		if (size == 0)
+		{
+			return new float[][] {{1f}};
+		}
+		
 		// I want the edge of the kernel to be 3 standard deviations away from
 		// the middle. I also divide by 2 to get half of the size (the length from center to edge).
 		double sd = size / (2.0 * 3.0);
@@ -174,6 +179,11 @@ public class ImageHelper
 	
 	public static float[][] createFractalKernel(int size, double p)
 	{
+		if (size == 0)
+		{
+			return new float[][] {{1f}};
+		}
+
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
@@ -194,6 +204,11 @@ public class ImageHelper
 
 	public static float[][] createPositiveSincKernel(int size, double scale)
 	{
+		if (size == 0)
+		{
+			return new float[][] {{1f}};
+		}
+
 		Sinc dist = new Sinc();
 
 		float[][] kernel = new float[size][size];
