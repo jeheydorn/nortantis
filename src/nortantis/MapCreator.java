@@ -430,6 +430,7 @@ public class MapCreator
 
 		Logger.println("Done creating map.");
 		
+		ScaledIconCache.clear();
 		return map;
 
 	}
@@ -800,8 +801,8 @@ public class MapCreator
 		{
 			if (needsScale)
 			{
-		       	icon = ImageHelper.scaleByWidth(icon, scaledWidth);
-		      	mask = ImageHelper.scaleByWidth(mask, scaledWidth);
+		       	icon = ScaledIconCache.getInstance().getScaledIcon(icon, scaledWidth);
+		      	mask = ScaledIconCache.getInstance().getScaledIcon(mask, scaledWidth);
 			}
 		}
 
