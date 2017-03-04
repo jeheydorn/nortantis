@@ -14,6 +14,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -58,6 +59,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.commons.io.FilenameUtils;
+
+import util.Helper;
 import util.ImageHelper;
 import util.JFontChooser;
 import util.Range;
@@ -95,6 +99,7 @@ public class RunSwing
 	Path openSettingsFilePath;
 	MapSettings lastSettingsLoadedOrSaved;
 	String defaultSettingsFile = "assets/old_paper.properties";
+	String frameTitleBase = "Nortantis Fantasy Map Generator";
 	JCheckBox frayedBorderCheckbox;
 	JPanel frayedBorderColorDisplay;
 	JSlider frayedBorderBlurSlider;
@@ -125,6 +130,7 @@ public class RunSwing
 	private JTextField regionsSeedTextField;
 	private JButton newRegionSeedButton;
 	private JSlider grungeSlider;
+	private UserPreferences userPreferences;
 
 	
 	public static boolean isRunning()
@@ -173,29 +179,56 @@ public class RunSwing
 	public RunSwing()
 	{
 		createGUI();
+		userPreferences = new UserPreferences();
+		
+		try
+		{
+			if (Files.exists(Paths.get(userPreferences.lastLoadedSettingsFile)))
+			{
+				loadSettingsIntoGUI(userPreferences.lastLoadedSettingsFile);
+				openSettingsFilePath = Paths.get(userPreferences.lastLoadedSettingsFile);
+				updateFrameTitle();
+			}
+			else
+			{
+				loadDefaultSettings();
+			}
+		}
+		catch(Exception e)
+		{
+			// This means they moved their settings or their settings were corrupted somehow. Load the defaults.
+			loadDefaultSettings();
+		}		
+	}
+	
+	private void loadDefaultSettings()
+	{
 		if (Files.exists(Paths.get(defaultSettingsFile)))
 		{
-			loadSettingsIntoGUI(defaultSettingsFile);
-			// If the user goes to File -> Save settings, bring up the save as dialog.
 			openSettingsFilePath = null;
-		}
-		long seed = Math.abs(new Random().nextInt());
-		randomSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.randomSeed = seed;
-		backgroundSeedTextField.setText(seed + "");
-		regionsSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
-		lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
-		updateBackgroundImageDisplays();
-		textRandomSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.textRandomSeed = seed;
+			loadSettingsIntoGUI(defaultSettingsFile);
+			updateFrameTitle();
+			long seed = Math.abs(new Random().nextInt());
+			randomSeedTextField.setText(seed + "");
+			lastSettingsLoadedOrSaved.randomSeed = seed;
+			backgroundSeedTextField.setText(seed + "");
+			regionsSeedTextField.setText(seed + "");
+			lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
+			lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
+			textRandomSeedTextField.setText(seed + "");
+			lastSettingsLoadedOrSaved.textRandomSeed = seed;
+			
+			updateBackgroundImageDisplays();
+			userPreferences.lastLoadedSettingsFile = "";
+		}		
 	}
 
 	private void createGUI()
 	{		
 		final RunSwing runSwing = this;
-		frame = new JFrame("Nortantis Fantasy Map Generator");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame = new JFrame(frameTitleBase);
+
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE );
 		frame.addWindowListener(new WindowAdapter()
         {
             @Override
@@ -203,7 +236,21 @@ public class RunSwing
             {
             	try
             	{
-            		checkForUnsavedChanges();
+            		boolean cancelPressed = checkForUnsavedChanges();
+            		if (!cancelPressed)
+            		{
+            			if (openSettingsFilePath != null)
+            			{
+	            			userPreferences.lastLoadedSettingsFile = openSettingsFilePath.toString();
+            			}
+            			else
+            			{
+            				userPreferences.lastLoadedSettingsFile = "";
+            			}
+            			userPreferences.save();
+            			frame.dispose();
+            			System.exit(0);
+            		}
             	}
             	catch(Exception ex)
             	{
@@ -1217,14 +1264,31 @@ public class RunSwing
 		JMenu fileMenu = new JMenu("File");
 		menuBar.add(fileMenu);
 		
-		final JMenuItem mntmLoadSettings = new JMenuItem("Open Settings");
+		final JMenuItem mntmNew = new JMenuItem("New");
+		fileMenu.add(mntmNew);
+		mntmNew.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				boolean cancelPressed = checkForUnsavedChanges();
+				if (!cancelPressed)
+				{
+					loadDefaultSettings();
+				}
+			}
+		});
+		
+		final JMenuItem mntmLoadSettings = new JMenuItem("Open");
 		fileMenu.add(mntmLoadSettings);
 		mntmLoadSettings.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				checkForUnsavedChanges();
+				boolean cancelPressed = checkForUnsavedChanges();
+				if (cancelPressed)
+					return;
 				
 				Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
@@ -1249,12 +1313,13 @@ public class RunSwing
 				{
 					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
 					loadSettingsIntoGUI(fileChooser.getSelectedFile().getAbsolutePath());
+					updateFrameTitle();
 				}
 			
 			}
 		});
-		
-		final JMenuItem mntmSave = new JMenuItem("Save Settings");
+	
+		final JMenuItem mntmSave = new JMenuItem("Save");
 		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
 		        java.awt.event.KeyEvent.VK_S, 
 		        java.awt.Event.CTRL_MASK));
@@ -1268,7 +1333,7 @@ public class RunSwing
 			}
 		});
 		
-		final JMenuItem mntmSaveAs = new JMenuItem("Save Settings As...");
+		final JMenuItem mntmSaveAs = new JMenuItem("Save As...");
 		fileMenu.add(mntmSaveAs);
 		mntmSaveAs.addActionListener(new ActionListener()
 		{
@@ -1342,6 +1407,18 @@ public class RunSwing
 		landDisplayPanel.repaint();
 	}
 	
+	public void newSettings(JComponent parent)
+	{
+		if (openSettingsFilePath == null)
+		{
+			saveSettingsAs(parent);
+		}
+		else
+		{
+			loadDefaultSettings();
+		}
+	}
+	
 	public void saveSettings(JComponent parent)
 	{
 		if (openSettingsFilePath == null)
@@ -1363,8 +1440,8 @@ public class RunSwing
 				e.printStackTrace();
 		        JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
+			updateFrameTitle();
 		}
-
 	}
 	
 	private void saveSettingsAs(JComponent parent)
@@ -1409,7 +1486,18 @@ public class RunSwing
 		        JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.",
 		        		JOptionPane.ERROR_MESSAGE);
 			}
+			updateFrameTitle();
 		}		
+	}
+	
+	private void updateFrameTitle()
+	{
+		String title = frameTitleBase;
+		if (openSettingsFilePath != null)
+		{
+			title += " - " + FilenameUtils.getName(openSettingsFilePath.toString());
+		}
+		frame.setTitle(title);
 	}
 	
 	private static String chooseImageFile(JComponent parent, String curFolder)
@@ -1580,8 +1668,11 @@ public class RunSwing
 		edits = settings.edits;
 		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
 		
+		updateBackgroundImageDisplays();
+		updateFrameTitle();
+
 		lastSettingsLoadedOrSaved = settings;
-		loadingSettings = false;
+		loadingSettings = false;	
 	}
 	
 	private List<String> getAllBooks()
@@ -1667,7 +1758,7 @@ public class RunSwing
 		return settings;
 	}
 	
-	public void checkForUnsavedChanges()
+	public boolean checkForUnsavedChanges()
 	{
 		final MapSettings currentSettings = getSettingsFromGUI();
 
@@ -1675,13 +1766,21 @@ public class RunSwing
         {
         	int n = JOptionPane.showConfirmDialog(
                     frame, "Settings have been modfied. Save changes?", "",
-                    JOptionPane.YES_NO_OPTION);
+                    JOptionPane.YES_NO_CANCEL_OPTION);
             if (n == JOptionPane.YES_OPTION) 
             {
             	saveSettings(null);
             }
-            
-        }
+            else if (n == JOptionPane.NO_OPTION)
+            {
+            }
+            else if (n == JOptionPane.CANCEL_OPTION)
+            {
+            	return true;
+            }
+         }
+        
+        return false;
 	}
 	
 	private class SliderChangeListener implements ChangeListener
