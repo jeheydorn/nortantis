@@ -721,7 +721,7 @@ public class ImageHelper
 			}
 		kernelData = null;
 		
-//		 Do the inverse DFT on the product.
+		// Do the inverse DFT on the product.
 		fft.complexInverse(data, true);
 		moveRealToLeftSide(data);
 		swapQuadrantsOfLeftSideInPlace(data); 
