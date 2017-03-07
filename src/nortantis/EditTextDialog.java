@@ -153,7 +153,7 @@ public class EditTextDialog extends JDialog
 		zoomComboBox.addItem("50%");
 		zoomComboBox.addItem("75%");
 		zoomComboBox.addItem("100%");
-		zoomComboBox.setSelectedItem("25%"); // TODO change back to 50%
+		zoomComboBox.setSelectedItem("50%");
 		panel.add(zoomComboBox);
 		setZoom((String)zoomComboBox.getSelectedItem());
 		zoomComboBox.addActionListener(new ActionListener()

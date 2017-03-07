@@ -98,7 +98,6 @@ public class RunSwing
 	JButton btnPreview;
 	Path openSettingsFilePath;
 	MapSettings lastSettingsLoadedOrSaved;
-	String defaultSettingsFile = "assets/old_paper.properties";
 	String frameTitleBase = "Nortantis Fantasy Map Generator";
 	JCheckBox frayedBorderCheckbox;
 	JPanel frayedBorderColorDisplay;
@@ -191,36 +190,33 @@ public class RunSwing
 			}
 			else
 			{
-				loadDefaultSettings();
+				generateAndloadNewSettings();
 			}
 		}
 		catch(Exception e)
 		{
 			// This means they moved their settings or their settings were corrupted somehow. Load the defaults.
-			loadDefaultSettings();
+			generateAndloadNewSettings();
 		}		
 	}
 	
-	private void loadDefaultSettings()
+	private void generateAndloadNewSettings()
 	{
-		if (Files.exists(Paths.get(defaultSettingsFile)))
-		{
-			openSettingsFilePath = null;
-			loadSettingsIntoGUI(defaultSettingsFile);
-			updateFrameTitle();
-			long seed = Math.abs(new Random().nextInt());
-			randomSeedTextField.setText(seed + "");
-			lastSettingsLoadedOrSaved.randomSeed = seed;
-			backgroundSeedTextField.setText(seed + "");
-			regionsSeedTextField.setText(seed + "");
-			lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
-			lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
-			textRandomSeedTextField.setText(seed + "");
-			lastSettingsLoadedOrSaved.textRandomSeed = seed;
-			
-			updateBackgroundImageDisplays();
-			userPreferences.lastLoadedSettingsFile = "";
-		}		
+		openSettingsFilePath = null;
+		loadSettingsIntoGUI(SettingsGenerator.generate());
+		updateFrameTitle();
+		long seed = Math.abs(new Random().nextInt());
+		randomSeedTextField.setText(seed + "");
+		lastSettingsLoadedOrSaved.randomSeed = seed;
+		backgroundSeedTextField.setText(seed + "");
+		regionsSeedTextField.setText(seed + "");
+		lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
+		lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
+		textRandomSeedTextField.setText(seed + "");
+		lastSettingsLoadedOrSaved.textRandomSeed = seed;
+		
+		updateBackgroundImageDisplays();
+		userPreferences.lastLoadedSettingsFile = "";
 	}
 
 	private void createGUI()
@@ -631,7 +627,7 @@ public class RunSwing
 		
 		JLabel lblOceanColor = new JLabel("Ocean color:");
 		lblOceanColor.setToolTipText("The color of the ocean.");
-		lblOceanColor.setBackground(new Color(119, 91, 36));
+		lblOceanColor.setBackground(Color.red);
 		lblOceanColor.setBounds(471, 319, 95, 15);
 		backgroundPanel.add(lblOceanColor);
 		
@@ -1274,7 +1270,7 @@ public class RunSwing
 				boolean cancelPressed = checkForUnsavedChanges();
 				if (!cancelPressed)
 				{
-					loadDefaultSettings();
+					generateAndloadNewSettings();
 				}
 			}
 		});
@@ -1415,7 +1411,7 @@ public class RunSwing
 		}
 		else
 		{
-			loadDefaultSettings();
+			generateAndloadNewSettings();
 		}
 	}
 	
@@ -1581,15 +1577,22 @@ public class RunSwing
 				+ " x " + generatedHeight);
 	}
 	
-	/**
-	 * Loads a map settings file into the GUI.
-	 * @param path
-	 */
 	private void loadSettingsIntoGUI(String propertiesFilePath)
 	{
 		loadingSettings = true;
 		
 		MapSettings settings = new MapSettings(propertiesFilePath);
+		loadSettingsIntoGUI(settings);
+	}
+	
+	/**
+	 * Loads a map settings file into the GUI.
+	 * @param path
+	 */
+	private void loadSettingsIntoGUI(MapSettings settings)
+	{
+		loadingSettings = true;
+
 		sizeSlider.setValue(settings.worldSize);
 		randomSeedTextField.setText(Long.toString(settings.randomSeed));
 		edgeLandToWaterProbSlider.setValue((int)(settings.edgeLandToWaterProbability * 100));

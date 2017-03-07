@@ -95,13 +95,14 @@ public class BackgroundGenerator
 	
 	public static void runExperiment4() throws IOException
 	{
-		int scale = 4;
-		String snippetFileName = "";
+		int scale = 2;
+		String snippetFileName = "firefox.jpg";
 //		BufferedImage snippet = ImageHelper.convertToGrayscale(runExperiment2(scale, ImageIO.read(new File(snippetFileName))));
 		BufferedImage snippet = ImageHelper.convertToGrayscale(ImageIO.read(new File(snippetFileName)));
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), snippet.getWidth(), snippet.getHeight()));
+		float[][] snippetArray = ImageHelper.tile(ImageHelper.imageToArrayFloat(snippet), snippet.getHeight() * scale, snippet.getWidth() * scale, 0, 0);
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), snippet.getWidth() * scale, snippet.getHeight() * scale));
 		//BufferedImage randomImage = FractalBGGenerator.generate(new Random(), 0.2f, snippet.getWidth(), snippet.getHeight(), 0.75f);
-		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, ImageHelper.imageToArrayFloat(snippet), true);
+		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, snippetArray, true);
 		BufferedImage result = ImageHelper.matchHistogram(grayImage, ImageIO.read(new File(snippetFileName)));
 		ImageHelper.write(result, "result.png");
 	}

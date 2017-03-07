@@ -542,14 +542,26 @@ public class MapCreator
 		Random rand = new Random(settings.regionsRandomSeed);
 		for (@SuppressWarnings("unused") int i : new Range(graph.regions.size())) 
 		{				
-			float hue = (float)(landHsb[0] * 360 + (rand.nextDouble() - 0.5) * settings.hueRange);
-			float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * settings.saturationRange));
-			float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * settings.brightnessRange));
-			regionColorOptions.add(ImageHelper.colorFromHSB(hue, saturation, brightness));
+			regionColorOptions.add(generateRegionColor(rand, landHsb, settings.hueRange, settings.saturationRange, settings.brightnessRange));
 		}
 				
 		// Create a new Random object so that changes 
 		assignRegionColors(graph, regionColorOptions);
+	}
+	
+	private static Color generateRegionColor(Random rand, float[] landHsb, float hueRange, float saturationRange, float brightnessRange)
+	{
+		float hue = (float)(landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
+		float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * saturationRange));
+		float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * brightnessRange));
+		return ImageHelper.colorFromHSB(hue, saturation, brightness);
+	}
+	
+	public static Color generateColorFromBaseColor(Random rand, Color base, float hueRange, float saturationRange, float brightnessRange)
+	{
+		float[] hsb = new float[3];
+		Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), hsb);
+		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 	
 	/**
