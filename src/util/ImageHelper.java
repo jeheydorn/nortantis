@@ -646,6 +646,11 @@ public class ImageHelper
 		WritableRaster raster = bi.copyData(null);
 		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 	}
+	
+	public float[][] applyLowPassButterworthFilter(float[][] array, float cutoff, float sharpness)
+	{
+		return null; // TODO
+	}
 		
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
@@ -818,7 +823,7 @@ public class ImageHelper
 		return image;
 	}
 
-	public static float[][] imageToArrayFloat(BufferedImage img)
+	public static float[][] imageToArray(BufferedImage img)
 	{
 		float[][] result = new float[img.getWidth()][img.getHeight()];
 		Raster raster = img.getRaster();
@@ -841,6 +846,19 @@ public class ImageHelper
 			result[i][j] = array[i][j];
 		}
 		return result;
+	}
+	
+	public static float[][] getLefHalf(float[][] array)
+	{
+		float[][] result = new float[array.length][array[0].length/2];
+		for (int r = 0; r < result.length; r++)
+		{
+			for (int c = 0; c < result[0].length; c++)
+			{				
+				result[r][c] = array[r][c];
+			}
+		}
+		return result;		
 	}
 	
 	public static int getPowerOf2EqualOrLargerThan(int value)
@@ -887,6 +905,12 @@ public class ImageHelper
 		
 		return result;
 	}
+		
+	public static BufferedImage tile(BufferedImage image, int targetRows, int targetCols)
+	{
+		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0));
+	}
+
 	
 	public static float[][] convertToTransformsInputFormat(float[][] transformReal, float[][] transformImaginary)
 	{
@@ -1069,7 +1093,6 @@ public class ImageHelper
 		return Math.min(255, Math.max(0, value));
 	}
 	
-
 	public static void main(String[] args) throws IOException
 	{
 		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
