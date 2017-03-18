@@ -130,6 +130,7 @@ public class RunSwing
 	private JButton newRegionSeedButton;
 	private JSlider grungeSlider;
 	private UserPreferences userPreferences;
+	private ImagePanel previewPanel;
 
 	
 	public static boolean isRunning()
@@ -217,6 +218,8 @@ public class RunSwing
 		
 		updateBackgroundImageDisplays();
 		userPreferences.lastLoadedSettingsFile = "";
+		previewPanel.setImage(null);
+		previewPanel.repaint();
 	}
 
 	private void createGUI()
@@ -321,7 +324,7 @@ public class RunSwing
 			}
 		});
 		
-		final ImagePanel previewPanel = new ImagePanel();
+		previewPanel = new ImagePanel();
 		previewPanel.setBounds(411, 385, 512, 288);
 		topPanel.add(previewPanel);
 		previewPanel.setLayout(null);
