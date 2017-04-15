@@ -3,6 +3,7 @@ package nortantis;
 import static java.lang.System.out;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
@@ -15,6 +16,7 @@ import javax.imageio.ImageIO;
 import org.jtransforms.fft.FloatFFT_2D;
 
 import util.ImageHelper;
+import util.Range;
 
 public class BackgroundGenerator
 {
@@ -185,25 +187,37 @@ public class BackgroundGenerator
 		return snippet;
 	}
 	
-	// Works well but the result must be 2x the dimension of the input and no more.
-	public static void runExperiment4() throws IOException
+	private static BufferedImage randomizeTexture(BufferedImage texture)
 	{
-		int scale = 2;
-		String snippetFileName = "fractal_paper.png";
-		BufferedImage grayImage = randomizeTexture(ImageHelper.convertToGrayscale(ImageIO.read(new File(snippetFileName))), scale);
-		BufferedImage result = ImageHelper.matchHistogram(grayImage, ImageIO.read(new File(snippetFileName)));
-		ImageHelper.write(result, "result.png");		
-	}
-	
-	private static BufferedImage randomizeTexture(BufferedImage texture, int scale)
-	{
-		float[][] snippetArray = ImageHelper.tile(ImageHelper.imageToArray(texture), texture.getHeight() * scale, texture.getWidth() * scale, 0, 0);
+		float[][] snippetArray = ImageHelper.tile(ImageHelper.imageToArray(texture), texture.getHeight(), texture.getWidth(), 0, 0);
 		ImageHelper.normalize(snippetArray);
-		//float[][] snippetArray = ImageHelper.tile(ImageHelper.imageToArrayFloat(snippet), snippet.getHeight(), snippet.getWidth(), 0, 0);
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), texture.getWidth() * scale, texture.getHeight() * scale));
-		//BufferedImage randomImage = FractalBGGenerator.generate(new Random(), 0.2f, snippet.getWidth(), snippet.getHeight(), 0.75f);
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), texture.getWidth(), texture.getHeight()));
 		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, snippetArray, true);
 		return grayImage;
+	}
+	
+	private static void runExperiment6() throws IOException
+	{
+		int compositeReps = 2;
+		String snippetFileName = "valcia_snippet.png";
+		String histogramSourceFileName = snippetFileName;
+		BufferedImage snippet = ImageHelper.convertToGrayscale(ImageHelper.read(snippetFileName));
+		
+		BufferedImage composite = new BufferedImage(snippet.getWidth(), snippet.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+		Graphics2D g = composite.createGraphics();
+		for (int y : new Range(compositeReps))
+		{
+			for (int x : new Range(compositeReps))
+			{
+				g.drawImage(randomizeTexture(snippet), x * snippet.getWidth(), y * snippet.getHeight(), null);
+			}
+		}
+		
+		BufferedImage result = randomizeTexture(composite);
+		
+		result = ImageHelper.matchHistogram(result, ImageHelper.read(histogramSourceFileName));
+		ImageHelper.write(result, "result.png");
+		ImageHelper.openImageInSystemDefaultEditor("result.png");
 	}
 
 	public static void main(String[] args) throws IOException
@@ -217,7 +231,7 @@ public class BackgroundGenerator
 //				ImageIO.read(new File("lord_of_the_rings_snippet.png")));
 //		ImageIO.write(background, "png", new File("background.png"));
 		
-		runExperiment4();
+		runExperiment6();
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");

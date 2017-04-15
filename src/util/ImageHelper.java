@@ -1,6 +1,10 @@
 package util;
 
 import hoten.geom.Point;
+import jigl.image.GrayImage;
+import jigl.image.ImageKernel;
+import jigl.image.ImageNotSupportedException;
+import jigl.image.ops.Convolve;
 
 import java.awt.Color;
 import java.awt.Desktop;
@@ -8,6 +12,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.Raster;
@@ -647,9 +652,23 @@ public class ImageHelper
 		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 	}
 	
-	public float[][] applyLowPassButterworthFilter(float[][] array, float cutoff, float sharpness)
+	public static float[][] applyLowPassButterworthFilter(float[][] array, float cutoff, float sharpness)
 	{
 		return null; // TODO
+	}
+	
+	public static void multiplyArrays(float[][] target, float[][] source)
+	{
+		assert target.length == source.length;
+		assert target[0].length == source[0].length;
+		
+		for (int r = 0; r < target.length; r++)
+		{
+			for (int c = 0; c < target[r].length; c++)
+			{
+				target[r][c] *= source[r][c];
+			}
+		}
 	}
 		
 	/**
@@ -705,7 +724,8 @@ public class ImageHelper
 				{
 					kernelData[r + rowPadding/2][c + colPadding/2] = kernel[r][c];
 				}
-	
+			write(arrayToImage(kernelData), "kernelData.png"); // TODO remove
+
 			// Do the forward FFT.
 			fft.realForwardFull(kernelData);
 		}
@@ -1076,16 +1096,27 @@ public class ImageHelper
 		File tempFile = File.createTempFile(filenameWithoutExtension, "." + format);
 		ImageIO.write(map, format, tempFile);
 		
+		openImageInSystemDefaultEditor(tempFile.getPath());
+	}
+	
+	public static void openImageInSystemDefaultEditor(String imageFilePath)
+	{
 		// Attempt to open the map in the system's default image viewer.
 		if (Desktop.isDesktopSupported())
 		{
 			Desktop desktop = Desktop.getDesktop();
 			if (Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.OPEN))
 			{
-				desktop.open(tempFile);
+				try 
+				{
+					desktop.open(new File(imageFilePath));
+				} 
+				catch (IOException e) 
+				{
+					throw new RuntimeException(e);
+				}
 			}
-		}
-
+		}		
 	}
 	
 	public static int bound(int value)
@@ -1093,22 +1124,81 @@ public class ImageHelper
 		return Math.min(255, Math.max(0, value));
 	}
 	
-	public static void main(String[] args) throws IOException
+//	public static void main(String[] args) throws IOException
+//	{
+//		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
+//		Graphics2D g = in.createGraphics();
+//		int blurLevel = 10;
+//		g.setColor(Color.white);
+//		g.fillRect(blurLevel, blurLevel, in.getWidth() - blurLevel*2, in.getHeight() - blurLevel*2);
+//		g.setColor(Color.black);
+//		int edge = 2;
+//		g.fillRect(edge + blurLevel, edge + blurLevel, in.getWidth() - (edge + blurLevel)*2, in.getHeight() - (edge + blurLevel)*2);
+//		ImageHelper.write(in, "in.png");
+//		BufferedImage result = convolveGrayscale(in, createGaussianKernel(blurLevel), false);
+//		ImageHelper.write(result, "result.png");
+//		shutdownThreadPool();
+//		System.out.println("Done");
+//		
+//	}
+	
+	// TODO remove
+	/**
+	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
+	 * @param img
+	 * @param kernel
+	 * @return
+	 */
+	public static BufferedImage convolveGrayscaleUsingJigl(BufferedImage img, float[][] kernel)
 	{
-		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
-		Graphics2D g = in.createGraphics();
-		int blurLevel = 10;
-		g.setColor(Color.white);
-		g.fillRect(blurLevel, blurLevel, in.getWidth() - blurLevel*2, in.getHeight() - blurLevel*2);
-		g.setColor(Color.black);
-		int edge = 2;
-		g.fillRect(edge + blurLevel, edge + blurLevel, in.getWidth() - (edge + blurLevel)*2, in.getHeight() - (edge + blurLevel)*2);
-		ImageHelper.write(in, "in.png");
-		BufferedImage result = convolveGrayscale(in, createGaussianKernel(blurLevel), false);
-		ImageHelper.write(result, "result.png");
-		shutdownThreadPool();
-		System.out.println("Done");
+		Convolve convolve = new Convolve(new ImageKernel(kernel));
+		GrayImage resultImage;
+		try
+		{
+			resultImage = (GrayImage)convolve.apply(new GrayImage(img));
+		}
+		catch (ImageNotSupportedException e)
+		{
+			throw new RuntimeException(e);
+		}
+		BufferedImage result = convertToColoredBufferedImage(Toolkit.getDefaultToolkit().createImage(
+				resultImage.getJavaImage()), BufferedImage.TYPE_BYTE_GRAY);
+		return result;
 		
 	}
+	
+	// TODO remove
+	/**
+	 * From
+	 * http://stackoverflow.com/questions/13605248/java-converting-image-to-
+	 * bufferedimage
+	 * 
+	 * Converts a given Image into a BufferedImage
+	 * 
+	 * @param img
+	 *            The Image to be converted
+	 * @return The converted BufferedImage
+	 */
+	public static BufferedImage convertToColoredBufferedImage(Image img, int bufferedImageType)
+	{
+		if (img instanceof BufferedImage)
+		{
+			return (BufferedImage) img;
+		}
+
+		// Create a buffered image with transparency
+		BufferedImage bimage = new BufferedImage(img.getWidth(null),
+				img.getHeight(null), bufferedImageType);
+
+		// Draw the image on to the buffered image
+		Graphics2D bGr = bimage.createGraphics();
+		bGr.drawImage(img, 0, 0, null);
+		bGr.dispose();
+
+		// Return the buffered image
+		return bimage;
+	}
+
+
 	
 }

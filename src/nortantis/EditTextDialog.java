@@ -564,7 +564,6 @@ public class EditTextDialog extends JDialog
 				catch (Exception e)
 				{
 					e.printStackTrace();
-					//ConcurrencyUtils.shutdownAndAwaitTermination();
 			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				} 
 	        	

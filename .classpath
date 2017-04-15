@@ -10,5 +10,6 @@
 	<classpathentry kind="lib" path="libraries/org.hamcrest.core_1.3.0.v201303031735.jar"/>
 	<classpathentry kind="lib" path="libraries/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="libraries/JTransforms-3.1-with-dependencies.jar"/>
+	<classpathentry kind="lib" path="/home/joseph/Desktop/Jigl.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
