@@ -55,53 +55,6 @@ public class BackgroundGenerator
 		return result;
 	}
 	
-	// The result has clearly repeating patterns, and blending with lower frequencies makes the higher frequencies less visible, which doesn't look as good
-	// as the original.
-	public static void runExperiment5()
-	{
-		int scale = 4; // must be a power of 2
-		BufferedImage snippet = ImageHelper.read("valcia_snippet.png");
-
-		BufferedImage img = ImageHelper.convertToGrayscale(snippet);
-		int rows = img.getWidth() * scale;
-		int cols = img.getHeight() * scale;
-		Random rand = new Random();
-		
-		float[][] summedArray = new float[rows][cols]; 
-
-		float[][] layer = ImageHelper.tile(ImageHelper.imageToArray(randomizeTexture(snippet, 2)), rows, cols, 
-				rand.nextInt(snippet.getHeight()), rand.nextInt(snippet.getWidth()));
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
-			{	
-				summedArray[r][c] += layer[r][c];
-			}
-		
-		for (int curScale = 1; curScale <= scale; curScale *= 2)
-		{
-			BufferedImage scaledSnippet = ImageHelper.scaleByWidth(snippet, snippet.getWidth() * curScale);
-			BufferedImage randomizedScaledSnippet = randomizeTexture(scaledSnippet, 2);
-			float[][] fractalLowPass = applyFractalLowPassFiltering(randomizedScaledSnippet);
-			layer = ImageHelper.tile(fractalLowPass, rows, cols, 
-					rand.nextInt(fractalLowPass.length), rand.nextInt(fractalLowPass[0].length)); 
-			
-			ImageHelper.write(ImageHelper.arrayToImage(layer), "layer_" + curScale + ".png");
-			//ImageHelper.write(ImageHelper.arrayToImage(fractalLowPass), "fractalLowPass" + curScale + ".png");
-						
-			for (int r = 0; r < rows; r++)
-				for (int c = 0; c < cols; c++)
-				{	
-					summedArray[r][c] += layer[r][c];
-				}
-		}
-		
-		ImageHelper.maximizeContrast(summedArray);
-		BufferedImage result = ImageHelper.matchHistogram(ImageHelper.arrayToImage(summedArray), snippet);
-		
-		ImageHelper.write(result, "result.png");
-	}
-
-	
 	// Apply fractal filtering to a snippet
 	public static float[][] applyFractalLowPassFiltering(BufferedImage snippet)
 	{
@@ -198,12 +151,13 @@ public class BackgroundGenerator
 	
 	private static void runExperiment6() throws IOException
 	{
-		int compositeReps = 2;
+		int compositeReps = 8;
 		String snippetFileName = "valcia_snippet.png";
 		String histogramSourceFileName = snippetFileName;
 		BufferedImage snippet = ImageHelper.convertToGrayscale(ImageHelper.read(snippetFileName));
+		snippet = ImageHelper.tileNTimes(snippet, 1);
 		
-		BufferedImage composite = new BufferedImage(snippet.getWidth(), snippet.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+		BufferedImage composite = new BufferedImage(snippet.getWidth() * compositeReps, snippet.getHeight() * compositeReps, BufferedImage.TYPE_BYTE_GRAY);
 		Graphics2D g = composite.createGraphics();
 		for (int y : new Range(compositeReps))
 		{
@@ -212,9 +166,9 @@ public class BackgroundGenerator
 				g.drawImage(randomizeTexture(snippet), x * snippet.getWidth(), y * snippet.getHeight(), null);
 			}
 		}
+		g.dispose();
 		
 		BufferedImage result = randomizeTexture(composite);
-		
 		result = ImageHelper.matchHistogram(result, ImageHelper.read(histogramSourceFileName));
 		ImageHelper.write(result, "result.png");
 		ImageHelper.openImageInSystemDefaultEditor("result.png");

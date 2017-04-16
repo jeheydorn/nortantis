@@ -724,10 +724,17 @@ public class ImageHelper
 				{
 					kernelData[r + rowPadding/2][c + colPadding/2] = kernel[r][c];
 				}
-			write(arrayToImage(kernelData), "kernelData.png"); // TODO remove
+			
 
 			// Do the forward FFT.
 			fft.realForwardFull(kernelData);
+
+//			float[][] realPart = getRealPart(kernelData);
+//			maximizeContrast(realPart);
+//			write(arrayToImage(realPart), "realPart.png"); // TODO remove
+//			float[][] imaginaryPart = getImaginaryPart(kernelData);
+//			maximizeContrast(imaginaryPart);
+//			write(arrayToImage(imaginaryPart), "imaginaryPart.png"); // TODO remove
 		}
 						
 		// Multiply the convolved image and kernel in the frequency domain.
@@ -929,6 +936,11 @@ public class ImageHelper
 	public static BufferedImage tile(BufferedImage image, int targetRows, int targetCols)
 	{
 		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0));
+	}
+	
+	public static BufferedImage tileNTimes(BufferedImage image, int n)
+	{
+		return tile(image, image.getWidth() * n, image.getHeight() * n);
 	}
 
 	
