@@ -1,10 +1,6 @@
 package util;
 
 import hoten.geom.Point;
-import jigl.image.GrayImage;
-import jigl.image.ImageKernel;
-import jigl.image.ImageNotSupportedException;
-import jigl.image.ops.Convolve;
 
 import java.awt.Color;
 import java.awt.Desktop;
@@ -1135,82 +1131,6 @@ public class ImageHelper
 	{
 		return Math.min(255, Math.max(0, value));
 	}
-	
-//	public static void main(String[] args) throws IOException
-//	{
-//		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
-//		Graphics2D g = in.createGraphics();
-//		int blurLevel = 10;
-//		g.setColor(Color.white);
-//		g.fillRect(blurLevel, blurLevel, in.getWidth() - blurLevel*2, in.getHeight() - blurLevel*2);
-//		g.setColor(Color.black);
-//		int edge = 2;
-//		g.fillRect(edge + blurLevel, edge + blurLevel, in.getWidth() - (edge + blurLevel)*2, in.getHeight() - (edge + blurLevel)*2);
-//		ImageHelper.write(in, "in.png");
-//		BufferedImage result = convolveGrayscale(in, createGaussianKernel(blurLevel), false);
-//		ImageHelper.write(result, "result.png");
-//		shutdownThreadPool();
-//		System.out.println("Done");
-//		
-//	}
-	
-	// TODO remove
-	/**
-	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
-	 * @param img
-	 * @param kernel
-	 * @return
-	 */
-	public static BufferedImage convolveGrayscaleUsingJigl(BufferedImage img, float[][] kernel)
-	{
-		Convolve convolve = new Convolve(new ImageKernel(kernel));
-		GrayImage resultImage;
-		try
-		{
-			resultImage = (GrayImage)convolve.apply(new GrayImage(img));
-		}
-		catch (ImageNotSupportedException e)
-		{
-			throw new RuntimeException(e);
-		}
-		BufferedImage result = convertToColoredBufferedImage(Toolkit.getDefaultToolkit().createImage(
-				resultImage.getJavaImage()), BufferedImage.TYPE_BYTE_GRAY);
-		return result;
-		
-	}
-	
-	// TODO remove
-	/**
-	 * From
-	 * http://stackoverflow.com/questions/13605248/java-converting-image-to-
-	 * bufferedimage
-	 * 
-	 * Converts a given Image into a BufferedImage
-	 * 
-	 * @param img
-	 *            The Image to be converted
-	 * @return The converted BufferedImage
-	 */
-	public static BufferedImage convertToColoredBufferedImage(Image img, int bufferedImageType)
-	{
-		if (img instanceof BufferedImage)
-		{
-			return (BufferedImage) img;
-		}
-
-		// Create a buffered image with transparency
-		BufferedImage bimage = new BufferedImage(img.getWidth(null),
-				img.getHeight(null), bufferedImageType);
-
-		// Draw the image on to the buffered image
-		Graphics2D bGr = bimage.createGraphics();
-		bGr.drawImage(img, 0, 0, null);
-		bGr.dispose();
-
-		// Return the buffered image
-		return bimage;
-	}
-
 
 	
 }
