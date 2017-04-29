@@ -1,4 +1,5 @@
 bin/*
+user_preferences
 coastline_mask.png
 elevation.png
 land_blur.png
