@@ -963,7 +963,7 @@ public class ImageHelper
 						
 		// Equalize the target.
 		BufferedImage targetEqualized = targetEqualizer.equalize(target);
-				
+		
 		// Apply the inverse map to the equalized target.
 		BufferedImage outImage = sourceEqualizer.inverseEqualize(targetEqualized);
 		
@@ -1130,6 +1130,21 @@ public class ImageHelper
 	public static int bound(int value)
 	{
 		return Math.min(255, Math.max(0, value));
+	}
+	
+	public static float calcMeanOfGrayscaleImage(BufferedImage image)
+	{
+		Raster raster = image.getRaster();
+		long sum = 0;
+		for (int r = 0; r < image.getHeight(); r++)
+		{
+			for (int c = 0; c < image.getWidth(); c++)
+			{
+				sum += raster.getSample(c, r, 0);
+			}
+		}
+		
+		return sum / ((float)(image.getHeight() * image.getWidth()));
 	}
 
 	

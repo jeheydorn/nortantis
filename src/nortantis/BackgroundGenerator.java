@@ -173,19 +173,81 @@ public class BackgroundGenerator
 		ImageHelper.write(result, "result.png");
 		ImageHelper.openImageInSystemDefaultEditor("result.png");
 	}
+	
+	private static void runExperiment7() throws IOException
+	{
+		int targetSize = 1024;
+		float alpha = 0.5f;
+		float targetSizeSquared = (float)(targetSize*targetSize);
+		String textureFileName = "valcia_snippet.png";
+		BufferedImage originalTexture = ImageHelper.read(textureFileName);
+		BufferedImage texture = ImageHelper.convertToGrayscale(originalTexture);
+		float textureArea = texture.getHeight() * texture.getHeight();
+		float[][] kernel = new float[targetSize][targetSize];
+		float mean = ImageHelper.calcMeanOfGrayscaleImage(texture)/255f;
+		Raster raster = texture.getRaster();
+		float varianceScaler = (float)Math.sqrt(targetSizeSquared / textureArea);
+		int alphaRows = (int)(alpha * texture.getHeight());
+		int alphaCols = (int)(alpha * texture.getWidth());
+		
+		for (int r = 0; r < targetSize; r++)
+		{
+			for (int c = 0; c < targetSize; c++)
+			{
+				int textureR = r - (targetSize - texture.getHeight())/2;
+				int textureC = c - (targetSize - texture.getWidth())/2;
+				if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
+				{
+					float level = raster.getSample(textureC, textureR, 0)/255f;
+					
+					float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
+					float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
+					
+					kernel[r][c] = mean + varianceScaler * (level - mean) * ar * ac;
+				}
+				else
+				{
+					kernel[r][c] = mean;
+				}
+			}
+		}
+		
+		//ImageHelper.write(ImageHelper.arrayToImage(kernel), "textureKernel.png");
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), kernel.length, kernel[0].length));
+		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
+		
+		ImageHelper.write(ImageHelper.matchHistogram(grayImage, originalTexture), "result.png");
+		
+	}
+	
+	private static float calcSmoothParamether(int textureR, int alphaPixels, float alpha, int imageLength)
+	{
+		if (textureR <= alphaPixels/2)
+		{
+			return calcSmoothingFunction(alpha, ((float)textureR) / imageLength);
+		}
+		else if (textureR >= (imageLength - alphaPixels/2))
+		{
+			return calcSmoothingFunction(alpha, ((float)(textureR - (imageLength - alphaPixels))) / imageLength);
+		}
+		
+		return 1f;
+
+	}
+	
+	private static float calcSmoothingFunction(float alpha, float t)
+	{
+		float x = (2 * t / alpha) - 1;
+		// The number 0.367879 is the value of the smoothing function at alpha/2, which is its maximum. 
+		// I multiply by 1/0.367879 to make the range of the smoothing function [0,1].
+		return (float)Math.exp(-1 / (1 - (x * x))) * (1f / 0.367879f);		
+	}
 
 	public static void main(String[] args) throws IOException
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		// If I want the colors to look better, I could use mutiple images to get colors for
-		// histogram matching.
-//		BufferedImage grayBackground = runExperiment2(8, ImageIO.read(new File("lord_of_the_rings_snippet.png")));
-//		BufferedImage background = ImageHelper.matchHistogram(grayBackground,
-//				ImageIO.read(new File("lord_of_the_rings_snippet.png")));
-//		ImageIO.write(background, "png", new File("background.png"));
-		
-		runExperiment6();
+		runExperiment7();
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");

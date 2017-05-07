@@ -40,15 +40,10 @@ public class HistogramEqualizer
 			for (int band : new Range(3))
 			{
 				int[] histogram = countPixelLevels(image, band);
-				createLookupTable(histogram, image.getWidth() * image.getHeight());
-				lookupTables.add(createLookupTable(histogram, image.getWidth() * image.getHeight()));
+				int[] lookupTable = createLookupTable(histogram, image.getWidth() * image.getHeight());
+				lookupTables.add(lookupTable);
 			}
 		}
-//		else
-//		{
-//			throw new UnsupportedOperationException("Unsupported image type: " + 
-//					ImageHelper.bufferedImageTypeToString(image));
-//		}
 	}
 
 	private static int[] createLookupTable(int[] histogram, int imageArea)
@@ -59,7 +54,7 @@ public class HistogramEqualizer
 		for (int r = 0; r < lookupTable.length; r++)
 		{
 			sum += histogram[r];
-			lookupTable[r] = (int) (scale * ((double)sum));
+			lookupTable[r] = (int) (scale * sum);
 		}
 		
 		return lookupTable;
@@ -76,56 +71,86 @@ public class HistogramEqualizer
 	
 	private static int[] createInverseLookupTable(int[] lookupTable)
 	{
-		Integer[] inverse = new Integer[lookupTable.length];
+		Float[] inverse = new Float[lookupTable.length];
+		int[] inverseCounts = new int[inverse.length];
 		for (int i : new Range(lookupTable.length))
 		{
-			inverse[lookupTable[i]] = i;
+			// Ignore 0 and the max value to avoid random pixels which are very light or very dark.
+			if (lookupTable[i] != 0 && lookupTable[i] != lookupTable.length - 1)
+			{
+				if (inverse[lookupTable[i]] == null)
+				{
+					inverse[lookupTable[i]] = (float)i;
+				}
+				else
+				{
+					// Do a running average of all levels that map to the save value in the inverse.
+					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i) / (inverseCounts[lookupTable[i]] + 1);
+				}
+				inverseCounts[lookupTable[i]]++;
+			}
 		}
 
+		// Interpolate values which are null in the inverse mapping.
 		for (int pixelValue : new Range(lookupTable.length))
 		{
 			if (inverse[pixelValue] == null)
 			{
-				// Find the closest pixel value that is in the inverse map.
-				int i = 0;
-				Integer inverseValue = null;
-				while (inverseValue == null)
+				Float higher = findFirstNonNullValueAbove(inverse, pixelValue);
+				Float lower = findFirstNonNullValueBelow(inverse, pixelValue);
+				
+				if (higher == null)
 				{
-					i++;
-					try
-					{
-						if (inverse[pixelValue + i] != null)
-						{
-							inverseValue = inverse[pixelValue + i];
-							break;
-						}
-					}
-					catch(IndexOutOfBoundsException e)
-					{
-						
-					}
-					try
-					{
-						if (inverse[pixelValue - i] != null)
-						{
-							inverseValue = inverse[pixelValue - i];
-						}
-					}
-					catch(IndexOutOfBoundsException e)
-					{
-						
-					}
+					// I'm not worried about lower being null because that would mean the original image had no pixel levels.
+					inverse[pixelValue] = lower;
 				}
-				inverse[pixelValue] = inverseValue;
+				else if (lower == null)
+				{
+					inverse[pixelValue] = higher;
+				}
+				else
+				{
+					inverse[pixelValue] = (lower + higher) / 2f;
+				}
 			}
 		}
 		
 		int[] result = new int[inverse.length];
 		for (int i : new Range(result.length))
-			result[i] = inverse[i];
+			result[i] = (int)(float)inverse[i];
 		return result;
 	}
 	
+	private static Float findFirstNonNullValueAbove(Float[] inverse, int start)
+	{
+		if (start == inverse.length)
+			return null;
+		
+		for (int i = start + 1; i < inverse.length; i++)
+		{
+			if (inverse[i] != null)
+			{
+				return inverse[i];
+			}
+		}
+		return null;
+	}
+
+	private static Float findFirstNonNullValueBelow(Float[] inverse, int start)
+	{
+		if (start == 0)
+			return null;
+		
+		for (int i = start - 1; i >= 0; i--)
+		{
+			if (inverse[i] != null)
+			{
+				return inverse[i];
+			}
+		}
+		return null;
+	}
+
 	@SuppressWarnings("unused")
 	private void writeToCSV(int[] histogram, String csvFileName)
 	{
@@ -219,18 +244,7 @@ public class HistogramEqualizer
 		
 		return counts;
 	}
-	
-	public static void main(String[] args) throws IOException
-	{
-		BufferedImage inImage = ImageIO.read(new File("mystery.png"));
-		HistogramEqualizer equalizer = new HistogramEqualizer(inImage);
 
-		BufferedImage outImage = equalizer.equalize(inImage);
-		
-		ImageIO.write(outImage, "png", new File("equalized.png"));
-		System.out.println("Done.");
-	}
-	
 	
 
 }
