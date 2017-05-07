@@ -216,7 +216,8 @@ public class BackgroundGenerator
 		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), kernel.length, kernel[0].length));
 		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
 		
-		ImageHelper.write(ImageHelper.matchHistogram(grayImage, originalTexture), "result.png");
+		BufferedImage result = ImageHelper.matchHistogram(grayImage, originalTexture);
+		ImageHelper.write(result, "result.png");
 		
 	}
 	

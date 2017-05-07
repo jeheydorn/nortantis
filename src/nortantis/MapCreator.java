@@ -266,7 +266,6 @@ public class MapCreator
 					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
 				}
 			}
-
 		}
 			
 		// Store the current version of the map for a background when drawing icons later.
@@ -349,8 +348,7 @@ public class MapCreator
 
 				map = ImageHelper.maskWithColor(map, settings.oceanEffectsColor, oceanBlur, true);
 				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
-			}
-				
+			}	
 		}
 		coastlineMask = null;
 		
@@ -422,11 +420,8 @@ public class MapCreator
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, clouds, true);
 		}
 		
-		
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
-		
-		Logger.println("Shutting down thread pool.");
 
 		Logger.println("Done creating map.");
 		
