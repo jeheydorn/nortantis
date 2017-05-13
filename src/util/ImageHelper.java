@@ -648,11 +648,6 @@ public class ImageHelper
 		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 	}
 	
-	public static float[][] applyLowPassButterworthFilter(float[][] array, float cutoff, float sharpness)
-	{
-		return null; // TODO
-	}
-	
 	public static void multiplyArrays(float[][] target, float[][] source)
 	{
 		assert target.length == source.length;
@@ -886,14 +881,20 @@ public class ImageHelper
 	
 	public static int getPowerOf2EqualOrLargerThan(int value)
 	{
+		return getPowerOf2EqualOrLargerThan((double) value);
+	}
+	
+	public static int getPowerOf2EqualOrLargerThan(double value)
+	{
 		double logLength = Math.log(value)/Math.log(2.0);
 		if (((int)logLength) == logLength )
 		{
-			return value;
+			return (int)value;
 		}
 		
 		return (int)Math.pow(2.0, ((int)logLength) + 1.0);
 	}
+
 	
 	public static float[][] genWhiteNoise(Random rand, int rows, int cols)
 	{
@@ -1097,7 +1098,11 @@ public class ImageHelper
 		}
 	}
 	
-	public static void openImageInSystemDefaultEditor(BufferedImage map, String filenameWithoutExtension) throws IOException
+	/***
+	 * Opens an image in the system default image editor.
+	 * @return The file name, in the system's temp folder.
+	 */
+	public static String openImageInSystemDefaultEditor(BufferedImage map, String filenameWithoutExtension) throws IOException
 	{
 		// Save the map to a file.
 		String format = "png";
@@ -1105,6 +1110,7 @@ public class ImageHelper
 		ImageIO.write(map, format, tempFile);
 		
 		openImageInSystemDefaultEditor(tempFile.getPath());
+		return tempFile.getAbsolutePath();
 	}
 	
 	public static void openImageInSystemDefaultEditor(String imageFilePath)
@@ -1113,7 +1119,7 @@ public class ImageHelper
 		if (Desktop.isDesktopSupported())
 		{
 			Desktop desktop = Desktop.getDesktop();
-			if (Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.OPEN))
+			if (desktop.isSupported(Desktop.Action.OPEN))
 			{
 				try 
 				{
@@ -1124,7 +1130,11 @@ public class ImageHelper
 					throw new RuntimeException(e);
 				}
 			}
-		}		
+		}
+		else
+		{
+			throw new RuntimeException("Unable to open the map because java's Desktop is not supported");
+		}
 	}
 	
 	public static int bound(int value)

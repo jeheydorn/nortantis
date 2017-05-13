@@ -64,6 +64,7 @@ import org.apache.commons.io.FilenameUtils;
 import util.Helper;
 import util.ImageHelper;
 import util.JFontChooser;
+import util.Logger;
 import util.Range;
 
 public class RunSwing
@@ -299,8 +300,9 @@ public class RunSwing
 						{
 							BufferedImage map = new MapCreator().createMap(settings, null, null);
 							
-							ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-							
+							Logger.println("Opening the map in your system's default image editor.");
+							String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+							Logger.println("Map written to " + fileName);
 							return map;
 						} 
 						catch (Exception e)
@@ -505,8 +507,8 @@ public class RunSwing
 		scaleSlider.setPaintTicks(true);
 		scaleSlider.setMinorTickSpacing(25);
 		scaleSlider.setMinimum(25);
-		scaleSlider.setMaximum(300);
-		scaleSlider.setMajorTickSpacing(50);
+		scaleSlider.setMaximum(calcMaximumResolution());
+		scaleSlider.setMajorTickSpacing(100);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 			for (int i = scaleSlider.getMinimum(); i < scaleSlider.getMaximum() + 1;  i += scaleSlider.getMajorTickSpacing())
@@ -1349,6 +1351,32 @@ public class RunSwing
 		frame.pack();
 	}
 	
+	private int calcMaximumResolution() 
+	{
+		long maxBytes = Runtime.getRuntime().maxMemory();
+		// The required memory is quadratic in the resolution used. 
+		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2) = 148468.
+		int maxResolution = (int)Math.sqrt(maxBytes / 148468L);
+		
+		// The FFT-based code will create arrays in powers of 2.
+		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
+		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
+		// Average with the original prediction because not all code is FFT-based.
+		maxResolution = (maxResolution + resolutionAtNextPowerOf2) / 2;
+		
+		if (maxResolution > 500)
+		{
+			// This is in case Runtime.maxMemory returns Long's max value, which it says it will if it fails.
+			return 1000;
+		}
+		if (maxResolution < 100)
+		{
+			return 100;
+		}
+		maxResolution -= maxResolution % 25;
+		return maxResolution;
+	}
+
 	/**
 	 * Informs the user that if they continue an action they must delete text edits.
 	 * @return true if the action should continue. false if the user canceled the action to keep text edits.
