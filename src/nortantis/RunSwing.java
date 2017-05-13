@@ -1373,6 +1373,7 @@ public class RunSwing
 		{
 			return 100;
 		}
+		// The resolution slider uses multiples of 25.
 		maxResolution -= maxResolution % 25;
 		return maxResolution;
 	}
