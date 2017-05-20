@@ -694,16 +694,21 @@ public class ImageHelper
 		
 		// Do the inverse DFT on the product.
 		inverseFFT(data);
+		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast);
+	}
+	
+	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast)
+	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
 		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
 		
-		int imgRowPaddingOver2 = (rows - img.getHeight())/2;
-		int imgColPaddingOver2 = (cols - img.getWidth())/2;
+		int imgRowPaddingOver2 = (data.getHeight() - imageHeight)/2;
+		int imgColPaddingOver2 = (data.getWidth() - imageWidth)/2;
 
 		if (maximizeContrast)
-			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, img.getHeight(), imgColPaddingOver2, img.getWidth());
+			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		
-		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, img.getHeight(), imgColPaddingOver2, img.getWidth());
+		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		return result;
 	}
 	
