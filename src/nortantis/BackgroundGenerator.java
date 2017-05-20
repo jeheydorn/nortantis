@@ -19,42 +19,7 @@ import util.ImageHelper;
 import util.Range;
 
 public class BackgroundGenerator
-{
-	public static BufferedImage runExperiment2(int scale, BufferedImage snippet)
-	{
-		BufferedImage img = ImageHelper.convertToGrayscale(snippet);
-		int rows = img.getWidth() * scale;
-		int cols = img.getHeight() * scale;
-		Random rand = new Random();
-		
-		float[][] imgArray = new float[rows][cols]; 
-		
-		for (int curScale = 1; curScale <= scale; curScale *= 2)
-		{
-			float[][] imgScaled;
-			if (curScale > 1)
-				imgScaled = ImageHelper.imageToArray(ImageHelper.scaleByWidth(img, img.getWidth() * curScale));
-			else
-				imgScaled = ImageHelper.imageToArray(img);
-			float[][] tiledScaledImg = ImageHelper.tile(imgScaled, rows, cols, 
-					rand.nextInt(img.getWidth()), rand.nextInt(img.getHeight()));
-			
-//			ImageIO.write(arrayToImage(tiledScaledImg), "png", new File("tiledScaledImg" + curScale + ".png"));
-			
-			for (int r = 0; r < rows; r++)
-				for (int c = 0; c < cols; c++)
-				{	
-					imgArray[r][c] += tiledScaledImg[r][c];
-				}
-		}
-		
-		ImageHelper.maximizeContrast(imgArray);
-		
-		BufferedImage result = ImageHelper.arrayToImage(imgArray);
-//		ImageIO.write(result, "png", new File("experiment2.png"));
-		return result;
-	}
-	
+{	
 	// Apply fractal filtering to a snippet
 	public static float[][] applyFractalLowPassFiltering(BufferedImage snippet)
 	{
@@ -123,60 +88,10 @@ public class BackgroundGenerator
 		float[][] result = ImageHelper.getLefHalf(data);
 		return result;
 	}
-
-	private static BufferedImage softenEdgesWithGausianBlur(BufferedImage snippet)
-	{
-		BufferedImage box = new BufferedImage(snippet.getWidth(), snippet.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-		Graphics2D bg = box.createGraphics();
-		bg.setColor(Color.white);
-		int padding = 50;
-		bg.fillRect(padding, padding, box.getWidth() - padding*2, box.getHeight() - padding*2);
-		ImageHelper.write(box, "box.png");
-		// Use convolution to make a hazy background for the text.
-		BufferedImage haze = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(padding), true);	
-		ImageHelper.write(haze, "haze.png");
-		snippet = ImageHelper.maskWithColor(snippet, Color.black, haze, false);
-		ImageHelper.write(snippet, "filtered_snippet.png");		
-		return snippet;
-	}
 	
-	private static BufferedImage randomizeTexture(BufferedImage texture)
+	private static void generateUsingRandomPhaseNoise() throws IOException
 	{
-		float[][] snippetArray = ImageHelper.tile(ImageHelper.imageToArray(texture), texture.getHeight(), texture.getWidth(), 0, 0);
-		ImageHelper.normalize(snippetArray);
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), texture.getWidth(), texture.getHeight()));
-		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, snippetArray, true);
-		return grayImage;
-	}
-	
-	private static void runExperiment6() throws IOException
-	{
-		int compositeReps = 8;
-		String snippetFileName = "valcia_snippet.png";
-		String histogramSourceFileName = snippetFileName;
-		BufferedImage snippet = ImageHelper.convertToGrayscale(ImageHelper.read(snippetFileName));
-		snippet = ImageHelper.tileNTimes(snippet, 1);
-		
-		BufferedImage composite = new BufferedImage(snippet.getWidth() * compositeReps, snippet.getHeight() * compositeReps, BufferedImage.TYPE_BYTE_GRAY);
-		Graphics2D g = composite.createGraphics();
-		for (int y : new Range(compositeReps))
-		{
-			for (int x : new Range(compositeReps))
-			{
-				g.drawImage(randomizeTexture(snippet), x * snippet.getWidth(), y * snippet.getHeight(), null);
-			}
-		}
-		g.dispose();
-		
-		BufferedImage result = randomizeTexture(composite);
-		result = ImageHelper.matchHistogram(result, ImageHelper.read(histogramSourceFileName));
-		ImageHelper.write(result, "result.png");
-		ImageHelper.openImageInSystemDefaultEditor("result.png");
-	}
-	
-	private static void runExperiment7() throws IOException
-	{
-		int targetSize = 1024;
+		int targetSize = 1024;	
 		float alpha = 0.5f;
 		float targetSizeSquared = (float)(targetSize*targetSize);
 		String textureFileName = "valcia_snippet.png";
@@ -189,6 +104,7 @@ public class BackgroundGenerator
 		float varianceScaler = (float)Math.sqrt(targetSizeSquared / textureArea);
 		int alphaRows = (int)(alpha * texture.getHeight());
 		int alphaCols = (int)(alpha * texture.getWidth());
+		Random rand = new Random();
 		
 		for (int r = 0; r < targetSize; r++)
 		{
@@ -213,7 +129,7 @@ public class BackgroundGenerator
 		}
 		
 		//ImageHelper.write(ImageHelper.arrayToImage(kernel), "textureKernel.png");
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(new Random(), kernel.length, kernel[0].length));
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, kernel.length, kernel[0].length));
 		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
 		
 		BufferedImage result = ImageHelper.matchHistogram(grayImage, originalTexture);
@@ -243,12 +159,133 @@ public class BackgroundGenerator
 		// I multiply by 1/0.367879 to make the range of the smoothing function [0,1].
 		return (float)Math.exp(-1 / (1 - (x * x))) * (1f / 0.367879f);		
 	}
+	
+	/***
+	 * Finds the periodic component of an image. Based on periodic_component_color.
+	 * @param rand
+	 * @param texture
+	 * @return
+	 */
+	private static float[][] calcPeriodicComponent(Random rand, BufferedImage texture)
+	{
+		float mean = ImageHelper.calcMeanOfGrayscaleImage(texture);
+		ComplexArray randomPhasesWithPoisson = generateRandomPhasesWithPoissonComplexFilter(rand, texture.getWidth(), texture.getHeight());
+		float[][] laplacian = calcDiscreteLaplacian(ImageHelper.imageToArray(texture));
+		return null; // TODO
+	}
+	
+	/**
+	 * Based on random_phase_with_poisson_complex_filter in random_phase_noise_lib.c.
+	 */
+	private static ComplexArray generateRandomPhasesWithPoissonComplexFilter(Random rand, int width, int height)
+	{
+		boolean isXEven = width % 2 == 0;
+		boolean isYEven = height % 2 == 0;
+		int halfWidth = width / 2;
+		int halfHeight = height / 2;
+		float[][] poissonComplexFilter = createPoissonComplexFilter(width, height);
+		ComplexArray result = new ComplexArray(width, height);
+		
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+	            // Case 1: (x,y) is its own symmetric: (x,y)
+	            // corresponds to a real coefficient of the DFT.
+	            // A random sign is drawn (except for (0,0)
+	            // where we impose sign=1. to conserve the
+	            // original mean)
+	            if (((x == 0) || (isXEven && (x == halfWidth)))
+	                && ((y == 0) || (isYEven && (y == halfHeight)))) 
+	            {
+	                float sign = (((rand.nextFloat() < 0.5f)
+	                         || ((x == 0) && (y == 0))) ? 1.0f : -1.0f);
+	                result.setReal(x, y, sign * poissonComplexFilter[y][x]);
+	                result.setImaginary(x, y, 0f);
+	            }
+	            // Case 2: Both (x,y) and its symmetric are in
+	            // the same half-domain, and y > height/2.
+	            // Then the random phase of this symmetric
+	            // point has already been drawn.
+	            else if (((x == 0) || (isXEven && x == halfWidth))
+	                     && y > halfHeight) 
+	            {
+	                // Copy the symmetric point
+	                int ySymmetric = height - y;
+	                result.setRealInput(x, y, result.getReal(x, ySymmetric));
+	                result.setImaginary(x, y, result.getImaginary(x, ySymmetric));
+	            }
+	            else 
+	            {
+	                // Draw a random phase
+	                float theta = (2f * rand.nextFloat() - 1f) * (float)Math.PI;
+	                result.setRealInput(x, y, (float) Math.cos(theta) * poissonComplexFilter[y][x]);
+	                result.setImaginary(x, y, (float) Math.sin(theta) * poissonComplexFilter[y][x]);
+	            }
+			}
+		}
+		
+		return result;
+	}
+
+	/**
+	 * Based on poisson_complex_filter in random_phase_noise_lib.c.
+	 */
+	private static float[][] createPoissonComplexFilter(int width, int height)
+	{
+		float[] cosX = new float[width/2 + 1];
+		for (int x : new Range(cosX.length))
+		{
+			cosX[x] = (float) Math.cos(2.0f * ((float) x) * Math.PI / ((float) width)); 
+		}
+		
+		float[] cosYMinTwo = new float[height];
+		for (int y : new Range(cosYMinTwo.length))
+		{
+			cosYMinTwo[y] = (float)Math.cos(2.0f * ((float) y) * Math.PI / ((float) height)) - 2f;
+		}
+		
+		float halfInverseArea = 0.5f / ((float)(width * height));
+		float[][] result = new float[width][height];
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				result[y][x] = halfInverseArea / (cosX[x] + cosYMinTwo[y]);
+			}
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * Calculate the discrete laplacian of an image. Points off the image are defined as 0.
+	 */
+	private static float[][] calcDiscreteLaplacian(float[][] image)
+	{
+		int height = image.length;
+		int width = image[0].length;
+		float[][] result = new float[image.length][image[0].length];
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				result[y][x] += (x > 0) ? image[y][x - 1] : 0f;
+				result[y][x] += (x < width - 1) ? image[y][x + 1] : 0f;
+				result[y][x] += (y > 0) ? image[y - 1][x] : 0f;
+				result[y][x] += (y < height - 1) ? image[y + 1][x] : 0f;
+				result[y][x] -= 4 * (image[y][x]);
+			}
+		}
+		
+		return result;
+	}
 
 	public static void main(String[] args) throws IOException
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		runExperiment7();
+		generateUsingRandomPhaseNoise();
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");

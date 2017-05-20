@@ -19,6 +19,7 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
 
 import org.apache.commons.io.FilenameUtils;
@@ -684,76 +685,95 @@ public class ImageHelper
 		if (rows < 2)
 			rows = 2;
 		
-		// Convert the input to the format required by JTransforms.
-		float[][] data = new float[rows][2 * cols];
+		ComplexArray data = forwardFFT(img, rows, cols);
 		
-		int imgRowPadding = rows - img.getHeight();
-		int imgColPadding = cols - img.getWidth();
-		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
-		{
-			Raster raster = img.getRaster();
-			for (int r = 0; r < img.getHeight(); r++)
-				for (int c = 0; c < img.getWidth(); c++)
-				{
-					float grayLevel = raster.getSample(c, r, 0);
-					if (img.getType() == BufferedImage.TYPE_BYTE_GRAY)
-						grayLevel /= 255f;
-					data[r + imgRowPadding/2][c + imgColPadding/2] = grayLevel;
-				}
-	
-			// Do the forward FFT.
-			fft.realForwardFull(data);
-		}
-		
-		// convert the kernel to the format required by JTransforms.
-		float[][] kernelData = new float[rows][2 * cols];
-		{
-			int rowPadding = rows - kernel.length;
-			int colPadding = cols - kernel[0].length;
-			for (int r = 0; r < kernel.length; r++)
-				for (int c = 0; c < kernel[0].length; c++)
-				{
-					kernelData[r + rowPadding/2][c + colPadding/2] = kernel[r][c];
-				}
-			
-
-			// Do the forward FFT.
-			fft.realForwardFull(kernelData);
-
-//			float[][] realPart = getRealPart(kernelData);
-//			maximizeContrast(realPart);
-//			write(arrayToImage(realPart), "realPart.png"); // TODO remove
-//			float[][] imaginaryPart = getImaginaryPart(kernelData);
-//			maximizeContrast(imaginaryPart);
-//			write(arrayToImage(imaginaryPart), "imaginaryPart.png"); // TODO remove
-		}
+		ComplexArray kernelData = forwardFFT(kernel, rows, cols, true);
 						
-		// Multiply the convolved image and kernel in the frequency domain.
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
-			{
-				float dataR = data[r][c*2];
-				float dataI = data[r][c*2 + 1];
-				float kernelR = kernelData[r][c*2];
-				float kernelI = kernelData[r][c*2 + 1];
-				
-				float real = dataR * kernelR - dataI * kernelI;
-				data[r][c*2] = real;
-				float imaginary = dataI * kernelR + dataR * kernelI;
-				data[r][c*2 + 1] = imaginary;
-			}
+		data.multiplyInPlace(kernelData);
 		kernelData = null;
 		
 		// Do the inverse DFT on the product.
-		fft.complexInverse(data, true);
-		moveRealToLeftSide(data);
-		swapQuadrantsOfLeftSideInPlace(data); 
+		inverseFFT(data);
+		moveRealToLeftSide(data.getArrayJTransformsFormat());
+		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
 		
+		int imgRowPaddingOver2 = (rows - img.getHeight())/2;
+		int imgColPaddingOver2 = (cols - img.getWidth())/2;
+
 		if (maximizeContrast)
-			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
+			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, img.getHeight(), imgColPaddingOver2, img.getWidth());
 		
-		BufferedImage result = arrayToImage(data, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
+		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, img.getHeight(), imgColPaddingOver2, img.getWidth());
 		return result;
+	}
+	
+	public static void inverseFFT(ComplexArray data)
+	{
+		FloatFFT_2D fft = new FloatFFT_2D(data.getHeight(), data.getWidth());
+		fft.complexInverse(data.getArrayJTransformsFormat(), true);		
+	}
+	
+	public static ComplexArray forwardFFT(BufferedImage img, int rows, int cols)
+	{
+		ComplexArray data = new ComplexArray(cols, rows);
+		
+		int imgRowPadding = rows - img.getHeight();
+		int imgColPadding = cols - img.getWidth();
+		int imgRowPaddingOver2 = imgRowPadding/2;
+		int imgColPaddingOver2 = imgColPadding/2;
+		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
+
+		Raster raster = img.getRaster();
+		for (int r = 0; r < img.getHeight(); r++)
+			for (int c = 0; c < img.getWidth(); c++)
+			{
+				float grayLevel = raster.getSample(c, r, 0);
+				if (img.getType() == BufferedImage.TYPE_BYTE_GRAY)
+					grayLevel /= 255f;
+				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
+			}
+
+		// Do the forward FFT.
+		fft.realForwardFull(data.getArrayJTransformsFormat());
+
+		return data;
+	}
+	
+	/**
+	 * Do a 2D forward FFT.
+	 * @param input 
+	 * @param rows Number of rows in the output
+	 * @param cols Number of columns in the output
+	 * @param flipXAndYAxis For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead of cross-correlation.
+	 * @return
+	 */
+	public static ComplexArray forwardFFT(float[][] input, int rows, int cols, boolean flipXAndYAxis)
+	{
+		// Convert the kernel to the format required by JTransforms.
+		ComplexArray data = new ComplexArray(cols, rows);
+		{
+			int rowPadding = rows - input.length;
+			int rowPaddingOver2 = rowPadding/2;
+			int colPadding = cols - input[0].length;
+			int columnPaddingOver2 = colPadding/2;
+			for (int r = 0; r < input.length; r++)
+				for (int c = 0; c < input[0].length; c++)
+				{
+					if (flipXAndYAxis)
+					{
+						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[input.length - 1 - r][input[0].length - 1 - c]);
+					}
+					else
+					{
+						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[r][c]);
+					}
+				}	
+
+			// Do the forward FFT.
+			FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
+			fft.realForwardFull(data.getArrayJTransformsFormat());
+		}
+		return data;
 	}
 		
 	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
