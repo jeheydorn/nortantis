@@ -168,7 +168,6 @@ public class BackgroundGenerator
 	 */
 	private static BufferedImage calcPeriodicComponent(Random rand, BufferedImage texture)
 	{
-		float mean = ImageHelper.calcMeanOfGrayscaleImage(texture);
 		ComplexArray randomPhasesWithPoisson = generateRandomPhasesWithPoissonComplexFilter(rand, texture.getWidth(), texture.getHeight());
 		float[][] laplacian = calcDiscreteLaplacian(ImageHelper.imageToArray(texture));
 		
@@ -186,6 +185,10 @@ public class BackgroundGenerator
 						
 		data.multiplyInPlace(randomPhasesWithPoisson);
 		randomPhasesWithPoisson = null;
+		
+		float mean = ImageHelper.calcMeanOfGrayscaleImage(texture);
+		data.setReal(0, 0, mean);
+		data.setImaginary(0, 0, 0f);
 		
 		// Do the inverse DFT on the product.
 		ImageHelper.inverseFFT(data);
