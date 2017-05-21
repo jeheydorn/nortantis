@@ -250,7 +250,7 @@ public class BackgroundGenerator
 	/**
 	 * Based on poisson_complex_filter in random_phase_noise_lib.c.
 	 * 
-	 * The result's width is only width/2 +1 because the other part is symetric.
+	 * The result's width that is actually populated is only width/2 + 1 because the other part is symetric.
 	 */
 	private static float[][] createPoissonComplexFilter(int width, int height)
 	{
@@ -268,7 +268,7 @@ public class BackgroundGenerator
 		}
 		
 		float halfInverseArea = 0.5f / ((float)(width * height));
-		float[][] result = new float[height][shortenedWidth];
+		float[][] result = new float[height][width];
 		for (int y = 0; y < height; y++)
 		{
 			for (int x = 0; x < shortenedWidth; x++)
@@ -294,16 +294,30 @@ public class BackgroundGenerator
 	{
 		int height = image.length;
 		int width = image[0].length;
-		float[][] result = new float[image.length][image[0].length];
+		float[][] result = new float[height][width];
 		for (int y = 0; y < height; y++)
 		{
 			for (int x = 0; x < width; x++)
 			{
-				result[y][x] += (x > 0) ? image[y][x - 1] : 0f;
-				result[y][x] += (x < width - 1) ? image[y][x + 1] : 0f;
-				result[y][x] += (y > 0) ? image[y - 1][x] : 0f;
-				result[y][x] += (y < height - 1) ? image[y + 1][x] : 0f;
-				result[y][x] -= 4 * (image[y][x]);
+				if (x > 0)
+				{
+					result[y][x] += image[y][x - 1] - result[y][x];
+				}
+				
+				if (x < width - 1)
+				{
+					result[y][x] += image[y][x + 1] - result[y][x];
+				}
+				
+				if (y > 0)
+				{
+					result[y][x] += image[y - 1][x] - result[y][x];	
+				}
+				
+				if (y < height - 1)
+				{
+					result[y][x] += image[y + 1][x] - result[y][x];	
+				}
 			}
 		}
 		
@@ -315,7 +329,7 @@ public class BackgroundGenerator
 		long startTime = System.currentTimeMillis();
 		
 		//generateUsingRandomPhaseNoise();
-		calcPeriodicComponent(new Random(), ImageHelper.read("valcia_snippet.png"));
+		ImageHelper.write(calcPeriodicComponent(new Random(), ImageHelper.read("valcia_snippet.png")), "result.png");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");
