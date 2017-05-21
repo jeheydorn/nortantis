@@ -166,12 +166,31 @@ public class BackgroundGenerator
 	 * @param texture
 	 * @return
 	 */
-	private static float[][] calcPeriodicComponent(Random rand, BufferedImage texture)
+	private static BufferedImage calcPeriodicComponent(Random rand, BufferedImage texture)
 	{
 		float mean = ImageHelper.calcMeanOfGrayscaleImage(texture);
 		ComplexArray randomPhasesWithPoisson = generateRandomPhasesWithPoissonComplexFilter(rand, texture.getWidth(), texture.getHeight());
 		float[][] laplacian = calcDiscreteLaplacian(ImageHelper.imageToArray(texture));
-		return null; // TODO
+		
+		assert randomPhasesWithPoisson.getWidth() == laplacian[0].length;
+		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(laplacian[0].length);
+		assert randomPhasesWithPoisson.getHeight() == laplacian.length;
+		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(laplacian.length);
+		// Make sure rows and cols are greater than 1 for jtransforms.
+		if (cols < 2)
+			cols = 2;
+		if (rows < 2)
+			rows = 2;
+		
+		ComplexArray data = ImageHelper.forwardFFT(laplacian, rows, cols, false);
+						
+		data.multiplyInPlace(randomPhasesWithPoisson);
+		randomPhasesWithPoisson = null;
+		
+		// Do the inverse DFT on the product.
+		ImageHelper.inverseFFT(data);
+		return ImageHelper.realToImage(data, texture.getWidth(), texture.getHeight(), true);
+
 	}
 	
 	/**
@@ -195,7 +214,7 @@ public class BackgroundGenerator
 	            // A random sign is drawn (except for (0,0)
 	            // where we impose sign=1. to conserve the
 	            // original mean)
-	            if (((x == 0) || (isXEven && (x == halfWidth)))
+	            if ((x == 0 || (isXEven && (x == halfWidth)))
 	                && ((y == 0) || (isYEven && (y == halfHeight)))) 
 	            {
 	                float sign = (((rand.nextFloat() < 0.5f)
@@ -207,19 +226,19 @@ public class BackgroundGenerator
 	            // the same half-domain, and y > height/2.
 	            // Then the random phase of this symmetric
 	            // point has already been drawn.
-	            else if (((x == 0) || (isXEven && x == halfWidth))
+	            else if ((x == 0 || (isXEven && x == halfWidth))
 	                     && y > halfHeight) 
 	            {
 	                // Copy the symmetric point
 	                int ySymmetric = height - y;
-	                result.setRealInput(x, y, result.getReal(x, ySymmetric));
+	                result.setReal(x, y, result.getReal(x, ySymmetric));
 	                result.setImaginary(x, y, result.getImaginary(x, ySymmetric));
 	            }
 	            else 
 	            {
 	                // Draw a random phase
 	                float theta = (2f * rand.nextFloat() - 1f) * (float)Math.PI;
-	                result.setRealInput(x, y, (float) Math.cos(theta) * poissonComplexFilter[y][x]);
+	                result.setReal(x, y, (float) Math.cos(theta) * poissonComplexFilter[y][x]);
 	                result.setImaginary(x, y, (float) Math.sin(theta) * poissonComplexFilter[y][x]);
 	            }
 			}
@@ -230,28 +249,38 @@ public class BackgroundGenerator
 
 	/**
 	 * Based on poisson_complex_filter in random_phase_noise_lib.c.
+	 * 
+	 * The result's width is only width/2 +1 because the other part is symetric.
 	 */
 	private static float[][] createPoissonComplexFilter(int width, int height)
 	{
-		float[] cosX = new float[width/2 + 1];
+		int shortenedWidth = width/2 + 1;
+		float[] cosX = new float[shortenedWidth];
 		for (int x : new Range(cosX.length))
 		{
 			cosX[x] = (float) Math.cos(2.0f * ((float) x) * Math.PI / ((float) width)); 
 		}
 		
-		float[] cosYMinTwo = new float[height];
-		for (int y : new Range(cosYMinTwo.length))
+		float[] cosYMinusTwo = new float[height];
+		for (int y : new Range(cosYMinusTwo.length))
 		{
-			cosYMinTwo[y] = (float)Math.cos(2.0f * ((float) y) * Math.PI / ((float) height)) - 2f;
+			cosYMinusTwo[y] = (float)Math.cos(2.0f * ((float) y) * Math.PI / ((float) height)) - 2f;
 		}
 		
 		float halfInverseArea = 0.5f / ((float)(width * height));
-		float[][] result = new float[width][height];
+		float[][] result = new float[height][shortenedWidth];
 		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < width; x++)
+			for (int x = 0; x < shortenedWidth; x++)
 			{
-				result[y][x] = halfInverseArea / (cosX[x] + cosYMinTwo[y]);
+				if (x == 0 && y == 0)
+				{
+					result[y][x] = 1f;
+				}
+				else
+				{
+					result[y][x] = halfInverseArea / (cosX[x] + cosYMinusTwo[y]);
+				}
 			}
 		}
 		
@@ -285,7 +314,8 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		generateUsingRandomPhaseNoise();
+		//generateUsingRandomPhaseNoise();
+		calcPeriodicComponent(new Random(), ImageHelper.read("valcia_snippet.png"));
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");
