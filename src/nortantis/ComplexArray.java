@@ -45,7 +45,7 @@ public class ComplexArray
 				array[r][c*2 + 1] = imaginary;
 			}
 	}
-	
+			
 	/**
 	 * When the internal array is being prepared for a real forward FFT by JTransforms, JTransforms expects real inputs
 	 * to all be on the left. This uses that format.

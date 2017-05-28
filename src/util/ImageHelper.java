@@ -431,7 +431,7 @@ public class ImageHelper
 					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen())/255;
 					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue())/255;
 					Color combined = new Color(r,g,b,alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
-					result.setRGB(x, y, combined.getRGB());					
+					result.setRGB(x, y, combined.getRGB());				
 				}
 				else
 				{
@@ -679,7 +679,7 @@ public class ImageHelper
 	{		
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
-		// Make sure rows and cols are greater than 1 for jtransforms.
+		// Make sure rows and cols are greater than 1 for JTransforms.
 		if (cols < 2)
 			cols = 2;
 		if (rows < 2)
@@ -1181,6 +1181,41 @@ public class ImageHelper
 		
 		return sum / ((float)(image.getHeight() * image.getWidth()));
 	}
+	
+	public static float[] calcMeanOfEachColor(BufferedImage image)
+	{
+		float[] result = new float[3];
+		for (int channel : new Range(3))
+		{
+			long sum = 0;
+			for (int r = 0; r < image.getHeight(); r++)
+			{
+				for (int c = 0; c < image.getWidth(); c++)
+				{
+					Color color = new Color(image.getRGB(c, r));
+					int level;
+					if (channel == 0)
+					{
+						level = color.getRed(); 
+					}
+					else if (channel == 1)
+					{
+						level = color.getGreen();
+					}
+					else
+					{
+						level = color.getBlue();
+					}
+	
+					sum += level;
+				}
+			}
+			result[channel] = sum / ((float)(image.getHeight() * image.getWidth()));
+		}
+		
+		return result;
+	}
+
 
 	
 }

@@ -89,52 +89,109 @@ public class BackgroundGenerator
 		return result;
 	}
 	
-	private static void generateUsingRandomPhaseNoise() throws IOException
+	private static BufferedImage generateUsingRandomFrequencyMultiplication(Random rand, BufferedImage texture, int targetRows, int targetCols) throws IOException
 	{
-		int targetSize = 1024;	
+		int generateSize = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(Math.max(targetRows, targetCols), Math.max(texture.getWidth(), texture.getHeight())));
 		float alpha = 0.5f;
-		float targetSizeSquared = (float)(targetSize*targetSize);
-		String textureFileName = "valcia_snippet.png";
-		BufferedImage originalTexture = ImageHelper.read(textureFileName);
-		BufferedImage texture = ImageHelper.convertToGrayscale(originalTexture);
 		float textureArea = texture.getHeight() * texture.getHeight();
-		float[][] kernel = new float[targetSize][targetSize];
-		float mean = ImageHelper.calcMeanOfGrayscaleImage(texture)/255f;
 		Raster raster = texture.getRaster();
-		float varianceScaler = (float)Math.sqrt(targetSizeSquared / textureArea);
+		float varianceScaler = (float)Math.sqrt(((float)(generateSize*generateSize)) / textureArea);
 		int alphaRows = (int)(alpha * texture.getHeight());
 		int alphaCols = (int)(alpha * texture.getWidth());
-		Random rand = new Random();
 		
-		for (int r = 0; r < targetSize; r++)
+		int numberOfColorChannels;
+		BufferedImage allChannels;
+		float[] means;
+		if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
 		{
-			for (int c = 0; c < targetSize; c++)
-			{
-				int textureR = r - (targetSize - texture.getHeight())/2;
-				int textureC = c - (targetSize - texture.getWidth())/2;
-				if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
-				{
-					float level = raster.getSample(textureC, textureR, 0)/255f;
-					
-					float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
-					float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
-					
-					kernel[r][c] = mean + varianceScaler * (level - mean) * ar * ac;
-				}
-				else
-				{
-					kernel[r][c] = mean;
-				}
-			}
+			numberOfColorChannels = 1;
+			allChannels = null;
+			means = new float[] {ImageHelper.calcMeanOfGrayscaleImage(texture)/255f};
+		}
+		else
+		{
+			numberOfColorChannels = 3;
+			allChannels = new BufferedImage(generateSize, generateSize, BufferedImage.TYPE_INT_RGB);
+			means = ImageHelper.calcMeanOfEachColor(texture);
 		}
 		
-		//ImageHelper.write(ImageHelper.arrayToImage(kernel), "textureKernel.png");
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, kernel.length, kernel[0].length));
-		BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
-		
-		BufferedImage result = ImageHelper.matchHistogram(grayImage, originalTexture);
-		ImageHelper.write(result, "result.png");
-		
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, generateSize, generateSize));
+
+		for (int channel : new Range(numberOfColorChannels))
+		{
+			float[][] kernel = new float[generateSize][generateSize];
+			for (int r = 0; r < generateSize; r++)
+			{
+				for (int c = 0; c < generateSize; c++)
+				{
+					int textureR = r - (generateSize - texture.getHeight())/2;
+					int textureC = c - (generateSize - texture.getWidth())/2;
+					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
+					{
+						float level;
+						if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						{
+							level = raster.getSample(textureC, textureR, 0)/255f;
+						}
+						else
+						{
+							// Color image
+							Color color = new Color(texture.getRGB(textureC, textureR));
+							if (channel == 0)
+							{
+								level = color.getRed(); 
+							}
+							else if (channel == 1)
+							{
+								level = color.getGreen();
+							}
+							else
+							{
+								level = color.getBlue();
+							}
+						}
+						
+						float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
+						float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
+						
+						kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
+					}
+					else
+					{
+						kernel[r][c] = means[channel];
+					}
+				}
+			}
+			
+			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
+			
+			if (numberOfColorChannels == 1)
+			{
+				allChannels = grayImage;
+			}
+			else
+			{
+				// Copy grayImage to a color channel in allChanels.
+				Raster gRaster = grayImage.getRaster();
+				for (int y = 0; y < allChannels.getHeight(); y++)
+					for (int x = 0; x < allChannels.getWidth(); x++)
+					{
+						Color color = new Color(allChannels.getRGB(x, y));
+						
+						int level = gRaster.getSample(x, y, 0);
+							
+						int r = (channel == 0) ? level : color.getRed();
+						int g = (channel == 1) ? level : color.getGreen();
+						int b = (channel == 2) ? level : color.getBlue();
+						Color combined = new Color(r,g,b);
+						allChannels.setRGB(x, y, combined.getRGB());				
+					}
+
+			}
+		}
+				
+		BufferedImage result = ImageHelper.matchHistogram(allChannels, texture);
+		return result;
 	}
 	
 	private static float calcSmoothParamether(int textureR, int alphaPixels, float alpha, int imageLength)
@@ -162,9 +219,8 @@ public class BackgroundGenerator
 	
 	/***
 	 * Finds the periodic component of an image. Based on periodic_component_color.
-	 * @param rand
-	 * @param texture
-	 * @return
+	 *
+	 * This has a bug in it and I can't seem to figure it out, so for now I'm not using it.
 	 */
 	private static BufferedImage calcPeriodicComponent(Random rand, BufferedImage texture)
 	{
@@ -175,7 +231,7 @@ public class BackgroundGenerator
 		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(laplacian[0].length);
 		assert randomPhasesWithPoisson.getHeight() == laplacian.length;
 		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(laplacian.length);
-		// Make sure rows and cols are greater than 1 for jtransforms.
+		// Make sure rows and cols are greater than 1 for JTransforms.
 		if (cols < 2)
 			cols = 2;
 		if (rows < 2)
@@ -201,8 +257,8 @@ public class BackgroundGenerator
 	 */
 	private static ComplexArray generateRandomPhasesWithPoissonComplexFilter(Random rand, int width, int height)
 	{
-		boolean isXEven = width % 2 == 0;
-		boolean isYEven = height % 2 == 0;
+		boolean widthIsEven = width % 2 == 0;
+		boolean heightIsEven = height % 2 == 0;
 		int halfWidth = width / 2;
 		int halfHeight = height / 2;
 		float[][] poissonComplexFilter = createPoissonComplexFilter(width, height);
@@ -212,13 +268,14 @@ public class BackgroundGenerator
 		{
 			for (int x = 0; x < width; x++)
 			{
+				
 	            // Case 1: (x,y) is its own symmetric: (x,y)
 	            // corresponds to a real coefficient of the DFT.
 	            // A random sign is drawn (except for (0,0)
 	            // where we impose sign=1. to conserve the
 	            // original mean)
-	            if ((x == 0 || (isXEven && (x == halfWidth)))
-	                && ((y == 0) || (isYEven && (y == halfHeight)))) 
+	            if ((x == 0 || (widthIsEven && (x == halfWidth)))
+	                && ((y == 0) || (heightIsEven && (y == halfHeight)))) 
 	            {
 	                float sign = (((rand.nextFloat() < 0.5f)
 	                         || ((x == 0) && (y == 0))) ? 1.0f : -1.0f);
@@ -229,7 +286,7 @@ public class BackgroundGenerator
 	            // the same half-domain, and y > height/2.
 	            // Then the random phase of this symmetric
 	            // point has already been drawn.
-	            else if ((x == 0 || (isXEven && x == halfWidth))
+	            else if ((x == 0 || (widthIsEven && x == halfWidth))
 	                     && y > halfHeight) 
 	            {
 	                // Copy the symmetric point
@@ -257,24 +314,23 @@ public class BackgroundGenerator
 	 */
 	private static float[][] createPoissonComplexFilter(int width, int height)
 	{
-		int shortenedWidth = width/2 + 1;
-		float[] cosX = new float[shortenedWidth];
+		float[] cosX = new float[width];
 		for (int x : new Range(cosX.length))
 		{
-			cosX[x] = (float) Math.cos(2.0f * ((float) x) * Math.PI / ((float) width)); 
+			cosX[x] = (float) Math.cos(2.0f * (((float) x) * Math.PI / ((float) width))); 
 		}
 		
 		float[] cosYMinusTwo = new float[height];
 		for (int y : new Range(cosYMinusTwo.length))
 		{
-			cosYMinusTwo[y] = (float)Math.cos(2.0f * ((float) y) * Math.PI / ((float) height)) - 2f;
+			cosYMinusTwo[y] = (float) Math.cos(2.0f * (((float) y) * Math.PI / ((float) height))) - 2f;
 		}
 		
 		float halfInverseArea = 0.5f / ((float)(width * height));
 		float[][] result = new float[height][width];
 		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < shortenedWidth; x++)
+			for (int x = 0; x < width; x++)
 			{
 				if (x == 0 && y == 0)
 				{
@@ -332,7 +388,8 @@ public class BackgroundGenerator
 		long startTime = System.currentTimeMillis();
 		
 		//generateUsingRandomPhaseNoise();
-		ImageHelper.write(calcPeriodicComponent(new Random(), ImageHelper.read("valcia_snippet.png")), "result.png");
+		BufferedImage result = generateUsingRandomFrequencyMultiplication(new Random(), ImageHelper.read("valcia_snippet.png"), 4096, 4096);
+		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");
