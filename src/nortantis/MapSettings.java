@@ -49,7 +49,12 @@ public class MapSettings implements Serializable
 	int frayedBorderBlurLevel;
 	public int grungeWidth;
 	
+	/**
+	 * This settings actually mans fractal generated as opposed to generated from texture.
+	 */
 	boolean generateBackground;
+	boolean generateBackgroundFromTexture;
+	String backgroundTextureImage;
 	long backgroundRandomSeed;
 	Color oceanColor;
 	Color landColor;
@@ -105,6 +110,8 @@ public class MapSettings implements Serializable
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
 		result.setProperty("generateBackground", generateBackground + "");
+		result.setProperty("backgroundTextureImage", backgroundTextureImage);
+		result.setProperty("generateBackgroundFromTexture", generateBackgroundFromTexture + "");
 		result.setProperty("oceanColor", colorToString(oceanColor));
 		result.setProperty("landColor", colorToString(landColor));
 		result.setProperty("generatedWidth", generatedWidth + "");
@@ -305,6 +312,28 @@ public class MapSettings implements Serializable
 			public Boolean apply()
 			{
 				return parseBoolean(props.getProperty("generateBackground"));
+			}
+		});
+		generateBackgroundFromTexture = getProperty("generateBackgroundFromTexture", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("generateBackgroundFromTexture");
+				if (propString == null)
+				{
+					return false;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		backgroundTextureImage = getProperty("backgroundTextureImage", new Function0<String>()
+		{
+			public String apply()
+			{
+				String result = props.getProperty("backgroundTextureImage");
+				if (result == null)
+					result = ".";
+				return result;
 			}
 		});
 		backgroundRandomSeed = getProperty("backgroundRandomSeed", new Function0<Long>()

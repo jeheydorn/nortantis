@@ -122,7 +122,12 @@ public class ImageHelper
 		
 		// This library is described at http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
-		
+
+		if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY && scaled.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		{
+			scaled = convertToGrayscale(scaled);
+		}
+
 		return scaled;
 	}
 
@@ -139,6 +144,11 @@ public class ImageHelper
 		
 		// This library is described at http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
+		
+		if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY && scaled.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		{
+			scaled = convertToGrayscale(scaled);
+		}
 		
 		return scaled;
 	}
@@ -600,7 +610,7 @@ public class ImageHelper
 	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc,
 			int width, int height, double angle)
 	{
-		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage result = new BufferedImage(width, height, image.getType());
 		Graphics2D gResult = result.createGraphics();
 		gResult.rotate(-angle, width/2, height/2);
 		gResult.translate(-xLoc, -yLoc);		
@@ -677,6 +687,13 @@ public class ImageHelper
 	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel,
 			boolean maximizeContrast)
 	{		
+		ComplexArray data = convolveGrayscaleAndReturnComplexArray(img, kernel);
+		
+		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast);
+	}
+	
+	public static ComplexArray convolveGrayscaleAndReturnComplexArray(BufferedImage img, float[][] kernel)
+	{		
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
 		// Make sure rows and cols are greater than 1 for JTransforms.
@@ -694,10 +711,15 @@ public class ImageHelper
 		
 		// Do the inverse DFT on the product.
 		inverseFFT(data);
-		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast);
+		return data;
 	}
 	
 	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast)
+	{
+		return realToImageWithMaxValue(data, imageWidth, imageHeight, maximizeContrast, 1f);
+	}
+	
+	public static BufferedImage realToImageWithMaxValue(ComplexArray data, int imageWidth, int imageHeight, boolean setContrast, float maxValue)
 	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
 		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
@@ -705,8 +727,10 @@ public class ImageHelper
 		int imgRowPaddingOver2 = (data.getHeight() - imageHeight)/2;
 		int imgColPaddingOver2 = (data.getWidth() - imageWidth)/2;
 
-		if (maximizeContrast)
-			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+		if (setContrast)
+		{
+			setContrast(data.getArrayJTransformsFormat(), 0f, maxValue, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+		}
 		
 		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		return result;

@@ -104,8 +104,9 @@ public class RunSwing
 	JPanel frayedBorderColorDisplay;
 	JSlider frayedBorderBlurSlider;
 	private JTextField backgroundSeedTextField;
-	private JRadioButton rdbtnGenerated;
+	private JRadioButton rdbtnGeneratedFromTexture;
 	private JRadioButton rdbtnFromFiles;
+	private JRadioButton rdbtnFractal;
 	private BGColorPreviewPanel oceanDisplayPanel;
 	private BGColorPreviewPanel landDisplayPanel;
 	private ActionListener backgroundImageButtonGroupListener;
@@ -132,6 +133,16 @@ public class RunSwing
 	private JSlider grungeSlider;
 	private UserPreferences userPreferences;
 	private ImagePanel previewPanel;
+	private JLabel lblOceanBackgroundImage;
+	private JLabel lblLandBackgroundImage;
+	private JLabel lblDimensions;
+	private JLabel lblBackgroundRandomSeed;
+	private JTextField textureImageFilename;
+	private JLabel lblTextureImage;
+	private JButton btnBrowseLandBackground;
+	private JLabel lblOceanColor;
+	private JLabel lblLandColor;
+	private JButton btnsBrowseTextureImage;
 
 	
 	public static boolean isRunning()
@@ -496,12 +507,12 @@ public class RunSwing
 		
 		JLabel label = new JLabel("Resolution:");
 		label.setToolTipText("The resolution of the result will be multiplied by this value. Larger values will take longer to run.");
-		label.setBounds(12, 140, 101, 15);
+		label.setBounds(12, 20, 101, 15);
 		backgroundPanel.add(label);
 		
 		scaleSlider = new JSlider();
 		scaleSlider.setPaintLabels(true);
-		scaleSlider.setBounds(131, 132, 245, 79);
+		scaleSlider.setBounds(131, 12, 245, 79);
 		scaleSlider.setValue(100);
 		scaleSlider.setSnapToTicks(true);
 		scaleSlider.setPaintTicks(true);
@@ -520,13 +531,12 @@ public class RunSwing
 		backgroundPanel.add(scaleSlider);
 
 
-		JLabel lblOceanBackgroundImage = new JLabel("Ocean background image:");
-		lblOceanBackgroundImage.setBounds(12, 212, 185, 15);
+		lblOceanBackgroundImage = new JLabel("Ocean background image:");
+		lblOceanBackgroundImage.setBounds(12, 218, 185, 15);
 		backgroundPanel.add(lblOceanBackgroundImage);
 		
 		oceanBackgroundImageFilename = new JTextField();
 		oceanBackgroundImageFilename.setBounds(12, 239, 278, 28);
-		oceanBackgroundImageFilename.setText(Paths.get("assets/land.jpg").toAbsolutePath().toString());
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
 
@@ -544,16 +554,16 @@ public class RunSwing
 		btnBrowseOceanBackground.setBounds(302, 240, 87, 25);
 		backgroundPanel.add(btnBrowseOceanBackground);
 		
-		JLabel lblLandBackgroundImage = new JLabel("Land background image:");
+		lblLandBackgroundImage = new JLabel("Land background image:");
 		lblLandBackgroundImage.setBounds(12, 279, 175, 15);
 		backgroundPanel.add(lblLandBackgroundImage);
 		
 		landBackgroundImageFilename = new JTextField();
 		landBackgroundImageFilename.setColumns(10);
-		landBackgroundImageFilename.setBounds(12, 306, 278, 28);
+		landBackgroundImageFilename.setBounds(12, 300, 278, 28);
 		backgroundPanel.add(landBackgroundImageFilename);
 		
-		final JButton btnBrowseLandBackground = new JButton("Browse");
+		btnBrowseLandBackground = new JButton("Browse");
 		btnBrowseLandBackground.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
@@ -564,10 +574,10 @@ public class RunSwing
 
 			}
 		});
-		btnBrowseLandBackground.setBounds(302, 307, 87, 25);
+		btnBrowseLandBackground.setBounds(302, 300, 87, 25);
 		backgroundPanel.add(btnBrowseLandBackground);
 		
-		JLabel lblLandColor = new JLabel("Land color:");
+		lblLandColor = new JLabel("Land color:");
 		lblLandColor.setToolTipText("The color of the land.");
 		lblLandColor.setBounds(728, 319, 79, 15);
 		backgroundPanel.add(lblLandColor);
@@ -592,15 +602,15 @@ public class RunSwing
 
 		backgroundPanel.add(btnChooseLandColor);
 		
-		JLabel label_3 = new JLabel("Random seed:");
-		label_3.setToolTipText("The random seed used to generate the background image.");
-		label_3.setBounds(12, 66, 122, 15);
-		backgroundPanel.add(label_3);
+		lblBackgroundRandomSeed = new JLabel("Random seed:");
+		lblBackgroundRandomSeed.setToolTipText("The random seed used to generate the background image.");
+		lblBackgroundRandomSeed.setBounds(12, 184, 122, 15);
+		backgroundPanel.add(lblBackgroundRandomSeed);
 		
 		backgroundSeedTextField = new JTextField();
 		backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
 		backgroundSeedTextField.setColumns(10);
-		backgroundSeedTextField.setBounds(131, 61, 141, 25);
+		backgroundSeedTextField.setBounds(131, 184, 141, 25);
 		backgroundPanel.add(backgroundSeedTextField);
 		
 		final JButton btnNewBackgroundSeed = new JButton("New Seed");
@@ -614,12 +624,12 @@ public class RunSwing
 			}
 		});
 		btnNewBackgroundSeed.setToolTipText("Generate a new random seed.");
-		btnNewBackgroundSeed.setBounds(284, 61, 105, 25);
+		btnNewBackgroundSeed.setBounds(284, 184, 105, 25);
 		backgroundPanel.add(btnNewBackgroundSeed);
 		
 		JLabel lblBackgroundImage = new JLabel("Background image:");
 		lblBackgroundImage.setToolTipText("Select whether to generate a new background image images from files.");
-		lblBackgroundImage.setBounds(12, 17, 156, 15);
+		lblBackgroundImage.setBounds(12, 112, 156, 15);
 		backgroundPanel.add(lblBackgroundImage);
 		
 		oceanDisplayPanel = new BGColorPreviewPanel();
@@ -630,7 +640,7 @@ public class RunSwing
 				(int)backgroundDisplayMaxSize.getHeight());
 		backgroundPanel.add(oceanDisplayPanel);
 		
-		JLabel lblOceanColor = new JLabel("Ocean color:");
+		lblOceanColor = new JLabel("Ocean color:");
 		lblOceanColor.setToolTipText("The color of the ocean.");
 		lblOceanColor.setBackground(Color.red);
 		lblOceanColor.setBounds(471, 319, 95, 15);
@@ -665,7 +675,7 @@ public class RunSwing
 		dimensionsComboBox.addItem("4096 x 4096 (square)");
 		dimensionsComboBox.addItem("4096 x 2304 (16 by 9)");
 		dimensionsComboBox.addItem("4096 x 2531 (golden ratio)");
-		dimensionsComboBox.setBounds(131, 93, 220, 28);
+		dimensionsComboBox.setBounds(169, 218, 220, 28);
 		dimensionsComboBox.addActionListener(new ActionListener()
 		{	
 			public void actionPerformed(ActionEvent e)
@@ -681,19 +691,33 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e)
 			{
 				warnOfTextEdits();
-				btnChooseLandColor.setEnabled(rdbtnGenerated.isSelected());
-				btnChooseOceanColor.setEnabled(rdbtnGenerated.isSelected());
-				btnNewBackgroundSeed.setEnabled(rdbtnGenerated.isSelected());
-				dimensionsComboBox.setEnabled(rdbtnGenerated.isSelected());
-				backgroundSeedTextField.setEnabled(rdbtnGenerated.isSelected());
-
-				btnBrowseLandBackground.setEnabled(!rdbtnGenerated.isSelected());
-				btnBrowseOceanBackground.setEnabled(!rdbtnGenerated.isSelected());
-				oceanBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
-				landBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
+				boolean isGeneratedBackground = rdbtnGeneratedFromTexture.isSelected() || rdbtnFractal.isSelected();
+				btnChooseLandColor.setVisible(isGeneratedBackground);
+				btnChooseOceanColor.setVisible(isGeneratedBackground);
+				btnNewBackgroundSeed.setVisible(isGeneratedBackground);
+				lblDimensions.setVisible(isGeneratedBackground);
+				dimensionsComboBox.setVisible(isGeneratedBackground);
+				backgroundSeedTextField.setVisible(isGeneratedBackground);
+				lblBackgroundRandomSeed.setVisible(isGeneratedBackground);
+				oceanDisplayPanel.setVisible(isGeneratedBackground);
+				landDisplayPanel.setVisible(isGeneratedBackground);
+				lblOceanColor.setVisible(isGeneratedBackground);
+				lblLandColor.setVisible(isGeneratedBackground);
 				
-				drawRegionsCheckBox.setEnabled(rdbtnGenerated.isSelected());
-				boolean regionControlsSelected = rdbtnGenerated.isSelected() && drawRegionsCheckBox.isSelected();
+				lblTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
+				textureImageFilename.setVisible(rdbtnGeneratedFromTexture.isSelected());
+				btnBrowseLandBackground.setVisible(rdbtnGeneratedFromTexture.isSelected());
+				btnsBrowseTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
+
+				btnBrowseLandBackground.setVisible(rdbtnFromFiles.isSelected());
+				btnBrowseOceanBackground.setVisible(rdbtnFromFiles.isSelected());
+				lblOceanBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
+				oceanBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
+				lblLandBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
+				landBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
+				
+				drawRegionsCheckBox.setEnabled(rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected());
+				boolean regionControlsSelected = (rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected()) && drawRegionsCheckBox.isSelected();
 				hueSlider.setEnabled(regionControlsSelected);
 				saturationSlider.setEnabled(regionControlsSelected);
 				brightnessSlider.setEnabled(regionControlsSelected);
@@ -702,24 +726,55 @@ public class RunSwing
 			}		
 		};
 		
-		rdbtnGenerated = new JRadioButton("Generated");
-		rdbtnGenerated.setBounds(165, 8, 185, 23);
-		rdbtnGenerated.addActionListener(backgroundImageButtonGroupListener);
-		backgroundPanel.add(rdbtnGenerated);
-		
+		rdbtnFractal = new JRadioButton("Fractal noise");
+		rdbtnFractal.setBounds(165, 103, 185, 23);
+		rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
+		backgroundPanel.add(rdbtnFractal);
+
+		rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
+		rdbtnGeneratedFromTexture.setBounds(165, 125, 211, 23);
+		rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
+		backgroundPanel.add(rdbtnGeneratedFromTexture);
+
 		rdbtnFromFiles = new JRadioButton("From files");
-		rdbtnFromFiles.setBounds(165, 30, 185, 23);
+		rdbtnFromFiles.setBounds(165, 147, 211, 23);
 		rdbtnFromFiles.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnFromFiles);
 		
 		ButtonGroup backgoundImageButtonGroup = new ButtonGroup();
-		backgoundImageButtonGroup.add(rdbtnGenerated);
+		backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
+		backgoundImageButtonGroup.add(rdbtnFractal);
 		backgoundImageButtonGroup.add(rdbtnFromFiles);
 		
-		JLabel lblDimensions = new JLabel("Dimensions:");
+		lblDimensions = new JLabel("Dimensions:");
 		lblDimensions.setToolTipText("The dimensions of the result before being multiplied by the resolution below.");
-		lblDimensions.setBounds(12, 93, 122, 15);
+		lblDimensions.setBounds(12, 215, 122, 15);
 		backgroundPanel.add(lblDimensions);
+		
+		lblTextureImage = new JLabel("Texture image:");
+		lblTextureImage.setBounds(12, 263, 156, 15);
+		backgroundPanel.add(lblTextureImage);
+		
+		textureImageFilename = new JTextField();
+		textureImageFilename.setColumns(10);
+		textureImageFilename.setBounds(12, 284, 278, 28);
+		backgroundPanel.add(textureImageFilename);
+		
+		btnsBrowseTextureImage = new JButton("Browse");
+		btnsBrowseTextureImage.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnsBrowseTextureImage.setBounds(302, 284, 87, 25);
+		btnsBrowseTextureImage.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				String filename = chooseImageFile(backgroundPanel, textureImageFilename.getText());
+				if (filename != null)
+					textureImageFilename.setText(filename);
+			}
+		});
+		backgroundPanel.add(btnsBrowseTextureImage);
 		
 		JPanel regionsPanel = new JPanel();
 		tabbedPane.addTab("Regions", null, regionsPanel, null);
@@ -1418,9 +1473,30 @@ public class RunSwing
 		DimensionDouble bounds = ImageHelper.fitDimensionsWithinBoundingBox(
 				backgroundDisplayMaxSize, dim.getWidth(), dim.getHeight());
 
-		BufferedImage background = FractalBGGenerator.generate(
-				new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
-				(int)bounds.getHeight(), 0.75f);
+		
+		BufferedImage background;
+		if (rdbtnFractal.isSelected())
+		{
+			background = FractalBGGenerator.generate(
+					new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
+					(int)bounds.getHeight(), 0.75f);
+		}
+		else
+		{
+			BufferedImage texture;
+			try
+			{
+				texture = ImageHelper.convertToGrayscale(ImageHelper.read(textureImageFilename.getText()));
+			}
+			catch(RuntimeException e)
+			{
+				Logger.println("Unable to load the background texture: " + textureImageFilename.getText());
+				return;
+			}
+			
+			background = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+					new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
+		}
 
 		oceanDisplayPanel.setImage(ImageHelper.extractRotatedRegion(background, 0, 0, background.getWidth()/2, 
 				oceanDisplayPanel.getHeight(), 0));
@@ -1646,9 +1722,11 @@ public class RunSwing
 		grungeSlider.setValue(settings.grungeWidth);
 		
 		// Settings for background images.
-		rdbtnGenerated.setSelected(settings.generateBackground);
-		rdbtnFromFiles.setSelected(!settings.generateBackground);
+		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
+		rdbtnFractal.setSelected(settings.generateBackground);
+		rdbtnFromFiles.setSelected(!settings.generateBackground && !settings.generateBackgroundFromTexture);
 		backgroundImageButtonGroupListener.actionPerformed(null);
+		textureImageFilename.setText(settings.backgroundTextureImage);
 		landBackgroundImageFilename.setText(settings.landBackgroundImage);
 		oceanBackgroundImageFilename.setText(settings.oceanBackgroundImage);
 		backgroundSeedTextField.setText(String.valueOf(settings.backgroundRandomSeed));
@@ -1753,7 +1831,9 @@ public class RunSwing
 		settings.grungeWidth = grungeSlider.getValue();
 		
 		// Background image settings
-		settings.generateBackground = rdbtnGenerated.isSelected();
+		settings.generateBackground = rdbtnFractal.isSelected();
+		settings.generateBackgroundFromTexture = rdbtnGeneratedFromTexture.isSelected();
+		settings.backgroundTextureImage = textureImageFilename.getText();
 		settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
 		settings.oceanColor = oceanDisplayPanel.getColor();
 		settings.landColor = landDisplayPanel.getColor();
