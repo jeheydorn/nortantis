@@ -191,7 +191,7 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("valcia_snippet.png"), 4000, 4000);
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("fractal_paper.png"), 4000, 4000);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);

@@ -541,23 +541,6 @@ public class RunSwing
 		oceanBackgroundImageFilename.setBounds(12, 239, 278, 28);
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
-		oceanBackgroundImageFilename.getDocument().addDocumentListener(new DocumentListener() 
-		{
-			public void changedUpdate(DocumentEvent e) 
-			{
-				updateBackgroundImageDisplays();
-			}
-
-			public void removeUpdate(DocumentEvent e) 
-			{
-				updateBackgroundImageDisplays();
-			}
-
-			public void insertUpdate(DocumentEvent e) 
-			{
-				updateBackgroundImageDisplays();
-			}
-		});
 
 		final JButton btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
@@ -694,7 +677,7 @@ public class RunSwing
 		dimensionsComboBox.addItem("4096 x 4096 (square)");
 		dimensionsComboBox.addItem("4096 x 2304 (16 by 9)");
 		dimensionsComboBox.addItem("4096 x 2531 (golden ratio)");
-		dimensionsComboBox.setBounds(169, 218, 220, 28);
+		dimensionsComboBox.setBounds(131, 223, 258, 28);
 		dimensionsComboBox.addActionListener(new ActionListener()
 		{	
 			public void actionPerformed(ActionEvent e)
@@ -772,7 +755,7 @@ public class RunSwing
 		
 		lblDimensions = new JLabel("Dimensions:");
 		lblDimensions.setToolTipText("The dimensions of the result before being multiplied by the resolution below.");
-		lblDimensions.setBounds(12, 215, 122, 15);
+		lblDimensions.setBounds(12, 223, 122, 15);
 		backgroundPanel.add(lblDimensions);
 		
 		lblTextureImage = new JLabel("Texture image:");
@@ -782,6 +765,23 @@ public class RunSwing
 		textureImageFilename = new JTextField();
 		textureImageFilename.setColumns(10);
 		textureImageFilename.setBounds(12, 284, 278, 28);
+		textureImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+		});
 		backgroundPanel.add(textureImageFilename);
 		
 		btnsBrowseTextureImage = new JButton("Browse");
