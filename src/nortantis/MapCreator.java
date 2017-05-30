@@ -131,7 +131,16 @@ public class MapCreator
 			}
 			else
 			{
-				BufferedImage texture = ImageHelper.convertToGrayscale(ImageHelper.read(settings.backgroundTextureImage));
+				BufferedImage texture;
+				try
+				{
+					texture = ImageHelper.convertToGrayscale(ImageHelper.read(settings.backgroundTextureImage));
+				}
+				catch (RuntimeException e)
+				{
+					throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
+				}
+				
 				generatedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 						new Random(settings.backgroundRandomSeed), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
 				ocean = ImageHelper.colorify2(generatedBackground, settings.oceanColor);

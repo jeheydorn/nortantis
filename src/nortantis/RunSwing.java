@@ -57,6 +57,8 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
@@ -539,6 +541,23 @@ public class RunSwing
 		oceanBackgroundImageFilename.setBounds(12, 239, 278, 28);
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
+		oceanBackgroundImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+		});
 
 		final JButton btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
@@ -723,6 +742,11 @@ public class RunSwing
 				brightnessSlider.setEnabled(regionControlsSelected);
 				regionsSeedTextField.setEnabled(regionControlsSelected);
 				newRegionSeedButton.setEnabled(regionControlsSelected);
+				
+				if (isGeneratedBackground)
+				{
+					updateBackgroundImageDisplays();
+				}
 			}		
 		};
 		
@@ -1487,15 +1511,14 @@ public class RunSwing
 			try
 			{
 				texture = ImageHelper.convertToGrayscale(ImageHelper.read(textureImageFilename.getText()));
+				background = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+						new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
 			}
 			catch(RuntimeException e)
 			{
-				Logger.println("Unable to load the background texture: " + textureImageFilename.getText());
-				return;
+				background = new BufferedImage((int)bounds.getWidth(), (int)bounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			}
 			
-			background = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-					new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
 		}
 
 		oceanDisplayPanel.setImage(ImageHelper.extractRotatedRegion(background, 0, 0, background.getWidth()/2, 
