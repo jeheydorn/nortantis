@@ -37,9 +37,14 @@ public class BackgroundGenerator
 	 */
 	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
 	{
+		// The conditions under which the two calls below change the texture are mutually exclusive.
+		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
+		texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
+
 		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max( texture.getHeight(), targetRows));
 		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
-		texture = scaleTextureLargerIfNeeded(texture, rows, cols);
+		
+		
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();
 		Raster raster = texture.getRaster();
@@ -168,6 +173,17 @@ public class BackgroundGenerator
 		return (float)Math.exp(-1 / (1 - (x * x))) * (1f / 0.367879f);		
 	}
 
+	private static BufferedImage cropTextureSmallerIfNeeded(BufferedImage texture, int rows, int cols)
+	{
+		if (texture.getWidth() < cols || texture.getHeight() < rows)
+		{
+			return texture;
+		}
+		
+		// The texture is wider and taller than we need it to be. Return a piece cropped out of the middle.
+		return ImageHelper.extractRegion(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
+	}
+
 	private static BufferedImage scaleTextureLargerIfNeeded(BufferedImage texture, int rows, int cols)
 	{
 		if (((float)texture.getWidth()) / cols < ((float)texture.getHeight()) / rows)
@@ -191,7 +207,7 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.convertToGrayscale(ImageHelper.read("Tolkien_snippet.png")), 2048, 2048);
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("valcia_snippet.png"), 2048, 2048);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
