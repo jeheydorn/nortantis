@@ -1040,7 +1040,7 @@ public class ImageHelper
 		for (int y = 0; y < result.getHeight(); y++)
 			for (int x = 0; x < result.getWidth(); x++)
 			{
-				float level = raster.getSampleFloat(x, y, 0) / 255f;
+				float level = raster.getSampleFloat(x, y, 0);
 				result.setRGB(x, y, colorifyPixel(level, hsb, how));
 			}
 		
@@ -1058,6 +1058,7 @@ public class ImageHelper
 		else if (how == ColorifyAlgorithm.algorithm3)
 		{
 			float resultLevel;
+			pixelLevel /= 255f;
 			if (hsb[2] < 0.5f)
 			{	
 				resultLevel = pixelLevel * (hsb[2] * 2f);
