@@ -420,7 +420,8 @@ public class ImageHelper
 					+ mask.getWidth() + " but image has width "
 					+ image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() 
+			+ " but mask height was " + mask.getHeight());
 
 		BufferedImage result = new BufferedImage(image.getWidth(),
 				image.getHeight(), image.getType());
@@ -1022,11 +1023,13 @@ public class ImageHelper
 		return outImage;
 	}
 	
-	/**
-	 * This algorithm preserves contrast a little better than colorify2.
-	 */
 	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how)
 	{
+		if (how == ColorifyAlgorithm.none)
+		{
+			return image;
+		}
+		
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
 		+ bufferedImageTypeToString(image.getType()));

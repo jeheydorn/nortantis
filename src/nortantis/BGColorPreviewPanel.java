@@ -59,7 +59,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	@Override
 	public void setImage(BufferedImage image)
 	{
-		originalBackground = ImageHelper.convertToGrayscale(image);
+		originalBackground = image;
 
 		if (color == null || colorifyAlgorithm == ImageHelper.ColorifyAlgorithm.none)
 		{
@@ -73,7 +73,10 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	
 	private void colorifyImage()
 	{
-		image = ImageHelper.colorify(originalBackground, color, colorifyAlgorithm);
+		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)
+		{
+			image = ImageHelper.colorify(originalBackground, color, colorifyAlgorithm);
+		}
 	}
 
 }

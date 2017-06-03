@@ -54,6 +54,8 @@ public class MapSettings implements Serializable
 	 */
 	boolean generateBackground;
 	boolean generateBackgroundFromTexture;
+	boolean colorizeOcean; // For backgrounds generated from a texture.
+	boolean colorizeLand; // For backgrounds generated from a texture.
 	String backgroundTextureImage;
 	long backgroundRandomSeed;
 	Color oceanColor;
@@ -112,6 +114,8 @@ public class MapSettings implements Serializable
 		result.setProperty("generateBackground", generateBackground + "");
 		result.setProperty("backgroundTextureImage", backgroundTextureImage);
 		result.setProperty("generateBackgroundFromTexture", generateBackgroundFromTexture + "");
+		result.setProperty("colorizeOcean", colorizeOcean + "");
+		result.setProperty("colorizeLand", colorizeLand + "");
 		result.setProperty("oceanColor", colorToString(oceanColor));
 		result.setProperty("landColor", colorToString(landColor));
 		result.setProperty("generatedWidth", generatedWidth + "");
@@ -322,6 +326,30 @@ public class MapSettings implements Serializable
 				if (propString == null)
 				{
 					return false;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		colorizeOcean = getProperty("colorizeOcean", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("colorizeOcean");
+				if (propString == null)
+				{
+					return true;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		colorizeLand = getProperty("colorizeLand", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("colorizeLand");
+				if (propString == null)
+				{
+					return true;
 				}
 				return parseBoolean(propString);
 			}

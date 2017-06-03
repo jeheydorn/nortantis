@@ -10,6 +10,8 @@ import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -145,6 +147,12 @@ public class RunSwing
 	private JLabel lblOceanColor;
 	private JLabel lblLandColor;
 	private JButton btnsBrowseTextureImage;
+	private JCheckBox colorizeLandCheckbox;
+	private JCheckBox colorizeOceanCheckbox;
+	private JButton btnChooseLandColor;
+	private JButton btnChooseOceanColor;
+	private JButton btnNewBackgroundSeed;
+	private JButton btnBrowseOceanBackground;
 
 	
 	public static boolean isRunning()
@@ -542,7 +550,7 @@ public class RunSwing
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
 
-		final JButton btnBrowseOceanBackground = new JButton("Browse");
+		btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent arg0) 
@@ -585,7 +593,7 @@ public class RunSwing
 		backgroundPanel.add(lblLandColor);
 		lblLandColor.setBackground(new Color(119, 91, 36));
 				
-		final JButton btnChooseLandColor = new JButton("Choose");
+		btnChooseLandColor = new JButton("Choose");
 		btnChooseLandColor.setBounds(814, 314, 87, 25);
 		btnChooseLandColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
@@ -615,7 +623,7 @@ public class RunSwing
 		backgroundSeedTextField.setBounds(131, 184, 141, 25);
 		backgroundPanel.add(backgroundSeedTextField);
 		
-		final JButton btnNewBackgroundSeed = new JButton("New Seed");
+		btnNewBackgroundSeed = new JButton("New Seed");
 		btnNewBackgroundSeed.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
@@ -648,7 +656,7 @@ public class RunSwing
 		lblOceanColor.setBounds(471, 319, 95, 15);
 		backgroundPanel.add(lblOceanColor);
 		
-		final JButton btnChooseOceanColor = new JButton("Choose");
+		btnChooseOceanColor = new JButton("Choose");
 		btnChooseOceanColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JColorChooser colorChooser = new JColorChooser(oceanDisplayPanel.getColor());
@@ -693,43 +701,7 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e)
 			{
 				warnOfTextEdits();
-				boolean isGeneratedBackground = rdbtnGeneratedFromTexture.isSelected() || rdbtnFractal.isSelected();
-				btnChooseLandColor.setVisible(isGeneratedBackground);
-				btnChooseOceanColor.setVisible(isGeneratedBackground);
-				btnNewBackgroundSeed.setVisible(isGeneratedBackground);
-				lblDimensions.setVisible(isGeneratedBackground);
-				dimensionsComboBox.setVisible(isGeneratedBackground);
-				backgroundSeedTextField.setVisible(isGeneratedBackground);
-				lblBackgroundRandomSeed.setVisible(isGeneratedBackground);
-				oceanDisplayPanel.setVisible(isGeneratedBackground);
-				landDisplayPanel.setVisible(isGeneratedBackground);
-				lblOceanColor.setVisible(isGeneratedBackground);
-				lblLandColor.setVisible(isGeneratedBackground);
-				
-				lblTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
-				textureImageFilename.setVisible(rdbtnGeneratedFromTexture.isSelected());
-				btnBrowseLandBackground.setVisible(rdbtnGeneratedFromTexture.isSelected());
-				btnsBrowseTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
-
-				btnBrowseLandBackground.setVisible(rdbtnFromFiles.isSelected());
-				btnBrowseOceanBackground.setVisible(rdbtnFromFiles.isSelected());
-				lblOceanBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
-				oceanBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
-				lblLandBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
-				landBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
-				
-				drawRegionsCheckBox.setEnabled(rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected());
-				boolean regionControlsSelected = (rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected()) && drawRegionsCheckBox.isSelected();
-				hueSlider.setEnabled(regionControlsSelected);
-				saturationSlider.setEnabled(regionControlsSelected);
-				brightnessSlider.setEnabled(regionControlsSelected);
-				regionsSeedTextField.setEnabled(regionControlsSelected);
-				newRegionSeedButton.setEnabled(regionControlsSelected);
-				
-				if (isGeneratedBackground)
-				{
-					updateBackgroundImageDisplays();
-				}
+				updateBackgroundPanelFieldStates();
 			}		
 		};
 		
@@ -799,6 +771,30 @@ public class RunSwing
 			}
 		});
 		backgroundPanel.add(btnsBrowseTextureImage);
+		
+		colorizeOceanCheckbox = new JCheckBox("");
+		colorizeOceanCheckbox.setToolTipText("Whether or not to change the ocean texture to a custom color");
+		colorizeOceanCheckbox.setBounds(448, 315, 129, 23);
+		colorizeOceanCheckbox.addItemListener(new ItemListener() 
+		{	
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				updateBackgroundPanelFieldStates();
+			}
+		});
+		backgroundPanel.add(colorizeOceanCheckbox);
+		
+		colorizeLandCheckbox = new JCheckBox("");
+		colorizeLandCheckbox.setToolTipText("Whether or not to change the land texture to a custom color");
+		colorizeLandCheckbox.setBounds(705, 315, 129, 23);
+		colorizeLandCheckbox.addItemListener(new ItemListener() 
+		{	
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				updateBackgroundPanelFieldStates();
+			}
+		});
+		backgroundPanel.add(colorizeLandCheckbox);
 		
 		JPanel regionsPanel = new JPanel();
 		tabbedPane.addTab("Regions", null, regionsPanel, null);
@@ -1073,159 +1069,161 @@ public class RunSwing
 		regionFontDisplay = new JLabel("");
 		regionFontDisplay.setBounds(181, 70, 195, 25);
 		
-				textPanel.add(regionFontDisplay);
+		textPanel.add(regionFontDisplay);
 				
-						final JButton btnRegionFont = new JButton("Choose");
-						btnRegionFont.addActionListener(new ActionListener() 
-						{
-							public void actionPerformed(ActionEvent arg0) 
-							{
-								runFontChooser(textPanel, regionFontDisplay);
-							}
-						});
-						btnRegionFont.setBounds(383, 72, 87, 25);
-						textPanel.add(btnRegionFont);
-						
-						JLabel lblTitleFont = new JLabel("Title font:");
-						lblTitleFont.setBounds(8, 43, 105, 15);
-						textPanel.add(lblTitleFont);
-						
-						titleFontDisplay = new JLabel("");
-						titleFontDisplay.setBounds(181, 12, 195, 49);
-						textPanel.add(titleFontDisplay);
-						
-						final JButton btnTitleFont = new JButton("Choose");
-						btnTitleFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent arg0) 
-							{
-								runFontChooser(textPanel, titleFontDisplay);
-							}
-						});
-						btnTitleFont.setBounds(383, 39, 87, 25);
-						textPanel.add(btnTitleFont);
-						
-						JLabel lblMountainRangeFont = new JLabel("Mountain range font:");
-						lblMountainRangeFont.setBounds(8, 109, 161, 15);
-						textPanel.add(lblMountainRangeFont);
-						
-						mountainRangeFontDisplay = new JLabel("");
-						mountainRangeFontDisplay.setBounds(181, 103, 195, 25);
-						textPanel.add(mountainRangeFontDisplay);
-						
-						final JButton btnMountainRangeFont = new JButton("Choose");
-						btnMountainRangeFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								runFontChooser(textPanel, mountainRangeFontDisplay);
-							}
-						});
-						btnMountainRangeFont.setBounds(383, 105, 87, 25);
-						textPanel.add(btnMountainRangeFont);
-						
-						JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
-						lblMountainGroupFont.setBounds(8, 142, 161, 15);
-						textPanel.add(lblMountainGroupFont);
-						
-						otherMountainsFontDisplay = new JLabel("");
-						otherMountainsFontDisplay.setBounds(181, 139, 195, 25);
-						textPanel.add(otherMountainsFontDisplay);
-						
-						final JButton btnOtherMountainsFont = new JButton("Choose");
-						btnOtherMountainsFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								runFontChooser(textPanel, otherMountainsFontDisplay);
-							}
-						});
-						btnOtherMountainsFont.setBounds(383, 138, 87, 25);
-						textPanel.add(btnOtherMountainsFont);
-						
-						JLabel lblRiverFont = new JLabel("River font:");
-						lblRiverFont.setBounds(8, 175, 116, 15);
-						textPanel.add(lblRiverFont);
-						
-						riverFontDisplay = new JLabel("");
-						riverFontDisplay.setBounds(181, 175, 195, 25);
-						textPanel.add(riverFontDisplay);
-						
-						final JButton btnRiverFont = new JButton("Choose");
-						btnRiverFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								runFontChooser(textPanel, riverFontDisplay);
-							}
-						});
-						btnRiverFont.setBounds(383, 171, 87, 25);
-						textPanel.add(btnRiverFont);
-						
-						JLabel lblTextColor = new JLabel("Text color:");
-						lblTextColor.setBounds(8, 208, 134, 23);
-						textPanel.add(lblTextColor);
-						
-						textColorDisplay = new JPanel();
-						textColorDisplay.setBackground(Color.BLACK);
-						textColorDisplay.setBounds(237, 204, 82, 23);
-						textPanel.add(textColorDisplay);
-						
-						final JButton btnChooseTextColor = new JButton("Choose");
-						btnChooseTextColor.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
-								showColorPickerWithPreviewPanel(textPanel, textColorDisplay, "Text color");
-							}
-						});
-						btnChooseTextColor.setBounds(383, 204, 87, 25);
-						textPanel.add(btnChooseTextColor);
-						
-						JLabel lblBoldBackgroundColor = new JLabel("Bold background color:");
-						lblBoldBackgroundColor.setToolTipText("Title and region names will be given a bold background in this color.");
-						lblBoldBackgroundColor.setBounds(8, 274, 186, 23);
-						textPanel.add(lblBoldBackgroundColor);
-						
-						boldBackgroundColorDisplay = new JPanel();
-						boldBackgroundColorDisplay.setBackground(new Color(244,226,194));
-						boldBackgroundColorDisplay.setBounds(237, 270, 82, 23);
-						textPanel.add(boldBackgroundColorDisplay);
-						
-						final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
-						btnChooseBoldBackgroundColor.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
-								showColorPickerWithPreviewPanel(textPanel, boldBackgroundColorDisplay, "Bold background color");
-							}
-						});
-						btnChooseBoldBackgroundColor.setBounds(383, 270, 87, 25);
-						textPanel.add(btnChooseBoldBackgroundColor);
-						
-						final JButton btnNewTextRandomSeed = new JButton("New Seed");
-						btnNewTextRandomSeed.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								warnOfTextEdits();
-								textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
-							}
-						});
-						btnNewTextRandomSeed.setToolTipText("Generate a new random seed for creating text.");
-						btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
-						textPanel.add(btnNewTextRandomSeed);
-						
-						btnEditText = new JButton("Edit Text");
-						btnEditText.setToolTipText("Modify the generated text.");
-						btnEditText.addActionListener(new ActionListener() 
-						{
-							public void actionPerformed(ActionEvent e)
-							{
-						        Dialog dialog;
-						        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
-								dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-								dialog.setVisible(true);
-							}
-						});
-						btnEditText.setBounds(8, 314, 117, 25);
-						textPanel.add(btnEditText);
-						
-						btnClearTextEdits = new JButton("Clear Text Edits");
-						btnClearTextEdits.setToolTipText("Remove all modifications to  generated text.");
-						btnClearTextEdits.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
+		final JButton btnRegionFont = new JButton("Choose");
+		btnRegionFont.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				runFontChooser(textPanel, regionFontDisplay);
+			}
+		});
+		btnRegionFont.setBounds(383, 72, 87, 25);
+		textPanel.add(btnRegionFont);
+		
+		JLabel lblTitleFont = new JLabel("Title font:");
+		lblTitleFont.setBounds(8, 43, 105, 15);
+		textPanel.add(lblTitleFont);
+		
+		titleFontDisplay = new JLabel("");
+		titleFontDisplay.setBounds(181, 12, 195, 49);
+		textPanel.add(titleFontDisplay);
+		
+		final JButton btnTitleFont = new JButton("Choose");
+		btnTitleFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				runFontChooser(textPanel, titleFontDisplay);
+			}
+		});
+		btnTitleFont.setBounds(383, 39, 87, 25);
+		textPanel.add(btnTitleFont);
+		
+		JLabel lblMountainRangeFont = new JLabel("Mountain range font:");
+		lblMountainRangeFont.setBounds(8, 109, 161, 15);
+		textPanel.add(lblMountainRangeFont);
+		
+		mountainRangeFontDisplay = new JLabel("");
+		mountainRangeFontDisplay.setBounds(181, 103, 195, 25);
+		textPanel.add(mountainRangeFontDisplay);
+		
+		final JButton btnMountainRangeFont = new JButton("Choose");
+		btnMountainRangeFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, mountainRangeFontDisplay);
+			}
+		});
+		btnMountainRangeFont.setBounds(383, 105, 87, 25);
+		textPanel.add(btnMountainRangeFont);
+		
+		JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
+		lblMountainGroupFont.setBounds(8, 142, 161, 15);
+		textPanel.add(lblMountainGroupFont);
+		
+		otherMountainsFontDisplay = new JLabel("");
+		otherMountainsFontDisplay.setBounds(181, 139, 195, 25);
+		textPanel.add(otherMountainsFontDisplay);
+		
+		final JButton btnOtherMountainsFont = new JButton("Choose");
+		btnOtherMountainsFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, otherMountainsFontDisplay);
+			}
+		});
+		btnOtherMountainsFont.setBounds(383, 138, 87, 25);
+		textPanel.add(btnOtherMountainsFont);
+		
+		JLabel lblRiverFont = new JLabel("River font:");
+		lblRiverFont.setBounds(8, 175, 116, 15);
+		textPanel.add(lblRiverFont);
+		
+		riverFontDisplay = new JLabel("");
+		riverFontDisplay.setBounds(181, 175, 195, 25);
+		textPanel.add(riverFontDisplay);
+		
+		final JButton btnRiverFont = new JButton("Choose");
+		btnRiverFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, riverFontDisplay);
+			}
+		});
+		btnRiverFont.setBounds(383, 171, 87, 25);
+		textPanel.add(btnRiverFont);
+		
+		JLabel lblTextColor = new JLabel("Text color:");
+		lblTextColor.setBounds(8, 208, 134, 23);
+		textPanel.add(lblTextColor);
+		
+		textColorDisplay = new JPanel();
+		textColorDisplay.setBackground(Color.BLACK);
+		textColorDisplay.setBounds(237, 204, 82, 23);
+		textPanel.add(textColorDisplay);
+		
+		final JButton btnChooseTextColor = new JButton("Choose");
+		btnChooseTextColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPickerWithPreviewPanel(textPanel, textColorDisplay, "Text color");
+			}
+		});
+		btnChooseTextColor.setBounds(383, 204, 87, 25);
+		textPanel.add(btnChooseTextColor);
+		
+		JLabel lblBoldBackgroundColor = new JLabel("Bold background color:");
+		lblBoldBackgroundColor.setToolTipText("Title and region names will be given a bold background in this color.");
+		lblBoldBackgroundColor.setBounds(8, 274, 186, 23);
+		textPanel.add(lblBoldBackgroundColor);
+		
+		boldBackgroundColorDisplay = new JPanel();
+		boldBackgroundColorDisplay.setBackground(new Color(244,226,194));
+		boldBackgroundColorDisplay.setBounds(237, 270, 82, 23);
+		textPanel.add(boldBackgroundColorDisplay);
+		
+		final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
+		btnChooseBoldBackgroundColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPickerWithPreviewPanel(textPanel, boldBackgroundColorDisplay, "Bold background color");
+			}
+		});
+		btnChooseBoldBackgroundColor.setBounds(383, 270, 87, 25);
+		textPanel.add(btnChooseBoldBackgroundColor);
+		
+		final JButton btnNewTextRandomSeed = new JButton("New Seed");
+		btnNewTextRandomSeed.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				warnOfTextEdits();
+				textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
+			}
+		});
+		btnNewTextRandomSeed.setToolTipText("Generate a new random seed for creating text.");
+		btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
+		textPanel.add(btnNewTextRandomSeed);
+		
+		btnEditText = new JButton("Edit Text");
+		btnEditText.setToolTipText("Modify the generated text.");
+		btnEditText.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+		        Dialog dialog;
+		        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
+				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+				dialog.setVisible(true);
+			}
+		});
+		btnEditText.setBounds(8, 314, 117, 25);
+		textPanel.add(btnEditText);
+		
+		btnClearTextEdits = new JButton("Clear Text Edits");
+		btnClearTextEdits.setToolTipText("Remove all modifications to  generated text.");
+		btnClearTextEdits.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
 	        	int n = JOptionPane.showConfirmDialog(
 	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
 	                    JOptionPane.YES_NO_OPTION);
@@ -1235,73 +1233,74 @@ public class RunSwing
 									btnClearTextEdits.setEnabled(false);
 	            }
 
-							}
-						});
-						btnClearTextEdits.setBounds(137, 314, 161, 25);
-						textPanel.add(btnClearTextEdits);
-						
-						drawTextCheckBox = new JCheckBox("Draw text");
-						drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
-						drawTextCheckBox.setBounds(8, 8, 125, 23);
-						drawTextCheckBox.addActionListener(new ActionListener() 
-						{
-							public void actionPerformed(ActionEvent e) 
-							{
-								btnTitleFont.setEnabled(drawTextCheckBox.isSelected());
-								booksPanel.setEnabled(drawTextCheckBox.isSelected());
-								for (Component component : booksPanel.getComponents())
-								{
-									if (component instanceof JCheckBox)
-									{
-										JCheckBox checkBox = (JCheckBox)component;
-										checkBox.setEnabled(drawTextCheckBox.isSelected());
-									}
-								}				
-								btnRegionFont.setEnabled(drawTextCheckBox.isSelected());
-								btnMountainRangeFont.setEnabled(drawTextCheckBox.isSelected());
-								btnOtherMountainsFont.setEnabled(drawTextCheckBox.isSelected());
-								btnRiverFont.setEnabled(drawTextCheckBox.isSelected());
-								btnChooseTextColor.setEnabled(drawTextCheckBox.isSelected());
-								btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
-								textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
-								btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
-								btnEditText.setEnabled(drawTextCheckBox.isSelected());
-								chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
-								btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
-							}			
-						});
-						textPanel.add(drawTextCheckBox);
-						
-						JScrollPane booksScrollPane = new JScrollPane();
-						booksScrollPane.setBounds(538, 70, 311, 270);
-						textPanel.add(booksScrollPane);
-						
-						booksPanel = new JPanel();
-						booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
-						booksScrollPane.setViewportView(booksPanel);
-						
-						JLabel label_7 = new JLabel("Random seed:");
-						label_7.setToolTipText("The random seed for text.");
-						label_7.setBounds(528, 14, 122, 15);
-						textPanel.add(label_7);
-						
-						textRandomSeedTextField = new JTextField();
-						textRandomSeedTextField.setText(new Random().nextInt() + "");
-						textRandomSeedTextField.setColumns(10);
-						textRandomSeedTextField.setBounds(647, 12, 141, 25);
-						textPanel.add(textRandomSeedTextField);
-						
-						chckbxDrawBoldBackground = new JCheckBox("Draw bold background");
-						chckbxDrawBoldBackground.setBounds(8, 241, 209, 23);
-						chckbxDrawBoldBackground.addActionListener(new ActionListener()
-						{
-							@Override
-							public void actionPerformed(ActionEvent e)
-							{
-								btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
-							}
-						});
-						textPanel.add(chckbxDrawBoldBackground);
+			}
+		});
+
+		btnClearTextEdits.setBounds(137, 314, 161, 25);
+		textPanel.add(btnClearTextEdits);
+		
+		drawTextCheckBox = new JCheckBox("Draw text");
+		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
+		drawTextCheckBox.setBounds(8, 8, 125, 23);
+		drawTextCheckBox.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				btnTitleFont.setEnabled(drawTextCheckBox.isSelected());
+				booksPanel.setEnabled(drawTextCheckBox.isSelected());
+				for (Component component : booksPanel.getComponents())
+				{
+					if (component instanceof JCheckBox)
+					{
+						JCheckBox checkBox = (JCheckBox)component;
+						checkBox.setEnabled(drawTextCheckBox.isSelected());
+					}
+				}				
+				btnRegionFont.setEnabled(drawTextCheckBox.isSelected());
+				btnMountainRangeFont.setEnabled(drawTextCheckBox.isSelected());
+				btnOtherMountainsFont.setEnabled(drawTextCheckBox.isSelected());
+				btnRiverFont.setEnabled(drawTextCheckBox.isSelected());
+				btnChooseTextColor.setEnabled(drawTextCheckBox.isSelected());
+				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
+				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
+				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
+				btnEditText.setEnabled(drawTextCheckBox.isSelected());
+				chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
+				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
+			}			
+		});
+		textPanel.add(drawTextCheckBox);
+		
+		JScrollPane booksScrollPane = new JScrollPane();
+		booksScrollPane.setBounds(538, 70, 311, 270);
+		textPanel.add(booksScrollPane);
+		
+		booksPanel = new JPanel();
+		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
+		booksScrollPane.setViewportView(booksPanel);
+		
+		JLabel label_7 = new JLabel("Random seed:");
+		label_7.setToolTipText("The random seed for text.");
+		label_7.setBounds(528, 14, 122, 15);
+		textPanel.add(label_7);
+		
+		textRandomSeedTextField = new JTextField();
+		textRandomSeedTextField.setText(new Random().nextInt() + "");
+		textRandomSeedTextField.setColumns(10);
+		textRandomSeedTextField.setBounds(647, 12, 141, 25);
+		textPanel.add(textRandomSeedTextField);
+		
+		chckbxDrawBoldBackground = new JCheckBox("Draw bold background");
+		chckbxDrawBoldBackground.setBounds(8, 241, 209, 23);
+		chckbxDrawBoldBackground.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
+			}
+		});
+		textPanel.add(chckbxDrawBoldBackground);
 		buttonChooseCoastlineColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline color");
@@ -1490,6 +1489,52 @@ public class RunSwing
 		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}
 	
+	private void updateBackgroundPanelFieldStates()
+	{
+		boolean isGeneratedBackground = rdbtnGeneratedFromTexture.isSelected() || rdbtnFractal.isSelected();
+		btnChooseLandColor.setVisible(isGeneratedBackground);
+		btnChooseOceanColor.setVisible(isGeneratedBackground);
+		btnNewBackgroundSeed.setVisible(isGeneratedBackground);
+		lblDimensions.setVisible(isGeneratedBackground);
+		dimensionsComboBox.setVisible(isGeneratedBackground);
+		backgroundSeedTextField.setVisible(isGeneratedBackground);
+		lblBackgroundRandomSeed.setVisible(isGeneratedBackground);
+		oceanDisplayPanel.setVisible(isGeneratedBackground);
+		landDisplayPanel.setVisible(isGeneratedBackground);
+		lblOceanColor.setVisible(isGeneratedBackground);
+		lblLandColor.setVisible(isGeneratedBackground);
+		
+		lblTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		textureImageFilename.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnBrowseLandBackground.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnsBrowseTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		colorizeOceanCheckbox.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		colorizeLandCheckbox.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnChooseOceanColor.setEnabled(colorizeOceanCheckbox.isSelected());
+		btnChooseLandColor.setEnabled(colorizeLandCheckbox.isSelected());
+
+		btnBrowseLandBackground.setVisible(rdbtnFromFiles.isSelected());
+		btnBrowseOceanBackground.setVisible(rdbtnFromFiles.isSelected());
+		lblOceanBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
+		oceanBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
+		lblLandBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
+		landBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
+		
+		drawRegionsCheckBox.setEnabled(rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected());
+		boolean regionControlsSelected = (rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected()) && drawRegionsCheckBox.isSelected();
+		hueSlider.setEnabled(regionControlsSelected);
+		saturationSlider.setEnabled(regionControlsSelected);
+		brightnessSlider.setEnabled(regionControlsSelected);
+		regionsSeedTextField.setEnabled(regionControlsSelected);
+		newRegionSeedButton.setEnabled(regionControlsSelected);
+		
+		if (isGeneratedBackground)
+		{
+			updateBackgroundImageDisplays();
+		}
+
+	}
+	
 	private void updateBackgroundImageDisplays()
 	{
 		Dimension dim = getGeneratedBackgroundDimensionsFromGUI();
@@ -1498,45 +1543,93 @@ public class RunSwing
 				backgroundDisplayMaxSize, dim.getWidth(), dim.getHeight());
 
 		
-		BufferedImage background;
+		BufferedImage oceanBackground;
+		BufferedImage landBackground;
 		if (rdbtnFractal.isSelected())
 		{
 			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
 			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
 
-			background = FractalBGGenerator.generate(
+			oceanBackground = landBackground = FractalBGGenerator.generate(
 					new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
 					(int)bounds.getHeight(), 0.75f);
 		}
 		else
 		{
-			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
-			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
-
 			BufferedImage texture;
 			try
 			{
-				texture = ImageHelper.convertToGrayscale(ImageHelper.read(textureImageFilename.getText()));
-				background = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-						new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
+				texture = ImageHelper.read(textureImageFilename.getText());
+				
+				if (colorizeOceanCheckbox.isSelected())
+				{
+					oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+
+					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+							new Random(Integer.parseInt(backgroundSeedTextField.getText())), ImageHelper.convertToGrayscale(texture),
+							(int)bounds.getHeight(), (int)bounds.getWidth());
+				}
+				else
+				{
+					oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+
+					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+							new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture,
+							(int)bounds.getHeight(), (int)bounds.getWidth());
+				}
+				
+				if (colorizeLandCheckbox.isSelected() == colorizeOceanCheckbox.isSelected())
+				{
+					// No need to generate the same image twice.
+					landBackground = oceanBackground;
+					if (colorizeLandCheckbox.isSelected())
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);					
+					}
+					else
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);											
+					}
+				}
+				else
+				{
+					if (colorizeLandCheckbox.isSelected())
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+						
+						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+								new Random(Integer.parseInt(backgroundSeedTextField.getText())), ImageHelper.convertToGrayscale(texture),
+								(int)bounds.getHeight(), (int)bounds.getWidth());
+					}
+					else
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+						
+						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+								new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture,
+								(int)bounds.getHeight(), (int)bounds.getWidth());
+					}
+				}	
 			}
 			catch(RuntimeException e)
 			{
-				background = new BufferedImage((int)bounds.getWidth(), (int)bounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
+				oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+				landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+				oceanBackground = landBackground = new BufferedImage((int)bounds.getWidth(), (int)bounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			}
 			
 		}
 
-		oceanDisplayPanel.setImage(ImageHelper.extractRotatedRegion(background, 0, 0, background.getWidth()/2, 
-				oceanDisplayPanel.getHeight(), 0));
-		oceanDisplayPanel.setLocation(backgroundDisplayCenterX - background.getWidth()/2,
+		oceanDisplayPanel.setImage(ImageHelper.extractRegion(oceanBackground, 0, 0, oceanBackground.getWidth()/2, 
+				oceanDisplayPanel.getHeight()));
+		oceanDisplayPanel.setLocation(backgroundDisplayCenterX - oceanBackground.getWidth()/2,
 				oceanDisplayPanel.getLocation().y);
-		oceanDisplayPanel.setSize(new Dimension(background.getWidth()/2, background.getHeight()));
+		oceanDisplayPanel.setSize(new Dimension(oceanBackground.getWidth()/2, oceanBackground.getHeight()));
 		oceanDisplayPanel.repaint();
 		
-		landDisplayPanel.setImage(ImageHelper.extractRotatedRegion(background, background.getWidth()/2, 0, 
-				background.getWidth()/2, landDisplayPanel.getHeight(), 0));
-		landDisplayPanel.setSize(new Dimension(background.getWidth()/2, background.getHeight()));
+		landDisplayPanel.setImage(ImageHelper.extractRegion(landBackground, landBackground.getWidth()/2, 0, 
+				landBackground.getWidth()/2, landDisplayPanel.getHeight()));
+		landDisplayPanel.setSize(new Dimension(landBackground.getWidth()/2, landBackground.getHeight()));
 		landDisplayPanel.repaint();
 	}
 	
@@ -1754,6 +1847,8 @@ public class RunSwing
 		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
 		rdbtnFractal.setSelected(settings.generateBackground);
 		rdbtnFromFiles.setSelected(!settings.generateBackground && !settings.generateBackgroundFromTexture);
+		colorizeOceanCheckbox.setSelected((settings.colorizeOcean));
+		colorizeLandCheckbox.setSelected((settings.colorizeLand));
 		backgroundImageButtonGroupListener.actionPerformed(null);
 		textureImageFilename.setText(settings.backgroundTextureImage);
 		landBackgroundImageFilename.setText(settings.landBackgroundImage);
@@ -1862,6 +1957,8 @@ public class RunSwing
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();
 		settings.generateBackgroundFromTexture = rdbtnGeneratedFromTexture.isSelected();
+		settings.colorizeOcean = colorizeOceanCheckbox.isSelected();
+		settings.colorizeLand = colorizeLandCheckbox.isSelected();
 		settings.backgroundTextureImage = textureImageFilename.getText();
 		settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
 		settings.oceanColor = oceanDisplayPanel.getColor();
