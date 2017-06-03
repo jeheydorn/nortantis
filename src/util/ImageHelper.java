@@ -1023,36 +1023,9 @@ public class ImageHelper
 	}
 	
 	/**
-	 * Colorizes a grayscale image. The given image must by type BufferedImage.TYPE_BYTE_GRAY.
-	 * The result will appear like looking at the grayscale image through a colored lens.
-	 * This appears to be the same as Colors -> Colorify... in Gimp.
+	 * This algorithm preserves contrast a little better than colorify2.
 	 */
-	public static BufferedImage colorify(BufferedImage image, Color color)
-	{
-		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
-		+ bufferedImageTypeToString(image.getType()));
-		BufferedImage result = new BufferedImage(image.getWidth(),
-				image.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Raster raster = image.getRaster();
-		for (int y = 0; y < result.getHeight(); y++)
-			for (int x = 0; x < result.getWidth(); x++)
-			{
-		
-				int level = raster.getSample(x, y, 0);
-
-				int r = (int) ((level * color.getRed()) / 255);
-				int g = (int) ((level * color.getGreen()) / 255);
-				int b = (int) ((level * color.getBlue()) / 255);
-
-				int combined = (r << 16) | (g << 8) | b;
-				result.setRGB(x, y, combined);
-			}
-		
-		return result;
-	}
-
-	public static BufferedImage colorify2(BufferedImage image, Color color)
+	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how)
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
@@ -1067,26 +1040,64 @@ public class ImageHelper
 		for (int y = 0; y < result.getHeight(); y++)
 			for (int x = 0; x < result.getWidth(); x++)
 			{
-				float level = raster.getSampleFloat(x, y, 0);
-
-				float I = hsb[2] * 255f;
-				float overlay = (I/255f) * (I + ((2*level)/255f) * (255f - I));
-				result.setRGB(x, y, Color.HSBtoRGB(hsb[0], hsb[1], overlay/255f));
+				float level = raster.getSampleFloat(x, y, 0) / 255f;
+				result.setRGB(x, y, colorifyPixel(level, hsb, how));
 			}
 		
 		return result;
 	}
 	
+	private static int colorifyPixel(float pixelLevel, float[] hsb, ColorifyAlgorithm how)
+	{	
+		if (how == ColorifyAlgorithm.algorithm2)
+		{
+			float I = hsb[2] * 255f;
+			float overlay = ((I/255f) * (I + ((2*pixelLevel)/255f) * (255f - I)))/255f;
+			return Color.HSBtoRGB(hsb[0], hsb[1], overlay);
+		}
+		else if (how == ColorifyAlgorithm.algorithm3)
+		{
+			float resultLevel;
+			if (hsb[2] < 0.5f)
+			{	
+				resultLevel = pixelLevel * (hsb[2] * 2f);
+			}
+			else
+			{
+				float range = (1f - hsb[2]) * 2;
+				resultLevel = range * pixelLevel + (1f - range);
+			}
+			return Color.HSBtoRGB(hsb[0], hsb[1], resultLevel);
+		}
+		else if (how == ColorifyAlgorithm.none)
+		{
+			return Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+		}
+		else
+		{
+			throw new IllegalArgumentException("Unrecognize colorify algorithm.");
+		}
+
+	}
+	
+	public enum ColorifyAlgorithm
+	{
+		none,
+		algorithm2,
+		algorithm3  // algorithm3 preserves contrast a little better than algorithm2.
+	}
+
+	
 	/**
-	 * Like colorify2 but for multiple colors. Colorifies an image using a an array of colors and
+	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and
 	 * a second image which maps those colors to pixels. This way you can specify multiple colors for the resulting image.
 	 * @param image The image to colorify
 	 * @param colors Used as a map from region index (in politicalRegions) to region color. The 
 	 * index of each color corresponds to a pixel level in pixelColors.
 	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
-	public static BufferedImage colorify2Multi(BufferedImage image, Color[] colors,
-			BufferedImage colorIndexes)
+	public static BufferedImage colorifyMulti(BufferedImage image, Color[] colors,
+			BufferedImage colorIndexes, ColorifyAlgorithm how)
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
@@ -1110,11 +1121,8 @@ public class ImageHelper
 			{
 				float level = raster.getSampleFloat(x, y, 0);
 				int colorIndex = colorIndexesRaster.getSample(x, y, 0);
-
-				float I = hsb[colorIndex][2] * 255f;
-				float overlay = (I/255f) * (I + ((2*level)/255f) * (255f - I));
-				result.setRGB(x, y, Color.HSBtoRGB(hsb[colorIndex][0], hsb[colorIndex][1],
-						overlay/255f));
+				
+				result.setRGB(x, y, colorifyPixel(level, hsb[colorIndex], how));
 			}
 		
 		return result;

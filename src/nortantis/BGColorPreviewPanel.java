@@ -18,6 +18,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	private JColorChooser colorChooser;
 	private BufferedImage originalBackground;
 	private Color color;
+	private ImageHelper.ColorifyAlgorithm colorifyAlgorithm;
 
 	public BGColorPreviewPanel()
 	{
@@ -35,9 +36,14 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 		this.color = color;
 		if (originalBackground != null)
 		{
-			image = ImageHelper.colorify2(originalBackground, color);
+			colorifyImage();
 	    	repaint();
 		}
+	}
+	
+	public void setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm colorfyAlgorithm)
+	{
+		this.colorifyAlgorithm = colorfyAlgorithm;
 	}
 	
 	public Color getColor()
@@ -55,10 +61,19 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		originalBackground = ImageHelper.convertToGrayscale(image);
 
-		if (color == null)
+		if (color == null || colorifyAlgorithm == ImageHelper.ColorifyAlgorithm.none)
+		{
 			this.image = originalBackground;
+		}
 		else
-			this.image = ImageHelper.colorify2(originalBackground, color);
+		{
+			colorifyImage();
+		}
+	}
+	
+	private void colorifyImage()
+	{
+		image = ImageHelper.colorify(originalBackground, color, colorifyAlgorithm);
 	}
 
 }

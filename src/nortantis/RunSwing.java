@@ -1501,12 +1501,18 @@ public class RunSwing
 		BufferedImage background;
 		if (rdbtnFractal.isSelected())
 		{
+			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
+			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
+
 			background = FractalBGGenerator.generate(
 					new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
 					(int)bounds.getHeight(), 0.75f);
 		}
 		else
 		{
+			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+
 			BufferedImage texture;
 			try
 			{

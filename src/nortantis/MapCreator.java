@@ -45,6 +45,7 @@ import util.Logger;
 import util.Pair;
 import util.Range;
 import util.Tuple2;
+import util.ImageHelper.ColorifyAlgorithm;
 
 public class MapCreator
 {
@@ -108,6 +109,7 @@ public class MapCreator
 		BufferedImage ocean;
 		DimensionDouble bounds;
 		BufferedImage generatedBackground = null;
+		ImageHelper.ColorifyAlgorithm colorifyAlgorithm = ColorifyAlgorithm.none;
 		if (settings.generateBackground || settings.generateBackgroundFromTexture)
 		{
 			Logger.println("Generating the background image");
@@ -127,7 +129,8 @@ public class MapCreator
 				generatedBackground = FractalBGGenerator.generate(
 						new Random(settings.backgroundRandomSeed), settings.fractalPower, 
 						(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
-				ocean = ImageHelper.colorify2(generatedBackground, settings.oceanColor);
+				colorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
+				ocean = ImageHelper.colorify(generatedBackground, settings.oceanColor, colorifyAlgorithm);
 			}
 			else
 			{
@@ -141,14 +144,15 @@ public class MapCreator
 					throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
 				}
 				
+				colorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 				generatedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 						new Random(settings.backgroundRandomSeed), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
-				ocean = ImageHelper.colorify2(generatedBackground, settings.oceanColor);
+				ocean = ImageHelper.colorify(generatedBackground, settings.oceanColor, colorifyAlgorithm);
 			}
 			
 			if (!shouldDrawRegionColors)
 			{
-				land = ImageHelper.colorify2(generatedBackground, settings.landColor);
+				land = ImageHelper.colorify(generatedBackground, settings.landColor, colorifyAlgorithm);
 				generatedBackground = null;
 			}
 			else
@@ -215,7 +219,7 @@ public class MapCreator
 					BufferedImage.TYPE_BYTE_GRAY);
 			graph.drawRegionIndexes(regionIndexes.createGraphics());
 			
-			land = drawRegionColors(graph, generatedBackground, regionIndexes);
+			land = drawRegionColors(graph, generatedBackground, regionIndexes, colorifyAlgorithm);
 		}
 		generatedBackground = null;
 		
@@ -540,12 +544,13 @@ public class MapCreator
 			}
 	}
 		
-	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors)
+	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors, 
+			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm)
 	{	
 		Color[] regionBackgroundColors = graph.regions.stream().map(
 				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
-		
-		return ImageHelper.colorify2Multi(fractalBG, regionBackgroundColors, pixelColors);
+				
+		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm);
 	}
 	
 	private void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
