@@ -153,6 +153,7 @@ public class RunSwing
 	private JButton btnChooseOceanColor;
 	private JButton btnNewBackgroundSeed;
 	private JButton btnBrowseOceanBackground;
+	private ItemListener colorizeCheckboxListener;
 
 	
 	public static boolean isRunning()
@@ -775,27 +776,21 @@ public class RunSwing
 		colorizeOceanCheckbox = new JCheckBox("");
 		colorizeOceanCheckbox.setToolTipText("Whether or not to change the ocean texture to a custom color");
 		colorizeOceanCheckbox.setBounds(448, 315, 129, 23);
-		colorizeOceanCheckbox.addItemListener(new ItemListener() 
-		{	
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				updateBackgroundPanelFieldStates();
-			}
-		});
 		backgroundPanel.add(colorizeOceanCheckbox);
 		
 		colorizeLandCheckbox = new JCheckBox("");
 		colorizeLandCheckbox.setToolTipText("Whether or not to change the land texture to a custom color");
 		colorizeLandCheckbox.setBounds(705, 315, 129, 23);
-		colorizeLandCheckbox.addItemListener(new ItemListener() 
+		backgroundPanel.add(colorizeLandCheckbox);
+
+		colorizeCheckboxListener = new ItemListener() 
 		{	
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				updateBackgroundPanelFieldStates();
 			}
-		});
-		backgroundPanel.add(colorizeLandCheckbox);
-		
+		};
+
 		JPanel regionsPanel = new JPanel();
 		tabbedPane.addTab("Regions", null, regionsPanel, null);
 		regionsPanel.setLayout(null);
@@ -1844,11 +1839,16 @@ public class RunSwing
 		grungeSlider.setValue(settings.grungeWidth);
 		
 		// Settings for background images.
+		// Remove and add item listeners to the colorize checkboxes to avoid generating backgrounds for display multiple times.
+		colorizeOceanCheckbox.removeItemListener(colorizeCheckboxListener);
+		colorizeOceanCheckbox.setSelected((settings.colorizeOcean));
+		colorizeOceanCheckbox.addItemListener(colorizeCheckboxListener);
+		colorizeLandCheckbox.removeItemListener(colorizeCheckboxListener);
+		colorizeLandCheckbox.setSelected((settings.colorizeLand));
+		colorizeLandCheckbox.addItemListener(colorizeCheckboxListener);
 		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
 		rdbtnFractal.setSelected(settings.generateBackground);
 		rdbtnFromFiles.setSelected(!settings.generateBackground && !settings.generateBackgroundFromTexture);
-		colorizeOceanCheckbox.setSelected((settings.colorizeOcean));
-		colorizeLandCheckbox.setSelected((settings.colorizeLand));
 		backgroundImageButtonGroupListener.actionPerformed(null);
 		textureImageFilename.setText(settings.backgroundTextureImage);
 		landBackgroundImageFilename.setText(settings.landBackgroundImage);
