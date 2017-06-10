@@ -204,12 +204,14 @@ public class MapCreator
 						{
 							land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 						}
+						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 					}
 					else
 					{
 						landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 								new Random(settings.backgroundRandomSeed), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
 						land = landGeneratedBackground;
+						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 					}
 				}
 			}
@@ -274,7 +276,9 @@ public class MapCreator
 					BufferedImage.TYPE_BYTE_GRAY);
 			graph.drawRegionIndexes(regionIndexes.createGraphics());
 			
+			ImageHelper.write(landGeneratedBackground, "landGeneratedBackground.png");
 			land = drawRegionColors(graph, landGeneratedBackground, regionIndexes, landColorifyAlgorithm);
+			ImageHelper.write(land, "land.png");
 		}
 		landGeneratedBackground = null;
 		
