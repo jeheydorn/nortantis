@@ -12,6 +12,9 @@ import java.util.Random;
 public class SettingsGenerator
 {
 	private static String defaultSettingsFile = "assets/old_paper.properties";
+	public static int minWorldSize = 2000;
+	public static int maxWorldSize = 30000;
+	public static int worldSizePrecision = 1000;
 
 	public static MapSettings generate()
 	{
@@ -41,6 +44,8 @@ public class SettingsGenerator
 		
 		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, 
 				saturationRange, brightnessRange);
+		
+		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSize) / worldSizePrecision) + minWorldSize / worldSizePrecision) * worldSizePrecision;
 				
 		return settings;
 	}

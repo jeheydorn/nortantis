@@ -449,11 +449,11 @@ public class RunSwing
 		sizeSlider.setValue(6000);
 		sizeSlider.setSnapToTicks(true);
 		sizeSlider.setMajorTickSpacing(8000);
-		sizeSlider.setMinorTickSpacing(1000);
+		sizeSlider.setMinorTickSpacing(SettingsGenerator.worldSizePrecision);
 		sizeSlider.setPaintLabels(true);
 		sizeSlider.setPaintTicks(true);
-		sizeSlider.setMinimum(2000);
-		sizeSlider.setMaximum(30000);
+		sizeSlider.setMinimum(SettingsGenerator.minWorldSize);
+		sizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		sizeSlider.setBounds(131, 45, 245, 79);
 		terrainPanel.add(sizeSlider);
 		sizeSlider.addChangeListener(new SliderChangeListener());
