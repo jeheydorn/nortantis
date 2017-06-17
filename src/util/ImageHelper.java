@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.Raster;
@@ -18,6 +19,7 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
 
 import org.apache.commons.io.FilenameUtils;
@@ -118,9 +120,15 @@ public class ImageHelper
 		
 		// This library is described at http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
-		
+
+		if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY && scaled.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		{
+			scaled = convertToGrayscale(scaled);
+		}
+
 		return scaled;
 	}
+	
 
 	/**
 	 * Scales the given image, preserving aspect ratio.
@@ -136,7 +144,21 @@ public class ImageHelper
 		// This library is described at http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
 		
+		if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY && scaled.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		{
+			scaled = convertToGrayscale(scaled);
+		}
+		
 		return scaled;
+	}
+	
+	public static BufferedImage scaleFastByHeightAndWidth(BufferedImage inImage, int xSize, int ySize)
+	{
+        BufferedImage scaledImage = new BufferedImage(xSize, ySize, inImage.getType());
+        Graphics2D graphics2D = scaledImage.createGraphics();
+        graphics2D.drawImage(inImage, 0, 0, xSize, ySize, null);
+        graphics2D.dispose();
+        return scaledImage;
 	}
 
 	/**
@@ -146,6 +168,11 @@ public class ImageHelper
 	 */
 	public static float[][] createGaussianKernel(int size)
 	{
+		if (size == 0)
+		{
+			return new float[][] {{1f}};
+		}
+		
 		// I want the edge of the kernel to be 3 standard deviations away from
 		// the middle. I also divide by 2 to get half of the size (the length from center to edge).
 		double sd = size / (2.0 * 3.0);
@@ -172,6 +199,11 @@ public class ImageHelper
 	
 	public static float[][] createFractalKernel(int size, double p)
 	{
+		if (size == 0)
+		{
+			return new float[][] {{1f}};
+		}
+
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
@@ -192,6 +224,11 @@ public class ImageHelper
 
 	public static float[][] createPositiveSincKernel(int size, double scale)
 	{
+		if (size == 0)
+		{
+			return new float[][] {{1f}};
+		}
+
 		Sinc dist = new Sinc();
 
 		float[][] kernel = new float[size][size];
@@ -391,7 +428,8 @@ public class ImageHelper
 					+ mask.getWidth() + " but image has width "
 					+ image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("In maskWithColor, image height was " + image.getHeight() 
+			+ " but mask height was " + mask.getHeight());
 
 		BufferedImage result = new BufferedImage(image.getWidth(),
 				image.getHeight(), image.getType());
@@ -412,7 +450,7 @@ public class ImageHelper
 					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen())/255;
 					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue())/255;
 					Color combined = new Color(r,g,b,alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
-					result.setRGB(x, y, combined.getRGB());					
+					result.setRGB(x, y, combined.getRGB());				
 				}
 				else
 				{
@@ -546,7 +584,6 @@ public class ImageHelper
 	public static void combineImagesWithMaskInRegion(BufferedImage image1, BufferedImage image2,
 			BufferedImage mask,  int xLoc, int yLoc, double angle)
 	{
-
 		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("Expected mask to be type BufferedImage.TYPE_BYTE_GRAY.");
     	
@@ -578,12 +615,26 @@ public class ImageHelper
        	
 	}
 	
+	/**
+	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
+	 */
 	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc,
 			int width, int height, double angle)
 	{
 		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D gResult = result.createGraphics();
 		gResult.rotate(-angle, width/2, height/2);
+		gResult.translate(-xLoc, -yLoc);		
+		gResult.drawImage(image, 0, 0, null);
+		      	
+		return result;
+	}
+	
+	public static BufferedImage extractRegion(BufferedImage image, int xLoc, int yLoc,
+			int width, int height)
+	{
+		BufferedImage result = new BufferedImage(width, height, image.getType());
+		Graphics2D gResult = result.createGraphics();
 		gResult.translate(-xLoc, -yLoc);		
 		gResult.drawImage(image, 0, 0, null);
 		      	
@@ -629,6 +680,20 @@ public class ImageHelper
 		WritableRaster raster = bi.copyData(null);
 		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
 	}
+	
+	public static void multiplyArrays(float[][] target, float[][] source)
+	{
+		assert target.length == source.length;
+		assert target[0].length == source[0].length;
+		
+		for (int r = 0; r < target.length; r++)
+		{
+			for (int c = 0; c < target[r].length; c++)
+			{
+				target[r][c] *= source[r][c];
+			}
+		}
+	}
 		
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
@@ -646,74 +711,109 @@ public class ImageHelper
 	{		
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
-		// Make sure rows and cols are greater than 1 for jtransforms.
+		// Make sure rows and cols are greater than 1 for JTransforms.
 		if (cols < 2)
 			cols = 2;
 		if (rows < 2)
 			rows = 2;
 		
-		// Convert the input to the format required by JTransforms.
-		float[][] data = new float[rows][2 * cols];
+		ComplexArray data = forwardFFT(img, rows, cols);
+		
+		ComplexArray kernelData = forwardFFT(kernel, rows, cols, true);
+						
+		data.multiplyInPlace(kernelData);
+		kernelData = null;
+		
+		// Do the inverse DFT on the product.
+		inverseFFT(data);
+		
+		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast);
+	}
+		
+	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast)
+	{
+		moveRealToLeftSide(data.getArrayJTransformsFormat());
+		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
+		
+		int imgRowPaddingOver2 = (data.getHeight() - imageHeight)/2;
+		int imgColPaddingOver2 = (data.getWidth() - imageWidth)/2;
+
+		if (maximizeContrast)
+		{
+			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+		}
+		
+		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+		return result;
+	}
+		
+	public static void inverseFFT(ComplexArray data)
+	{
+		FloatFFT_2D fft = new FloatFFT_2D(data.getHeight(), data.getWidth());
+		fft.complexInverse(data.getArrayJTransformsFormat(), true);		
+	}
+	
+	public static ComplexArray forwardFFT(BufferedImage img, int rows, int cols)
+	{
+		ComplexArray data = new ComplexArray(cols, rows);
 		
 		int imgRowPadding = rows - img.getHeight();
 		int imgColPadding = cols - img.getWidth();
+		int imgRowPaddingOver2 = imgRowPadding/2;
+		int imgColPaddingOver2 = imgColPadding/2;
 		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
-		{
-			Raster raster = img.getRaster();
-			for (int r = 0; r < img.getHeight(); r++)
-				for (int c = 0; c < img.getWidth(); c++)
-				{
-					float grayLevel = raster.getSample(c, r, 0);
-					if (img.getType() == BufferedImage.TYPE_BYTE_GRAY)
-						grayLevel /= 255f;
-					data[r + imgRowPadding/2][c + imgColPadding/2] = grayLevel;
-				}
-	
-			// Do the forward FFT.
-			fft.realForwardFull(data);
-		}
-		
-		// convert the kernel to the format required by JTransforms.
-		float[][] kernelData = new float[rows][2 * cols];
-		{
-			int rowPadding = rows - kernel.length;
-			int colPadding = cols - kernel[0].length;
-			for (int r = 0; r < kernel.length; r++)
-				for (int c = 0; c < kernel[0].length; c++)
-				{
-					kernelData[r + rowPadding/2][c + colPadding/2] = kernel[r][c];
-				}
-	
-			// Do the forward FFT.
-			fft.realForwardFull(kernelData);
-		}
-						
-		// Multiply the convolved image and kernel in the frequency domain.
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
+
+		Raster raster = img.getRaster();
+		for (int r = 0; r < img.getHeight(); r++)
+			for (int c = 0; c < img.getWidth(); c++)
 			{
-				float dataR = data[r][c*2];
-				float dataI = data[r][c*2 + 1];
-				float kernelR = kernelData[r][c*2];
-				float kernelI = kernelData[r][c*2 + 1];
-				
-				float real = dataR * kernelR - dataI * kernelI;
-				data[r][c*2] = real;
-				float imaginary = dataI * kernelR + dataR * kernelI;
-				data[r][c*2 + 1] = imaginary;
+				float grayLevel = raster.getSample(c, r, 0);
+				if (img.getType() == BufferedImage.TYPE_BYTE_GRAY)
+					grayLevel /= 255f;
+				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
 			}
-		kernelData = null;
-		
-//		 Do the inverse DFT on the product.
-		fft.complexInverse(data, true);
-		moveRealToLeftSide(data);
-		swapQuadrantsOfLeftSideInPlace(data); 
-		
-		if (maximizeContrast)
-			setContrast(data, 0f, 1f, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
-		
-		BufferedImage result = arrayToImage(data, imgRowPadding/2, img.getHeight(), imgColPadding/2, img.getWidth());
-		return result;
+
+		// Do the forward FFT.
+		fft.realForwardFull(data.getArrayJTransformsFormat());
+
+		return data;
+	}
+	
+	/**
+	 * Do a 2D forward FFT.
+	 * @param input 
+	 * @param rows Number of rows in the output
+	 * @param cols Number of columns in the output
+	 * @param flipXAndYAxis For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead of cross-correlation.
+	 * @return
+	 */
+	public static ComplexArray forwardFFT(float[][] input, int rows, int cols, boolean flipXAndYAxis)
+	{
+		// Convert the kernel to the format required by JTransforms.
+		ComplexArray data = new ComplexArray(cols, rows);
+		{
+			int rowPadding = rows - input.length;
+			int rowPaddingOver2 = rowPadding/2;
+			int colPadding = cols - input[0].length;
+			int columnPaddingOver2 = colPadding/2;
+			for (int r = 0; r < input.length; r++)
+				for (int c = 0; c < input[0].length; c++)
+				{
+					if (flipXAndYAxis)
+					{
+						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[input.length - 1 - r][input[0].length - 1 - c]);
+					}
+					else
+					{
+						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[r][c]);
+					}
+				}	
+
+			// Do the forward FFT.
+			FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
+			fft.realForwardFull(data.getArrayJTransformsFormat());
+		}
+		return data;
 	}
 		
 	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
@@ -801,7 +901,7 @@ public class ImageHelper
 		return image;
 	}
 
-	public static float[][] imageToArrayFloat(BufferedImage img)
+	public static float[][] imageToArray(BufferedImage img)
 	{
 		float[][] result = new float[img.getWidth()][img.getHeight()];
 		Raster raster = img.getRaster();
@@ -826,16 +926,35 @@ public class ImageHelper
 		return result;
 	}
 	
+	public static float[][] getLefHalf(float[][] array)
+	{
+		float[][] result = new float[array.length][array[0].length/2];
+		for (int r = 0; r < result.length; r++)
+		{
+			for (int c = 0; c < result[0].length; c++)
+			{				
+				result[r][c] = array[r][c];
+			}
+		}
+		return result;		
+	}
+	
 	public static int getPowerOf2EqualOrLargerThan(int value)
+	{
+		return getPowerOf2EqualOrLargerThan((double) value);
+	}
+	
+	public static int getPowerOf2EqualOrLargerThan(double value)
 	{
 		double logLength = Math.log(value)/Math.log(2.0);
 		if (((int)logLength) == logLength )
 		{
-			return value;
+			return (int)value;
 		}
 		
 		return (int)Math.pow(2.0, ((int)logLength) + 1.0);
 	}
+
 	
 	public static float[][] genWhiteNoise(Random rand, int rows, int cols)
 	{
@@ -870,6 +989,17 @@ public class ImageHelper
 		
 		return result;
 	}
+		
+	public static BufferedImage tile(BufferedImage image, int targetRows, int targetCols)
+	{
+		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0));
+	}
+	
+	public static BufferedImage tileNTimes(BufferedImage image, int n)
+	{
+		return tile(image, image.getWidth() * n, image.getHeight() * n);
+	}
+
 	
 	public static float[][] convertToTransformsInputFormat(float[][] transformReal, float[][] transformImaginary)
 	{
@@ -894,45 +1024,20 @@ public class ImageHelper
 						
 		// Equalize the target.
 		BufferedImage targetEqualized = targetEqualizer.equalize(target);
-				
+		
 		// Apply the inverse map to the equalized target.
 		BufferedImage outImage = sourceEqualizer.inverseEqualize(targetEqualized);
 		
 		return outImage;
 	}
 	
-	/**
-	 * Colorizes a grayscale image. The given image must by type BufferedImage.TYPE_BYTE_GRAY.
-	 * The result will appear like looking at the grayscale image through a colored lens.
-	 * This appears to be the same as Colors -> Colorify... in Gimp.
-	 */
-	public static BufferedImage colorify(BufferedImage image, Color color)
+	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how)
 	{
-		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
-		+ bufferedImageTypeToString(image.getType()));
-		BufferedImage result = new BufferedImage(image.getWidth(),
-				image.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Raster raster = image.getRaster();
-		for (int y = 0; y < result.getHeight(); y++)
-			for (int x = 0; x < result.getWidth(); x++)
-			{
+		if (how == ColorifyAlgorithm.none)
+		{
+			return image;
+		}
 		
-				int level = raster.getSample(x, y, 0);
-
-				int r = (int) ((level * color.getRed()) / 255);
-				int g = (int) ((level * color.getGreen()) / 255);
-				int b = (int) ((level * color.getBlue()) / 255);
-
-				int combined = (r << 16) | (g << 8) | b;
-				result.setRGB(x, y, combined);
-			}
-		
-		return result;
-	}
-
-	public static BufferedImage colorify2(BufferedImage image, Color color)
-	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
 		+ bufferedImageTypeToString(image.getType()));
@@ -947,25 +1052,64 @@ public class ImageHelper
 			for (int x = 0; x < result.getWidth(); x++)
 			{
 				float level = raster.getSampleFloat(x, y, 0);
-
-				float I = hsb[2] * 255f;
-				float overlay = (I/255f) * (I + ((2*level)/255f) * (255f - I));
-				result.setRGB(x, y, Color.HSBtoRGB(hsb[0], hsb[1], overlay/255f));
+				result.setRGB(x, y, colorifyPixel(level, hsb, how));
 			}
 		
 		return result;
 	}
 	
+	private static int colorifyPixel(float pixelLevel, float[] hsb, ColorifyAlgorithm how)
+	{	
+		if (how == ColorifyAlgorithm.algorithm2)
+		{
+			float I = hsb[2] * 255f;
+			float overlay = ((I/255f) * (I + ((2*pixelLevel)/255f) * (255f - I)))/255f;
+			return Color.HSBtoRGB(hsb[0], hsb[1], overlay);
+		}
+		else if (how == ColorifyAlgorithm.algorithm3)
+		{
+			float resultLevel;
+			pixelLevel /= 255f;
+			if (hsb[2] < 0.5f)
+			{	
+				resultLevel = pixelLevel * (hsb[2] * 2f);
+			}
+			else
+			{
+				float range = (1f - hsb[2]) * 2;
+				resultLevel = range * pixelLevel + (1f - range);
+			}
+			return Color.HSBtoRGB(hsb[0], hsb[1], resultLevel);
+		}
+		else if (how == ColorifyAlgorithm.none)
+		{
+			return Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+		}
+		else
+		{
+			throw new IllegalArgumentException("Unrecognize colorify algorithm.");
+		}
+
+	}
+	
+	public enum ColorifyAlgorithm
+	{
+		none,
+		algorithm2,
+		algorithm3  // algorithm3 preserves contrast a little better than algorithm2.
+	}
+
+	
 	/**
-	 * Like colorify2 but for multiple colors. Colorifies an image using a an array of colors and
+	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and
 	 * a second image which maps those colors to pixels. This way you can specify multiple colors for the resulting image.
 	 * @param image The image to colorify
 	 * @param colors Used as a map from region index (in politicalRegions) to region color. The 
 	 * index of each color corresponds to a pixel level in pixelColors.
 	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
-	public static BufferedImage colorify2Multi(BufferedImage image, Color[] colors,
-			BufferedImage colorIndexes)
+	public static BufferedImage colorifyMulti(BufferedImage image, Color[] colors,
+			BufferedImage colorIndexes, ColorifyAlgorithm how)
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
@@ -989,11 +1133,8 @@ public class ImageHelper
 			{
 				float level = raster.getSampleFloat(x, y, 0);
 				int colorIndex = colorIndexesRaster.getSample(x, y, 0);
-
-				float I = hsb[colorIndex][2] * 255f;
-				float overlay = (I/255f) * (I + ((2*level)/255f) * (255f - I));
-				result.setRGB(x, y, Color.HSBtoRGB(hsb[colorIndex][0], hsb[colorIndex][1],
-						overlay/255f));
+				
+				result.setRGB(x, y, colorifyPixel(level, hsb[colorIndex], how));
 			}
 		
 		return result;
@@ -1024,27 +1165,47 @@ public class ImageHelper
 		} 
 		catch (IOException e)
 		{
-			throw new RuntimeException(e);
+			throw new RuntimeException();
 		}
 	}
 	
-	public static void openImageInSystemDefaultEditor(BufferedImage map, String filenameWithoutExtension) throws IOException
+	/***
+	 * Opens an image in the system default image editor.
+	 * @return The file name, in the system's temp folder.
+	 */
+	public static String openImageInSystemDefaultEditor(BufferedImage map, String filenameWithoutExtension) throws IOException
 	{
 		// Save the map to a file.
 		String format = "png";
 		File tempFile = File.createTempFile(filenameWithoutExtension, "." + format);
 		ImageIO.write(map, format, tempFile);
 		
+		openImageInSystemDefaultEditor(tempFile.getPath());
+		return tempFile.getAbsolutePath();
+	}
+	
+	public static void openImageInSystemDefaultEditor(String imageFilePath)
+	{
 		// Attempt to open the map in the system's default image viewer.
 		if (Desktop.isDesktopSupported())
 		{
 			Desktop desktop = Desktop.getDesktop();
-			if (Desktop.isDesktopSupported() && desktop.isSupported(Desktop.Action.OPEN))
+			if (desktop.isSupported(Desktop.Action.OPEN))
 			{
-				desktop.open(tempFile);
+				try 
+				{
+					desktop.open(new File(imageFilePath));
+				} 
+				catch (IOException e) 
+				{
+					throw new RuntimeException(e);
+				}
 			}
 		}
-
+		else
+		{
+			throw new RuntimeException("Unable to open the map because java's Desktop is not supported");
+		}
 	}
 	
 	public static int bound(int value)
@@ -1052,23 +1213,55 @@ public class ImageHelper
 		return Math.min(255, Math.max(0, value));
 	}
 	
-
-	public static void main(String[] args) throws IOException
+	public static float calcMeanOfGrayscaleImage(BufferedImage image)
 	{
-		BufferedImage in = new BufferedImage(128, 62, BufferedImage.TYPE_BYTE_GRAY);
-		Graphics2D g = in.createGraphics();
-		int blurLevel = 10;
-		g.setColor(Color.white);
-		g.fillRect(blurLevel, blurLevel, in.getWidth() - blurLevel*2, in.getHeight() - blurLevel*2);
-		g.setColor(Color.black);
-		int edge = 2;
-		g.fillRect(edge + blurLevel, edge + blurLevel, in.getWidth() - (edge + blurLevel)*2, in.getHeight() - (edge + blurLevel)*2);
-		ImageHelper.write(in, "in.png");
-		BufferedImage result = convolveGrayscale(in, createGaussianKernel(blurLevel), false);
-		ImageHelper.write(result, "result.png");
-		shutdownThreadPool();
-		System.out.println("Done");
+		Raster raster = image.getRaster();
+		long sum = 0;
+		for (int r = 0; r < image.getHeight(); r++)
+		{
+			for (int c = 0; c < image.getWidth(); c++)
+			{
+				sum += raster.getSample(c, r, 0);
+			}
+		}
 		
+		return sum / ((float)(image.getHeight() * image.getWidth()));
 	}
+	
+	public static float[] calcMeanOfEachColor(BufferedImage image)
+	{
+		float[] result = new float[3];
+		for (int channel : new Range(3))
+		{
+			long sum = 0;
+			for (int r = 0; r < image.getHeight(); r++)
+			{
+				for (int c = 0; c < image.getWidth(); c++)
+				{
+					Color color = new Color(image.getRGB(c, r));
+					int level;
+					if (channel == 0)
+					{
+						level = color.getRed(); 
+					}
+					else if (channel == 1)
+					{
+						level = color.getGreen();
+					}
+					else
+					{
+						level = color.getBlue();
+					}
+	
+					sum += level;
+				}
+			}
+			result[channel] = sum / ((float)(image.getHeight() * image.getWidth()));
+		}
+		
+		return result;
+	}
+
+
 	
 }

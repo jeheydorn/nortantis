@@ -10,10 +10,13 @@ import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -56,10 +59,16 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.commons.io.FilenameUtils;
+
+import util.Helper;
 import util.ImageHelper;
 import util.JFontChooser;
+import util.Logger;
 import util.Range;
 
 public class RunSwing
@@ -94,13 +103,14 @@ public class RunSwing
 	JButton btnPreview;
 	Path openSettingsFilePath;
 	MapSettings lastSettingsLoadedOrSaved;
-	String defaultSettingsFile = "assets/old_paper.properties";
+	String frameTitleBase = "Nortantis Fantasy Map Generator";
 	JCheckBox frayedBorderCheckbox;
 	JPanel frayedBorderColorDisplay;
 	JSlider frayedBorderBlurSlider;
 	private JTextField backgroundSeedTextField;
-	private JRadioButton rdbtnGenerated;
+	private JRadioButton rdbtnGeneratedFromTexture;
 	private JRadioButton rdbtnFromFiles;
+	private JRadioButton rdbtnFractal;
 	private BGColorPreviewPanel oceanDisplayPanel;
 	private BGColorPreviewPanel landDisplayPanel;
 	private ActionListener backgroundImageButtonGroupListener;
@@ -125,6 +135,25 @@ public class RunSwing
 	private JTextField regionsSeedTextField;
 	private JButton newRegionSeedButton;
 	private JSlider grungeSlider;
+	private UserPreferences userPreferences;
+	private ImagePanel previewPanel;
+	private JLabel lblOceanBackgroundImage;
+	private JLabel lblLandBackgroundImage;
+	private JLabel lblDimensions;
+	private JLabel lblBackgroundRandomSeed;
+	private JTextField textureImageFilename;
+	private JLabel lblTextureImage;
+	private JButton btnBrowseLandBackground;
+	private JLabel lblOceanColor;
+	private JLabel lblLandColor;
+	private JButton btnsBrowseTextureImage;
+	private JCheckBox colorizeLandCheckbox;
+	private JCheckBox colorizeOceanCheckbox;
+	private JButton btnChooseLandColor;
+	private JButton btnChooseOceanColor;
+	private JButton btnNewBackgroundSeed;
+	private JButton btnBrowseOceanBackground;
+	private ItemListener colorizeCheckboxListener;
 
 	
 	public static boolean isRunning()
@@ -173,12 +202,33 @@ public class RunSwing
 	public RunSwing()
 	{
 		createGUI();
-		if (Files.exists(Paths.get(defaultSettingsFile)))
+		userPreferences = new UserPreferences();
+		
+		try
 		{
-			loadSettingsIntoGUI(defaultSettingsFile);
-			// If the user goes to File -> Save settings, bring up the save as dialog.
-			openSettingsFilePath = null;
+			if (Files.exists(Paths.get(userPreferences.lastLoadedSettingsFile)))
+			{
+				loadSettingsIntoGUI(userPreferences.lastLoadedSettingsFile);
+				openSettingsFilePath = Paths.get(userPreferences.lastLoadedSettingsFile);
+				updateFrameTitle();
+			}
+			else
+			{
+				generateAndloadNewSettings();
+			}
 		}
+		catch(Exception e)
+		{
+			// This means they moved their settings or their settings were corrupted somehow. Load the defaults.
+			generateAndloadNewSettings();
+		}		
+	}
+	
+	private void generateAndloadNewSettings()
+	{
+		openSettingsFilePath = null;
+		loadSettingsIntoGUI(SettingsGenerator.generate());
+		updateFrameTitle();
 		long seed = Math.abs(new Random().nextInt());
 		randomSeedTextField.setText(seed + "");
 		lastSettingsLoadedOrSaved.randomSeed = seed;
@@ -186,16 +236,21 @@ public class RunSwing
 		regionsSeedTextField.setText(seed + "");
 		lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
 		lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
-		updateBackgroundImageDisplays();
 		textRandomSeedTextField.setText(seed + "");
 		lastSettingsLoadedOrSaved.textRandomSeed = seed;
+		
+		updateBackgroundImageDisplays();
+		userPreferences.lastLoadedSettingsFile = "";
+		previewPanel.setImage(null);
+		previewPanel.repaint();
 	}
 
 	private void createGUI()
 	{		
 		final RunSwing runSwing = this;
-		frame = new JFrame("Nortantis Fantasy Map Generator");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame = new JFrame(frameTitleBase);
+
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE );
 		frame.addWindowListener(new WindowAdapter()
         {
             @Override
@@ -203,7 +258,21 @@ public class RunSwing
             {
             	try
             	{
-            		checkForUnsavedChanges();
+            		boolean cancelPressed = checkForUnsavedChanges();
+            		if (!cancelPressed)
+            		{
+            			if (openSettingsFilePath != null)
+            			{
+	            			userPreferences.lastLoadedSettingsFile = openSettingsFilePath.toString();
+            			}
+            			else
+            			{
+            				userPreferences.lastLoadedSettingsFile = "";
+            			}
+            			userPreferences.save();
+            			frame.dispose();
+            			System.exit(0);
+            		}
             	}
             	catch(Exception ex)
             	{
@@ -253,8 +322,9 @@ public class RunSwing
 						{
 							BufferedImage map = new MapCreator().createMap(settings, null, null);
 							
-							ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-							
+							Logger.println("Opening the map in your system's default image editor.");
+							String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+							Logger.println("Map written to " + fileName);
 							return map;
 						} 
 						catch (Exception e)
@@ -278,7 +348,7 @@ public class RunSwing
 			}
 		});
 		
-		final ImagePanel previewPanel = new ImagePanel();
+		previewPanel = new ImagePanel();
 		previewPanel.setBounds(411, 385, 512, 288);
 		topPanel.add(previewPanel);
 		previewPanel.setLayout(null);
@@ -332,7 +402,7 @@ public class RunSwing
 			            }
 			            catch (java.util.concurrent.ExecutionException e) 
 			            {
-			                throw new RuntimeException(e.getMessage());
+			                throw new RuntimeException(e);
 			            }
 			            if (map != null)
 			            {
@@ -379,11 +449,11 @@ public class RunSwing
 		sizeSlider.setValue(6000);
 		sizeSlider.setSnapToTicks(true);
 		sizeSlider.setMajorTickSpacing(8000);
-		sizeSlider.setMinorTickSpacing(1000);
+		sizeSlider.setMinorTickSpacing(SettingsGenerator.worldSizePrecision);
 		sizeSlider.setPaintLabels(true);
 		sizeSlider.setPaintTicks(true);
-		sizeSlider.setMinimum(2000);
-		sizeSlider.setMaximum(30000);
+		sizeSlider.setMinimum(SettingsGenerator.minWorldSize);
+		sizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		sizeSlider.setBounds(131, 45, 245, 79);
 		terrainPanel.add(sizeSlider);
 		sizeSlider.addChangeListener(new SliderChangeListener());
@@ -448,19 +518,19 @@ public class RunSwing
 		
 		JLabel label = new JLabel("Resolution:");
 		label.setToolTipText("The resolution of the result will be multiplied by this value. Larger values will take longer to run.");
-		label.setBounds(12, 140, 101, 15);
+		label.setBounds(12, 20, 101, 15);
 		backgroundPanel.add(label);
 		
 		scaleSlider = new JSlider();
 		scaleSlider.setPaintLabels(true);
-		scaleSlider.setBounds(131, 132, 245, 79);
+		scaleSlider.setBounds(131, 12, 245, 79);
 		scaleSlider.setValue(100);
 		scaleSlider.setSnapToTicks(true);
 		scaleSlider.setPaintTicks(true);
 		scaleSlider.setMinorTickSpacing(25);
 		scaleSlider.setMinimum(25);
-		scaleSlider.setMaximum(200);
-		scaleSlider.setMajorTickSpacing(50);
+		scaleSlider.setMaximum(calcMaximumResolution());
+		scaleSlider.setMajorTickSpacing(100);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 			for (int i = scaleSlider.getMinimum(); i < scaleSlider.getMaximum() + 1;  i += scaleSlider.getMajorTickSpacing())
@@ -472,17 +542,16 @@ public class RunSwing
 		backgroundPanel.add(scaleSlider);
 
 
-		JLabel lblOceanBackgroundImage = new JLabel("Ocean background image:");
-		lblOceanBackgroundImage.setBounds(12, 212, 185, 15);
+		lblOceanBackgroundImage = new JLabel("Ocean background image:");
+		lblOceanBackgroundImage.setBounds(12, 218, 185, 15);
 		backgroundPanel.add(lblOceanBackgroundImage);
 		
 		oceanBackgroundImageFilename = new JTextField();
 		oceanBackgroundImageFilename.setBounds(12, 239, 278, 28);
-		oceanBackgroundImageFilename.setText(Paths.get("assets/land.jpg").toAbsolutePath().toString());
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
 
-		final JButton btnBrowseOceanBackground = new JButton("Browse");
+		btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent arg0) 
@@ -496,16 +565,16 @@ public class RunSwing
 		btnBrowseOceanBackground.setBounds(302, 240, 87, 25);
 		backgroundPanel.add(btnBrowseOceanBackground);
 		
-		JLabel lblLandBackgroundImage = new JLabel("Land background image:");
+		lblLandBackgroundImage = new JLabel("Land background image:");
 		lblLandBackgroundImage.setBounds(12, 279, 175, 15);
 		backgroundPanel.add(lblLandBackgroundImage);
 		
 		landBackgroundImageFilename = new JTextField();
 		landBackgroundImageFilename.setColumns(10);
-		landBackgroundImageFilename.setBounds(12, 306, 278, 28);
+		landBackgroundImageFilename.setBounds(12, 300, 278, 28);
 		backgroundPanel.add(landBackgroundImageFilename);
 		
-		final JButton btnBrowseLandBackground = new JButton("Browse");
+		btnBrowseLandBackground = new JButton("Browse");
 		btnBrowseLandBackground.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
@@ -516,16 +585,16 @@ public class RunSwing
 
 			}
 		});
-		btnBrowseLandBackground.setBounds(302, 307, 87, 25);
+		btnBrowseLandBackground.setBounds(302, 300, 87, 25);
 		backgroundPanel.add(btnBrowseLandBackground);
 		
-		JLabel lblLandColor = new JLabel("Land color:");
+		lblLandColor = new JLabel("Land color:");
 		lblLandColor.setToolTipText("The color of the land.");
 		lblLandColor.setBounds(728, 319, 79, 15);
 		backgroundPanel.add(lblLandColor);
 		lblLandColor.setBackground(new Color(119, 91, 36));
 				
-		final JButton btnChooseLandColor = new JButton("Choose");
+		btnChooseLandColor = new JButton("Choose");
 		btnChooseLandColor.setBounds(814, 314, 87, 25);
 		btnChooseLandColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
@@ -544,18 +613,18 @@ public class RunSwing
 
 		backgroundPanel.add(btnChooseLandColor);
 		
-		JLabel label_3 = new JLabel("Random seed:");
-		label_3.setToolTipText("The random seed used to generate the background image.");
-		label_3.setBounds(12, 66, 122, 15);
-		backgroundPanel.add(label_3);
+		lblBackgroundRandomSeed = new JLabel("Random seed:");
+		lblBackgroundRandomSeed.setToolTipText("The random seed used to generate the background image.");
+		lblBackgroundRandomSeed.setBounds(12, 184, 122, 15);
+		backgroundPanel.add(lblBackgroundRandomSeed);
 		
 		backgroundSeedTextField = new JTextField();
 		backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
 		backgroundSeedTextField.setColumns(10);
-		backgroundSeedTextField.setBounds(131, 61, 141, 25);
+		backgroundSeedTextField.setBounds(131, 184, 141, 25);
 		backgroundPanel.add(backgroundSeedTextField);
 		
-		final JButton btnNewBackgroundSeed = new JButton("New Seed");
+		btnNewBackgroundSeed = new JButton("New Seed");
 		btnNewBackgroundSeed.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
@@ -566,12 +635,12 @@ public class RunSwing
 			}
 		});
 		btnNewBackgroundSeed.setToolTipText("Generate a new random seed.");
-		btnNewBackgroundSeed.setBounds(284, 61, 105, 25);
+		btnNewBackgroundSeed.setBounds(284, 184, 105, 25);
 		backgroundPanel.add(btnNewBackgroundSeed);
 		
 		JLabel lblBackgroundImage = new JLabel("Background image:");
 		lblBackgroundImage.setToolTipText("Select whether to generate a new background image images from files.");
-		lblBackgroundImage.setBounds(12, 17, 156, 15);
+		lblBackgroundImage.setBounds(12, 112, 156, 15);
 		backgroundPanel.add(lblBackgroundImage);
 		
 		oceanDisplayPanel = new BGColorPreviewPanel();
@@ -582,13 +651,13 @@ public class RunSwing
 				(int)backgroundDisplayMaxSize.getHeight());
 		backgroundPanel.add(oceanDisplayPanel);
 		
-		JLabel lblOceanColor = new JLabel("Ocean color:");
+		lblOceanColor = new JLabel("Ocean color:");
 		lblOceanColor.setToolTipText("The color of the ocean.");
-		lblOceanColor.setBackground(new Color(119, 91, 36));
+		lblOceanColor.setBackground(Color.red);
 		lblOceanColor.setBounds(471, 319, 95, 15);
 		backgroundPanel.add(lblOceanColor);
 		
-		final JButton btnChooseOceanColor = new JButton("Choose");
+		btnChooseOceanColor = new JButton("Choose");
 		btnChooseOceanColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JColorChooser colorChooser = new JColorChooser(oceanDisplayPanel.getColor());
@@ -617,7 +686,7 @@ public class RunSwing
 		dimensionsComboBox.addItem("4096 x 4096 (square)");
 		dimensionsComboBox.addItem("4096 x 2304 (16 by 9)");
 		dimensionsComboBox.addItem("4096 x 2531 (golden ratio)");
-		dimensionsComboBox.setBounds(131, 93, 220, 28);
+		dimensionsComboBox.setBounds(131, 223, 258, 28);
 		dimensionsComboBox.addActionListener(new ActionListener()
 		{	
 			public void actionPerformed(ActionEvent e)
@@ -633,47 +702,95 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e)
 			{
 				warnOfTextEdits();
-				btnChooseLandColor.setEnabled(rdbtnGenerated.isSelected());
-				btnChooseOceanColor.setEnabled(rdbtnGenerated.isSelected());
-				btnNewBackgroundSeed.setEnabled(rdbtnGenerated.isSelected());
-				dimensionsComboBox.setEnabled(rdbtnGenerated.isSelected());
-				scaleSlider.setEnabled(rdbtnGenerated.isSelected());
-				backgroundSeedTextField.setEnabled(rdbtnGenerated.isSelected());
-
-				btnBrowseLandBackground.setEnabled(!rdbtnGenerated.isSelected());
-				btnBrowseOceanBackground.setEnabled(!rdbtnGenerated.isSelected());
-				oceanBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
-				landBackgroundImageFilename.setEnabled(!rdbtnGenerated.isSelected());
-				
-				drawRegionsCheckBox.setEnabled(rdbtnGenerated.isSelected());
-				boolean regionControlsSelected = rdbtnGenerated.isSelected() && drawRegionsCheckBox.isSelected();
-				hueSlider.setEnabled(regionControlsSelected);
-				saturationSlider.setEnabled(regionControlsSelected);
-				brightnessSlider.setEnabled(regionControlsSelected);
-				regionsSeedTextField.setEnabled(regionControlsSelected);
-				newRegionSeedButton.setEnabled(regionControlsSelected);
+				updateBackgroundPanelFieldStates();
 			}		
 		};
 		
-		rdbtnGenerated = new JRadioButton("Generated");
-		rdbtnGenerated.setBounds(165, 8, 185, 23);
-		rdbtnGenerated.addActionListener(backgroundImageButtonGroupListener);
-		backgroundPanel.add(rdbtnGenerated);
-		
+		rdbtnFractal = new JRadioButton("Fractal noise");
+		rdbtnFractal.setBounds(165, 103, 185, 23);
+		rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
+		backgroundPanel.add(rdbtnFractal);
+
+		rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
+		rdbtnGeneratedFromTexture.setBounds(165, 125, 211, 23);
+		rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
+		backgroundPanel.add(rdbtnGeneratedFromTexture);
+
 		rdbtnFromFiles = new JRadioButton("From files");
-		rdbtnFromFiles.setBounds(165, 30, 185, 23);
+		rdbtnFromFiles.setBounds(165, 147, 211, 23);
 		rdbtnFromFiles.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnFromFiles);
 		
 		ButtonGroup backgoundImageButtonGroup = new ButtonGroup();
-		backgoundImageButtonGroup.add(rdbtnGenerated);
+		backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
+		backgoundImageButtonGroup.add(rdbtnFractal);
 		backgoundImageButtonGroup.add(rdbtnFromFiles);
 		
-		JLabel lblDimensions = new JLabel("Dimensions:");
+		lblDimensions = new JLabel("Dimensions:");
 		lblDimensions.setToolTipText("The dimensions of the result before being multiplied by the resolution below.");
-		lblDimensions.setBounds(12, 93, 122, 15);
+		lblDimensions.setBounds(12, 223, 122, 15);
 		backgroundPanel.add(lblDimensions);
 		
+		lblTextureImage = new JLabel("Texture image:");
+		lblTextureImage.setBounds(12, 263, 156, 15);
+		backgroundPanel.add(lblTextureImage);
+		
+		textureImageFilename = new JTextField();
+		textureImageFilename.setColumns(10);
+		textureImageFilename.setBounds(12, 284, 278, 28);
+		textureImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				updateBackgroundImageDisplays();
+			}
+		});
+		backgroundPanel.add(textureImageFilename);
+		
+		btnsBrowseTextureImage = new JButton("Browse");
+		btnsBrowseTextureImage.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+		btnsBrowseTextureImage.setBounds(302, 284, 87, 25);
+		btnsBrowseTextureImage.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				String filename = chooseImageFile(backgroundPanel, textureImageFilename.getText());
+				if (filename != null)
+					textureImageFilename.setText(filename);
+			}
+		});
+		backgroundPanel.add(btnsBrowseTextureImage);
+		
+		colorizeOceanCheckbox = new JCheckBox("");
+		colorizeOceanCheckbox.setToolTipText("Whether or not to change the ocean texture to a custom color");
+		colorizeOceanCheckbox.setBounds(448, 315, 129, 23);
+		backgroundPanel.add(colorizeOceanCheckbox);
+		
+		colorizeLandCheckbox = new JCheckBox("");
+		colorizeLandCheckbox.setToolTipText("Whether or not to change the land texture to a custom color");
+		colorizeLandCheckbox.setBounds(705, 315, 129, 23);
+		backgroundPanel.add(colorizeLandCheckbox);
+
+		colorizeCheckboxListener = new ItemListener() 
+		{	
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				updateBackgroundPanelFieldStates();
+			}
+		};
+
 		JPanel regionsPanel = new JPanel();
 		tabbedPane.addTab("Regions", null, regionsPanel, null);
 		regionsPanel.setLayout(null);
@@ -947,159 +1064,161 @@ public class RunSwing
 		regionFontDisplay = new JLabel("");
 		regionFontDisplay.setBounds(181, 70, 195, 25);
 		
-				textPanel.add(regionFontDisplay);
+		textPanel.add(regionFontDisplay);
 				
-						final JButton btnRegionFont = new JButton("Choose");
-						btnRegionFont.addActionListener(new ActionListener() 
-						{
-							public void actionPerformed(ActionEvent arg0) 
-							{
-								runFontChooser(textPanel, regionFontDisplay);
-							}
-						});
-						btnRegionFont.setBounds(383, 72, 87, 25);
-						textPanel.add(btnRegionFont);
-						
-						JLabel lblTitleFont = new JLabel("Title font:");
-						lblTitleFont.setBounds(8, 43, 105, 15);
-						textPanel.add(lblTitleFont);
-						
-						titleFontDisplay = new JLabel("");
-						titleFontDisplay.setBounds(181, 12, 195, 49);
-						textPanel.add(titleFontDisplay);
-						
-						final JButton btnTitleFont = new JButton("Choose");
-						btnTitleFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent arg0) 
-							{
-								runFontChooser(textPanel, titleFontDisplay);
-							}
-						});
-						btnTitleFont.setBounds(383, 39, 87, 25);
-						textPanel.add(btnTitleFont);
-						
-						JLabel lblMountainRangeFont = new JLabel("Mountain range font:");
-						lblMountainRangeFont.setBounds(8, 109, 161, 15);
-						textPanel.add(lblMountainRangeFont);
-						
-						mountainRangeFontDisplay = new JLabel("");
-						mountainRangeFontDisplay.setBounds(181, 103, 195, 25);
-						textPanel.add(mountainRangeFontDisplay);
-						
-						final JButton btnMountainRangeFont = new JButton("Choose");
-						btnMountainRangeFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								runFontChooser(textPanel, mountainRangeFontDisplay);
-							}
-						});
-						btnMountainRangeFont.setBounds(383, 105, 87, 25);
-						textPanel.add(btnMountainRangeFont);
-						
-						JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
-						lblMountainGroupFont.setBounds(8, 142, 161, 15);
-						textPanel.add(lblMountainGroupFont);
-						
-						otherMountainsFontDisplay = new JLabel("");
-						otherMountainsFontDisplay.setBounds(181, 139, 195, 25);
-						textPanel.add(otherMountainsFontDisplay);
-						
-						final JButton btnOtherMountainsFont = new JButton("Choose");
-						btnOtherMountainsFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								runFontChooser(textPanel, otherMountainsFontDisplay);
-							}
-						});
-						btnOtherMountainsFont.setBounds(383, 138, 87, 25);
-						textPanel.add(btnOtherMountainsFont);
-						
-						JLabel lblRiverFont = new JLabel("River font:");
-						lblRiverFont.setBounds(8, 175, 116, 15);
-						textPanel.add(lblRiverFont);
-						
-						riverFontDisplay = new JLabel("");
-						riverFontDisplay.setBounds(181, 175, 195, 25);
-						textPanel.add(riverFontDisplay);
-						
-						final JButton btnRiverFont = new JButton("Choose");
-						btnRiverFont.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								runFontChooser(textPanel, riverFontDisplay);
-							}
-						});
-						btnRiverFont.setBounds(383, 171, 87, 25);
-						textPanel.add(btnRiverFont);
-						
-						JLabel lblTextColor = new JLabel("Text color:");
-						lblTextColor.setBounds(8, 208, 134, 23);
-						textPanel.add(lblTextColor);
-						
-						textColorDisplay = new JPanel();
-						textColorDisplay.setBackground(Color.BLACK);
-						textColorDisplay.setBounds(237, 204, 82, 23);
-						textPanel.add(textColorDisplay);
-						
-						final JButton btnChooseTextColor = new JButton("Choose");
-						btnChooseTextColor.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
-								showColorPickerWithPreviewPanel(textPanel, textColorDisplay, "Text color");
-							}
-						});
-						btnChooseTextColor.setBounds(383, 204, 87, 25);
-						textPanel.add(btnChooseTextColor);
-						
-						JLabel lblBoldBackgroundColor = new JLabel("Bold background color:");
-						lblBoldBackgroundColor.setToolTipText("Title and region names will be given a bold background in this color.");
-						lblBoldBackgroundColor.setBounds(8, 274, 186, 23);
-						textPanel.add(lblBoldBackgroundColor);
-						
-						boldBackgroundColorDisplay = new JPanel();
-						boldBackgroundColorDisplay.setBackground(new Color(244,226,194));
-						boldBackgroundColorDisplay.setBounds(237, 270, 82, 23);
-						textPanel.add(boldBackgroundColorDisplay);
-						
-						final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
-						btnChooseBoldBackgroundColor.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
-								showColorPickerWithPreviewPanel(textPanel, boldBackgroundColorDisplay, "Bold background color");
-							}
-						});
-						btnChooseBoldBackgroundColor.setBounds(383, 270, 87, 25);
-						textPanel.add(btnChooseBoldBackgroundColor);
-						
-						final JButton btnNewTextRandomSeed = new JButton("New Seed");
-						btnNewTextRandomSeed.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) 
-							{
-								warnOfTextEdits();
-								textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
-							}
-						});
-						btnNewTextRandomSeed.setToolTipText("Generate a new random seed for creating text.");
-						btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
-						textPanel.add(btnNewTextRandomSeed);
-						
-						btnEditText = new JButton("Edit Text");
-						btnEditText.setToolTipText("Modify the generated text.");
-						btnEditText.addActionListener(new ActionListener() 
-						{
-							public void actionPerformed(ActionEvent e)
-							{
-						        Dialog dialog;
-						        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
-								dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-								dialog.setVisible(true);
-							}
-						});
-						btnEditText.setBounds(8, 314, 117, 25);
-						textPanel.add(btnEditText);
-						
-						btnClearTextEdits = new JButton("Clear Text Edits");
-						btnClearTextEdits.setToolTipText("Remove all modifications to  generated text.");
-						btnClearTextEdits.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent e) {
+		final JButton btnRegionFont = new JButton("Choose");
+		btnRegionFont.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				runFontChooser(textPanel, regionFontDisplay);
+			}
+		});
+		btnRegionFont.setBounds(383, 72, 87, 25);
+		textPanel.add(btnRegionFont);
+		
+		JLabel lblTitleFont = new JLabel("Title font:");
+		lblTitleFont.setBounds(8, 43, 105, 15);
+		textPanel.add(lblTitleFont);
+		
+		titleFontDisplay = new JLabel("");
+		titleFontDisplay.setBounds(181, 12, 195, 49);
+		textPanel.add(titleFontDisplay);
+		
+		final JButton btnTitleFont = new JButton("Choose");
+		btnTitleFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) 
+			{
+				runFontChooser(textPanel, titleFontDisplay);
+			}
+		});
+		btnTitleFont.setBounds(383, 39, 87, 25);
+		textPanel.add(btnTitleFont);
+		
+		JLabel lblMountainRangeFont = new JLabel("Mountain range font:");
+		lblMountainRangeFont.setBounds(8, 109, 161, 15);
+		textPanel.add(lblMountainRangeFont);
+		
+		mountainRangeFontDisplay = new JLabel("");
+		mountainRangeFontDisplay.setBounds(181, 103, 195, 25);
+		textPanel.add(mountainRangeFontDisplay);
+		
+		final JButton btnMountainRangeFont = new JButton("Choose");
+		btnMountainRangeFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, mountainRangeFontDisplay);
+			}
+		});
+		btnMountainRangeFont.setBounds(383, 105, 87, 25);
+		textPanel.add(btnMountainRangeFont);
+		
+		JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
+		lblMountainGroupFont.setBounds(8, 142, 161, 15);
+		textPanel.add(lblMountainGroupFont);
+		
+		otherMountainsFontDisplay = new JLabel("");
+		otherMountainsFontDisplay.setBounds(181, 139, 195, 25);
+		textPanel.add(otherMountainsFontDisplay);
+		
+		final JButton btnOtherMountainsFont = new JButton("Choose");
+		btnOtherMountainsFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, otherMountainsFontDisplay);
+			}
+		});
+		btnOtherMountainsFont.setBounds(383, 138, 87, 25);
+		textPanel.add(btnOtherMountainsFont);
+		
+		JLabel lblRiverFont = new JLabel("River font:");
+		lblRiverFont.setBounds(8, 175, 116, 15);
+		textPanel.add(lblRiverFont);
+		
+		riverFontDisplay = new JLabel("");
+		riverFontDisplay.setBounds(181, 175, 195, 25);
+		textPanel.add(riverFontDisplay);
+		
+		final JButton btnRiverFont = new JButton("Choose");
+		btnRiverFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				runFontChooser(textPanel, riverFontDisplay);
+			}
+		});
+		btnRiverFont.setBounds(383, 171, 87, 25);
+		textPanel.add(btnRiverFont);
+		
+		JLabel lblTextColor = new JLabel("Text color:");
+		lblTextColor.setBounds(8, 208, 134, 23);
+		textPanel.add(lblTextColor);
+		
+		textColorDisplay = new JPanel();
+		textColorDisplay.setBackground(Color.BLACK);
+		textColorDisplay.setBounds(237, 204, 82, 23);
+		textPanel.add(textColorDisplay);
+		
+		final JButton btnChooseTextColor = new JButton("Choose");
+		btnChooseTextColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPickerWithPreviewPanel(textPanel, textColorDisplay, "Text color");
+			}
+		});
+		btnChooseTextColor.setBounds(383, 204, 87, 25);
+		textPanel.add(btnChooseTextColor);
+		
+		JLabel lblBoldBackgroundColor = new JLabel("Bold background color:");
+		lblBoldBackgroundColor.setToolTipText("Title and region names will be given a bold background in this color.");
+		lblBoldBackgroundColor.setBounds(8, 274, 186, 23);
+		textPanel.add(lblBoldBackgroundColor);
+		
+		boldBackgroundColorDisplay = new JPanel();
+		boldBackgroundColorDisplay.setBackground(new Color(244,226,194));
+		boldBackgroundColorDisplay.setBounds(237, 270, 82, 23);
+		textPanel.add(boldBackgroundColorDisplay);
+		
+		final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
+		btnChooseBoldBackgroundColor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showColorPickerWithPreviewPanel(textPanel, boldBackgroundColorDisplay, "Bold background color");
+			}
+		});
+		btnChooseBoldBackgroundColor.setBounds(383, 270, 87, 25);
+		textPanel.add(btnChooseBoldBackgroundColor);
+		
+		final JButton btnNewTextRandomSeed = new JButton("New Seed");
+		btnNewTextRandomSeed.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) 
+			{
+				warnOfTextEdits();
+				textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
+			}
+		});
+		btnNewTextRandomSeed.setToolTipText("Generate a new random seed for creating text.");
+		btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
+		textPanel.add(btnNewTextRandomSeed);
+		
+		btnEditText = new JButton("Edit Text");
+		btnEditText.setToolTipText("Modify the generated text.");
+		btnEditText.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+		        Dialog dialog;
+		        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
+				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+				dialog.setVisible(true);
+			}
+		});
+		btnEditText.setBounds(8, 314, 117, 25);
+		textPanel.add(btnEditText);
+		
+		btnClearTextEdits = new JButton("Clear Text Edits");
+		btnClearTextEdits.setToolTipText("Remove all modifications to  generated text.");
+		btnClearTextEdits.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
 	        	int n = JOptionPane.showConfirmDialog(
 	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
 	                    JOptionPane.YES_NO_OPTION);
@@ -1109,73 +1228,74 @@ public class RunSwing
 									btnClearTextEdits.setEnabled(false);
 	            }
 
-							}
-						});
-						btnClearTextEdits.setBounds(137, 314, 161, 25);
-						textPanel.add(btnClearTextEdits);
-						
-						drawTextCheckBox = new JCheckBox("Draw text");
-						drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
-						drawTextCheckBox.setBounds(8, 8, 125, 23);
-						drawTextCheckBox.addActionListener(new ActionListener() 
-						{
-							public void actionPerformed(ActionEvent e) 
-							{
-								btnTitleFont.setEnabled(drawTextCheckBox.isSelected());
-								booksPanel.setEnabled(drawTextCheckBox.isSelected());
-								for (Component component : booksPanel.getComponents())
-								{
-									if (component instanceof JCheckBox)
-									{
-										JCheckBox checkBox = (JCheckBox)component;
-										checkBox.setEnabled(drawTextCheckBox.isSelected());
-									}
-								}				
-								btnRegionFont.setEnabled(drawTextCheckBox.isSelected());
-								btnMountainRangeFont.setEnabled(drawTextCheckBox.isSelected());
-								btnOtherMountainsFont.setEnabled(drawTextCheckBox.isSelected());
-								btnRiverFont.setEnabled(drawTextCheckBox.isSelected());
-								btnChooseTextColor.setEnabled(drawTextCheckBox.isSelected());
-								btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
-								textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
-								btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
-								btnEditText.setEnabled(drawTextCheckBox.isSelected());
-								chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
-								btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
-							}			
-						});
-						textPanel.add(drawTextCheckBox);
-						
-						JScrollPane booksScrollPane = new JScrollPane();
-						booksScrollPane.setBounds(538, 70, 311, 270);
-						textPanel.add(booksScrollPane);
-						
-						booksPanel = new JPanel();
-						booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
-						booksScrollPane.setViewportView(booksPanel);
-						
-						JLabel label_7 = new JLabel("Random seed:");
-						label_7.setToolTipText("The random seed for text.");
-						label_7.setBounds(528, 14, 122, 15);
-						textPanel.add(label_7);
-						
-						textRandomSeedTextField = new JTextField();
-						textRandomSeedTextField.setText(new Random().nextInt() + "");
-						textRandomSeedTextField.setColumns(10);
-						textRandomSeedTextField.setBounds(647, 12, 141, 25);
-						textPanel.add(textRandomSeedTextField);
-						
-						chckbxDrawBoldBackground = new JCheckBox("Draw bold background");
-						chckbxDrawBoldBackground.setBounds(8, 241, 209, 23);
-						chckbxDrawBoldBackground.addActionListener(new ActionListener()
-						{
-							@Override
-							public void actionPerformed(ActionEvent e)
-							{
-								btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
-							}
-						});
-						textPanel.add(chckbxDrawBoldBackground);
+			}
+		});
+
+		btnClearTextEdits.setBounds(137, 314, 161, 25);
+		textPanel.add(btnClearTextEdits);
+		
+		drawTextCheckBox = new JCheckBox("Draw text");
+		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
+		drawTextCheckBox.setBounds(8, 8, 125, 23);
+		drawTextCheckBox.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				btnTitleFont.setEnabled(drawTextCheckBox.isSelected());
+				booksPanel.setEnabled(drawTextCheckBox.isSelected());
+				for (Component component : booksPanel.getComponents())
+				{
+					if (component instanceof JCheckBox)
+					{
+						JCheckBox checkBox = (JCheckBox)component;
+						checkBox.setEnabled(drawTextCheckBox.isSelected());
+					}
+				}				
+				btnRegionFont.setEnabled(drawTextCheckBox.isSelected());
+				btnMountainRangeFont.setEnabled(drawTextCheckBox.isSelected());
+				btnOtherMountainsFont.setEnabled(drawTextCheckBox.isSelected());
+				btnRiverFont.setEnabled(drawTextCheckBox.isSelected());
+				btnChooseTextColor.setEnabled(drawTextCheckBox.isSelected());
+				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
+				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
+				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
+				btnEditText.setEnabled(drawTextCheckBox.isSelected());
+				chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
+				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
+			}			
+		});
+		textPanel.add(drawTextCheckBox);
+		
+		JScrollPane booksScrollPane = new JScrollPane();
+		booksScrollPane.setBounds(538, 70, 311, 270);
+		textPanel.add(booksScrollPane);
+		
+		booksPanel = new JPanel();
+		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
+		booksScrollPane.setViewportView(booksPanel);
+		
+		JLabel label_7 = new JLabel("Random seed:");
+		label_7.setToolTipText("The random seed for text.");
+		label_7.setBounds(528, 14, 122, 15);
+		textPanel.add(label_7);
+		
+		textRandomSeedTextField = new JTextField();
+		textRandomSeedTextField.setText(new Random().nextInt() + "");
+		textRandomSeedTextField.setColumns(10);
+		textRandomSeedTextField.setBounds(647, 12, 141, 25);
+		textPanel.add(textRandomSeedTextField);
+		
+		chckbxDrawBoldBackground = new JCheckBox("Draw bold background");
+		chckbxDrawBoldBackground.setBounds(8, 241, 209, 23);
+		chckbxDrawBoldBackground.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
+			}
+		});
+		textPanel.add(chckbxDrawBoldBackground);
 		buttonChooseCoastlineColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline color");
@@ -1218,14 +1338,31 @@ public class RunSwing
 		JMenu fileMenu = new JMenu("File");
 		menuBar.add(fileMenu);
 		
-		final JMenuItem mntmLoadSettings = new JMenuItem("Open Settings");
+		final JMenuItem mntmNew = new JMenuItem("New");
+		fileMenu.add(mntmNew);
+		mntmNew.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				boolean cancelPressed = checkForUnsavedChanges();
+				if (!cancelPressed)
+				{
+					generateAndloadNewSettings();
+				}
+			}
+		});
+		
+		final JMenuItem mntmLoadSettings = new JMenuItem("Open");
 		fileMenu.add(mntmLoadSettings);
 		mntmLoadSettings.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				checkForUnsavedChanges();
+				boolean cancelPressed = checkForUnsavedChanges();
+				if (cancelPressed)
+					return;
 				
 				Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
@@ -1250,12 +1387,13 @@ public class RunSwing
 				{
 					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
 					loadSettingsIntoGUI(fileChooser.getSelectedFile().getAbsolutePath());
+					updateFrameTitle();
 				}
 			
 			}
 		});
-		
-		final JMenuItem mntmSave = new JMenuItem("Save Settings");
+	
+		final JMenuItem mntmSave = new JMenuItem("Save");
 		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
 		        java.awt.event.KeyEvent.VK_S, 
 		        java.awt.Event.CTRL_MASK));
@@ -1269,7 +1407,7 @@ public class RunSwing
 			}
 		});
 		
-		final JMenuItem mntmSaveAs = new JMenuItem("Save Settings As...");
+		final JMenuItem mntmSaveAs = new JMenuItem("Save As...");
 		fileMenu.add(mntmSaveAs);
 		mntmSaveAs.addActionListener(new ActionListener()
 		{
@@ -1286,6 +1424,33 @@ public class RunSwing
 		frame.pack();
 	}
 	
+	private int calcMaximumResolution() 
+	{
+		long maxBytes = Runtime.getRuntime().maxMemory();
+		// The required memory is quadratic in the resolution used. 
+		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2) = 148468.
+		int maxResolution = (int)Math.sqrt(maxBytes / 148468L);
+		
+		// The FFT-based code will create arrays in powers of 2.
+		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
+		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
+		// Average with the original prediction because not all code is FFT-based.
+		maxResolution = (maxResolution + resolutionAtNextPowerOf2) / 2;
+		
+		if (maxResolution > 500)
+		{
+			// This is in case Runtime.maxMemory returns Long's max value, which it says it will if it fails.
+			return 1000;
+		}
+		if (maxResolution < 100)
+		{
+			return 100;
+		}
+		// The resolution slider uses multiples of 25.
+		maxResolution -= maxResolution % 25;
+		return maxResolution;
+	}
+
 	/**
 	 * Informs the user that if they continue an action they must delete text edits.
 	 * @return true if the action should continue. false if the user canceled the action to keep text edits.
@@ -1319,6 +1484,52 @@ public class RunSwing
 		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}
 	
+	private void updateBackgroundPanelFieldStates()
+	{
+		boolean isGeneratedBackground = rdbtnGeneratedFromTexture.isSelected() || rdbtnFractal.isSelected();
+		btnChooseLandColor.setVisible(isGeneratedBackground);
+		btnChooseOceanColor.setVisible(isGeneratedBackground);
+		btnNewBackgroundSeed.setVisible(isGeneratedBackground);
+		lblDimensions.setVisible(isGeneratedBackground);
+		dimensionsComboBox.setVisible(isGeneratedBackground);
+		backgroundSeedTextField.setVisible(isGeneratedBackground);
+		lblBackgroundRandomSeed.setVisible(isGeneratedBackground);
+		oceanDisplayPanel.setVisible(isGeneratedBackground);
+		landDisplayPanel.setVisible(isGeneratedBackground);
+		lblOceanColor.setVisible(isGeneratedBackground);
+		lblLandColor.setVisible(isGeneratedBackground);
+		
+		lblTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		textureImageFilename.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnBrowseLandBackground.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnsBrowseTextureImage.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		colorizeOceanCheckbox.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		colorizeLandCheckbox.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnChooseOceanColor.setEnabled(colorizeOceanCheckbox.isSelected());
+		btnChooseLandColor.setEnabled(colorizeLandCheckbox.isSelected());
+
+		btnBrowseLandBackground.setVisible(rdbtnFromFiles.isSelected());
+		btnBrowseOceanBackground.setVisible(rdbtnFromFiles.isSelected());
+		lblOceanBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
+		oceanBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
+		lblLandBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
+		landBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
+		
+		drawRegionsCheckBox.setEnabled(rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected());
+		boolean regionControlsSelected = (rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected()) && drawRegionsCheckBox.isSelected();
+		hueSlider.setEnabled(regionControlsSelected);
+		saturationSlider.setEnabled(regionControlsSelected);
+		brightnessSlider.setEnabled(regionControlsSelected);
+		regionsSeedTextField.setEnabled(regionControlsSelected);
+		newRegionSeedButton.setEnabled(regionControlsSelected);
+		
+		if (isGeneratedBackground)
+		{
+			updateBackgroundImageDisplays();
+		}
+
+	}
+	
 	private void updateBackgroundImageDisplays()
 	{
 		Dimension dim = getGeneratedBackgroundDimensionsFromGUI();
@@ -1326,21 +1537,107 @@ public class RunSwing
 		DimensionDouble bounds = ImageHelper.fitDimensionsWithinBoundingBox(
 				backgroundDisplayMaxSize, dim.getWidth(), dim.getHeight());
 
-		BufferedImage background = FractalBGGenerator.generate(
-				new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
-				(int)bounds.getHeight(), 0.75f);
+		
+		BufferedImage oceanBackground;
+		BufferedImage landBackground;
+		if (rdbtnFractal.isSelected())
+		{
+			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
+			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
 
-		oceanDisplayPanel.setImage(ImageHelper.extractRotatedRegion(background, 0, 0, background.getWidth()/2, 
-				oceanDisplayPanel.getHeight(), 0));
-		oceanDisplayPanel.setLocation(backgroundDisplayCenterX - background.getWidth()/2,
+			oceanBackground = landBackground = FractalBGGenerator.generate(
+					new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
+					(int)bounds.getHeight(), 0.75f);
+		}
+		else
+		{
+			BufferedImage texture;
+			try
+			{
+				texture = ImageHelper.read(textureImageFilename.getText());
+				
+				if (colorizeOceanCheckbox.isSelected())
+				{
+					oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+
+					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+							new Random(Integer.parseInt(backgroundSeedTextField.getText())), ImageHelper.convertToGrayscale(texture),
+							(int)bounds.getHeight(), (int)bounds.getWidth());
+				}
+				else
+				{
+					oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+
+					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+							new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture,
+							(int)bounds.getHeight(), (int)bounds.getWidth());
+				}
+				
+				if (colorizeLandCheckbox.isSelected() == colorizeOceanCheckbox.isSelected())
+				{
+					// No need to generate the same image twice.
+					landBackground = oceanBackground;
+					if (colorizeLandCheckbox.isSelected())
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);					
+					}
+					else
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);											
+					}
+				}
+				else
+				{
+					if (colorizeLandCheckbox.isSelected())
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+						
+						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+								new Random(Integer.parseInt(backgroundSeedTextField.getText())), ImageHelper.convertToGrayscale(texture),
+								(int)bounds.getHeight(), (int)bounds.getWidth());
+					}
+					else
+					{
+						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+						
+						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+								new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture,
+								(int)bounds.getHeight(), (int)bounds.getWidth());
+					}
+				}	
+			}
+			catch (RuntimeException e)
+			{
+				oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+				landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+				oceanBackground = landBackground = new BufferedImage((int)bounds.getWidth(), (int)bounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			}
+			
+		}
+
+		oceanDisplayPanel.setImage(ImageHelper.extractRegion(oceanBackground, 0, 0, oceanBackground.getWidth()/2, 
+				oceanDisplayPanel.getHeight()));
+		oceanDisplayPanel.setLocation(backgroundDisplayCenterX - oceanBackground.getWidth()/2,
 				oceanDisplayPanel.getLocation().y);
-		oceanDisplayPanel.setSize(new Dimension(background.getWidth()/2, background.getHeight()));
+		oceanDisplayPanel.setSize(new Dimension(oceanBackground.getWidth()/2, oceanBackground.getHeight()));
 		oceanDisplayPanel.repaint();
 		
-		landDisplayPanel.setImage(ImageHelper.extractRotatedRegion(background, background.getWidth()/2, 0, 
-				background.getWidth()/2, landDisplayPanel.getHeight(), 0));
-		landDisplayPanel.setSize(new Dimension(background.getWidth()/2, background.getHeight()));
+		landDisplayPanel.setImage(ImageHelper.extractRegion(landBackground, landBackground.getWidth()/2, 0, 
+				landBackground.getWidth()/2, landDisplayPanel.getHeight()));
+		landDisplayPanel.setSize(new Dimension(landBackground.getWidth()/2, landBackground.getHeight()));
 		landDisplayPanel.repaint();
+	}
+	
+	public void newSettings(JComponent parent)
+	{
+		if (openSettingsFilePath == null)
+		{
+			saveSettingsAs(parent);
+		}
+		else
+		{
+			generateAndloadNewSettings();
+		}
 	}
 	
 	public void saveSettings(JComponent parent)
@@ -1364,8 +1661,8 @@ public class RunSwing
 				e.printStackTrace();
 		        JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
+			updateFrameTitle();
 		}
-
 	}
 	
 	private void saveSettingsAs(JComponent parent)
@@ -1410,7 +1707,18 @@ public class RunSwing
 		        JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.",
 		        		JOptionPane.ERROR_MESSAGE);
 			}
+			updateFrameTitle();
 		}		
+	}
+	
+	private void updateFrameTitle()
+	{
+		String title = frameTitleBase;
+		if (openSettingsFilePath != null)
+		{
+			title += " - " + FilenameUtils.getName(openSettingsFilePath.toString());
+		}
+		frame.setTitle(title);
 	}
 	
 	private static String chooseImageFile(JComponent parent, String curFolder)
@@ -1494,15 +1802,22 @@ public class RunSwing
 				+ " x " + generatedHeight);
 	}
 	
-	/**
-	 * Loads a map settings file into the GUI.
-	 * @param path
-	 */
 	private void loadSettingsIntoGUI(String propertiesFilePath)
 	{
 		loadingSettings = true;
 		
 		MapSettings settings = new MapSettings(propertiesFilePath);
+		loadSettingsIntoGUI(settings);
+	}
+	
+	/**
+	 * Loads a map settings file into the GUI.
+	 * @param path
+	 */
+	private void loadSettingsIntoGUI(MapSettings settings)
+	{
+		loadingSettings = true;
+
 		sizeSlider.setValue(settings.worldSize);
 		randomSeedTextField.setText(Long.toString(settings.randomSeed));
 		edgeLandToWaterProbSlider.setValue((int)(settings.edgeLandToWaterProbability * 100));
@@ -1524,9 +1839,18 @@ public class RunSwing
 		grungeSlider.setValue(settings.grungeWidth);
 		
 		// Settings for background images.
-		rdbtnGenerated.setSelected(settings.generateBackground);
-		rdbtnFromFiles.setSelected(!settings.generateBackground);
+		// Remove and add item listeners to the colorize checkboxes to avoid generating backgrounds for display multiple times.
+		colorizeOceanCheckbox.removeItemListener(colorizeCheckboxListener);
+		colorizeOceanCheckbox.setSelected((settings.colorizeOcean));
+		colorizeOceanCheckbox.addItemListener(colorizeCheckboxListener);
+		colorizeLandCheckbox.removeItemListener(colorizeCheckboxListener);
+		colorizeLandCheckbox.setSelected((settings.colorizeLand));
+		colorizeLandCheckbox.addItemListener(colorizeCheckboxListener);
+		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
+		rdbtnFractal.setSelected(settings.generateBackground);
+		rdbtnFromFiles.setSelected(!settings.generateBackground && !settings.generateBackgroundFromTexture);
 		backgroundImageButtonGroupListener.actionPerformed(null);
+		textureImageFilename.setText(settings.backgroundTextureImage);
 		landBackgroundImageFilename.setText(settings.landBackgroundImage);
 		oceanBackgroundImageFilename.setText(settings.oceanBackgroundImage);
 		backgroundSeedTextField.setText(String.valueOf(settings.backgroundRandomSeed));
@@ -1538,6 +1862,8 @@ public class RunSwing
 		drawRegionsCheckBox.setSelected(!settings.drawRegionColors);
 		regionsSeedTextField.setText(String.valueOf(settings.regionsRandomSeed));
 		drawRegionsCheckBox.doClick();
+		// doClick seems to be ignored if the checkbox is disabled, so I must set the value again.
+		drawRegionsCheckBox.setSelected(settings.drawRegionColors);
 		hueSlider.setValue(settings.hueRange);
 		saturationSlider.setValue(settings.saturationRange);
 		brightnessSlider.setValue(settings.brightnessRange);
@@ -1581,8 +1907,11 @@ public class RunSwing
 		edits = settings.edits;
 		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
 		
+		updateBackgroundImageDisplays();
+		updateFrameTitle();
+
 		lastSettingsLoadedOrSaved = settings;
-		loadingSettings = false;
+		loadingSettings = false;	
 	}
 	
 	private List<String> getAllBooks()
@@ -1628,7 +1957,11 @@ public class RunSwing
 		settings.grungeWidth = grungeSlider.getValue();
 		
 		// Background image settings
-		settings.generateBackground = rdbtnGenerated.isSelected();
+		settings.generateBackground = rdbtnFractal.isSelected();
+		settings.generateBackgroundFromTexture = rdbtnGeneratedFromTexture.isSelected();
+		settings.colorizeOcean = colorizeOceanCheckbox.isSelected();
+		settings.colorizeLand = colorizeLandCheckbox.isSelected();
+		settings.backgroundTextureImage = textureImageFilename.getText();
 		settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
 		settings.oceanColor = oceanDisplayPanel.getColor();
 		settings.landColor = landDisplayPanel.getColor();
@@ -1668,7 +2001,7 @@ public class RunSwing
 		return settings;
 	}
 	
-	public void checkForUnsavedChanges()
+	public boolean checkForUnsavedChanges()
 	{
 		final MapSettings currentSettings = getSettingsFromGUI();
 
@@ -1676,13 +2009,21 @@ public class RunSwing
         {
         	int n = JOptionPane.showConfirmDialog(
                     frame, "Settings have been modfied. Save changes?", "",
-                    JOptionPane.YES_NO_OPTION);
+                    JOptionPane.YES_NO_CANCEL_OPTION);
             if (n == JOptionPane.YES_OPTION) 
             {
             	saveSettings(null);
             }
-            
-        }
+            else if (n == JOptionPane.NO_OPTION)
+            {
+            }
+            else if (n == JOptionPane.CANCEL_OPTION)
+            {
+            	return true;
+            }
+         }
+        
+        return false;
 	}
 	
 	private class SliderChangeListener implements ChangeListener

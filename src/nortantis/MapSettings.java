@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +50,14 @@ public class MapSettings implements Serializable
 	int frayedBorderBlurLevel;
 	public int grungeWidth;
 	
+	/**
+	 * This settings actually mans fractal generated as opposed to generated from texture.
+	 */
 	boolean generateBackground;
+	boolean generateBackgroundFromTexture;
+	boolean colorizeOcean; // For backgrounds generated from a texture.
+	boolean colorizeLand; // For backgrounds generated from a texture.
+	String backgroundTextureImage;
 	long backgroundRandomSeed;
 	Color oceanColor;
 	Color landColor;
@@ -105,6 +113,10 @@ public class MapSettings implements Serializable
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
 		result.setProperty("generateBackground", generateBackground + "");
+		result.setProperty("backgroundTextureImage", backgroundTextureImage);
+		result.setProperty("generateBackgroundFromTexture", generateBackgroundFromTexture + "");
+		result.setProperty("colorizeOcean", colorizeOcean + "");
+		result.setProperty("colorizeLand", colorizeLand + "");
 		result.setProperty("oceanColor", colorToString(oceanColor));
 		result.setProperty("landColor", colorToString(landColor));
 		result.setProperty("generatedWidth", generatedWidth + "");
@@ -305,6 +317,52 @@ public class MapSettings implements Serializable
 			public Boolean apply()
 			{
 				return parseBoolean(props.getProperty("generateBackground"));
+			}
+		});
+		generateBackgroundFromTexture = getProperty("generateBackgroundFromTexture", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("generateBackgroundFromTexture");
+				if (propString == null)
+				{
+					return false;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		colorizeOcean = getProperty("colorizeOcean", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("colorizeOcean");
+				if (propString == null)
+				{
+					return true;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		colorizeLand = getProperty("colorizeLand", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("colorizeLand");
+				if (propString == null)
+				{
+					return true;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		backgroundTextureImage = getProperty("backgroundTextureImage", new Function0<String>()
+		{
+			public String apply()
+			{
+				String result = props.getProperty("backgroundTextureImage");
+				if (result == null)
+					result = Paths.get("./assets/example textures").toString();
+				return result;
 			}
 		});
 		backgroundRandomSeed = getProperty("backgroundRandomSeed", new Function0<Long>()

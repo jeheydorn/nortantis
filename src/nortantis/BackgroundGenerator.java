@@ -2,107 +2,212 @@ package nortantis;
 
 import static java.lang.System.out;
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import org.jtransforms.fft.FloatFFT_2D;
+
 import util.ImageHelper;
+import util.Logger;
+import util.Range;
 
 public class BackgroundGenerator
-{
-	public static BufferedImage runExperiment2(int scale, BufferedImage snippet)
+{		
+	/**
+	 * Generates a texture of the specified size which is similar in appearance to the given texture. 
+	 * 
+	 * To allow generating textures at arbitrary sizes, instead of just at the original texture's size, I'm using some techniques from 
+	 * "Random Phase Textures: Theory and Synthesis" by Bruno Galerne, Yann Gousseau, and Jean-Michel Morel. Specifically, from the section
+	 * "Synthesizing Textures With Arbitrary Sizes", I'm using step 2, but not steps 1 and 3. Instead of step 1 I'm using the original image.
+	 * I compensate for this by increasing alpha in step 2. Instead of step 3 I'm convolving with white noise, which seems to work just as well.
+	 * @param rand
+	 * @param texture If this is a color image (not type BufferedImage.TYPE_INT_RGB), then I generate a color result by processing each channel 
+	 * separately similar to what Bruno Galerne do, except I use histogram matching to get the color levels right.
+	 * @param targetRows Number of rows in the result.
+	 * @param targetCols Number of columns in the result.
+	 * @return A randomly generated texture.
+	 */
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
 	{
-		BufferedImage img = ImageHelper.convertToGrayscale(snippet);
-		int rows = img.getWidth() * scale;
-		int cols = img.getHeight() * scale;
-		Random rand = new Random();
+		// The conditions under which the two calls below change the texture are mutually exclusive.
+		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
+		texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
+
+		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max( texture.getHeight(), targetRows));
+		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
 		
-		float[][] imgArray = new float[rows][cols];
 		
-		for (int curScale = 1; curScale <= scale; curScale *= 2)
+		float alpha = 0.5f;
+		float textureArea = texture.getHeight() * texture.getHeight();
+		Raster raster = texture.getRaster();
+		float varianceScaler = (float)Math.sqrt(((float)(rows*cols)) / textureArea);
+		int alphaRows = (int)(alpha * texture.getHeight());
+		int alphaCols = (int)(alpha * texture.getWidth());
+		
+		int numberOfColorChannels;
+		BufferedImage allChannels;
+		float[] means;
+		if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
 		{
-			float[][] imgScaled;
-			if (curScale > 1)
-				imgScaled = ImageHelper.imageToArrayFloat(ImageHelper.scaleByWidth(img, img.getWidth() * curScale));
-			else
-				imgScaled = ImageHelper.imageToArrayFloat(img);
-			float[][] tiledScaledImg = ImageHelper.tile(imgScaled, rows, cols, 
-					rand.nextInt(img.getWidth()), rand.nextInt(img.getHeight()));
-			
-//			ImageIO.write(arrayToImage(tiledScaledImg), "png", new File("tiledScaledImg" + curScale + ".png"));
-			
+			numberOfColorChannels = 1;
+			allChannels = null;
+			means = new float[] {ImageHelper.calcMeanOfGrayscaleImage(texture)/255f};
+		}
+		else
+		{
+			numberOfColorChannels = 3;
+			allChannels = new BufferedImage(cols, rows, BufferedImage.TYPE_INT_RGB);
+			means = ImageHelper.calcMeanOfEachColor(texture);
+		}
+		
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols));
+
+		for (int channel : new Range(numberOfColorChannels))
+		{
+			float[][] kernel = new float[rows][cols];
 			for (int r = 0; r < rows; r++)
+			{
 				for (int c = 0; c < cols; c++)
-				{	
-					imgArray[r][c] += tiledScaledImg[r][c];
+				{
+					int textureR = r - (rows - texture.getHeight())/2;
+					int textureC = c - (cols - texture.getWidth())/2;
+					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
+					{
+						float level;
+						if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						{
+							level = raster.getSample(textureC, textureR, 0)/255f;
+						}
+						else
+						{
+							// Color image
+							Color color = new Color(texture.getRGB(textureC, textureR));
+							if (channel == 0)
+							{
+								level = color.getRed(); 
+							}
+							else if (channel == 1)
+							{
+								level = color.getGreen();
+							}
+							else
+							{
+								level = color.getBlue();
+							}
+						}
+						
+						float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
+						float ac = calcSmoothParamether(textureC, alphaCols, alpha, texture.getWidth());
+						
+						kernel[r][c] = means[channel] + varianceScaler * (level - means[channel]) * ar * ac;
+					}
+					else
+					{
+						kernel[r][c] = means[channel];
+					}
 				}
+			}
+			
+			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
+			kernel = null;
+			
+			if (numberOfColorChannels == 1)
+			{
+				allChannels = grayImage;
+			}
+			else
+			{
+				// Copy grayImage to a color channel in allChanels.
+				Raster gRaster = grayImage.getRaster();
+				for (int y = 0; y < allChannels.getHeight(); y++)
+					for (int x = 0; x < allChannels.getWidth(); x++)
+					{
+						Color color = new Color(allChannels.getRGB(x, y));
+						
+						int level = gRaster.getSample(x, y, 0);
+							
+						int r = (channel == 0) ? level : color.getRed();
+						int g = (channel == 1) ? level : color.getGreen();
+						int b = (channel == 2) ? level : color.getBlue();
+						Color combined = new Color(r,g,b);
+						allChannels.setRGB(x, y, combined.getRGB());				
+					}
+			}
 		}
 				
+		BufferedImage result = ImageHelper.matchHistogram(allChannels, texture);
+		result = ImageHelper.extractRegion(result, 0, 0, targetCols, targetRows);
 		
-		
-		
-		ImageHelper.maximizeContrast(imgArray);
-		
-		BufferedImage result = ImageHelper.arrayToImage(imgArray);
-//		ImageIO.write(result, "png", new File("experiment2.png"));
 		return result;
 	}
+	
+	private static float calcSmoothParamether(int textureR, int alphaPixels, float alpha, int imageLength)
+	{
+		if (textureR <= alphaPixels/2)
+		{
+			return calcSmoothingFunction(alpha, ((float)textureR) / imageLength);
+		}
+		else if (textureR >= (imageLength - alphaPixels/2))
+		{
+			return calcSmoothingFunction(alpha, ((float)(textureR - (imageLength - alphaPixels))) / imageLength);
+		}
+		
+		return 1f;
 
-	// Results don't look much like the original snippet.
-//	public static void runExperiment3() throws IOException
-//	{
-//		int scale = 8;
-//		BufferedImage img = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(256 * scale, 256 * scale));
-//		img = ImageHelper.convertToGrayscale(img);
-//
-//		BufferedImage kernelImage = runExperiment2(scale);
-//		float[][] kernel = ImageHelper.imageToArrayFloat(kernelImage);
-//		ImageHelper.normalize(kernel);
-//		
-//		BufferedImage result = ImageHelper.convolveGrayscale(img, kernel);
-//		ImageIO.write(result, "png", new File("experiment3.png"));
-//		System.out.println("Done.");
-//		System.exit(0);
+	}
+	
+	private static float calcSmoothingFunction(float alpha, float t)
+	{
+		float x = (2 * t / alpha) - 1;
+		// The number 0.367879 is the value of the smoothing function at alpha/2, which is its maximum. 
+		// I multiply by 1/0.367879 to make the range of the smoothing function [0,1].
+		return (float)Math.exp(-1 / (1 - (x * x))) * (1f / 0.367879f);		
+	}
 
-//		BufferedImage img = convertToGrayscale(ImageIO.read(new File("ocean_small.png")));
-//		int cols = getPowerOf2EqualOrLargerThan(img.getWidth());
-//		int rows = getPowerOf2EqualOrLargerThan(img.getHeight());
-//		
-//		// Convert the input to the format required by JTransforms.
-//		float[][] data = new float[rows][2 * cols];
-//		
-//		int imgRowPadding = rows - img.getHeight();
-//		int imgColPadding = cols - img.getWidth();
-//		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
-//		{
-//			Raster raster = img.getRaster();
-//			for (int c = 0; c < img.getWidth(); c++)
-//				for (int r = 0; r < img.getHeight(); r++)
-//				{
-//					float grayLevel = raster.getSample(c, r, 0)/255f;
-//					data[r + imgRowPadding/2][c + imgColPadding/2] = grayLevel;
-//				}
-//	
-//
-//			// Do the forward FFT.
-//			fft.realForwardFull(data);
-//		}
-//	
-//	}
+	private static BufferedImage cropTextureSmallerIfNeeded(BufferedImage texture, int rows, int cols)
+	{
+		if (texture.getWidth() < cols || texture.getHeight() < rows)
+		{
+			return texture;
+		}
+		
+		// The texture is wider and taller than we need it to be. Return a piece cropped out of the middle.
+		return ImageHelper.extractRegion(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
+	}
+
+	private static BufferedImage scaleTextureLargerIfNeeded(BufferedImage texture, int rows, int cols)
+	{
+		if (((float)texture.getWidth()) / cols < ((float)texture.getHeight()) / rows)
+		{
+			if (texture.getWidth() * 4 < cols)
+			{
+				return ImageHelper.scaleByWidth(texture, cols / 4);
+			}
+		}
+		else
+		{
+			if (texture.getHeight() * 4 < rows)
+			{
+				return ImageHelper.scaleByHeight(texture, rows / 4);
+			}
+		}
+		return texture;
+	}
 
 	public static void main(String[] args) throws IOException
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		// If I want the colors to look better, I could use mutiple images to get colors for
-		// histogram matching.
-		BufferedImage grayBackground = runExperiment2(8, ImageIO.read(new File("lord_of_the_rings_snippet_2.png")));
-		BufferedImage background = ImageHelper.matchHistogram(grayBackground,
-				ImageIO.read(new File("lord_of_the_rings_snippet_2.png")));
-		ImageIO.write(background, "png", new File("background.png"));
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("valcia_snippet.png"), 2048, 2048);
+		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
 		System.out.println("Done.");
