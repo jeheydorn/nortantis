@@ -146,7 +146,6 @@ public class BackgroundGenerator
 		BufferedImage result = ImageHelper.matchHistogram(allChannels, texture);
 		result = ImageHelper.extractRegion(result, 0, 0, targetCols, targetRows);
 		
-		// TODO crop to the size the caller asked for.
 		return result;
 	}
 	

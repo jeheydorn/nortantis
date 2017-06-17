@@ -7,6 +7,7 @@ import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -360,7 +361,7 @@ public class MapSettings implements Serializable
 			{
 				String result = props.getProperty("backgroundTextureImage");
 				if (result == null)
-					result = ".";
+					result = Paths.get("./assets/example textures").toString();
 				return result;
 			}
 		});

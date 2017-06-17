@@ -1606,7 +1606,7 @@ public class RunSwing
 					}
 				}	
 			}
-			catch(RuntimeException e)
+			catch (RuntimeException e)
 			{
 				oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
 				landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
