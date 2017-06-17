@@ -130,6 +130,7 @@ public class ImageHelper
 
 		return scaled;
 	}
+	
 
 	/**
 	 * Scales the given image, preserving aspect ratio.
@@ -151,6 +152,15 @@ public class ImageHelper
 		}
 		
 		return scaled;
+	}
+	
+	public static BufferedImage scaleFastByHeightAndWidth(BufferedImage inImage, int xSize, int ySize)
+	{
+        BufferedImage scaledImage = new BufferedImage(xSize, ySize, inImage.getType());
+        Graphics2D graphics2D = scaledImage.createGraphics();
+        graphics2D.drawImage(inImage, 0, 0, xSize, ySize, null);
+        graphics2D.dispose();
+        return scaledImage;
 	}
 
 	/**

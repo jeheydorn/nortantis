@@ -1862,6 +1862,8 @@ public class RunSwing
 		drawRegionsCheckBox.setSelected(!settings.drawRegionColors);
 		regionsSeedTextField.setText(String.valueOf(settings.regionsRandomSeed));
 		drawRegionsCheckBox.doClick();
+		// doClick seems to be ignored if the checkbox is disabled, so I must set the value again.
+		drawRegionsCheckBox.setSelected(settings.drawRegionColors);
 		hueSlider.setValue(settings.hueRange);
 		saturationSlider.setValue(settings.saturationRange);
 		brightnessSlider.setValue(settings.brightnessRange);

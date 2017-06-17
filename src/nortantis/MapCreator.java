@@ -248,7 +248,16 @@ public class MapCreator
 						bounds.getHeight());
 			}
 			land = ImageHelper.scaleByWidth(land, (int)bounds.getWidth());
+			// The library I'm using to scale images and make them look nice has a bug where the width or height might be one pixel off, although rarely. So here I'm making sure it is correct.
+			if (land.getHeight() != (int)bounds.getHeight())
+			{
+				land = ImageHelper.scaleFastByHeightAndWidth(land, (int)bounds.getWidth(), (int)bounds.getHeight());
+			}
 			ocean = ImageHelper.scaleByWidth(ocean, (int)bounds.getWidth());
+			if (ocean.getHeight() != (int)bounds.getHeight())
+			{
+				ocean = ImageHelper.scaleFastByHeightAndWidth(ocean, (int)bounds.getWidth(), (int)bounds.getHeight());
+			}
 		}
 		
 		double sizeMultiplyer = (bounds.getWidth() / baseResolution);
