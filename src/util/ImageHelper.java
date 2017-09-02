@@ -1016,10 +1016,18 @@ public class ImageHelper
 		return result;
 	}
 	
-	public static BufferedImage matchHistogram(BufferedImage target, BufferedImage source)
+	/**
+	 * Do histogram matching on an image.
+	 * @param target The image to do histogram matching on.
+	 * @param source The source of histogram information.
+	 * @param resultType BufferedImage type of the result.
+	 */
+	public static BufferedImage matchHistogram(BufferedImage target, BufferedImage source, int resultType)
 	{
 		HistogramEqualizer targetEqualizer = new HistogramEqualizer(target);
 		HistogramEqualizer sourceEqualizer = new HistogramEqualizer(source);
+		sourceEqualizer.imageType = resultType;
+		
 		sourceEqualizer.createInverse();
 						
 		// Equalize the target.
@@ -1029,6 +1037,12 @@ public class ImageHelper
 		BufferedImage outImage = sourceEqualizer.inverseEqualize(targetEqualized);
 		
 		return outImage;
+		
+	}
+	
+	public static BufferedImage matchHistogram(BufferedImage target, BufferedImage source)
+	{
+		return matchHistogram(target, source, target.getType());
 	}
 	
 	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how)
