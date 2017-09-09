@@ -2,9 +2,12 @@ package nortantis.nlp;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
+import nortantis.NotEnoughNamesException;
 import util.ComparableList;
 import util.ListCounterMap;
 import util.Range;
@@ -19,6 +22,7 @@ public class CharacterNGram
 	int n;
 	Random r;
 	ListCounterMap<Character> lcMap;
+	Set<String> namesFromCorpora;
 	
 	final char startToken = 0;
 	final char endToken = 4; 
@@ -62,14 +66,35 @@ public class CharacterNGram
 					lastChars.add(phrase.charAt(j));
 			}
 			lcMap.increamentCount(lastChars, endToken);
-			
 		}
+		
+		namesFromCorpora = new HashSet<>(phrases);
 	}
 	
-	public String generateName()
+	public String generateNameNotCorpora() throws NotEnoughNamesException
+	{
+		final int maxRetries = 20;
+		for (@SuppressWarnings("unused") int retry : new Range(maxRetries))
+		{
+			String name = generateName();
+			if (name.length() < 2)
+			{
+				continue;
+			}
+			if (!namesFromCorpora.contains(name))
+			{
+				// This name never appeared in the corpora.
+				return name;
+			}
+		}
+		
+		throw new NotEnoughNamesException();
+	}
+	
+	private String generateName()
 	{
 		if (lcMap.size() == 0)
-			throw new IllegalStateException("At least one book must be selected to draw text.");
+			throw new IllegalStateException("At least one book must be selected to generate text.");
 		List<Character> lastChars = new ComparableList<>();
 		for (@SuppressWarnings("unused") int i : new Range(n - 1))
 		{

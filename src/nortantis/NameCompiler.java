@@ -120,6 +120,10 @@ public class NameCompiler
 	{
 		if (counter.sample(r).equals("adjectives"))
 		{
+			if (nounAdjectivePairs.size() == 0)
+			{
+				return "";
+			}
 			Pair<String> pair = nounAdjectivePairs.get(r.nextInt(nounAdjectivePairs.size()));
 			double d = r.nextDouble();
 			String result;
@@ -142,6 +146,10 @@ public class NameCompiler
 		}
 		else
 		{
+			if (nounVerbPairs.size() == 0)
+			{
+				return "";
+			}
 			Pair<String> pair = nounVerbPairs.get(r.nextInt(nounVerbPairs.size()));
 			double d = r.nextDouble();
 			String result;

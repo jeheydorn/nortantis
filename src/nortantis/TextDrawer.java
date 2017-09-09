@@ -202,7 +202,15 @@ public class TextDrawer
 		for (Region region : graph.regions)
 		{
 			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
-			String name = generateName("","");
+			String name;
+			try 
+			{
+				name = generateName("","");
+			}
+			catch (NotEnoughNamesException ex)
+			{
+				throw new RuntimeException(ex.getMessage());
+			}
 			drawNameHorizontal(map, g, name, locations, graph, settings.drawBoldBackground,
 					true, TextType.Region);
 		}
@@ -332,7 +340,14 @@ public class TextDrawer
 	{
 		if (type.equals(TextType.Title) || type.equals(TextType.Region))
 		{
-			return generateName("", "");
+			try
+			{
+				return generateName("", "");
+			} 
+			catch (Exception e)
+			{
+				return "name";
+			}
 		}
 		else if (type.equals(TextType.Mountain_range))
 		{
@@ -355,7 +370,7 @@ public class TextDrawer
 		}
 	}
 		
-	private String generateName(String prefix, String suffix)
+	private String generateName(String prefix, String suffix) throws NotEnoughNamesException
 	{
 		return prefix + nameGenerator.generateName() + suffix;
 	}
@@ -385,14 +400,21 @@ public class TextDrawer
 			titlePlate = Helper.argmax(oceanPlateWidths);
 		}
 				
-		if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
-				extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground, 
-				true, TextType.Title));
+		try
+		{	
+			if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
+					extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground, 
+					true, TextType.Title));
+			{
+				// The title didn't fit. Try drawing it without "The Land of".
+				drawNameHorizontal(map, g, generateName("",""),
+						extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground,
+						true, TextType.Title);
+			}
+		}
+		catch (NotEnoughNamesException e)
 		{
-			// The title didn't fit. Try drawing it without "The Land of".
-			drawNameHorizontal(map, g, generateName("",""),
-					extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground,
-					true, TextType.Title);
+			throw new RuntimeException(e.getMessage());
 		}
 
 	}

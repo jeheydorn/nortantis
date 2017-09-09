@@ -53,13 +53,13 @@ public class NameGenerator
 //		Logger.println("Percent of generated names seen in training data (out of 1000 generated names): " + countSeen/10.0);
 	}
 
-	public String generateName()
+	public String generateName() throws NotEnoughNamesException
 	{		
 		String name = null;
 		String longestWord = null;
 		do
 		{
-			name = nGram.generateName();
+			name = nGram.generateNameNotCorpora();
 			longestWord = Collections.max(Arrays.asList(name.split(" ")), new Comparator<String>()
 			{
 				public int compare(String s1, String s2)

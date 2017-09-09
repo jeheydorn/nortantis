@@ -615,7 +615,16 @@ public class EditTextDialog extends JDialog
 	private BufferedImage drawMapWithText()
 	{		
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
-		mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups);
+		try
+		{
+			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+	        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+		
 		return mapWithText;
 	}
 	
