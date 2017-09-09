@@ -29,10 +29,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
+import util.Function0;
 import util.Helper;
 import util.ImageHelper;
 import util.Pair;
@@ -67,6 +69,7 @@ public class TextDrawer
 	private Font mountainRangeFontScaled;
 	private Font otherMountainsFontScaled;
 	private Font riverFontScaled;
+	Set<String> namesGenerated;
 	
 	/**
 	 * 
@@ -83,6 +86,7 @@ public class TextDrawer
 		// the random number generator is used previous to the TextDrawer do not change the text.
 		this.r = new Random(settings.textRandomSeed);
 		this.originalSeed = settings.textRandomSeed;
+		this.namesGenerated = new HashSet<>();
 				
 		List<String> placeNames = new ArrayList<>();
 		List<Pair<String>> nounAdjectivePairs = new ArrayList<>();
@@ -205,7 +209,7 @@ public class TextDrawer
 			String name;
 			try 
 			{
-				name = generateName("","");
+				name = generateName("","", true);
 			}
 			catch (NotEnoughNamesException ex)
 			{
@@ -221,7 +225,7 @@ public class TextDrawer
 			{
 				g.setFont(mountainRangeFontScaled);
 				Set<Point> locations = extractLocationsFromCenters(mountainRange);
-				drawNameRotated(map, g, nameCompiler.compileName() + " Range", locations, true, TextType.Mountain_range);
+				drawNameRotated(map, g, compileName("", " Range", true), locations, true, TextType.Mountain_range);
 			}
 			else
 			{
@@ -231,7 +235,7 @@ public class TextDrawer
 					if (mountainRange.size() == 2)
 					{
 						Point location = findCentroid(extractLocationsFromCenters(mountainRange));
-						MapText text = createMapText(nameCompiler.compileName() + " Twin Peaks", location, 0.0, TextType.Other_mountains);
+						MapText text = createMapText(compileName("", " Twin Peaks", true), location, 0.0, TextType.Other_mountains);
 						if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text))
 						{
 							mapTexts.add(text);
@@ -239,7 +243,7 @@ public class TextDrawer
 					}
 					else
 					{
-						drawNameRotated(map, g, nameCompiler.compileName() + " Mountains", 
+						drawNameRotated(map, g, compileName("", " Mountains", true), 
 								extractLocationsFromCenters(mountainRange),
 								mountainGroupYOffset * settings.resolution, true, TextType.Other_mountains);
 					}
@@ -247,7 +251,7 @@ public class TextDrawer
 				else
 				{
 					Point location = findCentroid(extractLocationsFromCenters(mountainRange));
-					MapText text = createMapText(nameCompiler.compileName() + " Peak", location, 0.0, TextType.Other_mountains);
+					MapText text = createMapText(compileName("", " Peak", true), location, 0.0, TextType.Other_mountains);
 					if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text))
 					{
 						mapTexts.add(text);
@@ -263,7 +267,7 @@ public class TextDrawer
 			if (river.size() >= riverMinLength)
 			{
 				Set<Point> locations = extractLocationsFromCorners(river);
-				drawNameRotated(map, g, nameCompiler.compileName() + " River", locations,
+				drawNameRotated(map, g, compileName("", " River", true), locations,
 						riverNameRiseHeight * settings.resolution, true, TextType.River);
 			}
 			
@@ -277,7 +281,7 @@ public class TextDrawer
 	 * @param graph
 	 * @param g
 	 */
-	public void drawUserModifiedText(BufferedImage map, GraphImpl graph)
+	public synchronized void drawUserModifiedText(BufferedImage map, GraphImpl graph)
 	{
 		Graphics2D g = map.createGraphics();
 
@@ -342,7 +346,7 @@ public class TextDrawer
 		{
 			try
 			{
-				return generateName("", "");
+				return generateName("", "", false);
 			} 
 			catch (Exception e)
 			{
@@ -352,17 +356,17 @@ public class TextDrawer
 		else if (type.equals(TextType.Mountain_range))
 		{
 			nameCompiler.setSeed(System.currentTimeMillis());
-			return nameCompiler.compileName() + " Range";
+			return compileName("", " Range", false);
 		}
 		else if (type.equals(TextType.Other_mountains))
 		{
 			nameCompiler.setSeed(System.currentTimeMillis());
-			return nameCompiler.compileName() + " Mountains";
+			return compileName("", " Mountains", false);
 		}
 		else if (type.equals(TextType.River))
 		{
 			nameCompiler.setSeed(System.currentTimeMillis());
-			return nameCompiler.compileName() + " River";
+			return compileName("", " River", false);
 		}
 		else
 		{
@@ -370,9 +374,38 @@ public class TextDrawer
 		}
 	}
 		
-	private String generateName(String prefix, String suffix) throws NotEnoughNamesException
+	private String generateName(String prefix, String suffix, boolean requireUnique)
 	{
-		return prefix + nameGenerator.generateName() + suffix;
+		Function0<String> nameCreator = () -> nameGenerator.generateName();
+		return innerCreateUniqueName(prefix, suffix, requireUnique, nameCreator);
+	}
+	
+	private String compileName(String prefix, String suffix, boolean requireUnique)
+	{
+		Function0<String> nameCreator = () -> nameCompiler.compileName();
+		return innerCreateUniqueName(prefix, suffix, requireUnique, nameCreator);
+	}
+	
+	private String innerCreateUniqueName(String prefix, String suffix, boolean requireUnique, Function0<String> nameCreator)
+	{
+		final int maxRetries = 20;
+		
+		if (!requireUnique)
+		{
+			return 	prefix + nameCreator.apply() + suffix;
+		}
+		
+		for (@SuppressWarnings("unused") int retry : new Range(maxRetries))
+		{
+			String name = prefix + nameCreator.apply() + suffix;
+			if (!namesGenerated.contains(name))
+			{
+				namesGenerated.add(name);
+				return name;
+			}
+		}
+		throw new RuntimeException("Unable to create enough unique names. You can select more books, or shrink the world size, or try a different seed.");
+		
 	}
 	
 	private void addTitle(BufferedImage map, GraphImpl graph, Graphics2D g)
@@ -402,12 +435,12 @@ public class TextDrawer
 				
 		try
 		{	
-			if (!drawNameHorizontal(map, g, generateName("The Land of ",""),
+			if (!drawNameHorizontal(map, g, generateName("The Land of ","", true),
 					extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground, 
 					true, TextType.Title));
 			{
 				// The title didn't fit. Try drawing it without "The Land of".
-				drawNameHorizontal(map, g, generateName("",""),
+				drawNameHorizontal(map, g, generateName("","", true),
 						extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground,
 						true, TextType.Title);
 			}
