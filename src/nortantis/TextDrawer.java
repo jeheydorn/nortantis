@@ -444,7 +444,7 @@ public class TextDrawer
 		}
 		else if (type.equals(TextType.Mountain_range))
 		{
-			double probabilityOfCompiledName = 0.5;
+			double probabilityOfCompiledName = 0.7;
 			if (r.nextDouble() < probabilityOfCompiledName)
 			{
 				return compileName("%s Range", requireUnique);
