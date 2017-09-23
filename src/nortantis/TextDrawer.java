@@ -427,8 +427,6 @@ public class TextDrawer
 			if (r.nextDouble() < probabilityOfPersonName)
 			{
 				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
-						new Tuple2<>(0.2, "%s's Land"),
-						new Tuple2<>(0.2, "%s's Territory"),
 						new Tuple2<>(0.2, "Kingdom of %s"),
 						new Tuple2<>(0.04, "Empire of %s")));
 				return generatePersonName(format, requireUnique);	
@@ -534,7 +532,6 @@ public class TextDrawer
 			case Large:
 				format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
 						new Tuple2<>(0.1, "%s Wash"),
-						new Tuple2<>(0.1, "River of the %s"),
 						new Tuple2<>(0.8, "%s River")));
 				break;
 			case Small:
