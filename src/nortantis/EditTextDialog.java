@@ -45,7 +45,6 @@ public class EditTextDialog extends JDialog
 	private MapParts mapParts;
 	private MapText lastSelected;
 	private double zoom;
-	private double initialResolution;
 	JScrollPane scrollPane;
 	private JComboBox<ToolType> toolComboBox;
 	JComboBox<TextType>textTypeComboBox;
@@ -62,7 +61,6 @@ public class EditTextDialog extends JDialog
 	{
 		final EditTextDialog thisDialog = this;
 		this.settings = settings;
-		this.initialResolution = settings.resolution;
 		final BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.png");
 		setBounds(100, 100, 935, 584);
 		
@@ -543,7 +541,7 @@ public class EditTextDialog extends JDialog
 	private void createAndShowMap()
 	{
 		// Change a few settings to make map creation faster.
-		settings.resolution = initialResolution / zoom;
+		settings.resolution = 1.0 / zoom;
 		settings.landBlur = 0;
 		settings.oceanEffects = 0;
 		settings.frayedBorder = false;

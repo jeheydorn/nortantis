@@ -41,16 +41,6 @@ public class NameGenerator
 		}
 		
 		nGram.addData(placeNames);
-
-		// Test to see how much the generator gives names in the training data.
-//		int countSeen = 0;
-//		for (@SuppressWarnings("unused") int i : new Range(1000))
-//		{
-//			String name = nGram.generateName();
-//			if (placeNames.contains(name))
-//				countSeen++;
-//		}
-//		Logger.println("Percent of generated names seen in training data (out of 1000 generated names): " + countSeen/10.0);
 	}
 
 	public String generateName() throws NotEnoughNamesException
@@ -70,12 +60,12 @@ public class NameGenerator
 		}
 		while (longestWord.length() > averageWordLength * maxWordLengthComparedToAverage);
 		// Capitalize first letter of generated names, including for multi-word names.
-		name = capitalizeAllFirstLetter(name);
+		name = capitalizeAllFirstLetters(name);
 	
 		return name;
 	}
 	
-	private String capitalizeAllFirstLetter(String str)
+	private String capitalizeAllFirstLetters(String str)
 	{
 		char[] chars = str.toCharArray();
 		for (int i : new Range(0, chars.length))
