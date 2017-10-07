@@ -178,7 +178,7 @@ public class TextDrawer
 		} 
 		catch (IOException e)
 		{
-			throw new RuntimeException("Unable to read names from the file" + filename, e);
+			throw new RuntimeException("Unable to read names from the file " + filename, e);
 		}
 		
 		return result;
