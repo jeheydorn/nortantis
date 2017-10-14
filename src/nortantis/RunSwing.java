@@ -29,6 +29,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
@@ -105,7 +106,7 @@ public class RunSwing
 	MapSettings lastSettingsLoadedOrSaved;
 	String frameTitleBase = "Nortantis Fantasy Map Generator";
 	JCheckBox frayedBorderCheckbox;
-	JPanel frayedBorderColorDisplay;
+	JPanel grungeColorDisplay;
 	JSlider frayedBorderBlurSlider;
 	private JTextField backgroundSeedTextField;
 	private JRadioButton rdbtnGeneratedFromTexture;
@@ -154,6 +155,9 @@ public class RunSwing
 	private JButton btnNewBackgroundSeed;
 	private JButton btnBrowseOceanBackground;
 	private ItemListener colorizeCheckboxListener;
+	private JComboBox<String> borderTypeComboBox;
+	private JSlider borderWidthSlider;
+	private JCheckBox drawBordersCheckbox;
 
 	
 	public static boolean isRunning()
@@ -436,7 +440,7 @@ public class RunSwing
 		randomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 		
 		JLabel lblRandomSeed = new JLabel("Random seed:");
-		lblRandomSeed.setToolTipText("The random seed for the terrain and frayed border.");
+		lblRandomSeed.setToolTipText("The random seed for the terrain and frayed edges.");
 		lblRandomSeed.setBounds(12, 12, 122, 15);
 		terrainPanel.add(lblRandomSeed);
 				
@@ -795,9 +799,9 @@ public class RunSwing
 		tabbedPane.addTab("Regions", null, regionsPanel, null);
 		regionsPanel.setLayout(null);
 		
-		drawRegionsCheckBox = new JCheckBox("Draw Regions");
+		drawRegionsCheckBox = new JCheckBox("Draw regions");
 		drawRegionsCheckBox.setToolTipText("When checked, political region borders and background colors will be drawn. This will only work with generated background image.");
-		drawRegionsCheckBox.setBounds(8, 0, 129, 23);
+		drawRegionsCheckBox.setBounds(8, 8, 129, 23);
 		drawRegionsCheckBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -856,13 +860,13 @@ public class RunSwing
 		
 		JLabel regionsRandomSeedLabel = new JLabel("Random seed:");
 		regionsRandomSeedLabel.setToolTipText("The random seed for region colors.");
-		regionsRandomSeedLabel.setBounds(12, 36, 122, 15);
+		regionsRandomSeedLabel.setBounds(12, 42, 122, 15);
 		regionsPanel.add(regionsRandomSeedLabel);
 		
 		regionsSeedTextField = new JTextField();
 		regionsSeedTextField.setText("844645077");
 		regionsSeedTextField.setColumns(10);
-		regionsSeedTextField.setBounds(131, 34, 141, 25);
+		regionsSeedTextField.setBounds(131, 42, 141, 25);
 		regionsPanel.add(regionsSeedTextField);
 		
 		newRegionSeedButton = new JButton("New Seed");
@@ -872,7 +876,7 @@ public class RunSwing
 			}
 		});
 		newRegionSeedButton.setToolTipText("Generate a new random seed for the terrain and text.");
-		newRegionSeedButton.setBounds(284, 34, 105, 25);
+		newRegionSeedButton.setBounds(284, 42, 105, 25);
 		regionsPanel.add(newRegionSeedButton);
 		
 		final JPanel effectsPanel = new JPanel();
@@ -982,30 +986,30 @@ public class RunSwing
 		button_2.setBounds(725, 149, 87, 25);
 		effectsPanel.add(button_2);
 		
-		frayedBorderCheckbox = new JCheckBox("Frayed border");
+		frayedBorderCheckbox = new JCheckBox("Frayed edges");
 		frayedBorderCheckbox.setBounds(461, 194, 134, 23);
 		effectsPanel.add(frayedBorderCheckbox);
 		
-		JLabel frayedBorderColorLabel = new JLabel("Border/grunge color:");
-		frayedBorderColorLabel.setToolTipText("Frayed border and grunge will be this color");
-		frayedBorderColorLabel.setBounds(461, 221, 152, 23);
-		effectsPanel.add(frayedBorderColorLabel);
+		JLabel grungeColorLabel = new JLabel("Edge/Grunge color:");
+		grungeColorLabel.setToolTipText("Frayed edges and grunge will be this color");
+		grungeColorLabel.setBounds(461, 221, 152, 23);
+		effectsPanel.add(grungeColorLabel);
 		
-		frayedBorderColorDisplay = new JPanel();
-		frayedBorderColorDisplay.setBounds(631, 221, 82, 23);
-		effectsPanel.add(frayedBorderColorDisplay);
+		grungeColorDisplay = new JPanel();
+		grungeColorDisplay.setBounds(631, 221, 82, 23);
+		effectsPanel.add(grungeColorDisplay);
 		
 		final JButton frayedBorderChooseButton= new JButton("Choose");
 		frayedBorderChooseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				showColorPicker(effectsPanel, frayedBorderColorDisplay, "Frayed border color");
+				showColorPicker(effectsPanel, grungeColorDisplay, "Frayed edge color");
 			}
 		});
 		frayedBorderChooseButton.setBounds(725, 221, 87, 25);
 		effectsPanel.add(frayedBorderChooseButton);
 		
-		JLabel frayedBorderBlurLevelLabel = new JLabel("Frayed border blur:");
+		JLabel frayedBorderBlurLevelLabel = new JLabel("Frayed edge blur:");
 		frayedBorderBlurLevelLabel.setToolTipText("The width of color drawn around frayed edges");
 		frayedBorderBlurLevelLabel.setBounds(461, 267, 152, 15);
 		effectsPanel.add(frayedBorderBlurLevelLabel);
@@ -1047,7 +1051,52 @@ public class RunSwing
 		grungeSlider.setMajorTickSpacing(500);
 		grungeSlider.setBounds(131, 249, 245, 79);
 		effectsPanel.add(grungeSlider);
+
+		final JPanel borderPanel = new JPanel();
+		tabbedPane.addTab("Border", borderPanel);
+		borderPanel.setLayout(null);
 		
+		drawBordersCheckbox = new JCheckBox("Draw borders");
+		drawBordersCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
+		drawBordersCheckbox.setBounds(8, 8, 129, 23);
+		borderPanel.add(drawBordersCheckbox);
+		drawBordersCheckbox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				borderWidthSlider.setEnabled(drawBordersCheckbox.isSelected());
+				borderTypeComboBox.setEnabled(drawBordersCheckbox.isSelected());
+			}
+		});
+
+		
+		JLabel lblBorderType = new JLabel("Border type:");
+		lblBorderType.setToolTipText("The set of images to draw for the border");
+		lblBorderType.setBounds(8, 70, 109, 15);
+		borderPanel.add(lblBorderType);
+		
+		borderTypeComboBox = new JComboBox<String>();
+		borderTypeComboBox.setBounds(133, 70, 236, 24);
+		borderPanel.add(borderTypeComboBox);
+		
+		borderWidthSlider = new JSlider();
+		borderWidthSlider.setToolTipText("Width of the border in pixels, scaled if resolution is scaled");
+		borderWidthSlider.setValue(100);
+		borderWidthSlider.setSnapToTicks(false);
+		borderWidthSlider.setPaintTicks(true);
+		borderWidthSlider.setPaintLabels(true);
+		borderWidthSlider.setMinorTickSpacing(50);
+		borderWidthSlider.setMaximum(512);
+		borderWidthSlider.setMajorTickSpacing(100);
+		borderWidthSlider.setBounds(131, 174, 245, 79);
+		borderPanel.add(borderWidthSlider);
+		
+		JLabel lblBorderWidth = new JLabel("Border width:");
+		lblBorderWidth.setToolTipText("The size of the world.");
+		lblBorderWidth.setBounds(12, 188, 105, 15);
+		borderPanel.add(lblBorderWidth);
+
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
 		textPanel.setLayout(null);
@@ -1834,7 +1883,7 @@ public class RunSwing
 		frayedBorderCheckbox.setSelected(!settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or disabled.
 		frayedBorderCheckbox.doClick();
-		frayedBorderColorDisplay.setBackground(settings.frayedBorderColor);
+		grungeColorDisplay.setBackground(settings.frayedBorderColor);
 		frayedBorderBlurSlider.setValue(settings.frayedBorderBlurLevel);
 		grungeSlider.setValue(settings.grungeWidth);
 		
@@ -1904,6 +1953,22 @@ public class RunSwing
 		chckbxDrawBoldBackground.setSelected(!settings.drawBoldBackground);
 		chckbxDrawBoldBackground.doClick();
 		
+		// Borders
+		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
+		for (String borderType : borderTypes)
+		{
+			borderTypeComboBox.addItem(borderType);
+		}
+		if (!settings.borderType.isEmpty())
+		{
+			if (!borderTypes.contains(settings.borderType))
+			{
+				borderTypeComboBox.addItem(settings.borderType);
+			}
+			borderTypeComboBox.setSelectedItem(settings.borderType);
+		}
+		borderWidthSlider.setValue(settings.borderWidth);
+		
 		edits = settings.edits;
 		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
 		
@@ -1952,7 +2017,7 @@ public class RunSwing
 		settings.riverColor = riverColorDisplay.getBackground();
 		settings.drawText = drawTextCheckBox.isSelected();
 		settings.frayedBorder = frayedBorderCheckbox.isSelected();
-		settings.frayedBorderColor = frayedBorderColorDisplay.getBackground();
+		settings.frayedBorderColor = grungeColorDisplay.getBackground();
 		settings.frayedBorderBlurLevel = frayedBorderBlurSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
 		
@@ -1996,6 +2061,9 @@ public class RunSwing
 		settings.textColor = textColorDisplay.getBackground();
 		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
 		settings.drawBoldBackground = chckbxDrawBoldBackground.isSelected();
+		
+		settings.borderType = (String)borderTypeComboBox.getSelectedItem();
+		settings.borderWidth = borderWidthSlider.getValue();
 		
 		settings.edits = edits;
 		return settings;

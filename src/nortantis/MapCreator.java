@@ -30,6 +30,8 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -492,6 +494,18 @@ public class MapCreator
 
 	}
 	
+	private BackgroundImages createBackgroundImages()
+	{
+		BackgroundImages result = new BackgroundImages();
+		
+		return result;
+	}
+	
+	private class BackgroundImages
+	{
+		
+	}
+	
 	/**
 	 * Makes the middle area of a gray scale image darker following a Gauisian blur drop off.
 	 */
@@ -642,7 +656,12 @@ public class MapCreator
 		// Draw rivers thin.
 		graph.drawRivers(g, sizeMultiplyer/2.0);
 	}
-		
+	
+	public static Set<String> getAvailableBorderTypes()
+	{
+		File[] directories = new File(Paths.get("assets", "borders").toString()).listFiles(File::isDirectory);
+		return new TreeSet<String>(Arrays.stream(directories).map(file -> file.getName()).collect(Collectors.toList()));
+	}
 
 	public static void main(String[] args) throws IOException
 	{

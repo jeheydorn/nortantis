@@ -84,6 +84,8 @@ public class MapSettings implements Serializable
 	boolean drawBoldBackground;
 	boolean drawRegionColors;
 	long regionsRandomSeed;
+	String borderType;
+	int borderWidth;
 	
 	public MapSettings()
 	{
@@ -144,6 +146,9 @@ public class MapSettings implements Serializable
 		result.setProperty("boldBackgroundColor", colorToString(boldBackgroundColor));
 		result.setProperty("drawBoldBackground", drawBoldBackground + "");
 		result.setProperty("textColor", colorToString(textColor));
+		
+		result.setProperty("borderType", borderType);
+		result.setProperty("borderWidth", borderWidth + "");
 		
 		// User edits.
 		result.setProperty("editedText", editedTextToString());
@@ -543,6 +548,28 @@ public class MapSettings implements Serializable
 			public Color apply()
 			{
 				return parseColor(props.getProperty("textColor"));
+			}
+		});
+		borderType = getProperty("borderType", new Function0<String>()
+		{
+			public String apply()
+			{
+				String result = props.getProperty("borderType");
+				if (result == null)
+					return "";
+				return result;
+			}
+		});
+		borderWidth = getProperty("borderWidth", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				String value = props.getProperty("borderWidth");
+				if (value == null)
+				{
+					return 0;
+				}
+				return Integer.parseInt(value);
 			}
 		});
 		
