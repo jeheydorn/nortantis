@@ -55,6 +55,7 @@ public class MapSettings implements Serializable
 	 */
 	boolean generateBackground;
 	boolean generateBackgroundFromTexture;
+	boolean transparentBackground;
 	boolean colorizeOcean; // For backgrounds generated from a texture.
 	boolean colorizeLand; // For backgrounds generated from a texture.
 	String backgroundTextureImage;
@@ -84,6 +85,7 @@ public class MapSettings implements Serializable
 	boolean drawBoldBackground;
 	boolean drawRegionColors;
 	long regionsRandomSeed;
+	boolean drawBorder;
 	String borderType;
 	int borderWidth;
 	
@@ -117,6 +119,7 @@ public class MapSettings implements Serializable
 		result.setProperty("generateBackground", generateBackground + "");
 		result.setProperty("backgroundTextureImage", backgroundTextureImage);
 		result.setProperty("generateBackgroundFromTexture", generateBackgroundFromTexture + "");
+		result.setProperty("transparentBackground", transparentBackground + "");
 		result.setProperty("colorizeOcean", colorizeOcean + "");
 		result.setProperty("colorizeLand", colorizeLand + "");
 		result.setProperty("oceanColor", colorToString(oceanColor));
@@ -147,6 +150,7 @@ public class MapSettings implements Serializable
 		result.setProperty("drawBoldBackground", drawBoldBackground + "");
 		result.setProperty("textColor", colorToString(textColor));
 		
+		result.setProperty("drawBorder", drawBorder + "");
 		result.setProperty("borderType", borderType);
 		result.setProperty("borderWidth", borderWidth + "");
 		
@@ -329,6 +333,18 @@ public class MapSettings implements Serializable
 			public Boolean apply()
 			{
 				String propString = props.getProperty("generateBackgroundFromTexture");
+				if (propString == null)
+				{
+					return false;
+				}
+				return parseBoolean(propString);
+			}
+		});
+		transparentBackground = getProperty("transparentBackground", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String propString = props.getProperty("transparentBackground");
 				if (propString == null)
 				{
 					return false;
@@ -548,6 +564,16 @@ public class MapSettings implements Serializable
 			public Color apply()
 			{
 				return parseColor(props.getProperty("textColor"));
+			}
+		});
+		drawBorder = getProperty("drawBorder", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String value = props.getProperty("drawBorder");
+				if (value == null)
+					return false; // default value
+				return  parseBoolean(value);
 			}
 		});
 		borderType = getProperty("borderType", new Function0<String>()

@@ -106,6 +106,10 @@ public class ImageHelper
 		return "unknown";
 	}
 	
+	public static String bufferedImageTypeToString(BufferedImage image)
+	{
+		return bufferedImageTypeToString(image.getType());
+	}
 
 	/**
 	 * Scales the given image, preserving aspect ratio.
@@ -575,6 +579,20 @@ public class ImageHelper
 			}
 		return result;
 	}
+	
+	public static BufferedImage createWhiteTransparentImage(int width, int height)
+	{
+		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		for (int y = 0; y < height; y++)
+			for (int x = 0; x < width; x++)
+			{		
+				int mc = (255 << 24) | 0x00ffffff;
+	            int newColor = Color.white.getRGB() & mc;
+	            
+				result.setRGB(x, y, newColor);
+			}
+		return result;
+	}
 
 	
 	/**
@@ -594,17 +612,18 @@ public class ImageHelper
        	
        	BufferedImage region = extractRotatedRegion(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(),
        			angle);
-       	       	
+       	      	       	
 		Raster maskRaster = mask.getRaster();
 		for (int y = 0; y < region.getHeight(); y++)
 			for (int x = 0; x < region.getWidth(); x++)
 			{
 				int grayLevel = maskRaster.getSample(x, y, 0);
-				Color r = new Color(region.getRGB(x, y));
+				Color r = new Color(region.getRGB(x, y), true);
+				int alphaLevel = Math.min(r.getAlpha(), grayLevel); // Don't clobber the alpha level from the region.
 				// Only change the alpha channel of the region.
-				region.setRGB(x, y, new Color(r.getRed(), r.getGreen(), r.getBlue(), grayLevel).getRGB());
+				region.setRGB(x, y, new Color(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
 			}
-
+		
 		// This pivot must exactly match the one used in extractRotatedRegion above.
 		Point pivot = new Point(xLoc + mask.getWidth()/2, yLoc + mask.getHeight()/2);
 		
@@ -1276,6 +1295,21 @@ public class ImageHelper
 		return result;
 	}
 
+	public static BufferedImage flipHorizontally(BufferedImage image)
+	{
+		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+		Graphics2D g2 = result.createGraphics();
+		g2.drawImage(image, image.getWidth(), 0, -image.getHeight(), image.getHeight(), null);
+		return result;
+	}
+
+	public static BufferedImage flipVertically(BufferedImage image)
+	{
+		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+		Graphics2D g2 = result.createGraphics();
+		g2.drawImage(image, 0, image.getHeight(), image.getWidth(), -image.getHeight(), null);
+		return result;
+	}
 
 	
 }

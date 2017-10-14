@@ -117,7 +117,17 @@ public class HistogramEqualizer
 		
 		int[] result = new int[inverse.length];
 		for (int i : new Range(result.length))
-			result[i] = (int)(float)inverse[i];
+		{
+			if (inverse[i] != null)
+			{
+				result[i] = (int)(float)inverse[i];
+			}
+			else
+			{
+				// Happened when the image had only 1 color level.
+				result[i] = lookupTable[0];
+			}
+		}
 		return result;
 	}
 	

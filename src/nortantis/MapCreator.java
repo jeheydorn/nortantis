@@ -270,13 +270,22 @@ public class MapCreator
 			textDrawer.drawText(graph, map, landBackground, mountainGroups);
 		}
 		landBackground = null;
+		
+		if (settings.drawBorder)
+		{
+			Logger.println("Adding border.");
+			map = addBorderToMap(settings, map, background, sizeMultiplyer);
+		}
 
 		if (settings.frayedBorder)
 		{
-			Logger.println("Adding frayed border.");
-			BufferedImage borderMask = new BufferedImage(graph.getWidth(),
-					graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-			graph.drawBorderWhite(borderMask.createGraphics());
+			Logger.println("Adding frayed edges.");
+			// TODO Add an option for the hard-coded number of polygons below.
+			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.bounds.getWidth(), 
+					background.bounds.getHeight(), 30000, new Random(r.nextLong()), sizeMultiplyer);
+			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
+					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+			frayGraph.drawBorderWhite(borderMask.createGraphics());
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
 			if (blurLevel > 0)
@@ -289,6 +298,11 @@ public class MapCreator
 			}
 			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
 		}
+		else
+		{
+			// Use the random number generator the same whether or not we draw a frayed border.
+			r.nextLong();
+		}
 		
 		if (settings.grungeWidth > 0)
 		{
@@ -297,7 +311,7 @@ public class MapCreator
 			// the background.
 			BufferedImage clouds = FractalBGGenerator.generate(
 					new Random(settings.backgroundRandomSeed + 104567), settings.fractalPower, 
-					(int)background.bounds.getWidth(), (int)background.bounds.getHeight(), 0.75f);
+					(int)map.getWidth(), (int)map.getHeight(), 0.75f);
 			// Whiten the middle of clouds.
 			darkenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);
 			
@@ -312,41 +326,177 @@ public class MapCreator
 		
 		ScaledIconCache.clear();
 		return map;
+	}
+	
+	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background, double sizeMultipler)
+	{
+		BufferedImage mapWithoutBorder = ImageHelper.extractRegion(map, settings.borderWidth, settings.borderWidth, 
+				(int)(background.bounds.getWidth() - settings.borderWidth * 2 * sizeMultipler),
+				(int)(background.bounds.getHeight() - settings.borderWidth * 2 * sizeMultipler));
+		background.borderBackground.getGraphics().drawImage(mapWithoutBorder, settings.borderWidth, settings.borderWidth, null);
+		map = background.borderBackground;
+		
+		Path borderPath = Paths.get("assets", "borders", settings.borderType);
+		BufferedImage upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
+		BufferedImage upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
+		BufferedImage lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
+		BufferedImage lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
+		BufferedImage edge = loadImageWithStringInFileName(borderPath, "_edge.", true);
+		
+		if (upperLeftCorner == null)
+		{
+			if (upperRightCorner != null)
+			{
+				upperLeftCorner = createCornerFromCornerByFlipping(upperRightCorner, CornerType.upperRight, CornerType.upperLeft);
+			}
+			else if (lowerLeftCorner != null)
+			{
+				upperLeftCorner = createCornerFromCornerByFlipping(lowerLeftCorner, CornerType.lowerLeft, CornerType.upperLeft);
+			}
+			else if (lowerRightCorner != null)
+			{
+				upperLeftCorner = createCornerFromCornerByFlipping(lowerRightCorner, CornerType.lowerRight, CornerType.upperLeft);
+			}
+			else
+			{
+				throw new RuntimeException("Couldn't find any corners in " + borderPath);
+			}
+		}
+		
+		if (upperRightCorner == null)
+		{
+			upperRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.upperRight);
+		}
+		if (lowerLeftCorner == null)
+		{
+			lowerLeftCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerLeft);
+		}
+		if (lowerRightCorner == null)
+		{
+			lowerRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
+		}
+		
+		// TODO Draw the border with the images loaded above. 
 
+		return map;
+	}
+	
+	private BufferedImage createCornerFromCornerByFlipping(BufferedImage cornerIn, CornerType inputCornerType, CornerType outputType)
+	{
+		switch (inputCornerType)
+		{
+		case lowerLeft:
+			switch(outputType)
+			{
+			case lowerLeft:
+				return cornerIn;
+			case lowerRight:
+				return ImageHelper.flipVertically(cornerIn);
+			case upperLeft:
+				return ImageHelper.flipHorizontally(cornerIn);
+			case upperRight:
+				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+			}
+			break;
+		case lowerRight:
+			switch(outputType)
+			{
+			case lowerLeft:
+				return ImageHelper.flipVertically(cornerIn);
+			case lowerRight:
+				return cornerIn;
+			case upperLeft:
+				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+			case upperRight:
+				return ImageHelper.flipHorizontally(cornerIn);
+			}
+		case upperLeft:
+			switch(outputType)
+			{
+			case lowerLeft:
+				return ImageHelper.flipHorizontally(cornerIn);
+			case lowerRight:
+				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+			case upperLeft:
+				return cornerIn;
+			case upperRight:
+				return ImageHelper.flipVertically(cornerIn);
+			}
+		case upperRight:
+			switch(outputType)
+			{
+			case lowerLeft:
+				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+			case lowerRight:
+				return ImageHelper.flipHorizontally(cornerIn);
+			case upperLeft:
+				return ImageHelper.flipVertically(cornerIn);
+			case upperRight:
+				return cornerIn;
+			}
+		}
+		
+		throw new IllegalStateException("Unable to flip corner image.");
+	}
+	
+	private enum CornerType
+	{
+		upperLeft,
+		upperRight,
+		lowerLeft,
+		lowerRight
+	}
+	
+	private BufferedImage loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
+	{
+		File[] cornerArray = new File(path.toString()).listFiles(file -> file.getName().contains(inFileName));
+		if (cornerArray.length == 0)
+		{
+			if (throwExceptionIfMissing)
+				throw new RuntimeException("Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+			else
+				return null;
+		}
+		if (cornerArray.length > 1)
+		{
+			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());			
+		}
+		
+		return ImageHelper.read(cornerArray[0].getPath());
 	}
 	
 	private Background createBackgroundImages(MapSettings settings, Dimension maxDimensions)
 	{
-		Background result = new Background(settings, maxDimensions);
-		
-		
+		Background result = new Background(settings, maxDimensions);	
 		return result;
 	}
 	
+	/**
+	 * An assortment of things needed to draw the background.
+	 */
 	private class Background
 	{
-		BufferedImage land = null;
+		BufferedImage land;
 		BufferedImage ocean;
 		DimensionDouble bounds;
+		BufferedImage borderBackground;
 		private boolean backgroundFromFilesNotGenerated;
 		private boolean shouldDrawRegionColors;
 		private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
-		
 		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
 		BufferedImage regionIndexes;
-		
-		private BufferedImage landGeneratedBackground;
 
 		public Background(MapSettings settings, Dimension maxDimensions)
 		{
-			backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
+			backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture && !settings.transparentBackground;
 	        shouldDrawRegionColors = settings.drawRegionColors 
 			&& !backgroundFromFilesNotGenerated 
-			&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+			&& (!settings.generateBackgroundFromTexture || settings.colorizeLand)
+			&& !settings.transparentBackground;
 
-	        landGeneratedBackground = null;
+	        BufferedImage landGeneratedBackground;
 			landColorifyAlgorithm = ColorifyAlgorithm.none;
-			if (settings.generateBackground || settings.generateBackgroundFromTexture)
+			if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
 			{
 				Logger.println("Generating the background image");
 				bounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
@@ -359,7 +509,7 @@ public class MapCreator
 					settings.resolution *= newBounds.width / bounds.width;
 					bounds = newBounds;
 				}	
-							
+											
 				if (settings.generateBackground)
 				{
 					// Fractal generated background images
@@ -371,14 +521,18 @@ public class MapCreator
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm2);
 					
-					// Drawing region colors must be done later because it depends on the graph.
-					if (!shouldDrawRegionColors)
+					if (shouldDrawRegionColors)
+					{
+						// Drawing region colors must be done later because it depends on the graph.
+						land = landGeneratedBackground;
+					}
+					else
 					{
 						land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, landColorifyAlgorithm);
 						landGeneratedBackground = null;
 					}
 				}
-				else
+				else if (settings.generateBackgroundFromTexture)
 				{
 					// Generate the background images from a texture
 					
@@ -414,8 +568,12 @@ public class MapCreator
 						if (settings.colorizeLand)
 						{
 							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;					
-							// Drawing region colors must be done later because it depends on the graph.
-							if (!shouldDrawRegionColors)
+							if (shouldDrawRegionColors)
+							{
+								// Drawing region colors must be done later because it depends on the graph.
+								land = landGeneratedBackground;
+							}
+							else
 							{
 								land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 							}
@@ -432,8 +590,12 @@ public class MapCreator
 						{
 							landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 								new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), (int)bounds.getHeight(), (int)bounds.getWidth());
-							// Drawing region colors must be done later because it depends on the graph.
-							if (!shouldDrawRegionColors)
+							if (shouldDrawRegionColors)
+							{
+								// Drawing region colors must be done later because it depends on the graph.
+								land = landGeneratedBackground;
+							}
+							else
 							{
 								land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 							}
@@ -447,6 +609,14 @@ public class MapCreator
 							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 						}
 					}
+				}
+				else
+				{
+					// Transparent background
+					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+					land = ImageHelper.createWhiteTransparentImage((int)bounds.getWidth(), (int)bounds.getHeight());
+					ocean = land;
+					landGeneratedBackground = land;
 				}
 			}
 			else
@@ -492,21 +662,27 @@ public class MapCreator
 					ocean = ImageHelper.scaleFastByHeightAndWidth(ocean, (int)bounds.getWidth(), (int)bounds.getHeight());
 				}
 			}
+			
+			if (settings.drawBorder)
+			{
+				borderBackground = ImageHelper.deepCopy(ocean);
+			}
 		}
 		
 		public void doSetupThatNeedsGraph(MapSettings settings, GraphImpl graph)
 		{
 			if (shouldDrawRegionColors)
 			{
+				// The image "land" is generated but doesn't yet have colors.
+				
 				assignRandomRegionColors(graph, settings);
 				
-				regionIndexes = new BufferedImage(landGeneratedBackground.getWidth(), landGeneratedBackground.getHeight(), 
+				regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), 
 						BufferedImage.TYPE_BYTE_GRAY);
 				graph.drawRegionIndexes(regionIndexes.createGraphics());
 				
-				land = drawRegionColors(graph, landGeneratedBackground, regionIndexes, landColorifyAlgorithm);
+				land = drawRegionColors(graph, land, regionIndexes, landColorifyAlgorithm);
 			}
-			landGeneratedBackground = null;
 			
 			// Fixes a bug where graph width or height is not exactly the same as some image width and heights due to rounding issues.
 			if (backgroundFromFilesNotGenerated)
@@ -514,6 +690,10 @@ public class MapCreator
 				land = ImageHelper.scaleByWidth(land, graph.getWidth());
 				// Fixes a bug where graph width or height is not exactly the same as some image width and heights due to rounding issues.
 				ocean = ImageHelper.scaleByWidth(ocean, graph.getWidth());
+				if (settings.drawBorder)
+				{
+					borderBackground = ImageHelper.deepCopy(ocean);
+				}
 			}
 		}
 	}

@@ -157,7 +157,8 @@ public class RunSwing
 	private ItemListener colorizeCheckboxListener;
 	private JComboBox<String> borderTypeComboBox;
 	private JSlider borderWidthSlider;
-	private JCheckBox drawBordersCheckbox;
+	private JCheckBox drawBorderCheckbox;
+	private JRadioButton rdbtnTransparent;
 
 	
 	public static boolean isRunning()
@@ -619,13 +620,13 @@ public class RunSwing
 		
 		lblBackgroundRandomSeed = new JLabel("Random seed:");
 		lblBackgroundRandomSeed.setToolTipText("The random seed used to generate the background image.");
-		lblBackgroundRandomSeed.setBounds(12, 184, 122, 15);
+		lblBackgroundRandomSeed.setBounds(12, 194, 122, 15);
 		backgroundPanel.add(lblBackgroundRandomSeed);
 		
 		backgroundSeedTextField = new JTextField();
 		backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
 		backgroundSeedTextField.setColumns(10);
-		backgroundSeedTextField.setBounds(131, 184, 141, 25);
+		backgroundSeedTextField.setBounds(131, 194, 141, 25);
 		backgroundPanel.add(backgroundSeedTextField);
 		
 		btnNewBackgroundSeed = new JButton("New Seed");
@@ -639,12 +640,12 @@ public class RunSwing
 			}
 		});
 		btnNewBackgroundSeed.setToolTipText("Generate a new random seed.");
-		btnNewBackgroundSeed.setBounds(284, 184, 105, 25);
+		btnNewBackgroundSeed.setBounds(284, 194, 105, 25);
 		backgroundPanel.add(btnNewBackgroundSeed);
 		
 		JLabel lblBackgroundImage = new JLabel("Background image:");
-		lblBackgroundImage.setToolTipText("Select whether to generate a new background image images from files.");
-		lblBackgroundImage.setBounds(12, 112, 156, 15);
+		lblBackgroundImage.setToolTipText("Select whether to generate a new background image or use images from files.");
+		lblBackgroundImage.setBounds(12, 97, 156, 15);
 		backgroundPanel.add(lblBackgroundImage);
 		
 		oceanDisplayPanel = new BGColorPreviewPanel();
@@ -690,7 +691,7 @@ public class RunSwing
 		dimensionsComboBox.addItem("4096 x 4096 (square)");
 		dimensionsComboBox.addItem("4096 x 2304 (16 by 9)");
 		dimensionsComboBox.addItem("4096 x 2531 (golden ratio)");
-		dimensionsComboBox.setBounds(131, 223, 258, 28);
+		dimensionsComboBox.setBounds(131, 233, 258, 28);
 		dimensionsComboBox.addActionListener(new ActionListener()
 		{	
 			public void actionPerformed(ActionEvent e)
@@ -711,37 +712,43 @@ public class RunSwing
 		};
 		
 		rdbtnFractal = new JRadioButton("Fractal noise");
-		rdbtnFractal.setBounds(165, 103, 185, 23);
+		rdbtnFractal.setBounds(165, 95, 185, 23);
 		rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnFractal);
 
 		rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
-		rdbtnGeneratedFromTexture.setBounds(165, 125, 211, 23);
+		rdbtnGeneratedFromTexture.setBounds(165, 117, 211, 23);
 		rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnGeneratedFromTexture);
 
 		rdbtnFromFiles = new JRadioButton("From files");
-		rdbtnFromFiles.setBounds(165, 147, 211, 23);
+		rdbtnFromFiles.setBounds(165, 139, 211, 23);
 		rdbtnFromFiles.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnFromFiles);
+		
+		rdbtnTransparent = new JRadioButton("Transparent");
+		rdbtnTransparent.setBounds(165, 161, 211, 23);
+		rdbtnTransparent.addActionListener(backgroundImageButtonGroupListener);
+		//backgroundPanel.add(rdbtnTransparent); Doesn't work yet
 		
 		ButtonGroup backgoundImageButtonGroup = new ButtonGroup();
 		backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
 		backgoundImageButtonGroup.add(rdbtnFractal);
 		backgoundImageButtonGroup.add(rdbtnFromFiles);
+		backgoundImageButtonGroup.add(rdbtnTransparent);
 		
 		lblDimensions = new JLabel("Dimensions:");
 		lblDimensions.setToolTipText("The dimensions of the result before being multiplied by the resolution below.");
-		lblDimensions.setBounds(12, 223, 122, 15);
+		lblDimensions.setBounds(12, 233, 122, 15);
 		backgroundPanel.add(lblDimensions);
 		
 		lblTextureImage = new JLabel("Texture image:");
-		lblTextureImage.setBounds(12, 263, 156, 15);
+		lblTextureImage.setBounds(12, 273, 156, 15);
 		backgroundPanel.add(lblTextureImage);
 		
 		textureImageFilename = new JTextField();
 		textureImageFilename.setColumns(10);
-		textureImageFilename.setBounds(12, 284, 278, 28);
+		textureImageFilename.setBounds(12, 294, 278, 28);
 		textureImageFilename.getDocument().addDocumentListener(new DocumentListener() 
 		{
 			public void changedUpdate(DocumentEvent e) 
@@ -766,7 +773,7 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e) {
 			}
 		});
-		btnsBrowseTextureImage.setBounds(302, 284, 87, 25);
+		btnsBrowseTextureImage.setBounds(302, 294, 87, 25);
 		btnsBrowseTextureImage.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
@@ -786,7 +793,7 @@ public class RunSwing
 		colorizeLandCheckbox.setToolTipText("Whether or not to change the land texture to a custom color");
 		colorizeLandCheckbox.setBounds(705, 315, 129, 23);
 		backgroundPanel.add(colorizeLandCheckbox);
-
+		
 		colorizeCheckboxListener = new ItemListener() 
 		{	
 			@Override
@@ -1056,17 +1063,17 @@ public class RunSwing
 		tabbedPane.addTab("Border", borderPanel);
 		borderPanel.setLayout(null);
 		
-		drawBordersCheckbox = new JCheckBox("Draw borders");
-		drawBordersCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
-		drawBordersCheckbox.setBounds(8, 8, 129, 23);
-		borderPanel.add(drawBordersCheckbox);
-		drawBordersCheckbox.addActionListener(new ActionListener()
+		drawBorderCheckbox = new JCheckBox("Draw border");
+		drawBorderCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
+		drawBorderCheckbox.setBounds(8, 8, 129, 23);
+		borderPanel.add(drawBorderCheckbox);
+		drawBorderCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				borderWidthSlider.setEnabled(drawBordersCheckbox.isSelected());
-				borderTypeComboBox.setEnabled(drawBordersCheckbox.isSelected());
+				borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
+				borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
 			}
 		});
 
@@ -1598,7 +1605,7 @@ public class RunSwing
 					new Random(Integer.parseInt(backgroundSeedTextField.getText())), fractalPower, (int)bounds.getWidth(),
 					(int)bounds.getHeight(), 0.75f);
 		}
-		else
+		else if (rdbtnGeneratedFromTexture.isSelected())
 		{
 			BufferedImage texture;
 			try
@@ -1661,7 +1668,12 @@ public class RunSwing
 				landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
 				oceanBackground = landBackground = new BufferedImage((int)bounds.getWidth(), (int)bounds.getHeight(), BufferedImage.TYPE_INT_ARGB);
 			}
-			
+		}
+		else
+		{
+			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+			oceanBackground = landBackground = ImageHelper.createWhiteTransparentImage((int)bounds.getWidth(), (int)bounds.getHeight());
 		}
 
 		oceanDisplayPanel.setImage(ImageHelper.extractRegion(oceanBackground, 0, 0, oceanBackground.getWidth()/2, 
@@ -1897,7 +1909,8 @@ public class RunSwing
 		colorizeLandCheckbox.addItemListener(colorizeCheckboxListener);
 		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
 		rdbtnFractal.setSelected(settings.generateBackground);
-		rdbtnFromFiles.setSelected(!settings.generateBackground && !settings.generateBackgroundFromTexture);
+		rdbtnFromFiles.setSelected(!settings.generateBackground && !settings.generateBackgroundFromTexture && !settings.transparentBackground);
+		rdbtnTransparent.setSelected(settings.transparentBackground);
 		backgroundImageButtonGroupListener.actionPerformed(null);
 		textureImageFilename.setText(settings.backgroundTextureImage);
 		landBackgroundImageFilename.setText(settings.landBackgroundImage);
@@ -1968,6 +1981,8 @@ public class RunSwing
 			borderTypeComboBox.setSelectedItem(settings.borderType);
 		}
 		borderWidthSlider.setValue(settings.borderWidth);
+		drawBorderCheckbox.setSelected(!settings.drawBorder);
+		drawBorderCheckbox.doClick();
 		
 		edits = settings.edits;
 		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
@@ -2024,6 +2039,7 @@ public class RunSwing
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();
 		settings.generateBackgroundFromTexture = rdbtnGeneratedFromTexture.isSelected();
+		settings.transparentBackground = rdbtnTransparent.isSelected();
 		settings.colorizeOcean = colorizeOceanCheckbox.isSelected();
 		settings.colorizeLand = colorizeLandCheckbox.isSelected();
 		settings.backgroundTextureImage = textureImageFilename.getText();
@@ -2062,6 +2078,7 @@ public class RunSwing
 		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
 		settings.drawBoldBackground = chckbxDrawBoldBackground.isSelected();
 		
+		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderType = (String)borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
 		

@@ -119,15 +119,33 @@ public class GraphImpl extends VoronoiGraph
         this. borderPlateContinentalProbability = borderPlateContinentalProbability;
         TectonicPlate.resetIds();
         initVoronoiGraph(v, numLloydRelaxations);
-        OCEAN = ColorData.OCEAN.color;
-        LAKE = ColorData.LAKE.color;
-        BEACH = ColorData.BEACH.color;
-        RIVER = new Color(0x225588);
+        setupColors();
         createPoliticalRegions();
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
         noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
      }
+ 
+    /**
+     * This constructor doens't create tectonic plates or elevation.
+      */
+    public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer) 
+    {
+        super(r, sizeMultiplyer);
+        initVoronoiGraph(v, numLloydRelaxations);
+        setupColors();
+        noisyEdges = new NoisyEdges(scaleMultiplyer);  
+        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
+     }
     
+    private void setupColors()
+    {
+        OCEAN = ColorData.OCEAN.color;
+        LAKE = ColorData.LAKE.color;
+        BEACH = ColorData.BEACH.color;
+        RIVER = new Color(0x225588);
+   	
+    }
+
     @SuppressWarnings("unused")
 	private void testPoliticalRegions()
     {

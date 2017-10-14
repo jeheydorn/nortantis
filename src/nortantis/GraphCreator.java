@@ -25,7 +25,7 @@ public class GraphCreator
         // Higher values will make larger plates.
         final int tectonicPlateIterationMultiplier = 30;
         
-        //make the intial underlying voronoi structure
+        //make the initial underlying voronoi structure
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
 
          //assemble the voronoi structure into a usable graph object representing a map
@@ -58,6 +58,20 @@ public class GraphCreator
 //        // Save the image to a file.
 //        File outputfile = new File("biomes.png");
 //        ImageIO.write(img, "png", outputfile);
+        
+        return graph;
+    }
+    
+    public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer)
+    {
+        // Zero is most random. Higher values make the polygons more uniform shaped.
+        final int numLloydRelaxations = 0;
+ 
+        //make the initial underlying voronoi structure
+        final Voronoi v = new Voronoi(numSites, width, height, r, null);
+
+         //assemble the voronoi structure into a usable graph object representing a map
+        final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, sizeMultiplyer);
         
         return graph;
     }
