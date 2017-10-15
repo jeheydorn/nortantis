@@ -1295,7 +1295,7 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage flipHorizontally(BufferedImage image)
+	public static BufferedImage flipOnXAxis(BufferedImage image)
 	{
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		Graphics2D g2 = result.createGraphics();
@@ -1303,7 +1303,7 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage flipVertically(BufferedImage image)
+	public static BufferedImage flipOnYAxis(BufferedImage image)
 	{
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		Graphics2D g2 = result.createGraphics();

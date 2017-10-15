@@ -274,7 +274,7 @@ public class MapCreator
 		if (settings.drawBorder)
 		{
 			Logger.println("Adding border.");
-			map = addBorderToMap(settings, map, background, sizeMultiplyer);
+			map = addBorderToMap(settings, map, background);
 		}
 
 		if (settings.frayedBorder)
@@ -328,19 +328,48 @@ public class MapCreator
 		return map;
 	}
 	
-	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background, double sizeMultipler)
+	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background)
 	{
-		BufferedImage mapWithoutBorder = ImageHelper.extractRegion(map, settings.borderWidth, settings.borderWidth, 
-				(int)(background.bounds.getWidth() - settings.borderWidth * 2 * sizeMultipler),
-				(int)(background.bounds.getHeight() - settings.borderWidth * 2 * sizeMultipler));
-		background.borderBackground.getGraphics().drawImage(mapWithoutBorder, settings.borderWidth, settings.borderWidth, null);
+		int borderWidthScaled = (int) (settings.borderWidth * settings.resolution);
+		
+		if (borderWidthScaled == 0)
+		{
+			return map;
+		}
+		
+		borderWidthScaled = Math.min(borderWidthScaled, Math.min(
+				(int)background.bounds.getWidth() / 2 - 1,
+				(int)background.bounds.getHeight() / 2 - 1));
+				
+		
+		BufferedImage mapWithoutBorder = ImageHelper.extractRegion(map, borderWidthScaled, borderWidthScaled, 
+				(int)(background.bounds.getWidth() - borderWidthScaled * 2),
+				(int)(background.bounds.getHeight() - borderWidthScaled * 2));
+		Graphics2D g = background.borderBackground.createGraphics();
+		background.borderBackground.getGraphics().drawImage(mapWithoutBorder, borderWidthScaled, borderWidthScaled, null);
 		map = background.borderBackground;
 		
 		Path borderPath = Paths.get("assets", "borders", settings.borderType);
 		BufferedImage upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
+		if (upperLeftCorner != null)
+		{
+			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, borderWidthScaled);
+		}
 		BufferedImage upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
+		if (upperRightCorner != null)
+		{
+			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, borderWidthScaled);
+		}
 		BufferedImage lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
+		if (lowerLeftCorner != null)
+		{
+			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, borderWidthScaled);
+		}
 		BufferedImage lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
+		if (lowerRightCorner != null)
+		{
+			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, borderWidthScaled);
+		}
 		BufferedImage edge = loadImageWithStringInFileName(borderPath, "_edge.", true);
 		
 		if (upperLeftCorner == null)
@@ -376,7 +405,13 @@ public class MapCreator
 			lowerRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
 		}
 		
-		// TODO Draw the border with the images loaded above. 
+		g.drawImage(upperLeftCorner, 0, 0, null);
+		g.drawImage(upperRightCorner, (int)background.bounds.getWidth() - borderWidthScaled, 0, null);
+		g.drawImage(lowerLeftCorner, 0, (int)background.bounds.getHeight() - borderWidthScaled, null);
+		g.drawImage(lowerRightCorner, (int)background.bounds.getWidth() - borderWidthScaled,
+				(int)background.bounds.getHeight() - borderWidthScaled, null);
+		
+		// TODO draw the edges
 
 		return map;
 	}
@@ -391,46 +426,46 @@ public class MapCreator
 			case lowerLeft:
 				return cornerIn;
 			case lowerRight:
-				return ImageHelper.flipVertically(cornerIn);
+				return ImageHelper.flipOnXAxis(cornerIn);
 			case upperLeft:
-				return ImageHelper.flipHorizontally(cornerIn);
+				return ImageHelper.flipOnYAxis(cornerIn);
 			case upperRight:
-				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
 			}
 			break;
 		case lowerRight:
 			switch(outputType)
 			{
 			case lowerLeft:
-				return ImageHelper.flipVertically(cornerIn);
+				return ImageHelper.flipOnXAxis(cornerIn);
 			case lowerRight:
 				return cornerIn;
 			case upperLeft:
-				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
 			case upperRight:
-				return ImageHelper.flipHorizontally(cornerIn);
+				return ImageHelper.flipOnYAxis(cornerIn);
 			}
 		case upperLeft:
 			switch(outputType)
 			{
 			case lowerLeft:
-				return ImageHelper.flipHorizontally(cornerIn);
+				return ImageHelper.flipOnYAxis(cornerIn);
 			case lowerRight:
-				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
 			case upperLeft:
 				return cornerIn;
 			case upperRight:
-				return ImageHelper.flipVertically(cornerIn);
+				return ImageHelper.flipOnXAxis(cornerIn);
 			}
 		case upperRight:
 			switch(outputType)
 			{
 			case lowerLeft:
-				return ImageHelper.flipVertically(ImageHelper.flipVertically(cornerIn));
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
 			case lowerRight:
-				return ImageHelper.flipHorizontally(cornerIn);
+				return ImageHelper.flipOnYAxis(cornerIn);
 			case upperLeft:
-				return ImageHelper.flipVertically(cornerIn);
+				return ImageHelper.flipOnXAxis(cornerIn);
 			case upperRight:
 				return cornerIn;
 			}

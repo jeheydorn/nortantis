@@ -71,6 +71,7 @@ import util.ImageHelper;
 import util.JFontChooser;
 import util.Logger;
 import util.Range;
+import javax.swing.SwingConstants;
 
 public class RunSwing
 {
@@ -1088,19 +1089,20 @@ public class RunSwing
 		borderPanel.add(borderTypeComboBox);
 		
 		borderWidthSlider = new JSlider();
-		borderWidthSlider.setToolTipText("Width of the border in pixels, scaled if resolution is scaled");
+		borderWidthSlider.setToolTipText("");
 		borderWidthSlider.setValue(100);
 		borderWidthSlider.setSnapToTicks(false);
 		borderWidthSlider.setPaintTicks(true);
 		borderWidthSlider.setPaintLabels(true);
 		borderWidthSlider.setMinorTickSpacing(50);
-		borderWidthSlider.setMaximum(512);
-		borderWidthSlider.setMajorTickSpacing(100);
+		borderWidthSlider.setMaximum(700);
+		borderWidthSlider.setMajorTickSpacing(200);
 		borderWidthSlider.setBounds(131, 174, 245, 79);
 		borderPanel.add(borderWidthSlider);
 		
 		JLabel lblBorderWidth = new JLabel("Border width:");
-		lblBorderWidth.setToolTipText("The size of the world.");
+		lblBorderWidth.setVerticalAlignment(SwingConstants.BOTTOM);
+		lblBorderWidth.setToolTipText("Width of the border in pixels, scaled if resolution is scaled");
 		lblBorderWidth.setBounds(12, 188, 105, 15);
 		borderPanel.add(lblBorderWidth);
 
