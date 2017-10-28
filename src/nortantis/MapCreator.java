@@ -350,6 +350,8 @@ public class MapCreator
 		map = background.borderBackground;
 		
 		Path borderPath = Paths.get("assets", "borders", settings.borderType);
+		
+		// Corners
 		BufferedImage upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
 		if (upperLeftCorner != null)
 		{
@@ -411,9 +413,72 @@ public class MapCreator
 		g.drawImage(lowerRightCorner, (int)background.bounds.getWidth() - borderWidthScaled,
 				(int)background.bounds.getHeight() - borderWidthScaled, null);
 		
+		// Edges
+		BufferedImage topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
+		if (topEdge != null)
+		{
+			topEdge = ImageHelper.scaleByHeight(topEdge, borderWidthScaled);
+		}
+		BufferedImage bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
+		if (bottomEdge != null)
+		{
+			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
+		}
+		BufferedImage leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
+		if (leftEdge != null)
+		{
+			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
+		}
+		BufferedImage rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
+		if (rightEdge != null)
+		{
+			rightEdge = ImageHelper.scaleByHeight(rightEdge, borderWidthScaled);
+		}
+		
+		if (topEdge == null)
+		{
+			
+		}
+
+		
 		// TODO draw the edges
 
 		return map;
+	}
+	
+	private BufferedImage createEdgeFromEdge(BufferedImage edgeIn, EdgeType edgeTypeIn, EdgeType outputType)
+	{
+		switch (edgeTypeIn)
+		{
+		case Bottom:
+			switch (outputType)
+			{
+			case Bottom:
+				return edgeIn;
+			case Left:
+				return ImageHelper.rotate(edgeIn, true);
+			case Right:
+				return ImageHelper.rotate(edgeIn, false);
+			case Top:
+				return ImageHelper.flipOnYAxis(edgeIn);
+			}
+		case Left:
+			// TODO
+		case Right:
+			break;
+		case Top:
+			break;
+		}
+		
+		throw new IllegalStateException("Unable to create a border edge from the edges given");
+	}
+	
+	private enum EdgeType
+	{
+		Top,
+		Bottom,
+		Left,
+		Right
 	}
 	
 	private BufferedImage createCornerFromCornerByFlipping(BufferedImage cornerIn, CornerType inputCornerType, CornerType outputType)
