@@ -349,7 +349,13 @@ public class MapCreator
 		background.borderBackground.getGraphics().drawImage(mapWithoutBorder, borderWidthScaled, borderWidthScaled, null);
 		map = background.borderBackground;
 		
-		Path borderPath = Paths.get("assets", "borders", settings.borderType);
+		Path allBordersPath = Paths.get("assets", "borders");
+		Path borderPath = Paths.get(allBordersPath.toString(), settings.borderType);
+		if (!Files.exists(borderPath))
+		{
+			throw new RuntimeException("The selected border type '" + settings.borderType 
+					+ "' does not have a folder for images in " + allBordersPath + ".");
+		}
 		
 		// Corners
 		BufferedImage upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
@@ -372,7 +378,6 @@ public class MapCreator
 		{
 			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, borderWidthScaled);
 		}
-		BufferedImage edge = loadImageWithStringInFileName(borderPath, "_edge.", true);
 		
 		if (upperLeftCorner == null)
 		{
@@ -390,10 +395,9 @@ public class MapCreator
 			}
 			else
 			{
-				throw new RuntimeException("Couldn't find any corners in " + borderPath);
+				throw new RuntimeException("Couldn't find any corner images in " + borderPath);
 			}
 		}
-		
 		if (upperRightCorner == null)
 		{
 			upperRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.upperRight);
@@ -437,15 +441,91 @@ public class MapCreator
 		
 		if (topEdge == null)
 		{
-			
+			if (rightEdge != null)
+			{
+				topEdge = createEdgeFromEdge(rightEdge, EdgeType.Right, EdgeType.Top);
+			}
+			else if (leftEdge != null)
+			{
+				topEdge = createEdgeFromEdge(leftEdge, EdgeType.Left, EdgeType.Top);
+			}
+			else if (bottomEdge != null)
+			{
+				topEdge = createEdgeFromEdge(bottomEdge, EdgeType.Bottom, EdgeType.Top);
+			}
+			else
+			{
+				throw new RuntimeException("Couldn't find any edge images in " + borderPath);
+			}
+		}
+		if (rightEdge == null)
+		{
+			rightEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Right);
+		}
+		if (leftEdge == null)
+		{
+			leftEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Left);
+		}
+		if (bottomEdge == null)
+		{
+			bottomEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Bottom);
 		}
 
+		// Draw the edges
 		
-		// TODO draw the edges
+		// Top and bottom edges
+		for (int i : new Range(2))
+		{
+			BufferedImage edge = i == 0 ? topEdge : bottomEdge;
+			final int y = i == 0 ? 0 : map.getHeight() - borderWidthScaled;
+
+			int end = map.getWidth() - borderWidthScaled;
+			int increment = edge.getWidth();
+			for (int x = borderWidthScaled; x < end; x += increment)
+			{
+				int distanceRemaining = end - x;
+				if (distanceRemaining >= increment)
+				{
+					g.drawImage(edge, x, y, null);
+				}
+				else
+				{
+					// The image is too long/tall to draw in the remaining space.
+					BufferedImage partToDraw = ImageHelper.extractRegion(edge, 0, 0, distanceRemaining, borderWidthScaled);
+					g.drawImage(partToDraw, x, y, null);
+				}
+			}
+		}
+
+		// Left and right edges
+		for (int i : new Range(2))
+		{
+			BufferedImage edge = i == 0 ? leftEdge : rightEdge;
+			final int x = i == 0 ? 0 : map.getWidth() - borderWidthScaled;
+
+			int end = map.getHeight() - borderWidthScaled;
+			int increment = edge.getHeight();
+			for (int y = borderWidthScaled; y < end; y += increment)
+			{
+				int distanceRemaining = end - y;
+				if (distanceRemaining >= increment)
+				{
+					g.drawImage(edge, x, y, null);
+				}
+				else
+				{
+					// The image is too long/tall to draw in the remaining space.
+					BufferedImage partToDraw = ImageHelper.extractRegion(edge, 0, 0, borderWidthScaled, distanceRemaining);
+					g.drawImage(partToDraw, x, y, null);
+				}
+			}
+		}
+
+		g.dispose();
 
 		return map;
 	}
-	
+		
 	private BufferedImage createEdgeFromEdge(BufferedImage edgeIn, EdgeType edgeTypeIn, EdgeType outputType)
 	{
 		switch (edgeTypeIn)
@@ -456,18 +536,48 @@ public class MapCreator
 			case Bottom:
 				return edgeIn;
 			case Left:
-				return ImageHelper.rotate(edgeIn, true);
+				return ImageHelper.rotate90Degrees(edgeIn, true);
 			case Right:
-				return ImageHelper.rotate(edgeIn, false);
+				return ImageHelper.rotate90Degrees(edgeIn, false);
 			case Top:
 				return ImageHelper.flipOnYAxis(edgeIn);
 			}
 		case Left:
-			// TODO
+			switch (outputType)
+			{
+			case Bottom:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			case Left:
+				return edgeIn;
+			case Right:
+				return ImageHelper.flipOnXAxis(edgeIn);
+			case Top:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			}
 		case Right:
-			break;
+			switch (outputType)
+			{
+			case Bottom:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			case Left:
+				return ImageHelper.flipOnXAxis(edgeIn);
+			case Right:
+				return edgeIn;
+			case Top:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			}
 		case Top:
-			break;
+			switch (outputType)
+			{
+			case Bottom:
+				return ImageHelper.flipOnYAxis(edgeIn);
+			case Left:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			case Right:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			case Top:
+				return edgeIn;
+			}
 		}
 		
 		throw new IllegalStateException("Unable to create a border edge from the edges given");

@@ -663,7 +663,7 @@ public class ImageHelper
 	/**
 	 * Creates a rotated version of the input image 90 degrees either clockwise or counter-clockwise.
 =	 */
-	public static BufferedImage rotate(BufferedImage image, boolean isClockwise)
+	public static BufferedImage rotate90Degrees(BufferedImage image, boolean isClockwise)
 	{
 		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
 		Raster inRaster = image.getRaster();
@@ -673,11 +673,11 @@ public class ImageHelper
 			{		
 				if (isClockwise)
 				{
-					result.setRGB(y, x, image.getRGB(x, y));
+					result.setRGB(image.getHeight() - y - 1, image.getWidth() - x - 1, image.getRGB(x, y));					
 				}
 				else
 				{
-					result.setRGB(result.getHeight() - y, result.getWidth() - x, image.getRGB(x, y));					
+					result.setRGB(y, x, image.getRGB(x, y));
 				}
 			}
 		}

@@ -66,7 +66,7 @@ public class TextDrawer
 	private NameGenerator placeNameGenerator;
 	private NameGenerator personNameGenerator;
 	private NameCompiler nameCompiler;
-	Area graphBounds;
+	Area graphBoundsNotIncludingBorder;
 	private double sizeMultiplyer;
 	private Font titleFontScaled;
 	private Font regionFontScaled;
@@ -206,7 +206,8 @@ public class TextDrawer
 		// All text drawn must be done so in order from highest to lowest priority because if I try to draw
 		// text on top of other text, the latter will not be displayed.
 		
-		graphBounds = new Area(new java.awt.Rectangle(0, 0, graph.getWidth(), graph.getHeight()));
+		int borderWidthScaled = (int) (settings.borderWidth * settings.resolution);
+		graphBoundsNotIncludingBorder = new Area(new java.awt.Rectangle(borderWidthScaled, borderWidthScaled, graph.getWidth() - borderWidthScaled * 2, graph.getHeight() - borderWidthScaled * 2));
 
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.textColor);
@@ -612,42 +613,51 @@ public class TextDrawer
 	{
 		g.setFont(titleFontScaled);
 
-		// Find the widest ocean plate.
-		Map<TectonicPlate, Double> oceanPlateWidths = new HashMap<>();
+		List<Tuple2<TectonicPlate, Double>> oceanPlatesAndWidths = new ArrayList<>();
 		for (TectonicPlate p : graph.plates)
 			if (p.type == PlateType.Oceanic)
-				oceanPlateWidths.put(p, findWidth(p.centers));
-
-		Map<TectonicPlate, Double> landPlateWidths = new HashMap<>();
+				oceanPlatesAndWidths.add(new Tuple2<>(p, findWidth(p.centers)));
+		
+		List<Tuple2<TectonicPlate, Double>> landPlatesAndWidths = new ArrayList<>();
 		for (TectonicPlate p : graph.plates)
 			if (p.type == PlateType.Continental)
-				landPlateWidths.put(p, findWidth(p.centers));
+				landPlatesAndWidths.add(new Tuple2<>(p, findWidth(p.centers)));
 		
-		TectonicPlate titlePlate;
-		if (landPlateWidths.size() > 0 && ((double)oceanPlateWidths.size()) / landPlateWidths.size() < thresholdForPuttingTitleOnLand)
+		List<Tuple2<TectonicPlate, Double>> titlePlatesAndWidths;
+		if (landPlatesAndWidths.size() > 0 && ((double)oceanPlatesAndWidths.size()) / landPlatesAndWidths.size() < thresholdForPuttingTitleOnLand)
 		{
-			titlePlate = Helper.argmax(landPlateWidths);
+			titlePlatesAndWidths = landPlatesAndWidths;
 		}
 		else
 		{
-			titlePlate = Helper.argmax(oceanPlateWidths);
+			titlePlatesAndWidths = oceanPlatesAndWidths;
 		}
 				
-		try
-		{	
-			if (!drawNameHorizontal(map, g, generateNameOfType(TextType.Title, TitleType.Decorated, true),
-					extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground, 
-					true, TextType.Title));
-			{
-				// The title didn't fit. Try drawing it with just a name.
-				drawNameHorizontal(map, g, generateNameOfType(TextType.Title, TitleType.NameOnly, true),
-						extractLocationsFromCenters(titlePlate.centers), graph, settings.drawBoldBackground,
-						true, TextType.Title);
-			}
-		}
-		catch (NotEnoughNamesException e)
+		// Try drawing the title in each plate in titlePlatesAndWidths, starting from the widest plate to the narrowest.
+		titlePlatesAndWidths.sort((t1, t2) -> -t1.getSecond().compareTo(t2.getSecond()));
+		for (Tuple2<TectonicPlate, Double> plateAndWidth : titlePlatesAndWidths)
 		{
-			throw new RuntimeException(e.getMessage());
+			try
+			{	
+				if (drawNameHorizontal(map, g, generateNameOfType(TextType.Title, TitleType.Decorated, true),
+						extractLocationsFromCenters(plateAndWidth.getFirst().centers), graph, settings.drawBoldBackground, 
+						true, TextType.Title))
+				{
+					return;
+				}
+				
+				// The title didn't fit. Try drawing it with just a name.
+				if (drawNameHorizontal(map, g, generateNameOfType(TextType.Title, TitleType.NameOnly, true),
+						extractLocationsFromCenters(plateAndWidth.getFirst().centers), graph, settings.drawBoldBackground,
+						true, TextType.Title))
+				{
+					return;
+				}
+			}
+			catch (NotEnoughNamesException e)
+			{
+				throw new RuntimeException(e.getMessage());
+			}
 		}
 
 	}
@@ -1208,7 +1218,7 @@ public class TextDrawer
 				}
 			}
 		}
-		return !graphBounds.contains(bounds.getBounds2D());
+		return !graphBoundsNotIncludingBorder.contains(bounds.getBounds2D());
 	}
 	
 	/**
