@@ -286,12 +286,14 @@ public class MapCreator
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(borderMask.createGraphics());
+			ImageHelper.write(borderMask, "borderMask.png");
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel, true);
+				ImageHelper.write(borderBlur, "borderBlur.png");
 			
 				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, borderBlur, true);
 

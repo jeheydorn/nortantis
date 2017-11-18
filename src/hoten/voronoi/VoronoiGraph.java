@@ -55,7 +55,7 @@ public abstract class VoronoiGraph {
         dipWidth = r.nextDouble() * .5 + .2;
    }
     
-    public void initVoronoiGraph(Voronoi v, int numLloydRelaxations)
+    public void initVoronoiGraph(Voronoi v, int numLloydRelaxations, boolean createElevationRiversAndBiomes)
     {
         bounds = v.get_plotBounds();
          for (int i = 0; i < numLloydRelaxations; i++) {
@@ -78,17 +78,19 @@ public abstract class VoronoiGraph {
         buildGraph(v);
         improveCorners();
 
-        assignCornerElevations();  
-        redistributeElevations(landCorners());
-        assignPolygonElevations();
-        // Joseph note: I changed the order in which this is called.
-        assignOceanCoastAndLand();
-        
-        createRivers(); 
-		assignCornerMoisture();
-        redistributeMoisture(landCorners());
-        assignPolygonMoisture();
-        assignBiomes();
+        if (createElevationRiversAndBiomes)
+        {
+	        assignCornerElevations();  
+	        assignPolygonElevations();
+	        // Joseph note: I changed the order in which this is called.
+	        assignOceanCoastAndLand();
+	        
+	        createRivers(); 
+			assignCornerMoisture();
+	        redistributeMoisture(landCorners());
+	        assignPolygonMoisture();
+	        assignBiomes();
+        }
         // Joseph note: I moved noisy edge building code to GraphImpl because it now depends on the political regions.
     }
     
@@ -755,33 +757,8 @@ public abstract class VoronoiGraph {
         return c;
     }
 
-    protected void assignCornerElevations() {
-        LinkedList<Corner> queue = new LinkedList<>();
-        for (Corner c : corners) {
-            c.water = isWater(c.loc);
-            if (c.border) {
-                c.elevation = 0;
-                queue.add(c);
-            } else {
-                c.elevation = Double.MAX_VALUE;
-            }
-        }
+    protected abstract void assignCornerElevations();
 
-        // Assign each corner's elevation as its distance from water.
-        while (!queue.isEmpty()) {
-            Corner c = queue.pop();
-            for (Corner a : c.adjacent) {
-                double newElevation = 0.01 + c.elevation;
-                if (!c.water && !a.water) {
-                    newElevation += 1;
-                }
-                if (newElevation < a.elevation) {
-                    a.elevation = newElevation;
-                    queue.add(a);
-                }
-            }
-        }
-    }
     double[][] noise;
     double ISLAND_FACTOR = 1.07;  // 1.0 means no small islands; 2.0 leads to a lot
     final int bumps;
@@ -821,58 +798,8 @@ public abstract class VoronoiGraph {
          return !(body && !eye1 && !eye2);*/
     }
 
-    protected void assignOceanCoastAndLand() {
-        LinkedList<Center> queue = new LinkedList<>();
-        final double waterThreshold = .3;
-        for (final Center center : centers) {
-            int numWater = 0;
-            for (final Corner c : center.corners) {
-                if (c.border) {
-                    center.border = center.water = center.ocean = true;
-                    queue.add(center);
-                }
-                if (c.water) {
-                    numWater++;
-                }
-            }
-            center.water = center.ocean || ((double) numWater / center.corners.size() >= waterThreshold);
-        }
-        // Do a flood fill search from the borders of the map to mark ocean polygons. 
-        while (!queue.isEmpty()) {
-            final Center center = queue.pop();
-            for (final Center n : center.neighbors) {
-                if (n.water && !n.ocean) {
-                    n.ocean = true;
-                    queue.add(n);
-                }
-            }
-        }
-        
-        // Determine which polygons are coast.
-        for (Center center : centers) {
-            boolean oceanNeighbor = false;
-            boolean landNeighbor = false;
-            for (Center n : center.neighbors) {
-                oceanNeighbor |= n.ocean;
-                landNeighbor |= !n.water;
-            }
-            center.coast = oceanNeighbor && landNeighbor;
-        }
-
-        // Determine if each corner is ocean, coast, or water. 
-        for (Corner c : corners) {
-            int numOcean = 0;
-            int numLand = 0;
-            for (Center center : c.touches) {
-                numOcean += center.ocean ? 1 : 0;
-                numLand += !center.water ? 1 : 0;
-            }
-            c.ocean = numOcean == c.touches.size();
-            c.coast = numOcean > 0 && numLand > 0;
-            c.water = c.border || ((numLand != c.touches.size()) && !c.coast);
-        }
-    }
-
+    protected abstract void assignOceanCoastAndLand();
+    
     private ArrayList<Corner> landCorners() {
         final ArrayList<Corner> list = new ArrayList<>();
         for (Corner c : corners) {
@@ -881,34 +808,6 @@ public abstract class VoronoiGraph {
             }
         }
         return list;
-    }
-
-     protected void redistributeElevations(ArrayList<Corner> landCorners) {
-        Collections.sort(landCorners, new Comparator<Corner>() {
-            @Override
-            public int compare(Corner o1, Corner o2) {
-                if (o1.elevation > o2.elevation) {
-                    return 1;
-                } else if (o1.elevation < o2.elevation) {
-                    return -1;
-                }
-                return 0;
-            }
-        });
-
-        final double SCALE_FACTOR = 1.1;
-        for (int i = 0; i < landCorners.size(); i++) {
-            double y = (double) i / landCorners.size();
-            double x = Math.sqrt(SCALE_FACTOR) - Math.sqrt(SCALE_FACTOR * (1 - y));
-            x = Math.min(x, 1);
-            landCorners.get(i).elevation = x;
-        }
-
-        for (Corner c : corners) {
-            if (c.ocean || c.coast) {
-                c.elevation = 0.0;
-            }
-        }
     }
     
     protected double maxElevation = 0.0;

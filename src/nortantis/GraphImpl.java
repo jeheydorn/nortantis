@@ -118,7 +118,7 @@ public class GraphImpl extends VoronoiGraph
         this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
         this. borderPlateContinentalProbability = borderPlateContinentalProbability;
         TectonicPlate.resetIds();
-        initVoronoiGraph(v, numLloydRelaxations);
+        initVoronoiGraph(v, numLloydRelaxations, true);
         setupColors();
         createPoliticalRegions();
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
@@ -131,7 +131,7 @@ public class GraphImpl extends VoronoiGraph
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer) 
     {
         super(r, sizeMultiplyer);
-        initVoronoiGraph(v, numLloydRelaxations);
+        initVoronoiGraph(v, numLloydRelaxations, false);
         setupColors();
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
         noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
@@ -733,12 +733,6 @@ public class GraphImpl extends VoronoiGraph
 			c.water = (numLand != c.touches.size()) && !c.coast;
 		}
     }
-    
-    @Override
-    protected void redistributeElevations(ArrayList<Corner> landCorners) 
-    {
-    }
-    
     	
     private void assignOceanAndContinentalPlates()
     {
