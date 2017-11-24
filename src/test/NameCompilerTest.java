@@ -1,8 +1,8 @@
 package test;
 
-import nortantis.NameCompiler;
-
 import org.junit.Test;
+
+import nortantis.NameCompiler;
 
 public class NameCompilerTest
 {

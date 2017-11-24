@@ -1,7 +1,5 @@
 package nortantis;
 
-import util.ImageHelper;
-
 /**
  * Stores a 2D array of complex numbers in JTransform's format.
  * 

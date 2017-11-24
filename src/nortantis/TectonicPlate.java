@@ -1,11 +1,11 @@
 package nortantis;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import hoten.geom.Point;
+import hoten.voronoi.Center;
 
 public class TectonicPlate
 {

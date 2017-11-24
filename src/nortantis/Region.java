@@ -1,13 +1,13 @@
 package nortantis;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
-
 import java.awt.Color;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import hoten.geom.Point;
+import hoten.voronoi.Center;
 
 /**
  * Represents a political region on the map.

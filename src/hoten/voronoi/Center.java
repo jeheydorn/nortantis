@@ -1,9 +1,8 @@
 package hoten.voronoi;
 
-import hoten.geom.Point;
-
 import java.util.ArrayList;
 
+import hoten.geom.Point;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 

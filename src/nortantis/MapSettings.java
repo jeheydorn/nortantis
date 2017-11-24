@@ -1,7 +1,5 @@
 package nortantis;
 
-import hoten.geom.Point;
-
 import java.awt.Color;
 import java.awt.Font;
 import java.io.FileInputStream;
@@ -19,6 +17,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import hoten.geom.Point;
 import util.Function0;
 import util.Helper;
 
@@ -88,7 +87,7 @@ public class MapSettings implements Serializable
 	boolean drawBorder;
 	String borderType;
 	int borderWidth;
-	int frayedBorderPolygons;
+	int frayedBorderSize;
 	
 	public MapSettings()
 	{
@@ -154,7 +153,7 @@ public class MapSettings implements Serializable
 		result.setProperty("drawBorder", drawBorder + "");
 		result.setProperty("borderType", borderType);
 		result.setProperty("borderWidth", borderWidth + "");
-		result.setProperty("frayedBorderPolygons", frayedBorderPolygons + "");
+		result.setProperty("frayedBorderSize", frayedBorderSize + "");
 		
 		// User edits.
 		result.setProperty("editedText", editedTextToString());
@@ -600,11 +599,11 @@ public class MapSettings implements Serializable
 				return Integer.parseInt(value);
 			}
 		});
-		frayedBorderPolygons = getProperty("frayedBorderPolygons", new Function0<Integer>()
+		frayedBorderSize = getProperty("frayedBorderSize", new Function0<Integer>()
 		{
 			public Integer apply()
 			{
-				String value = props.getProperty("frayedBorderPolygons");
+				String value = props.getProperty("frayedBorderSize");
 				if (value == null)
 				{
 					return 10000;

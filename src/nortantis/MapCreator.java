@@ -1,9 +1,5 @@
 package nortantis;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
-import hoten.voronoi.Corner;
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -13,41 +9,26 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
-import nortantis.GraphImpl.ColorData;
-
-import org.apache.commons.io.FilenameUtils;
-
-import util.Function;
-import util.Helper;
+import hoten.voronoi.Center;
 import util.ImageHelper;
-import util.ListMap;
-import util.Logger;
-import util.Pair;
-import util.Range;
-import util.Tuple2;
 import util.ImageHelper.ColorifyAlgorithm;
+import util.Logger;
+import util.Range;
 
 public class MapCreator
 {
@@ -281,7 +262,7 @@ public class MapCreator
 		{
 			Logger.println("Adding frayed edges.");
 			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.bounds.getWidth(), 
-					background.bounds.getHeight(), settings.frayedBorderPolygons, new Random(r.nextLong()), sizeMultiplyer);
+					background.bounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer);
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(borderMask.createGraphics());

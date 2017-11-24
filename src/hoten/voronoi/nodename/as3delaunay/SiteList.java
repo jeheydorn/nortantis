@@ -1,9 +1,9 @@
 package hoten.voronoi.nodename.as3delaunay;
 
+import java.util.ArrayList;
+
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
-
-import java.util.ArrayList;
 
 public final class SiteList implements IDisposable {
 

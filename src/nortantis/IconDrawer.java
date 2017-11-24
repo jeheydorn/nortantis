@@ -29,7 +29,6 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import nortantis.GraphImpl.ColorData;
-
 import util.Function;
 import util.Helper;
 import util.ImageHelper;

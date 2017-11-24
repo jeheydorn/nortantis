@@ -16,7 +16,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -55,6 +54,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -66,12 +66,10 @@ import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 
-import util.Helper;
 import util.ImageHelper;
 import util.JFontChooser;
 import util.Logger;
 import util.Range;
-import javax.swing.SwingConstants;
 
 public class RunSwing
 {
@@ -158,8 +156,8 @@ public class RunSwing
 	private JSlider borderWidthSlider;
 	private JCheckBox drawBorderCheckbox;
 	private JRadioButton rdbtnTransparent;
-	private JLabel lblFrayedEdgePolygons;
-	private JSlider frayedEdgePolygonsSlider;
+	private JLabel lblFrayedEdgeSize;
+	private JSlider frayedEdgeSizeSlider;
 	private JSlider frayedEdgeBlurSlider;
 	private JCheckBox frayedEdgeCheckbox;
 
@@ -1096,7 +1094,7 @@ public class RunSwing
 			public void actionPerformed(ActionEvent e) 
 			{
 				frayedEdgeBlurSlider.setEnabled(frayedEdgeCheckbox.isSelected());
-				frayedEdgePolygonsSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+				frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 			}
 		});
 
@@ -1117,20 +1115,20 @@ public class RunSwing
 		frayedEdgeBlurSlider.setBounds(627, 63, 245, 79);
 		borderPanel.add(frayedEdgeBlurSlider);
 		
-		lblFrayedEdgePolygons = new JLabel("Frayed edge polygons:");
-		lblFrayedEdgePolygons.setToolTipText("The width of color drawn around frayed edges. The color used is the grunge color in the Effects tab.");
-		lblFrayedEdgePolygons.setBounds(461, 192, 163, 15);
-		borderPanel.add(lblFrayedEdgePolygons);
+		lblFrayedEdgeSize = new JLabel("Frayed edge size:");
+		lblFrayedEdgeSize.setToolTipText("The number of polygons used when creating the frayed border. Higher values make the fray smaller.");
+		lblFrayedEdgeSize.setBounds(461, 192, 163, 15);
+		borderPanel.add(lblFrayedEdgeSize);
 		
-		frayedEdgePolygonsSlider = new JSlider();
-		frayedEdgePolygonsSlider.setPaintTicks(true);
-		frayedEdgePolygonsSlider.setPaintLabels(true);
-		frayedEdgePolygonsSlider.setMinorTickSpacing(5000);
-		frayedEdgePolygonsSlider.setMaximum(50000);
-		frayedEdgePolygonsSlider.setMinimum(100);
-		frayedEdgePolygonsSlider.setMajorTickSpacing(20000);
-		frayedEdgePolygonsSlider.setBounds(627, 174, 245, 79);
-		borderPanel.add(frayedEdgePolygonsSlider);
+		frayedEdgeSizeSlider = new JSlider();
+		frayedEdgeSizeSlider.setPaintTicks(true);
+		frayedEdgeSizeSlider.setPaintLabels(true);
+		frayedEdgeSizeSlider.setMinorTickSpacing(5000);
+		frayedEdgeSizeSlider.setMaximum(50000);
+		frayedEdgeSizeSlider.setMinimum(100);
+		frayedEdgeSizeSlider.setMajorTickSpacing(20000);
+		frayedEdgeSizeSlider.setBounds(627, 174, 245, 79);
+		borderPanel.add(frayedEdgeSizeSlider);
 
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -1915,7 +1913,7 @@ public class RunSwing
 		frayedEdgeCheckbox.doClick();
 		grungeColorDisplay.setBackground(settings.frayedBorderColor);
 		frayedEdgeBlurSlider.setValue(settings.frayedBorderBlurLevel);
-		frayedEdgePolygonsSlider.setValue(settings.frayedBorderPolygons);
+		frayedEdgeSizeSlider.setValue(settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
 		
 		// Settings for background images.
@@ -2053,7 +2051,7 @@ public class RunSwing
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
 		settings.frayedBorderColor = grungeColorDisplay.getBackground();
 		settings.frayedBorderBlurLevel = frayedEdgeBlurSlider.getValue();
-		settings.frayedBorderPolygons = frayedEdgePolygonsSlider.getValue();
+		settings.frayedBorderSize = frayedEdgeSizeSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
 		
 		// Background image settings

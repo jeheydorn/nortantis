@@ -1,5 +1,10 @@
 package hoten.voronoi.nodename.as3delaunay;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
+
 /*
  * Java implementaition by Connor Clark (www.hotengames.com). Pretty much a 1:1 
  * translation of a wonderful map generating algorthim by Amit Patel of Red Blob Games,
@@ -29,11 +34,6 @@ package hoten.voronoi.nodename.as3delaunay;
  */
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
-
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 
 public final class Voronoi {
 

@@ -1,11 +1,11 @@
 package nortantis;
 
-import hoten.geom.Point;
-
 import java.awt.geom.Area;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import hoten.geom.Point;
 
 /**
  * Stores a piece of text (and data about it) drawn onto a map.

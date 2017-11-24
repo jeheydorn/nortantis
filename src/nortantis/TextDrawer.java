@@ -1,10 +1,5 @@
 package nortantis;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
-import hoten.voronoi.Corner;
-import hoten.voronoi.Edge;
-
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -22,20 +17,20 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
+import hoten.geom.Point;
+import hoten.voronoi.Center;
+import hoten.voronoi.Corner;
+import hoten.voronoi.Edge;
 import util.Function0;
-import util.Helper;
 import util.ImageHelper;
 import util.Pair;
 import util.ProbabilityHelper;

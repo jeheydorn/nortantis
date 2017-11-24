@@ -1,8 +1,8 @@
 package hoten.voronoi.nodename.as3delaunay;
 
-import hoten.geom.Point;
-
 import java.util.ArrayList;
+
+import hoten.geom.Point;
 
 public final class Polygon {
 

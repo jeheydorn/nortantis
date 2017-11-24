@@ -4,15 +4,15 @@
 
 package hoten.voronoi;
 
-import hoten.geom.Point;
-//import graph.*;
-//import de.polygonal.math.PM_PRNG;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
+
+import hoten.geom.Point;
+//import graph.*;
+//import de.polygonal.math.PM_PRNG;
   
 public class NoisyEdges 
 {

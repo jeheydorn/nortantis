@@ -1,13 +1,5 @@
 package nortantis;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
-import hoten.voronoi.Corner;
-import hoten.voronoi.Edge;
-import hoten.voronoi.NoisyEdges;
-import hoten.voronoi.VoronoiGraph;
-import hoten.voronoi.nodename.as3delaunay.Voronoi;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -22,6 +14,13 @@ import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
+import hoten.geom.Point;
+import hoten.voronoi.Center;
+import hoten.voronoi.Corner;
+import hoten.voronoi.Edge;
+import hoten.voronoi.NoisyEdges;
+import hoten.voronoi.VoronoiGraph;
+import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import util.Function;
 import util.Helper;
 import util.Range;

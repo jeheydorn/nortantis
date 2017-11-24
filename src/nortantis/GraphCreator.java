@@ -1,10 +1,9 @@
 package nortantis;
 
-import hoten.voronoi.nodename.as3delaunay.Voronoi;
-
 import java.io.IOException;
 import java.util.Random;
 
+import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import util.Logger;
 
 /**

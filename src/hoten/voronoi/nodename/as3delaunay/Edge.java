@@ -1,10 +1,10 @@
 package hoten.voronoi.nodename.as3delaunay;
 
-import hoten.geom.Point;
-import hoten.geom.Rectangle;
-
 import java.util.HashMap;
 import java.util.Stack;
+
+import hoten.geom.Point;
+import hoten.geom.Rectangle;
 
 /**
  * The line segment connecting the two Sites is part of the Delaunay

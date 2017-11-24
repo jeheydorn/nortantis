@@ -1,10 +1,5 @@
 package hoten.voronoi;
 
-import hoten.geom.Point;
-import hoten.geom.Rectangle;
-import hoten.voronoi.nodename.as3delaunay.LineSegment;
-import hoten.voronoi.nodename.as3delaunay.Voronoi;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -20,6 +15,10 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import hoten.geom.Point;
+import hoten.geom.Rectangle;
+import hoten.voronoi.nodename.as3delaunay.LineSegment;
+import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.TectonicPlate;
 import util.Range;
 

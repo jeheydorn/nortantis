@@ -1,8 +1,8 @@
 package hoten.voronoi.nodename.as3delaunay;
 
-import hoten.geom.Point;
-
 import java.util.Stack;
+
+import hoten.geom.Point;
 
 final class Vertex extends Object implements ICoord {
 

@@ -3,20 +3,12 @@ package nortantis;
 import static java.lang.System.out;
 
 import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
-import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import javax.imageio.ImageIO;
-
-import org.jtransforms.fft.FloatFFT_2D;
-
 import util.ImageHelper;
-import util.Logger;
 import util.Range;
 
 public class BackgroundGenerator

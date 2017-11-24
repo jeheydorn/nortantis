@@ -1,8 +1,8 @@
 package hoten.voronoi;
 
-import hoten.geom.Point;
-
 import java.util.ArrayList;
+
+import hoten.geom.Point;
 
 /**
  * Corner.java
