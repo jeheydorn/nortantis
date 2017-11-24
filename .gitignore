@@ -23,3 +23,5 @@ cloud.ng
 colorized.png
 frequencies.png
 user_preferences
+.metadata/
+.recommenders/

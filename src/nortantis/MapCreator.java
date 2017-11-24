@@ -280,20 +280,17 @@ public class MapCreator
 		if (settings.frayedBorder)
 		{
 			Logger.println("Adding frayed edges.");
-			// TODO Add an option for the hard-coded number of polygons below.
 			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.bounds.getWidth(), 
-					background.bounds.getHeight(), 30000, new Random(r.nextLong()), sizeMultiplyer);
+					background.bounds.getHeight(), settings.frayedBorderPolygons, new Random(r.nextLong()), sizeMultiplyer);
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(borderMask.createGraphics());
-			ImageHelper.write(borderMask, "borderMask.png");
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel, true);
-				ImageHelper.write(borderBlur, "borderBlur.png");
 			
 				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, borderBlur, true);
 

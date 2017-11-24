@@ -132,6 +132,7 @@ public class GraphImpl extends VoronoiGraph
     {
         super(r, sizeMultiplyer);
         initVoronoiGraph(v, numLloydRelaxations, false);
+		assignBorderToCorners();
         setupColors();
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
         noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
@@ -693,15 +694,9 @@ public class GraphImpl extends VoronoiGraph
 		for (Center c1 : centers)
 		{
 			c1.water = c1.ocean = c1.elevation < seaLevel;
-			for (final Corner corner : c1.corners)
-			{
-				if (corner.border)
-				{
-					c1.border = true;
-					break;
-				}
-			}
 		}
+		
+		assignBorderToCorners();
 
 		// Copied from super.assignOceanCoastAndLand()
 		// Determine if each corner is ocean, coast, or water.
@@ -732,6 +727,22 @@ public class GraphImpl extends VoronoiGraph
 			c.coast = numOcean > 0 && numLand > 0;
 			c.water = (numLand != c.touches.size()) && !c.coast;
 		}
+    }
+    
+    private void assignBorderToCorners()
+    {
+		for (Center c1 : centers)
+		{
+			for (final Corner corner : c1.corners)
+			{
+				if (corner.border)
+				{
+					c1.border = true;
+					break;
+				}
+			}
+		}
+
     }
     	
     private void assignOceanAndContinentalPlates()

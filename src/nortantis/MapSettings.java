@@ -88,6 +88,7 @@ public class MapSettings implements Serializable
 	boolean drawBorder;
 	String borderType;
 	int borderWidth;
+	int frayedBorderPolygons;
 	
 	public MapSettings()
 	{
@@ -153,6 +154,7 @@ public class MapSettings implements Serializable
 		result.setProperty("drawBorder", drawBorder + "");
 		result.setProperty("borderType", borderType);
 		result.setProperty("borderWidth", borderWidth + "");
+		result.setProperty("frayedBorderPolygons", frayedBorderPolygons + "");
 		
 		// User edits.
 		result.setProperty("editedText", editedTextToString());
@@ -594,6 +596,18 @@ public class MapSettings implements Serializable
 				if (value == null)
 				{
 					return 0;
+				}
+				return Integer.parseInt(value);
+			}
+		});
+		frayedBorderPolygons = getProperty("frayedBorderPolygons", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				String value = props.getProperty("frayedBorderPolygons");
+				if (value == null)
+				{
+					return 10000;
 				}
 				return Integer.parseInt(value);
 			}

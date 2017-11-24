@@ -106,9 +106,7 @@ public class RunSwing
 	Path openSettingsFilePath;
 	MapSettings lastSettingsLoadedOrSaved;
 	String frameTitleBase = "Nortantis Fantasy Map Generator";
-	JCheckBox frayedBorderCheckbox;
 	JPanel grungeColorDisplay;
-	JSlider frayedBorderBlurSlider;
 	private JTextField backgroundSeedTextField;
 	private JRadioButton rdbtnGeneratedFromTexture;
 	private JRadioButton rdbtnFromFiles;
@@ -160,6 +158,10 @@ public class RunSwing
 	private JSlider borderWidthSlider;
 	private JCheckBox drawBorderCheckbox;
 	private JRadioButton rdbtnTransparent;
+	private JLabel lblFrayedEdgePolygons;
+	private JSlider frayedEdgePolygonsSlider;
+	private JSlider frayedEdgeBlurSlider;
+	private JCheckBox frayedEdgeCheckbox;
 
 	
 	public static boolean isRunning()
@@ -993,11 +995,7 @@ public class RunSwing
 		});
 		button_2.setBounds(725, 149, 87, 25);
 		effectsPanel.add(button_2);
-		
-		frayedBorderCheckbox = new JCheckBox("Frayed edges");
-		frayedBorderCheckbox.setBounds(461, 194, 134, 23);
-		effectsPanel.add(frayedBorderCheckbox);
-		
+				
 		JLabel grungeColorLabel = new JLabel("Edge/Grunge color:");
 		grungeColorLabel.setToolTipText("Frayed edges and grunge will be this color");
 		grungeColorLabel.setBounds(461, 221, 152, 23);
@@ -1007,31 +1005,16 @@ public class RunSwing
 		grungeColorDisplay.setBounds(631, 221, 82, 23);
 		effectsPanel.add(grungeColorDisplay);
 		
-		final JButton frayedBorderChooseButton= new JButton("Choose");
-		frayedBorderChooseButton.addActionListener(new ActionListener() {
+		final JButton grungeColorChooseButton= new JButton("Choose");
+		grungeColorChooseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				showColorPicker(effectsPanel, grungeColorDisplay, "Frayed edge color");
+				showColorPicker(effectsPanel, grungeColorDisplay, "Grunge color");
 			}
 		});
-		frayedBorderChooseButton.setBounds(725, 221, 87, 25);
-		effectsPanel.add(frayedBorderChooseButton);
-		
-		JLabel frayedBorderBlurLevelLabel = new JLabel("Frayed edge blur:");
-		frayedBorderBlurLevelLabel.setToolTipText("The width of color drawn around frayed edges");
-		frayedBorderBlurLevelLabel.setBounds(461, 267, 152, 15);
-		effectsPanel.add(frayedBorderBlurLevelLabel);
-		
-		frayedBorderBlurSlider = new JSlider();
-		frayedBorderBlurSlider.setValue(30);
-		frayedBorderBlurSlider.setPaintTicks(true);
-		frayedBorderBlurSlider.setPaintLabels(true);
-		frayedBorderBlurSlider.setMinorTickSpacing(50);
-		frayedBorderBlurSlider.setMaximum(500);
-		frayedBorderBlurSlider.setMajorTickSpacing(100);
-		frayedBorderBlurSlider.setBounds(627, 249, 245, 79);
-		effectsPanel.add(frayedBorderBlurSlider);
-		
+		grungeColorChooseButton.setBounds(725, 221, 87, 25);
+		effectsPanel.add(grungeColorChooseButton);
+				
 		JLabel lblCoastlineColor = new JLabel("Coastline color:");
 		lblCoastlineColor.setBounds(461, 47, 134, 23);
 		effectsPanel.add(lblCoastlineColor);
@@ -1081,7 +1064,7 @@ public class RunSwing
 		
 		JLabel lblBorderType = new JLabel("Border type:");
 		lblBorderType.setToolTipText("The set of images to draw for the border");
-		lblBorderType.setBounds(8, 70, 109, 15);
+		lblBorderType.setBounds(12, 70, 109, 15);
 		borderPanel.add(lblBorderType);
 		
 		borderTypeComboBox = new JComboBox<String>();
@@ -1097,14 +1080,57 @@ public class RunSwing
 		borderWidthSlider.setMinorTickSpacing(50);
 		borderWidthSlider.setMaximum(700);
 		borderWidthSlider.setMajorTickSpacing(200);
-		borderWidthSlider.setBounds(131, 174, 245, 79);
+		borderWidthSlider.setBounds(131, 132, 245, 79);
 		borderPanel.add(borderWidthSlider);
 		
 		JLabel lblBorderWidth = new JLabel("Border width:");
 		lblBorderWidth.setVerticalAlignment(SwingConstants.BOTTOM);
 		lblBorderWidth.setToolTipText("Width of the border in pixels, scaled if resolution is scaled");
-		lblBorderWidth.setBounds(12, 188, 105, 15);
+		lblBorderWidth.setBounds(12, 148, 105, 15);
 		borderPanel.add(lblBorderWidth);
+		
+		frayedEdgeCheckbox = new JCheckBox("Draw frayed edges");
+		frayedEdgeCheckbox.setBounds(461, 8, 191, 23);
+		frayedEdgeCheckbox.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
+			{
+				frayedEdgeBlurSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+				frayedEdgePolygonsSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+			}
+		});
+
+		borderPanel.add(frayedEdgeCheckbox);
+		
+		JLabel label_3 = new JLabel("Frayed edge blur:");
+		label_3.setToolTipText("The width of color drawn around frayed edges. The color used is the grunge color in the Effects tab.");
+		label_3.setBounds(461, 81, 152, 15);
+		borderPanel.add(label_3);
+		
+		frayedEdgeBlurSlider = new JSlider();
+		frayedEdgeBlurSlider.setValue(30);
+		frayedEdgeBlurSlider.setPaintTicks(true);
+		frayedEdgeBlurSlider.setPaintLabels(true);
+		frayedEdgeBlurSlider.setMinorTickSpacing(50);
+		frayedEdgeBlurSlider.setMaximum(500);
+		frayedEdgeBlurSlider.setMajorTickSpacing(100);
+		frayedEdgeBlurSlider.setBounds(627, 63, 245, 79);
+		borderPanel.add(frayedEdgeBlurSlider);
+		
+		lblFrayedEdgePolygons = new JLabel("Frayed edge polygons:");
+		lblFrayedEdgePolygons.setToolTipText("The width of color drawn around frayed edges. The color used is the grunge color in the Effects tab.");
+		lblFrayedEdgePolygons.setBounds(461, 192, 163, 15);
+		borderPanel.add(lblFrayedEdgePolygons);
+		
+		frayedEdgePolygonsSlider = new JSlider();
+		frayedEdgePolygonsSlider.setPaintTicks(true);
+		frayedEdgePolygonsSlider.setPaintLabels(true);
+		frayedEdgePolygonsSlider.setMinorTickSpacing(5000);
+		frayedEdgePolygonsSlider.setMaximum(50000);
+		frayedEdgePolygonsSlider.setMinimum(100);
+		frayedEdgePolygonsSlider.setMajorTickSpacing(20000);
+		frayedEdgePolygonsSlider.setBounds(627, 174, 245, 79);
+		borderPanel.add(frayedEdgePolygonsSlider);
 
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -1357,16 +1383,6 @@ public class RunSwing
 		buttonChooseCoastlineColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline color");
-			}
-		});
-		
-
-		
-		frayedBorderCheckbox.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent e) 
-			{
-				frayedBorderBlurSlider.setEnabled(frayedBorderCheckbox.isSelected());
 			}
 		});
 								
@@ -1894,11 +1910,12 @@ public class RunSwing
 		coastlineColorDisplay.setBackground(settings.coastlineColor);
 		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
 		riverColorDisplay.setBackground(settings.riverColor);
-		frayedBorderCheckbox.setSelected(!settings.frayedBorder);
+		frayedEdgeCheckbox.setSelected(!settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or disabled.
-		frayedBorderCheckbox.doClick();
+		frayedEdgeCheckbox.doClick();
 		grungeColorDisplay.setBackground(settings.frayedBorderColor);
-		frayedBorderBlurSlider.setValue(settings.frayedBorderBlurLevel);
+		frayedEdgeBlurSlider.setValue(settings.frayedBorderBlurLevel);
+		frayedEdgePolygonsSlider.setValue(settings.frayedBorderPolygons);
 		grungeSlider.setValue(settings.grungeWidth);
 		
 		// Settings for background images.
@@ -2033,9 +2050,10 @@ public class RunSwing
 		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();
 		settings.riverColor = riverColorDisplay.getBackground();
 		settings.drawText = drawTextCheckBox.isSelected();
-		settings.frayedBorder = frayedBorderCheckbox.isSelected();
+		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
 		settings.frayedBorderColor = grungeColorDisplay.getBackground();
-		settings.frayedBorderBlurLevel = frayedBorderBlurSlider.getValue();
+		settings.frayedBorderBlurLevel = frayedEdgeBlurSlider.getValue();
+		settings.frayedBorderPolygons = frayedEdgePolygonsSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
 		
 		// Background image settings
