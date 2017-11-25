@@ -1028,7 +1028,7 @@ public class RunSwing
 		
 		JLabel lblGrunge = new JLabel("Grunge:");
 		lblGrunge.setToolTipText("Determines the width of grunge on the edges of the map. 0 means none. ");
-		lblGrunge.setBounds(12, 267, 152, 23);
+		lblGrunge.setBounds(461, 270, 152, 23);
 		effectsPanel.add(lblGrunge);
 		
 		grungeSlider = new JSlider();
@@ -1038,7 +1038,7 @@ public class RunSwing
 		grungeSlider.setMinorTickSpacing(100);
 		grungeSlider.setMaximum(2000);
 		grungeSlider.setMajorTickSpacing(500);
-		grungeSlider.setBounds(131, 249, 245, 79);
+		grungeSlider.setBounds(580, 252, 245, 79);
 		effectsPanel.add(grungeSlider);
 
 		final JPanel borderPanel = new JPanel();
