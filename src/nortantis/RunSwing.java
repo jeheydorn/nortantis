@@ -739,7 +739,7 @@ public class RunSwing
 		backgoundImageButtonGroup.add(rdbtnTransparent);
 		
 		lblDimensions = new JLabel("Dimensions:");
-		lblDimensions.setToolTipText("The dimensions of the result before being multiplied by the resolution below.");
+		lblDimensions.setToolTipText("The dimensions of the result before being multiplied by the resolution below. This also doesn't include the border, if you add one.");
 		lblDimensions.setBounds(12, 233, 122, 15);
 		backgroundPanel.add(lblDimensions);
 		
