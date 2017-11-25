@@ -61,7 +61,7 @@ public class TextDrawer
 	private NameGenerator placeNameGenerator;
 	private NameGenerator personNameGenerator;
 	private NameCompiler nameCompiler;
-	Area graphBoundsNotIncludingBorder;
+	Area graphBounds;
 	private double sizeMultiplyer;
 	private Font titleFontScaled;
 	private Font regionFontScaled;
@@ -201,8 +201,7 @@ public class TextDrawer
 		// All text drawn must be done so in order from highest to lowest priority because if I try to draw
 		// text on top of other text, the latter will not be displayed.
 		
-		int borderWidthScaled = (int) (settings.borderWidth * settings.resolution);
-		graphBoundsNotIncludingBorder = new Area(new java.awt.Rectangle(borderWidthScaled, borderWidthScaled, graph.getWidth() - borderWidthScaled * 2, graph.getHeight() - borderWidthScaled * 2));
+		graphBounds = new Area(new java.awt.Rectangle(0, 0, graph.getWidth(), graph.getHeight()));
 
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.textColor);
@@ -1213,7 +1212,7 @@ public class TextDrawer
 				}
 			}
 		}
-		return !graphBoundsNotIncludingBorder.contains(bounds.getBounds2D());
+		return !graphBounds.contains(bounds.getBounds2D());
 	}
 	
 	/**

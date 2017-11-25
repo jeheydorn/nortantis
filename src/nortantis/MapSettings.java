@@ -54,7 +54,7 @@ public class MapSettings implements Serializable
 	 */
 	boolean generateBackground;
 	boolean generateBackgroundFromTexture;
-	boolean transparentBackground;
+	boolean transparentBackground; 
 	boolean colorizeOcean; // For backgrounds generated from a texture.
 	boolean colorizeLand; // For backgrounds generated from a texture.
 	String backgroundTextureImage;

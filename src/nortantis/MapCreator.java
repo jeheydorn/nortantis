@@ -66,16 +66,17 @@ public class MapCreator
         Logger.println("Seed: " + settings.randomSeed);
         r = new Random(settings.randomSeed);        
 		
-        Background background = createBackgroundImages(settings, maxDimensions);
+		Logger.println("Generating the background image");
+		Background background = new Background(settings, maxDimensions);	
 		
-		double sizeMultiplyer = (background.bounds.getWidth() / baseResolution);
+		double sizeMultiplyer = (background.mapBounds.getWidth() / baseResolution);
 		
 		
 		TextDrawer textDrawer = settings.drawText || mapParts != null ? new TextDrawer(settings, sizeMultiplyer) : null;
 		if (mapParts != null)
 			mapParts.textDrawer = textDrawer;
 		
-		GraphImpl graph = GraphCreator.createGraph(background.bounds.getWidth(), background.bounds.getHeight(),
+		GraphImpl graph = GraphCreator.createGraph(background.mapBounds.getWidth(), background.mapBounds.getHeight(),
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
 				sizeMultiplyer);	
@@ -256,13 +257,14 @@ public class MapCreator
 		{
 			Logger.println("Adding border.");
 			map = addBorderToMap(settings, map, background);
+			background.borderBackground = null;
 		}
 
 		if (settings.frayedBorder)
 		{
 			Logger.println("Adding frayed edges.");
-			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.bounds.getWidth(), 
-					background.bounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer);
+			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
+					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer);
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(borderMask.createGraphics());
@@ -283,6 +285,7 @@ public class MapCreator
 			// Use the random number generator the same whether or not we draw a frayed border.
 			r.nextLong();
 		}
+		background = null;
 		
 		if (settings.grungeWidth > 0)
 		{
@@ -315,18 +318,10 @@ public class MapCreator
 		if (borderWidthScaled == 0)
 		{
 			return map;
-		}
+		}		
 		
-		borderWidthScaled = Math.min(borderWidthScaled, Math.min(
-				(int)background.bounds.getWidth() / 2 - 1,
-				(int)background.bounds.getHeight() / 2 - 1));
-				
-		
-		BufferedImage mapWithoutBorder = ImageHelper.extractRegion(map, borderWidthScaled, borderWidthScaled, 
-				(int)(background.bounds.getWidth() - borderWidthScaled * 2),
-				(int)(background.bounds.getHeight() - borderWidthScaled * 2));
 		Graphics2D g = background.borderBackground.createGraphics();
-		background.borderBackground.getGraphics().drawImage(mapWithoutBorder, borderWidthScaled, borderWidthScaled, null);
+		background.borderBackground.getGraphics().drawImage(map, borderWidthScaled, borderWidthScaled, null);
 		map = background.borderBackground;
 		
 		Path allBordersPath = Paths.get("assets", "borders");
@@ -392,10 +387,10 @@ public class MapCreator
 		}
 		
 		g.drawImage(upperLeftCorner, 0, 0, null);
-		g.drawImage(upperRightCorner, (int)background.bounds.getWidth() - borderWidthScaled, 0, null);
-		g.drawImage(lowerLeftCorner, 0, (int)background.bounds.getHeight() - borderWidthScaled, null);
-		g.drawImage(lowerRightCorner, (int)background.bounds.getWidth() - borderWidthScaled,
-				(int)background.bounds.getHeight() - borderWidthScaled, null);
+		g.drawImage(upperRightCorner, (int)background.borderBounds.getWidth() - borderWidthScaled, 0, null);
+		g.drawImage(lowerLeftCorner, 0, (int)background.borderBounds.getHeight() - borderWidthScaled, null);
+		g.drawImage(lowerRightCorner, (int)background.borderBounds.getWidth() - borderWidthScaled,
+				(int)background.borderBounds.getHeight() - borderWidthScaled, null);
 		
 		// Edges
 		BufferedImage topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
@@ -654,13 +649,7 @@ public class MapCreator
 		
 		return ImageHelper.read(cornerArray[0].getPath());
 	}
-	
-	private Background createBackgroundImages(MapSettings settings, Dimension maxDimensions)
-	{
-		Background result = new Background(settings, maxDimensions);	
-		return result;
-	}
-	
+		
 	/**
 	 * An assortment of things needed to draw the background.
 	 */
@@ -668,13 +657,15 @@ public class MapCreator
 	{
 		BufferedImage land;
 		BufferedImage ocean;
-		DimensionDouble bounds;
+		DimensionDouble mapBounds;
+		Dimension borderBounds;
 		BufferedImage borderBackground;
 		private boolean backgroundFromFilesNotGenerated;
 		private boolean shouldDrawRegionColors;
 		private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
 		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
 		BufferedImage regionIndexes;
+		private int borderWidthScaled;
 
 		public Background(MapSettings settings, Dimension maxDimensions)
 		{
@@ -688,17 +679,30 @@ public class MapCreator
 			landColorifyAlgorithm = ColorifyAlgorithm.none;
 			if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
 			{
-				Logger.println("Generating the background image");
-				bounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
+				mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
 						settings.generatedHeight * settings.resolution);
 				if (maxDimensions != null)
 				{
-					DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, bounds.getWidth(),
-							bounds.getHeight());
+					int borderWidth = 0;
+					if (settings.drawBorder)
+					{
+						borderWidth = (int) (settings.borderWidth * settings.resolution);
+					}
+					DimensionDouble mapBoundsPlusBorder = new DimensionDouble(
+							mapBounds.getWidth() + borderWidth * 2,
+							mapBounds.getHeight() + borderWidth * 2);
+
+					DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
+							mapBoundsPlusBorder.getHeight());
 					// Change the resolution to match the new bounds.
-					settings.resolution *= newBounds.width / bounds.width;
-					bounds = newBounds;
-				}	
+					settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
+					
+					DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution, 
+							settings.generatedHeight * settings.resolution);
+					mapBounds = scaledMapBounds;
+				}
+
+				borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 											
 				if (settings.generateBackground)
 				{
@@ -706,19 +710,29 @@ public class MapCreator
 					
 					BufferedImage oceanGeneratedBackground = FractalBGGenerator.generate(
 							new Random(settings.backgroundRandomSeed), settings.fractalPower, 
-							(int)bounds.getWidth(), (int)bounds.getHeight(), 0.75f);
+							(int)mapBounds.getWidth() + borderWidthScaled * 2, (int)mapBounds.getHeight() + borderWidthScaled * 2, 0.75f);
 					landGeneratedBackground = oceanGeneratedBackground;
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm2);
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm2);
+					
+					if (settings.drawBorder)
+					{
+						ocean = removeBorderPadding(borderBackground);
+					}
+					else
+					{
+						ocean = borderBackground;
+						borderBackground = null;
+					}
 					
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it depends on the graph.
-						land = landGeneratedBackground;
+						land = removeBorderPadding(landGeneratedBackground);
 					}
 					else
 					{
-						land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, landColorifyAlgorithm);
+						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
 						landGeneratedBackground = null;
 					}
 				}
@@ -740,14 +754,33 @@ public class MapCreator
 					if (settings.colorizeOcean)
 					{
 						oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), (int)bounds.getHeight(), (int)bounds.getWidth());
-						ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), 
+							(int)mapBounds.getHeight() + borderWidthScaled * 2, (int)mapBounds.getWidth() + borderWidthScaled * 2);
+						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+						if (settings.drawBorder)
+						{
+							ocean = ImageHelper.deepCopy(removeBorderPadding(borderBackground));
+						}
+						else
+						{
+							ocean = borderBackground;
+							borderBackground = null;
+						}
 					}
 					else
 					{
 						oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(settings.backgroundRandomSeed), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
-						ocean = oceanGeneratedBackground;
+								new Random(settings.backgroundRandomSeed), texture, (int)mapBounds.getHeight() + borderWidthScaled *  2, 
+								(int)mapBounds.getWidth() + borderWidthScaled * 2);
+						if (settings.drawBorder)
+						{
+							ocean = removeBorderPadding(oceanGeneratedBackground);
+							borderBackground = oceanGeneratedBackground;
+						}
+						else
+						{
+							ocean = oceanGeneratedBackground;
+						}
 					}
 					
 					if (settings.colorizeLand == settings.colorizeOcean)
@@ -761,41 +794,48 @@ public class MapCreator
 							if (shouldDrawRegionColors)
 							{
 								// Drawing region colors must be done later because it depends on the graph.
-								land = landGeneratedBackground;
+								land = removeBorderPadding(landGeneratedBackground);
 							}
 							else
 							{
-								land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+								land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 							}
 						}
 						else
 						{
 							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-							land = landGeneratedBackground;
+							land = removeBorderPadding(landGeneratedBackground);
 						}
 					}
 					else
 					{
 						if (settings.colorizeLand)
 						{
+							// It's necessary to generate landGeneratedBackground at a larger size including border width, then crop out the part we want because 
+							// otherwise the random texture of the land won't match the texture of the ocean.
+							
 							landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), (int)bounds.getHeight(), (int)bounds.getWidth());
+								new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), 
+								(int)mapBounds.getHeight() + borderWidthScaled * 2,
+								(int)mapBounds.getWidth() + borderWidthScaled * 2);
 							if (shouldDrawRegionColors)
 							{
 								// Drawing region colors must be done later because it depends on the graph.
-								land = landGeneratedBackground;
+								land = removeBorderPadding(landGeneratedBackground);
 							}
 							else
 							{
-								land = ImageHelper.colorify(landGeneratedBackground, settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
+								land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
 							}
 							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 						}
 						else
 						{
 							landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-									new Random(settings.backgroundRandomSeed), texture, (int)bounds.getHeight(), (int)bounds.getWidth());
-							land = landGeneratedBackground;
+									new Random(settings.backgroundRandomSeed), texture, 
+									(int)mapBounds.getHeight() + borderWidthScaled * 2, 
+									(int)mapBounds.getWidth() + borderWidthScaled * 2);
+							land = removeBorderPadding(landGeneratedBackground);
 							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 						}
 					}
@@ -804,7 +844,7 @@ public class MapCreator
 				{
 					// Transparent background
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-					land = ImageHelper.createWhiteTransparentImage((int)bounds.getWidth(), (int)bounds.getHeight());
+					land = ImageHelper.createWhiteTransparentImage((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
 					ocean = land;
 					landGeneratedBackground = land;
 				}
@@ -812,6 +852,10 @@ public class MapCreator
 			else
 			{
 				// The background images are from files
+				if (settings.drawBorder)
+				{
+					throw new IllegalArgumentException("Drawing a border with background images from files is not supported. Uncheck Border > Draw border.");
+				}
 				
 				try
 				{
@@ -834,29 +878,40 @@ public class MapCreator
 							+ settings.oceanBackgroundImage);
 				}
 
-				bounds = new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
+				mapBounds = new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
 				if (maxDimensions != null)
 				{
-					bounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, bounds.getWidth(),
-							bounds.getHeight());
+					mapBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBounds.getWidth(),
+							mapBounds.getHeight());
 				}
-				land = ImageHelper.scaleByWidth(land, (int)bounds.getWidth());
+				land = ImageHelper.scaleByWidth(land, (int)mapBounds.getWidth());
 				// The library I'm using to scale images and make them look nice has a bug where the width or height might be one pixel off, although rarely. So here I'm making sure it is correct.
-				if (land.getHeight() != (int)bounds.getHeight())
+				if (land.getHeight() != (int)mapBounds.getHeight())
 				{
-					land = ImageHelper.scaleFastByHeightAndWidth(land, (int)bounds.getWidth(), (int)bounds.getHeight());
+					land = ImageHelper.scaleFastByHeightAndWidth(land, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
 				}
-				ocean = ImageHelper.scaleByWidth(ocean, (int)bounds.getWidth());
-				if (ocean.getHeight() != (int)bounds.getHeight())
+				ocean = ImageHelper.scaleByWidth(ocean, (int)mapBounds.getWidth());
+				if (ocean.getHeight() != (int)mapBounds.getHeight())
 				{
-					ocean = ImageHelper.scaleFastByHeightAndWidth(ocean, (int)bounds.getWidth(), (int)bounds.getHeight());
+					ocean = ImageHelper.scaleFastByHeightAndWidth(ocean, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
 				}
 			}
 			
-			if (settings.drawBorder)
+			if (borderBackground != null)
 			{
-				borderBackground = ImageHelper.deepCopy(ocean);
+				borderBounds = new Dimension(borderBackground.getWidth(), borderBackground.getHeight());
 			}
+			else
+			{
+				borderBounds = new Dimension((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
+			}
+		}
+		
+		private BufferedImage removeBorderPadding(BufferedImage image)
+		{
+			return ImageHelper.extractRegion(image, borderWidthScaled, borderWidthScaled, 
+					(int)(image.getWidth() - borderWidthScaled * 2),
+					(int)(image.getHeight() - borderWidthScaled * 2));
 		}
 		
 		public void doSetupThatNeedsGraph(MapSettings settings, GraphImpl graph)
@@ -874,16 +929,12 @@ public class MapCreator
 				land = drawRegionColors(graph, land, regionIndexes, landColorifyAlgorithm);
 			}
 			
-			// Fixes a bug where graph width or height is not exactly the same as some image width and heights due to rounding issues.
+			// Fixes a bug where graph width or height is not exactly the same as image width and heights due to rounding issues.
 			if (backgroundFromFilesNotGenerated)
 			{
 				land = ImageHelper.scaleByWidth(land, graph.getWidth());
 				// Fixes a bug where graph width or height is not exactly the same as some image width and heights due to rounding issues.
 				ocean = ImageHelper.scaleByWidth(ocean, graph.getWidth());
-				if (settings.drawBorder)
-				{
-					borderBackground = ImageHelper.deepCopy(ocean);
-				}
 			}
 		}
 	}

@@ -647,9 +647,15 @@ public class ImageHelper
 		return result;
 	}
 	
+	/**
+	 * 
+	 * Creates a copy of a piece of an image. 
+	 * 
+	 * It is important the the result is a copy even if the desired region is exactly the input.
+	 */
 	public static BufferedImage extractRegion(BufferedImage image, int xLoc, int yLoc,
 			int width, int height)
-	{
+	{		
 		BufferedImage result = new BufferedImage(width, height, image.getType());
 		Graphics2D gResult = result.createGraphics();
 		gResult.translate(-xLoc, -yLoc);		

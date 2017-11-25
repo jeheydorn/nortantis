@@ -1076,7 +1076,7 @@ public class RunSwing
 		borderWidthSlider.setPaintTicks(true);
 		borderWidthSlider.setPaintLabels(true);
 		borderWidthSlider.setMinorTickSpacing(50);
-		borderWidthSlider.setMaximum(700);
+		borderWidthSlider.setMaximum(800);
 		borderWidthSlider.setMajorTickSpacing(200);
 		borderWidthSlider.setBounds(131, 132, 245, 79);
 		borderPanel.add(borderWidthSlider);
