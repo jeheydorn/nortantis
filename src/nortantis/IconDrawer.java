@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -750,21 +751,7 @@ public class IconDrawer
 			try
 			{
 				icon = ImageIO.read(path.toFile());
-				String ext = FilenameUtils.getExtension(path.toString());
-				String base = FilenameUtils.getBaseName(path.toString());
-				Path maskPath = Paths.get(path.getParent().toString(), base + "_mask." + ext);
-				if (!Files.exists(maskPath))
-				{
-					// Try jpg.
-					maskPath = Paths.get(path.getParent().toString(), base + "_mask.jpg");
-					if (!Files.exists(maskPath))
-					{
-						Logger.println("Unable to find a mask for image: " + path + ". When that image is drawn its transparent pixels will display icons drawn behind it.");
-						mask = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-					}
-				}
-				if (mask == null)
-					mask = ImageHelper.convertToGrayscale(ImageIO.read(new File(maskPath.toString())));
+				mask = createMask(icon);
 			} 
 			catch (IOException e)
 			{
@@ -782,63 +769,118 @@ public class IconDrawer
 		return imagesPerGroup;
 	}
 	
-	private static final int opaqueThreshold = 100;
+	private static final int opaqueThreshold = 50;
 	
 	public static BufferedImage createMask(BufferedImage icon)
 	{
-		ArrayDeque<Coordinate> points = new ArrayDeque<>();
-		
-		// Add points for the top
-		for (int x = 0; x < icon.getWidth(); x++)
+		// Top
+		BufferedImage topSilhouette = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
 		{
-			Coordinate point = findUppermostOpaquePixel(icon, x);
-			if (point != null)
+			List<Coordinate> points = new ArrayList<>();
+			for (int x = 0; x < icon.getWidth(); x++)
 			{
-				points.add(point);
+				Coordinate point = findUppermostOpaquePixel(icon, x);
+				if (point != null)
+				{
+					if (points.isEmpty())
+					{
+						points.add(new Coordinate(x, icon.getHeight()));
+					}
+					points.add(point);
+				}
 			}
-		}
-
-		if (points.size() < 3)
-		{
-			return new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-		}
-
-		// Add points for the left side
-		for (int y = points.getFirst().y; y < icon.getHeight(); y++)
-		{
-			Coordinate point = findLeftmostOpaquePixel(icon, y);
-			if (point != null)
-			{
-				points.push(point);
-			}
-		}
-
-		// Add points for the right side
-		for (int y = points.getLast().y; y < icon.getHeight(); y++)
-		{
-			Coordinate point = findRightmostOpaquePixel(icon, y);
-			if (point != null)
-			{
-				points.add(point);
-			}
-		}
 			
-		// Draw the mask image.
+			if (points.size() < 3)
+			{
+				return new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+			}
+			points.add(new Coordinate(points.get(points.size() - 1).x, icon.getHeight()));
+			drawWhitePolygonFromPoints(topSilhouette, points);
+		}
+		
+		// Left side
+		BufferedImage leftSilhouette = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		{
+			List<Coordinate> points = new ArrayList<>();
+			for (int y = 0; y < icon.getHeight(); y++)
+			{
+				Coordinate point = findLeftmostOpaquePixel(icon, y);
+				if (point != null)
+				{
+					if (points.isEmpty())
+					{
+						points.add(new Coordinate(icon.getWidth(), y));
+					}
+					points.add(point);
+				}
+			}
+			points.add(new Coordinate(icon.getWidth(), points.get(points.size() - 1).y));
+			drawWhitePolygonFromPoints(leftSilhouette, points);
+		}
+
+		// Right side
+		BufferedImage rightSilhouette = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		{
+			List<Coordinate> points = new ArrayList<>();
+			for (int y = 0; y < icon.getHeight(); y++)
+			{
+				Coordinate point = findRightmostOpaquePixel(icon, y);
+				if (point != null)
+				{
+					if (points.isEmpty())
+					{
+						points.add(new Coordinate(0, y));
+					}
+					points.add(point);
+				}
+			}
+			points.add(new Coordinate(0, points.get(points.size() - 1).y));
+			drawWhitePolygonFromPoints(rightSilhouette, points);
+		}
+		
+		// TODO remove
+//		ImageHelper.write(topSilhouette, "topSilhouette.png");
+//		ImageHelper.write(leftSilhouette, "leftSilhouette.png");
+//		ImageHelper.write(rightSilhouette, "rightSilhouette.png");
+
+			
+		// The mask image is a resolve of the intersection of the 3 silhouettes.
+		
+		BufferedImage mask = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		Graphics2D g = mask.createGraphics();
+		g.setColor(Color.white);
+		WritableRaster maskRaster = mask.getRaster();
+		Raster topRaster = topSilhouette.getRaster();
+		Raster leftRaster = leftSilhouette.getRaster();
+		Raster rightRaster = rightSilhouette.getRaster();
+		for (int x = 0; x < mask.getWidth(); x++)
+		{
+			for (int y = 0; y < mask.getHeight(); y++)
+			{
+				if (topRaster.getSample(x, y, 0) > 0 && leftRaster.getSample(x, y, 0) > 0 && rightRaster.getSample(x, y, 0) > 0)
+				{
+					maskRaster.setSample(x, y, 0, 255);
+				}
+			}
+		}
+		
+		return mask;
+	}
+	
+	private static void drawWhitePolygonFromPoints(BufferedImage image, List<Coordinate> points)
+	{
 		int[] xPoints = new int[points.size()];
 		int[] yPoints = new int[points.size()];
 		for (int i : new Range(points.size()))
 		{
-			 Coordinate point = points.pop();
+			 Coordinate point = points.get(i);
 			 xPoints[i] = point.x;
 			 yPoints[i] = point.y;
 		}
 		
-		BufferedImage mask = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-		Graphics2D g = mask.createGraphics();
-		g.setStroke(new BasicStroke(1));
+		Graphics2D g = image.createGraphics();
 		g.setColor(Color.white);
 		g.fillPolygon(xPoints, yPoints, xPoints.length);
-		return mask;
 	}
 	
 	private static Coordinate findUppermostOpaquePixel(BufferedImage icon, int x)
@@ -881,12 +923,5 @@ public class IconDrawer
 		}
 		
 		return null;
-	}
-	
-	public static void main(String[] args)
-	{
-		BufferedImage icon = ImageHelper.read("/home/joseph/Documents/FantasyMapCreator/workspace/nortantis/assets/icons/trees/cacti_tree3.png");
-		ImageHelper.write(createMask(icon), "generated_mask.png");
-		System.out.println("Done");
 	}
 }
