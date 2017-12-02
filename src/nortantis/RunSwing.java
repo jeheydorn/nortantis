@@ -523,7 +523,7 @@ public class RunSwing
 		backgroundPanel.setLayout(null);
 		
 		JLabel label = new JLabel("Resolution:");
-		label.setToolTipText("The resolution of the result will be multiplied by this value. Larger values will take longer to run.");
+		label.setToolTipText("The resolution of the result will be multiplied by this value. Larger values will take longer to run. The maximum resolution is automatically adjusted based on how much RAM you allocate to the java virtual machine.");
 		label.setBounds(12, 20, 101, 15);
 		backgroundPanel.add(label);
 		

@@ -771,6 +771,14 @@ public class IconDrawer
 	
 	private static final int opaqueThreshold = 50;
 	
+	/**
+	 * Generates a mask image for an icon. A mask is used when drawing an icon to determine which pixels that are transparent in the icon
+	 * should draw the map background vs draw the icons already drawn behind that icon. If a pixel is transparent in the icon, and the
+	 * corresponding pixel is white in the mask, then the map background is drawn for that pixel. But if the map pixel is black, then there
+	 * is no special handling when drawing that pixel, so whatever was drawn in that place on the map before it will be visible. 
+	 * @param icon
+	 * @return
+	 */
 	public static BufferedImage createMask(BufferedImage icon)
 	{
 		// Top
