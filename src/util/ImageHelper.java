@@ -632,6 +632,11 @@ public class ImageHelper
        	
 	}
 	
+	public static int getAlphaLevel(BufferedImage image, int x, int y)
+	{
+		return new Color(image.getRGB(x, y), true).getAlpha();
+	}
+	
 	/**
 	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */

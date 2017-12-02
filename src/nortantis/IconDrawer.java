@@ -1,6 +1,8 @@
 package nortantis;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.io.File;
@@ -9,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -29,6 +33,7 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import nortantis.GraphImpl.ColorData;
+import util.Coordinate;
 import util.Function;
 import util.Helper;
 import util.ImageHelper;
@@ -776,5 +781,112 @@ public class IconDrawer
 		}
 		return imagesPerGroup;
 	}
+	
+	private static final int opaqueThreshold = 100;
+	
+	public static BufferedImage createMask(BufferedImage icon)
+	{
+		ArrayDeque<Coordinate> points = new ArrayDeque<>();
+		
+		// Add points for the top
+		for (int x = 0; x < icon.getWidth(); x++)
+		{
+			Coordinate point = findUppermostOpaquePixel(icon, x);
+			if (point != null)
+			{
+				points.add(point);
+			}
+		}
 
+		if (points.size() < 3)
+		{
+			return new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		}
+
+		// Add points for the left side
+		for (int y = points.getFirst().y; y < icon.getHeight(); y++)
+		{
+			Coordinate point = findLeftmostOpaquePixel(icon, y);
+			if (point != null)
+			{
+				points.push(point);
+			}
+		}
+
+		// Add points for the right side
+		for (int y = points.getLast().y; y < icon.getHeight(); y++)
+		{
+			Coordinate point = findRightmostOpaquePixel(icon, y);
+			if (point != null)
+			{
+				points.add(point);
+			}
+		}
+			
+		// Draw the mask image.
+		int[] xPoints = new int[points.size()];
+		int[] yPoints = new int[points.size()];
+		for (int i : new Range(points.size()))
+		{
+			 Coordinate point = points.pop();
+			 xPoints[i] = point.x;
+			 yPoints[i] = point.y;
+		}
+		
+		BufferedImage mask = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		Graphics2D g = mask.createGraphics();
+		g.setStroke(new BasicStroke(1));
+		g.setColor(Color.white);
+		g.fillPolygon(xPoints, yPoints, xPoints.length);
+		return mask;
+	}
+	
+	private static Coordinate findUppermostOpaquePixel(BufferedImage icon, int x)
+	{
+		for (int y = 0; y < icon.getHeight(); y++)
+		{
+			int alpha = ImageHelper.getAlphaLevel(icon, x, y);
+			if (alpha >= opaqueThreshold)
+			{
+				return new Coordinate(x, y);
+			}
+		}
+		
+		return null;
+	}
+	
+	private static Coordinate findLeftmostOpaquePixel(BufferedImage icon, int y)
+	{
+		for (int x = 0; x < icon.getWidth(); x++)
+		{
+			int alpha = ImageHelper.getAlphaLevel(icon, x, y);
+			if (alpha >= opaqueThreshold)
+			{
+				return new Coordinate(x, y);
+			}
+		}
+		
+		return null;
+	}
+
+	private static Coordinate findRightmostOpaquePixel(BufferedImage icon, int y)
+	{
+		for (int x = icon.getWidth() - 1; x >= 0 ; x--)
+		{
+			int alpha = ImageHelper.getAlphaLevel(icon, x, y);
+			if (alpha >= opaqueThreshold)
+			{
+				return new Coordinate(x, y);
+			}
+		}
+		
+		return null;
+	}
+	
+	public static void main(String[] args)
+	{
+		BufferedImage icon = ImageHelper.read("/home/joseph/Documents/FantasyMapCreator/workspace/nortantis/assets/icons/trees/cacti_tree3.png");
+		ImageHelper.write(createMask(icon), "generated_mask.png");
+		System.out.println("Done");
+	}
 }
