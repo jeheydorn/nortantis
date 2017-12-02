@@ -837,13 +837,7 @@ public class IconDrawer
 			points.add(new Coordinate(0, points.get(points.size() - 1).y));
 			drawWhitePolygonFromPoints(rightSilhouette, points);
 		}
-		
-		// TODO remove
-//		ImageHelper.write(topSilhouette, "topSilhouette.png");
-//		ImageHelper.write(leftSilhouette, "leftSilhouette.png");
-//		ImageHelper.write(rightSilhouette, "rightSilhouette.png");
-
-			
+					
 		// The mask image is a resolve of the intersection of the 3 silhouettes.
 		
 		BufferedImage mask = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
