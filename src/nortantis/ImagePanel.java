@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 @SuppressWarnings("serial")
 public class ImagePanel extends JPanel
 {
-	protected BufferedImage image;
+	public BufferedImage image;
 	
 	public ImagePanel()
 	{

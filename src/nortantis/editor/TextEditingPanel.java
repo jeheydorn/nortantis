@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.editor;
 
 import java.awt.Color;
 import java.awt.Graphics;
@@ -6,6 +6,8 @@ import java.awt.Graphics2D;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.List;
+
+import nortantis.ImagePanel;
 
 @SuppressWarnings("serial")
 public class TextEditingPanel extends ImagePanel

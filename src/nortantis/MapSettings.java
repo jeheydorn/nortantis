@@ -33,61 +33,61 @@ public class MapSettings implements Serializable
 	/**
 	 *  A scalar multiplied by the map height and width to get the final resolution.
 	 */
-	double resolution;
-	int landBlur;
-	int oceanEffects;
-	boolean addWavesToOcean;
-	int worldSize;
-	Color riverColor;
-	Color landBlurColor;
-	Color oceanEffectsColor;
-	Color coastlineColor;
-	double centerLandToWaterProbability;
-	double edgeLandToWaterProbability;
-	boolean frayedBorder;
-	Color frayedBorderColor;
-	int frayedBorderBlurLevel;
+	public double resolution;
+	public int landBlur;
+	public int oceanEffects;
+	public boolean addWavesToOcean;
+	public int worldSize;
+	public Color riverColor;
+	public Color landBlurColor;
+	public Color oceanEffectsColor;
+	public Color coastlineColor;
+	public double centerLandToWaterProbability;
+	public double edgeLandToWaterProbability;
+	public boolean frayedBorder;
+	public Color frayedBorderColor;
+	public int frayedBorderBlurLevel;
 	public int grungeWidth;
 	
 	/**
 	 * This settings actually mans fractal generated as opposed to generated from texture.
 	 */
-	boolean generateBackground;
-	boolean generateBackgroundFromTexture;
-	boolean transparentBackground; 
-	boolean colorizeOcean; // For backgrounds generated from a texture.
-	boolean colorizeLand; // For backgrounds generated from a texture.
-	String backgroundTextureImage;
-	long backgroundRandomSeed;
-	Color oceanColor;
-	Color landColor;
-	int generatedWidth;
-	int generatedHeight;
-	float fractalPower;
-	String landBackgroundImage;
-	String oceanBackgroundImage;
-	int hueRange;
-	int saturationRange;
-	int brightnessRange;
+	public boolean generateBackground;
+	public boolean generateBackgroundFromTexture;
+	public boolean transparentBackground; 
+	public boolean colorizeOcean; // For backgrounds generated from a texture.
+	public boolean colorizeLand; // For backgrounds generated from a texture.
+	public String backgroundTextureImage;
+	public long backgroundRandomSeed;
+	public Color oceanColor;
+	public Color landColor;
+	public int generatedWidth;
+	public int generatedHeight;
+	public float fractalPower;
+	public String landBackgroundImage;
+	public String oceanBackgroundImage;
+	public int hueRange;
+	public int saturationRange;
 	
-	boolean drawText;
-	long textRandomSeed;
-	Set<String> books;
-	Font titleFont;
-	Font regionFont;
-	Font mountainRangeFont;
-	Font otherMountainsFont;
-	Font riverFont;
-	Color boldBackgroundColor;
-	Color textColor;
-	MapEdits edits;
-	boolean drawBoldBackground;
-	boolean drawRegionColors;
-	long regionsRandomSeed;
-	boolean drawBorder;
-	String borderType;
-	int borderWidth;
-	int frayedBorderSize;
+	public int brightnessRange;
+	public boolean drawText;
+	public long textRandomSeed;
+	public Set<String> books;
+	public Font titleFont;
+	public Font regionFont;
+	public Font mountainRangeFont;
+	public Font otherMountainsFont;
+	public Font riverFont;
+	public Color boldBackgroundColor;
+	public Color textColor;
+	public MapEdits edits;
+	public boolean drawBoldBackground;
+	public boolean drawRegionColors;
+	public long regionsRandomSeed;
+	public boolean drawBorder;
+	public String borderType;
+	public int borderWidth;
+	public int frayedBorderSize;
 	
 	public MapSettings()
 	{

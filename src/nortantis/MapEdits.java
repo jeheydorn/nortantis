@@ -15,7 +15,7 @@ public class MapEdits implements Serializable
 	/**
 	 * Text the user has edited, added, moved, or rotated. The key is the text id.
 	 */
-	List<MapText> text; 
+	public List<MapText> text; 
 		
 	public MapEdits()
 	{

@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.editor;
 
 import java.awt.BorderLayout;
 import java.awt.KeyEventDispatcher;
@@ -32,11 +32,17 @@ import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
+import nortantis.MapCreator;
+import nortantis.MapParts;
+import nortantis.MapSettings;
+import nortantis.MapText;
+import nortantis.RunSwing;
+import nortantis.TextType;
 import util.ImageHelper;
 import util.Tuple2;
 
 @SuppressWarnings("serial")
-public class EditTextDialog extends JDialog
+public class EditorDialog extends JDialog
 {
 	private final TextEditingPanel mapDisplayPanel;
 	private JTextField editTextField;
@@ -57,16 +63,16 @@ public class EditTextDialog extends JDialog
 	 * Other fields in settings may be modified in the editing process.
 	 * @throws IOException 
 	 */
-	public EditTextDialog(final MapSettings settings, final RunSwing runSwing)
+	public EditorDialog(final MapSettings settings, final RunSwing runSwing)
 	{
-		final EditTextDialog thisDialog = this;
+		final EditorDialog thisDialog = this;
 		this.settings = settings;
 		final BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.png");
 		setBounds(100, 100, 935, 584);
 		
 		mapDisplayPanel = new TextEditingPanel(placeHolder);
 		
-		runSwing.btnClearTextEdits.setEnabled(true);
+		runSwing.clearEditsMenuItem.setEnabled(true);
 
 		getContentPane().setLayout(new BorderLayout());
 		mapDisplayPanel.setLayout(new BorderLayout());

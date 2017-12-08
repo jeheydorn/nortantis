@@ -66,6 +66,7 @@ import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 
+import nortantis.editor.EditorDialog;
 import util.ImageHelper;
 import util.JFontChooser;
 import util.Logger;
@@ -117,8 +118,6 @@ public class RunSwing
 	private int backgroundDisplayCenterX = 667;
 	float fractalPower;
 	private JTextField textRandomSeedTextField;
-	private JButton btnEditText;
-	public JButton btnClearTextEdits;
 	MapEdits edits;
 	private boolean showTextWarning = true;
 	/**
@@ -160,6 +159,9 @@ public class RunSwing
 	private JSlider frayedEdgeSizeSlider;
 	private JSlider frayedEdgeBlurSlider;
 	private JCheckBox frayedEdgeCheckbox;
+	public JMenuItem clearEditsMenuItem;
+	private JMenu editorMenu;
+	private JMenuItem launchEditorMenuItem;
 
 	
 	public static boolean isRunning()
@@ -1279,43 +1281,7 @@ public class RunSwing
 		btnNewTextRandomSeed.setToolTipText("Generate a new random seed for creating text.");
 		btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
 		textPanel.add(btnNewTextRandomSeed);
-		
-		btnEditText = new JButton("Edit Text");
-		btnEditText.setToolTipText("Modify the generated text.");
-		btnEditText.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-		        Dialog dialog;
-		        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
-				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-				dialog.setVisible(true);
-			}
-		});
-		btnEditText.setBounds(8, 314, 117, 25);
-		textPanel.add(btnEditText);
-		
-		btnClearTextEdits = new JButton("Clear Text Edits");
-		btnClearTextEdits.setToolTipText("Remove all modifications to  generated text.");
-		btnClearTextEdits.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent e) 
-			{
-	        	int n = JOptionPane.showConfirmDialog(
-	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
-	                    JOptionPane.YES_NO_OPTION);
-	            if (n == JOptionPane.YES_OPTION) 
-	            {
-									edits = new MapEdits();
-									btnClearTextEdits.setEnabled(false);
-	            }
-
-			}
-		});
-
-		btnClearTextEdits.setBounds(137, 314, 161, 25);
-		textPanel.add(btnClearTextEdits);
-		
+						
 		drawTextCheckBox = new JCheckBox("Draw text");
 		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
 		drawTextCheckBox.setBounds(8, 8, 125, 23);
@@ -1341,9 +1307,9 @@ public class RunSwing
 				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
 				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
 				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
-				btnEditText.setEnabled(drawTextCheckBox.isSelected());
+				launchEditorMenuItem.setEnabled(drawTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
-				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
+				clearEditsMenuItem.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
 			}			
 		});
 		textPanel.add(drawTextCheckBox);
@@ -1490,6 +1456,44 @@ public class RunSwing
 			}			
 		});
 		
+		editorMenu = new JMenu("Editor");
+		menuBar.add(editorMenu);
+		
+		launchEditorMenuItem = new JMenuItem("Launch Editor");
+		launchEditorMenuItem.setAccelerator(KeyStroke.getKeyStroke(
+		        java.awt.event.KeyEvent.VK_E, 
+		        java.awt.Event.CTRL_MASK));
+		launchEditorMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+		        Dialog dialog;
+		        dialog = new EditorDialog(getSettingsFromGUI(), runSwing);
+				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+				dialog.setVisible(true);
+			}			
+		});
+		editorMenu.add(launchEditorMenuItem);
+		
+		clearEditsMenuItem = new JMenuItem("Clear Edits");
+		clearEditsMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+	        	int n = JOptionPane.showConfirmDialog(
+	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
+	                    JOptionPane.YES_NO_OPTION);
+	            if (n == JOptionPane.YES_OPTION) 
+	            {
+									edits = new MapEdits();
+									clearEditsMenuItem.setEnabled(false);
+	            }
+			}			
+		});
+		editorMenu.add(clearEditsMenuItem);
+		
 		JMenuBar menuBar_1 = new JMenuBar();
 		menuBar.add(menuBar_1);
 		
@@ -1534,7 +1538,7 @@ public class RunSwing
 		{
 	        int n = JOptionPane.showOptionDialog(frame, "You have edited text and performed an action which will likely change \n"
                     + "the generated map. This could cause the edited text to not fit the map. \n"
-                    + "You can clear text edits by going to Text -> " + btnClearTextEdits.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+                    + "You can clear text edits by going to " + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
 	        if (n == JOptionPane.NO_OPTION)
 	        {
 	        	showTextWarning = false;
@@ -2002,7 +2006,7 @@ public class RunSwing
 		drawBorderCheckbox.doClick();
 		
 		edits = settings.edits;
-		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
+		clearEditsMenuItem.setEnabled(!edits.text.isEmpty());
 		
 		updateBackgroundImageDisplays();
 		updateFrameTitle();
