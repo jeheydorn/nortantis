@@ -48,6 +48,7 @@ import nortantis.TextType;
 import util.ImageHelper;
 import util.Tuple2;
 import javax.swing.JToolBar;
+import javax.swing.SpringLayout;
 
 @SuppressWarnings("serial")
 public class EditorDialog extends JDialog
@@ -89,7 +90,7 @@ public class EditorDialog extends JDialog
 		
 		JPanel toolsPanel = new JPanel(new BorderLayout());
 		toolsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-		mapDisplayPanel.add(toolsPanel, BorderLayout.EAST);
+		getContentPane().add(toolsPanel, BorderLayout.EAST);
 		
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -102,31 +103,30 @@ public class EditorDialog extends JDialog
 
 		getContentPane().add(scrollPane);
 		
-		JPanel toolOptionsPanel = new JPanel(new GridBagLayout());
+		JPanel toolOptionsPanel = new JPanel();
 		toolsPanel.add(toolOptionsPanel, BorderLayout.CENTER);
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
 		editTextField = new JTextField();
-		GridBagConstraints c = new GridBagConstraints();
 		int curY = 0;
-		c.gridx = 0;
-		c.gridy = curY;
 		curY++;
-		c.weightx = 0.5;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		toolOptionsPanel.add(editTextField, c);
+		SpringLayout sl_toolOptionsPanel = new SpringLayout();
+		sl_toolOptionsPanel.putConstraint(SpringLayout.NORTH, editTextField, 202, SpringLayout.NORTH, toolOptionsPanel);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.WEST, editTextField, 3, SpringLayout.WEST, toolOptionsPanel);
+		toolOptionsPanel.setLayout(sl_toolOptionsPanel);
+		toolOptionsPanel.add(editTextField);
 		editTextField.setColumns(20);
 			
 		
 		JLabel lblTools = new JLabel("Tool:");
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = curY;
-		c.weightx = 0.5;
-		c.fill = GridBagConstraints.HORIZONTAL;
-		toolOptionsPanel.add(lblTools, c);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.NORTH, lblTools, 225, SpringLayout.NORTH, toolOptionsPanel);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.WEST, lblTools, 3, SpringLayout.WEST, toolOptionsPanel);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.EAST, lblTools, 227, SpringLayout.WEST, toolOptionsPanel);
+		toolOptionsPanel.add(lblTools);
 		
 		toolComboBox = new JComboBox<>();
+		sl_toolOptionsPanel.putConstraint(SpringLayout.NORTH, toolComboBox, 221, SpringLayout.NORTH, toolOptionsPanel);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.WEST, toolComboBox, 227, SpringLayout.WEST, toolOptionsPanel);
 		for (ToolType toolType : ToolType.values())
 		{
 			toolComboBox.addItem(toolType);
@@ -151,29 +151,24 @@ public class EditorDialog extends JDialog
 				updateToolText();
 			}
 		});
-		c = new GridBagConstraints();
-		c.gridx = 1;
-		c.gridy = curY;
 		curY++;
-		toolOptionsPanel.add(toolComboBox, c);
+		toolOptionsPanel.add(toolComboBox);
 		
 		JLabel lblTextType = new JLabel("Text type:");
-		c = new GridBagConstraints();
-		c.gridx = 0;
-		c.gridy = curY;		
-		toolOptionsPanel.add(lblTextType, c);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.NORTH, lblTextType, 249, SpringLayout.NORTH, toolOptionsPanel);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.WEST, lblTextType, 79, SpringLayout.WEST, toolOptionsPanel);
+		toolOptionsPanel.add(lblTextType);
 		
 		textTypeComboBox= new JComboBox<>();
+		sl_toolOptionsPanel.putConstraint(SpringLayout.NORTH, textTypeComboBox, 245, SpringLayout.NORTH, toolOptionsPanel);
+		sl_toolOptionsPanel.putConstraint(SpringLayout.WEST, textTypeComboBox, 227, SpringLayout.WEST, toolOptionsPanel);
 		for (TextType type : TextType.values())
 		{
 			textTypeComboBox.addItem(type);				
 		}
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		c = new GridBagConstraints();
-		c.gridx = 1;
-		c.gridy = curY;		
 		curY++;
-		toolOptionsPanel.add(textTypeComboBox, c);
+		toolOptionsPanel.add(textTypeComboBox);
 		textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 		toolComboBox.setSelectedItem(ToolType.Edit); 		
 		lastTool = (ToolType)toolComboBox.getSelectedItem();
