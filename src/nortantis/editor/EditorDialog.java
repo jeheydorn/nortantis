@@ -1,6 +1,10 @@
 package nortantis.editor;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -20,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -29,6 +35,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 
@@ -40,6 +47,7 @@ import nortantis.RunSwing;
 import nortantis.TextType;
 import util.ImageHelper;
 import util.Tuple2;
+import javax.swing.JToolBar;
 
 @SuppressWarnings("serial")
 public class EditorDialog extends JDialog
@@ -78,36 +86,45 @@ public class EditorDialog extends JDialog
 		mapDisplayPanel.setLayout(new BorderLayout());
 		mapDisplayPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		scrollPane = new JScrollPane(mapDisplayPanel);
+		
+		JPanel toolsPanel = new JPanel(new BorderLayout());
+		toolsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		mapDisplayPanel.add(toolsPanel, BorderLayout.EAST);
+		
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+		JToolBar toolBar = new JToolBar(null, JToolBar.VERTICAL);
+		toolsPanel.add(toolBar, BorderLayout.NORTH);
+		toolBar.add(new JToggleButton("JToolBar button1"));
+		toolBar.add(new JToggleButton("JToolBar button2"));
 		
+
 		getContentPane().add(scrollPane);
 		
-		JPanel buttonPane = new JPanel();
-		buttonPane.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		getContentPane().add(buttonPane, BorderLayout.SOUTH);
-		{
-			JButton doneButton = new JButton("Done");
-			doneButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e){
-					thisDialog.dispatchEvent(new WindowEvent(
-		                    thisDialog, WindowEvent.WINDOW_CLOSING));
-				}
-			});
-			buttonPane.setLayout(new BorderLayout(0, 0));
+		JPanel toolOptionsPanel = new JPanel(new GridBagLayout());
+		toolsPanel.add(toolOptionsPanel, BorderLayout.CENTER);
+		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
-			editTextField = new JTextField();
-			buttonPane.add(editTextField, BorderLayout.WEST);
-			editTextField.setColumns(20);
-			buttonPane.add(doneButton, BorderLayout.EAST);
+		editTextField = new JTextField();
+		GridBagConstraints c = new GridBagConstraints();
+		int curY = 0;
+		c.gridx = 0;
+		c.gridy = curY;
+		curY++;
+		c.weightx = 0.5;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		toolOptionsPanel.add(editTextField, c);
+		editTextField.setColumns(20);
 			
-		}
-		
-		JPanel panel = new JPanel();
-		buttonPane.add(panel, BorderLayout.CENTER);
 		
 		JLabel lblTools = new JLabel("Tool:");
-		panel.add(lblTools);
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = curY;
+		c.weightx = 0.5;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		toolOptionsPanel.add(lblTools, c);
 		
 		toolComboBox = new JComboBox<>();
 		for (ToolType toolType : ToolType.values())
@@ -134,10 +151,17 @@ public class EditorDialog extends JDialog
 				updateToolText();
 			}
 		});
-		panel.add(toolComboBox);
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = curY;
+		curY++;
+		toolOptionsPanel.add(toolComboBox, c);
 		
 		JLabel lblTextType = new JLabel("Text type:");
-		panel.add(lblTextType);
+		c = new GridBagConstraints();
+		c.gridx = 0;
+		c.gridy = curY;		
+		toolOptionsPanel.add(lblTextType, c);
 		
 		textTypeComboBox= new JComboBox<>();
 		for (TextType type : TextType.values())
@@ -145,12 +169,16 @@ public class EditorDialog extends JDialog
 			textTypeComboBox.addItem(type);				
 		}
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		panel.add(textTypeComboBox);
+		c = new GridBagConstraints();
+		c.gridx = 1;
+		c.gridy = curY;		
+		curY++;
+		toolOptionsPanel.add(textTypeComboBox, c);
 		textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 		toolComboBox.setSelectedItem(ToolType.Edit); 		
 		lastTool = (ToolType)toolComboBox.getSelectedItem();
 		JLabel lblZoom = new JLabel("Zoom:");
-		panel.add(lblZoom);
+		//panel.add(lblZoom);
 		
 		final JComboBox<String> zoomComboBox = new JComboBox<>();
 		zoomComboBox.addItem("25%");
@@ -158,7 +186,7 @@ public class EditorDialog extends JDialog
 		zoomComboBox.addItem("75%");
 		zoomComboBox.addItem("100%");
 		zoomComboBox.setSelectedItem("50%");
-		panel.add(zoomComboBox);
+		//panel.add(zoomComboBox);
 		setZoom((String)zoomComboBox.getSelectedItem());
 		zoomComboBox.addActionListener(new ActionListener()
 		{
@@ -174,7 +202,18 @@ public class EditorDialog extends JDialog
 				createAndShowMap();
 				editTextField.requestFocus();
 			}
-		});			
+		});	
+		
+		JPanel doneButtonPanel = new JPanel(new BorderLayout());
+		toolsPanel.add(doneButtonPanel, BorderLayout.SOUTH);
+		JButton doneButton = new JButton("Done");
+		doneButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e){
+				thisDialog.dispatchEvent(new WindowEvent(
+	                    thisDialog, WindowEvent.WINDOW_CLOSING));
+			}
+		});
+		doneButtonPanel.add(doneButton, BorderLayout.EAST);
 			
 		mapDisplayPanel.addMouseListener(new MouseAdapter()
 		{

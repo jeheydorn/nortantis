@@ -1307,7 +1307,6 @@ public class RunSwing
 				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
 				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
 				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
-				launchEditorMenuItem.setEnabled(drawTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
 				clearEditsMenuItem.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
 			}			
