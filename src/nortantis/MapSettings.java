@@ -18,6 +18,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import hoten.geom.Point;
+import nortantis.editor.MapEdits;
 import util.Function0;
 import util.Helper;
 

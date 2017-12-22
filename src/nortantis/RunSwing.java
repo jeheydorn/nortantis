@@ -67,6 +67,7 @@ import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 import nortantis.editor.EditorDialog;
+import nortantis.editor.MapEdits;
 import util.ImageHelper;
 import util.JFontChooser;
 import util.Logger;

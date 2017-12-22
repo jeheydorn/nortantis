@@ -1,8 +1,10 @@
-package nortantis;
+package nortantis.editor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import nortantis.MapText;
 
 /**
  * Stores edits made by a user to a map. These are stored as modifications from the generated content.
