@@ -38,7 +38,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.plaf.SliderUI;
 
 import nortantis.MapCreator;
@@ -54,6 +57,8 @@ import javax.swing.JToolBar;
 import javax.swing.SpringLayout;
 import java.awt.Insets;
 import java.awt.Component;
+import java.awt.Dimension;
+
 import javax.swing.Box;
 
 @SuppressWarnings("serial")
@@ -63,6 +68,7 @@ public class EditorDialog extends JDialog
 	EditorTool currentTool;
 	List<EditorTool> tools;
 	public static final int borderWidthBetweenComponents = 4;
+	public static final int toolsPanelMaxWidth = 300;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -79,7 +85,7 @@ public class EditorDialog extends JDialog
 
 		getContentPane().setLayout(new BorderLayout());
 
-		// Setup toolbar
+		// Setup tools
 		tools = Arrays.asList(
 				new TextTool(this, settings),
 				new OceanTool());
@@ -90,18 +96,24 @@ public class EditorDialog extends JDialog
 		getContentPane().add(scrollPane);
 	
 		JPanel toolsPanel = new JPanel();
+		toolsPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, getContentPane().getHeight()));
 		toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
 		getContentPane().add(toolsPanel, BorderLayout.EAST);
 
-		JToolBar toolBar = new JToolBar(null, JToolBar.VERTICAL);
-		toolsPanel.add(toolBar);
+		JPanel toolSelectPanel = new JPanel(new FlowLayout());
+		toolSelectPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, 20));
+		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tools"));
+		toolsPanel.add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
-			toolBar.add(new JToggleButton(tool.getToolbarName()));		
+			toolSelectPanel.add(new JToggleButton(tool.getToolbarName()));
 		}
 		
 		// Setup tool options panel
-		toolsPanel.add(currentTool.getToolOptionsPanel());
+		JPanel toolsOptionsPanel = new JPanel();
+		toolsOptionsPanel.add(currentTool.getToolOptionsPanel());
+		toolsPanel.add(toolsOptionsPanel);
+		toolsOptionsPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tool Options"));
 				
 		// Setup bottom panel
 		JPanel bottomPanel = new JPanel();

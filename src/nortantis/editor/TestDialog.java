@@ -32,16 +32,19 @@ public class TestDialog extends JDialog
 		setBounds(100, 100, 935, 584);
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		
+		JPanel topPanel = new JPanel(new FlowLayout());
+		topPanel.setMaximumSize(new Dimension(200,20));
+		getContentPane().add(topPanel);
 		JButton btnButton = new JButton("Button 1");
 		btnButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 			}
 		});
-		getContentPane().add(btnButton);
+		topPanel.add(btnButton);
 		
 		
 		JButton btnButton_1 = new JButton("Button 2");
-		getContentPane().add(btnButton_1);
+		topPanel.add(btnButton_1);
 		
 		JPanel panel = new JPanel();
 		panel.setBackground(Color.RED);

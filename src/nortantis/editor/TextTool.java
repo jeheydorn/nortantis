@@ -173,7 +173,7 @@ public class TextTool implements EditorTool
 		toolOptionsPanel.add(editTextField);
 		editTextField.setColumns(20);
 		
-		JLabel lblTools = new JLabel("Tool:");
+		JLabel lblTools = new JLabel("Action:");
 		
 		toolComboBox = new JComboBoxFixed<>();
 		toolComboBox.addActionListener(new ActionListener()

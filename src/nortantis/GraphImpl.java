@@ -405,7 +405,7 @@ public class GraphImpl extends VoronoiGraph
          	else
          		g.setColor(Color.BLACK);
                         
-            drawUsingTriangles(g, c);
+            drawUsingTriangles(g, c, false);
         } 	
         
         renderPolygons(g, c -> c.border ? Color.white : Color.black);

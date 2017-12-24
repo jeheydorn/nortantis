@@ -1,7 +1,13 @@
 package nortantis;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+
+import javax.imageio.ImageIO;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import util.Logger;
@@ -36,15 +42,15 @@ public class GraphCreator
 				/ 1000.0);
 
         // Draw elevation map with tectonic plate boundaries. 
-//        {
-//	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
-//	        Graphics2D g = elevationImg.createGraphics();
-//	        g.setColor(Color.BLACK);
-//	        g.fillRect(0, 0, (int)width, (int)height);
-//	        graph.paintWithTectonicPlateVelocity(g);
-//	        File elevationfile = new File("elevation.png");
-//	        ImageIO.write(elevationImg, "png", elevationfile);
-//       }
+        {
+	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
+	        Graphics2D g = elevationImg.createGraphics();
+	        g.setColor(Color.BLACK);
+	        g.fillRect(0, 0, (int)width, (int)height);
+	        graph.paintWithTectonicPlateVelocity(g);
+	        File elevationfile = new File("elevation.png");
+	        ImageIO.write(elevationImg, "png", elevationfile);
+       }
 //
 //        final BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
 //        Graphics2D g = img.createGraphics();

@@ -2,6 +2,7 @@ package hoten.voronoi;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -15,11 +16,15 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.TectonicPlate;
+import util.Helper;
 import util.Range;
 
 /**
@@ -144,7 +149,8 @@ public abstract class VoronoiGraph {
         }
     }
 
-    private Edge edgeWithCenters(Center c1, Center c2) {
+    private Edge edgeWithCenters(Center c1, Center c2) 
+    {
         for (Edge e : c1.borders) {
             if (e.d0 == c2 || e.d1 == c2) {
                 return e;
@@ -153,7 +159,8 @@ public abstract class VoronoiGraph {
         return null;
     }
 
-    private void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center) {
+    private void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center) 
+    {
         int[] x = new int[3];
         int[] y = new int[3];
         x[0] = (int) center.loc.x;
@@ -163,6 +170,76 @@ public abstract class VoronoiGraph {
         x[2] = (int) c2.loc.x;
         y[2] = (int) c2.loc.y;
         g.fillPolygon(x, y, 3);
+    }
+    
+    private void drawTriangleElevation(Graphics2D g, Corner c1, Corner c2, Center center) 
+    {
+      // TODO
+    	Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
+    	Vector3D v2 = new Vector3D(c2.loc.x, c2.loc.y, c2.elevation);
+    	Vector3D v3 = new Vector3D(center.loc.x, center.loc.y, center.elevation);
+    	
+    	// Normal of the plane containing the triangle
+    	Vector3D N = v2.subtract(v1).crossProduct(v3.subtract(v1));
+    	final double verySmall = 0.0000001;
+    	if (Math.abs(N.getX()) < verySmall && Math.abs(N.getY()) < verySmall && Math.abs(N.getZ()) < verySmall)
+    	{
+       		// All points in the triangle are very close to 0 in elevation.
+    		int grayLevel = (int)(255 * center.elevation);
+    		g.setColor(new Color(grayLevel, grayLevel, grayLevel));
+        	drawTriangle(g, c1, c2, center);
+        	return;
+    	}
+    	N = N.normalize();
+    	
+    	// Gradient vector
+    	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), N.getZ()); // TODO figure out if this is correct. I don't think it is.
+    	
+    	int c1GrayLevel = (int)(c1.elevation / 255);
+    	Color c1Color = new Color(c1GrayLevel, c1GrayLevel, c1GrayLevel);
+    	Vector3D highestPoint = findHighestZ(v1, v2, v3);
+    	Vector3D xyIntercept = findIntersectionWithXYPlain(highestPoint, G);
+    	if (highestPoint.distance(xyIntercept) < verySmall)
+    	{
+    		// All points in the triangle are very close to 0 in elevation.
+    		int grayLevel = (int)(255 * center.elevation);
+    		g.setColor(new Color(grayLevel, grayLevel, grayLevel));
+    	}
+    	else
+    	{
+	    	g.setPaint(new GradientPaint((float)highestPoint.getX(), (float)highestPoint.getY(), c1Color, (float)xyIntercept.getX(),
+	    			(float)xyIntercept.getY(), Color.black, false));
+    	}
+    	drawTriangle(g, c1, c2, center);
+    }
+    
+    private Vector3D findIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
+    {
+    	// I found this by using the form (x - x1)/a = (y - y1)/b = (z - z1)/c where a,b,c are the gradient, and solved for x and y.
+    	// That form is from http://mathforum.org/library/drmath/view/65721.html
+    	double x = (-point.getZ() * gradient.getX() / gradient.getZ()) + point.getX();
+    	double y = (-point.getZ() * gradient.getY() / gradient.getZ()) + point.getY();
+    	return new Vector3D(x, y, 0.0);
+    }
+    
+    private Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
+    {
+    	if (v1.getZ() > v2.getZ())
+    	{
+    		if (v1.getZ() > v3.getZ())
+    		{
+    			return v1;
+    		}
+    		return v3;
+    	}
+    	else
+    	{
+    		if (v2.getZ() > v3.getZ())
+    		{
+    			return v2;
+    		}
+    		return v3;
+    	}
     }
 
     private boolean closeEnough(double d1, double d2, double diff) {
@@ -222,7 +299,7 @@ public abstract class VoronoiGraph {
 	        {
             	float grayLevel = (float) (float)c.elevation;
             	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
-	            drawUsingTriangles(g, c);
+	            drawUsingTriangles(g, c, true);
 	        }
         }
         else if (drawBiomes)
@@ -290,8 +367,6 @@ public abstract class VoronoiGraph {
             g.setColor(Color.WHITE);
             for (Corner c : corners) 
             {
-//            	float grayLevel = (float)c.elevation;
-//            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));
             	g.setColor(Color.PINK);
 
                 g.fillOval((int) (c.loc.x - 2), (int) (c.loc.y - 2), 10, 10);
@@ -334,7 +409,7 @@ public abstract class VoronoiGraph {
         }
     }
         
-    protected void drawUsingTriangles(Graphics2D g, Center c)
+    protected void drawUsingTriangles(Graphics2D g, Center c, boolean drawElevation)
     {
         //only used if Center c is on the edge of the graph. allows for completely filling in the outer
         // polygons. This is a list because if c borders 2 edges, it may have 2 missing triangles.
@@ -384,7 +459,14 @@ public abstract class VoronoiGraph {
 	             }
             }
  
-            drawTriangle(g, e.v0, e.v1, c);
+            if (drawElevation)
+            {
+            	drawTriangleElevation(g, e.v0, e.v1, c);
+            }
+            else
+            {
+            	drawTriangle(g, e.v0, e.v1, c);
+            }
             
             c.area += Math.abs(c.loc.x * (e.v0.loc.y - e.v1.loc.y)
                     + e.v0.loc.x * (e.v1.loc.y - c.loc.y)
@@ -440,7 +522,15 @@ public abstract class VoronoiGraph {
 									edgeCorner2.loc.y, 1))
 					{
 						// Both corners on on a single border.
-						drawTriangle(g, edgeCorner1, edgeCorner2, c);
+						
+						if (drawElevation)
+						{
+			            	drawTriangleElevation(g, edgeCorner1, edgeCorner2, c);
+						}
+			            else
+			            {
+							drawTriangle(g, edgeCorner1, edgeCorner2, c);
+			            }
 					} 
 					else
 					{
@@ -463,6 +553,12 @@ public abstract class VoronoiGraph {
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;
 
+						if (drawElevation)
+						{
+							// I really should break the polygon into triangles and call drawElevationOfTriangle on each, but for now I'm just doing this.
+				           	float grayLevel = (float) (float)c.elevation;
+			            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
+						}
 						g.fillPolygon(x, y, 4);
 						c.area += 0; // TODOO: area of polygon given vertices
 					}
@@ -572,7 +668,7 @@ public abstract class VoronoiGraph {
 				if (color != null)
 				{
 					g.setColor(color);
-					drawUsingTriangles(g, c);
+					drawUsingTriangles(g, c, false);
 				}
     		}
     	}
