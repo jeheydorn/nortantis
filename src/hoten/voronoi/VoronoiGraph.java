@@ -1,5 +1,7 @@
 package hoten.voronoi;
 
+import static org.junit.Assert.assertEquals;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -25,6 +27,7 @@ import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.TectonicPlate;
 import util.Helper;
+import util.ImageHelper;
 import util.Range;
 
 /**
@@ -48,6 +51,8 @@ public abstract class VoronoiGraph {
 	private double riverDensity = 1.0/14.0;
 	protected double scaleMultiplyer;
 	private int riversThinnerThanThisWillNotBeDrawn = 2;
+	
+	final static double verySmall = 0.0000001;
 
 
     public VoronoiGraph(Random r, double scaleMultiplyer) {
@@ -159,7 +164,7 @@ public abstract class VoronoiGraph {
         return null;
     }
 
-    private void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center) 
+    private static void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center) 
     {
         int[] x = new int[3];
         int[] y = new int[3];
@@ -172,7 +177,7 @@ public abstract class VoronoiGraph {
         g.fillPolygon(x, y, 3);
     }
     
-    private void drawTriangleElevation(Graphics2D g, Corner c1, Corner c2, Center center) 
+    private static void drawTriangleElevation(Graphics2D g, Corner c1, Corner c2, Center center) 
     {
       // TODO
     	Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
@@ -181,7 +186,6 @@ public abstract class VoronoiGraph {
     	
     	// Normal of the plane containing the triangle
     	Vector3D N = v2.subtract(v1).crossProduct(v3.subtract(v1));
-    	final double verySmall = 0.0000001;
     	if (Math.abs(N.getX()) < verySmall && Math.abs(N.getY()) < verySmall && Math.abs(N.getZ()) < verySmall)
     	{
        		// All points in the triangle are very close to 0 in elevation.
@@ -190,14 +194,14 @@ public abstract class VoronoiGraph {
         	drawTriangle(g, c1, c2, center);
         	return;
     	}
-    	N = N.normalize();
-    	
-    	// Gradient vector
-    	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), N.getZ()); // TODO figure out if this is correct. I don't think it is.
-    	
-    	int c1GrayLevel = (int)(c1.elevation / 255);
-    	Color c1Color = new Color(c1GrayLevel, c1GrayLevel, c1GrayLevel);
+    	N = N.normalize();	
+    	    	
     	Vector3D highestPoint = findHighestZ(v1, v2, v3);
+    	int highestPointGrayLevel = (int)(highestPoint.getZ() * 255);
+    	Color highestPointColor = new Color(highestPointGrayLevel, highestPointGrayLevel, highestPointGrayLevel);
+    	
+    	// Gradient of x and y with respect to z.
+    	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), 0);
     	Vector3D xyIntercept = findIntersectionWithXYPlain(highestPoint, G);
     	if (highestPoint.distance(xyIntercept) < verySmall)
     	{
@@ -207,22 +211,36 @@ public abstract class VoronoiGraph {
     	}
     	else
     	{
-	    	g.setPaint(new GradientPaint((float)highestPoint.getX(), (float)highestPoint.getY(), c1Color, (float)xyIntercept.getX(),
+	    	g.setPaint(new GradientPaint((float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, (float)xyIntercept.getX(),
 	    			(float)xyIntercept.getY(), Color.black, false));
     	}
     	drawTriangle(g, c1, c2, center);
     }
     
-    private Vector3D findIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
+    private static Vector3D findIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
     {
-    	// I found this by using the form (x - x1)/a = (y - y1)/b = (z - z1)/c where a,b,c are the gradient, and solved for x and y.
-    	// That form is from http://mathforum.org/library/drmath/view/65721.html
-    	double x = (-point.getZ() * gradient.getX() / gradient.getZ()) + point.getX();
-    	double y = (-point.getZ() * gradient.getY() / gradient.getZ()) + point.getY();
+    	// Find a point inside the plain which, combined with the passed in point, creates a line going down along the gradient one value of z.
+    	Vector3D point2 = new Vector3D(point.getX() - gradient.getX(), point.getY() - gradient.getY(), point.getZ() - 1);
+
+//    	if (Math.abs(point2.getZ()) < verySmall)
+//    	{
+//    		// This happens when pointAlongGInPlain.getZ() is 0, or very close. So it is the intercept we want.
+//    		return new Vector3D(point2.getX(), point2.getY(), 0.0);
+//    	}
+
+    	// I found this by using the form (x - x1)/a = (y - y1)/b = (z - z1)/c
+    	// and solved for x and y. Note that a and b are the x and y components of the gradient. c is the change in z, which is 1.
+    	// See http://mathforum.org/library/drmath/view/65721.html
+    	//double x = (-point.getZ() * pointAlongGInPlain.getX() / pointAlongGInPlain.getZ()) + point.getX();
+    	//double y = (-point.getZ() * pointAlongGInPlain.getY() / pointAlongGInPlain.getZ()) + point.getY();
+      	//double x = (point.getZ() * (point2.getX() - point.getX()) / (point2.getZ() - point.getZ())) + point.getX();
+    	//double y = (point.getZ() * (point2.getY() - point.getY()) / (point2.getZ() - point.getZ())) + point.getY();
+    	double x = gradient.getX() * (-point.getZ()) + point.getX();
+    	double y = gradient.getY() * (-point.getZ()) + point.getY();
     	return new Vector3D(x, y, 0.0);
     }
     
-    private Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
+    private static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
     {
     	if (v1.getZ() > v2.getZ())
     	{
@@ -241,6 +259,93 @@ public abstract class VoronoiGraph {
     		return v3;
     	}
     }
+    
+    public static void runPrivateUnitTests()
+    {
+    	findHighestZTest();
+    	findIntersectionWithXYPlainTest();
+    	//drawTriangleElevationTest();
+    }
+    
+    private static void findIntersectionWithXYPlainTest()
+    {
+    	// point is [0,0,0]
+    	{
+	    	Vector3D point = new Vector3D(0.0, 0.0, 0.0);
+	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(intercept.getX(), 0.0, 0.0000001);
+	    	assertEquals(intercept.getY(), 0.0, 0.0000001);
+    	}
+    	
+    	// point is on the XY plain.
+    	{
+	    	Vector3D point = new Vector3D(5.0, 7.0, 0.0);
+	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(intercept.getX(), 5.0, 0.0000001);
+	    	assertEquals(intercept.getY(), 7.0, 0.0000001);
+    	}
+    	
+    	// point is above the XY plain and intercept is at the origin
+    	{
+	    	Vector3D point = new Vector3D(1.0, 1.0, 1.0);
+	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
+    	}
+
+    	// point is above the XY plain and intercept is not at the origin
+    	{
+	    	Vector3D point = new Vector3D(2.0, 2.0, 1.0);
+	    	Vector3D G = new Vector3D(0.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(2.0, 1.0, 0.0), intercept);
+    	}
+
+    	// point is above the XY plain and intercept is not at the origin and z is not 1.
+    	{
+	    	Vector3D point = new Vector3D(1.0, 1.0, 0.5);
+	    	Vector3D G = new Vector3D(0.5, 0.5, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(0.75, 0.75, 0.0), intercept);
+    	}
+
+    }
+    
+    private static void drawTriangleElevationTest()
+    {
+    	BufferedImage image = new BufferedImage(200,200, BufferedImage.TYPE_INT_RGB);
+    	Corner corner1 = new Corner();
+    	corner1.loc = new Point(0, 0);
+    	corner1.elevation = 0.0;
+    	Corner corner2 = new Corner();
+    	corner2.elevation = 0.5;
+    	corner2.loc = new Point(199, 0);
+    	Center center = new Center(new Point(100, 199));
+    	center.elevation = 1.0;
+    	drawTriangleElevation(image.createGraphics(), corner1, corner2, center);
+    	ImageHelper.write(image, "triange_test.png"); // TODO remove
+    	assertEquals(new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue(), (int)(corner1.elevation * 255));
+    	assertEquals(new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue(), (int)(corner2.elevation * 255));
+    	assertEquals(new Color(image.getRGB((int)center.loc.x, (int)center.loc.y)).getBlue(), (int)(center.elevation * 255));
+   }
+    
+    /**
+     * Unit test for findHighestZ.
+     */
+	private static void findHighestZTest() 
+	{		
+		Vector3D v1 = new Vector3D(0, 0, -3);
+		Vector3D v2 = new Vector3D(0, 0, 1);
+		Vector3D v3 = new Vector3D(0, 0, 2);
+		
+		List<Vector3D> list = Arrays.asList(v1, v2, v3);
+		
+		Collections.shuffle(list);
+		
+		assertEquals(v3, findHighestZ(list.get(0), list.get(1), list.get(2)));
+	}
 
     private boolean closeEnough(double d1, double d2, double diff) {
         return Math.abs(d1 - d2) <= diff * scaleMultiplyer;
@@ -334,18 +439,29 @@ public abstract class VoronoiGraph {
         	drawRivers(g, widthMultipierForMasks);
         }
         
-        for (Edge e : edges) {
-            if (drawDelaunay) {
-                g.setStroke(new BasicStroke(1));
-                g.setColor(Color.YELLOW);
-                g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
-            }
-            if (drawPlates && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
-            {
-                g.setStroke(new BasicStroke(1));
-                g.setColor(Color.GREEN);
-                g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
-            }
+        if (drawDelaunay)
+        {
+	        for (Edge e : edges) 
+	        {
+	            if (drawDelaunay) {
+	                g.setStroke(new BasicStroke(1));
+	                g.setColor(Color.YELLOW);
+	                g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
+	            }
+	        }
+        }
+        
+	    if (drawPlates)
+	    {
+	        for (Edge e : edges) 
+	        {
+	            if (drawPlates && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
+	            {
+	                g.setStroke(new BasicStroke(1));
+	                g.setColor(Color.GREEN);
+	                g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
+	            }
+	        }
         }
 
         if (drawSites) {

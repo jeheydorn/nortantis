@@ -378,22 +378,22 @@ public class GraphImpl extends VoronoiGraph
     	return explored;
     }
 
-	public void paintWithTectonicPlateVelocity(Graphics2D g)
+	public void paintElevationUsingTrianges(Graphics2D g)
     {
-    	super.paint(g, false, true, true, false, false, false, false);
+    	super.paint(g, false, false, true, false, false, false, false);
     	
     	// Draw plate velocities.
-    	g.setColor(Color.yellow);
-    	for (TectonicPlate plate : plates)
-    	{
-    		Point centroid =  plate.findCentroid();
-    		g.fillOval((int)centroid.x - 5, (int)centroid.y - 5, 10, 10);
-    		PolarCoordinate vTemp = new PolarCoordinate(plate.velocity);
-    		// Increase the velocity to make it visible.
-    		vTemp.radius *= 100;
-    		Point velocity = vTemp.toCartesian();
-    		g.drawLine((int)centroid.x, (int)centroid.y, (int)(centroid.x + velocity.x), (int)(centroid.y + velocity.y));
-    	}
+//    	g.setColor(Color.yellow);
+//    	for (TectonicPlate plate : plates)
+//    	{
+//    		Point centroid =  plate.findCentroid();
+//    		g.fillOval((int)centroid.x - 5, (int)centroid.y - 5, 10, 10);
+//    		PolarCoordinate vTemp = new PolarCoordinate(plate.velocity);
+//    		// Increase the velocity to make it visible.
+//    		vTemp.radius *= 100;
+//    		Point velocity = vTemp.toCartesian();
+//    		g.drawLine((int)centroid.x, (int)centroid.y, (int)(centroid.x + velocity.x), (int)(centroid.y + velocity.y));
+//    	}
     }
     
     public void drawBorderWhite(Graphics2D g)

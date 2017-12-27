@@ -47,7 +47,7 @@ public class GraphCreator
 	        Graphics2D g = elevationImg.createGraphics();
 	        g.setColor(Color.BLACK);
 	        g.fillRect(0, 0, (int)width, (int)height);
-	        graph.paintWithTectonicPlateVelocity(g);
+	        graph.paintElevationUsingTrianges(g);
 	        File elevationfile = new File("elevation.png");
 	        ImageIO.write(elevationImg, "png", elevationfile);
        }
