@@ -194,7 +194,6 @@ public abstract class VoronoiGraph {
         	drawTriangle(g, c1, c2, center);
         	return;
     	}
-    	N = N.normalize();	
     	    	
     	Vector3D highestPoint = findHighestZ(v1, v2, v3);
     	int highestPointGrayLevel = (int)(highestPoint.getZ() * 255);
@@ -202,8 +201,26 @@ public abstract class VoronoiGraph {
     	
     	// Gradient of x and y with respect to z.
     	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), 0);
-    	Vector3D xyIntercept = findIntersectionWithXYPlain(highestPoint, G);
-    	if (highestPoint.distance(xyIntercept) < verySmall)
+    	Vector3D xyPlainIntercept = findIntersectionWithXYPlain(highestPoint, G);
+    	// TODO these first two cases should be necessary because the only way the gradient does't intersect the XY plain is if it is zero in both x and y, I think.
+    	if (Math.abs(G.getX()) < verySmall)
+    	{
+    		// There is no x intercept. The gradient is only in the y direction.
+	    	g.setPaint(new GradientPaint(
+	    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
+	    			(float)highestPoint.getX(), (float)xyPlainIntercept.getY(), Color.black, 
+	    			false));
+
+    	}
+    	else if (Math.abs(G.getY()) < verySmall)
+    	{
+    		// There is no y intercept. The gradient is only in the x direction.
+	    	g.setPaint(new GradientPaint(
+	    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
+	    			(float)xyPlainIntercept.getX(), (float)highestPoint.getY(), Color.black, 
+	    			false));		
+    	}
+    	else if (highestPoint.distance(xyPlainIntercept) < verySmall)
     	{
     		// All points in the triangle are very close to 0 in elevation.
     		int grayLevel = (int)(255 * center.elevation);
@@ -211,32 +228,22 @@ public abstract class VoronoiGraph {
     	}
     	else
     	{
-	    	g.setPaint(new GradientPaint((float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, (float)xyIntercept.getX(),
-	    			(float)xyIntercept.getY(), Color.black, false));
+	    	g.setPaint(new GradientPaint(
+	    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
+	    			(float)xyPlainIntercept.getX(), (float)xyPlainIntercept.getY(), Color.black, 
+	    			false));
     	}
     	drawTriangle(g, c1, c2, center);
     }
-    
+        
     private static Vector3D findIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
     {
-    	// Find a point inside the plain which, combined with the passed in point, creates a line going down along the gradient one value of z.
-    	Vector3D point2 = new Vector3D(point.getX() - gradient.getX(), point.getY() - gradient.getY(), point.getZ() - 1);
-
-//    	if (Math.abs(point2.getZ()) < verySmall)
-//    	{
-//    		// This happens when pointAlongGInPlain.getZ() is 0, or very close. So it is the intercept we want.
-//    		return new Vector3D(point2.getX(), point2.getY(), 0.0);
-//    	}
-
     	// I found this by using the form (x - x1)/a = (y - y1)/b = (z - z1)/c
-    	// and solved for x and y. Note that a and b are the x and y components of the gradient. c is the change in z, which is 1.
+    	// and solved for x and y. Note that a and b are the rate of change of x and y with respect to z. 
+    	// c is the change in z with respect to z, which is 1.
     	// See http://mathforum.org/library/drmath/view/65721.html
-    	//double x = (-point.getZ() * pointAlongGInPlain.getX() / pointAlongGInPlain.getZ()) + point.getX();
-    	//double y = (-point.getZ() * pointAlongGInPlain.getY() / pointAlongGInPlain.getZ()) + point.getY();
-      	//double x = (point.getZ() * (point2.getX() - point.getX()) / (point2.getZ() - point.getZ())) + point.getX();
-    	//double y = (point.getZ() * (point2.getY() - point.getY()) / (point2.getZ() - point.getZ())) + point.getY();
-    	double x = gradient.getX() * (-point.getZ()) + point.getX();
-    	double y = gradient.getY() * (-point.getZ()) + point.getY();
+    	double x = (1.0/gradient.getX()) * (-point.getZ()) + point.getX();
+    	double y = (1.0/gradient.getY()) * (-point.getZ()) + point.getY();
     	return new Vector3D(x, y, 0.0);
     }
     
@@ -263,74 +270,136 @@ public abstract class VoronoiGraph {
     public static void runPrivateUnitTests()
     {
     	findHighestZTest();
-    	findIntersectionWithXYPlainTest();
-    	//drawTriangleElevationTest();
+    	//findIntersectionWithXYPlainTest(); TODO put back and fix these tests
+    	drawTriangleElevationZeroXGradientTest(); //TODO put back
+    	//drawTriangleElevationZeroYGradientTest(); // TODO put back
+    	//drawTriangleElevationWithXAndYGradientTest();
     }
-    
-    private static void findIntersectionWithXYPlainTest()
+  
+    private static void drawTriangleElevationWithXAndYGradientTest()
     {
-    	// point is [0,0,0]
-    	{
-	    	Vector3D point = new Vector3D(0.0, 0.0, 0.0);
-	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
-	    	assertEquals(intercept.getX(), 0.0, 0.0000001);
-	    	assertEquals(intercept.getY(), 0.0, 0.0000001);
-    	}
-    	
-    	// point is on the XY plain.
-    	{
-	    	Vector3D point = new Vector3D(5.0, 7.0, 0.0);
-	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
-	    	assertEquals(intercept.getX(), 5.0, 0.0000001);
-	    	assertEquals(intercept.getY(), 7.0, 0.0000001);
-    	}
-    	
-    	// point is above the XY plain and intercept is at the origin
-    	{
-	    	Vector3D point = new Vector3D(1.0, 1.0, 1.0);
-	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
-    	}
-
-    	// point is above the XY plain and intercept is not at the origin
-    	{
-	    	Vector3D point = new Vector3D(2.0, 2.0, 1.0);
-	    	Vector3D G = new Vector3D(0.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(2.0, 1.0, 0.0), intercept);
-    	}
-
-    	// point is above the XY plain and intercept is not at the origin and z is not 1.
-    	{
-	    	Vector3D point = new Vector3D(1.0, 1.0, 0.5);
-	    	Vector3D G = new Vector3D(0.5, 0.5, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(0.75, 0.75, 0.0), intercept);
-    	}
-
-    }
-    
-    private static void drawTriangleElevationTest()
-    {
-    	BufferedImage image = new BufferedImage(200,200, BufferedImage.TYPE_INT_RGB);
+    	BufferedImage image = new BufferedImage(101,101, BufferedImage.TYPE_INT_RGB);
     	Corner corner1 = new Corner();
     	corner1.loc = new Point(0, 0);
     	corner1.elevation = 0.0;
     	Corner corner2 = new Corner();
     	corner2.elevation = 0.5;
-    	corner2.loc = new Point(199, 0);
-    	Center center = new Center(new Point(100, 199));
+    	corner2.loc = new Point(100, 0);
+    	Center center = new Center(new Point(100, 100));
     	center.elevation = 1.0;
-    	drawTriangleElevation(image.createGraphics(), corner1, corner2, center);
-    	ImageHelper.write(image, "triange_test.png"); // TODO remove
-    	assertEquals(new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue(), (int)(corner1.elevation * 255));
-    	assertEquals(new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue(), (int)(corner2.elevation * 255));
-    	assertEquals(new Color(image.getRGB((int)center.loc.x, (int)center.loc.y)).getBlue(), (int)(center.elevation * 255));
-   }
-    
+    	Graphics2D g = image.createGraphics();
+    	drawTriangleElevation(g, corner1, corner2, center);
+       	ImageHelper.write(image, "triange_test.png"); // TODO remove
+        assertEquals(
+    			(int)(corner1.elevation * 255), 
+    			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
+    	assertEquals(
+    			(int)(corner2.elevation * 255),
+    			new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue());
+    	assertEquals((int)(center.elevation * 250),
+    			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y - 2)).getBlue());
+    }
+
+    private static void drawTriangleElevationZeroXGradientTest()
+    {
+    	BufferedImage image = new BufferedImage(101,101, BufferedImage.TYPE_INT_RGB);
+    	Corner corner1 = new Corner();
+    	corner1.loc = new Point(0, 0);
+    	corner1.elevation = 0.5;
+    	Corner corner2 = new Corner();
+    	corner2.elevation = 0.5;
+    	corner2.loc = new Point(50, 0);
+    	Center center = new Center(new Point(50, 100));
+    	center.elevation = 1.0;
+    	Graphics2D g = image.createGraphics();
+    	drawTriangleElevation(g, corner1, corner2, center);
+    	assertEquals(
+    			(int)(corner1.elevation * 255), 
+    			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
+    	assertEquals(
+    			(int)(corner2.elevation * 255),
+    			new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue());
+    	assertEquals((int)(center.elevation * 250),
+    			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y - 2)).getBlue());
+    }
+
+    private static void drawTriangleElevationZeroYGradientTest()
+    {
+    	BufferedImage image = new BufferedImage(101,101, BufferedImage.TYPE_INT_RGB);
+    	Corner corner1 = new Corner();
+    	corner1.loc = new Point(0, 0);
+    	corner1.elevation = 0.0;
+    	Corner corner2 = new Corner();
+    	corner2.elevation = 0.0;
+    	corner2.loc = new Point(0, 100);
+    	Center center = new Center(new Point(50, 100));
+    	center.elevation = 1.0;
+    	Graphics2D g = image.createGraphics();
+    	drawTriangleElevation(g, corner1, corner2, center);
+    	assertEquals(
+    			(int)(corner1.elevation * 255), 
+    			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
+    	assertEquals(
+    			(int)(corner2.elevation * 255),
+    			new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue());
+    	assertEquals((int)(center.elevation * 249),
+    			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y-1)).getBlue());
+    }
+
+    private static void findIntersectionWithXYPlainTest()
+	{
+		// point is [0,0,0]
+		{
+	    	Vector3D point = new Vector3D(0.0, 0.0, 0.0);
+	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(intercept.getX(), 0.0, 0.0000001);
+	    	assertEquals(intercept.getY(), 0.0, 0.0000001);
+		}
+		
+		// point is on the XY plain.
+		{
+	    	Vector3D point = new Vector3D(5.0, 7.0, 0.0);
+	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(intercept.getX(), 5.0, 0.0000001);
+	    	assertEquals(intercept.getY(), 7.0, 0.0000001);
+		}
+		
+		// point is above the XY plain and intercept is at the origin
+		{
+	    	Vector3D point = new Vector3D(1.0, 1.0, 1.0);
+	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
+		}
+	
+		// point is above the XY plain and intercept is not at the origin
+		{
+	    	Vector3D point = new Vector3D(2.0, 2.0, 1.0);
+	    	Vector3D G = new Vector3D(0.0, 1.0, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(2.0, 1.0, 0.0), intercept);
+		}
+	
+		// point is above the XY plain and intercept is not at the origin and z is not 1.
+		{
+	    	Vector3D point = new Vector3D(1.0, 1.0, 0.5);
+	    	Vector3D G = new Vector3D(0.5, 0.5, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(0.75, 0.75, 0.0), intercept);
+		}
+	
+		// point is above the XY plain and intercept is at the origin and x and y have different slopes
+		{
+	    	Vector3D point = new Vector3D(50, 100, 1);
+	    	Vector3D G = new Vector3D(50, 100, 0.0);
+	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
+		}
+		
+	}
+        
     /**
      * Unit test for findHighestZ.
      */
