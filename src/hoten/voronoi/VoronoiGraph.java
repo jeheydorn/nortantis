@@ -313,13 +313,14 @@ public abstract class VoronoiGraph {
     	center.elevation = 1.0;
     	Graphics2D g = image.createGraphics();
     	drawTriangleElevation(g, corner1, corner2, center);
+       	ImageHelper.write(image, "triange_test.png"); // TODO remove
     	assertEquals(
-    			(int)(corner1.elevation * 255), 
+    			(int)(corner1.elevation * 255),
     			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
     	assertEquals(
     			(int)(corner2.elevation * 255),
-    			new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue());
-    	assertEquals((int)(center.elevation * 250),
+    			new Color(image.getRGB((int)corner2.loc.x - 1, (int)corner2.loc.y)).getBlue());
+    	assertEquals((int)(center.elevation * 253),
     			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y - 2)).getBlue());
     }
 
