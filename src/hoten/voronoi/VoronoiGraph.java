@@ -201,50 +201,28 @@ public abstract class VoronoiGraph {
     	
     	// Gradient of x and y with respect to z.
     	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), 0);
-    	Vector3D xyPlainIntercept = findIntersectionWithXYPlain(highestPoint, G);
-    	// TODO these first two cases should be necessary because the only way the gradient does't intersect the XY plain is if it is zero in both x and y, I think.
-    	if (Math.abs(G.getX()) < verySmall)
-    	{
-    		// There is no x intercept. The gradient is only in the y direction.
-	    	g.setPaint(new GradientPaint(
-	    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
-	    			(float)highestPoint.getX(), (float)xyPlainIntercept.getY(), Color.black, 
-	    			false));
+    	Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
 
-    	}
-    	else if (Math.abs(G.getY()) < verySmall)
-    	{
-    		// There is no y intercept. The gradient is only in the x direction.
-	    	g.setPaint(new GradientPaint(
-	    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
-	    			(float)xyPlainIntercept.getX(), (float)highestPoint.getY(), Color.black, 
-	    			false));		
-    	}
-    	else if (highestPoint.distance(xyPlainIntercept) < verySmall)
-    	{
-    		// All points in the triangle are very close to 0 in elevation.
-    		int grayLevel = (int)(255 * center.elevation);
-    		g.setColor(new Color(grayLevel, grayLevel, grayLevel));
-    	}
-    	else
-    	{
-	    	g.setPaint(new GradientPaint(
-	    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
-	    			(float)xyPlainIntercept.getX(), (float)xyPlainIntercept.getY(), Color.black, 
-	    			false));
-    	}
+    	g.setPaint(new GradientPaint(
+    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
+    			(float)zIntercept.getX(), (float)zIntercept.getY(), Color.black, 
+    			false));
     	drawTriangle(g, c1, c2, center);
     }
         
-    private static Vector3D findIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
+    private static Vector3D findZIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
     {
-    	// I found this by using the form (x - x1)/a = (y - y1)/b = (z - z1)/c
-    	// and solved for x and y. Note that a and b are the rate of change of x and y with respect to z. 
-    	// c is the change in z with respect to z, which is 1.
-    	// See http://mathforum.org/library/drmath/view/65721.html
-    	double x = (1.0/gradient.getX()) * (-point.getZ()) + point.getX();
-    	double y = (1.0/gradient.getY()) * (-point.getZ()) + point.getY();
-    	return new Vector3D(x, y, 0.0);
+    	// To calculate this, I first had that 
+    	//     deltaZ = a*deltaX + b*deltaY
+    	// where delta* variables are the change in x, y, and z, and a and b are the x and y components of the gradient.
+    	// I then constrained deltaX and delta Y by requiring them to follow the gradient, so 
+    	//     deltaY = (a/b)*deltaX.
+    	// Plugging that into the first equation and solving for delta X, I got the equation below for x. The equation for y is very similar.
+    	// Note that deltaZ = -point.getZ() to find the point where z is 0.
+    	
+    	double xChange = gradient.getX() * (-point.getZ()) / (gradient.getX() * gradient.getX() + gradient.getY() * gradient.getY());
+    	double yChange = gradient.getY() * (-point.getZ()) / (gradient.getX() * gradient.getX() + gradient.getY() * gradient.getY());
+    	return new Vector3D(point.getX() + xChange, point.getY() + yChange, 0.0);
     }
     
     private static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
@@ -272,8 +250,8 @@ public abstract class VoronoiGraph {
     	findHighestZTest();
     	//findIntersectionWithXYPlainTest(); TODO put back and fix these tests
     	drawTriangleElevationZeroXGradientTest(); //TODO put back
-    	//drawTriangleElevationZeroYGradientTest(); // TODO put back
-    	//drawTriangleElevationWithXAndYGradientTest();
+    	drawTriangleElevationZeroYGradientTest(); // TODO put back
+    	drawTriangleElevationWithXAndYGradientTest();
     }
   
     private static void drawTriangleElevationWithXAndYGradientTest()
@@ -291,12 +269,13 @@ public abstract class VoronoiGraph {
     	drawTriangleElevation(g, corner1, corner2, center);
        	ImageHelper.write(image, "triange_test.png"); // TODO remove
         assertEquals(
-    			(int)(corner1.elevation * 255), 
+    			0, 
     			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
     	assertEquals(
-    			(int)(corner2.elevation * 255),
-    			new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue());
-    	assertEquals((int)(center.elevation * 250),
+    			125,
+    			new Color(image.getRGB((int)corner2.loc.x - 1, (int)corner2.loc.y)).getBlue());
+    	assertEquals(
+    			251,
     			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y - 2)).getBlue());
     }
 
@@ -353,7 +332,7 @@ public abstract class VoronoiGraph {
 		{
 	    	Vector3D point = new Vector3D(0.0, 0.0, 0.0);
 	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
 	    	assertEquals(intercept.getX(), 0.0, 0.0000001);
 	    	assertEquals(intercept.getY(), 0.0, 0.0000001);
 		}
@@ -362,7 +341,7 @@ public abstract class VoronoiGraph {
 		{
 	    	Vector3D point = new Vector3D(5.0, 7.0, 0.0);
 	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
 	    	assertEquals(intercept.getX(), 5.0, 0.0000001);
 	    	assertEquals(intercept.getY(), 7.0, 0.0000001);
 		}
@@ -371,7 +350,7 @@ public abstract class VoronoiGraph {
 		{
 	    	Vector3D point = new Vector3D(1.0, 1.0, 1.0);
 	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
 	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
 		}
 	
@@ -379,7 +358,7 @@ public abstract class VoronoiGraph {
 		{
 	    	Vector3D point = new Vector3D(2.0, 2.0, 1.0);
 	    	Vector3D G = new Vector3D(0.0, 1.0, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
 	    	assertEquals(new Vector3D(2.0, 1.0, 0.0), intercept);
 		}
 	
@@ -387,7 +366,7 @@ public abstract class VoronoiGraph {
 		{
 	    	Vector3D point = new Vector3D(1.0, 1.0, 0.5);
 	    	Vector3D G = new Vector3D(0.5, 0.5, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
 	    	assertEquals(new Vector3D(0.75, 0.75, 0.0), intercept);
 		}
 	
@@ -395,7 +374,7 @@ public abstract class VoronoiGraph {
 		{
 	    	Vector3D point = new Vector3D(50, 100, 1);
 	    	Vector3D G = new Vector3D(50, 100, 0.0);
-	    	Vector3D intercept = findIntersectionWithXYPlain(point, G);
+	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
 	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
 		}
 		
