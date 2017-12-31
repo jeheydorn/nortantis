@@ -10,6 +10,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
+import util.ImageHelper;
 import util.Logger;
 
 /**
@@ -43,13 +44,15 @@ public class GraphCreator
 
         // Draw elevation map with tectonic plate boundaries. 
         {
-	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
+	        BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_BYTE_GRAY);
 	        Graphics2D g = elevationImg.createGraphics();
 	        g.setColor(Color.BLACK);
 	        g.fillRect(0, 0, (int)width, (int)height);
 	        graph.paintElevationUsingTrianges(g);
-	        File elevationfile = new File("elevation.png");
-	        ImageIO.write(elevationImg, "png", elevationfile);
+	        
+	        //elevationImg = ImageHelper.convolveGrayscale(elevationImg, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
+	        
+	        ImageHelper.write(elevationImg, "elevation.png");
        }
 //
 //        final BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);

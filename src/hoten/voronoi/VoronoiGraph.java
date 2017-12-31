@@ -179,29 +179,31 @@ public abstract class VoronoiGraph {
     
     private static void drawTriangleElevation(Graphics2D g, Corner c1, Corner c2, Center center) 
     {
-      // TODO
     	Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
     	Vector3D v2 = new Vector3D(c2.loc.x, c2.loc.y, c2.elevation);
     	Vector3D v3 = new Vector3D(center.loc.x, center.loc.y, center.elevation);
     	
     	// Normal of the plane containing the triangle
     	Vector3D N = v2.subtract(v1).crossProduct(v3.subtract(v1));
-    	if (Math.abs(N.getX()) < verySmall && Math.abs(N.getY()) < verySmall && Math.abs(N.getZ()) < verySmall)
-    	{
-       		// All points in the triangle are very close to 0 in elevation.
-    		int grayLevel = (int)(255 * center.elevation);
-    		g.setColor(new Color(grayLevel, grayLevel, grayLevel));
-        	drawTriangle(g, c1, c2, center);
-        	return;
-    	}
-    	    	
+    	
     	Vector3D highestPoint = findHighestZ(v1, v2, v3);
     	int highestPointGrayLevel = (int)(highestPoint.getZ() * 255);
     	Color highestPointColor = new Color(highestPointGrayLevel, highestPointGrayLevel, highestPointGrayLevel);
     	
     	// Gradient of x and y with respect to z.
     	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), 0);
-    	Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
+
+       	if ((Math.abs(G.getX()) < verySmall || Double.isInfinite(G.getX()) || Double.isNaN(G.getX()))
+       			&& Math.abs(G.getY()) < verySmall || Double.isInfinite(G.getY()) || Double.isNaN(G.getY()))
+    	{
+       		// The triangle is either flat or vertical. 
+    		int grayLevel = (int)(255 * center.elevation);
+    		g.setColor(new Color(grayLevel, grayLevel, grayLevel));
+        	drawTriangle(g, c1, c2, center);
+        	return;
+    	}
+       	
+       	Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
 
     	g.setPaint(new GradientPaint(
     			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
@@ -248,9 +250,8 @@ public abstract class VoronoiGraph {
     public static void runPrivateUnitTests()
     {
     	findHighestZTest();
-    	//findIntersectionWithXYPlainTest(); TODO put back and fix these tests
-    	drawTriangleElevationZeroXGradientTest(); //TODO put back
-    	drawTriangleElevationZeroYGradientTest(); // TODO put back
+    	drawTriangleElevationZeroXGradientTest(); 
+    	drawTriangleElevationZeroYGradientTest();
     	drawTriangleElevationWithXAndYGradientTest();
     }
   
@@ -267,7 +268,6 @@ public abstract class VoronoiGraph {
     	center.elevation = 1.0;
     	Graphics2D g = image.createGraphics();
     	drawTriangleElevation(g, corner1, corner2, center);
-       	ImageHelper.write(image, "triange_test.png"); // TODO remove
         assertEquals(
     			0, 
     			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
@@ -292,7 +292,6 @@ public abstract class VoronoiGraph {
     	center.elevation = 1.0;
     	Graphics2D g = image.createGraphics();
     	drawTriangleElevation(g, corner1, corner2, center);
-       	ImageHelper.write(image, "triange_test.png"); // TODO remove
     	assertEquals(
     			(int)(corner1.elevation * 255),
     			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
@@ -326,59 +325,6 @@ public abstract class VoronoiGraph {
     			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y-1)).getBlue());
     }
 
-    private static void findIntersectionWithXYPlainTest()
-	{
-		// point is [0,0,0]
-		{
-	    	Vector3D point = new Vector3D(0.0, 0.0, 0.0);
-	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
-	    	assertEquals(intercept.getX(), 0.0, 0.0000001);
-	    	assertEquals(intercept.getY(), 0.0, 0.0000001);
-		}
-		
-		// point is on the XY plain.
-		{
-	    	Vector3D point = new Vector3D(5.0, 7.0, 0.0);
-	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
-	    	assertEquals(intercept.getX(), 5.0, 0.0000001);
-	    	assertEquals(intercept.getY(), 7.0, 0.0000001);
-		}
-		
-		// point is above the XY plain and intercept is at the origin
-		{
-	    	Vector3D point = new Vector3D(1.0, 1.0, 1.0);
-	    	Vector3D G = new Vector3D(1.0, 1.0, 0.0);
-	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
-		}
-	
-		// point is above the XY plain and intercept is not at the origin
-		{
-	    	Vector3D point = new Vector3D(2.0, 2.0, 1.0);
-	    	Vector3D G = new Vector3D(0.0, 1.0, 0.0);
-	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(2.0, 1.0, 0.0), intercept);
-		}
-	
-		// point is above the XY plain and intercept is not at the origin and z is not 1.
-		{
-	    	Vector3D point = new Vector3D(1.0, 1.0, 0.5);
-	    	Vector3D G = new Vector3D(0.5, 0.5, 0.0);
-	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(0.75, 0.75, 0.0), intercept);
-		}
-	
-		// point is above the XY plain and intercept is at the origin and x and y have different slopes
-		{
-	    	Vector3D point = new Vector3D(50, 100, 1);
-	    	Vector3D G = new Vector3D(50, 100, 0.0);
-	    	Vector3D intercept = findZIntersectionWithXYPlain(point, G);
-	    	assertEquals(new Vector3D(0.0, 0.0, 0.0), intercept);
-		}
-		
-	}
         
     /**
      * Unit test for findHighestZ.
@@ -578,7 +524,6 @@ public abstract class VoronoiGraph {
     {
         //only used if Center c is on the edge of the graph. allows for completely filling in the outer
         // polygons. This is a list because if c borders 2 edges, it may have 2 missing triangles.
- //   	List<Tuple2<Corner, Corner>> edgeCorners = null;
     	List<Corner> edgeCorners = null;
 
     	c.area = 0;
@@ -680,7 +625,6 @@ public abstract class VoronoiGraph {
 					// is common when the number of sites are quite low (less
 					// than 5), but not a problem
 					// with a more useful number of sites.
-					// TODOO: find a way to fix this
 
 					if (closeEnough(edgeCorner1.loc.x, edgeCorner2.loc.x, 1)
 							|| closeEnough(edgeCorner1.loc.y,
