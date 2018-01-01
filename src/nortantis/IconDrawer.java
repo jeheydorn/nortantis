@@ -70,7 +70,7 @@ public class IconDrawer
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
 	}
 
-	private static double findMeanPolygonWidth(GraphImpl graph)
+	public static double findMeanPolygonWidth(GraphImpl graph)
 	{
 		double widthSum = 0;
 		int count = 0;

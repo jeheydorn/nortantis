@@ -316,9 +316,6 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent arg0) 
 			{	
-				btnGenerate.setEnabled(false);
-				btnPreview.setEnabled(false);
-
 				final MapSettings settings = getSettingsFromGUI();
 				
 				txtConsoleOutput.setText("");
@@ -344,13 +341,6 @@ public class RunSwing
 			        	
 			        	return null;
 			        }			 
-
-			        @Override
-			        public void done()
-			        {
-						btnGenerate.setEnabled(true);
-						btnPreview.setEnabled(true);
-			        }
 			    };
 			    worker.execute();
 			 
@@ -1446,7 +1436,7 @@ public class RunSwing
 		});
 		
 		final JMenuItem mntmSaveAs = new JMenuItem("Save As...");
-		fileMenu.add(mntmSaveAs);
+		fileMenu.add(mntmSaveAs);	
 		mntmSaveAs.addActionListener(new ActionListener()
 		{
 			@Override
@@ -1456,6 +1446,51 @@ public class RunSwing
 			}			
 		});
 		
+		JMenuItem mntmExportHeightmap = new JMenuItem("Export Heightmap");
+		fileMenu.add(mntmExportHeightmap);
+		mntmExportHeightmap.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() 
+			        {
+						try
+						{
+							MapSettings settings = getSettingsFromGUI();
+							BufferedImage heightMap = new MapCreator().createHeightMap(settings);
+							Logger.println("Opening the heightmap in your system's default image editor.");
+							String fileName = ImageHelper.openImageInSystemDefaultEditor(heightMap, "heightmap");	
+							Logger.println("Heightmap written to " + fileName);
+						} 
+						catch (Exception e)
+						{
+							e.printStackTrace();
+					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						}
+			        	
+			        	return null;
+			        }			 
+
+			        @Override
+			        public void done()
+			        {
+						btnGenerate.setEnabled(true);
+						btnPreview.setEnabled(true);
+			        }
+			    };
+			    worker.execute();
+
+				
+				
+			}	
+			
+		});
+
 		editorMenu = new JMenu("Editor");
 		menuBar.add(editorMenu);
 		

@@ -45,6 +45,7 @@ public class MapCreator
 	}
 
 	/**
+	 * Draws a map.
 	 * 
 	 * @param settings
 	 * @param maxDimensions The maximum width and height (in pixels) at which to draw the map.
@@ -63,7 +64,6 @@ public class MapCreator
 		
 		double startTime = System.currentTimeMillis();				
 						
-        Logger.println("Seed: " + settings.randomSeed);
         r = new Random(settings.randomSeed);        
 		
 		Logger.println("Generating the background image");
@@ -76,10 +76,7 @@ public class MapCreator
 		if (mapParts != null)
 			mapParts.textDrawer = textDrawer;
 		
-		GraphImpl graph = GraphCreator.createGraph(background.mapBounds.getWidth(), background.mapBounds.getHeight(),
-				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
-				new Random(r.nextLong()),
-				sizeMultiplyer);	
+		GraphImpl graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
 		if (mapParts != null)
 			mapParts.graph = graph;
 		
@@ -309,6 +306,14 @@ public class MapCreator
 		
 		ScaledIconCache.clear();
 		return map;
+	}
+	
+	private static GraphImpl createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
+	{
+		return GraphCreator.createGraph(width, height,
+				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
+				new Random(r.nextLong()),
+				sizeMultiplyer);	
 	}
 	
 	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background)
@@ -666,6 +671,10 @@ public class MapCreator
 		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
 		BufferedImage regionIndexes;
 		private int borderWidthScaled;
+		
+		public Background()
+		{
+		}
 
 		public Background(MapSettings settings, Dimension maxDimensions)
 		{
@@ -677,30 +686,9 @@ public class MapCreator
 
 	        BufferedImage landGeneratedBackground;
 			landColorifyAlgorithm = ColorifyAlgorithm.none;
+			mapBounds = calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 			if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
 			{
-				mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
-						settings.generatedHeight * settings.resolution);
-				if (maxDimensions != null)
-				{
-					int borderWidth = 0;
-					if (settings.drawBorder)
-					{
-						borderWidth = (int) (settings.borderWidth * settings.resolution);
-					}
-					DimensionDouble mapBoundsPlusBorder = new DimensionDouble(
-							mapBounds.getWidth() + borderWidth * 2,
-							mapBounds.getHeight() + borderWidth * 2);
-
-					DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
-							mapBoundsPlusBorder.getHeight());
-					// Change the resolution to match the new bounds.
-					settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
-					
-					DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution, 
-							settings.generatedHeight * settings.resolution);
-					mapBounds = scaledMapBounds;
-				}
 
 				borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 											
@@ -906,6 +894,52 @@ public class MapCreator
 				borderBounds = new Dimension((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
 			}
 		}
+				
+		private DimensionDouble calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
+		{
+			if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
+			{
+				DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
+						settings.generatedHeight * settings.resolution);
+				if (maxDimensions != null)
+				{
+					int borderWidth = 0;
+					if (settings.drawBorder)
+					{
+						borderWidth = (int) (settings.borderWidth * settings.resolution);
+					}
+					DimensionDouble mapBoundsPlusBorder = new DimensionDouble(
+							mapBounds.getWidth() + borderWidth * 2,
+							mapBounds.getHeight() + borderWidth * 2);
+
+					DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
+							mapBoundsPlusBorder.getHeight());
+					// Change the resolution to match the new bounds.
+					settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
+					
+					DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution, 
+							settings.generatedHeight * settings.resolution);
+					mapBounds = scaledMapBounds;
+				}
+				return mapBounds;
+			}
+			else
+			{
+				// The background is from files.
+				BufferedImage land;
+				try
+				{
+					land = ImageIO.read(new File(settings.landBackgroundImage));
+				}
+				catch(IOException e)
+				{
+					throw new IllegalArgumentException("Cannot read land background image from " 
+							+ settings.landBackgroundImage);
+				}
+
+				return new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
+			}
+		}
 		
 		private BufferedImage removeBorderPadding(BufferedImage image)
 		{
@@ -1094,6 +1128,15 @@ public class MapCreator
 	{
 		File[] directories = new File(Paths.get("assets", "borders").toString()).listFiles(File::isDirectory);
 		return new TreeSet<String>(Arrays.stream(directories).map(file -> file.getName()).collect(Collectors.toList()));
+	}
+	
+	public BufferedImage createHeightMap(MapSettings settings)
+	{   
+		r = new Random(settings.randomSeed);
+        DimensionDouble mapBounds = new Background().calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		double sizeMultiplyer = (mapBounds.getWidth() / baseResolution);
+		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
+		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 
 	public static void main(String[] args) throws IOException

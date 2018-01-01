@@ -20,7 +20,7 @@ public class FractalBGGenerator
 	 * under "Frequency Synthesis of Landscapes (and clouds)". The results look the same as
 	 * Gimp's plasma clouds.
 	 * @param p The power in the fractal exponent. This controls how smooth the result is.
-	 * @param constrast The constrast of the resulting image. 1 means full. Less than one will
+	 * @param constrast The contrast of the resulting image. 1 means full. Less than one will
 	 * scale the pixel values in the result about the central value.
 	 * @throws IOException 
 	 */
