@@ -48,7 +48,7 @@ public class Corner
 		}
 		
 		if (lowestNeighbor.elevation >= elevation) {
-			lowestNeighbor.elevation = elevation * 0.99; // Make it a little lower than me
+			lowestNeighbor.elevation = elevation * 0.9999; // Make it a little lower than me
 		}
 
 		// recursive call

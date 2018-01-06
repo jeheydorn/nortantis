@@ -14,6 +14,14 @@ import util.Range;
 public class BackgroundGenerator
 {		
 	/**
+	 * See generateUsingWhiteNoiseConvolution(Random, BufferedImage, int, int, boolean)
+	 */
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
+	{
+		return generateUsingWhiteNoiseConvolution(rand, texture, targetRows, targetCols, true);
+	}
+	
+	/**
 	 * Generates a texture of the specified size which is similar in appearance to the given texture. 
 	 * 
 	 * To allow generating textures at arbitrary sizes, instead of just at the original texture's size, I'm using some techniques from 
@@ -25,13 +33,17 @@ public class BackgroundGenerator
 	 * separately similar to what Bruno Galerne do, except I use histogram matching to get the color levels right.
 	 * @param targetRows Number of rows in the result.
 	 * @param targetCols Number of columns in the result.
+	 * @param allowScalingSmaller If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols, boolean allowScalingTheTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
-		texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
+		if (allowScalingTheTextureLarger)
+		{
+			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
+		}
 
 		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max( texture.getHeight(), targetRows));
 		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
@@ -198,7 +210,7 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("valcia_snippet.png"), 2048, 2048);
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("valcia_snippet.png"), 2048, 2048, true);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);

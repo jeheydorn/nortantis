@@ -2,11 +2,13 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -59,7 +61,7 @@ public class GraphCreator
         return graph;
     }
     
-    public static BufferedImage createHeightMap(GraphImpl graph, Random rand)
+    public static BufferedImage createHeightMap(GraphImpl graph, Random rand, double sizeMultiplyer)
     {
 		double startTime = System.currentTimeMillis();
 		
@@ -73,26 +75,11 @@ public class GraphCreator
         elevationImg = ImageHelper.convolveGrayscale(elevationImg, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
         
         // Combine a fractal noise with the heightmap to give it more interesting small features.
-        BufferedImage fractalNoise = FractalBGGenerator.generate(rand, 1.1f, graph.getWidth(), graph.getHeight(), 1.0f);
-        Raster fractalRaster = fractalNoise.getRaster();
-		WritableRaster out = elevationImg.getRaster();
-		for (int y = 0; y < elevationImg.getHeight(); y++)
-		{
-			for (int x = 0; x < elevationImg.getWidth(); x++)
-			{
-				double elevation = out.getSample(x, y, 0);
-				double scale;
-				scale = Math.abs(elevation - GraphImpl.seaLevel*255.0) / 255.0;
-
-				double fValue = fractalRaster.getSample(x, y, 0);
-				int newValue = (int)((elevation - scale * (fValue/2.0)));
-				if (newValue < 0)
-				{
-					newValue = 0;
-				}
-				out.setSample(x, y, 0, newValue);
-			}
-		}
+        BufferedImage mountains = ImageHelper.read(Paths.get("assets/mountain_texture.png").toString());
+        mountains = ImageHelper.scaleByWidth(mountains, (int)(mountains.getWidth() * sizeMultiplyer * 0.25f));
+        BufferedImage mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
+        subtractTextureFromHeightMapUsingSeaLevel(elevationImg, mountainTexture);
+        mountainTexture = null;
         
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Time to draw heightmap: " + elapsedTime
@@ -100,6 +87,57 @@ public class GraphCreator
 
         return elevationImg;	
     }
+    
+    private static void subtractTextureFromHeightMapUsingSeaLevel(BufferedImage image, BufferedImage texture)
+    {
+        Raster textureRaster = texture.getRaster();
+		WritableRaster out = image.getRaster();
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				double elevation = out.getSample(x, y, 0);
+				double scale;
+				scale = Math.abs(elevation - GraphImpl.seaLevel*255.0) / 255.0;
+
+				double tValue = 255f - textureRaster.getSample(x, y, 0);
+				int newValue = (int)((elevation - scale * (tValue)));
+				if (newValue < 0)
+				{
+					newValue = 0;
+				}
+				out.setSample(x, y, 0, newValue);
+			}
+		}
+
+    }
+    
+    private static void subtractFractalTextureFromHeightMap(BufferedImage image, Random rand)
+    {
+    	float fractalScale = 0.025f;
+        BufferedImage texture = FractalBGGenerator.generate(rand, 1.2f, image.getWidth(), image.getHeight(), fractalScale);
+
+        Raster textureRaster = texture.getRaster();
+		WritableRaster out = image.getRaster();
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				double elevation = out.getSample(x, y, 0);
+
+				double tValue = textureRaster.getSample(x, y, 0);
+				int newValue = (int)((elevation + (tValue - (0.5f - fractalScale/2f) * 255f)));
+				newValue = Math.max(0, Math.min(newValue, 255));
+				if (newValue < 0)
+				{
+					newValue = 0;
+				}
+				out.setSample(x, y, 0, newValue);
+			}
+		}
+
+    }
+
     
     public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer)
     {
