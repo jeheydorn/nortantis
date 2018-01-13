@@ -87,8 +87,7 @@ public class FractalBGGenerator
 		
 		ImageHelper.setContrast(data, 0.5f - contrast/2f, 0.5f + contrast/2f);
 				
-		BufferedImage result = ImageHelper.arrayToImage(data, 0, height,
-				0, width);
+		BufferedImage result = ImageHelper.arrayToImage(data, 0, height, 0, width, BufferedImage.TYPE_BYTE_GRAY);
 		return result;
 
 	}

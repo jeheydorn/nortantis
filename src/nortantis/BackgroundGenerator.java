@@ -59,7 +59,7 @@ public class BackgroundGenerator
 		int numberOfColorChannels;
 		BufferedImage allChannels;
 		float[] means;
-		if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
+		if (ImageHelper.isSupportedGrayscaleType(texture))
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
@@ -72,7 +72,9 @@ public class BackgroundGenerator
 			means = ImageHelper.calcMeanOfEachColor(texture);
 		}
 		
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols));
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), BufferedImage.TYPE_USHORT_GRAY);
+		
+		float maxPixelValue = (float)ImageHelper.getMaxPixelValue(texture);
 
 		for (int channel : new Range(numberOfColorChannels))
 		{
@@ -86,9 +88,9 @@ public class BackgroundGenerator
 					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
 					{
 						float level;
-						if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						if (ImageHelper.isSupportedGrayscaleType(texture))
 						{
-							level = raster.getSample(textureC, textureR, 0)/255f;
+							level = raster.getSample(textureC, textureR, 0)/maxPixelValue;
 						}
 						else
 						{

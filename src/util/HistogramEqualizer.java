@@ -26,7 +26,7 @@ public class HistogramEqualizer
 	{
 		this.imageType = image.getType();
 		lookupTables = new ArrayList<>();
-		if (image.getType() == BufferedImage.TYPE_BYTE_GRAY)
+		if (ImageHelper.isSupportedGrayscaleType(image))
 		{
 			int[] histogram = countPixelLevels(image, 0);
 			lookupTables.add(createLookupTable(histogram, image.getWidth() * image.getHeight()));
@@ -208,7 +208,7 @@ public class HistogramEqualizer
 				else
 				{
 					Color inColor;
-					if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY)
+					if (ImageHelper.isSupportedGrayscaleType(inImage))
 					{
 						int grayLevel = in.getSample(x, y, 0);	
 						inColor = new Color(grayLevel, grayLevel, grayLevel, 255);

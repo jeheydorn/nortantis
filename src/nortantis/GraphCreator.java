@@ -66,26 +66,28 @@ public class GraphCreator
 		double startTime = System.currentTimeMillis();
 		
         // Draw elevation map with tectonic plate boundaries. 
-        BufferedImage elevationImg = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-        Graphics2D g = elevationImg.createGraphics();
+        BufferedImage heightMap = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
+        Graphics2D g = heightMap.createGraphics();
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, graph.getWidth(), graph.getHeight());
         graph.paintElevationUsingTrianges(g);
-        
-        elevationImg = ImageHelper.convolveGrayscale(elevationImg, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
-        
-        // Combine a fractal noise with the heightmap to give it more interesting small features.
-        BufferedImage mountains = ImageHelper.read(Paths.get("assets/mountain_texture.png").toString());
+         
+        heightMap = ImageHelper.convolveGrayscale(heightMap, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
+        ImageHelper.write(heightMap, "heightMap.png");
+       
+        // Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
+        BufferedImage mountains = ImageHelper.read(Paths.get("assets/20180113084702_1450196252.png").toString());
         mountains = ImageHelper.scaleByWidth(mountains, (int)(mountains.getWidth() * sizeMultiplyer * 0.25f));
         BufferedImage mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
-        subtractTextureFromHeightMapUsingSeaLevel(elevationImg, mountainTexture);
+        ImageHelper.write(mountainTexture, "mountainTexture.png");
+        subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);
         mountainTexture = null;
         
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Time to draw heightmap: " + elapsedTime
 				/ 1000.0);
 
-        return elevationImg;	
+        return heightMap;	
     }
     
     private static void subtractTextureFromHeightMapUsingSeaLevel(BufferedImage image, BufferedImage texture)

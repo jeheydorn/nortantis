@@ -60,7 +60,7 @@ public class ProbabilityHelper
 	public static void main(String[] args)
 	{
 		Map<String, Integer> counts = new HashMap<>();
-		for (int i : new Range(10000))
+		for (@SuppressWarnings("unused") int i : new Range(10000))
 		{
 			String value = sampleCategorical(new Random(), Arrays.asList(
 					 new Tuple2<>(0.1, "first"), 

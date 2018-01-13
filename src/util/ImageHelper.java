@@ -26,6 +26,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 import hoten.geom.Point;
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
+import nortantis.ScaledIconCache;
 
 public class ImageHelper
 {
@@ -65,12 +66,27 @@ public class ImageHelper
 	 */
 	public static BufferedImage convertToGrayscale(BufferedImage img)
 	{
+		return convertImageToType(img, BufferedImage.TYPE_BYTE_GRAY);
+	}
+
+	/**
+	 * Converts a BufferedImage to type BufferedImage.TYPE_BYTE_GRAY.
+	 * @param img
+	 * @return
+	 */
+	public static BufferedImage convertImageToType(BufferedImage img, int bufferedImageType)
+	{
 		BufferedImage result = new BufferedImage(img.getWidth(),
-				img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+				img.getHeight(), bufferedImageType);
 		Graphics g = result.getGraphics();
 		g.drawImage(img, 0, 0, null);
 		g.dispose();
 		return result;
+	}
+
+	public static boolean isSupportedGrayscaleType(BufferedImage image)
+	{
+		return image.getType() == BufferedImage.TYPE_BYTE_GRAY || image.getType() == BufferedImage.TYPE_USHORT_GRAY;
 	}
 	
 	public static String bufferedImageTypeToString(int type)
@@ -123,9 +139,9 @@ public class ImageHelper
 		// This library is described at http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
 
-		if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY && scaled.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		if (isSupportedGrayscaleType(inImage) && !isSupportedGrayscaleType(scaled))
 		{
-			scaled = convertToGrayscale(scaled);
+			scaled = convertImageToType(scaled, inImage.getType());
 		}
 
 		return scaled;
@@ -146,9 +162,9 @@ public class ImageHelper
 		// This library is described at http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
 		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
 		
-		if (inImage.getType() == BufferedImage.TYPE_BYTE_GRAY && scaled.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		if (isSupportedGrayscaleType(inImage) && !isSupportedGrayscaleType(scaled))
 		{
-			scaled = convertToGrayscale(scaled);
+			scaled = convertImageToType(scaled, inImage.getType());
 		}
 		
 		return scaled;
@@ -253,15 +269,17 @@ public class ImageHelper
 	}
 	
 	/** 
-	 * Maximizes the contrast of the given image. The image must be BufferedImage.TYPE_BYTE_GRAY.
+	 * Maximizes the contrast of the given grayscale image. The image must be a supported grayscale type.
 	 */
 	public static void maximizeContrastGrayscale(BufferedImage image)
 	{
-		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Image type must be BufferedImage.TYPE_BYTE_GRAY.");
+		if (!isSupportedGrayscaleType(image))
+			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + bufferedImageTypeToString(image));
+		
+		int maxPixelValue = getMaxPixelValue(image);
 
 		Raster in = image.getRaster();
-		double min = 255;
+		double min = maxPixelValue;
 		double max = 0;
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
@@ -277,9 +295,15 @@ public class ImageHelper
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				double value = in.getSample(x, y, 0);
-				int newValue = (int)(((value - min)/(max - min)) * 255);
+				int newValue = (int)(((value - min)/(max - min)) * maxPixelValue);
 				out.setSample(x, y, 0, newValue);
 			}
+	}
+	
+	public static int getMaxPixelValue(BufferedImage image)
+	{
+		return 255;
+		//return (1 << image.getColorModel().getPixelSize()) - 1;
 	}
 
 	/*
@@ -326,12 +350,12 @@ public class ImageHelper
 	
 
 	/** 
-	 * Multiplies each pixel by the given scale. The image must be BufferedImage.TYPE_BYTE_GRAY.
+	 * Multiplies each pixel by the given scale. The image must be a supported grayscale type
 	 */
 	public static void scaleGrayLevels(BufferedImage image, float scale)
 	{
-		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Image type must be BufferedImage.TYPE_BYTE_GRAY.");
+		if (!isSupportedGrayscaleType(image))
+			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + bufferedImageTypeToString(image));
 
 		WritableRaster out = image.getRaster();
 		for (int y = 0; y < image.getHeight(); y++)
@@ -675,7 +699,6 @@ public class ImageHelper
 	public static BufferedImage rotate90Degrees(BufferedImage image, boolean isClockwise)
 	{
 		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
-		Raster inRaster = image.getRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
@@ -758,9 +781,8 @@ public class ImageHelper
 	 * is a BufferedImage, which is more discretized.
 	 * @return
 	 */
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel,
-			boolean maximizeContrast)
-	{		
+	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast)
+	{			
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
 		// Make sure rows and cols are greater than 1 for JTransforms.
@@ -779,10 +801,10 @@ public class ImageHelper
 		// Do the inverse DFT on the product.
 		inverseFFT(data);
 		
-		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast);
+		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast, img.getType());
 	}
 		
-	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast)
+	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast, int bufferedImageType)
 	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
 		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
@@ -795,7 +817,7 @@ public class ImageHelper
 			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 		
-		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, bufferedImageType);
 		return result;
 	}
 		
@@ -814,13 +836,15 @@ public class ImageHelper
 		int imgRowPaddingOver2 = imgRowPadding/2;
 		int imgColPaddingOver2 = imgColPadding/2;
 		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
+		
+		boolean isGrayscale = isSupportedGrayscaleType(img);
 
 		Raster raster = img.getRaster();
 		for (int r = 0; r < img.getHeight(); r++)
 			for (int c = 0; c < img.getWidth(); c++)
 			{
 				float grayLevel = raster.getSample(c, r, 0);
-				if (img.getType() == BufferedImage.TYPE_BYTE_GRAY)
+				if (isGrayscale)
 					grayLevel /= 255f;
 				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
 			}
@@ -924,9 +948,9 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage arrayToImage(float[][] array, int rowStart, int rows, int colStart, int cols)
+	public static BufferedImage arrayToImage(float[][] array, int rowStart, int rows, int colStart, int cols, int bufferedImageType)
 	{
-		BufferedImage image = new BufferedImage(cols, rows, BufferedImage.TYPE_BYTE_GRAY);
+		BufferedImage image = new BufferedImage(cols, rows, bufferedImageType);
 		WritableRaster raster = image.getRaster();
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
@@ -939,9 +963,9 @@ public class ImageHelper
 		return image;
 	}
 
-	public static BufferedImage arrayToImage(float[][] array)
+	public static BufferedImage arrayToImage(float[][] array, int bufferedImageType)
 	{
-		BufferedImage image = new BufferedImage(array[0].length, array.length, BufferedImage.TYPE_BYTE_GRAY);
+		BufferedImage image = new BufferedImage(array[0].length, array.length, bufferedImageType);
 		WritableRaster raster = image.getRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 		{
@@ -1044,7 +1068,7 @@ public class ImageHelper
 		
 	public static BufferedImage tile(BufferedImage image, int targetRows, int targetCols)
 	{
-		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0));
+		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0), image.getType());
 	}
 	
 	public static BufferedImage tileNTimes(BufferedImage image, int n)
