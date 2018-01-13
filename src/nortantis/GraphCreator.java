@@ -73,13 +73,16 @@ public class GraphCreator
         graph.paintElevationUsingTrianges(g);
          
         heightMap = ImageHelper.convolveGrayscale(heightMap, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
-        ImageHelper.write(heightMap, "heightMap.png");
        
         // Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
-        BufferedImage mountains = ImageHelper.read(Paths.get("assets/20180113084702_1450196252.png").toString());
+        BufferedImage mountains = ImageHelper.read(Paths.get("assets/washington volcano.png").toString());
+        if (mountains.getType() != BufferedImage.TYPE_USHORT_GRAY)
+        {
+        	mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);
+        }
         mountains = ImageHelper.scaleByWidth(mountains, (int)(mountains.getWidth() * sizeMultiplyer * 0.25f));
         BufferedImage mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
-        ImageHelper.write(mountainTexture, "mountainTexture.png");
+        //ImageHelper.write(mountainTexture, "mountainTexture.png");
         subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);
         mountainTexture = null;
         
@@ -94,15 +97,16 @@ public class GraphCreator
     {
         Raster textureRaster = texture.getRaster();
 		WritableRaster out = image.getRaster();
+		float maxPixelValue = (float)ImageHelper.getMaxPixelValue(image);
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double elevation = out.getSample(x, y, 0);
-				double scale;
-				scale = Math.abs(elevation - GraphImpl.seaLevel*255.0) / 255.0;
+				float elevation = out.getSample(x, y, 0);
+				float scale;
+				scale = Math.abs(elevation - GraphImpl.seaLevel*maxPixelValue) / maxPixelValue;
 
-				double tValue = 255f - textureRaster.getSample(x, y, 0);
+				float tValue = maxPixelValue - textureRaster.getSample(x, y, 0);
 				int newValue = (int)((elevation - scale * (tValue)));
 				if (newValue < 0)
 				{
@@ -121,6 +125,7 @@ public class GraphCreator
 
         Raster textureRaster = texture.getRaster();
 		WritableRaster out = image.getRaster();
+		int maxPixelValue = ImageHelper.getMaxPixelValue(image);
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
@@ -128,8 +133,8 @@ public class GraphCreator
 				double elevation = out.getSample(x, y, 0);
 
 				double tValue = textureRaster.getSample(x, y, 0);
-				int newValue = (int)((elevation + (tValue - (0.5f - fractalScale/2f) * 255f)));
-				newValue = Math.max(0, Math.min(newValue, 255));
+				int newValue = (int)((elevation + (tValue - (0.5f - fractalScale/2f) * (float)maxPixelValue)));
+				newValue = Math.max(0, Math.min(newValue, maxPixelValue));
 				if (newValue < 0)
 				{
 					newValue = 0;

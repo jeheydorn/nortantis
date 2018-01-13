@@ -58,12 +58,13 @@ public class BackgroundGenerator
 		
 		int numberOfColorChannels;
 		BufferedImage allChannels;
+		float maxPixelValue = (float)ImageHelper.getMaxPixelValue(texture);
 		float[] means;
 		if (ImageHelper.isSupportedGrayscaleType(texture))
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[] {ImageHelper.calcMeanOfGrayscaleImage(texture)/255f};
+			means = new float[] {ImageHelper.calcMeanOfGrayscaleImage(texture)/maxPixelValue};
 		}
 		else
 		{
@@ -72,9 +73,9 @@ public class BackgroundGenerator
 			means = ImageHelper.calcMeanOfEachColor(texture);
 		}
 		
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), BufferedImage.TYPE_USHORT_GRAY);
+		int randomImageType = texture.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), randomImageType);
 		
-		float maxPixelValue = (float)ImageHelper.getMaxPixelValue(texture);
 
 		for (int channel : new Range(numberOfColorChannels))
 		{

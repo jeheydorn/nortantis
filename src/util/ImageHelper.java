@@ -11,6 +11,7 @@ import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Random;
 
@@ -86,7 +87,9 @@ public class ImageHelper
 
 	public static boolean isSupportedGrayscaleType(BufferedImage image)
 	{
-		return image.getType() == BufferedImage.TYPE_BYTE_GRAY || image.getType() == BufferedImage.TYPE_USHORT_GRAY;
+		return image.getType() == BufferedImage.TYPE_BYTE_BINARY
+				|| image.getType() == BufferedImage.TYPE_BYTE_GRAY 
+				|| image.getType() == BufferedImage.TYPE_USHORT_GRAY;
 	}
 	
 	public static String bufferedImageTypeToString(int type)
@@ -302,8 +305,23 @@ public class ImageHelper
 	
 	public static int getMaxPixelValue(BufferedImage image)
 	{
-		return 255;
-		//return (1 << image.getColorModel().getPixelSize()) - 1;
+		if (image.getType() == BufferedImage.TYPE_BYTE_BINARY)
+		{
+			return 1;
+		}
+		return (1 << image.getColorModel().getPixelSize()) - 1;
+	}
+	
+	public static int getMaxPixelValue(int bufferedImageType)
+	{
+		if (bufferedImageType == BufferedImage.TYPE_USHORT_GRAY)
+		{
+			return 65535;
+		}		
+		else
+		{
+			return 255;
+		}
 	}
 
 	/*
@@ -776,7 +794,7 @@ public class ImageHelper
 	 * @param kernel The kernel to convolve with.
 	 * @param maximizeContrast Iff true, the contrast of the convolved image
 	 * will be maximized while it is still in floating point representation.
-	 * In the result the pixel values will range from 0 to 255.
+	 * In the result the pixel values will range from 0 to 255 for 8 bit pixels, or 65535 for 16 bit.
 	 * This is better than maximizing the contrast of the result because the result
 	 * is a BufferedImage, which is more discretized.
 	 * @return
@@ -801,7 +819,10 @@ public class ImageHelper
 		// Do the inverse DFT on the product.
 		inverseFFT(data);
 		
-		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast, img.getType());
+		// Only use 16 bit pixels if the input image used them, to save memory.
+		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		
+		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast, resultType);
 	}
 		
 	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast, int bufferedImageType)
@@ -838,6 +859,7 @@ public class ImageHelper
 		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
 		
 		boolean isGrayscale = isSupportedGrayscaleType(img);
+		float maxPixelValue = getMaxPixelValue(img);
 
 		Raster raster = img.getRaster();
 		for (int r = 0; r < img.getHeight(); r++)
@@ -845,7 +867,7 @@ public class ImageHelper
 			{
 				float grayLevel = raster.getSample(c, r, 0);
 				if (isGrayscale)
-					grayLevel /= 255f;
+					grayLevel /= maxPixelValue;
 				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
 			}
 
@@ -952,11 +974,12 @@ public class ImageHelper
 	{
 		BufferedImage image = new BufferedImage(cols, rows, bufferedImageType);
 		WritableRaster raster = image.getRaster();
+		int maxPixelValue = getMaxPixelValue(bufferedImageType);
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{			
-				float value = array[r][c] * 255;
+				float value = array[r][c] * maxPixelValue;
 				raster.setSample(c - colStart, r - rowStart, 0, value);
 			}
 		}
@@ -967,11 +990,12 @@ public class ImageHelper
 	{
 		BufferedImage image = new BufferedImage(array[0].length, array.length, bufferedImageType);
 		WritableRaster raster = image.getRaster();
+		int maxPixelValue = getMaxPixelValue(bufferedImageType);
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{				
-				raster.setSample(x, y, 0, array[y][x] * 255);
+				raster.setSample(x, y, 0, array[y][x] * maxPixelValue);
 			}
 		}
 		return image;
@@ -1255,7 +1279,7 @@ public class ImageHelper
 		} 
 		catch (IOException e)
 		{
-			throw new RuntimeException();
+			throw new RuntimeException("Can't read the file " + fileName);
 		}
 	}
 	

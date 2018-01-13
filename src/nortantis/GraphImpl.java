@@ -42,7 +42,7 @@ public class GraphImpl extends VoronoiGraph
 	// Modify seeFloorLevel to change the number of islands in the ocean.
 	final double seaFloorLevel = 0.10;
 	final double continentalPlateLevel = 0.45;
-   	public static final double seaLevel = 0.39;
+   	public static final float seaLevel = 0.39f;
    	// This field must be set before creating instance of GraphImpl. This is necessary because it must be set
    	// before calling VoronoiGraph's constructor, which Java requires to be the first call in GraphImpl's
    	// constructor.
