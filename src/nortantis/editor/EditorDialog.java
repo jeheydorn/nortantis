@@ -1,65 +1,35 @@
 package nortantis.editor;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTextField;
 import javax.swing.JToggleButton;
-import javax.swing.SwingWorker;
-import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.plaf.SliderUI;
 
-import nortantis.MapCreator;
-import nortantis.MapParts;
 import nortantis.MapSettings;
-import nortantis.MapText;
 import nortantis.RunSwing;
-import nortantis.TextType;
-import util.ImageHelper;
 import util.JComboBoxFixed;
-import util.Tuple2;
-import javax.swing.JToolBar;
-import javax.swing.SpringLayout;
-import java.awt.Insets;
-import java.awt.Component;
-import java.awt.Dimension;
-
-import javax.swing.Box;
 
 @SuppressWarnings("serial")
 public class EditorDialog extends JDialog
@@ -88,7 +58,7 @@ public class EditorDialog extends JDialog
 		// Setup tools
 		tools = Arrays.asList(
 				new TextTool(this, settings),
-				new OceanTool());
+				new OceanTool(settings));
 		currentTool = tools.get(0);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.

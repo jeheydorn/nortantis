@@ -10,7 +10,7 @@ import java.util.List;
 import nortantis.ImagePanel;
 
 @SuppressWarnings("serial")
-public class TextEditingPanel extends ImagePanel
+public class MapEditingPanel extends ImagePanel
 {
 	private Color highlightColor = new Color(255,227,74);
 	private List<Area> areas;
@@ -25,7 +25,7 @@ public class TextEditingPanel extends ImagePanel
 		this.areas = null;
 	}
 
-	public TextEditingPanel(BufferedImage image)
+	public MapEditingPanel(BufferedImage image)
 	{
 		super(image);
 	}

@@ -75,7 +75,7 @@ public class GraphCreator
         heightMap = ImageHelper.convolveGrayscale(heightMap, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
        
         // Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
-        BufferedImage mountains = ImageHelper.read(Paths.get("assets/washington volcano.png").toString());
+        BufferedImage mountains = ImageHelper.read(Paths.get("assets/utah county.png").toString());
         if (mountains.getType() != BufferedImage.TYPE_USHORT_GRAY)
         {
         	mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);

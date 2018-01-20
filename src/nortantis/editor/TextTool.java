@@ -1,20 +1,13 @@
 package nortantis.editor;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
@@ -28,51 +21,35 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultFocusManager;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
-import javax.swing.border.EmptyBorder;
 
 import nortantis.ImagePanel;
-import nortantis.MapCreator;
-import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
+import util.ImageHelper;
 import util.JComboBoxFixed;
 import util.JTextFieldFixed;
-import util.ImageHelper;
-import util.Tuple2;
 
-public class TextTool implements EditorTool
+public class TextTool extends EditorTool
 {
-	private final TextEditingPanel mapDisplayPanel;
-	private JTextField editTextField;
 	private BufferedImage mapWithoutText;
-	private MapParts mapParts;
+	private JTextField editTextField;
 	private MapText lastSelected;
-	private double zoom;
 	private JComboBox<ToolType> toolComboBox;
 	JComboBox<TextType>textTypeComboBox;
 	private Point mousePressedLocation;
 	ToolType lastTool;
-	JPanel toolOptionsPanel;
-	BufferedImage placeHolder;
-	private MapSettings settings;
 	
 
 	public TextTool(JDialog parent, MapSettings settings)
 	{
-		this.settings = settings;
-		placeHolder = ImageHelper.read("assets/drawing_map.png");
-		mapDisplayPanel = new TextEditingPanel(placeHolder);
-		mapDisplayPanel.setLayout(new BorderLayout());
-
-		createToolsOptionsPanel();
+		super(settings);
 
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
@@ -122,47 +99,12 @@ public class TextTool implements EditorTool
 			}
 		});
 		
-		mapDisplayPanel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				handleMouseClickOnMap(e);
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				handleMousePressedOnMap(e);
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e)
-			{
-				handleMouseReleasedOnMap(e);
-			}
-		});
-		
-		mapDisplayPanel.addMouseMotionListener(new MouseMotionListener()
-		{
-			
-			@Override
-			public void mouseMoved(MouseEvent e)
-			{
-			}
-			
-			@Override
-			public void mouseDragged(MouseEvent e)
-			{
-				handleMouseDraggedOnMap(e);
-			}
-		});
-
 	}
 	
-	private void createToolsOptionsPanel()
+	@Override
+	protected JPanel createToolsOptionsPanel()
 	{
-		toolOptionsPanel = new JPanel();
+		JPanel toolOptionsPanel = new JPanel();
 		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
@@ -187,16 +129,16 @@ public class TextTool implements EditorTool
 					handleTextEdit(lastSelected);
 				}
 				
-				mapDisplayPanel.clearAreasToDraw();
+				mapEditingPanel.clearAreasToDraw();
 				lastSelected = null;
-				mapDisplayPanel.repaint();
+				mapEditingPanel.repaint();
 				textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 				editTextField.setText("");
 				lastTool = (ToolType)toolComboBox.getSelectedItem();
 				updateToolText();
 			}
 		});
-		addLabelAndComponentToToolsOptionsPanel(lblTools, toolComboBox);
+		addLabelAndComponentToPanel(toolOptionsPanel, lblTools, toolComboBox);
 		toolComboBox.setSelectedItem(ToolType.Edit); 		
 		lastTool = (ToolType)toolComboBox.getSelectedItem();
 		
@@ -205,7 +147,7 @@ public class TextTool implements EditorTool
 		textTypeComboBox = new JComboBoxFixed<>();
 		textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		addLabelAndComponentToToolsOptionsPanel(lblTextType, textTypeComboBox);
+		addLabelAndComponentToPanel(toolOptionsPanel, lblTextType, textTypeComboBox);
 		
 		for (ToolType toolType : ToolType.values())
 		{
@@ -217,21 +159,9 @@ public class TextTool implements EditorTool
 		}
 		
 		toolOptionsPanel.add(Box.createVerticalGlue());
+		return toolOptionsPanel;
 	}
-	
-	private void addLabelAndComponentToToolsOptionsPanel(JLabel label, JComponent component)
-	{
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		int borderWidth = EditorDialog.borderWidthBetweenComponents;
-		panel.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
-		label.setPreferredSize(new Dimension(80, 20));
-		panel.add(label);
-		panel.add(component);
-		panel.add(Box.createHorizontalGlue());
-		toolOptionsPanel.add(panel);
-	}
-	
+		
 	@Override
 	public String getToolbarName()
 	{
@@ -239,29 +169,16 @@ public class TextTool implements EditorTool
 	}
 
 	@Override
-	public JPanel getToolOptionsPanel()
-	{
-		return toolOptionsPanel;
-	}
-
-	@Override
 	public ImagePanel getDisplayPanel()
 	{
-		return mapDisplayPanel;
+		return mapEditingPanel;
 	}
 	
 	@Override
 	public void handleZoomChange(double zoomLevel)
-	{
-		zoom = zoomLevel;
-		mapDisplayPanel.setImage(placeHolder);
-		mapDisplayPanel.clearAreasToDraw();
-		mapParts = null;
-		
-		mapDisplayPanel.repaint();
-		createAndShowMap();
+	{	
+		super.handleZoomChange(zoomLevel);
 		editTextField.requestFocus();
-
 	}
 	
 	@Override
@@ -270,7 +187,8 @@ public class TextTool implements EditorTool
 		handleTextEdit(lastSelected);
 	}
 	
-	private void createAndShowMap()
+	@Override
+	protected void onBeforeCreateMap()
 	{
 		// Change a few settings to make map creation faster.
 		settings.resolution = zoom;
@@ -280,67 +198,20 @@ public class TextTool implements EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
-
-		SwingWorker<Tuple2<BufferedImage, MapParts>, Void> worker = new SwingWorker<Tuple2<BufferedImage, MapParts>, Void>() 
-	    {
-	        @Override
-	        public Tuple2<BufferedImage, MapParts> doInBackground() 
-	        {	
-				try
-				{
-					MapParts parts = new MapParts();
-					BufferedImage map = new MapCreator().createMap(settings, null, parts);
-					return new Tuple2<>(map, parts);
-				} 
-				catch (Exception e)
-				{
-					e.printStackTrace();
-			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				} 
-	        	
-	        	return null;
-	        }
-	        
-	        @Override
-	        public void done()
-	        {
-	        	Tuple2<BufferedImage, MapParts> tuple = null;
-	            try 
-	            {
-	                tuple = get();
-	            } 
-	            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
-	            {
-	                throw new RuntimeException(e);
-	            }
-	            
-	            if (tuple != null)
-	            {
-	            	mapWithoutText = tuple.getFirst();
-	            	mapParts = tuple.getSecond();
-	            	// I need the textDrawer to have the original settings object, not a copy,
-	            	// so that when the user edits text, the changes are displayed.
-	            	//mapParts.textDrawer.setSettings(settings);
-	            	
-	            	// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
-	            	// This makes it so that any edits done to the settings will automatically be reflected
-	            	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
-	            	// map texts, which are needed to make them clickable in this editing panel.
-            		mapParts.textDrawer.setMapTexts(settings.edits.text);
-	            
-	            	// Display the map with text.
-	            	BufferedImage mapWithText = drawMapWithText();
-	            	
-	            	mapDisplayPanel.image = mapWithText;
-	            	mapDisplayPanel.repaint();
-	            	// Tell the scroll pane to update itself.
-	            	mapDisplayPanel.revalidate();
-	            }
-	        }
-	 
-	    };
-	    worker.execute();
-
+	}
+	
+	@Override
+	protected BufferedImage onBeforeShowMap(BufferedImage map)
+	{
+		// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
+    	// This makes it so that any edits done to the settings will automatically be reflected
+    	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
+    	// map texts, which are needed to make them clickable in this editing panel.
+		mapParts.textDrawer.setMapTexts(settings.edits.text);
+    
+    	// Add text to the map
+		mapWithoutText = map;
+    	return drawMapWithText();
 	}
 	
 	private BufferedImage drawMapWithText()
@@ -368,10 +239,6 @@ public class TextTool implements EditorTool
 		Delete,
 	}
 
-	/**
-	 * 
-	 * @param clickLoc The location the user clicked relative the the map image.
-	 */
 	private void updateTextInBackgroundThread(final MapText selectedText)
 	{
 	    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
@@ -408,17 +275,18 @@ public class TextTool implements EditorTool
 	                throw new RuntimeException(e);
 	            }
 	            
-              	mapDisplayPanel.image = map;
-        		mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
-        		mapDisplayPanel.repaint();
+              	mapEditingPanel.image = map;
+        		mapEditingPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
+        		mapEditingPanel.repaint();
             	// Tell the scroll pane to update itself.
-            	mapDisplayPanel.revalidate();	        
+            	mapEditingPanel.revalidate();	        
 	        }
 	    };
 	    worker.execute();
 	}
 
-	private void handleMousePressedOnMap(MouseEvent e)
+	@Override
+	protected void handleMousePressedOnMap(MouseEvent e)
 	{
 		if (toolComboBox.getSelectedItem().equals(ToolType.Move))
 		{
@@ -429,8 +297,8 @@ public class TextTool implements EditorTool
 				mousePressedLocation = e.getPoint();
 			}
 			lastSelected = selectedText;
-			mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
-			mapDisplayPanel.repaint();
+			mapEditingPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
+			mapEditingPanel.repaint();
 		}
 		else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
 		{
@@ -440,7 +308,7 @@ public class TextTool implements EditorTool
 				// Region and title names cannot be rotated.
 				if (lastSelected.type != TextType.Region && lastSelected.type != TextType.Title)
 				{
-					mapDisplayPanel.setAreasToDraw(lastSelected.areas);
+					mapEditingPanel.setAreasToDraw(lastSelected.areas);
 				}
 				else
 				{
@@ -449,9 +317,9 @@ public class TextTool implements EditorTool
 			}
 			else
 			{
-				mapDisplayPanel.setAreasToDraw(null);
+				mapEditingPanel.setAreasToDraw(null);
 			}
-			mapDisplayPanel.repaint();
+			mapEditingPanel.repaint();
 		}
 		else if (toolComboBox.getSelectedItem().equals(ToolType.Delete))
 		{
@@ -464,7 +332,8 @@ public class TextTool implements EditorTool
 		}
 	}
 	
-	private void handleMouseDraggedOnMap(MouseEvent e)
+	@Override
+	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
 		if (lastSelected != null)
 		{
@@ -480,16 +349,16 @@ public class TextTool implements EditorTool
 					areaCopy.transform(t);
 					transformedAreas.add(areaCopy);
 				}
-				mapDisplayPanel.setAreasToDraw(transformedAreas);
-				mapDisplayPanel.repaint();
+				mapEditingPanel.setAreasToDraw(transformedAreas);
+				mapEditingPanel.repaint();
 			}
 			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
 			{
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
 				for (Area area : lastSelected.areas)
 				{
-					double centerX = lastSelected.location.x / zoom;
-					double centerY = lastSelected.location.y / zoom;
+					double centerX = lastSelected.location.x * zoom;
+					double centerY = lastSelected.location.y * zoom;
 					Area areaCopy = new Area(area);
 					
 					// Undo previous rotation.
@@ -505,13 +374,14 @@ public class TextTool implements EditorTool
 					areaCopy.transform(t);
 					transformedAreas.add(areaCopy);
 				}
-				mapDisplayPanel.setAreasToDraw(transformedAreas);
-				mapDisplayPanel.repaint();				
+				mapEditingPanel.setAreasToDraw(transformedAreas);
+				mapEditingPanel.repaint();				
 			}
 		}
 	}
 	
-	private void handleMouseReleasedOnMap(MouseEvent e)
+	@Override
+	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
 		if (lastSelected != null)
 		{
@@ -519,16 +389,16 @@ public class TextTool implements EditorTool
 			{
 				// The user dragged and dropped text.
 				
-				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * zoom), 
-						(int)((e.getY() - mousePressedLocation.y) * zoom));
+				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/zoom)), 
+						(int)((e.getY() - mousePressedLocation.y) * (1.0/zoom)));
 				lastSelected.location = new hoten.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
 				updateTextInBackgroundThread(lastSelected);
 			}
 			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
 			{
-				double centerX = lastSelected.location.x / zoom;
-				double centerY = lastSelected.location.y / zoom;
+				double centerX = lastSelected.location.x / (1.0/zoom);
+				double centerY = lastSelected.location.y / (1.0/zoom);
 				double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
 				// No upside-down text.
 				if (angle > Math.PI/2)
@@ -545,7 +415,8 @@ public class TextTool implements EditorTool
 		}
 	}
 		
-	private void handleMouseClickOnMap(MouseEvent e)
+	@Override
+	protected void handleMouseClickOnMap(MouseEvent e)
 	{
 		// If the map has been drawn...
 		if (mapParts != null)
@@ -578,8 +449,8 @@ public class TextTool implements EditorTool
 		else
 		{
 			// Just a quick highlights update.
-			mapDisplayPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
-			mapDisplayPanel.repaint();
+			mapEditingPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
+			mapEditingPanel.repaint();
 		}
 		
 		if (selectedText == null)
