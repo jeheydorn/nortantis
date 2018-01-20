@@ -9,8 +9,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.json.simple.JSONArray;
@@ -20,6 +22,7 @@ import org.json.simple.JSONValue;
 import hoten.geom.Point;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
+import nortantis.editor.RegionEdit;
 import util.Function0;
 import util.Helper;
 
@@ -160,6 +163,7 @@ public class MapSettings implements Serializable
 		// User edits.
 		result.setProperty("editedText", editedTextToJson());
 		result.setProperty("centerEdits", centerEditsToJson());
+		result.setProperty("regionEdits", regionsEditsToJson());
 		
 		return result;
 	}
@@ -191,6 +195,21 @@ public class MapSettings implements Serializable
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("regionId", centerEdit.regionId);
 			mpObj.put("isWater", centerEdit.isWater);
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String regionsEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (RegionEdit regionEdit : edits.regionEdits.values())
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("regionId", regionEdit.regionId);
+			mpObj.put("color", colorToString(regionEdit.color));
 			list.add(mpObj);
 		}
 		String json = list.toJSONString();
@@ -674,6 +693,28 @@ public class MapSettings implements Serializable
 				return result;
 			}
 		});
+		
+		edits.regionEdits = getProperty("regionEdits", new Function0<Map<Integer, RegionEdit>>()
+		{
+			public Map<Integer, RegionEdit> apply()
+			{
+				String str = props.getProperty("regionEdits");
+				if (str == null || str.isEmpty())
+					return new TreeMap<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				Map<Integer, RegionEdit>  result = new TreeMap<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					int regionId = Integer.parseInt((String) jsonObj.get("regionId"));
+					Color color = parseColor((String) jsonObj.get("color"));
+					result.put(regionId, new RegionEdit(regionId, color));
+				}
+				
+				return result;
+			}
+		});
+
 	}
 	
 	private static boolean parseBoolean(String str)

@@ -23,8 +23,10 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
+import javax.management.RuntimeErrorException;
 
 import hoten.voronoi.Center;
+import nortantis.editor.MapEdits;
 import util.ImageHelper;
 import util.ImageHelper.ColorifyAlgorithm;
 import util.Logger;
@@ -310,10 +312,42 @@ public class MapCreator
 	
 	private static GraphImpl createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
 	{
-		return GraphCreator.createGraph(width, height,
+		GraphImpl graph = GraphCreator.createGraph(width, height,
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
 				sizeMultiplyer);	
+		applyCenterEdits(graph, settings.edits);
+		
+		return graph;
+	}
+	
+	private static void applyCenterEdits(GraphImpl graph, MapEdits edits)
+	{
+		if (edits == null | edits.centerEdits.isEmpty())
+		{
+			return;
+		}
+		
+		if (edits.centerEdits.size() != graph.centers.size())
+		{
+			throw new IllegalArgumentException("The map edits have " + edits.centerEdits.size() + " polygons, but the world size is " + graph.centers.size());
+		}
+		
+		for (int i : new Range(edits.centerEdits.size()))
+		{
+			Center center = graph.centers.get(i);
+			center.water = edits.centerEdits.get(i).isWater;
+			int regionId = edits.centerEdits.get(i).regionId;
+			Region region = graph.findRegionById(regionId);
+			if (region == null)
+			{
+				region = new Region();
+				region.id = regionId;
+				region.backgroundColor = edits.regionEdits.get(regionId).color;
+			}
+			region.add(center);
+			graph.centers.get(i).region = region;
+		}
 	}
 	
 	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background)

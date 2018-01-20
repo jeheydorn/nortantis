@@ -4,9 +4,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import hoten.voronoi.Center;
 import nortantis.MapText;
+import nortantis.Region;
 import util.Range;
 
 /**
@@ -22,16 +25,18 @@ public class MapEdits implements Serializable
 	 */
 	public List<MapText> text;
 	public List<CenterEdit> centerEdits;
+	public Map<Integer, RegionEdit> regionEdits;
 		
 	public MapEdits()
 	{
 		text = new ArrayList<>();
 		centerEdits = new ArrayList<>();
+		regionEdits = new TreeMap<>();
 	}
 
 	public boolean isEmpty()
 	{
-		return text.isEmpty() && centerEdits.isEmpty();
+		return text.isEmpty() && centerEdits.isEmpty() && regionEdits.isEmpty();
 	}
 	
 	public void initializeCenterEdits(List<Center> centers)
@@ -46,5 +51,20 @@ public class MapEdits implements Serializable
 			centerEdits.get(i).regionId = centers.get(i).region.id;
 			centerEdits.get(i).isWater = centers.get(i).water;
 		}
+	}
+	
+	public void initializeRegionEdits(List<Region> regions)
+	{
+		if (regionEdits.isEmpty())
+		{
+			regionEdits = new TreeMap<>();
+		}
+		
+		for (int i : new Range(regions.size()))
+		{
+			regionEdits.get(i).regionId = regions.get(i).id;
+			regionEdits.get(i).color = regions.get(i).backgroundColor;
+		}
+
 	}
 }

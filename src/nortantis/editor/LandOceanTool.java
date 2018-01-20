@@ -29,13 +29,6 @@ public class LandOceanTool extends EditorTool
 	}
 
 	@Override
-	public void handleZoomChange(double zoomLevel)
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
 		// TODO Auto-generated method stub
@@ -81,6 +74,7 @@ public class LandOceanTool extends EditorTool
 	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{
 		settings.edits.initializeCenterEdits(mapParts.graph.centers);
+		settings.edits.initializeRegionEdits(mapParts.graph.regions);
 		return null;
 	}
 

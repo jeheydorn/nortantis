@@ -60,7 +60,7 @@ public class GraphImpl extends VoronoiGraph
 	    
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
-    List<Region> regions;
+    public List<Region> regions;
        
     /*
        Colors converted to rgb:
@@ -321,6 +321,19 @@ public class GraphImpl extends VoronoiGraph
     			}
     		}
     	}
+    	return null;
+    }
+    
+    public Region findRegionById(int id)
+    {
+    	for (Region region : regions)
+    	{
+    		if (region.id == id)
+    		{
+    			return region;
+    		}
+    	}
+    	
     	return null;
     }
     
