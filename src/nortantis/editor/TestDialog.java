@@ -18,6 +18,7 @@ import javax.swing.JPanel;
 import util.JComboBoxFixed;
 import util.JTextFieldFixed;
 
+@SuppressWarnings("serial")
 public class TestDialog extends JDialog
 {
 	public TestDialog() {
@@ -63,7 +64,7 @@ public class TestDialog extends JDialog
 		JLabel lblLine2 = new JLabel("line 2 label");
 		line2Panel.add(lblLine2);
 		lblLine2.setPreferredSize(new Dimension(200, 30));
-		JComboBox comboBox = new JComboBoxFixed();
+		JComboBox<String> comboBox = new JComboBoxFixed<String>();
         comboBox.setMaximumSize(new Dimension(200, 20));
 		comboBox.addItem("item 1");
 		comboBox.addItem("item 2");

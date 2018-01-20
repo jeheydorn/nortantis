@@ -11,7 +11,6 @@ import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Random;
 
@@ -27,7 +26,6 @@ import org.jtransforms.fft.FloatFFT_2D;
 import hoten.geom.Point;
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
-import nortantis.ScaledIconCache;
 
 public class ImageHelper
 {

@@ -154,7 +154,6 @@ public class GraphImpl extends VoronoiGraph
         	for (Center c : region.getCenters())
         	{
         		assert !c.water;
-        		assert !c.ocean;
         		assert c.region == region;
         	}
         	
@@ -284,9 +283,6 @@ public class GraphImpl extends VoronoiGraph
     	{
     		regions.get(i).id = i;
     	}
-    	
-    	// Find neighbors of each region.
-    	regions.stream().forEach(reg -> reg.findNeighbors());
 	}
     
     /**
@@ -430,7 +426,7 @@ public class GraphImpl extends VoronoiGraph
     protected Enum<?> getBiome(Center p) {
     	double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
     	
-		if (p.ocean)
+		if (p.water)
 		{
 			return ColorData.OCEAN;
 		}
@@ -692,7 +688,7 @@ public class GraphImpl extends VoronoiGraph
     {
 		for (Center c1 : centers)
 		{
-			c1.water = c1.ocean = c1.elevation < seaLevel;
+			c1.water = c1.elevation < seaLevel;
 		}
 		
 		assignBorderToCorners();
@@ -705,7 +701,7 @@ public class GraphImpl extends VoronoiGraph
 			int numLand = 0;
 			for (Center center : c.neighbors)
 			{
-				numOcean += center.ocean ? 1 : 0;
+				numOcean += center.water ? 1 : 0;
 				numLand += !center.water ? 1 : 0;
 			}
 			c.coast = numOcean > 0 && numLand > 0;
@@ -719,7 +715,7 @@ public class GraphImpl extends VoronoiGraph
 			int numLand = 0;
 			for (Center center : c.touches)
 			{
-				numOcean += center.ocean ? 1 : 0;
+				numOcean += center.water ? 1 : 0;
 				numLand += !center.water ? 1 : 0;
 			}
 			c.ocean = numOcean == c.touches.size();

@@ -19,13 +19,11 @@ public class Region
 	private Set<Center> centers;
 	public Set<Center> getCenters() { return Collections.unmodifiableSet(centers); }
 	public int id;
-	public Set<Region> neighbors;
 	public Color backgroundColor;
 	
 	public Region()
 	{
 		this.centers = new HashSet<>();
-		this.neighbors = new HashSet<>();
 	}
 	
 	public void addAll(Collection<Center> toAdd)
@@ -81,20 +79,4 @@ public class Region
 	{
 		return GraphImpl.findCentroid(centers);
 	}
-	
-	public void findNeighbors()
-	{
-		neighbors.clear();
-		for (Center c : centers)
-		{
-			for (Center n : c.neighbors)
-			{
-				if (n.region != this && n.region != null)
-				{
-					neighbors.add(n.region);
-				}
-			}
-		}
-	}
-
 }

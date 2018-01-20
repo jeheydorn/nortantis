@@ -18,6 +18,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import hoten.geom.Point;
+import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
 import util.Function0;
 import util.Helper;
@@ -157,17 +158,14 @@ public class MapSettings implements Serializable
 		result.setProperty("frayedBorderSize", frayedBorderSize + "");
 		
 		// User edits.
-		result.setProperty("editedText", editedTextToString());
+		result.setProperty("editedText", editedTextToJson());
+		result.setProperty("centerEdits", centerEditsToJson());
 		
 		return result;
 	}
 	
-	/**
-	 * Stores editedText as a '\n' delimited list of pairs, each delimited by ',';
-	 * @return
-	 */
 	@SuppressWarnings("unchecked")
-	private String editedTextToString()
+	private String editedTextToJson()
 	{
 		JSONArray list = new JSONArray();
 		for (MapText text : edits.text)
@@ -182,7 +180,21 @@ public class MapSettings implements Serializable
 		}
 		String json = list.toJSONString();
 		return json;
-
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String centerEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (CenterEdit centerEdit : edits.centerEdits)
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("regionId", centerEdit.regionId);
+			mpObj.put("isWater", centerEdit.isWater);
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
 	}
 	
 	private String colorToString(Color c)
@@ -637,9 +649,30 @@ public class MapSettings implements Serializable
 					MapText mp = new MapText(text, location, angle, type);
 					result.add(mp);
 				}
+				
 				return result;
 			}
-	
+		});
+		
+		edits.centerEdits = getProperty("centerEdits", new Function0<List<CenterEdit>>()
+		{
+			public List<CenterEdit> apply()
+			{
+				String str = props.getProperty("centerEdits");
+				if (str == null || str.isEmpty())
+					return new ArrayList<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				List<CenterEdit> result = new ArrayList<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					int regionId = Integer.parseInt((String) jsonObj.get("regionId"));
+					boolean isWater = Boolean.parseBoolean((String) jsonObj.get("isWater"));
+					result.add(new CenterEdit(regionId, isWater));
+				}
+				
+				return result;
+			}
 		});
 	}
 	

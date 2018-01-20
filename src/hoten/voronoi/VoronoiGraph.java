@@ -19,15 +19,12 @@ import java.util.TreeMap;
 import java.util.function.Function;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.TectonicPlate;
-import util.Helper;
-import util.ImageHelper;
 import util.Range;
 
 /**
@@ -388,7 +385,7 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.ocean != edge.d1.ocean;
+        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.water != edge.d1.water;
         	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), shouldDraw);
         	return;
         }
@@ -418,7 +415,7 @@ public abstract class VoronoiGraph {
 				{
 					if (drawLandAndOceanBlackAndWhiteOnly)
 					{
-						return c.ocean ? Color.black : Color.white;
+						return c.water ? Color.black : Color.white;
 					}
 					else
 					{
@@ -688,7 +685,7 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.ocean != edge.d1.ocean);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.water != edge.d1.water);
     }
 
     public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
@@ -969,38 +966,6 @@ public abstract class VoronoiGraph {
     final double startAngle;
     final double dipAngle;
     final double dipWidth;
-
-    //only the radial implementation of amitp's map generation
-    //TODOO implement more island shapes
-    private boolean isWater(Point p) {
-        p = new Point(2 * (p.x / bounds.width - 0.5), 2 * (p.y / bounds.height - 0.5));
-
-        double angle = Math.atan2(p.y, p.x);
-        double length = 0.5 * (Math.max(Math.abs(p.x), Math.abs(p.y)) + p.length());
-
-        double r1 = 0.5 + 0.40 * Math.sin(startAngle + bumps * angle + Math.cos((bumps + 3) * angle));
-        double r2 = 0.7 - 0.20 * Math.sin(startAngle + bumps * angle - Math.sin((bumps + 2) * angle));
-        if (Math.abs(angle - dipAngle) < dipWidth
-                || Math.abs(angle - dipAngle + 2 * Math.PI) < dipWidth
-                || Math.abs(angle - dipAngle - 2 * Math.PI) < dipWidth) {
-            r1 = r2 = 0.2;
-        }
-        return !(length < r1 || (length > r1 * ISLAND_FACTOR && length < r2));
-
-        //return false;
-
-        /*if (noise == null) {
-         noise = new Perlin2d(.125, 8, MyRandom.seed).createArray(257, 257);
-         }
-         int x = (int) ((p.x + 1) * 128);
-         int y = (int) ((p.y + 1) * 128);
-         return noise[x][y] < .3 + .3 * p.l2();*/
-
-        /*boolean eye1 = new Point(p.x - 0.2, p.y / 2 + 0.2).length() < 0.05;
-         boolean eye2 = new Point(p.x + 0.2, p.y / 2 + 0.2).length() < 0.05;
-         boolean body = p.length() < 0.8 - 0.18 * Math.sin(5 * Math.atan2(p.y, p.x));
-         return !(body && !eye1 && !eye2);*/
-    }
 
     protected abstract void assignOceanCoastAndLand();
     

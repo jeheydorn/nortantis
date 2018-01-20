@@ -2,16 +2,12 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.TexturePaint;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Random;
-
-import javax.imageio.ImageIO;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import util.ImageHelper;
@@ -117,34 +113,6 @@ public class GraphCreator
 		}
 
     }
-    
-    private static void subtractFractalTextureFromHeightMap(BufferedImage image, Random rand)
-    {
-    	float fractalScale = 0.025f;
-        BufferedImage texture = FractalBGGenerator.generate(rand, 1.2f, image.getWidth(), image.getHeight(), fractalScale);
-
-        Raster textureRaster = texture.getRaster();
-		WritableRaster out = image.getRaster();
-		int maxPixelValue = ImageHelper.getMaxPixelValue(image);
-		for (int y = 0; y < image.getHeight(); y++)
-		{
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				double elevation = out.getSample(x, y, 0);
-
-				double tValue = textureRaster.getSample(x, y, 0);
-				int newValue = (int)((elevation + (tValue - (0.5f - fractalScale/2f) * (float)maxPixelValue)));
-				newValue = Math.max(0, Math.min(newValue, maxPixelValue));
-				if (newValue < 0)
-				{
-					newValue = 0;
-				}
-				out.setSample(x, y, 0, newValue);
-			}
-		}
-
-    }
-
     
     public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer)
     {

@@ -1,19 +1,16 @@
 package nortantis.editor;
 
-import java.awt.BorderLayout;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 import javax.swing.JPanel;
 
-import nortantis.ImagePanel;
 import nortantis.MapSettings;
-import util.ImageHelper;
 
-public class OceanTool extends EditorTool
+public class LandOceanTool extends EditorTool
 {
 
-	public OceanTool(MapSettings settings)
+	public LandOceanTool(MapSettings settings)
 	{
 		super(settings);
 	}
@@ -21,22 +18,7 @@ public class OceanTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Ocean";
-	}
-
-	@Override
-	public JPanel getToolOptionsPanel()
-	{
-		return new JPanel();
-	}
-
-	@Override
-	public ImagePanel getDisplayPanel()
-	{
-		BufferedImage placeHolder = ImageHelper.read("assets/drawing_map.png");
-		ImagePanel displayPanel = new MapEditingPanel(placeHolder);
-		displayPanel.setLayout(new BorderLayout());
-		return displayPanel;
+		return "Land and Ocean";
 	}
 
 	@Override
@@ -98,7 +80,7 @@ public class OceanTool extends EditorTool
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{
-		// TODO Auto-generated method stub
+		settings.edits.initializeCenterEdits(mapParts.graph.centers);
 		return null;
 	}
 

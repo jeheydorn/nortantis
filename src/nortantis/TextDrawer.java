@@ -312,7 +312,7 @@ public class TextDrawer
 				g.setFont(regionFontScaled);
 				Center center = graph.getCenterAt(textLocation.x, textLocation.y);
 				Set<Center> plateCenters;
-				if (center.ocean)
+				if (center.water)
 				{
 					plateCenters = findPlateCentersWaterOnly(graph, center.tectonicPlate);
 				}

@@ -28,7 +28,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 
-import nortantis.ImagePanel;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
@@ -166,12 +165,6 @@ public class TextTool extends EditorTool
 	public String getToolbarName()
 	{
 		return "Text";
-	}
-
-	@Override
-	public ImagePanel getDisplayPanel()
-	{
-		return mapEditingPanel;
 	}
 	
 	@Override

@@ -81,7 +81,10 @@ public abstract class EditorTool
 	
 	public abstract String getToolbarName();
 	
-	public abstract ImagePanel getDisplayPanel();
+	public ImagePanel getDisplayPanel()
+	{
+		return mapEditingPanel;
+	}
 	
 	public abstract void onBeforeSaving();
 	

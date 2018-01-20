@@ -42,8 +42,9 @@ public class EditorDialog extends JDialog
 	
 	/**
 	 * Creates a dialog for editing text.
-	 * @param settings Settings for the map. The user's edits will be stored in settigns.edits.
-	 * Other fields in settings may be modified in the editing process.
+	 * @param settings Settings for the map. The user's edits will be stored in settings.edits.
+	 * 	      Other fields in settings may be modified in the editing process and will not be stored 
+	 * 		  after the editor closes.
 	 * @throws IOException 
 	 */
 	public EditorDialog(final MapSettings settings, final RunSwing runSwing)
@@ -58,7 +59,7 @@ public class EditorDialog extends JDialog
 		// Setup tools
 		tools = Arrays.asList(
 				new TextTool(this, settings),
-				new OceanTool(settings));
+				new LandOceanTool(settings));
 		currentTool = tools.get(0);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
@@ -116,6 +117,7 @@ public class EditorDialog extends JDialog
 		JButton doneButton = new JButton("Done");
 		doneButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
+				runSwing.updateFieldsWhenEditsChange();
 				thisDialog.dispatchEvent(new WindowEvent(
 	                    thisDialog, WindowEvent.WINDOW_CLOSING));
 			}

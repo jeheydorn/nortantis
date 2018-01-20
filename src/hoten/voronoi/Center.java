@@ -16,10 +16,10 @@ public class Center
 
     public int index;
     public Point loc;
-    public ArrayList<Corner> corners = new ArrayList<>();//good
-    public ArrayList<Center> neighbors = new ArrayList<>();//good
+    public ArrayList<Corner> corners = new ArrayList<>();
+    public ArrayList<Center> neighbors = new ArrayList<>();
     public ArrayList<Edge> borders = new ArrayList<>();
-    public boolean border, ocean, water, coast;
+    public boolean border, water, coast;
     public boolean mountain;
     public boolean hill;
     public double elevation;

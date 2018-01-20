@@ -163,6 +163,13 @@ public class RunSwing
 	public JMenuItem clearEditsMenuItem;
 	private JMenu editorMenu;
 	private JMenuItem launchEditorMenuItem;
+	private JLabel lblSize;
+	private JLabel lblEdgeLandtowaterRatio;
+	private JLabel lblCenterLandtowaterRatio;
+	private JLabel lblRandomSeed;
+	private JLabel lblTextRandomSeed;
+	private JButton btnNewSeed;
+	private JButton btnNewTextRandomSeed;
 
 	
 	public static boolean isRunning()
@@ -434,12 +441,12 @@ public class RunSwing
 		randomSeedTextField.setColumns(10);
 		randomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 		
-		JLabel lblRandomSeed = new JLabel("Random seed:");
+		lblRandomSeed = new JLabel("Random seed:");
 		lblRandomSeed.setToolTipText("The random seed for the terrain and frayed edges.");
 		lblRandomSeed.setBounds(12, 12, 122, 15);
 		terrainPanel.add(lblRandomSeed);
 				
-		JButton btnNewSeed = new JButton("New Seed");
+		btnNewSeed = new JButton("New Seed");
 		btnNewSeed.setToolTipText("Generate a new random seed for the terrain and text.");
 		btnNewSeed.setBounds(284, 10, 105, 25);
 		terrainPanel.add(btnNewSeed);
@@ -455,14 +462,13 @@ public class RunSwing
 		sizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		sizeSlider.setBounds(131, 45, 245, 79);
 		terrainPanel.add(sizeSlider);
-		sizeSlider.addChangeListener(new SliderChangeListener());
 		
-		JLabel lblSize = new JLabel("World size:");
+		lblSize = new JLabel("World size:");
 		lblSize.setToolTipText("The size of the world.");
 		lblSize.setBounds(12, 59, 87, 15);
 		terrainPanel.add(lblSize);
 						
-		JLabel lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
+		lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
 		lblEdgeLandtowaterRatio.setToolTipText("The probability that a tectonic plate touching the edge of the map will be land rather than ocean.");
 		lblEdgeLandtowaterRatio.setBounds(461, 12, 239, 22);
 		terrainPanel.add(lblEdgeLandtowaterRatio);
@@ -482,10 +488,9 @@ public class RunSwing
 			}
 			edgeLandToWaterProbSlider.setLabelTable( labelTable );
 		}
-		edgeLandToWaterProbSlider.addChangeListener(new SliderChangeListener());
 		terrainPanel.add(edgeLandToWaterProbSlider);
 		
-		JLabel lblCenterLandtowaterRatio = new JLabel("Center land probability:");
+		lblCenterLandtowaterRatio = new JLabel("Center land probability:");
 		lblCenterLandtowaterRatio.setToolTipText("The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.");
 		lblCenterLandtowaterRatio.setBounds(461, 111, 254, 22);
 		terrainPanel.add(lblCenterLandtowaterRatio);
@@ -506,7 +511,6 @@ public class RunSwing
 			}
 			centerLandToWaterProbSlider.setLabelTable( labelTable );
 		}
-		centerLandToWaterProbSlider.addChangeListener(new SliderChangeListener());
 		terrainPanel.add(centerLandToWaterProbSlider);
 		
 		
@@ -555,7 +559,6 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				warnOfTextEdits();
 				String filename = chooseImageFile(backgroundPanel, oceanBackgroundImageFilename.getText());
 				if (filename != null)
 					oceanBackgroundImageFilename.setText(filename);
@@ -577,7 +580,6 @@ public class RunSwing
 		btnBrowseLandBackground.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				warnOfTextEdits();
 				String filename = chooseImageFile(backgroundPanel, landBackgroundImageFilename.getText());
 				if (filename != null)
 					landBackgroundImageFilename.setText(filename);
@@ -690,7 +692,6 @@ public class RunSwing
 		{	
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfTextEdits();
 				updateBackgroundImageDisplays();		
 			}
 		});
@@ -700,7 +701,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfTextEdits();
+				warnOfEdits();
 				updateBackgroundPanelFieldStates();
 			}		
 		};
@@ -1261,11 +1262,11 @@ public class RunSwing
 		btnChooseBoldBackgroundColor.setBounds(383, 270, 87, 25);
 		textPanel.add(btnChooseBoldBackgroundColor);
 		
-		final JButton btnNewTextRandomSeed = new JButton("New Seed");
+		btnNewTextRandomSeed = new JButton("New Seed");
 		btnNewTextRandomSeed.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				warnOfTextEdits();
+				warnOfEdits();
 				textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 			}
 		});
@@ -1299,7 +1300,6 @@ public class RunSwing
 				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
 				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
-				clearEditsMenuItem.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
 			}			
 		});
 		textPanel.add(drawTextCheckBox);
@@ -1312,10 +1312,10 @@ public class RunSwing
 		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
 		booksScrollPane.setViewportView(booksPanel);
 		
-		JLabel label_7 = new JLabel("Random seed:");
-		label_7.setToolTipText("The random seed for text.");
-		label_7.setBounds(528, 14, 122, 15);
-		textPanel.add(label_7);
+		lblTextRandomSeed = new JLabel("Random seed:");
+		lblTextRandomSeed.setToolTipText("The random seed for text.");
+		lblTextRandomSeed.setBounds(528, 14, 122, 15);
+		textPanel.add(lblTextRandomSeed);
 		
 		textRandomSeedTextField = new JTextField();
 		textRandomSeedTextField.setText(new Random().nextInt() + "");
@@ -1351,7 +1351,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfTextEdits();
+				warnOfEdits();
 				int seed = Math.abs(new Random().nextInt());
 				randomSeedTextField.setText(seed + "");
 				textRandomSeedTextField.setText(seed + "");
@@ -1518,12 +1518,13 @@ public class RunSwing
 			public void actionPerformed(ActionEvent arg0)
 			{
 	        	int n = JOptionPane.showConfirmDialog(
-	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
+	                    frame, "All map edits will be deleted. Do you wish to continue?", "",
 	                    JOptionPane.YES_NO_OPTION);
 	            if (n == JOptionPane.YES_OPTION) 
 	            {
-									edits = new MapEdits();
-									clearEditsMenuItem.setEnabled(false);
+					edits = new MapEdits();
+					clearEditsMenuItem.setEnabled(false);
+					updateFieldsWhenEditsChange();
 	            }
 			}			
 		});
@@ -1566,14 +1567,13 @@ public class RunSwing
 	 * Informs the user that if they continue an action they must delete text edits.
 	 * @return true if the action should continue. false if the user canceled the action to keep text edits.
 	 */
-	private void warnOfTextEdits()
+	private void warnOfEdits()
 	{
 		
 		if (!loadingSettings && showTextWarning  && edits != null && !edits.text.isEmpty())
 		{
-	        int n = JOptionPane.showOptionDialog(frame, "You have edited text and performed an action which will likely change \n"
-                    + "the generated map. This could cause the edited text to not fit the map. \n"
-                    + "You can clear text edits by going to " + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+	        int n = JOptionPane.showOptionDialog(frame, "Some options are disabled because you have edited the map. \n"
+                    + "You can clear edits by going to " + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
 	        if (n == JOptionPane.NO_OPTION)
 	        {
 	        	showTextWarning = false;
@@ -1997,7 +1997,7 @@ public class RunSwing
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					warnOfTextEdits();
+					warnOfEdits();
 				}
 			});
 		}
@@ -2043,6 +2043,7 @@ public class RunSwing
 		edits = settings.edits;
 		clearEditsMenuItem.setEnabled(!edits.text.isEmpty());
 		
+		updateFieldsWhenEditsChange();
 		updateBackgroundImageDisplays();
 		updateFrameTitle();
 
@@ -2168,12 +2169,68 @@ public class RunSwing
         return false;
 	}
 	
-	private class SliderChangeListener implements ChangeListener
+	public void updateFieldsWhenEditsChange()
 	{
-		@Override
-		public void stateChanged(ChangeEvent e)
+		boolean hasEdits = !edits.isEmpty();
+		
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblSize, sizeSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblEdgeLandtowaterRatio, edgeLandToWaterProbSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblCenterLandtowaterRatio, centerLandToWaterProbSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblRandomSeed, randomSeedTextField, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewSeed, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblDimensions, dimensionsComboBox, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblTextRandomSeed, textRandomSeedTextField, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewTextRandomSeed, hasEdits);		
+	}
+	
+	public void lockOrUnlockBecauseOfEditsAndUpdateTooltip(JLabel label, JComponent component, boolean hasEdits)
+	{
+		if (component == null)
 		{
-			warnOfTextEdits();
+			return;
 		}
+		
+		component.setEnabled(!hasEdits);
+		
+		if (label != null)
+		{
+			String lockedMessage = " This is locked because this map has edits.";
+			if (hasEdits)
+			{
+				addToTooltip(label, lockedMessage);
+				addToTooltip(component, lockedMessage);
+			}
+			else
+			{
+				removeFromToolTip(label, lockedMessage);
+				removeFromToolTip(component, lockedMessage);
+			}
+		}
+	}
+	
+	private void addToTooltip(JComponent component, String message)
+	{
+		String currentToolTop = component.getToolTipText();
+		if (currentToolTop == null)
+		{
+			currentToolTop = "";
+		}
+		if (!currentToolTop.contains(message))
+		{
+			component.setToolTipText(currentToolTop + message);
+		}
+
+	}
+	
+	private void removeFromToolTip(JComponent component, String message)
+	{
+
+		String currentToolTop = component.getToolTipText();
+		if (currentToolTop == null)
+		{
+			return;
+		}
+		component.setToolTipText(currentToolTop.replace(message, ""));
+
 	}
 }
