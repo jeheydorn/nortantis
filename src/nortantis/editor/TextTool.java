@@ -481,6 +481,13 @@ public class TextTool extends EditorTool
 			toolComboBox.setToolTipText("Delete text (alt+D)");			
 		}
 	}
+
+	@Override
+	public void onSwitchingAway()
+	{
+		// TODO Auto-generated method stub
+		
+	}
 	
 
 

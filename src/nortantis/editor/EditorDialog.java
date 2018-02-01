@@ -11,6 +11,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.border.EtchedBorder;
 
+import nortantis.GraphImpl;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
 import util.JComboBoxFixed;
@@ -37,8 +39,12 @@ public class EditorDialog extends JDialog
 	JScrollPane scrollPane;
 	EditorTool currentTool;
 	List<EditorTool> tools;
+	List<JToggleButton> toolToggleButtons;
 	public static final int borderWidthBetweenComponents = 4;
 	public static final int toolsPanelMaxWidth = 300;
+	private JPanel toolsOptionsPanelContainer;
+	private JPanel currentToolOptionsPanel;
+	private GraphImpl graph; // This is cached so that only the first tool that runs has to create the graph
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -75,16 +81,27 @@ public class EditorDialog extends JDialog
 		toolSelectPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, 20));
 		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tools"));
 		toolsPanel.add(toolSelectPanel);
+		toolToggleButtons = new ArrayList<>();
 		for (EditorTool tool : tools)
 		{
-			toolSelectPanel.add(new JToggleButton(tool.getToolbarName()));
+			JToggleButton toolButton = new JToggleButton(tool.getToolbarName());
+			toolToggleButtons.add(toolButton);
+			toolButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					handleToolSelected(tool);
+				}
+			});
+			toolSelectPanel.add(toolButton);
 		}
 		
-		// Setup tool options panel
-		JPanel toolsOptionsPanel = new JPanel();
-		toolsOptionsPanel.add(currentTool.getToolOptionsPanel());
-		toolsPanel.add(toolsOptionsPanel);
-		toolsOptionsPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tool Options"));
+		toolsOptionsPanelContainer = new JPanel();
+		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
+		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
+		toolsPanel.add(toolsOptionsPanelContainer);
+		toolsOptionsPanelContainer.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tool Options"));
 				
 		// Setup bottom panel
 		JPanel bottomPanel = new JPanel();
@@ -167,7 +184,31 @@ public class EditorDialog extends JDialog
 			}
 		});
 		
-		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem()));
+		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem())); // TODO call handleToolSelected instead
+	}
+	
+	private void handleToolSelected(EditorTool selectedTool)
+	{
+		enableOrDisableToolToggleButtons(false);
+		
+		graph = currentTool.getGraph();
+		currentTool.onSwitchingAway();
+		currentTool = selectedTool;
+		currentTool.cachGraph(graph);
+		toolsOptionsPanelContainer.remove(currentToolOptionsPanel);
+		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
+		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
+		selectedTool.createAndShowMap();
+		
+		enableOrDisableToolToggleButtons(false);
+	}
+	
+	private void enableOrDisableToolToggleButtons(boolean enable)
+	{
+		for (JToggleButton button: toolToggleButtons)
+		{
+			button.setEnabled(enable);
+		}
 	}
 	
 	private double parseZoom(String zoomStr)

@@ -16,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingWorker;
 
+import nortantis.GraphImpl;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
@@ -31,6 +32,7 @@ public abstract class EditorTool
 	protected MapSettings settings;
 	private JPanel toolOptionsPanel;
 	protected MapParts mapParts;
+	private GraphImpl graph;
 	
 	public EditorTool(MapSettings settings)
 	{
@@ -88,6 +90,8 @@ public abstract class EditorTool
 	
 	public abstract void onBeforeSaving();
 	
+	public abstract void onSwitchingAway();
+	
 	protected abstract JPanel createToolsOptionsPanel();
 	
 	protected static void addLabelAndComponentToPanel(JPanel panelToAddTo, JLabel label, JComponent component)
@@ -131,7 +135,7 @@ public abstract class EditorTool
 	protected abstract void onBeforeCreateMap();
 	protected abstract BufferedImage onBeforeShowMap(BufferedImage map);
 	
-	private void createAndShowMap()
+	public void createAndShowMap()
 	{
 		onBeforeCreateMap();
 
@@ -143,6 +147,7 @@ public abstract class EditorTool
 				try
 				{
 					MapParts parts = new MapParts();
+					parts.graph = graph;
 					BufferedImage map = new MapCreator().createMap(settings, null, parts);
 					return new Tuple2<>(map, parts);
 				} 
@@ -185,6 +190,21 @@ public abstract class EditorTool
 	    };
 	    worker.execute();
 
+	}
+	
+	public GraphImpl getGraph()
+	{
+		if (mapParts != null)
+		{
+			return mapParts.graph;			
+		}
+		return graph;
+	}
+	
+	public void cachGraph(GraphImpl graph)
+	{
+		
+		this.graph = graph;
 	}
 
 }

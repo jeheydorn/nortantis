@@ -1,9 +1,14 @@
 package nortantis.editor;
 
+import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 
 import nortantis.MapSettings;
 
@@ -31,8 +36,14 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		JPanel toolOptionsPanel = new JPanel();
+		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
+		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
+		
+		JLabel lblTools = new JLabel("Tool:");
+
+		return toolOptionsPanel;
 	}
 
 	@Override
@@ -76,6 +87,13 @@ public class LandOceanTool extends EditorTool
 		settings.edits.initializeCenterEdits(mapParts.graph.centers);
 		settings.edits.initializeRegionEdits(mapParts.graph.regions);
 		return null;
+	}
+
+	@Override
+	public void onSwitchingAway()
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 }
