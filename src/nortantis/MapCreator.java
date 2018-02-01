@@ -337,16 +337,6 @@ public class MapCreator
 		{
 			Center center = graph.centers.get(i);
 			center.water = edits.centerEdits.get(i).isWater;
-			int regionId = edits.centerEdits.get(i).regionId;
-			Region region = graph.findRegionById(regionId);
-			if (region == null)
-			{
-				region = new Region();
-				region.id = regionId;
-				region.backgroundColor = edits.regionEdits.get(regionId).color;
-			}
-			region.add(center);
-			graph.centers.get(i).region = region;
 		}
 	}
 	

@@ -48,7 +48,6 @@ public class MapEdits implements Serializable
 		
 		for (int i : new Range(centers.size()))
 		{
-			centerEdits.get(i).regionId = centers.get(i).region.id;
 			centerEdits.get(i).isWater = centers.get(i).water;
 		}
 	}

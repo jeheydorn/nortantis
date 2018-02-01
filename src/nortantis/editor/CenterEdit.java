@@ -5,12 +5,10 @@ package nortantis.editor;
  */
 public class CenterEdit
 {
-	public int regionId;
 	public boolean isWater;
 	
-	public CenterEdit(int regionId, boolean isOcean)
+	public CenterEdit(boolean isOcean)
 	{
-		this.regionId = regionId;
 		this.isWater = isOcean;
 	}
 }

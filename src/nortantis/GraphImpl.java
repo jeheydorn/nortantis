@@ -324,19 +324,6 @@ public class GraphImpl extends VoronoiGraph
     	return null;
     }
     
-    public Region findRegionById(int id)
-    {
-    	for (Region region : regions)
-    	{
-    		if (region.id == id)
-    		{
-    			return region;
-    		}
-    	}
-    	
-    	return null;
-    }
-    
     /**
      * Splits apart a region by parts connect by land (not including land from another region).
      * @param region

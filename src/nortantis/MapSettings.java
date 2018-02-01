@@ -193,7 +193,6 @@ public class MapSettings implements Serializable
 		for (CenterEdit centerEdit : edits.centerEdits)
 		{
 			JSONObject mpObj = new JSONObject();	
-			mpObj.put("regionId", centerEdit.regionId);
 			mpObj.put("isWater", centerEdit.isWater);
 			list.add(mpObj);
 		}
@@ -685,9 +684,8 @@ public class MapSettings implements Serializable
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
-					int regionId = Integer.parseInt((String) jsonObj.get("regionId"));
 					boolean isWater = Boolean.parseBoolean((String) jsonObj.get("isWater"));
-					result.add(new CenterEdit(regionId, isWater));
+					result.add(new CenterEdit(isWater));
 				}
 				
 				return result;
