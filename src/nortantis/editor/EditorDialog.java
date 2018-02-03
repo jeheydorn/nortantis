@@ -8,6 +8,9 @@ import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -39,12 +42,13 @@ public class EditorDialog extends JDialog
 	JScrollPane scrollPane;
 	EditorTool currentTool;
 	List<EditorTool> tools;
-	List<JToggleButton> toolToggleButtons;
 	public static final int borderWidthBetweenComponents = 4;
 	public static final int toolsPanelMaxWidth = 300;
 	private JPanel toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
 	private GraphImpl graph; // This is cached so that only the first tool that runs has to create the graph
+	private JComboBox<String> zoomComboBox;
+	public MapEditingPanel mapEditingPanel;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -61,11 +65,51 @@ public class EditorDialog extends JDialog
 		runSwing.clearEditsMenuItem.setEnabled(true);
 
 		getContentPane().setLayout(new BorderLayout());
+		
+		mapEditingPanel = new MapEditingPanel(null);
+		mapEditingPanel.setLayout(new BorderLayout());
+		
+		mapEditingPanel.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				currentTool.handleMouseClickOnMap(e);
+			}
+			
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				currentTool.handleMousePressedOnMap(e);
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				currentTool.handleMouseReleasedOnMap(e);
+			}
+		});
+		
+		mapEditingPanel.addMouseMotionListener(new MouseMotionListener()
+		{
+			
+			@Override
+			public void mouseMoved(MouseEvent e)
+			{
+			}
+			
+			@Override
+			public void mouseDragged(MouseEvent e)
+			{
+				currentTool.handleMouseDraggedOnMap(e);
+			}
+		});
+
 
 		// Setup tools
 		tools = Arrays.asList(
-				new TextTool(this, settings),
-				new LandOceanTool(settings));
+				new LandOceanTool(settings, this),
+				new TextTool(settings, this));
 		currentTool = tools.get(0);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
@@ -81,11 +125,10 @@ public class EditorDialog extends JDialog
 		toolSelectPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, 20));
 		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tools"));
 		toolsPanel.add(toolSelectPanel);
-		toolToggleButtons = new ArrayList<>();
 		for (EditorTool tool : tools)
 		{
 			JToggleButton toolButton = new JToggleButton(tool.getToolbarName());
-			toolToggleButtons.add(toolButton);
+			tool.setToggleButton(toolButton);
 			toolButton.addActionListener(new ActionListener()
 			{
 				@Override
@@ -112,7 +155,7 @@ public class EditorDialog extends JDialog
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
 		
-		final JComboBox<String> zoomComboBox = new JComboBoxFixed<>();
+		zoomComboBox = new JComboBoxFixed<>();
 		zoomComboBox.addItem("25%");
 		zoomComboBox.addItem("50%");
 		zoomComboBox.addItem("75%");
@@ -184,7 +227,7 @@ public class EditorDialog extends JDialog
 			}
 		});
 		
-		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem())); // TODO call handleToolSelected instead
+		handleToolSelected(currentTool);
 	}
 	
 	private void handleToolSelected(EditorTool selectedTool)
@@ -193,21 +236,22 @@ public class EditorDialog extends JDialog
 		
 		graph = currentTool.getGraph();
 		currentTool.onSwitchingAway();
+		currentTool.setToggled(false);
 		currentTool = selectedTool;
+		currentTool.setToggled(true);
 		currentTool.cachGraph(graph);
 		toolsOptionsPanelContainer.remove(currentToolOptionsPanel);
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
-		selectedTool.createAndShowMap();
-		
-		enableOrDisableToolToggleButtons(false);
+		toolsOptionsPanelContainer.repaint();
+		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem()));
 	}
 	
-	private void enableOrDisableToolToggleButtons(boolean enable)
+	public void enableOrDisableToolToggleButtons(boolean enable)
 	{
-		for (JToggleButton button: toolToggleButtons)
+		for (EditorTool tool: tools)
 		{
-			button.setEnabled(enable);
+			tool.setToggleButtonEnabled(enable);
 		}
 	}
 	

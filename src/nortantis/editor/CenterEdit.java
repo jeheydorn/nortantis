@@ -11,4 +11,9 @@ public class CenterEdit
 	{
 		this.isWater = isOcean;
 	}
+	
+	public CenterEdit()
+	{
+		
+	}
 }

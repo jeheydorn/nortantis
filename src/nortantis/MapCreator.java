@@ -59,6 +59,7 @@ public class MapCreator
 	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
 			throws IOException
 	{		
+		Logger.println("Creating the map");
 		if (!Files.exists(Paths.get(settings.landBackgroundImage)))
 			throw new IllegalArgumentException("Land background image file does not exists: " + settings.landBackgroundImage);
 		if (!Files.exists(Paths.get(settings.oceanBackgroundImage)))
@@ -78,9 +79,16 @@ public class MapCreator
 		if (mapParts != null)
 			mapParts.textDrawer = textDrawer;
 		
-		GraphImpl graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
-		if (mapParts != null)
+		GraphImpl graph;
+		if (mapParts.graph == null)
+		{
+			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
 			mapParts.graph = graph;
+		}
+		else
+		{
+			graph = mapParts.graph;
+		}
 		
 		background.doSetupThatNeedsGraph(settings, graph);
 		

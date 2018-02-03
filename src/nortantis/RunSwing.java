@@ -1897,7 +1897,7 @@ public class RunSwing
 
 	}
 
-	private static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
+	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
 	{
 		Color c = JColorChooser.showDialog(parent, "", colorDisplay.getBackground());
 		if (c != null)

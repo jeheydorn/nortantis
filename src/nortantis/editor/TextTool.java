@@ -27,6 +27,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 
 import nortantis.MapSettings;
 import nortantis.MapText;
@@ -46,9 +47,9 @@ public class TextTool extends EditorTool
 	ToolType lastTool;
 	
 
-	public TextTool(JDialog parent, MapSettings settings)
+	public TextTool(MapSettings settings, EditorDialog parent)
 	{
-		super(settings);
+		super(settings, parent);
 
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
@@ -111,8 +112,12 @@ public class TextTool extends EditorTool
 		editTextField = new JTextFieldFixed();
 		int borderWidth = EditorDialog.borderWidthBetweenComponents;
 		editTextField.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
-		toolOptionsPanel.add(editTextField);
-		editTextField.setColumns(20);
+		editTextField.setColumns(18);
+		JPanel textFieldPanel = new JPanel();
+		textFieldPanel.setLayout(new BoxLayout(textFieldPanel, BoxLayout.X_AXIS));
+		textFieldPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, EditorTool.spaceBetweenRowsOfComponents, 0));
+		textFieldPanel.add(editTextField);
+		toolOptionsPanel.add(textFieldPanel);
 		
 		JLabel lblTools = new JLabel("Action:");
 		

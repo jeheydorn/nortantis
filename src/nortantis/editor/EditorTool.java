@@ -10,6 +10,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -18,6 +19,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 
 import nortantis.GraphImpl;
@@ -38,51 +41,18 @@ public abstract class EditorTool
 	private JPanel toolOptionsPanel;
 	protected MapParts mapParts;
 	private GraphImpl graph;
+	private EditorDialog parent;
+	public static int spaceBetweenRowsOfComponents = 8;
+	private JToggleButton toggleButton;
 	
-	public EditorTool(MapSettings settings)
+	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
 		this.settings = settings;
+		this.parent = parent;
 		placeHolder = createPlaceholderImage();
-		mapEditingPanel = new MapEditingPanel(placeHolder);
-		mapEditingPanel.setLayout(new BorderLayout());
+		this.mapEditingPanel = parent.mapEditingPanel;
+		mapEditingPanel.setImage(placeHolder);
 		toolOptionsPanel = createToolsOptionsPanel();
-		
-		mapEditingPanel.addMouseListener(new MouseAdapter()
-		{
-			@Override
-			public void mouseClicked(MouseEvent e)
-			{
-				handleMouseClickOnMap(e);
-			}
-			
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				handleMousePressedOnMap(e);
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e)
-			{
-				handleMouseReleasedOnMap(e);
-			}
-		});
-		
-		mapEditingPanel.addMouseMotionListener(new MouseMotionListener()
-		{
-			
-			@Override
-			public void mouseMoved(MouseEvent e)
-			{
-			}
-			
-			@Override
-			public void mouseDragged(MouseEvent e)
-			{
-				handleMouseDraggedOnMap(e);
-			}
-		});
-
 	}
 
 	private BufferedImage createPlaceholderImage()
@@ -111,18 +81,45 @@ public abstract class EditorTool
 	
 	protected abstract JPanel createToolsOptionsPanel();
 	
-	protected static void addLabelAndComponentToPanel(JPanel panelToAddTo, JLabel label, JComponent component)
+	private static final int labelWidth = 80;
+	private static final int labelHeight = 20;
+	protected static JPanel addLabelAndComponentToPanel(JPanel panelToAddTo, JLabel label, JComponent component)
 	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
 		int borderWidth = EditorDialog.borderWidthBetweenComponents;
 		panel.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
-		label.setPreferredSize(new Dimension(80, 20));
-		panel.add(label);
-		panel.add(component);
+		label.setPreferredSize(new Dimension(labelWidth, labelHeight));
+		
+		JPanel labelPanel = new JPanel();
+		labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.Y_AXIS));
+		labelPanel.add(label);
+		labelPanel.add(Box.createVerticalGlue());
+		panel.add(labelPanel);
+		
+		JPanel compPanel = new JPanel();
+		compPanel.setLayout(new BoxLayout(compPanel, BoxLayout.X_AXIS));
+		compPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, spaceBetweenRowsOfComponents, 0));
+		compPanel.add(component);
+		panel.add(compPanel);
 		panel.add(Box.createHorizontalGlue());
 		panelToAddTo.add(panel);
+		
+		return panel;
 	}
+	
+	protected static void addLabelAndComponentsToPanel(JPanel panelToAddTo, JLabel label, List<JComponent> components)
+	{		
+		JPanel compPanel = new JPanel();
+		compPanel.setLayout(new BoxLayout(compPanel, BoxLayout.Y_AXIS));
+		for (JComponent comp : components)
+		{
+			compPanel.add(comp);
+		}
+		
+		addLabelAndComponentToPanel(panelToAddTo, label, compPanel);
+	}
+
 	
 	public JPanel getToolOptionsPanel()
 	{
@@ -150,6 +147,13 @@ public abstract class EditorTool
 	protected abstract void handleMouseDraggedOnMap(MouseEvent e);
 	
 	protected abstract void onBeforeCreateMap();
+	
+	/**
+	 * Do any processing to the generated map before displaying it, and return the map to display.
+	 * This is also the earliest time when mapParts is initialized.
+	 * @param map The generated map
+	 * @return The map to display
+	 */
 	protected abstract BufferedImage onBeforeShowMap(BufferedImage map);
 	
 	public void createAndShowMap()
@@ -195,6 +199,7 @@ public abstract class EditorTool
 	            	BufferedImage map = tuple.getFirst();
 	            	mapParts = tuple.getSecond();
 	            	
+	            	initializeCenterEditsIfEmpty();
 	            	map = onBeforeShowMap(map);
 	            	
 	            	mapEditingPanel.image = map;
@@ -202,6 +207,8 @@ public abstract class EditorTool
 	            	// Tell the scroll pane to update itself.
 	            	mapEditingPanel.revalidate();
 	            }
+	            
+	            parent.enableOrDisableToolToggleButtons(true);
 	        }
 	 
 	    };
@@ -222,6 +229,30 @@ public abstract class EditorTool
 	{
 		
 		this.graph = graph;
+	}
+	
+	public void setToggled(boolean toggled)
+	{
+		toggleButton.setSelected(toggled);
+	}
+	
+	public void setToggleButton(JToggleButton toggleButton)
+	{
+		this.toggleButton = toggleButton;
+	}
+	
+	public void setToggleButtonEnabled(boolean enabled)
+	{
+		toggleButton.setEnabled(enabled);
+	}
+	
+	private void initializeCenterEditsIfEmpty()
+	{
+		if (settings.edits.centerEdits.isEmpty())
+		{
+			settings.edits.initializeCenterEdits(mapParts.graph.centers);			
+		}
+
 	}
 
 }

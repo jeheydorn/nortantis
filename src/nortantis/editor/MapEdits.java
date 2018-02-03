@@ -43,27 +43,16 @@ public class MapEdits implements Serializable
 	{
 		if (centerEdits.isEmpty())
 		{
-			centerEdits = Arrays.asList(new CenterEdit[centers.size()]);
+			centerEdits = new ArrayList<>(centers.size());
+			for (@SuppressWarnings("unused") Center c : centers)
+			{
+				centerEdits.add(new CenterEdit());
+			}
 		}
 		
 		for (int i : new Range(centers.size()))
 		{
 			centerEdits.get(i).isWater = centers.get(i).water;
 		}
-	}
-	
-	public void initializeRegionEdits(List<Region> regions)
-	{
-		if (regionEdits.isEmpty())
-		{
-			regionEdits = new TreeMap<>();
-		}
-		
-		for (int i : new Range(regions.size()))
-		{
-			regionEdits.get(i).regionId = regions.get(i).id;
-			regionEdits.get(i).color = regions.get(i).backgroundColor;
-		}
-
 	}
 }
