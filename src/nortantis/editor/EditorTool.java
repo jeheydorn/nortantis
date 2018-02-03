@@ -1,7 +1,11 @@
 package nortantis.editor;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
@@ -21,6 +25,7 @@ import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
 import nortantis.MapSettings;
+import nortantis.TextDrawer;
 import util.ImageHelper;
 import util.Tuple2;
 
@@ -37,7 +42,7 @@ public abstract class EditorTool
 	public EditorTool(MapSettings settings)
 	{
 		this.settings = settings;
-		placeHolder = ImageHelper.read("assets/drawing_map.png");
+		placeHolder = createPlaceholderImage();
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 		mapEditingPanel.setLayout(new BorderLayout());
 		toolOptionsPanel = createToolsOptionsPanel();
@@ -80,6 +85,18 @@ public abstract class EditorTool
 
 	}
 
+	private BufferedImage createPlaceholderImage()
+	{
+		String message = "Drawing the map. Some details like borders and grunge are not shown in edit mode.";
+		Font font = MapSettings.parseFont("URW Chancery L\t0\t25");
+		Point textBounds = TextDrawer.getTextBounds(message, font);
+		BufferedImage placeHolder = new BufferedImage(textBounds.x + 10, textBounds.y + 20, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = placeHolder.createGraphics();
+		g.setFont(font);
+		g.setColor(Color.BLACK);
+		g.drawString(message, 5, textBounds.y + 5);
+		return placeHolder;
+	}
 	
 	public abstract String getToolbarName();
 	

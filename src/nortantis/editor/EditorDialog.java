@@ -56,7 +56,7 @@ public class EditorDialog extends JDialog
 	public EditorDialog(final MapSettings settings, final RunSwing runSwing)
 	{
 		final EditorDialog thisDialog = this;
-		setBounds(100, 100, 935, 584);
+		setBounds(100, 100, 1122, 701);
 		
 		runSwing.clearEditsMenuItem.setEnabled(true);
 

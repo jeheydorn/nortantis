@@ -115,11 +115,6 @@ public class TextDrawer
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
 				(int)(settings.riverFont.getSize() * sizeMultiplyer));
 
-		
-//		out.println("noun adjective pairs: ");
-//		Helper.printMultiLine(nounAdjectivePairs);
-//		out.println("noun verb pairs: ");
-//		Helper.printMultiLine(nounVerbPairs);
 	}
 	
 	private List<Pair<String>> readStringPairs(String filename)
@@ -1045,6 +1040,13 @@ public class TextDrawer
 					boundsLocation.y + metrics.getAscent()), boldBackground);
 		}
 		return true;
+	}
+	
+	public static java.awt.Point getTextBounds(String text, Font font)
+	{
+		FontMetrics metrics = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(font);
+		return new java.awt.Point(metrics.stringWidth(text), 
+				metrics.getHeight());
 	}
 
 	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, 
