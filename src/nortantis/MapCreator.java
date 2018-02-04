@@ -80,10 +80,13 @@ public class MapCreator
 			mapParts.textDrawer = textDrawer;
 		
 		GraphImpl graph;
-		if (mapParts.graph == null)
+		if (mapParts == null || mapParts.graph == null)
 		{
 			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
-			mapParts.graph = graph;
+			if (mapParts != null)
+			{
+				mapParts.graph = graph;
+			}
 		}
 		else
 		{
@@ -241,6 +244,7 @@ public class MapCreator
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
 		// because I might draw the text later.
 		drawRivers(graph, landBackground, sizeMultiplyer, settings.riverColor);
+		
 		if (mapParts != null)
 			mapParts.landBackground = landBackground;
 		
@@ -314,7 +318,7 @@ public class MapCreator
 
 		Logger.println("Done creating map.");
 		
-		ScaledIconCache.clear();
+		//ScaledIconCache.clear(); TODO do this only if an icon from file changed
 		return map;
 	}
 	
@@ -763,7 +767,7 @@ public class MapCreator
 					BufferedImage texture;
 					try
 					{
-						texture = ImageHelper.read(settings.backgroundTextureImage);
+						texture = ImageCache.getInstance().getImageFromFile(Paths.get(settings.backgroundTextureImage));
 					}
 					catch (RuntimeException e)
 					{
@@ -879,23 +883,23 @@ public class MapCreator
 				
 				try
 				{
-					land = ImageIO.read(new File(settings.landBackgroundImage));
+					land = ImageCache.getInstance().getImageFromFile((new File(settings.landBackgroundImage).toPath()));
 					land = ImageHelper.convertToBufferedImageOfType(land, BufferedImage.TYPE_INT_RGB);
 				}
-				catch(IOException e)
+				catch(Exception e)
 				{
-					throw new IllegalArgumentException("Cannot read land background image from " 
-							+ settings.landBackgroundImage);
+					throw new IllegalArgumentException("Error while reading land background image from " 
+							+ settings.landBackgroundImage + ": " + e.getMessage());
 				}
 				try
 				{
-					ocean = ImageIO.read(new File(settings.oceanBackgroundImage));
+					ImageCache.getInstance().getImageFromFile((new File(settings.oceanBackgroundImage).toPath()));
 					ocean = ImageHelper.convertToBufferedImageOfType(ocean, BufferedImage.TYPE_INT_RGB);
 				}
-				catch(IOException e)
+				catch(Exception e)
 				{
-					throw new IllegalArgumentException("Cannot read ocean background image from " 
-							+ settings.oceanBackgroundImage);
+					throw new IllegalArgumentException("Error while reading ocean background image from " 
+							+ settings.oceanBackgroundImage + ": " + e.getMessage());
 				}
 
 				mapBounds = new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
@@ -961,12 +965,12 @@ public class MapCreator
 				BufferedImage land;
 				try
 				{
-					land = ImageIO.read(new File(settings.landBackgroundImage));
+					land = ImageCache.getInstance().getImageFromFile(new File(settings.landBackgroundImage).toPath());
 				}
-				catch(IOException e)
+				catch(Exception e)
 				{
-					throw new IllegalArgumentException("Cannot read land background image from " 
-							+ settings.landBackgroundImage);
+					throw new IllegalArgumentException("Error while reading land background image from " 
+							+ settings.landBackgroundImage + ": " + e.getMessage());
 				}
 
 				return new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);

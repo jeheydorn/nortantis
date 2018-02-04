@@ -298,8 +298,8 @@ public class IconDrawer
 		{
 			if (needsScale)
 			{
-		       	icon = ScaledIconCache.getInstance().getScaledIcon(icon, scaledWidth);
-		      	mask = ScaledIconCache.getInstance().getScaledIcon(mask, scaledWidth);
+		       	icon = ImageCache.getInstance().getScaledImage(icon, scaledWidth);
+		      	mask = ImageCache.getInstance().getScaledImage(mask, scaledWidth);
 			}
 		}
 
@@ -319,7 +319,7 @@ public class IconDrawer
 	{
 		Collections.sort(iconsToDraw);
 
-//		 Scale the icons and masks in parallel.
+		// Scale the icons in parallel.
 		List<Runnable> jobs = new ArrayList<>();
 		for (final IconDrawTask task : iconsToDraw)
 		{
@@ -742,15 +742,9 @@ public class IconDrawer
 			Logger.println("Loading icon: " + path);
 			BufferedImage icon;
 			BufferedImage mask = null;
-			try
-			{
-				icon = ImageIO.read(path.toFile());
-				mask = createMask(icon);
-			} 
-			catch (IOException e)
-			{
-				throw new RuntimeException(e);
-			}
+			
+			icon = ImageCache.getInstance().getImageFromFile(path);
+			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
 
 			String rangeId = filename.substring(0, filename.indexOf('_'));
 			if (rangeId == null || rangeId == "")

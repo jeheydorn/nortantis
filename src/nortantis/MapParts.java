@@ -7,13 +7,29 @@ import java.util.Set;
 import hoten.voronoi.Center;
 
 /**
- * Holds pieces of a map created while generating it which are needed for editing it.
+ * Holds pieces of a map created while generating it which are needed for editing it. This is also used to cache some parts
+ * for faster drawing when editing.
  *
  */
 public class MapParts
 {
+	/**
+	 * Used as an input and output during map creation.
+	 */
 	public GraphImpl graph;
+	
+	/**
+	 * Used only as an output during map creation.
+	 */
 	public BufferedImage landBackground;
+	
+	/**
+	 * Used only as an output during map creation.
+	 */
 	public List<Set<Center>> mountainGroups;
+	
+	/**
+	 * Used only as an output during map creation.
+	 */
 	public TextDrawer textDrawer;
 }
