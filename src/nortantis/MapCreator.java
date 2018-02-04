@@ -319,6 +319,7 @@ public class MapCreator
 		Logger.println("Done creating map.");
 		
 		//ScaledIconCache.clear(); TODO do this only if an icon from file changed
+		System.gc();
 		return map;
 	}
 	

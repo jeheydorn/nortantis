@@ -60,9 +60,9 @@ public class ImageCache
 		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.read(path.toString()));
 	}
 	
-	public void replaceImageFromFile(Path path, BufferedImage newImage)
+	public boolean containsImageFile(Path path)
 	{
-		fileCache.put(path.toString(), newImage);
+		return fileCache.containsKey(path.toString());
 	}
 	
 	/**

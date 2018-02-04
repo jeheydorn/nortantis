@@ -417,7 +417,7 @@ public class TextTool extends EditorTool
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
 		// If the map has been drawn...
-		if (mapParts != null)
+		if (mapWithoutText != null)
 		{
 			if (toolComboBox.getSelectedItem().equals(ToolType.Edit))
 			{

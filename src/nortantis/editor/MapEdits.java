@@ -25,18 +25,16 @@ public class MapEdits implements Serializable
 	 */
 	public List<MapText> text;
 	public List<CenterEdit> centerEdits;
-	public Map<Integer, RegionEdit> regionEdits;
 		
 	public MapEdits()
 	{
 		text = new ArrayList<>();
 		centerEdits = new ArrayList<>();
-		regionEdits = new TreeMap<>();
 	}
 
 	public boolean isEmpty()
 	{
-		return text.isEmpty() && centerEdits.isEmpty() && regionEdits.isEmpty();
+		return text.isEmpty() && centerEdits.isEmpty();
 	}
 	
 	public void initializeCenterEdits(List<Center> centers)

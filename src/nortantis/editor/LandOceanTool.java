@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
+import hoten.voronoi.Center;
 import hoten.voronoi.nodename.as3delaunay.Circle;
 import nortantis.BGColorCancelHandler;
 import nortantis.BGColorPreviewPanel;
@@ -37,6 +38,10 @@ public class LandOceanTool extends EditorTool
 	private JPanel colorDisplay;
 	private JPanel colorChooserPanel;
 	private JRadioButton oceanButton;
+	private BufferedImage map;
+	private JRadioButton replaceColorButton;
+	private JRadioButton paintColorButton;
+	private JRadioButton landButton;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
@@ -87,18 +92,18 @@ public class LandOceanTool extends EditorTool
 	    
 	    if (settings.drawRegionColors)
 	    {
-			JRadioButton replaceColorButton = new JRadioButton("Replace Color");
+			replaceColorButton = new JRadioButton("Replace Color");
 		    group.add(replaceColorButton);
 		    radioButtons.add(replaceColorButton);
 		    replaceColorButton.addActionListener(listener);
-			JRadioButton paintColorButton = new JRadioButton("Paint Color");
+			paintColorButton = new JRadioButton("Paint Color");
 		    group.add(paintColorButton);
 		    radioButtons.add(paintColorButton);
 		    paintColorButton.addActionListener(listener);
 	    }
 	    else
 	    {
-			JRadioButton landButton = new JRadioButton("Land");
+			landButton = new JRadioButton("Land");
 		    group.add(landButton);
 		    radioButtons.add(landButton);
 		    landButton.addActionListener(listener);
@@ -161,8 +166,33 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-		
+		if (map != null) // If the map is visible ...
+		{
+			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+			if (center != null)
+			{
+				if (replaceColorButton.isSelected())
+				{
+					// TODO
+				}
+				else
+				{
+					CenterEdit edit = settings.edits.centerEdits.get(center.index);
+					edit.isWater = oceanButton.isSelected();
+					if (paintColorButton.isSelected())
+					{
+						edit.regionColor = colorDisplay.getBackground();
+					}
+				}
+				handleMapChange();
+			}
+		}
+	}
+	
+	private void handleMapChange()
+	{
+		// TODO make this faster by caching as much as possible in mapParts.
+		createAndShowMap();
 	}
 
 	@Override
@@ -202,6 +232,7 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{
+		this.map = map;
 		return map;
 	}
 

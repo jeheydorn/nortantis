@@ -163,7 +163,6 @@ public class MapSettings implements Serializable
 		// User edits.
 		result.setProperty("editedText", editedTextToJson());
 		result.setProperty("centerEdits", centerEditsToJson());
-		result.setProperty("regionEdits", regionsEditsToJson());
 		
 		return result;
 	}
@@ -194,27 +193,16 @@ public class MapSettings implements Serializable
 		{
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("isWater", centerEdit.isWater);
+			if (centerEdit.regionColor != null)
+			{
+				mpObj.put("regionColor", colorToString(centerEdit.regionColor));
+			}
 			list.add(mpObj);
 		}
 		String json = list.toJSONString();
 		return json;
 	}
-	
-	@SuppressWarnings("unchecked")
-	private String regionsEditsToJson()
-	{
-		JSONArray list = new JSONArray();
-		for (RegionEdit regionEdit : edits.regionEdits.values())
-		{
-			JSONObject mpObj = new JSONObject();	
-			mpObj.put("regionId", regionEdit.regionId);
-			mpObj.put("color", colorToString(regionEdit.color));
-			list.add(mpObj);
-		}
-		String json = list.toJSONString();
-		return json;
-	}
-	
+		
 	private String colorToString(Color c)
 	{
 		return c.getRed() + "," + c.getGreen() + "," + c.getBlue();
@@ -684,35 +672,15 @@ public class MapSettings implements Serializable
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
-					boolean isWater = Boolean.parseBoolean((String) jsonObj.get("isWater"));
-					result.add(new CenterEdit(isWater));
+					boolean isWater = (boolean) jsonObj.get("isWater");
+					String colorStr = (String) jsonObj.get("regionColor");
+					Color regionColor = colorStr == null ? null : parseColor(colorStr);
+					result.add(new CenterEdit(isWater, regionColor));
 				}
 				
 				return result;
 			}
 		});
-		
-		edits.regionEdits = getProperty("regionEdits", new Function0<Map<Integer, RegionEdit>>()
-		{
-			public Map<Integer, RegionEdit> apply()
-			{
-				String str = props.getProperty("regionEdits");
-				if (str == null || str.isEmpty())
-					return new TreeMap<>();
-				JSONArray array = (JSONArray) JSONValue.parse(str);
-				Map<Integer, RegionEdit>  result = new TreeMap<>();
-				for (Object obj : array)
-				{
-					JSONObject jsonObj = (JSONObject) obj;
-					int regionId = Integer.parseInt((String) jsonObj.get("regionId"));
-					Color color = parseColor((String) jsonObj.get("color"));
-					result.put(regionId, new RegionEdit(regionId, color));
-				}
-				
-				return result;
-			}
-		});
-
 	}
 	
 	private static boolean parseBoolean(String str)

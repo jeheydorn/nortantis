@@ -739,7 +739,10 @@ public class IconDrawer
 		for (String filename : filenames)
 		{
 			Path path = Paths.get("assets", "icons", iconType, filename);
-			Logger.println("Loading icon: " + path);
+			if (!ImageCache.getInstance().containsImageFile(path))
+			{
+				Logger.println("Loading icon: " + path);
+			}
 			BufferedImage icon;
 			BufferedImage mask = null;
 			

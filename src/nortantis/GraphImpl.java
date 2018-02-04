@@ -303,6 +303,24 @@ public class GraphImpl extends VoronoiGraph
     	return null;
     }
     
+    public Center findClosestCenter(Point point)
+    {
+    	if (point.x > getWidth() || point.y > getHeight() || point.x < 0 || point.y < 0)
+    	{
+    		return null;
+    	}
+    	
+    	Optional<Center> opt = centers.stream()
+        		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+    	
+    	if (opt.isPresent())
+    	{
+    		return opt.get();
+    	}
+    	
+    	return null;
+    }
+    
     /**
      * Searches for any region touching and polygon in landMass and returns it if found.
      * Otherwise returns null.

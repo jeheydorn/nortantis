@@ -64,7 +64,7 @@ public abstract class EditorTool
 		Graphics2D g = placeHolder.createGraphics();
 		g.setFont(font);
 		g.setColor(Color.BLACK);
-		g.drawString(message, 5, textBounds.y + 5);
+		g.drawString(message, 8, textBounds.y + 5);
 		return placeHolder;
 	}
 	
