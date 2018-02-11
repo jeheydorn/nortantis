@@ -14,7 +14,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -31,7 +30,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.border.EtchedBorder;
 
-import nortantis.GraphImpl;
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;

@@ -2,14 +2,10 @@ package nortantis.editor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import hoten.voronoi.Center;
 import nortantis.MapText;
-import nortantis.Region;
 import util.Range;
 
 /**

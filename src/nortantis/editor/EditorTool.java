@@ -1,14 +1,11 @@
 package nortantis.editor;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
@@ -19,18 +16,14 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 
-import nortantis.GraphImpl;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
-import util.ImageHelper;
-import util.Tuple2;
 
 public abstract class EditorTool
 {

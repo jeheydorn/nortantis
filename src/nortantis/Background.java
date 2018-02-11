@@ -5,12 +5,9 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import util.ImageHelper;
-import util.Range;
 import util.ImageHelper.ColorifyAlgorithm;
 
 /**

@@ -1,7 +1,6 @@
 package nortantis.editor;
 
 import java.awt.Color;
-import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -18,7 +17,6 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -26,9 +24,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
 import hoten.voronoi.Center;
-import hoten.voronoi.nodename.as3delaunay.Circle;
-import nortantis.BGColorCancelHandler;
-import nortantis.BGColorPreviewPanel;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
 
@@ -42,6 +37,7 @@ public class LandOceanTool extends EditorTool
 	private JRadioButton fillRegionColor;
 	private JRadioButton paintColorButton;
 	private JRadioButton landButton;
+	private JRadioButton mergeRegionsButton;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
@@ -92,14 +88,20 @@ public class LandOceanTool extends EditorTool
 	    
 	    if (settings.drawRegionColors)
 	    {
-			fillRegionColor = new JRadioButton("Fill Region Color");
-		    group.add(fillRegionColor);
-		    radioButtons.add(fillRegionColor);
-		    fillRegionColor.addActionListener(listener);
-			paintColorButton = new JRadioButton("Paint Color");
+			paintColorButton = new JRadioButton("Paint color");
 		    group.add(paintColorButton);
 		    radioButtons.add(paintColorButton);
 		    paintColorButton.addActionListener(listener);
+
+		    fillRegionColor = new JRadioButton("Fill region color");
+		    group.add(fillRegionColor);
+		    radioButtons.add(fillRegionColor);
+		    fillRegionColor.addActionListener(listener);
+		    
+		    mergeRegionsButton = new JRadioButton("Merge regions");
+		    group.add(mergeRegionsButton);
+		    radioButtons.add(mergeRegionsButton);
+		    mergeRegionsButton.addActionListener(listener);
 	    }
 	    else
 	    {
@@ -173,18 +175,28 @@ public class LandOceanTool extends EditorTool
 			{
 				if (settings.drawRegionColors)
 				{
-					if (fillRegionColor.isSelected())
-					{
-						// TODO
-					}
-					else
+					
+					if (oceanButton.isSelected())
 					{
 						CenterEdit edit = settings.edits.centerEdits.get(center.index);
-						edit.isWater = oceanButton.isSelected();
+						edit.isWater = true;
+					}
+					else if (paintColorButton.isSelected())
+					{
+						CenterEdit edit = settings.edits.centerEdits.get(center.index);
+						edit.isWater = false;
 						if (paintColorButton.isSelected())
 						{
 							//edit.regionColor = colorDisplay.getBackground(); TODO
+							
 						}
+					}
+					else if (fillRegionColor.isSelected())
+					{
+						// TODO
+					}
+					else if (mergeRegionsButton.isSelected())
+					{
 					}
 				}
 				else

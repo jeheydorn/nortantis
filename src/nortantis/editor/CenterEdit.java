@@ -1,7 +1,5 @@
 package nortantis.editor;
 
-import java.awt.Color;
-
 /**
  * Stores edits made to a polygon (a "center") of a map.
  */

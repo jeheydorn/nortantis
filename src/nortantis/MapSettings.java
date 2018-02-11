@@ -9,10 +9,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.json.simple.JSONArray;
@@ -22,7 +20,6 @@ import org.json.simple.JSONValue;
 import hoten.geom.Point;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
-import nortantis.editor.RegionEdit;
 import util.Function0;
 import util.Helper;
 

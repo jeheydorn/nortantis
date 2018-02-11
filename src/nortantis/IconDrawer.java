@@ -22,8 +22,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 
-import javax.imageio.ImageIO;
-
 import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;

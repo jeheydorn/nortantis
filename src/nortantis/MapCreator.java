@@ -22,9 +22,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import javax.imageio.ImageIO;
-import javax.management.RuntimeErrorException;
-
 import hoten.voronoi.Center;
 import nortantis.editor.MapEdits;
 import util.ImageHelper;
