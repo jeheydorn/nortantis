@@ -40,7 +40,6 @@ public abstract class EditorTool
 	protected MapSettings settings;
 	private JPanel toolOptionsPanel;
 	protected MapParts mapParts;
-	private GraphImpl graph;
 	private EditorDialog parent;
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
@@ -160,17 +159,19 @@ public abstract class EditorTool
 	{
 		onBeforeCreateMap();
 
-		SwingWorker<Tuple2<BufferedImage, MapParts>, Void> worker = new SwingWorker<Tuple2<BufferedImage, MapParts>, Void>() 
+		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 	    {
 	        @Override
-	        public Tuple2<BufferedImage, MapParts> doInBackground() 
+	        public BufferedImage doInBackground() 
 	        {	
 				try
 				{
-					MapParts parts = new MapParts();
-					parts.graph = graph;
-					BufferedImage map = new MapCreator().createMap(settings, null, parts);
-					return new Tuple2<>(map, parts);
+					if (mapParts == null)
+					{
+						mapParts = new MapParts();
+					}
+					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);
+					return map;
 				} 
 				catch (Exception e)
 				{
@@ -184,21 +185,18 @@ public abstract class EditorTool
 	        @Override
 	        public void done()
 	        {
-	        	Tuple2<BufferedImage, MapParts> tuple = null;
+	        	BufferedImage map = null;
 	            try 
 	            {
-	                tuple = get();
+	                map = get();
 	            } 
 	            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
 	            {
 	                throw new RuntimeException(e);
 	            }
 	            
-	            if (tuple != null)
-	            {
-	            	BufferedImage map = tuple.getFirst();
-	            	mapParts = tuple.getSecond();
-	            	
+	            if (map != null)
+	            {	
 	            	initializeCenterEditsIfEmpty();
 	            	map = onBeforeShowMap(map);
 	            	
@@ -216,19 +214,14 @@ public abstract class EditorTool
 
 	}
 	
-	public GraphImpl getGraph()
+	public MapParts getMapParts()
 	{
-		if (mapParts != null)
-		{
-			return mapParts.graph;			
-		}
-		return graph;
+		return mapParts;
 	}
 	
-	public void cachGraph(GraphImpl graph)
+	public void setMapParts(MapParts parts)
 	{
-		
-		this.graph = graph;
+		this.mapParts = parts;
 	}
 	
 	public void setToggled(boolean toggled)

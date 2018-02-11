@@ -35,7 +35,7 @@ public class GraphCreator
 
          //assemble the voronoi structure into a usable graph object representing a map
         final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
-    		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer);
+    		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, false);
         
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Time to generate graph (in seconds): " + elapsedTime
@@ -126,18 +126,6 @@ public class GraphCreator
         final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, sizeMultiplyer);
         
         return graph;
-    }
-    
-    public static void main(String[] args) throws IOException 
-    {
-    	// 33198540789208L matching diverging plates.
-    	// 33426595304007L a long snaky island.
-    	// nice divergence with 12000 and 0 1 for probs
-        final long seed = System.nanoTime();
-        System.out.println("seed: " + seed);
-        final Random r = new Random(seed);
-    	createGraph(1024 * 2, 576 * 2, 1500, 1.0, 1.0, r, 1.0);
-    	Logger.println("Done.");
     }
 
 }

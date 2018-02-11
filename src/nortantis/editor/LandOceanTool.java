@@ -171,27 +171,37 @@ public class LandOceanTool extends EditorTool
 			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
 			if (center != null)
 			{
-				if (replaceColorButton.isSelected())
+				if (settings.drawRegionColors)
 				{
-					// TODO
+					if (replaceColorButton.isSelected())
+					{
+						// TODO
+					}
+					else
+					{
+						CenterEdit edit = settings.edits.centerEdits.get(center.index);
+						edit.isWater = oceanButton.isSelected();
+						if (paintColorButton.isSelected())
+						{
+							edit.regionColor = colorDisplay.getBackground();
+						}
+					}
 				}
 				else
 				{
 					CenterEdit edit = settings.edits.centerEdits.get(center.index);
 					edit.isWater = oceanButton.isSelected();
-					if (paintColorButton.isSelected())
-					{
-						edit.regionColor = colorDisplay.getBackground();
-					}
+					edit.regionColor = settings.landColor; // This needs to be set in case the user switching draw region colors on later.
 				}
-				handleMapChange();
+				handleMapChange(center);
 			}
 		}
 	}
 	
-	private void handleMapChange()
+	private void handleMapChange(Center center)
 	{
-		// TODO make this faster by caching as much as possible in mapParts.
+		mapParts.graph.updateCoast(center);
+		mapParts.graph.rebuildNoisyEdgesForCenter(center);
 		createAndShowMap();
 	}
 

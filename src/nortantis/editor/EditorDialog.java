@@ -32,6 +32,7 @@ import javax.swing.JToggleButton;
 import javax.swing.border.EtchedBorder;
 
 import nortantis.GraphImpl;
+import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
 import util.JComboBoxFixed;
@@ -46,9 +47,9 @@ public class EditorDialog extends JDialog
 	public static final int toolsPanelMaxWidth = 300;
 	private JPanel toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
-	private GraphImpl graph; // This is cached so that only the first tool that runs has to create the graph
 	private JComboBox<String> zoomComboBox;
 	public MapEditingPanel mapEditingPanel;
+	boolean areToolToggleButtonsEnabled = true;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -74,19 +75,28 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				currentTool.handleMouseClickOnMap(e);
+				if (areToolToggleButtonsEnabled)
+				{
+					currentTool.handleMouseClickOnMap(e);
+				}
 			}
 			
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				currentTool.handleMousePressedOnMap(e);
+				if (areToolToggleButtonsEnabled)
+				{
+					currentTool.handleMousePressedOnMap(e);
+				}
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				currentTool.handleMouseReleasedOnMap(e);
+				if (areToolToggleButtonsEnabled)
+				{
+					currentTool.handleMouseReleasedOnMap(e);
+				}
 			}
 		});
 		
@@ -96,12 +106,18 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
+				if (areToolToggleButtonsEnabled)
+				{
+				}
 			}
 			
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				currentTool.handleMouseDraggedOnMap(e);
+				if (areToolToggleButtonsEnabled)
+				{
+					currentTool.handleMouseDraggedOnMap(e);
+				}
 			}
 		});
 
@@ -234,12 +250,15 @@ public class EditorDialog extends JDialog
 	{
 		enableOrDisableToolToggleButtons(false);
 		
-		graph = currentTool.getGraph();
+		MapParts mapParts = currentTool.getMapParts(); // This is moved to the new tool so that only the first tool that runs has to certain parts of the map.
 		currentTool.onSwitchingAway();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
-		currentTool.cachGraph(graph);
+		if (mapParts != null)
+		{
+			currentTool.setMapParts(mapParts);
+		}
 		toolsOptionsPanelContainer.remove(currentToolOptionsPanel);
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
@@ -249,6 +268,7 @@ public class EditorDialog extends JDialog
 	
 	public void enableOrDisableToolToggleButtons(boolean enable)
 	{
+		areToolToggleButtonsEnabled = enable;
 		for (EditorTool tool: tools)
 		{
 			tool.setToggleButtonEnabled(enable);

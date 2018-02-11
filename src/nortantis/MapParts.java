@@ -32,4 +32,9 @@ public class MapParts
 	 * Used only as an output during map creation.
 	 */
 	public TextDrawer textDrawer;
+	
+	/*
+	 * Input and output. But regionColors will be generated each time.
+	 */
+	public Background background;
 }

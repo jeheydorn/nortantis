@@ -110,7 +110,7 @@ public class GraphImpl extends VoronoiGraph
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer) 
+    		double sizeMultiplyer, boolean shouldBuildNoisyEdges) 
     {
         super(r, sizeMultiplyer);
         this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
@@ -120,8 +120,11 @@ public class GraphImpl extends VoronoiGraph
         initVoronoiGraph(v, numLloydRelaxations, true);
         setupColors();
         createPoliticalRegions();
-        noisyEdges = new NoisyEdges(scaleMultiplyer);  
-        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
+        setupRandomSeeds(r);
+        if (shouldBuildNoisyEdges)
+        {
+        	buildNoisyEdges();	
+        }
      }
  
     /**
@@ -133,9 +136,21 @@ public class GraphImpl extends VoronoiGraph
         initVoronoiGraph(v, numLloydRelaxations, false);
 		assignBorderToCorners();
         setupColors();
-        noisyEdges = new NoisyEdges(scaleMultiplyer);  
-        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
-     }
+        setupRandomSeeds(r);
+        buildNoisyEdges();
+    }
+    
+    
+    private void setupRandomSeeds(Random rand)
+    {
+    	for (Center c : centers)
+    	{
+    		c.noisyEdgeSeed = rand.nextLong();
+    		c.treeSeed = rand.nextLong();
+    		c.mountainSeed = rand.nextLong();
+    		c.hillSeed = rand.nextLong();
+    	}
+    }
     
     private void setupColors()
     {
@@ -145,6 +160,19 @@ public class GraphImpl extends VoronoiGraph
         RIVER = new Color(0x225588);
    	
     }
+    
+    public void rebuildNoisyEdgesForCenter(Center center)
+    {
+    	noisyEdges.buildNoisyEdgesForCenter(center);
+    }
+    
+    public void buildNoisyEdges()
+    {
+        noisyEdges = new NoisyEdges(scaleMultiplyer);  
+        noisyEdges.buildNoisyEdges(this);	
+
+    }
+    
 
     @SuppressWarnings("unused")
 	private void testPoliticalRegions()
@@ -712,17 +740,10 @@ public class GraphImpl extends VoronoiGraph
 		assignBorderToCorners();
 
 		// Copied from super.assignOceanCoastAndLand()
-		// Determine if each corner is ocean, coast, or water.
+		// Determine if each corner is coast or water.
 		for (Center c : centers)
 		{
-			int numOcean = 0;
-			int numLand = 0;
-			for (Center center : c.neighbors)
-			{
-				numOcean += center.water ? 1 : 0;
-				numLand += !center.water ? 1 : 0;
-			}
-			c.coast = numOcean > 0 && numLand > 0;
+			updateCoast(c);
 		}
 
 		// Copied from super.assignOceanCoastAndLand()
@@ -740,6 +761,18 @@ public class GraphImpl extends VoronoiGraph
 			c.coast = numOcean > 0 && numLand > 0;
 			c.water = (numLand != c.touches.size()) && !c.coast;
 		}
+    }
+    
+    public void updateCoast(Center c)
+    {
+		int numOcean = 0;
+		int numLand = 0;
+		for (Center center : c.neighbors)
+		{
+			numOcean += center.water ? 1 : 0;
+			numLand += !center.water ? 1 : 0;
+		}
+		c.coast = numOcean > 0 && numLand > 0;
     }
     
     private void assignBorderToCorners()

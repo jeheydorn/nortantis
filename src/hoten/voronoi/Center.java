@@ -1,5 +1,6 @@
 package hoten.voronoi;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 import hoten.geom.Point;
@@ -28,9 +29,16 @@ public class Center
     public double area;
     public TectonicPlate tectonicPlate;
     public Region region;
+    public Color regionColor;
     // neighborsNotInSamePlateCount is only here to make GraphImpl.createTectonicPlates faster.
     public int neighborsNotInSamePlateCount;
     public Integer mountainRangeId;
+    
+    // Random seeds
+	public long noisyEdgeSeed;
+	public long treeSeed;
+	public long mountainSeed;
+	public long hillSeed;
     
     public Center() {
     }
