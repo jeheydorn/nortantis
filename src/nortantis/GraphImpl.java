@@ -110,7 +110,7 @@ public class GraphImpl extends VoronoiGraph
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer, boolean shouldBuildNoisyEdges) 
+    		double sizeMultiplyer) 
     {
         super(r, sizeMultiplyer);
         this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
@@ -121,10 +121,7 @@ public class GraphImpl extends VoronoiGraph
         setupColors();
         createPoliticalRegions();
         setupRandomSeeds(r);
-        if (shouldBuildNoisyEdges)
-        {
-        	buildNoisyEdges();	
-        }
+       	buildNoisyEdges();	
      }
  
     /**
@@ -166,7 +163,7 @@ public class GraphImpl extends VoronoiGraph
     	noisyEdges.buildNoisyEdgesForCenter(center);
     }
     
-    public void buildNoisyEdges()
+    private void buildNoisyEdges()
     {
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
         noisyEdges.buildNoisyEdges(this);	
@@ -992,5 +989,19 @@ public class GraphImpl extends VoronoiGraph
 		
 		return centroid;
 	}
+	
+	public Region findRegionById(int id)
+	{
+		for (Region region : regions)
+		{
+			if (region.id == id)
+			{
+				return region;
+			}
+		}
+
+		return null;
+	}
+
 
 }

@@ -39,7 +39,7 @@ public class LandOceanTool extends EditorTool
 	private JPanel colorChooserPanel;
 	private JRadioButton oceanButton;
 	private BufferedImage map;
-	private JRadioButton replaceColorButton;
+	private JRadioButton fillRegionColor;
 	private JRadioButton paintColorButton;
 	private JRadioButton landButton;
 
@@ -92,10 +92,10 @@ public class LandOceanTool extends EditorTool
 	    
 	    if (settings.drawRegionColors)
 	    {
-			replaceColorButton = new JRadioButton("Replace Color");
-		    group.add(replaceColorButton);
-		    radioButtons.add(replaceColorButton);
-		    replaceColorButton.addActionListener(listener);
+			fillRegionColor = new JRadioButton("Fill Region Color");
+		    group.add(fillRegionColor);
+		    radioButtons.add(fillRegionColor);
+		    fillRegionColor.addActionListener(listener);
 			paintColorButton = new JRadioButton("Paint Color");
 		    group.add(paintColorButton);
 		    radioButtons.add(paintColorButton);
@@ -173,7 +173,7 @@ public class LandOceanTool extends EditorTool
 			{
 				if (settings.drawRegionColors)
 				{
-					if (replaceColorButton.isSelected())
+					if (fillRegionColor.isSelected())
 					{
 						// TODO
 					}
@@ -183,7 +183,7 @@ public class LandOceanTool extends EditorTool
 						edit.isWater = oceanButton.isSelected();
 						if (paintColorButton.isSelected())
 						{
-							edit.regionColor = colorDisplay.getBackground();
+							//edit.regionColor = colorDisplay.getBackground(); TODO
 						}
 					}
 				}
@@ -191,7 +191,7 @@ public class LandOceanTool extends EditorTool
 				{
 					CenterEdit edit = settings.edits.centerEdits.get(center.index);
 					edit.isWater = oceanButton.isSelected();
-					edit.regionColor = settings.landColor; // This needs to be set in case the user switching draw region colors on later.
+					// TODO edit.regionColor = settings.landColor; // This needs to be set in case the user switching draw region colors on later.
 				}
 				handleMapChange(center);
 			}

@@ -301,7 +301,6 @@ public class MapCreator
 		{
 			Logger.println("Adding text.");
 			
-			// Draw region borders into the land mask so that names don't make region borders fade away when drawn on top of them.
 			if (background.shouldDrawRegionColors)
 			{
 				Graphics2D g = landBackground.createGraphics();
@@ -431,26 +430,6 @@ public class MapCreator
 			assignRandomRegionColors(graph, settings);
 		}
 		
-		for (Center c : graph.centers)
-		{
-			if (!c.water)
-			{
-				if (settings.drawRegionColors)
-				{
-					{
-						c.regionColor = c.region.backgroundColor;
-					}
-				}
-				else
-				{
-					c.regionColor = settings.landColor;
-				}
-			}
-		}
-		
-		// Noisy edge creation must be done here instead of in GraphImpl's constructor because it depends on the land color.
-		graph.buildNoisyEdges();
-		
 		return graph;
 	}
 	
@@ -470,7 +449,17 @@ public class MapCreator
 		{
 			Center center = graph.centers.get(i);
 			center.water = edits.centerEdits.get(i).isWater;
-			center.regionColor = edits.centerEdits.get(i).regionColor;
+			int regionId = edits.centerEdits.get(i).regionId;
+			Region region = graph.findRegionById(regionId);
+			if (region == null)
+			{
+				region = new Region();
+				region.id = regionId;
+				region.backgroundColor = edits.regionEdits.get(regionId).color;
+			}
+			region.add(center);
+			graph.centers.get(i).region = region;
+
 		}
 	}
 	

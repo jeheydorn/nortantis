@@ -241,7 +241,7 @@ public class IconDrawer
 				Color iconColor = new Color(icon.getRGB(x, y), true);
 				double alpha = iconColor.getAlpha() / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
-				double maskLevel = maskRaster.getSampleDouble(x, y, 0) / 255.0;
+				double maskLevel = maskRaster.getSampleDouble(x, y, 0);
 				Color bgColor;
 				Color mapColor;
 				// Find the location on the background and map where this pixel will be drawn.

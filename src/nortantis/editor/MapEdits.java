@@ -25,6 +25,7 @@ public class MapEdits implements Serializable
 	 */
 	public List<MapText> text;
 	public List<CenterEdit> centerEdits;
+	public List<RegionEdit> regionEdits;
 		
 	public MapEdits()
 	{
@@ -50,6 +51,10 @@ public class MapEdits implements Serializable
 		
 		for (int i : new Range(centers.size()))
 		{
+			if (centers.get(i).region != null)
+			{
+				centerEdits.get(i).regionId = centers.get(i).region.id;
+			}
 			centerEdits.get(i).isWater = centers.get(i).water;
 		}
 	}

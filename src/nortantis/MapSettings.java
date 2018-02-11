@@ -185,6 +185,7 @@ public class MapSettings implements Serializable
 		return json;
 	}
 	
+	
 	@SuppressWarnings("unchecked")
 	private String centerEditsToJson()
 	{
@@ -193,15 +194,16 @@ public class MapSettings implements Serializable
 		{
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("isWater", centerEdit.isWater);
-			if (centerEdit.regionColor != null)
-			{
-				mpObj.put("regionColor", colorToString(centerEdit.regionColor));
-			}
+			mpObj.put("regionId", centerEdit.regionId);
 			list.add(mpObj);
 		}
 		String json = list.toJSONString();
 		return json;
 	}
+	
+	// TODO load and store region edits
+	
+	
 		
 	private String colorToString(Color c)
 	{
@@ -673,9 +675,8 @@ public class MapSettings implements Serializable
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					boolean isWater = (boolean) jsonObj.get("isWater");
-					String colorStr = (String) jsonObj.get("regionColor");
-					Color regionColor = colorStr == null ? null : parseColor(colorStr);
-					result.add(new CenterEdit(isWater, regionColor));
+					int regionId = Integer.parseInt((String) jsonObj.get("regionId"));
+					result.add(new CenterEdit(isWater, regionId));
 				}
 				
 				return result;
