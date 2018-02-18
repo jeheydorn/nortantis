@@ -37,4 +37,9 @@ public class MapParts
 	 * Input and output. But regionColors will be generated each time.
 	 */
 	public Background background;
+	
+	/**
+	 * Input and output.
+	 */
+	public IconDrawer iconDrawer;
 }

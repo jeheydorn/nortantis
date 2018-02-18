@@ -1,6 +1,6 @@
 package util;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 /**
@@ -13,12 +13,19 @@ import java.util.function.Supplier;
  * @param <V>
  */
 @SuppressWarnings("serial")
-public class ConcurrentHashMapF <K, V> extends ConcurrentHashMap<K, V>
+public class HashMapF <K, V> extends HashMap<K, V>
 {
-
-	public ConcurrentHashMapF()
+	private Supplier<V> defaultCreateFunction;
+	
+	public HashMapF()
 	{
 		super();
+	}
+	
+	public HashMapF(Supplier<V> defaultCreateFunction)
+	{
+		super();
+		this.defaultCreateFunction = defaultCreateFunction;
 	}
 	
 	/**
@@ -33,11 +40,21 @@ public class ConcurrentHashMapF <K, V> extends ConcurrentHashMap<K, V>
 		V value = get(key);
 		if (value == null)
 		{
+			if (createFun == null && defaultCreateFunction == null)
+			{
+				throw new IllegalArgumentException("No create function given to getOrCreate.");
+			}
+			
 			value = createFun.get();
 			put(key, value);
 		}
 		return value;
 		
 	}	
+	
+	public V getOrCreate(K key)
+	{
+		return getOrCreate(key, defaultCreateFunction);
+	}
 
 }

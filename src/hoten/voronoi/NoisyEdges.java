@@ -58,7 +58,7 @@ public class NoisyEdges
 				Point s = Point.interpolate(edge.v1.loc, edge.d1.loc, f);
 
 				int minLength = 100;
-				if (!edge.d0.water && !edge.d1.water && edge.d0.regionColor != edge.d1.regionColor)
+				if (!edge.d0.isWater && !edge.d1.isWater && edge.d0.regionColor != edge.d1.regionColor)
 					minLength = 3;
 				if (edge.d0.border != edge.d1.border)
 					minLength = 3;

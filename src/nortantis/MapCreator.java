@@ -113,11 +113,30 @@ public class MapCreator
 			background.landBeforeRegionColoring = null;
 		}
 		
-		IconDrawer iconDrawer = new IconDrawer(graph, r);
+		IconDrawer iconDrawer;
+		boolean needToAddIcons;
+		if (mapParts == null || mapParts.iconDrawer == null)
+		{
+			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()));
+			needToAddIcons = true;
+			if (mapParts != null)
+			{
+				mapParts.iconDrawer = iconDrawer;
+			}
+		}
+		else
+		{
+			iconDrawer = mapParts.iconDrawer;
+			needToAddIcons = false; // The icon drawer is from cache, so it already knows what icons to draw.
+			r.nextLong(); // Use the random number generator the same as if I had created the icon drawer.
+		}
 
-		iconDrawer.markMountains();
-		iconDrawer.markHills();
-		iconDrawer.findMountainAndHillGroups();
+		if (needToAddIcons)
+		{
+			iconDrawer.markMountains();
+			iconDrawer.markHills();
+			iconDrawer.findMountainAndHillGroups();
+		}
 
 		stopWatch = new StopWatch();
 		// Draw mask for land vs ocean.
@@ -204,24 +223,35 @@ public class MapCreator
 		Logger.println("Adding rivers.");
 		drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
 		System.out.println("Time to add rivers: " + stopWatch.getElapsedSeconds());
-		
-	
-		stopWatch = new StopWatch();
-		Logger.println("Adding mountains and hills.");
-		List<Set<Center>> mountainGroups = iconDrawer.addMountainsAndHills();
-		if (mapParts != null)
-			mapParts.mountainGroups = mountainGroups;
-		System.out.println("Time to add mountains: " + stopWatch.getElapsedSeconds());
 
-		stopWatch = new StopWatch();
-		Logger.println("Adding sand dunes.");
-		iconDrawer.addSandDunes();
-		System.out.println("Time to add sand dunes: " + stopWatch.getElapsedSeconds());
-		
-		stopWatch = new StopWatch();
-		Logger.println("Adding trees.");
-		iconDrawer.addTrees();
-		System.out.println("Time to add trees: " + stopWatch.getElapsedSeconds());
+		List<Set<Center>> mountainGroups;
+		if (needToAddIcons)
+		{
+			stopWatch = new StopWatch();
+			Logger.println("Adding mountains and hills.");
+			mountainGroups = iconDrawer.addMountainsAndHills();
+			if (mapParts != null)
+				mapParts.mountainGroups = mountainGroups;
+			System.out.println("Time to add mountains: " + stopWatch.getElapsedSeconds());
+
+			stopWatch = new StopWatch();
+			Logger.println("Adding sand dunes.");
+			iconDrawer.addSandDunes();
+			System.out.println("Time to add sand dunes: " + stopWatch.getElapsedSeconds());
+			
+			stopWatch = new StopWatch();
+			Logger.println("Adding trees.");
+			iconDrawer.addTrees();
+			System.out.println("Time to add trees: " + stopWatch.getElapsedSeconds());
+		}
+		else
+		{
+			if (mapParts == null || mapParts.mountainGroups == null)
+			{
+				throw new IllegalStateException("If mapParts.iconDrawer is given, you must also give mapParts.mountainGroups.");
+			}
+			mountainGroups = mapParts.mountainGroups;
+		}
 		
 		stopWatch = new StopWatch();
 		Logger.println("Drawing all icons.");
@@ -445,7 +475,7 @@ public class MapCreator
 		for (int i : new Range(edits.centerEdits.size()))
 		{
 			Center center = graph.centers.get(i);
-			center.water = edits.centerEdits.get(i).isWater;
+			center.isWater = edits.centerEdits.get(i).isWater;
 			int regionId = edits.centerEdits.get(i).regionId;
 			Region region = graph.findRegionById(regionId);
 			if (region == null)

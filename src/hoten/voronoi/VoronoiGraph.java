@@ -6,7 +6,10 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,6 +28,8 @@ import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.TectonicPlate;
+import util.HashMapF;
+import util.ImageHelper;
 import util.Range;
 
 /**
@@ -109,6 +114,14 @@ public abstract class VoronoiGraph {
     	// Joseph note: img is not setup, so I'm re-writing this.
         //return centers.get(img.getRGB(x, y) & 0xffffff);
     	
+    	
+    	if (centerLookupTable != null)
+    	{
+    		Color color = new Color(centerLookupTable.getRGB((int)x, (int)y));
+    		int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+    		return centers.get(index);
+    	}
+    	
     	final Point p = new Point(x, y);
     	return Collections.max(centers, new Comparator<Center>()
     			{
@@ -123,6 +136,23 @@ public abstract class VoronoiGraph {
     public TectonicPlate getTectonicPlateAt(double x, double y)
     {
     	return getCenterAt(x, y).tectonicPlate;
+    }
+    
+    private BufferedImage centerLookupTable;
+    public void buildCenterLookupTableIfNotBuilt()
+    {
+    	if (centerLookupTable == null)
+    	{
+	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_INT_RGB);
+	    	Graphics2D g = centerLookupTable.createGraphics();
+	       	renderPolygons(g, new Function<Center, Color>()
+				{
+					public Color apply(Center c)
+					{
+						return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
+					}
+				});  
+    	}
     }
 
     /* an additional smoothing method across corners */
@@ -385,7 +415,7 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.water != edge.d1.water;
+        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.isWater != edge.d1.isWater;
         	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), shouldDraw);
         	return;
         }
@@ -405,17 +435,14 @@ public abstract class VoronoiGraph {
         }
 
         if (drawNoisyEdges)
-        {
-        	// This will draw polygons on top of the polygons we just drew, but this method doesn't handle
-        	// edge polygons correctly, I need to draw both.
-        	
+        {       	
         	renderPolygons(g, new Function<Center, Color>() 
 			{
 				public Color apply(Center c)
 				{
 					if (drawLandAndOceanBlackAndWhiteOnly)
 					{
-						return c.water ? Color.black : Color.white;
+						return c.isWater ? Color.black : Color.white;
 					}
 					else
 					{
@@ -685,7 +712,7 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.water != edge.d1.water);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.isWater != edge.d1.isWater);
     }
 
     public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
@@ -763,7 +790,7 @@ public abstract class VoronoiGraph {
      * @param colorChooser Decides the color for each polygons. If it returns null, then the
      * polygons will not be drawn.
      */
-    protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser) 
+    protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser)
     {    	
     	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
     	for (Center c : centers)

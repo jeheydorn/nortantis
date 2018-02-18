@@ -20,7 +20,7 @@ public class Center
     public ArrayList<Corner> corners = new ArrayList<>();
     public ArrayList<Center> neighbors = new ArrayList<>();
     public ArrayList<Edge> borders = new ArrayList<>();
-    public boolean border, water, coast;
+    public boolean border, isWater, coast;
     public boolean mountain;
     public boolean hill;
     public double elevation;

@@ -51,7 +51,7 @@ public class MapEdits implements Serializable
 			{
 				centerEdits.get(i).regionId = centers.get(i).region.id;
 			}
-			centerEdits.get(i).isWater = centers.get(i).water;
+			centerEdits.get(i).isWater = centers.get(i).isWater;
 		}
 	}
 }

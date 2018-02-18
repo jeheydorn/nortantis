@@ -178,7 +178,7 @@ public class GraphImpl extends VoronoiGraph
         {
         	for (Center c : region.getCenters())
         	{
-        		assert !c.water;
+        		assert !c.isWater;
         		assert c.region == region;
         	}
         	
@@ -187,7 +187,7 @@ public class GraphImpl extends VoronoiGraph
         assert new HashSet<>(regions).size() == regions.size();
         for (Center c : centers)
         {
-        	if (!c.water)
+        	if (!c.isWater)
         	{
         		assert c.region != null;
         	}
@@ -223,7 +223,7 @@ public class GraphImpl extends VoronoiGraph
     		if (plate.type == PlateType.Continental)
     		{
     			Region region = new Region();	
-    			plate.centers.stream().filter(c -> !c.water).forEach(c -> region.add(c));
+    			plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.add(c));
     			regions.add(region);
     		}
     	}
@@ -260,9 +260,9 @@ public class GraphImpl extends VoronoiGraph
     	List<Set<Center>> smallLandMasses = new ArrayList<>(); // stores small pieces of land not in a region.
        	for (Center center : centers)
        	{
-       		if (!center.water && center.region == null)
+       		if (!center.isWater && center.region == null)
        		{
-       			Set<Center> landMass = breadthFirstSearch(c -> !c.water && c.region == null, center);
+       			Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == null, center);
        			smallLandMasses.add(landMass);
        		}
        	}
@@ -381,7 +381,7 @@ public class GraphImpl extends VoronoiGraph
     	// centers which are of the same region and are not ocean.
     	while(!remaining.isEmpty())
     	{
-    		Set<Center> landMass = breadthFirstSearch(c -> !c.water && c.region == region, 
+    		Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == region, 
 	    			remaining.iterator().next());
 	    	dividedRegion.add(landMass);
 	    	remaining.removeAll(landMass);
@@ -469,11 +469,11 @@ public class GraphImpl extends VoronoiGraph
     protected Enum<?> getBiome(Center p) {
     	double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
     	
-		if (p.water)
+		if (p.isWater)
 		{
 			return ColorData.OCEAN;
 		}
-		else if (p.water)
+		else if (p.isWater)
 		{
 			if (elevation < 0.1)
 			{
@@ -731,7 +731,7 @@ public class GraphImpl extends VoronoiGraph
     {
 		for (Center c1 : centers)
 		{
-			c1.water = c1.elevation < seaLevel;
+			c1.isWater = c1.elevation < seaLevel;
 		}
 		
 		assignBorderToCorners();
@@ -751,8 +751,8 @@ public class GraphImpl extends VoronoiGraph
 			int numLand = 0;
 			for (Center center : c.touches)
 			{
-				numOcean += center.water ? 1 : 0;
-				numLand += !center.water ? 1 : 0;
+				numOcean += center.isWater ? 1 : 0;
+				numLand += !center.isWater ? 1 : 0;
 			}
 			c.ocean = numOcean == c.touches.size();
 			c.coast = numOcean > 0 && numLand > 0;
@@ -766,8 +766,8 @@ public class GraphImpl extends VoronoiGraph
 		int numLand = 0;
 		for (Center center : c.neighbors)
 		{
-			numOcean += center.water ? 1 : 0;
-			numLand += !center.water ? 1 : 0;
+			numOcean += center.isWater ? 1 : 0;
+			numLand += !center.isWater ? 1 : 0;
 		}
 		c.coast = numOcean > 0 && numLand > 0;
     }

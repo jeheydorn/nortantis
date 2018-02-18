@@ -307,7 +307,7 @@ public class TextDrawer
 				g.setFont(regionFontScaled);
 				Center center = graph.getCenterAt(textLocation.x, textLocation.y);
 				Set<Center> plateCenters;
-				if (center.water)
+				if (center.isWater)
 				{
 					plateCenters = findPlateCentersWaterOnly(graph, center.tectonicPlate);
 				}
@@ -1178,7 +1178,7 @@ public class TextDrawer
 		Set<Center> plateCenters = new HashSet<Center>();
 		for (Center c : plate.centers)
 		{
-			if (c.water)
+			if (c.isWater)
 				plateCenters.add(c);
 		}
 		return plateCenters;

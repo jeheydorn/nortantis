@@ -28,6 +28,7 @@ import hoten.voronoi.Corner;
 import nortantis.GraphImpl.ColorData;
 import util.Coordinate;
 import util.Function;
+import util.HashMapF;
 import util.Helper;
 import util.ImageHelper;
 import util.ListMap;
@@ -54,13 +55,13 @@ public class IconDrawer
 	private final double mountainScale = 1.0;
 	// Hill images are scaled by this.
 	private final double hillScale = 0.5;	
-	private List<IconDrawTask> iconsToDraw;
+	private HashMapF<Center, List<IconDrawTask>> iconsToDraw;
 	GraphImpl graph;
 	Random rand;
 
 	public IconDrawer(GraphImpl graph, Random rand)
 	{
-		iconsToDraw = new ArrayList<>();
+		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
 		
@@ -90,7 +91,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation > mountainElevationThreshold && !c.water
+			if (c.elevation > mountainElevationThreshold && !c.isWater
 					&& !c.coast && !c.border && c.findWidth() < maxSizeToDrawIcon)
 			{
 				c.mountain = true;
@@ -103,7 +104,7 @@ public class IconDrawer
 		for (Center c : graph.centers)
 		{
 			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold
-		 			&& !c.water && !c.coast && c.findWidth() < maxSizeToDrawIcon)
+		 			&& !c.isWater && !c.coast && c.findWidth() < maxSizeToDrawIcon)
 				
 			{
 				c.hill = true;
@@ -315,11 +316,22 @@ public class IconDrawer
 	 */
 	public void drawAllIcons(BufferedImage map, BufferedImage background)
 	{
-		Collections.sort(iconsToDraw);
+		StopWatch sw = new StopWatch();
+		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
+		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
+		{
+			if (!entry.getKey().isWater)
+			{
+				tasks.addAll(entry.getValue());
+			}
+		}
+		Collections.sort(tasks);
+		System.out.println("Time to create icon map: " + sw.getElapsedSeconds());
+		
 
 		// Scale the icons in parallel.
 		List<Runnable> jobs = new ArrayList<>();
-		for (final IconDrawTask task : iconsToDraw)
+		for (final IconDrawTask task : tasks)
 		{
 			jobs.add(new Runnable()
 			{
@@ -332,10 +344,13 @@ public class IconDrawer
 		}
 		Helper.processInParallel(jobs);
 		
-		for (final IconDrawTask task : iconsToDraw)
+		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMask(map, task.icon, task.mask, background, (int)task.centerLoc.x,
-					(int)task.centerLoc.y);
+			if (!isIconTouchingWater(task.icon, task.centerLoc))
+			{
+				drawIconWithBackgroundAndMask(map, task.icon, task.mask, background, (int)task.centerLoc.x,
+						(int)task.centerLoc.y);
+			}
 		}		
 	}
 
@@ -411,7 +426,7 @@ public class IconDrawer
 		           	if (scaledSize >= 1)
 		           	{	
 			           	// Draw the image such that it is centered in the center of c.
-		           		iconsToDraw.add(new IconDrawTask(imagesInRange.get(i).getFirst(), 
+		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInRange.get(i).getFirst(), 
 		           				imagesInRange.get(i).getSecond(), c.loc, scaledSize, true));
 		           	}
 		        }
@@ -429,7 +444,7 @@ public class IconDrawer
 		           		// Make sure the image will be at least 1 pixel wide.
 			           	if (scaledSize >= 1)
 			           	{
-			           		iconsToDraw.add(new IconDrawTask(imagesInGroup.get(i).getFirst(), 
+			           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInGroup.get(i).getFirst(), 
 			           				imagesInGroup.get(i).getSecond(), c.loc, scaledSize, true));
 			           	}
 		        	}         		
@@ -499,7 +514,7 @@ public class IconDrawer
 					{
 						int i = rand.nextInt(duneImages.size());
 						
-		           		iconsToDraw.add(new IconDrawTask(duneImages.get(i).getFirst(), 
+		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i).getFirst(), 
 		           				duneImages.get(i).getSecond(), c.loc, width, true));
 					}
 				}
@@ -604,9 +619,9 @@ public class IconDrawer
 			ForestType forest, double avgCenterHeight, boolean[] cornersWithTreesDrawn, Center center)
 	{
     	if (center.biome == forest.biome && center.elevation < mountainElevationThreshold 
-    			&& !center.water && !center.coast)
+    			&& !center.isWater && !center.coast)
     	{
-			drawTrees(graph, forest.imagesAndMasks, avgCenterHeight, center.loc, forest.density);
+			drawTrees(graph, forest.imagesAndMasks, avgCenterHeight, center.loc, forest.density, center);
 				
 			// Draw trees at the neighboring corners too.
 			for (Corner corner : center.corners)
@@ -614,7 +629,7 @@ public class IconDrawer
 				if (!cornersWithTreesDrawn[corner.index])
 				{
 					drawTrees(graph, forest.imagesAndMasks, avgCenterHeight, corner.loc,
-							forest.density);
+							forest.density, center);
 					cornersWithTreesDrawn[corner.index] = true;
 				}
 			}
@@ -665,7 +680,7 @@ public class IconDrawer
 
 	private void drawTrees(GraphImpl graph,
 			List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double cSize, Point loc,
-			double forestDensity)
+			double forestDensity, Center center)
 	{
 		if (imagesAndMasks == null || imagesAndMasks.isEmpty())
 		{
@@ -692,23 +707,29 @@ public class IconDrawer
            	x += rand.nextGaussian() * sqrtSize*2.0;
            	y += rand.nextGaussian() * sqrtSize*2.0;
         	
-           	// Make sure we don't draw trees in water.
-           	Center center = graph.getCenterAt(x + (int)image.getWidth()/2, y + image.getHeight()/2);
-           	if (center.water)
-           		continue;
-           	center = graph.getCenterAt(x + (int)image.getWidth()/2, y - image.getHeight()/2);
-           	if (center.water)
-           		continue;
-           	center = graph.getCenterAt(x - (int)image.getWidth()/2, y + image.getHeight()/2);
-           	if (center.water)
-           		continue;
-           	center = graph.getCenterAt(x - (int)image.getWidth()/2, y - image.getHeight()/2);
-           	if (!center.water)
-           	{
-           		iconsToDraw.add(new IconDrawTask(image, mask, new Point(x, y), (int)image.getWidth(), false));	           	
-           	}
+           	iconsToDraw.getOrCreate(center).add(new IconDrawTask(image, mask, new Point(x, y), (int)image.getWidth(), false));	           	
        	}
-		
+	}
+	
+	private boolean isIconTouchingWater(BufferedImage image, Point imageCenter)
+	{
+      	Center center = graph.getCenterAt(imageCenter.x, imageCenter.y);
+       	if (center.isWater)
+       		return true;
+       	center = graph.getCenterAt(imageCenter.x + (int)image.getWidth()/2, imageCenter.y + image.getHeight()/2);
+       	if (center.isWater)
+       		return true;
+       	center = graph.getCenterAt(imageCenter.x + (int)image.getWidth()/2, imageCenter.y - image.getHeight()/2);
+       	if (center.isWater)
+       		return true;
+       	center = graph.getCenterAt(imageCenter.x - (int)image.getWidth()/2, imageCenter.y + image.getHeight()/2);
+       	if (center.isWater)
+       		return true;
+       	center = graph.getCenterAt(imageCenter.x - (int)image.getWidth()/2, imageCenter.y - image.getHeight()/2);
+       	if (center.isWater)
+       		return true;
+       
+       	return false;
 	}
 	
 	/**
