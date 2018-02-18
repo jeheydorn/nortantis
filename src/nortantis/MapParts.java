@@ -42,4 +42,9 @@ public class MapParts
 	 * Input and output.
 	 */
 	public IconDrawer iconDrawer;
+	
+	/**
+	 * Input and output
+	 */
+	public BufferedImage landMask;
 }

@@ -212,8 +212,14 @@ public class LandOceanTool extends EditorTool
 	
 	private void handleMapChange(Center center)
 	{
-		mapParts.graph.updateCoast(center);
 		mapParts.graph.rebuildNoisyEdgesForCenter(center);
+		for (Center neighbor : center.neighbors)
+		{
+			mapParts.graph.rebuildNoisyEdgesForCenter(neighbor);
+		}
+		
+		//mapParts.graph.draw TODO
+		
 		createAndShowMap();
 	}
 

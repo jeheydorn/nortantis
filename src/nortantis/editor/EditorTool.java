@@ -190,7 +190,6 @@ public abstract class EditorTool
 	            
 	            if (map != null)
 	            {	
-	            	mapParts.graph.buildCenterLookupTableIfNotBuilt();
 	            	initializeCenterEditsIfEmpty();
 	            	map = onBeforeShowMap(map);
 	            	

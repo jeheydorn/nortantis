@@ -305,7 +305,7 @@ public class TextDrawer
 			else if (text.type == TextType.Region)
 			{
 				g.setFont(regionFontScaled);
-				Center center = graph.getCenterAt(textLocation.x, textLocation.y);
+				Center center = graph.findClosestCenter(textLocation.x, textLocation.y);
 				Set<Center> plateCenters;
 				if (center.isWater)
 				{
@@ -964,10 +964,10 @@ public class TextDrawer
 		String[] parts = text.value.split(" ");
 		
 		if (parts.length > 1 && (
-			   !locations.contains(graph.getCenterAt((int)textLocation.x - width/2, (int)textLocation.y - height/2).loc)
-			|| !locations.contains(graph.getCenterAt((int)textLocation.x - width/2, (int)textLocation.y + height/2).loc)
-			|| !locations.contains(graph.getCenterAt((int)textLocation.x + width/2, (int)textLocation.y - height/2).loc)
-			|| !locations.contains(graph.getCenterAt((int)textLocation.x + width/2, (int)textLocation.y + height/2).loc)))
+			   !locations.contains(graph.findClosestCenter((int)textLocation.x - width/2, (int)textLocation.y - height/2).loc)
+			|| !locations.contains(graph.findClosestCenter((int)textLocation.x - width/2, (int)textLocation.y + height/2).loc)
+			|| !locations.contains(graph.findClosestCenter((int)textLocation.x + width/2, (int)textLocation.y - height/2).loc)
+			|| !locations.contains(graph.findClosestCenter((int)textLocation.x + width/2, (int)textLocation.y + height/2).loc)))
 		{		
 			// One or more of the corners doesn't fit in the region. Draw it on 2 lines.
 			int start = text.value.length()/2;

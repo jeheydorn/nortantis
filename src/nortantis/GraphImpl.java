@@ -2,13 +2,16 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -21,7 +24,6 @@ import hoten.voronoi.Edge;
 import hoten.voronoi.NoisyEdges;
 import hoten.voronoi.VoronoiGraph;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import util.Function;
 import util.Helper;
 import util.Range;
 
@@ -121,6 +123,7 @@ public class GraphImpl extends VoronoiGraph
         setupColors();
         createPoliticalRegions();
         setupRandomSeeds(r);
+        buildCenterLookupTableIfNotBuilt();
        	buildNoisyEdges();	
      }
  
@@ -328,23 +331,71 @@ public class GraphImpl extends VoronoiGraph
     	return null;
     }
     
-    public Center findClosestCenter(Point point)
+    public Center findClosestCenter(double x, double y) 
     {
-    	if (point.x > getWidth() || point.y > getHeight() || point.x < 0 || point.y < 0)
-    	{
-    		return null;
-    	}
-    	
-    	Optional<Center> opt = centers.stream()
-        		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
-    	
-    	if (opt.isPresent())
-    	{
-    		return opt.get();
-    	}
-    	
-    	return null;
+    	return findClosestCenter(new Point(x, y));
     }
+    
+    public Center findClosestCenter(Point point) 
+    {    	
+    	if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+    	{
+    		Color color;
+    		try
+    		{
+    			color = new Color(centerLookupTable.getRGB((int)point.x, (int)point.y));
+    		}
+    		catch(IndexOutOfBoundsException e)
+    		{
+    			color = null; 
+    		}
+    		int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+    		return centers.get(index);
+    	}
+    	else
+    	{
+        	Optional<Center> opt = centers.stream().filter(c -> c.border)
+            		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+        	return opt.get();
+        	
+        	// TODO remove
+//	    	return Collections.max(centers.strea, new Comparator<Center>()
+//	    			{
+//						@Override
+//						public int compare(Center c1, Center c2)
+//						{
+//							return -Double.compare(Point.distance(point, c1.loc), Point.distance(point, c2.loc));
+//						}
+//	    			});
+    	}
+    }
+    
+    public TectonicPlate getTectonicPlateAt(double x, double y)
+    {
+    	return findClosestCenter(new Point(x, y)).tectonicPlate;
+    }
+    
+    private BufferedImage centerLookupTable;
+    /**
+     * Calling this makes subsequent calls to getCenterAt much faster, but requires memory to store
+     * a lookup table, and is a little less accurate due to rounding errors.
+     */
+    public void buildCenterLookupTableIfNotBuilt()
+    {
+    	if (centerLookupTable == null)
+    	{
+	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_INT_RGB);
+	    	Graphics2D g = centerLookupTable.createGraphics();
+	       	renderPolygons(g, new Function<Center, Color>()
+				{
+					public Color apply(Center c)
+					{
+						return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
+					}
+				});  
+    	}
+   }
+
     
     /**
      * Searches for any region touching and polygon in landMass and returns it if found.
@@ -419,7 +470,7 @@ public class GraphImpl extends VoronoiGraph
 
 	public void paintElevationUsingTrianges(Graphics2D g)
     {
-    	super.paint(g, false, false, true, false, false, false, false);
+    	super.paint(g, false, false, true, false, false, false);
     	
     	// Draw plate velocities.
 //    	g.setColor(Color.yellow);
@@ -871,7 +922,7 @@ public class GraphImpl extends VoronoiGraph
     		{
     			// Choose a center at random.
 	    		// Choose one of it's neighbors not in the same plate.
-	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new Function<Center, Boolean>()
+	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new util.Function<Center, Boolean>()
 	    				{
 							public Boolean apply(Center otherC) 
 							{

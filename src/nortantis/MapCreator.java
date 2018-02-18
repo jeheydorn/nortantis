@@ -81,15 +81,31 @@ public class MapCreator
         {
         	mapParts.background = background;
         }
+        
+        double sizeMultiplyer = (background.mapBounds.getWidth() / baseResolution);
 		
-		double sizeMultiplyer = (background.mapBounds.getWidth() / baseResolution);
 		
+		TextDrawer textDrawer = null;
+		if (settings.drawText)
+		{
+			if (mapParts == null || mapParts.textDrawer == null)
+			{
+				textDrawer = new TextDrawer(settings, sizeMultiplyer);
+				
+				if (mapParts != null)
+				{
+					mapParts.textDrawer = textDrawer;
+				}
+			}
+			else
+			{
+				textDrawer = mapParts.textDrawer;
+			}
+			
+
+		}
 		
-		TextDrawer textDrawer = settings.drawText || mapParts != null ? new TextDrawer(settings, sizeMultiplyer) : null;
-		if (mapParts != null)
-			mapParts.textDrawer = textDrawer;
-		
-		GraphImpl graph;
+        GraphImpl graph;
 		if (mapParts == null || mapParts.graph == null)
 		{
 			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
@@ -103,7 +119,7 @@ public class MapCreator
 			graph = mapParts.graph;
 		}
 		applyCenterEdits(graph, settings.edits);
-		System.out.println("Startup time: " + stopWatch.getElapsedSeconds());
+        System.out.println("Startup time: " + stopWatch.getElapsedSeconds());
 		
 		stopWatch = new StopWatch();
 		background.doSetupThatNeedsGraph(settings, graph);
@@ -138,16 +154,28 @@ public class MapCreator
 			iconDrawer.findMountainAndHillGroups();
 		}
 
-		stopWatch = new StopWatch();
-		// Draw mask for land vs ocean.
-		Logger.println("Adding land.");
-		BufferedImage landMask = new BufferedImage(graph.getWidth(),
-				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
+		BufferedImage landMask;
+		if (mapParts == null || mapParts.landMask == null)
 		{
-			Graphics2D g = landMask.createGraphics();
-			graph.paint(g, false, false, false, true, true, false, false);
+			stopWatch = new StopWatch();
+			// Draw mask for land vs ocean.
+			Logger.println("Adding land.");
+			landMask = new BufferedImage(graph.getWidth(),
+					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
+			{
+				Graphics2D g = landMask.createGraphics();
+				graph.drawLandAndOceanBlackAndWhite(g);
+			}
+			if (mapParts != null)
+			{
+				mapParts.landMask = landMask;
+			}
+			System.out.println("Time to create land mask: " + stopWatch.getElapsedSeconds());
 		}
-		System.out.println("Time to create land mask: " + stopWatch.getElapsedSeconds());
+		else
+		{
+			landMask = mapParts.landMask;
+		}
 
 		BufferedImage map = null;
 		{	
@@ -168,7 +196,7 @@ public class MapCreator
 					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
 			{
 				Graphics2D g = coastlineMask.createGraphics();
-				graph.paint(g, false, false, false, false, false, true, false, sizeMultiplyer);
+				graph.paint(g, false, false, false, false, true, false, sizeMultiplyer);
 			}
 		}
 		System.out.println("Time to create coastline mask: " + stopWatch.getElapsedSeconds());
@@ -267,8 +295,12 @@ public class MapCreator
 						+ " have the same aspect ratio as the given land background image.");
 			}
 
-			// Needed for drawing text.
-			landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
+			
+			if (settings.drawText)
+			{
+				// Needed for drawing text.
+				landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
+			}
 			
 			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
 			if (mapParts == null)

@@ -47,6 +47,7 @@ public class Center
         this.loc = loc;
     }
     
+    
     public double findWidth()
     {
 		double minX = Double.POSITIVE_INFINITY;

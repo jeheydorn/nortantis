@@ -62,7 +62,7 @@ public class NoisyEdges
 					minLength = 3;
 				if (edge.d0.border != edge.d1.border)
 					minLength = 3;
-				if (edge.d0.coast || edge.d1.coast)
+				if (edge.d0.isWater != edge.d1.isWater)
 					minLength = 3;
 				if (edge.river != 0)
 					minLength = 2;

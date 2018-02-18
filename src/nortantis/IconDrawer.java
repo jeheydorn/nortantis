@@ -91,7 +91,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation > mountainElevationThreshold && !c.isWater
+			if (c.elevation > mountainElevationThreshold
 					&& !c.coast && !c.border && c.findWidth() < maxSizeToDrawIcon)
 			{
 				c.mountain = true;
@@ -104,7 +104,7 @@ public class IconDrawer
 		for (Center c : graph.centers)
 		{
 			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold
-		 			&& !c.isWater && !c.coast && c.findWidth() < maxSizeToDrawIcon)
+					&& !c.coast && c.findWidth() < maxSizeToDrawIcon)
 				
 			{
 				c.hill = true;
@@ -316,7 +316,6 @@ public class IconDrawer
 	 */
 	public void drawAllIcons(BufferedImage map, BufferedImage background)
 	{
-		StopWatch sw = new StopWatch();
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
 		{
@@ -326,7 +325,6 @@ public class IconDrawer
 			}
 		}
 		Collections.sort(tasks);
-		System.out.println("Time to create icon map: " + sw.getElapsedSeconds());
 		
 
 		// Scale the icons in parallel.
@@ -712,22 +710,22 @@ public class IconDrawer
 	}
 	
 	private boolean isIconTouchingWater(BufferedImage image, Point imageCenter)
-	{
-      	Center center = graph.getCenterAt(imageCenter.x, imageCenter.y);
-       	if (center.isWater)
-       		return true;
-       	center = graph.getCenterAt(imageCenter.x + (int)image.getWidth()/2, imageCenter.y + image.getHeight()/2);
-       	if (center.isWater)
-       		return true;
-       	center = graph.getCenterAt(imageCenter.x + (int)image.getWidth()/2, imageCenter.y - image.getHeight()/2);
-       	if (center.isWater)
-       		return true;
-       	center = graph.getCenterAt(imageCenter.x - (int)image.getWidth()/2, imageCenter.y + image.getHeight()/2);
-       	if (center.isWater)
-       		return true;
-       	center = graph.getCenterAt(imageCenter.x - (int)image.getWidth()/2, imageCenter.y - image.getHeight()/2);
-       	if (center.isWater)
-       		return true;
+	{       	
+       	int imageUpperLeftX = (int)imageCenter.x - image.getWidth()/2;
+       	int imageUpperLeftY = (int)imageCenter.y + image.getHeight()/2;
+       	
+       	// Only check precision*precision points.
+       	float precision = Math.min(image.getWidth(), Math.min(image.getHeight(), 32));
+       	for (int x = 0; x < precision; x++)
+       	{
+       		for (int y = 0; y < precision; y++)
+       		{
+       			Center center = graph.findClosestCenter(imageUpperLeftX + (int)(image.getWidth() * (x/precision)), 
+       					(imageUpperLeftY - (int)(image.getHeight() * (y/precision))));
+       	       	if (center.isWater)
+       	       		return true;
+       		}
+       	}
        
        	return false;
 	}
