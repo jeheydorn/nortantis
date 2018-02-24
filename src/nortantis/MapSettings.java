@@ -73,6 +73,7 @@ public class MapSettings implements Serializable
 	
 	public int brightnessRange;
 	public boolean drawText;
+	public boolean alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean; // Not saved
 	public long textRandomSeed;
 	public Set<String> books;
 	public Font titleFont;

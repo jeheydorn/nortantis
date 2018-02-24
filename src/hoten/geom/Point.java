@@ -101,4 +101,8 @@ public class Point implements Comparable<Point>, Serializable
 		return true;
 	}
 	
+	public java.awt.Point toAwtPoint()
+	{
+		return new java.awt.Point((int)x, (int)y);
+	}
 }

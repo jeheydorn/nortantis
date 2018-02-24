@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -23,6 +24,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 
+import hoten.geom.Point;
 import hoten.voronoi.Center;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
@@ -38,6 +40,7 @@ public class LandOceanTool extends EditorTool
 	private JRadioButton paintColorButton;
 	private JRadioButton landButton;
 	private JRadioButton mergeRegionsButton;
+	private BufferedImage hoverCenters;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
@@ -212,11 +215,16 @@ public class LandOceanTool extends EditorTool
 	
 	private void handleMapChange(Center center)
 	{
+		mapParts.centersToUpdate = new HashSet<Center>();
+		mapParts.centersToUpdate.add(center);
 		mapParts.graph.rebuildNoisyEdgesForCenter(center);
 		for (Center neighbor : center.neighbors)
 		{
 			mapParts.graph.rebuildNoisyEdgesForCenter(neighbor);
+			mapParts.centersToUpdate.add(neighbor);
 		}
+		
+		
 		
 		//mapParts.graph.draw TODO
 		
@@ -235,6 +243,21 @@ public class LandOceanTool extends EditorTool
 	{
 		// TODO Auto-generated method stub
 		
+	}
+	
+	@Override
+	protected void handleMouseMovedOnMap(MouseEvent e)
+	{
+		// TODO Auto-generated method stub
+		if (mapParts != null && mapParts.graph != null)
+		{
+			Center c = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);
+			if (c != null)
+			{
+				mapEditingPanel.setAreasToDraw(Arrays.asList(mapParts.graph.centerToArea(c)));
+				mapEditingPanel.repaint();
+			}
+		}
 	}
 
 	@Override
@@ -261,6 +284,10 @@ public class LandOceanTool extends EditorTool
 	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{
 		this.map = map;
+		if (hoverCenters == null)
+		{
+			hoverCenters = new BufferedImage(map.getWidth(), map.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		}
 		return map;
 	}
 
@@ -271,4 +298,10 @@ public class LandOceanTool extends EditorTool
 		
 	}
 
+	@Override
+	public void onSelected()
+	{
+		mapEditingPanel.setHighlightColor(new Color(255,227,74));
+		
+	}
 }

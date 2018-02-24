@@ -104,9 +104,7 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				if (areToolToggleButtonsEnabled)
-				{
-				}
+				currentTool.handleMouseMovedOnMap(e);
 			}
 			
 			@Override

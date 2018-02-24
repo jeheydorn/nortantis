@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.Raster;
@@ -405,15 +406,28 @@ public class ImageHelper
 			}
 		}
 	}
+	
+	public static BufferedImage maskWithImage(BufferedImage image1,
+			BufferedImage image2, BufferedImage mask)
+	{
+		return maskWithImage(image1, image2, mask, null);
+	}
 
 	/**
 	 * Each pixel in the resulting image is a linear combination of that pixel
 	 * from image1 and from image2 using the gray levels in the given mask.
 	 * The mask must be BufferedImage.TYPE_BYTE_GRAY.
+	 * 
+	 * @param region Specifies only a region to create rather than masking the entire images.
 	 */
 	public static BufferedImage maskWithImage(BufferedImage image1,
-			BufferedImage image2, BufferedImage mask)
+			BufferedImage image2, BufferedImage mask, IntRectangle region)
 	{
+		if (region == null)
+		{
+			region = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
+		}
+		
 		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY 
 				&& mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
 			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY"
@@ -429,16 +443,20 @@ public class ImageHelper
 					+ image1.getWidth() + ".");
 		if (image1.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException();
+		if (!new IntRectangle(0, 0, image1.getWidth(), image2.getHeight()).contains(region))
+		{
+			throw new IllegalArgumentException("Region for masking is not contained within the source images.");
+		}
 
-		BufferedImage result = new BufferedImage(image1.getWidth(),
-				image1.getHeight(), image1.getType());
+		BufferedImage result = new BufferedImage((int)region.width,
+				(int)region.height, image1.getType());
 		Raster mRaster = mask.getRaster();
-		for (int y = 0; y < image1.getHeight(); y++)
-			for (int x = 0; x < image1.getWidth(); x++)
+		for (int y = region.y; y < region.height; y++)
+			for (int x = region.x; x < region.width; x++)
 			{
 				Color color1 = new Color(image1.getRGB(x, y));
 				Color color2 = new Color(image2.getRGB(x, y));
-				double maskLevel = ((double) mRaster.getSampleDouble(x, y, 0));
+				double maskLevel = ((double) mRaster.getSampleDouble(x + (int)region.x, y + (int)region.y, 0));
 				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
 					maskLevel /= 255.0;
 

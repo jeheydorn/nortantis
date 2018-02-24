@@ -71,6 +71,8 @@ public abstract class EditorTool
 	
 	public abstract void onSwitchingAway();
 	
+	public abstract void onSelected();
+	
 	protected abstract JPanel createToolsOptionsPanel();
 	
 	private static final int labelWidth = 80;
@@ -136,6 +138,7 @@ public abstract class EditorTool
 	protected abstract void handleMouseClickOnMap(MouseEvent e);
 	protected abstract void handleMousePressedOnMap(MouseEvent e);
 	protected abstract void handleMouseReleasedOnMap(MouseEvent e);
+	protected abstract void handleMouseMovedOnMap(MouseEvent e);
 	protected abstract void handleMouseDraggedOnMap(MouseEvent e);
 	
 	protected abstract void onBeforeCreateMap();

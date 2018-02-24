@@ -1,6 +1,9 @@
 package hoten.voronoi;
 
 import java.awt.Color;
+import java.awt.Polygon;
+import java.awt.geom.Area;
+import java.awt.geom.PathIterator;
 import java.util.ArrayList;
 
 import hoten.geom.Point;
@@ -91,5 +94,5 @@ public class Center
 				neighborsNotInSamePlateCount++;
 		}
 	}
-    
+
 }

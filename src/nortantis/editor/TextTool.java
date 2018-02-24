@@ -29,6 +29,7 @@ import javax.swing.SwingWorker;
 
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.TextDrawer;
 import nortantis.TextType;
 import util.ImageHelper;
 import util.JComboBoxFixed;
@@ -194,6 +195,7 @@ public class TextTool extends EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
+		settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean = true;
 	}
 	
 	@Override
@@ -207,6 +209,7 @@ public class TextTool extends EditorTool
     
     	// Add text to the map
 		mapWithoutText = map;
+		
     	return drawMapWithText();
 	}
 	
@@ -489,6 +492,18 @@ public class TextTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	protected void handleMouseMovedOnMap(MouseEvent e)
+	{
+	}
+
+	@Override
+	public void onSelected()
+	{
+		mapEditingPanel.setHighlightColor(new Color(255,227,74));
 		
 	}
 	

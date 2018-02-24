@@ -1,6 +1,7 @@
 package nortantis;
 
 import java.awt.image.BufferedImage;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -47,4 +48,9 @@ public class MapParts
 	 * Input and output
 	 */
 	public BufferedImage landMask;
+
+	/**
+	 * Input
+	 */
+	public Collection<Center> centersToUpdate;
 }

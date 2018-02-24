@@ -2,6 +2,8 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -337,6 +339,11 @@ public class GraphImpl extends VoronoiGraph
     }
     
     public Center findClosestCenter(Point point) 
+    {
+    	return findClosestCenter(point, false);
+    }
+    
+    public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap) 
     {    	
     	if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
     	{
@@ -352,22 +359,14 @@ public class GraphImpl extends VoronoiGraph
     		int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
     		return centers.get(index);
     	}
-    	else
+    	else if (!returnNullIfNotOnMap)
     	{
         	Optional<Center> opt = centers.stream().filter(c -> c.border)
             		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
         	return opt.get();
         	
-        	// TODO remove
-//	    	return Collections.max(centers.strea, new Comparator<Center>()
-//	    			{
-//						@Override
-//						public int compare(Center c1, Center c2)
-//						{
-//							return -Double.compare(Point.distance(point, c1.loc), Point.distance(point, c2.loc));
-//						}
-//	    			});
     	}
+    	return null;
     }
     
     public TectonicPlate getTectonicPlateAt(double x, double y)
@@ -1054,5 +1053,97 @@ public class GraphImpl extends VoronoiGraph
 		return null;
 	}
 
+	public Area centerToArea(Center center)
+	{
+		Polygon p = new Polygon();
+		
+		HashSet<Edge> remaining = new HashSet<>(center.borders);
 
+		Edge start = center.borders.get(0);
+		Edge currentEdge = start;
+		do
+		{
+			if (currentEdge.v0 != null)
+			{
+				if (noisyEdges.path0.get(currentEdge.index) != null
+						&& noisyEdges.path1.get(currentEdge.index) != null
+						&& noisyEdges.path0.get(currentEdge.index).size() > 0
+						&& noisyEdges.path1.get(currentEdge.index).size() > 0)
+				{
+					List<Point> path0 = noisyEdges.path0.get(currentEdge.index);
+					List<Point> path1 = noisyEdges.path1.get(currentEdge.index);
+					
+					if (path0.get(0).equals(currentEdge.v0))
+					{
+						addPointsToPolygon(p, path0, true);
+						addPointsToPolygon(p, path1, true);
+					}
+					else if (path1.get(0).equals(currentEdge.v0))
+					{
+						addPointsToPolygon(p, path0, true);
+						addPointsToPolygon(p, path1, true);
+					}
+				}
+				else
+				{
+					p.addPoint((int)currentEdge.v0.loc.x, (int) currentEdge.v0.loc.y);
+				}
+			}
+			remaining.remove(currentEdge);
+			currentEdge = findConnectedEdge(center, currentEdge, remaining);
+		}
+		while(!remaining.isEmpty() && currentEdge != null);
+		
+		return new Area(p);
+	}
+	
+	private void addPointsToPolygon(Polygon p, List<Point> points, boolean forward)
+	{
+		if (forward)
+		{
+			for (int i = 0; i < points.size(); i++)
+			{
+				p.addPoint((int)points.get(i).x, (int)points.get(i).y);
+			}
+		}
+		else
+		{
+			for (int i = points.size(); i >= 0; i--)
+			{
+				p.addPoint((int)points.get(i).x, (int)points.get(i).y);
+			}			
+		}
+	}
+	
+	private List<Edge> orderEdgesAroundCenter(Center center, List<Edge> edges)
+	{
+		List<Edge> result = new ArrayList<>(edges.size());
+		HashSet<Edge> remaining = new HashSet<>(center.borders);
+
+		Edge start = center.borders.get(0);
+		Edge currentEdge = start;
+		do
+		{
+			result.add(currentEdge);
+			remaining.remove(currentEdge);
+			currentEdge = findConnectedEdge(center, currentEdge, remaining);
+		}
+		while(!remaining.isEmpty() && currentEdge != null);
+		
+		return result;
+	}
+	
+	private Edge findConnectedEdge(Center center, Edge current, Set<Edge> remaining)
+	{
+		for (Edge edge : remaining)
+		{
+			if ((current.v0 != null && current.v0.protrudes.contains(edge)) 
+					|| (current.v1 != null && current.v1.protrudes.contains(edge)))
+			{
+				return edge;
+			}
+		}
+		
+		return null;
+	}
 }

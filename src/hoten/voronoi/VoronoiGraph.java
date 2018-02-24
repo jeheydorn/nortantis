@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -470,9 +471,9 @@ public abstract class VoronoiGraph {
         }
     }
     
-    public void drawLandAndOceanBlackAndWhite(Graphics2D g)
+    public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender)
     {
-       	renderPolygons(g, new Function<Center, Color>() 
+       	renderPolygons(g, centersToRender, new Function<Center, Color>() 
 			{
 				public Color apply(Center c)
 				{
@@ -707,8 +708,7 @@ public abstract class VoronoiGraph {
 						|| noisyEdges.path1.get(edge.index) == null)
 				{
 					// It's at the edge of the map, where we don't have
-					// the noisy edges computed. TODOO: figure out how to
-					// fill in these edges from the voronoi library.
+					// the noisy edges computed. 
 					continue;
 				}
 
@@ -751,8 +751,13 @@ public abstract class VoronoiGraph {
      */
     protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser)
     {    	
+    	renderPolygons(g, centers, colorChooser);
+    }
+    
+    protected void renderPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
+    {
     	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
-    	for (Center c : centers)
+    	for (Center c : centersToRender)
     	{
     		if (c.border)
     		{
@@ -766,7 +771,7 @@ public abstract class VoronoiGraph {
     	}
     	
     	// Draw noisy edges.
-		for (final Center c : centers)
+		for (final Center c : centersToRender)
 		{			
 			for (final Center r : c.neighbors)
 			{

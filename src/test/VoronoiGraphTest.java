@@ -4,7 +4,7 @@ import org.junit.Test;
 
 import hoten.voronoi.VoronoiGraph;
 
-public class VeronoiGraphTest 
+public class VoronoiGraphTest 
 {	
 	@Test
 	public void runPrivateUnitTests() 

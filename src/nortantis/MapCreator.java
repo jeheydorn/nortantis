@@ -86,9 +86,9 @@ public class MapCreator
 		
 		
 		TextDrawer textDrawer = null;
-		if (settings.drawText)
+		if (settings.drawText || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
 		{
-			if (mapParts == null || mapParts.textDrawer == null)
+			if (mapParts == null || mapParts.textDrawer == null || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
 			{
 				textDrawer = new TextDrawer(settings, sizeMultiplyer);
 				
@@ -101,8 +101,6 @@ public class MapCreator
 			{
 				textDrawer = mapParts.textDrawer;
 			}
-			
-
 		}
 		
         GraphImpl graph;
@@ -164,7 +162,7 @@ public class MapCreator
 					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
 			{
 				Graphics2D g = landMask.createGraphics();
-				graph.drawLandAndOceanBlackAndWhite(g);
+				graph.drawLandAndOceanBlackAndWhite(g, graph.centers);
 			}
 			if (mapParts != null)
 			{
@@ -175,6 +173,11 @@ public class MapCreator
 		else
 		{
 			landMask = mapParts.landMask;
+			if (mapParts.centersToUpdate != null)
+			{
+				Graphics2D g = landMask.createGraphics();
+				graph.drawLandAndOceanBlackAndWhite(g, mapParts.centersToUpdate);
+			}
 		}
 
 		BufferedImage map = null;
@@ -296,7 +299,7 @@ public class MapCreator
 			}
 
 			
-			if (settings.drawText)
+			if (settings.drawText || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
 			{
 				// Needed for drawing text.
 				landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
