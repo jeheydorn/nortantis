@@ -199,7 +199,7 @@ public class TextTool extends EditorTool
 	}
 	
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw)
 	{
 		// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
     	// This makes it so that any edits done to the settings will automatically be reflected
@@ -492,7 +492,6 @@ public class TextTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		// TODO Auto-generated method stub
-		
 	}
 
 	@Override

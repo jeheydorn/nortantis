@@ -114,7 +114,7 @@ public class GraphImpl extends VoronoiGraph
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer) 
+    		double sizeMultiplyer, boolean buildNoisyEdges) 
     {
         super(r, sizeMultiplyer);
         this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
@@ -126,7 +126,10 @@ public class GraphImpl extends VoronoiGraph
         createPoliticalRegions();
         setupRandomSeeds(r);
         buildCenterLookupTableIfNotBuilt();
-       	buildNoisyEdges();	
+        if (buildNoisyEdges)
+        {
+        	buildNoisyEdges();	
+        }
      }
  
     /**
@@ -168,7 +171,7 @@ public class GraphImpl extends VoronoiGraph
     	noisyEdges.buildNoisyEdgesForCenter(center);
     }
     
-    private void buildNoisyEdges()
+    public void buildNoisyEdges()
     {
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
         noisyEdges.buildNoisyEdges(this);	
@@ -1053,71 +1056,30 @@ public class GraphImpl extends VoronoiGraph
 		return null;
 	}
 
+	/**
+	 * Converts a center to an area. This does not include noisy edges because I couldn't figure out how to 
+	 * draw them in order correctly around the center.
+	 * @param center
+	 * @return
+	 */
 	public Area centerToArea(Center center)
 	{
 		Polygon p = new Polygon();
 		
-		HashSet<Edge> remaining = new HashSet<>(center.borders);
-
-		Edge start = center.borders.get(0);
-		Edge currentEdge = start;
-		do
+		List<Edge> ordered = orderEdgesAroundCenter(center);
 		{
-			if (currentEdge.v0 != null)
+			for (Edge edge : ordered)
 			{
-				if (noisyEdges.path0.get(currentEdge.index) != null
-						&& noisyEdges.path1.get(currentEdge.index) != null
-						&& noisyEdges.path0.get(currentEdge.index).size() > 0
-						&& noisyEdges.path1.get(currentEdge.index).size() > 0)
-				{
-					List<Point> path0 = noisyEdges.path0.get(currentEdge.index);
-					List<Point> path1 = noisyEdges.path1.get(currentEdge.index);
-					
-					if (path0.get(0).equals(currentEdge.v0))
-					{
-						addPointsToPolygon(p, path0, true);
-						addPointsToPolygon(p, path1, true);
-					}
-					else if (path1.get(0).equals(currentEdge.v0))
-					{
-						addPointsToPolygon(p, path0, true);
-						addPointsToPolygon(p, path1, true);
-					}
-				}
-				else
-				{
-					p.addPoint((int)currentEdge.v0.loc.x, (int) currentEdge.v0.loc.y);
-				}
+				p.addPoint((int)edge.v0.loc.x, (int) edge.v0.loc.y);
 			}
-			remaining.remove(currentEdge);
-			currentEdge = findConnectedEdge(center, currentEdge, remaining);
 		}
-		while(!remaining.isEmpty() && currentEdge != null);
 		
 		return new Area(p);
 	}
 	
-	private void addPointsToPolygon(Polygon p, List<Point> points, boolean forward)
+	private List<Edge> orderEdgesAroundCenter(Center center)
 	{
-		if (forward)
-		{
-			for (int i = 0; i < points.size(); i++)
-			{
-				p.addPoint((int)points.get(i).x, (int)points.get(i).y);
-			}
-		}
-		else
-		{
-			for (int i = points.size(); i >= 0; i--)
-			{
-				p.addPoint((int)points.get(i).x, (int)points.get(i).y);
-			}			
-		}
-	}
-	
-	private List<Edge> orderEdgesAroundCenter(Center center, List<Edge> edges)
-	{
-		List<Edge> result = new ArrayList<>(edges.size());
+		List<Edge> result = new ArrayList<>(center.borders.size());
 		HashSet<Edge> remaining = new HashSet<>(center.borders);
 
 		Edge start = center.borders.get(0);

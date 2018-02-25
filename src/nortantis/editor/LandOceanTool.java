@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -40,11 +41,13 @@ public class LandOceanTool extends EditorTool
 	private JRadioButton paintColorButton;
 	private JRadioButton landButton;
 	private JRadioButton mergeRegionsButton;
-	private BufferedImage hoverCenters;
+	private Set<Center> currentlyUpdating;
+	private Set<Point> queuedClicks;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
 		super(settings, dialog);
+		currentlyUpdating = new HashSet<>();
 	}
 
 	@Override
@@ -212,6 +215,7 @@ public class LandOceanTool extends EditorTool
 			}
 		}
 	}
+
 	
 	private void handleMapChange(Center center)
 	{
@@ -224,9 +228,8 @@ public class LandOceanTool extends EditorTool
 			mapParts.centersToUpdate.add(neighbor);
 		}
 		
-		
-		
-		//mapParts.graph.draw TODO
+		mapEditingPanel.addProcessingCenter(center);
+		mapEditingPanel.repaint();
 		
 		createAndShowMap();
 	}
@@ -254,9 +257,12 @@ public class LandOceanTool extends EditorTool
 			Center c = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);
 			if (c != null)
 			{
-				mapEditingPanel.setAreasToDraw(Arrays.asList(mapParts.graph.centerToArea(c)));
+				mapEditingPanel.setGraph(mapParts.graph);
+				mapEditingPanel.clearHighlightedCenters();
+				mapEditingPanel.addHighlightedCenter(c);
 				mapEditingPanel.repaint();
 			}
+			
 		}
 	}
 
@@ -264,7 +270,7 @@ public class LandOceanTool extends EditorTool
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
 		// TODO Auto-generated method stub
-		
+		handleMouseClickOnMap(e);
 	}
 
 	@Override
@@ -278,15 +284,20 @@ public class LandOceanTool extends EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
+		
+		if (mapParts != null)
+		{
+			mapParts.landMask = null; // TODO consider removing MapParts.landMask and MapParts.centersToUpdate if I don't use them 
+		}
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw)
 	{
 		this.map = map;
-		if (hoverCenters == null)
+		if (!mapNeedsRedraw)
 		{
-			hoverCenters = new BufferedImage(map.getWidth(), map.getHeight(), BufferedImage.TYPE_INT_ARGB);
+			mapEditingPanel.clearProcessingCenters();
 		}
 		return map;
 	}
@@ -294,8 +305,6 @@ public class LandOceanTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override

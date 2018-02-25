@@ -247,6 +247,9 @@ public class EditorDialog extends JDialog
 		enableOrDisableToolToggleButtons(false);
 		
 		MapParts mapParts = currentTool.getMapParts(); // This is moved to the new tool so that only the first tool that runs has to certain parts of the map.
+		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.clearAreasToDraw();
+		mapEditingPanel.clearProcessingCenters();
 		currentTool.onSwitchingAway();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;

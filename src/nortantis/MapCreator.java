@@ -104,9 +104,11 @@ public class MapCreator
 		}
 		
         GraphImpl graph;
+        boolean needsNoisyEdgesBuilt = false;
 		if (mapParts == null || mapParts.graph == null)
 		{
 			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
+			needsNoisyEdgesBuilt = true;
 			if (mapParts != null)
 			{
 				mapParts.graph = graph;
@@ -117,6 +119,11 @@ public class MapCreator
 			graph = mapParts.graph;
 		}
 		applyCenterEdits(graph, settings.edits);
+		if (needsNoisyEdgesBuilt)
+		{
+			// This must be done after applying edits because edits change noisy edges.
+			graph.buildNoisyEdges();
+		}
         System.out.println("Startup time: " + stopWatch.getElapsedSeconds());
 		
 		stopWatch = new StopWatch();

@@ -356,7 +356,21 @@ public abstract class VoronoiGraph {
     		boolean drawElevation, boolean drawNoisyEdges,
     		boolean drawCoastlineOnly, double widthMultipierForMasks)
     {
+    	
         final int numSites = centers.size();
+        
+        
+        if (drawVoronoi)
+        {
+        	g.setColor(Color.WHITE);
+        	for (Corner c : corners)
+        	{
+        		for (Corner adjacent : c.adjacent)
+        		{
+        			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
+        		}
+        	}
+        }
         
         Color[] defaultColors = null;
         if (!drawBiomes) {
@@ -456,19 +470,6 @@ public abstract class VoronoiGraph {
                 g.fillOval((int) (c.loc.x - 2), (int) (c.loc.y - 2), 10, 10);
             }
         }
-        
-        if (drawVoronoi)
-        {
-        	g.setColor(Color.WHITE);
-        	for (Corner c : corners)
-        	{
-        		for (Corner adjacent : c.adjacent)
-        		{
-        			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
-        		}
-        	}
-        	
-        }
     }
     
     public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender)
@@ -480,6 +481,24 @@ public abstract class VoronoiGraph {
 					return c.isWater ? Color.black : Color.white;
 				}
 			});
+		
+
+       	// Code usefull for debugging
+//    	g.setColor(Color.WHITE);
+//    	for (Corner c : corners)
+//    	{
+//    		for (Corner adjacent : c.adjacent)
+//    		{
+//    			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
+//    		}
+//    	}
+//    	
+//        for (Edge e : edges) 
+//        {
+//            g.setStroke(new BasicStroke(1));
+//            g.setColor(Color.YELLOW);
+//            g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
+//        }
     }
     
     public void drawBiomes(Graphics2D g)
@@ -704,41 +723,46 @@ public abstract class VoronoiGraph {
 				if (!shouldDraw.apply(edge))
 					continue;
 
-				if (noisyEdges.path0.get(edge.index) == null
-						|| noisyEdges.path1.get(edge.index) == null)
-				{
-					// It's at the edge of the map, where we don't have
-					// the noisy edges computed. 
-					continue;
-				}
-
-				// Draw path0.
-				{
-					List<Point> path = noisyEdges.path0.get(edge.index);
-					int[] xPoints = new int[path.size()];
-					int[] yPoints = new int[path.size()];
-					for (int i : new Range(path.size()))
-					{
-						xPoints[i] = (int) path.get(i).x;
-						yPoints[i] = (int) path.get(i).y;
-					}
-					g.drawPolyline(xPoints, yPoints, xPoints.length);
-				}
-
-				// Draw path1.
-				{
-					List<Point> path = noisyEdges.path1.get(edge.index);
-					int[] xPoints = new int[path.size()];
-					int[] yPoints = new int[path.size()];
-					for (int i : new Range(path.size()))
-					{
-						xPoints[i] = (int) path.get(i).x;
-						yPoints[i] = (int) path.get(i).y;
-					}
-					g.drawPolyline(xPoints, yPoints, xPoints.length);
-				}
-
+				drawEdge(g, edge);
 			}
+		}
+
+	}
+	
+	public void drawEdge(Graphics2D g, Edge edge)
+	{
+		if (noisyEdges.path0.get(edge.index) == null
+				|| noisyEdges.path1.get(edge.index) == null)
+		{
+			// It's at the edge of the map, where we don't have
+			// the noisy edges computed. 
+			return;
+		}
+
+		// Draw path0.
+		{
+			List<Point> path = noisyEdges.path0.get(edge.index);
+			int[] xPoints = new int[path.size()];
+			int[] yPoints = new int[path.size()];
+			for (int i : new Range(path.size()))
+			{
+				xPoints[i] = (int) path.get(i).x;
+				yPoints[i] = (int) path.get(i).y;
+			}
+			g.drawPolyline(xPoints, yPoints, xPoints.length);
+		}
+
+		// Draw path1.
+		{
+			List<Point> path = noisyEdges.path1.get(edge.index);
+			int[] xPoints = new int[path.size()];
+			int[] yPoints = new int[path.size()];
+			for (int i : new Range(path.size()))
+			{
+				xPoints[i] = (int) path.get(i).x;
+				yPoints[i] = (int) path.get(i).y;
+			}
+			g.drawPolyline(xPoints, yPoints, xPoints.length);
 		}
 
 	}

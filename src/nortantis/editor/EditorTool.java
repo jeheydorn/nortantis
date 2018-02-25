@@ -36,6 +36,8 @@ public abstract class EditorTool
 	private EditorDialog parent;
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
+	private boolean mapNeedsRedraw;
+	private boolean mapIsBeingDrawn;
 	
 	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
@@ -149,10 +151,18 @@ public abstract class EditorTool
 	 * @param map The generated map
 	 * @return The map to display
 	 */
-	protected abstract BufferedImage onBeforeShowMap(BufferedImage map);
+	protected abstract BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw);
 	
 	public void createAndShowMap()
 	{
+		if (mapIsBeingDrawn)
+		{
+			mapNeedsRedraw = true;
+			return;
+		}
+		
+		mapIsBeingDrawn = true;
+		
 		onBeforeCreateMap();
 
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
@@ -194,7 +204,7 @@ public abstract class EditorTool
 	            if (map != null)
 	            {	
 	            	initializeCenterEditsIfEmpty();
-	            	map = onBeforeShowMap(map);
+	            	map = onBeforeShowMap(map, mapNeedsRedraw);
 	            	
 	            	mapEditingPanel.image = map;
 	            	mapEditingPanel.repaint();
@@ -203,11 +213,19 @@ public abstract class EditorTool
 	            }
 	            
 	            parent.enableOrDisableToolToggleButtons(true);
+
+	            mapIsBeingDrawn = false;
+	            
+	            if (mapNeedsRedraw)
+	            {
+	            	createAndShowMap();
+	            }
+	            
+            	mapNeedsRedraw = false;
 	        }
 	 
 	    };
 	    worker.execute();
-
 	}
 	
 	public MapParts getMapParts()
