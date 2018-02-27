@@ -114,7 +114,7 @@ public class GraphImpl extends VoronoiGraph
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer, boolean buildNoisyEdges) 
+    		double sizeMultiplyer) 
     {
         super(r, sizeMultiplyer);
         this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
@@ -126,10 +126,7 @@ public class GraphImpl extends VoronoiGraph
         createPoliticalRegions();
         setupRandomSeeds(r);
         buildCenterLookupTableIfNotBuilt();
-        if (buildNoisyEdges)
-        {
-        	buildNoisyEdges();	
-        }
+       	buildNoisyEdges();	
      }
  
     /**
@@ -168,7 +165,7 @@ public class GraphImpl extends VoronoiGraph
     
     public void rebuildNoisyEdgesForCenter(Center center)
     {
-    	noisyEdges.buildNoisyEdgesForCenter(center);
+    	noisyEdges.buildNoisyEdgesForCenter(center, true);
     }
     
     public void buildNoisyEdges()

@@ -34,7 +34,7 @@ public class GraphCreator
 
          //assemble the voronoi structure into a usable graph object representing a map
         final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
-    		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, false);
+    		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer);
         
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Time to generate graph (in seconds): " + elapsedTime

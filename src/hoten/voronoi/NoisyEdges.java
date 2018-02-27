@@ -39,17 +39,17 @@ public class NoisyEdges
 	{
 		for (Center p : map.centers)
 		{
-			buildNoisyEdgesForCenter(p);
+			buildNoisyEdgesForCenter(p, false);
 		}
 	}
     
-    public void buildNoisyEdgesForCenter(Center center)
+    public void buildNoisyEdgesForCenter(Center center, boolean forceRebuild)
     {
     	Random rand = new Random(center.noisyEdgeSeed);
 		for (Edge edge : center.borders)
 		{
 			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null
-					&& path0.get(edge.index) == null)
+					&& (forceRebuild || path0.get(edge.index) == null))
 			{
 				double f = NOISY_LINE_TRADEOFF;
 				Point t = Point.interpolate(edge.v0.loc, edge.d0.loc, f);

@@ -104,11 +104,9 @@ public class MapCreator
 		}
 		
         GraphImpl graph;
-        boolean needsNoisyEdgesBuilt = false;
 		if (mapParts == null || mapParts.graph == null)
 		{
 			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
-			needsNoisyEdgesBuilt = true;
 			if (mapParts != null)
 			{
 				mapParts.graph = graph;
@@ -119,11 +117,6 @@ public class MapCreator
 			graph = mapParts.graph;
 		}
 		applyCenterEdits(graph, settings.edits);
-		if (needsNoisyEdgesBuilt)
-		{
-			// This must be done after applying edits because edits change noisy edges.
-			graph.buildNoisyEdges();
-		}
         System.out.println("Startup time: " + stopWatch.getElapsedSeconds());
 		
 		stopWatch = new StopWatch();
@@ -517,6 +510,7 @@ public class MapCreator
 		for (int i : new Range(edits.centerEdits.size()))
 		{
 			Center center = graph.centers.get(i);
+			boolean needsRebuild = center.isWater == edits.centerEdits.get(i).isWater;
 			center.isWater = edits.centerEdits.get(i).isWater;
 			int regionId = edits.centerEdits.get(i).regionId;
 			Region region = graph.findRegionById(regionId);
@@ -527,8 +521,13 @@ public class MapCreator
 				region.backgroundColor = edits.regionEdits.get(regionId).color;
 			}
 			region.add(center);
-			graph.centers.get(i).region = region;
-
+			needsRebuild |= graph.centers.get(i).region == region;
+			center.region = region;
+			
+			if (needsRebuild)
+			{
+				graph.rebuildNoisyEdgesForCenter(center);
+			}
 		}
 	}
 	
