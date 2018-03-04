@@ -58,8 +58,11 @@ public class NoisyEdges
 				Point s = Point.interpolate(edge.v1.loc, edge.d1.loc, f);
 
 				int minLength = 100;
-				if (!edge.d0.isWater && !edge.d1.isWater && edge.d0.regionColor != edge.d1.regionColor)
+				if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
+				{
+					System.out.println("Region boundary detected");
 					minLength = 3;
+				}
 				if (edge.d0.border != edge.d1.border)
 					minLength = 3;
 				if (edge.d0.isWater != edge.d1.isWater)

@@ -32,7 +32,6 @@ public class Center
     public double area;
     public TectonicPlate tectonicPlate;
     public Region region;
-    public Color regionColor;
     // neighborsNotInSamePlateCount is only here to make GraphImpl.createTectonicPlates faster.
     public int neighborsNotInSamePlateCount;
     public Integer mountainRangeId;

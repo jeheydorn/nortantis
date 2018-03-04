@@ -44,13 +44,4 @@ public class MapParts
 	 */
 	public IconDrawer iconDrawer;
 	
-	/**
-	 * Input and output
-	 */
-	public BufferedImage landMask;
-
-	/**
-	 * Input
-	 */
-	public Collection<Center> centersToUpdate;
 }

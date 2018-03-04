@@ -11,7 +11,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -24,10 +26,12 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.Painter;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
 import nortantis.MapSettings;
+import nortantis.Region;
 import nortantis.RunSwing;
 
 public class LandOceanTool extends EditorTool
@@ -41,6 +45,7 @@ public class LandOceanTool extends EditorTool
 	private JRadioButton paintColorButton;
 	private JRadioButton landButton;
 	private JRadioButton mergeRegionsButton;
+	private JRadioButton selectColorButton;
 	private Set<Center> currentlyUpdating;
 	private Set<Point> queuedClicks;
 
@@ -79,7 +84,7 @@ public class LandOceanTool extends EditorTool
 	    group.add(oceanButton);
 	    radioButtons.add(oceanButton);
 	    toolOptionsPanel.add(oceanButton);
-		ActionListener listener = new ActionListener() 
+		ActionListener listener = new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
@@ -92,26 +97,35 @@ public class LandOceanTool extends EditorTool
 	    };
 	    oceanButton.addActionListener(listener);
 	    
+	    paintColorButton = new JRadioButton("Paint color");
+	    fillRegionColor = new JRadioButton("Fill region color");
+	    mergeRegionsButton = new JRadioButton("Merge regions");
+	    selectColorButton = new JRadioButton("Select color by region");
+	    landButton = new JRadioButton("Land");
 	    if (settings.drawRegionColors)
 	    {
-			paintColorButton = new JRadioButton("Paint color");
+			
 		    group.add(paintColorButton);
 		    radioButtons.add(paintColorButton);
 		    paintColorButton.addActionListener(listener);
 
-		    fillRegionColor = new JRadioButton("Fill region color");
+		    
 		    group.add(fillRegionColor);
 		    radioButtons.add(fillRegionColor);
 		    fillRegionColor.addActionListener(listener);
 		    
-		    mergeRegionsButton = new JRadioButton("Merge regions");
+		   
 		    group.add(mergeRegionsButton);
 		    radioButtons.add(mergeRegionsButton);
 		    mergeRegionsButton.addActionListener(listener);
+
+		    
+		    group.add(selectColorButton);
+		    radioButtons.add(selectColorButton);
+		    selectColorButton.addActionListener(listener);
 	    }
 	    else
 	    {
-			landButton = new JRadioButton("Land");
 		    group.add(landButton);
 		    radioButtons.add(landButton);
 		    landButton.addActionListener(listener);
@@ -179,55 +193,99 @@ public class LandOceanTool extends EditorTool
 			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
 			if (center != null)
 			{
-				if (settings.drawRegionColors)
-				{
-					
-					if (oceanButton.isSelected())
-					{
-						CenterEdit edit = settings.edits.centerEdits.get(center.index);
-						edit.isWater = true;
-					}
-					else if (paintColorButton.isSelected())
-					{
-						CenterEdit edit = settings.edits.centerEdits.get(center.index);
-						edit.isWater = false;
-						if (paintColorButton.isSelected())
-						{
-							//edit.regionColor = colorDisplay.getBackground(); TODO
-							
-						}
-					}
-					else if (fillRegionColor.isSelected())
-					{
-						// TODO
-					}
-					else if (mergeRegionsButton.isSelected())
-					{
-					}
-				}
-				else
+				
+				if (oceanButton.isSelected())
 				{
 					CenterEdit edit = settings.edits.centerEdits.get(center.index);
-					edit.isWater = oceanButton.isSelected();
-					// TODO edit.regionColor = settings.landColor; // This needs to be set in case the user switching draw region colors on later.
+					edit.isWater = true;
+					handleMapChange(center);
 				}
-				handleMapChange(center);
+				else if (paintColorButton.isSelected())
+				{
+					CenterEdit edit = settings.edits.centerEdits.get(center.index);
+					edit.isWater = false;
+					edit.regionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
+					handleMapChange(center);
+				}
+				else if (landButton.isSelected())
+				{
+					CenterEdit edit = settings.edits.centerEdits.get(center.index);
+					// Still need to add region IDs to edits because the user might switch to region editing later.
+					edit.regionId = getOrCreateRegionIdForEdit(center, settings.landColor);
+					edit.isWater = false;
+					handleMapChange(center);
+				}
+				else if (fillRegionColor.isSelected())
+				{
+					// TODO
+					handleMapChange(center);
+				}
+				else if (mergeRegionsButton.isSelected())
+				{
+					handleMapChange(center);
+				}
+				else if (selectColorButton.isSelected())
+				{
+					if (center != null)
+					{
+						if (center.region != null)
+						{
+							colorDisplay.setBackground(center.region.backgroundColor);
+							selectColorButton.setSelected(false);
+							paintColorButton.setSelected(true);
+						}
+					}
+				}	
 			}
 		}
+	}
+	
+	private int getOrCreateRegionIdForEdit(Center center, Color color)
+	{
+		// If a neighboring center has the desired region color, then use that region.
+		if (center.region != null)
+		{
+			for (Center neighbor : center.neighbors)
+			{
+				if (neighbor.region != null && neighbor.region.backgroundColor.equals(color))
+				{
+					return neighbor.region.id;
+				}
+			}
+		}
+		
+		// Find the closest region of that color.
+       	Optional<Center> opt = mapParts.graph.centers.stream()
+       			.filter(c -> c.region != null && c.region.backgroundColor.equals(color))
+        		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(center.loc), c2.loc.distanceTo(center.loc)));
+       	if (opt.isPresent())
+       	{
+       		return opt.get().region.id;
+       	}
+       	else
+       	{
+       		int largestRegionId;
+       		if (mapParts.graph.regions.isEmpty())
+       		{
+       			largestRegionId = -1;
+       		}
+       		else
+       		{
+       			largestRegionId = mapParts.graph.regions.stream().max((r1, r2) -> Integer.compare(r1.id, r2.id)).get().id;
+       		}
+       		
+       		int newRegionId = largestRegionId + 1;
+       		
+       		RegionEdit regionEdit = new RegionEdit(newRegionId, color);
+       		settings.edits.regionEdits.add(regionEdit);
+       		
+       		return newRegionId;
+       	}
 	}
 
 	
 	private void handleMapChange(Center center)
-	{
-		mapParts.centersToUpdate = new HashSet<Center>();
-		mapParts.centersToUpdate.add(center);
-		mapParts.graph.rebuildNoisyEdgesForCenter(center);
-		for (Center neighbor : center.neighbors)
-		{
-			mapParts.graph.rebuildNoisyEdgesForCenter(neighbor);
-			mapParts.centersToUpdate.add(neighbor);
-		}
-		
+	{	
 		mapEditingPanel.addProcessingCenter(center);
 		mapEditingPanel.repaint();
 		
@@ -284,11 +342,6 @@ public class LandOceanTool extends EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
-		
-		if (mapParts != null)
-		{
-			mapParts.landMask = null; // TODO consider removing MapParts.landMask and MapParts.centersToUpdate if I don't use them 
-		}
 	}
 
 	@Override

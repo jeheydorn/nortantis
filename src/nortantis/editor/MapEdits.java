@@ -27,6 +27,7 @@ public class MapEdits implements Serializable
 	{
 		text = new ArrayList<>();
 		centerEdits = new ArrayList<>();
+		regionEdits = new ArrayList<>();
 	}
 
 	public boolean isEmpty()

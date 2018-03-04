@@ -228,7 +228,7 @@ public class GraphImpl extends VoronoiGraph
     		if (plate.type == PlateType.Continental)
     		{
     			Region region = new Region();	
-    			plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.add(c));
+    			plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.addAndSetRegion(c));
     			regions.add(region);
     		}
     	}

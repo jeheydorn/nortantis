@@ -30,7 +30,7 @@ public class Region
 	{
 		for (Center c : toAdd)
 		{
-			add(c);
+			addAndSetRegion(c);
 		}
 	}
 	
@@ -51,7 +51,7 @@ public class Region
 		centers.clear();
 	}
 	
-	public void add(Center c)
+	public void addAndSetRegion(Center c)
 	{
 		boolean addResult = centers.add(c);
 		assert addResult == (c.region != this);
@@ -78,5 +78,33 @@ public class Region
 	public Point findCentroid()
 	{
 		return GraphImpl.findCentroid(centers);
+	}
+	
+	public Set<Region> findNeighbors()
+	{
+		Set<Region> result = new HashSet<>();
+		for (Center c : centers)
+		{
+			for (Center n : c.neighbors)
+			{
+				if (n.region == null)
+				{
+					continue;
+				}
+				
+				if (n.region != c.region)
+				{
+					result.add(n.region);
+				}
+			}
+		}
+		
+		return result;
+	}
+	
+	@Override
+	public int hashCode()
+	{
+		return id;
 	}
 }

@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import hoten.voronoi.Center;
 import nortantis.editor.MapEdits;
+import nortantis.editor.RegionEdit;
 import util.ImageHelper;
 import util.Logger;
 import util.Range;
@@ -116,6 +117,7 @@ public class MapCreator
 		{
 			graph = mapParts.graph;
 		}
+		applyRegionEdits(graph, settings.edits);
 		applyCenterEdits(graph, settings.edits);
         System.out.println("Startup time: " + stopWatch.getElapsedSeconds());
 		
@@ -151,34 +153,18 @@ public class MapCreator
 			iconDrawer.markHills();
 			iconDrawer.findMountainAndHillGroups();
 		}
+		
+		stopWatch = new StopWatch();
+		// Draw mask for land vs ocean.
+		Logger.println("Adding land.");
+		BufferedImage landMask = new BufferedImage(graph.getWidth(),
+				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
+		{
+			Graphics2D g = landMask.createGraphics();
+			graph.drawLandAndOceanBlackAndWhite(g, graph.centers);
+		}
+		System.out.println("Time to create land mask: " + stopWatch.getElapsedSeconds());
 
-		BufferedImage landMask;
-		if (mapParts == null || mapParts.landMask == null)
-		{
-			stopWatch = new StopWatch();
-			// Draw mask for land vs ocean.
-			Logger.println("Adding land.");
-			landMask = new BufferedImage(graph.getWidth(),
-					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
-			{
-				Graphics2D g = landMask.createGraphics();
-				graph.drawLandAndOceanBlackAndWhite(g, graph.centers);
-			}
-			if (mapParts != null)
-			{
-				mapParts.landMask = landMask;
-			}
-			System.out.println("Time to create land mask: " + stopWatch.getElapsedSeconds());
-		}
-		else
-		{
-			landMask = mapParts.landMask;
-			if (mapParts.centersToUpdate != null)
-			{
-				Graphics2D g = landMask.createGraphics();
-				graph.drawLandAndOceanBlackAndWhite(g, mapParts.centersToUpdate);
-			}
-		}
 
 		BufferedImage map = null;
 		{	
@@ -495,6 +481,26 @@ public class MapCreator
 		return graph;
 	}
 	
+	private static void applyRegionEdits(GraphImpl graph, MapEdits edits)
+	{
+		if (edits == null || edits.regionEdits.isEmpty())
+		{
+			return;
+		}
+		
+		for (RegionEdit edit : edits.regionEdits)
+		{
+			if (graph.findRegionById(edit.regionId) == null)
+			{
+				Region region = new Region();
+				region.id = edit.regionId;
+				region.backgroundColor = edit.color;
+				graph.regions.add(region);
+				System.out.println("Created new region with id:" + region.id); // TODO remove
+			}
+		}
+	}
+	
 	private static void applyCenterEdits(GraphImpl graph, MapEdits edits)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
@@ -510,19 +516,20 @@ public class MapCreator
 		for (int i : new Range(edits.centerEdits.size()))
 		{
 			Center center = graph.centers.get(i);
-			boolean needsRebuild = center.isWater == edits.centerEdits.get(i).isWater;
+			boolean needsRebuild = center.isWater != edits.centerEdits.get(i).isWater;
 			center.isWater = edits.centerEdits.get(i).isWater;
+			
 			int regionId = edits.centerEdits.get(i).regionId;
 			Region region = graph.findRegionById(regionId);
-			if (region == null)
+			// region can be null if the map is edited while drawing it. If that happens, then the region color of this center will be updated the next time the map draws.
+			if (region != null)
 			{
-				region = new Region();
-				region.id = regionId;
-				region.backgroundColor = edits.regionEdits.get(regionId).color;
+				if (center.region != null && center.region.id != region.id)
+				{
+					needsRebuild = true;
+				}
+				region.addAndSetRegion(center);
 			}
-			region.add(center);
-			needsRebuild |= graph.centers.get(i).region == region;
-			center.region = region;
 			
 			if (needsRebuild)
 			{
@@ -982,36 +989,36 @@ public class MapCreator
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed), sizeMultiplyer);
 	}
 
-	public static void main(String[] args) throws IOException
-	{
-		if (args.length > 1)
-			Logger.println("usage: MapCreator.java properties_filename");
-		
-		String propsFilename = "map_settings.properties";
-		if (args.length > 0)
-			propsFilename = args[0];
-		Properties props = new Properties();
-		props.load(new FileInputStream(propsFilename));
-
-		MapSettings settings = new MapSettings(propsFilename);
-
-		// settings.randomSeed = System.currentTimeMillis();
-
-		BufferedImage map;
-		MapCreator creator = new MapCreator();
-		
-		try
-		{
-			map = creator.createMap(settings, null, null);
-		} 
-		finally
-		{
-			ImageHelper.shutdownThreadPool();
-		}
-				
-		ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-
-	}
+//	public static void main(String[] args) throws IOException
+//	{
+//		if (args.length > 1)
+//			Logger.println("usage: MapCreator.java properties_filename");
+//		
+//		String propsFilename = "map_settings.properties";
+//		if (args.length > 0)
+//			propsFilename = args[0];
+//		Properties props = new Properties();
+//		props.load(new FileInputStream(propsFilename));
+//
+//		MapSettings settings = new MapSettings(propsFilename);
+//
+//		// settings.randomSeed = System.currentTimeMillis();
+//
+//		BufferedImage map;
+//		MapCreator creator = new MapCreator();
+//		
+//		try
+//		{
+//			map = creator.createMap(settings, null, null);
+//		} 
+//		finally
+//		{
+//			ImageHelper.shutdownThreadPool();
+//		}
+//				
+//		ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+//
+//	}
 
 }
 
