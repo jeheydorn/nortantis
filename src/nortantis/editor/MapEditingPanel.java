@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +23,7 @@ public class MapEditingPanel extends ImagePanel
 	private Set<Center> highlightedCenters;
 	private Set<Center> processingCenters;
 	private GraphImpl graph;
+	private boolean onlyDrawCenterGroupOutline;
 	
 	public void setAreasToDraw(List<Area> areas)
 	{
@@ -31,6 +33,11 @@ public class MapEditingPanel extends ImagePanel
 	public void addHighlightedCenter(Center c)
 	{
 		highlightedCenters.add(c);
+	}
+	
+	public void addAllHighlightedCenters(Collection<Center> centers)
+	{
+		highlightedCenters.addAll(centers);
 	}
 	
 	public void clearHighlightedCenters()
@@ -72,6 +79,11 @@ public class MapEditingPanel extends ImagePanel
 		this.highlightColor = color;
 	}
 	
+	public void setCenterHighlightMode(boolean onlyDrawCenterGroupOutline)
+	{
+		this.onlyDrawCenterGroupOutline = onlyDrawCenterGroupOutline;
+	}
+	
 	@Override
 	protected void paintComponent(Graphics g)
 	{
@@ -92,6 +104,14 @@ public class MapEditingPanel extends ImagePanel
 			{
 				for (Edge e : c.borders)
 				{
+					if (onlyDrawCenterGroupOutline)
+					{
+						if (e.d0 != null && e.d1 != null && highlightedCenters.contains(e.d0) && highlightedCenters.contains(e.d1))
+						{
+							// c is not on the edge of the group
+							continue;
+						}
+					}
 					graph.drawEdge(((Graphics2D)g), e);
 				}
 			}
@@ -101,6 +121,14 @@ public class MapEditingPanel extends ImagePanel
 			{
 				for (Edge e : c.borders)
 				{
+					if (onlyDrawCenterGroupOutline)
+					{
+						if (e.d0 != null && e.d1 != null && highlightedCenters.contains(e.d0) && highlightedCenters.contains(e.d1))
+						{
+							// c is not on the edge of the group
+							continue;
+						}
+					}
 					graph.drawEdge(((Graphics2D)g), e);
 				}
 			}

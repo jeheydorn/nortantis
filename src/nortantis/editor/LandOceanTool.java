@@ -39,13 +39,15 @@ public class LandOceanTool extends EditorTool
 
 	private JPanel colorDisplay;
 	private JPanel colorChooserPanel;
-	private JRadioButton oceanButton;
 	private BufferedImage map;
-	private JRadioButton fillRegionColor;
-	private JRadioButton paintColorButton;
+	
 	private JRadioButton landButton;
+	private JRadioButton oceanButton;
+	private JRadioButton fillRegionColorButton;
+	private JRadioButton paintColorButton;
 	private JRadioButton mergeRegionsButton;
 	private JRadioButton selectColorButton;
+	
 	private Set<Center> currentlyUpdating;
 	private Set<Point> queuedClicks;
 
@@ -98,7 +100,7 @@ public class LandOceanTool extends EditorTool
 	    oceanButton.addActionListener(listener);
 	    
 	    paintColorButton = new JRadioButton("Paint color");
-	    fillRegionColor = new JRadioButton("Fill region color");
+	    fillRegionColorButton = new JRadioButton("Fill region color");
 	    mergeRegionsButton = new JRadioButton("Merge regions");
 	    selectColorButton = new JRadioButton("Select color by region");
 	    landButton = new JRadioButton("Land");
@@ -110,9 +112,9 @@ public class LandOceanTool extends EditorTool
 		    paintColorButton.addActionListener(listener);
 
 		    
-		    group.add(fillRegionColor);
-		    radioButtons.add(fillRegionColor);
-		    fillRegionColor.addActionListener(listener);
+		    group.add(fillRegionColorButton);
+		    radioButtons.add(fillRegionColorButton);
+		    fillRegionColorButton.addActionListener(listener);
 		    
 		   
 		    group.add(mergeRegionsButton);
@@ -215,7 +217,7 @@ public class LandOceanTool extends EditorTool
 					edit.isWater = false;
 					handleMapChange(center);
 				}
-				else if (fillRegionColor.isSelected())
+				else if (fillRegionColorButton.isSelected())
 				{
 					// TODO
 					handleMapChange(center);
@@ -316,11 +318,25 @@ public class LandOceanTool extends EditorTool
 			if (c != null)
 			{
 				mapEditingPanel.setGraph(mapParts.graph);
-				mapEditingPanel.clearHighlightedCenters();
-				mapEditingPanel.addHighlightedCenter(c);
-				mapEditingPanel.repaint();
+
+				if (oceanButton.isSelected() || paintColorButton.isSelected() || landButton.isSelected())
+				{		
+					mapEditingPanel.clearHighlightedCenters();
+					mapEditingPanel.addHighlightedCenter(c);
+					mapEditingPanel.setCenterHighlightMode(false);
+					mapEditingPanel.repaint();
+				}
+				else if (selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
+				{
+					if (c.region != null)
+					{
+						mapEditingPanel.clearHighlightedCenters();
+						mapEditingPanel.addAllHighlightedCenters(c.region.getCenters());
+						mapEditingPanel.setCenterHighlightMode(true);
+						mapEditingPanel.repaint();
+					}
+				}
 			}
-			
 		}
 	}
 

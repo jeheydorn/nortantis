@@ -60,15 +60,20 @@ public class NoisyEdges
 				int minLength = 100;
 				if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
 				{
-					System.out.println("Region boundary detected");
 					minLength = 3;
 				}
 				if (edge.d0.border != edge.d1.border)
+				{
 					minLength = 3;
+				}
 				if (edge.d0.isWater != edge.d1.isWater)
+				{
 					minLength = 3;
+				}
 				if (edge.river != 0)
+				{
 					minLength = 2;
+				}
 
 				path0.put(edge.index, buildNoisyLineSegments(rand, edge.v0.loc, t, edge.midpoint, q, minLength));
 				path0.get(edge.index).add(edge.midpoint);
