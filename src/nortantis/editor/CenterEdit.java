@@ -9,15 +9,11 @@ public class CenterEdit
 	/**
 	 * If this is null, then the generated region color is used if region colors are enabled.
 	 */
-	public int regionId;
+	public Integer regionId;
 	
-	public CenterEdit(boolean isOcean, int regionId)
+	public CenterEdit(boolean isWater, Integer regionId)
 	{
-		this.isWater = isOcean;
+		this.isWater = isWater;
 		this.regionId = regionId;
-	}
-	
-	public CenterEdit()
-	{
 	}
 }

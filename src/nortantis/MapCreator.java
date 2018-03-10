@@ -519,16 +519,19 @@ public class MapCreator
 			boolean needsRebuild = center.isWater != edits.centerEdits.get(i).isWater;
 			center.isWater = edits.centerEdits.get(i).isWater;
 			
-			int regionId = edits.centerEdits.get(i).regionId;
-			Region region = graph.findRegionById(regionId);
-			// region can be null if the map is edited while drawing it. If that happens, then the region color of this center will be updated the next time the map draws.
-			if (region != null)
+			Integer regionId = edits.centerEdits.get(i).regionId;
+			if (regionId != null)
 			{
-				if (center.region != null && center.region.id != region.id)
+				Region region = graph.findRegionById(regionId);
+				// region can be null if the map is edited while drawing it. If that happens, then the region color of this center will be updated the next time the map draws.
+				if (region != null)
 				{
-					needsRebuild = true;
+					if (center.region != null && center.region.id != region.id)
+					{
+						needsRebuild = true;
+					}
+					region.addAndSetRegion(center);
 				}
-				region.addAndSetRegion(center);
 			}
 			
 			if (needsRebuild)

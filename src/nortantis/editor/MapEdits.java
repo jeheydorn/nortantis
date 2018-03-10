@@ -42,7 +42,7 @@ public class MapEdits implements Serializable
 			centerEdits = new ArrayList<>(centers.size());
 			for (@SuppressWarnings("unused") Center c : centers)
 			{
-				centerEdits.add(new CenterEdit());
+				centerEdits.add(new CenterEdit(c.isWater, c.region != null ? c.region.id : null));
 			}
 		}
 		

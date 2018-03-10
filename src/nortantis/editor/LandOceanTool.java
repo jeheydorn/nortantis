@@ -228,14 +228,11 @@ public class LandOceanTool extends EditorTool
 				}
 				else if (selectColorButton.isSelected())
 				{
-					if (center != null)
+					if (center != null && center.region != null)
 					{
-						if (center.region != null)
-						{
-							colorDisplay.setBackground(center.region.backgroundColor);
-							selectColorButton.setSelected(false);
-							paintColorButton.setSelected(true);
-						}
+						colorDisplay.setBackground(center.region.backgroundColor);
+						selectColorButton.setSelected(false);
+						paintColorButton.setSelected(true);
 					}
 				}	
 			}
@@ -314,14 +311,22 @@ public class LandOceanTool extends EditorTool
 		// TODO Auto-generated method stub
 		if (mapParts != null && mapParts.graph != null)
 		{
+			mapEditingPanel.clearHighlightedCenters();
+			
 			Center c = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);
+			// TODO remove
+			if (c != null)
+				if (c.region != null)
+					System.out.println("Region id: " + c.region.id);
+				else
+					System.out.println("No region");
+			
 			if (c != null)
 			{
 				mapEditingPanel.setGraph(mapParts.graph);
 
 				if (oceanButton.isSelected() || paintColorButton.isSelected() || landButton.isSelected())
 				{		
-					mapEditingPanel.clearHighlightedCenters();
 					mapEditingPanel.addHighlightedCenter(c);
 					mapEditingPanel.setCenterHighlightMode(false);
 					mapEditingPanel.repaint();
@@ -330,12 +335,19 @@ public class LandOceanTool extends EditorTool
 				{
 					if (c.region != null)
 					{
-						mapEditingPanel.clearHighlightedCenters();
 						mapEditingPanel.addAllHighlightedCenters(c.region.getCenters());
 						mapEditingPanel.setCenterHighlightMode(true);
 						mapEditingPanel.repaint();
 					}
+					else
+					{
+						mapEditingPanel.repaint();
+					}
 				}
+			}
+			else
+			{
+				mapEditingPanel.repaint();
 			}
 		}
 	}

@@ -20,6 +20,7 @@ import org.json.simple.JSONValue;
 import hoten.geom.Point;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
+import nortantis.editor.RegionEdit;
 import util.Function0;
 import util.Helper;
 
@@ -161,6 +162,7 @@ public class MapSettings implements Serializable
 		// User edits.
 		result.setProperty("editedText", editedTextToJson());
 		result.setProperty("centerEdits", centerEditsToJson());
+		result.setProperty("regionEdits", regionEditsToJson());
 		
 		return result;
 	}
@@ -199,7 +201,20 @@ public class MapSettings implements Serializable
 		return json;
 	}
 	
-	// TODO load and store region edits
+	@SuppressWarnings("unchecked")
+	private String regionEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (RegionEdit regionEdit : edits.regionEdits)
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("color", colorToString(regionEdit.color));
+			mpObj.put("regionId", regionEdit.regionId);
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+	}
 	
 	
 		
@@ -673,14 +688,35 @@ public class MapSettings implements Serializable
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					boolean isWater = (boolean) jsonObj.get("isWater");
-					int regionId = Integer.parseInt((String) jsonObj.get("regionId"));
+					Integer regionId = (Integer)jsonObj.get("regionId");
 					result.add(new CenterEdit(isWater, regionId));
 				}
 				
 				return result;
 			}
 		});
-	}
+
+		edits.regionEdits = getProperty("regionEdits", new Function0<List<RegionEdit>>()
+		{
+			public List<RegionEdit> apply()
+			{
+				String str = props.getProperty("regionEdits");
+				if (str == null || str.isEmpty())
+					return new ArrayList<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				List<RegionEdit> result = new ArrayList<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					Color color = parseColor((String)jsonObj.get("color"));
+					int regionId = (int)(long)jsonObj.get("regionId");
+					result.add(new RegionEdit(regionId, color));
+				}
+				
+				return result;
+			}
+		});
+}
 	
 	private static boolean parseBoolean(String str)
 	{
