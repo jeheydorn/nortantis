@@ -142,6 +142,8 @@ public abstract class EditorTool
 	protected abstract void handleMouseReleasedOnMap(MouseEvent e);
 	protected abstract void handleMouseMovedOnMap(MouseEvent e);
 	protected abstract void handleMouseDraggedOnMap(MouseEvent e);
+	protected abstract void handleMouseExitedMap(MouseEvent e);
+
 	
 	protected abstract void onBeforeCreateMap();
 	
@@ -261,5 +263,6 @@ public abstract class EditorTool
 		}
 
 	}
+
 
 }

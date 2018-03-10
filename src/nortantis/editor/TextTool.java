@@ -491,7 +491,6 @@ public class TextTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -504,6 +503,11 @@ public class TextTool extends EditorTool
 	{
 		mapEditingPanel.setHighlightColor(new Color(255,227,74));
 		
+	}
+
+	@Override
+	protected void handleMouseExitedMap(MouseEvent e)
+	{	
 	}
 	
 

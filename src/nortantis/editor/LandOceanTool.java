@@ -50,6 +50,8 @@ public class LandOceanTool extends EditorTool
 	
 	private Set<Center> currentlyUpdating;
 	private Set<Point> queuedClicks;
+	private JComboBox<ImageIcon> brushSizeComboBox;
+	private JPanel brushSizePanel;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
@@ -93,7 +95,12 @@ public class LandOceanTool extends EditorTool
 			{
 				if (colorChooserPanel != null && settings.drawRegionColors)
 				{
-					colorChooserPanel.setVisible(!oceanButton.isSelected());
+					colorChooserPanel.setVisible(paintColorButton.isSelected() || fillRegionColorButton.isSelected());
+				}
+				
+				if (brushSizeComboBox != null)
+				{
+					brushSizePanel.setVisible(paintColorButton.isSelected() || oceanButton.isSelected() || landButton.isSelected());
 				}
 			}
 	    };
@@ -163,9 +170,8 @@ public class LandOceanTool extends EditorTool
 	    }
 	    listener.actionPerformed(null);
 
-	    // Brush sizes
 	    JLabel brushSizeLabel = new JLabel("Brush size:");
-	    JComboBox<ImageIcon> brushSizeComboBox = new JComboBox<>();
+	    brushSizeComboBox = new JComboBox<>();
 	    List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	    int largest = 70;
 	    for (int brushSize : brushSizes)
@@ -181,7 +187,7 @@ public class LandOceanTool extends EditorTool
 	    	g.fillOval(largest/2 - brushSize/2, largest/2 - brushSize/2, brushSize, brushSize);
 	    	brushSizeComboBox.addItem(new ImageIcon(image));
 	    }
-	    EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
+	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
 	    
 
 		return toolOptionsPanel;
@@ -357,6 +363,13 @@ public class LandOceanTool extends EditorTool
 	{
 		// TODO Auto-generated method stub
 		handleMouseClickOnMap(e);
+	}
+
+	@Override
+	protected void handleMouseExitedMap(MouseEvent e)
+	{
+		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.repaint();
 	}
 
 	@Override

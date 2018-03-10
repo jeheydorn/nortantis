@@ -688,7 +688,7 @@ public class MapSettings implements Serializable
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					boolean isWater = (boolean) jsonObj.get("isWater");
-					Integer regionId = (Integer)jsonObj.get("regionId");
+					Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
 					result.add(new CenterEdit(isWater, regionId));
 				}
 				
