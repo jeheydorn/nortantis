@@ -490,13 +490,17 @@ public class MapCreator
 		
 		for (RegionEdit edit : edits.regionEdits)
 		{
-			if (graph.findRegionById(edit.regionId) == null)
+			Region region = graph.findRegionById(edit.regionId);
+			if (region == null)
 			{
-				Region region = new Region();
+				region = new Region();
 				region.id = edit.regionId;
 				region.backgroundColor = edit.color;
 				graph.regions.add(region);
-				System.out.println("Created new region with id:" + region.id); // TODO remove
+			}
+			else
+			{
+				region.backgroundColor = edit.color;
 			}
 		}
 	}

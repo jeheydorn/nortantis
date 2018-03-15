@@ -23,7 +23,7 @@ public class MapEditingPanel extends ImagePanel
 	private Set<Center> highlightedCenters;
 	private Set<Center> processingCenters;
 	private GraphImpl graph;
-	private boolean onlyDrawCenterGroupOutline;
+	private HighlightMode highlightMode;
 	
 	public void setAreasToDraw(List<Area> areas)
 	{
@@ -49,6 +49,11 @@ public class MapEditingPanel extends ImagePanel
 	public void addProcessingCenter(Center c)
 	{
 		processingCenters.add(c);
+	}
+	
+	public void addAllProcessingCenters(Collection<Center> centers)
+	{
+		processingCenters.addAll(centers);
 	}
 		
 	public void clearProcessingCenters()
@@ -79,9 +84,9 @@ public class MapEditingPanel extends ImagePanel
 		this.highlightColor = color;
 	}
 	
-	public void setCenterHighlightMode(boolean onlyDrawCenterGroupOutline)
+	public void setCenterHighlightMode(HighlightMode mode)
 	{
-		this.onlyDrawCenterGroupOutline = onlyDrawCenterGroupOutline;
+		this.highlightMode = mode;
 	}
 	
 	@Override
@@ -100,39 +105,30 @@ public class MapEditingPanel extends ImagePanel
 		if (graph != null)
 		{
 			g.setColor(highlightColor);
-			for (Center c : highlightedCenters)
-			{
-				for (Edge e : c.borders)
-				{
-					if (onlyDrawCenterGroupOutline)
-					{
-						if (e.d0 != null && e.d1 != null && highlightedCenters.contains(e.d0) && highlightedCenters.contains(e.d1))
-						{
-							// c is not on the edge of the group
-							continue;
-						}
-					}
-					graph.drawEdge(((Graphics2D)g), e);
-				}
-			}
+			drawCenterOutlines(g, highlightedCenters);
 			
 			g.setColor(Color.green);
-			for (Center c : processingCenters)
+			drawCenterOutlines(g, processingCenters);
+		}
+	}
+	
+	private void drawCenterOutlines(Graphics g, Set<Center> centers)
+	{
+		for (Center c : centers)
+		{
+			for (Edge e : c.borders)
 			{
-				for (Edge e : c.borders)
+				if (highlightMode == HighlightMode.outlineGroup)
 				{
-					if (onlyDrawCenterGroupOutline)
+					if (e.d0 != null && e.d1 != null && centers.contains(e.d0) && centers.contains(e.d1))
 					{
-						if (e.d0 != null && e.d1 != null && highlightedCenters.contains(e.d0) && highlightedCenters.contains(e.d1))
-						{
-							// c is not on the edge of the group
-							continue;
-						}
+						// c is not on the edge of the group
+						continue;
 					}
-					graph.drawEdge(((Graphics2D)g), e);
 				}
+				graph.drawEdge(((Graphics2D)g), e);
 			}
 		}
-		
+
 	}
 }

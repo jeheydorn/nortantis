@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -225,8 +226,13 @@ public class LandOceanTool extends EditorTool
 				}
 				else if (fillRegionColorButton.isSelected())
 				{
-					// TODO
-					handleMapChange(center);
+					Region region = center.region;
+					if (region != null)
+					{
+						RegionEdit edit = settings.edits.regionEdits.stream().filter(re -> re.regionId == region.id).findFirst().get();
+						edit.color = colorDisplay.getBackground();
+						handleMapChange(region.getCenters());
+					}
 				}
 				else if (mergeRegionsButton.isSelected())
 				{
@@ -276,7 +282,7 @@ public class LandOceanTool extends EditorTool
        		}
        		else
        		{
-       			largestRegionId = mapParts.graph.regions.stream().max((r1, r2) -> Integer.compare(r1.id, r2.id)).get().id;
+       			largestRegionId = settings.edits.regionEdits.stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId)).get().regionId;
        		}
        		
        		int newRegionId = largestRegionId + 1;
@@ -291,10 +297,15 @@ public class LandOceanTool extends EditorTool
 	
 	private void handleMapChange(Center center)
 	{	
-		mapEditingPanel.addProcessingCenter(center);
+		handleMapChange(Collections.singleton(center));
+	}
+	
+	private void handleMapChange(Set<Center> centers)
+	{
+		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		createAndShowMap();
+		createAndShowMap();	
 	}
 
 	@Override
@@ -320,12 +331,12 @@ public class LandOceanTool extends EditorTool
 			mapEditingPanel.clearHighlightedCenters();
 			
 			Center c = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);
-			// TODO remove
-			if (c != null)
-				if (c.region != null)
-					System.out.println("Region id: " + c.region.id);
-				else
-					System.out.println("No region");
+//			// TODO remove
+//			if (c != null)
+//				if (c.region != null)
+//					System.out.println("Region id: " + c.region.id);
+//				else
+//					System.out.println("No region");
 			
 			if (c != null)
 			{
@@ -334,27 +345,19 @@ public class LandOceanTool extends EditorTool
 				if (oceanButton.isSelected() || paintColorButton.isSelected() || landButton.isSelected())
 				{		
 					mapEditingPanel.addHighlightedCenter(c);
-					mapEditingPanel.setCenterHighlightMode(false);
-					mapEditingPanel.repaint();
+					mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 				}
 				else if (selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
 				{
 					if (c.region != null)
 					{
 						mapEditingPanel.addAllHighlightedCenters(c.region.getCenters());
-						mapEditingPanel.setCenterHighlightMode(true);
-						mapEditingPanel.repaint();
 					}
-					else
-					{
-						mapEditingPanel.repaint();
-					}
+					mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineGroup);
 				}
 			}
-			else
-			{
-				mapEditingPanel.repaint();
-			}
+			
+			mapEditingPanel.repaint();
 		}
 	}
 

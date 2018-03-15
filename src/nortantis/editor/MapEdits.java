@@ -2,10 +2,12 @@ package nortantis.editor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import hoten.voronoi.Center;
 import nortantis.MapText;
+import nortantis.Region;
 import util.Range;
 
 /**
@@ -45,14 +47,25 @@ public class MapEdits implements Serializable
 				centerEdits.add(new CenterEdit(c.isWater, c.region != null ? c.region.id : null));
 			}
 		}
-		
-		for (int i : new Range(centers.size()))
+		else
 		{
-			if (centers.get(i).region != null)
+			for (int i : new Range(centers.size()))
 			{
-				centerEdits.get(i).regionId = centers.get(i).region.id;
+				if (centers.get(i).region != null)
+				{
+					centerEdits.get(i).regionId = centers.get(i).region.id;
+				}
+				centerEdits.get(i).isWater = centers.get(i).isWater;
 			}
-			centerEdits.get(i).isWater = centers.get(i).isWater;
+		}
+	}
+	
+	public void initializeRegionEdits(Collection<Region> regions)
+	{
+		for (Region region : regions)
+		{
+			RegionEdit edit = new RegionEdit(region.id, region.backgroundColor);
+			regionEdits.add(edit);
 		}
 	}
 }

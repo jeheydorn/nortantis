@@ -206,6 +206,7 @@ public abstract class EditorTool
 	            if (map != null)
 	            {	
 	            	initializeCenterEditsIfEmpty();
+	            	initializeRegionEditsIfEmpty();
 	            	map = onBeforeShowMap(map, mapNeedsRedraw);
 	            	
 	            	mapEditingPanel.image = map;
@@ -261,7 +262,14 @@ public abstract class EditorTool
 		{
 			settings.edits.initializeCenterEdits(mapParts.graph.centers);			
 		}
-
+	}
+	
+	private void initializeRegionEditsIfEmpty()
+	{
+		if (settings.edits.regionEdits.isEmpty())
+		{
+			settings.edits.initializeRegionEdits(mapParts.graph.regions);			
+		}
 	}
 
 
