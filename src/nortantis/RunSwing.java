@@ -1784,7 +1784,7 @@ public class RunSwing
 		}
 	}
 	
-	private void saveSettingsAs(JComponent parent)
+	public void saveSettingsAs(JComponent parent)
 	{
 		Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
 		File currentFolder = new File(curPath.toString());

@@ -29,12 +29,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
+import javax.swing.KeyStroke;
 import javax.swing.border.EtchedBorder;
 
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
 import util.JComboBoxFixed;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JMenu;
 
 @SuppressWarnings("serial")
 public class EditorDialog extends JDialog
@@ -49,6 +53,8 @@ public class EditorDialog extends JDialog
 	private JComboBox<String> zoomComboBox;
 	public MapEditingPanel mapEditingPanel;
 	boolean areToolToggleButtonsEnabled = true;
+	private JMenuItem undoButton;
+	private JMenuItem redoButton;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -161,6 +167,8 @@ public class EditorDialog extends JDialog
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		getContentPane().add(scrollPane);
+		
+		setupMenuBar(runSwing);
 	
 		JPanel toolsPanel = new JPanel();
 		toolsPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, getContentPane().getHeight()));
@@ -280,6 +288,90 @@ public class EditorDialog extends JDialog
 		handleToolSelected(currentTool);
 	}
 	
+	private void setupMenuBar(RunSwing runSwing)
+	{
+		JMenuBar menuBar = new JMenuBar();
+		scrollPane.setColumnHeaderView(menuBar);
+		
+		JMenu mnFile = new JMenu("File");
+		menuBar.add(mnFile);
+		
+		JMenuItem mntmSave = new JMenuItem("Save");
+		mnFile.add(mntmSave);
+		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
+		        java.awt.event.KeyEvent.VK_S, 
+		        java.awt.Event.CTRL_MASK));
+		mntmSave.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				runSwing.saveSettings(mntmSave);
+			}
+		});
+		
+		JMenuItem mntmSaveAs = new JMenuItem("Save As...");
+		mnFile.add(mntmSaveAs);
+		mntmSaveAs.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				runSwing.saveSettingsAs(mntmSaveAs);
+			}			
+		});
+		
+		JMenu mnEdit = new JMenu("Edit");
+		menuBar.add(mnEdit);
+		
+		undoButton = new JMenuItem("Undo");
+		mnEdit.add(undoButton);
+		undoButton.setAccelerator(KeyStroke.getKeyStroke(
+		        java.awt.event.KeyEvent.VK_Z, 
+		        java.awt.Event.CTRL_MASK));
+		undoButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (currentTool != null)
+				{
+					currentTool.undo();
+				}
+				updateUndoRedoEnabled();
+			}
+		});
+
+
+		redoButton = new JMenuItem("Redo");
+		mnEdit.add(redoButton);
+		redoButton.setAccelerator(KeyStroke.getKeyStroke(
+		        java.awt.event.KeyEvent.VK_Z, 
+		        ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+		redoButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (currentTool != null)
+				{
+					currentTool.redo();
+				}
+				updateUndoRedoEnabled();
+			}
+		});
+		
+		updateUndoRedoEnabled();
+	}
+	
+	public void updateUndoRedoEnabled()
+	{		
+		boolean undoEnabled = currentTool != null && currentTool.undoStack.size() > 0;
+		undoButton.setEnabled(undoEnabled);
+		boolean redoEnabled = currentTool != null && currentTool.redoStack.size() > 0;
+		redoButton.setEnabled(redoEnabled);
+	}
+	
 	private void handleToolSelected(EditorTool selectedTool)
 	{
 		enableOrDisableToolToggleButtons(false);
@@ -289,6 +381,7 @@ public class EditorDialog extends JDialog
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearProcessingCenters();
 		currentTool.onSwitchingAway();
+		currentTool.clearUndoRedoStacks();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);

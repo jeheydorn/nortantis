@@ -328,6 +328,7 @@ public class TextTool extends EditorTool
 				updateTextInBackgroundThread(null);
 			}
 		}
+		setUndoPoint();
 	}
 	
 	@Override
@@ -375,6 +376,7 @@ public class TextTool extends EditorTool
 				mapEditingPanel.setAreasToDraw(transformedAreas);
 				mapEditingPanel.repaint();				
 			}
+			setUndoPoint();
 		}
 	}
 	
@@ -410,6 +412,7 @@ public class TextTool extends EditorTool
 				lastSelected.angle = angle;
 				updateTextInBackgroundThread(lastSelected);
 			}
+			setUndoPoint();
 		}
 	}
 		
@@ -432,6 +435,7 @@ public class TextTool extends EditorTool
 				
 				updateTextInBackgroundThread(null);
 			}
+			setUndoPoint();
 		}
 	}
 	
@@ -461,6 +465,7 @@ public class TextTool extends EditorTool
 		}
 		
 		lastSelected = selectedText;
+		setUndoPoint();
 	}
 	
 	private void updateToolText()
@@ -512,8 +517,10 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo()
 	{
-		// TODO Auto-generated method stub
-		
+		lastSelected = null;
+		lastTool = null;
+		editTextField.setText("");
+		createAndShowMap();	
 	}
 	
 

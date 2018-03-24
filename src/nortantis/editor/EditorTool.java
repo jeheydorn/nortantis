@@ -42,6 +42,7 @@ public abstract class EditorTool
 	private boolean mapIsBeingDrawn;
 	Stack<MapEdits> undoStack;
 	Stack<MapEdits> redoStack;
+	MapEdits copyOfEditsWhenToolWasSelected;
 	
 	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
@@ -51,6 +52,8 @@ public abstract class EditorTool
 		this.mapEditingPanel = parent.mapEditingPanel;
 		mapEditingPanel.setImage(placeHolder);
 		toolOptionsPanel = createToolsOptionsPanel();
+		undoStack = new Stack<>();
+		redoStack = new Stack<>();
 	}
 
 	private BufferedImage createPlaceholderImage()
@@ -211,6 +214,10 @@ public abstract class EditorTool
 	            {	
 	            	initializeCenterEditsIfEmpty();
 	            	initializeRegionEditsIfEmpty();
+	            	if (copyOfEditsWhenToolWasSelected == null)
+	            	{
+	            		copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
+	            	}
 	            	map = onBeforeShowMap(map, mapNeedsRedraw);
 	            	
 	            	mapEditingPanel.image = map;
@@ -278,23 +285,46 @@ public abstract class EditorTool
 	
 	protected void setUndoPoint()
 	{
+//		if (undoStack.size() > 0)
+//		{
+//			if (undoStack.peek().equals(settings.edits))
+//			{
+//				// No changes
+//				return;
+//			}
+//		}
 		undoStack.push(Helper.deepCopy(settings.edits));
+		parent.updateUndoRedoEnabled();
 	}
 	
 	public void undo()
 	{
-		settings.edits = undoStack.pop();
-		redoStack.push(settings.edits);
+		redoStack.push(undoStack.pop());
+		if (undoStack.isEmpty())
+		{
+			settings.edits = copyOfEditsWhenToolWasSelected;
+		}
+		else
+		{
+			settings.edits = undoStack.peek();	
+		}
 		onAfterUndoRedo();
 	}
 	
 	public void redo()
 	{
-		settings.edits = redoStack.pop();
+		undoStack.push(redoStack.pop());
+		settings.edits = undoStack.peek();
 		onAfterUndoRedo();
 	}
 	
 	protected abstract void onAfterUndoRedo();
+
+	public void clearUndoRedoStacks()
+	{
+		undoStack.clear();
+		redoStack.clear();
+	}
 
 
 }

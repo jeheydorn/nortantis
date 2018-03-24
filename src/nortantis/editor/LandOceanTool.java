@@ -201,35 +201,54 @@ public class LandOceanTool extends EditorTool
 		if (oceanButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
+			boolean hasChange = false;
 			for (Center center : selected)
 			{
 				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				hasChange |= !edit.isWater;
 				edit.isWater = true;
 			}
-			handleMapChange(selected);
+			if (hasChange)
+			{
+				handleMapChange(selected);
+			}
 		}
 		else if (paintColorButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
+			boolean hasChange = false;
 			for (Center center : selected)
 			{
 				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				hasChange |= edit.isWater;
 				edit.isWater = false;
-				edit.regionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
+				Integer newRegionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
+				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
+				edit.regionId = newRegionId;
 			}
-			handleMapChange(selected);
+			if (hasChange)
+			{
+				handleMapChange(selected);
+			}
 		}
 		else if (landButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
+			boolean hasChange = false;
 			for (Center center : selected)
 			{
 				CenterEdit edit = settings.edits.centerEdits.get(center.index);
 				// Still need to add region IDs to edits because the user might switch to region editing later.
-				edit.regionId = getOrCreateRegionIdForEdit(center, settings.landColor);
+				Integer newRegionId = getOrCreateRegionIdForEdit(center, settings.landColor);
+				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
+				edit.regionId = newRegionId;
+				hasChange |= edit.isWater;
 				edit.isWater = false;
 			}
-			handleMapChange(selected);
+			if (hasChange)
+			{
+				handleMapChange(selected);
+			}
 
 		}
 		else if (fillRegionColorButton.isSelected())
@@ -384,6 +403,7 @@ public class LandOceanTool extends EditorTool
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
+		setUndoPoint();
 		createAndShowMap();	
 	}
 
@@ -491,7 +511,7 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo()
 	{
-		// TODO Auto-generated method stub
-		
+		selectedRegion = null;
+		createAndShowMap();
 	}
 }

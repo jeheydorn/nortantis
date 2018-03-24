@@ -8,8 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 import hoten.voronoi.Center;
+import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.Region;
+import util.Helper;
 import util.Range;
 
 /**

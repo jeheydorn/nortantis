@@ -12,12 +12,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -275,21 +277,14 @@ public class Helper
 	 * Creates a deep copy of an object using serialization.
 	 */
 	@SuppressWarnings("unchecked")
-	public static <T> T deepCopy(T toCopy)
+	public static <T extends Serializable> T deepCopy(T toCopy)
 	{
-		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
-		byte[] storedObjectArray;
+		if (toCopy == null)
 		{
-			try (ObjectOutputStream p = new ObjectOutputStream(new BufferedOutputStream(ostream)))
-			{
-				p.writeObject(toCopy);
-				p.flush();
-			} catch (IOException e)
-			{
-				throw new RuntimeException(e);
-			}
-			storedObjectArray = ostream.toByteArray();
+			return null;
 		}
+		
+		byte[] storedObjectArray = serializableToByteArray(toCopy);
 
 		Object toReturn = null;
 		try (ByteArrayInputStream istream = new ByteArrayInputStream(storedObjectArray))
@@ -302,6 +297,34 @@ public class Helper
 			throw new RuntimeException(e);
 		}
 		return (T)toReturn;
+	}
+	
+	/**
+	 * WARNING: This isn't tested.
+	 */
+	public static <T extends Serializable> boolean areEqual(T object1, T object2)
+	{
+		byte[] array1 = serializableToByteArray(object1);
+		byte[] array2 = serializableToByteArray(object1);
+		return Arrays.equals(array1, array2); // I think this line doesn't work.
+	}
+	
+	private static <T extends Serializable> byte[] serializableToByteArray(T object)
+	{
+		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
+		byte[] storedObjectArray;
+		{
+			try (ObjectOutputStream p = new ObjectOutputStream(new BufferedOutputStream(ostream)))
+			{
+				p.writeObject(object);
+				p.flush();
+			} catch (IOException e)
+			{
+				throw new RuntimeException(e);
+			}
+			storedObjectArray = ostream.toByteArray();
+		}
+		return storedObjectArray;
 	}
 
 	public static <T> List<T> iteratorToList(Iterator<T> iter)
