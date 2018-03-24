@@ -66,6 +66,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import nortantis.editor.EditorDialog;
 import nortantis.editor.MapEdits;
+import util.Helper;
 import util.ImageHelper;
 import util.JFontChooser;
 import util.Logger;
@@ -117,7 +118,7 @@ public class RunSwing
 	private int backgroundDisplayCenterX = 667;
 	float fractalPower;
 	private JTextField textRandomSeedTextField;
-	MapEdits edits;
+	public MapEdits edits;
 	private boolean showTextWarning = true;
 	/**
 	 * A flag to prevent warnings about text edits while loading settings into the gui.
@@ -168,6 +169,10 @@ public class RunSwing
 	private JLabel lblTextRandomSeed;
 	private JButton btnNewSeed;
 	private JButton btnNewTextRandomSeed;
+	private JLabel regionsRandomSeedLabel;
+	private JLabel lblHueRange;
+	private JLabel lblSaturationRange;
+	private JLabel lblBrightnessRange;
 
 	
 	public static boolean isRunning()
@@ -825,12 +830,12 @@ public class RunSwing
 		hueSlider.setBounds(150, 82, 245, 79);
 		regionsPanel.add(hueSlider);
 		
-		JLabel lblHueRange = new JLabel("Hue range:");
+		lblHueRange = new JLabel("Hue range:");
 		lblHueRange.setToolTipText("The possible range of hue values for generated region colors. The range is centered at the land color hue.");
 		lblHueRange.setBounds(12, 94, 101, 23);
 		regionsPanel.add(lblHueRange);
 		
-		JLabel lblSaturationRange = new JLabel("Saturation range:");
+		lblSaturationRange = new JLabel("Saturation range:");
 		lblSaturationRange.setToolTipText("The possible range of saturation values for generated region colors. The range is centered at the land color saturation.");
 		lblSaturationRange.setBounds(12, 175, 129, 23);
 		regionsPanel.add(lblSaturationRange);
@@ -844,7 +849,7 @@ public class RunSwing
 		saturationSlider.setBounds(150, 163, 245, 79);
 		regionsPanel.add(saturationSlider);
 		
-		JLabel lblBrightnessRange = new JLabel("Brightness range:");
+		lblBrightnessRange = new JLabel("Brightness range:");
 		lblBrightnessRange.setToolTipText("The possible range of brightness values for generated region colors. The range is centered at the land color brightness.");
 		lblBrightnessRange.setBounds(12, 255, 129, 23);
 		regionsPanel.add(lblBrightnessRange);
@@ -858,7 +863,7 @@ public class RunSwing
 		brightnessSlider.setBounds(150, 243, 245, 79);
 		regionsPanel.add(brightnessSlider);
 		
-		JLabel regionsRandomSeedLabel = new JLabel("Random seed:");
+		regionsRandomSeedLabel = new JLabel("Random seed:");
 		regionsRandomSeedLabel.setToolTipText("The random seed for region colors.");
 		regionsRandomSeedLabel.setBounds(12, 42, 122, 15);
 		regionsPanel.add(regionsRandomSeedLabel);
@@ -1767,7 +1772,7 @@ public class RunSwing
 			try
 			{
 				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
-				lastSettingsLoadedOrSaved = settings;
+				updateLastSettingsLoadedOrSaved(settings);
 				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
 			} 
 			catch (IOException e)
@@ -1814,7 +1819,7 @@ public class RunSwing
 			{
 				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
 				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
-				lastSettingsLoadedOrSaved = settings;
+				updateLastSettingsLoadedOrSaved(settings);
 			} catch (IOException e)
 			{
 				e.printStackTrace();
@@ -2045,8 +2050,15 @@ public class RunSwing
 		updateBackgroundImageDisplays();
 		updateFrameTitle();
 
-		lastSettingsLoadedOrSaved = settings;
+		updateLastSettingsLoadedOrSaved(settings);
+		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
 		loadingSettings = false;	
+	}
+	
+	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
+	{
+		lastSettingsLoadedOrSaved = settings;
+		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
 	}
 	
 	private List<String> getAllBooks()
@@ -2178,7 +2190,12 @@ public class RunSwing
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewSeed, hasEdits);
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblDimensions, dimensionsComboBox, hasEdits);
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblTextRandomSeed, textRandomSeedTextField, hasEdits);
-		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewTextRandomSeed, hasEdits);		
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewTextRandomSeed, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(regionsRandomSeedLabel, regionsSeedTextField, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblHueRange, hueSlider, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblSaturationRange, saturationSlider, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblBrightnessRange, brightnessSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, newRegionSeedButton, hasEdits);	
 	}
 	
 	public void lockOrUnlockBecauseOfEditsAndUpdateTooltip(JLabel label, JComponent component, boolean hasEdits)
@@ -2188,21 +2205,25 @@ public class RunSwing
 			return;
 		}
 		
+		String lockedMessage = " This is locked because this map has edits.";
+		
 		component.setEnabled(!hasEdits);
 		
-		if (label != null)
+		if (hasEdits)
 		{
-			String lockedMessage = " This is locked because this map has edits.";
-			if (hasEdits)
+			if (label != null)
 			{
 				addToTooltip(label, lockedMessage);
-				addToTooltip(component, lockedMessage);
 			}
-			else
+			addToTooltip(component, lockedMessage);
+		}
+		else
+		{
+			if (label != null)
 			{
 				removeFromToolTip(label, lockedMessage);
-				removeFromToolTip(component, lockedMessage);
 			}
+			removeFromToolTip(component, lockedMessage);
 		}
 	}
 	

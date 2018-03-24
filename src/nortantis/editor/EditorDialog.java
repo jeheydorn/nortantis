@@ -223,12 +223,11 @@ public class EditorDialog extends JDialog
 		JButton doneButton = new JButton("Done");
 		doneButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
-				runSwing.updateFieldsWhenEditsChange();
 				thisDialog.dispatchEvent(new WindowEvent(
 	                    thisDialog, WindowEvent.WINDOW_CLOSING));
 			}
 		});
-		
+				
 		bottomPanel.add(doneButton);
 		
 		toolsPanel.add(bottomPanel);
@@ -267,9 +266,14 @@ public class EditorDialog extends JDialog
 		
 		addWindowListener(new WindowAdapter()
 		{
+		    @Override
 			public void windowClosing(WindowEvent e)
 			{
 				KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(myKeyEventDispatcher);
+
+		    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
+		    	runSwing.edits = settings.edits;
+		    	runSwing.updateFieldsWhenEditsChange();
 			}
 		});
 		
@@ -313,6 +317,5 @@ public class EditorDialog extends JDialog
 		double zoomPercent = Double.parseDouble(zoomStr.substring(0, zoomStr.length() - 1));
 		return zoomPercent / 100.0;
 	}
-		
-
 }
+

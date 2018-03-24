@@ -1,9 +1,12 @@
 package nortantis.editor;
 
+import java.io.Serializable;
+
 /**
  * Stores edits made to a polygon (a "center") of a map.
  */
-public class CenterEdit
+@SuppressWarnings("serial")
+public class CenterEdit implements Serializable
 {
 	public boolean isWater;
 	/**
@@ -11,9 +14,12 @@ public class CenterEdit
 	 */
 	public Integer regionId;
 	
-	public CenterEdit(boolean isWater, Integer regionId)
+	public final int index;
+	
+	public CenterEdit(int index, boolean isWater, Integer regionId)
 	{
 		this.isWater = isWater;
 		this.regionId = regionId;
+		this.index = index;
 	}
 }

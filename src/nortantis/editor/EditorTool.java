@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.Stack;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -24,6 +25,7 @@ import nortantis.MapCreator;
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
+import util.Helper;
 
 public abstract class EditorTool
 {
@@ -38,6 +40,8 @@ public abstract class EditorTool
 	private JToggleButton toggleButton;
 	private boolean mapNeedsRedraw;
 	private boolean mapIsBeingDrawn;
+	Stack<MapEdits> undoStack;
+	Stack<MapEdits> redoStack;
 	
 	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
@@ -271,6 +275,26 @@ public abstract class EditorTool
 			settings.edits.initializeRegionEdits(mapParts.graph.regions);			
 		}
 	}
+	
+	protected void setUndoPoint()
+	{
+		undoStack.push(Helper.deepCopy(settings.edits));
+	}
+	
+	public void undo()
+	{
+		settings.edits = undoStack.pop();
+		redoStack.push(settings.edits);
+		onAfterUndoRedo();
+	}
+	
+	public void redo()
+	{
+		settings.edits = redoStack.pop();
+		onAfterUndoRedo();
+	}
+	
+	protected abstract void onAfterUndoRedo();
 
 
 }

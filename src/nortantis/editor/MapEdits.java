@@ -3,7 +3,9 @@ package nortantis.editor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import hoten.voronoi.Center;
 import nortantis.MapText;
@@ -23,13 +25,13 @@ public class MapEdits implements Serializable
 	 */
 	public List<MapText> text;
 	public List<CenterEdit> centerEdits;
-	public List<RegionEdit> regionEdits;
+	public Map<Integer, RegionEdit> regionEdits;
 		
 	public MapEdits()
 	{
 		text = new ArrayList<>();
 		centerEdits = new ArrayList<>();
-		regionEdits = new ArrayList<>();
+		regionEdits = new HashMap<>();
 	}
 
 	public boolean isEmpty()
@@ -42,9 +44,10 @@ public class MapEdits implements Serializable
 		if (centerEdits.isEmpty())
 		{
 			centerEdits = new ArrayList<>(centers.size());
-			for (@SuppressWarnings("unused") Center c : centers)
+			for (int index : new Range(centers.size()))
 			{
-				centerEdits.add(new CenterEdit(c.isWater, c.region != null ? c.region.id : null));
+				Center c = centers.get(index);
+				centerEdits.add(new CenterEdit(index, c.isWater, c.region != null ? c.region.id : null));
 			}
 		}
 		else
@@ -65,7 +68,7 @@ public class MapEdits implements Serializable
 		for (Region region : regions)
 		{
 			RegionEdit edit = new RegionEdit(region.id, region.backgroundColor);
-			regionEdits.add(edit);
+			regionEdits.put(edit.regionId, edit);
 		}
 	}
 }

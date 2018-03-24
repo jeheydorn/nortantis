@@ -6,10 +6,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,9 +25,6 @@ import hoten.geom.Point;
 import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import nortantis.TectonicPlate;
-import util.HashMapF;
-import util.ImageHelper;
 import util.Range;
 
 /**

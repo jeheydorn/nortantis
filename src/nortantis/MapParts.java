@@ -1,7 +1,6 @@
 package nortantis;
 
 import java.awt.image.BufferedImage;
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 

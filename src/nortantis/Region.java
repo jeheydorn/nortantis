@@ -53,8 +53,7 @@ public class Region
 	
 	public void addAndSetRegion(Center c)
 	{
-		boolean addResult = centers.add(c);
-		assert addResult == (c.region != this);
+		centers.add(c);
 		c.region = this;		
 	}
 	
@@ -62,8 +61,7 @@ public class Region
 	
 	public void remove(Center c)
 	{
-		boolean removeResult = centers.remove(c);
-		assert removeResult == (c.region == this);
+		centers.remove(c);
 		if (c.region == this)
 		{
 			c.region = null;

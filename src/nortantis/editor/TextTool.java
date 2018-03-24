@@ -29,7 +29,6 @@ import javax.swing.SwingWorker;
 
 import nortantis.MapSettings;
 import nortantis.MapText;
-import nortantis.TextDrawer;
 import nortantis.TextType;
 import util.ImageHelper;
 import util.JComboBoxFixed;
@@ -508,6 +507,13 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{	
+	}
+
+	@Override
+	protected void onAfterUndoRedo()
+	{
+		// TODO Auto-generated method stub
+		
 	}
 	
 

@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -205,7 +206,7 @@ public class MapSettings implements Serializable
 	private String regionEditsToJson()
 	{
 		JSONArray list = new JSONArray();
-		for (RegionEdit regionEdit : edits.regionEdits)
+		for (RegionEdit regionEdit : edits.regionEdits.values())
 		{
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("color", colorToString(regionEdit.color));
@@ -684,33 +685,35 @@ public class MapSettings implements Serializable
 					return new ArrayList<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
 				List<CenterEdit> result = new ArrayList<>();
+				int index = 0;
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					boolean isWater = (boolean) jsonObj.get("isWater");
 					Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
-					result.add(new CenterEdit(isWater, regionId));
+					result.add(new CenterEdit(index, isWater, regionId));
+					index++;
 				}
 				
 				return result;
 			}
 		});
 
-		edits.regionEdits = getProperty("regionEdits", new Function0<List<RegionEdit>>()
+		edits.regionEdits = getProperty("regionEdits", new Function0<HashMap<Integer, RegionEdit>>()
 		{
-			public List<RegionEdit> apply()
+			public HashMap<Integer, RegionEdit> apply()
 			{
 				String str = props.getProperty("regionEdits");
 				if (str == null || str.isEmpty())
-					return new ArrayList<>();
+					return new HashMap<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				List<RegionEdit> result = new ArrayList<>();
+				HashMap<Integer, RegionEdit> result = new HashMap<>();
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					Color color = parseColor((String)jsonObj.get("color"));
 					int regionId = (int)(long)jsonObj.get("regionId");
-					result.add(new RegionEdit(regionId, color));
+					result.put(regionId, new RegionEdit(regionId, color));
 				}
 				
 				return result;

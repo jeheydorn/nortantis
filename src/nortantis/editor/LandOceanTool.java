@@ -9,12 +9,10 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -27,7 +25,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.Painter;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
@@ -47,17 +44,16 @@ public class LandOceanTool extends EditorTool
 	private JRadioButton fillRegionColorButton;
 	private JRadioButton paintColorButton;
 	private JRadioButton mergeRegionsButton;
+	private Region selectedRegion;
 	private JRadioButton selectColorButton;
 	
-	private Set<Center> currentlyUpdating;
-	private Set<Point> queuedClicks;
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
+	private List<Integer> brushSizes;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
 		super(settings, dialog);
-		currentlyUpdating = new HashSet<>();
 	}
 
 	@Override
@@ -173,7 +169,7 @@ public class LandOceanTool extends EditorTool
 
 	    JLabel brushSizeLabel = new JLabel("Brush size:");
 	    brushSizeComboBox = new JComboBox<>();
-	    List<Integer> brushSizes = Arrays.asList(1, 25, 70);
+	    brushSizes = Arrays.asList(1, 25, 70);
 	    int largest = 70;
 	    for (int brushSize : brushSizes)
 	    {
@@ -197,107 +193,190 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		if (map != null) // If the map is visible ...
+		if (map == null) 
+		{
+			// The map is not visible;
+			return;
+		}
+		if (oceanButton.isSelected())
+		{
+			Set<Center> selected = getSelectedCenters(e.getPoint());
+			for (Center center : selected)
+			{
+				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				edit.isWater = true;
+			}
+			handleMapChange(selected);
+		}
+		else if (paintColorButton.isSelected())
+		{
+			Set<Center> selected = getSelectedCenters(e.getPoint());
+			for (Center center : selected)
+			{
+				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				edit.isWater = false;
+				edit.regionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
+			}
+			handleMapChange(selected);
+		}
+		else if (landButton.isSelected())
+		{
+			Set<Center> selected = getSelectedCenters(e.getPoint());
+			for (Center center : selected)
+			{
+				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				// Still need to add region IDs to edits because the user might switch to region editing later.
+				edit.regionId = getOrCreateRegionIdForEdit(center, settings.landColor);
+				edit.isWater = false;
+			}
+			handleMapChange(selected);
+
+		}
+		else if (fillRegionColorButton.isSelected())
 		{
 			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
 			if (center != null)
 			{
-				
-				if (oceanButton.isSelected())
+				Region region = center.region;
+				if (region != null)
 				{
-					CenterEdit edit = settings.edits.centerEdits.get(center.index);
-					edit.isWater = true;
-					handleMapChange(center);
+					RegionEdit edit = settings.edits.regionEdits.get(region.id);
+					edit.color = colorDisplay.getBackground();
+					handleMapChange(region.getCenters());
 				}
-				else if (paintColorButton.isSelected())
-				{
-					CenterEdit edit = settings.edits.centerEdits.get(center.index);
-					edit.isWater = false;
-					edit.regionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
-					handleMapChange(center);
-				}
-				else if (landButton.isSelected())
-				{
-					CenterEdit edit = settings.edits.centerEdits.get(center.index);
-					// Still need to add region IDs to edits because the user might switch to region editing later.
-					edit.regionId = getOrCreateRegionIdForEdit(center, settings.landColor);
-					edit.isWater = false;
-					handleMapChange(center);
-				}
-				else if (fillRegionColorButton.isSelected())
-				{
-					Region region = center.region;
-					if (region != null)
-					{
-						RegionEdit edit = settings.edits.regionEdits.stream().filter(re -> re.regionId == region.id).findFirst().get();
-						edit.color = colorDisplay.getBackground();
-						handleMapChange(region.getCenters());
-					}
-				}
-				else if (mergeRegionsButton.isSelected())
-				{
-					handleMapChange(center);
-				}
-				else if (selectColorButton.isSelected())
-				{
-					if (center != null && center.region != null)
-					{
-						colorDisplay.setBackground(center.region.backgroundColor);
-						selectColorButton.setSelected(false);
-						paintColorButton.setSelected(true);
-					}
-				}	
 			}
 		}
+		else if (mergeRegionsButton.isSelected())
+		{
+			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+			if (center != null)
+			{
+				Region region = center.region;
+				if (region != null)
+				{
+					if (selectedRegion == null)
+					{
+						selectedRegion = region;
+					}
+					else
+					{
+						if (region == selectedRegion)
+						{
+							// Cancel the selection
+							selectedRegion = null;
+						}
+						else
+						{
+							for (CenterEdit c : settings.edits.centerEdits)
+							{
+								assert c != null;
+								assert region != null;
+								if (c.regionId != null && c.regionId == region.id)
+								{
+									c.regionId = selectedRegion.id;
+								}
+								
+							}
+							settings.edits.regionEdits.remove(region.id);
+							handleMapChange(region.getCenters());
+							selectedRegion = null;
+						}
+					}
+				}
+			}
+		}
+		else if (selectColorButton.isSelected())
+		{
+			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+			if (center != null)
+			{
+				if (center != null && center.region != null)
+				{
+					colorDisplay.setBackground(center.region.backgroundColor);
+					selectColorButton.setSelected(false);
+					paintColorButton.setSelected(true);
+				}
+			}
+		}	
+	}
+	
+	private Set<Center> getSelectedCenters(java.awt.Point point)
+	{
+		Set<Center> selected = new HashSet<Center>();
+		
+		if (brushSizeComboBox.getSelectedIndex() == 0)
+		{
+			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+			if (center != null)
+			{
+				selected.add(center);
+			}
+			return selected;
+		}
+		
+		int brushRadius = brushSizes.get(brushSizeComboBox.getSelectedIndex())/2;
+		for (int x = point.x - brushRadius; x < point.x + brushRadius; x++)
+		{
+			for (int y = point.y - brushRadius; y < point.y + brushRadius; y++)
+			{
+				float deltaX = (float)(point.x - x);
+				float deltaXSquared = deltaX * deltaX;
+				float deltaY = (float)(point.y - y);
+				float deltaYSquared = deltaY * deltaY;
+				if (Math.sqrt(deltaXSquared + deltaYSquared) <= brushRadius)
+				{
+					Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(x, y));
+					if (center != null)
+					{
+						selected.add(center);
+					}
+				}
+			}
+		}
+		return selected;
 	}
 	
 	private int getOrCreateRegionIdForEdit(Center center, Color color)
 	{
 		// If a neighboring center has the desired region color, then use that region.
-		if (center.region != null)
+		for (Center neighbor : center.neighbors)
 		{
-			for (Center neighbor : center.neighbors)
+			CenterEdit neighborEdit = settings.edits.centerEdits.get(neighbor.index);
+			if (neighborEdit.regionId != null && settings.edits.regionEdits.get(neighborEdit.regionId).color.equals(color))
 			{
-				if (neighbor.region != null && neighbor.region.backgroundColor.equals(color))
-				{
-					return neighbor.region.id;
-				}
+				return neighborEdit.regionId;
 			}
 		}
 		
 		// Find the closest region of that color.
-       	Optional<Center> opt = mapParts.graph.centers.stream()
-       			.filter(c -> c.region != null && c.region.backgroundColor.equals(color))
-        		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(center.loc), c2.loc.distanceTo(center.loc)));
+       	Optional<CenterEdit> opt = settings.edits.centerEdits.stream()
+       			.filter(cEdit1 -> cEdit1.regionId != null && settings.edits.regionEdits.get(cEdit1.regionId).color.equals(color))
+        		.min((cEdit1, cEdit2) -> Double.compare(
+        				mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), 
+        				mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
        	if (opt.isPresent())
        	{
-       		return opt.get().region.id;
+       		return opt.get().regionId;
        	}
        	else
        	{
        		int largestRegionId;
-       		if (mapParts.graph.regions.isEmpty())
+       		if (settings.edits.regionEdits.isEmpty())
        		{
        			largestRegionId = -1;
        		}
        		else
        		{
-       			largestRegionId = settings.edits.regionEdits.stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId)).get().regionId;
+       			largestRegionId = settings.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId)).get().regionId;
        		}
        		
        		int newRegionId = largestRegionId + 1;
        		
        		RegionEdit regionEdit = new RegionEdit(newRegionId, color);
-       		settings.edits.regionEdits.add(regionEdit);
+       		settings.edits.regionEdits.put(newRegionId, regionEdit);
        		
        		return newRegionId;
        	}
-	}
-
-	
-	private void handleMapChange(Center center)
-	{	
-		handleMapChange(Collections.singleton(center));
 	}
 	
 	private void handleMapChange(Set<Center> centers)
@@ -326,37 +405,35 @@ public class LandOceanTool extends EditorTool
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
 		// TODO Auto-generated method stub
-		if (mapParts != null && mapParts.graph != null)
+		if (mapParts != null && mapParts.graph != null && map != null)
 		{
 			mapEditingPanel.clearHighlightedCenters();
-			
-			Center c = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);
-//			// TODO remove
-//			if (c != null)
-//				if (c.region != null)
-//					System.out.println("Region id: " + c.region.id);
-//				else
-//					System.out.println("No region");
-			
-			if (c != null)
-			{
-				mapEditingPanel.setGraph(mapParts.graph);
+		
+			mapEditingPanel.setGraph(mapParts.graph);
 
-				if (oceanButton.isSelected() || paintColorButton.isSelected() || landButton.isSelected())
-				{		
-					mapEditingPanel.addHighlightedCenter(c);
-					mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
-				}
-				else if (selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
+			if (oceanButton.isSelected() || paintColorButton.isSelected() || landButton.isSelected())
+			{		
+				Set<Center> selected = getSelectedCenters(e.getPoint());
+				mapEditingPanel.addAllHighlightedCenters(selected);
+				mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
+			}
+			else if (selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
+			{
+				Center center = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
+				if (center != null)
 				{
-					if (c.region != null)
+					if (center.region != null)
 					{
-						mapEditingPanel.addAllHighlightedCenters(c.region.getCenters());
+						System.out.println("Region: " + center.region.id);
+						mapEditingPanel.addAllHighlightedCenters(center.region.getCenters());
+					}
+					if (selectedRegion != null)
+					{
+						mapEditingPanel.addAllHighlightedCenters(selectedRegion.getCenters());
 					}
 					mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineGroup);
 				}
 			}
-			
 			mapEditingPanel.repaint();
 		}
 	}
@@ -408,6 +485,13 @@ public class LandOceanTool extends EditorTool
 	public void onSelected()
 	{
 		mapEditingPanel.setHighlightColor(new Color(255,227,74));
+		
+	}
+
+	@Override
+	protected void onAfterUndoRedo()
+	{
+		// TODO Auto-generated method stub
 		
 	}
 }

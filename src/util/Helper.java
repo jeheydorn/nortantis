@@ -274,7 +274,8 @@ public class Helper
 	/**
 	 * Creates a deep copy of an object using serialization.
 	 */
-	public static Object deepCopy(Object toCopy)
+	@SuppressWarnings("unchecked")
+	public static <T> T deepCopy(T toCopy)
 	{
 		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
 		byte[] storedObjectArray;
@@ -300,7 +301,7 @@ public class Helper
 		{
 			throw new RuntimeException(e);
 		}
-		return toReturn;
+		return (T)toReturn;
 	}
 
 	public static <T> List<T> iteratorToList(Iterator<T> iter)

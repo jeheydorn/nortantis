@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,7 +15,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
@@ -56,7 +54,6 @@ public class MapCreator
 	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
 			throws IOException
 	{		
-		StopWatch stopWatch = new StopWatch();
 		Logger.println("Creating the map");
 		if (!Files.exists(Paths.get(settings.landBackgroundImage)))
 			throw new IllegalArgumentException("Land background image file does not exists: " + settings.landBackgroundImage);
@@ -119,11 +116,8 @@ public class MapCreator
 		}
 		applyRegionEdits(graph, settings.edits);
 		applyCenterEdits(graph, settings.edits);
-        System.out.println("Startup time: " + stopWatch.getElapsedSeconds());
-		
-		stopWatch = new StopWatch();
+ 		
 		background.doSetupThatNeedsGraph(settings, graph);
-		System.out.println("Time to do additional background setup: " + stopWatch.getElapsedSeconds());
 		if (mapParts == null)
 		{
 			background.landBeforeRegionColoring = null;
@@ -154,7 +148,6 @@ public class MapCreator
 			iconDrawer.findMountainAndHillGroups();
 		}
 		
-		stopWatch = new StopWatch();
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
 		BufferedImage landMask = new BufferedImage(graph.getWidth(),
@@ -163,8 +156,7 @@ public class MapCreator
 			Graphics2D g = landMask.createGraphics();
 			graph.drawLandAndOceanBlackAndWhite(g, graph.centers);
 		}
-		System.out.println("Time to create land mask: " + stopWatch.getElapsedSeconds());
-
+		
 
 		BufferedImage map = null;
 		{	
@@ -176,7 +168,6 @@ public class MapCreator
 			background.land = null;
 		}
 		
-		stopWatch = new StopWatch();
 		BufferedImage coastlineMask = null;
 		if (settings.landBlur > 0 || settings.oceanEffects > 0)
 		{
@@ -188,8 +179,7 @@ public class MapCreator
 				graph.paint(g, false, false, false, false, true, false, sizeMultiplyer);
 			}
 		}
-		System.out.println("Time to create coastline mask: " + stopWatch.getElapsedSeconds());
-
+		
 		
 		// Darken the land next to coast lines and optionally region borders.
 		{
@@ -235,31 +225,23 @@ public class MapCreator
 			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
 
-		stopWatch = new StopWatch();
 		// Add rivers.
 		Logger.println("Adding rivers.");
 		drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
-		System.out.println("Time to add rivers: " + stopWatch.getElapsedSeconds());
 
 		List<Set<Center>> mountainGroups;
 		if (needToAddIcons)
 		{
-			stopWatch = new StopWatch();
 			Logger.println("Adding mountains and hills.");
 			mountainGroups = iconDrawer.addMountainsAndHills();
 			if (mapParts != null)
 				mapParts.mountainGroups = mountainGroups;
-			System.out.println("Time to add mountains: " + stopWatch.getElapsedSeconds());
 
-			stopWatch = new StopWatch();
 			Logger.println("Adding sand dunes.");
 			iconDrawer.addSandDunes();
-			System.out.println("Time to add sand dunes: " + stopWatch.getElapsedSeconds());
 			
-			stopWatch = new StopWatch();
 			Logger.println("Adding trees.");
 			iconDrawer.addTrees();
-			System.out.println("Time to add trees: " + stopWatch.getElapsedSeconds());
 		}
 		else
 		{
@@ -270,12 +252,9 @@ public class MapCreator
 			mountainGroups = mapParts.mountainGroups;
 		}
 		
-		stopWatch = new StopWatch();
 		Logger.println("Drawing all icons.");
 		iconDrawer.drawAllIcons(map, landBackground);
-		System.out.println("Time draw all icons: " + stopWatch.getElapsedSeconds());
 		
-		stopWatch = new StopWatch();
 		Logger.println("Drawing ocean.");
 		{
 			if (background.ocean.getWidth() != graph.getWidth() || background.ocean.getHeight() != graph.getHeight())
@@ -297,7 +276,6 @@ public class MapCreator
 				background.ocean = null;
 			}
 		}
-		System.out.println("Time to draw ocean: " + stopWatch.getElapsedSeconds());
 		
 		Logger.println("Adding effects to ocean along coastlines.");
 		{
@@ -323,7 +301,6 @@ public class MapCreator
 		}
 		coastlineMask = null;
 		
-		stopWatch = new StopWatch();
 		// Draw coast lines.
 		{
 			Graphics2D g = map.createGraphics();
@@ -335,7 +312,6 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			graph.drawCoastline(g, sizeMultiplyer);
 		}
-		System.out.println("Time to draw coastlines: " + stopWatch.getElapsedSeconds());
 
 				
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
@@ -488,7 +464,7 @@ public class MapCreator
 			return;
 		}
 		
-		for (RegionEdit edit : edits.regionEdits)
+		for (RegionEdit edit : edits.regionEdits.values())
 		{
 			Region region = graph.findRegionById(edit.regionId);
 			if (region == null)
@@ -535,6 +511,14 @@ public class MapCreator
 						needsRebuild = true;
 					}
 					region.addAndSetRegion(center);
+					// We don't know which region the center came from, so remove it from of them except the one it is in.
+					for (Region r : graph.regions)
+					{
+						if (r.id != region.id)
+						{
+							r.remove(center);
+						}
+					}
 				}
 			}
 			
