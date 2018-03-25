@@ -299,6 +299,7 @@ public abstract class EditorTool
 	
 	public void undo()
 	{
+		redoStack.clear();
 		redoStack.push(undoStack.pop());
 		if (undoStack.isEmpty())
 		{

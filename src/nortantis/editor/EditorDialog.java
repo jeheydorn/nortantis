@@ -291,7 +291,7 @@ public class EditorDialog extends JDialog
 	private void setupMenuBar(RunSwing runSwing)
 	{
 		JMenuBar menuBar = new JMenuBar();
-		scrollPane.setColumnHeaderView(menuBar);
+		this.getContentPane().add(menuBar, BorderLayout.NORTH);
 		
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
