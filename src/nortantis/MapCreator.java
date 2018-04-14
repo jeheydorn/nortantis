@@ -419,8 +419,6 @@ public class MapCreator
 	 */
 	static private void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
 	{
-		if (colorOptions.isEmpty())
-			throw new IllegalArgumentException("Cannot draw region colors with no color options.");
 		for (int i : new Range(graph.regions.size()))
 		{
 			graph.regions.get(i).backgroundColor = colorOptions.get(i % colorOptions.size());
@@ -520,6 +518,13 @@ public class MapCreator
 						}
 					}
 				}
+			}
+			
+			if (center.isWater && center.region != null)
+			{
+				center.region.remove(center);
+				center.region = null;
+				needsRebuild = true;
 			}
 			
 			if (needsRebuild)

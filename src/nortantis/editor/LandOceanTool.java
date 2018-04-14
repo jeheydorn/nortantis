@@ -65,8 +65,6 @@ public class LandOceanTool extends EditorTool
 	@Override
 	public void onBeforeSaving()
 	{
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -403,28 +401,23 @@ public class LandOceanTool extends EditorTool
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		setUndoPoint();
 		createAndShowMap();	
 	}
 
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-		
+		setUndoPoint();
 	}
 	
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
 		if (mapParts != null && mapParts.graph != null && map != null)
 		{
 			mapEditingPanel.clearHighlightedCenters();
@@ -444,7 +437,6 @@ public class LandOceanTool extends EditorTool
 				{
 					if (center.region != null)
 					{
-						System.out.println("Region: " + center.region.id);
 						mapEditingPanel.addAllHighlightedCenters(center.region.getCenters());
 					}
 					if (selectedRegion != null)
@@ -461,7 +453,6 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
 		handleMouseClickOnMap(e);
 	}
 

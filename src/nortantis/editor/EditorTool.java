@@ -285,21 +285,13 @@ public abstract class EditorTool
 	
 	protected void setUndoPoint()
 	{
-//		if (undoStack.size() > 0)
-//		{
-//			if (undoStack.peek().equals(settings.edits))
-//			{
-//				// No changes
-//				return;
-//			}
-//		}
+		redoStack.clear();
 		undoStack.push(Helper.deepCopy(settings.edits));
 		parent.updateUndoRedoEnabled();
 	}
 	
 	public void undo()
 	{
-		redoStack.clear();
 		redoStack.push(undoStack.pop());
 		if (undoStack.isEmpty())
 		{
@@ -307,7 +299,7 @@ public abstract class EditorTool
 		}
 		else
 		{
-			settings.edits = undoStack.peek();	
+			settings.edits = Helper.deepCopy(undoStack.peek());	
 		}
 		onAfterUndoRedo();
 	}
@@ -315,7 +307,7 @@ public abstract class EditorTool
 	public void redo()
 	{
 		undoStack.push(redoStack.pop());
-		settings.edits = undoStack.peek();
+		settings.edits = Helper.deepCopy(undoStack.peek());
 		onAfterUndoRedo();
 	}
 	
