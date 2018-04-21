@@ -30,6 +30,7 @@ import javax.swing.SwingWorker;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
+import util.Helper;
 import util.ImageHelper;
 import util.JComboBoxFixed;
 import util.JTextFieldFixed;
@@ -43,6 +44,7 @@ public class TextTool extends EditorTool
 	JComboBox<TextType>textTypeComboBox;
 	private Point mousePressedLocation;
 	ToolType lastTool;
+	private boolean hasDrawNextBefore;
 	
 
 	public TextTool(MapSettings settings, EditorDialog parent)
@@ -209,7 +211,15 @@ public class TextTool extends EditorTool
     	// Add text to the map
 		mapWithoutText = map;
 		
-    	return drawMapWithText();
+		BufferedImage mapWithText = drawMapWithText();
+		
+		if(!hasDrawNextBefore)
+		{
+			copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
+			hasDrawNextBefore = true;
+		}
+		
+    	return mapWithText;
 	}
 	
 	private BufferedImage drawMapWithText()
@@ -325,10 +335,10 @@ public class TextTool extends EditorTool
 			if (selectedText != null)
 			{
 				selectedText.value = "";
+				setUndoPoint();
 				updateTextInBackgroundThread(null);
 			}
 		}
-		setUndoPoint();
 	}
 	
 	@Override
@@ -376,7 +386,6 @@ public class TextTool extends EditorTool
 				mapEditingPanel.setAreasToDraw(transformedAreas);
 				mapEditingPanel.repaint();				
 			}
-			setUndoPoint();
 		}
 	}
 	
@@ -393,6 +402,7 @@ public class TextTool extends EditorTool
 						(int)((e.getY() - mousePressedLocation.y) * (1.0/zoom)));
 				lastSelected.location = new hoten.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
+				setUndoPoint();
 				updateTextInBackgroundThread(lastSelected);
 			}
 			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
@@ -412,7 +422,6 @@ public class TextTool extends EditorTool
 				lastSelected.angle = angle;
 				updateTextInBackgroundThread(lastSelected);
 			}
-			setUndoPoint();
 		}
 	}
 		
@@ -433,9 +442,9 @@ public class TextTool extends EditorTool
 						new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
 				settings.edits.text.add(addedText);
 				
+				setUndoPoint();
 				updateTextInBackgroundThread(null);
 			}
-			setUndoPoint();
 		}
 	}
 	
@@ -446,6 +455,7 @@ public class TextTool extends EditorTool
 			lastSelected.value = editTextField.getText();
 
 			// Need to re-draw all of the text.
+			setUndoPoint();
 			updateTextInBackgroundThread(selectedText);
 		}
 		else
@@ -465,7 +475,6 @@ public class TextTool extends EditorTool
 		}
 		
 		lastSelected = selectedText;
-		setUndoPoint();
 	}
 	
 	private void updateToolText()
@@ -520,7 +529,7 @@ public class TextTool extends EditorTool
 		lastSelected = null;
 		lastTool = null;
 		editTextField.setText("");
-		createAndShowMap();	
+		updateTextInBackgroundThread(null);
 	}
 	
 

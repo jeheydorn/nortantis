@@ -42,7 +42,7 @@ public abstract class EditorTool
 	private boolean mapIsBeingDrawn;
 	Stack<MapEdits> undoStack;
 	Stack<MapEdits> redoStack;
-	MapEdits copyOfEditsWhenToolWasSelected;
+	protected MapEdits copyOfEditsWhenToolWasSelected;
 	
 	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
@@ -214,7 +214,7 @@ public abstract class EditorTool
 	            {	
 	            	initializeCenterEditsIfEmpty();
 	            	initializeRegionEditsIfEmpty();
-	            	if (copyOfEditsWhenToolWasSelected == null)
+	            	if (copyOfEditsWhenToolWasSelected == null)  
 	            	{
 	            		copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
 	            	}

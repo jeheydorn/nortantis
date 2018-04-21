@@ -160,8 +160,9 @@ public class EditorDialog extends JDialog
 
 		// Setup tools
 		tools = Arrays.asList(
-				new LandOceanTool(settings, this),
-				new TextTool(settings, this));
+				new TextTool(settings, this),
+				new LandOceanTool(settings, this)
+				);
 		currentTool = tools.get(0);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
