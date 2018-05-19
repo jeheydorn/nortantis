@@ -1,12 +1,14 @@
 package nortantis.editor;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -55,6 +57,13 @@ public class IconTool extends EditorTool
 	private JSlider densitySlider;
 	private Random rand;
 	private JPanel densityPanel;
+	private JRadioButton eraseButton;
+	private JRadioButton eraseAllButton;
+	private JRadioButton eraseMountainsButton;
+	private JRadioButton eraseHillsButton;
+	private JRadioButton eraseDunesButton;
+	private JRadioButton eraseTreesButton;
+	private JPanel eraseOptionsPanel;
 
 	public IconTool(MapSettings settings, EditorDialog parent)
 	{
@@ -143,6 +152,19 @@ public class IconTool extends EditorTool
 					updateTypePanels();
 				}
 			});
+		    
+			eraseButton = new JRadioButton("Erase");
+		    group.add(eraseButton);
+		    radioButtons.add(eraseButton);
+		    eraseButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent event)
+				{
+					updateTypePanels();
+				}
+			});
+
 	
 		    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, brushLabel, 
 		    		radioButtons);
@@ -153,8 +175,39 @@ public class IconTool extends EditorTool
 		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.sandDunesName);
 		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.treesName);
 		
+		// Eraser options
+		{
+		    JLabel typeLabel = new JLabel("What:");
+		    ButtonGroup group = new ButtonGroup();
+		    List<JRadioButton> radioButtons = new ArrayList<>();
+		    
+		    eraseAllButton = new JRadioButton("All");
+		    group.add(eraseAllButton);
+		    radioButtons.add(eraseAllButton);
+		    
+		    eraseMountainsButton = new JRadioButton(mountainsButton.getText());
+		    group.add(eraseMountainsButton);
+		    radioButtons.add(eraseMountainsButton);
+
+		    eraseHillsButton = new JRadioButton(hillsButton.getText());
+		    group.add(eraseHillsButton);
+		    radioButtons.add(eraseHillsButton);
+
+		    eraseDunesButton = new JRadioButton(dunesButton.getText());
+		    group.add(eraseDunesButton);
+		    radioButtons.add(eraseDunesButton);
+
+		    eraseTreesButton = new JRadioButton(treesButton.getText());
+		    group.add(eraseTreesButton);
+		    radioButtons.add(eraseTreesButton);
+
+		    eraseAllButton.setSelected(true);
+		    eraseOptionsPanel = EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, typeLabel, radioButtons);
+		}
+		
 		JLabel densityLabel = new JLabel("density:");
 		densitySlider = new JSlider(1, 20);
+		densitySlider.setPreferredSize(new Dimension(150, 50));
 		densityPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, densityLabel, densitySlider);
 		
 		mountainsButton.doClick();
@@ -188,6 +241,7 @@ public class IconTool extends EditorTool
 		duneTypes.panel.setVisible(dunesButton.isSelected());
 		treeTypes.panel.setVisible(treesButton.isSelected());
 		densityPanel.setVisible(treesButton.isSelected());
+		eraseOptionsPanel.setVisible(eraseButton.isSelected());
 	}
 	
 	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, String iconType)
@@ -252,6 +306,58 @@ public class IconTool extends EditorTool
 						Math.abs(rand.nextLong()));
 			}		
 		}
+		else if (eraseButton.isSelected())
+		{
+			if (eraseAllButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					settings.edits.centerEdits.get(center.index).trees = null;
+					settings.edits.centerEdits.get(center.index).icon = null;
+				}
+			}
+			else if (eraseMountainsButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
+					{
+						cEdit.icon = null;
+					}
+				}	
+			}
+			else if (eraseHillsButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Hill)
+					{
+						cEdit.icon = null;
+					}
+				}	
+			}
+			else if (eraseDunesButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
+					{
+						cEdit.icon = null;
+					}
+				}	
+			}
+			else if (eraseTreesButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					cEdit.trees = null;
+				}	
+			}
+		}
 		handleMapChange(selected);	
 	}
 
@@ -275,6 +381,12 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
+		highlightHoverCenters(e);
+		mapEditingPanel.repaint();
+	}
+	
+	private void highlightHoverCenters(MouseEvent e)
+	{
 		if (mapParts == null || mapParts.graph == null || mapWithouticons == null) 
 		{
 			// The map is not visible;
@@ -288,12 +400,12 @@ public class IconTool extends EditorTool
 		Set<Center> selected = getSelectedCenters(e.getPoint());
 		mapEditingPanel.addAllHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);	
-		mapEditingPanel.repaint();
 	}
 
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
+		highlightHoverCenters(e);
 		handleMouseClickOnMap(e);
 	}
 
