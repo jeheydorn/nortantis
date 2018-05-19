@@ -335,6 +335,11 @@ public class Background
 	BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors, 
 			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm)
 	{	
+		if (graph.regions.isEmpty())
+		{
+			return ImageHelper.deepCopy(fractalBG);
+		}
+		
 		Color[] regionBackgroundColors = graph.regions.stream().map(
 				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
 				

@@ -19,9 +19,9 @@ public class Center
     public ArrayList<Corner> corners = new ArrayList<>();
     public ArrayList<Center> neighbors = new ArrayList<>();
     public ArrayList<Edge> borders = new ArrayList<>();
-    public boolean border, isWater, coast;
-    public boolean mountain;
-    public boolean hill;
+    public boolean isBorder, isWater, isCoast;
+    public boolean isMountain;
+    public boolean isHill;
     public double elevation;
     public double moisture;
 	public Enum<?> biome;
@@ -35,8 +35,6 @@ public class Center
     // Random seeds
 	public long noisyEdgeSeed;
 	public long treeSeed;
-	public long mountainSeed;
-	public long hillSeed;
     
     public Center() {
     }

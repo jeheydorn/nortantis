@@ -128,11 +128,12 @@ public class MapCreator
 		if (mapParts == null || mapParts.iconDrawer == null)
 		{
 			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()));
-			needToAddIcons = true;
 			if (mapParts != null)
 			{
 				mapParts.iconDrawer = iconDrawer;
 			}
+			
+			needToAddIcons = !settings.edits.hasIconEdits;
 		}
 		else
 		{
@@ -146,6 +147,10 @@ public class MapCreator
 			iconDrawer.markMountains();
 			iconDrawer.markHills();
 			iconDrawer.findMountainAndHillGroups();
+		}
+		else
+		{
+			iconDrawer.clearAndAddIconsFromEdits(settings.edits);
 		}
 		
 		// Draw mask for land vs ocean.
@@ -245,15 +250,22 @@ public class MapCreator
 		}
 		else
 		{
-			if (mapParts == null || mapParts.mountainGroups == null)
+			if (mapParts != null)
 			{
-				throw new IllegalStateException("If mapParts.iconDrawer is given, you must also give mapParts.mountainGroups.");
+				mountainGroups = mapParts.mountainGroups;
 			}
-			mountainGroups = mapParts.mountainGroups;
+			else
+			{
+				// Create mountain groups for the text drawer.
+				mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
+			}
 		}
 		
-		Logger.println("Drawing all icons.");
-		iconDrawer.drawAllIcons(map, landBackground);
+		if (settings.drawIcons)
+		{
+			Logger.println("Drawing all icons.");
+			iconDrawer.drawAllIcons(map, landBackground);
+		}
 		
 		Logger.println("Drawing ocean.");
 		{

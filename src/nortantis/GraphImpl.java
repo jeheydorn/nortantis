@@ -148,8 +148,6 @@ public class GraphImpl extends VoronoiGraph
     	{
     		c.noisyEdgeSeed = rand.nextLong();
     		c.treeSeed = rand.nextLong();
-    		c.mountainSeed = rand.nextLong();
-    		c.hillSeed = rand.nextLong();
     	}
     }
     
@@ -360,7 +358,7 @@ public class GraphImpl extends VoronoiGraph
     	}
     	else if (!returnNullIfNotOnMap)
     	{
-        	Optional<Center> opt = centers.stream().filter(c -> c.border)
+        	Optional<Center> opt = centers.stream().filter(c -> c.isBorder)
             		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
         	return opt.get();
         	
@@ -488,7 +486,7 @@ public class GraphImpl extends VoronoiGraph
     {
         for (Center c : centers) 
         {
-         	if (c.border)
+         	if (c.isBorder)
                 g.setColor(Color.white);
          	else
          		g.setColor(Color.BLACK);
@@ -496,7 +494,7 @@ public class GraphImpl extends VoronoiGraph
             drawUsingTriangles(g, c, false);
         } 	
         
-        renderPolygons(g, c -> c.border ? Color.white : Color.black);
+        renderPolygons(g, c -> c.isBorder ? Color.white : Color.black);
     }
     
     public int getWidth()
@@ -534,7 +532,7 @@ public class GraphImpl extends VoronoiGraph
 			}
 			return ColorData.LAKE;
 		}
-		else if (p.coast)
+		else if (p.isCoast)
 		{
 			return ColorData.BEACH;
 		}
@@ -818,7 +816,7 @@ public class GraphImpl extends VoronoiGraph
 			numOcean += center.isWater ? 1 : 0;
 			numLand += !center.isWater ? 1 : 0;
 		}
-		c.coast = numOcean > 0 && numLand > 0;
+		c.isCoast = numOcean > 0 && numLand > 0;
     }
     
     private void assignBorderToCorners()
@@ -829,7 +827,7 @@ public class GraphImpl extends VoronoiGraph
 			{
 				if (corner.border)
 				{
-					c1.border = true;
+					c1.isBorder = true;
 					break;
 				}
 			}

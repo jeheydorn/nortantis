@@ -21,11 +21,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import nortantis.GraphImpl.ColorData;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.MapEdits;
 import util.Coordinate;
 import util.Function;
 import util.HashMapF;
@@ -42,6 +45,10 @@ public class IconDrawer
 	final double mountainElevationThreshold = 0.58;
 	final double hillElevationThreshold = 0.53;
 	final double treeScale = 4.0/8.0;
+	public final static String mountainsName = "mountains";
+	public final static String hillsName = "hills";
+	public final static String sandDunesName = "sand";
+	public final static String treesName = "trees";
 	double meanPolygonWidth;
 	// If a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
 	final double maxMeansToDraw = 5.0;
@@ -58,6 +65,11 @@ public class IconDrawer
 	private HashMapF<Center, List<IconDrawTask>> iconsToDraw;
 	GraphImpl graph;
 	Random rand;
+	/**
+	 * Used to store icons drawn when generating icons so they can be edited later by the editor.
+	 */
+	public Map<Integer, CenterIcon> centerIcons;
+	public Map<Integer, CenterTrees> trees;
 
 	public IconDrawer(GraphImpl graph, Random rand)
 	{
@@ -67,6 +79,8 @@ public class IconDrawer
 		
 		meanPolygonWidth = findMeanPolygonWidth(graph);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
+		centerIcons = new HashMap<>();
+		trees = new HashMap<>();
 	}
 
 	public static double findMeanPolygonWidth(GraphImpl graph)
@@ -92,9 +106,9 @@ public class IconDrawer
 		for (Center c : graph.centers)
 		{
 			if (c.elevation > mountainElevationThreshold
-					&& !c.coast && !c.border && c.findWidth() < maxSizeToDrawIcon)
+					&& !c.isCoast && !c.isBorder && c.findWidth() < maxSizeToDrawIcon)
 			{
-				c.mountain = true;
+				c.isMountain = true;
 			}
 		}
 	}
@@ -104,10 +118,10 @@ public class IconDrawer
 		for (Center c : graph.centers)
 		{
 			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold
-					&& !c.coast && c.findWidth() < maxSizeToDrawIcon)
+					&& !c.isCoast && c.findWidth() < maxSizeToDrawIcon)
 				
 			{
-				c.hill = true;
+				c.isHill = true;
 			}
 		}
 	}
@@ -123,7 +137,7 @@ public class IconDrawer
 				{
 					public Boolean apply(Center center)
 					{
-						return center.mountain;
+						return center.isMountain;
 					}
 				});
 		
@@ -131,7 +145,7 @@ public class IconDrawer
 		{
 			public Boolean apply(Center center)
 			{
-				return center.mountain || center.hill;
+				return center.isMountain || center.isHill;
 			}
 		});
 
@@ -148,7 +162,68 @@ public class IconDrawer
 		
 		return new Pair<>(mountainGroups, mountainAndHillGroups);
 		
-}
+	}
+	
+	/**
+	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them.
+	 */
+	public void clearAndAddIconsFromEdits(MapEdits edits)
+	{
+		iconsToDraw.clear();
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups(mountainsName);
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = loadIconGroups(hillsName);
+		List<Tuple2<BufferedImage, BufferedImage>> duneImages = loadIconGroups(sandDunesName).get(sandDunesName);
+		int duneWidth = findDuneWidth();
+		
+		trees.clear();
+		
+		for (CenterEdit cEdit : edits.centerEdits)
+		{
+			Center center = graph.centers.get(cEdit.index);
+			if (cEdit.icon != null)
+			{
+				if (cEdit.icon.iconType == CenterIconType.Mountain)
+				{
+					if (mountainImagesById.containsKey(cEdit.icon.iconGroupId) && mountainImagesById.get(cEdit.icon.iconGroupId).size() > 0)
+					{
+						int scaledSize = findScaledMountainSize(center);
+						BufferedImage mountainImage = mountainImagesById.get(cEdit.icon.iconGroupId).get(
+								cEdit.icon.iconIndex % mountainImagesById.get(cEdit.icon.iconGroupId).size()).getFirst();
+						BufferedImage mask = mountainImagesById.get(cEdit.icon.iconGroupId).get(
+								cEdit.icon.iconIndex % mountainImagesById.get(cEdit.icon.iconGroupId).size()).getSecond();
+						iconsToDraw.getOrCreate(center).add(new IconDrawTask(mountainImage, 
+			       				mask, center.loc, scaledSize, true));
+					}
+				}
+				else if (cEdit.icon.iconType == CenterIconType.Hill)
+				{
+					int scaledSize = findScaledHillSize(center);
+					BufferedImage hillImage = hillImagesById.get(cEdit.icon.iconGroupId).get(
+							cEdit.icon.iconIndex % hillImagesById.get(cEdit.icon.iconGroupId).size()).getFirst();
+					BufferedImage mask = hillImagesById.get(cEdit.icon.iconGroupId).get(
+							cEdit.icon.iconIndex % hillImagesById.get(cEdit.icon.iconGroupId).size()).getSecond();
+					iconsToDraw.getOrCreate(center).add(new IconDrawTask(hillImage, 
+		       				mask, center.loc, scaledSize, true));				
+				}
+				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0)
+				{
+					BufferedImage duneImage = duneImages.get(
+							cEdit.icon.iconIndex % duneImages.size()).getFirst();
+					BufferedImage mask = duneImages.get(
+							cEdit.icon.iconIndex % duneImages.size()).getSecond();
+					iconsToDraw.getOrCreate(center).add(new IconDrawTask(duneImage, 
+		       				mask, center.loc, duneWidth, true));								
+				}
+			}
+			
+			if (cEdit.trees != null)
+			{
+				trees.put(cEdit.index, cEdit.trees);
+			}
+		}
+
+		drawTreesForAllCenters();
+	}
 
 	/**
 	 * Finds groups of centers that accepted according to a given function. A group is a set of centers
@@ -315,7 +390,7 @@ public class IconDrawer
 	 * are drawn in front of those that are higher.
 	 */
 	public void drawAllIcons(BufferedImage map, BufferedImage background)
-	{
+	{	
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
 		{
@@ -352,6 +427,10 @@ public class IconDrawer
 		}		
 	}
 
+	/**
+	 * Creates tasks for drawing mountains and hills.
+	 * @return
+	 */
 	public List<Set<Center>> addMountainsAndHills()
 	{		
 		Pair<List<Set<Center>>> pair = findMountainAndHillGroups();
@@ -359,7 +438,6 @@ public class IconDrawer
 		List<Set<Center>> mountainGroups = pair.getFirst();
 		// All mountain ranges and smaller groups of mountains extended to include nearby hills.
 		List<Set<Center>> mountainAndHillGroups = pair.getSecond();
-
 		
         // Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
         ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups("mountains");
@@ -395,10 +473,7 @@ public class IconDrawer
         for (Set<Center> group : mountainAndHillGroups)
         {
         	for (Center c : group)
-        	{
-        		// Find the center's size along the x axis.
-	        	double cSize = findCenterWidthBetweenNeighbors(c);
-	        	
+        	{	
 	        	String filenameRangeId = rangeMap.get(c.mountainRangeId);
 	        	if ((filenameRangeId == null))
 	        	{
@@ -407,7 +482,7 @@ public class IconDrawer
 	        		rangeMap.put(c.mountainRangeId, filenameRangeId);
 	        	}
 
-	        	if (c.mountain)
+	        	if (c.isMountain)
 	        	{        		
 		        	List<Tuple2<BufferedImage, BufferedImage>> imagesInRange =
 		        			mountainImagesById.get(filenameRangeId);
@@ -418,7 +493,7 @@ public class IconDrawer
 		        	// is drawn at.
 	           		int i = rand.nextInt(imagesInRange.size());
 
-	           		int scaledSize = (int)(cSize * mountainScale);
+	           		int scaledSize = findScaledMountainSize(c);
 
 	           		// Make sure the image will be at least 1 pixel wide.
 		           	if (scaledSize >= 1)
@@ -426,9 +501,10 @@ public class IconDrawer
 			           	// Draw the image such that it is centered in the center of c.
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInRange.get(i).getFirst(), 
 		           				imagesInRange.get(i).getSecond(), c.loc, scaledSize, true));
+		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, filenameRangeId, i));
 		           	}
 		        }
-	         	else if (c.hill)
+	         	else if (c.isHill)
 	         	{
 		        	List<Tuple2<BufferedImage, BufferedImage>> imagesInGroup = 
 		        			hillImagesById.get(filenameRangeId);
@@ -437,13 +513,14 @@ public class IconDrawer
 		        	{	        		
 			        	int i = rand.nextInt(imagesInGroup.size());
 
-		           		int scaledSize = (int)(cSize * hillScale);
+		           		int scaledSize = findScaledHillSize(c);
 			        	
 		           		// Make sure the image will be at least 1 pixel wide.
 			           	if (scaledSize >= 1)
 			           	{
 			           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInGroup.get(i).getFirst(), 
 			           				imagesInGroup.get(i).getSecond(), c.loc, scaledSize, true));
+			           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, filenameRangeId, i));
 			           	}
 		        	}         		
 	         	}
@@ -452,6 +529,20 @@ public class IconDrawer
         
         return mountainGroups;
    	}
+	
+	private int findScaledMountainSize(Center c)
+	{
+		// Find the center's size along the x axis.
+    	double cSize = findCenterWidthBetweenNeighbors(c);
+    	return (int)(cSize * mountainScale);
+	}
+	
+	private int findScaledHillSize(Center c)
+	{
+		// Find the center's size along the x axis.
+    	double cSize = findCenterWidthBetweenNeighbors(c);
+    	return (int)(cSize * hillScale);
+	}
 	
 	public void addSandDunes()
 	{
@@ -484,20 +575,7 @@ public class IconDrawer
    		double duneProbabilityPerBiomeGroup = 0.6;
    		double duneProbabilityPerCenter = 0.5;
    		
-   		// Find the average center width.
-   		double sum = 0;
-   		double count = 0;
-		for (Set<Center> group : groups)
-		{
-			for (Center c : group)
-			{
-				sum += c.findWidth();
-				count++;
-			}
-		}
-		double averageWidth = sum/count;
-		
-		int width = (int)(averageWidth * 1.5);
+		int width = findDuneWidth();
 		if (width == 0)
 			return;
 		
@@ -514,15 +592,94 @@ public class IconDrawer
 						
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i).getFirst(), 
 		           				duneImages.get(i).getSecond(), c.loc, width, true));
+		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
 					}
 				}
 				
 			}
 		}
 	}
+	
+	private int findDuneWidth()
+	{
+		double averageWidth = findMeanPolygonWidth(graph);
+		return (int)(averageWidth * 1.5);
+	}
 		
-	public void addTrees()
-			throws IOException
+	public void addTrees() throws IOException
+	{
+   		List<ForestType> forestTypes = new ArrayList<>();
+        forestTypes.add(new ForestType("deciduous", GraphImpl.ColorData.TEMPERATE_RAIN_FOREST, 0.5, 1.0));
+        forestTypes.add(new ForestType("pine", GraphImpl.ColorData.TAIGA, 1.0, 1.0));
+        forestTypes.add(new ForestType("pine", GraphImpl.ColorData.SHRUBLAND, 1.0, 1.0));
+        forestTypes.add(new ForestType("pine", GraphImpl.ColorData.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25));
+        forestTypes.add(new ForestType("cacti", GraphImpl.ColorData.HIGH_TEMPERATE_DESERT, 1.0/8.0, 0.1));
+
+		addCenterTrees(forestTypes);
+		drawTreesForAllCenters();
+	}
+	
+	private void addCenterTrees(List<ForestType> forestTypes)
+	{	
+		trees.clear();
+        
+        for (final ForestType forest : forestTypes)
+        {
+        	if (forest.biomeFrequency != 1.0)
+        	{
+        		List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, 
+        				new Function<Center, Boolean>()
+        				{
+        					public Boolean apply(Center center)
+        					{
+        						return center.biome.equals(forest.biome);
+        					}
+        				});
+        		for (Set<Center> group : groups)
+        		{
+        			if (rand.nextDouble() < forest.biomeFrequency)
+        			{
+        				for (Center c : group)
+        				{	        	
+               				if (canGenerateTreesOnCenter(c))
+               				{
+               				   trees.put(c.index, new CenterTrees(forest.name, forest.density, c.treeSeed));
+               				}
+        				}
+        			}
+        		}
+        	}
+        }
+ 
+        // Process forest types that don't use biome groups separately for efficiency.
+        for (Center c : graph.centers)
+        {
+    		for (ForestType forest : forestTypes)
+    		{
+    			if (forest.biomeFrequency == 1.0)
+    			{		
+        			if (forest.biome.equals(c.biome))
+        			{
+        				if (canGenerateTreesOnCenter(c))
+        				{
+        					trees.put(c.index, new CenterTrees(forest.name, forest.density, c.treeSeed));
+        				}
+        			}
+    			}
+      			
+ 	        }
+        }
+	}
+	
+	private boolean canGenerateTreesOnCenter(Center c)
+	{
+		return c.elevation < mountainElevationThreshold && !c.isWater && !c.isCoast;
+	}
+	
+	/**
+	 * Draws all trees in this.trees.
+	 */
+	public void drawTreesForAllCenters()
 	{
 		// Find the average width of all Centers.
 		double sum = 0;
@@ -532,8 +689,8 @@ public class IconDrawer
 		}
 		double avgHeight = sum / graph.centers.size();
 		
-        // Load the images and masks.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = loadIconGroups("trees");
+	       // Load the images and masks.
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = loadIconGroups(treesName);
         if (treesById == null || treesById.isEmpty())
         {
 			Logger.println("Trees will not be drawn because no tree images were found.");
@@ -555,103 +712,56 @@ public class IconDrawer
 		       	tuple.setSecond(ImageHelper.scaleByHeight(tuple.getSecond(), scaledHeight));
         	}
         }
-   		
-
-   		List<ForestType> forestTypes = new ArrayList<>();
-        forestTypes.add(new ForestType(GraphImpl.ColorData.TEMPERATE_RAIN_FOREST, 0.5, 1.0,
-        		treesById.get("deciduous")));
-        forestTypes.add(new ForestType(GraphImpl.ColorData.TAIGA, 1.0, 1.0, treesById.get("pine")));
-        forestTypes.add(new ForestType(GraphImpl.ColorData.SHRUBLAND, 1.0, 1.0, treesById.get("pine")));
-        forestTypes.add(new ForestType(GraphImpl.ColorData.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25, treesById.get("pine")));
-        forestTypes.add(new ForestType(GraphImpl.ColorData.HIGH_TEMPERATE_DESERT, 1.0/8.0, 0.1,
-        		treesById.get("cacti")));
- 
-        // Store which corners have had trees drawn so that I don't draw them multiple times.
+		
+         // Store which corners have had trees drawn so that I don't draw them multiple times.
         boolean[] cornersWithTreesDrawn = new boolean[graph.corners.size()];
         
-        for (final ForestType forest : forestTypes)
-        {
-        	if (forest.biomeFrequency != 1.0)
-        	{
-        		List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, 
-        				new Function<Center, Boolean>()
-        				{
-        					public Boolean apply(Center center)
-        					{
-        						return center.biome.equals(forest.biome);
-        					}
-        				});
-        		for (Set<Center> group : groups)
-        		{
-        			if (rand.nextDouble() < forest.biomeFrequency)
-        			{
-        				for (Center c : group)
-        				{	        	
-         					drawTreesAtCenterAndCorners(graph, forest, avgHeight,
-         							cornersWithTreesDrawn, c);
-        				}
-        			}
-        		}
-        	}
-        }
- 
-        // Process forest types that don't use biome groups separately for efficiency.
         for (Center c : graph.centers)
         {
-    		for (ForestType forest : forestTypes)
-    		{
-    			if (forest.biomeFrequency == 1.0)
-    			{		
-        			if (forest.biome.equals(c.biome))
-        			{
-        				drawTreesAtCenterAndCorners(graph, forest, avgHeight, 
-        						cornersWithTreesDrawn, c);
-        			}
-    			}
-      			
- 	        }
+        	CenterTrees cTrees = trees.get(c.index);
+        	if (cTrees != null)
+        	{
+	        	drawTreesAtCenterAndCorners(graph, cTrees.density, treesById.get(cTrees.treeType), avgHeight,
+							cornersWithTreesDrawn, c, cTrees.randomSeed);
+        	}
         }
 	}
 
 	private void drawTreesAtCenterAndCorners(GraphImpl graph,
-			ForestType forest, double avgCenterHeight, boolean[] cornersWithTreesDrawn, Center center)
+			double density, List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double avgCenterHeight, 
+			boolean[] cornersWithTreesDrawn, Center center, long randomSeed)
 	{
-    	if (center.biome == forest.biome && center.elevation < mountainElevationThreshold 
-    			&& !center.isWater && !center.coast)
-    	{
-			drawTrees(graph, forest.imagesAndMasks, avgCenterHeight, center.loc, forest.density, center);
-				
-			// Draw trees at the neighboring corners too.
-			for (Corner corner : center.corners)
-			{
-				if (!cornersWithTreesDrawn[corner.index])
-				{
-					drawTrees(graph, forest.imagesAndMasks, avgCenterHeight, corner.loc,
-							forest.density, center);
-					cornersWithTreesDrawn[corner.index] = true;
-				}
-			}
-    	}
+		Random rand = new Random(randomSeed);
+		drawTrees(graph, imagesAndMasks, avgCenterHeight, center.loc, density, center, rand);
 			
+		// Draw trees at the neighboring corners too.
+		for (Corner corner : center.corners)
+		{
+			if (!cornersWithTreesDrawn[corner.index])
+			{
+				drawTrees(graph, imagesAndMasks, avgCenterHeight, corner.loc,
+						density, center, rand);
+				cornersWithTreesDrawn[corner.index] = true;
+			}
+		}
 	}
 	
 	private class ForestType
 	{
+		String name;
 		GraphImpl.ColorData biome;
 		double density;
-		List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks;
 		double biomeFrequency;
 		
 		/**
 		 * @param biomeProb If this is not 1.0, groups of centers of biome type "biome" will be found
 		 * and each groups will have this type of forest with probability biomeProb.
 		*/
-		public ForestType(GraphImpl.ColorData biome, double density, double biomeFrequency, 
-				List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks)
+		public ForestType(String treeType, GraphImpl.ColorData biome, double density, double biomeFrequency)
 		{
+			this.name = treeType;
 			this.biome = biome;
 			this.density = density;
-			this.imagesAndMasks = imagesAndMasks;
 			this.biomeFrequency = biomeFrequency;
 		}
 	};
@@ -678,7 +788,7 @@ public class IconDrawer
 
 	private void drawTrees(GraphImpl graph,
 			List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double cSize, Point loc,
-			double forestDensity, Center center)
+			double forestDensity, Center center, Random rand)
 	{
 		if (imagesAndMasks == null || imagesAndMasks.isEmpty())
 		{
@@ -731,31 +841,22 @@ public class IconDrawer
 	}
 	
 	/**
-	 * Loads groups if icons, using iconType as a key word to filter on.
+	 * Loads groups if icons, using iconType as a key word to filter on. 
+	 * The second image in the tuples is the mask, which is generated based on the image loaded from disk.
 	 */
 	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> loadIconGroups(final String iconType)
 	{
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> imagesPerGroup = new ListMap<>();
 
-		String[] filenames = new File(Paths.get("assets", "icons", iconType).toString()).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				return !name.contains("_mask.");
-			}
-		});
-		
-		if (filenames == null)
+		String[] fileNames = getIconGroupFileNames(iconType);
+		if (fileNames.length == 0)
 		{
 			return imagesPerGroup;
 		}
-		
-		Arrays.sort(filenames);
 
-		for (String filename : filenames)
+		for (String fileName : fileNames)
 		{
-			Path path = Paths.get("assets", "icons", iconType, filename);
+			Path path = Paths.get("assets", "icons", iconType, fileName);
 			if (!ImageCache.getInstance().containsImageFile(path))
 			{
 				Logger.println("Loading icon: " + path);
@@ -766,15 +867,50 @@ public class IconDrawer
 			icon = ImageCache.getInstance().getImageFromFile(path);
 			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
 
-			String rangeId = filename.substring(0, filename.indexOf('_'));
+			String rangeId = fileName.substring(0, fileName.indexOf('_'));
 			if (rangeId == null || rangeId == "")
 			{
-				throw new RuntimeException("The file name of the icon " + filename + " must start with a group id followed by an underscore.");
+				throw new RuntimeException("The file name of the icon " + fileName + " must start with a group id followed by an underscore.");
 			}
 
 			imagesPerGroup.add(rangeId, new Tuple2<>(icon, mask));
 		}
 		return imagesPerGroup;
+	}
+	
+	public static String[] getIconGroupFileNames(String iconType)
+	{
+		String[] fileNames = new File(Paths.get("assets", "icons", iconType).toString()).list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File dir, String name)
+			{
+				return !name.contains("_mask.");
+			}
+		});
+		
+		if (fileNames == null)
+		{
+			return new String[] {};
+		}
+		
+		Arrays.sort(fileNames);
+		return fileNames;
+	}
+	
+	public static Set<String> getDistinctIconGroupIds(String iconType)
+	{ 
+		TreeSet<String> set = new TreeSet<>();
+		for (String fileName : getIconGroupFileNames(iconType))
+		{
+			int index = fileName.indexOf('_');
+			if (index > 0)
+			{
+				set.add(fileName.substring(0, index));
+			}
+		}
+		
+		return set;
 	}
 	
 	private static final int opaqueThreshold = 50;

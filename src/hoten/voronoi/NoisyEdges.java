@@ -62,7 +62,7 @@ public class NoisyEdges
 				{
 					minLength = 3;
 				}
-				if (edge.d0.border != edge.d1.border)
+				if (edge.d0.isBorder != edge.d1.isBorder)
 				{
 					minLength = 3;
 				}

@@ -263,7 +263,6 @@ public class TextTool extends EditorTool
 				catch (Exception e)
 				{
 					e.printStackTrace();
-					//ConcurrencyUtils.shutdownAndAwaitTermination();
 			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				} 
 	        	
@@ -509,13 +508,6 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-	}
-
-	@Override
-	public void onSelected()
-	{
-		mapEditingPanel.setHighlightColor(new Color(255,227,74));
-		
 	}
 
 	@Override

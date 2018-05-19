@@ -26,6 +26,9 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
@@ -36,9 +39,6 @@ import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
 import util.JComboBoxFixed;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JMenu;
 
 @SuppressWarnings("serial")
 public class EditorDialog extends JDialog
@@ -161,9 +161,10 @@ public class EditorDialog extends JDialog
 		// Setup tools
 		tools = Arrays.asList(
 				new TextTool(settings, this),
-				new LandOceanTool(settings, this)
+				new LandOceanTool(settings, this),
+				new IconTool(settings, this)
 				);
-		currentTool = tools.get(0);
+		currentTool = tools.get(2);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);

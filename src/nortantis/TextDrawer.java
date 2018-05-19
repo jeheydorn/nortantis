@@ -186,6 +186,10 @@ public class TextDrawer
 		}
 		else
 		{
+			if (mountainRanges == null)
+			{
+				throw new IllegalStateException("mountainRanges must be given when generating text.");
+			}
 			generateText(map, graph, mountainRanges);
 		}
 		

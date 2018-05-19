@@ -8,8 +8,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -49,7 +48,6 @@ public class LandOceanTool extends EditorTool
 	
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
-	private List<Integer> brushSizes;
 
 	public LandOceanTool(MapSettings settings, EditorDialog dialog)
 	{
@@ -76,7 +74,7 @@ public class LandOceanTool extends EditorTool
 		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
 		
 		// Tools
-		JLabel toolsLabel = new JLabel("Brush:");
+		JLabel brushLabel = new JLabel("Brush:");
 		List<JComponent> radioButtons = new ArrayList<>();
 		ButtonGroup group = new ButtonGroup();
 		oceanButton = new JRadioButton("Ocean");
@@ -135,7 +133,7 @@ public class LandOceanTool extends EditorTool
 		    landButton.addActionListener(listener);
 	    }
 	    oceanButton.setSelected(true); // Selected by default
-	    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, toolsLabel, radioButtons);
+	    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, brushLabel, radioButtons);
 	    
 	    // Color chooser
 	    if (settings.drawRegionColors)
@@ -167,8 +165,7 @@ public class LandOceanTool extends EditorTool
 
 	    JLabel brushSizeLabel = new JLabel("Brush size:");
 	    brushSizeComboBox = new JComboBox<>();
-	    brushSizes = Arrays.asList(1, 25, 70);
-	    int largest = 70;
+	    int largest = Collections.max(brushSizes);
 	    for (int brushSize : brushSizes)
 	    {
 	    	if (brushSize == 1)
@@ -319,38 +316,7 @@ public class LandOceanTool extends EditorTool
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
 	{
-		Set<Center> selected = new HashSet<Center>();
-		
-		if (brushSizeComboBox.getSelectedIndex() == 0)
-		{
-			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
-			if (center != null)
-			{
-				selected.add(center);
-			}
-			return selected;
-		}
-		
-		int brushRadius = brushSizes.get(brushSizeComboBox.getSelectedIndex())/2;
-		for (int x = point.x - brushRadius; x < point.x + brushRadius; x++)
-		{
-			for (int y = point.y - brushRadius; y < point.y + brushRadius; y++)
-			{
-				float deltaX = (float)(point.x - x);
-				float deltaXSquared = deltaX * deltaX;
-				float deltaY = (float)(point.y - y);
-				float deltaYSquared = deltaY * deltaY;
-				if (Math.sqrt(deltaXSquared + deltaYSquared) <= brushRadius)
-				{
-					Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(x, y));
-					if (center != null)
-					{
-						selected.add(center);
-					}
-				}
-			}
-		}
-		return selected;
+		return getSelectedCenters(point, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
 	}
 	
 	private int getOrCreateRegionIdForEdit(Center center, Color color)
@@ -490,13 +456,6 @@ public class LandOceanTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-	}
-
-	@Override
-	public void onSelected()
-	{
-		mapEditingPanel.setHighlightColor(new Color(255,227,74));
-		
 	}
 
 	@Override

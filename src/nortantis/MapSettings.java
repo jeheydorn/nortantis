@@ -93,6 +93,7 @@ public class MapSettings implements Serializable
 	public String borderType;
 	public int borderWidth;
 	public int frayedBorderSize;
+	public boolean drawIcons = true;
 	
 	public MapSettings()
 	{
@@ -159,11 +160,13 @@ public class MapSettings implements Serializable
 		result.setProperty("borderType", borderType);
 		result.setProperty("borderWidth", borderWidth + "");
 		result.setProperty("frayedBorderSize", frayedBorderSize + "");
+		result.setProperty("drawIcons", drawIcons + "");
 		
 		// User edits.
 		result.setProperty("editedText", editedTextToJson());
 		result.setProperty("centerEdits", centerEditsToJson());
 		result.setProperty("regionEdits", regionEditsToJson());
+		result.setProperty("hasIconEdits", edits.hasIconEdits + "");
 		
 		return result;
 	}
@@ -196,6 +199,23 @@ public class MapSettings implements Serializable
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("isWater", centerEdit.isWater);
 			mpObj.put("regionId", centerEdit.regionId);
+			// TODO put back
+			if (centerEdit.icon != null)
+			{
+				JSONObject iconObj = new JSONObject();
+				iconObj.put("iconGroupId", centerEdit.icon.iconGroupId);
+				iconObj.put("iconIndex", centerEdit.icon.iconIndex);
+				iconObj.put("iconType", centerEdit.icon.iconType.toString());
+				mpObj.put("icon", iconObj);
+			}
+			if (centerEdit.trees != null)
+			{
+				JSONObject treesObj = new JSONObject();
+				treesObj.put("treeType", centerEdit.trees.treeType);
+				treesObj.put("density", centerEdit.trees.density);
+				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
+				mpObj.put("trees", treesObj);
+			}
 			list.add(mpObj);
 		}
 		String json = list.toJSONString();
@@ -510,6 +530,14 @@ public class MapSettings implements Serializable
 			String str = props.getProperty("brightnessRange");
 			return str == null ? 25 : Integer.parseInt(str); // default value
 		});
+		drawIcons = getProperty("drawIcons", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String str = props.getProperty("drawIcons");
+				return str == null ? true : parseBoolean(str);
+			}
+		});
 		
 	
 		drawText = getProperty("drawText", new Function0<Boolean>()
@@ -691,7 +719,32 @@ public class MapSettings implements Serializable
 					JSONObject jsonObj = (JSONObject) obj;
 					boolean isWater = (boolean) jsonObj.get("isWater");
 					Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
-					result.add(new CenterEdit(index, isWater, regionId));
+					
+					CenterIcon icon = null;
+					{
+						JSONObject iconObj = (JSONObject)jsonObj.get("icon");
+						if (iconObj != null)
+						{
+							String iconGroupId = (String)iconObj.get("iconGroupId");
+							int iconIndex = (int)(long)iconObj.get("iconIndex");
+							CenterIconType iconType = CenterIconType.valueOf((String)iconObj.get("iconType")); 
+							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+						}
+					}
+					
+					CenterTrees trees = null;
+					{
+						JSONObject treesObj = (JSONObject)jsonObj.get("trees");
+						if (treesObj != null)
+						{
+							String treeType = (String)treesObj.get("treeType");
+							double density = (Double)treesObj.get("density");
+							long randomSeed = (Long)treesObj.get("randomSeed");
+							trees = new CenterTrees(treeType, density, randomSeed);
+						}
+					}
+					
+					result.add(new CenterEdit(index, isWater, regionId, icon, trees));
 					index++;
 				}
 				
@@ -719,7 +772,18 @@ public class MapSettings implements Serializable
 				return result;
 			}
 		});
-}
+		
+		edits.hasIconEdits = getProperty("hasIconEdits", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String value = props.getProperty("hasIconEdits");
+				if (value == null)
+					return false; // default value
+				return  parseBoolean(value);
+			}
+		});
+	}
 	
 	private static boolean parseBoolean(String str)
 	{

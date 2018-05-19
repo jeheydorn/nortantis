@@ -7,7 +7,10 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 
 import javax.swing.BorderFactory;
@@ -20,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 
+import hoten.voronoi.Center;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
@@ -43,6 +47,7 @@ public abstract class EditorTool
 	Stack<MapEdits> undoStack;
 	Stack<MapEdits> redoStack;
 	protected MapEdits copyOfEditsWhenToolWasSelected;
+	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	
 	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
@@ -80,8 +85,6 @@ public abstract class EditorTool
 	
 	public abstract void onSwitchingAway();
 	
-	public abstract void onSelected();
-	
 	protected abstract JPanel createToolsOptionsPanel();
 	
 	private static final int labelWidth = 80;
@@ -111,7 +114,7 @@ public abstract class EditorTool
 		return panel;
 	}
 	
-	protected static void addLabelAndComponentsToPanel(JPanel panelToAddTo, JLabel label, List<JComponent> components)
+	protected static <T extends JComponent> JPanel addLabelAndComponentsToPanel(JPanel panelToAddTo, JLabel label, List<T> components)
 	{		
 		JPanel compPanel = new JPanel();
 		compPanel.setLayout(new BoxLayout(compPanel, BoxLayout.Y_AXIS));
@@ -120,7 +123,7 @@ public abstract class EditorTool
 			compPanel.add(comp);
 		}
 		
-		addLabelAndComponentToPanel(panelToAddTo, label, compPanel);
+		return addLabelAndComponentToPanel(panelToAddTo, label, compPanel);
 	}
 
 	
@@ -214,19 +217,14 @@ public abstract class EditorTool
 	            {	
 	            	initializeCenterEditsIfEmpty();
 	            	initializeRegionEditsIfEmpty();
+	            	
 	            	if (copyOfEditsWhenToolWasSelected == null)  
 	            	{
 	            		copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
 	            	}
 	            	map = onBeforeShowMap(map, mapNeedsRedraw);
 	            	
-	            	mapEditingPanel.image = map;
-	            	mapEditingPanel.repaint();
-	            	// Tell the scroll pane to update itself.
-	            	mapEditingPanel.revalidate();
-	            }
-	            
-	            parent.enableOrDisableToolToggleButtons(true);
+	            	mapEditingPanel.image = map; parent.enableOrDisableToolToggleButtons(true);
 
 	            mapIsBeingDrawn = false;
 	            
@@ -234,8 +232,12 @@ public abstract class EditorTool
 	            {
 	            	createAndShowMap();
 	            }
-	            
-            	mapNeedsRedraw = false;
+             	mapNeedsRedraw = false;
+     
+	            mapEditingPanel.repaint();
+	            // Tell the scroll pane to update itself.
+	            mapEditingPanel.revalidate();
+	            }
 	        }
 	 
 	    };
@@ -271,7 +273,7 @@ public abstract class EditorTool
 	{
 		if (settings.edits.centerEdits.isEmpty())
 		{
-			settings.edits.initializeCenterEdits(mapParts.graph.centers);			
+			settings.edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);			
 		}
 	}
 	
@@ -317,6 +319,42 @@ public abstract class EditorTool
 	{
 		undoStack.clear();
 		redoStack.clear();
+	}
+
+	protected Set<Center> getSelectedCenters(java.awt.Point point, int brushDiameter)
+	{
+		Set<Center> selected = new HashSet<Center>();
+		
+		if (brushDiameter <= 1)
+		{
+			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+			if (center != null)
+			{
+				selected.add(center);
+			}
+			return selected;
+		}
+		
+		int brushRadius = brushDiameter/2;
+		for (int x = point.x - brushRadius; x < point.x + brushRadius; x++)
+		{
+			for (int y = point.y - brushRadius; y < point.y + brushRadius; y++)
+			{
+				float deltaX = (float)(point.x - x);
+				float deltaXSquared = deltaX * deltaX;
+				float deltaY = (float)(point.y - y);
+				float deltaYSquared = deltaY * deltaY;
+				if (Math.sqrt(deltaXSquared + deltaYSquared) <= brushRadius)
+				{
+					Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(x, y));
+					if (center != null)
+					{
+						selected.add(center);
+					}
+				}
+			}
+		}
+		return selected;
 	}
 
 

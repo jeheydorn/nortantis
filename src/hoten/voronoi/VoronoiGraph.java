@@ -777,7 +777,7 @@ public abstract class VoronoiGraph {
     	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
     	for (Center c : centersToRender)
     	{
-    		if (c.border)
+    		if (c.isBorder)
     		{
 				Color color = colorChooser.apply(c);
 				if (color != null)
