@@ -2044,7 +2044,7 @@ public class RunSwing
 		drawBorderCheckbox.doClick();
 		
 		edits = settings.edits;
-		clearEditsMenuItem.setEnabled(!edits.text.isEmpty());
+		clearEditsMenuItem.setEnabled(!edits.text.isEmpty() || !edits.centerEdits.isEmpty());
 		
 		updateFieldsWhenEditsChange();
 		updateBackgroundImageDisplays();

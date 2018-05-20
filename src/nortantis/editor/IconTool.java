@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -79,9 +78,7 @@ public class IconTool extends EditorTool
 
 	@Override
 	public void onBeforeSaving()
-	{
-		// TODO Auto-generated method stub
-		
+	{		
 	}
 
 	@Override
@@ -511,9 +508,8 @@ public class IconTool extends EditorTool
 	
 	@Override
 	protected void onAfterUndoRedo()
-	{
-		// TODO Auto-generated method stub
-		
+	{	
+		updateIconsInBackgroundThread();
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)

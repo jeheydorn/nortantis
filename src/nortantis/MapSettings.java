@@ -199,7 +199,6 @@ public class MapSettings implements Serializable
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("isWater", centerEdit.isWater);
 			mpObj.put("regionId", centerEdit.regionId);
-			// TODO put back
 			if (centerEdit.icon != null)
 			{
 				JSONObject iconObj = new JSONObject();

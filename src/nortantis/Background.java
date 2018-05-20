@@ -337,7 +337,8 @@ public class Background
 	{	
 		if (graph.regions.isEmpty())
 		{
-			return ImageHelper.deepCopy(fractalBG);
+			return ImageHelper.convertImageToType(fractalBG, BufferedImage.TYPE_INT_RGB);
+			//return ImageHelper.deepCopy(fractalBG);
 		}
 		
 		Color[] regionBackgroundColors = graph.regions.stream().map(
