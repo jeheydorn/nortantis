@@ -197,6 +197,7 @@ public class TextTool extends EditorTool
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
 		settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean = true;
+		settings.drawIcons = true;
 	}
 	
 	@Override

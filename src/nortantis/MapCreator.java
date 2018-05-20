@@ -25,6 +25,7 @@ import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
 import util.ImageHelper;
 import util.Logger;
+import util.Pair;
 import util.Range;
 
 public class MapCreator
@@ -142,13 +143,20 @@ public class MapCreator
 			r.nextLong(); // Use the random number generator the same as if I had created the icon drawer.
 		}
 
-		if (needToAddIcons)
+		iconDrawer.markMountains();
+		iconDrawer.markHills();
+		Pair<List<Set<Center>>> pair = iconDrawer.findMountainAndHillGroups();
+		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
+		List<Set<Center>> mountainGroups = pair.getFirst();
+		// All mountain ranges and smaller groups of mountains extended to include nearby hills.
+		List<Set<Center>> mountainAndHillGroups = pair.getSecond();
+		pair = null;
+		if (mapParts != null)
 		{
-			iconDrawer.markMountains();
-			iconDrawer.markHills();
-			iconDrawer.findMountainAndHillGroups();
+			mapParts.mountainGroups = mountainGroups;
 		}
-		else
+		
+		if (!needToAddIcons)
 		{
 			iconDrawer.clearAndAddIconsFromEdits(settings.edits);
 		}
@@ -234,11 +242,11 @@ public class MapCreator
 		Logger.println("Adding rivers.");
 		drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
 
-		List<Set<Center>> mountainGroups;
+		
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
-			mountainGroups = iconDrawer.addMountainsAndHills();
+			iconDrawer.addMountainsAndHills(mountainGroups, mountainAndHillGroups);
 			if (mapParts != null)
 				mapParts.mountainGroups = mountainGroups;
 
@@ -250,15 +258,8 @@ public class MapCreator
 		}
 		else
 		{
-			if (mapParts != null)
-			{
-				mountainGroups = mapParts.mountainGroups;
-			}
-			else
-			{
-				// Create mountain groups for the text drawer.
-				mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
-			}
+			// Create mountain groups for the text drawer.
+			mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
 		}
 		
 		if (settings.drawIcons)

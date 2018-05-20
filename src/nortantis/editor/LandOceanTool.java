@@ -440,6 +440,7 @@ public class LandOceanTool extends EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
+		settings.drawIcons = true;
 	}
 
 	@Override

@@ -431,14 +431,8 @@ public class IconDrawer
 	 * Creates tasks for drawing mountains and hills.
 	 * @return
 	 */
-	public List<Set<Center>> addMountainsAndHills()
-	{		
-		Pair<List<Set<Center>>> pair = findMountainAndHillGroups();
-		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
-		List<Set<Center>> mountainGroups = pair.getFirst();
-		// All mountain ranges and smaller groups of mountains extended to include nearby hills.
-		List<Set<Center>> mountainAndHillGroups = pair.getSecond();
-		
+	public List<Set<Center>> addMountainsAndHills(List<Set<Center>> mountainGroups, List<Set<Center>> mountainAndHillGroups)
+	{				
         // Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
         ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups("mountains");
         if (mountainImagesById == null || mountainImagesById.isEmpty())

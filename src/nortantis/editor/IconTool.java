@@ -177,7 +177,7 @@ public class IconTool extends EditorTool
 		
 		// Eraser options
 		{
-		    JLabel typeLabel = new JLabel("What:");
+		    JLabel typeLabel = new JLabel("Erase:");
 		    ButtonGroup group = new ButtonGroup();
 		    List<JRadioButton> radioButtons = new ArrayList<>();
 		    
