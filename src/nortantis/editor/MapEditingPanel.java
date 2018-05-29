@@ -24,6 +24,37 @@ public class MapEditingPanel extends ImagePanel
 	private Set<Center> processingCenters;
 	private GraphImpl graph;
 	private HighlightMode highlightMode;
+	private Collection<Edge> highlightedEdges;
+	private Collection<Edge> processingEdges;
+	
+	public MapEditingPanel(BufferedImage image)
+	{
+		super(image);
+		highlightedCenters = new HashSet<>();
+		processingCenters = new HashSet<>();
+		highlightedEdges = new HashSet<>();
+		processingEdges = new HashSet<>();
+	}
+	
+	public void setHighlightedEdges(Collection<Edge> edges)
+	{
+		this.highlightedEdges = edges;
+	}
+	
+	public void clearHighlightedEdges()
+	{
+		highlightedEdges.clear();
+	}
+	
+	public void setProcessingEdges(Collection<Edge> edges)
+	{
+		this.processingEdges = edges;
+	}
+	
+	public void clearProcessingEdges()
+	{
+		this.processingEdges.clear();
+	}
 	
 	public void setAreasToDraw(List<Area> areas)
 	{
@@ -71,13 +102,6 @@ public class MapEditingPanel extends ImagePanel
 	{
 		this.areas = null;
 	}
-
-	public MapEditingPanel(BufferedImage image)
-	{
-		super(image);
-		highlightedCenters = new HashSet<>();
-		processingCenters = new HashSet<>();
-	}
 	
 	public void setHighlightColor(Color color)
 	{
@@ -106,9 +130,11 @@ public class MapEditingPanel extends ImagePanel
 		{
 			g.setColor(highlightColor);
 			drawCenterOutlines(g, highlightedCenters);
+			drawEdges(g, highlightedEdges);
 			
 			g.setColor(Color.green);
 			drawCenterOutlines(g, processingCenters);
+			drawEdges(g, processingEdges);
 		}
 	}
 	
@@ -128,6 +154,14 @@ public class MapEditingPanel extends ImagePanel
 				}
 				graph.drawEdge(((Graphics2D)g), e);
 			}
+		}
+	}
+	
+	private void drawEdges(Graphics g, Collection<Edge> edges)
+	{
+		for (Edge e : edges)
+		{
+			graph.drawEdge(((Graphics2D)g), e);
 		}
 
 	}

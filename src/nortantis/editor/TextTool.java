@@ -1,6 +1,7 @@
 package nortantis.editor;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -19,18 +20,19 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
-import util.Helper;
 import util.ImageHelper;
 import util.JComboBoxFixed;
 import util.JTextFieldFixed;
@@ -40,11 +42,16 @@ public class TextTool extends EditorTool
 	private BufferedImage mapWithoutText;
 	private JTextField editTextField;
 	private MapText lastSelected;
-	private JComboBox<ToolType> toolComboBox;
-	JComboBox<TextType>textTypeComboBox;
 	private Point mousePressedLocation;
-	ToolType lastTool;
 	private boolean hasDrawNextBefore;
+	private JRadioButton editButton;
+	private JRadioButton moveButton;
+	private JRadioButton addButton;
+	private JRadioButton rotateButton;
+	private JRadioButton deleteButton;
+	private JPanel textTypePanel;
+	private JComboBox<TextType>textTypeComboBox;
+	private JPanel textFieldPanel;
 	
 
 	public TextTool(MapSettings settings, EditorDialog parent)
@@ -63,27 +70,27 @@ public class TextTool extends EditorTool
 				else if ((e.getKeyCode() == KeyEvent.VK_A) 
 						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
-					toolComboBox.setSelectedItem(ToolType.Add);
+					addButton.doClick();
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_E) 
 						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
-					toolComboBox.setSelectedItem(ToolType.Edit);
+					editButton.doClick();
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_R) 
 						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
-					toolComboBox.setSelectedItem(ToolType.Rotate);
+					rotateButton.doClick();
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_G) 
 						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
-					toolComboBox.setSelectedItem(ToolType.Move);
+					moveButton.doClick();
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_D) 
 						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
-					toolComboBox.setSelectedItem(ToolType.Delete);
+					deleteButton.doClick();
 				}
 				
 				return false;
@@ -108,62 +115,99 @@ public class TextTool extends EditorTool
 		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
+				
+		{
+			JLabel actionsLabel = new JLabel("Action:");
+			ButtonGroup group = new ButtonGroup();
+		    List<JRadioButton> radioButtons = new ArrayList<>();
+		    
+		    ActionListener listener = new ActionListener()
+			{
+				
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					handleActionChanged();
+				}
+			};
+		    
+		    editButton = new JRadioButton("Edit");
+		    group.add(editButton);
+		    radioButtons.add(editButton);
+		    editButton.addActionListener(listener);
+		    editButton.setToolTipText("Edit text (alt+E)");
+		    
+		    moveButton = new JRadioButton("Move");
+		    group.add(moveButton);
+		    radioButtons.add(moveButton);
+		    moveButton.addActionListener(listener);
+		    moveButton.setToolTipText("Move text (alt+G)");
+	
+		    addButton = new JRadioButton("Add");
+		    group.add(addButton);
+		    radioButtons.add(addButton);
+		    addButton.addActionListener(listener);
+		    addButton.setToolTipText("Add new text of the selected text type (alt+A)");
+	
+		    rotateButton = new JRadioButton("Rotate");
+		    group.add(rotateButton);
+		    radioButtons.add(rotateButton);
+		    rotateButton.addActionListener(listener);
+		    rotateButton.setToolTipText("Rotate text (alt+R)");	
+	
+		    deleteButton = new JRadioButton("Delete");
+		    group.add(deleteButton);
+		    radioButtons.add(deleteButton);
+		    deleteButton.addActionListener(listener);
+		    deleteButton.setToolTipText("Delete text (alt+D)");	
+	
+		    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, actionsLabel, radioButtons);
+		}
 		
 		editTextField = new JTextFieldFixed();
 		int borderWidth = EditorDialog.borderWidthBetweenComponents;
 		editTextField.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
 		editTextField.setColumns(18);
-		JPanel textFieldPanel = new JPanel();
+		textFieldPanel = new JPanel();
 		textFieldPanel.setLayout(new BoxLayout(textFieldPanel, BoxLayout.X_AXIS));
 		textFieldPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, EditorTool.spaceBetweenRowsOfComponents, 0));
 		textFieldPanel.add(editTextField);
 		toolOptionsPanel.add(textFieldPanel);
 		
-		JLabel lblTools = new JLabel("Action:");
-		
-		toolComboBox = new JComboBoxFixed<>();
-		toolComboBox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				// Keep any text edits being done.
-				if (lastSelected != null && lastTool == ToolType.Edit)
-				{
-					handleTextEdit(lastSelected);
-				}
-				
-				mapEditingPanel.clearAreasToDraw();
-				lastSelected = null;
-				mapEditingPanel.repaint();
-				textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
-				editTextField.setText("");
-				lastTool = (ToolType)toolComboBox.getSelectedItem();
-				updateToolText();
-			}
-		});
-		addLabelAndComponentToPanel(toolOptionsPanel, lblTools, toolComboBox);
-		toolComboBox.setSelectedItem(ToolType.Edit); 		
-		lastTool = (ToolType)toolComboBox.getSelectedItem();
-		
 		JLabel lblTextType = new JLabel("Text type:");
 		
 		textTypeComboBox = new JComboBoxFixed<>();
-		textTypeComboBox.setEnabled(toolComboBox.getSelectedItem() == ToolType.Add);
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		addLabelAndComponentToPanel(toolOptionsPanel, lblTextType, textTypeComboBox);
+		textTypePanel = addLabelAndComponentToPanel(toolOptionsPanel, lblTextType, textTypeComboBox);
 		
-		for (ToolType toolType : ToolType.values())
-		{
-			toolComboBox.addItem(toolType);
-		}
 		for (TextType type : TextType.values())
 		{
 			textTypeComboBox.addItem(type);				
 		}
 		
+		// Prevent the panel from shrinking when components are hidden.
+		toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
+		
 		toolOptionsPanel.add(Box.createVerticalGlue());
+		
+	    editButton.doClick(); 		
 		return toolOptionsPanel;
+	}
+	
+	private void handleActionChanged()
+	{
+		// Keep any text edits being done.
+		if (textFieldPanel.isVisible())
+		{
+			handleTextEdit(lastSelected);
+		}
+		
+		mapEditingPanel.clearAreasToDraw();
+		lastSelected = null;
+		mapEditingPanel.repaint();
+		textTypePanel.setVisible(addButton.isSelected());
+		editTextField.setText("");
+		textFieldPanel.setVisible(editButton.isSelected());
 	}
 		
 	@Override
@@ -206,7 +250,7 @@ public class TextTool extends EditorTool
 		// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
     	// This makes it so that any edits done to the settings will automatically be reflected
     	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
-    	// map texts, which are needed to make them clickable in this editing panel.
+    	// map texts, which are needed to make them clickable to edit them.
 		mapParts.textDrawer.setMapTexts(settings.edits.text);
     
     	// Add text to the map
@@ -216,7 +260,7 @@ public class TextTool extends EditorTool
 		
 		if(!hasDrawNextBefore)
 		{
-			copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
+			copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 			hasDrawNextBefore = true;
 		}
 		
@@ -237,15 +281,6 @@ public class TextTool extends EditorTool
 		}
 		
 		return mapWithText;
-	}
-	
-	enum ToolType
-	{
-		Edit,
-		Move,
-		Add,
-		Rotate,
-		Delete,
 	}
 
 	private void updateTextInBackgroundThread(final MapText selectedText)
@@ -296,9 +331,9 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
-		if (toolComboBox.getSelectedItem().equals(ToolType.Move))
+		if (moveButton.isSelected())
 		{
-			// Allow the user to drag and drop a text box to a new location.
+			// Begin a drag and drop of a text box.
 			MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
 			if (selectedText != null)
 			{
@@ -308,7 +343,7 @@ public class TextTool extends EditorTool
 			mapEditingPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
 			mapEditingPanel.repaint();
 		}
-		else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
+		else if (rotateButton.isSelected())
 		{
 			lastSelected = mapParts.textDrawer.findTextPicked(e.getPoint());
 			if (lastSelected != null)
@@ -329,7 +364,7 @@ public class TextTool extends EditorTool
 			}
 			mapEditingPanel.repaint();
 		}
-		else if (toolComboBox.getSelectedItem().equals(ToolType.Delete))
+		else if (deleteButton.isSelected())
 		{
 			MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
 			if (selectedText != null)
@@ -346,7 +381,7 @@ public class TextTool extends EditorTool
 	{
 		if (lastSelected != null)
 		{
-			if (toolComboBox.getSelectedItem().equals(ToolType.Move))
+			if (moveButton.isSelected())
 			{
 				// The user is dragging a text box.
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
@@ -361,7 +396,7 @@ public class TextTool extends EditorTool
 				mapEditingPanel.setAreasToDraw(transformedAreas);
 				mapEditingPanel.repaint();
 			}
-			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
+			else if (rotateButton.isSelected())
 			{
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
 				for (Area area : lastSelected.areas)
@@ -394,7 +429,7 @@ public class TextTool extends EditorTool
 	{
 		if (lastSelected != null)
 		{
-			if (toolComboBox.getSelectedItem().equals(ToolType.Move))
+			if (moveButton.isSelected())
 			{
 				// The user dragged and dropped text.
 				
@@ -405,7 +440,7 @@ public class TextTool extends EditorTool
 				setUndoPoint();
 				updateTextInBackgroundThread(lastSelected);
 			}
-			else if (toolComboBox.getSelectedItem().equals(ToolType.Rotate))
+			else if (rotateButton.isSelected())
 			{
 				double centerX = lastSelected.location.x / (1.0/zoom);
 				double centerY = lastSelected.location.y / (1.0/zoom);
@@ -431,12 +466,12 @@ public class TextTool extends EditorTool
 		// If the map has been drawn...
 		if (mapWithoutText != null)
 		{
-			if (toolComboBox.getSelectedItem().equals(ToolType.Edit))
+			if (editButton.isSelected())
 			{
 				MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
 				handleTextEdit(selectedText);
 			}
-			else if (toolComboBox.getSelectedItem().equals(ToolType.Add))
+			else if (addButton.isSelected())
 			{
 				MapText addedText = mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 						new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
@@ -456,7 +491,7 @@ public class TextTool extends EditorTool
 
 			// Need to re-draw all of the text.
 			setUndoPoint();
-			updateTextInBackgroundThread(selectedText);
+			updateTextInBackgroundThread(editButton.isSelected() ? selectedText : null);
 		}
 		else
 		{
@@ -476,34 +511,18 @@ public class TextTool extends EditorTool
 		
 		lastSelected = selectedText;
 	}
-	
-	private void updateToolText()
-	{
-		if (toolComboBox.getSelectedItem() == ToolType.Add)
-		{
-			toolComboBox.setToolTipText("Add new text of the selected text type (alt+A)");
-		}
-		else if (toolComboBox.getSelectedItem() == ToolType.Edit)
-		{
-			toolComboBox.setToolTipText("Edit text (alt+E)");			
-		}
-		else if (toolComboBox.getSelectedItem() == ToolType.Move)
-		{
-			toolComboBox.setToolTipText("Move text (alt+G)");			
-		}
-		else if (toolComboBox.getSelectedItem() == ToolType.Rotate)
-		{
-			toolComboBox.setToolTipText("Rotate text (alt+R)");			
-		}
-		else if (toolComboBox.getSelectedItem() == ToolType.Delete)
-		{
-			toolComboBox.setToolTipText("Delete text (alt+D)");			
-		}
-	}
 
 	@Override
 	public void onSwitchingAway()
 	{
+		// Keep any text edits being done.
+		if (textFieldPanel.isVisible())
+		{
+			if (lastSelected != null && !editTextField.getText().equals(lastSelected.value))
+			{
+				lastSelected.value = editTextField.getText();
+			}
+		}
 	}
 
 	@Override
@@ -519,8 +538,11 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo()
 	{
+		// For why this is needed, see the big comment on the same line in onBeforeShowMap.
+		mapParts.textDrawer.setMapTexts(settings.edits.text);
+		
+		mapEditingPanel.clearAreasToDraw();
 		lastSelected = null;
-		lastTool = null;
 		editTextField.setText("");
 		updateTextInBackgroundThread(null);
 	}

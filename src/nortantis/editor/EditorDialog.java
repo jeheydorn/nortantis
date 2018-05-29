@@ -47,7 +47,7 @@ public class EditorDialog extends JDialog
 	EditorTool currentTool;
 	List<EditorTool> tools;
 	public static final int borderWidthBetweenComponents = 4;
-	public static final int toolsPanelMaxWidth = 300;
+	public static final int toolsPanelWidth = 280;
 	private JPanel toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
 	private JComboBox<String> zoomComboBox;
@@ -160,11 +160,11 @@ public class EditorDialog extends JDialog
 
 		// Setup tools
 		tools = Arrays.asList(
-				new TextTool(settings, this),
 				new LandOceanTool(settings, this),
-				new IconTool(settings, this)
+				new IconTool(settings, this),
+				new TextTool(settings, this)
 				);
-		currentTool = tools.get(2);
+		currentTool = tools.get(1);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -173,12 +173,12 @@ public class EditorDialog extends JDialog
 		setupMenuBar(runSwing);
 	
 		JPanel toolsPanel = new JPanel();
-		toolsPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, getContentPane().getHeight()));
+		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, getContentPane().getHeight()));
 		toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
 		getContentPane().add(toolsPanel, BorderLayout.EAST);
 
 		JPanel toolSelectPanel = new JPanel(new FlowLayout());
-		toolSelectPanel.setMaximumSize(new Dimension(toolsPanelMaxWidth, 20));
+		toolSelectPanel.setMaximumSize(new Dimension(toolsPanelWidth, 20));
 		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tools"));
 		toolsPanel.add(toolSelectPanel);
 		for (EditorTool tool : tools)
@@ -281,6 +281,8 @@ public class EditorDialog extends JDialog
 			{
 				KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(myKeyEventDispatcher);
 
+				currentTool.onSwitchingAway();
+				
 		    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
 		    	runSwing.edits = settings.edits;
 		    	runSwing.updateFieldsWhenEditsChange();

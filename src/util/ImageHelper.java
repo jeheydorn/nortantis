@@ -769,16 +769,16 @@ public class ImageHelper
 		}
 
 		// Create a buffered image with transparency
-		BufferedImage bimage = new BufferedImage(img.getWidth(null),
+		BufferedImage bImage = new BufferedImage(img.getWidth(null),
 				img.getHeight(null), bufferedImageType);
 
 		// Draw the image on to the buffered image
-		Graphics2D bGr = bimage.createGraphics();
+		Graphics2D bGr = bImage.createGraphics();
 		bGr.drawImage(img, 0, 0, null);
 		bGr.dispose();
 
 		// Return the buffered image
-		return bimage;
+		return bImage;
 	}
 	
 	public static BufferedImage deepCopy(BufferedImage bi) 

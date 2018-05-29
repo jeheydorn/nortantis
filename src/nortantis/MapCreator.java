@@ -72,7 +72,7 @@ public class MapCreator
         }
         else
         {
-    		Logger.println("Generating the background image");
+    		Logger.println("Generating the background image.");
         	background = new Background(settings, maxDimensions);	
         }
         
@@ -460,10 +460,8 @@ public class MapCreator
 				new Random(r.nextLong()),
 				sizeMultiplyer);	
 		
-		if (settings.drawRegionColors)
-		{
-			assignRandomRegionColors(graph, settings);
-		}
+		// Setup region colors even if settings.drawRegionColors = false because edits need them in case someone edits a map without region colors, then later enables region colors.
+		assignRandomRegionColors(graph, settings);
 		
 		return graph;
 	}

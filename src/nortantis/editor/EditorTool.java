@@ -6,7 +6,9 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -28,8 +30,10 @@ import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
 import nortantis.MapSettings;
+import nortantis.MapText;
 import nortantis.TextDrawer;
 import util.Helper;
+import util.Range;
 
 public abstract class EditorTool
 {
@@ -39,7 +43,7 @@ public abstract class EditorTool
 	protected MapSettings settings;
 	private JPanel toolOptionsPanel;
 	protected MapParts mapParts;
-	private EditorDialog parent;
+	protected EditorDialog parent;
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
 	private boolean mapNeedsRedraw;
@@ -220,7 +224,7 @@ public abstract class EditorTool
 	            	
 	            	if (copyOfEditsWhenToolWasSelected == null)  
 	            	{
-	            		copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
+	            		copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 	            	}
 	            	map = onBeforeShowMap(map, mapNeedsRedraw);
 	            	
@@ -288,7 +292,7 @@ public abstract class EditorTool
 	protected void setUndoPoint()
 	{
 		redoStack.clear();
-		undoStack.push(Helper.deepCopy(settings.edits));
+		undoStack.push(deepCopyMapEdits(settings.edits));
 		parent.updateUndoRedoEnabled();
 	}
 	
@@ -301,7 +305,7 @@ public abstract class EditorTool
 		}
 		else
 		{
-			settings.edits = Helper.deepCopy(undoStack.peek());	
+			settings.edits = deepCopyMapEdits(undoStack.peek());	
 		}
 		onAfterUndoRedo();
 	}
@@ -309,8 +313,31 @@ public abstract class EditorTool
 	public void redo()
 	{
 		undoStack.push(redoStack.pop());
-		settings.edits = Helper.deepCopy(undoStack.peek());
+		settings.edits = deepCopyMapEdits(undoStack.peek());
 		onAfterUndoRedo();
+	}
+	
+	protected MapEdits deepCopyMapEdits(MapEdits edits)
+	{
+		MapEdits copy = Helper.deepCopy(edits);
+		// Explicitly copy edits.text.areas because it isn't serializable. 
+		if (edits.text != null)
+		{
+			for (int i : new Range(edits.text.size()))
+			{
+				MapText otherText = edits.text.get(i);
+				MapText resultText = copy.text.get(i);
+				if (otherText.areas != null)
+				{
+					resultText.areas = new ArrayList<Area>(otherText.areas.size());
+					for (Area area : otherText.areas)
+					{
+						resultText.areas.add(new Area(area));
+					}
+				}
+			}
+		}
+		return copy;
 	}
 	
 	protected abstract void onAfterUndoRedo();

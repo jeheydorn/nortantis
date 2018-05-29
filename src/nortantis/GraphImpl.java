@@ -7,11 +7,14 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
@@ -364,6 +367,13 @@ public class GraphImpl extends VoronoiGraph
         	
     	}
     	return null;
+    }
+    
+    public Corner findClosestCorner(Point point)
+    {
+    	Center closestCenter = findClosestCenter(point);  	
+    	Optional<Corner> optional = closestCenter.corners.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+   		return optional.get();
     }
     
     public TectonicPlate getTectonicPlateAt(double x, double y)
@@ -1101,5 +1111,149 @@ public class GraphImpl extends VoronoiGraph
 		}
 		
 		return null;
+	}
+
+	/**
+	 * Greedily finds a path between the 2 given corners.
+	 * @param riverStart
+	 * @param end
+	 */
+	public Set<Edge> findPath(Corner riverStart, Corner end)
+	{
+		if (riverStart.equals(end))
+		{
+			return new HashSet<>();
+		}
+		
+		System.out.println("Index of end: " + end.index);
+		System.out.println("Index of start: " + riverStart.index);
+		
+		Set<SearchNode> explored = new HashSet<>();
+		SearchNode startNode = new SearchNode(riverStart, null);
+		explored.add(startNode);
+		SortedSet<SearchNode> frontier = new TreeSet<>(new Comparator<SearchNode>()
+		{
+			@Override
+			public int compare(SearchNode n1, SearchNode n2)
+			{
+				int distanceComp = Double.compare(end.loc.distanceTo(n1.corner.loc), end.loc.distanceTo(n2.corner.loc));
+				if (distanceComp == 0)
+				{
+					// This ensures corners which are the same distance to the target don't clober eachother in the set.
+					return Integer.compare(n1.corner.index, n2.corner.index);
+				}
+				assert n1.corner.index != n2.corner.index;
+				return distanceComp;
+			}
+		});
+		
+		expandFrontier(startNode, frontier, explored);
+		
+		SearchNode endNode = null;
+		while (true)
+		{
+			SearchNode closest = frontier.first();
+			System.out.println("Index of closest: " + closest.corner.index);
+			frontier.remove(closest);
+			assert !explored.contains(closest); // TODO remove
+			explored.add(closest);
+			
+//			try // TODO remove
+//			{
+//				Thread.sleep(1000L);
+//			} catch (InterruptedException e)
+//			{
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			} // TODO remove
+			
+			System.out.println("closest distance: " + closest.corner.loc.distanceTo(end.loc));
+			
+			if (closest.corner.equals(end))
+			{
+				endNode = closest;
+				break;
+			}
+			
+			assert !frontier.contains(new SearchNode(end, null)); // TODO remove
+			
+			expandFrontier(closest, frontier, explored);
+		}
+		
+		return createPathFromBackPointers(endNode);
+	}
+	
+	private void expandFrontier(SearchNode node, Set<SearchNode> frontier, Set<SearchNode> explored)
+	{
+		// Expand the frontier
+		for (Corner c : node.corner.adjacent)
+		{
+			SearchNode otherNode = new SearchNode(c, node);
+			System.out.println("otherNode: " + otherNode.corner.index);
+			System.out.println("explored.contains(otherNode: " + explored.contains(otherNode));
+			if (!explored.contains(otherNode) && !frontier.contains(otherNode))
+			{
+				frontier.add(otherNode);
+			}
+		}
+	}
+	
+	private Edge findConnectingEdge(Corner c1, Corner c2)
+	{
+		for (Edge edge : c1.protrudes)
+		{
+			if (edge.v1 != null && edge.v1.equals(c2))
+			{
+				return edge;
+			}
+			if (edge.v0 != null && edge.v0.equals(c2))
+			{
+				return edge;
+			}
+		}
+		return null;
+	}
+	
+	private Set<Edge> createPathFromBackPointers(SearchNode end)
+	{	
+		Set<Edge> path = new HashSet<>();
+		if (end == null)
+		{
+			return path;
+		}
+		
+		SearchNode curNode = end;
+		while (curNode.cameFrom != null)
+		{
+			Edge edge = findConnectingEdge(curNode.corner, curNode.cameFrom.corner);
+			assert edge != null;
+			path.add(edge);
+			curNode = curNode.cameFrom;
+		}
+		return path;
+	}
+	
+	private class SearchNode
+	{
+		public Corner corner;
+		public SearchNode cameFrom;
+		
+		public SearchNode(Corner corner, SearchNode cameFrom)
+		{
+			this.corner = corner;
+			this.cameFrom = cameFrom;
+		}
+		
+		@Override
+		public int hashCode()
+		{
+			return corner.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object other)
+		{
+			return corner.equals(((SearchNode)other).corner);
+		}
 	}
 }

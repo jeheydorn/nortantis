@@ -181,6 +181,8 @@ public class LandOceanTool extends EditorTool
 	    }
 	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
 	    
+	    // Prevent the panel from shrinking when components are hidden.
+	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
 
 		return toolOptionsPanel;
 	}

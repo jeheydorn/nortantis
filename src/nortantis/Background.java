@@ -210,17 +210,17 @@ public class Background
 			catch(Exception e)
 			{
 				throw new IllegalArgumentException("Error while reading land background image from " 
-						+ settings.landBackgroundImage + ": " + e.getMessage());
+						+ settings.landBackgroundImage + ": " + e.getMessage(), e);
 			}
 			try
 			{
-				ImageCache.getInstance().getImageFromFile((new File(settings.oceanBackgroundImage).toPath()));
+				ocean = ImageCache.getInstance().getImageFromFile((new File(settings.oceanBackgroundImage).toPath()));
 				ocean = ImageHelper.convertToBufferedImageOfType(ocean, BufferedImage.TYPE_INT_RGB);
 			}
 			catch(Exception e)
 			{
 				throw new IllegalArgumentException("Error while reading ocean background image from " 
-						+ settings.oceanBackgroundImage + ": " + e.getMessage());
+						+ settings.oceanBackgroundImage + ": " + e.getMessage(), e);
 			}
 
 			mapBounds = new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
@@ -338,7 +338,6 @@ public class Background
 		if (graph.regions.isEmpty())
 		{
 			return ImageHelper.convertImageToType(fractalBG, BufferedImage.TYPE_INT_RGB);
-			//return ImageHelper.deepCopy(fractalBG);
 		}
 		
 		Color[] regionBackgroundColors = graph.regions.stream().map(

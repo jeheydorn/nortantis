@@ -1272,10 +1272,6 @@ public class TextDrawer
 		return mapText;
 	}
 	
-	public List<MapText> getMapTexts()
-	{
-		return mapTexts;
-	}
 
 	public void setMapTexts(List<MapText> text)
 	{

@@ -81,4 +81,15 @@ public class Corner
 	{
 		return index;
 	}
+	
+	@Override
+	public boolean equals(Object other)
+	{
+		if (other == null || !(other instanceof Corner))
+		{
+			return false;
+		}
+		
+		return index == ((Corner)other).index;
+	}
 }

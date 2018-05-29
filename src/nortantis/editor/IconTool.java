@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -27,13 +28,15 @@ import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.SwingWorker;
 
+import hoten.geom.Point;
 import hoten.voronoi.Center;
+import hoten.voronoi.Corner;
+import hoten.voronoi.Edge;
 import nortantis.CenterIcon;
 import nortantis.CenterIconType;
 import nortantis.CenterTrees;
 import nortantis.IconDrawer;
 import nortantis.MapSettings;
-import util.Helper;
 import util.ImageHelper;
 
 public class IconTool extends EditorTool
@@ -63,6 +66,10 @@ public class IconTool extends EditorTool
 	private JRadioButton eraseDunesButton;
 	private JRadioButton eraseTreesButton;
 	private JPanel eraseOptionsPanel;
+	private JRadioButton riversButton;
+	private JPanel riverOptionPanel;
+	private JSlider riverWidthSlider;
+	private Corner riverStart;
 
 	public IconTool(MapSettings settings, EditorDialog parent)
 	{
@@ -150,6 +157,18 @@ public class IconTool extends EditorTool
 				}
 			});
 		    
+			riversButton = new JRadioButton("Rivers");
+		    group.add(riversButton);
+		    radioButtons.add(riversButton);
+		    riversButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent event)
+				{
+					updateTypePanels();
+				}
+			});
+		    
 			eraseButton = new JRadioButton("Erase");
 		    group.add(eraseButton);
 		    radioButtons.add(eraseButton);
@@ -171,6 +190,14 @@ public class IconTool extends EditorTool
 		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.hillsName);
 		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.sandDunesName);
 		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.treesName);
+		
+		// River options
+		{
+			JLabel widthLabel = new JLabel("Width:");
+			riverWidthSlider = new JSlider(0, 10);
+			riverWidthSlider.setPreferredSize(new Dimension(160, 50));
+		    riverOptionPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, widthLabel, riverWidthSlider);
+		}
 		
 		// Eraser options
 		{
@@ -204,10 +231,8 @@ public class IconTool extends EditorTool
 		
 		JLabel densityLabel = new JLabel("density:");
 		densitySlider = new JSlider(1, 20);
-		densitySlider.setPreferredSize(new Dimension(150, 50));
+		densitySlider.setPreferredSize(new Dimension(160, 50));
 		densityPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, densityLabel, densitySlider);
-		
-		mountainsButton.doClick();
 	    
 	    JLabel brushSizeLabel = new JLabel("Brush size:");
 	    brushSizeComboBox = new JComboBox<>();
@@ -226,7 +251,11 @@ public class IconTool extends EditorTool
 	    	brushSizeComboBox.addItem(new ImageIcon(image));
 	    }
 	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
-
+	    
+	    // Prevent the panel from shrinking when components are hidden.
+	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
+	    
+		mountainsButton.doClick();
 	    
 	    return toolOptionsPanel;
 	}
@@ -239,6 +268,8 @@ public class IconTool extends EditorTool
 		treeTypes.panel.setVisible(treesButton.isSelected());
 		densityPanel.setVisible(treesButton.isSelected());
 		eraseOptionsPanel.setVisible(eraseButton.isSelected());
+		riverOptionPanel.setVisible(riversButton.isSelected());
+		brushSizePanel.setVisible(!riversButton.isSelected());
 	}
 	
 	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, String iconType)
@@ -258,13 +289,22 @@ public class IconTool extends EditorTool
 	    }
 	    return new IconTypeButtons(EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, typeLabel, radioButtons), radioButtons);
 	}
+	
+	private boolean isMapVisible()
+	{
+		return !(mapParts == null || mapParts.graph == null || mapWithouticons == null);
+	}
 
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		if (mapParts == null || mapParts.graph == null || mapWithouticons == null) 
+		if (!isMapVisible())
 		{
-			// The map is not visible;
+			return;
+		}
+		
+		if (riversButton.isSelected())
+		{
 			return;
 		}
 
@@ -357,11 +397,6 @@ public class IconTool extends EditorTool
 		}
 		handleMapChange(selected);	
 	}
-
-	@Override
-	protected void handleMousePressedOnMap(MouseEvent e)
-	{		
-	}
 	
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
 	{
@@ -370,23 +405,59 @@ public class IconTool extends EditorTool
 	}
 
 	@Override
+	protected void handleMousePressedOnMap(MouseEvent e)
+	{		
+		if (!isMapVisible())
+		{
+			return;
+		}
+		
+		mapEditingPanel.setGraph(mapParts.graph);
+
+		if (riversButton.isSelected())
+		{
+			riverStart = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+		}
+	}
+
+	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
+		if (!isMapVisible())
+		{
+			return;
+		}
+		
+		if (riversButton.isSelected())
+		{
+			riverStart = null;
+			// TODO
+		}
+		
 		setUndoPoint();
 	}
 
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		highlightHoverCenters(e);
-		mapEditingPanel.repaint();
+		if (!isMapVisible())
+		{
+			return;
+		}
+		
+		mapEditingPanel.setGraph(mapParts.graph);
+		
+		if (!riversButton.isSelected())
+		{
+			highlightHoverCenters(e);
+			mapEditingPanel.repaint();
+		}
 	}
 	
 	private void highlightHoverCenters(MouseEvent e)
 	{
-		if (mapParts == null || mapParts.graph == null || mapWithouticons == null) 
+		if (!isMapVisible())
 		{
-			// The map is not visible;
 			return;
 		}
 		
@@ -402,8 +473,22 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		highlightHoverCenters(e);
-		handleMouseClickOnMap(e);
+		if (riversButton.isSelected())
+		{
+			if (riverStart != null)
+			{
+				mapEditingPanel.clearHighlightedEdges();
+				Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+				Set<Edge> river = mapParts.graph.findPath(riverStart, end);
+				mapEditingPanel.setHighlightedEdges(river);
+				mapEditingPanel.repaint();
+			}
+		}
+		else
+		{
+			highlightHoverCenters(e);
+			handleMouseClickOnMap(e);
+		}
 	}
 
 	@Override
@@ -436,7 +521,7 @@ public class IconTool extends EditorTool
 		
 		if(!hasDrawnIconsBefore)
 		{
-			copyOfEditsWhenToolWasSelected = Helper.deepCopy(settings.edits);
+			copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 			hasDrawnIconsBefore = true;
 		}
 

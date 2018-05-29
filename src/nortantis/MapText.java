@@ -17,7 +17,7 @@ public class MapText implements Serializable
 {
 	public String value;
 	/**
-	 * The (possibly rotated) bounding boxes of the text. This only has size 2 if the text has 2 lines.
+	 * The (possibly rotated) bounding boxes of the text. This only has size 2 areas if the text has 2 lines.
 	 */
 	public transient List<Area> areas;
 	
