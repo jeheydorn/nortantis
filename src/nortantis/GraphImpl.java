@@ -149,8 +149,12 @@ public class GraphImpl extends VoronoiGraph
     {
     	for (Center c : centers)
     	{
-    		c.noisyEdgeSeed = rand.nextLong();
     		c.treeSeed = rand.nextLong();
+    	}
+    	
+    	for (Edge e : edges)
+    	{
+    		e.noisyEdgeSeed = rand.nextLong();
     	}
     }
     
@@ -1124,10 +1128,7 @@ public class GraphImpl extends VoronoiGraph
 		{
 			return new HashSet<>();
 		}
-		
-		System.out.println("Index of end: " + end.index);
-		System.out.println("Index of start: " + riverStart.index);
-		
+				
 		Set<SearchNode> explored = new HashSet<>();
 		SearchNode startNode = new SearchNode(riverStart, null);
 		explored.add(startNode);
@@ -1153,29 +1154,14 @@ public class GraphImpl extends VoronoiGraph
 		while (true)
 		{
 			SearchNode closest = frontier.first();
-			System.out.println("Index of closest: " + closest.corner.index);
 			frontier.remove(closest);
-			assert !explored.contains(closest); // TODO remove
 			explored.add(closest);
-			
-//			try // TODO remove
-//			{
-//				Thread.sleep(1000L);
-//			} catch (InterruptedException e)
-//			{
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			} // TODO remove
-			
-			System.out.println("closest distance: " + closest.corner.loc.distanceTo(end.loc));
 			
 			if (closest.corner.equals(end))
 			{
 				endNode = closest;
 				break;
 			}
-			
-			assert !frontier.contains(new SearchNode(end, null)); // TODO remove
 			
 			expandFrontier(closest, frontier, explored);
 		}
@@ -1189,8 +1175,6 @@ public class GraphImpl extends VoronoiGraph
 		for (Corner c : node.corner.adjacent)
 		{
 			SearchNode otherNode = new SearchNode(c, node);
-			System.out.println("otherNode: " + otherNode.corner.index);
-			System.out.println("explored.contains(otherNode: " + explored.contains(otherNode));
 			if (!explored.contains(otherNode) && !frontier.contains(otherNode))
 			{
 				frontier.add(otherNode);

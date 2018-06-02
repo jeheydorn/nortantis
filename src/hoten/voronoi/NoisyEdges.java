@@ -45,12 +45,13 @@ public class NoisyEdges
     
     public void buildNoisyEdgesForCenter(Center center, boolean forceRebuild)
     {
-    	Random rand = new Random(center.noisyEdgeSeed);
 		for (Edge edge : center.borders)
 		{
 			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null
 					&& (forceRebuild || path0.get(edge.index) == null))
 			{
+		    	Random rand = new Random(edge.noisyEdgeSeed);
+
 				double f = NOISY_LINE_TRADEOFF;
 				Point t = Point.interpolate(edge.v0.loc, edge.d0.loc, f);
 				Point q = Point.interpolate(edge.v0.loc, edge.d1.loc, f);

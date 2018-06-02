@@ -32,8 +32,6 @@ public class Center
     public int neighborsNotInSamePlateCount;
     public Integer mountainRangeId;
     
-    // Random seeds
-	public long noisyEdgeSeed;
 	public long treeSeed;
     
     public Center() {

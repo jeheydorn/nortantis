@@ -326,6 +326,8 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent arg0) 
 			{	
+				btnGenerate.setEnabled(false);
+				btnPreview.setEnabled(false);
 				final MapSettings settings = getSettingsFromGUI();
 				
 				txtConsoleOutput.setText("");
@@ -350,7 +352,14 @@ public class RunSwing
 						}
 			        	
 			        	return null;
-			        }			 
+			        }		
+			        
+			        @Override
+			        public void done()
+			        {
+			        	btnGenerate.setEnabled(true);
+						btnPreview.setEnabled(true);
+			        }
 			    };
 			    worker.execute();
 			 

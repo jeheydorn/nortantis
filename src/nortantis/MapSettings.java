@@ -20,6 +20,7 @@ import org.json.simple.JSONValue;
 
 import hoten.geom.Point;
 import nortantis.editor.CenterEdit;
+import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
 import util.Function0;
@@ -94,6 +95,7 @@ public class MapSettings implements Serializable
 	public int borderWidth;
 	public int frayedBorderSize;
 	public boolean drawIcons = true;
+	public boolean drawRivers = true; // Not saved
 	
 	public MapSettings()
 	{
@@ -166,6 +168,7 @@ public class MapSettings implements Serializable
 		result.setProperty("editedText", editedTextToJson());
 		result.setProperty("centerEdits", centerEditsToJson());
 		result.setProperty("regionEdits", regionEditsToJson());
+		result.setProperty("edgeEdits", edgeEditsToJson());
 		result.setProperty("hasIconEdits", edits.hasIconEdits + "");
 		
 		return result;
@@ -230,6 +233,21 @@ public class MapSettings implements Serializable
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("color", colorToString(regionEdit.color));
 			mpObj.put("regionId", regionEdit.regionId);
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String edgeEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (EdgeEdit eEdit : edits.edgeEdits)
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("riverLevel", eEdit.riverLevel);
+			mpObj.put("index", eEdit.index);
 			list.add(mpObj);
 		}
 		String json = list.toJSONString();
@@ -766,6 +784,27 @@ public class MapSettings implements Serializable
 					Color color = parseColor((String)jsonObj.get("color"));
 					int regionId = (int)(long)jsonObj.get("regionId");
 					result.put(regionId, new RegionEdit(regionId, color));
+				}
+				
+				return result;
+			}
+		});
+		
+		edits.edgeEdits = getProperty("edgeEdits", new Function0<List<EdgeEdit>>()
+		{
+			public List<EdgeEdit> apply()
+			{
+				String str = props.getProperty("edgeEdits");
+				if (str == null || str.isEmpty())
+					return new ArrayList<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				List<EdgeEdit> result = new ArrayList<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					int riverLevel = (int)(long)jsonObj.get("riverLevel");
+					int index = (int)(long)jsonObj.get("index");
+					result.add(new EdgeEdit(index, riverLevel));
 				}
 				
 				return result;

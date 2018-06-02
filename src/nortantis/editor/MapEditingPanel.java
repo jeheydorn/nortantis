@@ -46,9 +46,9 @@ public class MapEditingPanel extends ImagePanel
 		highlightedEdges.clear();
 	}
 	
-	public void setProcessingEdges(Collection<Edge> edges)
+	public void addAllProcessingEdges(Collection<Edge> edges)
 	{
-		this.processingEdges = edges;
+		this.processingEdges.addAll(edges);
 	}
 	
 	public void clearProcessingEdges()

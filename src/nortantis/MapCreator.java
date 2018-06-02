@@ -21,6 +21,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import hoten.voronoi.Center;
+import hoten.voronoi.Edge;
+import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
 import util.ImageHelper;
@@ -82,6 +84,10 @@ public class MapCreator
         }
         
         double sizeMultiplyer = (background.mapBounds.getWidth() / baseResolution);
+        if (mapParts != null)
+        {
+        	mapParts.sizeMultiplyer = sizeMultiplyer;
+        }
 		
 		
 		TextDrawer textDrawer = null;
@@ -117,6 +123,7 @@ public class MapCreator
 		}
 		applyRegionEdits(graph, settings.edits);
 		applyCenterEdits(graph, settings.edits);
+		applyEdgeEdits(graph, settings.edits);
  		
 		background.doSetupThatNeedsGraph(settings, graph);
 		if (mapParts == null)
@@ -238,9 +245,12 @@ public class MapCreator
 			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
 
+		if (settings.drawRivers)
+		{
 		// Add rivers.
-		Logger.println("Adding rivers.");
-		drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
+			Logger.println("Adding rivers.");
+			drawRivers(settings, graph, map, sizeMultiplyer);
+		}
 
 		
 		if (needToAddIcons)
@@ -329,7 +339,10 @@ public class MapCreator
 				
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
 		// because I might draw the text later.
-		drawRivers(graph, landBackground, sizeMultiplyer, settings.riverColor);
+		if (settings.drawRivers)
+		{
+			drawRivers(settings, graph, landBackground, sizeMultiplyer);
+		}
 		
 		if (mapParts != null)
 			mapParts.landBackground = landBackground;
@@ -541,6 +554,33 @@ public class MapCreator
 			if (needsRebuild)
 			{
 				graph.rebuildNoisyEdgesForCenter(center);
+			}
+		}
+	}
+	
+	private static void applyEdgeEdits(GraphImpl graph, MapEdits edits)
+	{
+		if (edits == null || edits.edgeEdits.isEmpty())
+		{
+			return;
+		}
+		if (edits.edgeEdits.size() != graph.edges.size())
+		{
+			throw new IllegalArgumentException("The map edits have " + edits.edgeEdits.size() + " edges, but graph has " + graph.edges.size() + " edges.");
+		}
+		
+		for (EdgeEdit eEdit : edits.edgeEdits)
+		{				
+			Edge edge = graph.edges.get(eEdit.index);
+			boolean needsRebuild = false;
+			if (eEdit.riverLevel != edge.river && edge.d0 != null)
+			{
+				needsRebuild = true;
+			}
+			graph.edges.get(eEdit.index).river = eEdit.riverLevel;
+			if (needsRebuild)
+			{
+				graph.rebuildNoisyEdgesForCenter(edge.d0);
 			}
 		}
 	}
@@ -973,10 +1013,10 @@ public class MapCreator
 			}
 	}
 
-	private void drawRivers(GraphImpl graph, BufferedImage map, double sizeMultiplyer, Color riverColor)
+	public static void drawRivers(MapSettings settings, GraphImpl graph, BufferedImage map, double sizeMultiplyer)
 	{
 		Graphics2D g = map.createGraphics();
-		g.setColor(riverColor);
+		g.setColor(settings.riverColor);
 		// Draw rivers thin.
 		graph.drawRivers(g, sizeMultiplyer/2.0);
 	}

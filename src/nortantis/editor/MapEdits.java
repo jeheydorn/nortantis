@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import hoten.voronoi.Center;
+import hoten.voronoi.Edge;
 import nortantis.CenterIcon;
 import nortantis.CenterTrees;
 import nortantis.IconDrawer;
@@ -30,12 +31,14 @@ public class MapEdits implements Serializable
 	public List<CenterEdit> centerEdits;
 	public Map<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
+	public List<EdgeEdit> edgeEdits;
 		
 	public MapEdits()
 	{
 		text = new ArrayList<>();
 		centerEdits = new ArrayList<>();
 		regionEdits = new HashMap<>();
+		edgeEdits = new ArrayList<>();
 	}
 
 	public boolean isEmpty()
@@ -55,6 +58,15 @@ public class MapEdits implements Serializable
 		hasIconEdits = true;
 		storeCenterIcons(iconDrawer.centerIcons);
 		storeCenterTrees(iconDrawer.trees);
+	}
+	
+	public void initializeEdgeEdits(List<Edge> edges)
+	{
+		edgeEdits = new ArrayList<>(edges.size());
+		for (Edge edge : edges)
+		{
+			edgeEdits.add(new EdgeEdit(edge.index, edge.river));
+		}
 	}
 	
 	public void initializeRegionEdits(Collection<Region> regions)

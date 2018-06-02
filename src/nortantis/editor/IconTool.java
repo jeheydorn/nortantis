@@ -19,6 +19,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -36,6 +37,7 @@ import nortantis.CenterIcon;
 import nortantis.CenterIconType;
 import nortantis.CenterTrees;
 import nortantis.IconDrawer;
+import nortantis.MapCreator;
 import nortantis.MapSettings;
 import util.ImageHelper;
 
@@ -70,6 +72,9 @@ public class IconTool extends EditorTool
 	private JPanel riverOptionPanel;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
+	private JCheckBox showRiversOnTopCheckBox;
+	private JRadioButton eraseRiversButton;
+	private boolean needsFullRedraw;
 
 	public IconTool(MapSettings settings, EditorDialog parent)
 	{
@@ -194,7 +199,8 @@ public class IconTool extends EditorTool
 		// River options
 		{
 			JLabel widthLabel = new JLabel("Width:");
-			riverWidthSlider = new JSlider(0, 10);
+			riverWidthSlider = new JSlider(0, 300);
+			riverWidthSlider.setValue(10);
 			riverWidthSlider.setPreferredSize(new Dimension(160, 50));
 		    riverOptionPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, widthLabel, riverWidthSlider);
 		}
@@ -225,6 +231,10 @@ public class IconTool extends EditorTool
 		    group.add(eraseTreesButton);
 		    radioButtons.add(eraseTreesButton);
 
+		    eraseRiversButton = new JRadioButton(riversButton.getText());
+		    group.add(eraseRiversButton);
+		    radioButtons.add(eraseRiversButton);
+
 		    eraseAllButton.setSelected(true);
 		    eraseOptionsPanel = EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, typeLabel, radioButtons);
 		}
@@ -251,6 +261,20 @@ public class IconTool extends EditorTool
 	    	brushSizeComboBox.addItem(new ImageIcon(image));
 	    }
 	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
+	    
+	    JLabel showRiversLabel = new JLabel("");
+	    showRiversOnTopCheckBox = new JCheckBox("Show rivers on top?");
+	    showRiversOnTopCheckBox.setToolTipText("Temporarily show rivers on top of icons to make them visible in the editor.");
+	    EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, showRiversLabel, showRiversOnTopCheckBox);
+	    showRiversOnTopCheckBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				updateMap(false);
+			}
+		});
+	    		
 	    
 	    // Prevent the panel from shrinking when components are hidden.
 	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
@@ -307,6 +331,8 @@ public class IconTool extends EditorTool
 		{
 			return;
 		}
+		
+		boolean needsFullRedraw = false;
 
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 
@@ -351,6 +377,15 @@ public class IconTool extends EditorTool
 				{
 					settings.edits.centerEdits.get(center.index).trees = null;
 					settings.edits.centerEdits.get(center.index).icon = null;
+					for (Edge edge : center.borders)
+					{
+						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
+						if (eEdit.riverLevel > 0)
+						{
+							needsFullRedraw = true;
+							eEdit.riverLevel = 0;
+						}
+					}
 				}
 			}
 			else if (eraseMountainsButton.isSelected())
@@ -394,8 +429,23 @@ public class IconTool extends EditorTool
 					cEdit.trees = null;
 				}	
 			}
+			else if (eraseRiversButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					for (Edge edge : center.borders)
+					{
+						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
+						if (eEdit.riverLevel > 0)
+						{
+							needsFullRedraw = true;
+							eEdit.riverLevel = 0;
+						}
+					}
+				}	
+			}
 		}
-		handleMapChange(selected);	
+		handleMapChange(selected, !needsFullRedraw);	
 	}
 	
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
@@ -430,11 +480,30 @@ public class IconTool extends EditorTool
 		
 		if (riversButton.isSelected())
 		{
+			Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+			Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPath(riverStart, end));
+			for (Edge edge : river)
+			{
+				int riverLevel = riverWidthSlider.getValue();
+				settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
+			}
 			riverStart = null;
-			// TODO
+			mapEditingPanel.clearHighlightedEdges();
+			mapEditingPanel.addAllProcessingEdges(river);
+			mapEditingPanel.repaint();
+			
+			if (river.size() > 0)
+			{
+				updateMap(false);
+			}
 		}
 		
 		setUndoPoint();
+	}
+	
+	private Set<Edge> filterOutOceanAndCoastEdges(Set<Edge> edges)
+	{
+		return edges.stream().filter(e -> (e.d0 == null || !e.d0.isWater ) && (e.d1 == null || !e.d1.isWater)).collect(Collectors.toSet());
 	}
 
 	@Override
@@ -479,7 +548,7 @@ public class IconTool extends EditorTool
 			{
 				mapEditingPanel.clearHighlightedEdges();
 				Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
-				Set<Edge> river = mapParts.graph.findPath(riverStart, end);
+				Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPath(riverStart, end));
 				mapEditingPanel.setHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
@@ -510,6 +579,7 @@ public class IconTool extends EditorTool
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
 		settings.drawIcons = false;
+		settings.drawRivers = false;
 	}
 
 	@Override
@@ -517,84 +587,123 @@ public class IconTool extends EditorTool
 	{
 		mapWithouticons = ImageHelper.deepCopy(map);
 		
+		if (!showRiversOnTopCheckBox.isSelected())
+		{
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+		}
 		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
+		if (showRiversOnTopCheckBox.isSelected())
+		{
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+		}
 		
 		if(!hasDrawnIconsBefore)
 		{
 			copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 			hasDrawnIconsBefore = true;
 		}
-
-		return map;
+		
+ 		mapEditingPanel.clearProcessingCenters();
+ 		mapEditingPanel.clearProcessingEdges();
+ 		
+ 		return map;
 	}
 	
-	private void updateIconsInBackgroundThread()
+	private void updateMap(boolean onlyUpdateIcons)
 	{
+		System.out.println("Entered updateMap");
+		System.out.println("onlyUpdateIcons: " + onlyUpdateIcons);
 		if (iconsAreDrawing)
 		{
+			System.out.println("icons already drawing");
 			iconsNeedRedraw = true;
+			needsFullRedraw |= !onlyUpdateIcons;
 			return;
 		}
 		
 		iconsAreDrawing = true;
+		
+		if (onlyUpdateIcons)
+		{
 
-	    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
-	    {
-	        @Override
-	        public synchronized BufferedImage doInBackground() 
-	        {	
-				try
-				{
-					BufferedImage map = ImageHelper.deepCopy(mapWithouticons);
-					mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits);
-					mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
-					
-					return map;
-				} 
-				catch (Exception e)
-				{
-					e.printStackTrace();
-			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				} 
-	        	
-	        	return null;
-	        }
-	        
-	        @Override
-	        public void done()
-	        {
-	        	BufferedImage map = null;
-	            try 
-	            {
-	            	map = get();
-	            } 
-	            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
-	            {
-	                throw new RuntimeException(e);
-	            }
-	            
-	            iconsAreDrawing = false;
-	            if (iconsNeedRedraw)
-	            {
-	            	updateIconsInBackgroundThread();
-	            }
-            	iconsNeedRedraw = false;
-	            
-         		mapEditingPanel.clearProcessingCenters();
-	            
-              	mapEditingPanel.image = map;
-        		mapEditingPanel.repaint();
-            	// Tell the scroll pane to update itself.
-            	mapEditingPanel.revalidate();
-	        }
-	    };
-	    worker.execute();
+		    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
+		    {
+		        @Override
+		        public synchronized BufferedImage doInBackground() 
+		        {	
+	        		// Only update icons
+		        	drawLock.lock();
+					try
+					{
+						BufferedImage map = ImageHelper.deepCopy(mapWithouticons);
+						if (!showRiversOnTopCheckBox.isSelected())
+						{
+							MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+						}
+						mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits);
+						mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
+						if (showRiversOnTopCheckBox.isSelected())
+						{
+							MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+						}
+						
+						return map;
+					} 
+					catch (Exception e)
+					{
+						e.printStackTrace();
+				        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					} 
+					finally
+					{
+						drawLock.unlock();
+					}
+		        	
+		        	return null;
+		        }
+		        
+		        @Override
+		        public void done()
+		        {
+		        	BufferedImage map = null;
+		            try 
+		            {
+		            	map = get();
+		            } 
+		            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
+		            {
+		                throw new RuntimeException(e);
+		            }
+		            
+		            iconsAreDrawing = false;
+		            if (iconsNeedRedraw)
+		            {
+		    			System.out.println("Recursing updateMap.");
+		            	updateMap(needsFullRedraw);
+		            }
+	            	iconsNeedRedraw = false;
+		            
+	         		mapEditingPanel.clearProcessingCenters();
+	         		mapEditingPanel.clearProcessingEdges();
+		            
+	              	mapEditingPanel.image = map;
+	        		mapEditingPanel.repaint();
+	            	// Tell the scroll pane to update itself.
+	            	mapEditingPanel.revalidate();
+		        }
+		    };
+		    worker.execute();
+		}
+		else
+		{
+			createAndShowMap();
+		}
 	}
 	
 	@Override
 	protected void onAfterUndoRedo()
 	{	
-		updateIconsInBackgroundThread();
+		updateMap(false);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
@@ -602,12 +711,12 @@ public class IconTool extends EditorTool
 		return getSelectedCenters(point, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
 	}
 	
-	private void handleMapChange(Set<Center> centers)
+	private void handleMapChange(Set<Center> centers, boolean onlyUpdateIcons)
 	{
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		updateIconsInBackgroundThread();
+		updateMap(onlyUpdateIcons);
 	}
 
 

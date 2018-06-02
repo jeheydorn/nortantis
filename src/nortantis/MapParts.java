@@ -43,4 +43,9 @@ public class MapParts
 	 */
 	public IconDrawer iconDrawer;
 	
+	/**
+	 * Used only as an output during map creation.
+	 */
+	public double sizeMultiplyer;
+	
 }

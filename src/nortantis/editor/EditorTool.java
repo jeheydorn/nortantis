@@ -8,12 +8,14 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -48,6 +50,7 @@ public abstract class EditorTool
 	private JToggleButton toggleButton;
 	private boolean mapNeedsRedraw;
 	private boolean mapIsBeingDrawn;
+	protected ReentrantLock drawLock;
 	Stack<MapEdits> undoStack;
 	Stack<MapEdits> redoStack;
 	protected MapEdits copyOfEditsWhenToolWasSelected;
@@ -63,6 +66,7 @@ public abstract class EditorTool
 		toolOptionsPanel = createToolsOptionsPanel();
 		undoStack = new Stack<>();
 		redoStack = new Stack<>();
+		drawLock  = new ReentrantLock();
 	}
 
 	private BufferedImage createPlaceholderImage()
@@ -171,8 +175,10 @@ public abstract class EditorTool
 	
 	public void createAndShowMap()
 	{
+		System.out.println("Entered createAndShowMap");
 		if (mapIsBeingDrawn)
 		{
+			System.out.println("map already drawing");
 			mapNeedsRedraw = true;
 			return;
 		}
@@ -186,20 +192,20 @@ public abstract class EditorTool
 	        @Override
 	        public BufferedImage doInBackground() 
 	        {	
+	        	drawLock.lock();
 				try
-				{
-					if (mapParts == null)
-					{
-						mapParts = new MapParts();
-					}
-					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);
-					return map;
+				{	
+					return createMap();
 				} 
 				catch (Exception e)
 				{
 					e.printStackTrace();
 			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				} 
+				finally
+				{
+					drawLock.unlock();
+				}
 	        	
 	        	return null;
 	        }
@@ -221,6 +227,7 @@ public abstract class EditorTool
 	            {	
 	            	initializeCenterEditsIfEmpty();
 	            	initializeRegionEditsIfEmpty();
+	            	initializeEdgeEditsIfEmpty();
 	            	
 	            	if (copyOfEditsWhenToolWasSelected == null)  
 	            	{
@@ -230,22 +237,34 @@ public abstract class EditorTool
 	            	
 	            	mapEditingPanel.image = map; parent.enableOrDisableToolToggleButtons(true);
 
-	            mapIsBeingDrawn = false;
-	            
-	            if (mapNeedsRedraw)
-	            {
-	            	createAndShowMap();
-	            }
-             	mapNeedsRedraw = false;
-     
-	            mapEditingPanel.repaint();
-	            // Tell the scroll pane to update itself.
-	            mapEditingPanel.revalidate();
+	            	mapIsBeingDrawn = false;
+		            if (mapNeedsRedraw)
+		            {
+		            	System.out.println("Recursing createAndShowMap");
+		            	createAndShowMap();
+		            }
+	             	mapNeedsRedraw = false;
+	     
+		            mapEditingPanel.repaint();
+		            // Tell the scroll pane to update itself.
+		            mapEditingPanel.revalidate();            
+
 	            }
 	        }
 	 
 	    };
 	    worker.execute();
+	}
+	
+	public BufferedImage createMap() throws IOException
+	{
+		if (mapParts == null)
+		{
+			mapParts = new MapParts();
+		}
+		BufferedImage map = new MapCreator().createMap(settings, null, mapParts);			
+		
+		return map;
 	}
 	
 	public MapParts getMapParts()
@@ -278,6 +297,14 @@ public abstract class EditorTool
 		if (settings.edits.centerEdits.isEmpty())
 		{
 			settings.edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);			
+		}
+	}
+	
+	private void initializeEdgeEditsIfEmpty()
+	{
+		if (settings.edits.edgeEdits.isEmpty())
+		{
+			settings.edits.initializeEdgeEdits(mapParts.graph.edges);
 		}
 	}
 	
