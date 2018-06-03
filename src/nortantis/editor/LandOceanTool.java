@@ -443,16 +443,13 @@ public class LandOceanTool extends EditorTool
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
 		settings.drawIcons = true;
+		settings.drawRivers = true;
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate)
 	{
 		this.map = map;
-		if (!mapNeedsRedraw)
-		{
-			mapEditingPanel.clearProcessingCenters();
-		}
 		return map;
 	}
 

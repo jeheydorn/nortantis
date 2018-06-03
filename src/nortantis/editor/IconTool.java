@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
+import hoten.voronoi.VoronoiGraph;
 import nortantis.CenterIcon;
 import nortantis.CenterIconType;
 import nortantis.CenterTrees;
@@ -271,7 +273,7 @@ public class IconTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				updateMap(false);
+				createAndShowMap();
 			}
 		});
 	    		
@@ -380,7 +382,7 @@ public class IconTool extends EditorTool
 					for (Edge edge : center.borders)
 					{
 						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
-						if (eEdit.riverLevel > 0)
+						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
 						{
 							needsFullRedraw = true;
 							eEdit.riverLevel = 0;
@@ -436,7 +438,7 @@ public class IconTool extends EditorTool
 					for (Edge edge : center.borders)
 					{
 						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
-						if (eEdit.riverLevel > 0)
+						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
 						{
 							needsFullRedraw = true;
 							eEdit.riverLevel = 0;
@@ -494,7 +496,7 @@ public class IconTool extends EditorTool
 			
 			if (river.size() > 0)
 			{
-				updateMap(false);
+				createAndShowMap();
 			}
 		}
 		
@@ -583,15 +585,19 @@ public class IconTool extends EditorTool
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean  isQuickUpdate)
 	{
-		mapWithouticons = ImageHelper.deepCopy(map);
-		
-		if (!showRiversOnTopCheckBox.isSelected())
+		if (!isQuickUpdate)
 		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+			mapWithouticons = ImageHelper.deepCopy(map);
+			
+			if (!showRiversOnTopCheckBox.isSelected())
+			{
+				MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+			}
+			mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
 		}
-		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
+		
 		if (showRiversOnTopCheckBox.isSelected())
 		{
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
@@ -602,108 +608,32 @@ public class IconTool extends EditorTool
 			copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 			hasDrawnIconsBefore = true;
 		}
-		
- 		mapEditingPanel.clearProcessingCenters();
- 		mapEditingPanel.clearProcessingEdges();
- 		
+		 		
  		return map;
 	}
 	
-	private void updateMap(boolean onlyUpdateIcons)
+	@Override
+	protected BufferedImage drawMapQuickUpdate()
 	{
-		System.out.println("Entered updateMap");
-		System.out.println("onlyUpdateIcons: " + onlyUpdateIcons);
-		if (iconsAreDrawing)
+		BufferedImage map = ImageHelper.deepCopy(mapWithouticons);
+		if (!showRiversOnTopCheckBox.isSelected())
 		{
-			System.out.println("icons already drawing");
-			iconsNeedRedraw = true;
-			needsFullRedraw |= !onlyUpdateIcons;
-			return;
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
 		}
-		
-		iconsAreDrawing = true;
-		
-		if (onlyUpdateIcons)
+		mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits);
+		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
+		if (showRiversOnTopCheckBox.isSelected())
 		{
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+		}
 
-		    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
-		    {
-		        @Override
-		        public synchronized BufferedImage doInBackground() 
-		        {	
-	        		// Only update icons
-		        	drawLock.lock();
-					try
-					{
-						BufferedImage map = ImageHelper.deepCopy(mapWithouticons);
-						if (!showRiversOnTopCheckBox.isSelected())
-						{
-							MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
-						}
-						mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits);
-						mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
-						if (showRiversOnTopCheckBox.isSelected())
-						{
-							MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
-						}
-						
-						return map;
-					} 
-					catch (Exception e)
-					{
-						e.printStackTrace();
-				        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-					} 
-					finally
-					{
-						drawLock.unlock();
-					}
-		        	
-		        	return null;
-		        }
-		        
-		        @Override
-		        public void done()
-		        {
-		        	BufferedImage map = null;
-		            try 
-		            {
-		            	map = get();
-		            } 
-		            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
-		            {
-		                throw new RuntimeException(e);
-		            }
-		            
-		            iconsAreDrawing = false;
-		            if (iconsNeedRedraw)
-		            {
-		    			System.out.println("Recursing updateMap.");
-		            	updateMap(needsFullRedraw);
-		            }
-	            	iconsNeedRedraw = false;
-		            
-	         		mapEditingPanel.clearProcessingCenters();
-	         		mapEditingPanel.clearProcessingEdges();
-		            
-	              	mapEditingPanel.image = map;
-	        		mapEditingPanel.repaint();
-	            	// Tell the scroll pane to update itself.
-	            	mapEditingPanel.revalidate();
-		        }
-		    };
-		    worker.execute();
-		}
-		else
-		{
-			createAndShowMap();
-		}
+		return map;
 	}
 	
 	@Override
 	protected void onAfterUndoRedo()
 	{	
-		updateMap(false);
+		createAndShowMap();
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
@@ -716,7 +646,7 @@ public class IconTool extends EditorTool
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		updateMap(onlyUpdateIcons);
+		createAndShowMap(onlyUpdateIcons);
 	}
 
 

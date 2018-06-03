@@ -49,8 +49,9 @@ public abstract class EditorTool
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
 	private boolean mapNeedsRedraw;
+	private boolean mapNeedsQuickUpdate;
 	private boolean mapIsBeingDrawn;
-	protected ReentrantLock drawLock;
+	private ReentrantLock drawLock;
 	Stack<MapEdits> undoStack;
 	Stack<MapEdits> redoStack;
 	protected MapEdits copyOfEditsWhenToolWasSelected;
@@ -171,15 +172,30 @@ public abstract class EditorTool
 	 * @param map The generated map
 	 * @return The map to display
 	 */
-	protected abstract BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw);
+	protected abstract BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate);
 	
 	public void createAndShowMap()
 	{
-		System.out.println("Entered createAndShowMap");
+		createAndShowMap(false);
+	}
+	
+	/**
+	 * Redraws the map, then displays it
+	 * @param quickUpdate If true, only a quick update will be done instead of redrawing the entire map. 
+	 * 					  To use this, a child class must override drawMapQuickUpdate.
+	 */
+	public void createAndShowMap(boolean quickUpdate)
+	{
 		if (mapIsBeingDrawn)
 		{
-			System.out.println("map already drawing");
-			mapNeedsRedraw = true;
+			if (quickUpdate)
+			{
+				mapNeedsQuickUpdate = true;
+			}
+			else
+			{
+				mapNeedsRedraw = true;
+			}
 			return;
 		}
 		
@@ -195,7 +211,18 @@ public abstract class EditorTool
 	        	drawLock.lock();
 				try
 				{	
-					return createMap();
+					if (quickUpdate)
+					{
+						return drawMapQuickUpdate();
+					}
+					
+					if (mapParts == null)
+					{
+						mapParts = new MapParts();
+					}
+					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);			
+					
+					return map;
 				} 
 				catch (Exception e)
 				{
@@ -233,18 +260,27 @@ public abstract class EditorTool
 	            	{
 	            		copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 	            	}
-	            	map = onBeforeShowMap(map, mapNeedsRedraw);
+	            	map = onBeforeShowMap(map, quickUpdate);
 	            	
 	            	mapEditingPanel.image = map; parent.enableOrDisableToolToggleButtons(true);
 
 	            	mapIsBeingDrawn = false;
-		            if (mapNeedsRedraw)
+		            if (mapNeedsRedraw || mapNeedsQuickUpdate)
 		            {
-		            	System.out.println("Recursing createAndShowMap");
-		            	createAndShowMap();
+		            	createAndShowMap(!mapNeedsRedraw);
 		            }
-	             	mapNeedsRedraw = false;
-	     
+		            else
+		            {
+		         		mapEditingPanel.clearProcessingCenters();
+		         		mapEditingPanel.clearProcessingEdges();
+		            }
+		            
+		            mapNeedsQuickUpdate = false;
+		            if (!quickUpdate)
+		            {
+		            	mapNeedsRedraw = false;
+		            }
+	             		     
 		            mapEditingPanel.repaint();
 		            // Tell the scroll pane to update itself.
 		            mapEditingPanel.revalidate();            
@@ -256,17 +292,11 @@ public abstract class EditorTool
 	    worker.execute();
 	}
 	
-	public BufferedImage createMap() throws IOException
+	protected BufferedImage drawMapQuickUpdate()
 	{
-		if (mapParts == null)
-		{
-			mapParts = new MapParts();
-		}
-		BufferedImage map = new MapCreator().createMap(settings, null, mapParts);			
-		
-		return map;
+		throw new IllegalStateException("This editor hasn't implemented quick updates");
 	}
-	
+
 	public MapParts getMapParts()
 	{
 		return mapParts;

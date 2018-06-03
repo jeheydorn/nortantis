@@ -47,7 +47,7 @@ public abstract class VoronoiGraph {
      */
 	private double riverDensity = 1.0/14.0;
 	protected double scaleMultiplyer;
-	private int riversThinnerThanThisWillNotBeDrawn = 2;
+	public static final int riversThinnerThanThisWillNotBeDrawn = 2;
 	
 	final static double verySmall = 0.0000001;
 

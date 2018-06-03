@@ -242,10 +242,11 @@ public class TextTool extends EditorTool
 		settings.drawBorder = false;
 		settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean = true;
 		settings.drawIcons = true;
+		settings.drawRivers = true;
 	}
 	
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean mapNeedsRedraw)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate)
 	{
 		// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
     	// This makes it so that any edits done to the settings will automatically be reflected
