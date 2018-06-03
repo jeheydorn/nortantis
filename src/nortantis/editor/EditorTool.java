@@ -262,7 +262,8 @@ public abstract class EditorTool
 	            	}
 	            	map = onBeforeShowMap(map, quickUpdate);
 	            	
-	            	mapEditingPanel.image = map; parent.enableOrDisableToolToggleButtons(true);
+	            	mapEditingPanel.image = map; 
+	            	parent.enableOrDisableToolToggleButtons(true);
 
 	            	mapIsBeingDrawn = false;
 		            if (mapNeedsRedraw || mapNeedsQuickUpdate)
@@ -284,7 +285,6 @@ public abstract class EditorTool
 		            mapEditingPanel.repaint();
 		            // Tell the scroll pane to update itself.
 		            mapEditingPanel.revalidate();            
-
 	            }
 	        }
 	 

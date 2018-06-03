@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
+import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
@@ -518,10 +519,11 @@ public class MapCreator
 		for (int i : new Range(edits.centerEdits.size()))
 		{
 			Center center = graph.centers.get(i);
-			boolean needsRebuild = center.isWater != edits.centerEdits.get(i).isWater;
-			center.isWater = edits.centerEdits.get(i).isWater;
+			CenterEdit cEdit = edits.centerEdits.get(i);
+			boolean needsRebuild = center.isWater != cEdit.isWater;
+			center.isWater = cEdit.isWater;
 			
-			Integer regionId = edits.centerEdits.get(i).regionId;
+			Integer regionId = cEdit.regionId;
 			if (regionId != null)
 			{
 				Region region = graph.findRegionById(regionId);
@@ -554,6 +556,12 @@ public class MapCreator
 			if (needsRebuild)
 			{
 				graph.rebuildNoisyEdgesForCenter(center);
+			}
+			
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
+			{
+				// This is so that if you edit mountains before text, the text drawer generates names for your mountains.
+				center.isMountain = true;
 			}
 		}
 	}

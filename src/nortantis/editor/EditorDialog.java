@@ -164,7 +164,7 @@ public class EditorDialog extends JDialog
 				new IconTool(settings, this),
 				new TextTool(settings, this)
 				);
-		currentTool = tools.get(1);
+		currentTool = tools.get(0);
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -384,6 +384,8 @@ public class EditorDialog extends JDialog
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearProcessingCenters();
+		mapEditingPanel.clearProcessingEdges();
+		mapEditingPanel.clearHighlightedEdges();
 		currentTool.onSwitchingAway();
 		currentTool.clearUndoRedoStacks();
 		currentTool.setToggled(false);
