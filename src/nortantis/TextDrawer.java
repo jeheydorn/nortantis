@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -55,7 +56,7 @@ public class TextDrawer
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 	
 	private BufferedImage landAndOceanBackground;
-	private List<MapText> mapTexts;
+	private CopyOnWriteArrayList<MapText> mapTexts;
 	Random r;
 	long originalSeed;
 	private NameGenerator placeNameGenerator;
@@ -80,7 +81,7 @@ public class TextDrawer
 	{
 		this.settings = settings;
 		this.sizeMultiplyer = sizeMultiplyer;
-		mapTexts = new ArrayList<>();
+		mapTexts = new CopyOnWriteArrayList<>();
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.
 		this.r = new Random(settings.textRandomSeed);
@@ -1273,7 +1274,7 @@ public class TextDrawer
 	}
 	
 
-	public void setMapTexts(List<MapText> text)
+	public void setMapTexts(CopyOnWriteArrayList<MapText> text)
 	{
 		this.mapTexts = text;
 	}

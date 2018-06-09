@@ -8,11 +8,12 @@ import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -695,17 +696,17 @@ public class MapSettings implements Serializable
 		edits = new MapEdits();
 		// hiddenTextIds is a comma seperated list.
 				
-		edits.text = getProperty("editedText", new Function0<List<MapText>>()
+		edits.text = getProperty("editedText", new Function0<CopyOnWriteArrayList<MapText>>()
 		{
 	
 			@Override
-			public List<MapText> apply()
+			public CopyOnWriteArrayList<MapText> apply()
 			{
 				String str = props.getProperty("editedText");
 				if (str == null || str.isEmpty())
-					return new ArrayList<>();
+					return new CopyOnWriteArrayList<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				List<MapText> result = new ArrayList<>();
+				CopyOnWriteArrayList<MapText> result = new CopyOnWriteArrayList<>();
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
@@ -769,15 +770,15 @@ public class MapSettings implements Serializable
 			}
 		});
 
-		edits.regionEdits = getProperty("regionEdits", new Function0<HashMap<Integer, RegionEdit>>()
+		edits.regionEdits = getProperty("regionEdits", new Function0<ConcurrentHashMap<Integer, RegionEdit>>()
 		{
-			public HashMap<Integer, RegionEdit> apply()
+			public ConcurrentHashMap<Integer, RegionEdit> apply()
 			{
 				String str = props.getProperty("regionEdits");
 				if (str == null || str.isEmpty())
-					return new HashMap<>();
+					return new ConcurrentHashMap<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				HashMap<Integer, RegionEdit> result = new HashMap<>();
+				ConcurrentHashMap<Integer, RegionEdit> result = new ConcurrentHashMap<>();
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;

@@ -12,8 +12,20 @@ public class UserPreferences
 	private final String userPrefsFileName = "user_preferences";
 	
 	public String lastLoadedSettingsFile = "";
+	public String lastEditorTool = "";
+	public String zoomLevel = "";
+	public static UserPreferences instance;
 	
-	public UserPreferences()
+	public static UserPreferences getInstance()
+	{
+		if (instance == null)
+		{
+			instance = new UserPreferences();
+		}
+		return instance;
+	}
+	
+	private UserPreferences()
 	{
 		final Properties props = new Properties();
 		try
@@ -22,7 +34,12 @@ public class UserPreferences
 			{
 				props.load(new FileInputStream("user_preferences"));
 				
-				lastLoadedSettingsFile = props.getProperty("lastLoadedSettingsFile");
+				if (props.containsKey("lastLoadedSettingsFile"))
+					lastLoadedSettingsFile = props.getProperty("lastLoadedSettingsFile");
+				if (props.containsKey("lastEditTool"))
+					lastEditorTool = props.getProperty("lastEditTool");
+				if (props.containsKey("zoomLevel"))
+					zoomLevel = props.getProperty("zoomLevel");
 			}
 		} 
 		catch (IOException e)
@@ -35,6 +52,9 @@ public class UserPreferences
 	{
 		Properties props = new Properties();
 		props.setProperty("lastLoadedSettingsFile", lastLoadedSettingsFile);
+		props.setProperty("lastEditTool", lastEditorTool);
+		props.setProperty("zoomLevel", zoomLevel);
+		
 		try
 		{
 			props.store(new PrintWriter(userPrefsFileName.toString()), "");

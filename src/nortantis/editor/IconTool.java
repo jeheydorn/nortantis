@@ -7,7 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,11 +23,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
-import javax.swing.SwingWorker;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
@@ -50,8 +47,6 @@ public class IconTool extends EditorTool
 	private JRadioButton treesButton;
 	private BufferedImage mapWithouticons;
 	private boolean hasDrawnIconsBefore;
-	private boolean iconsAreDrawing;
-	private boolean iconsNeedRedraw;
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
 	private JRadioButton hillsButton;
@@ -76,7 +71,6 @@ public class IconTool extends EditorTool
 	private Corner riverStart;
 	private JCheckBox showRiversOnTopCheckBox;
 	private JRadioButton eraseRiversButton;
-	private boolean needsFullRedraw;
 
 	public IconTool(MapSettings settings, EditorDialog parent)
 	{
@@ -201,8 +195,8 @@ public class IconTool extends EditorTool
 		// River options
 		{
 			JLabel widthLabel = new JLabel("Width:");
-			riverWidthSlider = new JSlider(0, 300);
-			riverWidthSlider.setValue(10);
+			riverWidthSlider = new JSlider(1, 15);
+			riverWidthSlider.setValue(1);
 			riverWidthSlider.setPreferredSize(new Dimension(160, 50));
 		    riverOptionPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, widthLabel, riverWidthSlider);
 		}
@@ -242,7 +236,8 @@ public class IconTool extends EditorTool
 		}
 		
 		JLabel densityLabel = new JLabel("density:");
-		densitySlider = new JSlider(1, 20);
+		densitySlider = new JSlider(1, 50);
+		densitySlider.setValue(10);
 		densitySlider.setPreferredSize(new Dimension(160, 50));
 		densityPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, densityLabel, densitySlider);
 	    
@@ -315,20 +310,10 @@ public class IconTool extends EditorTool
 	    }
 	    return new IconTypeButtons(EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, typeLabel, radioButtons), radioButtons);
 	}
-	
-	private boolean isMapVisible()
-	{
-		return !(mapParts == null || mapParts.graph == null || mapWithouticons == null);
-	}
 
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
-	{
-		if (!isMapVisible())
-		{
-			return;
-		}
-		
+	{		
 		if (riversButton.isSelected())
 		{
 			return;
@@ -459,13 +444,6 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{		
-		if (!isMapVisible())
-		{
-			return;
-		}
-		
-		mapEditingPanel.setGraph(mapParts.graph);
-
 		if (riversButton.isSelected())
 		{
 			riverStart = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
@@ -474,19 +452,19 @@ public class IconTool extends EditorTool
 
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
-	{
-		if (!isMapVisible())
-		{
-			return;
-		}
-		
+	{		
 		if (riversButton.isSelected())
 		{
 			Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
 			Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPath(riverStart, end));
 			for (Edge edge : river)
 			{
-				int riverLevel = riverWidthSlider.getValue();
+				int base = (riverWidthSlider.getValue() - 1);
+				if (base >= 2)
+				{
+					base += 1; // Level 3 looks just like level 2, so skip it.
+				}
+				int riverLevel = (base * base * 6) + VoronoiGraph.riversThinnerThanThisWillNotBeDrawn + 1;
 				settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
 			}
 			riverStart = null;
@@ -511,13 +489,6 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (!isMapVisible())
-		{
-			return;
-		}
-		
-		mapEditingPanel.setGraph(mapParts.graph);
-		
 		if (!riversButton.isSelected())
 		{
 			highlightHoverCenters(e);
@@ -527,15 +498,7 @@ public class IconTool extends EditorTool
 	
 	private void highlightHoverCenters(MouseEvent e)
 	{
-		if (!isMapVisible())
-		{
-			return;
-		}
-		
 		mapEditingPanel.clearHighlightedCenters();
-		
-		mapEditingPanel.setGraph(mapParts.graph);
-		
 		Set<Center> selected = getSelectedCenters(e.getPoint());
 		mapEditingPanel.addAllHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);	

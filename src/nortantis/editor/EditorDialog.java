@@ -38,6 +38,7 @@ import javax.swing.border.EtchedBorder;
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
+import nortantis.UserPreferences;
 import util.JComboBoxFixed;
 
 @SuppressWarnings("serial")
@@ -55,6 +56,7 @@ public class EditorDialog extends JDialog
 	boolean areToolToggleButtonsEnabled = true;
 	private JMenuItem undoButton;
 	private JMenuItem redoButton;
+	private JLabel mapIsDrawingLabel;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -80,7 +82,7 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				if (areToolToggleButtonsEnabled)
+				if (currentTool.isMapVisible)
 				{
 					currentTool.handleMouseClickOnMap(e);
 				}
@@ -89,7 +91,7 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (areToolToggleButtonsEnabled)
+				if (currentTool.isMapVisible)
 				{
 					currentTool.handleMousePressedOnMap(e);
 				}
@@ -98,7 +100,7 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				if (areToolToggleButtonsEnabled)
+				if (currentTool.isMapVisible)
 				{
 					currentTool.handleMouseReleasedOnMap(e);
 				}
@@ -111,13 +113,16 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				currentTool.handleMouseMovedOnMap(e);
+				if (currentTool.isMapVisible)
+				{
+					currentTool.handleMouseMovedOnMap(e);
+				}
 			}
 			
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (areToolToggleButtonsEnabled)
+				if (currentTool.isMapVisible)
 				{
 					currentTool.handleMouseDraggedOnMap(e);
 				}
@@ -140,7 +145,7 @@ public class EditorDialog extends JDialog
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				if (areToolToggleButtonsEnabled)
+				if (currentTool.isMapVisible)
 				{
 					currentTool.handleMouseExitedMap(e);
 				}
@@ -160,11 +165,24 @@ public class EditorDialog extends JDialog
 
 		// Setup tools
 		tools = Arrays.asList(
-				new LandOceanTool(settings, this),
+				new LandWaterTool(settings, this),
 				new IconTool(settings, this),
 				new TextTool(settings, this)
 				);
-		currentTool = tools.get(0);
+		if (UserPreferences.getInstance().lastEditorTool != "")
+		{
+			for (EditorTool tool : tools)
+			{
+				if (tool.getToolbarName().equals(UserPreferences.getInstance().lastEditorTool))
+				{
+					currentTool = tool;
+				}
+			}
+		}
+		if (currentTool == null)
+		{
+			currentTool = tools.get(0);
+		}
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -216,18 +234,31 @@ public class EditorDialog extends JDialog
 		zoomComboBox.addItem("50%");
 		zoomComboBox.addItem("75%");
 		zoomComboBox.addItem("100%");
-		zoomComboBox.setSelectedItem("50%");
+		if (UserPreferences.getInstance().zoomLevel != "")
+		{
+			zoomComboBox.setSelectedItem(UserPreferences.getInstance().zoomLevel);
+		}
+		else
+		{
+			zoomComboBox.setSelectedItem("50%");
+			UserPreferences.getInstance().zoomLevel = "50%";
+		}
 		bottomPanel.add(zoomComboBox);
 		zoomComboBox.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				UserPreferences.getInstance().zoomLevel = (String)zoomComboBox.getSelectedItem();
 				double zoom = parseZoom((String)zoomComboBox.getSelectedItem());
 				currentTool.handleZoomChange(zoom);
 			}
 		});	
 		
+		bottomPanel.add(Box.createHorizontalGlue());
+		mapIsDrawingLabel = new JLabel("Drawing...");
+		mapIsDrawingLabel.setVisible(false);
+		bottomPanel.add(mapIsDrawingLabel);
 		bottomPanel.add(Box.createHorizontalGlue());
 
 		JButton doneButton = new JButton("Done");
@@ -280,7 +311,7 @@ public class EditorDialog extends JDialog
 			public void windowClosing(WindowEvent e)
 			{
 				KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(myKeyEventDispatcher);
-
+				UserPreferences.getInstance().lastEditorTool = currentTool.getToolbarName();
 				currentTool.onSwitchingAway();
 				
 		    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
@@ -378,7 +409,7 @@ public class EditorDialog extends JDialog
 	
 	private void handleToolSelected(EditorTool selectedTool)
 	{
-		enableOrDisableToolToggleButtons(false);
+		enableOrDisableToolToggleButtonsAndZoom(false);
 		
 		MapParts mapParts = currentTool.getMapParts(); // This is moved to the new tool so that only the first tool that runs has to certain parts of the map.
 		mapEditingPanel.clearHighlightedCenters();
@@ -402,13 +433,15 @@ public class EditorDialog extends JDialog
 		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem()));
 	}
 	
-	public void enableOrDisableToolToggleButtons(boolean enable)
+	public void enableOrDisableToolToggleButtonsAndZoom(boolean enable)
 	{
 		areToolToggleButtonsEnabled = enable;
 		for (EditorTool tool: tools)
 		{
 			tool.setToggleButtonEnabled(enable);
 		}
+		zoomComboBox.setEnabled(enable);
+		mapIsDrawingLabel.setVisible(!enable);
 	}
 	
 	private double parseZoom(String zoomStr)

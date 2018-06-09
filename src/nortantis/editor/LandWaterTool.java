@@ -24,6 +24,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
@@ -31,25 +32,25 @@ import nortantis.MapSettings;
 import nortantis.Region;
 import nortantis.RunSwing;
 
-public class LandOceanTool extends EditorTool
+public class LandWaterTool extends EditorTool
 {
 
 	private JPanel colorDisplay;
 	private JPanel colorChooserPanel;
-	private BufferedImage map;
 	
 	private JRadioButton landButton;
-	private JRadioButton oceanButton;
+	private JRadioButton waterButton;
 	private JRadioButton fillRegionColorButton;
-	private JRadioButton paintColorButton;
+	private JRadioButton paintRegionButton;
 	private JRadioButton mergeRegionsButton;
 	private Region selectedRegion;
-	private JRadioButton selectColorButton;
+	private JToggleButton selectColorButton;
 	
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
+	private JPanel selectColorPanel;
 
-	public LandOceanTool(MapSettings settings, EditorDialog dialog)
+	public LandWaterTool(MapSettings settings, EditorDialog dialog)
 	{
 		super(settings, dialog);
 	}
@@ -57,7 +58,7 @@ public class LandOceanTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Land and Ocean";
+		return "Land and Water";
 	}
 
 	@Override
@@ -77,10 +78,10 @@ public class LandOceanTool extends EditorTool
 		JLabel brushLabel = new JLabel("Brush:");
 		List<JComponent> radioButtons = new ArrayList<>();
 		ButtonGroup group = new ButtonGroup();
-		oceanButton = new JRadioButton("Ocean");
-	    group.add(oceanButton);
-	    radioButtons.add(oceanButton);
-	    toolOptionsPanel.add(oceanButton);
+		waterButton = new JRadioButton("Ocean");
+	    group.add(waterButton);
+	    radioButtons.add(waterButton);
+	    toolOptionsPanel.add(waterButton);
 		ActionListener listener = new ActionListener()
 		{
 			@Override
@@ -88,28 +89,29 @@ public class LandOceanTool extends EditorTool
 			{
 				if (colorChooserPanel != null && settings.drawRegionColors)
 				{
-					colorChooserPanel.setVisible(paintColorButton.isSelected() || fillRegionColorButton.isSelected());
+					boolean isVisible = paintRegionButton.isSelected() || fillRegionColorButton.isSelected();
+					colorChooserPanel.setVisible(isVisible);
+					selectColorPanel.setVisible(isVisible);
 				}
 				
 				if (brushSizeComboBox != null)
 				{
-					brushSizePanel.setVisible(paintColorButton.isSelected() || oceanButton.isSelected() || landButton.isSelected());
+					brushSizePanel.setVisible(paintRegionButton.isSelected() || waterButton.isSelected() || landButton.isSelected());
 				}
 			}
 	    };
-	    oceanButton.addActionListener(listener);
+	    waterButton.addActionListener(listener);
 	    
-	    paintColorButton = new JRadioButton("Paint color");
+	    paintRegionButton = new JRadioButton("Paint region");
 	    fillRegionColorButton = new JRadioButton("Fill region color");
 	    mergeRegionsButton = new JRadioButton("Merge regions");
-	    selectColorButton = new JRadioButton("Select color by region");
 	    landButton = new JRadioButton("Land");
 	    if (settings.drawRegionColors)
 	    {
 			
-		    group.add(paintColorButton);
-		    radioButtons.add(paintColorButton);
-		    paintColorButton.addActionListener(listener);
+		    group.add(paintRegionButton);
+		    radioButtons.add(paintRegionButton);
+		    paintRegionButton.addActionListener(listener);
 
 		    
 		    group.add(fillRegionColorButton);
@@ -120,11 +122,6 @@ public class LandOceanTool extends EditorTool
 		    group.add(mergeRegionsButton);
 		    radioButtons.add(mergeRegionsButton);
 		    mergeRegionsButton.addActionListener(listener);
-
-		    
-		    group.add(selectColorButton);
-		    radioButtons.add(selectColorButton);
-		    selectColorButton.addActionListener(listener);
 	    }
 	    else
 	    {
@@ -132,7 +129,7 @@ public class LandOceanTool extends EditorTool
 		    radioButtons.add(landButton);
 		    landButton.addActionListener(listener);
 	    }
-	    oceanButton.setSelected(true); // Selected by default
+	    waterButton.setSelected(true); // Selected by default
 	    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, brushLabel, radioButtons);
 	    
 	    // Color chooser
@@ -160,6 +157,11 @@ public class LandOceanTool extends EditorTool
 			chooserPanel.add(chooseButton);
 			
 			colorChooserPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, colorLabel, chooserPanel);
+			
+			selectColorButton = new JToggleButton("Select color from map");
+			selectColorButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
+			selectColorPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, new JLabel(""), selectColorButton);
+
 	    }
 	    listener.actionPerformed(null);
 
@@ -190,12 +192,7 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		if (map == null) 
-		{
-			// The map is not visible;
-			return;
-		}
-		if (oceanButton.isSelected())
+		if (waterButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 			boolean hasChange = false;
@@ -210,22 +207,38 @@ public class LandOceanTool extends EditorTool
 				handleMapChange(selected);
 			}
 		}
-		else if (paintColorButton.isSelected())
+		else if (paintRegionButton.isSelected())
 		{
-			Set<Center> selected = getSelectedCenters(e.getPoint());
-			boolean hasChange = false;
-			for (Center center : selected)
+			if (selectColorButton.isSelected())
 			{
-				CenterEdit edit = settings.edits.centerEdits.get(center.index);
-				hasChange |= edit.isWater;
-				edit.isWater = false;
-				Integer newRegionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
-				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
-				edit.regionId = newRegionId;
-			}
-			if (hasChange)
+				Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+				if (center != null)
+				{
+					if (center != null && center.region != null)
+					{
+						colorDisplay.setBackground(center.region.backgroundColor);
+						selectColorButton.setSelected(false);
+						paintRegionButton.setSelected(true);
+					}
+				}
+			}	
+			else
 			{
-				handleMapChange(selected);
+				Set<Center> selected = getSelectedCenters(e.getPoint());
+				boolean hasChange = false;
+				for (Center center : selected)
+				{
+					CenterEdit edit = settings.edits.centerEdits.get(center.index);
+					hasChange |= edit.isWater;
+					edit.isWater = false;
+					Integer newRegionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
+					hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
+					edit.regionId = newRegionId;
+				}
+				if (hasChange)
+				{
+					handleMapChange(selected);
+				}
 			}
 		}
 		else if (landButton.isSelected())
@@ -301,19 +314,6 @@ public class LandOceanTool extends EditorTool
 				}
 			}
 		}
-		else if (selectColorButton.isSelected())
-		{
-			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
-			if (center != null)
-			{
-				if (center != null && center.region != null)
-				{
-					colorDisplay.setBackground(center.region.backgroundColor);
-					selectColorButton.setSelected(false);
-					paintColorButton.setSelected(true);
-				}
-			}
-		}	
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
@@ -386,36 +386,31 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (mapParts != null && mapParts.graph != null && map != null)
-		{
-			mapEditingPanel.clearHighlightedCenters();
-		
-			mapEditingPanel.setGraph(mapParts.graph);
-
-			if (oceanButton.isSelected() || paintColorButton.isSelected() || landButton.isSelected())
-			{		
-				Set<Center> selected = getSelectedCenters(e.getPoint());
-				mapEditingPanel.addAllHighlightedCenters(selected);
-				mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
-			}
-			else if (selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
-			{
-				Center center = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
-				if (center != null)
-				{
-					if (center.region != null)
-					{
-						mapEditingPanel.addAllHighlightedCenters(center.region.getCenters());
-					}
-					if (selectedRegion != null)
-					{
-						mapEditingPanel.addAllHighlightedCenters(selectedRegion.getCenters());
-					}
-					mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineGroup);
-				}
-			}
-			mapEditingPanel.repaint();
+		mapEditingPanel.clearHighlightedCenters();
+	
+		if (waterButton.isSelected() || paintRegionButton.isSelected() && !selectColorButton.isSelected() || landButton.isSelected())
+		{		
+			Set<Center> selected = getSelectedCenters(e.getPoint());
+			mapEditingPanel.addAllHighlightedCenters(selected);
+			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 		}
+		else if (paintRegionButton.isSelected() && selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
+		{
+			Center center = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
+			if (center != null)
+			{
+				if (center.region != null)
+				{
+					mapEditingPanel.addAllHighlightedCenters(center.region.getCenters());
+				}
+				if (selectedRegion != null)
+				{
+					mapEditingPanel.addAllHighlightedCenters(selectedRegion.getCenters());
+				}
+				mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineGroup);
+			}
+		}
+		mapEditingPanel.repaint();
 	}
 
 	@Override
@@ -449,7 +444,6 @@ public class LandOceanTool extends EditorTool
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate)
 	{
-		this.map = map;
 		return map;
 	}
 

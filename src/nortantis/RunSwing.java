@@ -132,7 +132,6 @@ public class RunSwing
 	private JTextField regionsSeedTextField;
 	private JButton newRegionSeedButton;
 	private JSlider grungeSlider;
-	private UserPreferences userPreferences;
 	private ImagePanel previewPanel;
 	private JLabel lblOceanBackgroundImage;
 	private JLabel lblLandBackgroundImage;
@@ -221,14 +220,13 @@ public class RunSwing
 	public RunSwing()
 	{
 		createGUI();
-		userPreferences = new UserPreferences();
 		
 		try
 		{
-			if (Files.exists(Paths.get(userPreferences.lastLoadedSettingsFile)))
+			if (Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
 			{
-				loadSettingsIntoGUI(userPreferences.lastLoadedSettingsFile);
-				openSettingsFilePath = Paths.get(userPreferences.lastLoadedSettingsFile);
+				loadSettingsIntoGUI(UserPreferences.getInstance().lastLoadedSettingsFile);
+				openSettingsFilePath = Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile);
 				updateFrameTitle();
 			}
 			else
@@ -259,7 +257,7 @@ public class RunSwing
 		lastSettingsLoadedOrSaved.textRandomSeed = seed;
 		
 		updateBackgroundImageDisplays();
-		userPreferences.lastLoadedSettingsFile = "";
+		UserPreferences.getInstance().lastLoadedSettingsFile = "";
 		previewPanel.setImage(null);
 		previewPanel.repaint();
 	}
@@ -282,13 +280,13 @@ public class RunSwing
             		{
             			if (openSettingsFilePath != null)
             			{
-	            			userPreferences.lastLoadedSettingsFile = openSettingsFilePath.toString();
+            				UserPreferences.getInstance().lastLoadedSettingsFile = openSettingsFilePath.toString();
             			}
             			else
             			{
-            				userPreferences.lastLoadedSettingsFile = "";
+            				UserPreferences.getInstance().lastLoadedSettingsFile = "";
             			}
-            			userPreferences.save();
+            			UserPreferences.getInstance().save();
             			frame.dispose();
             			System.exit(0);
             		}
@@ -1072,7 +1070,7 @@ public class RunSwing
 		borderPanel.add(lblBorderType);
 		
 		borderTypeComboBox = new JComboBox<String>();
-		borderTypeComboBox.setBounds(133, 70, 236, 24);
+		borderTypeComboBox.setBounds(133, 70, 236, 30);
 		borderPanel.add(borderTypeComboBox);
 		
 		borderWidthSlider = new JSlider();

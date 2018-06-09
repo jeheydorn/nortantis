@@ -8,7 +8,6 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -56,6 +55,7 @@ public abstract class EditorTool
 	Stack<MapEdits> redoStack;
 	protected MapEdits copyOfEditsWhenToolWasSelected;
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
+	protected boolean isMapVisible;
 	
 	public EditorTool(MapSettings settings, EditorDialog parent)
 	{
@@ -147,8 +147,8 @@ public abstract class EditorTool
 	 */
 	public void handleZoomChange(double zoomLevel)
 	{
+		isMapVisible = false;
 		zoom = zoomLevel;
-		mapEditingPanel.setImage(placeHolder);
 		mapEditingPanel.clearAreasToDraw();
 		mapParts = null;
 		
@@ -200,6 +200,7 @@ public abstract class EditorTool
 		}
 		
 		mapIsBeingDrawn = true;
+		parent.enableOrDisableToolToggleButtonsAndZoom(false);
 		
 		onBeforeCreateMap();
 
@@ -252,6 +253,8 @@ public abstract class EditorTool
 	            
 	            if (map != null)
 	            {	
+					mapEditingPanel.setGraph(mapParts.graph);
+
 	            	initializeCenterEditsIfEmpty();
 	            	initializeRegionEditsIfEmpty();
 	            	initializeEdgeEditsIfEmpty();
@@ -263,7 +266,7 @@ public abstract class EditorTool
 	            	map = onBeforeShowMap(map, quickUpdate);
 	            	
 	            	mapEditingPanel.image = map; 
-	            	parent.enableOrDisableToolToggleButtons(true);
+	            	parent.enableOrDisableToolToggleButtonsAndZoom(true);
 
 	            	mapIsBeingDrawn = false;
 		            if (mapNeedsRedraw || mapNeedsQuickUpdate)
@@ -284,7 +287,8 @@ public abstract class EditorTool
 	             		     
 		            mapEditingPanel.repaint();
 		            // Tell the scroll pane to update itself.
-		            mapEditingPanel.revalidate();            
+		            mapEditingPanel.revalidate();   
+		            isMapVisible = true;
 	            }
 	        }
 	 

@@ -3,9 +3,10 @@ package nortantis.editor;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
@@ -25,19 +26,23 @@ import util.Range;
 public class MapEdits implements Serializable
 {
 	/**
+	 * All fields in this class must either be thread safe or must not be modified after initialization.
+	 */
+	
+	/**
 	 * Text the user has edited, added, moved, or rotated. The key is the text id.
 	 */
-	public List<MapText> text;
+	public CopyOnWriteArrayList<MapText> text;
 	public List<CenterEdit> centerEdits;
-	public Map<Integer, RegionEdit> regionEdits;
+	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
 		
 	public MapEdits()
 	{
-		text = new ArrayList<>();
+		text = new CopyOnWriteArrayList<>();
 		centerEdits = new ArrayList<>();
-		regionEdits = new HashMap<>();
+		regionEdits = new ConcurrentHashMap<>();
 		edgeEdits = new ArrayList<>();
 	}
 
