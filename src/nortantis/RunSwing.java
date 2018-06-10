@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -172,6 +173,7 @@ public class RunSwing
 	private JLabel lblHueRange;
 	private JLabel lblSaturationRange;
 	private JLabel lblBrightnessRange;
+	private JLabel lblMapEditsMessage;
 
 	
 	public static boolean isRunning()
@@ -521,8 +523,7 @@ public class RunSwing
 			}
 			centerLandToWaterProbSlider.setLabelTable( labelTable );
 		}
-		terrainPanel.add(centerLandToWaterProbSlider);
-		
+		terrainPanel.add(centerLandToWaterProbSlider);		
 		
 		// For the background tab.
 		final JPanel backgroundPanel = new JPanel();
@@ -1518,7 +1519,8 @@ public class RunSwing
 		        dialog = new EditorDialog(getSettingsFromGUI(), runSwing);
 				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 				dialog.setVisible(true);
-				if (!hadEdits)
+		    	runSwing.updateFieldsWhenEditsChange();	
+				if (!hadEdits && !edits.isEmpty())
 				{
 					showMapChangesMessage();
 				}
@@ -1545,6 +1547,14 @@ public class RunSwing
 		});
 		editorMenu.add(clearEditsMenuItem);
 		
+		lblMapEditsMessage = new JLabel("<html>Fields on this tab and some on other tabs are disabled because this"
+				+ " map has edits. If you wish to enable those fields, you can either clear your "
+				+ "edits (" + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "),"
+					+ " or create a new random map by going to File > New.</html>");
+		lblMapEditsMessage.setBounds(12, 285, 913, 50);
+		lblMapEditsMessage.setVisible(false);
+		terrainPanel.add(lblMapEditsMessage);
+		
 		JMenuBar menuBar_1 = new JMenuBar();
 		menuBar.add(menuBar_1);
 		
@@ -1558,9 +1568,10 @@ public class RunSwing
 			JPanel panel = new JPanel();
 			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 			panel.add(new JLabel("<html>Some fields are now disabled to ensure your map remains compatible with your "
-					+ "<br>edits. If a field is disabled for thisreason, a message about that is added to"
-					+ "<br>the field's tool tip. If you wish to change those fields, you must either clear your"
-					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
+					+ "<br>edits. If a field is disabled for this reason, a message is added to the field's tool "
+					+ "<br>tip. If you wish to enable those fields, you can either clear your edits (Editor > Clear"
+					+ "<br>Edits), or create a new random map by going to File > New.</html>"));
+			panel.add(Box.createVerticalStrut(18));
 			JCheckBox checkBox = new JCheckBox("Don't show this messag again.");
 			panel.add(checkBox);
 			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.OK_OPTION);
@@ -2081,6 +2092,7 @@ public class RunSwing
 
 		updateLastSettingsLoadedOrSaved(settings);
 		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
+		
 		loadingSettings = false;	
 	}
 	
@@ -2225,6 +2237,7 @@ public class RunSwing
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblSaturationRange, saturationSlider, hasEdits);	
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblBrightnessRange, brightnessSlider, hasEdits);
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, newRegionSeedButton, hasEdits);	
+		lblMapEditsMessage.setVisible(hasEdits);
 	}
 	
 	public void lockOrUnlockBecauseOfEditsAndUpdateTooltip(JLabel label, JComponent component, boolean hasEdits)

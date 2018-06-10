@@ -316,11 +316,18 @@ public class EditorDialog extends JDialog
 				UserPreferences.getInstance().lastEditorTool = currentTool.getToolbarName();
 				currentTool.onSwitchingAway();
 				
-		    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
-		    	runSwing.edits = settings.edits;
-		    	runSwing.updateFieldsWhenEditsChange();
-		    	
-		    	//showMapChangesWarning();
+				if (settings.edits.isEmpty())
+				{
+					// This happens if the user closes the editor before it finishes generating the first time. This
+					// assignment causes the edits being created by the generator to be discarded. This is necessary
+					// to prevent a case where there are edits but the UI doesn't realize it.
+					settings.edits = new MapEdits();
+				}
+				else
+				{
+			    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
+			    	runSwing.edits = settings.edits;				
+				}
 			}
 		});
 		

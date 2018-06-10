@@ -9,7 +9,7 @@ import java.util.Properties;
 
 public class UserPreferences
 {
-	private final String userPrefsFileName = "user_preferences";
+	private final String userPrefsFileName = "user preferences";
 	
 	public String lastLoadedSettingsFile = "";
 	public String lastEditorTool = "";
@@ -34,7 +34,7 @@ public class UserPreferences
 		{
 			if (Files.exists(Paths.get(userPrefsFileName)))
 			{
-				props.load(new FileInputStream("user_preferences"));
+				props.load(new FileInputStream(userPrefsFileName));
 				
 				if (props.containsKey("lastLoadedSettingsFile"))
 					lastLoadedSettingsFile = props.getProperty("lastLoadedSettingsFile");
