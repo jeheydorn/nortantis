@@ -1517,6 +1517,7 @@ public class RunSwing
 		        dialog = new EditorDialog(getSettingsFromGUI(), runSwing);
 				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 				dialog.setVisible(true);
+				showMapChangesWarning();
 			}			
 		});
 		editorMenu.add(launchEditorMenuItem);
@@ -1544,6 +1545,23 @@ public class RunSwing
 		menuBar.add(menuBar_1);
 		
 		frame.pack();
+	}
+	
+	private void showMapChangesWarning()
+	{
+		if (!UserPreferences.getInstance().hideMapChangesWarning)
+		{
+			JPanel panel = new JPanel();
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			panel.add(new JLabel("<html>Some fields are now disabled to ensure your map remains compatible with your "
+					+ "<br>edits. If a field is disabled for thisreason, a message about that is added to"
+					+ "<br>the field's tool tip. If you wish to change those fields, you must either clear your"
+					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
+			JCheckBox checkBox = new JCheckBox("Don't show this messag again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.OK_OPTION);
+			UserPreferences.getInstance().hideMapChangesWarning = checkBox.isSelected();
+		}
 	}
 	
 	private int calcMaximumResolution() 

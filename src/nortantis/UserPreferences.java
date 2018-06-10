@@ -14,6 +14,8 @@ public class UserPreferences
 	public String lastLoadedSettingsFile = "";
 	public String lastEditorTool = "";
 	public String zoomLevel = "";
+	public boolean hideMapChangesWarning;
+	
 	public static UserPreferences instance;
 	
 	public static UserPreferences getInstance()
@@ -40,6 +42,8 @@ public class UserPreferences
 					lastEditorTool = props.getProperty("lastEditTool");
 				if (props.containsKey("zoomLevel"))
 					zoomLevel = props.getProperty("zoomLevel");
+				if (props.containsKey("hideMapChangesWarning"))
+					hideMapChangesWarning = Boolean.parseBoolean(props.getProperty("hideMapChangesWarning"));
 			}
 		} 
 		catch (IOException e)
@@ -54,6 +58,7 @@ public class UserPreferences
 		props.setProperty("lastLoadedSettingsFile", lastLoadedSettingsFile);
 		props.setProperty("lastEditTool", lastEditorTool);
 		props.setProperty("zoomLevel", zoomLevel);
+		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
 		
 		try
 		{

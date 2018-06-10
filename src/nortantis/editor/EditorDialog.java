@@ -23,12 +23,14 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
@@ -317,6 +319,8 @@ public class EditorDialog extends JDialog
 		    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
 		    	runSwing.edits = settings.edits;
 		    	runSwing.updateFieldsWhenEditsChange();
+		    	
+		    	//showMapChangesWarning();
 			}
 		});
 		
@@ -449,5 +453,7 @@ public class EditorDialog extends JDialog
 		double zoomPercent = Double.parseDouble(zoomStr.substring(0, zoomStr.length() - 1));
 		return zoomPercent / 100.0;
 	}
+	
+
 }
 
