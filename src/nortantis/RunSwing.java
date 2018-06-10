@@ -1540,7 +1540,6 @@ public class RunSwing
 	            if (n == JOptionPane.YES_OPTION) 
 	            {
 					edits = new MapEdits();
-					clearEditsMenuItem.setEnabled(false);
 					updateFieldsWhenEditsChange();
 	            }
 			}			
@@ -2084,7 +2083,6 @@ public class RunSwing
 		drawBorderCheckbox.doClick();
 		
 		edits = settings.edits;
-		clearEditsMenuItem.setEnabled(!edits.text.isEmpty() || !edits.centerEdits.isEmpty());
 		
 		updateFieldsWhenEditsChange();
 		updateBackgroundImageDisplays();
@@ -2238,6 +2236,7 @@ public class RunSwing
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblBrightnessRange, brightnessSlider, hasEdits);
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, newRegionSeedButton, hasEdits);	
 		lblMapEditsMessage.setVisible(hasEdits);
+		clearEditsMenuItem.setEnabled(hasEdits);
 	}
 	
 	public void lockOrUnlockBecauseOfEditsAndUpdateTooltip(JLabel label, JComponent component, boolean hasEdits)

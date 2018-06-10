@@ -69,10 +69,16 @@ public class EditorDialog extends JDialog
 	 */
 	public EditorDialog(final MapSettings settings, final RunSwing runSwing)
 	{
+		if (settings.edits.isEmpty())
+		{
+			// This is in case the user closes the editor before it finishes generating the first time. This
+			// assignment causes the edits being created by the generator to be discarded. This is necessary
+			// to prevent a case where there are edits but the UI doesn't realize it.
+			settings.edits = new MapEdits();
+		}
+		
 		final EditorDialog thisDialog = this;
 		setBounds(100, 100, 1122, 701);
-		
-		runSwing.clearEditsMenuItem.setEnabled(true);
 
 		getContentPane().setLayout(new BorderLayout());
 		
