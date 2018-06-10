@@ -1513,11 +1513,15 @@ public class RunSwing
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
+				boolean hadEdits = !edits.isEmpty();
 		        Dialog dialog;
 		        dialog = new EditorDialog(getSettingsFromGUI(), runSwing);
 				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
 				dialog.setVisible(true);
-				showMapChangesWarning();
+				if (!hadEdits)
+				{
+					showMapChangesMessage();
+				}
 			}			
 		});
 		editorMenu.add(launchEditorMenuItem);
@@ -1547,7 +1551,7 @@ public class RunSwing
 		frame.pack();
 	}
 	
-	private void showMapChangesWarning()
+	private void showMapChangesMessage()
 	{
 		if (!UserPreferences.getInstance().hideMapChangesWarning)
 		{
