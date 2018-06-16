@@ -15,6 +15,8 @@ public class UserPreferences
 	public String lastEditorTool = "";
 	public String zoomLevel = "";
 	public boolean hideMapChangesWarning;
+	public boolean hideAspectRatioWarning;
+	public boolean hideHeightMapWithEditsWarning;
 	
 	public static UserPreferences instance;
 	
@@ -44,6 +46,10 @@ public class UserPreferences
 					zoomLevel = props.getProperty("zoomLevel");
 				if (props.containsKey("hideMapChangesWarning"))
 					hideMapChangesWarning = Boolean.parseBoolean(props.getProperty("hideMapChangesWarning"));
+				if (props.containsKey("hideAspectRatioWarning"))
+					hideAspectRatioWarning = Boolean.parseBoolean(props.getProperty("hideAspectRatioWarning"));
+				if (props.containsKey("hideHeightMapWithEditsWarning"))
+					hideHeightMapWithEditsWarning = Boolean.parseBoolean(props.getProperty("hideHeightMapWithEditsWarning"));
 			}
 		} 
 		catch (IOException e)
@@ -59,6 +65,8 @@ public class UserPreferences
 		props.setProperty("lastEditTool", lastEditorTool);
 		props.setProperty("zoomLevel", zoomLevel);
 		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
+		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
+		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");
 		
 		try
 		{

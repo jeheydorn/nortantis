@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Rectangle;
+import java.awt.TrayIcon.MessageType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -246,18 +247,9 @@ public class RunSwing
 	private void generateAndloadNewSettings()
 	{
 		openSettingsFilePath = null;
-		loadSettingsIntoGUI(SettingsGenerator.generate());
-		updateFrameTitle();
-		long seed = Math.abs(new Random().nextInt());
-		randomSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.randomSeed = seed;
-		backgroundSeedTextField.setText(seed + "");
-		regionsSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
-		lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
-		textRandomSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.textRandomSeed = seed;
-		
+		MapSettings randomSettings = SettingsGenerator.generate();
+		loadSettingsIntoGUI(randomSettings);
+		updateFrameTitle();		
 		updateBackgroundImageDisplays();
 		UserPreferences.getInstance().lastLoadedSettingsFile = "";
 		previewPanel.setImage(null);
@@ -564,6 +556,24 @@ public class RunSwing
 		oceanBackgroundImageFilename.setBounds(12, 239, 278, 28);
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
+		oceanBackgroundImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				showAspectRatioWarning();
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				showAspectRatioWarning();
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				showAspectRatioWarning();
+			}
+		});
+		
 
 		btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
@@ -1464,6 +1474,8 @@ public class RunSwing
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
+				showHeightMapWithEditsWarning();
+				
 				txtConsoleOutput.setText("");
 			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 			    {
@@ -1560,6 +1572,48 @@ public class RunSwing
 		frame.pack();
 	}
 	
+	private void showHeightMapWithEditsWarning()
+	{
+		if (edits != null && !edits.isEmpty() && !UserPreferences.getInstance().hideHeightMapWithEditsWarning)
+		{
+			Dimension size = new Dimension(400, 80);
+			JPanel panel = new JPanel();
+			panel.setPreferredSize(size);
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			JLabel label = new JLabel("<html>Edits made in the editor, such as land, water, and mountains, "
+					+ "are not applied to height maps. </html>");
+			panel.add(label);
+			label.setMaximumSize(size);
+			panel.add(Box.createVerticalStrut(18));
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
+			UserPreferences.getInstance().hideHeightMapWithEditsWarning = checkBox.isSelected();
+		}
+	}
+
+	
+	private void showAspectRatioWarning()
+	{
+		if (edits != null && !edits.isEmpty() && !UserPreferences.getInstance().hideAspectRatioWarning)
+		{
+			Dimension size = new Dimension(400, 130);
+			JPanel panel = new JPanel();
+			panel.setPreferredSize(size);
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			JLabel label = new JLabel("<html>The new background image must have exactly the same aspect ratio as the old one "
+					+ "or your edits won't work. If you want to use a background image with a different aspect ratio, "
+					+ "first clear your edits. Note that changing the aspect ratio will create a very different map. </html>");
+			label.setMaximumSize(size);
+			panel.add(label);
+			panel.add(Box.createVerticalStrut(18));
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.WARNING_MESSAGE);
+			UserPreferences.getInstance().hideAspectRatioWarning = checkBox.isSelected();
+		}
+	}
+	
 	private void showMapChangesMessage()
 	{
 		if (!UserPreferences.getInstance().hideMapChangesWarning)
@@ -1571,9 +1625,9 @@ public class RunSwing
 					+ "<br>to the field's tool tip. If you wish to enable those fields, you can either clear your "
 					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
 			panel.add(Box.createVerticalStrut(18));
-			JCheckBox checkBox = new JCheckBox("Don't show this messag again.");
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
 			panel.add(checkBox);
-			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.OK_OPTION);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
 			UserPreferences.getInstance().hideMapChangesWarning = checkBox.isSelected();
 		}
 	}

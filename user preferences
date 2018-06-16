@@ -1,6 +1,8 @@
 #
-#Sat Jun 16 11:40:51 CDT 2018
-hideMapChangesWarning=true
-lastEditTool=Land and Water
-lastLoadedSettingsFile=/home/joseph/Documents/FantasyMapCreator/workspace/nortantis/temp.properties
-zoomLevel=100%
+#Sat Jun 16 17:39:23 CDT 2018
+hideHeightMapWithEditsWarning=false
+hideMapChangesWarning=false
+lastEditTool=
+hideAspectRatioWarning=false
+lastLoadedSettingsFile=
+zoomLevel=

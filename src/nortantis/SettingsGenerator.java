@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * For randomly generating settings with which to generate a map.
@@ -32,6 +33,8 @@ public class SettingsGenerator
 		
 		MapSettings settings = new MapSettings(defaultSettingsFile);
 		
+		setRandomSeeds(settings, rand);
+		
 		int hueRange = 16;
 		int saturationRange = 25;
 		int brightnessRange = 25;
@@ -46,7 +49,26 @@ public class SettingsGenerator
 				saturationRange, brightnessRange);
 		
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSize) / worldSizePrecision) + minWorldSize / worldSizePrecision) * worldSizePrecision;
+		
+		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
+		if (!borderTypes.isEmpty())
+		{
+			// Random border type.
+			settings.drawBorder = true;
+			int index = rand.nextInt() % borderTypes.size();
+			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
+			settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
+		}
 				
 		return settings;
+	}
+	
+	private static void setRandomSeeds(MapSettings settings, Random rand)
+	{
+		long seed = Math.abs(rand.nextInt());
+		settings.randomSeed = seed;
+		settings.regionsRandomSeed = seed;
+		settings.backgroundRandomSeed = seed;
+		settings.textRandomSeed = seed;
 	}
 }
