@@ -144,8 +144,15 @@ public class LandWaterTool extends EditorTool
 			JButton chooseButton = new JButton("Choose");
 			chooseButton.setBounds(814, 314, 87, 25);
 			chooseButton = new JButton("Choose");
-			chooseButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
+			chooseButton.addActionListener(new ActionListener() 
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					if (selectColorButton.isSelected())
+					{
+						selectColorButton.setSelected(false);
+						selectedRegion = null;
+					}
 					RunSwing.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, "Text color");
 				}
 			});

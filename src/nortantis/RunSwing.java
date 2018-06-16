@@ -1566,10 +1566,10 @@ public class RunSwing
 		{
 			JPanel panel = new JPanel();
 			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			panel.add(new JLabel("<html>Some fields are now disabled to ensure your map remains compatible with your "
-					+ "<br>edits. If a field is disabled for this reason, a message is added to the field's tool "
-					+ "<br>tip. If you wish to enable those fields, you can either clear your edits (Editor > Clear"
-					+ "<br>Edits), or create a new random map by going to File > New.</html>"));
+			panel.add(new JLabel("<html>Some fields in the generator are now disabled to ensure your map remains"
+					+ "<br>compatible with your edits. If a field is disabled for this reason, a message is added"
+					+ "<br>to the field's tool tip. If you wish to enable those fields, you can either clear your "
+					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
 			panel.add(Box.createVerticalStrut(18));
 			JCheckBox checkBox = new JCheckBox("Don't show this messag again.");
 			panel.add(checkBox);

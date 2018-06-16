@@ -182,30 +182,45 @@ public class IconDrawer
 			Center center = graph.centers.get(cEdit.index);
 			if (cEdit.icon != null)
 			{
-				if (cEdit.icon.iconType == CenterIconType.Mountain)
+				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null && !mountainImagesById.isEmpty())
 				{
-					if (mountainImagesById.containsKey(cEdit.icon.iconGroupId) && mountainImagesById.get(cEdit.icon.iconGroupId).size() > 0)
+					String groupId = cEdit.icon.iconGroupId;
+					if (!mountainImagesById.containsKey(groupId))
+					{
+						// Someone removed the icon group. Choose a new group.
+						groupId = chooseNewGroupId(mountainImagesById.keySet(), groupId);
+					}
+					if (mountainImagesById.get(groupId).size() > 0)
 					{
 						int scaledSize = findScaledMountainSize(center);
-						BufferedImage mountainImage = mountainImagesById.get(cEdit.icon.iconGroupId).get(
-								cEdit.icon.iconIndex % mountainImagesById.get(cEdit.icon.iconGroupId).size()).getFirst();
-						BufferedImage mask = mountainImagesById.get(cEdit.icon.iconGroupId).get(
-								cEdit.icon.iconIndex % mountainImagesById.get(cEdit.icon.iconGroupId).size()).getSecond();
+						BufferedImage mountainImage = mountainImagesById.get(groupId).get(
+								cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getFirst();
+						BufferedImage mask = mountainImagesById.get(groupId).get(
+								cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getSecond();
 						iconsToDraw.getOrCreate(center).add(new IconDrawTask(mountainImage, 
 			       				mask, center.loc, scaledSize, true));
 					}
 				}
-				else if (cEdit.icon.iconType == CenterIconType.Hill)
+				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null && !hillImagesById.isEmpty())
 				{
-					int scaledSize = findScaledHillSize(center);
-					BufferedImage hillImage = hillImagesById.get(cEdit.icon.iconGroupId).get(
-							cEdit.icon.iconIndex % hillImagesById.get(cEdit.icon.iconGroupId).size()).getFirst();
-					BufferedImage mask = hillImagesById.get(cEdit.icon.iconGroupId).get(
-							cEdit.icon.iconIndex % hillImagesById.get(cEdit.icon.iconGroupId).size()).getSecond();
-					iconsToDraw.getOrCreate(center).add(new IconDrawTask(hillImage, 
-		       				mask, center.loc, scaledSize, true));				
+					String groupId = cEdit.icon.iconGroupId;
+					if (!hillImagesById.containsKey(groupId))
+					{
+						// Someone removed the icon group. Choose a new group.
+						groupId = chooseNewGroupId(hillImagesById.keySet(), groupId);
+					}
+					if (hillImagesById.get(groupId).size() > 0)
+					{
+						int scaledSize = findScaledHillSize(center);
+						BufferedImage hillImage = hillImagesById.get(groupId).get(
+								cEdit.icon.iconIndex % hillImagesById.get(groupId).size()).getFirst();
+						BufferedImage mask = hillImagesById.get(groupId).get(
+								cEdit.icon.iconIndex % hillImagesById.get(groupId).size()).getSecond();
+						iconsToDraw.getOrCreate(center).add(new IconDrawTask(hillImage, 
+			       				mask, center.loc, scaledSize, true));	
+					}
 				}
-				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0)
+				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
 				{
 					BufferedImage duneImage = duneImages.get(
 							cEdit.icon.iconIndex % duneImages.size()).getFirst();
@@ -223,6 +238,12 @@ public class IconDrawer
 		}
 
 		drawTreesForAllCenters();
+	}
+	
+	private String chooseNewGroupId(Set<String> groupIds, String oldGroupId)
+	{
+		int randomIndex = oldGroupId.hashCode() % groupIds.size();
+		return groupIds.toArray(new String[groupIds.size()])[randomIndex];
 	}
 
 	/**
@@ -715,8 +736,11 @@ public class IconDrawer
         	CenterTrees cTrees = trees.get(c.index);
         	if (cTrees != null)
         	{
-	        	drawTreesAtCenterAndCorners(graph, cTrees.density, treesById.get(cTrees.treeType), avgHeight,
-							cornersWithTreesDrawn, c, cTrees.randomSeed);
+        		if (cTrees.treeType != null && treesById.containsKey(cTrees.treeType))
+        		{
+		        	drawTreesAtCenterAndCorners(graph, cTrees.density, treesById.get(cTrees.treeType), avgHeight,
+								cornersWithTreesDrawn, c, cTrees.randomSeed);
+	        		}
         	}
         }
 	}
