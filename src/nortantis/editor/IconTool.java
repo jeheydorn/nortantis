@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,6 +83,13 @@ public class IconTool extends EditorTool
 	public String getToolbarName()
 	{
 		return "Icons";
+	}
+
+	@Override
+	public String getImageIconFilePath()
+	{
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
@@ -314,6 +322,10 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{		
+	}
+	
+	private void handleMousePressOrDrag(MouseEvent e)
+	{
 		if (riversButton.isSelected())
 		{
 			return;
@@ -432,7 +444,7 @@ public class IconTool extends EditorTool
 				}	
 			}
 		}
-		handleMapChange(selected, !needsFullRedraw);	
+		handleMapChange(selected, !needsFullRedraw);
 	}
 	
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
@@ -444,6 +456,8 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{		
+		handleMousePressOrDrag(e);
+		
 		if (riversButton.isSelected())
 		{
 			riverStart = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
@@ -489,6 +503,7 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
+		
 		if (!riversButton.isSelected())
 		{
 			highlightHoverCenters(e);
@@ -521,7 +536,7 @@ public class IconTool extends EditorTool
 		else
 		{
 			highlightHoverCenters(e);
-			handleMouseClickOnMap(e);
+			handleMousePressOrDrag(e);
 		}
 	}
 

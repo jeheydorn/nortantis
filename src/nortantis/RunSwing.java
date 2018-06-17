@@ -560,17 +560,26 @@ public class RunSwing
 		{
 			public void changedUpdate(DocumentEvent e) 
 			{
-				showAspectRatioWarning();
+				if (oceanBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
 			}
 
 			public void removeUpdate(DocumentEvent e) 
 			{
-				showAspectRatioWarning();
+				if (oceanBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
 			}
 
 			public void insertUpdate(DocumentEvent e) 
 			{
-				showAspectRatioWarning();
+				if (oceanBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
 			}
 		});
 		
@@ -596,6 +605,32 @@ public class RunSwing
 		landBackgroundImageFilename.setColumns(10);
 		landBackgroundImageFilename.setBounds(12, 300, 278, 28);
 		backgroundPanel.add(landBackgroundImageFilename);
+		landBackgroundImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				if (landBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				if (landBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				if (landBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+		});
 		
 		btnBrowseLandBackground = new JButton("Browse");
 		btnBrowseLandBackground.addActionListener(new ActionListener() {

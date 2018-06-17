@@ -12,7 +12,7 @@ import java.util.Set;
  */
 public class SettingsGenerator
 {
-	private static String defaultSettingsFile = "assets/old_paper.properties";
+	private static String defaultSettingsFile = "assets/internal/old_paper.properties";
 	public static int minWorldSize = 2000;
 	public static int maxWorldSize = 30000;
 	public static int worldSizePrecision = 1000;

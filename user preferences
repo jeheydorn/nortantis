@@ -1,8 +1,8 @@
 #
-#Sat Jun 16 17:39:23 CDT 2018
+#Sat Jun 16 21:01:45 CDT 2018
 hideHeightMapWithEditsWarning=false
-hideMapChangesWarning=false
-lastEditTool=
+hideMapChangesWarning=true
+lastEditTool=Icons
 hideAspectRatioWarning=false
-lastLoadedSettingsFile=
-zoomLevel=
+lastLoadedSettingsFile=/home/joseph/Dropbox/Nortantis/content/editor/tool buttons.properties
+zoomLevel=75%

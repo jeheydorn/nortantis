@@ -215,6 +215,13 @@ public class TextTool extends EditorTool
 	{
 		return "Text";
 	}
+
+	@Override
+	public String getImageIconFilePath()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
 	
 	@Override
 	public void handleZoomChange(double zoomLevel)

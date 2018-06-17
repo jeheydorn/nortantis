@@ -22,6 +22,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultFocusManager;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -210,6 +211,14 @@ public class EditorDialog extends JDialog
 		for (EditorTool tool : tools)
 		{
 			JToggleButton toolButton = new JToggleButton(tool.getToolbarName());
+			try
+			{
+				toolButton.setIcon(new ImageIcon(tool.getImageIconFilePath()));
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
 			tool.setToggleButton(toolButton);
 			toolButton.addActionListener(new ActionListener()
 			{

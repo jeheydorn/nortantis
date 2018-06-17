@@ -86,6 +86,8 @@ public abstract class EditorTool
 	
 	public abstract String getToolbarName();
 	
+	public abstract String getImageIconFilePath();
+	
 	public ImagePanel getDisplayPanel()
 	{
 		return mapEditingPanel;

@@ -62,6 +62,13 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
+	public String getImageIconFilePath()
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
 	public void onBeforeSaving()
 	{
 	}
@@ -199,6 +206,10 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
+	}
+	
+	private void handleMousePressOrDrag(MouseEvent e)
+	{
 		if (waterButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
@@ -266,7 +277,7 @@ public class LandWaterTool extends EditorTool
 			{
 				handleMapChange(selected);
 			}
-
+	
 		}
 		else if (fillRegionColorButton.isSelected())
 		{
@@ -382,6 +393,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
+		handleMousePressOrDrag(e);
 	}
 
 	@Override
@@ -423,7 +435,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		handleMouseClickOnMap(e);
+		handleMousePressOrDrag(e);
 	}
 
 	@Override
