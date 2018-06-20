@@ -210,7 +210,7 @@ public class EditorDialog extends JDialog
 		toolsPanel.add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
-			JToggleButton toolButton = new JToggleButton(tool.getToolbarName());
+			JToggleButton toolButton = new JToggleButton();
 			try
 			{
 				toolButton.setIcon(new ImageIcon(tool.getImageIconFilePath()));

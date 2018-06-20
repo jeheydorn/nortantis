@@ -88,8 +88,7 @@ public class IconTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return Paths.get("assets/internal/Icon tool.png").toString();
 	}
 
 	@Override

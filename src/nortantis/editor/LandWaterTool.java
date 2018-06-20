@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -64,8 +65,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return Paths.get("assets/internal/Land Water tool.png").toString();
 	}
 	
 	@Override

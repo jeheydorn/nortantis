@@ -14,6 +14,7 @@ import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -219,8 +220,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		// TODO Auto-generated method stub
-		return null;
+		return Paths.get("assets/internal/Text tool.png").toString();
 	}
 	
 	@Override
