@@ -82,7 +82,7 @@ public class IconTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Icons";
+		return "Icon";
 	}
 
 	@Override

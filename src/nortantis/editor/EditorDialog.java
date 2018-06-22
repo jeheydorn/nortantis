@@ -24,19 +24,18 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultFocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.border.EtchedBorder;
+import javax.swing.border.TitledBorder;
 
 import nortantis.MapParts;
 import nortantis.MapSettings;
@@ -60,6 +59,7 @@ public class EditorDialog extends JDialog
 	private JMenuItem undoButton;
 	private JMenuItem redoButton;
 	private JLabel mapIsDrawingLabel;
+	private TitledBorder toolOptionsPanelBorder;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -235,7 +235,8 @@ public class EditorDialog extends JDialog
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
 		toolsPanel.add(toolsOptionsPanelContainer);
-		toolsOptionsPanelContainer.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tool Options"));
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), currentTool.getToolbarName() + " Options");
+		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 				
 		// Setup bottom panel
 		JPanel bottomPanel = new JPanel();
@@ -448,6 +449,7 @@ public class EditorDialog extends JDialog
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
+		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
 		if (mapParts != null)
 		{
 			currentTool.setMapParts(mapParts);
