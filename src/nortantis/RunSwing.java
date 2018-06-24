@@ -847,7 +847,8 @@ public class RunSwing
 		colorizeCheckboxListener = new ItemListener() 
 		{	
 			@Override
-			public void itemStateChanged(ItemEvent e) {
+			public void itemStateChanged(ItemEvent e) 
+			{
 				updateBackgroundPanelFieldStates();
 			}
 		};

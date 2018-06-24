@@ -94,7 +94,7 @@ public class LandWaterTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (colorChooserPanel != null && settings.drawRegionColors)
+				if (colorChooserPanel != null && areRegionColorsVisible())
 				{
 					boolean isVisible = paintRegionButton.isSelected() || fillRegionColorButton.isSelected();
 					colorChooserPanel.setVisible(isVisible);
@@ -113,7 +113,7 @@ public class LandWaterTool extends EditorTool
 	    fillRegionColorButton = new JRadioButton("Fill region color");
 	    mergeRegionsButton = new JRadioButton("Merge regions");
 	    landButton = new JRadioButton("Land");
-	    if (settings.drawRegionColors)
+	    if (areRegionColorsVisible())
 	    {
 			
 		    group.add(paintRegionButton);
@@ -140,7 +140,7 @@ public class LandWaterTool extends EditorTool
 	    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, brushLabel, radioButtons);
 	    
 	    // Color chooser
-	    if (settings.drawRegionColors)
+	    if (areRegionColorsVisible())
 	    {
 		    JLabel colorLabel = new JLabel("Color:");
 		    
@@ -201,6 +201,11 @@ public class LandWaterTool extends EditorTool
 	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
 
 		return toolOptionsPanel;
+	}
+	
+	private boolean areRegionColorsVisible()
+	{
+		return settings.drawRegionColors && (!settings.generateBackgroundFromTexture || settings.colorizeLand);
 	}
 
 	@Override

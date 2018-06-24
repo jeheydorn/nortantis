@@ -364,7 +364,7 @@ public abstract class EditorTool
 		redoStack.push(undoStack.pop());
 		if (undoStack.isEmpty())
 		{
-			settings.edits = copyOfEditsWhenToolWasSelected;
+			settings.edits = deepCopyMapEdits(copyOfEditsWhenToolWasSelected);
 		}
 		else
 		{

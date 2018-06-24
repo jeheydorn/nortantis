@@ -192,16 +192,17 @@ public class BackgroundGenerator
 
 	private static BufferedImage scaleTextureLargerIfNeeded(BufferedImage texture, int rows, int cols)
 	{
+		int scaleThreshold = 4;
 		if (((float)texture.getWidth()) / cols < ((float)texture.getHeight()) / rows)
 		{
-			if (texture.getWidth() * 4 < cols)
+			if (texture.getWidth() * scaleThreshold < cols)
 			{
 				return ImageHelper.scaleByWidth(texture, cols / 4);
 			}
 		}
 		else
 		{
-			if (texture.getHeight() * 4 < rows)
+			if (texture.getHeight() * scaleThreshold < rows)
 			{
 				return ImageHelper.scaleByHeight(texture, rows / 4);
 			}

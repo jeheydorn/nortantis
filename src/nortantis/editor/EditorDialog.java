@@ -446,6 +446,7 @@ public class EditorDialog extends JDialog
 		mapEditingPanel.clearHighlightedEdges();
 		currentTool.onSwitchingAway();
 		currentTool.clearUndoRedoStacks();
+		updateUndoRedoEnabled();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
