@@ -219,6 +219,7 @@ public class EditorDialog extends JDialog
 			{
 				e.printStackTrace();
 			}
+			toolButton.setMaximumSize(new Dimension(50, 50));
 			tool.setToggleButton(toolButton);
 			toolButton.addActionListener(new ActionListener()
 			{
