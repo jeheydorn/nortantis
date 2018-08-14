@@ -56,6 +56,7 @@ public class IconTool extends EditorTool
 	private IconTypeButtons hillTypes;
 	private IconTypeButtons duneTypes;
 	private IconTypeButtons treeTypes;
+	private IconTypeButtons cityTypes;
 	private JSlider densitySlider;
 	private Random rand;
 	private JPanel densityPanel;
@@ -67,11 +68,13 @@ public class IconTool extends EditorTool
 	private JRadioButton eraseTreesButton;
 	private JPanel eraseOptionsPanel;
 	private JRadioButton riversButton;
+	private JRadioButton citiesButton;
 	private JPanel riverOptionPanel;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
 	private JCheckBox showRiversOnTopCheckBox;
 	private JRadioButton eraseRiversButton;
+	private JRadioButton eraseCitiesButton;
 
 	public IconTool(MapSettings settings, EditorDialog parent)
 	{
@@ -177,6 +180,18 @@ public class IconTool extends EditorTool
 				}
 			});
 		    
+			citiesButton = new JRadioButton("Cities");
+		    group.add(citiesButton);
+		    radioButtons.add(citiesButton);
+		    citiesButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent event)
+				{
+					updateTypePanels();
+				}
+			});
+		    
 			eraseButton = new JRadioButton("Erase");
 		    group.add(eraseButton);
 		    radioButtons.add(eraseButton);
@@ -198,6 +213,7 @@ public class IconTool extends EditorTool
 		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.hillsName);
 		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.sandDunesName);
 		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.treesName);
+		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
 		
 		// River options
 		{
@@ -233,6 +249,10 @@ public class IconTool extends EditorTool
 		    eraseTreesButton = new JRadioButton(treesButton.getText());
 		    group.add(eraseTreesButton);
 		    radioButtons.add(eraseTreesButton);
+		    
+		    eraseCitiesButton = new JRadioButton(citiesButton.getText());
+		    group.add(eraseCitiesButton);
+		    radioButtons.add(eraseCitiesButton);
 
 		    eraseRiversButton = new JRadioButton(riversButton.getText());
 		    group.add(eraseRiversButton);
@@ -294,6 +314,7 @@ public class IconTool extends EditorTool
 		hillTypes.panel.setVisible(hillsButton.isSelected());
 		duneTypes.panel.setVisible(dunesButton.isSelected());
 		treeTypes.panel.setVisible(treesButton.isSelected());
+		cityTypes.panel.setVisible(citiesButton.isSelected());
 		densityPanel.setVisible(treesButton.isSelected());
 		eraseOptionsPanel.setVisible(eraseButton.isSelected());
 		riverOptionPanel.setVisible(riversButton.isSelected());
@@ -308,6 +329,24 @@ public class IconTool extends EditorTool
 	    for (String groupId : IconDrawer.getDistinctIconGroupIds(iconType))
 	    {
 	    	JRadioButton button = new JRadioButton(groupId);
+	    	group.add(button);
+	    	radioButtons.add(button);
+	    }
+	    if (radioButtons.size() > 0)
+	    {
+	    	((JRadioButton)radioButtons.get(0)).setSelected(true);
+	    }
+	    return new IconTypeButtons(EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, typeLabel, radioButtons), radioButtons);
+	}
+	
+	private IconTypeButtons createRadioButtonsForCities(JPanel toolOptionsPanel)
+	{
+	    JLabel typeLabel = new JLabel("Cities:");
+	    ButtonGroup group = new ButtonGroup();
+	    List<JRadioButton> radioButtons = new ArrayList<>();
+	    for (String fileNameWithoutWidthOrExtension : IconDrawer.getIconGroupFileNamesWithoutWidthOrExtension(IconDrawer.citiesName))
+	    {
+	    	JRadioButton button = new JRadioButton(fileNameWithoutWidthOrExtension);
 	    	group.add(button);
 	    	radioButtons.add(button);
 	    }
@@ -365,6 +404,14 @@ public class IconTool extends EditorTool
 			{
 				settings.edits.centerEdits.get(center.index).trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, 
 						Math.abs(rand.nextLong()));
+			}		
+		}
+		else if (citiesButton.isSelected())
+		{
+			String cityName = cityTypes.getSelectedOption();
+			for (Center center : selected)
+			{
+				settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.City, cityName);
 			}		
 		}
 		else if (eraseButton.isSelected())
@@ -425,6 +472,17 @@ public class IconTool extends EditorTool
 				{
 					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
 					cEdit.trees = null;
+				}	
+			}
+			else if (eraseCitiesButton.isSelected())
+			{
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
+					{
+						cEdit.icon = null;
+					}
 				}	
 			}
 			else if (eraseRiversButton.isSelected())
@@ -597,7 +655,7 @@ public class IconTool extends EditorTool
 		{
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
 		}
-		mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits);
+		mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits, mapParts.sizeMultiplyer);
 		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
 		if (showRiversOnTopCheckBox.isSelected())
 		{

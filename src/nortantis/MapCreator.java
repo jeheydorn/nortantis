@@ -168,7 +168,7 @@ public class MapCreator
 		
 		if (!needToAddIcons)
 		{
-			iconDrawer.clearAndAddIconsFromEdits(settings.edits);
+			iconDrawer.clearAndAddIconsFromEdits(settings.edits, sizeMultiplyer);
 		}
 		
 		// Draw mask for land vs ocean.
@@ -270,7 +270,7 @@ public class MapCreator
 			iconDrawer.addTrees();
 			
 			Logger.println("Adding cities.");
-			cityAreas = iconDrawer.addCities(settings.resolution, true);
+			cityAreas = iconDrawer.addCities(sizeMultiplyer, true);
 		}
 		else
 		{

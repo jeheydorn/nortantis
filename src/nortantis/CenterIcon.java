@@ -14,10 +14,22 @@ public class CenterIcon implements Serializable
 	 * When moduloed by the number of icons in a group, this gives an index into the set of icons.
 	 */
 	public int iconIndex;
+	/**
+	 * An alternative to using iconIndex.
+	 */
+	public String iconName;
 	public CenterIcon(CenterIconType iconType, String iconGroupId, int iconIndex)
 	{
 		this.iconType = iconType;
 		this.iconGroupId = iconGroupId;
 		this.iconIndex = iconIndex;
+	}
+	
+	public CenterIcon(CenterIconType iconType, String iconName)
+	{
+		this.iconType = iconType;
+		this.iconGroupId = "";
+		this.iconIndex = -1;
+		this.iconName = iconName;
 	}
 }

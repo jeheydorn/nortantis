@@ -210,6 +210,7 @@ public class MapSettings implements Serializable
 				JSONObject iconObj = new JSONObject();
 				iconObj.put("iconGroupId", centerEdit.icon.iconGroupId);
 				iconObj.put("iconIndex", centerEdit.icon.iconIndex);
+				iconObj.put("iconName", centerEdit.icon.iconName);
 				iconObj.put("iconType", centerEdit.icon.iconType.toString());
 				mpObj.put("icon", iconObj);
 			}
@@ -756,8 +757,10 @@ public class MapSettings implements Serializable
 						{
 							String iconGroupId = (String)iconObj.get("iconGroupId");
 							int iconIndex = (int)(long)iconObj.get("iconIndex");
+							String iconName = (String)iconObj.get("iconName");
 							CenterIconType iconType = CenterIconType.valueOf((String)iconObj.get("iconType")); 
 							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+							icon.iconName = iconName;
 						}
 					}
 					

@@ -53,6 +53,7 @@ public class IconDrawer
 	public final static String hillsName = "hills";
 	public final static String sandDunesName = "sand";
 	public final static String treesName = "trees";
+	public final static String citiesName = "cities";
 	double meanPolygonWidth;
 	// If a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
 	final double maxMeansToDraw = 5.0;
@@ -181,13 +182,14 @@ public class IconDrawer
 	/**
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them.
 	 */
-	public void clearAndAddIconsFromEdits(MapEdits edits)
+	public void clearAndAddIconsFromEdits(MapEdits edits, double sizeMultiplyer)
 	{
 		iconsToDraw.clear();
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups(mountainsName);
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = loadIconGroups(hillsName);
 		List<Tuple2<BufferedImage, BufferedImage>> duneImages = loadIconGroups(sandDunesName).get(sandDunesName);
 		int duneWidth = findDuneWidth();
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = loadIconsWithWidths(citiesName);
 		
 		trees.clear();
 		
@@ -212,7 +214,7 @@ public class IconDrawer
 						BufferedImage mask = mountainImagesById.get(groupId).get(
 								cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getSecond();
 						iconsToDraw.getOrCreate(center).add(new IconDrawTask(mountainImage, 
-			       				mask, center.loc, scaledSize, true));
+			       				mask, center.loc, scaledSize, true, false));
 					}
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null && !hillImagesById.isEmpty())
@@ -231,7 +233,7 @@ public class IconDrawer
 						BufferedImage mask = hillImagesById.get(groupId).get(
 								cEdit.icon.iconIndex % hillImagesById.get(groupId).size()).getSecond();
 						iconsToDraw.getOrCreate(center).add(new IconDrawTask(hillImage, 
-			       				mask, center.loc, scaledSize, true));	
+			       				mask, center.loc, scaledSize, true, false));	
 					}
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
@@ -241,8 +243,19 @@ public class IconDrawer
 					BufferedImage mask = duneImages.get(
 							cEdit.icon.iconIndex % duneImages.size()).getSecond();
 					iconsToDraw.getOrCreate(center).add(new IconDrawTask(duneImage, 
-		       				mask, center.loc, duneWidth, true));								
+		       				mask, center.loc, duneWidth, true, false));								
 				}
+				else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
+				{
+					BufferedImage cityImage = cityImages.get(
+							cEdit.icon.iconName).getFirst();
+					BufferedImage mask = cityImages.get(
+							cEdit.icon.iconName).getSecond();
+					iconsToDraw.getOrCreate(center).add(
+							new IconDrawTask(cityImage, mask, center.loc, 
+									(int)(cityImages.get(cEdit.icon.iconName).getThird() * sizeMultiplyer), true, true));								
+				}
+
 			}
 			
 			if (cEdit.trees != null)
@@ -326,7 +339,7 @@ public class IconDrawer
 	 * other mountains through it.
 	 */
 	private void drawIconWithBackgroundAndMask(BufferedImage map, BufferedImage icon, 
-			BufferedImage mask, BufferedImage background, int xCenter, int yCenter)
+			BufferedImage mask, BufferedImage background, int xCenter, int yCenter, boolean ignoreMaxSize)
 	{   	
     	if (map.getWidth() != background.getWidth())
     		throw new IllegalArgumentException();
@@ -337,7 +350,7 @@ public class IconDrawer
        	if (mask.getHeight() != icon.getHeight())
        		throw new IllegalArgumentException("The given mask's height does not match the icon' height.");
        	
-       	if (icon.getWidth() > maxSizeToDrawIcon)
+       	if (!ignoreMaxSize && icon.getWidth() > maxSizeToDrawIcon)
        		return;
        	       	      	
       	int xLeft = xCenter - icon.getWidth()/2;
@@ -388,9 +401,10 @@ public class IconDrawer
 		int scaledWidth;
 		int yBottom;
 		boolean needsScale;
+		boolean ignoreMaxSize;
 
 		public IconDrawTask(BufferedImage icon, BufferedImage mask, Point centerLoc, int scaledWidth,
-				boolean needsScale)
+				boolean needsScale, boolean ignoreMaxSize)
 		{
 			this.icon = icon;
 			this.mask = mask;
@@ -401,6 +415,8 @@ public class IconDrawer
 	   		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
 	   		int scaledHeight = (int)(scaledWidth/aspectRatio);
 	       	yBottom = (int)(centerLoc.y + (scaledHeight/2.0));
+	       	
+	       	this.ignoreMaxSize = ignoreMaxSize;
 		}
 		
 		public void scaleIcon()
@@ -457,7 +473,7 @@ public class IconDrawer
 			if (!isIconTouchingWater(task.icon, task.centerLoc))
 			{
 				drawIconWithBackgroundAndMask(map, task.icon, task.mask, background, (int)task.centerLoc.x,
-						(int)task.centerLoc.y);
+						(int)task.centerLoc.y, task.ignoreMaxSize);
 			}
 		}		
 	}
@@ -466,14 +482,16 @@ public class IconDrawer
 	 * Adds icon draw tasks to draw cities.
 	 * @return Areas of each city icon. Needed to void drawing text on top of cities.
 	 */
-	public List<Area> addCities(double resolution, boolean createIconDrawTasks)
+	public List<Area> addCities(double sizeMultiplyer, boolean createIconDrawTasks)
 	{
-		List<Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = loadIconsWithWidths("cities");
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = loadIconsWithWidths(citiesName);
 		if (cityIcons.isEmpty())
 		{
 			Logger.println("Cities will not be drawn because there are no city icons.");
 			return new ArrayList<>(0);
 		}
+		
+		List<String> cityNames = new ArrayList<>(cityIcons.keySet());
 		
 		List<Area> areas = new ArrayList<>();
 		
@@ -481,14 +499,14 @@ public class IconDrawer
 		{
 			if (c.isCity)
 			{
-				int index = rand.nextInt(cityIcons.size());
-				int scaledWidth = (int)(cityIcons.get(index).getThird() * resolution);
-				BufferedImage icon = cityIcons.get(index).getFirst();
+				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
+				int scaledWidth = (int)(cityIcons.get(cityName).getThird() * sizeMultiplyer);
+				BufferedImage icon = cityIcons.get(cityName).getFirst();
 				if (createIconDrawTasks)
 				{
-					iconsToDraw.getOrCreate(c).add(new IconDrawTask(icon, 
-	           				cityIcons.get(index).getSecond(), c.loc, scaledWidth, true));
-	           		centerIcons.put(c.index, new CenterIcon(CenterIconType.City, "", index));
+					IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true);
+					iconsToDraw.getOrCreate(c).add(task);
+	           		centerIcons.put(c.index, new CenterIcon(CenterIconType.City, cityName));
 				}
            		
     	   		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
@@ -567,7 +585,7 @@ public class IconDrawer
 		           	{	
 			           	// Draw the image such that it is centered in the center of c.
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInRange.get(i).getFirst(), 
-		           				imagesInRange.get(i).getSecond(), c.loc, scaledSize, true));
+		           				imagesInRange.get(i).getSecond(), c.loc, scaledSize, true, false));
 		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, filenameRangeId, i));
 		           	}
 		        }
@@ -586,7 +604,7 @@ public class IconDrawer
 			           	if (scaledSize >= 1)
 			           	{
 			           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInGroup.get(i).getFirst(), 
-			           				imagesInGroup.get(i).getSecond(), c.loc, scaledSize, true));
+			           				imagesInGroup.get(i).getSecond(), c.loc, scaledSize, true, false));
 			           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, filenameRangeId, i));
 			           	}
 		        	}         		
@@ -658,7 +676,7 @@ public class IconDrawer
 						int i = rand.nextInt(duneImages.size());
 						
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i).getFirst(), 
-		           				duneImages.get(i).getSecond(), c.loc, width, true));
+		           				duneImages.get(i).getSecond(), c.loc, width, true, false));
 		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
 					}
 				}
@@ -885,7 +903,7 @@ public class IconDrawer
            	x += rand.nextGaussian() * sqrtSize*2.0;
            	y += rand.nextGaussian() * sqrtSize*2.0;
         	
-           	iconsToDraw.getOrCreate(center).add(new IconDrawTask(image, mask, new Point(x, y), (int)image.getWidth(), false));	           	
+           	iconsToDraw.getOrCreate(center).add(new IconDrawTask(image, mask, new Point(x, y), (int)image.getWidth(), false, false));	           	
        	}
 	}
 	
@@ -912,10 +930,12 @@ public class IconDrawer
 	
 	/**
 	 * Loads icons which do not have groups, but which do have default widths in the file names.
+	 * 
+	 * @return A map from icon names (not including width or extension) to a tuple with the icon, mask, and width.
 	 */
-	private List<Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(final String iconType)
+	private Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(final String iconType)
 	{
-		List<Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new ArrayList<>();
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new HashMap<>();
 		String[] fileNames = getIconGroupFileNames(iconType);
 		if (fileNames.length == 0)
 		{
@@ -924,6 +944,13 @@ public class IconDrawer
 		
 		for (String fileName : fileNames)
 		{
+			String fileNameBaseWithoutWidth = getFileNameBaseWithoutWidth(fileName);
+			if (imagesAndMasks.containsKey(fileNameBaseWithoutWidth))
+			{
+				throw new RuntimeException("There are multiple icons for " + iconType + " named '" + fileNameBaseWithoutWidth + "' whose file names only differ by the width."
+						+ " Rename one of them");
+			}
+
 			Path path = Paths.get("assets", "icons", iconType, fileName);
 			if (!ImageCache.getInstance().containsImageFile(path))
 			{
@@ -950,7 +977,7 @@ public class IconDrawer
 			{
 				throw new RuntimeException("Unable to load icon " + path.toString() + ". Make sure the default width of the image is stored at the end of the file name before the extension, proceeded by an underscore. Example: myCityIcon_64.png. Error: " + e.getMessage(), e);
 			}
-			imagesAndMasks.add(new Tuple3<>(icon, mask, width));
+			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple3<>(icon, mask, width));
 		}
 		
 		return imagesAndMasks;
@@ -992,6 +1019,22 @@ public class IconDrawer
 			imagesPerGroup.add(rangeId, new Tuple2<>(icon, mask));
 		}
 		return imagesPerGroup;
+	}
+	
+	public static Set<String> getIconGroupFileNamesWithoutWidthOrExtension(String iconType)
+	{
+		String[] fileNames = getIconGroupFileNames(iconType);
+		Set<String> result = new HashSet<String>();
+		for (int i : new Range(fileNames.length))
+		{
+			result.add(getFileNameBaseWithoutWidth(fileNames[i]));
+		}
+		return result;
+	}
+	
+	private static String getFileNameBaseWithoutWidth(String fileName)
+	{
+		return fileName.substring(0, fileName.lastIndexOf('_'));
 	}
 	
 	public static String[] getIconGroupFileNames(String iconType)
