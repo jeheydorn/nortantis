@@ -97,6 +97,7 @@ public class MapSettings implements Serializable
 	public int frayedBorderSize;
 	public boolean drawIcons = true;
 	public boolean drawRivers = true; // Not saved
+	public double cityProbability;
 	
 	public MapSettings()
 	{
@@ -122,6 +123,7 @@ public class MapSettings implements Serializable
 		result.setProperty("frayedBorderColor", colorToString(frayedBorderColor));
 		result.setProperty("frayedBorderBlurLevel", frayedBorderBlurLevel + "");
 		result.setProperty("grungeWidth", grungeWidth + "");
+		result.setProperty("cityProbability", cityProbability + "");
 
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
@@ -393,6 +395,15 @@ public class MapSettings implements Serializable
 				return str == null ? 0 : (int)(Integer.parseInt(str));
 			}
 		});
+		cityProbability = getProperty("cityProbability", new Function0<Double>()
+		{
+			public Double apply()
+			{
+				String str = props.getProperty("cityProbability");
+				return str == null ? 0.0 : (double)(Double.parseDouble(str));
+			}
+		});
+		
 		
 		// Background image stuff.
 		generateBackground = getProperty("generateBackground", new Function0<Boolean>()

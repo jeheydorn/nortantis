@@ -4,5 +4,6 @@ public enum CenterIconType
 {
 	Mountain,
 	Hill,
-	Dune
+	Dune,
+	City,
 }

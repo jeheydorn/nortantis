@@ -280,7 +280,7 @@ public class TextTool extends EditorTool
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
 		try
 		{
-			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups);
+			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups, mapParts.cityAreas);
 		}
 		catch (Exception e)
 		{

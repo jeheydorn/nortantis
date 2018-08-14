@@ -57,6 +57,7 @@ public class TextDrawer
 	
 	private BufferedImage landAndOceanBackground;
 	private CopyOnWriteArrayList<MapText> mapTexts;
+	private List<Area> cityAreas;
 	Random r;
 	long originalSeed;
 	private NameGenerator placeNameGenerator;
@@ -176,9 +177,10 @@ public class TextDrawer
 	}
 	
 	public void drawText(GraphImpl graph, BufferedImage map, BufferedImage landAndOceanBackground,
-			List<Set<Center>> mountainRanges)
+			List<Set<Center>> mountainRanges, List<Area> cityAreas)
 	{				
 		this.landAndOceanBackground = landAndOceanBackground;
+		this.cityAreas = cityAreas;
 
 		if (settings.edits.text.size() > 0)
 		{
@@ -1001,7 +1003,7 @@ public class TextDrawer
 			java.awt.Rectangle bounds1 = new java.awt.Rectangle((int)ulCorner1.x, 
 					(int)ulCorner1.y, metrics.stringWidth(nameLine1), metrics.getHeight());
 			Area area1 = new Area(bounds1);
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area1))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area1))
 			{
 				return false;
 			}
@@ -1009,7 +1011,7 @@ public class TextDrawer
 			java.awt.Rectangle bounds2 = new java.awt.Rectangle((int)ulCorner2.x, 
 					(int)ulCorner2.y, metrics.stringWidth(nameLine2), metrics.getHeight());
 			Area area2 = new Area(bounds2);
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area2))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area2))
 			{
 				return false;
 			}
@@ -1030,7 +1032,7 @@ public class TextDrawer
 					(int)textLocation.y - height/2, metrics.stringWidth(text.value), height);
 			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 			Area area = new Area(bounds);
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area))
 			{
 				return false;
 			}
@@ -1140,7 +1142,7 @@ public class TextDrawer
 				(int)(pivot.y - height/2), width, height);
 		Area area = new Area(bounds);
 		area = area.createTransformedArea(g.getTransform());
-		if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area))
+		if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area))
 		{
 			// If there is a riseOffset, try negating it to put the name below the object instead of above.
 			offset = new Point(-riseOffset * Math.sin(text.angle), riseOffset * Math.cos(text.angle));
@@ -1153,7 +1155,7 @@ public class TextDrawer
 			g.rotate(text.angle, pivot.x, pivot.y);
 			area = new Area(bounds);
 			area = area.createTransformedArea(g.getTransform());
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area))
 			{
 				// Give up.
 				//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -1203,7 +1205,7 @@ public class TextDrawer
 		return centroid;
 	}
 	
-	private boolean overlapsExistingTextOrIsOffMap(Area bounds)
+	private boolean overlapsExistingTextOrCityOrIsOffMap(Area bounds)
 	{
 		for (MapText mp : mapTexts)
 		{
@@ -1219,6 +1221,15 @@ public class TextDrawer
 				}
 			}
 		}
+		
+		for (Area a : cityAreas)
+		{
+			Area aCopy = new Area(a);
+			aCopy.intersect(bounds);
+			if (!aCopy.isEmpty())
+				return true;
+		}
+		
 		return !graphBounds.contains(bounds.getBounds2D());
 	}
 	

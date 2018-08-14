@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
@@ -153,6 +154,7 @@ public class MapCreator
 
 		iconDrawer.markMountains();
 		iconDrawer.markHills();
+		iconDrawer.markCities(settings.cityProbability);
 		Pair<List<Set<Center>>> pair = iconDrawer.findMountainAndHillGroups();
 		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
 		List<Set<Center>> mountainGroups = pair.getFirst();
@@ -253,7 +255,7 @@ public class MapCreator
 			drawRivers(settings, graph, map, sizeMultiplyer);
 		}
 
-		
+		List<Area> cityAreas;
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
@@ -266,11 +268,21 @@ public class MapCreator
 			
 			Logger.println("Adding trees.");
 			iconDrawer.addTrees();
+			
+			Logger.println("Adding cities.");
+			cityAreas = iconDrawer.addCities(settings.resolution, true);
 		}
 		else
 		{
 			// Create mountain groups for the text drawer.
 			mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
+			// Create city areas forthe text drawer.
+			cityAreas = iconDrawer.addCities(settings.resolution, false);
+		}
+		
+		if (mapParts != null)
+		{
+			mapParts.cityAreas = cityAreas;
 		}
 		
 		if (settings.drawIcons)
@@ -359,7 +371,7 @@ public class MapCreator
 				graph.drawRegionBorders(g, sizeMultiplyer, true);
 			}
 						
-			textDrawer.drawText(graph, map, landBackground, mountainGroups);
+			textDrawer.drawText(graph, map, landBackground, mountainGroups, cityAreas);
 		}
 		landBackground = null;
 		

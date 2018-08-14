@@ -2,6 +2,7 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
@@ -23,6 +24,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.commons.io.FilenameUtils;
+
 import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
@@ -39,6 +42,7 @@ import util.Logger;
 import util.Pair;
 import util.Range;
 import util.Tuple2;
+import util.Tuple3;
 
 public class IconDrawer 
 {
@@ -125,8 +129,18 @@ public class IconDrawer
 			}
 		}
 	}
-
- 
+	
+	public void markCities(double cityProbability)
+	{
+		for (Center c : graph.centers)
+		{
+			if (!c.isMountain && !c.isHill && !c.isWater && rand.nextDouble() <= cityProbability)
+				
+			{
+				c.isCity = true;
+			}
+		}
+	}
 	
 	/**
 	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
@@ -446,6 +460,44 @@ public class IconDrawer
 						(int)task.centerLoc.y);
 			}
 		}		
+	}
+	
+	/**
+	 * Adds icon draw tasks to draw cities.
+	 * @return Areas of each city icon. Needed to void drawing text on top of cities.
+	 */
+	public List<Area> addCities(double resolution, boolean createIconDrawTasks)
+	{
+		List<Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = loadIconsWithWidths("cities");
+		if (cityIcons.isEmpty())
+		{
+			Logger.println("Cities will not be drawn because there are no city icons.");
+			return new ArrayList<>(0);
+		}
+		
+		List<Area> areas = new ArrayList<>();
+		
+		for (Center c : graph.centers)
+		{
+			if (c.isCity)
+			{
+				int index = rand.nextInt(cityIcons.size());
+				int scaledWidth = (int)(cityIcons.get(index).getThird() * resolution);
+				BufferedImage icon = cityIcons.get(index).getFirst();
+				if (createIconDrawTasks)
+				{
+					iconsToDraw.getOrCreate(c).add(new IconDrawTask(icon, 
+	           				cityIcons.get(index).getSecond(), c.loc, scaledWidth, true));
+	           		centerIcons.put(c.index, new CenterIcon(CenterIconType.City, "", index));
+				}
+           		
+    	   		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
+    	   		int scaledHeight = (int)(scaledWidth/aspectRatio);
+    	   		areas.add(new Area(new java.awt.Rectangle((int)(c.loc.x - scaledWidth/2.0), (int)(c.loc.y - scaledHeight/2.0), scaledWidth, scaledHeight)));
+			}
+		}
+		
+		return areas;
 	}
 
 	/**
@@ -859,6 +911,52 @@ public class IconDrawer
 	}
 	
 	/**
+	 * Loads icons which do not have groups, but which do have default widths in the file names.
+	 */
+	private List<Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(final String iconType)
+	{
+		List<Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new ArrayList<>();
+		String[] fileNames = getIconGroupFileNames(iconType);
+		if (fileNames.length == 0)
+		{
+			return imagesAndMasks;
+		}
+		
+		for (String fileName : fileNames)
+		{
+			Path path = Paths.get("assets", "icons", iconType, fileName);
+			if (!ImageCache.getInstance().containsImageFile(path))
+			{
+				Logger.println("Loading icon: " + path);
+			}
+			BufferedImage icon;
+			BufferedImage mask;
+			
+			icon = ImageCache.getInstance().getImageFromFile(path);
+			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
+			
+			String[] parts = FilenameUtils.getBaseName(fileName).split("_");
+			if (parts.length < 2)
+			{
+				throw new RuntimeException("Icons of type " + iconType + " must have their default width stored in the file name, at the end preceded by an underscore. Example myCityIcon_64.png.");
+			}
+			int width;
+			try
+			{
+				String widthStr = parts[parts.length - 1];
+				width = Integer.parseInt(widthStr);
+			}
+			catch (RuntimeException e)
+			{
+				throw new RuntimeException("Unable to load icon " + path.toString() + ". Make sure the default width of the image is stored at the end of the file name before the extension, proceeded by an underscore. Example: myCityIcon_64.png. Error: " + e.getMessage(), e);
+			}
+			imagesAndMasks.add(new Tuple3<>(icon, mask, width));
+		}
+		
+		return imagesAndMasks;
+	}
+	
+	/**
 	 * Loads groups if icons, using iconType as a key word to filter on. 
 	 * The second image in the tuples is the mask, which is generated based on the image loaded from disk.
 	 */
@@ -880,7 +978,7 @@ public class IconDrawer
 				Logger.println("Loading icon: " + path);
 			}
 			BufferedImage icon;
-			BufferedImage mask = null;
+			BufferedImage mask;
 			
 			icon = ImageCache.getInstance().getImageFromFile(path);
 			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));

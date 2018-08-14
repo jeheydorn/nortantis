@@ -22,6 +22,7 @@ public class Center
     public boolean isBorder, isWater, isCoast;
     public boolean isMountain;
     public boolean isHill;
+    public boolean isCity;
     public double elevation;
     public double moisture;
 	public Enum<?> biome;

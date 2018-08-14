@@ -59,6 +59,8 @@ public class SettingsGenerator
 			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
 			settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
 		}
+		
+		settings.cityProbability = rand.nextDouble() / 20.0;
 				
 		return settings;
 	}
