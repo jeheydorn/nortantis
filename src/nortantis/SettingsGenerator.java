@@ -16,6 +16,7 @@ public class SettingsGenerator
 	public static int minWorldSize = 2000;
 	public static int maxWorldSize = 30000;
 	public static int worldSizePrecision = 1000;
+	public static double maxCityProbabillity = 1.0/40.0;
 
 	public static MapSettings generate()
 	{
@@ -60,7 +61,7 @@ public class SettingsGenerator
 			settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
 		}
 		
-		settings.cityProbability = rand.nextDouble() / 20.0;
+		settings.cityProbability = rand.nextDouble() / 40.0;
 				
 		return settings;
 	}

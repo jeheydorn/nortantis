@@ -174,8 +174,8 @@ public class RunSwing
 	private JLabel lblSaturationRange;
 	private JLabel lblBrightnessRange;
 	private JLabel lblMapEditsMessage;
-	private JSlider cityFrequencySlider;
-	public final double cityFrequencySliderScale = 20000.0;
+	private JSlider cityProbabilitySlider;
+	public final double cityFrequencySliderScale = 100.0 * 1.0/SettingsGenerator.maxCityProbabillity;
 
 	
 	public static boolean isRunning()
@@ -1186,21 +1186,21 @@ public class RunSwing
 		tabbedPane.addTab("Icons", iconsPanel);
 		iconsPanel.setLayout(null);
 		
-		JLabel cityProbabilityLabel = new JLabel("City frequency:");
+		JLabel cityProbabilityLabel = new JLabel("City probability:");
 		cityProbabilityLabel.setToolTipText("Higher values create more cities. Lower values create less cities. Zero means no cities.");
 		cityProbabilityLabel.setBounds(12, 20, 114, 15);
 		iconsPanel.add(cityProbabilityLabel);
 		
-		cityFrequencySlider = new JSlider();
-		cityFrequencySlider.setPaintLabels(true);
-		cityFrequencySlider.setBounds(131, 12, 245, 79);
-		cityFrequencySlider.setSnapToTicks(false);
-		cityFrequencySlider.setPaintTicks(true);
-		cityFrequencySlider.setMinorTickSpacing(100);
-		cityFrequencySlider.setMinimum(0);
-		cityFrequencySlider.setMaximum(1000);
-		cityFrequencySlider.setMajorTickSpacing(250);
-		iconsPanel.add(cityFrequencySlider);
+		cityProbabilitySlider = new JSlider();
+		cityProbabilitySlider.setPaintLabels(true);
+		cityProbabilitySlider.setBounds(131, 12, 245, 79);
+		cityProbabilitySlider.setSnapToTicks(false);
+		cityProbabilitySlider.setPaintTicks(true);
+		cityProbabilitySlider.setMinorTickSpacing(10);
+		cityProbabilitySlider.setMinimum(0);
+		cityProbabilitySlider.setMaximum(100);
+		cityProbabilitySlider.setMajorTickSpacing(25);
+		iconsPanel.add(cityProbabilitySlider);
 
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -2107,7 +2107,7 @@ public class RunSwing
 		frayedEdgeBlurSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
-		cityFrequencySlider.setValue((int)(settings.cityProbability * cityFrequencySliderScale));
+		cityProbabilitySlider.setValue((int)(settings.cityProbability * cityFrequencySliderScale));
 		
 		// Settings for background images.
 		// Remove and add item listeners to the colorize checkboxes to avoid generating backgrounds for display multiple times.
@@ -2254,7 +2254,7 @@ public class RunSwing
 		settings.frayedBorderBlurLevel = frayedEdgeBlurSlider.getValue();
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
+		settings.cityProbability = cityProbabilitySlider.getValue() / cityFrequencySliderScale;
 		
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();
