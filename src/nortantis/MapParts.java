@@ -52,6 +52,6 @@ public class MapParts
 	/**
 	 * Used only as an output during map creation;
 	 */
-	public List<Area> cityAreas;
+	public List<IconDrawTask> cityDrawTasks;
 	
 }

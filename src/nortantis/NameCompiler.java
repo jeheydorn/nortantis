@@ -13,11 +13,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
-import util.Counter;
-import util.Function;
-import util.Helper;
-import util.Pair;
-import util.Range;
+import nortantis.util.Counter;
+import nortantis.util.Function;
+import nortantis.util.Helper;
+import nortantis.util.Pair;
+import nortantis.util.Range;
 
 /**
  * Creates names for rivers and mountains by putting nouns, verbs, and adjectives together.

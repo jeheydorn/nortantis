@@ -34,9 +34,9 @@ import javax.swing.SwingWorker;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
-import util.ImageHelper;
-import util.JComboBoxFixed;
-import util.JTextFieldFixed;
+import nortantis.util.ImageHelper;
+import nortantis.util.JComboBoxFixed;
+import nortantis.util.JTextFieldFixed;
 
 public class TextTool extends EditorTool
 {
@@ -280,7 +280,7 @@ public class TextTool extends EditorTool
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
 		try
 		{
-			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups, mapParts.cityAreas);
+			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
 		}
 		catch (Exception e)
 		{

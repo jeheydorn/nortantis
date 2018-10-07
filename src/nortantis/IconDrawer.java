@@ -2,7 +2,6 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
@@ -32,17 +31,17 @@ import hoten.voronoi.Corner;
 import nortantis.GraphImpl.ColorData;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
-import util.Coordinate;
-import util.Function;
-import util.HashMapF;
-import util.Helper;
-import util.ImageHelper;
-import util.ListMap;
-import util.Logger;
-import util.Pair;
-import util.Range;
-import util.Tuple2;
-import util.Tuple3;
+import nortantis.util.Coordinate;
+import nortantis.util.Function;
+import nortantis.util.HashMapF;
+import nortantis.util.Helper;
+import nortantis.util.ImageHelper;
+import nortantis.util.ListMap;
+import nortantis.util.Logger;
+import nortantis.util.Pair;
+import nortantis.util.Range;
+import nortantis.util.Tuple2;
+import nortantis.util.Tuple3;
 
 public class IconDrawer 
 {
@@ -389,53 +388,6 @@ public class IconDrawer
 	}
 
 	/**
-	 * Stores things needed to draw an icon onto the map.
-	 * @author joseph
-	 *
-	 */
-	private class IconDrawTask implements Comparable<IconDrawTask>
-	{
-		BufferedImage icon;
-		BufferedImage mask;
-		Point centerLoc;
-		int scaledWidth;
-		int yBottom;
-		boolean needsScale;
-		boolean ignoreMaxSize;
-
-		public IconDrawTask(BufferedImage icon, BufferedImage mask, Point centerLoc, int scaledWidth,
-				boolean needsScale, boolean ignoreMaxSize)
-		{
-			this.icon = icon;
-			this.mask = mask;
-			this.centerLoc = centerLoc;
-			this.scaledWidth = scaledWidth;
-			this.needsScale = needsScale;
-			
-	   		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
-	   		int scaledHeight = (int)(scaledWidth/aspectRatio);
-	       	yBottom = (int)(centerLoc.y + (scaledHeight/2.0));
-	       	
-	       	this.ignoreMaxSize = ignoreMaxSize;
-		}
-		
-		public void scaleIcon()
-		{
-			if (needsScale)
-			{
-		       	icon = ImageCache.getInstance().getScaledImage(icon, scaledWidth);
-		      	mask = ImageCache.getInstance().getScaledImage(mask, scaledWidth);
-			}
-		}
-
-		@Override
-		public int compareTo(IconDrawTask other)
-		{
-			return Integer.compare(yBottom, other.yBottom);
-		}
-	}
-	
-	/**
 	 * Draws all icons in iconsToDraw. I draw all the icons at once this way so that I can sort
 	 * the icons by the y-coordinate of the base of each icon. This way icons lower on the map
 	 * are drawn in front of those that are higher.
@@ -470,7 +422,7 @@ public class IconDrawer
 		
 		for (final IconDrawTask task : tasks)
 		{
-			if (!isIconTouchingWater(task.icon, task.centerLoc))
+			if (!isIconTouchingWater(task))
 			{
 				drawIconWithBackgroundAndMask(map, task.icon, task.mask, background, (int)task.centerLoc.x,
 						(int)task.centerLoc.y, task.ignoreMaxSize);
@@ -480,9 +432,9 @@ public class IconDrawer
 	
 	/**
 	 * Adds icon draw tasks to draw cities.
-	 * @return Areas of each city icon. Needed to void drawing text on top of cities.
+	 * @return IconDrawTask of each city icon added. Needed to void drawing text on top of cities.
 	 */
-	public List<Area> addCities(double sizeMultiplyer, boolean createIconDrawTasks)
+	public List<IconDrawTask> addCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = loadIconsWithWidths(citiesName);
 		if (cityIcons.isEmpty())
@@ -493,7 +445,7 @@ public class IconDrawer
 		
 		List<String> cityNames = new ArrayList<>(cityIcons.keySet());
 		
-		List<Area> areas = new ArrayList<>();
+		List<IconDrawTask> cities = new ArrayList<>();
 		
 		for (Center c : graph.centers)
 		{
@@ -502,20 +454,22 @@ public class IconDrawer
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
 				int scaledWidth = (int)(cityIcons.get(cityName).getThird() * sizeMultiplyer);
 				BufferedImage icon = cityIcons.get(cityName).getFirst();
-				if (createIconDrawTasks)
+				
+				IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true);
+				if (!isIconTouchingWater(task))
 				{
-					IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true);
-					iconsToDraw.getOrCreate(c).add(task);
-	           		centerIcons.put(c.index, new CenterIcon(CenterIconType.City, cityName));
+					if (addIconDrawTasks)
+					{
+						iconsToDraw.getOrCreate(c).add(task);
+		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.City, cityName));
+					}
+	           		
+	    	   		cities.add(task); 
 				}
-           		
-    	   		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
-    	   		int scaledHeight = (int)(scaledWidth/aspectRatio);
-    	   		areas.add(new Area(new java.awt.Rectangle((int)(c.loc.x - scaledWidth/2.0), (int)(c.loc.y - scaledHeight/2.0), scaledWidth, scaledHeight)));
 			}
 		}
 		
-		return areas;
+		return cities;
 	}
 
 	/**
@@ -907,19 +861,19 @@ public class IconDrawer
        	}
 	}
 	
-	private boolean isIconTouchingWater(BufferedImage image, Point imageCenter)
+	private boolean isIconTouchingWater(IconDrawTask iconTask)
 	{       	
-       	int imageUpperLeftX = (int)imageCenter.x - image.getWidth()/2;
-       	int imageUpperLeftY = (int)imageCenter.y + image.getHeight()/2;
+       	int imageUpperLeftX = (int)iconTask.centerLoc.x - iconTask.scaledWidth/2;
+       	int imageUpperLeftY = (int)iconTask.centerLoc.y + iconTask.scaledHeight/2;
        	
        	// Only check precision*precision points.
-       	float precision = Math.min(image.getWidth(), Math.min(image.getHeight(), 32));
+       	float precision = Math.min(iconTask.scaledWidth, Math.min(iconTask.scaledHeight, 32));
        	for (int x = 0; x < precision; x++)
        	{
        		for (int y = 0; y < precision; y++)
        		{
-       			Center center = graph.findClosestCenter(imageUpperLeftX + (int)(image.getWidth() * (x/precision)), 
-       					(imageUpperLeftY - (int)(image.getHeight() * (y/precision))));
+       			Center center = graph.findClosestCenter(imageUpperLeftX + (int)(iconTask.scaledWidth * (x/precision)), 
+       					(imageUpperLeftY - (int)(iconTask.scaledHeight * (y/precision))));
        	       	if (center.isWater)
        	       		return true;
        		}

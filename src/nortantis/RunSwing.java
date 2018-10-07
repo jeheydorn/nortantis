@@ -67,11 +67,11 @@ import org.apache.commons.io.FilenameUtils;
 
 import nortantis.editor.EditorDialog;
 import nortantis.editor.MapEdits;
-import util.Helper;
-import util.ImageHelper;
-import util.JFontChooser;
-import util.Logger;
-import util.Range;
+import nortantis.util.Helper;
+import nortantis.util.ImageHelper;
+import nortantis.util.JFontChooser;
+import nortantis.util.Logger;
+import nortantis.util.Range;
 
 public class RunSwing
 {
@@ -1267,7 +1267,7 @@ public class RunSwing
 		btnMountainRangeFont.setBounds(383, 105, 87, 25);
 		textPanel.add(btnMountainRangeFont);
 		
-		JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
+		JLabel lblMountainGroupFont = new JLabel("Cities/mountains font:");
 		lblMountainGroupFont.setBounds(8, 142, 161, 15);
 		textPanel.add(lblMountainGroupFont);
 		

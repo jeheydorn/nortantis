@@ -27,10 +27,10 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
-import util.ImageHelper;
-import util.Logger;
-import util.Pair;
-import util.Range;
+import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
+import nortantis.util.Pair;
+import nortantis.util.Range;
 
 public class MapCreator
 {
@@ -255,7 +255,7 @@ public class MapCreator
 			drawRivers(settings, graph, map, sizeMultiplyer);
 		}
 
-		List<Area> cityAreas;
+		List<IconDrawTask> cities;
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
@@ -270,19 +270,19 @@ public class MapCreator
 			iconDrawer.addTrees();
 			
 			Logger.println("Adding cities.");
-			cityAreas = iconDrawer.addCities(sizeMultiplyer, true);
+			cities = iconDrawer.addCities(sizeMultiplyer, true);
 		}
 		else
 		{
 			// Create mountain groups for the text drawer.
 			mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
-			// Create city areas forthe text drawer.
-			cityAreas = iconDrawer.addCities(settings.resolution, false);
+			// Create city areas for the text drawer.
+			cities = iconDrawer.addCities(settings.resolution, false);
 		}
 		
 		if (mapParts != null)
 		{
-			mapParts.cityAreas = cityAreas;
+			mapParts.cityDrawTasks = cities;
 		}
 		
 		if (settings.drawIcons)
@@ -371,7 +371,7 @@ public class MapCreator
 				graph.drawRegionBorders(g, sizeMultiplyer, true);
 			}
 						
-			textDrawer.drawText(graph, map, landBackground, mountainGroups, cityAreas);
+			textDrawer.drawText(graph, map, landBackground, mountainGroups, cities);
 		}
 		landBackground = null;
 		

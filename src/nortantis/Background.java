@@ -7,8 +7,8 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.Random;
 
-import util.ImageHelper;
-import util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.ImageHelper;
+import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
 /**
  * An assortment of things needed to draw the background.

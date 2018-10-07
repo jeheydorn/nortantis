@@ -15,8 +15,8 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import util.JComboBoxFixed;
-import util.JTextFieldFixed;
+import nortantis.util.JComboBoxFixed;
+import nortantis.util.JTextFieldFixed;
 
 @SuppressWarnings("serial")
 public class TestDialog extends JDialog

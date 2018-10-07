@@ -6,6 +6,7 @@ public enum TextType
 	Region,
 	Mountain_range,
 	Other_mountains,
+	City,
 	River;
 	
 	public String toString() 

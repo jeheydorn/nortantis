@@ -39,7 +39,7 @@ import nortantis.CenterTrees;
 import nortantis.IconDrawer;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
-import util.ImageHelper;
+import nortantis.util.ImageHelper;
 
 public class IconTool extends EditorTool
 {

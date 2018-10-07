@@ -4,8 +4,8 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 
-import util.ConcurrentHashMapF;
-import util.ImageHelper;
+import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.ImageHelper;
 
 /**
  * Caches icons in memory to avoid recreating or reloading them.

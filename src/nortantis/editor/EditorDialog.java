@@ -41,7 +41,7 @@ import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
 import nortantis.UserPreferences;
-import util.JComboBoxFixed;
+import nortantis.util.JComboBoxFixed;
 
 @SuppressWarnings("serial")
 public class EditorDialog extends JDialog

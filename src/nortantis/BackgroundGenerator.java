@@ -8,8 +8,8 @@ import java.awt.image.Raster;
 import java.io.IOException;
 import java.util.Random;
 
-import util.ImageHelper;
-import util.Range;
+import nortantis.util.ImageHelper;
+import nortantis.util.Range;
 
 public class BackgroundGenerator
 {		

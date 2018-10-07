@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
 
 import org.jtransforms.fft.FloatFFT_2D;
 
-import util.ImageHelper;
+import nortantis.util.ImageHelper;
 
 public class FractalBGGenerator
 {

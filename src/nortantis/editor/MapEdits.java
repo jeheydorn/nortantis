@@ -15,7 +15,7 @@ import nortantis.CenterTrees;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
-import util.Range;
+import nortantis.util.Range;
 
 /**
  * Stores edits made by a user to a map. These are stored as modifications from the generated content.

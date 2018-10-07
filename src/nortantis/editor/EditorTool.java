@@ -33,8 +33,8 @@ import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextDrawer;
-import util.Helper;
-import util.Range;
+import nortantis.util.Helper;
+import nortantis.util.Range;
 
 public abstract class EditorTool
 {

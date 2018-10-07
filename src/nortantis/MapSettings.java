@@ -24,8 +24,8 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
-import util.Function0;
-import util.Helper;
+import nortantis.util.Function0;
+import nortantis.util.Helper;
 
 /**
  * For parsing and storing map settings.

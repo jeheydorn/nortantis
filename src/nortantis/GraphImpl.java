@@ -28,8 +28,8 @@ import hoten.voronoi.Edge;
 import hoten.voronoi.NoisyEdges;
 import hoten.voronoi.VoronoiGraph;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import util.Helper;
-import util.Range;
+import nortantis.util.Helper;
+import nortantis.util.Range;
 
 /**
  * TestGraphImpl.java
@@ -932,7 +932,7 @@ public class GraphImpl extends VoronoiGraph
     		{
     			// Choose a center at random.
 	    		// Choose one of it's neighbors not in the same plate.
-	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new util.Function<Center, Boolean>()
+	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new nortantis.util.Function<Center, Boolean>()
 	    				{
 							public Boolean apply(Center otherC) 
 							{

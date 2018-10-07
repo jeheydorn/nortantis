@@ -9,8 +9,8 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import util.ImageHelper;
-import util.Logger;
+import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
 
 /**
  * TestDriver.java

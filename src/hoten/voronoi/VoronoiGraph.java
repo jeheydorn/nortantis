@@ -25,7 +25,7 @@ import hoten.geom.Point;
 import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import util.Range;
+import nortantis.util.Range;
 
 /**
  * VoronoiGraph.java
