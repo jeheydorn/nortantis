@@ -61,7 +61,7 @@ public class SettingsGenerator
 			settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
 		}
 		
-		settings.cityProbability = rand.nextDouble() / 40.0;
+		settings.cityProbability = rand.nextDouble() / 100.0;
 				
 		return settings;
 	}

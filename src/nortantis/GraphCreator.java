@@ -99,7 +99,14 @@ public class GraphCreator
 			{
 				float elevation = out.getSample(x, y, 0);
 				float scale;
-				scale = Math.abs(elevation - GraphImpl.seaLevel*maxPixelValue) / maxPixelValue;
+				if (elevation > GraphImpl.seaLevel*maxPixelValue)
+				{
+					scale = Math.abs(elevation - GraphImpl.seaLevel*maxPixelValue) / maxPixelValue;
+				}
+				else
+				{
+					scale = 0f;
+				}
 
 				float tValue = maxPixelValue - textureRaster.getSample(x, y, 0);
 				int newValue = (int)((elevation - scale * (tValue)));

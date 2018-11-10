@@ -176,6 +176,7 @@ public class RunSwing
 	private JLabel lblMapEditsMessage;
 	private JSlider cityProbabilitySlider;
 	public final double cityFrequencySliderScale = 100.0 * 1.0/SettingsGenerator.maxCityProbabillity;
+	private JLabel cityProbabilityLabel;
 
 	
 	public static boolean isRunning()
@@ -1186,7 +1187,7 @@ public class RunSwing
 		tabbedPane.addTab("Icons", iconsPanel);
 		iconsPanel.setLayout(null);
 		
-		JLabel cityProbabilityLabel = new JLabel("City probability:");
+		cityProbabilityLabel = new JLabel("City probability:");
 		cityProbabilityLabel.setToolTipText("Higher values create more cities. Lower values create less cities. Zero means no cities.");
 		cityProbabilityLabel.setBounds(12, 20, 114, 15);
 		iconsPanel.add(cityProbabilityLabel);
@@ -2348,6 +2349,7 @@ public class RunSwing
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblSaturationRange, saturationSlider, hasEdits);	
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblBrightnessRange, brightnessSlider, hasEdits);
 		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, newRegionSeedButton, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(cityProbabilityLabel, cityProbabilitySlider, hasEdits);	
 		lblMapEditsMessage.setVisible(hasEdits);
 		clearEditsMenuItem.setEnabled(hasEdits);
 	}

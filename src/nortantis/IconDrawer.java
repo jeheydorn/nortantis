@@ -246,13 +246,25 @@ public class IconDrawer
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
 				{
-					BufferedImage cityImage = cityImages.get(
-							cEdit.icon.iconName).getFirst();
-					BufferedImage mask = cityImages.get(
-							cEdit.icon.iconName).getSecond();
-					iconsToDraw.getOrCreate(center).add(
-							new IconDrawTask(cityImage, mask, center.loc, 
-									(int)(cityImages.get(cEdit.icon.iconName).getThird() * sizeMultiplyer), true, true));								
+					BufferedImage cityImage;
+					BufferedImage mask;
+					String cityIconName = null;
+					if (cityImages.containsKey(cEdit.icon.iconName))
+					{
+						cityIconName = cEdit.icon.iconName;
+					}
+					else if (cityImages.size() > 0)
+					{
+						cityIconName = chooseNewGroupId(cityImages.keySet(), cEdit.icon.iconName);
+					}
+					if (cityIconName != null)
+					{
+						cityImage = cityImages.get(cityIconName).getFirst();
+						mask = cityImages.get(cityIconName).getSecond();
+						iconsToDraw.getOrCreate(center).add(
+								new IconDrawTask(cityImage, mask, center.loc, 
+										(int)(cityImages.get(cityIconName).getThird() * sizeMultiplyer), true, true));
+					}
 				}
 
 			}
@@ -268,7 +280,7 @@ public class IconDrawer
 	
 	private String chooseNewGroupId(Set<String> groupIds, String oldGroupId)
 	{
-		int randomIndex = oldGroupId.hashCode() % groupIds.size();
+		int randomIndex = Math.abs(oldGroupId.hashCode() % groupIds.size());
 		return groupIds.toArray(new String[groupIds.size()])[randomIndex];
 	}
 

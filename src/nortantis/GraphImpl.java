@@ -46,7 +46,7 @@ public class GraphImpl extends VoronoiGraph
 {
 
 	// Modify seeFloorLevel to change the number of islands in the ocean.
-	final double seaFloorLevel = 0.10;
+	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
    	public static final float seaLevel = 0.39f;
    	// This field must be set before creating instance of GraphImpl. This is necessary because it must be set
@@ -783,7 +783,7 @@ public class GraphImpl extends VoronoiGraph
             		numOceanic++;
             }
             double oceanicRatio = ((double)numOceanic)/corner.touches.size();
-            corner.elevation = oceanicRatio*seaFloorLevel + (1.0 - oceanicRatio)*continentalPlateLevel;
+            corner.elevation = oceanicRatio*oceanPlateLevel + (1.0 - oceanicRatio)*continentalPlateLevel;
        }
     }
        
