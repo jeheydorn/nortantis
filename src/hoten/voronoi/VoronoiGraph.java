@@ -25,6 +25,7 @@ import hoten.geom.Point;
 import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.Biome;
 import nortantis.util.Range;
 
 /**
@@ -100,9 +101,9 @@ public abstract class VoronoiGraph {
         // Joseph note: I moved noisy edge building code to GraphImpl because it now depends on the political regions.
     }
     
-    abstract protected Enum<?> getBiome(Center p);
+    abstract protected Biome getBiome(Center p);
 
-    abstract protected Color getColor(Enum<?> biome);
+    abstract protected Color getColor(Biome biome);
 
 
     /* an additional smoothing method across corners */

@@ -28,7 +28,8 @@ import org.apache.commons.io.FilenameUtils;
 import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
-import nortantis.GraphImpl.ColorData;
+import hoten.voronoi.VoronoiGraph;
+import nortantis.Biome;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
 import nortantis.util.Coordinate;
@@ -39,6 +40,7 @@ import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
+import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple3;
@@ -132,15 +134,46 @@ public class IconDrawer
 	
 	public void markCities(double cityProbability)
 	{
+//		Set<Center> rivers = new HashSet<>();
+//		Set<Center> coast = new HashSet<>();
+//		findRiversAndCoast(rivers, coast); // TODO decide if I need this and delete it if I don't.
 		for (Center c : graph.centers)
 		{
-			if (!c.isMountain && !c.isHill && !c.isWater && rand.nextDouble() <= cityProbability)
-				
+			// TODO figure out how to make the cities draw on coasts and not draw right on top of rivers.
+			if (!c.isMountain && !c.isHill && !c.isWater)
 			{
-				c.isCity = true;
+				if (c.isRiver() && rand.nextDouble() <= cityProbability*2)
+				{
+					c.isCity = true;
+				}
+				else if (c.isCoast && rand.nextDouble() <= cityProbability*2)
+				{
+					c.isCity = true;
+				}
+				else if (rand.nextDouble() <= cityProbability)
+				{
+					c.isCity = true;
+				}
 			}
 		}
 	}
+	
+	// TODO remove if not needed
+//	private void findRiversAndCoast(Set<Center> rivers, Set<Center> coast)
+//	{
+//		for (Center c : graph.centers)
+//		{
+//			if (c. >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+//			{
+//				rivers.add(c);
+//			}
+//			
+//			if (c.isCoast)
+//			{
+//				coast.add(c);
+//			}
+//		}
+//	}
 	
 	/**
 	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
@@ -618,7 +651,7 @@ public class IconDrawer
 				{
 					public Boolean apply(Center center)
 					{
-						return center.biome.equals(ColorData.TEMPERATE_DESERT);
+						return center.biome.equals(Biome.TEMPERATE_DESERT);
 					}
 				});
    		
@@ -659,18 +692,35 @@ public class IconDrawer
 		
 	public void addTrees() throws IOException
 	{
-   		List<ForestType> forestTypes = new ArrayList<>();
-        forestTypes.add(new ForestType("deciduous", GraphImpl.ColorData.TEMPERATE_RAIN_FOREST, 0.5, 1.0));
-        forestTypes.add(new ForestType("pine", GraphImpl.ColorData.TAIGA, 1.0, 1.0));
-        forestTypes.add(new ForestType("pine", GraphImpl.ColorData.SHRUBLAND, 1.0, 1.0));
-        forestTypes.add(new ForestType("pine", GraphImpl.ColorData.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25));
-        forestTypes.add(new ForestType("cacti", GraphImpl.ColorData.HIGH_TEMPERATE_DESERT, 1.0/8.0, 0.1));
-
-		addCenterTrees(forestTypes);
+		addCenterTrees();
 		drawTreesForAllCenters();
 	}
 	
-	private void addCenterTrees(List<ForestType> forestTypes)
+	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
+	{
+		Set<TreeType> result = new TreeSet<TreeType>();
+		for (final ForestType forest : forestTypes)
+		{
+			if (forest.biome == biome)
+			{
+				result.add(forest.treeType);
+			}
+		}
+		return result;
+	}
+	
+	private static List<ForestType> forestTypes;
+	static
+	{
+		forestTypes = new ArrayList<>();
+        forestTypes.add(new ForestType(TreeType.Deciduous, Biome.TEMPERATE_RAIN_FOREST, 0.5, 1.0));
+        forestTypes.add(new ForestType(TreeType.Pine, Biome.TAIGA, 1.0, 1.0));
+        forestTypes.add(new ForestType(TreeType.Pine, Biome.SHRUBLAND, 1.0, 1.0));
+        forestTypes.add(new ForestType(TreeType.Pine, Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25));
+        forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 1.0/8.0, 0.1));
+	}
+	
+	private void addCenterTrees()
 	{	
 		trees.clear();
         
@@ -694,7 +744,7 @@ public class IconDrawer
         				{	        	
                				if (canGenerateTreesOnCenter(c))
                				{
-               				   trees.put(c.index, new CenterTrees(forest.name, forest.density, c.treeSeed));
+               				   trees.put(c.index, new CenterTrees(forest.treeType.toString().toLowerCase(), forest.density, c.treeSeed));
                				}
         				}
         			}
@@ -713,7 +763,7 @@ public class IconDrawer
         			{
         				if (canGenerateTreesOnCenter(c))
         				{
-        					trees.put(c.index, new CenterTrees(forest.name, forest.density, c.treeSeed));
+        					trees.put(c.index, new CenterTrees(forest.treeType.toString().toLowerCase(), forest.density, c.treeSeed));
         				}
         			}
     			}
@@ -800,10 +850,10 @@ public class IconDrawer
 		}
 	}
 	
-	private class ForestType
+	private static class ForestType
 	{
-		String name;
-		GraphImpl.ColorData biome;
+		TreeType treeType;
+		Biome biome;
 		double density;
 		double biomeFrequency;
 		
@@ -811,9 +861,9 @@ public class IconDrawer
 		 * @param biomeProb If this is not 1.0, groups of centers of biome type "biome" will be found
 		 * and each groups will have this type of forest with probability biomeProb.
 		*/
-		public ForestType(String treeType, GraphImpl.ColorData biome, double density, double biomeFrequency)
+		public ForestType(TreeType treeType, Biome biome, double density, double biomeFrequency)
 		{
-			this.name = treeType;
+			this.treeType = treeType;
 			this.biome = biome;
 			this.density = density;
 			this.biomeFrequency = biomeFrequency;

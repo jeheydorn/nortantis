@@ -67,52 +67,6 @@ public class GraphImpl extends VoronoiGraph
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
     public List<Region> regions;
-       
-    /*
-       Colors converted to rgb:
-        OCEAN: [r=68,g=68,b=122]
-		LAKE: [r=51,g=102,b=153]
-		BEACH: [r=160,g=144,b=119]
-		SNOW: [r=255,g=255,b=255]
-		TUNDRA: [r=187,g=187,b=170]
-		BARE: [r=136,g=136,b=136]
-		SCORCHED: [r=85,g=85,b=85]
-		TAIGA: [r=153,g=170,b=119]
-		SHURBLAND: [r=136,g=153,b=119]
-		TEMPERATE_DESERT: [r=201,g=210,b=155]
-		HIGH_TEMPERATE_DESERT: [r=189,g=196,b=153]
-	 	TEMPERATE_RAIN_FOREST: [r=68,g=136,b=85]
-		TEMPERATE_DECIDUOUS_FOREST: [r=103,g=148,b=89]
-		HIGH_TEMPERATE_DECIDUOUS_FOREST: [r=74,b=119,b=61],
-		GRASSLAND: [r=136,g=170,b=85]
-		SUBTROPICAL_DESERT: [r=210,g=185,b=139]
-		SHRUBLAND: [r=136,g=153,b=119]
-		ICE: [r=153,g=255,b=255]
-		MARSH: [r=47,g=102,b=102]
-		TROPICAL_RAIN_FOREST: [r=51,g=119,b=85]
-		TROPICAL_SEASONAL_FOREST: [r=85,g=153,b=68]
-		COAST: [r=51,g=51,b=90]
-		LAKESHORE: [r=34,g=85,b=136]
-
-     */
-    enum ColorData {
-
-        OCEAN(0x44447a), LAKE(0x336699), BEACH(0xa09077), SNOW(0xffffff),
-        TUNDRA(0xbbbbaa), BARE(0x888888), SCORCHED(0x555555), TAIGA(0x99aa77),
-        SHURBLAND(0x889977), TEMPERATE_DESERT(0xc9d29b), HIGH_TEMPERATE_DESERT(0xbdc499),
-        TEMPERATE_RAIN_FOREST(0x448855), TEMPERATE_DECIDUOUS_FOREST(0x679459), 
-        HIGH_TEMPERATE_DECIDUOUS_FOREST(0x4a773d),
-        GRASSLAND(0x88aa55), SUBTROPICAL_DESERT(0xd2b98b), SHRUBLAND(0x889977),
-        ICE(0x99ffff), MARSH(0x2f6666), TROPICAL_RAIN_FOREST(0x337755),
-        TROPICAL_SEASONAL_FOREST(0x559944), COAST(0x33335a),
-        LAKESHORE(0x225588);
-        Color color;
-
-        ColorData(int color) {
-            this.color = new Color(color);
-        }
-    }
-    
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
@@ -160,9 +114,9 @@ public class GraphImpl extends VoronoiGraph
     
     private void setupColors()
     {
-        OCEAN = ColorData.OCEAN.color;
-        LAKE = ColorData.LAKE.color;
-        BEACH = ColorData.BEACH.color;
+        OCEAN = Biome.OCEAN.color;
+        LAKE = Biome.LAKE.color;
+        BEACH = Biome.BEACH.color;
         RIVER = new Color(0x225588);
    	
     }
@@ -522,66 +476,66 @@ public class GraphImpl extends VoronoiGraph
     }
 
     @Override
-    protected Color getColor(Enum<?> biome) {
-        return ((ColorData) biome).color;
+    protected Color getColor(Biome biome) {
+        return biome.color;
     }
 
     @Override
-    protected Enum<?> getBiome(Center p) {
+    protected Biome getBiome(Center p) {
     	double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
     	
 		if (p.isWater)
 		{
-			return ColorData.OCEAN;
+			return Biome.OCEAN;
 		}
 		else if (p.isWater)
 		{
 			if (elevation < 0.1)
 			{
-				return ColorData.MARSH;
+				return Biome.MARSH;
 			}
 			if (elevation > 0.8)
 			{
-				return ColorData.ICE;
+				return Biome.ICE;
 			}
-			return ColorData.LAKE;
+			return Biome.LAKE;
 		}
 		else if (p.isCoast)
 		{
-			return ColorData.BEACH;
+			return Biome.BEACH;
 		}
 		else if (elevation > 0.8)
 		{
 			if (p.moisture > 0.50)
 			{
-				return ColorData.SNOW;
+				return Biome.SNOW;
 			}
 			else if (p.moisture > 0.33)
 			{
-				return ColorData.TUNDRA;
+				return Biome.TUNDRA;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.BARE;
+				return Biome.BARE;
 			}
 			else
 			{
-				return ColorData.SCORCHED;
+				return Biome.SCORCHED;
 			}
 		}
 		else if (elevation > 0.6)
 		{
 			if (p.moisture > 0.66)
 			{
-				return ColorData.TAIGA;
+				return Biome.TAIGA;
 			}
 			else if (p.moisture > 0.33)
 			{
-				return ColorData.SHRUBLAND;
+				return Biome.SHRUBLAND;
 			}
 			else
 			{
-				return ColorData.HIGH_TEMPERATE_DESERT;
+				return Biome.HIGH_TEMPERATE_DESERT;
 			}
 		}
 		else if (elevation > 0.45)
@@ -589,57 +543,57 @@ public class GraphImpl extends VoronoiGraph
 			// Note: I added this else if case. It is not in Red Blob's blog.
 			if (p.moisture > 0.83)
 			{
-				return ColorData.TEMPERATE_RAIN_FOREST;
+				return Biome.TEMPERATE_RAIN_FOREST;
 			}
 			else if (p.moisture > 0.50)
 			{
-				return ColorData.HIGH_TEMPERATE_DECIDUOUS_FOREST;
+				return Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.GRASSLAND;
+				return Biome.GRASSLAND;
 			}
 			else
 			{
-				return ColorData.TEMPERATE_DESERT;
+				return Biome.TEMPERATE_DESERT;
 			}			
 		}
 		else if (elevation > 0.3)
 		{
 			if (p.moisture > 0.83)
 			{
-				return ColorData.TEMPERATE_RAIN_FOREST;
+				return Biome.TEMPERATE_RAIN_FOREST;
 			}
 			else if (p.moisture > 0.50)
 			{
-				return ColorData.TEMPERATE_DECIDUOUS_FOREST;
+				return Biome.TEMPERATE_DECIDUOUS_FOREST;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.GRASSLAND;
+				return Biome.GRASSLAND;
 			}
 			else
 			{
-				return ColorData.TEMPERATE_DESERT;
+				return Biome.TEMPERATE_DESERT;
 			}
 		}
 		else
 		{
 			if (p.moisture > 0.66)
 			{
-				return ColorData.TROPICAL_RAIN_FOREST;
+				return Biome.TROPICAL_RAIN_FOREST;
 			}
 			else if (p.moisture > 0.33)
 			{
-				return ColorData.TROPICAL_SEASONAL_FOREST;
+				return Biome.TROPICAL_SEASONAL_FOREST;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.GRASSLAND;
+				return Biome.GRASSLAND;
 			}
 			else
 			{
-				return ColorData.SUBTROPICAL_DESERT;
+				return Biome.SUBTROPICAL_DESERT;
 			}
 		}
     }

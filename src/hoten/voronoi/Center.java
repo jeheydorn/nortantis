@@ -1,10 +1,15 @@
 package hoten.voronoi;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import hoten.geom.Point;
+import nortantis.Biome;
+import nortantis.GraphImpl;
+import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
+import nortantis.TreeType;
 
 /**
  * Center.java
@@ -25,7 +30,7 @@ public class Center
     public boolean isCity;
     public double elevation;
     public double moisture;
-	public Enum<?> biome;
+	public Biome biome;
     public double area;
     public TectonicPlate tectonicPlate;
     public Region region;
@@ -85,6 +90,23 @@ public class Center
 			if (tectonicPlate != neighbor.tectonicPlate) 
 				neighborsNotInSamePlateCount++;
 		}
+	}
+	
+	public boolean isRiver()
+	{
+		for (Edge edge : borders)
+		{
+			if (edge.river >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public Set<TreeType> getTreeTypesForBiome()
+	{
+		return IconDrawer.getTreeTypesForBiome(biome);
 	}
 
 }

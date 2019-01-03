@@ -444,7 +444,7 @@ public class TextDrawer
 				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
 						new Tuple2<>(0.2, "Kingdom of %s"),
 						new Tuple2<>(0.04, "Empire of %s")));
-				return generatePersonName(format, requireUnique);	
+				return generatePersonName(format, requireUnique);
 			}
 			else
 			{
