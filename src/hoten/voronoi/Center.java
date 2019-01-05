@@ -28,6 +28,7 @@ public class Center
     public boolean isMountain;
     public boolean isHill;
     public boolean isCity;
+    public boolean isSandDunes;
     public double elevation;
     public double moisture;
 	public Biome biome;
@@ -104,7 +105,7 @@ public class Center
 		return false;
 	}
 	
-	public Set<TreeType> getTreeTypesForBiome()
+	public Set<TreeType> getTreeTypes()
 	{
 		return IconDrawer.getTreeTypesForBiome(biome);
 	}

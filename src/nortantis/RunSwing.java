@@ -30,6 +30,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -67,6 +68,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import nortantis.editor.EditorDialog;
 import nortantis.editor.MapEdits;
+import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.JFontChooser;
@@ -257,6 +259,36 @@ public class RunSwing
 		previewPanel.setImage(null);
 		previewPanel.repaint();
 	}
+	
+	private void handleBackgroundThreadException(Exception ex)
+	{
+		if (ex instanceof ExecutionException)
+		{
+			if (ex.getCause() != null)
+			{
+				ex.getCause().printStackTrace();
+				if (ex.getCause() instanceof OutOfMemoryError)
+				{
+					JOptionPane.showMessageDialog(null, "Out of memory. Try allocating more memory to the Java heap space, or decrease the resolution in the Background tab.", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+				else
+				{
+					JOptionPane.showMessageDialog(null, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+			else
+			{
+				// Should never happen.
+				ex.printStackTrace();
+		        JOptionPane.showMessageDialog(null, "An ExecutionException error occured with no cause: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		else
+		{
+			ex.printStackTrace();
+	        JOptionPane.showMessageDialog(null, "An unexpected error occured: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+	}
 
 	private void createGUI()
 	{		
@@ -328,29 +360,29 @@ public class RunSwing
 			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 			    {
 			        @Override
-			        public BufferedImage doInBackground() 
+			        public BufferedImage doInBackground() throws Exception
 			        {
-						try
-						{
-							BufferedImage map = new MapCreator().createMap(settings, null, null);
-							
-							Logger.println("Opening the map in your system's default image editor.");
-							String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-							Logger.println("Map written to " + fileName);
-							return map;
-						} 
-						catch (Exception e)
-						{
-							e.printStackTrace();
-					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						}
-			        	
-			        	return null;
+						ImageCache.clear();
+						
+						BufferedImage map = new MapCreator().createMap(settings, null, null);
+						
+						Logger.println("Opening the map in your system's default image editor.");
+						String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+						Logger.println("Map written to " + fileName);
+						return map;
 			        }		
 			        
 			        @Override
 			        public void done()
 			        {
+			        	try
+			        	{
+			        		get();
+			        	}
+						catch (Exception ex)
+						{
+							handleBackgroundThreadException(ex);
+						}
 			        	btnGenerate.setEnabled(true);
 						btnPreview.setEnabled(true);
 			        }
@@ -383,21 +415,11 @@ public class RunSwing
 			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 			    {
 			        @Override
-			        public BufferedImage doInBackground() 
+			        public BufferedImage doInBackground() throws IOException 
 			        {	
 			        	Dimension bounds = new Dimension(previewPanel.getWidth(), previewPanel.getHeight());
 
-						try
-						{
-							return new MapCreator().createMap(settings, bounds, null);
-						} 
-						catch (Exception e)
-						{
-							e.printStackTrace();
-					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						} 
-			        	
-			        	return null;
+						return new MapCreator().createMap(settings, bounds, null);
 			        }
 			        
 			        @Override
@@ -408,14 +430,11 @@ public class RunSwing
 			            {
 			                map = get();
 			            } 
-			            catch (InterruptedException e) 
-			            {
-			                throw new RuntimeException(e.getMessage());
-			            }
-			            catch (java.util.concurrent.ExecutionException e) 
-			            {
-			                throw new RuntimeException(e);
-			            }
+						catch (Exception ex)
+						{
+							handleBackgroundThreadException(ex);
+						}
+			        	
 			            if (map != null)
 			            {
 			            	previewPanel.image = map;
@@ -1532,34 +1551,36 @@ public class RunSwing
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
+				btnGenerate.setEnabled(false);
+				btnPreview.setEnabled(false);
 				showHeightMapWithEditsWarning();
 				
 				txtConsoleOutput.setText("");
 			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 			    {
 			        @Override
-			        public BufferedImage doInBackground() 
+			        public BufferedImage doInBackground() throws IOException 
 			        {
-						try
-						{
-							MapSettings settings = getSettingsFromGUI();
-							BufferedImage heightMap = new MapCreator().createHeightMap(settings);
-							Logger.println("Opening the heightmap in your system's default image editor.");
-							String fileName = ImageHelper.openImageInSystemDefaultEditor(heightMap, "heightmap");	
-							Logger.println("Heightmap written to " + fileName);
-						} 
-						catch (Exception e)
-						{
-							e.printStackTrace();
-					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						}
-			        	
-			        	return null;
+						MapSettings settings = getSettingsFromGUI();
+						Logger.println("Creating a heightmap...");
+						BufferedImage heightMap = new MapCreator().createHeightMap(settings);
+						Logger.println("Opening the heightmap in your system's default image editor.");
+						String fileName = ImageHelper.openImageInSystemDefaultEditor(heightMap, "heightmap");	
+						Logger.println("Heightmap written to " + fileName);
+						return heightMap;
 			        }			 
 
 			        @Override
 			        public void done()
 			        {
+			        	try
+			        	{
+			        		get();
+			        	}
+			        	catch (Exception ex)
+			        	{
+			        		handleBackgroundThreadException(ex);
+			        	}
 						btnGenerate.setEnabled(true);
 						btnPreview.setEnabled(true);
 			        }
@@ -1623,9 +1644,6 @@ public class RunSwing
 		lblMapEditsMessage.setBounds(12, 285, 913, 50);
 		lblMapEditsMessage.setVisible(false);
 		terrainPanel.add(lblMapEditsMessage);
-		
-		JMenuBar menuBar_1 = new JMenuBar();
-		menuBar.add(menuBar_1);
 		
 		frame.pack();
 	}
@@ -2215,7 +2233,7 @@ public class RunSwing
 	
 	private List<String> getAllBooks()
 	{
-		String[] filenames = new File("assets/books").list(new FilenameFilter()
+		String[] filenames = new File(Paths.get(AssetsPath.get(), "books").toString()).list(new FilenameFilter()
 		{
 			public boolean accept(File arg0, String name)
 			{

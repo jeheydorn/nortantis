@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.BorderFactory;
@@ -27,6 +28,7 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 
 import hoten.voronoi.Center;
+import nortantis.ImageCache;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
@@ -248,9 +250,22 @@ public abstract class EditorTool
 	            {
 	                map = get();
 	            } 
-	            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
+	            catch (InterruptedException ex) 
 	            {
-	                throw new RuntimeException(e);
+	                throw new RuntimeException(ex);
+	            }
+	            catch (ExecutionException ex)
+	            {
+	            	Throwable cause = ex.getCause();
+	            	cause.printStackTrace();
+	            	if (cause instanceof OutOfMemoryError)
+	            	{
+	            		JOptionPane.showMessageDialog(null, "Out of memory. Try allocating more memory to the Java heap space.", "Error", JOptionPane.ERROR_MESSAGE);
+	            	}
+	            	else
+	            	{
+	            		JOptionPane.showMessageDialog(null, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+	            	}
 	            }
 	            
 	            if (map != null)

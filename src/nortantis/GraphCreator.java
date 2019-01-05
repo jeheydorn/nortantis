@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -67,10 +68,10 @@ public class GraphCreator
         g.fillRect(0, 0, graph.getWidth(), graph.getHeight());
         graph.paintElevationUsingTrianges(g);
          
-        heightMap = ImageHelper.convolveGrayscale(heightMap, ImageHelper.createGaussianKernel((int)(IconDrawer.findMeanPolygonWidth(graph) / 2)), false);
+        heightMap = ImageHelper.blur(heightMap, (int)IconDrawer.findMeanPolygonWidth(graph) / 2);
        
         // Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
-        BufferedImage mountains = ImageHelper.read(Paths.get("assets/internal/mountain texture.png").toString());
+        BufferedImage mountains = ImageHelper.read(Paths.get(AssetsPath.get(), "internal/mountain texture.png").toString());
         if (mountains.getType() != BufferedImage.TYPE_USHORT_GRAY)
         {
         	mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);
@@ -133,5 +134,6 @@ public class GraphCreator
         
         return graph;
     }
+
 
 }

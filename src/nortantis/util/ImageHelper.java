@@ -26,6 +26,8 @@ import org.jtransforms.fft.FloatFFT_2D;
 import hoten.geom.Point;
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
+import nortantis.IconDrawer;
+import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
 {
@@ -37,7 +39,7 @@ public class ImageHelper
 	 */
 	public static void shutdownThreadPool()
 	{
-		//ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination(); 
+		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination(); 
 	}
 		
 	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
@@ -629,6 +631,61 @@ public class ImageHelper
 				
 				int mc = (maskLevel << 24) | 0x00ffffff;
 	            int newColor = col.getRGB() & mc;
+				
+				result.setRGB(x, y, newColor);
+			}
+		return result;
+	}
+	
+	public static BufferedImage createColoredImageFromGrayScaleImages(BufferedImage redChanel, BufferedImage greenChanel, BufferedImage blueChanel, BufferedImage alphaChanel)
+	{
+		if (redChanel.getType() != BufferedImage.TYPE_BYTE_GRAY)
+			throw new IllegalArgumentException("Red chanel image type must be type BufferedImage.TYPE_BYTE_GRAY.");
+		
+		if (greenChanel.getType() != BufferedImage.TYPE_BYTE_GRAY )
+			throw new IllegalArgumentException("Green chanel image type must be type BufferedImage.TYPE_BYTE_GRAY");
+		
+		if (blueChanel.getType() != BufferedImage.TYPE_BYTE_GRAY )
+			throw new IllegalArgumentException("Blue chanel image type must be type BufferedImage.TYPE_BYTE_GRAY");
+		
+		if (alphaChanel.getType() != BufferedImage.TYPE_BYTE_GRAY )
+			throw new IllegalArgumentException("Alpha chanel image type must be type BufferedImage.TYPE_BYTE_GRAY.");
+		
+		if (redChanel.getWidth() != alphaChanel.getWidth())
+			throw new IllegalArgumentException("Alpha chanel width is "
+					+ alphaChanel.getWidth() + " but red chanel image has width "
+					+ redChanel.getWidth() + ".");
+		if (redChanel.getHeight() != alphaChanel.getHeight())
+			throw new IllegalArgumentException();
+
+		if (greenChanel.getWidth() != alphaChanel.getWidth())
+			throw new IllegalArgumentException("Alpha chanel width is "
+					+ alphaChanel.getWidth() + " but green chanel image has width "
+					+ greenChanel.getWidth() + ".");
+		if (greenChanel.getHeight() != alphaChanel.getHeight())
+			throw new IllegalArgumentException();
+		
+		if (blueChanel.getWidth() != alphaChanel.getWidth())
+			throw new IllegalArgumentException("Alpha chanel width is "
+					+ alphaChanel.getWidth() + " but blue chanel image has width "
+					+ blueChanel.getWidth() + ".");
+		if (blueChanel.getHeight() != alphaChanel.getHeight())
+			throw new IllegalArgumentException();
+
+		BufferedImage result = new BufferedImage(redChanel.getWidth(),
+				redChanel.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		Raster alphaRaster = alphaChanel.getRaster();
+		for (int y = 0; y < redChanel.getHeight(); y++)
+			for (int x = 0; x < redChanel.getWidth(); x++)
+			{
+				int red = new Color(redChanel.getRGB(x, y)).getRed();
+				int green = new Color(greenChanel.getRGB(x, y)).getGreen();
+				int blue = new Color(blueChanel.getRGB(x, y)).getBlue();
+				
+				int maskLevel = alphaRaster.getSample(x, y, 0);
+				
+				int mc = (maskLevel << 24) | 0x00ffffff;
+	            int newColor = new Color(red, green, blue).getRGB() & mc;
 				
 				result.setRGB(x, y, newColor);
 			}
@@ -1406,6 +1463,10 @@ public class ImageHelper
 		g2.drawImage(image, 0, image.getHeight(), image.getWidth(), -image.getHeight(), null);
 		return result;
 	}
-
+	
+	public static BufferedImage blur(BufferedImage image, int blurLevel)
+	{
+		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false);
+	}
 	
 }

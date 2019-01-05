@@ -24,6 +24,7 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
+import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 import nortantis.util.Helper;
 
@@ -468,7 +469,7 @@ public class MapSettings implements Serializable
 			{
 				String result = props.getProperty("backgroundTextureImage");
 				if (result == null)
-					result = Paths.get("./assets/example textures").toString();
+					result = Paths.get(AssetsPath.get(), "example textures").toString();
 				return result;
 			}
 		});

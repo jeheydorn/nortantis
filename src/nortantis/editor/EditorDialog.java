@@ -37,6 +37,7 @@ import javax.swing.KeyStroke;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import nortantis.ImageCache;
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.RunSwing;
@@ -270,6 +271,7 @@ public class EditorDialog extends JDialog
 			{
 				UserPreferences.getInstance().zoomLevel = (String)zoomComboBox.getSelectedItem();
 				double zoom = parseZoom((String)zoomComboBox.getSelectedItem());
+				ImageCache.clear();
 				currentTool.handleZoomChange(zoom);
 			}
 		});	

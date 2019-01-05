@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
+import nortantis.util.AssetsPath;
 import nortantis.util.Counter;
 import nortantis.util.Function;
 import nortantis.util.Helper;
@@ -45,7 +46,7 @@ public class NameCompiler
 		List<String> lines;
 		try
 		{
-			lines = Files.readAllLines(Paths.get("assets/internal/en_GB.dic"), Charset.defaultCharset());
+			lines = Files.readAllLines(Paths.get(AssetsPath.get(), "internal/en_GB.dic"), Charset.defaultCharset());
 		} catch (IOException e)
 		{
 			throw new RuntimeException("Unable to read word dictionary file.", e);

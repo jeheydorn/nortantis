@@ -27,6 +27,7 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
+import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
@@ -40,7 +41,7 @@ public class MapCreator
 	
 	private Random r;
 	// This is a base width for determining how large to draw text and effects.
-	private final double baseResolution = 1536;
+	private static final double baseResolution = 1536;
 	
 	public MapCreator()
 	{
@@ -85,7 +86,7 @@ public class MapCreator
         	mapParts.background = background;
         }
         
-        double sizeMultiplyer = (background.mapBounds.getWidth() / baseResolution);
+        double sizeMultiplyer = calcSizeMultiplyer(background.mapBounds.getWidth());
         if (mapParts != null)
         {
         	mapParts.sizeMultiplyer = sizeMultiplyer;
@@ -437,7 +438,7 @@ public class MapCreator
 		return map;
 	}
 	
-	void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
+	private static void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
 	{
 		
 		float[] landHsb = new float[3];
@@ -456,7 +457,7 @@ public class MapCreator
 	/**
 	 * Assigns the color of each political region.
 	 */
-	static private void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
+	private static void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
 	{
 		for (int i : new Range(graph.regions.size()))
 		{
@@ -479,7 +480,7 @@ public class MapCreator
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 	
-	private GraphImpl createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
+	private static GraphImpl createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
 	{
 		GraphImpl graph = GraphCreator.createGraph(width, height,
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
@@ -490,6 +491,20 @@ public class MapCreator
 		assignRandomRegionColors(graph, settings);
 		
 		return graph;
+	}
+	
+	public static GraphImpl createGraphFromSettings(MapSettings settings)
+	{   
+		Random r = new Random(settings.randomSeed);
+        DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
+		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
+		return graph;
+	}
+	
+	public static double calcSizeMultiplyer(double mapWidth)
+	{
+		return mapWidth / baseResolution;
 	}
 	
 	private static void applyRegionEdits(GraphImpl graph, MapEdits edits)
@@ -618,7 +633,7 @@ public class MapCreator
 		background.borderBackground.getGraphics().drawImage(map, borderWidthScaled, borderWidthScaled, null);
 		map = background.borderBackground;
 		
-		Path allBordersPath = Paths.get("assets", "borders");
+		Path allBordersPath = Paths.get(AssetsPath.get(), "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), settings.borderType);
 		if (!Files.exists(borderPath))
 		{
@@ -1043,7 +1058,7 @@ public class MapCreator
 	
 	public static Set<String> getAvailableBorderTypes()
 	{
-		File[] directories = new File(Paths.get("assets", "borders").toString()).listFiles(File::isDirectory);
+		File[] directories = new File(Paths.get(AssetsPath.get(), "borders").toString()).listFiles(File::isDirectory);
 		return new TreeSet<String>(Arrays.stream(directories).map(file -> file.getName()).collect(Collectors.toList()));
 	}
 	
@@ -1051,7 +1066,7 @@ public class MapCreator
 	{   
 		r = new Random(settings.randomSeed);
         DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
-		double sizeMultiplyer = (mapBounds.getWidth() / baseResolution);
+		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
 		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed), sizeMultiplyer);
 	}

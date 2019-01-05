@@ -32,6 +32,7 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
+import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
@@ -98,10 +99,10 @@ public class TextDrawer
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : settings.books)
 		{
-			placeNames = readNameList("assets/books/" + book + "_place_names.txt");
-			personNames = readNameList("assets/books/" + book + "_person_names.txt");
-			nounAdjectivePairs.addAll(readStringPairs("assets/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs("assets/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames = readNameList(AssetsPath.get() + "/books/" + book + "_place_names.txt");
+			personNames = readNameList(AssetsPath.get() + "/books/" + book + "_person_names.txt");
+			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 				
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage);

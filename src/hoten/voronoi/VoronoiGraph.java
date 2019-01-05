@@ -768,7 +768,7 @@ public abstract class VoronoiGraph {
      * @param colorChooser Decides the color for each polygons. If it returns null, then the
      * polygons will not be drawn.
      */
-    protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser)
+    public void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser)
     {    	
     	renderPolygons(g, centers, colorChooser);
     }

@@ -32,6 +32,7 @@ import hoten.voronoi.VoronoiGraph;
 import nortantis.Biome;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.MapEdits;
+import nortantis.util.AssetsPath;
 import nortantis.util.Coordinate;
 import nortantis.util.Function;
 import nortantis.util.HashMapF;
@@ -672,8 +673,9 @@ public class IconDrawer
 				{	        
 					if (rand.nextDouble() < duneProbabilityPerCenter)
 					{
-						int i = rand.nextInt(duneImages.size());
+						c.isSandDunes = true;
 						
+						int i = rand.nextInt(duneImages.size());
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i).getFirst(), 
 		           				duneImages.get(i).getSecond(), c.loc, width, true, false));
 		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
@@ -967,7 +969,7 @@ public class IconDrawer
 						+ " Rename one of them");
 			}
 
-			Path path = Paths.get("assets", "icons", iconType, fileName);
+			Path path = Paths.get(AssetsPath.get(), "icons", iconType, fileName);
 			if (!ImageCache.getInstance().containsImageFile(path))
 			{
 				Logger.println("Loading icon: " + path);
@@ -1015,7 +1017,7 @@ public class IconDrawer
 
 		for (String fileName : fileNames)
 		{
-			Path path = Paths.get("assets", "icons", iconType, fileName);
+			Path path = Paths.get(AssetsPath.get(), "icons", iconType, fileName);
 			if (!ImageCache.getInstance().containsImageFile(path))
 			{
 				Logger.println("Loading icon: " + path);
@@ -1055,7 +1057,7 @@ public class IconDrawer
 	
 	public static String[] getIconGroupFileNames(String iconType)
 	{
-		String[] fileNames = new File(Paths.get("assets", "icons", iconType).toString()).list(new FilenameFilter()
+		String[] fileNames = new File(Paths.get(AssetsPath.get(), "icons", iconType).toString()).list(new FilenameFilter()
 		{
 			@Override
 			public boolean accept(File dir, String name)
