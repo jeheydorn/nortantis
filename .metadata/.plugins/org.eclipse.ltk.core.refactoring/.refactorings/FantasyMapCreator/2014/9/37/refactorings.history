@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename resource &apos;FantasyMapCreator/map.png&apos; to &apos;map_9-17.png&apos;" description="Rename resource &apos;map.png&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="map.png" name="map_9-17.png" stamp="1410144327432" updateReferences="true"/>
-</session>

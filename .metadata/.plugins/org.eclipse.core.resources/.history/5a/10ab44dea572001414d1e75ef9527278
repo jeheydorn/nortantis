@@ -1,7 +1,0 @@
-package cs673;
-
-
-public class ColorButtonListener implements MouseListener
-{
-
-}
