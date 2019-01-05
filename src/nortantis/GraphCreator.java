@@ -1,10 +1,17 @@
 package nortantis;
 
-import java.io.IOException;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
+import java.nio.file.Paths;
 import java.util.Random;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import util.Logger;
+import nortantis.util.AssetsPath;
+import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
 
 /**
  * TestDriver.java
@@ -13,16 +20,15 @@ import util.Logger;
  */
 public class GraphCreator 
 {
-
+    // Zero is most random. Higher values make the polygons more uniform shaped.
+    private static final int numLloydRelaxations = 0;
+    // Higher values will make larger plates, but fewer of them.
+	private static final int tectonicPlateIterationMultiplier = 30;
+	
     public static GraphImpl createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
-    		double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer) throws IOException 
+    		double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer)
     {
 		double startTime = System.currentTimeMillis();
-
-        // Zero is most random. Higher values make the polygons more uniform shaped.
-        final int numLloydRelaxations = 0;
-        // Higher values will make larger plates.
-        final int tectonicPlateIterationMultiplier = 30;
         
         //make the initial underlying voronoi structure
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
@@ -35,16 +41,6 @@ public class GraphCreator
 		Logger.println("Time to generate graph (in seconds): " + elapsedTime
 				/ 1000.0);
 
-        // Draw elevation map with tectonic plate boundaries. 
-//        {
-//	        final BufferedImage elevationImg = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
-//	        Graphics2D g = elevationImg.createGraphics();
-//	        g.setColor(Color.BLACK);
-//	        g.fillRect(0, 0, (int)width, (int)height);
-//	        graph.paintWithTectonicPlateVelocity(g);
-//	        File elevationfile = new File("elevation.png");
-//	        ImageIO.write(elevationImg, "png", elevationfile);
-//       }
 //
 //        final BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
 //        Graphics2D g = img.createGraphics();
@@ -61,6 +57,70 @@ public class GraphCreator
         return graph;
     }
     
+    public static BufferedImage createHeightMap(GraphImpl graph, Random rand, double sizeMultiplyer)
+    {
+		double startTime = System.currentTimeMillis();
+		
+        // Draw elevation map with tectonic plate boundaries. 
+        BufferedImage heightMap = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
+        Graphics2D g = heightMap.createGraphics();
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, graph.getWidth(), graph.getHeight());
+        graph.paintElevationUsingTrianges(g);
+         
+        heightMap = ImageHelper.blur(heightMap, (int)IconDrawer.findMeanPolygonWidth(graph) / 2);
+       
+        // Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
+        BufferedImage mountains = ImageHelper.read(Paths.get(AssetsPath.get(), "internal/mountain texture.png").toString());
+        if (mountains.getType() != BufferedImage.TYPE_USHORT_GRAY)
+        {
+        	mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);
+        }
+        mountains = ImageHelper.scaleByWidth(mountains, (int)(mountains.getWidth() * sizeMultiplyer * 0.25f));
+        BufferedImage mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
+        //ImageHelper.write(mountainTexture, "mountainTexture.png");
+        subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);
+        mountainTexture = null;
+        
+		double elapsedTime = System.currentTimeMillis() - startTime;
+		Logger.println("Time to draw heightmap: " + elapsedTime
+				/ 1000.0);
+
+        return heightMap;	
+    }
+    
+    private static void subtractTextureFromHeightMapUsingSeaLevel(BufferedImage image, BufferedImage texture)
+    {
+        Raster textureRaster = texture.getRaster();
+		WritableRaster out = image.getRaster();
+		float maxPixelValue = (float)ImageHelper.getMaxPixelValue(image);
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				float elevation = out.getSample(x, y, 0);
+				float scale;
+				if (elevation > GraphImpl.seaLevel*maxPixelValue)
+				{
+					scale = Math.abs(elevation - GraphImpl.seaLevel*maxPixelValue) / maxPixelValue;
+				}
+				else
+				{
+					scale = 0f;
+				}
+
+				float tValue = maxPixelValue - textureRaster.getSample(x, y, 0);
+				int newValue = (int)((elevation - scale * (tValue)));
+				if (newValue < 0)
+				{
+					newValue = 0;
+				}
+				out.setSample(x, y, 0, newValue);
+			}
+		}
+
+    }
+    
     public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer)
     {
         // Zero is most random. Higher values make the polygons more uniform shaped.
@@ -74,17 +134,6 @@ public class GraphCreator
         
         return graph;
     }
-    
-    public static void main(String[] args) throws IOException 
-    {
-    	// 33198540789208L matching diverging plates.
-    	// 33426595304007L a long snaky island.
-    	// nice divergence with 12000 and 0 1 for probs
-        final long seed = System.nanoTime();
-        System.out.println("seed: " + seed);
-        final Random r = new Random(seed);
-    	createGraph(1024 * 2, 576 * 2, 1500, 1.0, 1.0, r, 1.0);
-    	Logger.println("Done.");
-    }
+
 
 }

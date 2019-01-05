@@ -4,11 +4,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,19 +16,22 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import javax.imageio.ImageIO;
-
 import hoten.voronoi.Center;
-import util.ImageHelper;
-import util.ImageHelper.ColorifyAlgorithm;
-import util.Logger;
-import util.Range;
+import hoten.voronoi.Edge;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.EdgeEdit;
+import nortantis.editor.MapEdits;
+import nortantis.editor.RegionEdit;
+import nortantis.util.AssetsPath;
+import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
+import nortantis.util.Pair;
+import nortantis.util.Range;
 
 public class MapCreator
 {
@@ -38,13 +41,14 @@ public class MapCreator
 	
 	private Random r;
 	// This is a base width for determining how large to draw text and effects.
-	private final double baseResolution = 1536;
+	private static final double baseResolution = 1536;
 	
 	public MapCreator()
 	{
 	}
 
 	/**
+	 * Draws a map.
 	 * 
 	 * @param settings
 	 * @param maxDimensions The maximum width and height (in pixels) at which to draw the map.
@@ -56,6 +60,7 @@ public class MapCreator
 	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
 			throws IOException
 	{		
+		Logger.println("Creating the map");
 		if (!Files.exists(Paths.get(settings.landBackgroundImage)))
 			throw new IllegalArgumentException("Land background image file does not exists: " + settings.landBackgroundImage);
 		if (!Files.exists(Paths.get(settings.oceanBackgroundImage)))
@@ -63,57 +68,142 @@ public class MapCreator
 		
 		double startTime = System.currentTimeMillis();				
 						
-        Logger.println("Seed: " + settings.randomSeed);
         r = new Random(settings.randomSeed);        
 		
-		Logger.println("Generating the background image");
-		Background background = new Background(settings, maxDimensions);	
+        Background background;
+        if (mapParts != null && mapParts.background != null)
+        {
+        	background = mapParts.background;
+        }
+        else
+        {
+    		Logger.println("Generating the background image.");
+        	background = new Background(settings, maxDimensions);	
+        }
+        
+        if (mapParts != null)
+        {
+        	mapParts.background = background;
+        }
+        
+        double sizeMultiplyer = calcSizeMultiplyer(background.mapBounds.getWidth());
+        if (mapParts != null)
+        {
+        	mapParts.sizeMultiplyer = sizeMultiplyer;
+        }
 		
-		double sizeMultiplyer = (background.mapBounds.getWidth() / baseResolution);
 		
+		TextDrawer textDrawer = null;
+		if (settings.drawText || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
+		{
+			if (mapParts == null || mapParts.textDrawer == null || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
+			{
+				textDrawer = new TextDrawer(settings, sizeMultiplyer);
+				
+				if (mapParts != null)
+				{
+					mapParts.textDrawer = textDrawer;
+				}
+			}
+			else
+			{
+				textDrawer = mapParts.textDrawer;
+			}
+		}
 		
-		TextDrawer textDrawer = settings.drawText || mapParts != null ? new TextDrawer(settings, sizeMultiplyer) : null;
-		if (mapParts != null)
-			mapParts.textDrawer = textDrawer;
-		
-		GraphImpl graph = GraphCreator.createGraph(background.mapBounds.getWidth(), background.mapBounds.getHeight(),
-				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
-				new Random(r.nextLong()),
-				sizeMultiplyer);	
-		if (mapParts != null)
-			mapParts.graph = graph;
-		
+        GraphImpl graph;
+		if (mapParts == null || mapParts.graph == null)
+		{
+			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
+			if (mapParts != null)
+			{
+				mapParts.graph = graph;
+			}
+		}
+		else
+		{
+			graph = mapParts.graph;
+		}
+		applyRegionEdits(graph, settings.edits);
+		applyCenterEdits(graph, settings.edits);
+		applyEdgeEdits(graph, settings.edits);
+ 		
 		background.doSetupThatNeedsGraph(settings, graph);
+		if (mapParts == null)
+		{
+			background.landBeforeRegionColoring = null;
+		}
 		
-		IconDrawer iconDrawer = new IconDrawer(graph, r);
+		IconDrawer iconDrawer;
+		boolean needToAddIcons;
+		if (mapParts == null || mapParts.iconDrawer == null)
+		{
+			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()));
+			if (mapParts != null)
+			{
+				mapParts.iconDrawer = iconDrawer;
+			}
+			
+			needToAddIcons = !settings.edits.hasIconEdits;
+		}
+		else
+		{
+			iconDrawer = mapParts.iconDrawer;
+			needToAddIcons = false; // The icon drawer is from cache, so it already knows what icons to draw.
+			r.nextLong(); // Use the random number generator the same as if I had created the icon drawer.
+		}
 
 		iconDrawer.markMountains();
 		iconDrawer.markHills();
-		iconDrawer.findMountainAndHillGroups();
-
+		iconDrawer.markCities(settings.cityProbability);
+		Pair<List<Set<Center>>> pair = iconDrawer.findMountainAndHillGroups();
+		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
+		List<Set<Center>> mountainGroups = pair.getFirst();
+		// All mountain ranges and smaller groups of mountains extended to include nearby hills.
+		List<Set<Center>> mountainAndHillGroups = pair.getSecond();
+		pair = null;
+		if (mapParts != null)
+		{
+			mapParts.mountainGroups = mountainGroups;
+		}
+		
+		if (!needToAddIcons)
+		{
+			iconDrawer.clearAndAddIconsFromEdits(settings.edits, sizeMultiplyer);
+		}
+		
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
 		BufferedImage landMask = new BufferedImage(graph.getWidth(),
 				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
 		{
 			Graphics2D g = landMask.createGraphics();
-			graph.paint(g, false, false, false, true, true, false, false);
+			graph.drawLandAndOceanBlackAndWhite(g, graph.centers);
 		}
+		
 
 		BufferedImage map = null;
 		{	
 			// Combine land and ocean images.
 			map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 		}
-		background.land = null;
-		
-		Logger.println("Creating coastlines.");
-		BufferedImage coastlineMask = new BufferedImage(graph.getWidth(),
-				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		if (mapParts == null)
 		{
-			Graphics2D g = coastlineMask.createGraphics();
-			graph.paint(g, false, false, false, false, false, true, false, sizeMultiplyer);
+			background.land = null;
 		}
+		
+		BufferedImage coastlineMask = null;
+		if (settings.landBlur > 0 || settings.oceanEffects > 0)
+		{
+			Logger.println("Creating coastline effects.");
+			coastlineMask = new BufferedImage(graph.getWidth(),
+					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+			{
+				Graphics2D g = coastlineMask.createGraphics();
+				graph.paint(g, false, false, false, false, true, false, sizeMultiplyer);
+			}
+		}
+		
 		
 		// Darken the land next to coast lines and optionally region borders.
 		{
@@ -159,26 +249,48 @@ public class MapCreator
 			graph.drawRegionBorders(g, sizeMultiplyer, true);
 		}
 
+		if (settings.drawRivers)
+		{
 		// Add rivers.
-		Logger.println("Adding rivers.");
-//		StopWatch riverSw = new StopWatch();
-		drawRivers(graph, map, sizeMultiplyer, settings.riverColor);
-//		System.out.println("Time to add rivers in seconds: " + riverSw.getElapsedSeconds());
-		
-	
-		Logger.println("Adding mountains and hills.");
-		List<Set<Center>> mountainGroups = iconDrawer.addMountainsAndHills();
-		if (mapParts != null)
-			mapParts.mountainGroups = mountainGroups;
+			Logger.println("Adding rivers.");
+			drawRivers(settings, graph, map, sizeMultiplyer);
+		}
 
-		Logger.println("Adding sand dunes.");
-		iconDrawer.addSandDunes();
+		List<IconDrawTask> cities;
+		if (needToAddIcons)
+		{
+			Logger.println("Adding mountains and hills.");
+			iconDrawer.addMountainsAndHills(mountainGroups, mountainAndHillGroups);
+			if (mapParts != null)
+				mapParts.mountainGroups = mountainGroups;
+
+			Logger.println("Adding sand dunes.");
+			iconDrawer.addSandDunes();
+			
+			Logger.println("Adding trees.");
+			iconDrawer.addTrees();
+			
+			Logger.println("Adding cities.");
+			cities = iconDrawer.addCities(sizeMultiplyer, true);
+		}
+		else
+		{
+			// Create mountain groups for the text drawer.
+			mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
+			// Create city areas for the text drawer.
+			cities = iconDrawer.addCities(settings.resolution, false);
+		}
 		
-		Logger.println("Adding trees.");
-		iconDrawer.addTrees();
+		if (mapParts != null)
+		{
+			mapParts.cityDrawTasks = cities;
+		}
 		
-		Logger.println("Drawing all icons.");
-		iconDrawer.drawAllIcons(map, landBackground);
+		if (settings.drawIcons)
+		{
+			Logger.println("Drawing all icons.");
+			iconDrawer.drawAllIcons(map, landBackground);
+		}
 		
 		Logger.println("Drawing ocean.");
 		{
@@ -188,11 +300,18 @@ public class MapCreator
 						+ " have the same aspect ratio as the given land background image.");
 			}
 
-			// Needed for drawing text.
-			landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
+			
+			if (settings.drawText || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
+			{
+				// Needed for drawing text.
+				landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
+			}
 			
 			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
-			background.ocean = null;
+			if (mapParts == null)
+			{
+				background.ocean = null;
+			}
 		}
 		
 		Logger.println("Adding effects to ocean along coastlines.");
@@ -230,10 +349,15 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			graph.drawCoastline(g, sizeMultiplyer);
 		}
+
 				
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
 		// because I might draw the text later.
-		drawRivers(graph, landBackground, sizeMultiplyer, settings.riverColor);
+		if (settings.drawRivers)
+		{
+			drawRivers(settings, graph, landBackground, sizeMultiplyer);
+		}
+		
 		if (mapParts != null)
 			mapParts.landBackground = landBackground;
 		
@@ -241,7 +365,6 @@ public class MapCreator
 		{
 			Logger.println("Adding text.");
 			
-			// Draw region borders into the land mask so that names don't make region borders fade away when drawn on top of them.
 			if (background.shouldDrawRegionColors)
 			{
 				Graphics2D g = landBackground.createGraphics();
@@ -249,7 +372,7 @@ public class MapCreator
 				graph.drawRegionBorders(g, sizeMultiplyer, true);
 			}
 						
-			textDrawer.drawText(graph, map, landBackground, mountainGroups);
+			textDrawer.drawText(graph, map, landBackground, mountainGroups, cities);
 		}
 		landBackground = null;
 		
@@ -257,7 +380,10 @@ public class MapCreator
 		{
 			Logger.println("Adding border.");
 			map = addBorderToMap(settings, map, background);
-			background.borderBackground = null;
+			if (mapParts == null)
+			{
+				background.borderBackground = null;
+			}
 		}
 
 		if (settings.frayedBorder)
@@ -307,8 +433,191 @@ public class MapCreator
 
 		Logger.println("Done creating map.");
 		
-		ScaledIconCache.clear();
+		//ScaledIconCache.clear(); TODO do this only if an icon from file changed
+		System.gc();
 		return map;
+	}
+	
+	private static void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
+	{
+		
+		float[] landHsb = new float[3];
+		Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), landHsb);
+		
+		List<Color> regionColorOptions = new ArrayList<>();
+		Random rand = new Random(settings.regionsRandomSeed);
+		for (@SuppressWarnings("unused") int i : new Range(graph.regions.size())) 
+		{				
+			regionColorOptions.add(generateRegionColor(rand, landHsb, settings.hueRange, settings.saturationRange, settings.brightnessRange));
+		}
+				
+		assignRegionColors(graph, regionColorOptions);
+	}
+	
+	/**
+	 * Assigns the color of each political region.
+	 */
+	private static void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
+	{
+		for (int i : new Range(graph.regions.size()))
+		{
+			graph.regions.get(i).backgroundColor = colorOptions.get(i % colorOptions.size());
+		}
+	}
+	
+	private static Color generateRegionColor(Random rand, float[] landHsb, float hueRange, float saturationRange, float brightnessRange)
+	{
+		float hue = (float)(landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
+		float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * saturationRange));
+		float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * brightnessRange));
+		return ImageHelper.colorFromHSB(hue, saturation, brightness);
+	}
+
+	public static Color generateColorFromBaseColor(Random rand, Color base, float hueRange, float saturationRange, float brightnessRange)
+	{
+		float[] hsb = new float[3];
+		Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), hsb);
+		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
+	}
+	
+	private static GraphImpl createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
+	{
+		GraphImpl graph = GraphCreator.createGraph(width, height,
+				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
+				new Random(r.nextLong()),
+				sizeMultiplyer);	
+		
+		// Setup region colors even if settings.drawRegionColors = false because edits need them in case someone edits a map without region colors, then later enables region colors.
+		assignRandomRegionColors(graph, settings);
+		
+		return graph;
+	}
+	
+	public static GraphImpl createGraphFromSettings(MapSettings settings)
+	{   
+		Random r = new Random(settings.randomSeed);
+        DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
+		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
+		return graph;
+	}
+	
+	public static double calcSizeMultiplyer(double mapWidth)
+	{
+		return mapWidth / baseResolution;
+	}
+	
+	private static void applyRegionEdits(GraphImpl graph, MapEdits edits)
+	{
+		if (edits == null || edits.regionEdits.isEmpty())
+		{
+			return;
+		}
+		
+		for (RegionEdit edit : edits.regionEdits.values())
+		{
+			Region region = graph.findRegionById(edit.regionId);
+			if (region == null)
+			{
+				region = new Region();
+				region.id = edit.regionId;
+				region.backgroundColor = edit.color;
+				graph.regions.add(region);
+			}
+			else
+			{
+				region.backgroundColor = edit.color;
+			}
+		}
+	}
+	
+	private static void applyCenterEdits(GraphImpl graph, MapEdits edits)
+	{
+		if (edits == null || edits.centerEdits.isEmpty())
+		{
+			return;
+		}
+		
+		if (edits.centerEdits.size() != graph.centers.size())
+		{
+			throw new IllegalArgumentException("The map edits have " + edits.centerEdits.size() + " polygons, but the world size is " + graph.centers.size());
+		}
+		
+		for (int i : new Range(edits.centerEdits.size()))
+		{
+			Center center = graph.centers.get(i);
+			CenterEdit cEdit = edits.centerEdits.get(i);
+			boolean needsRebuild = center.isWater != cEdit.isWater;
+			center.isWater = cEdit.isWater;
+			
+			Integer regionId = cEdit.regionId;
+			if (regionId != null)
+			{
+				Region region = graph.findRegionById(regionId);
+				// region can be null if the map is edited while drawing it. If that happens, then the region color of this center will be updated the next time the map draws.
+				if (region != null)
+				{
+					if (center.region != null && center.region.id != region.id)
+					{
+						needsRebuild = true;
+					}
+					region.addAndSetRegion(center);
+					// We don't know which region the center came from, so remove it from of them except the one it is in.
+					for (Region r : graph.regions)
+					{
+						if (r.id != region.id)
+						{
+							r.remove(center);
+						}
+					}
+				}
+			}
+			
+			if (center.isWater && center.region != null)
+			{
+				center.region.remove(center);
+				center.region = null;
+				needsRebuild = true;
+			}
+			
+			if (needsRebuild)
+			{
+				graph.rebuildNoisyEdgesForCenter(center);
+			}
+			
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
+			{
+				// This is so that if you edit mountains before text, the text drawer generates names for your mountains.
+				center.isMountain = true;
+			}
+		}
+	}
+	
+	private static void applyEdgeEdits(GraphImpl graph, MapEdits edits)
+	{
+		if (edits == null || edits.edgeEdits.isEmpty())
+		{
+			return;
+		}
+		if (edits.edgeEdits.size() != graph.edges.size())
+		{
+			throw new IllegalArgumentException("The map edits have " + edits.edgeEdits.size() + " edges, but graph has " + graph.edges.size() + " edges.");
+		}
+		
+		for (EdgeEdit eEdit : edits.edgeEdits)
+		{				
+			Edge edge = graph.edges.get(eEdit.index);
+			boolean needsRebuild = false;
+			if (eEdit.riverLevel != edge.river && edge.d0 != null)
+			{
+				needsRebuild = true;
+			}
+			graph.edges.get(eEdit.index).river = eEdit.riverLevel;
+			if (needsRebuild)
+			{
+				graph.rebuildNoisyEdgesForCenter(edge.d0);
+			}
+		}
 	}
 	
 	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background)
@@ -324,7 +633,7 @@ public class MapCreator
 		background.borderBackground.getGraphics().drawImage(map, borderWidthScaled, borderWidthScaled, null);
 		map = background.borderBackground;
 		
-		Path allBordersPath = Paths.get("assets", "borders");
+		Path allBordersPath = Paths.get(AssetsPath.get(), "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), settings.borderType);
 		if (!Files.exists(borderPath))
 		{
@@ -651,295 +960,6 @@ public class MapCreator
 	}
 		
 	/**
-	 * An assortment of things needed to draw the background.
-	 */
-	private class Background
-	{
-		BufferedImage land;
-		BufferedImage ocean;
-		DimensionDouble mapBounds;
-		Dimension borderBounds;
-		BufferedImage borderBackground;
-		private boolean backgroundFromFilesNotGenerated;
-		private boolean shouldDrawRegionColors;
-		private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
-		// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
-		BufferedImage regionIndexes;
-		private int borderWidthScaled;
-
-		public Background(MapSettings settings, Dimension maxDimensions)
-		{
-			backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture && !settings.transparentBackground;
-	        shouldDrawRegionColors = settings.drawRegionColors 
-			&& !backgroundFromFilesNotGenerated 
-			&& (!settings.generateBackgroundFromTexture || settings.colorizeLand)
-			&& !settings.transparentBackground;
-
-	        BufferedImage landGeneratedBackground;
-			landColorifyAlgorithm = ColorifyAlgorithm.none;
-			if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
-			{
-				mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
-						settings.generatedHeight * settings.resolution);
-				if (maxDimensions != null)
-				{
-					int borderWidth = 0;
-					if (settings.drawBorder)
-					{
-						borderWidth = (int) (settings.borderWidth * settings.resolution);
-					}
-					DimensionDouble mapBoundsPlusBorder = new DimensionDouble(
-							mapBounds.getWidth() + borderWidth * 2,
-							mapBounds.getHeight() + borderWidth * 2);
-
-					DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
-							mapBoundsPlusBorder.getHeight());
-					// Change the resolution to match the new bounds.
-					settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
-					
-					DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution, 
-							settings.generatedHeight * settings.resolution);
-					mapBounds = scaledMapBounds;
-				}
-
-				borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-											
-				if (settings.generateBackground)
-				{
-					// Fractal generated background images
-					
-					BufferedImage oceanGeneratedBackground = FractalBGGenerator.generate(
-							new Random(settings.backgroundRandomSeed), settings.fractalPower, 
-							(int)mapBounds.getWidth() + borderWidthScaled * 2, (int)mapBounds.getHeight() + borderWidthScaled * 2, 0.75f);
-					landGeneratedBackground = oceanGeneratedBackground;
-					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm2);
-					
-					if (settings.drawBorder)
-					{
-						ocean = removeBorderPadding(borderBackground);
-					}
-					else
-					{
-						ocean = borderBackground;
-						borderBackground = null;
-					}
-					
-					if (shouldDrawRegionColors)
-					{
-						// Drawing region colors must be done later because it depends on the graph.
-						land = removeBorderPadding(landGeneratedBackground);
-					}
-					else
-					{
-						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
-						landGeneratedBackground = null;
-					}
-				}
-				else if (settings.generateBackgroundFromTexture)
-				{
-					// Generate the background images from a texture
-					
-					BufferedImage texture;
-					try
-					{
-						texture = ImageHelper.read(settings.backgroundTextureImage);
-					}
-					catch (RuntimeException e)
-					{
-						throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
-					}
-					
-					BufferedImage oceanGeneratedBackground;
-					if (settings.colorizeOcean)
-					{
-						oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), 
-							(int)mapBounds.getHeight() + borderWidthScaled * 2, (int)mapBounds.getWidth() + borderWidthScaled * 2);
-						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm3);
-						if (settings.drawBorder)
-						{
-							ocean = ImageHelper.deepCopy(removeBorderPadding(borderBackground));
-						}
-						else
-						{
-							ocean = borderBackground;
-							borderBackground = null;
-						}
-					}
-					else
-					{
-						oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(settings.backgroundRandomSeed), texture, (int)mapBounds.getHeight() + borderWidthScaled *  2, 
-								(int)mapBounds.getWidth() + borderWidthScaled * 2);
-						if (settings.drawBorder)
-						{
-							ocean = removeBorderPadding(oceanGeneratedBackground);
-							borderBackground = oceanGeneratedBackground;
-						}
-						else
-						{
-							ocean = oceanGeneratedBackground;
-						}
-					}
-					
-					if (settings.colorizeLand == settings.colorizeOcean)
-					{
-						// Don't generate the same image twice.
-						landGeneratedBackground = oceanGeneratedBackground;
-						
-						if (settings.colorizeLand)
-						{
-							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;					
-							if (shouldDrawRegionColors)
-							{
-								// Drawing region colors must be done later because it depends on the graph.
-								land = removeBorderPadding(landGeneratedBackground);
-							}
-							else
-							{
-								land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
-							}
-						}
-						else
-						{
-							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-							land = removeBorderPadding(landGeneratedBackground);
-						}
-					}
-					else
-					{
-						if (settings.colorizeLand)
-						{
-							// It's necessary to generate landGeneratedBackground at a larger size including border width, then crop out the part we want because 
-							// otherwise the random texture of the land won't match the texture of the ocean.
-							
-							landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), 
-								(int)mapBounds.getHeight() + borderWidthScaled * 2,
-								(int)mapBounds.getWidth() + borderWidthScaled * 2);
-							if (shouldDrawRegionColors)
-							{
-								// Drawing region colors must be done later because it depends on the graph.
-								land = removeBorderPadding(landGeneratedBackground);
-							}
-							else
-							{
-								land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
-							}
-							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
-						}
-						else
-						{
-							landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-									new Random(settings.backgroundRandomSeed), texture, 
-									(int)mapBounds.getHeight() + borderWidthScaled * 2, 
-									(int)mapBounds.getWidth() + borderWidthScaled * 2);
-							land = removeBorderPadding(landGeneratedBackground);
-							landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-						}
-					}
-				}
-				else
-				{
-					// Transparent background
-					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-					land = ImageHelper.createWhiteTransparentImage((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
-					ocean = land;
-					landGeneratedBackground = land;
-				}
-			}
-			else
-			{
-				// The background images are from files
-				if (settings.drawBorder)
-				{
-					throw new IllegalArgumentException("Drawing a border with background images from files is not supported. Uncheck Border > Draw border.");
-				}
-				
-				try
-				{
-					land = ImageIO.read(new File(settings.landBackgroundImage));
-					land = ImageHelper.convertToBufferedImageOfType(land, BufferedImage.TYPE_INT_RGB);
-				}
-				catch(IOException e)
-				{
-					throw new IllegalArgumentException("Cannot read land background image from " 
-							+ settings.landBackgroundImage);
-				}
-				try
-				{
-					ocean = ImageIO.read(new File(settings.oceanBackgroundImage));
-					ocean = ImageHelper.convertToBufferedImageOfType(ocean, BufferedImage.TYPE_INT_RGB);
-				}
-				catch(IOException e)
-				{
-					throw new IllegalArgumentException("Cannot read ocean background image from " 
-							+ settings.oceanBackgroundImage);
-				}
-
-				mapBounds = new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
-				if (maxDimensions != null)
-				{
-					mapBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBounds.getWidth(),
-							mapBounds.getHeight());
-				}
-				land = ImageHelper.scaleByWidth(land, (int)mapBounds.getWidth());
-				// The library I'm using to scale images and make them look nice has a bug where the width or height might be one pixel off, although rarely. So here I'm making sure it is correct.
-				if (land.getHeight() != (int)mapBounds.getHeight())
-				{
-					land = ImageHelper.scaleFastByHeightAndWidth(land, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
-				}
-				ocean = ImageHelper.scaleByWidth(ocean, (int)mapBounds.getWidth());
-				if (ocean.getHeight() != (int)mapBounds.getHeight())
-				{
-					ocean = ImageHelper.scaleFastByHeightAndWidth(ocean, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
-				}
-			}
-			
-			if (borderBackground != null)
-			{
-				borderBounds = new Dimension(borderBackground.getWidth(), borderBackground.getHeight());
-			}
-			else
-			{
-				borderBounds = new Dimension((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
-			}
-		}
-		
-		private BufferedImage removeBorderPadding(BufferedImage image)
-		{
-			return ImageHelper.extractRegion(image, borderWidthScaled, borderWidthScaled, 
-					(int)(image.getWidth() - borderWidthScaled * 2),
-					(int)(image.getHeight() - borderWidthScaled * 2));
-		}
-		
-		public void doSetupThatNeedsGraph(MapSettings settings, GraphImpl graph)
-		{
-			if (shouldDrawRegionColors)
-			{
-				// The image "land" is generated but doesn't yet have colors.
-				
-				assignRandomRegionColors(graph, settings);
-				
-				regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), 
-						BufferedImage.TYPE_BYTE_GRAY);
-				graph.drawRegionIndexes(regionIndexes.createGraphics());
-				
-				land = drawRegionColors(graph, land, regionIndexes, landColorifyAlgorithm);
-			}
-			
-			// Fixes a bug where graph width or height is not exactly the same as image width and heights due to rounding issues.
-			if (backgroundFromFilesNotGenerated)
-			{
-				land = ImageHelper.scaleByWidth(land, graph.getWidth());
-				// Fixes a bug where graph width or height is not exactly the same as some image width and heights due to rounding issues.
-				ocean = ImageHelper.scaleByWidth(ocean, graph.getWidth());
-			}
-		}
-	}
-	
-	/**
 	 * Makes the middle area of a gray scale image darker following a Gauisian blur drop off.
 	 */
 	private void darkenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
@@ -1027,105 +1047,60 @@ public class MapCreator
 				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel)/255f);
 			}
 	}
-		
-	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors, 
-			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm)
-	{	
-		Color[] regionBackgroundColors = graph.regions.stream().map(
-				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
-				
-		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm);
-	}
-	
-	private void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
-	{
-		
-		float[] landHsb = new float[3];
-		Color.RGBtoHSB(settings.landColor.getRed(), settings.landColor.getGreen(), settings.landColor.getBlue(), landHsb);
-		
-		List<Color> regionColorOptions = new ArrayList<>();
-		Random rand = new Random(settings.regionsRandomSeed);
-		for (@SuppressWarnings("unused") int i : new Range(graph.regions.size())) 
-		{				
-			regionColorOptions.add(generateRegionColor(rand, landHsb, settings.hueRange, settings.saturationRange, settings.brightnessRange));
-		}
-				
-		// Create a new Random object so that changes 
-		assignRegionColors(graph, regionColorOptions);
-	}
-	
-	private static Color generateRegionColor(Random rand, float[] landHsb, float hueRange, float saturationRange, float brightnessRange)
-	{
-		float hue = (float)(landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
-		float saturation = ImageHelper.bound((int)(landHsb[1] * 255 + (rand.nextDouble() - 0.5) * saturationRange));
-		float brightness = ImageHelper.bound((int)(landHsb[2] * 255 + (rand.nextDouble() - 0.5) * brightnessRange));
-		return ImageHelper.colorFromHSB(hue, saturation, brightness);
-	}
-	
-	public static Color generateColorFromBaseColor(Random rand, Color base, float hueRange, float saturationRange, float brightnessRange)
-	{
-		float[] hsb = new float[3];
-		Color.RGBtoHSB(base.getRed(), base.getGreen(), base.getBlue(), hsb);
-		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
-	}
-	
-	/**
-	 * Assigns the color of each political region.
-	 */
-	private void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
-	{
-		if (colorOptions.isEmpty())
-			throw new IllegalArgumentException("To draw region colors, you must specify at least one region color.");
-		for (int i : new Range(graph.regions.size()))
-		{
-			graph.regions.get(i).backgroundColor = colorOptions.get(i % colorOptions.size());
-		}
-	}
 
-	private void drawRivers(GraphImpl graph, BufferedImage map, double sizeMultiplyer, Color riverColor)
+	public static void drawRivers(MapSettings settings, GraphImpl graph, BufferedImage map, double sizeMultiplyer)
 	{
 		Graphics2D g = map.createGraphics();
-		g.setColor(riverColor);
+		g.setColor(settings.riverColor);
 		// Draw rivers thin.
 		graph.drawRivers(g, sizeMultiplyer/2.0);
 	}
 	
 	public static Set<String> getAvailableBorderTypes()
 	{
-		File[] directories = new File(Paths.get("assets", "borders").toString()).listFiles(File::isDirectory);
+		File[] directories = new File(Paths.get(AssetsPath.get(), "borders").toString()).listFiles(File::isDirectory);
 		return new TreeSet<String>(Arrays.stream(directories).map(file -> file.getName()).collect(Collectors.toList()));
 	}
-
-	public static void main(String[] args) throws IOException
-	{
-		if (args.length > 1)
-			Logger.println("usage: MapCreator.java properties_filename");
-		
-		String propsFilename = "map_settings.properties";
-		if (args.length > 0)
-			propsFilename = args[0];
-		Properties props = new Properties();
-		props.load(new FileInputStream(propsFilename));
-
-		MapSettings settings = new MapSettings(propsFilename);
-
-		// settings.randomSeed = System.currentTimeMillis();
-
-		BufferedImage map;
-		MapCreator creator = new MapCreator();
-		
-		try
-		{
-			map = creator.createMap(settings, null, null);
-		} 
-		finally
-		{
-			ImageHelper.shutdownThreadPool();
-		}
-				
-		ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-
+	
+	public BufferedImage createHeightMap(MapSettings settings)
+	{   
+		r = new Random(settings.randomSeed);
+        DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
+		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
+		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed), sizeMultiplyer);
 	}
+
+//	public static void main(String[] args) throws IOException
+//	{
+//		if (args.length > 1)
+//			Logger.println("usage: MapCreator.java properties_filename");
+//		
+//		String propsFilename = "map_settings.properties";
+//		if (args.length > 0)
+//			propsFilename = args[0];
+//		Properties props = new Properties();
+//		props.load(new FileInputStream(propsFilename));
+//
+//		MapSettings settings = new MapSettings(propsFilename);
+//
+//		// settings.randomSeed = System.currentTimeMillis();
+//
+//		BufferedImage map;
+//		MapCreator creator = new MapCreator();
+//		
+//		try
+//		{
+//			map = creator.createMap(settings, null, null);
+//		} 
+//		finally
+//		{
+//			ImageHelper.shutdownThreadPool();
+//		}
+//				
+//		ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+//
+//	}
 
 }
 

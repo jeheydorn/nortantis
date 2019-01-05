@@ -19,20 +19,18 @@ public class Region
 	private Set<Center> centers;
 	public Set<Center> getCenters() { return Collections.unmodifiableSet(centers); }
 	public int id;
-	public Set<Region> neighbors;
 	public Color backgroundColor;
 	
 	public Region()
 	{
 		this.centers = new HashSet<>();
-		this.neighbors = new HashSet<>();
 	}
 	
 	public void addAll(Collection<Center> toAdd)
 	{
 		for (Center c : toAdd)
 		{
-			add(c);
+			addAndSetRegion(c);
 		}
 	}
 	
@@ -53,10 +51,9 @@ public class Region
 		centers.clear();
 	}
 	
-	public void add(Center c)
+	public void addAndSetRegion(Center c)
 	{
-		boolean addResult = centers.add(c);
-		assert addResult == (c.region != this);
+		centers.add(c);
 		c.region = this;		
 	}
 	
@@ -64,8 +61,7 @@ public class Region
 	
 	public void remove(Center c)
 	{
-		boolean removeResult = centers.remove(c);
-		assert removeResult == (c.region == this);
+		centers.remove(c);
 		if (c.region == this)
 		{
 			c.region = null;
@@ -82,19 +78,31 @@ public class Region
 		return GraphImpl.findCentroid(centers);
 	}
 	
-	public void findNeighbors()
+	public Set<Region> findNeighbors()
 	{
-		neighbors.clear();
+		Set<Region> result = new HashSet<>();
 		for (Center c : centers)
 		{
 			for (Center n : c.neighbors)
 			{
-				if (n.region != this && n.region != null)
+				if (n.region == null)
 				{
-					neighbors.add(n.region);
+					continue;
+				}
+				
+				if (n.region != c.region)
+				{
+					result.add(n.region);
 				}
 			}
 		}
+		
+		return result;
 	}
-
+	
+	@Override
+	public int hashCode()
+	{
+		return id;
+	}
 }

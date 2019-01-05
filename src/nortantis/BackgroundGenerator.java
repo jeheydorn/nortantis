@@ -8,11 +8,19 @@ import java.awt.image.Raster;
 import java.io.IOException;
 import java.util.Random;
 
-import util.ImageHelper;
-import util.Range;
+import nortantis.util.ImageHelper;
+import nortantis.util.Range;
 
 public class BackgroundGenerator
 {		
+	/**
+	 * See generateUsingWhiteNoiseConvolution(Random, BufferedImage, int, int, boolean)
+	 */
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
+	{
+		return generateUsingWhiteNoiseConvolution(rand, texture, targetRows, targetCols, true);
+	}
+	
 	/**
 	 * Generates a texture of the specified size which is similar in appearance to the given texture. 
 	 * 
@@ -25,13 +33,17 @@ public class BackgroundGenerator
 	 * separately similar to what Bruno Galerne do, except I use histogram matching to get the color levels right.
 	 * @param targetRows Number of rows in the result.
 	 * @param targetCols Number of columns in the result.
+	 * @param allowScalingSmaller If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols, boolean allowScalingTheTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
-		texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
+		if (allowScalingTheTextureLarger)
+		{
+			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
+		}
 
 		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max( texture.getHeight(), targetRows));
 		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
@@ -46,12 +58,13 @@ public class BackgroundGenerator
 		
 		int numberOfColorChannels;
 		BufferedImage allChannels;
+		float maxPixelValue = (float)ImageHelper.getMaxPixelValue(texture);
 		float[] means;
-		if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
+		if (ImageHelper.isSupportedGrayscaleType(texture))
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[] {ImageHelper.calcMeanOfGrayscaleImage(texture)/255f};
+			means = new float[] {ImageHelper.calcMeanOfGrayscaleImage(texture)/maxPixelValue};
 		}
 		else
 		{
@@ -60,7 +73,9 @@ public class BackgroundGenerator
 			means = ImageHelper.calcMeanOfEachColor(texture);
 		}
 		
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols));
+		int randomImageType = texture.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), randomImageType);
+		
 
 		for (int channel : new Range(numberOfColorChannels))
 		{
@@ -74,9 +89,9 @@ public class BackgroundGenerator
 					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
 					{
 						float level;
-						if (texture.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						if (ImageHelper.isSupportedGrayscaleType(texture))
 						{
-							level = raster.getSample(textureC, textureR, 0)/255f;
+							level = raster.getSample(textureC, textureR, 0)/maxPixelValue;
 						}
 						else
 						{
@@ -177,16 +192,17 @@ public class BackgroundGenerator
 
 	private static BufferedImage scaleTextureLargerIfNeeded(BufferedImage texture, int rows, int cols)
 	{
+		int scaleThreshold = 4;
 		if (((float)texture.getWidth()) / cols < ((float)texture.getHeight()) / rows)
 		{
-			if (texture.getWidth() * 4 < cols)
+			if (texture.getWidth() * scaleThreshold < cols)
 			{
 				return ImageHelper.scaleByWidth(texture, cols / 4);
 			}
 		}
 		else
 		{
-			if (texture.getHeight() * 4 < rows)
+			if (texture.getHeight() * scaleThreshold < rows)
 			{
 				return ImageHelper.scaleByHeight(texture, rows / 4);
 			}
@@ -198,7 +214,7 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("valcia_snippet.png"), 2048, 2048);
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("/home/joseph/Downloads/wisconsin sky.jpg"), 1024, 1024, false);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);

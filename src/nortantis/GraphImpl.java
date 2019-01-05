@@ -2,13 +2,20 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Polygon;
+import java.awt.geom.Area;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.function.Function;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -21,9 +28,8 @@ import hoten.voronoi.Edge;
 import hoten.voronoi.NoisyEdges;
 import hoten.voronoi.VoronoiGraph;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import util.Function;
-import util.Helper;
-import util.Range;
+import nortantis.util.Helper;
+import nortantis.util.Range;
 
 /**
  * TestGraphImpl.java
@@ -40,9 +46,9 @@ public class GraphImpl extends VoronoiGraph
 {
 
 	// Modify seeFloorLevel to change the number of islands in the ocean.
-	final double seaFloorLevel = 0.10;
+	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
-   	final double seaLevel = 0.39;
+   	public static final float seaLevel = 0.39f;
    	// This field must be set before creating instance of GraphImpl. This is necessary because it must be set
    	// before calling VoronoiGraph's constructor, which Java requires to be the first call in GraphImpl's
    	// constructor.
@@ -60,53 +66,7 @@ public class GraphImpl extends VoronoiGraph
 	    
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
-    List<Region> regions;
-       
-    /*
-       Colors converted to rgb:
-        OCEAN: [r=68,g=68,b=122]
-		LAKE: [r=51,g=102,b=153]
-		BEACH: [r=160,g=144,b=119]
-		SNOW: [r=255,g=255,b=255]
-		TUNDRA: [r=187,g=187,b=170]
-		BARE: [r=136,g=136,b=136]
-		SCORCHED: [r=85,g=85,b=85]
-		TAIGA: [r=153,g=170,b=119]
-		SHURBLAND: [r=136,g=153,b=119]
-		TEMPERATE_DESERT: [r=201,g=210,b=155]
-		HIGH_TEMPERATE_DESERT: [r=189,g=196,b=153]
-	 	TEMPERATE_RAIN_FOREST: [r=68,g=136,b=85]
-		TEMPERATE_DECIDUOUS_FOREST: [r=103,g=148,b=89]
-		HIGH_TEMPERATE_DECIDUOUS_FOREST: [r=74,b=119,b=61],
-		GRASSLAND: [r=136,g=170,b=85]
-		SUBTROPICAL_DESERT: [r=210,g=185,b=139]
-		SHRUBLAND: [r=136,g=153,b=119]
-		ICE: [r=153,g=255,b=255]
-		MARSH: [r=47,g=102,b=102]
-		TROPICAL_RAIN_FOREST: [r=51,g=119,b=85]
-		TROPICAL_SEASONAL_FOREST: [r=85,g=153,b=68]
-		COAST: [r=51,g=51,b=90]
-		LAKESHORE: [r=34,g=85,b=136]
-
-     */
-    enum ColorData {
-
-        OCEAN(0x44447a), LAKE(0x336699), BEACH(0xa09077), SNOW(0xffffff),
-        TUNDRA(0xbbbbaa), BARE(0x888888), SCORCHED(0x555555), TAIGA(0x99aa77),
-        SHURBLAND(0x889977), TEMPERATE_DESERT(0xc9d29b), HIGH_TEMPERATE_DESERT(0xbdc499),
-        TEMPERATE_RAIN_FOREST(0x448855), TEMPERATE_DECIDUOUS_FOREST(0x679459), 
-        HIGH_TEMPERATE_DECIDUOUS_FOREST(0x4a773d),
-        GRASSLAND(0x88aa55), SUBTROPICAL_DESERT(0xd2b98b), SHRUBLAND(0x889977),
-        ICE(0x99ffff), MARSH(0x2f6666), TROPICAL_RAIN_FOREST(0x337755),
-        TROPICAL_SEASONAL_FOREST(0x559944), COAST(0x33335a),
-        LAKESHORE(0x225588);
-        Color color;
-
-        ColorData(int color) {
-            this.color = new Color(color);
-        }
-    }
-    
+    public List<Region> regions;
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
@@ -120,8 +80,9 @@ public class GraphImpl extends VoronoiGraph
         initVoronoiGraph(v, numLloydRelaxations, true);
         setupColors();
         createPoliticalRegions();
-        noisyEdges = new NoisyEdges(scaleMultiplyer);  
-        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
+        setupRandomSeeds(r);
+        buildCenterLookupTableIfNotBuilt();
+       	buildNoisyEdges();	
      }
  
     /**
@@ -133,18 +94,45 @@ public class GraphImpl extends VoronoiGraph
         initVoronoiGraph(v, numLloydRelaxations, false);
 		assignBorderToCorners();
         setupColors();
-        noisyEdges = new NoisyEdges(scaleMultiplyer);  
-        noisyEdges.buildNoisyEdges(this, new Random(rand.nextLong()));	
-     }
+        setupRandomSeeds(r);
+        buildNoisyEdges();
+    }
+    
+    
+    private void setupRandomSeeds(Random rand)
+    {
+    	for (Center c : centers)
+    	{
+    		c.treeSeed = rand.nextLong();
+    	}
+    	
+    	for (Edge e : edges)
+    	{
+    		e.noisyEdgeSeed = rand.nextLong();
+    	}
+    }
     
     private void setupColors()
     {
-        OCEAN = ColorData.OCEAN.color;
-        LAKE = ColorData.LAKE.color;
-        BEACH = ColorData.BEACH.color;
+        OCEAN = Biome.OCEAN.color;
+        LAKE = Biome.LAKE.color;
+        BEACH = Biome.BEACH.color;
         RIVER = new Color(0x225588);
    	
     }
+    
+    public void rebuildNoisyEdgesForCenter(Center center)
+    {
+    	noisyEdges.buildNoisyEdgesForCenter(center, true);
+    }
+    
+    public void buildNoisyEdges()
+    {
+        noisyEdges = new NoisyEdges(scaleMultiplyer);  
+        noisyEdges.buildNoisyEdges(this);	
+
+    }
+    
 
     @SuppressWarnings("unused")
 	private void testPoliticalRegions()
@@ -153,8 +141,7 @@ public class GraphImpl extends VoronoiGraph
         {
         	for (Center c : region.getCenters())
         	{
-        		assert !c.water;
-        		assert !c.ocean;
+        		assert !c.isWater;
         		assert c.region == region;
         	}
         	
@@ -163,7 +150,7 @@ public class GraphImpl extends VoronoiGraph
         assert new HashSet<>(regions).size() == regions.size();
         for (Center c : centers)
         {
-        	if (!c.water)
+        	if (!c.isWater)
         	{
         		assert c.region != null;
         	}
@@ -199,7 +186,7 @@ public class GraphImpl extends VoronoiGraph
     		if (plate.type == PlateType.Continental)
     		{
     			Region region = new Region();	
-    			plate.centers.stream().filter(c -> !c.water).forEach(c -> region.add(c));
+    			plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.addAndSetRegion(c));
     			regions.add(region);
     		}
     	}
@@ -236,9 +223,9 @@ public class GraphImpl extends VoronoiGraph
     	List<Set<Center>> smallLandMasses = new ArrayList<>(); // stores small pieces of land not in a region.
        	for (Center center : centers)
        	{
-       		if (!center.water && center.region == null)
+       		if (!center.isWater && center.region == null)
        		{
-       			Set<Center> landMass = breadthFirstSearch(c -> !c.water && c.region == null, center);
+       			Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == null, center);
        			smallLandMasses.add(landMass);
        		}
        	}
@@ -284,9 +271,6 @@ public class GraphImpl extends VoronoiGraph
     	{
     		regions.get(i).id = i;
     	}
-    	
-    	// Find neighbors of each region.
-    	regions.stream().forEach(reg -> reg.findNeighbors());
 	}
     
     /**
@@ -306,6 +290,76 @@ public class GraphImpl extends VoronoiGraph
     	// This could only happen if there are no regions on the graph.
     	return null;
     }
+    
+    public Center findClosestCenter(double x, double y) 
+    {
+    	return findClosestCenter(new Point(x, y));
+    }
+    
+    public Center findClosestCenter(Point point) 
+    {
+    	return findClosestCenter(point, false);
+    }
+    
+    public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap) 
+    {    	
+    	if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+    	{
+    		Color color;
+    		try
+    		{
+    			color = new Color(centerLookupTable.getRGB((int)point.x, (int)point.y));
+    		}
+    		catch(IndexOutOfBoundsException e)
+    		{
+    			color = null; 
+    		}
+    		int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+    		return centers.get(index);
+    	}
+    	else if (!returnNullIfNotOnMap)
+    	{
+        	Optional<Center> opt = centers.stream().filter(c -> c.isBorder)
+            		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+        	return opt.get();
+        	
+    	}
+    	return null;
+    }
+    
+    public Corner findClosestCorner(Point point)
+    {
+    	Center closestCenter = findClosestCenter(point);  	
+    	Optional<Corner> optional = closestCenter.corners.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+   		return optional.get();
+    }
+    
+    public TectonicPlate getTectonicPlateAt(double x, double y)
+    {
+    	return findClosestCenter(new Point(x, y)).tectonicPlate;
+    }
+    
+    private BufferedImage centerLookupTable;
+    /**
+     * Calling this makes subsequent calls to getCenterAt much faster, but requires memory to store
+     * a lookup table, and is a little less accurate due to rounding errors.
+     */
+    public void buildCenterLookupTableIfNotBuilt()
+    {
+    	if (centerLookupTable == null)
+    	{
+	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_INT_RGB);
+	    	Graphics2D g = centerLookupTable.createGraphics();
+	       	renderPolygons(g, new Function<Center, Color>()
+				{
+					public Color apply(Center c)
+					{
+						return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
+					}
+				});  
+    	}
+   }
+
     
     /**
      * Searches for any region touching and polygon in landMass and returns it if found.
@@ -342,7 +396,7 @@ public class GraphImpl extends VoronoiGraph
     	// centers which are of the same region and are not ocean.
     	while(!remaining.isEmpty())
     	{
-    		Set<Center> landMass = breadthFirstSearch(c -> !c.water && c.region == region, 
+    		Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == region, 
 	    			remaining.iterator().next());
 	    	dividedRegion.add(landMass);
 	    	remaining.removeAll(landMass);
@@ -378,37 +432,37 @@ public class GraphImpl extends VoronoiGraph
     	return explored;
     }
 
-	public void paintWithTectonicPlateVelocity(Graphics2D g)
+	public void paintElevationUsingTrianges(Graphics2D g)
     {
-    	super.paint(g, false, true, true, false, false, false, false);
+    	super.paint(g, false, false, true, false, false, false);
     	
     	// Draw plate velocities.
-    	g.setColor(Color.yellow);
-    	for (TectonicPlate plate : plates)
-    	{
-    		Point centroid =  plate.findCentroid();
-    		g.fillOval((int)centroid.x - 5, (int)centroid.y - 5, 10, 10);
-    		PolarCoordinate vTemp = new PolarCoordinate(plate.velocity);
-    		// Increase the velocity to make it visible.
-    		vTemp.radius *= 100;
-    		Point velocity = vTemp.toCartesian();
-    		g.drawLine((int)centroid.x, (int)centroid.y, (int)(centroid.x + velocity.x), (int)(centroid.y + velocity.y));
-    	}
+//    	g.setColor(Color.yellow);
+//    	for (TectonicPlate plate : plates)
+//    	{
+//    		Point centroid =  plate.findCentroid();
+//    		g.fillOval((int)centroid.x - 5, (int)centroid.y - 5, 10, 10);
+//    		PolarCoordinate vTemp = new PolarCoordinate(plate.velocity);
+//    		// Increase the velocity to make it visible.
+//    		vTemp.radius *= 100;
+//    		Point velocity = vTemp.toCartesian();
+//    		g.drawLine((int)centroid.x, (int)centroid.y, (int)(centroid.x + velocity.x), (int)(centroid.y + velocity.y));
+//    	}
     }
     
     public void drawBorderWhite(Graphics2D g)
     {
         for (Center c : centers) 
         {
-         	if (c.border)
+         	if (c.isBorder)
                 g.setColor(Color.white);
          	else
          		g.setColor(Color.BLACK);
                         
-            drawUsingTriangles(g, c);
+            drawUsingTriangles(g, c, false);
         } 	
         
-        renderPolygons(g, c -> c.border ? Color.white : Color.black);
+        renderPolygons(g, c -> c.isBorder ? Color.white : Color.black);
     }
     
     public int getWidth()
@@ -422,66 +476,66 @@ public class GraphImpl extends VoronoiGraph
     }
 
     @Override
-    protected Color getColor(Enum<?> biome) {
-        return ((ColorData) biome).color;
+    protected Color getColor(Biome biome) {
+        return biome.color;
     }
 
     @Override
-    protected Enum<?> getBiome(Center p) {
+    protected Biome getBiome(Center p) {
     	double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
     	
-		if (p.ocean)
+		if (p.isWater)
 		{
-			return ColorData.OCEAN;
+			return Biome.OCEAN;
 		}
-		else if (p.water)
+		else if (p.isWater)
 		{
 			if (elevation < 0.1)
 			{
-				return ColorData.MARSH;
+				return Biome.MARSH;
 			}
 			if (elevation > 0.8)
 			{
-				return ColorData.ICE;
+				return Biome.ICE;
 			}
-			return ColorData.LAKE;
+			return Biome.LAKE;
 		}
-		else if (p.coast)
+		else if (p.isCoast)
 		{
-			return ColorData.BEACH;
+			return Biome.BEACH;
 		}
 		else if (elevation > 0.8)
 		{
 			if (p.moisture > 0.50)
 			{
-				return ColorData.SNOW;
+				return Biome.SNOW;
 			}
 			else if (p.moisture > 0.33)
 			{
-				return ColorData.TUNDRA;
+				return Biome.TUNDRA;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.BARE;
+				return Biome.BARE;
 			}
 			else
 			{
-				return ColorData.SCORCHED;
+				return Biome.SCORCHED;
 			}
 		}
 		else if (elevation > 0.6)
 		{
 			if (p.moisture > 0.66)
 			{
-				return ColorData.TAIGA;
+				return Biome.TAIGA;
 			}
 			else if (p.moisture > 0.33)
 			{
-				return ColorData.SHRUBLAND;
+				return Biome.SHRUBLAND;
 			}
 			else
 			{
-				return ColorData.HIGH_TEMPERATE_DESERT;
+				return Biome.HIGH_TEMPERATE_DESERT;
 			}
 		}
 		else if (elevation > 0.45)
@@ -489,57 +543,57 @@ public class GraphImpl extends VoronoiGraph
 			// Note: I added this else if case. It is not in Red Blob's blog.
 			if (p.moisture > 0.83)
 			{
-				return ColorData.TEMPERATE_RAIN_FOREST;
+				return Biome.TEMPERATE_RAIN_FOREST;
 			}
 			else if (p.moisture > 0.50)
 			{
-				return ColorData.HIGH_TEMPERATE_DECIDUOUS_FOREST;
+				return Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.GRASSLAND;
+				return Biome.GRASSLAND;
 			}
 			else
 			{
-				return ColorData.TEMPERATE_DESERT;
+				return Biome.TEMPERATE_DESERT;
 			}			
 		}
 		else if (elevation > 0.3)
 		{
 			if (p.moisture > 0.83)
 			{
-				return ColorData.TEMPERATE_RAIN_FOREST;
+				return Biome.TEMPERATE_RAIN_FOREST;
 			}
 			else if (p.moisture > 0.50)
 			{
-				return ColorData.TEMPERATE_DECIDUOUS_FOREST;
+				return Biome.TEMPERATE_DECIDUOUS_FOREST;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.GRASSLAND;
+				return Biome.GRASSLAND;
 			}
 			else
 			{
-				return ColorData.TEMPERATE_DESERT;
+				return Biome.TEMPERATE_DESERT;
 			}
 		}
 		else
 		{
 			if (p.moisture > 0.66)
 			{
-				return ColorData.TROPICAL_RAIN_FOREST;
+				return Biome.TROPICAL_RAIN_FOREST;
 			}
 			else if (p.moisture > 0.33)
 			{
-				return ColorData.TROPICAL_SEASONAL_FOREST;
+				return Biome.TROPICAL_SEASONAL_FOREST;
 			}
 			else if (p.moisture > 0.16)
 			{
-				return ColorData.GRASSLAND;
+				return Biome.GRASSLAND;
 			}
 			else
 			{
-				return ColorData.SUBTROPICAL_DESERT;
+				return Biome.SUBTROPICAL_DESERT;
 			}
 		}
     }
@@ -683,7 +737,7 @@ public class GraphImpl extends VoronoiGraph
             		numOceanic++;
             }
             double oceanicRatio = ((double)numOceanic)/corner.touches.size();
-            corner.elevation = oceanicRatio*seaFloorLevel + (1.0 - oceanicRatio)*continentalPlateLevel;
+            corner.elevation = oceanicRatio*oceanPlateLevel + (1.0 - oceanicRatio)*continentalPlateLevel;
        }
     }
        
@@ -692,23 +746,16 @@ public class GraphImpl extends VoronoiGraph
     {
 		for (Center c1 : centers)
 		{
-			c1.water = c1.ocean = c1.elevation < seaLevel;
+			c1.isWater = c1.elevation < seaLevel;
 		}
 		
 		assignBorderToCorners();
 
 		// Copied from super.assignOceanCoastAndLand()
-		// Determine if each corner is ocean, coast, or water.
+		// Determine if each corner is coast or water.
 		for (Center c : centers)
 		{
-			int numOcean = 0;
-			int numLand = 0;
-			for (Center center : c.neighbors)
-			{
-				numOcean += center.ocean ? 1 : 0;
-				numLand += !center.water ? 1 : 0;
-			}
-			c.coast = numOcean > 0 && numLand > 0;
+			updateCoast(c);
 		}
 
 		// Copied from super.assignOceanCoastAndLand()
@@ -719,13 +766,25 @@ public class GraphImpl extends VoronoiGraph
 			int numLand = 0;
 			for (Center center : c.touches)
 			{
-				numOcean += center.ocean ? 1 : 0;
-				numLand += !center.water ? 1 : 0;
+				numOcean += center.isWater ? 1 : 0;
+				numLand += !center.isWater ? 1 : 0;
 			}
 			c.ocean = numOcean == c.touches.size();
 			c.coast = numOcean > 0 && numLand > 0;
 			c.water = (numLand != c.touches.size()) && !c.coast;
 		}
+    }
+    
+    public void updateCoast(Center c)
+    {
+		int numOcean = 0;
+		int numLand = 0;
+		for (Center center : c.neighbors)
+		{
+			numOcean += center.isWater ? 1 : 0;
+			numLand += !center.isWater ? 1 : 0;
+		}
+		c.isCoast = numOcean > 0 && numLand > 0;
     }
     
     private void assignBorderToCorners()
@@ -736,7 +795,7 @@ public class GraphImpl extends VoronoiGraph
 			{
 				if (corner.border)
 				{
-					c1.border = true;
+					c1.isBorder = true;
 					break;
 				}
 			}
@@ -827,7 +886,7 @@ public class GraphImpl extends VoronoiGraph
     		{
     			// Choose a center at random.
 	    		// Choose one of it's neighbors not in the same plate.
-	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new Function<Center, Boolean>()
+	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new nortantis.util.Function<Center, Boolean>()
 	    				{
 							public Boolean apply(Center otherC) 
 							{
@@ -945,5 +1004,194 @@ public class GraphImpl extends VoronoiGraph
 		
 		return centroid;
 	}
+	
+	public Region findRegionById(int id)
+	{
+		for (Region region : regions)
+		{
+			if (region.id == id)
+			{
+				return region;
+			}
+		}
 
+		return null;
+	}
+
+	/**
+	 * Converts a center to an area. This does not include noisy edges because I couldn't figure out how to 
+	 * draw them in order correctly around the center.
+	 * @param center
+	 * @return
+	 */
+	public Area centerToArea(Center center)
+	{
+		Polygon p = new Polygon();
+		
+		List<Edge> ordered = orderEdgesAroundCenter(center);
+		{
+			for (Edge edge : ordered)
+			{
+				p.addPoint((int)edge.v0.loc.x, (int) edge.v0.loc.y);
+			}
+		}
+		
+		return new Area(p);
+	}
+	
+	private List<Edge> orderEdgesAroundCenter(Center center)
+	{
+		List<Edge> result = new ArrayList<>(center.borders.size());
+		HashSet<Edge> remaining = new HashSet<>(center.borders);
+
+		Edge start = center.borders.get(0);
+		Edge currentEdge = start;
+		do
+		{
+			result.add(currentEdge);
+			remaining.remove(currentEdge);
+			currentEdge = findConnectedEdge(center, currentEdge, remaining);
+		}
+		while(!remaining.isEmpty() && currentEdge != null);
+		
+		return result;
+	}
+	
+	private Edge findConnectedEdge(Center center, Edge current, Set<Edge> remaining)
+	{
+		for (Edge edge : remaining)
+		{
+			if ((current.v0 != null && current.v0.protrudes.contains(edge)) 
+					|| (current.v1 != null && current.v1.protrudes.contains(edge)))
+			{
+				return edge;
+			}
+		}
+		
+		return null;
+	}
+
+	/**
+	 * Greedily finds a path between the 2 given corners.
+	 * @param riverStart
+	 * @param end
+	 */
+	public Set<Edge> findPath(Corner riverStart, Corner end)
+	{
+		if (riverStart.equals(end))
+		{
+			return new HashSet<>();
+		}
+				
+		Set<SearchNode> explored = new HashSet<>();
+		SearchNode startNode = new SearchNode(riverStart, null);
+		explored.add(startNode);
+		SortedSet<SearchNode> frontier = new TreeSet<>(new Comparator<SearchNode>()
+		{
+			@Override
+			public int compare(SearchNode n1, SearchNode n2)
+			{
+				int distanceComp = Double.compare(end.loc.distanceTo(n1.corner.loc), end.loc.distanceTo(n2.corner.loc));
+				if (distanceComp == 0)
+				{
+					// This ensures corners which are the same distance to the target don't clober eachother in the set.
+					return Integer.compare(n1.corner.index, n2.corner.index);
+				}
+				assert n1.corner.index != n2.corner.index;
+				return distanceComp;
+			}
+		});
+		
+		expandFrontier(startNode, frontier, explored);
+		
+		SearchNode endNode = null;
+		while (true)
+		{
+			SearchNode closest = frontier.first();
+			frontier.remove(closest);
+			explored.add(closest);
+			
+			if (closest.corner.equals(end))
+			{
+				endNode = closest;
+				break;
+			}
+			
+			expandFrontier(closest, frontier, explored);
+		}
+		
+		return createPathFromBackPointers(endNode);
+	}
+	
+	private void expandFrontier(SearchNode node, Set<SearchNode> frontier, Set<SearchNode> explored)
+	{
+		// Expand the frontier
+		for (Corner c : node.corner.adjacent)
+		{
+			SearchNode otherNode = new SearchNode(c, node);
+			if (!explored.contains(otherNode) && !frontier.contains(otherNode))
+			{
+				frontier.add(otherNode);
+			}
+		}
+	}
+	
+	private Edge findConnectingEdge(Corner c1, Corner c2)
+	{
+		for (Edge edge : c1.protrudes)
+		{
+			if (edge.v1 != null && edge.v1.equals(c2))
+			{
+				return edge;
+			}
+			if (edge.v0 != null && edge.v0.equals(c2))
+			{
+				return edge;
+			}
+		}
+		return null;
+	}
+	
+	private Set<Edge> createPathFromBackPointers(SearchNode end)
+	{	
+		Set<Edge> path = new HashSet<>();
+		if (end == null)
+		{
+			return path;
+		}
+		
+		SearchNode curNode = end;
+		while (curNode.cameFrom != null)
+		{
+			Edge edge = findConnectingEdge(curNode.corner, curNode.cameFrom.corner);
+			assert edge != null;
+			path.add(edge);
+			curNode = curNode.cameFrom;
+		}
+		return path;
+	}
+	
+	private class SearchNode
+	{
+		public Corner corner;
+		public SearchNode cameFrom;
+		
+		public SearchNode(Corner corner, SearchNode cameFrom)
+		{
+			this.corner = corner;
+			this.cameFrom = cameFrom;
+		}
+		
+		@Override
+		public int hashCode()
+		{
+			return corner.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object other)
+		{
+			return corner.equals(((SearchNode)other).corner);
+		}
+	}
 }

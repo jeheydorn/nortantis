@@ -35,15 +35,23 @@ public class NoisyEdges
     // distance: path0 is from v0 to the midpoint and path1 is from v1
     // to the midpoint. When drawing the polygons, one or the other
     // must be drawn in reverse order.
-    public void buildNoisyEdges(VoronoiGraph map, /*lava:Lava,*/ Random random) 
+	public void buildNoisyEdges(VoronoiGraph map)
+	{
+		for (Center p : map.centers)
+		{
+			buildNoisyEdgesForCenter(p, false);
+		}
+	}
+    
+    public void buildNoisyEdgesForCenter(Center center, boolean forceRebuild)
     {
-      for (Center p : map.centers) 
-      {
-          for (Edge edge : p.borders) 
-          {
-              if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null 
-            		  && path0.get(edge.index) == null)
-              {
+		for (Edge edge : center.borders)
+		{
+			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null
+					&& (forceRebuild || path0.get(edge.index) == null))
+			{
+		    	Random rand = new Random(edge.noisyEdgeSeed);
+
 				double f = NOISY_LINE_TRADEOFF;
 				Point t = Point.interpolate(edge.v0.loc, edge.d0.loc, f);
 				Point q = Point.interpolate(edge.v0.loc, edge.d1.loc, f);
@@ -51,18 +59,29 @@ public class NoisyEdges
 				Point s = Point.interpolate(edge.v1.loc, edge.d1.loc, f);
 
 				int minLength = 100;
-				if (edge.d0.region != edge.d1.region) minLength = 3;
-				if (edge.d0.border != edge.d1.border) minLength = 3;
-				if (edge.d0.coast || edge.d1.coast) minLength = 3;
-				if (edge.river != 0) minLength = 2;
-				                
-				path0.put(edge.index, buildNoisyLineSegments(random, edge.v0.loc, t, edge.midpoint, q, minLength));
+				if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
+				{
+					minLength = 3;
+				}
+				if (edge.d0.isBorder != edge.d1.isBorder)
+				{
+					minLength = 3;
+				}
+				if (edge.d0.isWater != edge.d1.isWater)
+				{
+					minLength = 3;
+				}
+				if (edge.river != 0)
+				{
+					minLength = 2;
+				}
+
+				path0.put(edge.index, buildNoisyLineSegments(rand, edge.v0.loc, t, edge.midpoint, q, minLength));
 				path0.get(edge.index).add(edge.midpoint);
-				path1.put(edge.index, buildNoisyLineSegments(random, edge.v1.loc, s, edge.midpoint, r, minLength));
+				path1.put(edge.index, buildNoisyLineSegments(rand, edge.v1.loc, s, edge.midpoint, r, minLength));
 				path1.get(edge.index).add(edge.midpoint);
-             }
-            }
-        }
+			}
+		}
     }
 
     

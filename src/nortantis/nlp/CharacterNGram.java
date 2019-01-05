@@ -8,9 +8,9 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.NotEnoughNamesException;
-import util.ComparableList;
-import util.ListCounterMap;
-import util.Range;
+import nortantis.util.ComparableList;
+import nortantis.util.ListCounterMap;
+import nortantis.util.Range;
 
 /**
  * Used to generate words using character level n-grams.

@@ -15,6 +15,7 @@ public class Edge implements Comparable<Edge>
     public Corner v0, v1;  // Voronoi edge
     public Point midpoint;  // halfway between v0,v1
     public int river;
+	public long noisyEdgeSeed;
 
     public void setVornoi(Corner v0, Corner v1) {
         this.v0 = v0;
@@ -54,6 +55,27 @@ public class Edge implements Comparable<Edge>
 		
 		assert false; // impossible
 		return 0;
+	}
+	
+	public boolean isCoast()
+	{
+		if (d0 == null || d1 == null)
+		{
+			return false;
+		}
+		
+		return d0.isWater != d1.isWater;
+	}
+	
+	public boolean isRegionBoundary()
+	{
+		if (d0 == null || d1 == null)
+		{
+			return false;
+		}
+		
+		return d0.region != null && d1.region != null && d0.region != d1.region;
+
 	}
 	
 	@Override

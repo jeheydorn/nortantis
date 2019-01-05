@@ -30,8 +30,10 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -58,18 +60,20 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 
-import util.ImageHelper;
-import util.JFontChooser;
-import util.Logger;
-import util.Range;
+import nortantis.editor.EditorDialog;
+import nortantis.editor.MapEdits;
+import nortantis.util.AssetsPath;
+import nortantis.util.Helper;
+import nortantis.util.ImageHelper;
+import nortantis.util.JFontChooser;
+import nortantis.util.Logger;
+import nortantis.util.Range;
 
 public class RunSwing
 {
@@ -117,9 +121,7 @@ public class RunSwing
 	private int backgroundDisplayCenterX = 667;
 	float fractalPower;
 	private JTextField textRandomSeedTextField;
-	private JButton btnEditText;
-	public JButton btnClearTextEdits;
-	MapEdits edits;
+	public MapEdits edits;
 	private boolean showTextWarning = true;
 	/**
 	 * A flag to prevent warnings about text edits while loading settings into the gui.
@@ -133,7 +135,6 @@ public class RunSwing
 	private JTextField regionsSeedTextField;
 	private JButton newRegionSeedButton;
 	private JSlider grungeSlider;
-	private UserPreferences userPreferences;
 	private ImagePanel previewPanel;
 	private JLabel lblOceanBackgroundImage;
 	private JLabel lblLandBackgroundImage;
@@ -160,6 +161,24 @@ public class RunSwing
 	private JSlider frayedEdgeSizeSlider;
 	private JSlider frayedEdgeBlurSlider;
 	private JCheckBox frayedEdgeCheckbox;
+	public JMenuItem clearEditsMenuItem;
+	private JMenu editorMenu;
+	private JMenuItem launchEditorMenuItem;
+	private JLabel lblSize;
+	private JLabel lblEdgeLandtowaterRatio;
+	private JLabel lblCenterLandtowaterRatio;
+	private JLabel lblRandomSeed;
+	private JLabel lblTextRandomSeed;
+	private JButton btnNewSeed;
+	private JButton btnNewTextRandomSeed;
+	private JLabel regionsRandomSeedLabel;
+	private JLabel lblHueRange;
+	private JLabel lblSaturationRange;
+	private JLabel lblBrightnessRange;
+	private JLabel lblMapEditsMessage;
+	private JSlider cityProbabilitySlider;
+	public final double cityFrequencySliderScale = 100.0 * 1.0/SettingsGenerator.maxCityProbabillity;
+	private JLabel cityProbabilityLabel;
 
 	
 	public static boolean isRunning()
@@ -208,14 +227,13 @@ public class RunSwing
 	public RunSwing()
 	{
 		createGUI();
-		userPreferences = new UserPreferences();
 		
 		try
 		{
-			if (Files.exists(Paths.get(userPreferences.lastLoadedSettingsFile)))
+			if (Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
 			{
-				loadSettingsIntoGUI(userPreferences.lastLoadedSettingsFile);
-				openSettingsFilePath = Paths.get(userPreferences.lastLoadedSettingsFile);
+				loadSettingsIntoGUI(UserPreferences.getInstance().lastLoadedSettingsFile);
+				openSettingsFilePath = Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile);
 				updateFrameTitle();
 			}
 			else
@@ -233,22 +251,43 @@ public class RunSwing
 	private void generateAndloadNewSettings()
 	{
 		openSettingsFilePath = null;
-		loadSettingsIntoGUI(SettingsGenerator.generate());
-		updateFrameTitle();
-		long seed = Math.abs(new Random().nextInt());
-		randomSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.randomSeed = seed;
-		backgroundSeedTextField.setText(seed + "");
-		regionsSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.regionsRandomSeed = seed;
-		lastSettingsLoadedOrSaved.backgroundRandomSeed = seed;
-		textRandomSeedTextField.setText(seed + "");
-		lastSettingsLoadedOrSaved.textRandomSeed = seed;
-		
+		MapSettings randomSettings = SettingsGenerator.generate();
+		loadSettingsIntoGUI(randomSettings);
+		updateFrameTitle();		
 		updateBackgroundImageDisplays();
-		userPreferences.lastLoadedSettingsFile = "";
+		UserPreferences.getInstance().lastLoadedSettingsFile = "";
 		previewPanel.setImage(null);
 		previewPanel.repaint();
+	}
+	
+	private void handleBackgroundThreadException(Exception ex)
+	{
+		if (ex instanceof ExecutionException)
+		{
+			if (ex.getCause() != null)
+			{
+				ex.getCause().printStackTrace();
+				if (ex.getCause() instanceof OutOfMemoryError)
+				{
+					JOptionPane.showMessageDialog(null, "Out of memory. Try allocating more memory to the Java heap space, or decrease the resolution in the Background tab.", "Error", JOptionPane.ERROR_MESSAGE);
+				}
+				else
+				{
+					JOptionPane.showMessageDialog(null, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+			else
+			{
+				// Should never happen.
+				ex.printStackTrace();
+		        JOptionPane.showMessageDialog(null, "An ExecutionException error occured with no cause: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		else
+		{
+			ex.printStackTrace();
+	        JOptionPane.showMessageDialog(null, "An unexpected error occured: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 
 	private void createGUI()
@@ -269,13 +308,13 @@ public class RunSwing
             		{
             			if (openSettingsFilePath != null)
             			{
-	            			userPreferences.lastLoadedSettingsFile = openSettingsFilePath.toString();
+            				UserPreferences.getInstance().lastLoadedSettingsFile = openSettingsFilePath.toString();
             			}
             			else
             			{
-            				userPreferences.lastLoadedSettingsFile = "";
+            				UserPreferences.getInstance().lastLoadedSettingsFile = "";
             			}
-            			userPreferences.save();
+            			UserPreferences.getInstance().save();
             			frame.dispose();
             			System.exit(0);
             		}
@@ -315,37 +354,36 @@ public class RunSwing
 			{	
 				btnGenerate.setEnabled(false);
 				btnPreview.setEnabled(false);
-
 				final MapSettings settings = getSettingsFromGUI();
 				
 				txtConsoleOutput.setText("");
 			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 			    {
 			        @Override
-			        public BufferedImage doInBackground() 
+			        public BufferedImage doInBackground() throws Exception
 			        {
-						try
-						{
-							BufferedImage map = new MapCreator().createMap(settings, null, null);
-							
-							Logger.println("Opening the map in your system's default image editor.");
-							String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-							Logger.println("Map written to " + fileName);
-							return map;
-						} 
-						catch (Exception e)
-						{
-							e.printStackTrace();
-					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						}
-			        	
-			        	return null;
-			        }			 
-
+						ImageCache.clear();
+						
+						BufferedImage map = new MapCreator().createMap(settings, null, null);
+						
+						Logger.println("Opening the map in your system's default image editor.");
+						String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+						Logger.println("Map written to " + fileName);
+						return map;
+			        }		
+			        
 			        @Override
 			        public void done()
 			        {
-						btnGenerate.setEnabled(true);
+			        	try
+			        	{
+			        		get();
+			        	}
+						catch (Exception ex)
+						{
+							handleBackgroundThreadException(ex);
+						}
+			        	btnGenerate.setEnabled(true);
 						btnPreview.setEnabled(true);
 			        }
 			    };
@@ -377,21 +415,11 @@ public class RunSwing
 			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 			    {
 			        @Override
-			        public BufferedImage doInBackground() 
+			        public BufferedImage doInBackground() throws IOException 
 			        {	
 			        	Dimension bounds = new Dimension(previewPanel.getWidth(), previewPanel.getHeight());
 
-						try
-						{
-							return new MapCreator().createMap(settings, bounds, null);
-						} 
-						catch (Exception e)
-						{
-							e.printStackTrace();
-					        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-						} 
-			        	
-			        	return null;
+						return new MapCreator().createMap(settings, bounds, null);
 			        }
 			        
 			        @Override
@@ -402,14 +430,11 @@ public class RunSwing
 			            {
 			                map = get();
 			            } 
-			            catch (InterruptedException e) 
-			            {
-			                throw new RuntimeException(e.getMessage());
-			            }
-			            catch (java.util.concurrent.ExecutionException e) 
-			            {
-			                throw new RuntimeException(e);
-			            }
+						catch (Exception ex)
+						{
+							handleBackgroundThreadException(ex);
+						}
+			        	
 			            if (map != null)
 			            {
 			            	previewPanel.image = map;
@@ -441,12 +466,12 @@ public class RunSwing
 		randomSeedTextField.setColumns(10);
 		randomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 		
-		JLabel lblRandomSeed = new JLabel("Random seed:");
+		lblRandomSeed = new JLabel("Random seed:");
 		lblRandomSeed.setToolTipText("The random seed for the terrain and frayed edges.");
 		lblRandomSeed.setBounds(12, 12, 122, 15);
 		terrainPanel.add(lblRandomSeed);
 				
-		JButton btnNewSeed = new JButton("New Seed");
+		btnNewSeed = new JButton("New Seed");
 		btnNewSeed.setToolTipText("Generate a new random seed for the terrain and text.");
 		btnNewSeed.setBounds(284, 10, 105, 25);
 		terrainPanel.add(btnNewSeed);
@@ -462,14 +487,13 @@ public class RunSwing
 		sizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		sizeSlider.setBounds(131, 45, 245, 79);
 		terrainPanel.add(sizeSlider);
-		sizeSlider.addChangeListener(new SliderChangeListener());
 		
-		JLabel lblSize = new JLabel("World size:");
+		lblSize = new JLabel("World size:");
 		lblSize.setToolTipText("The size of the world.");
 		lblSize.setBounds(12, 59, 87, 15);
 		terrainPanel.add(lblSize);
 						
-		JLabel lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
+		lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
 		lblEdgeLandtowaterRatio.setToolTipText("The probability that a tectonic plate touching the edge of the map will be land rather than ocean.");
 		lblEdgeLandtowaterRatio.setBounds(461, 12, 239, 22);
 		terrainPanel.add(lblEdgeLandtowaterRatio);
@@ -489,10 +513,9 @@ public class RunSwing
 			}
 			edgeLandToWaterProbSlider.setLabelTable( labelTable );
 		}
-		edgeLandToWaterProbSlider.addChangeListener(new SliderChangeListener());
 		terrainPanel.add(edgeLandToWaterProbSlider);
 		
-		JLabel lblCenterLandtowaterRatio = new JLabel("Center land probability:");
+		lblCenterLandtowaterRatio = new JLabel("Center land probability:");
 		lblCenterLandtowaterRatio.setToolTipText("The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.");
 		lblCenterLandtowaterRatio.setBounds(461, 111, 254, 22);
 		terrainPanel.add(lblCenterLandtowaterRatio);
@@ -513,9 +536,7 @@ public class RunSwing
 			}
 			centerLandToWaterProbSlider.setLabelTable( labelTable );
 		}
-		centerLandToWaterProbSlider.addChangeListener(new SliderChangeListener());
-		terrainPanel.add(centerLandToWaterProbSlider);
-		
+		terrainPanel.add(centerLandToWaterProbSlider);		
 		
 		// For the background tab.
 		final JPanel backgroundPanel = new JPanel();
@@ -556,13 +577,39 @@ public class RunSwing
 		oceanBackgroundImageFilename.setBounds(12, 239, 278, 28);
 		backgroundPanel.add(oceanBackgroundImageFilename);
 		oceanBackgroundImageFilename.setColumns(10);
+		oceanBackgroundImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				if (oceanBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				if (oceanBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				if (oceanBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+		});
+		
 
 		btnBrowseOceanBackground = new JButton("Browse");
 		btnBrowseOceanBackground.addActionListener(new ActionListener() 
 		{
 			public void actionPerformed(ActionEvent arg0) 
 			{
-				warnOfTextEdits();
 				String filename = chooseImageFile(backgroundPanel, oceanBackgroundImageFilename.getText());
 				if (filename != null)
 					oceanBackgroundImageFilename.setText(filename);
@@ -579,12 +626,37 @@ public class RunSwing
 		landBackgroundImageFilename.setColumns(10);
 		landBackgroundImageFilename.setBounds(12, 300, 278, 28);
 		backgroundPanel.add(landBackgroundImageFilename);
+		landBackgroundImageFilename.getDocument().addDocumentListener(new DocumentListener() 
+		{
+			public void changedUpdate(DocumentEvent e) 
+			{
+				if (landBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+
+			public void removeUpdate(DocumentEvent e) 
+			{
+				if (landBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+
+			public void insertUpdate(DocumentEvent e) 
+			{
+				if (landBackgroundImageFilename.getText().length() > 1)
+				{
+					showAspectRatioWarning();
+				}
+			}
+		});
 		
 		btnBrowseLandBackground = new JButton("Browse");
 		btnBrowseLandBackground.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				warnOfTextEdits();
 				String filename = chooseImageFile(backgroundPanel, landBackgroundImageFilename.getText());
 				if (filename != null)
 					landBackgroundImageFilename.setText(filename);
@@ -697,7 +769,6 @@ public class RunSwing
 		{	
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfTextEdits();
 				updateBackgroundImageDisplays();		
 			}
 		});
@@ -707,7 +778,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfTextEdits();
+				warnOfEdits();
 				updateBackgroundPanelFieldStates();
 			}		
 		};
@@ -798,7 +869,8 @@ public class RunSwing
 		colorizeCheckboxListener = new ItemListener() 
 		{	
 			@Override
-			public void itemStateChanged(ItemEvent e) {
+			public void itemStateChanged(ItemEvent e) 
+			{
 				updateBackgroundPanelFieldStates();
 			}
 		};
@@ -833,12 +905,12 @@ public class RunSwing
 		hueSlider.setBounds(150, 82, 245, 79);
 		regionsPanel.add(hueSlider);
 		
-		JLabel lblHueRange = new JLabel("Hue range:");
+		lblHueRange = new JLabel("Hue range:");
 		lblHueRange.setToolTipText("The possible range of hue values for generated region colors. The range is centered at the land color hue.");
 		lblHueRange.setBounds(12, 94, 101, 23);
 		regionsPanel.add(lblHueRange);
 		
-		JLabel lblSaturationRange = new JLabel("Saturation range:");
+		lblSaturationRange = new JLabel("Saturation range:");
 		lblSaturationRange.setToolTipText("The possible range of saturation values for generated region colors. The range is centered at the land color saturation.");
 		lblSaturationRange.setBounds(12, 175, 129, 23);
 		regionsPanel.add(lblSaturationRange);
@@ -852,7 +924,7 @@ public class RunSwing
 		saturationSlider.setBounds(150, 163, 245, 79);
 		regionsPanel.add(saturationSlider);
 		
-		JLabel lblBrightnessRange = new JLabel("Brightness range:");
+		lblBrightnessRange = new JLabel("Brightness range:");
 		lblBrightnessRange.setToolTipText("The possible range of brightness values for generated region colors. The range is centered at the land color brightness.");
 		lblBrightnessRange.setBounds(12, 255, 129, 23);
 		regionsPanel.add(lblBrightnessRange);
@@ -866,7 +938,7 @@ public class RunSwing
 		brightnessSlider.setBounds(150, 243, 245, 79);
 		regionsPanel.add(brightnessSlider);
 		
-		JLabel regionsRandomSeedLabel = new JLabel("Random seed:");
+		regionsRandomSeedLabel = new JLabel("Random seed:");
 		regionsRandomSeedLabel.setToolTipText("The random seed for region colors.");
 		regionsRandomSeedLabel.setBounds(12, 42, 122, 15);
 		regionsPanel.add(regionsRandomSeedLabel);
@@ -1066,7 +1138,7 @@ public class RunSwing
 		borderPanel.add(lblBorderType);
 		
 		borderTypeComboBox = new JComboBox<String>();
-		borderTypeComboBox.setBounds(133, 70, 236, 24);
+		borderTypeComboBox.setBounds(133, 70, 236, 30);
 		borderPanel.add(borderTypeComboBox);
 		
 		borderWidthSlider = new JSlider();
@@ -1129,6 +1201,26 @@ public class RunSwing
 		frayedEdgeSizeSlider.setMajorTickSpacing(20000);
 		frayedEdgeSizeSlider.setBounds(627, 174, 245, 79);
 		borderPanel.add(frayedEdgeSizeSlider);
+		
+		final JPanel iconsPanel = new JPanel();
+		tabbedPane.addTab("Icons", iconsPanel);
+		iconsPanel.setLayout(null);
+		
+		cityProbabilityLabel = new JLabel("City probability:");
+		cityProbabilityLabel.setToolTipText("Higher values create more cities. Lower values create less cities. Zero means no cities.");
+		cityProbabilityLabel.setBounds(12, 20, 114, 15);
+		iconsPanel.add(cityProbabilityLabel);
+		
+		cityProbabilitySlider = new JSlider();
+		cityProbabilitySlider.setPaintLabels(true);
+		cityProbabilitySlider.setBounds(131, 12, 245, 79);
+		cityProbabilitySlider.setSnapToTicks(false);
+		cityProbabilitySlider.setPaintTicks(true);
+		cityProbabilitySlider.setMinorTickSpacing(10);
+		cityProbabilitySlider.setMinimum(0);
+		cityProbabilitySlider.setMaximum(100);
+		cityProbabilitySlider.setMajorTickSpacing(25);
+		iconsPanel.add(cityProbabilitySlider);
 
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -1195,7 +1287,7 @@ public class RunSwing
 		btnMountainRangeFont.setBounds(383, 105, 87, 25);
 		textPanel.add(btnMountainRangeFont);
 		
-		JLabel lblMountainGroupFont = new JLabel("Other mountains font:");
+		JLabel lblMountainGroupFont = new JLabel("Cities/mountains font:");
 		lblMountainGroupFont.setBounds(8, 142, 161, 15);
 		textPanel.add(lblMountainGroupFont);
 		
@@ -1268,54 +1360,18 @@ public class RunSwing
 		btnChooseBoldBackgroundColor.setBounds(383, 270, 87, 25);
 		textPanel.add(btnChooseBoldBackgroundColor);
 		
-		final JButton btnNewTextRandomSeed = new JButton("New Seed");
+		btnNewTextRandomSeed = new JButton("New Seed");
 		btnNewTextRandomSeed.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				warnOfTextEdits();
+				warnOfEdits();
 				textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 			}
 		});
 		btnNewTextRandomSeed.setToolTipText("Generate a new random seed for creating text.");
 		btnNewTextRandomSeed.setBounds(800, 12, 105, 25);
 		textPanel.add(btnNewTextRandomSeed);
-		
-		btnEditText = new JButton("Edit Text");
-		btnEditText.setToolTipText("Modify the generated text.");
-		btnEditText.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-		        Dialog dialog;
-		        dialog = new EditTextDialog(getSettingsFromGUI(), runSwing);
-				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-				dialog.setVisible(true);
-			}
-		});
-		btnEditText.setBounds(8, 314, 117, 25);
-		textPanel.add(btnEditText);
-		
-		btnClearTextEdits = new JButton("Clear Text Edits");
-		btnClearTextEdits.setToolTipText("Remove all modifications to  generated text.");
-		btnClearTextEdits.addActionListener(new ActionListener() 
-		{
-			public void actionPerformed(ActionEvent e) 
-			{
-	        	int n = JOptionPane.showConfirmDialog(
-	                    frame, "All edited text will be deleted. Do you wish to continue?", "",
-	                    JOptionPane.YES_NO_OPTION);
-	            if (n == JOptionPane.YES_OPTION) 
-	            {
-									edits = new MapEdits();
-									btnClearTextEdits.setEnabled(false);
-	            }
-
-			}
-		});
-
-		btnClearTextEdits.setBounds(137, 314, 161, 25);
-		textPanel.add(btnClearTextEdits);
-		
+						
 		drawTextCheckBox = new JCheckBox("Draw text");
 		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
 		drawTextCheckBox.setBounds(8, 8, 125, 23);
@@ -1341,9 +1397,7 @@ public class RunSwing
 				btnChooseBoldBackgroundColor.setEnabled(drawTextCheckBox.isSelected());
 				textRandomSeedTextField.setEnabled(drawTextCheckBox.isSelected());
 				btnNewTextRandomSeed.setEnabled(drawTextCheckBox.isSelected());
-				btnEditText.setEnabled(drawTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(drawTextCheckBox.isSelected());
-				btnClearTextEdits.setEnabled(drawTextCheckBox.isSelected() && (edits != null && !edits.text.isEmpty()));
 			}			
 		});
 		textPanel.add(drawTextCheckBox);
@@ -1356,10 +1410,10 @@ public class RunSwing
 		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
 		booksScrollPane.setViewportView(booksPanel);
 		
-		JLabel label_7 = new JLabel("Random seed:");
-		label_7.setToolTipText("The random seed for text.");
-		label_7.setBounds(528, 14, 122, 15);
-		textPanel.add(label_7);
+		lblTextRandomSeed = new JLabel("Random seed:");
+		lblTextRandomSeed.setToolTipText("The random seed for text.");
+		lblTextRandomSeed.setBounds(528, 14, 122, 15);
+		textPanel.add(lblTextRandomSeed);
 		
 		textRandomSeedTextField = new JTextField();
 		textRandomSeedTextField.setText(new Random().nextInt() + "");
@@ -1395,7 +1449,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfTextEdits();
+				warnOfEdits();
 				int seed = Math.abs(new Random().nextInt());
 				randomSeedTextField.setText(seed + "");
 				textRandomSeedTextField.setText(seed + "");
@@ -1480,7 +1534,7 @@ public class RunSwing
 		});
 		
 		final JMenuItem mntmSaveAs = new JMenuItem("Save As...");
-		fileMenu.add(mntmSaveAs);
+		fileMenu.add(mntmSaveAs);	
 		mntmSaveAs.addActionListener(new ActionListener()
 		{
 			@Override
@@ -1490,10 +1544,168 @@ public class RunSwing
 			}			
 		});
 		
-		JMenuBar menuBar_1 = new JMenuBar();
-		menuBar.add(menuBar_1);
+		JMenuItem mntmExportHeightmap = new JMenuItem("Export Heightmap");
+		fileMenu.add(mntmExportHeightmap);
+		mntmExportHeightmap.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				btnGenerate.setEnabled(false);
+				btnPreview.setEnabled(false);
+				showHeightMapWithEditsWarning();
+				
+				txtConsoleOutput.setText("");
+			    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
+			    {
+			        @Override
+			        public BufferedImage doInBackground() throws IOException 
+			        {
+						MapSettings settings = getSettingsFromGUI();
+						Logger.println("Creating a heightmap...");
+						BufferedImage heightMap = new MapCreator().createHeightMap(settings);
+						Logger.println("Opening the heightmap in your system's default image editor.");
+						String fileName = ImageHelper.openImageInSystemDefaultEditor(heightMap, "heightmap");	
+						Logger.println("Heightmap written to " + fileName);
+						return heightMap;
+			        }			 
+
+			        @Override
+			        public void done()
+			        {
+			        	try
+			        	{
+			        		get();
+			        	}
+			        	catch (Exception ex)
+			        	{
+			        		handleBackgroundThreadException(ex);
+			        	}
+						btnGenerate.setEnabled(true);
+						btnPreview.setEnabled(true);
+			        }
+			    };
+			    worker.execute();
+
+				
+				
+			}	
+			
+		});
+
+		editorMenu = new JMenu("Editor");
+		menuBar.add(editorMenu);
+		
+		launchEditorMenuItem = new JMenuItem("Launch Editor");
+		launchEditorMenuItem.setAccelerator(KeyStroke.getKeyStroke(
+		        java.awt.event.KeyEvent.VK_E, 
+		        java.awt.Event.CTRL_MASK));
+		launchEditorMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				boolean hadEdits = !edits.isEmpty();
+		        Dialog dialog;
+		        dialog = new EditorDialog(getSettingsFromGUI(), runSwing);
+				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+				dialog.setVisible(true);
+		    	runSwing.updateFieldsWhenEditsChange();	
+				if (!hadEdits && !edits.isEmpty())
+				{
+					showMapChangesMessage();
+				}
+			}			
+		});
+		editorMenu.add(launchEditorMenuItem);
+		
+		clearEditsMenuItem = new JMenuItem("Clear Edits");
+		clearEditsMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+	        	int n = JOptionPane.showConfirmDialog(
+	                    frame, "All map edits will be deleted. Do you wish to continue?", "",
+	                    JOptionPane.YES_NO_OPTION);
+	            if (n == JOptionPane.YES_OPTION) 
+	            {
+					edits = new MapEdits();
+					updateFieldsWhenEditsChange();
+	            }
+			}			
+		});
+		editorMenu.add(clearEditsMenuItem);
+		
+		lblMapEditsMessage = new JLabel("<html>Fields on this tab and some on other tabs are disabled because this"
+				+ " map has edits. If you wish to enable those fields, you can either clear your "
+				+ "edits (" + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "),"
+					+ " or create a new random map by going to File > New.</html>");
+		lblMapEditsMessage.setBounds(12, 285, 913, 50);
+		lblMapEditsMessage.setVisible(false);
+		terrainPanel.add(lblMapEditsMessage);
 		
 		frame.pack();
+	}
+	
+	private void showHeightMapWithEditsWarning()
+	{
+		if (edits != null && !edits.isEmpty() && !UserPreferences.getInstance().hideHeightMapWithEditsWarning)
+		{
+			Dimension size = new Dimension(400, 80);
+			JPanel panel = new JPanel();
+			panel.setPreferredSize(size);
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			JLabel label = new JLabel("<html>Edits made in the editor, such as land, water, and mountains, "
+					+ "are not applied to height maps. </html>");
+			panel.add(label);
+			label.setMaximumSize(size);
+			panel.add(Box.createVerticalStrut(18));
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
+			UserPreferences.getInstance().hideHeightMapWithEditsWarning = checkBox.isSelected();
+		}
+	}
+
+	
+	private void showAspectRatioWarning()
+	{
+		if (edits != null && !edits.isEmpty() && !UserPreferences.getInstance().hideAspectRatioWarning)
+		{
+			Dimension size = new Dimension(400, 130);
+			JPanel panel = new JPanel();
+			panel.setPreferredSize(size);
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			JLabel label = new JLabel("<html>The new background image must have exactly the same aspect ratio as the old one "
+					+ "or your edits won't work. If you want to use a background image with a different aspect ratio, "
+					+ "first clear your edits. Note that changing the aspect ratio will create a very different map. </html>");
+			label.setMaximumSize(size);
+			panel.add(label);
+			panel.add(Box.createVerticalStrut(18));
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.WARNING_MESSAGE);
+			UserPreferences.getInstance().hideAspectRatioWarning = checkBox.isSelected();
+		}
+	}
+	
+	private void showMapChangesMessage()
+	{
+		if (!UserPreferences.getInstance().hideMapChangesWarning)
+		{
+			JPanel panel = new JPanel();
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			panel.add(new JLabel("<html>Some fields in the generator are now disabled to ensure your map remains"
+					+ "<br>compatible with your edits. If a field is disabled for this reason, a message is added"
+					+ "<br>to the field's tool tip. If you wish to enable those fields, you can either clear your "
+					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
+			panel.add(Box.createVerticalStrut(18));
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
+			UserPreferences.getInstance().hideMapChangesWarning = checkBox.isSelected();
+		}
 	}
 	
 	private int calcMaximumResolution() 
@@ -1527,14 +1739,13 @@ public class RunSwing
 	 * Informs the user that if they continue an action they must delete text edits.
 	 * @return true if the action should continue. false if the user canceled the action to keep text edits.
 	 */
-	private void warnOfTextEdits()
+	private void warnOfEdits()
 	{
 		
 		if (!loadingSettings && showTextWarning  && edits != null && !edits.text.isEmpty())
 		{
-	        int n = JOptionPane.showOptionDialog(frame, "You have edited text and performed an action which will likely change \n"
-                    + "the generated map. This could cause the edited text to not fit the map. \n"
-                    + "You can clear text edits by going to Text -> " + btnClearTextEdits.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+	        int n = JOptionPane.showOptionDialog(frame, "Some options are disabled because you have edited the map. \n"
+                    + "You can clear edits by going to " + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
 	        if (n == JOptionPane.NO_OPTION)
 	        {
 	        	showTextWarning = false;
@@ -1730,7 +1941,7 @@ public class RunSwing
 			try
 			{
 				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
-				lastSettingsLoadedOrSaved = settings;
+				updateLastSettingsLoadedOrSaved(settings);
 				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
 			} 
 			catch (IOException e)
@@ -1742,7 +1953,7 @@ public class RunSwing
 		}
 	}
 	
-	private void saveSettingsAs(JComponent parent)
+	public void saveSettingsAs(JComponent parent)
 	{
 		Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
 		File currentFolder = new File(curPath.toString());
@@ -1777,7 +1988,7 @@ public class RunSwing
 			{
 				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
 				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
-				lastSettingsLoadedOrSaved = settings;
+				updateLastSettingsLoadedOrSaved(settings);
 			} catch (IOException e)
 			{
 				e.printStackTrace();
@@ -1858,7 +2069,7 @@ public class RunSwing
 
 	}
 
-	private static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
+	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
 	{
 		Color c = JColorChooser.showDialog(parent, "", colorDisplay.getBackground());
 		if (c != null)
@@ -1915,6 +2126,7 @@ public class RunSwing
 		frayedEdgeBlurSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
+		cityProbabilitySlider.setValue((int)(settings.cityProbability * cityFrequencySliderScale));
 		
 		// Settings for background images.
 		// Remove and add item listeners to the colorize checkboxes to avoid generating backgrounds for display multiple times.
@@ -1958,7 +2170,7 @@ public class RunSwing
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					warnOfTextEdits();
+					warnOfEdits();
 				}
 			});
 		}
@@ -2002,18 +2214,26 @@ public class RunSwing
 		drawBorderCheckbox.doClick();
 		
 		edits = settings.edits;
-		btnClearTextEdits.setEnabled(!edits.text.isEmpty());
 		
+		updateFieldsWhenEditsChange();
 		updateBackgroundImageDisplays();
 		updateFrameTitle();
 
-		lastSettingsLoadedOrSaved = settings;
+		updateLastSettingsLoadedOrSaved(settings);
+		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
+		
 		loadingSettings = false;	
+	}
+	
+	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
+	{
+		lastSettingsLoadedOrSaved = settings;
+		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
 	}
 	
 	private List<String> getAllBooks()
 	{
-		String[] filenames = new File("assets/books").list(new FilenameFilter()
+		String[] filenames = new File(Paths.get(AssetsPath.get(), "books").toString()).list(new FilenameFilter()
 		{
 			public boolean accept(File arg0, String name)
 			{
@@ -2053,6 +2273,7 @@ public class RunSwing
 		settings.frayedBorderBlurLevel = frayedEdgeBlurSlider.getValue();
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
+		settings.cityProbability = cityProbabilitySlider.getValue() / cityFrequencySliderScale;
 		
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();
@@ -2129,12 +2350,80 @@ public class RunSwing
         return false;
 	}
 	
-	private class SliderChangeListener implements ChangeListener
+	public void updateFieldsWhenEditsChange()
 	{
-		@Override
-		public void stateChanged(ChangeEvent e)
+		boolean hasEdits = !edits.isEmpty();
+		
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblSize, sizeSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblEdgeLandtowaterRatio, edgeLandToWaterProbSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblCenterLandtowaterRatio, centerLandToWaterProbSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblRandomSeed, randomSeedTextField, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewSeed, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblDimensions, dimensionsComboBox, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblTextRandomSeed, textRandomSeedTextField, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, btnNewTextRandomSeed, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(regionsRandomSeedLabel, regionsSeedTextField, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblHueRange, hueSlider, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblSaturationRange, saturationSlider, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(lblBrightnessRange, brightnessSlider, hasEdits);
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(null, newRegionSeedButton, hasEdits);	
+		lockOrUnlockBecauseOfEditsAndUpdateTooltip(cityProbabilityLabel, cityProbabilitySlider, hasEdits);	
+		lblMapEditsMessage.setVisible(hasEdits);
+		clearEditsMenuItem.setEnabled(hasEdits);
+	}
+	
+	public void lockOrUnlockBecauseOfEditsAndUpdateTooltip(JLabel label, JComponent component, boolean hasEdits)
+	{
+		if (component == null)
 		{
-			warnOfTextEdits();
+			return;
 		}
+		
+		String lockedMessage = " This is locked because this map has edits.";
+		
+		component.setEnabled(!hasEdits);
+		
+		if (hasEdits)
+		{
+			if (label != null)
+			{
+				addToTooltip(label, lockedMessage);
+			}
+			addToTooltip(component, lockedMessage);
+		}
+		else
+		{
+			if (label != null)
+			{
+				removeFromToolTip(label, lockedMessage);
+			}
+			removeFromToolTip(component, lockedMessage);
+		}
+	}
+	
+	private void addToTooltip(JComponent component, String message)
+	{
+		String currentToolTop = component.getToolTipText();
+		if (currentToolTop == null)
+		{
+			currentToolTop = "";
+		}
+		if (!currentToolTop.contains(message))
+		{
+			component.setToolTipText(currentToolTop + message);
+		}
+
+	}
+	
+	private void removeFromToolTip(JComponent component, String message)
+	{
+
+		String currentToolTop = component.getToolTipText();
+		if (currentToolTop == null)
+		{
+			return;
+		}
+		component.setToolTipText(currentToolTop.replace(message, ""));
+
 	}
 }

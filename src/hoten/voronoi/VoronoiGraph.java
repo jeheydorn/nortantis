@@ -1,11 +1,15 @@
 package hoten.voronoi;
 
+import static org.junit.Assert.assertEquals;
+
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -15,12 +19,14 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
+
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
 import hoten.voronoi.nodename.as3delaunay.LineSegment;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
-import nortantis.TectonicPlate;
-import util.Range;
+import nortantis.Biome;
+import nortantis.util.Range;
 
 /**
  * VoronoiGraph.java
@@ -42,7 +48,9 @@ public abstract class VoronoiGraph {
      */
 	private double riverDensity = 1.0/14.0;
 	protected double scaleMultiplyer;
-	private int riversThinnerThanThisWillNotBeDrawn = 2;
+	public static final int riversThinnerThanThisWillNotBeDrawn = 2;
+	
+	final static double verySmall = 0.0000001;
 
 
     public VoronoiGraph(Random r, double scaleMultiplyer) {
@@ -93,30 +101,10 @@ public abstract class VoronoiGraph {
         // Joseph note: I moved noisy edge building code to GraphImpl because it now depends on the political regions.
     }
     
-    abstract protected Enum<?> getBiome(Center p);
+    abstract protected Biome getBiome(Center p);
 
-    abstract protected Color getColor(Enum<?> biome);
+    abstract protected Color getColor(Biome biome);
 
-    public Center getCenterAt(double x, double y) 
-    {
-    	// Joseph note: img is not setup, so I'm re-writing this.
-        //return centers.get(img.getRGB(x, y) & 0xffffff);
-    	
-    	final Point p = new Point(x, y);
-    	return Collections.max(centers, new Comparator<Center>()
-    			{
-					@Override
-					public int compare(Center c1, Center c2)
-					{
-						return -Double.compare(Point.distance(p, c1.loc), Point.distance(p, c2.loc));
-					}
-    			});
-    }
-    
-    public TectonicPlate getTectonicPlateAt(double x, double y)
-    {
-    	return getCenterAt(x, y).tectonicPlate;
-    }
 
     /* an additional smoothing method across corners */
     private void improveCorners() {
@@ -144,7 +132,8 @@ public abstract class VoronoiGraph {
         }
     }
 
-    private Edge edgeWithCenters(Center c1, Center c2) {
+    private Edge edgeWithCenters(Center c1, Center c2) 
+    {
         for (Edge e : c1.borders) {
             if (e.d0 == c2 || e.d1 == c2) {
                 return e;
@@ -153,7 +142,8 @@ public abstract class VoronoiGraph {
         return null;
     }
 
-    private void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center) {
+    private static void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center) 
+    {
         int[] x = new int[3];
         int[] y = new int[3];
         x[0] = (int) center.loc.x;
@@ -164,21 +154,186 @@ public abstract class VoronoiGraph {
         y[2] = (int) c2.loc.y;
         g.fillPolygon(x, y, 3);
     }
+    
+    private static void drawTriangleElevation(Graphics2D g, Corner c1, Corner c2, Center center) 
+    {
+    	Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
+    	Vector3D v2 = new Vector3D(c2.loc.x, c2.loc.y, c2.elevation);
+    	Vector3D v3 = new Vector3D(center.loc.x, center.loc.y, center.elevation);
+    	
+    	// Normal of the plane containing the triangle
+    	Vector3D N = v2.subtract(v1).crossProduct(v3.subtract(v1));
+    	
+    	Vector3D highestPoint = findHighestZ(v1, v2, v3);
+    	int highestPointGrayLevel = (int)(highestPoint.getZ() * 255);
+    	Color highestPointColor = new Color(highestPointGrayLevel, highestPointGrayLevel, highestPointGrayLevel);
+    	
+    	// Gradient of x and y with respect to z.
+    	Vector3D G = new Vector3D(-N.getX()/N.getZ(), -N.getY()/N.getZ(), 0);
+
+       	if ((Math.abs(G.getX()) < verySmall || Double.isInfinite(G.getX()) || Double.isNaN(G.getX()))
+       			&& Math.abs(G.getY()) < verySmall || Double.isInfinite(G.getY()) || Double.isNaN(G.getY()))
+    	{
+       		// The triangle is either flat or vertical. 
+    		int grayLevel = (int)(255 * center.elevation);
+    		g.setColor(new Color(grayLevel, grayLevel, grayLevel));
+        	drawTriangle(g, c1, c2, center);
+        	return;
+    	}
+       	
+       	Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
+
+    	g.setPaint(new GradientPaint(
+    			(float)highestPoint.getX(), (float)highestPoint.getY(), highestPointColor, 
+    			(float)zIntercept.getX(), (float)zIntercept.getY(), Color.black, 
+    			false));
+    	drawTriangle(g, c1, c2, center);
+    }
+        
+    private static Vector3D findZIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
+    {
+    	// To calculate this, I first had that 
+    	//     deltaZ = a*deltaX + b*deltaY
+    	// where delta* variables are the change in x, y, and z, and a and b are the x and y components of the gradient.
+    	// I then constrained deltaX and delta Y by requiring them to follow the gradient, so 
+    	//     deltaY = (a/b)*deltaX.
+    	// Plugging that into the first equation and solving for delta X, I got the equation below for x. The equation for y is very similar.
+    	// Note that deltaZ = -point.getZ() to find the point where z is 0.
+    	
+    	double xChange = gradient.getX() * (-point.getZ()) / (gradient.getX() * gradient.getX() + gradient.getY() * gradient.getY());
+    	double yChange = gradient.getY() * (-point.getZ()) / (gradient.getX() * gradient.getX() + gradient.getY() * gradient.getY());
+    	return new Vector3D(point.getX() + xChange, point.getY() + yChange, 0.0);
+    }
+    
+    private static Vector3D findHighestZ(Vector3D v1, Vector3D v2, Vector3D v3)
+    {
+    	if (v1.getZ() > v2.getZ())
+    	{
+    		if (v1.getZ() > v3.getZ())
+    		{
+    			return v1;
+    		}
+    		return v3;
+    	}
+    	else
+    	{
+    		if (v2.getZ() > v3.getZ())
+    		{
+    			return v2;
+    		}
+    		return v3;
+    	}
+    }
+    
+    public static void runPrivateUnitTests()
+    {
+    	findHighestZTest();
+    	drawTriangleElevationZeroXGradientTest(); 
+    	drawTriangleElevationZeroYGradientTest();
+    	drawTriangleElevationWithXAndYGradientTest();
+    }
+  
+    private static void drawTriangleElevationWithXAndYGradientTest()
+    {
+    	BufferedImage image = new BufferedImage(101,101, BufferedImage.TYPE_INT_RGB);
+    	Corner corner1 = new Corner();
+    	corner1.loc = new Point(0, 0);
+    	corner1.elevation = 0.0;
+    	Corner corner2 = new Corner();
+    	corner2.elevation = 0.5;
+    	corner2.loc = new Point(100, 0);
+    	Center center = new Center(new Point(100, 100));
+    	center.elevation = 1.0;
+    	Graphics2D g = image.createGraphics();
+    	drawTriangleElevation(g, corner1, corner2, center);
+        assertEquals(
+    			0, 
+    			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
+    	assertEquals(
+    			125,
+    			new Color(image.getRGB((int)corner2.loc.x - 1, (int)corner2.loc.y)).getBlue());
+    	assertEquals(
+    			251,
+    			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y - 2)).getBlue());
+    }
+
+    private static void drawTriangleElevationZeroXGradientTest()
+    {
+    	BufferedImage image = new BufferedImage(101,101, BufferedImage.TYPE_INT_RGB);
+    	Corner corner1 = new Corner();
+    	corner1.loc = new Point(0, 0);
+    	corner1.elevation = 0.5;
+    	Corner corner2 = new Corner();
+    	corner2.elevation = 0.5;
+    	corner2.loc = new Point(50, 0);
+    	Center center = new Center(new Point(50, 100));
+    	center.elevation = 1.0;
+    	Graphics2D g = image.createGraphics();
+    	drawTriangleElevation(g, corner1, corner2, center);
+    	assertEquals(
+    			(int)(corner1.elevation * 255),
+    			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
+    	assertEquals(
+    			(int)(corner2.elevation * 255),
+    			new Color(image.getRGB((int)corner2.loc.x - 1, (int)corner2.loc.y)).getBlue());
+    	assertEquals((int)(center.elevation * 253),
+    			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y - 2)).getBlue());
+    }
+
+    private static void drawTriangleElevationZeroYGradientTest()
+    {
+    	BufferedImage image = new BufferedImage(101,101, BufferedImage.TYPE_INT_RGB);
+    	Corner corner1 = new Corner();
+    	corner1.loc = new Point(0, 0);
+    	corner1.elevation = 0.0;
+    	Corner corner2 = new Corner();
+    	corner2.elevation = 0.0;
+    	corner2.loc = new Point(0, 100);
+    	Center center = new Center(new Point(50, 100));
+    	center.elevation = 1.0;
+    	Graphics2D g = image.createGraphics();
+    	drawTriangleElevation(g, corner1, corner2, center);
+    	assertEquals(
+    			(int)(corner1.elevation * 255), 
+    			new Color(image.getRGB((int)corner1.loc.x, (int)corner1.loc.y)).getBlue());
+    	assertEquals(
+    			(int)(corner2.elevation * 255),
+    			new Color(image.getRGB((int)corner2.loc.x, (int)corner2.loc.y)).getBlue());
+    	assertEquals((int)(center.elevation * 249),
+    			new Color(image.getRGB((int)center.loc.x - 1, (int)center.loc.y-1)).getBlue());
+    }
+
+        
+    /**
+     * Unit test for findHighestZ.
+     */
+	private static void findHighestZTest() 
+	{		
+		Vector3D v1 = new Vector3D(0, 0, -3);
+		Vector3D v2 = new Vector3D(0, 0, 1);
+		Vector3D v3 = new Vector3D(0, 0, 2);
+		
+		List<Vector3D> list = Arrays.asList(v1, v2, v3);
+		
+		Collections.shuffle(list);
+		
+		assertEquals(v3, findHighestZ(list.get(0), list.get(1), list.get(2)));
+	}
 
     private boolean closeEnough(double d1, double d2, double diff) {
         return Math.abs(d1 - d2) <= diff * scaleMultiplyer;
     }
 
     public void paint(Graphics2D g, boolean drawRivers, boolean drawPlates, boolean drawElevations, 
-    		boolean drawNoisyEdges, boolean drawLandAndOceanBlackAndWhiteOnly, boolean drawCoastlineOnly,
+    		boolean drawNoisyEdges, boolean drawCoastlineOnly,
     		boolean drawRiverMaskOnly) 
     {
-    	paint(g, drawRivers, drawPlates, drawElevations, drawNoisyEdges, drawLandAndOceanBlackAndWhiteOnly,
+    	paint(g, drawRivers, drawPlates, drawElevations, drawNoisyEdges,
     			drawCoastlineOnly, drawRiverMaskOnly, 1);
     }
 
     public void paint(Graphics2D g, boolean drawRivers, boolean drawPlates, boolean drawElevations,
-    		boolean drawNoisyEdges, boolean drawLandAndOceanBlackAndWhiteOnly, boolean drawCoastlineOnly,
+    		boolean drawNoisyEdges, boolean drawCoastlineOnly,
     		boolean drawRiverMaskOnly, double widthMultipierForMasks) 
     {
     	boolean drawBioms = true;
@@ -187,16 +342,30 @@ public abstract class VoronoiGraph {
     	boolean drawDeluanay = false;  
     	boolean drawVoronoi = false;  
         paint(g, drawBioms, drawRivers, drawSites, drawCorners, drawDeluanay, drawVoronoi, drawPlates,
-        		drawElevations, drawNoisyEdges, drawLandAndOceanBlackAndWhiteOnly, drawCoastlineOnly,
+        		drawElevations, drawNoisyEdges, drawCoastlineOnly,
         		widthMultipierForMasks);
     }
 
     public void paint(Graphics2D g, boolean drawBiomes, boolean drawRivers, boolean drawSites, 
     		boolean drawCorners, boolean drawDelaunay, boolean drawVoronoi, boolean drawPlates,
-    		boolean drawElevation, boolean drawNoisyEdges, final boolean drawLandAndOceanBlackAndWhiteOnly,
+    		boolean drawElevation, boolean drawNoisyEdges,
     		boolean drawCoastlineOnly, double widthMultipierForMasks)
     {
+    	
         final int numSites = centers.size();
+        
+        
+        if (drawVoronoi)
+        {
+        	g.setColor(Color.WHITE);
+        	for (Corner c : corners)
+        	{
+        		for (Corner adjacent : c.adjacent)
+        		{
+        			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
+        		}
+        	}
+        }
         
         Color[] defaultColors = null;
         if (!drawBiomes) {
@@ -211,7 +380,7 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.ocean != edge.d1.ocean;
+        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.isWater != edge.d1.isWater;
         	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), shouldDraw);
         	return;
         }
@@ -222,7 +391,7 @@ public abstract class VoronoiGraph {
 	        {
             	float grayLevel = (float) (float)c.elevation;
             	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
-	            drawUsingTriangles(g, c);
+	            drawUsingTriangles(g, c, true);
 	        }
         }
         else if (drawBiomes)
@@ -231,44 +400,45 @@ public abstract class VoronoiGraph {
         }
 
         if (drawNoisyEdges)
-        {
-        	// This will draw polygons on top of the polygons we just drew, but this method doesn't handle
-        	// edge polygons correctly, I need to draw both.
-        	
+        {       	
         	renderPolygons(g, new Function<Center, Color>() 
 			{
 				public Color apply(Center c)
 				{
-					if (drawLandAndOceanBlackAndWhiteOnly)
-					{
-						return c.ocean ? Color.black : Color.white;
-					}
-					else
-					{
-						return getColor(c.biome);
-					}
+					return getColor(c.biome);
 				}
 			});
         }
         
-        if (drawRivers && !drawLandAndOceanBlackAndWhiteOnly)
+        if (drawRivers)
         {
             g.setColor(RIVER);
         	drawRivers(g, widthMultipierForMasks);
         }
         
-        for (Edge e : edges) {
-            if (drawDelaunay) {
-                g.setStroke(new BasicStroke(1));
-                g.setColor(Color.YELLOW);
-                g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
-            }
-            if (drawPlates && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
-            {
-                g.setStroke(new BasicStroke(1));
-                g.setColor(Color.GREEN);
-                g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
-            }
+        if (drawDelaunay)
+        {
+	        for (Edge e : edges) 
+	        {
+	            if (drawDelaunay) {
+	                g.setStroke(new BasicStroke(1));
+	                g.setColor(Color.YELLOW);
+	                g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
+	            }
+	        }
+        }
+        
+	    if (drawPlates)
+	    {
+	        for (Edge e : edges) 
+	        {
+	            if (drawPlates && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
+	            {
+	                g.setStroke(new BasicStroke(1));
+	                g.setColor(Color.GREEN);
+	                g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
+	            }
+	        }
         }
 
         if (drawSites) {
@@ -290,26 +460,40 @@ public abstract class VoronoiGraph {
             g.setColor(Color.WHITE);
             for (Corner c : corners) 
             {
-//            	float grayLevel = (float)c.elevation;
-//            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));
             	g.setColor(Color.PINK);
 
                 g.fillOval((int) (c.loc.x - 2), (int) (c.loc.y - 2), 10, 10);
             }
         }
-        
-        if (drawVoronoi)
-        {
-        	g.setColor(Color.WHITE);
-        	for (Corner c : corners)
-        	{
-        		for (Corner adjacent : c.adjacent)
-        		{
-        			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
-        		}
-        	}
-        	
-        }
+    }
+    
+    public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender)
+    {
+       	renderPolygons(g, centersToRender, new Function<Center, Color>() 
+			{
+				public Color apply(Center c)
+				{
+					return c.isWater ? Color.black : Color.white;
+				}
+			});
+		
+
+       	// Code usefull for debugging
+//    	g.setColor(Color.WHITE);
+//    	for (Corner c : corners)
+//    	{
+//    		for (Corner adjacent : c.adjacent)
+//    		{
+//    			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
+//    		}
+//    	}
+//    	
+//        for (Edge e : edges) 
+//        {
+//            g.setStroke(new BasicStroke(1));
+//            g.setColor(Color.YELLOW);
+//            g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
+//        }
     }
     
     public void drawBiomes(Graphics2D g)
@@ -334,11 +518,10 @@ public abstract class VoronoiGraph {
         }
     }
         
-    protected void drawUsingTriangles(Graphics2D g, Center c)
+    protected void drawUsingTriangles(Graphics2D g, Center c, boolean drawElevation)
     {
         //only used if Center c is on the edge of the graph. allows for completely filling in the outer
         // polygons. This is a list because if c borders 2 edges, it may have 2 missing triangles.
- //   	List<Tuple2<Corner, Corner>> edgeCorners = null;
     	List<Corner> edgeCorners = null;
 
     	c.area = 0;
@@ -384,7 +567,14 @@ public abstract class VoronoiGraph {
 	             }
             }
  
-            drawTriangle(g, e.v0, e.v1, c);
+            if (drawElevation)
+            {
+            	drawTriangleElevation(g, e.v0, e.v1, c);
+            }
+            else
+            {
+            	drawTriangle(g, e.v0, e.v1, c);
+            }
             
             c.area += Math.abs(c.loc.x * (e.v0.loc.y - e.v1.loc.y)
                     + e.v0.loc.x * (e.v1.loc.y - c.loc.y)
@@ -433,14 +623,21 @@ public abstract class VoronoiGraph {
 					// is common when the number of sites are quite low (less
 					// than 5), but not a problem
 					// with a more useful number of sites.
-					// TODOO: find a way to fix this
 
 					if (closeEnough(edgeCorner1.loc.x, edgeCorner2.loc.x, 1)
 							|| closeEnough(edgeCorner1.loc.y,
 									edgeCorner2.loc.y, 1))
 					{
 						// Both corners on on a single border.
-						drawTriangle(g, edgeCorner1, edgeCorner2, c);
+						
+						if (drawElevation)
+						{
+			            	drawTriangleElevation(g, edgeCorner1, edgeCorner2, c);
+						}
+			            else
+			            {
+							drawTriangle(g, edgeCorner1, edgeCorner2, c);
+			            }
 					} 
 					else
 					{
@@ -463,6 +660,12 @@ public abstract class VoronoiGraph {
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;
 
+						if (drawElevation)
+						{
+							// I really should break the polygon into triangles and call drawElevationOfTriangle on each, but for now I'm just doing this.
+				           	float grayLevel = (float) (float)c.elevation;
+			            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
+						}
 						g.fillPolygon(x, y, 4);
 						c.area += 0; // TODOO: area of polygon given vertices
 					}
@@ -483,7 +686,7 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.ocean != edge.d1.ocean);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.isWater != edge.d1.isWater);
     }
 
     public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
@@ -515,42 +718,46 @@ public abstract class VoronoiGraph {
 				if (!shouldDraw.apply(edge))
 					continue;
 
-				if (noisyEdges.path0.get(edge.index) == null
-						|| noisyEdges.path1.get(edge.index) == null)
-				{
-					// It's at the edge of the map, where we don't have
-					// the noisy edges computed. TODOO: figure out how to
-					// fill in these edges from the voronoi library.
-					continue;
-				}
-
-				// Draw path0.
-				{
-					List<Point> path = noisyEdges.path0.get(edge.index);
-					int[] xPoints = new int[path.size()];
-					int[] yPoints = new int[path.size()];
-					for (int i : new Range(path.size()))
-					{
-						xPoints[i] = (int) path.get(i).x;
-						yPoints[i] = (int) path.get(i).y;
-					}
-					g.drawPolyline(xPoints, yPoints, xPoints.length);
-				}
-
-				// Draw path1.
-				{
-					List<Point> path = noisyEdges.path1.get(edge.index);
-					int[] xPoints = new int[path.size()];
-					int[] yPoints = new int[path.size()];
-					for (int i : new Range(path.size()))
-					{
-						xPoints[i] = (int) path.get(i).x;
-						yPoints[i] = (int) path.get(i).y;
-					}
-					g.drawPolyline(xPoints, yPoints, xPoints.length);
-				}
-
+				drawEdge(g, edge);
 			}
+		}
+
+	}
+	
+	public void drawEdge(Graphics2D g, Edge edge)
+	{
+		if (noisyEdges.path0.get(edge.index) == null
+				|| noisyEdges.path1.get(edge.index) == null)
+		{
+			// It's at the edge of the map, where we don't have
+			// the noisy edges computed. 
+			return;
+		}
+
+		// Draw path0.
+		{
+			List<Point> path = noisyEdges.path0.get(edge.index);
+			int[] xPoints = new int[path.size()];
+			int[] yPoints = new int[path.size()];
+			for (int i : new Range(path.size()))
+			{
+				xPoints[i] = (int) path.get(i).x;
+				yPoints[i] = (int) path.get(i).y;
+			}
+			g.drawPolyline(xPoints, yPoints, xPoints.length);
+		}
+
+		// Draw path1.
+		{
+			List<Point> path = noisyEdges.path1.get(edge.index);
+			int[] xPoints = new int[path.size()];
+			int[] yPoints = new int[path.size()];
+			for (int i : new Range(path.size()))
+			{
+				xPoints[i] = (int) path.get(i).x;
+				yPoints[i] = (int) path.get(i).y;
+			}
+			g.drawPolyline(xPoints, yPoints, xPoints.length);
 		}
 
 	}
@@ -561,67 +768,90 @@ public abstract class VoronoiGraph {
      * @param colorChooser Decides the color for each polygons. If it returns null, then the
      * polygons will not be drawn.
      */
-    protected void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser) 
+    public void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser)
     {    	
+    	renderPolygons(g, centers, colorChooser);
+    }
+    
+    protected void renderPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
+    {
     	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
-    	for (Center c : centers)
+    	for (Center c : centersToRender)
     	{
-    		if (c.border)
+    		if (c.isBorder)
     		{
 				Color color = colorChooser.apply(c);
 				if (color != null)
 				{
 					g.setColor(color);
-					drawUsingTriangles(g, c);
+					drawUsingTriangles(g, c, false);
 				}
     		}
     	}
     	
     	// Draw noisy edges.
-		for (final Center p : centers)
-		{
-			for (final Center r : p.neighbors)
+		for (final Center c : centersToRender)
+		{			
+			for (final Center r : c.neighbors)
 			{
-				Edge edge = lookupEdgeFromCenter(p, r);
+				Edge edge = lookupEdgeFromCenter(c, r);
 
-				Color color = colorChooser.apply(p);
+				Color color = colorChooser.apply(c);
 				if (color != null)
 				{
 					g.setColor(color);
-
-					if (noisyEdges.path0.get(edge.index) == null || noisyEdges.path1.get(edge.index) == null)
+					if (noisyEdges == null || noisyEdges.path0.get(edge.index) == null || noisyEdges.path1.get(edge.index) == null)
 					{
-						// It's at the edge of the map, where we don't have
-						// the noisy edges computed. These are already drawn using triangles previously in this method.
-						continue;
+						// This can happen if noisy edges haven't been created yet or if the polygon is on the border.
+						drawPieceWithoutNoisyEdges(g, edge, c);
 					}
-
-					// Draw path0.
+					else
 					{
-						List<Point> path = noisyEdges.path0.get(edge.index);
-						java.awt.Polygon shape = new java.awt.Polygon();
-						shape.addPoint((int) p.loc.x, (int) p.loc.y);
-						for (Point point : path)
-						{
-							shape.addPoint((int) point.x, (int) point.y);
-						}
-						g.fillPolygon(shape);
-					}
-
-					// Draw path1.
-					{
-						List<Point> path = noisyEdges.path1.get(edge.index);
-						java.awt.Polygon shape = new java.awt.Polygon();
-						shape.addPoint((int) p.loc.x, (int) p.loc.y);
-						for (Point point : path)
-						{
-							shape.addPoint((int) point.x, (int) point.y);
-						}
-						g.fillPolygon(shape);
+						dawPieceUsingNoisyEdges(g, edge, c);
 					}
 				}
 			}
 		}
+    }
+    
+    private void drawPieceWithoutNoisyEdges(Graphics2D g, Edge edge, Center c)
+    {
+		java.awt.Polygon shape = new java.awt.Polygon();
+    	shape.addPoint((int) c.loc.x, (int) c.loc.y);
+    	if (edge.v0 != null)
+    		shape.addPoint((int)edge.v0.loc.x, (int)edge.v0.loc.y);
+    	if (edge.v1 != null)
+    		shape.addPoint((int)edge.v1.loc.x, (int)edge.v1.loc.y);
+    	g.fill(shape);
+		return;
+    }
+    
+    private void dawPieceUsingNoisyEdges(Graphics2D g, Edge edge, Center c)
+    {
+		// Draw path0.
+		{
+			List<Point> path = noisyEdges.path0.get(edge.index);
+			java.awt.Polygon shape = new java.awt.Polygon();
+			shape.addPoint((int) c.loc.x, (int) c.loc.y);
+			for (Point point : path)
+			{
+				shape.addPoint((int) point.x, (int) point.y);
+			}
+			g.fillPolygon(shape);
+		}
+
+		// Draw path1.
+		{
+			List<Point> path = noisyEdges.path1.get(edge.index);
+			java.awt.Polygon shape = new java.awt.Polygon();
+			shape.addPoint((int) c.loc.x, (int) c.loc.y);
+			for (Point point : path)
+			{
+				shape.addPoint((int) point.x, (int) point.y);
+			}
+			g.fillPolygon(shape);
+		}
+
     }
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi
@@ -764,38 +994,6 @@ public abstract class VoronoiGraph {
     final double startAngle;
     final double dipAngle;
     final double dipWidth;
-
-    //only the radial implementation of amitp's map generation
-    //TODOO implement more island shapes
-    private boolean isWater(Point p) {
-        p = new Point(2 * (p.x / bounds.width - 0.5), 2 * (p.y / bounds.height - 0.5));
-
-        double angle = Math.atan2(p.y, p.x);
-        double length = 0.5 * (Math.max(Math.abs(p.x), Math.abs(p.y)) + p.length());
-
-        double r1 = 0.5 + 0.40 * Math.sin(startAngle + bumps * angle + Math.cos((bumps + 3) * angle));
-        double r2 = 0.7 - 0.20 * Math.sin(startAngle + bumps * angle - Math.sin((bumps + 2) * angle));
-        if (Math.abs(angle - dipAngle) < dipWidth
-                || Math.abs(angle - dipAngle + 2 * Math.PI) < dipWidth
-                || Math.abs(angle - dipAngle - 2 * Math.PI) < dipWidth) {
-            r1 = r2 = 0.2;
-        }
-        return !(length < r1 || (length > r1 * ISLAND_FACTOR && length < r2));
-
-        //return false;
-
-        /*if (noise == null) {
-         noise = new Perlin2d(.125, 8, MyRandom.seed).createArray(257, 257);
-         }
-         int x = (int) ((p.x + 1) * 128);
-         int y = (int) ((p.y + 1) * 128);
-         return noise[x][y] < .3 + .3 * p.l2();*/
-
-        /*boolean eye1 = new Point(p.x - 0.2, p.y / 2 + 0.2).length() < 0.05;
-         boolean eye2 = new Point(p.x + 0.2, p.y / 2 + 0.2).length() < 0.05;
-         boolean body = p.length() < 0.8 - 0.18 * Math.sin(5 * Math.atan2(p.y, p.x));
-         return !(body && !eye1 && !eye2);*/
-    }
 
     protected abstract void assignOceanCoastAndLand();
     

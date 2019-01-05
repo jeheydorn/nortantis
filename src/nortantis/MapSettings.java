@@ -12,14 +12,21 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import hoten.geom.Point;
-import util.Function0;
-import util.Helper;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.EdgeEdit;
+import nortantis.editor.MapEdits;
+import nortantis.editor.RegionEdit;
+import nortantis.util.AssetsPath;
+import nortantis.util.Function0;
+import nortantis.util.Helper;
 
 /**
  * For parsing and storing map settings.
@@ -33,61 +40,65 @@ public class MapSettings implements Serializable
 	/**
 	 *  A scalar multiplied by the map height and width to get the final resolution.
 	 */
-	double resolution;
-	int landBlur;
-	int oceanEffects;
-	boolean addWavesToOcean;
-	int worldSize;
-	Color riverColor;
-	Color landBlurColor;
-	Color oceanEffectsColor;
-	Color coastlineColor;
-	double centerLandToWaterProbability;
-	double edgeLandToWaterProbability;
-	boolean frayedBorder;
-	Color frayedBorderColor;
-	int frayedBorderBlurLevel;
+	public double resolution;
+	public int landBlur;
+	public int oceanEffects;
+	public boolean addWavesToOcean;
+	public int worldSize;
+	public Color riverColor;
+	public Color landBlurColor;
+	public Color oceanEffectsColor;
+	public Color coastlineColor;
+	public double centerLandToWaterProbability;
+	public double edgeLandToWaterProbability;
+	public boolean frayedBorder;
+	public Color frayedBorderColor;
+	public int frayedBorderBlurLevel;
 	public int grungeWidth;
 	
 	/**
 	 * This settings actually mans fractal generated as opposed to generated from texture.
 	 */
-	boolean generateBackground;
-	boolean generateBackgroundFromTexture;
-	boolean transparentBackground; 
-	boolean colorizeOcean; // For backgrounds generated from a texture.
-	boolean colorizeLand; // For backgrounds generated from a texture.
-	String backgroundTextureImage;
-	long backgroundRandomSeed;
-	Color oceanColor;
-	Color landColor;
-	int generatedWidth;
-	int generatedHeight;
-	float fractalPower;
-	String landBackgroundImage;
-	String oceanBackgroundImage;
-	int hueRange;
-	int saturationRange;
-	int brightnessRange;
+	public boolean generateBackground;
+	public boolean generateBackgroundFromTexture;
+	public boolean transparentBackground; 
+	public boolean colorizeOcean; // For backgrounds generated from a texture.
+	public boolean colorizeLand; // For backgrounds generated from a texture.
+	public String backgroundTextureImage;
+	public long backgroundRandomSeed;
+	public Color oceanColor;
+	public Color landColor;
+	public int generatedWidth;
+	public int generatedHeight;
+	public float fractalPower;
+	public String landBackgroundImage;
+	public String oceanBackgroundImage;
+	public int hueRange;
+	public int saturationRange;
 	
-	boolean drawText;
-	long textRandomSeed;
-	Set<String> books;
-	Font titleFont;
-	Font regionFont;
-	Font mountainRangeFont;
-	Font otherMountainsFont;
-	Font riverFont;
-	Color boldBackgroundColor;
-	Color textColor;
-	MapEdits edits;
-	boolean drawBoldBackground;
-	boolean drawRegionColors;
-	long regionsRandomSeed;
-	boolean drawBorder;
-	String borderType;
-	int borderWidth;
-	int frayedBorderSize;
+	public int brightnessRange;
+	public boolean drawText;
+	public boolean alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean; // Not saved
+	public long textRandomSeed;
+	public Set<String> books;
+	public Font titleFont;
+	public Font regionFont;
+	public Font mountainRangeFont;
+	public Font otherMountainsFont;
+	public Font riverFont;
+	public Color boldBackgroundColor;
+	public Color textColor;
+	public MapEdits edits;
+	public boolean drawBoldBackground;
+	public boolean drawRegionColors;
+	public long regionsRandomSeed;
+	public boolean drawBorder;
+	public String borderType;
+	public int borderWidth;
+	public int frayedBorderSize;
+	public boolean drawIcons = true;
+	public boolean drawRivers = true; // Not saved
+	public double cityProbability;
 	
 	public MapSettings()
 	{
@@ -113,6 +124,7 @@ public class MapSettings implements Serializable
 		result.setProperty("frayedBorderColor", colorToString(frayedBorderColor));
 		result.setProperty("frayedBorderBlurLevel", frayedBorderBlurLevel + "");
 		result.setProperty("grungeWidth", grungeWidth + "");
+		result.setProperty("cityProbability", cityProbability + "");
 
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
@@ -154,19 +166,20 @@ public class MapSettings implements Serializable
 		result.setProperty("borderType", borderType);
 		result.setProperty("borderWidth", borderWidth + "");
 		result.setProperty("frayedBorderSize", frayedBorderSize + "");
+		result.setProperty("drawIcons", drawIcons + "");
 		
 		// User edits.
-		result.setProperty("editedText", editedTextToString());
+		result.setProperty("editedText", editedTextToJson());
+		result.setProperty("centerEdits", centerEditsToJson());
+		result.setProperty("regionEdits", regionEditsToJson());
+		result.setProperty("edgeEdits", edgeEditsToJson());
+		result.setProperty("hasIconEdits", edits.hasIconEdits + "");
 		
 		return result;
 	}
 	
-	/**
-	 * Stores editedText as a '\n' delimited list of pairs, each delimited by ',';
-	 * @return
-	 */
 	@SuppressWarnings("unchecked")
-	private String editedTextToString()
+	private String editedTextToJson()
 	{
 		JSONArray list = new JSONArray();
 		for (MapText text : edits.text)
@@ -181,9 +194,73 @@ public class MapSettings implements Serializable
 		}
 		String json = list.toJSONString();
 		return json;
-
 	}
 	
+	
+	@SuppressWarnings("unchecked")
+	private String centerEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (CenterEdit centerEdit : edits.centerEdits)
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("isWater", centerEdit.isWater);
+			mpObj.put("regionId", centerEdit.regionId);
+			if (centerEdit.icon != null)
+			{
+				JSONObject iconObj = new JSONObject();
+				iconObj.put("iconGroupId", centerEdit.icon.iconGroupId);
+				iconObj.put("iconIndex", centerEdit.icon.iconIndex);
+				iconObj.put("iconName", centerEdit.icon.iconName);
+				iconObj.put("iconType", centerEdit.icon.iconType.toString());
+				mpObj.put("icon", iconObj);
+			}
+			if (centerEdit.trees != null)
+			{
+				JSONObject treesObj = new JSONObject();
+				treesObj.put("treeType", centerEdit.trees.treeType);
+				treesObj.put("density", centerEdit.trees.density);
+				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
+				mpObj.put("trees", treesObj);
+			}
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String regionEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (RegionEdit regionEdit : edits.regionEdits.values())
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("color", colorToString(regionEdit.color));
+			mpObj.put("regionId", regionEdit.regionId);
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String edgeEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (EdgeEdit eEdit : edits.edgeEdits)
+		{
+			JSONObject mpObj = new JSONObject();	
+			mpObj.put("riverLevel", eEdit.riverLevel);
+			mpObj.put("index", eEdit.index);
+			list.add(mpObj);
+		}
+		String json = list.toJSONString();
+		return json;
+	}
+	
+	
+		
 	private String colorToString(Color c)
 	{
 		return c.getRed() + "," + c.getGreen() + "," + c.getBlue();
@@ -320,6 +397,15 @@ public class MapSettings implements Serializable
 				return str == null ? 0 : (int)(Integer.parseInt(str));
 			}
 		});
+		cityProbability = getProperty("cityProbability", new Function0<Double>()
+		{
+			public Double apply()
+			{
+				String str = props.getProperty("cityProbability");
+				return str == null ? 0.0 : (double)(Double.parseDouble(str));
+			}
+		});
+		
 		
 		// Background image stuff.
 		generateBackground = getProperty("generateBackground", new Function0<Boolean>()
@@ -383,7 +469,7 @@ public class MapSettings implements Serializable
 			{
 				String result = props.getProperty("backgroundTextureImage");
 				if (result == null)
-					result = Paths.get("./assets/example textures").toString();
+					result = Paths.get(AssetsPath.get(), "example textures").toString();
 				return result;
 			}
 		});
@@ -474,6 +560,14 @@ public class MapSettings implements Serializable
 		{
 			String str = props.getProperty("brightnessRange");
 			return str == null ? 25 : Integer.parseInt(str); // default value
+		});
+		drawIcons = getProperty("drawIcons", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String str = props.getProperty("drawIcons");
+				return str == null ? true : parseBoolean(str);
+			}
 		});
 		
 	
@@ -615,17 +709,17 @@ public class MapSettings implements Serializable
 		edits = new MapEdits();
 		// hiddenTextIds is a comma seperated list.
 				
-		edits.text = getProperty("editedText", new Function0<List<MapText>>()
+		edits.text = getProperty("editedText", new Function0<CopyOnWriteArrayList<MapText>>()
 		{
 	
 			@Override
-			public List<MapText> apply()
+			public CopyOnWriteArrayList<MapText> apply()
 			{
 				String str = props.getProperty("editedText");
 				if (str == null || str.isEmpty())
-					return new ArrayList<>();
+					return new CopyOnWriteArrayList<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				List<MapText> result = new ArrayList<>();
+				CopyOnWriteArrayList<MapText> result = new CopyOnWriteArrayList<>();
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
@@ -636,9 +730,112 @@ public class MapSettings implements Serializable
 					MapText mp = new MapText(text, location, angle, type);
 					result.add(mp);
 				}
+				
 				return result;
 			}
-	
+		});
+		
+		edits.centerEdits = getProperty("centerEdits", new Function0<List<CenterEdit>>()
+		{
+			public List<CenterEdit> apply()
+			{
+				String str = props.getProperty("centerEdits");
+				if (str == null || str.isEmpty())
+					return new ArrayList<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				List<CenterEdit> result = new ArrayList<>();
+				int index = 0;
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					boolean isWater = (boolean) jsonObj.get("isWater");
+					Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
+					
+					CenterIcon icon = null;
+					{
+						JSONObject iconObj = (JSONObject)jsonObj.get("icon");
+						if (iconObj != null)
+						{
+							String iconGroupId = (String)iconObj.get("iconGroupId");
+							int iconIndex = (int)(long)iconObj.get("iconIndex");
+							String iconName = (String)iconObj.get("iconName");
+							CenterIconType iconType = CenterIconType.valueOf((String)iconObj.get("iconType")); 
+							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+							icon.iconName = iconName;
+						}
+					}
+					
+					CenterTrees trees = null;
+					{
+						JSONObject treesObj = (JSONObject)jsonObj.get("trees");
+						if (treesObj != null)
+						{
+							String treeType = (String)treesObj.get("treeType");
+							double density = (Double)treesObj.get("density");
+							long randomSeed = (Long)treesObj.get("randomSeed");
+							trees = new CenterTrees(treeType, density, randomSeed);
+						}
+					}
+					
+					result.add(new CenterEdit(index, isWater, regionId, icon, trees));
+					index++;
+				}
+				
+				return result;
+			}
+		});
+
+		edits.regionEdits = getProperty("regionEdits", new Function0<ConcurrentHashMap<Integer, RegionEdit>>()
+		{
+			public ConcurrentHashMap<Integer, RegionEdit> apply()
+			{
+				String str = props.getProperty("regionEdits");
+				if (str == null || str.isEmpty())
+					return new ConcurrentHashMap<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				ConcurrentHashMap<Integer, RegionEdit> result = new ConcurrentHashMap<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					Color color = parseColor((String)jsonObj.get("color"));
+					int regionId = (int)(long)jsonObj.get("regionId");
+					result.put(regionId, new RegionEdit(regionId, color));
+				}
+				
+				return result;
+			}
+		});
+		
+		edits.edgeEdits = getProperty("edgeEdits", new Function0<List<EdgeEdit>>()
+		{
+			public List<EdgeEdit> apply()
+			{
+				String str = props.getProperty("edgeEdits");
+				if (str == null || str.isEmpty())
+					return new ArrayList<>();
+				JSONArray array = (JSONArray) JSONValue.parse(str);
+				List<EdgeEdit> result = new ArrayList<>();
+				for (Object obj : array)
+				{
+					JSONObject jsonObj = (JSONObject) obj;
+					int riverLevel = (int)(long)jsonObj.get("riverLevel");
+					int index = (int)(long)jsonObj.get("index");
+					result.add(new EdgeEdit(index, riverLevel));
+				}
+				
+				return result;
+			}
+		});
+		
+		edits.hasIconEdits = getProperty("hasIconEdits", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String value = props.getProperty("hasIconEdits");
+				if (value == null)
+					return false; // default value
+				return  parseBoolean(value);
+			}
 		});
 	}
 	

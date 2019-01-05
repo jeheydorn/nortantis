@@ -11,7 +11,7 @@ import javax.imageio.ImageIO;
 
 import org.jtransforms.fft.FloatFFT_2D;
 
-import util.ImageHelper;
+import nortantis.util.ImageHelper;
 
 public class FractalBGGenerator
 {
@@ -20,7 +20,7 @@ public class FractalBGGenerator
 	 * under "Frequency Synthesis of Landscapes (and clouds)". The results look the same as
 	 * Gimp's plasma clouds.
 	 * @param p The power in the fractal exponent. This controls how smooth the result is.
-	 * @param constrast The constrast of the resulting image. 1 means full. Less than one will
+	 * @param constrast The contrast of the resulting image. 1 means full. Less than one will
 	 * scale the pixel values in the result about the central value.
 	 * @throws IOException 
 	 */
@@ -87,8 +87,7 @@ public class FractalBGGenerator
 		
 		ImageHelper.setContrast(data, 0.5f - contrast/2f, 0.5f + contrast/2f);
 				
-		BufferedImage result = ImageHelper.arrayToImage(data, 0, height,
-				0, width);
+		BufferedImage result = ImageHelper.arrayToImage(data, 0, height, 0, width, BufferedImage.TYPE_BYTE_GRAY);
 		return result;
 
 	}

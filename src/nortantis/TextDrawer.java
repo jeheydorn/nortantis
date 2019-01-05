@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -30,12 +32,14 @@ import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
-import util.Function0;
-import util.ImageHelper;
-import util.Pair;
-import util.ProbabilityHelper;
-import util.Range;
-import util.Tuple2;
+import nortantis.util.AssetsPath;
+import nortantis.util.Function0;
+import nortantis.util.Helper;
+import nortantis.util.ImageHelper;
+import nortantis.util.Pair;
+import nortantis.util.ProbabilityHelper;
+import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 public class TextDrawer
 {
@@ -51,11 +55,13 @@ public class TextDrawer
 	private final int largeRiverWidth = 4;
 	// This is how far away from a river it's name will be drawn.
 	private final double riverNameRiseHeight = -32;
+	private final double cityYNameOffset = 24;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 	
 	private BufferedImage landAndOceanBackground;
-	private List<MapText> mapTexts;
+	private CopyOnWriteArrayList<MapText> mapTexts;
+	private List<Area> cityAreas;
 	Random r;
 	long originalSeed;
 	private NameGenerator placeNameGenerator;
@@ -66,7 +72,7 @@ public class TextDrawer
 	private Font titleFontScaled;
 	private Font regionFontScaled;
 	private Font mountainRangeFontScaled;
-	private Font otherMountainsFontScaled;
+	private Font citiesAndOtherMountainsFontScaled;
 	private Font riverFontScaled;
 	Set<String> namesGenerated;
 	
@@ -80,7 +86,7 @@ public class TextDrawer
 	{
 		this.settings = settings;
 		this.sizeMultiplyer = sizeMultiplyer;
-		mapTexts = new ArrayList<>();
+		mapTexts = new CopyOnWriteArrayList<>();
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.
 		this.r = new Random(settings.textRandomSeed);
@@ -93,10 +99,10 @@ public class TextDrawer
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : settings.books)
 		{
-			placeNames = readNameList("assets/books/" + book + "_place_names.txt");
-			personNames = readNameList("assets/books/" + book + "_person_names.txt");
-			nounAdjectivePairs.addAll(readStringPairs("assets/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs("assets/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames = readNameList(AssetsPath.get() + "/books/" + book + "_place_names.txt");
+			personNames = readNameList(AssetsPath.get() + "/books/" + book + "_person_names.txt");
+			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 				
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage);
@@ -110,16 +116,11 @@ public class TextDrawer
 				(int)(settings.regionFont.getSize() * sizeMultiplyer));
 		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
 				(int)(settings.mountainRangeFont.getSize() * sizeMultiplyer));
-		otherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
+		citiesAndOtherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
 				(int)(settings.otherMountainsFont.getSize() * sizeMultiplyer));
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
 				(int)(settings.riverFont.getSize() * sizeMultiplyer));
 
-		
-//		out.println("noun adjective pairs: ");
-//		Helper.printMultiLine(nounAdjectivePairs);
-//		out.println("noun verb pairs: ");
-//		Helper.printMultiLine(nounVerbPairs);
 	}
 	
 	private List<Pair<String>> readStringPairs(String filename)
@@ -180,9 +181,10 @@ public class TextDrawer
 	}
 	
 	public void drawText(GraphImpl graph, BufferedImage map, BufferedImage landAndOceanBackground,
-			List<Set<Center>> mountainRanges)
+			List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{				
 		this.landAndOceanBackground = landAndOceanBackground;
+		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());;
 
 		if (settings.edits.text.size() > 0)
 		{
@@ -191,12 +193,16 @@ public class TextDrawer
 		}
 		else
 		{
-			generateText(map, graph, mountainRanges);
+			if (mountainRanges == null)
+			{
+				throw new IllegalStateException("mountainRanges must be given when generating text.");
+			}
+			generateText(map, graph, mountainRanges, cityDrawTasks);
 		}
 		
 	}
 	
-	private void generateText(BufferedImage map, GraphImpl graph, List<Set<Center>> mountainRanges)
+	private void generateText(BufferedImage map, GraphImpl graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{
 		// All text drawn must be done so in order from highest to lowest priority because if I try to draw
 		// text on top of other text, the latter will not be displayed.
@@ -207,6 +213,15 @@ public class TextDrawer
 		g.setColor(settings.textColor);
 		
 		addTitle(map, graph, g);
+		
+		g.setFont(citiesAndOtherMountainsFontScaled);
+		for (IconDrawTask city : cityDrawTasks)
+		{
+			Set<Point> cityLoc = new HashSet<>(1);
+			cityLoc.add(city.centerLoc);
+			drawNameRotated(map, g, generateNameOfType(TextType.City, null, true), 
+					cityLoc, city.scaledHeight/2 + cityYNameOffset * settings.resolution, true, TextType.City);
+		}
 		
 		g.setFont(regionFontScaled);
 		for (Region region : graph.regions)
@@ -224,7 +239,7 @@ public class TextDrawer
 			drawNameHorizontal(map, g, name, locations, graph, settings.drawBoldBackground,
 					true, TextType.Region);
 		}
-		
+				
 		for (Set<Center> mountainRange : mountainRanges)
 		{
 			if (mountainRange.size() >= mountainRangeMinSize)
@@ -235,7 +250,7 @@ public class TextDrawer
 			}
 			else
 			{
-				g.setFont(otherMountainsFontScaled);
+				g.setFont(citiesAndOtherMountainsFontScaled);
 				if (mountainRange.size() >= 2)
 				{
 					if (mountainRange.size() == 2)
@@ -280,6 +295,7 @@ public class TextDrawer
 			}
 			
 		}
+		
 		g.dispose();
 	}
 	
@@ -307,12 +323,17 @@ public class TextDrawer
 				drawNameHorizontal(map, g, extractLocationsFromCenters(plate.centers), 
 						graph, settings.drawBoldBackground, false, text);
 			}
+			else if (text.type == TextType.City)
+			{
+				g.setFont(citiesAndOtherMountainsFontScaled);
+				drawNameRotated(map, g, 0, false, text);	
+			}
 			else if (text.type == TextType.Region)
 			{
 				g.setFont(regionFontScaled);
-				Center center = graph.getCenterAt(textLocation.x, textLocation.y);
+				Center center = graph.findClosestCenter(textLocation.x, textLocation.y);
 				Set<Center> plateCenters;
-				if (center.ocean)
+				if (center.isWater)
 				{
 					plateCenters = findPlateCentersWaterOnly(graph, center.tectonicPlate);
 				}
@@ -330,7 +351,7 @@ public class TextDrawer
 			}
 			else if (text.type == TextType.Other_mountains)
 			{
-				g.setFont(otherMountainsFontScaled);
+				g.setFont(citiesAndOtherMountainsFontScaled);
 				drawNameRotated(map, g, 0, false, text);				
 			}
 			else if (text.type == TextType.River)
@@ -424,7 +445,7 @@ public class TextDrawer
 				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
 						new Tuple2<>(0.2, "Kingdom of %s"),
 						new Tuple2<>(0.04, "Empire of %s")));
-				return generatePersonName(format, requireUnique);	
+				return generatePersonName(format, requireUnique);
 			}
 			else
 			{
@@ -470,6 +491,30 @@ public class TextDrawer
 				{
 					return generatePlaceName(format, requireUnique);
 				}
+			}
+		}
+		else if (type.equals(TextType.City))
+		{
+			double probabilityOfPersonName = 0.5;
+			if (r.nextDouble() < probabilityOfPersonName)
+			{
+				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
+						new Tuple2<>(0.1, "City of %s"),
+						new Tuple2<>(0.04, "%s's Town"),
+						new Tuple2<>(0.04, "Keep of %s"),
+						new Tuple2<>(0.04, "Fortress of %s"),
+						new Tuple2<>(0.04, "%s's Fortress"),
+						new Tuple2<>(0.04, "%s's Keep")));
+				return generatePersonName(format, requireUnique);	
+			}
+			else
+			{
+				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
+						new Tuple2<>(0.2, "City of %s"),
+						new Tuple2<>(0.2, "%s City"),
+						new Tuple2<>(0.02, "%s Town"),
+						new Tuple2<>(0.3, "%s")));
+				return generatePlaceName(format, requireUnique);
 			}
 		}
 		else if (type.equals(TextType.River))
@@ -948,6 +993,29 @@ public class TextDrawer
 			mapTexts.add(text);
 			return true;
 		}
+		if (locations.size() > 0)
+		{
+			// Try random locations to try to find a place to fit the text.
+			Point[] locationsArray = locations.toArray(new Point[locations.size()]);
+			for (@SuppressWarnings("unused") int i : new Range(30))
+			{
+				// Select a few random locations and choose the one closest to the centroid.
+				List<Point> samples = new ArrayList<>(3);
+				for (@SuppressWarnings("unused") int sampleNumber : new Range(5))
+				{
+					samples.add(locationsArray[r.nextInt(locationsArray.length)]);
+				}
+				
+				Point loc = Helper.maxItem(samples, (point1, point2) -> -Double.compare(point1.distanceTo(centroid), point2.distanceTo(centroid)));
+
+				text = createMapText(name, loc, 0.0, textType);
+				if (drawNameHorizontal(map, g, locations, graph, boldBackground, enableBoundsChecking, text))
+				{
+					mapTexts.add(text);
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 	
@@ -969,10 +1037,10 @@ public class TextDrawer
 		String[] parts = text.value.split(" ");
 		
 		if (parts.length > 1 && (
-			   !locations.contains(graph.getCenterAt((int)textLocation.x - width/2, (int)textLocation.y - height/2).loc)
-			|| !locations.contains(graph.getCenterAt((int)textLocation.x - width/2, (int)textLocation.y + height/2).loc)
-			|| !locations.contains(graph.getCenterAt((int)textLocation.x + width/2, (int)textLocation.y - height/2).loc)
-			|| !locations.contains(graph.getCenterAt((int)textLocation.x + width/2, (int)textLocation.y + height/2).loc)))
+			   !locations.contains(graph.findClosestCenter((int)textLocation.x - width/2, (int)textLocation.y - height/2).loc)
+			|| !locations.contains(graph.findClosestCenter((int)textLocation.x - width/2, (int)textLocation.y + height/2).loc)
+			|| !locations.contains(graph.findClosestCenter((int)textLocation.x + width/2, (int)textLocation.y - height/2).loc)
+			|| !locations.contains(graph.findClosestCenter((int)textLocation.x + width/2, (int)textLocation.y + height/2).loc)))
 		{		
 			// One or more of the corners doesn't fit in the region. Draw it on 2 lines.
 			int start = text.value.length()/2;
@@ -1001,7 +1069,7 @@ public class TextDrawer
 			java.awt.Rectangle bounds1 = new java.awt.Rectangle((int)ulCorner1.x, 
 					(int)ulCorner1.y, metrics.stringWidth(nameLine1), metrics.getHeight());
 			Area area1 = new Area(bounds1);
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area1))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area1))
 			{
 				return false;
 			}
@@ -1009,7 +1077,7 @@ public class TextDrawer
 			java.awt.Rectangle bounds2 = new java.awt.Rectangle((int)ulCorner2.x, 
 					(int)ulCorner2.y, metrics.stringWidth(nameLine2), metrics.getHeight());
 			Area area2 = new Area(bounds2);
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area2))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area2))
 			{
 				return false;
 			}
@@ -1030,7 +1098,7 @@ public class TextDrawer
 					(int)textLocation.y - height/2, metrics.stringWidth(text.value), height);
 			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 			Area area = new Area(bounds);
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area))
 			{
 				return false;
 			}
@@ -1045,6 +1113,13 @@ public class TextDrawer
 					boundsLocation.y + metrics.getAscent()), boldBackground);
 		}
 		return true;
+	}
+	
+	public static java.awt.Point getTextBounds(String text, Font font)
+	{
+		FontMetrics metrics = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(font);
+		return new java.awt.Point(metrics.stringWidth(text), 
+				metrics.getHeight());
 	}
 
 	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, 
@@ -1133,7 +1208,7 @@ public class TextDrawer
 				(int)(pivot.y - height/2), width, height);
 		Area area = new Area(bounds);
 		area = area.createTransformedArea(g.getTransform());
-		if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area))
+		if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area))
 		{
 			// If there is a riseOffset, try negating it to put the name below the object instead of above.
 			offset = new Point(-riseOffset * Math.sin(text.angle), riseOffset * Math.cos(text.angle));
@@ -1146,7 +1221,7 @@ public class TextDrawer
 			g.rotate(text.angle, pivot.x, pivot.y);
 			area = new Area(bounds);
 			area = area.createTransformedArea(g.getTransform());
-			if (enableBoundsChecking && overlapsExistingTextOrIsOffMap(area))
+			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area))
 			{
 				// Give up.
 				//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
@@ -1176,7 +1251,7 @@ public class TextDrawer
 		Set<Center> plateCenters = new HashSet<Center>();
 		for (Center c : plate.centers)
 		{
-			if (c.water)
+			if (c.isWater)
 				plateCenters.add(c);
 		}
 		return plateCenters;
@@ -1196,7 +1271,7 @@ public class TextDrawer
 		return centroid;
 	}
 	
-	private boolean overlapsExistingTextOrIsOffMap(Area bounds)
+	private boolean overlapsExistingTextOrCityOrIsOffMap(Area bounds)
 	{
 		for (MapText mp : mapTexts)
 		{
@@ -1212,6 +1287,15 @@ public class TextDrawer
 				}
 			}
 		}
+		
+		for (Area a : cityAreas)
+		{
+			Area aCopy = new Area(a);
+			aCopy.intersect(bounds);
+			if (!aCopy.isEmpty())
+				return true;
+		}
+		
 		return !graphBounds.contains(bounds.getBounds2D());
 	}
 	
@@ -1266,12 +1350,8 @@ public class TextDrawer
 		return mapText;
 	}
 	
-	public List<MapText> getMapTexts()
-	{
-		return mapTexts;
-	}
 
-	public void setMapTexts(List<MapText> text)
+	public void setMapTexts(CopyOnWriteArrayList<MapText> text)
 	{
 		this.mapTexts = text;
 	}

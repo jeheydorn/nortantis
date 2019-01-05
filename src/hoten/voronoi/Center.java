@@ -1,10 +1,15 @@
 package hoten.voronoi;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import hoten.geom.Point;
+import nortantis.Biome;
+import nortantis.GraphImpl;
+import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
+import nortantis.TreeType;
 
 /**
  * Center.java
@@ -16,15 +21,17 @@ public class Center
 
     public int index;
     public Point loc;
-    public ArrayList<Corner> corners = new ArrayList<>();//good
-    public ArrayList<Center> neighbors = new ArrayList<>();//good
+    public ArrayList<Corner> corners = new ArrayList<>();
+    public ArrayList<Center> neighbors = new ArrayList<>();
     public ArrayList<Edge> borders = new ArrayList<>();
-    public boolean border, ocean, water, coast;
-    public boolean mountain;
-    public boolean hill;
+    public boolean isBorder, isWater, isCoast;
+    public boolean isMountain;
+    public boolean isHill;
+    public boolean isCity;
+    public boolean isSandDunes;
     public double elevation;
     public double moisture;
-	public Enum<?> biome;
+	public Biome biome;
     public double area;
     public TectonicPlate tectonicPlate;
     public Region region;
@@ -32,12 +39,15 @@ public class Center
     public int neighborsNotInSamePlateCount;
     public Integer mountainRangeId;
     
+	public long treeSeed;
+    
     public Center() {
     }
 
     public Center(Point loc) {
         this.loc = loc;
     }
+    
     
     public double findWidth()
     {
@@ -82,5 +92,22 @@ public class Center
 				neighborsNotInSamePlateCount++;
 		}
 	}
-    
+	
+	public boolean isRiver()
+	{
+		for (Edge edge : borders)
+		{
+			if (edge.river >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public Set<TreeType> getTreeTypes()
+	{
+		return IconDrawer.getTreeTypesForBiome(biome);
+	}
+
 }
