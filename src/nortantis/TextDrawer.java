@@ -55,7 +55,7 @@ public class TextDrawer
 	private final int largeRiverWidth = 4;
 	// This is how far away from a river it's name will be drawn.
 	private final double riverNameRiseHeight = -32;
-	private final double cityYNameOffset = 24;
+	private final double cityYNameOffset = 18;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 	
@@ -215,12 +215,15 @@ public class TextDrawer
 		addTitle(map, graph, g);
 		
 		g.setFont(citiesAndOtherMountainsFontScaled);
+		// Get the height of the city/mountain font.
+		FontMetrics metrics = g.getFontMetrics(g.getFont());
+		int cityMountainFontHeight = metrics.getHeight();
 		for (IconDrawTask city : cityDrawTasks)
 		{
 			Set<Point> cityLoc = new HashSet<>(1);
 			cityLoc.add(city.centerLoc);
-			drawNameRotated(map, g, generateNameOfType(TextType.City, null, true), 
-					cityLoc, city.scaledHeight/2 + cityYNameOffset * settings.resolution, true, TextType.City);
+			String cityName = generateNameOfType(TextType.City, null, true);
+			drawNameRotated(map, g, cityName, cityLoc, city.scaledHeight/2 + (cityYNameOffset + cityMountainFontHeight/2.0) * settings.resolution, true, TextType.City);
 		}
 		
 		g.setFont(regionFontScaled);
