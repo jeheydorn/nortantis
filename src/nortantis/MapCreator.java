@@ -433,7 +433,6 @@ public class MapCreator
 
 		Logger.println("Done creating map.");
 		
-		//ScaledIconCache.clear(); TODO do this only if an icon from file changed
 		System.gc();
 		return map;
 	}
@@ -490,15 +489,6 @@ public class MapCreator
 		// Setup region colors even if settings.drawRegionColors = false because edits need them in case someone edits a map without region colors, then later enables region colors.
 		assignRandomRegionColors(graph, settings);
 		
-		return graph;
-	}
-	
-	public static GraphImpl createGraphFromSettings(MapSettings settings)
-	{   
-		Random r = new Random(settings.randomSeed);
-        DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
-		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
-		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
 		return graph;
 	}
 	
