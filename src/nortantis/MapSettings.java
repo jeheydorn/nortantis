@@ -36,7 +36,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	long randomSeed;
+	public long randomSeed;
 	/**
 	 *  A scalar multiplied by the map height and width to get the final resolution.
 	 */

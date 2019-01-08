@@ -1058,7 +1058,7 @@ public class MapCreator
         DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
 		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
 		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
-		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed), sizeMultiplyer);
+		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 
 //	public static void main(String[] args) throws IOException

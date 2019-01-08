@@ -33,14 +33,14 @@ public class BackgroundGenerator
 	 * separately similar to what Bruno Galerne do, except I use histogram matching to get the color levels right.
 	 * @param targetRows Number of rows in the result.
 	 * @param targetCols Number of columns in the result.
-	 * @param allowScalingSmaller If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
+	 * @param allowScalingTextureLarger If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols, boolean allowScalingTheTextureLarger)
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols, boolean allowScalingTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
-		if (allowScalingTheTextureLarger)
+		if (allowScalingTextureLarger)
 		{
 			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
 		}
@@ -214,7 +214,7 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("/home/joseph/Downloads/wisconsin sky.jpg"), 1024, 1024, false);
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("C:\\Users\\Joseph\\Dropbox\\Joseph\\Games\\SailGame\\textures\\seeds\\grass3.jpg"), 1024, 1024, false);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);

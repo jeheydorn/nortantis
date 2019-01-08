@@ -57,7 +57,7 @@ public class GraphCreator
         return graph;
     }
     
-    public static BufferedImage createHeightMap(GraphImpl graph, Random rand, double sizeMultiplyer)
+    public static BufferedImage createHeightMap(GraphImpl graph, Random rand)
     {
 		double startTime = System.currentTimeMillis();
 		
@@ -76,7 +76,7 @@ public class GraphCreator
         {
         	mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);
         }
-        mountains = ImageHelper.scaleByWidth(mountains, (int)(mountains.getWidth() * sizeMultiplyer * 0.25f));
+        mountains = ImageHelper.scaleByWidth(mountains, (int)(mountains.getWidth() * MapCreator.calcSizeMultiplyer(graph.getWidth()) * 0.25f));
         BufferedImage mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(), false);
         //ImageHelper.write(mountainTexture, "mountainTexture.png");
         subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);

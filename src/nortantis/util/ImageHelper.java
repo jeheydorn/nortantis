@@ -1466,6 +1466,10 @@ public class ImageHelper
 	
 	public static BufferedImage blur(BufferedImage image, int blurLevel)
 	{
+		if (blurLevel == 0)
+		{
+			return image;
+		}
 		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false);
 	}
 	

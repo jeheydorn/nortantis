@@ -48,8 +48,8 @@ import nortantis.util.Tuple3;
 
 public class IconDrawer 
 {
-	final double mountainElevationThreshold = 0.58;
-	final double hillElevationThreshold = 0.53;
+	public static final double mountainElevationThreshold = 0.58;
+	public static final double hillElevationThreshold = 0.53;
 	final double treeScale = 4.0/8.0;
 	public final static String mountainsName = "mountains";
 	public final static String hillsName = "hills";
