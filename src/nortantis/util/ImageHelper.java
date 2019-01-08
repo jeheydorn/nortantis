@@ -1447,20 +1447,32 @@ public class ImageHelper
 		
 		return result;
 	}
-
+	
 	public static BufferedImage flipOnXAxis(BufferedImage image)
 	{
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
-		Graphics2D g2 = result.createGraphics();
-		g2.drawImage(image, image.getWidth(), 0, -image.getHeight(), image.getHeight(), null);
+		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			for (int x = 0; x < image.getWidth(); x++)
+			{		
+				result.setRGB(image.getWidth() - x - 1, y, image.getRGB(x, y));					
+			}
+		}
+		
 		return result;
 	}
-
+	
 	public static BufferedImage flipOnYAxis(BufferedImage image)
 	{
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
-		Graphics2D g2 = result.createGraphics();
-		g2.drawImage(image, 0, image.getHeight(), image.getWidth(), -image.getHeight(), null);
+		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+		for (int y = 0; y < image.getHeight(); y++)
+		{
+			for (int x = 0; x < image.getWidth(); x++)
+			{		
+				result.setRGB(x, image.getHeight() - y - 1, image.getRGB(x, y));					
+			}
+		}
+		
 		return result;
 	}
 	
