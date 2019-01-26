@@ -557,7 +557,7 @@ public class RunSwing
 		scaleSlider.setMinorTickSpacing(25);
 		scaleSlider.setMinimum(25);
 		scaleSlider.setMaximum(calcMaximumResolution());
-		scaleSlider.setMajorTickSpacing(100);
+		scaleSlider.setMajorTickSpacing(25);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 			for (int i = scaleSlider.getMinimum(); i < scaleSlider.getMaximum() + 1;  i += scaleSlider.getMajorTickSpacing())
@@ -718,7 +718,7 @@ public class RunSwing
 		
 		JLabel lblBackgroundImage = new JLabel("Background image:");
 		lblBackgroundImage.setToolTipText("Select whether to generate a new background image or use images from files.");
-		lblBackgroundImage.setBounds(12, 97, 156, 15);
+		lblBackgroundImage.setBounds(12, 100, 156, 15);
 		backgroundPanel.add(lblBackgroundImage);
 		
 		oceanDisplayPanel = new BGColorPreviewPanel();
@@ -784,17 +784,17 @@ public class RunSwing
 		};
 		
 		rdbtnFractal = new JRadioButton("Fractal noise");
-		rdbtnFractal.setBounds(165, 95, 185, 23);
+		rdbtnFractal.setBounds(165, 98, 185, 23);
 		rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnFractal);
 
 		rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
-		rdbtnGeneratedFromTexture.setBounds(165, 117, 211, 23);
+		rdbtnGeneratedFromTexture.setBounds(165, 120, 211, 23);
 		rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnGeneratedFromTexture);
 
 		rdbtnFromFiles = new JRadioButton("From files");
-		rdbtnFromFiles.setBounds(165, 139, 211, 23);
+		rdbtnFromFiles.setBounds(165, 142, 211, 23);
 		rdbtnFromFiles.addActionListener(backgroundImageButtonGroupListener);
 		backgroundPanel.add(rdbtnFromFiles);
 		
