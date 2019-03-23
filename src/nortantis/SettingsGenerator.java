@@ -63,7 +63,8 @@ public class SettingsGenerator
 			settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
 		}
 		
-		settings.cityProbability = rand.nextDouble() / 100.0;
+		settings.cityProbability = 0.0; //settings.cityProbability = rand.nextDouble() / 100.0; TODO put this back once I have city icons worth looking at.
+		
 				
 		return settings;
 	}
