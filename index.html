@@ -41,7 +41,7 @@
 
 <h3>Download and Run</h3>
 <h4> Prerequisites</h4>
-<p> To run Nortantis you must have Java 8 or later installed. If you don't already have it installed, you can find it <a href="https://java.com/en/download/">here</a>. </p>
+<p> To run Nortantis you must have Java 8 or later installed. If you don't already have it installed, you can find it <a href="https://java.com/en/download/manual.jsp">here</a>. Make sure to choose 64-bit if you have a 64-bit computer (almost all computers are). With 32-bit Java you can't generate high resolution maps because it can't allocate enough memory.</p>
 
 <p> Your computer must have at least 3 GB of RAM memory. </p>
 <h4>Download</h4>
@@ -53,7 +53,7 @@
 	<li>Linux - unzip the downloaded file, open it, and run run.bash</p>
 </ul>
 <p>Generating a map requires some intense computing, so it can take up to a minute depending on the speed of your computer and the size of the map you generate.</p>
-<p>If you want to generate maps at higher resolutions than the default, you must first modify run.bat (or run.bash for Linux) to increase the amount of memory Nortantis can use. Find -Xmx1G and change the 1 to the number of gigabytes to use. For example, to use 8 GBs it should be -Xmx8G. When Nortantis opens it checks the amount of RAM allocated and adjusts the maximum on the "Resolution" slider in the "Background" tab to the maximum size of map you can generate with that amount of RAM.
+<p>If you want to generate maps at higher resolutions than the default, you must first modify run.bat (or run.bash for Linux) to increase the amount of memory Nortantis can use. Find the line that starts with java, then after the word java enter -Xmx8G. The 8 is the number of gigabytes to use. You can change it to whatever limit you want. When done, that line should look like: <br><br> java -Xmx8G -jar nortantis_map_generator.jar<br><br> When Nortantis opens it checks the amount of RAM allocated and adjusts the maximum on the Resolution slider in the Background tab to the maximum size of map you can generate with that amount of RAM.
 
 <h2>Examples<h2>
 
