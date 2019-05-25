@@ -53,14 +53,18 @@ public class SettingsGenerator
 		
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSize) / worldSizePrecision) + minWorldSize / worldSizePrecision) * worldSizePrecision;
 		
-		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
-		if (!borderTypes.isEmpty())
+		final double drawBorderProbability = 0.25;
+		settings.drawBorder = rand.nextDouble() > drawBorderProbability;
+		if (settings.drawBorder)
 		{
-			// Random border type.
-			settings.drawBorder = true;
-			int index = rand.nextInt() % borderTypes.size();
-			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
-			settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
+			Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
+			if (!borderTypes.isEmpty())
+			{
+				// Random border type.
+				int index = rand.nextInt() % borderTypes.size();
+				settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
+				settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
+			}
 		}
 		
 		settings.cityProbability = 0.0; //settings.cityProbability = rand.nextDouble() / 100.0; TODO put this back once I have city icons worth looking at.
