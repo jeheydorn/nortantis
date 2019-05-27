@@ -57,25 +57,21 @@ public class SettingsGenerator
 		
 		final double drawBorderProbability = 0.25;
 		settings.drawBorder = rand.nextDouble() > drawBorderProbability;
-		if (settings.drawBorder)
+		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
+		if (!borderTypes.isEmpty())
 		{
-			Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
-			if (!borderTypes.isEmpty())
+			// Random border type.
+			int index = Math.abs(rand.nextInt()) % borderTypes.size();
+			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
+			if (settings.borderType.equals("dashes"))
 			{
-				// Random border type.
-				int index = Math.abs(rand.nextInt()) % borderTypes.size();
-				settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
-				if (settings.borderType.equals("dashes"))
-				{
-					settings.frayedBorder = false;
-					settings.borderWidth = Math.abs(rand.nextInt()) % 50 + 25;
-				}
-				else
-				{
-					settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
-				}
+				settings.frayedBorder = false;
+				settings.borderWidth = Math.abs(rand.nextInt()) % 50 + 25;
 			}
-			
+			else
+			{
+				settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
+			}
 		}
 		
 		settings.cityProbability = 0.0; //settings.cityProbability = rand.nextDouble() / 100.0; TODO put this back once I have city icons worth looking at.
