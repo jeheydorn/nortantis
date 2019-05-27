@@ -1450,7 +1450,7 @@ public class ImageHelper
 	
 	public static BufferedImage flipOnXAxis(BufferedImage image)
 	{
-		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
@@ -1464,12 +1464,12 @@ public class ImageHelper
 	
 	public static BufferedImage flipOnYAxis(BufferedImage image)
 	{
-		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{		
-				result.setRGB(x, image.getHeight() - y - 1, image.getRGB(x, y));					
+				result.setRGB(x, image.getHeight() - y - 1, image.getRGB(x, y));		
 			}
 		}
 		
