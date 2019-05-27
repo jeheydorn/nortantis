@@ -2196,6 +2196,7 @@ public class RunSwing
 		chckbxDrawBoldBackground.doClick();
 		
 		// Borders
+		borderTypeComboBox.removeAllItems();
 		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
 		for (String borderType : borderTypes)
 		{
