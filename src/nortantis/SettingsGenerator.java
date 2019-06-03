@@ -1,12 +1,18 @@
 package nortantis;
 
 import java.awt.Color;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import nortantis.util.AssetsPath;
+import nortantis.util.ProbabilityHelper;
 
 /**
  * For randomly generating settings with which to generate a map.
@@ -44,16 +50,23 @@ public class SettingsGenerator
 		
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		Color oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
+		settings.addWavesToOcean = rand.nextDouble() > 0.5;
+		settings.oceanEffects = 10 + Math.abs(rand.nextInt(40));
+		settings.landBlur = 10 + Math.abs(rand.nextInt(40));
 		
-		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, 
-				saturationRange, brightnessRange);
+		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		
-		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, 
-				saturationRange, brightnessRange);
+		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
+		
+		settings.landBlurColor = settings.landColor;
+		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
+		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
 		
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSize) / worldSizePrecision) + minWorldSize / worldSizePrecision) * worldSizePrecision;
 		
 		settings.frayedBorder = rand.nextDouble() > 0.5;
+		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
+		settings.frayedBorderSize = 100 + Math.abs(rand.nextInt(4900));
 		
 		final double drawBorderProbability = 0.25;
 		settings.drawBorder = rand.nextDouble() > drawBorderProbability;
@@ -76,6 +89,37 @@ public class SettingsGenerator
 		
 		settings.cityProbability = 0.0; //settings.cityProbability = rand.nextDouble() / 100.0; TODO put this back once I have city icons worth looking at.
 		
+		settings.drawRegionColors = rand.nextDouble() > 0.25;
+		
+		if (rand.nextDouble() > 0.5)
+		{
+			settings.generateBackground = true;
+			settings.generateBackgroundFromTexture = false;
+		}
+		else
+		{
+			settings.generateBackground = false;
+			settings.generateBackgroundFromTexture = true;
+			
+			Path exampleTexturesPath = Paths.get(AssetsPath.get(), "example textures");
+			List<Path> textureFiles;
+			try
+			{
+				textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
+			}
+			catch(IOException ex)
+			{
+				throw new RuntimeException("The example textures folder does not exist.", ex);
+			}
+			
+			if (textureFiles.size() > 0)
+			{
+				settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toString();
+			}
+		}
+		
+		settings.drawBoldBackground = rand.nextDouble() > 0.5;
+		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange, brightnessRange);
 				
 		return settings;
 	}

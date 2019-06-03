@@ -179,6 +179,7 @@ public class RunSwing
 	private JSlider cityProbabilitySlider;
 	public final double cityFrequencySliderScale = 100.0 * 1.0/SettingsGenerator.maxCityProbabillity;
 	private JLabel cityProbabilityLabel;
+	private JButton btnChooseLandBlurColor;
 
 	
 	public static boolean isRunning()
@@ -841,10 +842,6 @@ public class RunSwing
 		backgroundPanel.add(textureImageFilename);
 		
 		btnsBrowseTextureImage = new JButton("Browse");
-		btnsBrowseTextureImage.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-			}
-		});
 		btnsBrowseTextureImage.setBounds(302, 294, 87, 25);
 		btnsBrowseTextureImage.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
@@ -892,6 +889,16 @@ public class RunSwing
 				brightnessSlider.setEnabled(drawRegionsCheckBox.isSelected());
 				regionsSeedTextField.setEnabled(drawRegionsCheckBox.isSelected());
 				newRegionSeedButton.setEnabled(drawRegionsCheckBox.isSelected());
+				btnChooseLandBlurColor.setEnabled(!drawRegionsCheckBox.isSelected());
+				final String message ="Land blur color selection is disabled because it will use the region color when draw regions is checked.";
+				if (drawRegionsCheckBox.isSelected())
+				{
+					addToTooltip(btnChooseLandBlurColor, message);
+				}
+				else
+				{
+					removeFromToolTip(btnChooseLandBlurColor, message);
+				}
 			}
 		});
 		regionsPanel.add(drawRegionsCheckBox);
@@ -1018,14 +1025,14 @@ public class RunSwing
 		landBlurColorDisplay.setBounds(631, 79, 82, 23);
 		effectsPanel.add(landBlurColorDisplay);
 		
-		JButton button = new JButton("Choose");
-		button.addActionListener(new ActionListener() {
+		btnChooseLandBlurColor = new JButton("Choose");
+		btnChooseLandBlurColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 		        showColorPicker(effectsPanel, landBlurColorDisplay, "Land blur color");
 			}
 		});
-		button.setBounds(725, 79, 87, 25);
-		effectsPanel.add(button);
+		btnChooseLandBlurColor.setBounds(725, 79, 87, 25);
+		effectsPanel.add(btnChooseLandBlurColor);
 		
 		JLabel label_5 = new JLabel("Ocean effects color:");
 		label_5.setBounds(461, 120, 152, 23);

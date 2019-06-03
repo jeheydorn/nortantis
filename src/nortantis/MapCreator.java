@@ -224,9 +224,17 @@ public class MapCreator
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-					Color[] colors = graph.regions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
-							(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale)))
-							.toArray(size -> new Color[size]);
+					Color[] colors;
+					if (graph.regions.size() > 0)
+					{
+						colors = graph.regions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
+								(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale)))
+								.toArray(size -> new Color[size]);
+					}
+					else
+					{
+						colors = new Color[] {settings.landColor};
+					}
 					map = ImageHelper.maskWithMultipleColors(map, colors, background.regionIndexes, landBlur, true);
 				}
 				else

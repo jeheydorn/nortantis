@@ -45,6 +45,38 @@ public class ProbabilityHelper
 		return distribution.get(distribution.size() - 1).getSecond();
 	}
 	
+	/**
+	 * Samples a uniform distribution over the given items
+	 */
+	public static <T> T sampleUniform(Random rand, List<T> items)
+	{
+		if (items.size() == 0)
+		{
+			throw new IllegalArgumentException("The distribution must have at least one value");
+		}
+		
+		if (items.size() == 1)
+		{
+			return items.get(0);
+		}
+		
+		double sample = rand.nextDouble();
+		double itemWeight = 1.0 / items.size();
+		double curWeight = 0;
+		for (T item : items)
+		{
+			curWeight += itemWeight;
+			if (curWeight >= sample)
+			{
+				return item;
+			}
+		}
+		
+		// This shouldn't actually happen.
+		assert false;
+		return items.get(0);
+	}
+	
 	@SuppressWarnings("rawtypes")
 	public static List<Tuple2<Double, Enum>> createUniformDistributionOverEnumValues(Enum[] values)
 	{

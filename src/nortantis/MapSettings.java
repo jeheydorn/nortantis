@@ -59,7 +59,7 @@ public class MapSettings implements Serializable
 	/**
 	 * This settings actually mans fractal generated as opposed to generated from texture.
 	 */
-	public boolean generateBackground;
+	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with generateBackgroundFromTexture.
 	public boolean generateBackgroundFromTexture;
 	public boolean transparentBackground; 
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
