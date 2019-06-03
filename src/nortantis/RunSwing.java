@@ -1471,7 +1471,7 @@ public class RunSwing
 		JMenu fileMenu = new JMenu("File");
 		menuBar.add(fileMenu);
 		
-		final JMenuItem mntmNew = new JMenuItem("New");
+		final JMenuItem mntmNew = new JMenuItem("New Random Settings");
 		fileMenu.add(mntmNew);
 		mntmNew.addActionListener(new ActionListener()
 		{
