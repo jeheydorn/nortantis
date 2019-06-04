@@ -215,7 +215,7 @@ public abstract class EditorTool
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 	    {
 	        @Override
-	        public BufferedImage doInBackground() 
+	        public BufferedImage doInBackground() throws IOException 
 	        {	
 	        	drawLock.lock();
 				try
@@ -233,17 +233,10 @@ public abstract class EditorTool
 					
 					return map;
 				} 
-				catch (Exception e)
-				{
-					e.printStackTrace();
-			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				} 
 				finally
 				{
 					drawLock.unlock();
 				}
-	        	
-	        	return null;
 	        }
 	        
 	        @Override
@@ -258,17 +251,18 @@ public abstract class EditorTool
 	            {
 	                throw new RuntimeException(ex);
 	            }
-	            catch (ExecutionException ex)
+	            catch (Exception ex)
 	            {
-	            	Throwable cause = ex.getCause();
-	            	cause.printStackTrace();
-	            	if (cause instanceof OutOfMemoryError)
+	            	if (isCausedByOutOfMemoryError(ex))
 	            	{
-	            		JOptionPane.showMessageDialog(null, "Out of memory. Try allocating more memory to the Java heap space.", "Error", JOptionPane.ERROR_MESSAGE);
+	            		String outOfMemoryMessage =  "Out of memory. Try lowering the zoom or allocating more memory to the Java heap space.";
+	            		JOptionPane.showMessageDialog(null, outOfMemoryMessage, "Error", JOptionPane.ERROR_MESSAGE);
+	            		ex.printStackTrace();
 	            	}
 	            	else
 	            	{
-	            		JOptionPane.showMessageDialog(null, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+	            		JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+	            		ex.printStackTrace();
 	            	}
 	            }
 	            
@@ -311,10 +305,32 @@ public abstract class EditorTool
 		            mapEditingPanel.revalidate();   
 		            isMapVisible = true;
 	            }
+	            else
+	            {
+	            	parent.enableOrDisableToolToggleButtonsAndZoom(true);
+	            	mapEditingPanel.clearProcessingCenters();
+	         		mapEditingPanel.clearProcessingEdges();
+	         		mapIsBeingDrawn = false;
+	            }
 	        }
 	 
 	    };
 	    worker.execute();
+	}
+	
+	private boolean isCausedByOutOfMemoryError(Throwable ex)
+	{
+		if (ex == null)
+		{
+			return false;
+		}
+		
+		if (ex instanceof OutOfMemoryError)
+		{
+			return true;
+		}
+		
+		return isCausedByOutOfMemoryError(ex.getCause());
 	}
 	
 	protected BufferedImage drawMapQuickUpdate()

@@ -50,7 +50,15 @@ public class SettingsGenerator
 		int brightnessRange = 25;
 		
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
-		Color oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
+		Color oceanColor;
+		if (landColor == settings.landColor)
+		{
+			oceanColor = settings.oceanColor;
+		}
+		else
+		{
+			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
+		}
 		settings.addWavesToOcean = rand.nextDouble() > 0.5;
 		settings.oceanEffects = 10 + Math.abs(rand.nextInt(40));
 		settings.landBlur = 10 + Math.abs(rand.nextInt(40));
