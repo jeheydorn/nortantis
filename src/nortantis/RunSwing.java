@@ -762,9 +762,10 @@ public class RunSwing
 		backgroundPanel.add(landDisplayPanel);
 		
 		dimensionsComboBox = new JComboBox<>();
-		dimensionsComboBox.addItem("4096 x 4096 (square)");
-		dimensionsComboBox.addItem("4096 x 2304 (16 by 9)");
-		dimensionsComboBox.addItem("4096 x 2531 (golden ratio)");
+		for (String dimension : getAllowedDimmensions())
+		{
+			dimensionsComboBox.addItem(dimension);
+		}
 		dimensionsComboBox.setBounds(131, 233, 258, 28);
 		dimensionsComboBox.addActionListener(new ActionListener()
 		{	
@@ -1767,7 +1768,7 @@ public class RunSwing
 		return parseGenerateBackgroundDimensionsFromDropdown(selected);
 	}
 	
-	private Dimension parseGenerateBackgroundDimensionsFromDropdown(String selected)
+	public static Dimension parseGenerateBackgroundDimensionsFromDropdown(String selected)
 	{
 		selected = selected.substring(0, selected.indexOf("("));
 		String[] parts = selected.split("x");
@@ -2432,6 +2433,14 @@ public class RunSwing
 			return;
 		}
 		component.setToolTipText(currentToolTop.replace(message, ""));
-
+	}
+	
+	public static List<String> getAllowedDimmensions()
+	{
+		List<String> result = new ArrayList<>();
+		result.add("4096 x 4096 (square)");
+		result.add("4096 x 2304 (16 by 9)");
+		result.add("4096 x 2531 (golden ratio)");
+		return result;
 	}
 }

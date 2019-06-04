@@ -1,6 +1,7 @@
 package nortantis;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -149,6 +150,10 @@ public class SettingsGenerator
 		
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
+		
+		Dimension dimension = RunSwing.parseGenerateBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, RunSwing.getAllowedDimmensions()));
+		settings.generatedWidth = dimension.width;
+		settings.generatedHeight = dimension.height;
 				
 		return settings;
 	}
