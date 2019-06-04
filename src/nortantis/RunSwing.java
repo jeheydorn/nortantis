@@ -1001,15 +1001,15 @@ public class RunSwing
 		effectsPanel.add(oceanEffectsSlider);
 		
 		JLabel lblOceanEffectType = new JLabel("Ocean effect type:");
-		lblOceanEffectType.setBounds(12, 171, 134, 15);
+		lblOceanEffectType.setBounds(12, 176, 122, 15);
 		effectsPanel.add(lblOceanEffectType);
 		
 		wavesRadioButton = new JRadioButton("Waves");
-		wavesRadioButton.setBounds(148, 167, 185, 23);
+		wavesRadioButton.setBounds(148, 172, 185, 23);
 		effectsPanel.add(wavesRadioButton);
 		
 		blurRadioButton = new JRadioButton("Blur");
-		blurRadioButton.setBounds(148, 189, 185, 23);
+		blurRadioButton.setBounds(148, 195, 185, 35);
 		effectsPanel.add(blurRadioButton);
 		
 		ButtonGroup group = new ButtonGroup();

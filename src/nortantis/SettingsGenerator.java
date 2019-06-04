@@ -60,6 +60,15 @@ public class SettingsGenerator
 		
 		double landBlurColorScale = 0.5;
 		settings.landBlurColor = new Color((int)(settings.landColor.getRed() * landBlurColorScale), (int)(settings.landColor.getGreen() * landBlurColorScale), (int)(settings.landColor.getBlue() * landBlurColorScale));
+		if (settings.addWavesToOcean)
+		{
+			settings.oceanEffectsColor = Color.black;
+		}
+		else
+		{
+			double oceanEffectsColorScale = 0.3;
+			settings.oceanEffectsColor = new Color((int)(settings.oceanColor.getRed() * oceanEffectsColorScale), (int)(settings.oceanColor.getGreen() * oceanEffectsColorScale), (int)(settings.oceanColor.getBlue() * oceanEffectsColorScale));
+		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
 		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
 		
@@ -67,7 +76,9 @@ public class SettingsGenerator
 		
 		settings.frayedBorder = rand.nextDouble() > 0.5;
 		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		settings.frayedBorderSize = 100 + Math.abs(rand.nextInt(4900));
+		settings.frayedBorderSize = 100 + Math.abs(rand.nextInt(20000));
+		
+		settings.grungeWidth = 100 + rand.nextInt(1400);
 		
 		final double drawBorderProbability = 0.25;
 		settings.drawBorder = rand.nextDouble() > drawBorderProbability;
@@ -80,11 +91,11 @@ public class SettingsGenerator
 			if (settings.borderType.equals("dashes"))
 			{
 				settings.frayedBorder = false;
-				settings.borderWidth = Math.abs(rand.nextInt()) % 50 + 25;
+				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
 			}
 			else
 			{
-				settings.borderWidth = Math.abs(rand.nextInt()) % 200 + 100;
+				settings.borderWidth = Math.abs(rand.nextInt(200)) + 100;
 			}
 		}
 		
@@ -121,6 +132,23 @@ public class SettingsGenerator
 		
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;
 		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange, brightnessRange);
+		
+		// This threshold prevents large maps from having land on the edge, because such maps should be the entire world/continent.
+		int noOceanOnEdgeThreshold = 15000;
+		if (settings.worldSize < noOceanOnEdgeThreshold)
+		{
+			settings.edgeLandToWaterProbability = settings.worldSize / (double) noOceanOnEdgeThreshold;
+			// Make the edge and center land water probability add up to 1 so there is usually both land and ocean.
+			settings.centerLandToWaterProbability = 1.0 - settings.edgeLandToWaterProbability;
+		}
+		else
+		{
+			settings.centerLandToWaterProbability = 0.5 + rand.nextDouble() * 0.5;
+			settings.edgeLandToWaterProbability = 0;
+		}
+		
+		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
+		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 				
 		return settings;
 	}
