@@ -8,6 +8,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -28,6 +29,8 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 
 import hoten.voronoi.Center;
+import hoten.voronoi.Edge;
+import hoten.voronoi.VoronoiGraph;
 import nortantis.ImageCache;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
@@ -36,6 +39,7 @@ import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextDrawer;
 import nortantis.util.Helper;
+import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 
 public abstract class EditorTool
@@ -46,7 +50,7 @@ public abstract class EditorTool
 	protected MapSettings settings;
 	private JPanel toolOptionsPanel;
 	protected MapParts mapParts;
-	protected EditorDialog parent;
+	protected EditorFrame parent;
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
 	private boolean mapNeedsRedraw;
@@ -59,7 +63,7 @@ public abstract class EditorTool
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	protected boolean isMapVisible;
 	
-	public EditorTool(MapSettings settings, EditorDialog parent)
+	public EditorTool(MapSettings settings, EditorFrame parent)
 	{
 		this.settings = settings;
 		this.parent = parent;
@@ -106,7 +110,7 @@ public abstract class EditorTool
 	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		int borderWidth = EditorDialog.borderWidthBetweenComponents;
+		int borderWidth = EditorFrame.borderWidthBetweenComponents;
 		panel.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
 		label.setPreferredSize(new Dimension(labelWidth, labelHeight));
 		
@@ -460,5 +464,53 @@ public abstract class EditorTool
 			}
 		}
 		return selected;
+	}
+	
+	public void clearEntireMap()
+	{
+		if (mapParts == null || mapParts.graph == null)
+		{
+			return;
+		}
+		
+		// Erase text
+		if (mapParts.textDrawer == null)
+		{
+			// The text tool has not been opened. Draw the text once so we can erase it.
+			mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplyer(mapParts.graph.getWidth()));	
+			// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
+	    	// This makes it so that any edits done to the settings will automatically be reflected
+	    	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
+	    	// map texts, which are needed to make them clickable to edit them.
+			mapParts.textDrawer.setMapTexts(settings.edits.text);
+			mapParts.textDrawer.drawText(mapParts.graph, ImageHelper.deepCopy(mapParts.landBackground), mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
+		}
+		for (MapText text : settings.edits.text)
+		{
+			text.value = "";
+		}
+		
+		for (Center center : mapParts.graph.centers)
+		{
+			// Change land to ocean
+			settings.edits.centerEdits.get(center.index).isWater = true;
+
+			// Erase icons
+			settings.edits.centerEdits.get(center.index).trees = null;
+			settings.edits.centerEdits.get(center.index).icon = null;
+			
+			// Erase rivers
+			for (Edge edge : center.borders)
+			{
+				EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
+				if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+				{
+					eEdit.riverLevel = 0;
+				}
+			}
+		}
+		
+		setUndoPoint();
+		createAndShowMap(false);
 	}
 }

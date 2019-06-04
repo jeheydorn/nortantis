@@ -55,7 +55,7 @@ public class TextTool extends EditorTool
 	private JPanel textFieldPanel;
 	
 
-	public TextTool(MapSettings settings, EditorDialog parent)
+	public TextTool(MapSettings settings, EditorFrame parent)
 	{
 		super(settings, parent);
 
@@ -166,7 +166,7 @@ public class TextTool extends EditorTool
 		}
 		
 		editTextField = new JTextFieldFixed();
-		int borderWidth = EditorDialog.borderWidthBetweenComponents;
+		int borderWidth = EditorFrame.borderWidthBetweenComponents;
 		editTextField.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
 		editTextField.setColumns(18);
 		textFieldPanel = new JPanel();
@@ -187,7 +187,7 @@ public class TextTool extends EditorTool
 		}
 		
 		// Prevent the panel from shrinking when components are hidden.
-		toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
+		toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorFrame.toolsPanelWidth - 25, 0)));
 		
 		toolOptionsPanel.add(Box.createVerticalGlue());
 		
@@ -440,7 +440,6 @@ public class TextTool extends EditorTool
 			if (moveButton.isSelected())
 			{
 				// The user dragged and dropped text.
-				
 				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/zoom)), 
 						(int)((e.getY() - mousePressedLocation.y) * (1.0/zoom)));
 				lastSelected.location = new hoten.geom.Point(lastSelected.location.x + translation.x,

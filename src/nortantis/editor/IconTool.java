@@ -76,7 +76,7 @@ public class IconTool extends EditorTool
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
 
-	public IconTool(MapSettings settings, EditorDialog parent)
+	public IconTool(MapSettings settings, EditorFrame parent)
 	{
 		super(settings, parent);
 		rand = new Random();
@@ -301,7 +301,7 @@ public class IconTool extends EditorTool
 	    		
 	    
 	    // Prevent the panel from shrinking when components are hidden.
-	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
+	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorFrame.toolsPanelWidth - 25, 0)));
 	    
 		mountainsButton.doClick();
 	    

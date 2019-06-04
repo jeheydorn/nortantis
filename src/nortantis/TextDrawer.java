@@ -317,6 +317,11 @@ public class TextDrawer
 		// Draw all text the user has (potentially) modified.
 		for (MapText text : settings.edits.text)
 		{
+			if (text.value == null || text.value.trim().length() == 0)
+			{
+				continue;
+			}
+			
 			Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 			
 			if (text.type == TextType.Title)
@@ -1197,6 +1202,12 @@ public class TextDrawer
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
 		int width = metrics.stringWidth(text.value);
 		int height = metrics.getHeight();
+		
+		if (width == 0 || height == 0)
+		{
+			// The text is too small to draw.
+			return false;
+		}
 		
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 

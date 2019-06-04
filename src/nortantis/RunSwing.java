@@ -66,7 +66,7 @@ import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 
-import nortantis.editor.EditorDialog;
+import nortantis.editor.EditorFrame;
 import nortantis.editor.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
@@ -78,7 +78,7 @@ import nortantis.util.Range;
 public class RunSwing
 {
 	private static JTextArea txtConsoleOutput;
-	private JFrame frame;
+	public JFrame frame;
 	private JTextField randomSeedTextField;
 	private JTextField oceanBackgroundImageFilename;
 	private JTextField landBackgroundImageFilename;
@@ -1614,15 +1614,10 @@ public class RunSwing
 			public void actionPerformed(ActionEvent arg0)
 			{
 				boolean hadEdits = !edits.isEmpty();
-		        Dialog dialog;
-		        dialog = new EditorDialog(getSettingsFromGUI(), runSwing);
-				dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
-				dialog.setVisible(true);
-		    	runSwing.updateFieldsWhenEditsChange();	
-				if (!hadEdits && !edits.isEmpty())
-				{
-					showMapChangesMessage();
-				}
+				frame.setEnabled(false);
+		        JFrame editorFrame;
+		        editorFrame = new EditorFrame(getSettingsFromGUI(), runSwing);
+				editorFrame.setVisible(true);
 			}			
 		});
 		editorMenu.add(launchEditorMenuItem);
@@ -1695,24 +1690,6 @@ public class RunSwing
 			panel.add(checkBox);
 			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.WARNING_MESSAGE);
 			UserPreferences.getInstance().hideAspectRatioWarning = checkBox.isSelected();
-		}
-	}
-	
-	private void showMapChangesMessage()
-	{
-		if (!UserPreferences.getInstance().hideMapChangesWarning)
-		{
-			JPanel panel = new JPanel();
-			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			panel.add(new JLabel("<html>Some fields in the generator are now disabled to ensure your map remains"
-					+ "<br>compatible with your edits. If a field is disabled for this reason, a message is added"
-					+ "<br>to the field's tool tip. If you wish to enable those fields, you can either clear your "
-					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
-			panel.add(Box.createVerticalStrut(18));
-			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-			panel.add(checkBox);
-			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
-			UserPreferences.getInstance().hideMapChangesWarning = checkBox.isSelected();
 		}
 	}
 	

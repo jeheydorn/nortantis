@@ -51,7 +51,7 @@ public class LandWaterTool extends EditorTool
 	private JPanel brushSizePanel;
 	private JPanel selectColorPanel;
 
-	public LandWaterTool(MapSettings settings, EditorDialog dialog)
+	public LandWaterTool(MapSettings settings, EditorFrame dialog)
 	{
 		super(settings, dialog);
 	}
@@ -198,7 +198,7 @@ public class LandWaterTool extends EditorTool
 	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
 	    
 	    // Prevent the panel from shrinking when components are hidden.
-	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorDialog.toolsPanelWidth - 25, 0)));
+	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorFrame.toolsPanelWidth - 25, 0)));
 
 		return toolOptionsPanel;
 	}
