@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -14,6 +15,7 @@ import java.util.stream.Collectors;
 
 import nortantis.util.AssetsPath;
 import nortantis.util.ProbabilityHelper;
+import nortantis.util.Range;
 
 /**
  * For randomly generating settings with which to generate a map.
@@ -162,6 +164,25 @@ public class SettingsGenerator
 		Dimension dimension = RunSwing.parseGenerateBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, RunSwing.getAllowedDimmensions()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
+		
+		settings.books.clear();
+		List<String> allBooks = RunSwing.getAllBooks();
+		if (allBooks.size() < 3)
+		{
+			settings.books.addAll(allBooks);
+		}
+		else if (allBooks.size() > 0)
+		{
+			int numBooks = 2 + Math.abs(rand.nextInt(allBooks.size() - 1));
+			List<String> booksRemaining = new ArrayList<>(allBooks);
+			for (@SuppressWarnings("unused") int ignored : new Range(numBooks))
+			{
+				int index = rand.nextInt(booksRemaining.size());
+				settings.books.add(booksRemaining.get(index));
+				booksRemaining.remove(index);
+			}
+		}
+		
 				
 		return settings;
 	}

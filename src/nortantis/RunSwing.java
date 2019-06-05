@@ -2217,7 +2217,7 @@ public class RunSwing
 		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
 	}
 	
-	private List<String> getAllBooks()
+	public static List<String> getAllBooks()
 	{
 		String[] filenames = new File(Paths.get(AssetsPath.get(), "books").toString()).list(new FilenameFilter()
 		{
