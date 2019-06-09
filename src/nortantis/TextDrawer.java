@@ -217,7 +217,7 @@ public class TextDrawer
 		g.setFont(citiesAndOtherMountainsFontScaled);
 		// Get the height of the city/mountain font.
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int cityMountainFontHeight = metrics.getHeight();
+		int cityMountainFontHeight = getFontHeight(metrics);
 		for (IconDrawTask city : cityDrawTasks)
 		{
 			Set<Point> cityLoc = new HashSet<>(1);
@@ -919,12 +919,12 @@ public class TextDrawer
 		}
 	}
 		
+	// TODO Remove this if I don't want it as an option, which I probably don't
 	/**
 	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground
 	 * to make it readable when the name is drawn on top of mountains or trees.
 	 */
-	private void drawBackgroundBlending(BufferedImage map, Graphics2D g, int width, int height,
-			Point upperLeftCorner, double angle)
+	private void drawBackgroundBlending(BufferedImage map, Graphics2D g, int width, int height, Point upperLeftCorner, double angle)
 	{		
 		int kernelSize = (int)(backGroundBlendKernelBaseSize * sizeMultiplyer);
 		int padding = kernelSize/2;
@@ -942,6 +942,40 @@ public class TextDrawer
 		
 		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, 
 				((int)upperLeftCorner.x) - padding, (int)(upperLeftCorner.y) - padding, angle);
+	}
+	
+	/**
+	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground
+	 * to make it readable when the name is drawn on top of mountains or trees.
+	 */
+	private void drawBackgroundBlendingForText(BufferedImage map, Graphics2D g, Point textStart, double angle, FontMetrics metrics, String text)
+	{		
+		int textWidth = metrics.stringWidth(text);
+		int textHeight = getFontHeight(metrics);
+		
+		// This magic number below is a result of trial and error to get the blur levels to look right.
+		int kernelSize = (int)((13.0 / 54.0) * textHeight);
+		if (kernelSize == 0)
+		{
+			return;
+		}
+		int padding = kernelSize/2;
+	
+		BufferedImage textBG = new BufferedImage(textWidth + padding*2, textHeight + padding*2, BufferedImage.TYPE_BYTE_GRAY);
+				
+		Graphics2D bG = textBG.createGraphics();
+		bG.setFont(g.getFont());
+		bG.setColor(Color.white);
+		bG.drawString(text, padding, padding + metrics.getAscent());
+		
+		// Use convolution to make a hazy background for the text.
+		BufferedImage haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize), true);
+		// Threshold it and convolve it again to make the haze bigger.
+		ImageHelper.threshold(haze, 1);
+		haze = ImageHelper.convolveGrayscale(haze, ImageHelper.createGaussianKernel(kernelSize), true);
+				
+		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, 
+				((int)textStart.x) - padding, (int)(textStart.y) - metrics.getAscent() - padding, angle);
 	}
 
 	private void drawNameHorizontalAtPoint(Graphics2D g, String name, Point location, boolean boldBackground)
@@ -1039,7 +1073,7 @@ public class TextDrawer
 	{	
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
 		int width = metrics.stringWidth(text.value);
-		int height = metrics.getHeight();
+		int height = getFontHeight(metrics);
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		String[] parts = text.value.split(" ");
@@ -1068,14 +1102,14 @@ public class TextDrawer
 			String nameLine1 = text.value.substring(0, pivot);
 			String nameLine2 = text.value.substring(pivot + 1);
 			Point ulCorner1 = new Point(textLocation.x - metrics.stringWidth(nameLine1)/2, 
-					textLocation.y - metrics.getHeight()/2);
+					textLocation.y - getFontHeight(metrics)/2);
 			Point ulCorner2 =  new Point(textLocation.x - metrics.stringWidth(nameLine2)/2,
-					textLocation.y + metrics.getHeight()/2);
+					textLocation.y + getFontHeight(metrics)/2);
 			
 			// Make sure we don't draw on top of existing text. Only draw the text if both lines can be drawn.
 			// Check line 1.
 			java.awt.Rectangle bounds1 = new java.awt.Rectangle((int)ulCorner1.x, 
-					(int)ulCorner1.y, metrics.stringWidth(nameLine1), metrics.getHeight());
+					(int)ulCorner1.y, metrics.stringWidth(nameLine1), getFontHeight(metrics));
 			Area area1 = new Area(bounds1);
 			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area1))
 			{
@@ -1083,7 +1117,7 @@ public class TextDrawer
 			}
 			// Check line 2.
 			java.awt.Rectangle bounds2 = new java.awt.Rectangle((int)ulCorner2.x, 
-					(int)ulCorner2.y, metrics.stringWidth(nameLine2), metrics.getHeight());
+					(int)ulCorner2.y, metrics.stringWidth(nameLine2), getFontHeight(metrics));
 			Area area2 = new Area(bounds2);
 			if (enableBoundsChecking && overlapsExistingTextOrCityOrIsOffMap(area2))
 			{
@@ -1091,13 +1125,15 @@ public class TextDrawer
 			}
 			text.areas = Arrays.asList(area1, area2);
 
-			drawBackgroundBlending(map, g, (int)bounds1.getWidth(), (int)bounds1.getHeight(), ulCorner1, 0);
-			drawNameHorizontalAtPoint(g, nameLine1, new Point(ulCorner1.x, 
-					ulCorner1.y + metrics.getAscent()), boldBackground);
+			Point textStartLine1 = new Point(ulCorner1.x, ulCorner1.y + metrics.getAscent());
+			//drawBackgroundBlending(map, g, (int)bounds1.getWidth(), (int)bounds1.getHeight(), ulCorner1, 0);
+			drawBackgroundBlendingForText(map, g, textStartLine1, 0, metrics, nameLine1);
+			drawNameHorizontalAtPoint(g, nameLine1, textStartLine1, boldBackground);
 			
-			drawBackgroundBlending(map, g, (int)bounds2.getWidth(), (int)bounds2.getHeight(), ulCorner2, 0);
-			drawNameHorizontalAtPoint(g, nameLine2, new Point(ulCorner2.x, 
-					ulCorner2.y + metrics.getAscent()), boldBackground);
+			Point textStartLine2 = new Point(ulCorner2.x, ulCorner2.y + metrics.getAscent());
+			//drawBackgroundBlending(map, g, (int)bounds2.getWidth(), (int)bounds2.getHeight(), ulCorner2, 0);
+			drawBackgroundBlendingForText(map, g, textStartLine2, 0, metrics, nameLine2);
+			drawNameHorizontalAtPoint(g, nameLine2, textStartLine2, boldBackground);
 		}
 		else
 		{	
@@ -1115,10 +1151,10 @@ public class TextDrawer
 			
 			Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
 			
-			drawBackgroundBlending(map, g, width, height, boundsLocation, 0);
-			
-			drawNameHorizontalAtPoint(g, text.value, new Point(boundsLocation.x, 
-					boundsLocation.y + metrics.getAscent()), boldBackground);
+			Point textStart = new Point(boundsLocation.x, boundsLocation.y + metrics.getAscent());
+			//drawBackgroundBlending(map, g, width, height, boundsLocation, 0);
+			drawBackgroundBlendingForText(map, g, textStart, 0, metrics, text.value);
+			drawNameHorizontalAtPoint(g, text.value, textStart, boldBackground);
 		}
 		return true;
 	}
@@ -1128,6 +1164,11 @@ public class TextDrawer
 		FontMetrics metrics = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(font);
 		return new java.awt.Point(metrics.stringWidth(text), 
 				metrics.getHeight());
+	}
+	
+	private static int getFontHeight(FontMetrics metrics)
+	{
+		return metrics.getAscent() + metrics.getDescent();
 	}
 
 	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, 
@@ -1201,7 +1242,7 @@ public class TextDrawer
 	{
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
 		int width = metrics.stringWidth(text.value);
-		int height = metrics.getHeight();
+		int height = getFontHeight(metrics);
 		
 		if (width == 0 || height == 0)
 		{
@@ -1247,14 +1288,12 @@ public class TextDrawer
 		// Update the text location with the offset.
 		text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
 		
-		Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
-		
-		drawBackgroundBlending(map, g, (int)bounds.getWidth(), (int)bounds.getHeight(), 
-				boundsLocation, text.angle);
+		Point textStart = new Point((int)(bounds.getLocation().x), (int)(bounds.getLocation().y + metrics.getAscent()));
+		drawBackgroundBlendingForText(map, g, textStart, text.angle, metrics, text.value);
 		
 		//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
 		
-		g.drawString(text.value, (int)(boundsLocation.x), (int)(boundsLocation.y + metrics.getAscent()));
+		g.drawString(text.value, (int) textStart.x, (int) textStart.y);
 		g.setTransform(orig);
 		
 		return true;

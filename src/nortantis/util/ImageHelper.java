@@ -1485,4 +1485,29 @@ public class ImageHelper
 		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false);
 	}
 	
+	public static void threshold(BufferedImage image, int threshold)
+	{
+		if (!isSupportedGrayscaleType(image))
+		{
+			throw new IllegalArgumentException("Unsupported image type for thresholding: " + bufferedImageTypeToString(image.getType()));
+		}
+		
+		int maxPixelValue = getMaxPixelValue(image);
+
+		WritableRaster out = image.getRaster();
+		for (int y = 0; y < image.getHeight(); y++)
+			for (int x = 0; x < image.getWidth(); x++)
+			{
+				double value = (int) out.getSample(x, y, 0);
+				if (value * maxPixelValue >= threshold)
+				{
+					out.setSample(x, y, 0, maxPixelValue);
+				}
+				else
+				{
+					out.setSample(x, y, 0, 0);
+				}
+			}
+	}
+	
 }
