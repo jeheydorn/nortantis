@@ -918,31 +918,6 @@ public class TextDrawer
 			return result;
 		}
 	}
-		
-	// TODO Remove this if I don't want it as an option, which I probably don't
-	/**
-	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground
-	 * to make it readable when the name is drawn on top of mountains or trees.
-	 */
-	private void drawBackgroundBlending(BufferedImage map, Graphics2D g, int width, int height, Point upperLeftCorner, double angle)
-	{		
-		int kernelSize = (int)(backGroundBlendKernelBaseSize * sizeMultiplyer);
-		int padding = kernelSize/2;
-		
-		BufferedImage textBG = new BufferedImage(width + padding*2, height + padding*2, 
-				BufferedImage.TYPE_BYTE_GRAY);
-				
-		Graphics2D bG = textBG.createGraphics();
-		bG.setFont(g.getFont());
-		bG.setColor(Color.white);
-		bG.fillRect(padding, padding, width, height);
-		
-		// Use convolution to make a hazy background for the text.
-		BufferedImage haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize), true);
-		
-		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, 
-				((int)upperLeftCorner.x) - padding, (int)(upperLeftCorner.y) - padding, angle);
-	}
 	
 	/**
 	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground
