@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -465,11 +466,7 @@ public abstract class EditorTool
 		{
 			for (int y = point.y - brushRadius; y < point.y + brushRadius; y++)
 			{
-				float deltaX = (float)(point.x - x);
-				float deltaXSquared = deltaX * deltaX;
-				float deltaY = (float)(point.y - y);
-				float deltaYSquared = deltaY * deltaY;
-				if (Math.sqrt(deltaXSquared + deltaYSquared) <= brushRadius)
+				if (isPointWithinCircle(x, y, point, brushRadius))
 				{
 					Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(x, y));
 					if (center != null)
@@ -479,7 +476,30 @@ public abstract class EditorTool
 				}
 			}
 		}
+		
+		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
+		ArrayDeque<Center> frontier = new ArrayDeque<>(selected);
+		while (!frontier.isEmpty())
+		{
+			Center c = frontier.pop();
+			for (Center n : c.neighbors)
+			{
+				// In theory I should be checking if any corner of the center is within the brush, but that won't make a big difference since this is only for handling tiny polygons.
+				if (!selected.contains((n)) && isPointWithinCircle(n.loc.x, n.loc.y, point, brushRadius))
+				{
+					selected.add(n);
+					frontier.push(n);
+				}
+			}
+		}
 		return selected;
+	}
+	
+	private boolean isPointWithinCircle(double x, double y, Point circleCenter, double radius)
+	{
+		double deltaX = x - circleCenter.x;
+		double deltaY = y - circleCenter.y;
+		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
 	
 	public void clearEntireMap()
