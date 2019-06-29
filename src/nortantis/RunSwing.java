@@ -24,6 +24,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
@@ -556,14 +558,18 @@ public class RunSwing
 		scaleSlider.setSnapToTicks(true);
 		scaleSlider.setPaintTicks(true);
 		scaleSlider.setMinorTickSpacing(25);
+		scaleSlider.setMajorTickSpacing(25);
 		scaleSlider.setMinimum(25);
 		scaleSlider.setMaximum(calcMaximumResolution());
-		scaleSlider.setMajorTickSpacing(25);
+		int labelFrequency = scaleSlider.getMaximum() < 300 ? 50 : 100;
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-			for (int i = scaleSlider.getMinimum(); i < scaleSlider.getMaximum() + 1;  i += scaleSlider.getMajorTickSpacing())
+			for (int i = scaleSlider.getMinimum(); i < scaleSlider.getMaximum() + 1;  i += scaleSlider.getMinorTickSpacing())
 			{
-				labelTable.put(i, new JLabel(Double.toString(i/100.0)));
+				if (i % labelFrequency == 0)
+				{
+					labelTable.put(i, new JLabel(i + "%"));
+				}
 			}
 			scaleSlider.setLabelTable(labelTable);
 		}

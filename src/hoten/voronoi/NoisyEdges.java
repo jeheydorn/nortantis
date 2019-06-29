@@ -13,13 +13,19 @@ import java.util.TreeMap;
 import hoten.geom.Point;
 //import graph.*;
 //import de.polygonal.math.PM_PRNG;
+import nortantis.CurveCreator;
   
 public class NoisyEdges 
 {
     final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged vedge; high: jagged dedge
     
-    public Map<Integer, List<Point>> path0; // edge index -> Vector.<Point>
-    public Map<Integer, List<Point>> path1; // edge index -> Vector.<Point>
+    public Map<Integer, List<Point>> path0; // edge index -> List of points in that edge.
+    public Map<Integer, List<Point>> path1; // edge index -> List of points in that edge. 
+    
+    // Contains the points in path0 before adding curves
+    private Map<Integer, List<Point>> waypoints0;
+    // Contains the points in path1 before adding curves
+    private Map<Integer, List<Point>> waypoints1;
 
 	private double scaleMultiplyer;
     
@@ -41,6 +47,14 @@ public class NoisyEdges
 		{
 			buildNoisyEdgesForCenter(p, false);
 		}
+		
+//		if (shouldDrawCurves)
+//		{
+//			for (Center c : map.centers)
+//			{
+//				buildCurvesForCenter(c, false);
+//			}
+//		}
 	}
     
     public void buildNoisyEdgesForCenter(Center center, boolean forceRebuild)
@@ -131,5 +145,9 @@ public class NoisyEdges
 		return (random.nextDouble() * (upper - lower)) + lower;
 	}
 	
+	public void buildCurvesForCenter(Center center, boolean forceRebuild)
+	{
+		//CurveCreator.createCurve();
+	}
 }
 

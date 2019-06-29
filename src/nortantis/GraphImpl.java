@@ -130,7 +130,6 @@ public class GraphImpl extends VoronoiGraph
     {
         noisyEdges = new NoisyEdges(scaleMultiplyer);  
         noisyEdges.buildNoisyEdges(this);	
-
     }
     
 
