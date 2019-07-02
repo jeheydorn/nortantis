@@ -512,8 +512,7 @@ public abstract class VoronoiGraph {
         	{
         		int width = Math.max(1, (int)(riverWidthScale + Math.sqrt(e.river * 0.1)));
                 g.setStroke(new BasicStroke(width));
-                drawPath(g, noisyEdges.path0.get(e.index));
-                drawPath(g, noisyEdges.path1.get(e.index));
+                drawPath(g, noisyEdges.getNoisyEdge(e.index));
         	}
         }
     }
@@ -726,8 +725,7 @@ public abstract class VoronoiGraph {
 	
 	public void drawEdge(Graphics2D g, Edge edge)
 	{
-		if (noisyEdges.path0.get(edge.index) == null
-				|| noisyEdges.path1.get(edge.index) == null)
+		if (noisyEdges.getNoisyEdge(edge.index) == null)
 		{
 			// It's at the edge of the map, where we don't have
 			// the noisy edges computed. 
@@ -736,7 +734,7 @@ public abstract class VoronoiGraph {
 
 		// Draw path0.
 		{
-			List<Point> path = noisyEdges.path0.get(edge.index);
+			List<Point> path = noisyEdges.getNoisyEdge(edge.index);
 			int[] xPoints = new int[path.size()];
 			int[] yPoints = new int[path.size()];
 			for (int i : new Range(path.size()))
@@ -746,20 +744,6 @@ public abstract class VoronoiGraph {
 			}
 			g.drawPolyline(xPoints, yPoints, xPoints.length);
 		}
-
-		// Draw path1.
-		{
-			List<Point> path = noisyEdges.path1.get(edge.index);
-			int[] xPoints = new int[path.size()];
-			int[] yPoints = new int[path.size()];
-			for (int i : new Range(path.size()))
-			{
-				xPoints[i] = (int) path.get(i).x;
-				yPoints[i] = (int) path.get(i).y;
-			}
-			g.drawPolyline(xPoints, yPoints, xPoints.length);
-		}
-
 	}
     
     /**
@@ -800,7 +784,7 @@ public abstract class VoronoiGraph {
 				if (color != null)
 				{
 					g.setColor(color);
-					if (noisyEdges == null || noisyEdges.path0.get(edge.index) == null || noisyEdges.path1.get(edge.index) == null)
+					if (noisyEdges == null || noisyEdges.getNoisyEdge(edge.index) == null)
 					{
 						// This can happen if noisy edges haven't been created yet or if the polygon is on the border.
 						drawPieceWithoutNoisyEdges(g, edge, c);
@@ -830,7 +814,7 @@ public abstract class VoronoiGraph {
     {
 		// Draw path0.
 		{
-			List<Point> path = noisyEdges.path0.get(edge.index);
+			List<Point> path = noisyEdges.getNoisyEdge(edge.index);
 			java.awt.Polygon shape = new java.awt.Polygon();
 			shape.addPoint((int) c.loc.x, (int) c.loc.y);
 			for (Point point : path)
@@ -839,19 +823,6 @@ public abstract class VoronoiGraph {
 			}
 			g.fillPolygon(shape);
 		}
-
-		// Draw path1.
-		{
-			List<Point> path = noisyEdges.path1.get(edge.index);
-			java.awt.Polygon shape = new java.awt.Polygon();
-			shape.addPoint((int) c.loc.x, (int) c.loc.y);
-			for (Point point : path)
-			{
-				shape.addPoint((int) point.x, (int) point.y);
-			}
-			g.fillPolygon(shape);
-		}
-
     }
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi

@@ -23,7 +23,7 @@ public class Corner
     public int river;
     public double moisture;
     
-    Corner lowestNeighbor;
+    public Corner lowestNeighbor;
     boolean findingRivers = false; // to avoid infinite recursion as we wind our way to the sea
 
 	public boolean createRivers() {
