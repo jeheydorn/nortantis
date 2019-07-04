@@ -114,6 +114,7 @@ public class MapCreator
         GraphImpl graph;
 		if (mapParts == null || mapParts.graph == null)
 		{
+			Logger.println("Creating the graph.");
 			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
 			if (mapParts != null)
 			{
@@ -492,7 +493,7 @@ public class MapCreator
 		GraphImpl graph = GraphCreator.createGraph(width, height,
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
-				sizeMultiplyer);	
+				sizeMultiplyer, settings.lineStyle);	
 		
 		// Setup region colors even if settings.drawRegionColors = false because edits need them in case someone edits a map without region colors, then later enables region colors.
 		assignRandomRegionColors(graph, settings);

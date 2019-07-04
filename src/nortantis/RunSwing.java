@@ -182,6 +182,9 @@ public class RunSwing
 	public final double cityFrequencySliderScale = 100.0 * 1.0/SettingsGenerator.maxCityProbabillity;
 	private JLabel cityProbabilityLabel;
 	private JButton btnChooseLandBlurColor;
+	private JLabel label_7;
+	private JRadioButton jaggedLinesButton;
+	private JRadioButton smoothLinesButton;
 
 	
 	public static boolean isRunning()
@@ -979,7 +982,7 @@ public class RunSwing
 				
 		JLabel label_1 = new JLabel("Land blur:");
 		label_1.setToolTipText("Adds fading color to coastlines.");
-		label_1.setBounds(12, 23, 82, 15);
+		label_1.setBounds(10, 93, 82, 15);
 		effectsPanel.add(label_1);
 		
 		landBlurSlider = new JSlider();
@@ -989,12 +992,12 @@ public class RunSwing
 		landBlurSlider.setMinorTickSpacing(5);
 		landBlurSlider.setMaximum(100);
 		landBlurSlider.setMajorTickSpacing(20);
-		landBlurSlider.setBounds(131, 12, 245, 79);
+		landBlurSlider.setBounds(129, 82, 245, 79);
 		effectsPanel.add(landBlurSlider);
 		
 		JLabel label_2 = new JLabel("Ocean effects:");
 		label_2.setToolTipText("Adds fading color or waves to oceans at coastlines.");
-		label_2.setBounds(12, 96, 122, 15);
+		label_2.setBounds(10, 166, 122, 15);
 		effectsPanel.add(label_2);
 		
 		oceanEffectsSlider = new JSlider();
@@ -1004,19 +1007,19 @@ public class RunSwing
 		oceanEffectsSlider.setMinorTickSpacing(5);
 		oceanEffectsSlider.setMaximum(100);
 		oceanEffectsSlider.setMajorTickSpacing(20);
-		oceanEffectsSlider.setBounds(131, 84, 245, 79);
+		oceanEffectsSlider.setBounds(129, 154, 245, 79);
 		effectsPanel.add(oceanEffectsSlider);
 		
 		JLabel lblOceanEffectType = new JLabel("Ocean effect type:");
-		lblOceanEffectType.setBounds(12, 176, 122, 15);
+		lblOceanEffectType.setBounds(10, 246, 122, 15);
 		effectsPanel.add(lblOceanEffectType);
 		
 		wavesRadioButton = new JRadioButton("Waves");
-		wavesRadioButton.setBounds(148, 172, 185, 23);
+		wavesRadioButton.setBounds(146, 242, 185, 23);
 		effectsPanel.add(wavesRadioButton);
 		
 		blurRadioButton = new JRadioButton("Blur");
-		blurRadioButton.setBounds(148, 195, 185, 35);
+		blurRadioButton.setBounds(146, 265, 185, 35);
 		effectsPanel.add(blurRadioButton);
 		
 		ButtonGroup group = new ButtonGroup();
@@ -1126,6 +1129,20 @@ public class RunSwing
 		grungeSlider.setMajorTickSpacing(500);
 		grungeSlider.setBounds(580, 252, 245, 79);
 		effectsPanel.add(grungeSlider);
+		
+		label_7 = new JLabel("Line style:");
+		label_7.setBounds(10, 22, 95, 14);
+		effectsPanel.add(label_7);
+		
+		jaggedLinesButton = new JRadioButton("Jagged");
+		jaggedLinesButton.setBounds(146, 22, 185, 23);
+		effectsPanel.add(jaggedLinesButton);
+		smoothLinesButton = new JRadioButton("Smooth");
+		smoothLinesButton.setBounds(146, 45, 185, 35);
+		effectsPanel.add(smoothLinesButton);
+		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
+		lineStyleButtonGroup.add(jaggedLinesButton);
+		lineStyleButtonGroup.add(smoothLinesButton);
 
 		final JPanel borderPanel = new JPanel();
 		tabbedPane.addTab("Border", borderPanel);
@@ -2118,6 +2135,14 @@ public class RunSwing
 		frayedEdgeSizeSlider.setValue(settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
 		cityProbabilitySlider.setValue((int)(settings.cityProbability * cityFrequencySliderScale));
+		if (settings.lineStyle.equals(LineStyle.Jagged))
+		{
+			jaggedLinesButton.setSelected(true);
+		}
+		else if (settings.lineStyle.equals(LineStyle.Smooth))
+		{
+			smoothLinesButton.setSelected(true);
+		}
 		
 		// Settings for background images.
 		// Remove and add item listeners to the colorize checkboxes to avoid generating backgrounds for display multiple times.
@@ -2266,6 +2291,7 @@ public class RunSwing
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
 		settings.cityProbability = cityProbabilitySlider.getValue() / cityFrequencySliderScale;
+		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged : LineStyle.Smooth;
 		
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();

@@ -77,6 +77,16 @@ public class ProbabilityHelper
 		return items.get(0);
 	}
 	
+	public static <T extends Enum<T>> T sampleEnumUniform(Random rand, Class<T> enumType)
+	{
+		List<T> items = new ArrayList<>();
+		for (T c : enumType.getEnumConstants()) 
+		{
+			items.add(c);
+		}
+		return sampleUniform(rand, items);
+	}
+	
 	@SuppressWarnings("rawtypes")
 	public static List<Tuple2<Double, Enum>> createUniformDistributionOverEnumValues(Enum[] values)
 	{

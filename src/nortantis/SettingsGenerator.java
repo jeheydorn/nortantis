@@ -183,6 +183,7 @@ public class SettingsGenerator
 			}
 		}
 		
+		settings.lineStyle = ProbabilityHelper.sampleEnumUniform(rand, LineStyle.class);
 				
 		return settings;
 	}

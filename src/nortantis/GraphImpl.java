@@ -61,7 +61,7 @@ public class GraphImpl extends VoronoiGraph
 	final double collisionScale = 0.4;
 	// This controlls how smooth the plates boundaries are. Higher is smoother. 1 is minumum. Larger values
 	// will slow down plate generation.
-	final int plateBoundarySmoothness = 20;
+	final int plateBoundarySmoothness = 30;
 	final int minPoliticalRegionSize = 10;
 	    
    // Maps plate ids to plates.
@@ -70,7 +70,7 @@ public class GraphImpl extends VoronoiGraph
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer) 
+    		double sizeMultiplyer, LineStyle lineStyle) 
     {
         super(r, sizeMultiplyer);
         this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
@@ -82,11 +82,11 @@ public class GraphImpl extends VoronoiGraph
         createPoliticalRegions();
         setupRandomSeeds(r);
         buildCenterLookupTableIfNotBuilt();
-       	buildNoisyEdges();	
+       	buildNoisyEdges(lineStyle);	
      }
  
     /**
-     * This constructor doens't create tectonic plates or elevation.
+     * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
       */
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer) 
     {
@@ -95,7 +95,7 @@ public class GraphImpl extends VoronoiGraph
 		assignBorderToCorners();
         setupColors();
         setupRandomSeeds(r);
-        buildNoisyEdges();
+        buildNoisyEdges(LineStyle.Jagged);
     }
     
     
@@ -126,9 +126,9 @@ public class GraphImpl extends VoronoiGraph
     	noisyEdges.buildNoisyEdgesForCenter(center, true);
     }
     
-    public void buildNoisyEdges()
+    public void buildNoisyEdges(LineStyle lineStyle)
     {
-        noisyEdges = new NoisyEdges(scaleMultiplyer);  
+        noisyEdges = new NoisyEdges(scaleMultiplyer, lineStyle);  
         noisyEdges.buildNoisyEdges(this);	
     }
     
@@ -865,10 +865,10 @@ public class GraphImpl extends VoronoiGraph
      		for (int i = 0; i < plateBoundarySmoothness; i++)
      		{
         		final Center cTemp = centers.get(rand.nextInt(centers.size()));
-           		if (cTemp.neighborsNotInSamePlateCount == 0)
+           		if (cTemp.neighborsNotInSamePlateRatio == 0)
         			continue;
           		
-          		if (least == null || cTemp.neighborsNotInSamePlateCount < least.neighborsNotInSamePlateCount)
+          		if (least == null || cTemp.neighborsNotInSamePlateRatio < least.neighborsNotInSamePlateRatio)
           		{
           			least = cTemp;
           		}

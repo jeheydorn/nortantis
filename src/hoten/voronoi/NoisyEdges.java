@@ -15,12 +15,13 @@ import hoten.geom.Point;
 //import graph.*;
 //import de.polygonal.math.PM_PRNG;
 import nortantis.CurveCreator;
+import nortantis.LineStyle;
   
 public class NoisyEdges 
 {
     final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged vedge; high: jagged dedge
     
-    private boolean shouldDrawCurves = true; // TODO make this a parameter
+    private LineStyle lineStyle;
     private Map<Integer, List<Point>> paths; // edge index -> List of points in that edge.
     
     // Maps edge index to a list of points that draw the same position in path0 but with curves
@@ -28,11 +29,12 @@ public class NoisyEdges
 
 	private double scaleMultiplyer;
     
-    public NoisyEdges(double scaleMultiplyer) 
+    public NoisyEdges(double scaleMultiplyer, LineStyle style) 
     {
        	this.scaleMultiplyer = scaleMultiplyer;
         paths = new TreeMap<>();
         curves = new TreeMap<>();
+        lineStyle = style;
     }
 
     // Build noisy line paths for each of the Voronoi edges. There are
@@ -50,7 +52,7 @@ public class NoisyEdges
     
     public void buildNoisyEdgesForCenter(Center center, boolean forceRebuild)
     {
-    	if (shouldDrawCurves)
+    	if (lineStyle.equals(LineStyle.Smooth))
     	{
     		buildCurvesForCenter(center, forceRebuild);
     	}
@@ -309,7 +311,7 @@ public class NoisyEdges
 	
 	public List<Point> getNoisyEdge(int edgeIndex)
 	{
-		if (shouldDrawCurves)
+		if (lineStyle.equals(LineStyle.Smooth))
 		{
 			return curves.get(edgeIndex);
 		}

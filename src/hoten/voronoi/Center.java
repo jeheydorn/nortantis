@@ -35,8 +35,8 @@ public class Center
     public double area;
     public TectonicPlate tectonicPlate;
     public Region region;
-    // neighborsNotInSamePlateCount is only here to make GraphImpl.createTectonicPlates faster.
-    public int neighborsNotInSamePlateCount;
+    // neighborsNotInSamePlateRatio is only here to make GraphImpl.createTectonicPlates faster.
+    public float neighborsNotInSamePlateRatio;
     public Integer mountainRangeId;
     
 	public long treeSeed;
@@ -85,12 +85,16 @@ public class Center
     
 	public void updateNeighborsNotInSamePlateCount()
 	{
-		neighborsNotInSamePlateCount = 0;
+		float neighborsNotInSamePlateCount = 0;
+		float neighborsInSamePlateCOunt = 0;
  		for (Center neighbor : neighbors)
 		{
 			if (tectonicPlate != neighbor.tectonicPlate) 
 				neighborsNotInSamePlateCount++;
+			else
+				neighborsInSamePlateCOunt++;
 		}
+ 		neighborsNotInSamePlateRatio = neighborsNotInSamePlateCount / neighborsInSamePlateCOunt;
 	}
 	
 	public boolean isRiver()

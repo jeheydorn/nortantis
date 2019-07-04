@@ -99,6 +99,7 @@ public class MapSettings implements Serializable
 	public boolean drawIcons = true;
 	public boolean drawRivers = true; // Not saved
 	public double cityProbability;
+	public LineStyle lineStyle;
 	
 	public MapSettings()
 	{
@@ -125,6 +126,7 @@ public class MapSettings implements Serializable
 		result.setProperty("frayedBorderBlurLevel", frayedBorderBlurLevel + "");
 		result.setProperty("grungeWidth", grungeWidth + "");
 		result.setProperty("cityProbability", cityProbability + "");
+		result.setProperty("lineStyle", lineStyle + "");
 
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
@@ -257,9 +259,7 @@ public class MapSettings implements Serializable
 		}
 		String json = list.toJSONString();
 		return json;
-	}
-	
-	
+	}	
 		
 	private String colorToString(Color c)
 	{
@@ -404,6 +404,15 @@ public class MapSettings implements Serializable
 				String str = props.getProperty("cityProbability");
 				return str == null ? 0.0 : (double)(Double.parseDouble(str));
 			}
+		});
+		lineStyle = getProperty("lineStyle", () -> 
+		{
+			String str = props.getProperty("lineStyle");
+			if (str == null || str.equals(""))
+			{
+				return LineStyle.Jagged;
+			}
+			return LineStyle.valueOf(str);
 		});
 		
 		
