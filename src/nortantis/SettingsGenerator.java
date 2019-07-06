@@ -13,6 +13,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import nortantis.MapSettings.LineStyle;
+import nortantis.MapSettings.OceanEffect;
 import nortantis.util.AssetsPath;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
@@ -61,8 +63,8 @@ public class SettingsGenerator
 		{
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
-		settings.addWavesToOcean = rand.nextDouble() > 0.5;
-		settings.oceanEffects = 10 + Math.abs(rand.nextInt(40));
+		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
+		settings.oceanEffectSize = 10 + Math.abs(rand.nextInt(40));
 		settings.landBlur = 10 + Math.abs(rand.nextInt(40));
 		
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
@@ -71,14 +73,22 @@ public class SettingsGenerator
 		
 		double landBlurColorScale = 0.5;
 		settings.landBlurColor = new Color((int)(settings.landColor.getRed() * landBlurColorScale), (int)(settings.landColor.getGreen() * landBlurColorScale), (int)(settings.landColor.getBlue() * landBlurColorScale));
-		if (settings.addWavesToOcean)
+		if (settings.oceanEffect == OceanEffect.Ripples)
 		{
 			settings.oceanEffectsColor = Color.black;
 		}
-		else
+		else if (settings.oceanEffect == OceanEffect.Blur)
 		{
 			double oceanEffectsColorScale = 0.3;
 			settings.oceanEffectsColor = new Color((int)(settings.oceanColor.getRed() * oceanEffectsColorScale), (int)(settings.oceanColor.getGreen() * oceanEffectsColorScale), (int)(settings.oceanColor.getBlue() * oceanEffectsColorScale));
+		}
+		else
+		{
+			// Concentric waves
+			double oceanEffectsColorScale = 0.5;
+			int alpha = 255;
+			settings.oceanEffectsColor = new Color((int)(settings.oceanColor.getRed() * oceanEffectsColorScale), (int)(settings.oceanColor.getGreen() * oceanEffectsColorScale), (int)(settings.oceanColor.getBlue() * oceanEffectsColorScale), alpha);
+			
 		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
 		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);

@@ -42,8 +42,8 @@ public class MapSettings implements Serializable
 	 */
 	public double resolution;
 	public int landBlur;
-	public int oceanEffects;
-	public boolean addWavesToOcean;
+	public int oceanEffectSize;
+	public OceanEffect oceanEffect;
 	public int worldSize;
 	public Color riverColor;
 	public Color landBlurColor;
@@ -112,8 +112,8 @@ public class MapSettings implements Serializable
 		result.setProperty("randomSeed", randomSeed + "");
 		result.setProperty("resolution", resolution + "");
 		result.setProperty("landBlur", landBlur + "");
-		result.setProperty("oceanEffects", oceanEffects + "");
-		result.setProperty("addWavesToOcean", addWavesToOcean + "");
+		result.setProperty("oceanEffects", oceanEffectSize + "");
+		result.setProperty("oceanEffect", oceanEffect + "");
 		result.setProperty("worldSize", worldSize + "");
 		result.setProperty("riverColor", colorToString(riverColor));
 		result.setProperty("landBlurColor", colorToString(landBlurColor));
@@ -263,7 +263,7 @@ public class MapSettings implements Serializable
 		
 	private String colorToString(Color c)
 	{
-		return c.getRed() + "," + c.getGreen() + "," + c.getBlue();
+		return c.getRed() + "," + c.getGreen() + "," + c.getBlue() + "," + c.getAlpha();
 	}
 	
 	private String fontToString(Font font)
@@ -305,7 +305,7 @@ public class MapSettings implements Serializable
 				return (int)(Integer.parseInt(props.getProperty("landBlur")));
 			}
 		});
-		oceanEffects = getProperty("oceanEffects", new Function0<Integer>()
+		oceanEffectSize = getProperty("oceanEffects", new Function0<Integer>()
 		{
 			public Integer apply()
 			{
@@ -347,11 +347,22 @@ public class MapSettings implements Serializable
 				return parseColor(props.getProperty("coastlineColor"));
 			}
 		});
-		addWavesToOcean = getProperty("addWavesToOcean", new Function0<Boolean>()
+		oceanEffect = getProperty("addWavesToOcean", new Function0<OceanEffect>()
 		{
-			public Boolean apply()
+			public OceanEffect apply()
 			{
-				return parseBoolean(props.getProperty("addWavesToOcean"));
+				String str = props.getProperty("oceanEffect");
+				if (str == null || str.equals(""))
+				{
+					// Try the old property name.
+					String str2 = props.getProperty("addWavesToOcean");
+					if (str2 == null || str2.equals(""))
+					{
+						return OceanEffect.Ripples;
+					}
+					return parseBoolean(str2) ? OceanEffect.Ripples : OceanEffect.Ripples;
+				}
+				return OceanEffect.valueOf(str);
 			}
 		});		
 		centerLandToWaterProbability = getProperty("centerLandToWaterProbability", new Function0<Double>()
@@ -862,9 +873,15 @@ public class MapSettings implements Serializable
 		if (str == null)
 			throw new NullPointerException("A color is null.");
 		String[] parts = str.split(",");
-		if (parts.length != 3)
-			throw new IllegalArgumentException("Unable to parse color from string: " + str);
-		return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		if (parts.length == 3)
+		{
+			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		}
+		if (parts.length == 4)
+		{
+			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+		}
+		throw new IllegalArgumentException("Unable to parse color from string: " + str);
 	}
 	
 	private static <T> T getProperty(String propName, Function0<T> getter)
@@ -917,5 +934,16 @@ public class MapSettings implements Serializable
 		return toPropertiesFile().equals(o.toPropertiesFile());
 	}
 	
+	public enum LineStyle
+	{
+		Jagged,
+		Smooth
+	}
 
+	public enum OceanEffect
+	{
+		Blur,
+		Ripples,
+		ConcentricWaves,
+	}
 }

@@ -380,8 +380,7 @@ public abstract class VoronoiGraph {
         	g.setColor(Color.black);
         	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
         	g.setColor(Color.white);
-        	Function <Edge, Boolean> shouldDraw = edge -> edge.d0.isWater != edge.d1.isWater;
-        	drawSpecifiedEdges(g, Math.max(1, (int) widthMultipierForMasks), shouldDraw);
+        	drawCoastline(g, Math.max(1, (int)widthMultipierForMasks));
         	return;
         }
        
@@ -732,7 +731,6 @@ public abstract class VoronoiGraph {
 			return;
 		}
 
-		// Draw path0.
 		{
 			List<Point> path = noisyEdges.getNoisyEdge(edge.index);
 			int[] xPoints = new int[path.size()];

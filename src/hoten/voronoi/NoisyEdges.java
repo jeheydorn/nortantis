@@ -15,7 +15,7 @@ import hoten.geom.Point;
 //import graph.*;
 //import de.polygonal.math.PM_PRNG;
 import nortantis.CurveCreator;
-import nortantis.LineStyle;
+import nortantis.MapSettings.LineStyle;
   
 public class NoisyEdges 
 {

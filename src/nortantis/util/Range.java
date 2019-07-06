@@ -20,8 +20,6 @@ public class Range implements Iterable<Integer>, Iterator<Integer>
 	 */
 	public Range(int min, int max)
 	{
-		if (min > max)
-			throw new IllegalArgumentException("Min must be less than or equal to max.");
 		current = min;
 		this.max = max;
 	}

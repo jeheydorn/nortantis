@@ -68,6 +68,8 @@ import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 
+import nortantis.MapSettings.LineStyle;
+import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.EditorFrame;
 import nortantis.editor.MapEdits;
 import nortantis.util.AssetsPath;
@@ -185,6 +187,7 @@ public class RunSwing
 	private JLabel label_7;
 	private JRadioButton jaggedLinesButton;
 	private JRadioButton smoothLinesButton;
+	private JRadioButton concentricWavesButton;
 
 	
 	public static boolean isRunning()
@@ -1014,17 +1017,22 @@ public class RunSwing
 		lblOceanEffectType.setBounds(10, 246, 122, 15);
 		effectsPanel.add(lblOceanEffectType);
 		
-		wavesRadioButton = new JRadioButton("Waves");
-		wavesRadioButton.setBounds(146, 242, 185, 23);
+		wavesRadioButton = new JRadioButton("Ripples");
+		wavesRadioButton.setBounds(129, 270, 185, 23);
 		effectsPanel.add(wavesRadioButton);
 		
 		blurRadioButton = new JRadioButton("Blur");
-		blurRadioButton.setBounds(146, 265, 185, 35);
+		blurRadioButton.setBounds(129, 293, 185, 35);
 		effectsPanel.add(blurRadioButton);
 		
-		ButtonGroup group = new ButtonGroup();
-	    group.add(wavesRadioButton);
-	    group.add(blurRadioButton);
+		concentricWavesButton = new JRadioButton("Concentric waves");
+		concentricWavesButton.setBounds(129, 236, 185, 35);
+		effectsPanel.add(concentricWavesButton);
+		
+		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
+	    oceanEffectButtonGroup.add(wavesRadioButton);
+	    oceanEffectButtonGroup.add(blurRadioButton);
+	    oceanEffectButtonGroup.add(concentricWavesButton);
 		
 		JLabel label_4 = new JLabel("Land blur color:");
 		label_4.setBounds(461, 82, 134, 23);
@@ -1053,14 +1061,15 @@ public class RunSwing
 		oceanEffectsColorDisplay.setBounds(631, 114, 82, 23);
 		effectsPanel.add(oceanEffectsColorDisplay);
 		
-		JButton button_1 = new JButton("Choose");
-		button_1.addActionListener(new ActionListener() {
+		JButton btnChooseOceanEffectsColor = new JButton("Choose");
+		btnChooseOceanEffectsColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showColorPicker(effectsPanel, oceanEffectsColorDisplay, "Ocean effects color");
 			}
 		});
-		button_1.setBounds(725, 114, 87, 25);
-		effectsPanel.add(button_1);
+		btnChooseOceanEffectsColor.setBounds(725, 114, 87, 25);
+		btnChooseOceanEffectsColor.setToolTipText("Choose a color for ocean effects near coastlines. Transparency is supported.");
+		effectsPanel.add(btnChooseOceanEffectsColor);
 		
 		JLabel label_6 = new JLabel("River color:");
 		label_6.setToolTipText("Rivers will be drawn this color.");
@@ -1135,10 +1144,10 @@ public class RunSwing
 		effectsPanel.add(label_7);
 		
 		jaggedLinesButton = new JRadioButton("Jagged");
-		jaggedLinesButton.setBounds(146, 22, 185, 23);
+		jaggedLinesButton.setBounds(129, 22, 185, 23);
 		effectsPanel.add(jaggedLinesButton);
 		smoothLinesButton = new JRadioButton("Smooth");
-		smoothLinesButton.setBounds(146, 45, 185, 35);
+		smoothLinesButton.setBounds(129, 45, 185, 35);
 		effectsPanel.add(smoothLinesButton);
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
@@ -2120,9 +2129,10 @@ public class RunSwing
 		centerLandToWaterProbSlider.setValue((int)(settings.centerLandToWaterProbability * 100));
 		scaleSlider.setValue((int)(settings.resolution * 100));
 		landBlurSlider.setValue(settings.landBlur);
-		oceanEffectsSlider.setValue(settings.oceanEffects);
-		wavesRadioButton.setSelected(settings.addWavesToOcean);
-		blurRadioButton.setSelected(!settings.addWavesToOcean);
+		oceanEffectsSlider.setValue(settings.oceanEffectSize);
+		wavesRadioButton.setSelected(settings.oceanEffect == OceanEffect.Ripples);
+		blurRadioButton.setSelected(settings.oceanEffect == OceanEffect.Blur);
+		concentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.ConcentricWaves);
 		landBlurColorDisplay.setBackground(settings.landBlurColor);
 		coastlineColorDisplay.setBackground(settings.coastlineColor);
 		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
@@ -2278,8 +2288,8 @@ public class RunSwing
 		settings.centerLandToWaterProbability = centerLandToWaterProbSlider.getValue() / 100.0;
 		settings.resolution = scaleSlider.getValue() / 100.0;
 		settings.landBlur = landBlurSlider.getValue();
-		settings.oceanEffects = oceanEffectsSlider.getValue();
-		settings.addWavesToOcean = wavesRadioButton.isSelected();
+		settings.oceanEffectSize = oceanEffectsSlider.getValue();
+		settings.oceanEffect = wavesRadioButton.isSelected() ? OceanEffect.Ripples : blurRadioButton.isSelected() ? OceanEffect.Blur : OceanEffect.ConcentricWaves;
 		settings.landBlurColor = landBlurColorDisplay.getBackground();
 		settings.coastlineColor = coastlineColorDisplay.getBackground();
 		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();

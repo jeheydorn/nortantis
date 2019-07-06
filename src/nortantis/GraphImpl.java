@@ -28,6 +28,7 @@ import hoten.voronoi.Edge;
 import hoten.voronoi.NoisyEdges;
 import hoten.voronoi.VoronoiGraph;
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.MapSettings.LineStyle;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 

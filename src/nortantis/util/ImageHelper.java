@@ -872,7 +872,12 @@ public class ImageHelper
 	 * @return
 	 */
 	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast)
-	{			
+	{	
+		return convolveGrayscale(img, kernel, maximizeContrast, 0f, 1f);
+	}
+	
+	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax)
+	{
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
 		// Make sure rows and cols are greater than 1 for JTransforms.
@@ -894,10 +899,10 @@ public class ImageHelper
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
 		
-		return realToImage(data, img.getWidth(), img.getHeight(), maximizeContrast, resultType);
+		return realToImage(data, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, resultType);
 	}
 		
-	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean maximizeContrast, int bufferedImageType)
+	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean setContrast,  float contrastMin, float contrastMax, int bufferedImageType)
 	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
 		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
@@ -905,9 +910,9 @@ public class ImageHelper
 		int imgRowPaddingOver2 = (data.getHeight() - imageHeight)/2;
 		int imgColPaddingOver2 = (data.getWidth() - imageWidth)/2;
 
-		if (maximizeContrast)
+		if (setContrast)
 		{
-			setContrast(data.getArrayJTransformsFormat(), 0f, 1f, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 		
 		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, bufferedImageType);
@@ -1487,13 +1492,24 @@ public class ImageHelper
 	
 	public static void threshold(BufferedImage image, int threshold)
 	{
+		int maxPixelValue = getMaxPixelValue(image);
+		threshold(image, threshold, maxPixelValue);
+	}
+	
+	/**
+	 * Thresholds an image in-place
+	 * @param image Input and output image.
+	 * @param threshold Pixel values equal to or greater than this value will be set to highValue. Pixel values lower than this will be set to 0.
+	 * @param highValue Value pixels will be set to if thresholded high.
+	 */
+	public static void threshold(BufferedImage image, int threshold, int highValue)
+	{
 		if (!isSupportedGrayscaleType(image))
 		{
 			throw new IllegalArgumentException("Unsupported image type for thresholding: " + bufferedImageTypeToString(image.getType()));
 		}
-		
-		int maxPixelValue = getMaxPixelValue(image);
 
+		int maxPixelValue = getMaxPixelValue(image);
 		WritableRaster out = image.getRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
@@ -1501,12 +1517,58 @@ public class ImageHelper
 				double value = (int) out.getSample(x, y, 0);
 				if (value * maxPixelValue >= threshold)
 				{
-					out.setSample(x, y, 0, maxPixelValue);
+					out.setSample(x, y, 0, highValue);
 				}
 				else
 				{
 					out.setSample(x, y, 0, 0);
 				}
+			}
+	}
+	
+	public static void add(BufferedImage target, BufferedImage other)
+	{
+		if (!isSupportedGrayscaleType(target))
+		{
+			throw new IllegalArgumentException("Unsupported target image type for target: " + bufferedImageTypeToString(target.getType()));
+		}
+		if (!isSupportedGrayscaleType(other))
+		{
+			throw new IllegalArgumentException("Unsupported other image type for target: " + bufferedImageTypeToString(other.getType()));
+		}
+		
+		int maxPixelValue = getMaxPixelValue(target);
+		WritableRaster out = target.getRaster();
+		Raster otherRaster = other.getRaster();
+		for (int y = 0; y < target.getHeight(); y++)
+			for (int x = 0; x < target.getWidth(); x++)
+			{
+				double value = (int) out.getSample(x, y, 0);
+				double otherValue = (int) otherRaster.getSample(x, y, 0);
+				out.setSample(x, y, 0, Math.min(maxPixelValue, value + otherValue));
+			}
+	}
+	
+	public static void subtract(BufferedImage target, BufferedImage other)
+	{
+		if (!isSupportedGrayscaleType(target))
+		{
+			throw new IllegalArgumentException("Unsupported target image type for subtracting: " + bufferedImageTypeToString(target.getType()));
+		}
+		
+		if (!isSupportedGrayscaleType(other))
+		{
+			throw new IllegalArgumentException("Unsupported other image type for subtracting: " + bufferedImageTypeToString(other.getType()));
+		}
+
+		WritableRaster out = target.getRaster();
+		Raster otherRaster = other.getRaster();
+		for (int y = 0; y < target.getHeight(); y++)
+			for (int x = 0; x < target.getWidth(); x++)
+			{
+				double value = (int) out.getSample(x, y, 0);
+				double otherValue = (int) otherRaster.getSample(x, y, 0);
+				out.setSample(x, y, 0, Math.max(0, value - otherValue));
 			}
 	}
 	

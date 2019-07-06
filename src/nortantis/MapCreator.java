@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
+import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
@@ -194,7 +195,7 @@ public class MapCreator
 		}
 		
 		BufferedImage coastlineMask = null;
-		if (settings.landBlur > 0 || settings.oceanEffects > 0)
+		if (settings.landBlur > 0 || settings.oceanEffectSize > 0)
 		{
 			Logger.println("Creating coastline effects.");
 			coastlineMask = new BufferedImage(graph.getWidth(),
@@ -326,20 +327,61 @@ public class MapCreator
 		Logger.println("Adding effects to ocean along coastlines.");
 		{
 			BufferedImage oceanBlur;
-			int blurLevel = (int) (settings.oceanEffects * sizeMultiplyer);
+			int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplyer);
 			if (blurLevel > 0)
 			{
-				float[][] kernel;
-				if (settings.addWavesToOcean)
+				if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
 				{
-					kernel = ImageHelper.createPositiveSincKernel(blurLevel, 1.0 / sizeMultiplyer);
-				} else
-				{
-					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffects * sizeMultiplyer));
+					float[][] kernel;
+					if (settings.oceanEffect == OceanEffect.Ripples)
+					{
+						kernel = ImageHelper.createPositiveSincKernel(blurLevel, 1.0 / sizeMultiplyer);
+					} 
+					else
+					{
+						kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectSize * sizeMultiplyer));
+					}
+					int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
+					oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true, 0f, ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)));
+					// Remove the ocean blur from the land side of the borders.
+					oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
 				}
-				oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true);
-				// Remove the ocean blur from the land side of the borders.
-				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
+				else
+				{
+					oceanBlur = new BufferedImage(graph.getWidth(),
+							graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+
+					double widthBetweenWaves = 12.0 * sizeMultiplyer;
+					double lineWidth = 2.0 * sizeMultiplyer;
+					int numWaves = (int)(blurLevel / (widthBetweenWaves + lineWidth));
+					double largestLineWidth = blurLevel - blurLevel % (widthBetweenWaves + lineWidth);
+					for (int i : new Range(0, numWaves))
+					{
+						{
+							double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth));
+							if (whiteWidth <= 0)
+							{
+								continue;
+							}
+							BufferedImage blur = ImageHelper.convolveGrayscale(coastlineMask, ImageHelper.createGaussianKernel((int)whiteWidth), true);
+							ImageHelper.threshold(blur, 1, settings.oceanEffectsColor.getAlpha());
+							ImageHelper.add(oceanBlur, blur);
+						}
+						
+						{
+							double blackWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth)) - lineWidth;
+							if (blackWidth <= 0)
+							{
+								continue;
+							}
+							BufferedImage blur = ImageHelper.convolveGrayscale(coastlineMask, ImageHelper.createGaussianKernel((int)blackWidth), true);
+							ImageHelper.threshold(blur, 1);
+							ImageHelper.subtract(oceanBlur, blur);
+						}
+					}
+					
+					oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
+				}
 
 				map = ImageHelper.maskWithColor(map, settings.oceanEffectsColor, oceanBlur, true);
 				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);

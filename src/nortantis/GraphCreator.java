@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 import hoten.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.MapSettings.LineStyle;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;

@@ -610,7 +610,7 @@ public class IconTool extends EditorTool
 		// Change a few settings to make map creation faster.
 		settings.resolution = zoom;
 		settings.landBlur = 0;
-		settings.oceanEffects = 0;
+		settings.oceanEffectSize = 0;
 		settings.frayedBorder = false;
 		settings.drawText = false;
 		settings.grungeWidth = 0;
