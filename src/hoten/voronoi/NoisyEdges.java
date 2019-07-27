@@ -185,7 +185,7 @@ public class NoisyEdges
 		if (toFollow == null)
 		{
 			// p1 is the first or last point in a river / coast line / region boundary.
-			return corner.loc; // TODO see if this works
+			return corner.loc;
 		}
 		
 		if (toFollow.v0.equals(corner))
@@ -319,6 +319,11 @@ public class NoisyEdges
 		{
 			return paths.get(edgeIndex);
 		}
+	}
+	
+	public LineStyle getLineStyle()
+	{
+		return lineStyle;
 	}
 }
 

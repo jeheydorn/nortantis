@@ -62,7 +62,7 @@ public class GraphImpl extends VoronoiGraph
 	final double collisionScale = 0.4;
 	// This controlls how smooth the plates boundaries are. Higher is smoother. 1 is minumum. Larger values
 	// will slow down plate generation.
-	final int plateBoundarySmoothness = 30;
+	final int plateBoundarySmoothness = 26;
 	final int minPoliticalRegionSize = 10;
 	    
    // Maps plate ids to plates.
@@ -125,6 +125,14 @@ public class GraphImpl extends VoronoiGraph
     public void rebuildNoisyEdgesForCenter(Center center)
     {
     	noisyEdges.buildNoisyEdgesForCenter(center, true);
+    	
+    	if (noisyEdges.getLineStyle() == LineStyle.Smooth)
+    	{
+    		for (Center n : center.neighbors)
+    		{
+    			noisyEdges.buildNoisyEdgesForCenter(n, true);
+    		}
+    	}
     }
     
     public void buildNoisyEdges(LineStyle lineStyle)

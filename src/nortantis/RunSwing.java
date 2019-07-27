@@ -1022,7 +1022,7 @@ public class RunSwing
 		effectsPanel.add(wavesRadioButton);
 		
 		blurRadioButton = new JRadioButton("Blur");
-		blurRadioButton.setBounds(129, 293, 185, 35);
+		blurRadioButton.setBounds(129, 293, 185, 38);
 		effectsPanel.add(blurRadioButton);
 		
 		concentricWavesButton = new JRadioButton("Concentric waves");
@@ -1147,7 +1147,7 @@ public class RunSwing
 		jaggedLinesButton.setBounds(129, 22, 185, 23);
 		effectsPanel.add(jaggedLinesButton);
 		smoothLinesButton = new JRadioButton("Smooth");
-		smoothLinesButton.setBounds(129, 45, 185, 35);
+		smoothLinesButton.setBounds(129, 45, 185, 45);
 		effectsPanel.add(smoothLinesButton);
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
