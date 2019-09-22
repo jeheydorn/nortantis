@@ -1844,6 +1844,10 @@ public class RunSwing
 		landBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
 		
 		drawRegionsCheckBox.setEnabled(rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected());
+		if (!drawRegionsCheckBox.isEnabled())
+		{
+				drawRegionsCheckBox.setSelected(false);
+		}
 		boolean regionControlsSelected = (rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected()) && drawRegionsCheckBox.isSelected();
 		hueSlider.setEnabled(regionControlsSelected);
 		saturationSlider.setEnabled(regionControlsSelected);
