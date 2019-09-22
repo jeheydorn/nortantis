@@ -326,7 +326,7 @@ public class IconTool extends EditorTool
 	    JLabel typeLabel = new JLabel("Type:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String groupId : IconDrawer.getDistinctIconGroupIds(iconType))
+	    for (String groupId : IconDrawer.getIconGroupNames(iconType, iconType == IconDrawer.citiesName ? settings.cityIconSetName : null))
 	    {
 	    	JRadioButton button = new JRadioButton(groupId);
 	    	group.add(button);
@@ -344,7 +344,7 @@ public class IconTool extends EditorTool
 	    JLabel typeLabel = new JLabel("Cities:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String fileNameWithoutWidthOrExtension : IconDrawer.getIconGroupFileNamesWithoutWidthOrExtension(IconDrawer.citiesName))
+	    for (String fileNameWithoutWidthOrExtension : IconDrawer.getIconGroupFileNamesWithoutWidthOrExtension(IconDrawer.citiesName, null, settings.cityIconSetName))
 	    {
 	    	JRadioButton button = new JRadioButton(fileNameWithoutWidthOrExtension);
 	    	group.add(button);

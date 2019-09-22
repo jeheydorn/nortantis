@@ -100,6 +100,7 @@ public class MapSettings implements Serializable
 	public boolean drawRivers = true; // Not saved
 	public double cityProbability;
 	public LineStyle lineStyle;
+	public String cityIconSetName;
 	
 	public MapSettings()
 	{
@@ -151,6 +152,8 @@ public class MapSettings implements Serializable
 		result.setProperty("saturationRange", saturationRange + "");
 		result.setProperty("brightnessRange", brightnessRange + "");
 		
+		// Icon sets
+		result.setProperty("cityIconSetName", cityIconSetName + "");
 
 		result.setProperty("drawText", drawText + "");
 		result.setProperty("textRandomSeed", textRandomSeed + "");
@@ -590,6 +593,23 @@ public class MapSettings implements Serializable
 			}
 		});
 		
+		cityIconSetName = getProperty("cityIconSetName", () -> 
+		{
+			String setName = props.getProperty("cityIconSetName");
+			if (setName == null || setName.isEmpty())
+			{
+				Set<String> sets = IconDrawer.getIconSets(IconDrawer.citiesName);
+				if (sets.size() > 0)
+				{
+					setName = sets.iterator().next();
+				}
+				else
+				{
+					setName = "";
+				}
+			}
+			return setName;
+		});
 	
 		drawText = getProperty("drawText", new Function0<Boolean>()
 		{

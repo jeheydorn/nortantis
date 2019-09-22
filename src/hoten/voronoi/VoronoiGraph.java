@@ -940,7 +940,7 @@ public abstract class VoronoiGraph {
         
         // As pointKeyScale becomes larger, points become less likely to be merged. I added this because of a bug
         // where corners on the border of the graph which were needed to draw the polygons on the border were disappearing,
-        // causing the background color to be shown in triangular a
+        // causing the background color to be shown
         final double pointKeyScale = 10.0;
         Point key = new Point((int)((p.x / scaleMultiplyer) * pointKeyScale), (int)((p.y / scaleMultiplyer)) * pointKeyScale);
         Corner c = pointCornerMap.get(key);

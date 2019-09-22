@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import hoten.geom.Point;
@@ -77,12 +78,14 @@ public class IconDrawer
 	 */
 	public Map<Integer, CenterIcon> centerIcons;
 	public Map<Integer, CenterTrees> trees;
+	private String cityIconsSetName;
 
-	public IconDrawer(GraphImpl graph, Random rand)
+	public IconDrawer(GraphImpl graph, Random rand, String cityIconsSetName)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
+		this.cityIconsSetName = cityIconsSetName;
 		
 		meanPolygonWidth = findMeanPolygonWidth(graph);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
@@ -218,9 +221,9 @@ public class IconDrawer
 	public void clearAndAddIconsFromEdits(MapEdits edits, double sizeMultiplyer)
 	{
 		iconsToDraw.clear();
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups(mountainsName);
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = loadIconGroups(hillsName);
-		List<Tuple2<BufferedImage, BufferedImage>> duneImages = loadIconGroups(sandDunesName).get(sandDunesName);
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType(mountainsName);
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType(hillsName);
+		List<Tuple2<BufferedImage, BufferedImage>> duneImages = getAllIconGroupsAndMasksForType(sandDunesName).get(sandDunesName);
 		int duneWidth = findDuneWidth();
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = loadIconsWithWidths(citiesName);
 		
@@ -525,7 +528,7 @@ public class IconDrawer
 	public List<Set<Center>> addMountainsAndHills(List<Set<Center>> mountainGroups, List<Set<Center>> mountainAndHillGroups)
 	{				
         // Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = loadIconGroups("mountains");
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType("mountains");
         if (mountainImagesById == null || mountainImagesById.isEmpty())
         {
         	Logger.println("No mountain images were found. Mountain images will not be drawn.");
@@ -534,7 +537,7 @@ public class IconDrawer
 
         // Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
         // The hill image file names must use the same ids as the mountain ranges.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = loadIconGroups("hills");
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType("hills");
         
         // Warn if images are missing
         for (String hillGroupId : hillImagesById.keySet())
@@ -631,7 +634,7 @@ public class IconDrawer
 	
 	public void addSandDunes()
 	{
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> sandGroups = loadIconGroups("sand");
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> sandGroups = getAllIconGroupsAndMasksForType("sand");
 		if (sandGroups == null || sandGroups.isEmpty())
 		{
 			Logger.println("Sand dunes will not be drawn because no sand images were found.");
@@ -793,7 +796,7 @@ public class IconDrawer
 		double avgHeight = sum / graph.centers.size();
 		
 	       // Load the images and masks.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = loadIconGroups(treesName);
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = getAllIconGroupsAndMasksForType(treesName);
         if (treesById == null || treesById.isEmpty())
         {
 			Logger.println("Trees will not be drawn because no tree images were found.");
@@ -954,7 +957,7 @@ public class IconDrawer
 	private Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(final String iconType)
 	{
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new HashMap<>();
-		String[] fileNames = getIconGroupFileNames(iconType);
+		String[] fileNames = getIconGroupFileNames(iconType, null, getIconSetName(iconType));
 		if (fileNames.length == 0)
 		{
 			return imagesAndMasks;
@@ -962,6 +965,12 @@ public class IconDrawer
 		
 		for (String fileName : fileNames)
 		{
+			String[] parts = FilenameUtils.getBaseName(fileName).split("width=");
+			if (parts.length < 2)
+			{
+				throw new RuntimeException("The icon " + fileName + " of type " + iconType + " must have its default width stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png.");
+			}
+			
 			String fileNameBaseWithoutWidth = getFileNameBaseWithoutWidth(fileName);
 			if (imagesAndMasks.containsKey(fileNameBaseWithoutWidth))
 			{
@@ -969,7 +978,7 @@ public class IconDrawer
 						+ " Rename one of them");
 			}
 
-			Path path = Paths.get(AssetsPath.get(), "icons", iconType, fileName);
+			Path path = Paths.get(getIconGroupPath(iconType, null, getIconSetName(iconType)), fileName);
 			if (!ImageCache.getInstance().containsImageFile(path))
 			{
 				Logger.println("Loading icon: " + path);
@@ -980,11 +989,7 @@ public class IconDrawer
 			icon = ImageCache.getInstance().getImageFromFile(path);
 			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
 			
-			String[] parts = FilenameUtils.getBaseName(fileName).split("_");
-			if (parts.length < 2)
-			{
-				throw new RuntimeException("Icons of type " + iconType + " must have their default width stored in the file name, at the end preceded by an underscore. Example myCityIcon_64.png.");
-			}
+			
 			int width;
 			try
 			{
@@ -993,7 +998,7 @@ public class IconDrawer
 			}
 			catch (RuntimeException e)
 			{
-				throw new RuntimeException("Unable to load icon " + path.toString() + ". Make sure the default width of the image is stored at the end of the file name before the extension, proceeded by an underscore. Example: myCityIcon_64.png. Error: " + e.getMessage(), e);
+				throw new RuntimeException("Unable to load icon " + path.toString() + ". Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: " + e.getMessage(), e);
 			}
 			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple3<>(icon, mask, width));
 		}
@@ -1005,64 +1010,146 @@ public class IconDrawer
 	 * Loads groups if icons, using iconType as a key word to filter on. 
 	 * The second image in the tuples is the mask, which is generated based on the image loaded from disk.
 	 */
-	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> loadIconGroups(final String iconType)
+	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> getAllIconGroupsAndMasksForType(final String iconType)
 	{
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> imagesPerGroup = new ListMap<>();
 
-		String[] fileNames = getIconGroupFileNames(iconType);
-		if (fileNames.length == 0)
+		String[] groupNames = getIconGroupNames(iconType);
+		for (String groupName : groupNames)
 		{
-			return imagesPerGroup;
-		}
-
-		for (String fileName : fileNames)
-		{
-			Path path = Paths.get(AssetsPath.get(), "icons", iconType, fileName);
-			if (!ImageCache.getInstance().containsImageFile(path))
+			String[] fileNames = getIconGroupFileNames(iconType, groupName, getIconSetName(iconType));
+			String groupPath = getIconGroupPath(iconType, groupName, getIconSetName(iconType));
+			if (fileNames.length == 0)
 			{
-				Logger.println("Loading icon: " + path);
+				continue;
 			}
-			BufferedImage icon;
-			BufferedImage mask;
-			
-			icon = ImageCache.getInstance().getImageFromFile(path);
-			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
-
-			String rangeId = fileName.substring(0, fileName.indexOf('_'));
-			if (rangeId == null || rangeId == "")
+	
+			for (String fileName : fileNames)
 			{
-				throw new RuntimeException("The file name of the icon " + fileName + " must start with a group id followed by an underscore.");
+				Path path = Paths.get(groupPath, fileName);
+				if (!ImageCache.getInstance().containsImageFile(path))
+				{
+					Logger.println("Loading icon: " + path);
+				}
+				BufferedImage icon;
+				BufferedImage mask;
+				
+				icon = ImageCache.getInstance().getImageFromFile(path);
+				mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
+	
+				imagesPerGroup.add(groupName, new Tuple2<>(icon, mask));
 			}
-
-			imagesPerGroup.add(rangeId, new Tuple2<>(icon, mask));
 		}
 		return imagesPerGroup;
 	}
 	
-	public static Set<String> getIconGroupFileNamesWithoutWidthOrExtension(String iconType)
+	private String getIconSetName(String iconType)
 	{
-		String[] fileNames = getIconGroupFileNames(iconType);
-		Set<String> result = new HashSet<String>();
-		for (int i : new Range(fileNames.length))
+		if (iconType.equals(citiesName))
 		{
-			result.add(getFileNameBaseWithoutWidth(fileNames[i]));
+			return cityIconsSetName;
+		}
+		return null;
+	}
+	
+	public static Set<String> getIconSets(String iconType)
+	{
+		if (!doesUseSets(iconType))
+		{
+			throw new RuntimeException("Type '" + iconType + "' does not use sets.");
+		}
+		
+		String path = Paths.get(AssetsPath.get(), "icons", iconType).toString();
+		String[] folderNames = new File(path).list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File dir, String name)
+			{
+				File file = new File(dir, name);
+				return file.isDirectory();
+			}
+		});
+		
+		Set<String> result = new HashSet<>();
+		result.addAll(Arrays.asList(folderNames));
+		return result;
+	}
+	
+	public static Set<String> getIconGroupFileNamesWithoutWidthOrExtension(String iconType, String groupName, String cityIconSetName)
+	{
+		String[] folderNames = getIconGroupFileNames(iconType, groupName, cityIconSetName);
+		Set<String> result = new HashSet<String>();
+		for (int i : new Range(folderNames.length))
+		{
+			result.add(getFileNameBaseWithoutWidth(folderNames[i]));
 		}
 		return result;
 	}
 	
 	private static String getFileNameBaseWithoutWidth(String fileName)
 	{
-		return fileName.substring(0, fileName.lastIndexOf('_'));
+		return fileName.substring(0, fileName.lastIndexOf("width="));
 	}
 	
-	public static String[] getIconGroupFileNames(String iconType)
+	/**
+	 * Gets the names of icon groups, which are folders under the icon type folder or the icon set folder which
+	 * contain images files.
+	 * @param iconType Name of a folder under assets/icons
+	 * @param setName Optional - for icon types that support it, it is a folder under assets/icons/<iconType>/
+	 * @return Array of file names sorted with no duplicates
+	 */
+	public static String[] getIconGroupNames(String iconType, String setName)
 	{
-		String[] fileNames = new File(Paths.get(AssetsPath.get(), "icons", iconType).toString()).list(new FilenameFilter()
+		String path;
+		if (doesUseSets(iconType))
+		{
+			if (setName == null || setName.isEmpty())
+			{
+				return new String[] {};
+			}
+			path = Paths.get(AssetsPath.get(), "icons", iconType, setName).toString();
+		}
+		else
+		{
+			path = Paths.get(AssetsPath.get(), "icons", iconType).toString();
+		}
+		
+		String[] folderNames = new File(path).list(new FilenameFilter()
 		{
 			@Override
 			public boolean accept(File dir, String name)
 			{
-				return !name.contains("_mask.");
+				File file = new File(dir, name);
+				return file.isDirectory();
+			}
+		});
+		
+		if (folderNames == null)
+		{
+			return new String[] {};
+		}
+		
+		Arrays.sort(folderNames);
+		return folderNames;
+	}
+	
+	public String[] getIconGroupNames(String iconType)
+	{
+		String setName = getIconSetName(iconType);
+		return getIconGroupNames(iconType, setName);
+	}
+	
+	public static String[] getIconGroupFileNames(String iconType, String groupName, String setName)
+	{
+		String path = getIconGroupPath(iconType, groupName, setName);
+		
+		String[] fileNames = new File(path).list(new FilenameFilter()
+		{
+			@Override
+			public boolean accept(File dir, String name)
+			{
+				File file = new File(dir, name);
+				return !file.isDirectory();
 			}
 		});
 		
@@ -1075,19 +1162,56 @@ public class IconDrawer
 		return fileNames;
 	}
 	
-	public static Set<String> getDistinctIconGroupIds(String iconType)
-	{ 
-		TreeSet<String> set = new TreeSet<>();
-		for (String fileName : getIconGroupFileNames(iconType))
+	public static String getIconGroupPath(String iconType, String groupName, String setName)
+	{
+		String path;
+		if (iconType.equals(citiesName))
 		{
-			int index = fileName.indexOf('_');
-			if (index > 0)
+			path = Paths.get(AssetsPath.get(), "icons", iconType, setName).toString();
+		}
+		else
+		{
+			if (doesUseSets(iconType))
 			{
-				set.add(fileName.substring(0, index));
+				// Not used yet
+				
+				if (setName == null || setName.isEmpty())
+				{
+					throw new IllegalArgumentException("The icon type " + iconType + " uses sets, but no set name was given.");
+				}
+				path = Paths.get(AssetsPath.get(), "icons", iconType, groupName, setName).toString(); 
+			}
+			else
+			{
+				path = Paths.get(AssetsPath.get(), "icons", iconType, groupName).toString();
 			}
 		}
-		
-		return set;
+		return path;
+	}
+	
+	/**
+	 * Tells whether an icon type supports icon sets. Icon sets are an additional folder under the icon type folder
+	 * which is the name of the icon set. Under the icon set folder either image files or group folders of image files.
+	 * 
+	 * If an icon type supports sets, it should also return a value from getSetName.
+	 * @param iconType
+	 * @return
+	 */
+	private static boolean doesUseSets(String iconType)
+	{
+		return iconType.equals(citiesName);
+	}
+	
+	private String getSetName(String iconType)
+	{
+		if (iconType.equals(citiesName))
+		{
+			return cityIconsSetName;
+		}
+		else
+		{
+			return null;
+		}
 	}
 	
 	private static final int opaqueThreshold = 50;

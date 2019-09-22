@@ -698,8 +698,6 @@ team	proper
 wife	informal
 aphrodisiac	potent
 bed	wide
-bitch	alive
-bitch	interested
 blameworthy	more
 boy	innocent
 breath	deep
@@ -2320,7 +2318,6 @@ archduchy	able
 archduchy	appropriate
 archduchy	good
 archduchy	new
-bitch	worst
 brother	more
 brother	tortured
 compassion	good
@@ -2994,8 +2991,6 @@ answer	obvious
 answer	unpleasant
 assignment	first
 assignment	urgent
-bitch	alive
-bitch	goddamned
 changes	necessary
 colleague	new
 contact	mental

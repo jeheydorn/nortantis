@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -188,6 +189,8 @@ public class RunSwing
 	private JRadioButton jaggedLinesButton;
 	private JRadioButton smoothLinesButton;
 	private JRadioButton concentricWavesButton;
+	private JLabel lblCityIconsSubfolder;
+	private JComboBox<String> cityIconsSetComboBox;
 
 	
 	public static boolean isRunning()
@@ -1261,6 +1264,15 @@ public class RunSwing
 		cityProbabilitySlider.setMaximum(100);
 		cityProbabilitySlider.setMajorTickSpacing(25);
 		iconsPanel.add(cityProbabilitySlider);
+		
+		lblCityIconsSubfolder = new JLabel("City icon type:");
+		lblCityIconsSubfolder.setToolTipText("Higher values create more cities. Lower values create less cities. Zero means no cities.");
+		lblCityIconsSubfolder.setBounds(12, 121, 114, 15);
+		iconsPanel.add(lblCityIconsSubfolder);
+		
+		cityIconsSetComboBox = new JComboBox<String>();
+		cityIconsSetComboBox.setBounds(131, 118, 245, 30);
+		iconsPanel.add(cityIconsSetComboBox);
 
 		final JPanel textPanel = new JPanel();
 		tabbedPane.addTab("Text", textPanel);
@@ -1645,7 +1657,6 @@ public class RunSwing
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				boolean hadEdits = !edits.isEmpty();
 				frame.setEnabled(false);
 		        JFrame editorFrame;
 		        editorFrame = new EditorFrame(getSettingsFromGUI(), runSwing);
@@ -1681,6 +1692,23 @@ public class RunSwing
 		terrainPanel.add(lblMapEditsMessage);
 		
 		frame.pack();
+	}
+	
+	private static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem)
+	{
+		comboBox.removeAllItems();
+		for (String item : items)
+		{
+			comboBox.addItem(item);
+		}
+		if (selectedItem != null && !selectedItem.isEmpty())
+		{
+			if (!items.contains(selectedItem))
+			{
+				comboBox.addItem(selectedItem);
+			}
+			comboBox.setSelectedItem(selectedItem);
+		}
 	}
 	
 	private void showHeightMapWithEditsWarning()
@@ -2145,6 +2173,7 @@ public class RunSwing
 		frayedEdgeSizeSlider.setValue(settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
 		cityProbabilitySlider.setValue((int)(settings.cityProbability * cityFrequencySliderScale));
+		initializeComboBoxItems(cityIconsSetComboBox, IconDrawer.getIconSets(IconDrawer.citiesName), settings.cityIconSetName);
 		if (settings.lineStyle.equals(LineStyle.Jagged))
 		{
 			jaggedLinesButton.setSelected(true);
@@ -2222,20 +2251,7 @@ public class RunSwing
 		chckbxDrawBoldBackground.doClick();
 		
 		// Borders
-		borderTypeComboBox.removeAllItems();
-		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
-		for (String borderType : borderTypes)
-		{
-			borderTypeComboBox.addItem(borderType);
-		}
-		if (!settings.borderType.isEmpty())
-		{
-			if (!borderTypes.contains(settings.borderType))
-			{
-				borderTypeComboBox.addItem(settings.borderType);
-			}
-			borderTypeComboBox.setSelectedItem(settings.borderType);
-		}
+		initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(), settings.borderType);
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(!settings.drawBorder);
 		drawBorderCheckbox.doClick();
@@ -2301,6 +2317,7 @@ public class RunSwing
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
 		settings.cityProbability = cityProbabilitySlider.getValue() / cityFrequencySliderScale;
+		settings.cityIconSetName = (String)cityIconsSetComboBox.getSelectedItem();
 		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged : LineStyle.Smooth;
 		
 		// Background image settings

@@ -120,7 +120,12 @@ public class SettingsGenerator
 			}
 		}
 		
-		settings.cityProbability = 0.0; //settings.cityProbability = rand.nextDouble() / 100.0; TODO put this back once I have city icons worth looking at.
+		settings.cityProbability = Math.round(100.0 * rand.nextDouble() * maxCityProbabillity) / 100.0;
+		Set<String> cityIconSets = IconDrawer.getIconSets(IconDrawer.citiesName);
+		if (cityIconSets.size() > 0)
+		{
+			settings.cityIconSetName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconSets));
+		}
 		
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
 		

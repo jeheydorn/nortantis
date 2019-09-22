@@ -263,6 +263,8 @@ public class EditorFrame extends JFrame
 		zoomComboBox.addItem("50%");
 		zoomComboBox.addItem("75%");
 		zoomComboBox.addItem("100%");
+		zoomComboBox.addItem("150%");
+		zoomComboBox.addItem("200%");
 		if (UserPreferences.getInstance().zoomLevel != "")
 		{
 			zoomComboBox.setSelectedItem(UserPreferences.getInstance().zoomLevel);

@@ -140,7 +140,7 @@ public class MapCreator
 		boolean needToAddIcons;
 		if (mapParts == null || mapParts.iconDrawer == null)
 		{
-			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()));
+			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconSetName);
 			if (mapParts != null)
 			{
 				mapParts.iconDrawer = iconDrawer;
