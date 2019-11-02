@@ -44,7 +44,6 @@ public class TextTool extends EditorTool
 	private JTextField editTextField;
 	private MapText lastSelected;
 	private Point mousePressedLocation;
-	private boolean hasDrawNextBefore;
 	private JRadioButton editButton;
 	private JRadioButton moveButton;
 	private JRadioButton addButton;
@@ -265,12 +264,6 @@ public class TextTool extends EditorTool
 		mapWithoutText = map;
 		
 		BufferedImage mapWithText = drawMapWithText();
-		
-		if(!hasDrawNextBefore)
-		{
-			copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
-			hasDrawNextBefore = true;
-		}
 		
     	return mapWithText;
 	}

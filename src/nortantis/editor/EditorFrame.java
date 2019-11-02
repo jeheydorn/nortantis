@@ -500,6 +500,7 @@ public class EditorFrame extends JFrame
 		mapEditingPanel.clearHighlightedEdges();
 		currentTool.onSwitchingAway();
 		currentTool.clearUndoRedoStacks();
+		currentTool.resetFurthestUndoPoint();
 		updateUndoRedoEnabled();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;

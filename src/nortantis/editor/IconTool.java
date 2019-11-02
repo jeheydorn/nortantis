@@ -47,7 +47,6 @@ public class IconTool extends EditorTool
 	private JRadioButton mountainsButton;
 	private JRadioButton treesButton;
 	private BufferedImage mapWithouticons;
-	private boolean hasDrawnIconsBefore;
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
 	private JRadioButton hillsButton;
@@ -637,13 +636,7 @@ public class IconTool extends EditorTool
 		{
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
 		}
-		
-		if(!hasDrawnIconsBefore)
-		{
-			copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
-			hasDrawnIconsBefore = true;
-		}
-		 		
+				 		
  		return map;
 	}
 	

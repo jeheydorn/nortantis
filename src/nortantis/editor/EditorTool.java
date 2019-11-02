@@ -446,6 +446,14 @@ public abstract class EditorTool
 		undoStack.clear();
 		redoStack.clear();
 	}
+	
+	/**
+	 * Clears the farthest undo point so that when the map is redrawn it will reset that undo point. That way you can't undo past when you selected the current tool.
+	 */
+	public void resetFurthestUndoPoint()
+	{
+		copyOfEditsWhenToolWasSelected = null;
+	}
 
 	protected Set<Center> getSelectedCenters(java.awt.Point point, int brushDiameter)
 	{
