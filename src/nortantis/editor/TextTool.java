@@ -536,7 +536,7 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo()
+	protected void onAfterUndoRedo(boolean requiresFullRedraw)
 	{
 		// For why this is needed, see the big comment on the same line in onBeforeShowMap.
 		mapParts.textDrawer.setMapTexts(settings.edits.text);
@@ -544,7 +544,14 @@ public class TextTool extends EditorTool
 		mapEditingPanel.clearAreasToDraw();
 		lastSelected = null;
 		editTextField.setText("");
-		updateTextInBackgroundThread(null);
+		if (requiresFullRedraw)
+		{
+			createAndShowMap();
+		}
+		else
+		{
+			updateTextInBackgroundThread(null);
+		}
 	}
 	
 

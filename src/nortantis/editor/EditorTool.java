@@ -58,8 +58,8 @@ public abstract class EditorTool
 	private boolean mapNeedsQuickUpdate;
 	private boolean mapIsBeingDrawn;
 	private ReentrantLock drawLock;
-	Stack<MapEdits> undoStack;
-	Stack<MapEdits> redoStack;
+	Stack<MapChange> undoStack;
+	Stack<MapChange> redoStack;
 	protected MapEdits copyOfEditsWhenToolWasSelected;
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	protected boolean isMapVisible;
@@ -75,6 +75,18 @@ public abstract class EditorTool
 		undoStack = new Stack<>();
 		redoStack = new Stack<>();
 		drawLock  = new ReentrantLock();
+	}
+	
+	private class MapChange
+	{
+		public MapChange(MapEdits edits, boolean undoRequiresFullRedraw)
+		{
+			this.edits = edits;
+			this.requiresFullRedraw = undoRequiresFullRedraw;
+		}
+		
+		MapEdits edits;
+		boolean requiresFullRedraw;
 	}
 
 	private BufferedImage createPlaceholderImage()
@@ -390,30 +402,42 @@ public abstract class EditorTool
 	
 	protected void setUndoPoint()
 	{
+		setUndoPoint(false);
+	}
+	
+	/***
+	 * Sets a point to which the user can undo changes. 
+	 * @param requiresFullRedraw If true, then when this change is undone the entire map should be redrawn. If false then a quick update can be done. It's up to 
+	 *                               each tools implementation of onAfterUndoRedo to respect this.
+	 */
+	protected void setUndoPoint(boolean requiresFullRedraw)
+	{
 		redoStack.clear();
-		undoStack.push(deepCopyMapEdits(settings.edits));
+		undoStack.push(new MapChange(deepCopyMapEdits(settings.edits), requiresFullRedraw));
 		parent.updateUndoRedoEnabled();
 	}
 	
 	public void undo()
 	{
-		redoStack.push(undoStack.pop());
+		MapChange change = undoStack.pop();
+		redoStack.push(change);
 		if (undoStack.isEmpty())
 		{
 			settings.edits = deepCopyMapEdits(copyOfEditsWhenToolWasSelected);
 		}
 		else
 		{
-			settings.edits = deepCopyMapEdits(undoStack.peek());	
+			settings.edits = deepCopyMapEdits(undoStack.peek().edits);	
 		}
-		onAfterUndoRedo();
+		onAfterUndoRedo(change.requiresFullRedraw);
 	}
 	
 	public void redo()
 	{
-		undoStack.push(redoStack.pop());
-		settings.edits = deepCopyMapEdits(undoStack.peek());
-		onAfterUndoRedo();
+		MapChange change = redoStack.pop();
+		undoStack.push(change);
+		settings.edits = deepCopyMapEdits(undoStack.peek().edits);
+		onAfterUndoRedo(change.requiresFullRedraw);
 	}
 	
 	protected MapEdits deepCopyMapEdits(MapEdits edits)
@@ -439,7 +463,7 @@ public abstract class EditorTool
 		return copy;
 	}
 	
-	protected abstract void onAfterUndoRedo();
+	protected abstract void onAfterUndoRedo(boolean doFullRedraw);
 
 	public void clearUndoRedoStacks()
 	{
@@ -554,7 +578,7 @@ public abstract class EditorTool
 			}
 		}
 		
-		setUndoPoint();
+		setUndoPoint(true);
 		createAndShowMap(false);
 	}
 }

@@ -659,7 +659,7 @@ public class IconTool extends EditorTool
 	}
 	
 	@Override
-	protected void onAfterUndoRedo()
+	protected void onAfterUndoRedo(boolean requiresFullRedraw)
 	{	
 		createAndShowMap();
 	}
