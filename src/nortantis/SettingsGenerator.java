@@ -121,7 +121,14 @@ public class SettingsGenerator
 			}
 		}
 		
-		settings.cityProbability = Math.round(100.0 * rand.nextDouble() * maxCityProbabillity) / 100.0;
+		if (rand.nextDouble() > 0.25)
+		{
+			settings.cityProbability =  0.25 * maxCityProbabillity;
+		}
+		else
+		{
+			settings.cityProbability = 0.0;
+		}
 		Set<String> cityIconSets = IconDrawer.getIconSets(IconDrawer.citiesName);
 		if (cityIconSets.size() > 0)
 		{
