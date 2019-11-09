@@ -71,9 +71,9 @@ public class GraphImpl extends VoronoiGraph
 
     public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer, LineStyle lineStyle) 
+    		double sizeMultiplyer, LineStyle lineStyle, double pointPrecision) 
     {
-        super(r, sizeMultiplyer);
+        super(r, sizeMultiplyer, pointPrecision);
         this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
         this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
         this. borderPlateContinentalProbability = borderPlateContinentalProbability;
@@ -89,9 +89,9 @@ public class GraphImpl extends VoronoiGraph
     /**
      * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
       */
-    public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer) 
+    public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision) 
     {
-        super(r, sizeMultiplyer);
+        super(r, sizeMultiplyer, pointPrecision);
         initVoronoiGraph(v, numLloydRelaxations, false);
 		assignBorderToCorners();
         setupColors();

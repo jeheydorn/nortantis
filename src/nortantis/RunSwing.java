@@ -338,6 +338,7 @@ public class RunSwing
             	}
             }
         });
+		frame.setIconImage(ImageHelper.read("assets/internal/taskbar icon.png"));
 		frame.getContentPane().setLayout(new BorderLayout());
 		
 		
@@ -2371,6 +2372,13 @@ public class RunSwing
 		settings.borderWidth = borderWidthSlider.getValue();
 		
 		settings.edits = edits;
+		
+		if (lastSettingsLoadedOrSaved != null)
+		{
+			// Copy over any settings which do not have a UI element.
+			settings.pointPrecision = lastSettingsLoadedOrSaved.pointPrecision;
+		}
+		
 		return settings;
 	}
 	

@@ -27,7 +27,7 @@ public class GraphCreator
 	private static final int tectonicPlateIterationMultiplier = 30;
 	
     public static GraphImpl createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
-    		double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer, LineStyle lineStyle)
+    		double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision)
     {
 		double startTime = System.currentTimeMillis();
         
@@ -36,7 +36,7 @@ public class GraphCreator
 
          //assemble the voronoi structure into a usable graph object representing a map
         final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
-    		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, lineStyle);
+    		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, lineStyle, pointPrecision);
         
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Time to generate graph (in seconds): " + elapsedTime
@@ -122,7 +122,7 @@ public class GraphCreator
 
     }
     
-    public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer)
+    public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer, double pointPrecision)
     {
         // Zero is most random. Higher values make the polygons more uniform shaped.
         final int numLloydRelaxations = 0;
@@ -131,7 +131,7 @@ public class GraphCreator
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
 
          //assemble the voronoi structure into a usable graph object representing a map
-        final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, sizeMultiplyer);
+        final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, sizeMultiplyer, pointPrecision);
         
         return graph;
     }

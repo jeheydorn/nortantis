@@ -51,15 +51,22 @@ public abstract class VoronoiGraph {
 	public static final int riversThinnerThanThisWillNotBeDrawn = 2;
 	
 	final static double verySmall = 0.0000001;
+	double pointPrecision;
 
-
-    public VoronoiGraph(Random r, double scaleMultiplyer) {
+	/**
+	 * @param r Random number generator
+	 * @param scaleMultiplyer Used to scale the graph larger smaller according to the resolution being used.
+	 * @param pointPrecision Used to determine when points should be considered duplicates. Larger numbers mean less duplicate detection, making tiny polygons more likely. 
+	 * 		  This number will be scaled by scaleMultiplyer.
+	 */
+    public VoronoiGraph(Random r, double scaleMultiplyer, double pointPrecision) {
     	this.rand = r;
         bumps = r.nextInt(5) + 1;
         this.scaleMultiplyer = scaleMultiplyer;
         startAngle = r.nextDouble() * 2 * Math.PI;
         dipAngle = r.nextDouble() * 2 * Math.PI;
         dipWidth = r.nextDouble() * .5 + .2;
+        this.pointPrecision = pointPrecision;
    }
     
     public void initVoronoiGraph(Voronoi v, int numLloydRelaxations, boolean createElevationRiversAndBiomes)
@@ -938,11 +945,10 @@ public abstract class VoronoiGraph {
         // Joseph note: I changed this function to use a TreeMap and sizeMultiplyer
         // so that the graph won't have small changes when drawn at higher resolutions.
         
-        // As pointKeyScale becomes larger, points become less likely to be merged. I added this because of a bug
+        // As pointPrecision becomes larger, points become less likely to be merged. I added this because of a bug
         // where corners on the border of the graph which were needed to draw the polygons on the border were disappearing,
         // causing the background color to be shown
-        final double pointKeyScale = 10.0;
-        Point key = new Point((int)((p.x / scaleMultiplyer) * pointKeyScale), (int)((p.y / scaleMultiplyer)) * pointKeyScale);
+        Point key = new Point((int)((p.x / scaleMultiplyer) * pointPrecision), (int)((p.y / scaleMultiplyer)) * pointPrecision);
         Corner c = pointCornerMap.get(key);
         if (c == null) {
             c = new Corner();

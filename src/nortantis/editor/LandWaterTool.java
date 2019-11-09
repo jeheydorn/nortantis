@@ -45,7 +45,7 @@ public class LandWaterTool extends EditorTool
 	private JRadioButton paintRegionButton;
 	private JRadioButton mergeRegionsButton;
 	private Region selectedRegion;
-	private JToggleButton selectColorButton;
+	private JToggleButton selectColorFromMapButton;
 	
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
@@ -155,9 +155,9 @@ public class LandWaterTool extends EditorTool
 			{
 				public void actionPerformed(ActionEvent e) 
 				{
-					if (selectColorButton.isSelected())
+					if (selectColorFromMapButton.isSelected())
 					{
-						selectColorButton.setSelected(false);
+						selectColorFromMapButton.setSelected(false);
 						selectedRegion = null;
 					}
 					RunSwing.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, "Text color");
@@ -172,9 +172,9 @@ public class LandWaterTool extends EditorTool
 			
 			colorChooserPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, colorLabel, chooserPanel);
 			
-			selectColorButton = new JToggleButton("Select color from map");
-			selectColorButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
-			selectColorPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, new JLabel(""), selectColorButton);
+			selectColorFromMapButton = new JToggleButton("Select color from map");
+			selectColorFromMapButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
+			selectColorPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, new JLabel(""), selectColorFromMapButton);
 
 	    }
 	    listener.actionPerformed(null);
@@ -232,18 +232,9 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (paintRegionButton.isSelected())
 		{
-			if (selectColorButton.isSelected())
+			if (selectColorFromMapButton.isSelected())
 			{
-				Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
-				if (center != null)
-				{
-					if (center != null && center.region != null)
-					{
-						colorDisplay.setBackground(center.region.backgroundColor);
-						selectColorButton.setSelected(false);
-						paintRegionButton.setSelected(true);
-					}
-				}
+				selectColorFromMap(e);
 			}	
 			else
 			{
@@ -286,15 +277,22 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (fillRegionColorButton.isSelected())
 		{
-			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
-			if (center != null)
+			if (selectColorFromMapButton.isSelected())
 			{
-				Region region = center.region;
-				if (region != null)
+				selectColorFromMap(e);
+			}	
+			else
+			{
+				Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+				if (center != null)
 				{
-					RegionEdit edit = settings.edits.regionEdits.get(region.id);
-					edit.color = colorDisplay.getBackground();
-					handleMapChange(region.getCenters());
+					Region region = center.region;
+					if (region != null)
+					{
+						RegionEdit edit = settings.edits.regionEdits.get(region.id);
+						edit.color = colorDisplay.getBackground();
+						handleMapChange(region.getCenters());
+					}
 				}
 			}
 		}
@@ -335,6 +333,19 @@ public class LandWaterTool extends EditorTool
 						}
 					}
 				}
+			}
+		}
+	}
+	
+	private void selectColorFromMap(MouseEvent e)
+	{
+		Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+		if (center != null)
+		{
+			if (center != null && center.region != null)
+			{
+				colorDisplay.setBackground(center.region.backgroundColor);
+				selectColorFromMapButton.setSelected(false);
 			}
 		}
 	}
@@ -412,13 +423,13 @@ public class LandWaterTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedCenters();
 	
-		if (waterButton.isSelected() || paintRegionButton.isSelected() && !selectColorButton.isSelected() || landButton.isSelected())
+		if (waterButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected() || landButton.isSelected())
 		{		
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 			mapEditingPanel.addAllHighlightedCenters(selected);
 			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 		}
-		else if (paintRegionButton.isSelected() && selectColorButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
+		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
 		{
 			Center center = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
 			if (center != null)

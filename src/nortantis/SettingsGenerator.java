@@ -46,6 +46,7 @@ public class SettingsGenerator
 		}
 		
 		MapSettings settings = new MapSettings(defaultSettingsFile);
+		settings.pointPrecision = MapSettings.defaultPointPrecision;
 		
 		setRandomSeeds(settings, rand);
 		

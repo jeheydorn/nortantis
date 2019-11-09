@@ -88,7 +88,7 @@ public class JFontChooser extends JComponent
     private static final String[] DEFAULT_FONT_SIZE_STRINGS =
     {
         "8", "9", "10", "11", "12", "14", "16", "18", "20",
-        "22", "24", "26", "28", "36", "48", "72",
+        "22", "24", "26", "28", "36", "48", "72", "96", "120", "144", "168", "192", "216", "240",
     };
 
     // instance variables

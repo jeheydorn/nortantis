@@ -441,7 +441,7 @@ public class MapCreator
 		{
 			Logger.println("Adding frayed edges.");
 			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
-					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer);
+					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer, settings.pointPrecision);
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(borderMask.createGraphics());
@@ -535,7 +535,7 @@ public class MapCreator
 		GraphImpl graph = GraphCreator.createGraph(width, height,
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
-				sizeMultiplyer, settings.lineStyle);	
+				sizeMultiplyer, settings.lineStyle, settings.pointPrecision);	
 		
 		// Setup region colors even if settings.drawRegionColors = false because edits need them in case someone edits a map without region colors, then later enables region colors.
 		assignRandomRegionColors(graph, settings);

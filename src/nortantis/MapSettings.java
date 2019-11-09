@@ -36,6 +36,8 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
+	public static final double defaultPointPrecision = 2.0;
+
 	public long randomSeed;
 	/**
 	 *  A scalar multiplied by the map height and width to get the final resolution.
@@ -57,7 +59,7 @@ public class MapSettings implements Serializable
 	public int grungeWidth;
 	
 	/**
-	 * This settings actually mans fractal generated as opposed to generated from texture.
+	 * This settings actually means fractal generated as opposed to generated from texture.
 	 */
 	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with generateBackgroundFromTexture.
 	public boolean generateBackgroundFromTexture;
@@ -101,6 +103,7 @@ public class MapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconSetName;
+	public double pointPrecision = defaultPointPrecision; // Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings files that have edits.
 	
 	public MapSettings()
 	{
@@ -128,6 +131,7 @@ public class MapSettings implements Serializable
 		result.setProperty("grungeWidth", grungeWidth + "");
 		result.setProperty("cityProbability", cityProbability + "");
 		result.setProperty("lineStyle", lineStyle + "");
+		result.setProperty("pointPrecision", pointPrecision + "");
 
 		// Background image settings.
 		result.setProperty("backgroundRandomSeed", backgroundRandomSeed + "");
@@ -427,6 +431,14 @@ public class MapSettings implements Serializable
 				return LineStyle.Jagged;
 			}
 			return LineStyle.valueOf(str);
+		});
+		pointPrecision = getProperty("pointPrecision", new Function0<Double>()
+		{
+			public Double apply()
+			{
+				String str = props.getProperty("pointPrecision");
+				return (str == null || str == "") ? 10.0 : (double)(Double.parseDouble(str)); // 10.0 was the value used before I made a setting for it.
+			}
 		});
 		
 		
