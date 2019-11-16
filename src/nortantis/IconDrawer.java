@@ -300,7 +300,7 @@ public class IconDrawer
 						mask = cityImages.get(cityIconName).getSecond();
 						iconsToDraw.getOrCreate(center).add(
 								new IconDrawTask(cityImage, mask, center.loc, 
-										(int)(cityImages.get(cityIconName).getThird() * sizeMultiplyer), true, true));
+										(int)(cityImages.get(cityIconName).getThird() * sizeMultiplyer), true, true, cityIconName));
 					}
 				}
 
@@ -504,7 +504,7 @@ public class IconDrawer
 				int scaledWidth = (int)(cityIcons.get(cityName).getThird() * sizeMultiplyer);
 				BufferedImage icon = cityIcons.get(cityName).getFirst();
 				
-				IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true);
+				IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true, cityName);
 				if (!isIconTouchingWater(task))
 				{
 					if (addIconDrawTasks)

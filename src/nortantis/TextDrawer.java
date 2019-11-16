@@ -25,6 +25,7 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
@@ -222,7 +223,7 @@ public class TextDrawer
 		{
 			Set<Point> cityLoc = new HashSet<>(1);
 			cityLoc.add(city.centerLoc);
-			String cityName = generateNameOfType(TextType.City, null, true);
+			String cityName = generateNameOfType(TextType.City, findCityTypeFromCityFileName(city.fileName), true);
 			drawNameRotated(map, g, cityName, cityLoc, city.scaledHeight/2 + (cityYNameOffset + cityMountainFontHeight/2.0) * settings.resolution, true, TextType.City);
 		}
 		
@@ -300,6 +301,31 @@ public class TextDrawer
 		}
 		
 		g.dispose();
+	}
+	
+	private CityType findCityTypeFromCityFileName(String cityFileNameNoExtension)
+	{
+		String name = cityFileNameNoExtension.toLowerCase();
+		if (name.contains("fort") || name.contains("castle") || name.contains("keep") || name.contains("citadel"))
+		{
+			return CityType.Fortification;
+		}
+		else if (name.contains("city") || name.contains("buildings"))
+		{
+			return CityType.City;
+		}
+		else if (name.contains("town") || name.contains("village") || name.contains("houses"))
+		{
+			return CityType.Town;
+		}
+		else if (name.contains("farm") || name.contains("homestead") || name.contains("building") || name.contains("house"))
+		{
+			return CityType.Homestead;
+		}
+		else
+		{
+			return ProbabilityHelper.sampleEnumUniform(r, CityType.class);
+		}
 	}
 	
 	/**
@@ -402,6 +428,11 @@ public class TextDrawer
 			subType = ProbabilityHelper.sampleCategorical(r, 
 					ProbabilityHelper.createUniformDistributionOverEnumValues(RiverType.values()));			
 		}
+		else if (type.equals(TextType.City))
+		{
+			// In the editor you add city icons in a different tool than city text, so we have no way of knowing what icon, if any, this city name is for.
+			subType = ProbabilityHelper.sampleEnumUniform(r, CityType.class);
+		}
 		
 		try
 		{
@@ -503,24 +534,59 @@ public class TextDrawer
 		}
 		else if (type.equals(TextType.City))
 		{
+			CityType cityType = (CityType)subType;
+			String structureName;
+			if (cityType.equals(CityType.Fortification))
+			{
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
+						 new Tuple2<>(0.2, "Castle"),
+						 new Tuple2<>(0.2, "Fort"),
+						 new Tuple2<>(0.2, "Fortress"),
+						 new Tuple2<>(0.2, "Keep"),
+						 new Tuple2<>(0.2, "Citadel")));
+			}
+			else if (cityType.equals(CityType.City))
+			{
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
+						 new Tuple2<>(0.75, "City"),
+						 new Tuple2<>(0.25, "Town")));
+			}
+			else if (cityType.equals(CityType.Town))
+			{
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
+						 new Tuple2<>(0.2, "City"),
+						 new Tuple2<>(0.4, "Village"),
+						 new Tuple2<>(0.4, "Town")));
+			}
+			else if (cityType.equals(CityType.Homestead))
+			{
+				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
+						 new Tuple2<>(0.5, "Farm"),
+						 new Tuple2<>(0.5, "Village")));
+			}
+			else
+			{
+				throw new RuntimeException("Unknown city type: " + cityType);
+			}
+			
 			double probabilityOfPersonName = 0.5;
 			if (r.nextDouble() < probabilityOfPersonName)
 			{
 				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
-						new Tuple2<>(0.1, "City of %s"),
-						new Tuple2<>(0.04, "%s's Town"),
-						new Tuple2<>(0.04, "Keep of %s"),
-						new Tuple2<>(0.04, "Fortress of %s"),
-						new Tuple2<>(0.04, "%s's Fortress"),
-						new Tuple2<>(0.04, "%s's Keep")));
+						new Tuple2<>(0.1, structureName + " of %s"),
+						new Tuple2<>(0.04, "%s's " + structureName),
+						new Tuple2<>(0.04, structureName + " of %s"),
+						new Tuple2<>(0.04, structureName + " of %s"),
+						new Tuple2<>(0.04, "%s's " + structureName),
+						new Tuple2<>(0.04, "%s's " + structureName)));
 				return generatePersonName(format, requireUnique);	
 			}
 			else
 			{
 				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(
-						new Tuple2<>(0.2, "City of %s"),
-						new Tuple2<>(0.2, "%s City"),
-						new Tuple2<>(0.02, "%s Town"),
+						new Tuple2<>(0.2, structureName + " of %s"),
+						new Tuple2<>(0.2, "%s " + structureName),
+						new Tuple2<>(0.02, "%s " + structureName),
 						new Tuple2<>(0.3, "%s")));
 				return generatePlaceName(format, requireUnique);
 			}
@@ -613,6 +679,14 @@ public class TextDrawer
 	{
 		NameOnly,
 		Decorated
+	}
+	
+	private enum CityType
+	{
+		Fortification,
+		City,
+		Town,
+		Homestead,
 	}
 		
 	private String generatePlaceName(String format, boolean requireUnique)

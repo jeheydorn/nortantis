@@ -20,9 +20,16 @@ class IconDrawTask implements Comparable<IconDrawTask>
 	int yBottom;
 	boolean needsScale;
 	boolean ignoreMaxSize;
-
+	String fileName;
+	
 	public IconDrawTask(BufferedImage icon, BufferedImage mask, Point centerLoc, int scaledWidth,
 			boolean needsScale, boolean ignoreMaxSize)
+	{
+		this(icon, mask, centerLoc, scaledWidth, needsScale, ignoreMaxSize, "");
+	}
+
+	public IconDrawTask(BufferedImage icon, BufferedImage mask, Point centerLoc, int scaledWidth,
+			boolean needsScale, boolean ignoreMaxSize, String fileName)
 	{
 		this.icon = icon;
 		this.mask = mask;
@@ -35,6 +42,7 @@ class IconDrawTask implements Comparable<IconDrawTask>
        	yBottom = (int)(centerLoc.y + (scaledHeight/2.0));
        	
        	this.ignoreMaxSize = ignoreMaxSize;
+       	this.fileName = fileName;
 	}
 	
 	public void scaleIcon()
