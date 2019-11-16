@@ -223,7 +223,7 @@ public class IconDrawer
 		iconsToDraw.clear();
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType(mountainsName);
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType(hillsName);
-		List<Tuple2<BufferedImage, BufferedImage>> duneImages = getAllIconGroupsAndMasksForType(sandDunesName).get(sandDunesName);
+		List<Tuple2<BufferedImage, BufferedImage>> duneImages = getAllIconGroupsAndMasksForType(sandDunesName).get("dunes");
 		int duneWidth = findDuneWidth();
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = loadIconsWithWidths(citiesName);
 		
@@ -528,7 +528,7 @@ public class IconDrawer
 	public List<Set<Center>> addMountainsAndHills(List<Set<Center>> mountainGroups, List<Set<Center>> mountainAndHillGroups)
 	{				
         // Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType("mountains");
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType(mountainsName);
         if (mountainImagesById == null || mountainImagesById.isEmpty())
         {
         	Logger.println("No mountain images were found. Mountain images will not be drawn.");
@@ -537,7 +537,7 @@ public class IconDrawer
 
         // Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
         // The hill image file names must use the same ids as the mountain ranges.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType("hills");
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType(hillsName);
         
         // Warn if images are missing
         for (String hillGroupId : hillImagesById.keySet())
@@ -1200,18 +1200,6 @@ public class IconDrawer
 	private static boolean doesUseSets(String iconType)
 	{
 		return iconType.equals(citiesName);
-	}
-	
-	private String getSetName(String iconType)
-	{
-		if (iconType.equals(citiesName))
-		{
-			return cityIconsSetName;
-		}
-		else
-		{
-			return null;
-		}
 	}
 	
 	private static final int opaqueThreshold = 50;
