@@ -1249,7 +1249,7 @@ public class ImageHelper
 		return result;
 	}
 	
-	private static int colorifyPixel(float pixelLevel, float[] hsb, ColorifyAlgorithm how)
+	public static int colorifyPixel(float pixelLevel, float[] hsb, ColorifyAlgorithm how)
 	{	
 		if (how == ColorifyAlgorithm.algorithm2)
 		{

@@ -176,9 +176,13 @@ public class GraphImpl extends VoronoiGraph
         		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
     }
     
-	public void drawRegionIndexes(Graphics2D g)
-	{       
+	public BufferedImage createRegionIndexes()
+	{      
+		BufferedImage regionIndexes = new BufferedImage(getWidth(), getHeight(), 
+				BufferedImage.TYPE_BYTE_GRAY);
+		Graphics2D g = regionIndexes.createGraphics();
        	renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+       	return regionIndexes;
 	}
     
     /**
@@ -331,6 +335,25 @@ public class GraphImpl extends VoronoiGraph
             		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
         	return opt.get();
         	
+    	}
+    	return null;
+    }
+    
+    public Center findClosestCenterNoPoint(int x, int y) 
+    {    	
+    	if (x < getWidth() && y < getHeight() && x >= 0 && y >= 0)
+    	{
+    		Color color;
+    		try
+    		{
+    			color = new Color(centerLookupTable.getRGB((int)x, (int)y));
+    		}
+    		catch(IndexOutOfBoundsException e)
+    		{
+    			color = null; 
+    		}
+    		int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+    		return centers.get(index);
     	}
     	return null;
     }

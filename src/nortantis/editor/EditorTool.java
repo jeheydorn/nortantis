@@ -233,6 +233,7 @@ public abstract class EditorTool
 	        	drawLock.lock();
 				try
 				{	
+					long startTime = System.currentTimeMillis(); // TODO remove
 					if (quickUpdate)
 					{
 						return drawMapQuickUpdate();
@@ -243,7 +244,7 @@ public abstract class EditorTool
 						mapParts = new MapParts();
 					}
 					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);			
-					
+					System.out.println("Seconds to draw map: " + ((System.currentTimeMillis() - startTime) / 1000.0)); // TODO remove
 					return map;
 				} 
 				finally
