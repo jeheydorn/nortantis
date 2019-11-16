@@ -3,16 +3,11 @@ package nortantis;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Random;
-import java.util.function.Function;
 
-import hoten.voronoi.Center;
-import hoten.voronoi.Edge;
 import nortantis.util.ImageHelper;
-import nortantis.util.Range;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
 /**
@@ -29,6 +24,8 @@ public class Background
 	private boolean backgroundFromFilesNotGenerated;
 	boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+	// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
+	BufferedImage regionIndexes;
 	private int borderWidthScaled;
 	
 	public Background(MapSettings settings, Dimension maxDimensions)
@@ -313,7 +310,12 @@ public class Background
 		if (shouldDrawRegionColors)
 		{
 			// The image "land" is generated but doesn't yet have colors.
-			land = drawRegionColors(graph, landBeforeRegionColoring, landColorifyAlgorithm);
+			
+			regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), 
+					BufferedImage.TYPE_BYTE_GRAY);
+			graph.drawRegionIndexes(regionIndexes.createGraphics());
+			
+			land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm);
 		}
 		
 		// Fixes a bug where graph width or height is not exactly the same as image width and heights due to rounding issues.
@@ -330,48 +332,18 @@ public class Background
 		}
 	}
 	
-	private BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, 
+	BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors, 
 			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm)
 	{	
 		if (graph.regions.isEmpty())
 		{
 			return ImageHelper.convertImageToType(fractalBG, BufferedImage.TYPE_INT_RGB);
 		}
+		
+		Color[] regionBackgroundColors = graph.regions.stream().map(
+				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
 				
-		return colorifyRegionBackground(graph, fractalBG, colorfiyAlgorithm);
+		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm);
 	}
-	
-	private static BufferedImage colorifyRegionBackground(GraphImpl graph, BufferedImage grayBackground, ColorifyAlgorithm how)
-	{
-		if (grayBackground.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("The grayBackground image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
-					+ ImageHelper.bufferedImageTypeToString(grayBackground.getType()));
-
-		BufferedImage result = new BufferedImage(grayBackground.getWidth(),
-				grayBackground.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Raster raster = grayBackground.getRaster();
-		
-		float[] hsb = new float[3];
-		
-		for (int y = 0; y < result.getHeight(); y++)
-			for (int x = 0; x < result.getWidth(); x++)
-			{
-				float level = raster.getSampleFloat(x, y, 0);
-				
-				Center center = graph.findClosestCenterNoPoint(x, y);
-				
-				// If the center has no region, it should be ocean, in which case there's no need to draw a region color on it.
-				if (center.region != null)
-				{
-					Color regionColor = center.region.backgroundColor;
-					Color.RGBtoHSB(regionColor.getRed(), regionColor.getGreen(), regionColor.getBlue(), hsb);
-					
-					result.setRGB(x, y, ImageHelper.colorifyPixel(level, hsb, how));
-				}
-			}
-		
-		return result;
-	}
-	
 
 }

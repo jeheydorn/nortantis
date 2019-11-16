@@ -237,8 +237,7 @@ public class MapCreator
 					{
 						colors = new Color[] {settings.landColor};
 					}
-					BufferedImage regionIndexes = graph.createRegionIndexes();
-					map = ImageHelper.maskWithMultipleColors(map, colors, regionIndexes, landBlur, true);
+					map = ImageHelper.maskWithMultipleColors(map, colors, background.regionIndexes, landBlur, true);
 				}
 				else
 				{
