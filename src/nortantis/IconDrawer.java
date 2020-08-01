@@ -71,7 +71,7 @@ public class IconDrawer
 	// Hill images are scaled by this.
 	private final double hillScale = 0.5;	
 	private HashMapF<Center, List<IconDrawTask>> iconsToDraw;
-	GraphImpl graph;
+	WorldGraph graph;
 	Random rand;
 	/**
 	 * Used to store icons drawn when generating icons so they can be edited later by the editor.
@@ -80,7 +80,7 @@ public class IconDrawer
 	public Map<Integer, CenterTrees> trees;
 	private String cityIconsSetName;
 
-	public IconDrawer(GraphImpl graph, Random rand, String cityIconsSetName)
+	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
@@ -93,7 +93,7 @@ public class IconDrawer
 		trees = new HashMap<>();
 	}
 
-	public static double findMeanPolygonWidth(GraphImpl graph)
+	public static double findMeanPolygonWidth(WorldGraph graph)
 	{
 		double widthSum = 0;
 		int count = 0;
@@ -328,7 +328,7 @@ public class IconDrawer
 	 * to get to that other center. If distanceThreshold > 1, the result will include those
 	 * centers which connect centeres that are accepted.
 	 */
-	private static List<Set<Center>> findCenterGroups(GraphImpl graph, int maxGapSize,
+	private static List<Set<Center>> findCenterGroups(WorldGraph graph, int maxGapSize,
 			Function<Center, Boolean> accept)
 	{
 		List<Set<Center>> groups = new ArrayList<>();
@@ -562,21 +562,21 @@ public class IconDrawer
         {
         	for (Center c : group)
         	{	
-	        	String filenameRangeId = rangeMap.get(c.mountainRangeId);
-	        	if ((filenameRangeId == null))
+	        	String fileNameRangeId = rangeMap.get(c.mountainRangeId);
+	        	if ((fileNameRangeId == null))
 	        	{
-	        		filenameRangeId =  new ArrayList<>(mountainImagesById.keySet()).get(
+	        		fileNameRangeId =  new ArrayList<>(mountainImagesById.keySet()).get(
 	        				rand.nextInt(mountainImagesById.keySet().size()));
-	        		rangeMap.put(c.mountainRangeId, filenameRangeId);
+	        		rangeMap.put(c.mountainRangeId, fileNameRangeId);
 	        	}
 
 	        	if (c.isMountain)
 	        	{        		
 		        	List<Tuple2<BufferedImage, BufferedImage>> imagesInRange =
-		        			mountainImagesById.get(filenameRangeId);
+		        			mountainImagesById.get(fileNameRangeId);
 
 
-		        	// I'm deliberatly putting this line before checking center size so that the
+		        	// I'm deliberately putting this line before checking center size so that the
 		        	// random number generator is used the same no matter what resolution the map
 		        	// is drawn at.
 	           		int i = rand.nextInt(imagesInRange.size());
@@ -589,13 +589,13 @@ public class IconDrawer
 			           	// Draw the image such that it is centered in the center of c.
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInRange.get(i).getFirst(), 
 		           				imagesInRange.get(i).getSecond(), c.loc, scaledSize, true, false));
-		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, filenameRangeId, i));
+		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, fileNameRangeId, i));
 		           	}
 		        }
 	         	else if (c.isHill)
 	         	{
 		        	List<Tuple2<BufferedImage, BufferedImage>> imagesInGroup = 
-		        			hillImagesById.get(filenameRangeId);
+		        			hillImagesById.get(fileNameRangeId);
 		        	
 		        	if (imagesInGroup != null && !imagesInGroup.isEmpty())
 		        	{	        		
@@ -608,7 +608,7 @@ public class IconDrawer
 			           	{
 			           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(imagesInGroup.get(i).getFirst(), 
 			           				imagesInGroup.get(i).getSecond(), c.loc, scaledSize, true, false));
-			           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, filenameRangeId, i));
+			           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));
 			           	}
 		        	}         		
 	         	}
@@ -709,6 +709,19 @@ public class IconDrawer
 			if (forest.biome == biome)
 			{
 				result.add(forest.treeType);
+			}
+		}
+		return result;
+	}
+	
+	public static Set<Biome> getBiomesForTreeType(TreeType type)
+	{
+		Set<Biome> result = new TreeSet<>();
+		for (final ForestType forest : forestTypes)
+		{
+			if (forest.treeType == type)
+			{
+				result.add(forest.biome);
 			}
 		}
 		return result;
@@ -836,7 +849,7 @@ public class IconDrawer
         }
 	}
 
-	private void drawTreesAtCenterAndCorners(GraphImpl graph,
+	private void drawTreesAtCenterAndCorners(WorldGraph graph,
 			double density, List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double avgCenterHeight, 
 			boolean[] cornersWithTreesDrawn, Center center, long randomSeed)
 	{
@@ -895,7 +908,7 @@ public class IconDrawer
        	return cSize;
 	}
 
-	private void drawTrees(GraphImpl graph,
+	private void drawTrees(WorldGraph graph,
 			List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double cSize, Point loc,
 			double forestDensity, Center center, Random rand)
 	{

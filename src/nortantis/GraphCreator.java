@@ -26,7 +26,7 @@ public class GraphCreator
     // Higher values will make larger plates, but fewer of them.
 	private static final int tectonicPlateIterationMultiplier = 30;
 	
-    public static GraphImpl createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
+    public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
     		double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision)
     {
 		double startTime = System.currentTimeMillis();
@@ -35,7 +35,7 @@ public class GraphCreator
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
 
          //assemble the voronoi structure into a usable graph object representing a map
-        final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
+        final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
     		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, lineStyle, pointPrecision);
         
 		double elapsedTime = System.currentTimeMillis() - startTime;
@@ -58,7 +58,7 @@ public class GraphCreator
         return graph;
     }
     
-    public static BufferedImage createHeightMap(GraphImpl graph, Random rand)
+    public static BufferedImage createHeightMap(WorldGraph graph, Random rand)
     {
 		double startTime = System.currentTimeMillis();
 		
@@ -101,9 +101,9 @@ public class GraphCreator
 			{
 				float elevation = out.getSample(x, y, 0);
 				float scale;
-				if (elevation > GraphImpl.seaLevel*maxPixelValue)
+				if (elevation > WorldGraph.seaLevel*maxPixelValue)
 				{
-					scale = Math.abs(elevation - GraphImpl.seaLevel*maxPixelValue) / maxPixelValue;
+					scale = Math.abs(elevation - WorldGraph.seaLevel*maxPixelValue) / maxPixelValue;
 				}
 				else
 				{
@@ -122,7 +122,7 @@ public class GraphCreator
 
     }
     
-    public static GraphImpl createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer, double pointPrecision)
+    public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer, double pointPrecision)
     {
         // Zero is most random. Higher values make the polygons more uniform shaped.
         final int numLloydRelaxations = 0;
@@ -131,7 +131,7 @@ public class GraphCreator
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
 
          //assemble the voronoi structure into a usable graph object representing a map
-        final GraphImpl graph = new GraphImpl(v, numLloydRelaxations, r, sizeMultiplyer, pointPrecision);
+        final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, sizeMultiplyer, pointPrecision);
         
         return graph;
     }

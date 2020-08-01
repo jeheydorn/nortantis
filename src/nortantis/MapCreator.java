@@ -112,7 +112,7 @@ public class MapCreator
 			}
 		}
 		
-        GraphImpl graph;
+        WorldGraph graph;
 		if (mapParts == null || mapParts.graph == null)
 		{
 			Logger.println("Creating the graph.");
@@ -440,7 +440,7 @@ public class MapCreator
 		if (settings.frayedBorder)
 		{
 			Logger.println("Adding frayed edges.");
-			GraphImpl frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
+			WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
 					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer, settings.pointPrecision);
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
@@ -488,7 +488,7 @@ public class MapCreator
 		return map;
 	}
 	
-	private static void assignRandomRegionColors(GraphImpl graph, MapSettings settings)
+	private static void assignRandomRegionColors(WorldGraph graph, MapSettings settings)
 	{
 		
 		float[] landHsb = new float[3];
@@ -507,7 +507,7 @@ public class MapCreator
 	/**
 	 * Assigns the color of each political region.
 	 */
-	private static void assignRegionColors(GraphImpl graph, List<Color> colorOptions)
+	private static void assignRegionColors(WorldGraph graph, List<Color> colorOptions)
 	{
 		for (int i : new Range(graph.regions.size()))
 		{
@@ -530,9 +530,9 @@ public class MapCreator
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 	
-	private static GraphImpl createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
+	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
 	{
-		GraphImpl graph = GraphCreator.createGraph(width, height,
+		WorldGraph graph = GraphCreator.createGraph(width, height,
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
 				sizeMultiplyer, settings.lineStyle, settings.pointPrecision);	
@@ -548,7 +548,7 @@ public class MapCreator
 		return mapWidth / baseResolution;
 	}
 	
-	private static void applyRegionEdits(GraphImpl graph, MapEdits edits)
+	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)
 	{
 		if (edits == null || edits.regionEdits.isEmpty())
 		{
@@ -572,7 +572,7 @@ public class MapCreator
 		}
 	}
 	
-	private static void applyCenterEdits(GraphImpl graph, MapEdits edits)
+	private static void applyCenterEdits(WorldGraph graph, MapEdits edits)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
@@ -634,7 +634,7 @@ public class MapCreator
 		}
 	}
 	
-	private static void applyEdgeEdits(GraphImpl graph, MapEdits edits)
+	private static void applyEdgeEdits(WorldGraph graph, MapEdits edits)
 	{
 		if (edits == null || edits.edgeEdits.isEmpty())
 		{
@@ -1089,7 +1089,7 @@ public class MapCreator
 			}
 	}
 
-	public static void drawRivers(MapSettings settings, GraphImpl graph, BufferedImage map, double sizeMultiplyer)
+	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, double sizeMultiplyer)
 	{
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.riverColor);
@@ -1108,7 +1108,7 @@ public class MapCreator
 		r = new Random(settings.randomSeed);
         DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
 		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
-		GraphImpl graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
+		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 

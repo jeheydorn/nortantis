@@ -15,6 +15,7 @@ public class Edge implements Comparable<Edge>
     public Corner v0, v1;  // Voronoi edge
     public Point midpoint;  // halfway between v0,v1
     public int river;
+    public boolean isRoad;
 	public long noisyEdgeSeed;
 
     public void setVornoi(Corner v0, Corner v1) {

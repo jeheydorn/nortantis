@@ -43,7 +43,7 @@ import nortantis.util.Range;
  *
  * @author Connor
  */
-public class GraphImpl extends VoronoiGraph
+public class WorldGraph extends VoronoiGraph
 {
 
 	// Modify seeFloorLevel to change the number of islands in the ocean.
@@ -69,7 +69,7 @@ public class GraphImpl extends VoronoiGraph
     Set<TectonicPlate> plates;
     public List<Region> regions;
 
-    public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
+    public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
     		double sizeMultiplyer, LineStyle lineStyle, double pointPrecision) 
     {
@@ -89,7 +89,7 @@ public class GraphImpl extends VoronoiGraph
     /**
      * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
       */
-    public GraphImpl(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision) 
+    public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision) 
     {
         super(r, sizeMultiplyer, pointPrecision);
         initVoronoiGraph(v, numLloydRelaxations, false);
@@ -259,7 +259,7 @@ public class GraphImpl extends VoronoiGraph
     	// For each land mass in smallLandMasses, add it to the region nearest its centroid.
     	for (Set<Center> landMass : smallLandMasses)
     	{
-    		Point centroid = GraphImpl.findCentroid(landMass);
+    		Point centroid = WorldGraph.findCentroid(landMass);
     		Region closest = findClosestRegion(centroid);
     		if (closest != null)
     		{

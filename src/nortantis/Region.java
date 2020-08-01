@@ -75,7 +75,7 @@ public class Region
 	
 	public Point findCentroid()
 	{
-		return GraphImpl.findCentroid(centers);
+		return WorldGraph.findCentroid(centers);
 	}
 	
 	public Set<Region> findNeighbors()

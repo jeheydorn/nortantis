@@ -5,7 +5,7 @@ import java.util.Set;
 
 import hoten.geom.Point;
 import nortantis.Biome;
-import nortantis.GraphImpl;
+import nortantis.WorldGraph;
 import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;

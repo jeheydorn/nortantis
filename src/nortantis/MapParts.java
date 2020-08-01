@@ -17,7 +17,7 @@ public class MapParts
 	/**
 	 * Used as an input and output during map creation.
 	 */
-	public GraphImpl graph;
+	public WorldGraph graph;
 	
 	/**
 	 * Used only as an output during map creation.

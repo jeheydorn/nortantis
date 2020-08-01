@@ -8,6 +8,6 @@ public class TestRunner
 {
 	public static void main(String[] args)
 	{
-		new GraphImplTest().calcUnilateralLevelOfConvergenceTest();
+		new WorldGraphTest().calcUnilateralLevelOfConvergenceTest();
 	}
 }

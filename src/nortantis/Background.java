@@ -305,7 +305,7 @@ public class Background
 				(int)(image.getHeight() - borderWidthScaled * 2));
 	}
 	
-	public void doSetupThatNeedsGraph(MapSettings settings, GraphImpl graph)
+	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph)
 	{
 		if (shouldDrawRegionColors)
 		{
@@ -332,7 +332,7 @@ public class Background
 		}
 	}
 	
-	BufferedImage drawRegionColors(GraphImpl graph, BufferedImage fractalBG, BufferedImage pixelColors, 
+	BufferedImage drawRegionColors(WorldGraph graph, BufferedImage fractalBG, BufferedImage pixelColors, 
 			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm)
 	{	
 		if (graph.regions.isEmpty())

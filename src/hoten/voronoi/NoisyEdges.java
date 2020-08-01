@@ -304,7 +304,7 @@ public class NoisyEdges
 		River
 	}
 	
-	public boolean shouldDrawEdge(Edge edge)
+	private boolean shouldDrawEdge(Edge edge)
 	{
 		return getEdgeDrawType(edge) != EdgeType.None;
 	}
@@ -320,6 +320,8 @@ public class NoisyEdges
 			return paths.get(edgeIndex);
 		}
 	}
+	
+	
 	
 	public LineStyle getLineStyle()
 	{

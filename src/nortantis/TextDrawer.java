@@ -181,7 +181,7 @@ public class TextDrawer
 		return result;
 	}
 	
-	public void drawText(GraphImpl graph, BufferedImage map, BufferedImage landAndOceanBackground,
+	public void drawText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground,
 			List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{				
 		this.landAndOceanBackground = landAndOceanBackground;
@@ -203,7 +203,7 @@ public class TextDrawer
 		
 	}
 	
-	private void generateText(BufferedImage map, GraphImpl graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
+	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{
 		// All text drawn must be done so in order from highest to lowest priority because if I try to draw
 		// text on top of other text, the latter will not be displayed.
@@ -334,7 +334,7 @@ public class TextDrawer
 	 * @param graph
 	 * @param g
 	 */
-	public synchronized void drawUserModifiedText(BufferedImage map, GraphImpl graph)
+	public synchronized void drawUserModifiedText(BufferedImage map, WorldGraph graph)
 	{
 		Graphics2D g = map.createGraphics();
 
@@ -730,7 +730,7 @@ public class TextDrawer
 		
 	}
 	
-	private void addTitle(BufferedImage map, GraphImpl graph, Graphics2D g)
+	private void addTitle(BufferedImage map, WorldGraph graph, Graphics2D g)
 	{
 		g.setFont(titleFontScaled);
 
@@ -825,7 +825,7 @@ public class TextDrawer
 	/**
 	 * For finding rivers.
 	 */
-	private List<River> findRivers(GraphImpl graph)
+	private List<River> findRivers(WorldGraph graph)
 	{
 		List<River> rivers = new ArrayList<>();
 		Set<Corner> explored = new HashSet<>();
@@ -1054,7 +1054,7 @@ public class TextDrawer
 	}
 
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
-			GraphImpl graph, boolean boldBackground, boolean enableBoundsChecking, TextType textType)
+			WorldGraph graph, boolean boldBackground, boolean enableBoundsChecking, TextType textType)
 	{
 		return drawNameHorizontal(map, g, name, locations, graph, boldBackground, 0, enableBoundsChecking, 
 				textType);
@@ -1068,7 +1068,7 @@ public class TextDrawer
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, String name, Set<Point> locations,
-			GraphImpl graph, boolean boldBackground, double yOffset, boolean enableBoundsChecking, 
+			WorldGraph graph, boolean boldBackground, double yOffset, boolean enableBoundsChecking, 
 			TextType textType)
 	{
 		if (name.length() == 0)
@@ -1117,7 +1117,7 @@ public class TextDrawer
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, 
-			Set<Point> locations, GraphImpl graph, boolean boldBackground,
+			Set<Point> locations, WorldGraph graph, boolean boldBackground,
 			boolean enableBoundsChecking, MapText text)
 	{	
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
@@ -1348,7 +1348,7 @@ public class TextDrawer
 		return true;
 	}
 	
-	private Set<Center> findPlateCentersWaterOnly(final GraphImpl graph, final TectonicPlate plate)
+	private Set<Center> findPlateCentersWaterOnly(final WorldGraph graph, final TectonicPlate plate)
 	{		
 		Set<Center> plateCenters = new HashSet<Center>();
 		for (Center c : plate.centers)

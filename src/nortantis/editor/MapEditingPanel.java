@@ -12,7 +12,7 @@ import java.util.Set;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
-import nortantis.GraphImpl;
+import nortantis.WorldGraph;
 import nortantis.ImagePanel;
 
 @SuppressWarnings("serial")
@@ -22,7 +22,7 @@ public class MapEditingPanel extends ImagePanel
 	private List<Area> areas;
 	private Set<Center> highlightedCenters;
 	private Set<Center> processingCenters;
-	private GraphImpl graph;
+	private WorldGraph graph;
 	private HighlightMode highlightMode;
 	private Collection<Edge> highlightedEdges;
 	private Collection<Edge> processingEdges;
@@ -93,7 +93,7 @@ public class MapEditingPanel extends ImagePanel
 			processingCenters.clear();
 	}
 	
-	public void setGraph(GraphImpl graph)
+	public void setGraph(WorldGraph graph)
 	{
 		this.graph = graph;
 	}

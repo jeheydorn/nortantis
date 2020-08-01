@@ -607,7 +607,16 @@ public class MapSettings implements Serializable
 		
 		cityIconSetName = getProperty("cityIconSetName", () -> 
 		{
-			String setName = props.getProperty("cityIconSetName");
+			String setName;
+			try
+			{
+				setName = props.getProperty("cityIconSetName");
+			}
+			catch(Exception ex)
+			{
+				setName = "";
+			}
+			
 			if (setName == null || setName.isEmpty())
 			{
 				Set<String> sets = IconDrawer.getIconSets(IconDrawer.citiesName);
@@ -759,7 +768,7 @@ public class MapSettings implements Serializable
 		});
 		
 		edits = new MapEdits();
-		// hiddenTextIds is a comma seperated list.
+		// hiddenTextIds is a comma delimited list.
 				
 		edits.text = getProperty("editedText", new Function0<CopyOnWriteArrayList<MapText>>()
 		{

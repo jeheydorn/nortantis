@@ -39,7 +39,7 @@ public class TectonicPlate
 	
 	public Point findCentroid()
 	{
-		return GraphImpl.findCentroid(centers);
+		return WorldGraph.findCentroid(centers);
 	}
 
 		

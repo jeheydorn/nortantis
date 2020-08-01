@@ -214,7 +214,7 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("C:\\Users\\Joseph\\Dropbox\\Joseph\\Games\\SailGame\\textures\\seeds\\sailcloth.jpg"), 4096, 4096, false);
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("C:\\Users\\Joseph\\Dropbox\\Joseph\\Games\\SailGame\\textures\\seeds\\maple trunk.png"), 1024, 1024, false);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);
