@@ -82,7 +82,7 @@ public class TextTool extends EditorTool
 				{
 					rotateButton.doClick();
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_G) 
+				else if ((e.getKeyCode() == KeyEvent.VK_M) 
 						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
 				{
 					moveButton.doClick();
@@ -131,31 +131,31 @@ public class TextTool extends EditorTool
 				}
 			};
 		    
-		    editButton = new JRadioButton("Edit");
+		    editButton = new JRadioButton("<HTML><U>E</U>dit</HTML>");
 		    group.add(editButton);
 		    radioButtons.add(editButton);
 		    editButton.addActionListener(listener);
 		    editButton.setToolTipText("Edit text (alt+E)");
 		    
-		    moveButton = new JRadioButton("Move");
+		    moveButton = new JRadioButton("<HTML><U>M</U>ove</HTML>");
 		    group.add(moveButton);
 		    radioButtons.add(moveButton);
 		    moveButton.addActionListener(listener);
-		    moveButton.setToolTipText("Move text (alt+G)");
+		    moveButton.setToolTipText("Move text (alt+M)");
 	
-		    addButton = new JRadioButton("Add");
+		    addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
 		    group.add(addButton);
 		    radioButtons.add(addButton);
 		    addButton.addActionListener(listener);
 		    addButton.setToolTipText("Add new text of the selected text type (alt+A)");
 	
-		    rotateButton = new JRadioButton("Rotate");
+		    rotateButton = new JRadioButton("<HTML><U>R</U>otate</HTML>");
 		    group.add(rotateButton);
 		    radioButtons.add(rotateButton);
 		    rotateButton.addActionListener(listener);
-		    rotateButton.setToolTipText("Rotate text (alt+R)");	
+		    rotateButton.setToolTipText("Rotate text (alt+R) will");	
 	
-		    deleteButton = new JRadioButton("Delete");
+		    deleteButton = new JRadioButton("<HTML><U>D</U>elete</HTML>");
 		    group.add(deleteButton);
 		    radioButtons.add(deleteButton);
 		    deleteButton.addActionListener(listener);
@@ -468,6 +468,10 @@ public class TextTool extends EditorTool
 		{
 			if (editButton.isSelected())
 			{
+				if (!editTextField.hasFocus())
+				{
+					editTextField.grabFocus();
+				}
 				MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
 				handleTextEdit(selectedText);
 			}

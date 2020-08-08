@@ -100,6 +100,7 @@ public class MapSettings implements Serializable
 	public int frayedBorderSize;
 	public boolean drawIcons = true;
 	public boolean drawRivers = true; // Not saved
+	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconSetName;
@@ -176,6 +177,7 @@ public class MapSettings implements Serializable
 		result.setProperty("borderWidth", borderWidth + "");
 		result.setProperty("frayedBorderSize", frayedBorderSize + "");
 		result.setProperty("drawIcons", drawIcons + "");
+		result.setProperty("drawRoads", drawRoads + "");
 		
 		// User edits.
 		result.setProperty("editedText", editedTextToJson());
@@ -601,6 +603,14 @@ public class MapSettings implements Serializable
 			public Boolean apply()
 			{
 				String str = props.getProperty("drawIcons");
+				return str == null ? true : parseBoolean(str);
+			}
+		});
+		drawRoads= getProperty("drawRoads", new Function0<Boolean>()
+		{
+			public Boolean apply()
+			{
+				String str = props.getProperty("drawRoads");
 				return str == null ? true : parseBoolean(str);
 			}
 		});

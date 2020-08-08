@@ -113,5 +113,15 @@ public class Center
 	{
 		return IconDrawer.getTreeTypesForBiome(biome);
 	}
+	
+	public static double distanceBetween(Center c1, Center c2)
+	{
+		if (c1 == null || c2 == null)
+		{
+			// Good luck with that journey
+			return Double.POSITIVE_INFINITY;
+		}
+		return c1.loc.distanceTo(c2.loc);
+	}
 
 }

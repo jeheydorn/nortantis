@@ -138,12 +138,8 @@ public class IconDrawer
 	
 	public void markCities(double cityProbability)
 	{
-//		Set<Center> rivers = new HashSet<>();
-//		Set<Center> coast = new HashSet<>();
-//		findRiversAndCoast(rivers, coast); // TODO decide if I need this and delete it if I don't.
 		for (Center c : graph.centers)
 		{
-			// TODO figure out how to make the cities draw on coasts and not draw right on top of rivers.
 			if (!c.isMountain && !c.isHill && !c.isWater)
 			{
 				if (c.isRiver() && rand.nextDouble() <= cityProbability*2)
@@ -161,24 +157,7 @@ public class IconDrawer
 			}
 		}
 	}
-	
-	// TODO remove if not needed
-//	private void findRiversAndCoast(Set<Center> rivers, Set<Center> coast)
-//	{
-//		for (Center c : graph.centers)
-//		{
-//			if (c. >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
-//			{
-//				rivers.add(c);
-//			}
-//			
-//			if (c.isCoast)
-//			{
-//				coast.add(c);
-//			}
-//		}
-//	}
-	
+		
 	/**
 	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
 	 */
@@ -481,9 +460,10 @@ public class IconDrawer
 	
 	/**
 	 * Adds icon draw tasks to draw cities.
-	 * @return IconDrawTask of each city icon added. Needed to void drawing text on top of cities.
+	 * Side effect – if a city is placed where it cannot be drawn, this will un-mark it as a city.
+	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
 	 */
-	public List<IconDrawTask> addCities(double sizeMultiplyer, boolean addIconDrawTasks)
+	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = loadIconsWithWidths(citiesName);
 		if (cityIcons.isEmpty())
@@ -514,6 +494,10 @@ public class IconDrawer
 					}
 	           		
 	    	   		cities.add(task); 
+				}
+				else
+				{
+					c.isCity = false;
 				}
 			}
 		}

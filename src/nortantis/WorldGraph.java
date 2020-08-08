@@ -2,15 +2,19 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Polygon;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -41,7 +45,6 @@ import nortantis.util.Range;
  *
  * 2) color mapping information based on biome, and for bodies of water
  *
- * @author Connor
  */
 public class WorldGraph extends VoronoiGraph
 {
@@ -60,7 +63,7 @@ public class WorldGraph extends VoronoiGraph
    	double borderPlateContinentalProbability;
    	// This scales how much elevation is added or subtracted at convergent/divergent boundaries.
 	final double collisionScale = 0.4;
-	// This controlls how smooth the plates boundaries are. Higher is smoother. 1 is minumum. Larger values
+	// This controls how smooth the plates boundaries are. Higher is smoother. 1 is minimum. Larger values
 	// will slow down plate generation.
 	final int plateBoundarySmoothness = 26;
 	final int minPoliticalRegionSize = 10;
@@ -1080,29 +1083,27 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Greedily finds a path between the 2 given corners.
-	 * @param riverStart
-	 * @param end
+	 * Greedily finds a path between the 2 given corners using Voronoi edges.
 	 */
-	public Set<Edge> findPath(Corner riverStart, Corner end)
+	public Set<Edge> findPathGreedy(Corner start, Corner end)
 	{
-		if (riverStart.equals(end))
+		if (start.equals(end))
 		{
 			return new HashSet<>();
 		}
 				
-		Set<SearchNode> explored = new HashSet<>();
-		SearchNode startNode = new SearchNode(riverStart, null);
+		Set<CornerSearchNode> explored = new HashSet<>();
+		CornerSearchNode startNode = new CornerSearchNode(start, null);
 		explored.add(startNode);
-		SortedSet<SearchNode> frontier = new TreeSet<>(new Comparator<SearchNode>()
+		SortedSet<CornerSearchNode> frontier = new TreeSet<>(new Comparator<CornerSearchNode>()
 		{
 			@Override
-			public int compare(SearchNode n1, SearchNode n2)
+			public int compare(CornerSearchNode n1, CornerSearchNode n2)
 			{
 				int distanceComp = Double.compare(end.loc.distanceTo(n1.corner.loc), end.loc.distanceTo(n2.corner.loc));
 				if (distanceComp == 0)
 				{
-					// This ensures corners which are the same distance to the target don't clober eachother in the set.
+					// This ensures corners which are the same distance to the target don't clobber each other in the set.
 					return Integer.compare(n1.corner.index, n2.corner.index);
 				}
 				assert n1.corner.index != n2.corner.index;
@@ -1112,10 +1113,10 @@ public class WorldGraph extends VoronoiGraph
 		
 		expandFrontier(startNode, frontier, explored);
 		
-		SearchNode endNode = null;
+		CornerSearchNode endNode = null;
 		while (true)
 		{
-			SearchNode closest = frontier.first();
+			CornerSearchNode closest = frontier.first();
 			frontier.remove(closest);
 			explored.add(closest);
 			
@@ -1131,19 +1132,21 @@ public class WorldGraph extends VoronoiGraph
 		return createPathFromBackPointers(endNode);
 	}
 	
-	private void expandFrontier(SearchNode node, Set<SearchNode> frontier, Set<SearchNode> explored)
+	/**
+	 * Expands the frontier using Voronoi edges
+	 */
+	private void expandFrontier(CornerSearchNode node, Set<CornerSearchNode> frontier, Set<CornerSearchNode> explored)
 	{
-		// Expand the frontier
 		for (Corner c : node.corner.adjacent)
 		{
-			SearchNode otherNode = new SearchNode(c, node);
+			CornerSearchNode otherNode = new CornerSearchNode(c, node);
 			if (!explored.contains(otherNode) && !frontier.contains(otherNode))
 			{
 				frontier.add(otherNode);
 			}
 		}
 	}
-	
+		
 	private Edge findConnectingEdge(Corner c1, Corner c2)
 	{
 		for (Edge edge : c1.protrudes)
@@ -1160,7 +1163,13 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 	
-	private Set<Edge> createPathFromBackPointers(SearchNode end)
+	/**
+	 * Create path using back pointers in search does for Voronoi edges.
+	 * @param end The end of the search
+	 * @param edgeType The type of edge to return
+	 * @return A path
+	 */
+	private Set<Edge> createPathFromBackPointers(CornerSearchNode end)
 	{	
 		Set<Edge> path = new HashSet<>();
 		if (end == null)
@@ -1168,7 +1177,7 @@ public class WorldGraph extends VoronoiGraph
 			return path;
 		}
 		
-		SearchNode curNode = end;
+		CornerSearchNode curNode = end;
 		while (curNode.cameFrom != null)
 		{
 			Edge edge = findConnectingEdge(curNode.corner, curNode.cameFrom.corner);
@@ -1179,17 +1188,17 @@ public class WorldGraph extends VoronoiGraph
 		return path;
 	}
 	
-	private class SearchNode
+	private class CornerSearchNode
 	{
-		public Corner corner;
-		public SearchNode cameFrom;
+		public Corner corner; // for searching Voronoi edges 
+		public CornerSearchNode cameFrom;
 		
-		public SearchNode(Corner corner, SearchNode cameFrom)
+		public CornerSearchNode(Corner corner, CornerSearchNode cameFrom)
 		{
 			this.corner = corner;
 			this.cameFrom = cameFrom;
 		}
-		
+				
 		@Override
 		public int hashCode()
 		{
@@ -1199,7 +1208,141 @@ public class WorldGraph extends VoronoiGraph
 		@Override
 		public boolean equals(Object other)
 		{
-			return corner.equals(((SearchNode)other).corner);
+			CornerSearchNode otherNode = (CornerSearchNode) other;
+			if (otherNode.corner != null)
+			{
+				return corner.equals(otherNode.corner);
+			}
+			return corner ==  null;
+		}
+	}
+	
+	/**
+	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
+	 * @param start Where to begin the search
+	 * @param end The goal
+	 * @param calculateWeight Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge. 
+	 *        Likely this will be calculated based on the distance from one end of the Delaunay age
+	 * @return A path if one is found; null if the and is unreachable from the start.
+	 */
+	public List<Edge> findShortestPath(Center start, Center end, Function<Edge, Double> calculateWeight)
+	{
+		PriorityQueue<CenterSearchNode> explored = new PriorityQueue<>((n1, n2) -> Double.compare(n1.predictedScore, n2.predictedScore));
+		// Contains exactly those centers in explored, for faster checking if explored contains a center.
+		Set<Center> exploredCenters = new HashSet<>();
+		// Maps from centers we have seen to their nodes, to allow fast lookup of scores of previously seen centers.
+		Map<Center, CenterSearchNode> centerNodeMap = new HashMap<>();
+		
+		explored.add(new CenterSearchNode(start, null, 0, Center.distanceBetween(start, end))); 
+		exploredCenters.add(start);
+		centerNodeMap.put(start, explored.peek());
+		
+		while (!explored.isEmpty())
+		{
+			CenterSearchNode current = explored.poll();
+			exploredCenters.remove(current.center);
+			if (current.center.equals(end))
+			{
+				// The score so far doesn't matter for this case
+				return createPathFromBackPointers(new CenterSearchNode(end, current, 0, Center.distanceBetween(current.center, end)));
+			}
+			
+			for (Edge edge : current.center.borders)
+			{
+				Center neighbor = current.center.equals(edge.d0) ? edge.d1 : edge.d0;
+				if (neighbor != null)
+				{
+					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge);
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar : Float.POSITIVE_INFINITY;
+					if (scoreFromStartToNeighbor < neighborCurrentScore)
+					{
+						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor, scoreFromStartToNeighbor + Center.distanceBetween(current.center, end));
+						if (!exploredCenters.contains(neighbor))
+						{
+							centerNodeMap.put(neighbor, neighborNode);
+							explored.add(neighborNode);
+							exploredCenters.add(neighbor);
+						}
+					}
+				}
+			}
+		}
+		
+		// The end is not reachable from the start
+		return null;
+	}
+	
+	private Edge findConnectingEdge(Center c1, Center c2)
+	{
+		for (Edge edge : c1.borders)
+		{
+			if (edge.d1 != null && edge.d1.equals(c2))
+			{
+				return edge;
+			}
+			if (edge.d0 != null && edge.d0.equals(c2))
+			{
+				return edge;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Create path using back pointers in search does for Voronoi edges.
+	 * @param end The end of the search
+	 * @param edgeType The type of edge to return
+	 * @return A path
+	 */
+	private List<Edge> createPathFromBackPointers(CenterSearchNode end)
+	{	
+		List<Edge> path = new ArrayList<>();
+		if (end == null)
+		{
+			return path;
+		}
+		
+		CenterSearchNode curNode = end;
+		while (curNode.cameFrom != null)
+		{
+			Edge edge = findConnectingEdge(curNode.center, curNode.cameFrom.center);
+			assert edge != null;
+			path.add(edge);
+			curNode = curNode.cameFrom;
+		}
+		return path;
+	}
+	
+	private class CenterSearchNode
+	{
+		public Center center; // for searching Delaunay edges 
+		public CenterSearchNode cameFrom;
+		public double scoreSoFar; 
+		public double predictedScore;
+				
+		public CenterSearchNode(Center center, CenterSearchNode cameFrom, double scoreSoFar, double predictedScore)
+		{
+			this.center = center;
+			this.cameFrom = cameFrom;
+			this.scoreSoFar = scoreSoFar;
+			this.predictedScore = predictedScore;
+		}
+		
+		@Override
+		public int hashCode()
+		{
+			return center.hashCode();
+		}
+		
+		@Override
+		public boolean equals(Object other)
+		{
+			CenterSearchNode otherNode = (CenterSearchNode) other;
+			if (otherNode.center !=  null)
+			{
+				return center.equals(otherNode.center);
+			} 
+			return center ==  null;
 		}
 	}
 }

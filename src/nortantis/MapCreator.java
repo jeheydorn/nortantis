@@ -87,10 +87,10 @@ public class MapCreator
         	mapParts.background = background;
         }
         
-        double sizeMultiplyer = calcSizeMultiplyer(background.mapBounds.getWidth());
+        double sizeMultiplier = calcSizeMultiplyer(background.mapBounds.getWidth());
         if (mapParts != null)
         {
-        	mapParts.sizeMultiplyer = sizeMultiplyer;
+        	mapParts.sizeMultiplyer = sizeMultiplier;
         }
 		
 		
@@ -99,7 +99,7 @@ public class MapCreator
 		{
 			if (mapParts == null || mapParts.textDrawer == null || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
 			{
-				textDrawer = new TextDrawer(settings, sizeMultiplyer);
+				textDrawer = new TextDrawer(settings, sizeMultiplier);
 				
 				if (mapParts != null)
 				{
@@ -116,7 +116,7 @@ public class MapCreator
 		if (mapParts == null || mapParts.graph == null)
 		{
 			Logger.println("Creating the graph.");
-			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplyer);
+			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplier);
 			if (mapParts != null)
 			{
 				mapParts.graph = graph;
@@ -171,7 +171,7 @@ public class MapCreator
 		
 		if (!needToAddIcons)
 		{
-			iconDrawer.clearAndAddIconsFromEdits(settings.edits, sizeMultiplyer);
+			iconDrawer.clearAndAddIconsFromEdits(settings.edits, sizeMultiplier);
 		}
 		
 		// Draw mask for land vs ocean.
@@ -202,7 +202,7 @@ public class MapCreator
 					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
 			{
 				Graphics2D g = coastlineMask.createGraphics();
-				graph.paint(g, false, false, false, false, true, false, sizeMultiplyer);
+				graph.paint(g, false, false, false, false, true, false, sizeMultiplier);
 			}
 		}
 		
@@ -210,7 +210,7 @@ public class MapCreator
 		// Darken the land next to coast lines and optionally region borders.
 		{
 			BufferedImage landBlur;
-			int blurLevel = (int) (settings.landBlur * sizeMultiplyer);
+			int blurLevel = (int) (settings.landBlur * sizeMultiplier);
 			if (blurLevel > 0)
 			{
 				Logger.println("Darkening land near shores.");
@@ -221,7 +221,7 @@ public class MapCreator
 					BufferedImage coastlineAndRegionBorders = ImageHelper.deepCopy(coastlineMask);
 					Graphics2D g = coastlineAndRegionBorders.createGraphics();
 					g.setColor(Color.white);
-					graph.drawRegionBorders(g, sizeMultiplyer, false);
+					graph.drawRegionBorders(g, sizeMultiplier, false);
 					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel, true);
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
@@ -256,15 +256,17 @@ public class MapCreator
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawRegionBorders(g, sizeMultiplyer, true);
+			graph.drawRegionBorders(g, sizeMultiplier, true);
 		}
 
 		if (settings.drawRivers)
 		{
 		// Add rivers.
 			Logger.println("Adding rivers.");
-			drawRivers(settings, graph, map, sizeMultiplyer);
+			drawRivers(settings, graph, map, sizeMultiplier);
 		}
+		
+		
 
 		List<IconDrawTask> cities;
 		if (needToAddIcons)
@@ -281,14 +283,20 @@ public class MapCreator
 			iconDrawer.addTrees();
 			
 			Logger.println("Adding cities.");
-			cities = iconDrawer.addCities(sizeMultiplyer, true);
+			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
 		}
 		else
 		{
 			// Create mountain groups for the text drawer.
 			mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
 			// Create city areas for the text drawer.
-			cities = iconDrawer.addCities(settings.resolution, false);
+			cities = iconDrawer.addOrUnmarkCities(settings.resolution, false);
+		}
+		
+		if (settings.drawRoads)
+		{
+			RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph, iconDrawer);
+			roadDrawer.drawRoads();
 		}
 		
 		if (mapParts != null)
@@ -318,6 +326,7 @@ public class MapCreator
 			}
 			
 			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
+			
 			if (mapParts == null)
 			{
 				background.ocean = null;
@@ -327,7 +336,7 @@ public class MapCreator
 		Logger.println("Adding effects to ocean along coastlines.");
 		{
 			BufferedImage oceanBlur;
-			int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplyer);
+			int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplier);
 			if (blurLevel > 0)
 			{
 				if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
@@ -335,11 +344,11 @@ public class MapCreator
 					float[][] kernel;
 					if (settings.oceanEffect == OceanEffect.Ripples)
 					{
-						kernel = ImageHelper.createPositiveSincKernel(blurLevel, 1.0 / sizeMultiplyer);
+						kernel = ImageHelper.createPositiveSincKernel(blurLevel, 1.0 / sizeMultiplier);
 					} 
 					else
 					{
-						kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectSize * sizeMultiplyer));
+						kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectSize * sizeMultiplier));
 					}
 					int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 					oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true, 0f, ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)));
@@ -351,8 +360,8 @@ public class MapCreator
 					oceanBlur = new BufferedImage(graph.getWidth(),
 							graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 
-					double widthBetweenWaves = 12.0 * sizeMultiplyer;
-					double lineWidth = 2.0 * sizeMultiplyer;
+					double widthBetweenWaves = 12.0 * sizeMultiplier;
+					double lineWidth = 2.0 * sizeMultiplier;
 					int numWaves = (int)(blurLevel / (widthBetweenWaves + lineWidth));
 					double largestLineWidth = blurLevel - blurLevel % (widthBetweenWaves + lineWidth);
 					for (int i : new Range(0, numWaves))
@@ -393,12 +402,12 @@ public class MapCreator
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawCoastline(g, sizeMultiplyer);
+			graph.drawCoastline(g, sizeMultiplier);
 		}
 		{
 			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawCoastline(g, sizeMultiplyer);
+			graph.drawCoastline(g, sizeMultiplier);
 		}
 
 				
@@ -406,7 +415,7 @@ public class MapCreator
 		// because I might draw the text later.
 		if (settings.drawRivers)
 		{
-			drawRivers(settings, graph, landBackground, sizeMultiplyer);
+			drawRivers(settings, graph, landBackground, sizeMultiplier);
 		}
 		
 		if (mapParts != null)
@@ -420,7 +429,7 @@ public class MapCreator
 			{
 				Graphics2D g = landBackground.createGraphics();
 				g.setColor(settings.coastlineColor);
-				graph.drawRegionBorders(g, sizeMultiplyer, true);
+				graph.drawRegionBorders(g, sizeMultiplier, true);
 			}
 						
 			textDrawer.drawText(graph, map, landBackground, mountainGroups, cities);
@@ -441,12 +450,12 @@ public class MapCreator
 		{
 			Logger.println("Adding frayed edges.");
 			WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
-					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplyer, settings.pointPrecision);
+					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, settings.pointPrecision);
 			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(borderMask.createGraphics());
 
-			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplyer);
+			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);

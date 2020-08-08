@@ -942,7 +942,7 @@ public abstract class VoronoiGraph {
         if (p == null) {
             return null;
         }
-        // Joseph note: I changed this function to use a TreeMap and sizeMultiplyer
+        // Joseph note: I changed this function to use a TreeMap and sizeMultiplier
         // so that the graph won't have small changes when drawn at higher resolutions.
         
         // As pointPrecision becomes larger, points become less likely to be merged. I added this because of a bug

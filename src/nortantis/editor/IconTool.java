@@ -526,7 +526,7 @@ public class IconTool extends EditorTool
 		if (riversButton.isSelected())
 		{
 			Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
-			Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPath(riverStart, end));
+			Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPathGreedy(riverStart, end));
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
@@ -584,7 +584,7 @@ public class IconTool extends EditorTool
 			{
 				mapEditingPanel.clearHighlightedEdges();
 				Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
-				Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPath(riverStart, end));
+				Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPathGreedy(riverStart, end));
 				mapEditingPanel.setHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
