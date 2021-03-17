@@ -154,7 +154,7 @@ public class NoisyEdges
 				Point p0 = findPrevOrNextPointOnCurve(edge, edge.v0);
 				Point p1 = edge.v0.loc;
 				Point p2 = edge.v1.loc;
-				Point p3 =  findPrevOrNextPointOnCurve(edge, edge.v1);
+				Point p3 = findPrevOrNextPointOnCurve(edge, edge.v1);
 				// Create enough points that you can't see the lines in the curves.
 				int numPoints = (int)(p1.distanceTo(p2) * 0.25);
 				List<Point> curve = new ArrayList<>();
@@ -205,7 +205,7 @@ public class NoisyEdges
 	}
 	
 	/**
-	 * Finds Determines which edge curves should follow since there are always multiple directions curves can go.
+	 * Determines which edge curves we should follow since there are always multiple directions curves can go.
 	 * @param corner Corner to search from
 	 * @param edge Edge to follow from
 	 * @return Edge to follow, or null if there is none.
@@ -258,7 +258,7 @@ public class NoisyEdges
 	 * @param edge
 	 * @return
 	 */
-	public int getNoisyEdgeMinLength(Edge edge)
+	private int getNoisyEdgeMinLength(Edge edge)
 	{		
 		EdgeType type = getEdgeDrawType(edge);
 		if (type.equals(EdgeType.Region))
@@ -277,7 +277,7 @@ public class NoisyEdges
 		return 1000; // A number big enough to not create noisy edges
 	}
 	
-	public EdgeType getEdgeDrawType(Edge edge)
+	private EdgeType getEdgeDrawType(Edge edge)
 	{
 		// Any edge that will be drawn should return a value not equal to defaultNoisyEdgeMinLength.
 		if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)

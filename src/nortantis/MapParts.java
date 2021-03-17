@@ -47,7 +47,7 @@ public class MapParts
 	/**
 	 * Used only as an output during map creation.
 	 */
-	public double sizeMultiplyer;
+	public double sizeMultiplier;
 	
 	/**
 	 * Used only as an output during map creation;

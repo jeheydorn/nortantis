@@ -58,6 +58,9 @@ public class TextDrawer
 	private final double riverNameRiseHeight = -32;
 	private final double cityYNameOffset = 18;
 	private final double maxWordLengthComparedToAverage = 2.0;
+	private final double probabilityOfKeepingNameLength1 = 0.0;
+	private final double probabilityOfKeepingNameLength2 = 0.0;
+	private final double probabilityOfKeepingNameLength3 = 0.3;
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 	
 	private BufferedImage landAndOceanBackground;
@@ -106,8 +109,8 @@ public class TextDrawer
 			nounVerbPairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 				
-		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage);
-		personNameGenerator = new NameGenerator(r, personNames, maxWordLengthComparedToAverage);
+		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1, probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
+		personNameGenerator = new NameGenerator(r, personNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1, probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
 	
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 		
@@ -689,13 +692,13 @@ public class TextDrawer
 		Homestead,
 	}
 		
-	private String generatePlaceName(String format, boolean requireUnique)
+	public String generatePlaceName(String format, boolean requireUnique)
 	{
 		Function0<String> nameCreator = () -> placeNameGenerator.generateName();
 		return innerCreateUniqueName(format, requireUnique, nameCreator);
 	}
 	
-	private String generatePersonName(String format, boolean requireUnique)
+	public String generatePersonName(String format, boolean requireUnique)
 	{
 		Function0<String> nameCreator = () -> personNameGenerator.generateName();
 		return innerCreateUniqueName(format, requireUnique, nameCreator);

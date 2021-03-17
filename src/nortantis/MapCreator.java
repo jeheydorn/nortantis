@@ -87,10 +87,10 @@ public class MapCreator
         	mapParts.background = background;
         }
         
-        double sizeMultiplier = calcSizeMultiplyer(background.mapBounds.getWidth());
+        double sizeMultiplier = calcSizeMultiplier(background.mapBounds.getWidth());
         if (mapParts != null)
         {
-        	mapParts.sizeMultiplyer = sizeMultiplier;
+        	mapParts.sizeMultiplier = sizeMultiplier;
         }
 		
 		
@@ -295,8 +295,10 @@ public class MapCreator
 		
 		if (settings.drawRoads)
 		{
-			RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph, iconDrawer);
-			roadDrawer.drawRoads();
+			// TODO put back
+			//RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph, iconDrawer); 
+			//roadDrawer.markRoads();
+			//roadDrawer.drawRoads(map, sizeMultiplier);
 		}
 		
 		if (mapParts != null)
@@ -539,12 +541,12 @@ public class MapCreator
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 	
-	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplyer)
+	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplier)
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height,
 				settings.worldSize, settings.edgeLandToWaterProbability, settings.centerLandToWaterProbability,
 				new Random(r.nextLong()),
-				sizeMultiplyer, settings.lineStyle, settings.pointPrecision);	
+				sizeMultiplier, settings.lineStyle, settings.pointPrecision);	
 		
 		// Setup region colors even if settings.drawRegionColors = false because edits need them in case someone edits a map without region colors, then later enables region colors.
 		assignRandomRegionColors(graph, settings);
@@ -552,7 +554,7 @@ public class MapCreator
 		return graph;
 	}
 	
-	public static double calcSizeMultiplyer(double mapWidth)
+	public static double calcSizeMultiplier(double mapWidth)
 	{
 		return mapWidth / baseResolution;
 	}
@@ -1098,12 +1100,12 @@ public class MapCreator
 			}
 	}
 
-	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, double sizeMultiplyer)
+	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, double sizeMultiplier)
 	{
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.riverColor);
 		// Draw rivers thin.
-		graph.drawRivers(g, sizeMultiplyer/2.0);
+		graph.drawRivers(g, sizeMultiplier/2.0);
 	}
 	
 	public static Set<String> getAvailableBorderTypes()
@@ -1116,8 +1118,8 @@ public class MapCreator
 	{   
 		r = new Random(settings.randomSeed);
         DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
-		double sizeMultiplyer = calcSizeMultiplyer(mapBounds.getWidth());
-		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplyer);
+		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
+		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 

@@ -626,7 +626,7 @@ public class IconDrawer
 		}
 		
         // Load the sand dune images.
-        List<Tuple2<BufferedImage, BufferedImage>> duneImages = sandGroups.get("sand");
+        List<Tuple2<BufferedImage, BufferedImage>> duneImages = sandGroups.get("dunes");
         
         if (duneImages == null || duneImages.isEmpty())
         {

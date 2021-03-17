@@ -71,7 +71,7 @@ public class CharacterNGram
 		namesFromCorpora = new HashSet<>(phrases);
 	}
 	
-	public String generateNameNotCorpora() throws NotEnoughNamesException
+	public String generateNameNotInCorpora() throws NotEnoughNamesException
 	{
 		final int maxRetries = 20;
 		for (@SuppressWarnings("unused") int retry : new Range(maxRetries))

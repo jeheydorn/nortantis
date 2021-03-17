@@ -732,7 +732,6 @@ public class WorldGraph extends VoronoiGraph
             while (cornerFound);
  
     	}
-//     	Logger.println("Corner elevation time: " + (System.currentTimeMillis() - startTime)/1000.0);
    }
         
     /**
@@ -740,7 +739,8 @@ public class WorldGraph extends VoronoiGraph
      */ 
     private void lowerOceanPlates()
     {
-        for (Corner corner : corners) {
+        for (Corner corner : corners) 
+        {
             int numOceanic = 0;
             for (Center center : corner.touches) 
             {
@@ -836,7 +836,7 @@ public class WorldGraph extends VoronoiGraph
 	    		if (corner.border)
 	    		{
 	    			borderPlates.add(c.tectonicPlate);
-		    			continue;
+		    		continue;
 	    		}
     	}
     	for (TectonicPlate plate : borderPlates)

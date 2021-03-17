@@ -627,14 +627,14 @@ public class IconTool extends EditorTool
 			
 			if (!showRiversOnTopCheckBox.isSelected())
 			{
-				MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+				MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier);
 			}
 			mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
 		}
 		
 		if (showRiversOnTopCheckBox.isSelected())
 		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier);
 		}
 				 		
  		return map;
@@ -646,13 +646,13 @@ public class IconTool extends EditorTool
 		BufferedImage map = ImageHelper.deepCopy(mapWithouticons);
 		if (!showRiversOnTopCheckBox.isSelected())
 		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier);
 		}
-		mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits, mapParts.sizeMultiplyer);
+		mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits, mapParts.sizeMultiplier);
 		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
 		if (showRiversOnTopCheckBox.isSelected())
 		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplyer);
+			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier);
 		}
 
 		return map;

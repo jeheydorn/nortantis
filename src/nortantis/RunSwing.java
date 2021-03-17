@@ -796,7 +796,6 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfEdits();
 				updateBackgroundPanelFieldStates();
 			}		
 		};
@@ -1417,7 +1416,6 @@ public class RunSwing
 		btnNewTextRandomSeed.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) 
 			{
-				warnOfEdits();
 				textRandomSeedTextField.setText(Math.abs(new Random().nextInt()) + "");
 			}
 		});
@@ -1502,7 +1500,6 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				warnOfEdits();
 				int seed = Math.abs(new Random().nextInt());
 				randomSeedTextField.setText(seed + "");
 				textRandomSeedTextField.setText(seed + "");
@@ -1779,26 +1776,7 @@ public class RunSwing
 		// The resolution slider uses multiples of 25.
 		maxResolution -= maxResolution % 25;
 		return maxResolution;
-	}
-
-	/**
-	 * Informs the user that if they continue an action they must delete text edits.
-	 * @return true if the action should continue. false if the user canceled the action to keep text edits.
-	 */
-	private void warnOfEdits()
-	{
-		
-		if (!loadingSettings && showTextWarning  && edits != null && !edits.text.isEmpty())
-		{
-	        int n = JOptionPane.showOptionDialog(frame, "Some options are disabled because you have edited the map. \n"
-                    + "You can clear edits by going to " + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "\n\nWould you like to continue to see this warning?", "Warning", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
-	        if (n == JOptionPane.NO_OPTION)
-	        {
-	        	showTextWarning = false;
-	        }
-		}
-	}
-	
+	}	
 		
 	private Dimension getGeneratedBackgroundDimensionsFromGUI()
 	{
@@ -2230,7 +2208,6 @@ public class RunSwing
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					warnOfEdits();
 				}
 			});
 		}

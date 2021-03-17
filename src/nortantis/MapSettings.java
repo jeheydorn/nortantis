@@ -48,6 +48,7 @@ public class MapSettings implements Serializable
 	public OceanEffect oceanEffect;
 	public int worldSize;
 	public Color riverColor;
+	public Color roadColor;
 	public Color landBlurColor;
 	public Color oceanEffectsColor;
 	public Color coastlineColor;
@@ -121,6 +122,7 @@ public class MapSettings implements Serializable
 		result.setProperty("oceanEffect", oceanEffect + "");
 		result.setProperty("worldSize", worldSize + "");
 		result.setProperty("riverColor", colorToString(riverColor));
+		result.setProperty("roadColor", colorToString(roadColor));
 		result.setProperty("landBlurColor", colorToString(landBlurColor));
 		result.setProperty("oceanEffectsColor", colorToString(oceanEffectsColor));
 		result.setProperty("coastlineColor", colorToString(coastlineColor));
@@ -272,7 +274,14 @@ public class MapSettings implements Serializable
 		
 	private String colorToString(Color c)
 	{
-		return c.getRed() + "," + c.getGreen() + "," + c.getBlue() + "," + c.getAlpha();
+		if (c != null)
+		{
+			return c.getRed() + "," + c.getGreen() + "," + c.getBlue() + "," + c.getAlpha();
+		}
+		else
+		{
+			return "";
+		}
 	}
 	
 	private String fontToString(Font font)
@@ -333,6 +342,18 @@ public class MapSettings implements Serializable
 			public Color apply()
 			{
 				return parseColor(props.getProperty("riverColor"));
+			}
+		});
+		roadColor = getProperty("roadColor", new Function0<Color>()
+		{
+			public Color apply()
+			{
+				String roadColorString = props.getProperty("roadColor");
+				if (roadColorString == null || roadColorString.equals(""))
+				{
+					return Color.black;
+				}
+				return parseColor(roadColorString);
 			}
 		});
 		landBlurColor = getProperty("landBlurColor", new Function0<Color>()
