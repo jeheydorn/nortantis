@@ -445,7 +445,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void paintElevationUsingTrianges(Graphics2D g)
     {
-    	super.paint(g, false, false, true, false, false, false);
+    	super.paint(g, false, false, true, false, false);
     	
     	// Draw plate velocities.
 //    	g.setColor(Color.yellow);
@@ -777,7 +777,7 @@ public class WorldGraph extends VoronoiGraph
 			int numLand = 0;
 			for (Center center : c.touches)
 			{
-				numOcean += center.isWater ? 1 : 0;
+				numOcean += (center.isWater && !center.isLake) ? 1 : 0;
 				numLand += !center.isWater ? 1 : 0;
 			}
 			c.ocean = numOcean == c.touches.size();

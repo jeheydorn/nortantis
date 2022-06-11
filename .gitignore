@@ -27,3 +27,13 @@ user preferences
 .recommenders/
 /.metadata
 /user preferences
+/assets/books/SSA boy names_noun_adjective_pairs.txt
+/assets/books/SSA boy names_noun_verb_pairs.txt
+/assets/books/SSA boy names_person_names.txt
+/assets/books/SSA boy names_place_names.txt
+/assets/books/SSA girl names_noun_adjective_pairs.txt
+/assets/books/SSA girl names_noun_verb_pairs.txt
+/assets/books/SSA girl names_person_names.txt
+/assets/books/SSA girl names_place_names.txt
+map with new cities.properties
+temp.properties

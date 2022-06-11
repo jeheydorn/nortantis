@@ -192,20 +192,7 @@ public class MapCreator
 		if (mapParts == null)
 		{
 			background.land = null;
-		}
-		
-		BufferedImage coastlineMask = null;
-		if (settings.landBlur > 0 || settings.oceanEffectSize > 0)
-		{
-			Logger.println("Creating coastline effects.");
-			coastlineMask = new BufferedImage(graph.getWidth(),
-					graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-			{
-				Graphics2D g = coastlineMask.createGraphics();
-				graph.paint(g, false, false, false, false, true, false, sizeMultiplier);
-			}
-		}
-		
+		}	
 		
 		// Darken the land next to coast lines and optionally region borders.
 		{
@@ -216,13 +203,19 @@ public class MapCreator
 				Logger.println("Darkening land near shores.");
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 				
+				BufferedImage coastlineAndLakeShoreMask = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+				{
+					Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
+					g.setColor(Color.white);
+					graph.drawCoastlineWithLakeShores(g, sizeMultiplier);
+				}
+
 				if (background.shouldDrawRegionColors)
 				{
-					BufferedImage coastlineAndRegionBorders = ImageHelper.deepCopy(coastlineMask);
-					Graphics2D g = coastlineAndRegionBorders.createGraphics();
+					Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 					g.setColor(Color.white);
 					graph.drawRegionBorders(g, sizeMultiplier, false);
-					landBlur = ImageHelper.convolveGrayscale(coastlineAndRegionBorders, kernel, true);
+					landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
@@ -241,7 +234,7 @@ public class MapCreator
 				}
 				else
 				{
-					landBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true);
+					landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
 					// Remove the land blur from the ocean side of the borders.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
 					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
@@ -341,6 +334,13 @@ public class MapCreator
 			int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplier);
 			if (blurLevel > 0)
 			{
+				BufferedImage coastlineMask = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+				{
+					Graphics2D g = coastlineMask.createGraphics();
+					g.setColor(Color.white);
+					graph.drawCoastline(g, sizeMultiplier);
+				}
+				
 				if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
 				{
 					float[][] kernel;
@@ -398,18 +398,17 @@ public class MapCreator
 				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
 			}	
 		}
-		coastlineMask = null;
 		
 		// Draw coast lines.
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawCoastline(g, sizeMultiplier);
+			graph.drawCoastlineWithLakeShores(g, sizeMultiplier);
 		}
 		{
 			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawCoastline(g, sizeMultiplier);
+			graph.drawCoastlineWithLakeShores(g, sizeMultiplier);
 		}
 
 				
@@ -601,6 +600,7 @@ public class MapCreator
 			CenterEdit cEdit = edits.centerEdits.get(i);
 			boolean needsRebuild = center.isWater != cEdit.isWater;
 			center.isWater = cEdit.isWater;
+			center.isLake = cEdit.isLake;
 			
 			Integer regionId = cEdit.regionId;
 			if (regionId != null)

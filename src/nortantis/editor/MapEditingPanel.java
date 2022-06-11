@@ -26,6 +26,7 @@ public class MapEditingPanel extends ImagePanel
 	private HighlightMode highlightMode;
 	private Collection<Edge> highlightedEdges;
 	private Collection<Edge> processingEdges;
+	private boolean showLakes;
 	
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -93,6 +94,11 @@ public class MapEditingPanel extends ImagePanel
 			processingCenters.clear();
 	}
 	
+	public void setShowLakes(boolean enabled)
+	{
+		this.showLakes = enabled;
+	}
+	
 	public void setGraph(WorldGraph graph)
 	{
 		this.graph = graph;
@@ -128,6 +134,11 @@ public class MapEditingPanel extends ImagePanel
 		
 		if (graph != null)
 		{
+			if (showLakes)
+			{
+				drawLakes(g);
+			}
+			
 			g.setColor(highlightColor);
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
@@ -164,5 +175,25 @@ public class MapEditingPanel extends ImagePanel
 			graph.drawEdge(((Graphics2D)g), e);
 		}
 
+	}
+	
+	private void drawLakes(Graphics g)
+	{
+		g.setColor(Color.BLUE);
+		for (Center c : graph.centers)
+		{
+			if (c.isLake)
+			{
+				for (Edge e : c.borders)
+				{
+					if (e.d0 != null && e.d1 != null && e.d0.isLake && e.d1.isLake)
+					{
+						// c is not on the edge of the group
+						continue;
+					}
+					graph.drawEdge(((Graphics2D)g), e);
+				}
+			}
+		}
 	}
 }

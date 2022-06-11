@@ -65,9 +65,35 @@ public class Edge implements Comparable<Edge>
 			return false;
 		}
 		
+		if (d0.isWater == d1.isWater)
+		{
+			return false;
+		}
+		
+		// One of the centers is land, and the other is water. It's a coast if the water is not a lake.
+		if (d0.isWater)
+		{
+			return !d0.isLake;
+		}
+
+		return !d1.isLake;
+	}
+	
+	public boolean isCoastOrLakeShore()
+	{
+		if (d0 == null || d1 == null)
+		{
+			return false;
+		}
+		
 		return d0.isWater != d1.isWater;
 	}
 	
+	public boolean isLakeShore()
+	{
+		return isCoastOrLakeShore() && !isCoast();
+	}
+
 	public boolean isRegionBoundary()
 	{
 		if (d0 == null || d1 == null)

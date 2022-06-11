@@ -21,17 +21,44 @@ public class ExampleNameGenerator
 		
 		final int numberToGenerate = 50;
 		
+		final String requiredPrefix = "";
+		final String requiredSuffix = "";
+		
 		System.out.println("Person names: ");
 		for (@SuppressWarnings("unused") int i : new Range(numberToGenerate))
 		{
-			System.out.println(textDrawer.generatePersonName("%s", true));
+			String name = "";
+			while (true)
+			{
+				name = textDrawer.generatePersonName("%s", true);
+				if (requiredPrefix == null || requiredPrefix.equals("") || name.toLowerCase().startsWith(requiredPrefix.toLowerCase()))
+				{
+					if (requiredSuffix == null || requiredSuffix.equals("") || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
+					{
+						break;
+					}
+				}
+			}
+			System.out.println(name);
 		}
 		System.out.println("");
 
 		System.out.println("Place names: ");
 		for (@SuppressWarnings("unused") int i : new Range(numberToGenerate))
 		{
-			System.out.println(textDrawer.generatePlaceName("%s", true));
+			String name = "";
+			while (true)
+			{
+				name = textDrawer.generatePersonName("%s", true);
+				if (requiredPrefix == null || requiredPrefix.equals("") || name.toLowerCase().startsWith(requiredPrefix.toLowerCase()))
+				{
+					if (requiredSuffix == null || requiredSuffix.equals("") || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
+					{
+						break;
+					}
+				}
+			}
+			System.out.println(name);
 		}
 
 		return;

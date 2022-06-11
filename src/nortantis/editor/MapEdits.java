@@ -57,7 +57,7 @@ public class MapEdits implements Serializable
 		for (int index : new Range(centers.size()))
 		{
 			Center c = centers.get(index);
-			centerEdits.add(new CenterEdit(index, c.isWater, c.region != null ? c.region.id : null, null, null));
+			centerEdits.add(new CenterEdit(index, c.isWater, c.isLake, c.region != null ? c.region.id : null, null, null));
 		}
 		
 		hasIconEdits = true;

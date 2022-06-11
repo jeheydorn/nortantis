@@ -356,9 +356,18 @@ public class TextDrawer
 			if (text.type == TextType.Title)
 			{
 				g.setFont(titleFontScaled);
-				TectonicPlate plate = graph.getTectonicPlateAt(textLocation.x, textLocation.y);
-				drawNameHorizontal(map, g, extractLocationsFromCenters(plate.centers), 
-						graph, settings.drawBoldBackground, false, text);
+				Center center = graph.findClosestCenter(textLocation.x, textLocation.y);
+				Set<Center> regionCenters;
+				if (center.isWater)
+				{
+					regionCenters = findAllWaterCenters(graph);
+				}
+				else
+				{
+					regionCenters = center.region.getCenters();
+				}
+				Set<Point> locations = extractLocationsFromCenters(regionCenters);
+				drawNameHorizontal(map, g, locations, graph, settings.drawBoldBackground, false, text);
 			}
 			else if (text.type == TextType.City)
 			{
@@ -369,16 +378,16 @@ public class TextDrawer
 			{
 				g.setFont(regionFontScaled);
 				Center center = graph.findClosestCenter(textLocation.x, textLocation.y);
-				Set<Center> plateCenters;
+				Set<Center> regionCenters;
 				if (center.isWater)
 				{
-					plateCenters = findPlateCentersWaterOnly(graph, center.tectonicPlate);
+					regionCenters = findAllWaterCenters(graph);
 				}
 				else
 				{
-					plateCenters = center.region.getCenters();
+					regionCenters = center.region.getCenters();
 				}
-				Set<Point> locations = extractLocationsFromCenters(plateCenters);
+				Set<Point> locations = extractLocationsFromCenters(regionCenters);
 				drawNameHorizontal(map, g, locations, graph, settings.drawBoldBackground, false, text);
 			}
 			else if (text.type == TextType.Mountain_range)
@@ -1351,15 +1360,15 @@ public class TextDrawer
 		return true;
 	}
 	
-	private Set<Center> findPlateCentersWaterOnly(final WorldGraph graph, final TectonicPlate plate)
+	private Set<Center> findAllWaterCenters(final WorldGraph graph)
 	{		
-		Set<Center> plateCenters = new HashSet<Center>();
-		for (Center c : plate.centers)
+		Set<Center> waterCenters = new HashSet<Center>();
+		for (Center c : graph.centers)
 		{
 			if (c.isWater)
-				plateCenters.add(c);
+				waterCenters.add(c);
 		}
-		return plateCenters;
+		return waterCenters;
 	}
 
 	public Point findCentroid(Collection<Point> plateCenters)

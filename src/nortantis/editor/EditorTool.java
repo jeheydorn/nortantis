@@ -562,6 +562,7 @@ public abstract class EditorTool
 		{
 			// Change land to ocean
 			settings.edits.centerEdits.get(center.index).isWater = true;
+			settings.edits.centerEdits.get(center.index).isLake = false;
 
 			// Erase icons
 			settings.edits.centerEdits.get(center.index).trees = null;

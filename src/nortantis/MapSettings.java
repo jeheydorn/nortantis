@@ -218,6 +218,7 @@ public class MapSettings implements Serializable
 		{
 			JSONObject mpObj = new JSONObject();	
 			mpObj.put("isWater", centerEdit.isWater);
+			mpObj.put("isLake", centerEdit.isLake);
 			mpObj.put("regionId", centerEdit.regionId);
 			if (centerEdit.icon != null)
 			{
@@ -841,6 +842,12 @@ public class MapSettings implements Serializable
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					boolean isWater = (boolean) jsonObj.get("isWater");
+					Boolean isLakeObject = (Boolean) jsonObj.get("isLake");
+					boolean isLake = false;
+					if (isLakeObject != null)
+					{
+						isLake = isLakeObject;
+					}
 					Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
 					
 					CenterIcon icon = null;
@@ -869,7 +876,7 @@ public class MapSettings implements Serializable
 						}
 					}
 					
-					result.add(new CenterEdit(index, isWater, regionId, icon, trees));
+					result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 					index++;
 				}
 				

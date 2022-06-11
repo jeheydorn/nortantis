@@ -25,6 +25,10 @@ public class Center
     public ArrayList<Center> neighbors = new ArrayList<>();
     public ArrayList<Edge> borders = new ArrayList<>();
     public boolean isBorder, isWater, isCoast;
+    /***
+     * Lakes are just water with no ocean effects
+     */
+    public boolean isLake;
     public boolean isMountain;
     public boolean isHill;
     public boolean isCity;
@@ -107,6 +111,12 @@ public class Center
 			}
 		}
 		return false;
+	}
+	
+	
+	public boolean isOcean()
+	{
+		return isWater && !isLake;
 	}
 	
 	public Set<TreeType> getTreeTypes()

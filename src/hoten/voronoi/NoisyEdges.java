@@ -279,7 +279,6 @@ public class NoisyEdges
 	
 	private EdgeType getEdgeDrawType(Edge edge)
 	{
-		// Any edge that will be drawn should return a value not equal to defaultNoisyEdgeMinLength.
 		if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
 		{
 			return EdgeType.Region;

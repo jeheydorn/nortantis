@@ -12,6 +12,7 @@ import nortantis.CenterTrees;
 public class CenterEdit implements Serializable
 {
 	public boolean isWater;
+	public boolean isLake;
 	/**
 	 * If this is null, then the generated region color is used if region colors are enabled.
 	 */
@@ -22,12 +23,13 @@ public class CenterEdit implements Serializable
 	
 	public final int index;
 	
-	public CenterEdit(int index, boolean isWater, Integer regionId, CenterIcon icon, CenterTrees trees)
+	public CenterEdit(int index, boolean isWater, boolean isLake, Integer regionId, CenterIcon icon, CenterTrees trees)
 	{
 		this.isWater = isWater;
 		this.regionId = regionId;
 		this.index = index;
 		this.icon = icon;
 		this.trees = trees;
+		this.isLake = isLake;
 	}
 }

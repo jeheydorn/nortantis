@@ -40,7 +40,8 @@ public class LandWaterTool extends EditorTool
 	private JPanel colorChooserPanel;
 	
 	private JRadioButton landButton;
-	private JRadioButton waterButton;
+	private JRadioButton oceanButton;
+	private JRadioButton lakeButton;
 	private JRadioButton fillRegionColorButton;
 	private JRadioButton paintRegionButton;
 	private JRadioButton mergeRegionsButton;
@@ -85,10 +86,10 @@ public class LandWaterTool extends EditorTool
 		JLabel brushLabel = new JLabel("Brush:");
 		List<JComponent> radioButtons = new ArrayList<>();
 		ButtonGroup group = new ButtonGroup();
-		waterButton = new JRadioButton("Ocean");
-	    group.add(waterButton);
-	    radioButtons.add(waterButton);
-	    toolOptionsPanel.add(waterButton);
+		oceanButton = new JRadioButton("Ocean");
+	    group.add(oceanButton);
+	    radioButtons.add(oceanButton);
+	    toolOptionsPanel.add(oceanButton);
 		ActionListener listener = new ActionListener()
 		{
 			@Override
@@ -103,11 +104,18 @@ public class LandWaterTool extends EditorTool
 				
 				if (brushSizeComboBox != null)
 				{
-					brushSizePanel.setVisible(paintRegionButton.isSelected() || waterButton.isSelected() || landButton.isSelected());
+					brushSizePanel.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected() || landButton.isSelected());
 				}
 			}
 	    };
-	    waterButton.addActionListener(listener);
+	    oceanButton.addActionListener(listener);
+	    
+	    lakeButton = new JRadioButton("Lake");
+	    group.add(lakeButton);
+	    radioButtons.add(lakeButton);
+	    toolOptionsPanel.add(lakeButton);
+	    lakeButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines.");
+	    lakeButton.addActionListener(listener);
 	    
 	    paintRegionButton = new JRadioButton("Paint region");
 	    fillRegionColorButton = new JRadioButton("Fill region color");
@@ -136,7 +144,7 @@ public class LandWaterTool extends EditorTool
 		    radioButtons.add(landButton);
 		    landButton.addActionListener(listener);
 	    }
-	    waterButton.setSelected(true); // Selected by default
+	    oceanButton.setSelected(true); // Selected by default
 	    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, brushLabel, radioButtons);
 	    
 	    // Color chooser
@@ -215,7 +223,7 @@ public class LandWaterTool extends EditorTool
 	
 	private void handleMousePressOrDrag(MouseEvent e)
 	{
-		if (waterButton.isSelected())
+		if (oceanButton.isSelected() || lakeButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 			boolean hasChange = false;
@@ -224,6 +232,8 @@ public class LandWaterTool extends EditorTool
 				CenterEdit edit = settings.edits.centerEdits.get(center.index);
 				hasChange |= !edit.isWater;
 				edit.isWater = true;
+				hasChange |= edit.isLake != lakeButton.isSelected();
+				edit.isLake = lakeButton.isSelected(); 
 			}
 			if (hasChange)
 			{
@@ -245,6 +255,7 @@ public class LandWaterTool extends EditorTool
 					CenterEdit edit = settings.edits.centerEdits.get(center.index);
 					hasChange |= edit.isWater;
 					edit.isWater = false;
+					edit.isLake = false;
 					Integer newRegionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
 					hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
 					edit.regionId = newRegionId;
@@ -268,6 +279,7 @@ public class LandWaterTool extends EditorTool
 				edit.regionId = newRegionId;
 				hasChange |= edit.isWater;
 				edit.isWater = false;
+				edit.isLake = false;
 			}
 			if (hasChange)
 			{
@@ -423,7 +435,7 @@ public class LandWaterTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedCenters();
 	
-		if (waterButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected() || landButton.isSelected())
+		if (oceanButton.isSelected() || lakeButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected() || landButton.isSelected())
 		{		
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 			mapEditingPanel.addAllHighlightedCenters(selected);
@@ -474,6 +486,8 @@ public class LandWaterTool extends EditorTool
 		settings.drawBorder = false;
 		settings.drawIcons = true;
 		settings.drawRivers = true;
+		
+		mapEditingPanel.setShowLakes(true);
 	}
 
 	@Override
@@ -485,6 +499,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
+		mapEditingPanel.setShowLakes(false);
 	}
 
 	@Override

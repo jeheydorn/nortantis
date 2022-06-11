@@ -332,15 +332,14 @@ public abstract class VoronoiGraph {
     }
 
     public void paint(Graphics2D g, boolean drawRivers, boolean drawPlates, boolean drawElevations, 
-    		boolean drawNoisyEdges, boolean drawCoastlineOnly,
+    		boolean drawNoisyEdges,
     		boolean drawRiverMaskOnly) 
     {
-    	paint(g, drawRivers, drawPlates, drawElevations, drawNoisyEdges,
-    			drawCoastlineOnly, drawRiverMaskOnly, 1);
+    	paint(g, drawRivers, drawPlates, drawElevations, drawNoisyEdges, drawRiverMaskOnly, 1);
     }
 
     public void paint(Graphics2D g, boolean drawRivers, boolean drawPlates, boolean drawElevations,
-    		boolean drawNoisyEdges, boolean drawCoastlineOnly,
+    		boolean drawNoisyEdges,
     		boolean drawRiverMaskOnly, double widthMultipierForMasks) 
     {
     	boolean drawBioms = true;
@@ -349,14 +348,13 @@ public abstract class VoronoiGraph {
     	boolean drawDeluanay = false;  
     	boolean drawVoronoi = false;  
         paint(g, drawBioms, drawRivers, drawSites, drawCorners, drawDeluanay, drawVoronoi, drawPlates,
-        		drawElevations, drawNoisyEdges, drawCoastlineOnly,
+        		drawElevations, drawNoisyEdges,
         		widthMultipierForMasks);
     }
 
     public void paint(Graphics2D g, boolean drawBiomes, boolean drawRivers, boolean drawSites, 
     		boolean drawCorners, boolean drawDelaunay, boolean drawVoronoi, boolean drawPlates,
-    		boolean drawElevation, boolean drawNoisyEdges,
-    		boolean drawCoastlineOnly, double widthMultipierForMasks)
+    		boolean drawElevation, boolean drawNoisyEdges,  double widthMultipierForMasks)
     {
     	
         final int numSites = centers.size();
@@ -381,16 +379,7 @@ public abstract class VoronoiGraph {
                 defaultColors[i] = new Color(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255));
             }
         }
-        
-        if (drawCoastlineOnly)
-        {
-        	g.setColor(Color.black);
-        	g.fillRect(0, 0, (int)bounds.width, (int)bounds.height);
-        	g.setColor(Color.white);
-        	drawCoastline(g, Math.max(1, (int)widthMultipierForMasks));
-        	return;
-        }
-       
+               
         if (drawElevation)
         {
 	        for (Center c : centers) 
@@ -484,7 +473,7 @@ public abstract class VoronoiGraph {
 			});
 		
 
-       	// Code usefull for debugging
+       	// Code useful for debugging
 //    	g.setColor(Color.WHITE);
 //    	for (Corner c : corners)
 //    	{
@@ -691,7 +680,12 @@ public abstract class VoronoiGraph {
     
     public void drawCoastline(Graphics2D g, double width)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.d0.isWater != edge.d1.isWater);
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.isCoast());
+    }
+    
+    public void drawCoastlineWithLakeShores(Graphics2D g, double width)
+    {
+    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.isCoastOrLakeShore());
     }
 
     public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
@@ -704,7 +698,7 @@ public abstract class VoronoiGraph {
 				return false;
 			}
 
-    		return edge.d0.region != edge.d1.region;
+    		return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
     	});
     }
            

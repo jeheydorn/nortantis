@@ -530,11 +530,7 @@ public class IconTool extends EditorTool
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
-				if (base >= 2)
-				{
-					base += 1; // Level 3 looks just like level 2, so skip it.
-				}
-				int riverLevel = (base * base * 6) + VoronoiGraph.riversThinnerThanThisWillNotBeDrawn + 1;
+				int riverLevel = (base * base * 2) + VoronoiGraph.riversThinnerThanThisWillNotBeDrawn + 1;
 				settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
 			}
 			riverStart = null;
