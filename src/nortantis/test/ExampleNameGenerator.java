@@ -35,7 +35,10 @@ public class ExampleNameGenerator
 				{
 					if (requiredSuffix == null || requiredSuffix.equals("") || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
 					{
-						break;
+						if (!name.contains(" "))
+						{
+							break;
+						}
 					}
 				}
 			}
@@ -54,7 +57,10 @@ public class ExampleNameGenerator
 				{
 					if (requiredSuffix == null || requiredSuffix.equals("") || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
 					{
-						break;
+						if (!name.contains(" "))
+						{
+							break;
+						}
 					}
 				}
 			}
