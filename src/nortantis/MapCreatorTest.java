@@ -67,9 +67,9 @@ public class MapCreatorTest
 	}
 	
 	@Test
-	public void bugWithNoOcean()
+	public void preventCreatingOnlyOneTectonicPlate()
 	{
-		generateAndCompare("bugWithNoOcean.properties");
+		generateAndCompare("preventCreatingOnlyOneTectonicPlate.properties");
 	}
 	
 	@Test

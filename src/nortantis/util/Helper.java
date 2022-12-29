@@ -82,6 +82,20 @@ public class Helper
 		}
 		return minEntry.getKey();
 	}
+	
+	public static <K, V extends Comparable<V>> V min(Map<K, V> map)
+	{
+		Map.Entry<K, V> minEntry = null;
+		
+		for (Map.Entry<K, V> entry : map.entrySet())
+		{
+		    if (minEntry == null || entry.getValue().compareTo(minEntry.getValue()) < 0)
+		    {
+		        minEntry = entry;
+		    }
+		}
+		return minEntry.getValue();
+	}
 
 	public static String readFile(String path) 
 	{

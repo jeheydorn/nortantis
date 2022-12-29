@@ -67,6 +67,9 @@ public class WorldGraph extends VoronoiGraph
 	// will slow down plate generation.
 	final int plateBoundarySmoothness = 26;
 	final int minPoliticalRegionSize = 10;
+	// During tectonic plate creation, if there are only two plates left and the smaller of the two is less than this size, stop. 
+	// Prevents small maps from containing only one tectonic plate.  
+	final int minSecondtoLastPlateSize = 100;
 	    
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
@@ -854,6 +857,10 @@ public class WorldGraph extends VoronoiGraph
     	// First, assign a unique plate id and a random growth probability to each center.
     	RandomGenerator randomData = new JDKRandomGenerator(); 
     	randomData.setSeed(rand.nextLong());
+    	
+    	// Maps tectonic plates to the number of centers in that plate.
+    	HashMap<TectonicPlate, Integer> plateCounts = new HashMap<>(centers.size());
+    	
     	// A beta distribution is nice because (with the parameters I use) it creates a few plates
     	// with high growth probabilities and many with low growth probabilities. This makes plate creation
     	// faster and creates a larger variety of plate sizes than a uniform distribution would.
@@ -861,6 +868,7 @@ public class WorldGraph extends VoronoiGraph
     	for (Center c : centers)
     	{
     		c.tectonicPlate = new TectonicPlate(betaDist.sample(), centers);
+    		plateCounts.put(c.tectonicPlate, 1);
        	}
     	
    		for (Center c : centers)
@@ -905,16 +913,30 @@ public class WorldGraph extends VoronoiGraph
 							}
 	    				});
 	    		Center neighbor = neighborsNotInSamePlate.get(rand.nextInt(neighborsNotInSamePlate.size()));
-    		
-     		
+    		     		
+        		plateCounts.put(c.tectonicPlate, plateCounts.get(c.tectonicPlate)+1);
+        		plateCounts.put(neighbor.tectonicPlate, plateCounts.get(neighbor.tectonicPlate)-1);
+           		if (plateCounts.get(neighbor.tectonicPlate) == 0)
+        		{
+        			plateCounts.remove(neighbor.tectonicPlate);
+        		}
+
     	   		// Merge the neighbor into c's plate.
-        		neighbor.tectonicPlate = c.tectonicPlate;
+          		neighbor.tectonicPlate = c.tectonicPlate;
+        		
+         		
         		c.updateNeighborsNotInSamePlateCount();
         		for (Center n : c.neighbors)
         			n.updateNeighborsNotInSamePlateCount();
         		neighbor.updateNeighborsNotInSamePlateCount();
         		for (Center n : neighbor.neighbors)
         			n.updateNeighborsNotInSamePlateCount();
+        		
+	    		// Stop if there are only two plates left and one of them is getting too small
+        		if (plateCounts.keySet().size() == 2 && Helper.min(plateCounts) <= minSecondtoLastPlateSize)
+        		{
+        			break;
+        		}
      		}
     	}
  

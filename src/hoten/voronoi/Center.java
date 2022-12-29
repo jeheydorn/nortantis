@@ -90,15 +90,15 @@ public class Center
 	public void updateNeighborsNotInSamePlateCount()
 	{
 		float neighborsNotInSamePlateCount = 0;
-		float neighborsInSamePlateCOunt = 0;
+		float neighborsInSamePlateCount = 0;
  		for (Center neighbor : neighbors)
 		{
 			if (tectonicPlate != neighbor.tectonicPlate) 
 				neighborsNotInSamePlateCount++;
 			else
-				neighborsInSamePlateCOunt++;
+				neighborsInSamePlateCount++;
 		}
- 		neighborsNotInSamePlateRatio = neighborsNotInSamePlateCount / neighborsInSamePlateCOunt;
+ 		neighborsNotInSamePlateRatio = neighborsNotInSamePlateCount / neighborsInSamePlateCount;
 	}
 	
 	public boolean isRiver()
