@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -58,9 +59,8 @@ public class MapSettings implements Serializable
 	public Color frayedBorderColor;
 	public int frayedBorderBlurLevel;
 	public int grungeWidth;
-	
 	/**
-	 * This settings actually means fractal generated as opposed to generated from texture.
+	 * This setting actually means fractal generated as opposed to generated from texture.
 	 */
 	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with generateBackgroundFromTexture.
 	public boolean generateBackgroundFromTexture;
@@ -78,7 +78,6 @@ public class MapSettings implements Serializable
 	public String oceanBackgroundImage;
 	public int hueRange;
 	public int saturationRange;
-	
 	public int brightnessRange;
 	public boolean drawText;
 	public boolean alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean; // Not saved
@@ -107,12 +106,26 @@ public class MapSettings implements Serializable
 	public String cityIconSetName;
 	public double pointPrecision = defaultPointPrecision; // Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings files that have edits.
 	
+	/**
+	 * Default values for new settings
+	 */
+	private final Color defaultRoadColor = Color.black;
+	
 	public MapSettings()
 	{
 		edits = new MapEdits();
+		roadColor = defaultRoadColor;
 	}
 	
-	public Properties toPropertiesFile()
+	public void writeToFile(String filePath) throws IOException
+	{
+		Properties props = toProperties();
+		PrintWriter pw = new PrintWriter(filePath);
+		props.store(pw, "");
+		pw.close();
+	}
+	
+	private Properties toProperties()
 	{
 		Properties result = new Properties();
 		result.setProperty("randomSeed", randomSeed + "");
@@ -352,7 +365,7 @@ public class MapSettings implements Serializable
 				String roadColorString = props.getProperty("roadColor");
 				if (roadColorString == null || roadColorString.equals(""))
 				{
-					return Color.black;
+					return defaultRoadColor;
 				}
 				return parseColor(roadColorString);
 			}
@@ -1010,7 +1023,7 @@ public class MapSettings implements Serializable
 	public boolean equals(Object other)
 	{
 		MapSettings o = (MapSettings)other;
-		return toPropertiesFile().equals(o.toPropertiesFile());
+		return toProperties().equals(o.toProperties());
 	}
 	
 	public enum LineStyle

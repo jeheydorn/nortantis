@@ -262,7 +262,6 @@ public class Helper
 		return results;
 	}
 
-	
 	public static void writeToFile(String fileName, String contents)
 	{
 		try
@@ -285,6 +284,12 @@ public class Helper
 		{
 			System.out.println("Helper.writeToFile caught error: " + ex.getMessage());
 		}
+	}
+	
+	public static void createFolder(String folderName)
+	{
+		 File folder = new File(folderName); 
+		 folder.mkdir();
 	}
 	
 	/**

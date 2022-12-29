@@ -37,3 +37,5 @@ user preferences
 /assets/books/SSA girl names_place_names.txt
 map with new cities.properties
 temp.properties
+/unit test files/expected maps
+/unit test files/failed maps

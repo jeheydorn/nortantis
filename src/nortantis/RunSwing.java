@@ -18,7 +18,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -1246,7 +1245,7 @@ public class RunSwing
 		borderPanel.add(frayedEdgeSizeSlider);
 		
 		final JPanel iconsPanel = new JPanel();
-		tabbedPane.addTab("Icons", iconsPanel);
+		tabbedPane.addTab("Cities", iconsPanel);
 		iconsPanel.setLayout(null);
 		
 		cityProbabilityLabel = new JLabel("City probability:");
@@ -1965,10 +1964,9 @@ public class RunSwing
 		else
 		{
 			final MapSettings settings = getSettingsFromGUI();
-			Properties props = settings.toPropertiesFile();
 			try
 			{
-				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
+				settings.writeToFile(openSettingsFilePath.toString());
 				updateLastSettingsLoadedOrSaved(settings);
 				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
 			} 
@@ -2011,10 +2009,9 @@ public class RunSwing
 			}
 			
 			final MapSettings settings = getSettingsFromGUI();
-			Properties props = settings.toPropertiesFile();
 			try
 			{
-				props.store(new PrintWriter(openSettingsFilePath.toString()), "");
+				settings.writeToFile(openSettingsFilePath.toString());
 				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
 				updateLastSettingsLoadedOrSaved(settings);
 			} catch (IOException e)

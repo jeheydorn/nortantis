@@ -1570,6 +1570,5 @@ public class ImageHelper
 				double otherValue = (int) otherRaster.getSample(x, y, 0);
 				out.setSample(x, y, 0, Math.max(0, value - otherValue));
 			}
-	}
-	
+	}	
 }
