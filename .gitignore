@@ -1,5 +1,4 @@
 bin/*
-user_preferences
 coastline_mask.png
 elevation.png
 land_blur.png
@@ -14,7 +13,7 @@ river_mask.png
 *.class
 /bin
 biomes.png
-map_creator.jar
+nortantis_map_generator.jar
 fantasy_map_creator/*
 matched_*.png
 experiment*.png
@@ -23,7 +22,22 @@ mystery.png
 cloud.ng
 colorized.png
 frequencies.png
+user preferences
+.metadata/
+.recommenders/
+/.metadata
 /user preferences
-temp.properties
+/assets/books/SSA boy names_noun_adjective_pairs.txt
+/assets/books/SSA boy names_noun_verb_pairs.txt
+/assets/books/SSA boy names_person_names.txt
+/assets/books/SSA boy names_place_names.txt
+/assets/books/SSA girl names_noun_adjective_pairs.txt
+/assets/books/SSA girl names_noun_verb_pairs.txt
+/assets/books/SSA girl names_person_names.txt
+/assets/books/SSA girl names_place_names.txt
 map with new cities.properties
-assets/
+temp.properties
+/unit test files/expected maps
+/unit test files/expected maps/*
+/unit test files/failed maps
+/unit test files/failed maps/*
