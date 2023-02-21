@@ -1,19 +1,19 @@
-package nortantis;
+package nortantis.test;
 
 import static org.junit.Assert.*;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Paths;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import nortantis.MapCreator;
+import nortantis.MapSettings;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;

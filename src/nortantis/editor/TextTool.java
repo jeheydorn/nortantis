@@ -246,20 +246,14 @@ public class TextTool extends EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
-		settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean = true;
+		settings.alwaysUpdateLandBackgroundWithOcean = true;
 		settings.drawIcons = true;
 		settings.drawRivers = true;
 	}
 	
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate)
-	{
-		// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
-    	// This makes it so that any edits done to the settings will automatically be reflected
-    	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
-    	// map texts, which are needed to make them clickable to edit them.
-		mapParts.textDrawer.setMapTexts(settings.edits.text);
-    
+	{    
     	// Add text to the map
 		mapWithoutText = map;
 		
@@ -273,12 +267,17 @@ public class TextTool extends EditorTool
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
 		try
 		{
+			settings.drawText = true;
 			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 	        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		}
+		finally
+		{
+			settings.drawText = false;
 		}
 		
 		return mapWithText;
@@ -542,9 +541,6 @@ public class TextTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo(boolean requiresFullRedraw)
 	{
-		// For why this is needed, see the big comment on the same line in onBeforeShowMap.
-		mapParts.textDrawer.setMapTexts(settings.edits.text);
-		
 		mapEditingPanel.clearAreasToDraw();
 		lastSelected = null;
 		editTextField.setText("");

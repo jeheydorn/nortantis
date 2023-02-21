@@ -546,11 +546,6 @@ public abstract class EditorTool
 		{
 			// The text tool has not been opened. Draw the text once so we can erase it.
 			mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplier(mapParts.graph.getWidth()));	
-			// Set the MapTexts in the TextDrawer to be the same object as settings.edits.text.
-	    	// This makes it so that any edits done to the settings will automatically be reflected
-	    	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
-	    	// map texts, which are needed to make them clickable to edit them.
-			mapParts.textDrawer.setMapTexts(settings.edits.text);
 			mapParts.textDrawer.drawText(mapParts.graph, ImageHelper.deepCopy(mapParts.landBackground), mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
 		}
 		for (MapText text : settings.edits.text)

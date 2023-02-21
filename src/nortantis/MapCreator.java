@@ -49,6 +49,20 @@ public class MapCreator
 	public MapCreator()
 	{
 	}
+	
+	/**
+	 * Incrementally updates a map, given a list of centers that changed.
+	 * Drawing text is currently not supported (it's not needed because the editor draws text as a separate step).
+	 * @param settings
+	 * @param mapParts
+	 * @param map
+	 * @param centersChanged
+	 * @return
+	 */
+	public BufferedImage UpdateIncremental(final MapSettings settings,  MapParts mapParts, BufferedImage map, Set<Center> centersChanged)
+	{
+		return null;
+	}
 
 	/**
 	 * Draws a map.
@@ -58,7 +72,7 @@ public class MapCreator
 	 * This is needed for creating previews. null means draw at normal resolution. Warning: If 
 	 * maxDimensions is specified, then settings.resolution will be modified to fit that size.
 	 * @param mapParts If not null, then parts of the map created while generating will be stored in it.
-	 * @return
+	 * @return The map
 	 */
 	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
 			throws IOException
@@ -97,21 +111,21 @@ public class MapCreator
 		
 		
 		TextDrawer textDrawer = null;
-		if (settings.drawText || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
+		if (mapParts == null || mapParts.textDrawer == null)
 		{
-			if (mapParts == null || mapParts.textDrawer == null || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
+			// Create the TextDrawer regardless off settings.drawText because the editor might be generating the map without text
+			// now, but want to show the text later, so in that case we would want to generate the texts using the TextDrawer but 
+			// not show them.
+			textDrawer = new TextDrawer(settings, sizeMultiplier);
+			
+			if (mapParts != null)
 			{
-				textDrawer = new TextDrawer(settings, sizeMultiplier);
-				
-				if (mapParts != null)
-				{
-					mapParts.textDrawer = textDrawer;
-				}
+				mapParts.textDrawer = textDrawer;
 			}
-			else
-			{
-				textDrawer = mapParts.textDrawer;
-			}
+		}
+		else
+		{
+			textDrawer = mapParts.textDrawer;
 		}
 		
         WorldGraph graph;
@@ -157,21 +171,25 @@ public class MapCreator
 			r.nextLong(); // Use the random number generator the same as if I had created the icon drawer.
 		}
 
-		iconDrawer.markMountains();
-		iconDrawer.markHills();
-		iconDrawer.markCities(settings.cityProbability);
-		Pair<List<Set<Center>>> pair = iconDrawer.findMountainAndHillGroups();
-		// All mountain ranges and smaller groups of mountains (include mountains that are alone).
-		List<Set<Center>> mountainGroups = pair.getFirst();
-		// All mountain ranges and smaller groups of mountains extended to include nearby hills.
-		List<Set<Center>> mountainAndHillGroups = pair.getSecond();
-		pair = null;
-		if (mapParts != null)
+		List<Set<Center>> mountainGroups = null;
+		List<Set<Center>> mountainAndHillGroups = null;
+		if (needToAddIcons)
 		{
-			mapParts.mountainGroups = mountainGroups;
+			iconDrawer.markMountains();
+			iconDrawer.markHills();
+			iconDrawer.markCities(settings.cityProbability);
+			Pair<List<Set<Center>>> pair = iconDrawer.findMountainAndHillGroups();
+			// All mountain ranges and smaller groups of mountains (include mountains that are alone).
+			mountainGroups = pair.getFirst();
+			// All mountain ranges and smaller groups of mountains extended to include nearby hills.
+			mountainAndHillGroups = pair.getSecond();
+			pair = null;
+			if (mapParts != null)
+			{
+				mapParts.mountainGroups = mountainGroups;
+			}
 		}
-		
-		if (!needToAddIcons)
+		else
 		{
 			iconDrawer.clearAndAddIconsFromEdits(settings.edits, sizeMultiplier);
 		}
@@ -260,7 +278,7 @@ public class MapCreator
 
 		if (settings.drawRivers)
 		{
-		// Add rivers.
+			// Add rivers.
 			Logger.println("Adding rivers.");
 			drawRivers(settings, graph, map, sizeMultiplier);
 		}
@@ -320,9 +338,9 @@ public class MapCreator
 			}
 
 			
-			if (settings.drawText || settings.alwaysCreateTextDrawerAndUpdateLandBackgroundWithOcean)
+			if (settings.drawText || settings.alwaysUpdateLandBackgroundWithOcean)
 			{
-				// Needed for drawing text.
+				// Needed for drawing text
 				landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
 			}
 			
@@ -438,9 +456,9 @@ public class MapCreator
 				g.setColor(settings.coastlineColor);
 				graph.drawRegionBorders(g, sizeMultiplier, true);
 			}
-						
-			textDrawer.drawText(graph, map, landBackground, mountainGroups, cities);
 		}
+		// Call drawText below regardless of settings.drawText to create the MapText objects even when text is not shown.
+		textDrawer.drawText(graph, map, landBackground, mountainGroups, cities);
 		landBackground = null;
 		
 		if (settings.drawBorder)

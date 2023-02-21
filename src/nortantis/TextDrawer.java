@@ -90,7 +90,25 @@ public class TextDrawer
 	{
 		this.settings = settings;
 		this.sizeMultiplyer = sizeMultiplyer;
-		mapTexts = new CopyOnWriteArrayList<>();
+		
+		if (settings.edits != null && settings.edits.text != null)
+		{
+			// Set the MapTexts in this TextDrawer to be the same object as settings.edits.text.
+	    	// This makes it so that any edits done to the settings will automatically be reflected
+	    	// in the text drawer. Also, it is necessary because the TextDrawer adds the Areas to the
+	    	// map texts, which are needed to make them clickable to edit them.
+			mapTexts = settings.edits.text;
+		}
+		else if (settings.edits != null && settings.edits.text == null)
+		{
+			mapTexts = new CopyOnWriteArrayList<>();
+			settings.edits.text = mapTexts;
+		}
+		else
+		{
+			mapTexts = new CopyOnWriteArrayList<>();
+		}
+		
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.
 		this.r = new Random(settings.textRandomSeed);
@@ -199,7 +217,7 @@ public class TextDrawer
 		{
 			if (mountainRanges == null)
 			{
-				throw new IllegalStateException("mountainRanges must be given when generating text.");
+				mountainRanges = new ArrayList<>(0);
 			}
 			generateText(map, graph, mountainRanges, cityDrawTasks);
 		}
@@ -1126,6 +1144,8 @@ public class TextDrawer
 	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still
 	 * fit with the given locations, then it will be drawn on 2 lines.
 	 * 
+	 * The actual drawing step is skipped if settings.drawText = false.
+	 * 
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameHorizontal(BufferedImage map, Graphics2D g, 
@@ -1186,15 +1206,16 @@ public class TextDrawer
 			}
 			text.areas = Arrays.asList(area1, area2);
 
-			Point textStartLine1 = new Point(ulCorner1.x, ulCorner1.y + metrics.getAscent());
-			//drawBackgroundBlending(map, g, (int)bounds1.getWidth(), (int)bounds1.getHeight(), ulCorner1, 0);
-			drawBackgroundBlendingForText(map, g, textStartLine1, 0, metrics, nameLine1);
-			drawNameHorizontalAtPoint(g, nameLine1, textStartLine1, boldBackground);
-			
-			Point textStartLine2 = new Point(ulCorner2.x, ulCorner2.y + metrics.getAscent());
-			//drawBackgroundBlending(map, g, (int)bounds2.getWidth(), (int)bounds2.getHeight(), ulCorner2, 0);
-			drawBackgroundBlendingForText(map, g, textStartLine2, 0, metrics, nameLine2);
-			drawNameHorizontalAtPoint(g, nameLine2, textStartLine2, boldBackground);
+			if (settings.drawText)
+			{
+				Point textStartLine1 = new Point(ulCorner1.x, ulCorner1.y + metrics.getAscent());
+				drawBackgroundBlendingForText(map, g, textStartLine1, 0, metrics, nameLine1);
+				drawNameHorizontalAtPoint(g, nameLine1, textStartLine1, boldBackground);
+				
+				Point textStartLine2 = new Point(ulCorner2.x, ulCorner2.y + metrics.getAscent());
+				drawBackgroundBlendingForText(map, g, textStartLine2, 0, metrics, nameLine2);
+				drawNameHorizontalAtPoint(g, nameLine2, textStartLine2, boldBackground);
+			}
 		}
 		else
 		{	
@@ -1210,12 +1231,14 @@ public class TextDrawer
 			
 			text.areas = Collections.singletonList(area);
 			
-			Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
-			
-			Point textStart = new Point(boundsLocation.x, boundsLocation.y + metrics.getAscent());
-			//drawBackgroundBlending(map, g, width, height, boundsLocation, 0);
-			drawBackgroundBlendingForText(map, g, textStart, 0, metrics, text.value);
-			drawNameHorizontalAtPoint(g, text.value, textStart, boldBackground);
+			if (settings.drawText)
+			{
+				Point boundsLocation = new Point(bounds.getLocation().x, bounds.getLocation().y);
+				
+				Point textStart = new Point(boundsLocation.x, boundsLocation.y + metrics.getAscent());
+				drawBackgroundBlendingForText(map, g, textStart, 0, metrics, text.value);
+				drawNameHorizontalAtPoint(g, text.value, textStart, boldBackground);
+			}
 		}
 		return true;
 	}
@@ -1292,6 +1315,10 @@ public class TextDrawer
 	/**
 	 * Draws the given name at the given location (centroid), at the given angle. This does not break text
 	 * into multiple lines.
+	 * 
+	 * If settings.drawText = false, then this method will not do the actual text writing, but will still
+	 * update the MapText text.
+	 * 
 	 * @param riseOffset The text will be raised (positive y) by this much distance above the centroid when
 	 *  drawn. The rotation will be applied to this location. If there is already a name drawn above the object,
 	 *  I try negating the riseOffset to draw the name below it. Positive y is down.
@@ -1349,12 +1376,15 @@ public class TextDrawer
 		// Update the text location with the offset.
 		text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
 		
-		Point textStart = new Point((int)(bounds.getLocation().x), (int)(bounds.getLocation().y + metrics.getAscent()));
-		drawBackgroundBlendingForText(map, g, textStart, text.angle, metrics, text.value);
+		if (settings.drawText)
+		{
+			Point textStart = new Point((int)(bounds.getLocation().x), (int)(bounds.getLocation().y + metrics.getAscent()));
+			drawBackgroundBlendingForText(map, g, textStart, text.angle, metrics, text.value);
 		
-		//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
-		
-		g.drawString(text.value, (int) textStart.x, (int) textStart.y);
+			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
+
+			g.drawString(text.value, (int) textStart.x, (int) textStart.y);
+		}
 		g.setTransform(orig);
 		
 		return true;
