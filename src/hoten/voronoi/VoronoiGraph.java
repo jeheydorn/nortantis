@@ -408,7 +408,6 @@ public abstract class VoronoiGraph {
 				}
 			});
 		
-
        	// Code useful for debugging
 //    	g.setColor(Color.WHITE);
 //    	for (Corner c : corners)

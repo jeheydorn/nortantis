@@ -513,20 +513,20 @@ public class MapCreator
 			Logger.println("Adding frayed edges.");
 			WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
 					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, settings.pointPrecision);
-			BufferedImage borderMask = new BufferedImage(frayGraph.getWidth(),
+			BufferedImage frayedBorderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-			frayGraph.drawBorderWhite(borderMask.createGraphics());
+			frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
 
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
 			if (blurLevel > 0)
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				BufferedImage borderBlur = ImageHelper.convolveGrayscale(borderMask, kernel, true);
+				BufferedImage frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true);
 			
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, borderBlur, true);
+				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
 
 			}
-			map = ImageHelper.setAlphaFromMask(map, borderMask, true);
+			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
 		}
 		else
 		{
