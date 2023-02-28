@@ -455,7 +455,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void paintElevationUsingTrianges(Graphics2D g)
     {
-    	super.paint(g, false, false, true, false, false);
+     	super.drawElevation(g);
     	
     	// Draw plate velocities.
 //    	g.setColor(Color.yellow);
@@ -473,16 +473,6 @@ public class WorldGraph extends VoronoiGraph
     
     public void drawBorderWhite(Graphics2D g)
     {
-        for (Center c : centers) 
-        {
-         	if (c.isBorder)
-                g.setColor(Color.white);
-         	else
-         		g.setColor(Color.BLACK);
-                        
-            drawUsingTriangles(g, c, false);
-        } 	
-        
         renderPolygons(g, c -> c.isBorder ? Color.white : Color.black);
     }
     

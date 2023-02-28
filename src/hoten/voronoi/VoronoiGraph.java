@@ -330,134 +330,71 @@ public abstract class VoronoiGraph {
         return Math.abs(d1 - d2) <= diff * scaleMultiplyer;
     }
 
-    public void paint(Graphics2D g, boolean drawRivers, boolean drawPlates, boolean drawElevations, 
-    		boolean drawNoisyEdges,
-    		boolean drawRiverMaskOnly) 
+    /**
+     * Draw tectonic plates. For debugging
+     */
+    public void drawPlates(Graphics2D g)
     {
-    	paint(g, drawRivers, drawPlates, drawElevations, drawNoisyEdges, drawRiverMaskOnly, 1);
-    }
-
-    public void paint(Graphics2D g, boolean drawRivers, boolean drawPlates, boolean drawElevations,
-    		boolean drawNoisyEdges,
-    		boolean drawRiverMaskOnly, double widthMultipierForMasks) 
-    {
-    	boolean drawBioms = true;
-    	boolean drawSites = false; 
-    	boolean drawCorners = false; 
-    	boolean drawDeluanay = false;  
-    	boolean drawVoronoi = false;  
-        paint(g, drawBioms, drawRivers, drawSites, drawCorners, drawDeluanay, drawVoronoi, drawPlates,
-        		drawElevations, drawNoisyEdges,
-        		widthMultipierForMasks);
-    }
-
-    public void paint(Graphics2D g, boolean drawBiomes, boolean drawRivers, boolean drawSites, 
-    		boolean drawCorners, boolean drawDelaunay, boolean drawVoronoi, boolean drawPlates,
-    		boolean drawElevation, boolean drawNoisyEdges,  double widthMultipierForMasks)
-    {
-    	
-        final int numSites = centers.size();
-        
-        
-        if (drawVoronoi)
+    	for (Edge e : edges) 
         {
-        	g.setColor(Color.WHITE);
-        	for (Corner c : corners)
-        	{
-        		for (Corner adjacent : c.adjacent)
-        		{
-        			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
-        		}
-        	}
-        }
-        
-        Color[] defaultColors = null;
-        if (!drawBiomes) {
-            defaultColors = new Color[numSites];
-            for (int i = 0; i < defaultColors.length; i++) {
-                defaultColors[i] = new Color(rand.nextInt(255), rand.nextInt(255), rand.nextInt(255));
-            }
-        }
-               
-        if (drawElevation)
-        {
-	        for (Center c : centers) 
-	        {
-            	float grayLevel = (float) (float)c.elevation;
-            	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
-	            drawUsingTriangles(g, c, true);
-	        }
-        }
-        else if (drawBiomes)
-        {
-        	drawBiomes(g);
-        }
-
-        if (drawNoisyEdges)
-        {       	
-        	renderPolygons(g, new Function<Center, Color>() 
-			{
-				public Color apply(Center c)
-				{
-					return getColor(c.biome);
-				}
-			});
-        }
-        
-        if (drawRivers)
-        {
-            g.setColor(RIVER);
-        	drawRivers(g, widthMultipierForMasks);
-        }
-        
-        if (drawDelaunay)
-        {
-	        for (Edge e : edges) 
-	        {
-	            if (drawDelaunay) {
-	                g.setStroke(new BasicStroke(1));
-	                g.setColor(Color.YELLOW);
-	                g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
-	            }
-	        }
-        }
-        
-	    if (drawPlates)
-	    {
-	        for (Edge e : edges) 
-	        {
-	            if (drawPlates && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
-	            {
-	                g.setStroke(new BasicStroke(1));
-	                g.setColor(Color.GREEN);
-	                g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
-	            }
-	        }
-        }
-
-        if (drawSites) {
-            g.setColor(Color.YELLOW);
-            for (Center s : centers) {
-                g.fillOval((int) (s.loc.x - 2), (int) (s.loc.y - 2), 12, 12);
-            }
-        }
-
-//        if (drawPlates) {
-//            for (Center s : centers) {
-//             	int grayLevel = (int)((((double)s.tectonicPlateId) / centers.size())*255);
-//				g.setColor(new Color(grayLevel, grayLevel, grayLevel));
-//				g.fillRect((int) (s.loc.x - 2), (int) (s.loc.y - 2), 3, 4);
-//            }
-//        }
-
-        if (drawCorners) {
-            g.setColor(Color.WHITE);
-            for (Corner c : corners) 
+            if (e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
             {
-            	g.setColor(Color.PINK);
-
-                g.fillOval((int) (c.loc.x - 2), (int) (c.loc.y - 2), 10, 10);
+                g.setStroke(new BasicStroke(1));
+                g.setColor(Color.GREEN);
+                g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
             }
+        }
+    }
+    
+    /**
+     * For debugging
+     */
+    public void drawVoronoi(Graphics2D g)
+    {
+    	g.setColor(Color.WHITE);
+    	for (Corner c : corners)
+    	{
+    		for (Corner adjacent : c.adjacent)
+    		{
+    			g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x, (int)adjacent.loc.y);
+    		}
+    	}
+    }
+    
+    /**
+     * For debugging
+     */
+    public void drawDelaunay(Graphics2D g)
+    {
+        for (Edge e : edges) 
+        {
+            g.setStroke(new BasicStroke(1));
+            g.setColor(Color.YELLOW);
+            g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
+        }
+    }
+    
+    /**
+     * For debugging
+     */
+    public void drawCorner(Graphics2D g)
+    {
+    	g.setColor(Color.WHITE);
+        for (Corner c : corners) 
+        {
+        	g.setColor(Color.PINK);
+
+            g.fillOval((int) (c.loc.x - 2), (int) (c.loc.y - 2), 10, 10);
+        }
+    }
+    
+    public void drawElevation(Graphics2D g)
+    {
+        for (Center c : centers) 
+        {
+        	float grayLevel = (float) (float)c.elevation;
+        	g.setColor(new Color(grayLevel, grayLevel, grayLevel));	            
+            drawUsingTriangles(g, c, true);
         }
     }
     
@@ -701,8 +638,7 @@ public abstract class VoronoiGraph {
     	});
     }
            
-	private void drawSpecifiedEdges(Graphics2D g, int width, 
-			Function<Edge, Boolean> shouldDraw)
+	private void drawSpecifiedEdges(Graphics2D g, int width, Function<Edge, Boolean> shouldDraw)
 	{		
 		g.setStroke(new BasicStroke(width));
 		

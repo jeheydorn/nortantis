@@ -49,8 +49,8 @@ class IconDrawTask implements Comparable<IconDrawTask>
 	{
 		if (needsScale)
 		{
-	       	icon = ImageCache.getInstance().getScaledImage(icon, scaledWidth);
-	      	mask = ImageCache.getInstance().getScaledImage(mask, scaledWidth);
+	       	icon = ImageCache.getInstance().getScaledImageByWidth(icon, scaledWidth);
+	      	mask = ImageCache.getInstance().getScaledImageByWidth(mask, scaledWidth);
 		}
 	}
 	

@@ -283,7 +283,7 @@ public class EditorFrame extends JFrame
 			{
 				UserPreferences.getInstance().zoomLevel = (String)zoomComboBox.getSelectedItem();
 				double zoom = parseZoom((String)zoomComboBox.getSelectedItem());
-				ImageCache.clear();
+				ImageCache.getInstance().clear();
 				currentTool.handleZoomChange(zoom);
 			}
 		});

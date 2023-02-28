@@ -93,7 +93,8 @@ public class MapCreator
 		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(snippetToDrawBounds), centersChanged.iterator().next());
 		
 		// Determine which icons to draw:
-		//	- Before drawing, remove the icons from iconsToDraw for the centers in centersChanged. Then add the new icons for those centers. Then redraw all icons except skip any whose bounds don't touch snippetToReplaceBounds.
+		//	- Before drawing, remove the icons from iconsToDraw for the centers in centersChanged. Then add the new icons for those centers. 
+		//    Then redraw all icons except skip any whose bounds don't touch snippetToReplaceBounds.
 		//- Let snippet = Draw the map constrained to only draw snippetToDrawBounds, and only centers in centersToDraw.
 		//- Extract snippetToReplaceBounds image from snippet and replace it on the map. 		
 	}

@@ -18,6 +18,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
@@ -67,7 +68,7 @@ public class IconDrawer
 	 */
 	public Map<Integer, CenterIcon> centerIcons;
 	public Map<Integer, CenterTrees> trees;
-	private double averageCenterWidth;
+	private double averageCenterWidthBetweenNeighbors;
 
 	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName)
 	{
@@ -76,22 +77,16 @@ public class IconDrawer
 		this.rand = rand;
 		ImageCache.getInstance().setCityIconsSetName(cityIconsSetName);
 		
-		meanPolygonWidth = findMeanPolygonWidth(graph);
+		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneWidth = (int)(meanPolygonWidth * 1.5);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
 		centerIcons = new HashMap<>();
 		trees = new HashMap<>();
 		
-		// Store the average width of all Centers.
-		double sum = 0;
-		for (Center c : graph.centers)
-		{
-			sum += findCenterWidthBetweenNeighbors(c);
-		}
-		averageCenterWidth = sum / graph.centers.size();
+		averageCenterWidthBetweenNeighbors = findMeanCenterWidthBetweenNeighbors();
 	}
 
-	public static double findMeanPolygonWidth(WorldGraph graph)
+	public static double findMeanCenterWidth(WorldGraph graph)
 	{
 		double widthSum = 0;
 		int count = 0;
@@ -107,6 +102,16 @@ public class IconDrawer
 		}
 		
 		return widthSum / count;
+	}
+	
+	private double findMeanCenterWidthBetweenNeighbors()
+	{
+		double sum = 0;
+		for (Center c : graph.centers)
+		{
+			sum += findCenterWidthBetweenNeighbors(c);
+		}
+		return sum / graph.centers.size();
 	}
 
 	public void markMountains()
@@ -807,18 +812,27 @@ public class IconDrawer
         }
         
       	// Make the tree images small. I make them all the same height.
-        int scaledHeight = (int)(averageCenterWidth * treeScale);
+        int scaledHeight = (int)(averageCenterWidthBetweenNeighbors * treeScale);
        	if (scaledHeight == 0)
        	{
        		// Don't draw trees if they would all be size zero.
        		return;
        	}
-        for (List<Tuple2<BufferedImage, BufferedImage>> imageGroup: treesById.values())
+       	
+       	// Scale the tree images. Note that images in treesById should not be modified because treesById is cached and so can be re-used.
+       	ListMap<String, Tuple2<BufferedImage, BufferedImage>> scaledTreesById = new ListMap<>(); 
+        for (Map.Entry<String, List<Tuple2<BufferedImage, BufferedImage>>> entry: treesById.entrySet())
         {
+        	String groupName = entry.getKey();
+        	List<Tuple2<BufferedImage, BufferedImage>> imageGroup = entry.getValue();
+        	List<Tuple2<BufferedImage, BufferedImage>> scaledImageGroup = new ArrayList<>();
+        	scaledTreesById.put(groupName, scaledImageGroup);
+        	
         	for (Tuple2<BufferedImage, BufferedImage> tuple : imageGroup)
         	{
-		       	tuple.setFirst(ImageHelper.scaleByHeight(tuple.getFirst(), scaledHeight));
-		       	tuple.setSecond(ImageHelper.scaleByHeight(tuple.getSecond(), scaledHeight));
+        		scaledTreesById.add(groupName, new Tuple2<>(
+        				ImageCache.getInstance().getScaledImageByHeight(tuple.getFirst(), scaledHeight),
+        				ImageCache.getInstance().getScaledImageByHeight(tuple.getSecond(), scaledHeight)));
         	}
         }
         
@@ -827,9 +841,9 @@ public class IconDrawer
         	CenterTrees cTrees = trees.get(c.index);
         	if (cTrees != null)
         	{
-        		if (cTrees.treeType != null && treesById.containsKey(cTrees.treeType))
+        		if (cTrees.treeType != null && scaledTreesById.containsKey(cTrees.treeType))
         		{
-		        	drawTreesAtCenterAndCorners(graph, cTrees.density, treesById.get(cTrees.treeType), c);
+		        	drawTreesAtCenterAndCorners(graph, cTrees.density, scaledTreesById.get(cTrees.treeType), c);
 	        	}
         	}
         }
@@ -945,7 +959,7 @@ public class IconDrawer
            	int x = (int) (loc.x);
            	int y = (int) (loc.y);
            	
-           	double sqrtSize = Math.sqrt(averageCenterWidth);
+           	double sqrtSize = Math.sqrt(averageCenterWidthBetweenNeighbors);
            	x += rand.nextGaussian() * sqrtSize*2.0;
            	y += rand.nextGaussian() * sqrtSize*2.0;
         	

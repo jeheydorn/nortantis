@@ -370,7 +370,7 @@ public class RunSwing
 			        @Override
 			        public BufferedImage doInBackground() throws Exception
 			        {
-						ImageCache.clear();
+						ImageCache.getInstance().clear();
 						
 						BufferedImage map = new MapCreator().createMap(settings, null, null);
 						System.gc();

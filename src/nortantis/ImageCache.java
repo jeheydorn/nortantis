@@ -73,7 +73,6 @@ public class ImageCache
 		fileCache = new ConcurrentHashMapF<>();
 		generatedImageCache = new ConcurrentHashMapF<>();
 		iconGroupsAndMasksCache = new ConcurrentHashMapF<>();
-		iconGroupsAndMasksCache = new ConcurrentHashMapF<>();
 		iconsWithWidthsCache = new ConcurrentHashMapF<>();
 		iconSetsCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
@@ -87,13 +86,38 @@ public class ImageCache
 		return instance;
 	}
 	
-	public BufferedImage getScaledImage(BufferedImage icon, int width)
+	/**
+	 * Either looks up in the cache, or creates, a version of the given icon with the given width.
+	 * @param icon Original image (not scaled)
+	 * @param width The desired width
+	 * @return A scaled image
+	 */
+	public BufferedImage getScaledImageByWidth(BufferedImage icon, int width)
 	{
 		// There is a small chance the 2 different threads might both add the same image at the same time, 
 		// but if that did happen it would only results in a little bit of duplicated work, not a functional
 		// problem.
 		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(width, 
 				() -> ImageHelper.scaleByWidth(icon, width));
+	}
+	
+	/**
+	 * Either looks up in the cache, or creates, a version of the given icon with approximately the given height.
+	 * Warning: The height of the result is approximate because the cache is keyed by image width, and so the height of
+	 * the images in the cache will vary because of integer precision limitations.
+	 * @param icon Original image (not scaled)
+	 * @param height The approximate desired height
+	 * @return A scaled image
+	 */
+	public BufferedImage getScaledImageByHeight(BufferedImage icon, int height)
+	{
+		double aspectRatioInverse = ((double) icon.getWidth())
+				/ icon.getHeight();
+		int width = (int) (aspectRatioInverse * height);
+		if (width == 0)
+			width = 1;
+		
+		return getScaledImageByWidth(icon, width);
 	}
 	
 	public BufferedImage getImageFromFile(Path path)
@@ -406,15 +430,15 @@ public class ImageCache
 		return iconType == IconType.cities;
 	}
 	
-	public static void clear()
+	public void clear()
 	{
-		getInstance().scaledCache.clear();
-		getInstance().fileCache.clear();
-		getInstance().generatedImageCache.clear();
-		getInstance().iconGroupFilesNamesCache.clear();
-		getInstance().iconSetsCache.clear();
-		getInstance().iconsWithWidthsCache.clear();
-		getInstance().iconGroupsAndMasksCache.clear();
-		getInstance().iconGroupNames.clear();
+		scaledCache.clear();
+		fileCache.clear();
+		generatedImageCache.clear();
+		iconGroupFilesNamesCache.clear();
+		iconSetsCache.clear();
+		iconsWithWidthsCache.clear();
+		iconGroupsAndMasksCache.clear();
+		iconGroupNames.clear();
 	}
 }
