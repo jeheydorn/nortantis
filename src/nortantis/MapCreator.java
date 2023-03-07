@@ -327,7 +327,7 @@ public class MapCreator
 		}
 		
 
-		List<IconDrawTask> cities;
+		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
@@ -399,7 +399,7 @@ public class MapCreator
 				{
 					Graphics2D g = coastlineMask.createGraphics();
 					g.setColor(Color.white);
-					graph.drawCoastline(g, sizeMultiplier);
+					graph.drawCoastline(g, sizeMultiplier, null, null);
 				}
 				
 				if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
@@ -464,12 +464,12 @@ public class MapCreator
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawCoastlineWithLakeShores(g, sizeMultiplier);
+			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
 		{
 			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawCoastlineWithLakeShores(g, sizeMultiplier);
+			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
 
 				
@@ -477,7 +477,7 @@ public class MapCreator
 		// because I might draw the text later.
 		if (settings.drawRivers)
 		{
-			drawRivers(settings, graph, landBackground, sizeMultiplier);
+			drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
 		}
 		
 		if (mapParts != null)
@@ -491,7 +491,7 @@ public class MapCreator
 			{
 				Graphics2D g = landBackground.createGraphics();
 				g.setColor(settings.coastlineColor);
-				graph.drawRegionBorders(g, sizeMultiplier, true);
+				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
 		// Call drawText below regardless of settings.drawText to create the MapText objects even when text is not shown.
