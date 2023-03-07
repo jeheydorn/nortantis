@@ -231,7 +231,7 @@ public class TextDrawer
 		}
 		
 		g.setFont(regionFontScaled);
-		for (Region region : graph.regions)
+		for (Region region : graph.regions.values())
 		{
 			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
 			String name;

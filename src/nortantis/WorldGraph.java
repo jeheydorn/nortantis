@@ -2,7 +2,6 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.Polygon;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
@@ -18,6 +17,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
 
@@ -73,7 +73,8 @@ public class WorldGraph extends VoronoiGraph
 	    
    // Maps plate ids to plates.
     Set<TectonicPlate> plates;
-    public List<Region> regions;
+    // Maps from region id to region
+    public Map<Integer, Region> regions;
 
     public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
     		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
@@ -151,7 +152,7 @@ public class WorldGraph extends VoronoiGraph
     @SuppressWarnings("unused")
 	private void testPoliticalRegions()
     {
-        for (Region region : regions)
+        for (Region region : regions.values())
         {
         	for (Center c : region.getCenters())
         	{
@@ -161,7 +162,7 @@ public class WorldGraph extends VoronoiGraph
         	
         	assert centers.stream().filter(c -> c.region == region).count() == region.size();
         }
-        assert new HashSet<>(regions).size() == regions.size();
+        assert new HashSet<>(regions.keySet()).size() == regions.size();
         for (Center c : centers)
         {
         	if (!c.isWater)
@@ -175,10 +176,10 @@ public class WorldGraph extends VoronoiGraph
         	
         	if (c.region != null)
         	{
-        		assert regions.stream().filter(reg -> reg.contains(c)).count() == 1;
+        		assert regions.values().stream().filter(reg -> reg.contains(c)).count() == 1;
         	}
         }
-        assert regions.stream().mapToInt(reg -> reg.size()).sum() 
+        assert regions.values().stream().mapToInt(reg -> reg.size()).sum() 
         		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
     }
     
@@ -193,19 +194,20 @@ public class WorldGraph extends VoronoiGraph
      */
     private void createPoliticalRegions()
 	{
+    	List<Region> regionList = new ArrayList<>();
+    	
 		// Regions start as land Centers on continental plates.
-    	regions = new ArrayList<>();
     	for (TectonicPlate plate : plates)
     	{
     		if (plate.type == PlateType.Continental)
     		{
     			Region region = new Region();	
     			plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.addAndSetRegion(c));
-    			regions.add(region);
+    			regionList.add(region);
     		}
     	}
     	    	    	
-       	for (Region region : regions)
+       	for (Region region : regionList)
     	{
     		// For each region, divide it by land masses separated by water.
     		List<Set<Center>> dividedRegion = divideRegionByLand(region);
@@ -246,20 +248,20 @@ public class WorldGraph extends VoronoiGraph
        	
     	// For each region, if region is smaller than minPoliticalRegionSize, make it not a region and add it to smallLandMasses.
     	List<Integer> toRemove = new ArrayList<>();
-    	for (int i : new Range(regions.size()))
+    	for (int i : new Range(regionList.size()))
     	{
-    		if (regions.get(i).size() < minPoliticalRegionSize)
+    		if (regionList.get(i).size() < minPoliticalRegionSize)
     		{
     			toRemove.add(i);
-    			Set<Center> smallLandMass = new HashSet<>(regions.get(i).getCenters());
+    			Set<Center> smallLandMass = new HashSet<>(regionList.get(i).getCenters());
     			smallLandMasses.add(smallLandMass);
     		}
     	}
     	Collections.reverse(toRemove);
     	for (int i : toRemove)
     	{
-    		regions.get(i).clear(); // This updates the region pointers in the Centers.
-    		regions.remove(i);
+    		regionList.get(i).clear(); // This updates the region pointers in the Centers.
+    		regionList.remove(i);
     	}
 
     	// For each land mass in smallLandMasses, add it to the region nearest its centroid.
@@ -276,14 +278,17 @@ public class WorldGraph extends VoronoiGraph
     			// This will probably never happen because it means there are no regions on the map at all.
     			Region region = new Region();
     			region.addAll(landMass);
-    			regions.add(region);
+    			regionList.add(region);
     		}
     	}
     	
-    	// Set the id of each region.
-    	for (int i : new Range(regions.size()))
+    	regions = new TreeMap<>();
+
+    	// Set the id of each region and add it to the regions map.
+    	for (int i : new Range(regionList.size()))
     	{
-    		regions.get(i).id = i;
+    		regionList.get(i).id = i;
+    		regions.put(i, regionList.get(i));
     	}
 	}
     
@@ -1036,19 +1041,6 @@ public class WorldGraph extends VoronoiGraph
 		centroid.y /= centers.size();
 		
 		return centroid;
-	}
-	
-	public Region findRegionById(int id)
-	{
-		for (Region region : regions)
-		{
-			if (region.id == id)
-			{
-				return region;
-			}
-		}
-
-		return null;
 	}
 
 	/**

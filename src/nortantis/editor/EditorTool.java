@@ -396,7 +396,7 @@ public abstract class EditorTool
 	{
 		if (settings.edits.regionEdits.isEmpty())
 		{
-			settings.edits.initializeRegionEdits(mapParts.graph.regions);			
+			settings.edits.initializeRegionEdits(mapParts.graph.regions.values());			
 		}
 	}
 	

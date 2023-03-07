@@ -24,6 +24,7 @@ public class Region
 	public Region()
 	{
 		this.centers = new HashSet<>();
+		this.id = id;
 	}
 	
 	public void addAll(Collection<Center> toAdd)

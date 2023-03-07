@@ -5,6 +5,8 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import nortantis.util.ImageHelper;
@@ -340,8 +342,11 @@ public class Background
 			return ImageHelper.convertImageToType(fractalBG, BufferedImage.TYPE_INT_RGB);
 		}
 		
-		Color[] regionBackgroundColors = graph.regions.stream().map(
-				reg -> reg.backgroundColor).toArray(size -> new Color[size]);
+		Map<Integer, Color> regionBackgroundColors = new HashMap<>();
+		for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
+		{
+			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
+		}
 				
 		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm);
 	}

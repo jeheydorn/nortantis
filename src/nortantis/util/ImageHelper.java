@@ -12,6 +12,8 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -536,7 +538,7 @@ public class ImageHelper
 	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
 	public static BufferedImage maskWithMultipleColors(BufferedImage image,
-			Color[] colors, BufferedImage colorIndexes, BufferedImage mask, boolean invertMask)
+			Map<Integer, Color> colors, BufferedImage colorIndexes, BufferedImage mask, boolean invertMask)
 	{
 		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY 
 				&& mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
@@ -559,7 +561,7 @@ public class ImageHelper
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				Color col = new Color(image.getRGB(x, y));
-				Color color = colors[colorIndexesRaster.getSample(x, y, 0)];
+				Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
 				
 				int maskLevel = mRaster.getSample(x, y, 0);
 				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
@@ -1295,11 +1297,10 @@ public class ImageHelper
 	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and
 	 * a second image which maps those colors to pixels. This way you can specify multiple colors for the resulting image.
 	 * @param image The image to colorify
-	 * @param colors Used as a map from region index (in politicalRegions) to region color. The 
-	 * index of each color corresponds to a pixel level in pixelColors.
+	 * @param colorMap Used as a map from region index (in politicalRegions) to region color.
 	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
-	public static BufferedImage colorifyMulti(BufferedImage image, Color[] colors,
+	public static BufferedImage colorifyMulti(BufferedImage image, Map<Integer, Color> colorMap,
 			BufferedImage colorIndexes, ColorifyAlgorithm how)
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
@@ -1313,19 +1314,23 @@ public class ImageHelper
 		Raster raster = image.getRaster();
 		Raster colorIndexesRaster = colorIndexes.getRaster();
 		
-		float[][] hsb = new float[colors.length][3];
-		for (int i : new Range(colors.length))
+		Map<Integer, float[]> hsbMap = new HashMap<>();
+		
+		for (int regionId : colorMap.keySet())
 		{
-			Color.RGBtoHSB(colors[i].getRed(), colors[i].getGreen(), colors[i].getBlue(), hsb[i]);
+			Color color = colorMap.get(regionId);
+			float[] hsb = new float[3];
+			Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
+			hsbMap.put(regionId, hsb);
 		}
 		
 		for (int y = 0; y < result.getHeight(); y++)
 			for (int x = 0; x < result.getWidth(); x++)
 			{
 				float level = raster.getSampleFloat(x, y, 0);
-				int colorIndex = colorIndexesRaster.getSample(x, y, 0);
+				int colorKey = colorIndexesRaster.getSample(x, y, 0);
 				
-				result.setRGB(x, y, colorifyPixel(level, hsb[colorIndex], how));
+				result.setRGB(x, y, colorifyPixel(level, hsbMap.get(colorKey), how));
 			}
 		
 		return result;

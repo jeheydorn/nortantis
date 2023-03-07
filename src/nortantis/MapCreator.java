@@ -15,7 +15,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
@@ -219,16 +221,20 @@ public class MapCreator
 					// Remove the land blur from the ocean side of the borders and color the blur
 					// according to each region's blur color.
 					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-					Color[] colors;
+					Map<Integer, Color> colors = new HashMap<>();
 					if (graph.regions.size() > 0)
 					{
-						colors = graph.regions.stream().map(reg -> new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
-								(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale)))
-								.toArray(size -> new Color[size]);
+						for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
+						{
+							Region reg = regionEntry.getValue();
+							Color color = new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
+									(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale));
+							colors.put(reg.id, color);
+						}
 					}
 					else
 					{
-						colors = new Color[] {settings.landColor};
+						colors.put(1, settings.landColor);
 					}
 					map = ImageHelper.maskWithMultipleColors(map, colors, background.regionIndexes, landBlur, true);
 				}
@@ -567,13 +573,13 @@ public class MapCreator
 		
 		for (RegionEdit edit : edits.regionEdits.values())
 		{
-			Region region = graph.findRegionById(edit.regionId);
+			Region region = graph.regions.get(edit.regionId);
 			if (region == null)
 			{
 				region = new Region();
 				region.id = edit.regionId;
 				region.backgroundColor = edit.color;
-				graph.regions.add(region);
+				graph.regions.put(edit.regionId, region);
 			}
 			else
 			{
@@ -605,7 +611,7 @@ public class MapCreator
 			Integer regionId = cEdit.regionId;
 			if (regionId != null)
 			{
-				Region region = graph.findRegionById(regionId);
+				Region region = graph.regions.get(regionId);
 				// region can be null if the map is edited while drawing it. If that happens, then the region color of this center will be updated the next time the map draws.
 				if (region != null)
 				{
@@ -615,7 +621,7 @@ public class MapCreator
 					}
 					region.addAndSetRegion(center);
 					// We don't know which region the center came from, so remove it from of them except the one it is in.
-					for (Region r : graph.regions)
+					for (Region r : graph.regions.values())
 					{
 						if (r.id != region.id)
 						{
