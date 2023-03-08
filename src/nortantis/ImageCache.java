@@ -1,5 +1,6 @@
 package nortantis;
 
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -33,7 +34,7 @@ public class ImageCache
 	/**
 	 * Maps original images, to scaled width, to scaled images.
 	 */
-	private ConcurrentHashMapF<BufferedImage, ConcurrentHashMapF<Integer, BufferedImage>> scaledCache; 
+	private ConcurrentHashMapF<BufferedImage, ConcurrentHashMapF<Dimension, BufferedImage>> scaledCache; 
 	
 	/**
 	 * Maps file path (or any string key) to images.
@@ -94,30 +95,28 @@ public class ImageCache
 	 */
 	public BufferedImage getScaledImageByWidth(BufferedImage icon, int width)
 	{
+		Dimension dimension = new Dimension(width, ImageHelper.getHeightWhenScaledByWidth(icon, width));
 		// There is a small chance the 2 different threads might both add the same image at the same time, 
 		// but if that did happen it would only results in a little bit of duplicated work, not a functional
 		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(width, 
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(dimension, 
 				() -> ImageHelper.scaleByWidth(icon, width));
 	}
 	
 	/**
-	 * Either looks up in the cache, or creates, a version of the given icon with approximately the given height.
-	 * Warning: The height of the result is approximate because the cache is keyed by image width, and so the height of
-	 * the images in the cache will vary because of integer precision limitations.
+	 * Either looks up in the cache, or creates, a version of the given icon with the given height.
 	 * @param icon Original image (not scaled)
-	 * @param height The approximate desired height
+	 * @param width The desired width
 	 * @return A scaled image
 	 */
 	public BufferedImage getScaledImageByHeight(BufferedImage icon, int height)
 	{
-		double aspectRatioInverse = ((double) icon.getWidth())
-				/ icon.getHeight();
-		int width = (int) (aspectRatioInverse * height);
-		if (width == 0)
-			width = 1;
-		
-		return getScaledImageByWidth(icon, width);
+		Dimension dimension = new Dimension(ImageHelper.getWidthWhenScaledByHeight(icon, height), height);
+		// There is a small chance the 2 different threads might both add the same image at the same time, 
+		// but if that did happen it would only results in a little bit of duplicated work, not a functional
+		// problem.
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(dimension, 
+						() -> ImageHelper.scaleByHeight(icon, height));
 	}
 	
 	public BufferedImage getImageFromFile(Path path)

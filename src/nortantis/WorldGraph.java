@@ -54,104 +54,106 @@ public class WorldGraph extends VoronoiGraph
 	// Modify seeFloorLevel to change the number of islands in the ocean.
 	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
-   	public static final float seaLevel = 0.39f;
-   	// This field must be set before creating instance of GraphImpl. This is necessary because it must be set
-   	// before calling VoronoiGraph's constructor, which Java requires to be the first call in GraphImpl's
-   	// constructor.
+	public static final float seaLevel = 0.39f;
+	// This field must be set before creating instance of GraphImpl. This is
+	// necessary because it must be set
+	// before calling VoronoiGraph's constructor, which Java requires to be the
+	// first call in GraphImpl's
+	// constructor.
 	int numIterationsForTectonicPlateCreation;
 	// The probability that a plate not touching the border will be continental.
-   	double nonBorderPlateContinentalProbability;
-   	// The probability that a plate touching the border will be continental.
-   	double borderPlateContinentalProbability;
-   	// This scales how much elevation is added or subtracted at convergent/divergent boundaries.
+	double nonBorderPlateContinentalProbability;
+	// The probability that a plate touching the border will be continental.
+	double borderPlateContinentalProbability;
+	// This scales how much elevation is added or subtracted at
+	// convergent/divergent boundaries.
 	final double collisionScale = 0.4;
-	// This controls how smooth the plates boundaries are. Higher is smoother. 1 is minimum. Larger values
+	// This controls how smooth the plates boundaries are. Higher is smoother. 1
+	// is minimum. Larger values
 	// will slow down plate generation.
 	final int plateBoundarySmoothness = 26;
 	final int minPoliticalRegionSize = 10;
-	// During tectonic plate creation, if there are only two plates left and the smaller of the two is less than this size, stop. 
-	// Prevents small maps from containing only one tectonic plate.  
+	// During tectonic plate creation, if there are only two plates left and the
+	// smaller of the two is less than this size, stop.
+	// Prevents small maps from containing only one tectonic plate.
 	final int minSecondtoLastPlateSize = 100;
-	    
-   // Maps plate ids to plates.
-    Set<TectonicPlate> plates;
-    // Maps from region id to region
-    public Map<Integer, Region> regions;
 
-    public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
-    		double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability,
-    		double sizeMultiplyer, LineStyle lineStyle, double pointPrecision) 
-    {
-        super(r, sizeMultiplyer, pointPrecision);
-        this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
-        this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
-        this. borderPlateContinentalProbability = borderPlateContinentalProbability;
-        TectonicPlate.resetIds();
-        initVoronoiGraph(v, numLloydRelaxations, true);
-        setupColors();
-        createPoliticalRegions();
-        setupRandomSeeds(r);
-        buildCenterLookupTableIfNotBuilt();
-       	buildNoisyEdges(lineStyle);	
-     }
- 
-    /**
-     * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
-      */
-    public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision) 
-    {
-        super(r, sizeMultiplyer, pointPrecision);
-        initVoronoiGraph(v, numLloydRelaxations, false);
+	// Maps plate ids to plates.
+	Set<TectonicPlate> plates;
+	public Map<Integer, Region> regions;
+
+	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
+			double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
+			LineStyle lineStyle, double pointPrecision)
+	{
+		super(r, sizeMultiplyer, pointPrecision);
+		this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
+		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
+		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
+		TectonicPlate.resetIds();
+		initVoronoiGraph(v, numLloydRelaxations, true);
+		setupColors();
+		createPoliticalRegions();
+		setupRandomSeeds(r);
+		buildNoisyEdges(lineStyle);
+	}
+
+	/**
+	 * This constructor doens't create tectonic plates or elevation, and always
+	 * uses jagged lines.
+	 */
+	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision)
+	{
+		super(r, sizeMultiplyer, pointPrecision);
+		initVoronoiGraph(v, numLloydRelaxations, false);
 		assignBorderToCorners();
-        setupColors();
-        setupRandomSeeds(r);
-        buildNoisyEdges(LineStyle.Jagged);
-    }
-    
-    
-    private void setupRandomSeeds(Random rand)
-    {
-    	for (Center c : centers)
-    	{
-    		c.treeSeed = rand.nextLong();
-    	}
-    	
-    	for (Edge e : edges)
-    	{
-    		e.noisyEdgesSeed = rand.nextLong();
-    	}
-    }
-    
-    private void setupColors()
-    {
-        OCEAN = Biome.OCEAN.color;
-        LAKE = Biome.LAKE.color;
-        BEACH = Biome.BEACH.color;
-        RIVER = new Color(0x225588);
-   	
-    }
-    
-    public void rebuildNoisyEdgesForCenter(Center center)
-    {
-    	noisyEdges.buildNoisyEdgesForCenter(center, true);
-    	
-    	if (noisyEdges.getLineStyle() == LineStyle.Smooth)
-    	{
-    		for (Center n : center.neighbors)
-    		{
-    			noisyEdges.buildNoisyEdgesForCenter(n, true);
-    		}
-    	}
-    }
-    
-    public void buildNoisyEdges(LineStyle lineStyle)
-    {
-        noisyEdges = new NoisyEdges(scaleMultiplyer, lineStyle);  
-        noisyEdges.buildNoisyEdges(this);	
-    }
-    
+		setupColors();
+		setupRandomSeeds(r);
+		buildNoisyEdges(LineStyle.Jagged);
+	}
 
-    @SuppressWarnings("unused")
+	private void setupRandomSeeds(Random rand)
+	{
+		for (Center c : centers)
+		{
+			c.treeSeed = rand.nextLong();
+		}
+
+		for (Edge e : edges)
+		{
+			e.noisyEdgesSeed = rand.nextLong();
+		}
+	}
+
+	private void setupColors()
+	{
+		OCEAN = Biome.OCEAN.color;
+		LAKE = Biome.LAKE.color;
+		BEACH = Biome.BEACH.color;
+		RIVER = new Color(0x225588);
+
+	}
+
+	public void rebuildNoisyEdgesForCenter(Center center)
+	{
+		noisyEdges.buildNoisyEdgesForCenter(center, true);
+
+		if (noisyEdges.getLineStyle() == LineStyle.Smooth)
+		{
+			for (Center n : center.neighbors)
+			{
+				noisyEdges.buildNoisyEdgesForCenter(n, true);
+			}
+		}
+	}
+
+	public void buildNoisyEdges(LineStyle lineStyle)
+	{
+		noisyEdges = new NoisyEdges(scaleMultiplyer, lineStyle);
+		noisyEdges.buildNoisyEdges(this);
+	}
+
+	@SuppressWarnings("unused")
 	private void testPoliticalRegions()
     {
         for (Region region : regions.values())
@@ -186,15 +188,15 @@ public class WorldGraph extends VoronoiGraph
     }
     
 	public void drawRegionIndexes(Graphics2D g)
-	{       
-       	renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+	{
+		renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
 	}
-    
-    /**
-     * Creates political regions. When done, all non-ocean centers will have a political region
-     * assigned.
-     */
-    private void createPoliticalRegions()
+
+	/**
+	 * Creates political regions. When done, all non-ocean centers will have a
+	 * political region assigned.
+	 */
+	private void createPoliticalRegions()
 	{
     	List<Region> regionList = new ArrayList<>();
     	
@@ -293,39 +295,54 @@ public class WorldGraph extends VoronoiGraph
     		regions.put(i, regionList.get(i));
     	}
 	}
-    
-    /**
-     * Finds the region closest (in terms of Cartesian distance) to the given point.
-     */
-    private Region findClosestRegion(Point point)
-    {
-    	Optional<Center> opt = centers.stream().filter(c -> c.region != null)
-    		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
-    	
-    	if (opt.isPresent())
-    	{
-    		assert opt.get().region != null;
-    		return opt.get().region;
-    	}
-    	
-    	// This could only happen if there are no regions on the graph.
-    	return null;
-    }
-    
-    public Center findClosestCenter(double x, double y) 
-    {
-    	return findClosestCenter(new Point(x, y));
-    }
-    
-    public Center findClosestCenter(Point point) 
-    {
-    	return findClosestCenter(point, false);
-    }
-    
+
+	/**
+	 * Finds the region closest (in terms of Cartesian distance) to the given
+	 * point.
+	 */
+	private Region findClosestRegion(Point point)
+	{
+		Optional<Center> opt = centers.stream().filter(c -> c.region != null)
+				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+
+		if (opt.isPresent())
+		{
+			assert opt.get().region != null;
+			return opt.get().region;
+		}
+
+		// This could only happen if there are no regions on the graph.
+		return null;
+	}
+	
+	public Corner findClosestCorner(Point point)
+	{
+		Center closestCenter = findClosestCenter(point);
+		Optional<Corner> optional = closestCenter.corners.stream()
+				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+		return optional.get();
+	}
+
+	public TectonicPlate getTectonicPlateAt(double x, double y)
+	{
+		return findClosestCenter(new Point(x, y)).tectonicPlate;
+	}
+
+	public Center findClosestCenter(double x, double y)
+	{
+		return findClosestCenter(new Point(x, y));
+	}
+
+	public Center findClosestCenter(Point point)
+	{
+		return findClosestCenter(point, false);
+	}
+
     public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap) 
     {    	
     	if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
     	{
+    		buildCenterLookupTableIfNeeded();
     		Color color;
     		try
     		{
@@ -348,28 +365,12 @@ public class WorldGraph extends VoronoiGraph
     	return null;
     }
     
-    public Corner findClosestCorner(Point point)
-    {
-    	Center closestCenter = findClosestCenter(point);  	
-    	Optional<Corner> optional = closestCenter.corners.stream().min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
-   		return optional.get();
-    }
-    
-    public TectonicPlate getTectonicPlateAt(double x, double y)
-    {
-    	return findClosestCenter(new Point(x, y)).tectonicPlate;
-    }
-    
     private BufferedImage centerLookupTable;
-    /**
-     * Calling this makes subsequent calls to getCenterAt much faster, but requires memory to store
-     * a lookup table, and is a little less accurate due to rounding errors.
-     */
-    public void buildCenterLookupTableIfNotBuilt()
+    public void buildCenterLookupTableIfNeeded()
     {
     	if (centerLookupTable == null)
     	{
-	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_INT_RGB);
+	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_3BYTE_BGR);
 	    	Graphics2D g = centerLookupTable.createGraphics();
 	       	renderPolygons(g, new Function<Center, Color>()
 				{
@@ -381,120 +382,125 @@ public class WorldGraph extends VoronoiGraph
     	}
    }
 
-    
-    /**
-     * Searches for any region touching and polygon in landMass and returns it if found.
-     * Otherwise returns null.
-     * 
-     * Assumes all Centers in landMass either all have the same region, or are all null.
-     */
-    private Region findRegionTouching(Set<Center> landMass)
-    {
-    	for (Center center : landMass)
-    	{
-    		for (Center n : center.neighbors)
-    		{
-    			if (n.region != center.region && n.region != null)
-    			{
-    				return n.region;
-    			}
-    		}
-    	}
-    	return null;
-    }
-    
-    /**
-     * Splits apart a region by parts connect by land (not including land from another region).
-     * @param region
-     * @return
-     */
-    private List<Set<Center>> divideRegionByLand(Region region)
-    {
-    	Set<Center> remaining = new HashSet<>(region.getCenters());
-    	List<Set<Center>> dividedRegion = new ArrayList<>();
-    	
-    	// Start with the first center. Do a breadth-first search adding all connected
-    	// centers which are of the same region and are not ocean.
-    	while(!remaining.isEmpty())
-    	{
-    		Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == region, 
-	    			remaining.iterator().next());
-	    	dividedRegion.add(landMass);
-	    	remaining.removeAll(landMass);
-    	}
-    	
-    	return dividedRegion;
-    }
-    
-    public Set<Center> breadthFirstSearch(Function<Center, Boolean> accept, Center start)
-    {
-    	Set<Center> explored = new HashSet<>();
-    	explored.add(start);
-    	Set<Center> frontier = new HashSet<>();
-    	frontier.add(start);
-    	while (!frontier.isEmpty())  	
-    	{
-    		Set<Center> nextFrontier = new HashSet<>();
-    		for (Center c : frontier)
-    		{
-    			explored.add(c);
-    			// Add neighbors to the frontier.
-    			for (Center n : c.neighbors)
-    			{
-    				if (!explored.contains(n) && accept.apply(n))
-    				{
-    					nextFrontier.add(n);
-    				}
-    			}
-    		}
-    		frontier = nextFrontier;
-    	}
-    	
-    	return explored;
-    }
+	/**
+	 * Searches for any region touching and polygon in landMass and returns it
+	 * if found. Otherwise returns null.
+	 * 
+	 * Assumes all Centers in landMass either all have the same region, or are
+	 * all null.
+	 */
+	private Region findRegionTouching(Set<Center> landMass)
+	{
+		for (Center center : landMass)
+		{
+			for (Center n : center.neighbors)
+			{
+				if (n.region != center.region && n.region != null)
+				{
+					return n.region;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Splits apart a region by parts connect by land (not including land from
+	 * another region).
+	 * 
+	 * @param region
+	 * @return
+	 */
+	private List<Set<Center>> divideRegionByLand(Region region)
+	{
+		Set<Center> remaining = new HashSet<>(region.getCenters());
+		List<Set<Center>> dividedRegion = new ArrayList<>();
+
+		// Start with the first center. Do a breadth-first search adding all
+		// connected
+		// centers which are of the same region and are not ocean.
+		while (!remaining.isEmpty())
+		{
+			Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == region, remaining.iterator().next());
+			dividedRegion.add(landMass);
+			remaining.removeAll(landMass);
+		}
+
+		return dividedRegion;
+	}
+
+	public Set<Center> breadthFirstSearch(Function<Center, Boolean> accept, Center start)
+	{
+		Set<Center> explored = new HashSet<>();
+		explored.add(start);
+		Set<Center> frontier = new HashSet<>();
+		frontier.add(start);
+		while (!frontier.isEmpty())
+		{
+			Set<Center> nextFrontier = new HashSet<>();
+			for (Center c : frontier)
+			{
+				explored.add(c);
+				// Add neighbors to the frontier.
+				for (Center n : c.neighbors)
+				{
+					if (!explored.contains(n) && accept.apply(n))
+					{
+						nextFrontier.add(n);
+					}
+				}
+			}
+			frontier = nextFrontier;
+		}
+
+		return explored;
+	}
 
 	public void paintElevationUsingTrianges(Graphics2D g)
-    {
-     	super.drawElevation(g);
-    	
-    	// Draw plate velocities.
-//    	g.setColor(Color.yellow);
-//    	for (TectonicPlate plate : plates)
-//    	{
-//    		Point centroid =  plate.findCentroid();
-//    		g.fillOval((int)centroid.x - 5, (int)centroid.y - 5, 10, 10);
-//    		PolarCoordinate vTemp = new PolarCoordinate(plate.velocity);
-//    		// Increase the velocity to make it visible.
-//    		vTemp.radius *= 100;
-//    		Point velocity = vTemp.toCartesian();
-//    		g.drawLine((int)centroid.x, (int)centroid.y, (int)(centroid.x + velocity.x), (int)(centroid.y + velocity.y));
-//    	}
-    }
-    
-    public void drawBorderWhite(Graphics2D g)
-    {
-        renderPolygons(g, c -> c.isBorder ? Color.white : Color.black);
-    }
-    
-    public int getWidth()
-    {
-    	return (int) bounds.width;
-    }
-    
-    public int getHeight()
-    {
-    	return (int) bounds.height;
-    }
+	{
+		super.drawElevation(g);
 
-    @Override
-    protected Color getColor(Biome biome) {
-        return biome.color;
-    }
+		// Draw plate velocities.
+		// g.setColor(Color.yellow);
+		// for (TectonicPlate plate : plates)
+		// {
+		// Point centroid = plate.findCentroid();
+		// g.fillOval((int)centroid.x - 5, (int)centroid.y - 5, 10, 10);
+		// PolarCoordinate vTemp = new PolarCoordinate(plate.velocity);
+		// // Increase the velocity to make it visible.
+		// vTemp.radius *= 100;
+		// Point velocity = vTemp.toCartesian();
+		// g.drawLine((int)centroid.x, (int)centroid.y, (int)(centroid.x +
+		// velocity.x), (int)(centroid.y + velocity.y));
+		// }
+	}
 
-    @Override
-    protected Biome getBiome(Center p) {
-    	double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
-    	
+	public void drawBorderWhite(Graphics2D g)
+	{
+		renderPolygons(g, c -> c.isBorder ? Color.white : Color.black);
+	}
+
+	public int getWidth()
+	{
+		return (int) bounds.width;
+	}
+
+	public int getHeight()
+	{
+		return (int) bounds.height;
+	}
+
+	@Override
+	protected Color getColor(Biome biome)
+	{
+		return biome.color;
+	}
+
+	@Override
+	protected Biome getBiome(Center p)
+	{
+		double elevation = Math.sqrt((p.elevation - seaLevel) / (maxElevation - seaLevel));
+
 		if (p.isWater)
 		{
 			return Biome.OCEAN;
@@ -567,7 +573,7 @@ public class WorldGraph extends VoronoiGraph
 			else
 			{
 				return Biome.TEMPERATE_DESERT;
-			}			
+			}
 		}
 		else if (elevation > 0.3)
 		{
@@ -607,159 +613,158 @@ public class WorldGraph extends VoronoiGraph
 				return Biome.SUBTROPICAL_DESERT;
 			}
 		}
-    }
-    
-    @Override 
-    protected void assignCornerElevations()
-    {
-     	createTectonicPlates();
-     	assignOceanAndContinentalPlates();
-     	lowerOceanPlates();
-		assignPlateCornerElivations();
-  }
-    
-    private void assignPlateCornerElivations()
-    {    	
-//    	long startTime = System.currentTimeMillis();
-    	    	
-     	for (final TectonicPlate plate : plates)
-    	{    		
-     		
-    		Set<Corner> explored = new HashSet<>();
-    		
-    		// Find all corners along plate boundaries.
-    		Set<Corner> plateBoundaryCorners = new HashSet<>();
-            for (Edge e : edges) 
-            {
-                if (e.d0.tectonicPlate == plate
-                		&& e.d0.tectonicPlate != e.d1.tectonicPlate
-                		&& e.v0 != null && e.v1 != null)
-                {
-                	if (e.v0 != null)
-                		plateBoundaryCorners.add(e.v0);
-                	if (e.v1 != null)
-                		plateBoundaryCorners.add(e.v1);
-                }
-            }
-    		    	
-            // Simulate tectonic plate collisions.
-            for (Edge e : edges) 
-            {
-                if (e.d0.tectonicPlate == plate 
-                		&& e.d0.tectonicPlate != e.d1.tectonicPlate
-                		&& e.v0 != null && e.v1 != null)
-                {
-                	double d0ConvergeLevel = calcLevelOfConvergence(e.d0.tectonicPlate.findCentroid(), e.d0.tectonicPlate.velocity, e.d1.tectonicPlate.findCentroid(),
-                			e.d1.tectonicPlate.velocity);
-                	
-                	// If the plates are converging, rough them up a bit by calculating divergence per
-                	// polygon. This brakes up long snake like islands.
-                	if (d0ConvergeLevel > 0)
-                	{
-	                	d0ConvergeLevel =  calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc,
-	                			e.d1.tectonicPlate.velocity);
-                	}
-                	
-                	
-                 	e.v0.elevation += d0ConvergeLevel * collisionScale;
-                	e.v1.elevation += d0ConvergeLevel * collisionScale;
-                	explored.add(e.v0);
-                	explored.add(e.v1);
-                	
-                	// Make sure the corner elevations don't go out of range.
-                	e.v0.elevation = Math.min(e.v0.elevation, 1.0);
-                   	e.v0.elevation = Math.max(e.v0.elevation, 0.0);
-                	e.v1.elevation = Math.min(e.v1.elevation, 1.0);
-                   	e.v1.elevation = Math.max(e.v1.elevation, 0.0);
-                   	                   	
-                	// Handle subduction of an ocean plate under a continental one.
-                   	if (d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic
-                   			 && e.d1.tectonicPlate.type == PlateType.Continental)
-                   	{
-                   		for (Corner corner : e.d0.corners)
-                   		{
-                   			if (!plateBoundaryCorners.contains(corner))
-                   			{
-                   				corner.elevation -= d0ConvergeLevel * collisionScale;
-                   				corner.elevation = Math.min(corner.elevation, 1.0);
-                   				corner.elevation = Math.max(corner.elevation, 0.0);
-                   				explored.add(corner);
-                   			}
-                   		}
-                   	}
-               }           	
-            }
+	}
 
-            // Do a search starting at the corners along the borders. At each step, assign each corner's
-            // elevation to the average of its self and its explored neighbors.
-  			boolean cornerFound;
-   			Set<Corner> exploredThisIteration = new HashSet<>();
-   		    do
-            {
-   		    	cornerFound = false;
-   		    	explored.addAll(exploredThisIteration);
-   		    	exploredThisIteration.clear();
-    			for (Corner exCorner : explored)
-	    		{
-	    			for (Corner corner : exCorner.adjacent)
-	    			{
-	    				if (!explored.contains(corner) && !exploredThisIteration.contains(corner))
-	    				{
-		    				
-		    				for (Center center : corner.touches)
-		    					if (center.tectonicPlate == plate)
-		    					{
-		    						// Set the corner's elevation to the average of its self and its
-		    						// explored neighbors.
-		    						double sum = corner.elevation;
-		    						double count = 1;
-		    						for (Corner a : corner.adjacent)
-		    							if (explored.contains(a) || exploredThisIteration.contains(a))
-		    							{
-		    								sum += a.elevation;
-		    								count++;
-		    							}
-		    						corner.elevation = sum / count;
-		    						
-		    						exploredThisIteration.add(corner);
-		    						cornerFound = true;
-		    						continue;
-		    					}
-	    				}
-	    			}
-	    		}
-	        }
-            while (cornerFound);
- 
-    	}
-   }
-        
-    /**
-     * Lower the elevation of all ocean plates so they are likely to be water.
-     */ 
-    private void lowerOceanPlates()
-    {
-        for (Corner corner : corners) 
-        {
-            int numOceanic = 0;
-            for (Center center : corner.touches) 
-            {
-            	if (center.tectonicPlate.type == PlateType.Oceanic)
-            		numOceanic++;
-            }
-            double oceanicRatio = ((double)numOceanic)/corner.touches.size();
-            corner.elevation = oceanicRatio*oceanPlateLevel + (1.0 - oceanicRatio)*continentalPlateLevel;
-       }
-    }
-       
-    @Override
-    protected void assignOceanCoastAndLand()
-    {
+	@Override
+	protected void assignCornerElevations()
+	{
+		createTectonicPlates();
+		assignOceanAndContinentalPlates();
+		lowerOceanPlates();
+		assignPlateCornerElivations();
+	}
+
+	private void assignPlateCornerElivations()
+	{
+		// long startTime = System.currentTimeMillis();
+
+		for (final TectonicPlate plate : plates)
+		{
+
+			Set<Corner> explored = new HashSet<>();
+
+			// Find all corners along plate boundaries.
+			Set<Corner> plateBoundaryCorners = new HashSet<>();
+			for (Edge e : edges)
+			{
+				if (e.d0.tectonicPlate == plate && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
+				{
+					if (e.v0 != null)
+						plateBoundaryCorners.add(e.v0);
+					if (e.v1 != null)
+						plateBoundaryCorners.add(e.v1);
+				}
+			}
+
+			// Simulate tectonic plate collisions.
+			for (Edge e : edges)
+			{
+				if (e.d0.tectonicPlate == plate && e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
+				{
+					double d0ConvergeLevel = calcLevelOfConvergence(e.d0.tectonicPlate.findCentroid(), e.d0.tectonicPlate.velocity,
+							e.d1.tectonicPlate.findCentroid(), e.d1.tectonicPlate.velocity);
+
+					// If the plates are converging, rough them up a bit by
+					// calculating divergence per
+					// polygon. This brakes up long snake like islands.
+					if (d0ConvergeLevel > 0)
+					{
+						d0ConvergeLevel = calcLevelOfConvergence(e.d0.loc, e.d0.tectonicPlate.velocity, e.d1.loc,
+								e.d1.tectonicPlate.velocity);
+					}
+
+					e.v0.elevation += d0ConvergeLevel * collisionScale;
+					e.v1.elevation += d0ConvergeLevel * collisionScale;
+					explored.add(e.v0);
+					explored.add(e.v1);
+
+					// Make sure the corner elevations don't go out of range.
+					e.v0.elevation = Math.min(e.v0.elevation, 1.0);
+					e.v0.elevation = Math.max(e.v0.elevation, 0.0);
+					e.v1.elevation = Math.min(e.v1.elevation, 1.0);
+					e.v1.elevation = Math.max(e.v1.elevation, 0.0);
+
+					// Handle subduction of an ocean plate under a continental
+					// one.
+					if (d0ConvergeLevel > 0 && e.d0.tectonicPlate.type == PlateType.Oceanic
+							&& e.d1.tectonicPlate.type == PlateType.Continental)
+					{
+						for (Corner corner : e.d0.corners)
+						{
+							if (!plateBoundaryCorners.contains(corner))
+							{
+								corner.elevation -= d0ConvergeLevel * collisionScale;
+								corner.elevation = Math.min(corner.elevation, 1.0);
+								corner.elevation = Math.max(corner.elevation, 0.0);
+								explored.add(corner);
+							}
+						}
+					}
+				}
+			}
+
+			// Do a search starting at the corners along the borders. At each
+			// step, assign each corner's
+			// elevation to the average of its self and its explored neighbors.
+			boolean cornerFound;
+			Set<Corner> exploredThisIteration = new HashSet<>();
+			do
+			{
+				cornerFound = false;
+				explored.addAll(exploredThisIteration);
+				exploredThisIteration.clear();
+				for (Corner exCorner : explored)
+				{
+					for (Corner corner : exCorner.adjacent)
+					{
+						if (!explored.contains(corner) && !exploredThisIteration.contains(corner))
+						{
+
+							for (Center center : corner.touches)
+								if (center.tectonicPlate == plate)
+								{
+									// Set the corner's elevation to the average
+									// of its self and its
+									// explored neighbors.
+									double sum = corner.elevation;
+									double count = 1;
+									for (Corner a : corner.adjacent)
+										if (explored.contains(a) || exploredThisIteration.contains(a))
+										{
+											sum += a.elevation;
+											count++;
+										}
+									corner.elevation = sum / count;
+
+									exploredThisIteration.add(corner);
+									cornerFound = true;
+									continue;
+								}
+						}
+					}
+				}
+			}
+			while (cornerFound);
+
+		}
+	}
+
+	/**
+	 * Lower the elevation of all ocean plates so they are likely to be water.
+	 */
+	private void lowerOceanPlates()
+	{
+		for (Corner corner : corners)
+		{
+			int numOceanic = 0;
+			for (Center center : corner.touches)
+			{
+				if (center.tectonicPlate.type == PlateType.Oceanic)
+					numOceanic++;
+			}
+			double oceanicRatio = ((double) numOceanic) / corner.touches.size();
+			corner.elevation = oceanicRatio * oceanPlateLevel + (1.0 - oceanicRatio) * continentalPlateLevel;
+		}
+	}
+
+	@Override
+	protected void assignOceanCoastAndLand()
+	{
 		for (Center c1 : centers)
 		{
 			c1.isWater = c1.elevation < seaLevel;
 		}
-		
+
 		assignBorderToCorners();
 
 		// Copied from super.assignOceanCoastAndLand()
@@ -784,10 +789,10 @@ public class WorldGraph extends VoronoiGraph
 			c.coast = numOcean > 0 && numLand > 0;
 			c.water = (numLand != c.touches.size()) && !c.coast;
 		}
-    }
-    
-    public void updateCoast(Center c)
-    {
+	}
+
+	public void updateCoast(Center c)
+	{
 		int numOcean = 0;
 		int numLand = 0;
 		for (Center center : c.neighbors)
@@ -796,10 +801,10 @@ public class WorldGraph extends VoronoiGraph
 			numLand += !center.isWater ? 1 : 0;
 		}
 		c.isCoast = numOcean > 0 && numLand > 0;
-    }
-    
-    private void assignBorderToCorners()
-    {
+	}
+
+	private void assignBorderToCorners()
+	{
 		for (Center c1 : centers)
 		{
 			for (final Corner corner : c1.corners)
@@ -812,214 +817,230 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 
-    }
-    	
-    private void assignOceanAndContinentalPlates()
-    {
-    	for (TectonicPlate plate : plates)
-    	{
-    		if (rand.nextDouble() > nonBorderPlateContinentalProbability)
-    		{
-    			plate.type = PlateType.Oceanic;
-    		}
-    		else
-    		{
-     			plate.type = PlateType.Continental;
-    		}
-    	}
-    	
-    	// Set the type for plates that touch the borders, overwriting any settings from above.
-    	Set<TectonicPlate> borderPlates = new HashSet<TectonicPlate>();
-    	for (Center c : centers)
-    	{
-    		for (Corner corner : c.corners)
-	    		if (corner.border)
-	    		{
-	    			borderPlates.add(c.tectonicPlate);
-		    		continue;
-	    		}
-    	}
-    	for (TectonicPlate plate : borderPlates)
-    	{
-    		if (rand.nextDouble() < borderPlateContinentalProbability)
-    			plate.type = PlateType.Continental; 
-    		else
-    			plate.type = PlateType.Oceanic;
-    	}
-    }
-    
-    private void createTectonicPlates()
-    {   	   	
-//    	long startTime = System.currentTimeMillis();
-    	// First, assign a unique plate id and a random growth probability to each center.
-    	RandomGenerator randomData = new JDKRandomGenerator(); 
-    	randomData.setSeed(rand.nextLong());
-    	
-    	// Maps tectonic plates to the number of centers in that plate.
-    	HashMap<TectonicPlate, Integer> plateCounts = new HashMap<>(centers.size());
-    	
-    	// A beta distribution is nice because (with the parameters I use) it creates a few plates
-    	// with high growth probabilities and many with low growth probabilities. This makes plate creation
-    	// faster and creates a larger variety of plate sizes than a uniform distribution would.
+	}
+
+	private void assignOceanAndContinentalPlates()
+	{
+		for (TectonicPlate plate : plates)
+		{
+			if (rand.nextDouble() > nonBorderPlateContinentalProbability)
+			{
+				plate.type = PlateType.Oceanic;
+			}
+			else
+			{
+				plate.type = PlateType.Continental;
+			}
+		}
+
+		// Set the type for plates that touch the borders, overwriting any
+		// settings from above.
+		Set<TectonicPlate> borderPlates = new HashSet<TectonicPlate>();
+		for (Center c : centers)
+		{
+			for (Corner corner : c.corners)
+				if (corner.border)
+				{
+					borderPlates.add(c.tectonicPlate);
+					continue;
+				}
+		}
+		for (TectonicPlate plate : borderPlates)
+		{
+			if (rand.nextDouble() < borderPlateContinentalProbability)
+				plate.type = PlateType.Continental;
+			else
+				plate.type = PlateType.Oceanic;
+		}
+	}
+
+	private void createTectonicPlates()
+	{
+		// long startTime = System.currentTimeMillis();
+		// First, assign a unique plate id and a random growth probability to
+		// each center.
+		RandomGenerator randomData = new JDKRandomGenerator();
+		randomData.setSeed(rand.nextLong());
+
+		// Maps tectonic plates to the number of centers in that plate.
+		HashMap<TectonicPlate, Integer> plateCounts = new HashMap<>(centers.size());
+
+		// A beta distribution is nice because (with the parameters I use) it
+		// creates a few plates
+		// with high growth probabilities and many with low growth
+		// probabilities. This makes plate creation
+		// faster and creates a larger variety of plate sizes than a uniform
+		// distribution would.
 		BetaDistribution betaDist = new BetaDistribution(randomData, 1, 3, BetaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
-    	for (Center c : centers)
-    	{
-    		c.tectonicPlate = new TectonicPlate(betaDist.sample(), centers);
-    		plateCounts.put(c.tectonicPlate, 1);
-       	}
-    	
-   		for (Center c : centers)
-   		{
+		for (Center c : centers)
+		{
+			c.tectonicPlate = new TectonicPlate(betaDist.sample(), centers);
+			plateCounts.put(c.tectonicPlate, 1);
+		}
+
+		for (Center c : centers)
+		{
 			c.updateNeighborsNotInSamePlateCount();
-   		}
+		}
 
-    	
-     	for (int curIteration = 0; curIteration < numIterationsForTectonicPlateCreation; curIteration++)
-    	{
-     		// Sample some centers and choose the one with the least number of neighbors which
-     		// are not on this plate (greater than 0). This makes the plate boundaries more smooth.
-      		Center least = null;
-     		for (int i = 0; i < plateBoundarySmoothness; i++)
-     		{
-        		final Center cTemp = centers.get(rand.nextInt(centers.size()));
-           		if (cTemp.neighborsNotInSamePlateRatio == 0)
-        			continue;
-          		
-          		if (least == null || cTemp.neighborsNotInSamePlateRatio < least.neighborsNotInSamePlateRatio)
-          		{
-          			least = cTemp;
-          		}
-        		
-    		}
-     		if (least == null)
-     		{
-     			continue;
-     		}
-     		final Center c = least;
-     		
-    		// Keep the merge with probability equal to the score of the new tectonic plate.
-    		if (rand.nextDouble() < c.tectonicPlate.growthProbability)
-    		{
-    			// Choose a center at random.
-	    		// Choose one of it's neighbors not in the same plate.
-	    		List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new nortantis.util.Function<Center, Boolean>()
-	    				{
-							public Boolean apply(Center otherC) 
-							{
-								return c.tectonicPlate != otherC.tectonicPlate;
-							}
-	    				});
-	    		Center neighbor = neighborsNotInSamePlate.get(rand.nextInt(neighborsNotInSamePlate.size()));
-    		     		
-        		plateCounts.put(c.tectonicPlate, plateCounts.get(c.tectonicPlate)+1);
-        		plateCounts.put(neighbor.tectonicPlate, plateCounts.get(neighbor.tectonicPlate)-1);
-           		if (plateCounts.get(neighbor.tectonicPlate) == 0)
-        		{
-        			plateCounts.remove(neighbor.tectonicPlate);
-        		}
+		for (int curIteration = 0; curIteration < numIterationsForTectonicPlateCreation; curIteration++)
+		{
+			// Sample some centers and choose the one with the least number of
+			// neighbors which
+			// are not on this plate (greater than 0). This makes the plate
+			// boundaries more smooth.
+			Center least = null;
+			for (int i = 0; i < plateBoundarySmoothness; i++)
+			{
+				final Center cTemp = centers.get(rand.nextInt(centers.size()));
+				if (cTemp.neighborsNotInSamePlateRatio == 0)
+					continue;
 
-    	   		// Merge the neighbor into c's plate.
-          		neighbor.tectonicPlate = c.tectonicPlate;
-        		
-         		
-        		c.updateNeighborsNotInSamePlateCount();
-        		for (Center n : c.neighbors)
-        			n.updateNeighborsNotInSamePlateCount();
-        		neighbor.updateNeighborsNotInSamePlateCount();
-        		for (Center n : neighbor.neighbors)
-        			n.updateNeighborsNotInSamePlateCount();
-        		
-	    		// Stop if there are only two plates left and one of them is getting too small
-        		if (plateCounts.keySet().size() == 2 && Helper.min(plateCounts) <= minSecondtoLastPlateSize)
-        		{
-        			break;
-        		}
-     		}
-    	}
- 
-     	// Find the plates still on the map.
-     	plates = new HashSet<TectonicPlate>();
-     	for (Center c : centers)
-     	{
-     		plates.add(c.tectonicPlate);
-     	}
-     	
-     	// Setup tectonic plate velocities randomly. The maximum speed of a plate is 1.
-     	for (TectonicPlate plate : plates)
-     	{
-     		plate.velocity = new PolarCoordinate(rand.nextDouble() * 2 * Math.PI, rand.nextDouble());
-     	}
-     	
-     	// Store which Centers are in each plate.
-     	for (Center c : centers)
-     	{
-     		c.tectonicPlate.centers.add(c);
-     	}
-     	
-//     	Logger.println("Plate time: " + (System.currentTimeMillis() - startTime)/1000.0);
-    }        
-    
-    /**
-     * Returns the amount c1 and c2 are converging. This is between -1 and 1.
-     * @param c1 A center along a tectonic plate border.
-     * @param c1Velocity The velocity of the plate c1 is on.
-     * @param c2 A center along a tectonic plate border: not the same tectonic plate as c1
-     * @param c2Velocity The velocity of the plate c2 is on.
-     */
-    private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2,
-    		PolarCoordinate c2Velocity)
-    {
-		return 0.5 * calcUnilateralLevelOfConvergence(p1, p1Velocity, p2)
-				+ 0.5 * calcUnilateralLevelOfConvergence(p2, c2Velocity, p1);
-    }
-    
-    /**
-     * Returns the amount c1 is moving toward c2, ignoring movement of c2.
-     */
-   public static double calcUnilateralLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2)
-    {
+				if (least == null || cTemp.neighborsNotInSamePlateRatio < least.neighborsNotInSamePlateRatio)
+				{
+					least = cTemp;
+				}
+
+			}
+			if (least == null)
+			{
+				continue;
+			}
+			final Center c = least;
+
+			// Keep the merge with probability equal to the score of the new
+			// tectonic plate.
+			if (rand.nextDouble() < c.tectonicPlate.growthProbability)
+			{
+				// Choose a center at random.
+				// Choose one of it's neighbors not in the same plate.
+				List<Center> neighborsNotInSamePlate = Helper.filter(c.neighbors, new nortantis.util.Function<Center, Boolean>()
+				{
+					public Boolean apply(Center otherC)
+					{
+						return c.tectonicPlate != otherC.tectonicPlate;
+					}
+				});
+				Center neighbor = neighborsNotInSamePlate.get(rand.nextInt(neighborsNotInSamePlate.size()));
+
+				plateCounts.put(c.tectonicPlate, plateCounts.get(c.tectonicPlate) + 1);
+				plateCounts.put(neighbor.tectonicPlate, plateCounts.get(neighbor.tectonicPlate) - 1);
+				if (plateCounts.get(neighbor.tectonicPlate) == 0)
+				{
+					plateCounts.remove(neighbor.tectonicPlate);
+				}
+
+				// Merge the neighbor into c's plate.
+				neighbor.tectonicPlate = c.tectonicPlate;
+
+				c.updateNeighborsNotInSamePlateCount();
+				for (Center n : c.neighbors)
+					n.updateNeighborsNotInSamePlateCount();
+				neighbor.updateNeighborsNotInSamePlateCount();
+				for (Center n : neighbor.neighbors)
+					n.updateNeighborsNotInSamePlateCount();
+
+				// Stop if there are only two plates left and one of them is
+				// getting too small
+				if (plateCounts.keySet().size() == 2 && Helper.min(plateCounts) <= minSecondtoLastPlateSize)
+				{
+					break;
+				}
+			}
+		}
+
+		// Find the plates still on the map.
+		plates = new HashSet<TectonicPlate>();
+		for (Center c : centers)
+		{
+			plates.add(c.tectonicPlate);
+		}
+
+		// Setup tectonic plate velocities randomly. The maximum speed of a
+		// plate is 1.
+		for (TectonicPlate plate : plates)
+		{
+			plate.velocity = new PolarCoordinate(rand.nextDouble() * 2 * Math.PI, rand.nextDouble());
+		}
+
+		// Store which Centers are in each plate.
+		for (Center c : centers)
+		{
+			c.tectonicPlate.centers.add(c);
+		}
+
+		// Logger.println("Plate time: " + (System.currentTimeMillis() -
+		// startTime)/1000.0);
+	}
+
+	/**
+	 * Returns the amount c1 and c2 are converging. This is between -1 and 1.
+	 * 
+	 * @param c1
+	 *            A center along a tectonic plate border.
+	 * @param c1Velocity
+	 *            The velocity of the plate c1 is on.
+	 * @param c2
+	 *            A center along a tectonic plate border: not the same tectonic
+	 *            plate as c1
+	 * @param c2Velocity
+	 *            The velocity of the plate c2 is on.
+	 */
+	private double calcLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2, PolarCoordinate c2Velocity)
+	{
+		return 0.5 * calcUnilateralLevelOfConvergence(p1, p1Velocity, p2) + 0.5 * calcUnilateralLevelOfConvergence(p2, c2Velocity, p1);
+	}
+
+	/**
+	 * Returns the amount c1 is moving toward c2, ignoring movement of c2.
+	 */
+	public static double calcUnilateralLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2)
+	{
 
 		// Find the angle from c1.location to c2.location:
-    	Point cDiff = p2.subtract(p1);
-     	double diffAngle = Math.atan2(cDiff.y, cDiff.x);
-		
-		// If the 2 angles are the same, return at most 0.5. If they are opposite, return  at least -0.5. 
+		Point cDiff = p2.subtract(p1);
+		double diffAngle = Math.atan2(cDiff.y, cDiff.x);
+
+		// If the 2 angles are the same, return at most 0.5. If they are
+		// opposite, return at least -0.5.
 		// If they are orthogonal, return 0.0.
-    	
+
 		double theta = calcAngleDifference(p1Velocity.angle, diffAngle);
 		double scale = p1Velocity.radius * Math.cos(theta);
 		return scale;
-    }
-    
-    
-    /**
-     * Calculates the minimum distance (in radians) from angle a1 to angle a2.
-     * The result will be in the range [0, pi].
-     * @param a1 An angle in radians. This must be between 0 and 2*pi.
-     * @param a2 An angle in radians. This must be between 0 and 2*pi.
-     * @return
-     */
-    private static double calcAngleDifference(double a1, double a2)
-    {
-    	while (a1 < 0)
-    		a1 += 2*Math.PI;
-    	while (a2 < 0)
-    		a2 += 2*Math.PI;
-    	
-    	if (a1 < 0 || a1 > 2*Math.PI)
-    		throw new IllegalArgumentException();
-    	if (a2 < 0 || a2 > 2*Math.PI)
-    		throw new IllegalArgumentException();
-    	
-    	if (a1 - a2 > Math.PI)
-    		a1 -= 2*Math.PI;
-    	else if (a2 - a1 > Math.PI)
-    		a2 -= 2*Math.PI;
-    	double result = Math.abs(a1 - a2);
-    	assert result <= Math.PI;
-    	return result;
-    }
-    
+	}
+
+	/**
+	 * Calculates the minimum distance (in radians) from angle a1 to angle a2.
+	 * The result will be in the range [0, pi].
+	 * 
+	 * @param a1
+	 *            An angle in radians. This must be between 0 and 2*pi.
+	 * @param a2
+	 *            An angle in radians. This must be between 0 and 2*pi.
+	 * @return
+	 */
+	private static double calcAngleDifference(double a1, double a2)
+	{
+		while (a1 < 0)
+			a1 += 2 * Math.PI;
+		while (a2 < 0)
+			a2 += 2 * Math.PI;
+
+		if (a1 < 0 || a1 > 2 * Math.PI)
+			throw new IllegalArgumentException();
+		if (a2 < 0 || a2 > 2 * Math.PI)
+			throw new IllegalArgumentException();
+
+		if (a1 - a2 > Math.PI)
+			a1 -= 2 * Math.PI;
+		else if (a2 - a1 > Math.PI)
+			a2 -= 2 * Math.PI;
+		double result = Math.abs(a1 - a2);
+		assert result <= Math.PI;
+		return result;
+	}
+
 	public static Point findCentroid(Set<Center> centers)
 	{
 		Point centroid = new Point(0, 0);
@@ -1031,7 +1052,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		centroid.x /= centers.size();
 		centroid.y /= centers.size();
-		
+
 		return centroid;
 	}
 
@@ -1041,11 +1062,11 @@ public class WorldGraph extends VoronoiGraph
 		{
 			return null;
 		}
-		
+
 		// Start at a point we know is inside the desired bounds.
 		Point start = centers.iterator().next().loc;
 		Rectangle bounds = new Rectangle(start.x, start.y, 0, 0);
-		
+
 		// Add each corner to the bounds.
 		for (Center center : centers)
 		{
@@ -1054,31 +1075,33 @@ public class WorldGraph extends VoronoiGraph
 				bounds = bounds.add(corner.loc);
 			}
 		}
-		
+
 		return bounds;
 	}
 
 	/**
-	 * Converts a center to an area. This does not include noisy edges because I couldn't figure out how to 
-	 * draw them in order correctly around the center.
+	 * Converts a center to an area. This does not include noisy edges because I
+	 * couldn't figure out how to draw them in order correctly around the
+	 * center.
+	 * 
 	 * @param center
 	 * @return
 	 */
 	public Area centerToArea(Center center)
 	{
 		Polygon p = new Polygon();
-		
+
 		List<Edge> ordered = orderEdgesAroundCenter(center);
 		{
 			for (Edge edge : ordered)
 			{
-				p.addPoint((int)edge.v0.loc.x, (int) edge.v0.loc.y);
+				p.addPoint((int) edge.v0.loc.x, (int) edge.v0.loc.y);
 			}
 		}
-		
+
 		return new Area(p);
 	}
-	
+
 	private List<Edge> orderEdgesAroundCenter(Center center)
 	{
 		List<Edge> result = new ArrayList<>(center.borders.size());
@@ -1092,22 +1115,21 @@ public class WorldGraph extends VoronoiGraph
 			remaining.remove(currentEdge);
 			currentEdge = findConnectedEdge(center, currentEdge, remaining);
 		}
-		while(!remaining.isEmpty() && currentEdge != null);
-		
+		while (!remaining.isEmpty() && currentEdge != null);
+
 		return result;
 	}
-	
+
 	private Edge findConnectedEdge(Center center, Edge current, Set<Edge> remaining)
 	{
 		for (Edge edge : remaining)
 		{
-			if ((current.v0 != null && current.v0.protrudes.contains(edge)) 
-					|| (current.v1 != null && current.v1.protrudes.contains(edge)))
+			if ((current.v0 != null && current.v0.protrudes.contains(edge)) || (current.v1 != null && current.v1.protrudes.contains(edge)))
 			{
 				return edge;
 			}
 		}
-		
+
 		return null;
 	}
 
@@ -1120,7 +1142,7 @@ public class WorldGraph extends VoronoiGraph
 		{
 			return new HashSet<>();
 		}
-				
+
 		Set<CornerSearchNode> explored = new HashSet<>();
 		CornerSearchNode startNode = new CornerSearchNode(start, null);
 		explored.add(startNode);
@@ -1132,35 +1154,36 @@ public class WorldGraph extends VoronoiGraph
 				int distanceComp = Double.compare(end.loc.distanceTo(n1.corner.loc), end.loc.distanceTo(n2.corner.loc));
 				if (distanceComp == 0)
 				{
-					// This ensures corners which are the same distance to the target don't clobber each other in the set.
+					// This ensures corners which are the same distance to the
+					// target don't clobber each other in the set.
 					return Integer.compare(n1.corner.index, n2.corner.index);
 				}
 				assert n1.corner.index != n2.corner.index;
 				return distanceComp;
 			}
 		});
-		
+
 		expandFrontier(startNode, frontier, explored);
-		
+
 		CornerSearchNode endNode = null;
 		while (true)
 		{
 			CornerSearchNode closest = frontier.first();
 			frontier.remove(closest);
 			explored.add(closest);
-			
+
 			if (closest.corner.equals(end))
 			{
 				endNode = closest;
 				break;
 			}
-			
+
 			expandFrontier(closest, frontier, explored);
 		}
-		
+
 		return createPathFromBackPointers(endNode);
 	}
-	
+
 	/**
 	 * Expands the frontier using Voronoi edges
 	 */
@@ -1175,7 +1198,7 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 	}
-		
+
 	private Edge findConnectingEdge(Corner c1, Corner c2)
 	{
 		for (Edge edge : c1.protrudes)
@@ -1191,21 +1214,24 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Create path using back pointers in search does for Voronoi edges.
-	 * @param end The end of the search
-	 * @param edgeType The type of edge to return
+	 * 
+	 * @param end
+	 *            The end of the search
+	 * @param edgeType
+	 *            The type of edge to return
 	 * @return A path
 	 */
 	private Set<Edge> createPathFromBackPointers(CornerSearchNode end)
-	{	
+	{
 		Set<Edge> path = new HashSet<>();
 		if (end == null)
 		{
 			return path;
 		}
-		
+
 		CornerSearchNode curNode = end;
 		while (curNode.cameFrom != null)
 		{
@@ -1216,24 +1242,24 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return path;
 	}
-	
+
 	private class CornerSearchNode
 	{
-		public Corner corner; // for searching Voronoi edges 
+		public Corner corner; // for searching Voronoi edges
 		public CornerSearchNode cameFrom;
-		
+
 		public CornerSearchNode(Corner corner, CornerSearchNode cameFrom)
 		{
 			this.corner = corner;
 			this.cameFrom = cameFrom;
 		}
-				
+
 		@Override
 		public int hashCode()
 		{
 			return corner.hashCode();
 		}
-		
+
 		@Override
 		public boolean equals(Object other)
 		{
@@ -1242,30 +1268,40 @@ public class WorldGraph extends VoronoiGraph
 			{
 				return corner.equals(otherNode.corner);
 			}
-			return corner ==  null;
+			return corner == null;
 		}
 	}
-	
+
 	/**
-	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
-	 * @param start Where to begin the search
-	 * @param end The goal
-	 * @param calculateWeight Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge. 
-	 *        Likely this will be calculated based on the distance from one end of the Delaunay age
-	 * @return A path if one is found; null if the and is unreachable from the start.
+	 * Uses A* search to find the shortest path between the 2 given centers
+	 * using Delaunay edges.
+	 * 
+	 * @param start
+	 *            Where to begin the search
+	 * @param end
+	 *            The goal
+	 * @param calculateWeight
+	 *            Finds the weight of an edge for determining whether to explore
+	 *            it. This should be the weight of it the Delaunay edge. Likely
+	 *            this will be calculated based on the distance from one end of
+	 *            the Delaunay age
+	 * @return A path if one is found; null if the and is unreachable from the
+	 *         start.
 	 */
 	public List<Edge> findShortestPath(Center start, Center end, Function<Edge, Double> calculateWeight)
 	{
 		PriorityQueue<CenterSearchNode> explored = new PriorityQueue<>((n1, n2) -> Double.compare(n1.predictedScore, n2.predictedScore));
-		// Contains exactly those centers in explored, for faster checking if explored contains a center.
+		// Contains exactly those centers in explored, for faster checking if
+		// explored contains a center.
 		Set<Center> exploredCenters = new HashSet<>();
-		// Maps from centers we have seen to their nodes, to allow fast lookup of scores of previously seen centers.
+		// Maps from centers we have seen to their nodes, to allow fast lookup
+		// of scores of previously seen centers.
 		Map<Center, CenterSearchNode> centerNodeMap = new HashMap<>();
-		
-		explored.add(new CenterSearchNode(start, null, 0, Center.distanceBetween(start, end))); 
+
+		explored.add(new CenterSearchNode(start, null, 0, Center.distanceBetween(start, end)));
 		exploredCenters.add(start);
 		centerNodeMap.put(start, explored.peek());
-		
+
 		while (!explored.isEmpty())
 		{
 			CenterSearchNode current = explored.poll();
@@ -1275,17 +1311,19 @@ public class WorldGraph extends VoronoiGraph
 				// The score so far doesn't matter for this case
 				return createPathFromBackPointers(new CenterSearchNode(end, current, 0, Center.distanceBetween(current.center, end)));
 			}
-			
+
 			for (Edge edge : current.center.borders)
 			{
 				Center neighbor = current.center.equals(edge.d0) ? edge.d1 : edge.d0;
 				if (neighbor != null)
 				{
 					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge);
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar : Float.POSITIVE_INFINITY;
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
+							: Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{
-						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor, scoreFromStartToNeighbor + Center.distanceBetween(current.center, end));
+						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor,
+								scoreFromStartToNeighbor + Center.distanceBetween(current.center, end));
 						if (!exploredCenters.contains(neighbor))
 						{
 							centerNodeMap.put(neighbor, neighborNode);
@@ -1296,11 +1334,11 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 		}
-		
+
 		// The end is not reachable from the start
 		return null;
 	}
-	
+
 	private Edge findConnectingEdge(Center c1, Center c2)
 	{
 		for (Edge edge : c1.borders)
@@ -1316,21 +1354,24 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Create path using back pointers in search does for Voronoi edges.
-	 * @param end The end of the search
-	 * @param edgeType The type of edge to return
+	 * 
+	 * @param end
+	 *            The end of the search
+	 * @param edgeType
+	 *            The type of edge to return
 	 * @return A path
 	 */
 	private List<Edge> createPathFromBackPointers(CenterSearchNode end)
-	{	
+	{
 		List<Edge> path = new ArrayList<>();
 		if (end == null)
 		{
 			return path;
 		}
-		
+
 		CenterSearchNode curNode = end;
 		while (curNode.cameFrom != null)
 		{
@@ -1341,14 +1382,14 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return path;
 	}
-	
+
 	private class CenterSearchNode
 	{
-		public Center center; // for searching Delaunay edges 
+		public Center center; // for searching Delaunay edges
 		public CenterSearchNode cameFrom;
-		public double scoreSoFar; 
+		public double scoreSoFar;
 		public double predictedScore;
-				
+
 		public CenterSearchNode(Center center, CenterSearchNode cameFrom, double scoreSoFar, double predictedScore)
 		{
 			this.center = center;
@@ -1356,22 +1397,22 @@ public class WorldGraph extends VoronoiGraph
 			this.scoreSoFar = scoreSoFar;
 			this.predictedScore = predictedScore;
 		}
-		
+
 		@Override
 		public int hashCode()
 		{
 			return center.hashCode();
 		}
-		
+
 		@Override
 		public boolean equals(Object other)
 		{
 			CenterSearchNode otherNode = (CenterSearchNode) other;
-			if (otherNode.center !=  null)
+			if (otherNode.center != null)
 			{
 				return center.equals(otherNode.center);
-			} 
-			return center ==  null;
+			}
+			return center == null;
 		}
 	}
 }

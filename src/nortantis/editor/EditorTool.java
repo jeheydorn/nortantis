@@ -29,6 +29,7 @@ import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 
 import hoten.voronoi.Center;
+import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
 import hoten.voronoi.VoronoiGraph;
 import nortantis.ImagePanel;
@@ -482,48 +483,39 @@ public abstract class EditorTool
 	{
 		Set<Center> selected = new HashSet<Center>();
 		
+		Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+		if (center != null)
+		{
+			selected.add(center);
+		}
+			
 		if (brushDiameter <= 1)
 		{
-			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
-			if (center != null)
-			{
-				selected.add(center);
-			}
 			return selected;
 		}
 		
 		int brushRadius = brushDiameter/2;
-		for (int x = point.x - brushRadius; x < point.x + brushRadius; x++)
+		
+		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
+		return mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushRadius), center);
+	}
+	
+	/**
+	 * Determines if a center is overlapping the given circle. 
+	 * Note that this isn't super precise because it doesn't account for the edge of the circle protruding into the center without overlapping
+	 * any of the center's corners or centroid.
+	 */
+	private boolean isCenterOverlappingCircle(Center center, Point circleCenter, double radius)
+	{
+		for (Corner corner : center.corners)
 		{
-			for (int y = point.y - brushRadius; y < point.y + brushRadius; y++)
+			if (isPointWithinCircle(corner.loc.x, corner.loc.y, circleCenter, radius))
 			{
-				if (isPointWithinCircle(x, y, point, brushRadius))
-				{
-					Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(x, y));
-					if (center != null)
-					{
-						selected.add(center);
-					}
-				}
+				return true;
 			}
 		}
 		
-		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
-		ArrayDeque<Center> frontier = new ArrayDeque<>(selected);
-		while (!frontier.isEmpty())
-		{
-			Center c = frontier.pop();
-			for (Center n : c.neighbors)
-			{
-				// In theory I should be checking if any corner of the center is within the brush, but that won't make a big difference since this is only for handling tiny polygons.
-				if (!selected.contains((n)) && isPointWithinCircle(n.loc.x, n.loc.y, point, brushRadius))
-				{
-					selected.add(n);
-					frontier.push(n);
-				}
-			}
-		}
-		return selected;
+		return isPointWithinCircle(center.loc.x, center.loc.y, circleCenter, radius);
 	}
 	
 	private boolean isPointWithinCircle(double x, double y, Point circleCenter, double radius)

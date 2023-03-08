@@ -148,4 +148,18 @@ public class Center
 		}
 		return false;
 	}
+	
+	public Rectangle createBoundingBox()
+	{
+		// Start at a point we know is inside the desired bounds.
+		Rectangle bounds = new Rectangle(loc.x, loc.y, 0, 0);
+
+		// Add each corner to the bounds.
+		for (Corner corner : corners)
+		{
+			bounds = bounds.add(corner.loc);
+		}
+		
+		return bounds;
+	}
 }
