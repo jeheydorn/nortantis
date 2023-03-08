@@ -1235,11 +1235,36 @@ public class ImageHelper
 		return matchHistogram(target, source, target.getType());
 	}
 	
+	/**
+	 * Creates a colored image from a grayscale one and a given color.
+	 * @param image Grayscale image
+	 * @param color Color to use
+	 * @param how Algorithm to use when determining pixel colors
+	 * @return
+	 */
 	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how)
+	{
+		return colorify(image, color, how, null);
+	}
+	
+	/**
+	 * Creates a colored image from a grayscale one and a given color.
+	 * @param image Grayscale image
+	 * @param color Color to use
+	 * @param how Algorithm to use when determining pixel colors
+	 * @param where Allows colorifying only a snippet of image. Null means colorify the whole image.
+	 * @return
+	 */
+	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how, java.awt.Rectangle where)
 	{
 		if (how == ColorifyAlgorithm.none)
 		{
 			return image;
+		}
+		
+		if (where == null)
+		{
+			where = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
 		}
 		
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
@@ -1252,8 +1277,8 @@ public class ImageHelper
 		float[] hsb = new float[3];
 		Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
 
-		for (int y = 0; y < result.getHeight(); y++)
-			for (int x = 0; x < result.getWidth(); x++)
+		for (int y = where.y; y < where.y + where.height; y++)
+			for (int x = where.x; x < where.x + where.width; x++)
 			{
 				float level = raster.getSampleFloat(x, y, 0);
 				result.setRGB(x, y, colorifyPixel(level, hsb, how));
@@ -1303,6 +1328,10 @@ public class ImageHelper
 		algorithm3  // algorithm3 preserves contrast a little better than algorithm2.
 	}
 
+	public static BufferedImage colorifyMulti(BufferedImage image, Color[] colors, BufferedImage colorIndexes, ColorifyAlgorithm how)
+	{
+		return colorifyMulti(image, colors, colorIndexes, how);
+	}
 	
 	/**
 	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and
@@ -1310,18 +1339,26 @@ public class ImageHelper
 	 * @param image The image to colorify
 	 * @param colorMap Used as a map from region index (in politicalRegions) to region color.
 	 * @param colorIndexes Each pixel stores a gray level which (converted to an int) is an index into colors.
+	 * @param how Determines the algorithm to use for coloring pixels
+	 * @param where Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image, 
+	 *        and this point is the upper left corner in image where the result should be extracted from, using the width and height 
+	 *        of colorIndexes. 
 	 */
-	public static BufferedImage colorifyMulti(BufferedImage image, Map<Integer, Color> colorMap,
-			BufferedImage colorIndexes, ColorifyAlgorithm how)
+	public static BufferedImage colorifyMulti(BufferedImage image, Map<Integer, Color> colorMap, BufferedImage colorIndexes, ColorifyAlgorithm how,
+			java.awt.Point where)
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type "  
 					+ bufferedImageTypeToString(image.getType()));
 		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
+		
+		if (where == null)
+		{
+			where = new java.awt.Point(0, 0);
+		}
 
-		BufferedImage result = new BufferedImage(image.getWidth(),
-				image.getHeight(), BufferedImage.TYPE_INT_RGB);
+		BufferedImage result = new BufferedImage(colorIndexes.getWidth(), colorIndexes.getHeight(), BufferedImage.TYPE_INT_RGB);
 		Raster raster = image.getRaster();
 		Raster colorIndexesRaster = colorIndexes.getRaster();
 		
@@ -1335,12 +1372,11 @@ public class ImageHelper
 			hsbMap.put(regionId, hsb);
 		}
 		
-		for (int y = 0; y < result.getHeight(); y++)
-			for (int x = 0; x < result.getWidth(); x++)
+		for (int y = 0; y < colorIndexes.getHeight(); y++)
+			for (int x = 0; x < colorIndexes.getWidth(); x++)
 			{
-				float level = raster.getSampleFloat(x, y, 0);
-				int colorKey = colorIndexesRaster.getSample(x, y, 0);
-				
+				float level = raster.getSampleFloat(x + where.x, y + where.y, 0);
+				int colorKey = colorIndexesRaster.getSample(x, y, 0);				
 				result.setRGB(x, y, colorifyPixel(level, hsbMap.get(colorKey), how));
 			}
 		
@@ -1587,4 +1623,29 @@ public class ImageHelper
 				out.setSample(x, y, 0, Math.max(0, value - otherValue));
 			}
 	}	
+	
+	/**
+	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by 
+	 * upperLeftCornerToPasteIntoInTarget.
+	 */
+	public static void CopySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source, java.awt.Point upperLeftCornerToPasteIntoInTarget, 
+			java.awt.Rectangle boundsInSourceToCopyFrom)
+	{
+		java.awt.Rectangle targetBounds = new java.awt.Rectangle(0, 0, target.getWidth(), target.getHeight());
+		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
+		{
+			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)
+			{
+				int targetX = x + upperLeftCornerToPasteIntoInTarget.x;
+				int targetY = y + upperLeftCornerToPasteIntoInTarget.y;
+				if (!targetBounds.contains(targetX, targetY))
+				{
+					continue;
+				}
+				
+				int value = source.getRGB(x + boundsInSourceToCopyFrom.x, y + boundsInSourceToCopyFrom.y);
+				target.setRGB(targetX, targetY, value);
+			}
+		}
+	}
 }

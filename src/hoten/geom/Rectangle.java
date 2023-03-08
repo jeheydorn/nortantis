@@ -87,6 +87,21 @@ public class Rectangle
 		return new Rectangle(x - paddWidth/2.0, y - paddHeight/2.0, width + paddWidth, height + paddHeight);
 	}
 	
+	// TODO Decide if I should keep this, and if it should round up or down
+	public java.awt.Rectangle toAwTRectangle()
+	{
+		// Round up to the nearest integer
+		int integerWidth = (double)(int)width == width ? (int)(width) : (int)width + 1;
+		int integerHeight = (double)(int)height == height ? (int)(height) : (int)height + 1;
+		
+		return new java.awt.Rectangle((int) x, (int) y, integerWidth, integerHeight);
+	}
+	
+	public java.awt.Point upperLeftCornerAsAwtPoint()
+	{
+		return new java.awt.Point((int) x, (int) y);
+	}
+	
 	public double getRight()
 	{
 		return x + width;

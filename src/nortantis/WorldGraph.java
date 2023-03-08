@@ -3,6 +3,7 @@ package nortantis;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -187,9 +188,29 @@ public class WorldGraph extends VoronoiGraph
         		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
     }
     
-	public void drawRegionIndexes(Graphics2D g)
+	public void drawRegionIndexes(Graphics2D g, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
-		renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+		AffineTransform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+				
+		if (centersToDraw == null)
+		{
+			renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+		}
+		else
+		{
+			g.translate(-drawBounds.x, -drawBounds.y);
+			renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+		}
+		
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
+		}
 	}
 
 	/**

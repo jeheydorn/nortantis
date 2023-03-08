@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -60,12 +61,11 @@ public class MapCreator
 	 * @param centersChanged
 	 * @return
 	 */
-	public void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage map, Set<Center> centersChanged)
+	public void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage map, List<CenterEdit> centerChanges, List<EdgeEdit> edgeChanges)
 	{
-		if (centersChanged.size() == 0)
-		{
-			return;
-		}
+		double startTime = System.currentTimeMillis();				
+		
+		Set<Center> centersChanged = getCentersThatChanged(mapParts.graph, centerChanges);
 		
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 		
@@ -97,6 +97,22 @@ public class MapCreator
 		//    Then redraw all icons except skip any whose bounds don't touch snippetToReplaceBounds.
 		//- Let snippet = Draw the map constrained to only draw snippetToDrawBounds, and only centers in centersToDraw.
 		//- Extract snippetToReplaceBounds image from snippet and replace it on the map. 		
+		
+		double elapsedTime = System.currentTimeMillis() - startTime;
+		Logger.println("Total time to do incremental update (in seconds): " + elapsedTime / 1000.0);
+		
+		applyRegionEdits(mapParts.graph, settings.edits);
+		applyCenterEdits(mapParts.graph, settings.edits, centerChanges);
+		applyEdgeEdits(mapParts.graph, settings.edits, edgeChanges);
+		
+		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersChanged, snippetToDrawBounds, snippetToDrawBounds);
+		
+		// TODO Use ImageHelper.CopySnippetFromSourceAndPasteIntoTarget to update the original image
+	}
+	
+	private Set<Center> getCentersThatChanged(WorldGraph graph, Collection<CenterEdit> centerChanges)
+	{
+		return centerChanges.stream().map(cEdit -> graph.centers.get(cEdit.index)).collect(Collectors.toSet());  
 	}
 	
 
@@ -179,11 +195,12 @@ public class MapCreator
 		{
 			graph = mapParts.graph;
 		}
+		
 		applyRegionEdits(graph, settings.edits);
-		applyCenterEdits(graph, settings.edits);
-		applyEdgeEdits(graph, settings.edits);
+		applyCenterEdits(graph, settings.edits, null);
+		applyEdgeEdits(graph, settings.edits, null);
  		
-		background.doSetupThatNeedsGraph(settings, graph);
+		background.doSetupThatNeedsGraph(settings, graph, null, null, null);
 		if (mapParts == null)
 		{
 			background.landBeforeRegionColoring = null;
@@ -642,7 +659,7 @@ public class MapCreator
 		}
 	}
 	
-	private static void applyCenterEdits(WorldGraph graph, MapEdits edits)
+	private static void applyCenterEdits(WorldGraph graph, MapEdits edits, List<CenterEdit> centerChanges)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
@@ -654,10 +671,14 @@ public class MapCreator
 			throw new IllegalArgumentException("The map edits have " + edits.centerEdits.size() + " polygons, but the world size is " + graph.centers.size());
 		}
 		
-		for (int i : new Range(edits.centerEdits.size()))
+		if (centerChanges == null)
 		{
-			Center center = graph.centers.get(i);
-			CenterEdit cEdit = edits.centerEdits.get(i);
+			centerChanges = edits.centerEdits;
+		}
+		
+		for (CenterEdit cEdit : centerChanges)
+		{
+			Center center = graph.centers.get(cEdit.index);
 			boolean needsRebuild = center.isWater != cEdit.isWater;
 			center.isWater = cEdit.isWater;
 			center.isLake = cEdit.isLake;
@@ -705,7 +726,7 @@ public class MapCreator
 		}
 	}
 	
-	private static void applyEdgeEdits(WorldGraph graph, MapEdits edits)
+	private static void applyEdgeEdits(WorldGraph graph, MapEdits edits, List<EdgeEdit> edgeChanges)
 	{
 		if (edits == null || edits.edgeEdits.isEmpty())
 		{
@@ -716,7 +737,12 @@ public class MapCreator
 			throw new IllegalArgumentException("The map edits have " + edits.edgeEdits.size() + " edges, but graph has " + graph.edges.size() + " edges.");
 		}
 		
-		for (EdgeEdit eEdit : edits.edgeEdits)
+		if (edgeChanges == null)
+		{
+			edgeChanges = edits.edgeEdits;
+		}
+		
+		for (EdgeEdit eEdit : edgeChanges)
 		{				
 			Edge edge = graph.edges.get(eEdit.index);
 			boolean needsRebuild = false;

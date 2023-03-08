@@ -33,10 +33,12 @@ public class BackgroundGenerator
 	 * separately similar to what Bruno Galerne do, except I use histogram matching to get the color levels right.
 	 * @param targetRows Number of rows in the result.
 	 * @param targetCols Number of columns in the result.
-	 * @param allowScalingTextureLarger If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
+	 * @param allowScalingTextureLarger If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so 
+	 *        that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols, boolean allowScalingTextureLarger)
+	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols, 
+			boolean allowScalingTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
@@ -125,6 +127,7 @@ public class BackgroundGenerator
 			
 			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
 			kernel = null;
+			randomImage = null;
 			
 			if (numberOfColorChannels == 1)
 			{

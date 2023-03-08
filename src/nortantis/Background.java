@@ -8,7 +8,10 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
+import hoten.geom.Rectangle;
+import hoten.voronoi.Center;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
@@ -307,17 +310,31 @@ public class Background
 				(int)(image.getHeight() - borderWidthScaled * 2));
 	}
 	
-	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph)
+	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph, Set<Center> centersChanged, Rectangle drawBounds, 
+			Rectangle replaceBounds)
 	{
 		if (shouldDrawRegionColors)
 		{
 			// The image "land" is generated but doesn't yet have colors.
-			
-			regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), 
-					BufferedImage.TYPE_BYTE_GRAY);
-			graph.drawRegionIndexes(regionIndexes.createGraphics());
-			
-			land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm);
+		
+			if (drawBounds == null || centersChanged == null)
+			{
+				regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+				graph.drawRegionIndexes(regionIndexes.createGraphics(), null, null);
+				
+				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
+			}
+			else
+			{
+				// Update only a piece of the land
+				regionIndexes = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
+				graph.drawRegionIndexes(regionIndexes.createGraphics(), centersChanged, drawBounds);
+				BufferedImage landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, 
+						new java.awt.Point((int) drawBounds.x, (int) drawBounds.y));
+				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), (int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);
+				ImageHelper.CopySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
+				
+			}
 		}
 		
 		// Fixes a bug where graph width or height is not exactly the same as image width and heights due to rounding issues.
@@ -334,8 +351,8 @@ public class Background
 		}
 	}
 	
-	BufferedImage drawRegionColors(WorldGraph graph, BufferedImage fractalBG, BufferedImage pixelColors, 
-			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm)
+	private BufferedImage drawRegionColors(WorldGraph graph, BufferedImage fractalBG, BufferedImage pixelColors, 
+			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm, java.awt.Point where)
 	{	
 		if (graph.regions.isEmpty())
 		{
@@ -348,7 +365,7 @@ public class Background
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
 				
-		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm);
+		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm, where);
 	}
 
 }
