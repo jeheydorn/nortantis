@@ -199,13 +199,12 @@ public class IconDrawer
 	
 	/**
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them.
+	 * The actual drawing of the icons is done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, List<Center> centersToDraw)
+	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToDraw)
 	{
 		clearIconsForCenters(centersToDraw);
 		
-		iconsToDraw.clear();
-		trees.clear();
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.hills);
 		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
@@ -297,7 +296,7 @@ public class IconDrawer
 		drawTreesForCenters(centersToDraw);
 	}
 	
-	private void clearIconsForCenters(List<Center> centers)
+	private void clearIconsForCenters(Collection<Center> centers)
 	{
 		for (Center center : centers)
 		{
@@ -801,7 +800,7 @@ public class IconDrawer
 	/**
 	 * Draws all trees in this.trees.
 	 */
-	public void drawTreesForCenters(List<Center> centersToDraw)
+	public void drawTreesForCenters(Collection<Center> centersToDraw)
 	{	
 	       // Load the images and masks.
         ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.trees);

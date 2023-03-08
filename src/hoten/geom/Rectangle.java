@@ -91,10 +91,10 @@ public class Rectangle
 	public java.awt.Rectangle toAwTRectangle()
 	{
 		// Round up to the nearest integer
-		int integerWidth = (double)(int)width == width ? (int)(width) : (int)width + 1;
-		int integerHeight = (double)(int)height == height ? (int)(height) : (int)height + 1;
+		//int integerWidth = (double)(int)width == width ? (int)(width) : (int)width + 1;
+		//int integerHeight = (double)(int)height == height ? (int)(height) : (int)height + 1;
 		
-		return new java.awt.Rectangle((int) x, (int) y, integerWidth, integerHeight);
+		return new java.awt.Rectangle((int) x, (int) y, (int)width, (int)height);
 	}
 	
 	public java.awt.Point upperLeftCornerAsAwtPoint()

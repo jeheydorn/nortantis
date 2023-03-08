@@ -6,6 +6,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,9 +14,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
@@ -398,9 +401,9 @@ public abstract class VoronoiGraph {
         }
     }
     
-    public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender)
+    public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
     {
-       	renderPolygons(g, centersToRender, new Function<Center, Color>() 
+       	drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>() 
 			{
 				public Color apply(Center c)
 				{
@@ -428,15 +431,27 @@ public abstract class VoronoiGraph {
     
     public void drawBiomes(Graphics2D g)
     {
-    	renderPolygons(g, (center) -> 
+    	drawPolygons(g, (center) -> 
     	{
     		return getColor(center.biome);
     	});
     }
     
-    public void drawRivers(Graphics2D g, double riverWidthScale)
+    public void drawRivers(Graphics2D g, double riverWidthScale, Collection<Edge> edgesToDraw, Rectangle drawBounds)
     {
-        for (Edge e : edges) 
+		if (edgesToDraw == null)
+		{
+			edgesToDraw = edges;
+		}
+		
+		AffineTransform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+				
+        for (Edge e : edgesToDraw) 
         {
         	if (e.river > riversThinnerThanThisWillNotBeDrawn)
         	{
@@ -445,6 +460,11 @@ public abstract class VoronoiGraph {
                 drawPath(g, noisyEdges.getNoisyEdge(e.index));
         	}
         }
+        
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
+		}
     }
         
     protected void drawUsingTriangles(Graphics2D g, Center c, boolean drawElevation)
@@ -613,19 +633,19 @@ public abstract class VoronoiGraph {
         }    	
     }
     
-    public void drawCoastline(Graphics2D g, double width)
+    public void drawCoastline(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.isCoast());
+    	drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
     }
     
-    public void drawCoastlineWithLakeShores(Graphics2D g, double width)
+    public void drawCoastlineWithLakeShores(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> edge.isCoastOrLakeShore());
+    	drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
     }
 
-    public void drawRegionBorders(Graphics2D g, double width, boolean ignoreRiverEdges)
+    public void drawRegionBorders(Graphics2D g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw, Rectangle drawBounds)
     {
-    	drawSpecifiedEdges(g, Math.max(1, (int) width), edge -> 
+    	drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge -> 
     	{
 			if (ignoreRiverEdges && edge.river > riversThinnerThanThisWillNotBeDrawn)
 			{
@@ -637,24 +657,44 @@ public abstract class VoronoiGraph {
     	});
     }
            
-	private void drawSpecifiedEdges(Graphics2D g, int width, Function<Edge, Boolean> shouldDraw)
+	private void drawSpecifiedEdges(Graphics2D g, int strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds, 
+			Function<Edge, Boolean> shouldDraw)
 	{		
-		g.setStroke(new BasicStroke(width));
-		
-		for (final Center p : centers)
+		if (centersToDraw == null)
 		{
-			for (final Center r : p.neighbors)
+			centersToDraw = centers;
+		}
+		
+		AffineTransform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+		
+		Set<Edge> drawn = new HashSet<>();
+		
+		g.setStroke(new BasicStroke(strokeWidth));
+		
+		for (final Center p : centersToDraw)
+		{
+			for (final Edge edge : p.borders)
 			{
-				
-				Edge edge = lookupEdgeFromCenter(p, r);
-				
 				if (!shouldDraw.apply(edge))
 					continue;
 
-				drawEdge(g, edge);
+				if (!drawn.contains(edge))
+				{
+					drawn.add(edge);
+					drawEdge(g, edge);
+				}
 			}
 		}
-
+		
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
+		}
 	}
 	
 	public void drawEdge(Graphics2D g, Edge edge)
@@ -685,12 +725,36 @@ public abstract class VoronoiGraph {
      * @param colorChooser Decides the color for each polygons. If it returns null, then the
      * polygons will not be drawn.
      */
-    public void renderPolygons(Graphics2D g, Function<Center, Color> colorChooser)
+    public void drawPolygons(Graphics2D g, Function<Center, Color> colorChooser)
     {    	
-    	renderPolygons(g, centers, colorChooser);
+    	drawPolygons(g, centers, colorChooser);
     }
     
-    protected void renderPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
+    public void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds, Function<Center, Color> colorChooser)
+    {
+		AffineTransform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+				
+		if (centersToRender == null)
+		{
+			drawPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+		}
+		else
+		{
+			drawPolygons(g, centersToRender, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+		}
+		
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
+		}
+    }
+    
+    private void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
     {
     	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
     	for (Center c : centersToRender)

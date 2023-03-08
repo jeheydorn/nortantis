@@ -27,7 +27,7 @@ public class Background
 	Dimension borderBounds;
 	BufferedImage borderBackground;
 	private boolean backgroundFromFilesNotGenerated;
-	boolean shouldDrawRegionColors;
+	private boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
 	// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
 	BufferedImage regionIndexes;
@@ -333,7 +333,6 @@ public class Background
 						new java.awt.Point((int) drawBounds.x, (int) drawBounds.y));
 				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), (int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);
 				ImageHelper.CopySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
-				
 			}
 		}
 		

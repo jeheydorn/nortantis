@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.junit.runner.Computer;
+
 import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
@@ -55,17 +57,20 @@ public class MapCreator
 	/**
 	 * Updates a piece of a map, given a list of centers that changed.
 	 * Drawing text is currently not supported (it's not needed because the editor draws text as a separate step).
-	 * @param settings
-	 * @param mapParts
-	 * @param map
-	 * @param centersChanged
+	 * @param settings Map settings for drawing
+	 * @param mapParts Assumed to be populated by createMap the last time the map was generated at full size
+	 * @param map The full sized map to update
+	 * @param centerChanges Edits for centers that need to be re-drawn
+	 * @param edgeChanges Edits for edges that need to be re-drawn
 	 * @return
 	 */
-	public void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage map, List<CenterEdit> centerChanges, List<EdgeEdit> edgeChanges)
+	public void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage map, List<CenterEdit> centerChanges, 
+			List<EdgeEdit> edgeChanges)
 	{
 		double startTime = System.currentTimeMillis();				
 		
 		Set<Center> centersChanged = getCentersThatChanged(mapParts.graph, centerChanges);
+		Set<Edge> edgesChanged = getEdgesThatChanged(mapParts.graph, edgeChanges);
 		
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 		
@@ -88,9 +93,58 @@ public class MapCreator
 		
 		// The bounds of the snippet to draw. This is larger than the snippet to replace because ocean/land effects expand beyond the edges
 		// that draw them, and we need those to be included in the snippet to replace.
-		Rectangle snippetToDrawBounds = snippetToReplaceBounds.pad(effectsPadding, effectsPadding);
+		Rectangle drawBounds = snippetToReplaceBounds.pad(effectsPadding, effectsPadding);
 		
-		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(snippetToDrawBounds), centersChanged.iterator().next());
+		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), centersChanged.iterator().next());
+				
+		double sizeMultiplier = calcSizeMultiplier(mapParts.background.mapBounds.getWidth());
+				
+		applyRegionEdits(mapParts.graph, settings.edits);
+		applyCenterEdits(mapParts.graph, settings.edits, centerChanges);
+		applyEdgeEdits(mapParts.graph, settings.edits, edgeChanges);
+		
+		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersChanged, drawBounds, drawBounds);
+		
+		
+		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersToDraw);
+		
+		// Draw mask for land vs ocean.
+		Logger.println("Adding land.");
+		BufferedImage landMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, 
+				BufferedImage.TYPE_BYTE_BINARY); 
+		{
+			Graphics2D g = landMask.createGraphics();
+			mapParts.graph.drawLandAndOceanBlackAndWhite(g, centersToDraw, drawBounds);
+		}
+		
+		BufferedImage mapSnippet =  ImageHelper.maskWithColor(mapParts.background.land, Color.black, landMask, false);
+		
+		mapSnippet = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet, landMask, 
+				mapParts.background, centersToDraw, drawBounds);
+		
+		// Store the current version of mapSnippet for a background when drawing icons later.
+		BufferedImage landBackground = ImageHelper.deepCopy(map);
+		
+		if (settings.drawRegionColors)
+		{
+			Graphics2D g = map.createGraphics();
+			g.setColor(settings.coastlineColor);
+			mapParts.graph.drawRegionBorders(g, sizeMultiplier, true, centersToDraw, drawBounds);
+		}
+
+		if (settings.drawRivers)
+		{
+			// Add rivers.
+			drawRivers(settings, mapParts.graph, map, sizeMultiplier, edgesChanged, drawBounds);
+		}
+		
+		if (settings.drawIcons)
+		{
+			Logger.println("Drawing all icons.");
+			mapParts.iconDrawer.drawAllIcons(map, landBackground);
+		}
+		
+		// TODO Use ImageHelper.CopySnippetFromSourceAndPasteIntoTarget to update the original image
 		
 		// Determine which icons to draw:
 		//	- Before drawing, remove the icons from iconsToDraw for the centers in centersChanged. Then add the new icons for those centers. 
@@ -98,25 +152,12 @@ public class MapCreator
 		//- Let snippet = Draw the map constrained to only draw snippetToDrawBounds, and only centers in centersToDraw.
 		//- Extract snippetToReplaceBounds image from snippet and replace it on the map. 		
 		
+		// TODO remove time logging code when done testing.
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to do incremental update (in seconds): " + elapsedTime / 1000.0);
-		
-		applyRegionEdits(mapParts.graph, settings.edits);
-		applyCenterEdits(mapParts.graph, settings.edits, centerChanges);
-		applyEdgeEdits(mapParts.graph, settings.edits, edgeChanges);
-		
-		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersChanged, snippetToDrawBounds, snippetToDrawBounds);
-		
-		// TODO Use ImageHelper.CopySnippetFromSourceAndPasteIntoTarget to update the original image
+
 	}
 	
-	private Set<Center> getCentersThatChanged(WorldGraph graph, Collection<CenterEdit> centerChanges)
-	{
-		return centerChanges.stream().map(cEdit -> graph.centers.get(cEdit.index)).collect(Collectors.toSet());  
-	}
-	
-
-
 	/**
 	 * Draws a map.
 	 * 
@@ -138,7 +179,7 @@ public class MapCreator
 		
 		double startTime = System.currentTimeMillis();				
 						
-        r = new Random(settings.randomSeed);        
+        r = new Random(settings.randomSeed);
 		
         Background background;
         if (mapParts != null && mapParts.background != null)
@@ -254,89 +295,36 @@ public class MapCreator
 				graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY); 
 		{
 			Graphics2D g = landMask.createGraphics();
-			graph.drawLandAndOceanBlackAndWhite(g, graph.centers);
+			graph.drawLandAndOceanBlackAndWhite(g, graph.centers, null);
 		}
 		
 
-		BufferedImage map = null;
-		{	
-			// Combine land and ocean images.
-			map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
-		}
+		// Combine land and ocean images.
+		BufferedImage map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
+
 		if (mapParts == null)
 		{
 			background.land = null;
 		}	
 		
-		// Darken the land next to coast lines and optionally region borders.
-		{
-			BufferedImage landBlur;
-			int blurLevel = (int) (settings.landBlur * sizeMultiplier);
-			if (blurLevel > 0)
-			{
-				Logger.println("Darkening land near shores.");
-				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				
-				BufferedImage coastlineAndLakeShoreMask = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-				{
-					Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
-					g.setColor(Color.white);
-					graph.drawCoastlineWithLakeShores(g, sizeMultiplier);
-				}
-
-				if (background.shouldDrawRegionColors)
-				{
-					Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
-					g.setColor(Color.white);
-					graph.drawRegionBorders(g, sizeMultiplier, false);
-					landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
-					// Remove the land blur from the ocean side of the borders and color the blur
-					// according to each region's blur color.
-					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-					Map<Integer, Color> colors = new HashMap<>();
-					if (graph.regions.size() > 0)
-					{
-						for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
-						{
-							Region reg = regionEntry.getValue();
-							Color color = new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
-									(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale));
-							colors.put(reg.id, color);
-						}
-					}
-					else
-					{
-						colors.put(1, settings.landColor);
-					}
-					map = ImageHelper.maskWithMultipleColors(map, colors, background.regionIndexes, landBlur, true);
-				}
-				else
-				{
-					landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
-					// Remove the land blur from the ocean side of the borders.
-					landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
-					map = ImageHelper.maskWithColor(map, settings.landBlurColor, landBlur, true);
-				}
-			}
-		}
+		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null);
 			
 		// Store the current version of the map for a background when drawing icons later.
 		BufferedImage landBackground = ImageHelper.deepCopy(map);
 		
-		if (background.shouldDrawRegionColors)
+		if (settings.drawRegionColors)
 		{
 			Graphics2D g = map.createGraphics();
 			g.setColor(settings.coastlineColor);
-			graph.drawRegionBorders(g, sizeMultiplier, true);
+			graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 		}
 
 		if (settings.drawRivers)
 		{
 			// Add rivers.
 			Logger.println("Adding rivers.");
-			drawRivers(settings, graph, map, sizeMultiplier);
+			drawRivers(settings, graph, map, sizeMultiplier, null, null);
 		}
-		
 		
 
 		List<IconDrawTask> cities;
@@ -355,15 +343,14 @@ public class MapCreator
 			
 			Logger.println("Adding cities.");
 			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
-		}
-		else
-		{
-			// Create mountain groups for the text drawer.
-			mountainGroups = iconDrawer.findMountainAndHillGroups().getFirst();
-			// Create city areas for the text drawer.
-			cities = iconDrawer.addOrUnmarkCities(settings.resolution, false);
+			
+			if (mapParts != null)
+			{
+				mapParts.cityDrawTasks = cities;
+			}
 		}
 		
+
 		if (settings.drawRoads)
 		{
 			// TODO put back
@@ -372,10 +359,6 @@ public class MapCreator
 			//roadDrawer.drawRoads(map, sizeMultiplier);
 		}
 		
-		if (mapParts != null)
-		{
-			mapParts.cityDrawTasks = cities;
-		}
 		
 		if (settings.drawIcons)
 		{
@@ -504,7 +487,7 @@ public class MapCreator
 		{
 			Logger.println("Adding text.");
 			
-			if (background.shouldDrawRegionColors)
+			if (settings.drawRegionColors)
 			{
 				Graphics2D g = landBackground.createGraphics();
 				g.setColor(settings.coastlineColor);
@@ -573,6 +556,65 @@ public class MapCreator
 		Logger.println("Done creating map.");
 		
 		return map;
+	}
+	
+	/**
+	 * If land near coast lines and region borders should be darkened, then t his creates a copy of mapOrSnippet but with that darkening.
+	 * Otherwise, it returns mapOrSnippet.
+	 */
+	private BufferedImage darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double sizeMultiplier, 
+			BufferedImage mapOrSnippet, BufferedImage landMask, Background background, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		BufferedImage landBlur;
+		int blurLevel = (int) (settings.landBlur * sizeMultiplier);
+		if (blurLevel > 0)
+		{
+			Logger.println("Darkening land near shores.");
+			float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
+			
+			BufferedImage coastlineAndLakeShoreMask = new BufferedImage(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(), 
+					BufferedImage.TYPE_BYTE_BINARY);
+			{
+				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
+				g.setColor(Color.white);
+				graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
+			}
+
+			if (settings.drawRegionColors)
+			{
+				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
+				g.setColor(Color.white);
+				graph.drawRegionBorders(g, sizeMultiplier, false, centersToDraw, drawBounds);
+				landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
+				// Remove the land blur from the ocean side of the borders and color the blur
+				// according to each region's blur color.
+				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+				Map<Integer, Color> colors = new HashMap<>();
+				if (graph.regions.size() > 0)
+				{
+					for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
+					{
+						Region reg = regionEntry.getValue();
+						Color color = new Color((int)(reg.backgroundColor.getRed() * regionBlurColorScale), 
+								(int)(reg.backgroundColor.getGreen() * regionBlurColorScale), (int)(reg.backgroundColor.getBlue() * regionBlurColorScale));
+						colors.put(reg.id, color);
+					}
+				}
+				else
+				{
+					colors.put(1, settings.landColor);
+				}
+				return ImageHelper.maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, landBlur, true);
+			}
+			else
+			{
+				landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
+				// Remove the land blur from the ocean side of the borders.
+				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+				return ImageHelper.maskWithColor(mapOrSnippet, settings.landBlurColor, landBlur, true);
+			}
+		}
+		return mapOrSnippet;
 	}
 	
 	private static void assignRandomRegionColors(WorldGraph graph, MapSettings settings)
@@ -1186,12 +1228,13 @@ public class MapCreator
 			}
 	}
 
-	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, double sizeMultiplier)
+	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, double sizeMultiplier, 
+			Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.riverColor);
 		// Draw rivers thin.
-		graph.drawRivers(g, sizeMultiplier/2.0);
+		graph.drawRivers(g, sizeMultiplier/2.0, edgesToDraw, drawBounds);
 	}
 	
 	public static Set<String> getAvailableBorderTypes()
@@ -1207,6 +1250,16 @@ public class MapCreator
 		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
 		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
+	}
+	
+	private Set<Center> getCentersThatChanged(WorldGraph graph, Collection<CenterEdit> centerChanges)
+	{
+		return centerChanges.stream().map(cEdit -> graph.centers.get(cEdit.index)).collect(Collectors.toSet());  
+	}
+	
+	private Set<Edge> getEdgesThatChanged(WorldGraph graph, Collection<EdgeEdit> edgeChanges)
+	{
+		return edgeChanges.stream().map(eEdit -> graph.edges.get(eEdit.index)).collect(Collectors.toSet());  
 	}
 
 //	public static void main(String[] args) throws IOException

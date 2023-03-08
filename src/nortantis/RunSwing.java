@@ -1276,7 +1276,7 @@ public class RunSwing
 		textPanel.setLayout(null);
 		
 		JLabel lblBooks = new JLabel("Books:");
-		lblBooks.setToolTipText("Selected books will be used to generate (potentially) new names.");
+		lblBooks.setToolTipText("Selected books will be used to generate new names.");
 		lblBooks.setBounds(528, 43, 70, 15);
 		textPanel.add(lblBooks);
 		

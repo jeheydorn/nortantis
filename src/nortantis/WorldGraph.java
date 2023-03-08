@@ -190,27 +190,7 @@ public class WorldGraph extends VoronoiGraph
     
 	public void drawRegionIndexes(Graphics2D g, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
-		AffineTransform orig = null;
-		if (drawBounds != null)
-		{
-			orig = g.getTransform();
-			g.translate(-drawBounds.x, -drawBounds.y);
-		}
-				
-		if (centersToDraw == null)
-		{
-			renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
-		}
-		else
-		{
-			g.translate(-drawBounds.x, -drawBounds.y);
-			renderPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
-		}
-		
-		if (drawBounds != null)
-		{
-			g.setTransform(orig);
-		}
+		drawPolygons(g, centersToDraw, drawBounds, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
 	}
 
 	/**
@@ -393,7 +373,7 @@ public class WorldGraph extends VoronoiGraph
     	{
 	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_3BYTE_BGR);
 	    	Graphics2D g = centerLookupTable.createGraphics();
-	       	renderPolygons(g, new Function<Center, Color>()
+	       	drawPolygons(g, new Function<Center, Color>()
 				{
 					public Color apply(Center c)
 					{
@@ -498,7 +478,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void drawBorderWhite(Graphics2D g)
 	{
-		renderPolygons(g, c -> c.isBorder ? Color.white : Color.black);
+		drawPolygons(g, c -> c.isBorder ? Color.white : Color.black);
 	}
 
 	public int getWidth()

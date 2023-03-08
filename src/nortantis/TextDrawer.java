@@ -206,7 +206,6 @@ public class TextDrawer
 			List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{				
 		this.landAndOceanBackground = landAndOceanBackground;
-		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());;
 
 		if (settings.edits.text.size() > 0)
 		{
@@ -215,6 +214,8 @@ public class TextDrawer
 		}
 		else
 		{
+			cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());;
+
 			if (mountainRanges == null)
 			{
 				mountainRanges = new ArrayList<>(0);
