@@ -26,7 +26,7 @@
     <div class="wrapper">
       <header>
         <h1 class="header">Nortantis</h1>
-        <p class="header">Nortantis is a fantasy map generator originally created as an academic project. It uses a simple tectonic plate simulation to create islands and continents with trees, rivers, and mountains. You create a color scheme and it creates the world. You can optionally add region, river, and mountain names randomly generated based on books you select. The result has the appearance of an old-fashioned hand-drawn map.</p>
+        <p class="header">Nortantis is a fantasy map generator originally created as an academic project. It uses a simple tectonic plate simulation to create islands and continents with trees, rivers, and mountains. Using image convolution and micro texture generation, it creates random paper textures on which it draws maps using randomly generated color schemes, and it uses words extracted from books to randomly create region, river, mountain, and city names. The result has the appearance of an old-fashioned, hand-drawn map. Nortantis also has an editor that can be used to change the placement of land/ocean, mountains, rivers, and cities, as well as update text. </p>
 
         <ul>
           <li><a class="buttons github" href="https://github.com/jeheydorn/nortantis">View On GitHub</a></li>
@@ -53,11 +53,11 @@
 <h4>Run</h4>
 <p>The download above gives you a zip file containing an executable jar file and a folder of assets such as mountain and tree icons. The way to run Nortantis depends on your operating system:</p>
 <ul>
-	<li>Windows - unzip the downloaded file, open it, and double click run.bat.</li>
-	<li>Linux - unzip the downloaded file, open it, and run run.bash</p>
+	<li>Windows - unzip the downloaded file, open it, and double click 'run in Windows.bat'.</li>
+	<li>Linux - unzip the downloaded file, open it, and 'run in Linux.bash'</p>
 </ul>
 <p>Generating a map requires some intense computing, so it can take up to a minute depending on the speed of your computer and the size of the map you generate.</p>
-<p>If you want to generate maps at higher resolutions than the default, you can modify run.bat (or run.bash for Linux) to increase the amount of memory Nortantis can use. Find the line that contains -XX:MaxRAMPercentage=50.0. The 50.0 is the percentage of RAM memory it can use. Change it to whatever limit you want up to 100.0. Make sure to include the .0 at the end because Java requires it. When done, that line should look like: When Nortantis opens it checks the amount of RAM allocated and adjusts the maximum on the Resolution slider in the Background tab to the maximum size of map you can generate with that amount of RAM.
+<p>If you want to generate maps at higher resolutions than the default, you can modify 'run in Windows.bat' or 'run in Linux.bash' to increase the amount of memory Nortantis can use. Find the line that contains -XX:MaxRAMPercentage=50.0. The 50.0 is the percentage of RAM memory it can use. Change it to whatever limit you want up to 100.0. Make sure to include the .0 at the end because Java requires it. When Nortantis opens, it checks the amount of RAM allocated and adjusts the upper limit of the Resolution slider in the Background tab to the maximum size of map you can generate with that amount of RAM.
 
 <h2>Examples<h2>
 
@@ -85,10 +85,10 @@
 <ht>Acknowledgments</h2>
 <p>Nortantis is built on top of a polygon-based island generator by Red Blog games (<a href="http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/" >here</a>). It also uses several other open source libraries, one of the most important of which is <a href="https://sites.google.com/site/piotrwendykier/software/jtransforms">JTransforms</a>, which is used to do very fast image transformations.</p>
 
-<p>Nortantis has the ability to generate random background images of arbitrary sizes based on a texture image. To do this, I used step 2 of the algorithm in section C from <i>Random Phase Textures: Theory and Synthesis</i> by Bruno Galerne et al. I used my own methods instead of steps 1 and 3. I also generate in multiple color channels like they do.</p>
+<p>Nortantis has the ability to generate random background images of arbitrary sizes based on a texture image. To do this, I used step 2 of the algorithm in section C from <i>Random Phase Textures: Theory and Synthesis</i> by Bruno Galerne et al. I used my own methods instead of steps 1 and 3.</p>
 
 <h2>Contact</h2>
-If you have questions or find a bug, you can contact me at <a href="mailto:nortantis@gmail.com">nortantis@gmail.com</a>.
+If you have questions or find a bug, I recommmend creating an issue on <a href="https://github.com/jeheydorn/nortantis">GitHub</a>. You can also contact me at <a href="mailto:nortantis@gmail.com">nortantis@gmail.com</a>.
 
  </section>
 </div>
