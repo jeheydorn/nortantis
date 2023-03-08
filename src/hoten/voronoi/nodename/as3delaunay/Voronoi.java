@@ -436,7 +436,7 @@ public final class Voronoi {
         }
         vertices.clear();
 
-
+        Halfedge.clearPool();
     }
 
     Site leftRegion(Halfedge he, Site bottomMostSite) {

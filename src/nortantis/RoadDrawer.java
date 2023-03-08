@@ -2,24 +2,20 @@ package nortantis;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
 import java.awt.Stroke;
 import java.awt.image.BufferedImage;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
 import nortantis.util.OrderlessPair;
-import nortantis.util.Pair;
 import nortantis.util.Range;
 
 public class RoadDrawer

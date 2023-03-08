@@ -5,13 +5,9 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,17 +19,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-
 import hoten.geom.Point;
+import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
-import hoten.voronoi.VoronoiGraph;
-import nortantis.Biome;
 import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIcon;
+import nortantis.editor.CenterIconType;
+import nortantis.editor.CenterTrees;
 import nortantis.editor.MapEdits;
-import nortantis.util.AssetsPath;
 import nortantis.util.Coordinate;
 import nortantis.util.Function;
 import nortantis.util.HashMapF;
@@ -42,7 +36,6 @@ import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
-import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple3;
@@ -52,12 +45,8 @@ public class IconDrawer
 	public static final double mountainElevationThreshold = 0.58;
 	public static final double hillElevationThreshold = 0.53;
 	final double treeScale = 4.0/8.0;
-	public final static String mountainsName = "mountains";
-	public final static String hillsName = "hills";
-	public final static String sandDunesName = "sand";
-	public final static String treesName = "trees";
-	public final static String citiesName = "cities";
-	double meanPolygonWidth;
+	final double meanPolygonWidth;
+	final int duneWidth;
 	// If a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
 	final double maxMeansToDraw = 5.0;
 	double maxSizeToDrawIcon;
@@ -78,19 +67,28 @@ public class IconDrawer
 	 */
 	public Map<Integer, CenterIcon> centerIcons;
 	public Map<Integer, CenterTrees> trees;
-	private String cityIconsSetName;
+	private double averageCenterWidth;
 
 	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
-		this.cityIconsSetName = cityIconsSetName;
+		ImageCache.getInstance().setCityIconsSetName(cityIconsSetName);
 		
 		meanPolygonWidth = findMeanPolygonWidth(graph);
+		duneWidth = (int)(meanPolygonWidth * 1.5);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
 		centerIcons = new HashMap<>();
 		trees = new HashMap<>();
+		
+		// Store the average width of all Centers.
+		double sum = 0;
+		for (Center c : graph.centers)
+		{
+			sum += findCenterWidthBetweenNeighbors(c);
+		}
+		averageCenterWidth = sum / graph.centers.size();
 	}
 
 	public static double findMeanPolygonWidth(WorldGraph graph)
@@ -197,20 +195,20 @@ public class IconDrawer
 	/**
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them.
 	 */
-	public void clearAndAddIconsFromEdits(MapEdits edits, double sizeMultiplyer)
+	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, List<Center> centersToDraw)
 	{
+		clearIconsForCenters(centersToDraw);
+		
 		iconsToDraw.clear();
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType(mountainsName);
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType(hillsName);
-		List<Tuple2<BufferedImage, BufferedImage>> duneImages = getAllIconGroupsAndMasksForType(sandDunesName).get("dunes");
-		int duneWidth = findDuneWidth();
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = loadIconsWithWidths(citiesName);
-		
 		trees.clear();
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.mountains);
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.hills);
+		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance().getIconsWithWidths(IconType.cities);
 		
-		for (CenterEdit cEdit : edits.centerEdits)
+		for (Center center : centersToDraw)
 		{
-			Center center = graph.centers.get(cEdit.index);
+			CenterEdit cEdit = edits.centerEdits.get(center.index);
 			if (cEdit.icon != null)
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null && !mountainImagesById.isEmpty())
@@ -291,7 +289,28 @@ public class IconDrawer
 			}
 		}
 
-		drawTreesForAllCenters();
+		drawTreesForCenters(centersToDraw);
+	}
+	
+	private void clearIconsForCenters(List<Center> centers)
+	{
+		for (Center center : centers)
+		{
+			if (iconsToDraw.containsKey(center))
+			{
+				iconsToDraw.get(center).clear();
+			}
+			
+			if (trees.containsKey(center.index))
+			{
+				trees.put(center.index, null);
+			}
+			
+			if (centerIcons.containsKey(center.index))
+			{
+				centerIcons.put(center.index, null);
+			}
+		}
 	}
 	
 	private String chooseNewGroupId(Set<String> groupIds, String oldGroupId)
@@ -465,7 +484,7 @@ public class IconDrawer
 	 */
 	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = loadIconsWithWidths(citiesName);
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance().getIconsWithWidths(IconType.cities);
 		if (cityIcons.isEmpty())
 		{
 			Logger.println("Cities will not be drawn because there are no city icons.");
@@ -512,7 +531,7 @@ public class IconDrawer
 	public List<Set<Center>> addMountainsAndHills(List<Set<Center>> mountainGroups, List<Set<Center>> mountainAndHillGroups)
 	{				
         // Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = getAllIconGroupsAndMasksForType(mountainsName);
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.mountains);
         if (mountainImagesById == null || mountainImagesById.isEmpty())
         {
         	Logger.println("No mountain images were found. Mountain images will not be drawn.");
@@ -521,7 +540,7 @@ public class IconDrawer
 
         // Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
         // The hill image file names must use the same ids as the mountain ranges.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = getAllIconGroupsAndMasksForType(hillsName);
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.hills);
         
         // Warn if images are missing
         for (String hillGroupId : hillImagesById.keySet())
@@ -618,7 +637,7 @@ public class IconDrawer
 	
 	public void addSandDunes()
 	{
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> sandGroups = getAllIconGroupsAndMasksForType("sand");
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> sandGroups = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.sand);
 		if (sandGroups == null || sandGroups.isEmpty())
 		{
 			Logger.println("Sand dunes will not be drawn because no sand images were found.");
@@ -647,9 +666,10 @@ public class IconDrawer
    		double duneProbabilityPerBiomeGroup = 0.6;
    		double duneProbabilityPerCenter = 0.5;
    		
-		int width = findDuneWidth();
-		if (width == 0)
+		if (duneWidth == 0)
+		{
 			return;
+		}
 		
    		
 		for (Set<Center> group : groups)
@@ -664,7 +684,7 @@ public class IconDrawer
 						
 						int i = rand.nextInt(duneImages.size());
 		           		iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i).getFirst(), 
-		           				duneImages.get(i).getSecond(), c.loc, width, true, false));
+		           				duneImages.get(i).getSecond(), c.loc, duneWidth, true, false));
 		           		centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
 					}
 				}
@@ -672,17 +692,11 @@ public class IconDrawer
 			}
 		}
 	}
-	
-	private int findDuneWidth()
-	{
-		double averageWidth = findMeanPolygonWidth(graph);
-		return (int)(averageWidth * 1.5);
-	}
 		
 	public void addTrees() throws IOException
 	{
 		addCenterTrees();
-		drawTreesForAllCenters();
+		drawTreesForCenters(graph.centers);
 	}
 	
 	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
@@ -782,18 +796,10 @@ public class IconDrawer
 	/**
 	 * Draws all trees in this.trees.
 	 */
-	public void drawTreesForAllCenters()
-	{
-		// Find the average width of all Centers.
-		double sum = 0;
-		for (Center c : graph.centers)
-		{
-			sum += findCenterWidthBetweenNeighbors(c);
-		}
-		double avgHeight = sum / graph.centers.size();
-		
+	public void drawTreesForCenters(List<Center> centersToDraw)
+	{	
 	       // Load the images and masks.
-        ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = getAllIconGroupsAndMasksForType(treesName);
+        ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.trees);
         if (treesById == null || treesById.isEmpty())
         {
 			Logger.println("Trees will not be drawn because no tree images were found.");
@@ -801,7 +807,7 @@ public class IconDrawer
         }
         
       	// Make the tree images small. I make them all the same height.
-        int scaledHeight = (int)(avgHeight * treeScale);
+        int scaledHeight = (int)(averageCenterWidth * treeScale);
        	if (scaledHeight == 0)
        	{
        		// Don't draw trees if they would all be size zero.
@@ -815,41 +821,64 @@ public class IconDrawer
 		       	tuple.setSecond(ImageHelper.scaleByHeight(tuple.getSecond(), scaledHeight));
         	}
         }
-		
-         // Store which corners have had trees drawn so that I don't draw them multiple times.
-        boolean[] cornersWithTreesDrawn = new boolean[graph.corners.size()];
         
-        for (Center c : graph.centers)
+        for (Center c : centersToDraw)
         {
         	CenterTrees cTrees = trees.get(c.index);
         	if (cTrees != null)
         	{
         		if (cTrees.treeType != null && treesById.containsKey(cTrees.treeType))
         		{
-		        	drawTreesAtCenterAndCorners(graph, cTrees.density, treesById.get(cTrees.treeType), avgHeight,
-								cornersWithTreesDrawn, c, cTrees.randomSeed);
-	        		}
+		        	drawTreesAtCenterAndCorners(graph, cTrees.density, treesById.get(cTrees.treeType), c);
+	        	}
         	}
         }
 	}
 
-	private void drawTreesAtCenterAndCorners(WorldGraph graph,
-			double density, List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double avgCenterHeight, 
-			boolean[] cornersWithTreesDrawn, Center center, long randomSeed)
+	private void drawTreesAtCenterAndCorners(WorldGraph graph, double density, List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, 
+			Center center)
 	{
-		Random rand = new Random(randomSeed);
-		drawTrees(graph, imagesAndMasks, avgCenterHeight, center.loc, density, center, rand);
+		CenterTrees cTrees = trees.get(center.index);
+		Random rand = new Random(cTrees.randomSeed);
+		drawTrees(graph, imagesAndMasks, center.loc, density, center, rand);
 			
 		// Draw trees at the neighboring corners too.
+		// Note that corners use their own Random instance because the random seed of that random needs to not depend on the center or else
+		// trees would be placed differently based on which center drew first.
 		for (Corner corner : center.corners)
 		{
-			if (!cornersWithTreesDrawn[corner.index])
+			if (shouldCenterDrawTreesForCorner(center, corner))
 			{
-				drawTrees(graph, imagesAndMasks, avgCenterHeight, corner.loc,
-						density, center, rand);
-				cornersWithTreesDrawn[corner.index] = true;
+				drawTrees(graph, imagesAndMasks, corner.loc, density, center, rand);
 			}
 		}
+	}
+	
+	/**
+	 * Ensures at most 1 center draws trees at each corner.
+	 */
+	private boolean shouldCenterDrawTreesForCorner(Center center, Corner corner)
+	{
+		Center centerWithSmallestIndex = null;
+		for (Center t : corner.touches)
+		{
+			CenterTrees tTrees = trees.get(t.index);
+			if (tTrees == null || tTrees.treeType == null && tTrees.treeType.equals(""))
+			{
+				continue;
+			}
+			
+			if (centerWithSmallestIndex == null || (t.index < centerWithSmallestIndex.index))
+			{
+				centerWithSmallestIndex = t;
+			}
+		}
+		
+		if (centerWithSmallestIndex != null)
+		{
+			return center.index == centerWithSmallestIndex.index;
+		}
+		return true;
 	}
 	
 	private static class ForestType
@@ -892,8 +921,7 @@ public class IconDrawer
        	return cSize;
 	}
 
-	private void drawTrees(WorldGraph graph,
-			List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, double cSize, Point loc,
+	private void drawTrees(WorldGraph graph, List<Tuple2<BufferedImage, BufferedImage>> imagesAndMasks, Point loc, 
 			double forestDensity, Center center, Random rand)
 	{
 		if (imagesAndMasks == null || imagesAndMasks.isEmpty())
@@ -917,7 +945,7 @@ public class IconDrawer
            	int x = (int) (loc.x);
            	int y = (int) (loc.y);
            	
-           	double sqrtSize = Math.sqrt(cSize);
+           	double sqrtSize = Math.sqrt(averageCenterWidth);
            	x += rand.nextGaussian() * sqrtSize*2.0;
            	y += rand.nextGaussian() * sqrtSize*2.0;
         	
@@ -946,258 +974,7 @@ public class IconDrawer
        	return false;
 	}
 	
-	/**
-	 * Loads icons which do not have groups, but which do have default widths in the file names.
-	 * 
-	 * @return A map from icon names (not including width or extension) to a tuple with the icon, mask, and width.
-	 */
-	private Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(final String iconType)
-	{
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new HashMap<>();
-		String[] fileNames = getIconGroupFileNames(iconType, null, getIconSetName(iconType));
-		if (fileNames.length == 0)
-		{
-			return imagesAndMasks;
-		}
-		
-		for (String fileName : fileNames)
-		{
-			String[] parts = FilenameUtils.getBaseName(fileName).split("width=");
-			if (parts.length < 2)
-			{
-				throw new RuntimeException("The icon " + fileName + " of type " + iconType + " must have its default width stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png.");
-			}
-			
-			String fileNameBaseWithoutWidth = getFileNameBaseWithoutWidth(fileName);
-			if (imagesAndMasks.containsKey(fileNameBaseWithoutWidth))
-			{
-				throw new RuntimeException("There are multiple icons for " + iconType + " named '" + fileNameBaseWithoutWidth + "' whose file names only differ by the width."
-						+ " Rename one of them");
-			}
 
-			Path path = Paths.get(getIconGroupPath(iconType, null, getIconSetName(iconType)), fileName);
-			if (!ImageCache.getInstance().containsImageFile(path))
-			{
-				Logger.println("Loading icon: " + path);
-			}
-			BufferedImage icon;
-			BufferedImage mask;
-			
-			icon = ImageCache.getInstance().getImageFromFile(path);
-			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
-			
-			
-			int width;
-			try
-			{
-				String widthStr = parts[parts.length - 1];
-				width = Integer.parseInt(widthStr);
-			}
-			catch (RuntimeException e)
-			{
-				throw new RuntimeException("Unable to load icon " + path.toString() + ". Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: " + e.getMessage(), e);
-			}
-			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple3<>(icon, mask, width));
-		}
-		
-		return imagesAndMasks;
-	}
-	
-	/**
-	 * Loads groups if icons, using iconType as a key word to filter on. 
-	 * The second image in the tuples is the mask, which is generated based on the image loaded from disk.
-	 */
-	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> getAllIconGroupsAndMasksForType(final String iconType)
-	{
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> imagesPerGroup = new ListMap<>();
-
-		String[] groupNames = getIconGroupNames(iconType);
-		for (String groupName : groupNames)
-		{
-			String[] fileNames = getIconGroupFileNames(iconType, groupName, getIconSetName(iconType));
-			String groupPath = getIconGroupPath(iconType, groupName, getIconSetName(iconType));
-			if (fileNames.length == 0)
-			{
-				continue;
-			}
-	
-			for (String fileName : fileNames)
-			{
-				Path path = Paths.get(groupPath, fileName);
-				if (!ImageCache.getInstance().containsImageFile(path))
-				{
-					Logger.println("Loading icon: " + path);
-				}
-				BufferedImage icon;
-				BufferedImage mask;
-				
-				icon = ImageCache.getInstance().getImageFromFile(path);
-				mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> createMask(icon));
-	
-				imagesPerGroup.add(groupName, new Tuple2<>(icon, mask));
-			}
-		}
-		return imagesPerGroup;
-	}
-	
-	private String getIconSetName(String iconType)
-	{
-		if (iconType.equals(citiesName))
-		{
-			return cityIconsSetName;
-		}
-		return null;
-	}
-	
-	public static Set<String> getIconSets(String iconType)
-	{
-		if (!doesUseSets(iconType))
-		{
-			throw new RuntimeException("Type '" + iconType + "' does not use sets.");
-		}
-		
-		String path = Paths.get(AssetsPath.get(), "icons", iconType).toString();
-		String[] folderNames = new File(path).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return file.isDirectory();
-			}
-		});
-		
-		Set<String> result = new HashSet<>();
-		result.addAll(Arrays.asList(folderNames));
-		return result;
-	}
-	
-	public static Set<String> getIconGroupFileNamesWithoutWidthOrExtension(String iconType, String groupName, String cityIconSetName)
-	{
-		String[] folderNames = getIconGroupFileNames(iconType, groupName, cityIconSetName);
-		Set<String> result = new HashSet<String>();
-		for (int i : new Range(folderNames.length))
-		{
-			result.add(getFileNameBaseWithoutWidth(folderNames[i]));
-		}
-		return result;
-	}
-	
-	private static String getFileNameBaseWithoutWidth(String fileName)
-	{
-		return fileName.substring(0, fileName.lastIndexOf("width="));
-	}
-	
-	/**
-	 * Gets the names of icon groups, which are folders under the icon type folder or the icon set folder which
-	 * contain images files.
-	 * @param iconType Name of a folder under assets/icons
-	 * @param setName Optional - for icon types that support it, it is a folder under assets/icons/<iconType>/
-	 * @return Array of file names sorted with no duplicates
-	 */
-	public static String[] getIconGroupNames(String iconType, String setName)
-	{
-		String path;
-		if (doesUseSets(iconType))
-		{
-			if (setName == null || setName.isEmpty())
-			{
-				return new String[] {};
-			}
-			path = Paths.get(AssetsPath.get(), "icons", iconType, setName).toString();
-		}
-		else
-		{
-			path = Paths.get(AssetsPath.get(), "icons", iconType).toString();
-		}
-		
-		String[] folderNames = new File(path).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return file.isDirectory();
-			}
-		});
-		
-		if (folderNames == null)
-		{
-			return new String[] {};
-		}
-		
-		Arrays.sort(folderNames);
-		return folderNames;
-	}
-	
-	public String[] getIconGroupNames(String iconType)
-	{
-		String setName = getIconSetName(iconType);
-		return getIconGroupNames(iconType, setName);
-	}
-	
-	public static String[] getIconGroupFileNames(String iconType, String groupName, String setName)
-	{
-		String path = getIconGroupPath(iconType, groupName, setName);
-		
-		String[] fileNames = new File(path).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return !file.isDirectory();
-			}
-		});
-		
-		if (fileNames == null)
-		{
-			return new String[] {};
-		}
-		
-		Arrays.sort(fileNames);
-		return fileNames;
-	}
-	
-	public static String getIconGroupPath(String iconType, String groupName, String setName)
-	{
-		String path;
-		if (iconType.equals(citiesName))
-		{
-			path = Paths.get(AssetsPath.get(), "icons", iconType, setName).toString();
-		}
-		else
-		{
-			if (doesUseSets(iconType))
-			{
-				// Not used yet
-				
-				if (setName == null || setName.isEmpty())
-				{
-					throw new IllegalArgumentException("The icon type " + iconType + " uses sets, but no set name was given.");
-				}
-				path = Paths.get(AssetsPath.get(), "icons", iconType, groupName, setName).toString(); 
-			}
-			else
-			{
-				path = Paths.get(AssetsPath.get(), "icons", iconType, groupName).toString();
-			}
-		}
-		return path;
-	}
-	
-	/**
-	 * Tells whether an icon type supports icon sets. Icon sets are an additional folder under the icon type folder
-	 * which is the name of the icon set. Under the icon set folder either image files or group folders of image files.
-	 * 
-	 * If an icon type supports sets, it should also return a value from getSetName.
-	 * @param iconType
-	 * @return
-	 */
-	private static boolean doesUseSets(String iconType)
-	{
-		return iconType.equals(citiesName);
-	}
 	
 	private static final int opaqueThreshold = 50;
 	
@@ -1355,5 +1132,54 @@ public class IconDrawer
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * Creates a bounding box that includes all icons drawn for a center the last time icons were drawn for it.
+	 * @param center Center to get icons bounds for.
+	 * @return A rectangle if center had icons drawn. Null otherwise.
+	 */
+	private Rectangle getBoundingBoxOfIconsForCenterFromLastDraw(Center center)
+	{
+		Rectangle bounds = null; 
+		for (IconDrawTask iconTask : iconsToDraw.get(center))
+		{
+			if (bounds == null)
+			{
+				bounds = iconTask.createBounds();
+			}
+			else
+			{
+				bounds.add(iconTask.createBounds());
+			}
+		}
+		
+		return bounds;
+	}
+	
+	/**
+	 * Creates a bounding box that includes all icons drawn for a collection of centers from the last time icons were drawn.
+	 * @param centers A collection of centers to get icons bounds for.
+	 * @return A rectangle if any of the centers had icons drawn. Null otherwise.
+	 */
+	public Rectangle getBoundinbBoxOfIconsForCentersFromLastdraw(Collection<Center> centers)
+	{
+		Rectangle bounds = null;
+		for (Center center: centers)
+		{
+			if (bounds == null)
+			{
+				bounds = getBoundingBoxOfIconsForCenterFromLastDraw(center);
+			}
+			else
+			{
+				Rectangle b = getBoundingBoxOfIconsForCenterFromLastDraw(center);
+				if (b != null)
+				{
+					bounds.add(b);
+				}
+			}
+		}
+		return bounds;
 	}
 }

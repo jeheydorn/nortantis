@@ -33,10 +33,8 @@ import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
 import hoten.voronoi.VoronoiGraph;
-import nortantis.CenterIcon;
-import nortantis.CenterIconType;
-import nortantis.CenterTrees;
-import nortantis.IconDrawer;
+import nortantis.IconType;
+import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.util.ImageHelper;
@@ -208,10 +206,10 @@ public class IconTool extends EditorTool
 		    		radioButtons);
 		}
 	    
-		mountainTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.mountainsName);
-		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.hillsName);
-		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.sandDunesName);
-		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconDrawer.treesName);
+		mountainTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.mountains);
+		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.hills);
+		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.sand);
+		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.trees);
 		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
 		
 		// River options
@@ -320,12 +318,12 @@ public class IconTool extends EditorTool
 		brushSizePanel.setVisible(!riversButton.isSelected());
 	}
 	
-	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, String iconType)
+	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, IconType iconType)
 	{
 	    JLabel typeLabel = new JLabel("Type:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String groupId : IconDrawer.getIconGroupNames(iconType, iconType == IconDrawer.citiesName ? settings.cityIconSetName : null))
+	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, iconType == IconType.cities ? settings.cityIconSetName : null))
 	    {
 	    	JRadioButton button = new JRadioButton(groupId);
 	    	group.add(button);
@@ -343,7 +341,7 @@ public class IconTool extends EditorTool
 	    JLabel typeLabel = new JLabel("Cities:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String fileNameWithoutWidthOrExtension : IconDrawer.getIconGroupFileNamesWithoutWidthOrExtension(IconDrawer.citiesName, null, settings.cityIconSetName))
+	    for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance().getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, settings.cityIconSetName))
 	    {
 	    	JRadioButton button = new JRadioButton(fileNameWithoutWidthOrExtension);
 	    	group.add(button);
@@ -644,7 +642,7 @@ public class IconTool extends EditorTool
 		{
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier);
 		}
-		mapParts.iconDrawer.clearAndAddIconsFromEdits(settings.edits, mapParts.sizeMultiplier);
+		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, mapParts.sizeMultiplier, mapParts.graph.centers); // TODO pass in only Centers that changed 
 		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
 		if (showRiversOnTopCheckBox.isSelected())
 		{

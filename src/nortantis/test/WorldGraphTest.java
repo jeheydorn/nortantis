@@ -6,8 +6,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import hoten.geom.Point;
-import nortantis.WorldGraph;
 import nortantis.PolarCoordinate;
+import nortantis.WorldGraph;
 
 public class WorldGraphTest 
 {	

@@ -1,6 +1,6 @@
 package nortantis.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -82,6 +82,12 @@ public class MapCreatorTest
 	public void noText_WithCities_GoldenRatio_withEdits()
 	{
 		generateAndCompare("noText_WithCities_GoldenRatio_withEdits.properties");
+	}
+	
+	@Test
+	public void allTypesOfEdits()
+	{
+		generateAndCompare("allTypesOfEdits.properties");
 	}
 	
 	private static String getExpectedMapFilePath(String settingsFileName)

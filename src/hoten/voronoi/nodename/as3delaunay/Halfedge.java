@@ -19,6 +19,12 @@ public final class Halfedge {
     public static Halfedge createDummy() {
         return create(null, null);
     }
+    
+    public static void clearPool()
+    {
+    	_pool.clear();
+    }
+    
     public Halfedge edgeListLeftNeighbor, edgeListRightNeighbor;
     public Halfedge nextInPriorityQueue;
     public Edge edge;

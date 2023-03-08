@@ -10,8 +10,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
-import nortantis.CenterIcon;
-import nortantis.CenterTrees;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
@@ -37,6 +35,10 @@ public class MapEdits implements Serializable
 	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
+	/**
+	 * Not stored. A flat the editor uses to tell TextDrawer to generate text and store it as edits.
+	 */
+	public boolean bakeGeneratedTextAsEdits;
 		
 	public MapEdits()
 	{

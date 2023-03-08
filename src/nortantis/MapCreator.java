@@ -4,7 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
@@ -23,10 +22,12 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIconType;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
@@ -51,7 +52,7 @@ public class MapCreator
 	}
 	
 	/**
-	 * Incrementally updates a map, given a list of centers that changed.
+	 * Updates a piece of a map, given a list of centers that changed.
 	 * Drawing text is currently not supported (it's not needed because the editor draws text as a separate step).
 	 * @param settings
 	 * @param mapParts
@@ -59,10 +60,45 @@ public class MapCreator
 	 * @param centersChanged
 	 * @return
 	 */
-	public BufferedImage UpdateIncremental(final MapSettings settings,  MapParts mapParts, BufferedImage map, Set<Center> centersChanged)
+	public void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage map, Set<Center> centersChanged)
 	{
-		return null;
+		if (centersChanged.size() == 0)
+		{
+			return;
+		}
+		
+		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
+		
+		// To handle edge/effects changes outside centersChangedBounds box caused by centers in centersChanged, pad the bounds of the
+		// snippet to replace to include the width of ocean effects, land effects, and with widest possible line that can be drawn,
+		// whichever is largest.
+		
+		double effectsPadding = Math.max(settings.oceanEffectSize, settings.landBlur);
+		// Increase effectsPadding by the maximum width of any line that can be drawn, probably a very wide river. Since it's no easy
+		// way to find that number, just guess.
+		effectsPadding = Math.max(effectsPadding, 20);
+		// The bounds to replace in the original map.
+		Rectangle snippetToReplaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
+		// Expand snippetToReplaceBounds to include all icons the centers in centersChanged drew the last time they were drawn.
+		Rectangle iconBounds = mapParts.iconDrawer.getBoundinbBoxOfIconsForCentersFromLastdraw(centersChanged);
+		if (iconBounds != null)
+		{
+			snippetToReplaceBounds = snippetToReplaceBounds.add(iconBounds);
+		}
+		
+		// The bounds of the snippet to draw. This is larger than the snippet to replace because ocean/land effects expand beyond the edges
+		// that draw them, and we need those to be included in the snippet to replace.
+		Rectangle snippetToDrawBounds = snippetToReplaceBounds.pad(effectsPadding, effectsPadding);
+		
+		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(snippetToDrawBounds), centersChanged.iterator().next());
+		
+		// Determine which icons to draw:
+		//	- Before drawing, remove the icons from iconsToDraw for the centers in centersChanged. Then add the new icons for those centers. Then redraw all icons except skip any whose bounds don't touch snippetToReplaceBounds.
+		//- Let snippet = Draw the map constrained to only draw snippetToDrawBounds, and only centers in centersToDraw.
+		//- Extract snippetToReplaceBounds image from snippet and replace it on the map. 		
 	}
+	
+
 
 	/**
 	 * Draws a map.
@@ -191,7 +227,7 @@ public class MapCreator
 		}
 		else
 		{
-			iconDrawer.clearAndAddIconsFromEdits(settings.edits, sizeMultiplier);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers);
 		}
 		
 		// Draw mask for land vs ocean.
@@ -518,7 +554,6 @@ public class MapCreator
 
 		Logger.println("Done creating map.");
 		
-		System.gc();
 		return map;
 	}
 	

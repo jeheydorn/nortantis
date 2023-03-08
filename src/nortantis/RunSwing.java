@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -24,13 +25,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Dictionary;
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
@@ -126,7 +123,6 @@ public class RunSwing
 	float fractalPower;
 	private JTextField textRandomSeedTextField;
 	public MapEdits edits;
-	private boolean showTextWarning = true;
 	/**
 	 * A flag to prevent warnings about text edits while loading settings into the gui.
 	 */
@@ -377,6 +373,7 @@ public class RunSwing
 						ImageCache.clear();
 						
 						BufferedImage map = new MapCreator().createMap(settings, null, null);
+						System.gc();
 						
 						Logger.println("Opening the map in your system's default image editor.");
 						String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
@@ -400,7 +397,6 @@ public class RunSwing
 			        }
 			    };
 			    worker.execute();
-			 
 			}
 		});
 		
@@ -430,8 +426,10 @@ public class RunSwing
 			        public BufferedImage doInBackground() throws IOException 
 			        {	
 			        	Dimension bounds = new Dimension(previewPanel.getWidth(), previewPanel.getHeight());
-
-						return new MapCreator().createMap(settings, bounds, null);
+			        	
+			        	BufferedImage map = new MapCreator().createMap(settings, bounds, null);
+			        	System.gc();
+						return map;
 			        }
 			        
 			        @Override
@@ -1570,8 +1568,8 @@ public class RunSwing
 	
 		final JMenuItem mntmSave = new JMenuItem("Save");
 		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
-		        java.awt.event.KeyEvent.VK_S, 
-		        java.awt.Event.CTRL_MASK));
+		        KeyEvent.VK_S, 
+		        KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(mntmSave);
 		mntmSave.addActionListener(new ActionListener()
 		{
@@ -1647,8 +1645,8 @@ public class RunSwing
 		
 		launchEditorMenuItem = new JMenuItem("Launch Editor");
 		launchEditorMenuItem.setAccelerator(KeyStroke.getKeyStroke(
-		        java.awt.event.KeyEvent.VK_E, 
-		        java.awt.Event.CTRL_MASK));
+		        KeyEvent.VK_E, 
+		        KeyEvent.CTRL_DOWN_MASK));
 		launchEditorMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
@@ -2153,7 +2151,7 @@ public class RunSwing
 		frayedEdgeSizeSlider.setValue(settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
 		cityProbabilitySlider.setValue((int)(settings.cityProbability * cityFrequencySliderScale));
-		initializeComboBoxItems(cityIconsSetComboBox, IconDrawer.getIconSets(IconDrawer.citiesName), settings.cityIconSetName);
+		initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities), settings.cityIconSetName);
 		if (settings.lineStyle.equals(LineStyle.Jagged))
 		{
 			jaggedLinesButton.setSelected(true);

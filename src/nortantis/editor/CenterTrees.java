@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.editor;
 
 import java.io.Serializable;
 
@@ -10,8 +10,8 @@ import java.io.Serializable;
 public class CenterTrees implements Serializable
 {
 	public String treeType;
-	double density;
-	long randomSeed;
+	public double density;
+	public long randomSeed;
 	
 	public CenterTrees(String treeType, double density, long seed)
 	{

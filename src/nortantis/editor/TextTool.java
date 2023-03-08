@@ -67,28 +67,23 @@ public class TextTool extends EditorTool
 				{
 					handleTextEdit(lastSelected);	
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_A) 
-						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
+				else if ((e.getKeyCode() == KeyEvent.VK_A) && e.isAltDown())
 				{
 					addButton.doClick();
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_E) 
-						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
+				else if ((e.getKeyCode() == KeyEvent.VK_E) && e.isAltDown())
 				{
 					editButton.doClick();
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_R) 
-						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
+				else if ((e.getKeyCode() == KeyEvent.VK_R) && e.isAltDown())
 				{
 					rotateButton.doClick();
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_M) 
-						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
+				else if ((e.getKeyCode() == KeyEvent.VK_M) && e.isAltDown())
 				{
 					moveButton.doClick();
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_D) 
-						&& ((e.getModifiers() & (KeyEvent.ALT_MASK)) != 0))
+				else if ((e.getKeyCode() == KeyEvent.VK_D) && e.isAltDown())
 				{
 					deleteButton.doClick();
 				}

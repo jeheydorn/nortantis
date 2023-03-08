@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import hoten.geom.Point;
+import hoten.geom.Rectangle;
 import nortantis.Biome;
-import nortantis.WorldGraph;
 import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
@@ -43,6 +43,9 @@ public class Center
     public float neighborsNotInSamePlateRatio;
     public Integer mountainRangeId;
     
+    /**
+     * Used to deterministically place trees so that edits don't cause changes in other centers.
+     */
 	public long treeSeed;
     
     public Center() {
@@ -133,5 +136,16 @@ public class Center
 		}
 		return c1.loc.distanceTo(c2.loc);
 	}
-
+	
+	public boolean isInBounds(Rectangle bounds)
+	{
+		for (Corner corner : corners)
+		{
+			if (bounds.inBounds(corner.loc))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }

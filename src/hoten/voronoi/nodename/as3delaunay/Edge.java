@@ -258,8 +258,8 @@ public final class Edge {
     public void clipVertices(Rectangle bounds) {
         double xmin = bounds.x;
         double ymin = bounds.y;
-        double xmax = bounds.right;
-        double ymax = bounds.bottom;
+        double xmax = bounds.getRight();
+        double ymax = bounds.getBottom();
 
         Vertex vertex0, vertex1;
         double x0, x1, y0, y1;

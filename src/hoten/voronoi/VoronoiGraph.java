@@ -40,7 +40,6 @@ public abstract class VoronoiGraph {
     final public ArrayList<Center> centers = new ArrayList<>();
     public Rectangle bounds;
     final protected Random rand;
-    public BufferedImage img;
     protected Color OCEAN, RIVER, LAKE, BEACH;
     protected NoisyEdges noisyEdges;
     /**
@@ -646,10 +645,10 @@ public abstract class VoronoiGraph {
 
 						x[2] = (int) ((closeEnough(edgeCorner1.loc.x, bounds.x,
 								1) || closeEnough(edgeCorner2.loc.x, bounds.x,
-								.5)) ? bounds.x : bounds.right);
+								.5)) ? bounds.x : bounds.getRight());
 						y[2] = (int) ((closeEnough(edgeCorner1.loc.y, bounds.y,
 								1) || closeEnough(edgeCorner2.loc.y, bounds.y,
-								.5)) ? bounds.y : bounds.bottom);
+								.5)) ? bounds.y : bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;

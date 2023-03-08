@@ -12,8 +12,8 @@ import java.util.Set;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
-import nortantis.WorldGraph;
 import nortantis.ImagePanel;
+import nortantis.WorldGraph;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends ImagePanel

@@ -69,7 +69,7 @@ public class NoisyEdges
 			if (edge.d0 != null && edge.d1 != null && edge.v0 != null && edge.v1 != null
 					&& (forceRebuild || paths.get(edge.index) == null))
 			{
-		    	Random rand = new Random(edge.noisyEdgeSeed);
+		    	Random rand = new Random(edge.noisyEdgesSeed);
 
 				double f = NOISY_LINE_TRADEOFF;
 				Point t = Point.interpolate(edge.v0.loc, edge.d0.loc, f);

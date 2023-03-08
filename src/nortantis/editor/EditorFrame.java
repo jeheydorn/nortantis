@@ -26,7 +26,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -40,9 +39,6 @@ import javax.swing.KeyStroke;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
-import hoten.voronoi.Center;
-import hoten.voronoi.Edge;
-import hoten.voronoi.VoronoiGraph;
 import nortantis.ImageCache;
 import nortantis.MapParts;
 import nortantis.MapSettings;
@@ -86,6 +82,11 @@ public class EditorFrame extends JFrame
 			// assignment causes the edits being created by the generator to be discarded. This is necessary
 			// to prevent a case where there are edits but the UI doesn't realize it.
 			settings.edits = new MapEdits();
+		}
+		
+		if (!hadEditsAtStartup)
+		{
+			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
 		
 		final EditorFrame thisFrame = this;
@@ -313,7 +314,7 @@ public class EditorFrame extends JFrame
 
 			public boolean dispatchKeyEvent(KeyEvent e)
 			{
-				if ((e.getKeyCode() == KeyEvent.VK_S) && ((e.getModifiers() & KeyEvent.CTRL_MASK) != 0))
+				if ((e.getKeyCode() == KeyEvent.VK_S) && e.isControlDown())
 				{
 					// Prevent multiple "save as" popups.
 					if (isSaving)
@@ -400,8 +401,8 @@ public class EditorFrame extends JFrame
 		JMenuItem mntmSave = new JMenuItem("Save");
 		mnFile.add(mntmSave);
 		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
-		        java.awt.event.KeyEvent.VK_S, 
-		        java.awt.Event.CTRL_MASK));
+		        KeyEvent.VK_S, 
+		        KeyEvent.CTRL_DOWN_MASK));
 		mntmSave.addActionListener(new ActionListener()
 		{
 			@Override
@@ -428,8 +429,8 @@ public class EditorFrame extends JFrame
 		undoButton = new JMenuItem("Undo");
 		mnEdit.add(undoButton);
 		undoButton.setAccelerator(KeyStroke.getKeyStroke(
-		        java.awt.event.KeyEvent.VK_Z, 
-		        java.awt.Event.CTRL_MASK));
+		        KeyEvent.VK_Z, 
+		        KeyEvent.CTRL_DOWN_MASK));
 		undoButton.addActionListener(new ActionListener()
 		{
 			@Override

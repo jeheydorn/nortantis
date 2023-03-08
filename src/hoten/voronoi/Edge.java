@@ -16,7 +16,10 @@ public class Edge implements Comparable<Edge>
     public Point midpoint;  // halfway between v0,v1
     public int river;
     public boolean isRoad;
-	public long noisyEdgeSeed;
+    /**
+     * Used to deterministically create noisy edges so that edits don't cause changes in other edges.
+     */
+	public long noisyEdgesSeed;
 
     public void setVornoi(Corner v0, Corner v1) {
         this.v0 = v0;

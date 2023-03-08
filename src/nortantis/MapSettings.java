@@ -3,6 +3,7 @@ package nortantis;
 import java.awt.Color;
 import java.awt.Font;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
@@ -22,6 +23,9 @@ import org.json.simple.JSONValue;
 
 import hoten.geom.Point;
 import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIcon;
+import nortantis.editor.CenterIconType;
+import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapEdits;
 import nortantis.editor.RegionEdit;
@@ -664,7 +668,7 @@ public class MapSettings implements Serializable
 			
 			if (setName == null || setName.isEmpty())
 			{
-				Set<String> sets = IconDrawer.getIconSets(IconDrawer.citiesName);
+				Set<String> sets = ImageCache.getInstance().getIconSets(IconType.cities);
 				if (sets.size() > 0)
 				{
 					setName = sets.iterator().next();
@@ -1023,6 +1027,32 @@ public class MapSettings implements Serializable
 	public boolean equals(Object other)
 	{
 		MapSettings o = (MapSettings)other;
+		
+		// Debug code for when equals unexpectedly returns false.
+//		if (!toProperties().equals(o.toProperties()))
+//		{
+//			PrintWriter pw;
+//			try
+//			{
+//				pw = new PrintWriter("thisDebug.properites");
+//				Properties thisProperties = this.toProperties();
+//				thisProperties.store(pw, "");
+//				pw.close();
+//				pw = new PrintWriter("otherDebug.properites");
+//				Properties otherProperties = o.toProperties();
+//				otherProperties.store(pw, "");
+//				pw.close();
+//			} 
+//			catch (FileNotFoundException e)
+//			{
+//				throw new RuntimeException(e);
+//			} 
+//			catch (IOException e)
+//			{
+//				throw new RuntimeException(e);
+//			}
+//		}
+
 		return toProperties().equals(o.toProperties());
 	}
 	

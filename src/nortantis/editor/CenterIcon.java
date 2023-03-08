@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.editor;
 
 import java.io.Serializable;
 

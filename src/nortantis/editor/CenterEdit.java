@@ -2,9 +2,6 @@ package nortantis.editor;
 
 import java.io.Serializable;
 
-import nortantis.CenterIcon;
-import nortantis.CenterTrees;
-
 /**
  * Stores edits made to a polygon (a "center") of a map.
  */

@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.BorderFactory;
@@ -32,7 +31,6 @@ import javax.swing.SwingWorker;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
 import hoten.voronoi.VoronoiGraph;
-import nortantis.ImageCache;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.MapParts;
@@ -242,7 +240,8 @@ public abstract class EditorTool
 					{
 						mapParts = new MapParts();
 					}
-					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);			
+					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);	
+					System.gc();
 					
 					return map;
 				} 

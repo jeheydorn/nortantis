@@ -58,6 +58,11 @@ class IconDrawTask implements Comparable<IconDrawTask>
 	{
 		return new Area(new java.awt.Rectangle((int)(centerLoc.x - scaledWidth/2.0), (int)(centerLoc.y - scaledHeight/2.0), scaledWidth, scaledHeight));
 	}
+	
+	public hoten.geom.Rectangle createBounds()
+	{
+		return new hoten.geom.Rectangle(centerLoc.x - scaledWidth/2.0, centerLoc.y - scaledHeight/2.0, scaledWidth, scaledHeight);
+	}
 
 	@Override
 	public int compareTo(IconDrawTask other)

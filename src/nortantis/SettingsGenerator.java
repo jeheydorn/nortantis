@@ -2,7 +2,6 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -131,7 +130,7 @@ public class SettingsGenerator
 		{
 			settings.cityProbability = 0.0;
 		}
-		Set<String> cityIconSets = IconDrawer.getIconSets(IconDrawer.citiesName);
+		Set<String> cityIconSets = ImageCache.getInstance().getIconSets(IconType.cities);
 		if (cityIconSets.size() > 0)
 		{
 			settings.cityIconSetName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconSets));

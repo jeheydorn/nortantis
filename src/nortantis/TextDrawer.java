@@ -25,7 +25,6 @@ import java.util.TreeSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
@@ -48,7 +47,6 @@ public class TextDrawer
 	private final int mountainRangeMinSize = 50;
 	// y offset added to names of mountain groups smaller than a range.
 	private final double mountainGroupYOffset = 67;
-	private final int backGroundBlendKernelBaseSize = 10;
 	// How big a river must be , in terms of edge.river, to be considered for labeling.
 	private final int riverMinWidth = 3;
 	// Rivers shorter than this will not be named. This must be at least 3.
@@ -72,7 +70,6 @@ public class TextDrawer
 	private NameGenerator personNameGenerator;
 	private NameCompiler nameCompiler;
 	Area graphBounds;
-	private double sizeMultiplyer;
 	private Font titleFontScaled;
 	private Font regionFontScaled;
 	private Font mountainRangeFontScaled;
@@ -89,9 +86,8 @@ public class TextDrawer
 	public TextDrawer(MapSettings settings, double sizeMultiplyer)
 	{
 		this.settings = settings;
-		this.sizeMultiplyer = sizeMultiplyer;
 		
-		if (settings.edits != null && settings.edits.text != null)
+		if (settings.edits != null && settings.edits.text != null && settings.edits.text.size() > 0)
 		{
 			// Set the MapTexts in this TextDrawer to be the same object as settings.edits.text.
 	    	// This makes it so that any edits done to the settings will automatically be reflected
@@ -99,10 +95,14 @@ public class TextDrawer
 	    	// map texts, which are needed to make them clickable to edit them.
 			mapTexts = settings.edits.text;
 		}
-		else if (settings.edits != null && settings.edits.text == null)
+		else if (settings.edits != null && settings.edits.bakeGeneratedTextAsEdits)
 		{
 			mapTexts = new CopyOnWriteArrayList<>();
 			settings.edits.text = mapTexts;
+			// Clear the flag below because the text only needs to be generated once in the editor 
+			// (although realistically it doesn't matter because the case above this one will be taken
+			// if text generate created at least one text, which it will).
+			settings.edits.bakeGeneratedTextAsEdits = false;
 		}
 		else
 		{

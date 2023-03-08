@@ -6,6 +6,7 @@ import java.awt.Polygon;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import hoten.geom.Point;
+import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
@@ -116,7 +118,7 @@ public class WorldGraph extends VoronoiGraph
     	
     	for (Edge e : edges)
     	{
-    		e.noisyEdgeSeed = rand.nextLong();
+    		e.noisyEdgesSeed = rand.nextLong();
     	}
     }
     
@@ -1041,6 +1043,29 @@ public class WorldGraph extends VoronoiGraph
 		centroid.y /= centers.size();
 		
 		return centroid;
+	}
+
+	public static Rectangle getBoundingBox(Collection<Center> centers)
+	{
+		if (centers.size() == 0)
+		{
+			return null;
+		}
+		
+		// Start at a point we know is inside the desired bounds.
+		Point start = centers.iterator().next().loc;
+		Rectangle bounds = new Rectangle(start.x, start.y, 0, 0);
+		
+		// Add each corner to the bounds.
+		for (Center center : centers)
+		{
+			for (Corner corner : center.corners)
+			{
+				bounds = bounds.add(corner.loc);
+			}
+		}
+		
+		return bounds;
 	}
 
 	/**

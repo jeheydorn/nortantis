@@ -1,6 +1,5 @@
 package nortantis;
 
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Set;
