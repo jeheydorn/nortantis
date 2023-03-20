@@ -332,7 +332,7 @@ public class Background
 				BufferedImage landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, 
 						new java.awt.Point((int) drawBounds.x, (int) drawBounds.y));
 				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), (int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);
-				ImageHelper.CopySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
 			}
 		}
 		
@@ -365,6 +365,11 @@ public class Background
 		}
 				
 		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm, where);
+	}
+	
+	public BufferedImage createOceanSnippet(Rectangle boundsToCopyFrom)
+	{
+		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toAwTRectangle());
 	}
 
 }

@@ -415,7 +415,7 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		createAndShowMap();	
+		createAndShowMapIncrementalUsingCenters(centers);	
 	}
 
 	@Override
@@ -474,7 +474,7 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected void onBeforeCreateMap()
+	protected void onBeforeCreateMapFull()
 	{
 		// Change a few settings to make map creation faster.
 		settings.resolution = zoom;
@@ -491,7 +491,7 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType)
 	{
 		return map;
 	}

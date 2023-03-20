@@ -3,7 +3,6 @@ package nortantis;
 import java.awt.Color;
 import java.awt.Font;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;

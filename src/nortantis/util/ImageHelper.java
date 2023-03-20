@@ -1628,8 +1628,8 @@ public class ImageHelper
 	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by 
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
-	public static void CopySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source, java.awt.Point upperLeftCornerToPasteIntoInTarget, 
-			java.awt.Rectangle boundsInSourceToCopyFrom)
+	public static void copySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source, 
+			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom)
 	{
 		java.awt.Rectangle targetBounds = new java.awt.Rectangle(0, 0, target.getWidth(), target.getHeight());
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
@@ -1647,5 +1647,28 @@ public class ImageHelper
 				target.setRGB(targetX, targetY, value);
 			}
 		}
+	}
+	
+	public static BufferedImage copySnippet(BufferedImage source, java.awt.Rectangle boundsInSourceToCopyFrom)
+	{
+		java.awt.Rectangle sourceBounds = new java.awt.Rectangle(0, 0, source.getWidth(), source.getHeight());
+		BufferedImage result = new BufferedImage(boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height, source.getType());
+		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
+		{
+			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)
+			{
+				int sourceX = x + boundsInSourceToCopyFrom.x;
+				int sourceY = y + boundsInSourceToCopyFrom.y;
+				if (!sourceBounds.contains(sourceX, sourceY))
+				{
+					continue;
+				}
+				
+				int value = source.getRGB(sourceX, sourceY);
+				result.setRGB(x, y, value);
+			}
+		}
+		
+		return result;
 	}
 }

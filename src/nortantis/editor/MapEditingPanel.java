@@ -91,7 +91,9 @@ public class MapEditingPanel extends ImagePanel
 	public void clearProcessingCenters()
 	{
 		if (processingCenters != null)
+		{
 			processingCenters.clear();
+		}
 	}
 	
 	public void setShowLakes(boolean enabled)

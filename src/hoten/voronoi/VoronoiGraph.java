@@ -741,11 +741,11 @@ public abstract class VoronoiGraph {
 				
 		if (centersToRender == null)
 		{
-			drawPolygons(g, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+			drawPolygons(g, colorChooser);
 		}
 		else
 		{
-			drawPolygons(g, centersToRender, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+			drawPolygons(g, centersToRender, colorChooser);
 		}
 		
 		if (drawBounds != null)

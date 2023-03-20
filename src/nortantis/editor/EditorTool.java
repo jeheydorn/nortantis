@@ -53,8 +53,9 @@ public abstract class EditorTool
 	protected EditorFrame parent;
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
-	private boolean mapNeedsRedraw;
+	private boolean mapNeedsFullRedraw;
 	private boolean mapNeedsQuickUpdate;
+	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	private boolean mapIsBeingDrawn;
 	private ReentrantLock drawLock;
 	Stack<MapChange> undoStack;
@@ -74,6 +75,7 @@ public abstract class EditorTool
 		undoStack = new Stack<>();
 		redoStack = new Stack<>();
 		drawLock  = new ReentrantLock();
+		incrementalUpdatesToDraw = new ArrayDeque<>();
 	}
 	
 	private class MapChange
@@ -173,7 +175,7 @@ public abstract class EditorTool
 		mapParts = null;
 		
 		mapEditingPanel.repaint();
-		createAndShowMap();
+		createAndShowMap(UpdateType.Full);
 	}
 
 	protected abstract void handleMouseClickOnMap(MouseEvent e);
@@ -184,7 +186,7 @@ public abstract class EditorTool
 	protected abstract void handleMouseExitedMap(MouseEvent e);
 
 	
-	protected abstract void onBeforeCreateMap();
+	protected abstract void onBeforeCreateMapFull();
 	
 	/**
 	 * Do any processing to the generated map before displaying it, and return the map to display.
@@ -192,29 +194,75 @@ public abstract class EditorTool
 	 * @param map The generated map
 	 * @return The map to display
 	 */
-	protected abstract BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate);
+	protected abstract BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType);
 	
-	public void createAndShowMap()
+	public void updateChangedCentersOnMap(Set<Center> centersChanged)
 	{
-		createAndShowMap(false);
+		createAndShowMap(UpdateType.Incremental, centersChanged, null);
+	}
+	
+	public void updateChangedEdgesOnMap(Set<Edge> edgesChanged)
+	{
+		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
+	}
+	
+	/**
+	 * Do a quick redraw of the map. To use this, a child class must override drawMapQuickUpdate to define what a quick redraw is.
+	 */
+	public void quickRedrawMap()
+	{
+		createAndShowMap(UpdateType.Quick);
+	}
+	
+	/**
+	 * Redraws the map, then displays it. Use only with UpdateType.Full and UpdateType.Quick.
+	 */
+	public void createAndShowMap(UpdateType updateType)
+	{
+		if (updateType == UpdateType.Incremental)
+		{
+			throw new IllegalArgumentException("Incremental updates must use the overload of createAndShowMap that "
+					+ "passes in the things that changed.");
+		}
+		
+		createAndShowMap(updateType, null, null);
+	}
+	
+	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
+	{
+		createAndShowMap(UpdateType.Incremental, centersChanged, null);
+	}
+	
+	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
+	{
+		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
 	}
 	
 	/**
 	 * Redraws the map, then displays it
-	 * @param quickUpdate If true, only a quick update will be done instead of redrawing the entire map. 
-	 * 					  To use this, a child class must override drawMapQuickUpdate.
 	 */
-	public void createAndShowMap(boolean quickUpdate)
+	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
 		if (mapIsBeingDrawn)
 		{
-			if (quickUpdate)
+			if (updateType == UpdateType.Full)
+			{
+				mapNeedsFullRedraw = true;
+				mapNeedsQuickUpdate = false;
+				incrementalUpdatesToDraw.clear();
+			}
+			else if (updateType == UpdateType.Quick)
 			{
 				mapNeedsQuickUpdate = true;
 			}
-			else
+			else if (updateType == UpdateType.Incremental)
 			{
-				mapNeedsRedraw = true;
+				if (centersChanged == null && edgesChanged == null)
+				{
+					throw new IllegalArgumentException("Either centersChanged or edgesChagned must be passed in.");
+				}
+
+				incrementalUpdatesToDraw.add(new IncrementalUpdate(centersChanged, edgesChanged));
 			}
 			return;
 		}
@@ -222,8 +270,11 @@ public abstract class EditorTool
 		mapIsBeingDrawn = true;
 		parent.enableOrDisableToolToggleButtonsAndZoom(false);
 		
-		onBeforeCreateMap();
-
+		if (updateType == UpdateType.Full)
+		{
+			onBeforeCreateMapFull();
+		}
+		
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
 	    {
 	        @Override
@@ -232,19 +283,36 @@ public abstract class EditorTool
 	        	drawLock.lock();
 				try
 				{	
-					if (quickUpdate)
+					if (updateType == UpdateType.Quick)
 					{
 						return drawMapQuickUpdate();
 					}
-					
-					if (mapParts == null)
+					else if (updateType == UpdateType.Full)
 					{
-						mapParts = new MapParts();
+						if (mapParts == null)
+						{
+							mapParts = new MapParts();
+						}
+						BufferedImage map = new MapCreator().createMap(settings, null, mapParts);	
+						System.gc();
+						return map;
 					}
-					BufferedImage map = new MapCreator().createMap(settings, null, mapParts);	
-					System.gc();
-					
-					return map;
+					else
+					{
+						BufferedImage map = mapEditingPanel.image;
+						// Incremental update
+						if (centersChanged != null)
+						{
+							new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
+							return map;
+						}
+						else if (edgesChanged != null)
+						{
+							new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
+							return map;
+						}
+						throw new IllegalStateException("Map cannot be re-drawn incremental without passing in what changed.");
+					}
 				} 
 				finally
 				{
@@ -291,26 +359,51 @@ public abstract class EditorTool
 	            	{
 	            		copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 	            	}
-	            	map = onBeforeShowMap(map, quickUpdate);
+	            	map = onBeforeShowMap(map, updateType);
 	            	
 	            	mapEditingPanel.image = map; 
 	            	parent.enableOrDisableToolToggleButtonsAndZoom(true);
 
 	            	mapIsBeingDrawn = false;
-		            if (mapNeedsRedraw || mapNeedsQuickUpdate)
+		            if (mapNeedsFullRedraw)
 		            {
-		            	createAndShowMap(!mapNeedsRedraw);
+		            	createAndShowMap(UpdateType.Full);
 		            }
+		            else if (mapNeedsQuickUpdate)
+		            {
+		            	createAndShowMap(UpdateType.Quick);
+		            }
+		            else if (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0)
+		            {
+	            		IncrementalUpdate incrementalUpdate = incrementalUpdatesToDraw.pop();
+	            		createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
+	            	}
 		            else
-		            {
-		         		mapEditingPanel.clearProcessingCenters();
+	            	{
+	            		mapEditingPanel.clearProcessingCenters();
 		         		mapEditingPanel.clearProcessingEdges();
-		            }
+		         		// Add back the centers and edges not yet processed.
+		         		for (IncrementalUpdate incrementalUpdate : incrementalUpdatesToDraw)
+		         		{
+		         			if (incrementalUpdate.centersChanged != null)
+		         			{
+		         				mapEditingPanel.addAllProcessingCenters(incrementalUpdate.centersChanged);
+		         			}
+		         			if (incrementalUpdate.edgesChanged != null)
+		         			{
+		         				mapEditingPanel.addAllProcessingEdges(edgesChanged);
+		         			}
+		         		}
+	            	}
 		            
-		            mapNeedsQuickUpdate = false;
-		            if (!quickUpdate)
+		            if (updateType == UpdateType.Full)
 		            {
-		            	mapNeedsRedraw = false;
+			            mapNeedsQuickUpdate = false;
+		            	mapNeedsFullRedraw = false;
+		            }
+		            else if (updateType == UpdateType.Quick)
+		            {
+		            	 mapNeedsQuickUpdate = false;
 		            }
 	             		     
 		            mapEditingPanel.repaint();
@@ -566,6 +659,18 @@ public abstract class EditorTool
 		}
 		
 		setUndoPoint(true);
-		createAndShowMap(false);
+		createAndShowMap(UpdateType.Full);
+	}
+	
+	private class IncrementalUpdate
+	{
+		public IncrementalUpdate(Set<Center> centersChanged, Set<Edge> edgesChanged)
+		{
+			this.centersChanged = centersChanged;
+			this.edgesChanged = edgesChanged;
+		}
+		
+		Set<Center> centersChanged;
+		Set<Edge> edgesChanged;
 	}
 }

@@ -292,7 +292,7 @@ public class IconTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				createAndShowMap();
+				createAndShowMap(UpdateType.Full);
 			}
 		});
 	    		
@@ -538,7 +538,7 @@ public class IconTool extends EditorTool
 			
 			if (river.size() > 0)
 			{
-				createAndShowMap();
+				createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
 		
@@ -598,7 +598,7 @@ public class IconTool extends EditorTool
 	}
 
 	@Override
-	protected void onBeforeCreateMap()
+	protected void onBeforeCreateMapFull()
 	{
 		// Change a few settings to make map creation faster.
 		settings.resolution = zoom;
@@ -613,9 +613,11 @@ public class IconTool extends EditorTool
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean  isQuickUpdate)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType)
 	{
-		if (!isQuickUpdate)
+		// TODO handle incremental updates
+		
+		if (updateType == UpdateType.Full)
 		{
 			mapWithouticons = ImageHelper.deepCopy(map);
 			
@@ -623,7 +625,7 @@ public class IconTool extends EditorTool
 			{
 				MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
 			}
-			mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
+			mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground, null);
 		}
 		
 		if (showRiversOnTopCheckBox.isSelected())
@@ -643,7 +645,7 @@ public class IconTool extends EditorTool
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
 		}
 		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, mapParts.sizeMultiplier, mapParts.graph.centers); // TODO pass in only Centers that changed 
-		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground);
+		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground, null);
 		if (showRiversOnTopCheckBox.isSelected())
 		{
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
@@ -668,7 +670,14 @@ public class IconTool extends EditorTool
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		createAndShowMap(onlyUpdateIcons);
+		if (onlyUpdateIcons)
+		{
+			createAndShowMap(UpdateType.Quick);
+		}
+		else
+		{
+			createAndShowMapIncrementalUsingCenters(centers);
+		}
 	}
 
 

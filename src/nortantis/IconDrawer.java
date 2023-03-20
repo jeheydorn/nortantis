@@ -18,7 +18,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Map.Entry;
 
 import hoten.geom.Point;
 import hoten.geom.Rectangle;
@@ -388,12 +387,12 @@ public class IconDrawer
 	 * when I draw an icon that is transparent (such as a hand drawn mountain), I cannot see
 	 * other mountains through it.
 	 */
-	private void drawIconWithBackgroundAndMask(BufferedImage map, BufferedImage icon, 
-			BufferedImage mask, BufferedImage background, int xCenter, int yCenter, boolean ignoreMaxSize)
+	private void drawIconWithBackgroundAndMask(BufferedImage mapOrSnippet, BufferedImage icon, 
+			BufferedImage mask, BufferedImage backgroundOrSnippet, int xCenter, int yCenter, boolean ignoreMaxSize)
 	{   	
-    	if (map.getWidth() != background.getWidth())
+    	if (mapOrSnippet.getWidth() != backgroundOrSnippet.getWidth())
     		throw new IllegalArgumentException();
-       	if (map.getHeight() != background.getHeight())
+       	if (mapOrSnippet.getHeight() != backgroundOrSnippet.getHeight())
     		throw new IllegalArgumentException();
        	if (mask.getWidth() != icon.getWidth())
        		throw new IllegalArgumentException("The given mask's width does not match the icon' width.");
@@ -421,8 +420,8 @@ public class IconDrawer
 				int yLoc = yBottom + y;
 				try
 				{
-					bgColor = new Color(background.getRGB(xLoc, yLoc));
-					mapColor = new Color(map.getRGB(xLoc, yLoc));
+					bgColor = new Color(backgroundOrSnippet.getRGB(xLoc, yLoc));
+					mapColor = new Color(mapOrSnippet.getRGB(xLoc, yLoc));
 				}
 				catch (IndexOutOfBoundsException e)
 				{
@@ -434,16 +433,18 @@ public class IconDrawer
 				int green = (int)(alpha * (iconColor.getGreen()) + (1 - alpha) * (maskLevel * bgColor.getGreen() + (1 - maskLevel) * mapColor.getGreen()));
 				int blue = (int)(alpha * (iconColor.getBlue()) + (1 - alpha) * (maskLevel * bgColor.getBlue() + (1 - maskLevel) * mapColor.getBlue()));
 				
-				map.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
+				mapOrSnippet.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
 			}
 	}
 
 	/**
-	 * Draws all icons in iconsToDraw. I draw all the icons at once this way so that I can sort
+	 * Draws all icons in iconsToDraw that touch drawBounds. 
+	 * 
+	 * I draw all the icons at once this way so that I can sort
 	 * the icons by the y-coordinate of the base of each icon. This way icons lower on the map
 	 * are drawn in front of those that are higher.
 	 */
-	public void drawAllIcons(BufferedImage map, BufferedImage background)
+	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, Rectangle drawBounds)
 	{	
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
@@ -460,23 +461,29 @@ public class IconDrawer
 		List<Runnable> jobs = new ArrayList<>();
 		for (final IconDrawTask task : tasks)
 		{
-			jobs.add(new Runnable()
+			if (drawBounds == null || task.overlaps(drawBounds))
 			{
-				@Override
-				public void run()
+				jobs.add(new Runnable()
 				{
-			       	task.scaleIcon();
-				}			
-			});
+					@Override
+					public void run()
+					{
+				       	task.scaleIcon();
+					}			
+				});
+			}
 		}
 		Helper.processInParallel(jobs);
+		
+		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
+		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 		
 		for (final IconDrawTask task : tasks)
 		{
 			if (!isIconTouchingWater(task))
 			{
-				drawIconWithBackgroundAndMask(map, task.icon, task.mask, background, (int)task.centerLoc.x,
-						(int)task.centerLoc.y, task.ignoreMaxSize);
+				drawIconWithBackgroundAndMask(mapOrSnippet, task.icon, task.mask, background, ((int)task.centerLoc.x) - xToSubtract,
+						((int)task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
 			}
 		}		
 	}

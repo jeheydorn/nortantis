@@ -231,7 +231,7 @@ public class TextTool extends EditorTool
 	}
 	
 	@Override
-	protected void onBeforeCreateMap()
+	protected void onBeforeCreateMapFull()
 	{
 		// Change a few settings to make map creation faster.
 		settings.resolution = zoom;
@@ -247,7 +247,7 @@ public class TextTool extends EditorTool
 	}
 	
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, boolean isQuickUpdate)
+	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType udpateType)
 	{    
     	// Add text to the map
 		mapWithoutText = map;

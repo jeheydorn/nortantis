@@ -39,6 +39,31 @@ public class Rectangle
 		return true;
 	}
 	
+	public boolean overlaps(Rectangle other)
+	{
+		if (inBounds(other.x, other.y))
+		{
+			return true;
+		}
+		
+		if (inBounds(other.x + other.width, other.y))
+		{
+			return true;
+		}
+		
+		if (inBounds(other.x, other.y + other.height))
+		{
+			return true;
+		}
+		
+		if (inBounds(other.x + other.width, other.y + other.height))
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public Rectangle add(Point point)
 	{
 		return add(point.x, point.y);
