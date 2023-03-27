@@ -37,14 +37,12 @@ import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
-import nortantis.util.ImageHelper;
 
 public class IconTool extends EditorTool
 {
 
 	private JRadioButton mountainsButton;
 	private JRadioButton treesButton;
-	private BufferedImage mapWithouticons;
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
 	private JRadioButton hillsButton;
@@ -292,7 +290,7 @@ public class IconTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				createAndShowMap(UpdateType.Full);
+				createAndShowMapFull();
 			}
 		});
 	    		
@@ -365,8 +363,6 @@ public class IconTool extends EditorTool
 		{
 			return;
 		}
-		
-		boolean needsFullRedraw = false;
 
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 
@@ -424,7 +420,6 @@ public class IconTool extends EditorTool
 						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
 						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
 						{
-							needsFullRedraw = true;
 							eEdit.riverLevel = 0;
 						}
 					}
@@ -491,14 +486,13 @@ public class IconTool extends EditorTool
 						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
 						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
 						{
-							needsFullRedraw = true;
 							eEdit.riverLevel = 0;
 						}
 					}
 				}	
 			}
 		}
-		handleMapChange(selected, !needsFullRedraw);
+		handleMapChange(selected);
 	}
 	
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
@@ -608,26 +602,13 @@ public class IconTool extends EditorTool
 		settings.drawText = false;
 		settings.grungeWidth = 0;
 		settings.drawBorder = false;
-		settings.drawIcons = false;
-		settings.drawRivers = false;
 	}
 
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType)
-	{
-		// TODO handle incremental updates
-		
-		if (updateType == UpdateType.Full)
-		{
-			mapWithouticons = ImageHelper.deepCopy(map);
-			
-			if (!showRiversOnTopCheckBox.isSelected())
-			{
-				MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
-			}
-			mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground, null);
-		}
-		
+	{	
+		// TODO Figure out how to efficiently handle drawing rivers on top with increment metal drawing.
+					
 		if (showRiversOnTopCheckBox.isSelected())
 		{
 			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
@@ -637,27 +618,9 @@ public class IconTool extends EditorTool
 	}
 	
 	@Override
-	protected BufferedImage drawMapQuickUpdate()
-	{
-		BufferedImage map = ImageHelper.deepCopy(mapWithouticons);
-		if (!showRiversOnTopCheckBox.isSelected())
-		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
-		}
-		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, mapParts.sizeMultiplier, mapParts.graph.centers); // TODO pass in only Centers that changed 
-		mapParts.iconDrawer.drawAllIcons(map, mapParts.landBackground, null);
-		if (showRiversOnTopCheckBox.isSelected())
-		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
-		}
-
-		return map;
-	}
-	
-	@Override
-	protected void onAfterUndoRedo(boolean requiresFullRedraw)
+	protected void onAfterUndoRedo(MapChange change)
 	{	
-		createAndShowMap();
+		createAndShowMapFromChange(change);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
@@ -665,19 +628,12 @@ public class IconTool extends EditorTool
 		return getSelectedCenters(point, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
 	}
 	
-	private void handleMapChange(Set<Center> centers, boolean onlyUpdateIcons)
+	private void handleMapChange(Set<Center> centers)
 	{
 		mapEditingPanel.addAllProcessingCenters(centers);
 		mapEditingPanel.repaint();
 		
-		if (onlyUpdateIcons)
-		{
-			createAndShowMap(UpdateType.Quick);
-		}
-		else
-		{
-			createAndShowMapIncrementalUsingCenters(centers);
-		}
+		createAndShowMapIncrementalUsingCenters(centers);
 	}
 
 

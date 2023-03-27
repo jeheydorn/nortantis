@@ -310,14 +310,14 @@ public class Background
 				(int)(image.getHeight() - borderWidthScaled * 2));
 	}
 	
-	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph, Set<Center> centersChanged, Rectangle drawBounds, 
+	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph, Set<Center> centersToDraw, Rectangle drawBounds, 
 			Rectangle replaceBounds)
 	{
 		if (shouldDrawRegionColors)
 		{
 			// The image "land" is generated but doesn't yet have colors.
 		
-			if (drawBounds == null || centersChanged == null)
+			if (drawBounds == null || centersToDraw == null)
 			{
 				regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 				graph.drawRegionIndexes(regionIndexes.createGraphics(), null, null);
@@ -328,7 +328,7 @@ public class Background
 			{
 				// Update only a piece of the land
 				regionIndexes = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
-				graph.drawRegionIndexes(regionIndexes.createGraphics(), centersChanged, drawBounds);
+				graph.drawRegionIndexes(regionIndexes.createGraphics(), centersToDraw, drawBounds);
 				BufferedImage landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, 
 						new java.awt.Point((int) drawBounds.x, (int) drawBounds.y));
 				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), (int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);

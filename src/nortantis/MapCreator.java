@@ -130,7 +130,7 @@ public class MapCreator
 			applyEdgeEdits(mapParts.graph, settings.edits, getEdgeEditsForEdges(settings.edits, edgesChanged));
 		}
 		
-		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersChanged, drawBounds, drawBounds);
+		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, drawBounds);
 		
 		
 		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersToDraw);
@@ -144,7 +144,8 @@ public class MapCreator
 			mapParts.graph.drawLandAndOceanBlackAndWhite(g, centersToDraw, drawBounds);
 		}
 		
-		BufferedImage mapSnippet =  ImageHelper.maskWithColor(mapParts.background.land, Color.black, landMask, false);
+		BufferedImage mapSnippet =  ImageHelper.maskWithColor(ImageHelper.copySnippet(mapParts.background.land, drawBounds.toAwTRectangle()),
+					Color.black, landMask, false);
 		
 		mapSnippet = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet, landMask, 
 				mapParts.background, centersToDraw, drawBounds);
@@ -159,9 +160,10 @@ public class MapCreator
 			mapParts.graph.drawRegionBorders(g, sizeMultiplier, true, centersToDraw, drawBounds);
 		}
 
+		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
 		if (settings.drawRivers)
 		{
-			drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, getEdgesFromCenters(mapParts.graph, centersToDraw), drawBounds);
+			drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
 		}
 		
 		if (settings.drawIcons)
@@ -196,19 +198,19 @@ public class MapCreator
 		{
 			Graphics2D g = mapSnippet.createGraphics();
 			g.setColor(settings.coastlineColor);
-			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
+			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
 		{
 			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
-			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
+			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
 		
 		// Add the rivers to landBackground so that the text doesn't erase them. I do this whether or not I draw text
 		// because I might draw the text later.
 		if (settings.drawRivers)
 		{
-			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, null, null);
+			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
 		}
 
 

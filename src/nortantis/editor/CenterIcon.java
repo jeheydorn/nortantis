@@ -1,6 +1,7 @@
 package nortantis.editor;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Stores which icon, if any, to draw for a center.
@@ -31,5 +32,19 @@ public class CenterIcon implements Serializable
 		this.iconGroupId = "";
 		this.iconIndex = -1;
 		this.iconName = iconName;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CenterIcon other = (CenterIcon) obj;
+		return Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
+				&& iconType == other.iconType;
 	}
 }

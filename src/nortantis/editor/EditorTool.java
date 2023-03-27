@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Stack;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -54,7 +55,6 @@ public abstract class EditorTool
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
 	private boolean mapNeedsFullRedraw;
-	private boolean mapNeedsQuickUpdate;
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	private boolean mapIsBeingDrawn;
 	private ReentrantLock drawLock;
@@ -78,16 +78,16 @@ public abstract class EditorTool
 		incrementalUpdatesToDraw = new ArrayDeque<>();
 	}
 	
-	private class MapChange
+	class MapChange
 	{
-		public MapChange(MapEdits edits, boolean undoRequiresFullRedraw)
+		MapEdits edits;
+		UpdateType updateType;
+		
+		public MapChange(MapEdits edits, UpdateType updateType)
 		{
 			this.edits = edits;
-			this.requiresFullRedraw = undoRequiresFullRedraw;
+			this.updateType = updateType;
 		}
-		
-		MapEdits edits;
-		boolean requiresFullRedraw;
 	}
 
 	private BufferedImage createPlaceholderImage()
@@ -175,7 +175,7 @@ public abstract class EditorTool
 		mapParts = null;
 		
 		mapEditingPanel.repaint();
-		createAndShowMap(UpdateType.Full);
+		createAndShowMapFull();
 	}
 
 	protected abstract void handleMouseClickOnMap(MouseEvent e);
@@ -207,25 +207,11 @@ public abstract class EditorTool
 	}
 	
 	/**
-	 * Do a quick redraw of the map. To use this, a child class must override drawMapQuickUpdate to define what a quick redraw is.
-	 */
-	public void quickRedrawMap()
-	{
-		createAndShowMap(UpdateType.Quick);
-	}
-	
-	/**
 	 * Redraws the map, then displays it. Use only with UpdateType.Full and UpdateType.Quick.
 	 */
-	public void createAndShowMap(UpdateType updateType)
-	{
-		if (updateType == UpdateType.Incremental)
-		{
-			throw new IllegalArgumentException("Incremental updates must use the overload of createAndShowMap that "
-					+ "passes in the things that changed.");
-		}
-		
-		createAndShowMap(updateType, null, null);
+	public void createAndShowMapFull()
+	{		
+		createAndShowMap(UpdateType.Full, null, null);
 	}
 	
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
@@ -238,6 +224,43 @@ public abstract class EditorTool
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
 	}
 	
+	public void createAndShowMapFromChange(MapChange change)
+	{
+		if (change.updateType == UpdateType.Full)
+		{
+			createAndShowMapFull();
+		}
+		else
+		{
+			// TODO Loop through the edits in 'before' and find the centers and edges that have changed. Then use those to update the 
+			// map incrementally.
+
+			Set<Center> centersChanged = getCentersWithChangesInEdits(change);
+			Set<Edge> edgesChanged = null;
+			// Currently createAndShowMap doesn't support drawing both center edits and edge edits at the same time, so there is no
+			// need to find edges changed if centers were changed.
+			if (centersChanged.size() == 0)
+			{
+				edgesChanged = getEdgesWithChangesInEdits(change);
+			}
+			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged);
+		}
+	}
+	
+	private Set<Center> getCentersWithChangesInEdits(MapChange change)
+	{
+		return settings.edits.centerEdits.stream().filter(cEdit -> cEdit.equals(change.edits.centerEdits.get(cEdit.index)))
+		.map(cEdit -> mapParts.graph.centers.get(cEdit.index))
+		.collect(Collectors.toSet());
+	}
+	
+	private Set<Edge> getEdgesWithChangesInEdits(MapChange change)
+	{
+		return settings.edits.edgeEdits.stream().filter(eEdit -> eEdit.equals(change.edits.edgeEdits.get(eEdit.index)))
+		.map(eEdit -> mapParts.graph.edges.get(eEdit.index))
+		.collect(Collectors.toSet());
+	}
+	
 	/**
 	 * Redraws the map, then displays it
 	 */
@@ -248,12 +271,7 @@ public abstract class EditorTool
 			if (updateType == UpdateType.Full)
 			{
 				mapNeedsFullRedraw = true;
-				mapNeedsQuickUpdate = false;
 				incrementalUpdatesToDraw.clear();
-			}
-			else if (updateType == UpdateType.Quick)
-			{
-				mapNeedsQuickUpdate = true;
 			}
 			else if (updateType == UpdateType.Incremental)
 			{
@@ -283,11 +301,7 @@ public abstract class EditorTool
 	        	drawLock.lock();
 				try
 				{	
-					if (updateType == UpdateType.Quick)
-					{
-						return drawMapQuickUpdate();
-					}
-					else if (updateType == UpdateType.Full)
+					if (updateType == UpdateType.Full)
 					{
 						if (mapParts == null)
 						{
@@ -367,15 +381,11 @@ public abstract class EditorTool
 	            	mapIsBeingDrawn = false;
 		            if (mapNeedsFullRedraw)
 		            {
-		            	createAndShowMap(UpdateType.Full);
-		            }
-		            else if (mapNeedsQuickUpdate)
-		            {
-		            	createAndShowMap(UpdateType.Quick);
+		            	createAndShowMapFull();
 		            }
 		            else if (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0)
 		            {
-	            		IncrementalUpdate incrementalUpdate = incrementalUpdatesToDraw.pop();
+	            		IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
 	            		createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
 	            	}
 		            else
@@ -398,12 +408,7 @@ public abstract class EditorTool
 		            
 		            if (updateType == UpdateType.Full)
 		            {
-			            mapNeedsQuickUpdate = false;
 		            	mapNeedsFullRedraw = false;
-		            }
-		            else if (updateType == UpdateType.Quick)
-		            {
-		            	 mapNeedsQuickUpdate = false;
 		            }
 	             		     
 		            mapEditingPanel.repaint();
@@ -424,6 +429,31 @@ public abstract class EditorTool
 	    worker.execute();
 	}
 	
+	/**
+	 * Combines the incremental updates in incrementalUpdatesToDraw so they can be drawn together. Clears out incrementalUpdatesToDraw.
+	 * @return The combined update to draw
+	 */
+	private IncrementalUpdate combineAndGetNextIncrementalUpdateToDraw()
+	{
+		if (incrementalUpdatesToDraw.size() == 0)
+		{
+			return null;
+		}
+		
+		IncrementalUpdate result = incrementalUpdatesToDraw.pop();
+		if (incrementalUpdatesToDraw.size() == 1)
+		{
+			return result;
+		}
+		
+		while (incrementalUpdatesToDraw.size() > 0)
+		{
+			IncrementalUpdate next = incrementalUpdatesToDraw.pop();
+			result.add(next);
+		}
+		return result;
+	}
+	
 	private boolean isCausedByOutOfMemoryError(Throwable ex)
 	{
 		if (ex == null)
@@ -437,11 +467,6 @@ public abstract class EditorTool
 		}
 		
 		return isCausedByOutOfMemoryError(ex.getCause());
-	}
-	
-	protected BufferedImage drawMapQuickUpdate()
-	{
-		throw new IllegalStateException("This editor hasn't implemented quick updates");
 	}
 
 	public MapParts getMapParts()
@@ -495,18 +520,17 @@ public abstract class EditorTool
 	
 	protected void setUndoPoint()
 	{
-		setUndoPoint(false);
+		setUndoPoint(UpdateType.Incremental);
 	}
 	
 	/***
 	 * Sets a point to which the user can undo changes. 
-	 * @param requiresFullRedraw If true, then when this change is undone the entire map should be redrawn. If false then a quick update can be done. It's up to 
-	 *                               each tools implementation of onAfterUndoRedo to respect this.
+	 * @param updateType The type of update that was last made. 
 	 */
-	protected void setUndoPoint(boolean requiresFullRedraw)
+	protected void setUndoPoint(UpdateType updateType)
 	{
 		redoStack.clear();
-		undoStack.push(new MapChange(deepCopyMapEdits(settings.edits), requiresFullRedraw));
+		undoStack.push(new MapChange(deepCopyMapEdits(settings.edits), updateType));
 		parent.updateUndoRedoEnabled();
 	}
 	
@@ -522,7 +546,7 @@ public abstract class EditorTool
 		{
 			settings.edits = deepCopyMapEdits(undoStack.peek().edits);	
 		}
-		onAfterUndoRedo(change.requiresFullRedraw);
+		onAfterUndoRedo(change);
 	}
 	
 	public void redo()
@@ -530,7 +554,7 @@ public abstract class EditorTool
 		MapChange change = redoStack.pop();
 		undoStack.push(change);
 		settings.edits = deepCopyMapEdits(undoStack.peek().edits);
-		onAfterUndoRedo(change.requiresFullRedraw);
+		onAfterUndoRedo(change);
 	}
 	
 	protected MapEdits deepCopyMapEdits(MapEdits edits)
@@ -556,7 +580,7 @@ public abstract class EditorTool
 		return copy;
 	}
 	
-	protected abstract void onAfterUndoRedo(boolean doFullRedraw);
+	protected abstract void onAfterUndoRedo(MapChange change);
 
 	public void clearUndoRedoStacks()
 	{
@@ -658,8 +682,8 @@ public abstract class EditorTool
 			}
 		}
 		
-		setUndoPoint(true);
-		createAndShowMap(UpdateType.Full);
+		setUndoPoint(UpdateType.Full);
+		createAndShowMapFull();
 	}
 	
 	private class IncrementalUpdate
@@ -672,5 +696,31 @@ public abstract class EditorTool
 		
 		Set<Center> centersChanged;
 		Set<Edge> edgesChanged;
+		
+		public void add(IncrementalUpdate other)
+		{
+			if (other == null)
+			{
+				return;
+			}
+			
+			if (centersChanged != null && other.centersChanged != null)
+			{
+				centersChanged.addAll(other.centersChanged);
+			}
+			else if (centersChanged == null && other.centersChanged != null)
+			{
+				centersChanged = new HashSet<>(other.centersChanged);
+			}
+			
+			if (edgesChanged != null && other.edgesChanged != null)
+			{
+				edgesChanged.addAll(other.edgesChanged);
+			}
+			else if (edgesChanged == null && other.edgesChanged != null)
+			{
+				edgesChanged = new HashSet<>(other.edgesChanged);
+			}
+		}
 	}
 }

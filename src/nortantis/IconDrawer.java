@@ -1161,6 +1161,11 @@ public class IconDrawer
 	 */
 	private Rectangle getBoundingBoxOfIconsForCenterFromLastDraw(Center center)
 	{
+		if (iconsToDraw.get(center) == null)
+		{
+			return null;
+		}
+		
 		Rectangle bounds = null; 
 		for (IconDrawTask iconTask : iconsToDraw.get(center))
 		{

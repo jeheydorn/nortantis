@@ -503,9 +503,9 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(boolean requiresFullRedraw)
+	protected void onAfterUndoRedo(MapChange change)
 	{
 		selectedRegion = null;
-		createAndShowMap();
+		createAndShowMapFromChange(change);
 	}
 }

@@ -534,14 +534,14 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(boolean requiresFullRedraw)
+	protected void onAfterUndoRedo(MapChange change)
 	{
 		mapEditingPanel.clearAreasToDraw();
 		lastSelected = null;
 		editTextField.setText("");
-		if (requiresFullRedraw)
+		if (change.updateType == UpdateType.Full)
 		{
-			createAndShowMap();
+			createAndShowMapFull();
 		}
 		else
 		{
