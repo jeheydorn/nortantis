@@ -338,14 +338,6 @@ public class ImageHelper
 	}
 
 	/*
-	 * Increases the contrast of array to make the min 0 and the max 1.
-	 */
-	public static void maximizeContrast(float[][] array)
-	{
-		setContrast(array, 0f, 1f);
-	}
-
-	/*
 	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
 	 */
 	public static void setContrast(float[][] array, float targetMin, float targetMax)
@@ -369,12 +361,42 @@ public class ImageHelper
 					max = value;
 			}
 		}
+		
+		float range = max - min;
+		float targetRange = targetMax - targetMin;
+		
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{			
 				float value = array[r][c];
-				array[r][c] = (((value - min)/(max - min))) * (targetMax - targetMin) + targetMin;
+				array[r][c] = (((value - min)/(range))) * (targetRange) + targetMin;
+			}
+		}
+	}
+	
+	public static void scaleAndSquashLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
+	{
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{			
+				// Make sure the value is above 0. In theory this shouldn't happen if the kernel is positive, but very small 
+				// values below zero can happen I believe due to rounding error.
+				float value = Math.max(0f, array[r][c] * scale);
+				final float steepness = 5f;
+				//float value = (float) (1.0 / (1.0 + Math.exp(-steepness * (value) )));
+				// TODO remove temp code below
+				if (value < 0f)
+				{
+					value = 0f;
+				}
+				else if (value > 1f)
+				{
+					value = 1f;
+				}
+				
+				array[r][c] = value;
 			}
 		}
 	}
@@ -875,21 +897,45 @@ public class ImageHelper
 		
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
-	 * @param img
+	 * @param img Image to convolve
 	 * @param kernel The kernel to convolve with.
 	 * @param maximizeContrast Iff true, the contrast of the convolved image
 	 * will be maximized while it is still in floating point representation.
 	 * In the result the pixel values will range from 0 to 255 for 8 bit pixels, or 65535 for 16 bit.
 	 * This is better than maximizing the contrast of the result because the result
-	 * is a BufferedImage, which is more discretized.
-	 * @return
+	 * is a BufferedImage, which has less precise values than floats.
+	 * @return The convolved image.
 	 */
 	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast)
 	{	
-		return convolveGrayscale(img, kernel, maximizeContrast, 0f, 1f);
+		ComplexArray data = convolveGrayscale(img, kernel);
+		
+		// Only use 16 bit pixels if the input image used them, to save memory.
+		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		
+		return realToImage(data, resultType, img.getWidth(), img.getHeight(), true, 0f, 1f, false, 0f);
 	}
 	
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean setContrast, float contrastMin, float contrastMax)
+	/**
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged.
+	 * The convolved image will be scaled while it is still in floating point representation. Values below 0 will be made 0.
+	 * Values are squashed to avoid them exceeding the maximum pixel value.
+	 * @param img Image to convolve
+	 * @param kernel
+	 * @param scale Amount to multiply levels by. 
+	 * @return The convolved image.
+	 */
+	public static BufferedImage convolveGrayscaleThenScaleAndSquash(BufferedImage img, float[][] kernel, float scale)
+	{
+		ComplexArray data = convolveGrayscale(img, kernel);
+		
+		// Only use 16 bit pixels if the input image used them, to save memory.
+		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		
+		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
+	}
+	
+	private static ComplexArray convolveGrayscale(BufferedImage img, float[][] kernel)
 	{
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
 		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
@@ -909,13 +955,12 @@ public class ImageHelper
 		// Do the inverse DFT on the product.
 		inverseFFT(data);
 		
-		// Only use 16 bit pixels if the input image used them, to save memory.
-		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
-		
-		return realToImage(data, img.getWidth(), img.getHeight(), setContrast, contrastMin, contrastMax, resultType);
+		return data;
 	}
 		
-	public static BufferedImage realToImage(ComplexArray data, int imageWidth, int imageHeight, boolean setContrast,  float contrastMin, float contrastMax, int bufferedImageType)
+	private static BufferedImage realToImage(ComplexArray data, int bufferedImageType, int imageWidth, int imageHeight, 
+			boolean setContrast, float contrastMin, float contrastMax,
+			boolean scaleAndSquashLevels, float scale)
 	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
 		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
@@ -925,7 +970,13 @@ public class ImageHelper
 
 		if (setContrast)
 		{
-			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, 
+					imgColPaddingOver2, imageWidth);
+		}
+		else if (scaleAndSquashLevels)
+		{
+			scaleAndSquashLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, 
+					imgColPaddingOver2, imageWidth);
 		}
 		
 		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, bufferedImageType);

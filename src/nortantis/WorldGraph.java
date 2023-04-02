@@ -1070,9 +1070,11 @@ public class WorldGraph extends VoronoiGraph
 		// Add each corner to the bounds.
 		for (Center center : centers)
 		{
-			for (Corner corner : center.corners)
+			// Use the centroid of the neighbors instead of this center's own corners because noisy 
+			// edges/curves can extend beyond this center.
+			for (Center neighbor: center.neighbors)
 			{
-				bounds = bounds.add(corner.loc);
+				bounds = bounds.add(neighbor.loc);
 			}
 		}
 

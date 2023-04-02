@@ -79,6 +79,7 @@ public class Rectangle
 		else if (xToAdd < x)
 		{
 			newX = xToAdd;
+			newWidth = width + (x - xToAdd);
 		}
 		
 		if (yToAdd > y + height)
@@ -88,6 +89,7 @@ public class Rectangle
 		else if (yToAdd < y)
 		{
 			newY = yToAdd;
+			newHeight = height + (y - yToAdd);
 		}
 		
 		return new Rectangle(newX, newY, newWidth, newHeight);

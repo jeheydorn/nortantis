@@ -200,16 +200,16 @@ public class IconDrawer
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them.
 	 * The actual drawing of the icons is done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToDraw)
+	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor)
 	{
-		clearIconsForCenters(centersToDraw);
+		clearIconsForCenters(centersToUpdateIconsFor);
 		
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.hills);
 		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance().getIconsWithWidths(IconType.cities);
 		
-		for (Center center : centersToDraw)
+		for (Center center : centersToUpdateIconsFor)
 		{
 			CenterEdit cEdit = edits.centerEdits.get(center.index);
 			if (cEdit.icon != null)
@@ -292,7 +292,7 @@ public class IconDrawer
 			}
 		}
 
-		drawTreesForCenters(centersToDraw);
+		drawTreesForCenters(centersToUpdateIconsFor);
 	}
 	
 	private void clearIconsForCenters(Collection<Center> centers)
@@ -452,6 +452,13 @@ public class IconDrawer
 			if (!entry.getKey().isWater)
 			{
 				tasks.addAll(entry.getValue());
+				for (final IconDrawTask task : entry.getValue())
+				{
+					if (drawBounds == null || task.overlaps(drawBounds))
+					{
+						tasks.add(task);
+					}	
+				}
 			}
 		}
 		Collections.sort(tasks);
@@ -461,17 +468,14 @@ public class IconDrawer
 		List<Runnable> jobs = new ArrayList<>();
 		for (final IconDrawTask task : tasks)
 		{
-			if (drawBounds == null || task.overlaps(drawBounds))
+			jobs.add(new Runnable()
 			{
-				jobs.add(new Runnable()
+				@Override
+				public void run()
 				{
-					@Override
-					public void run()
-					{
-				       	task.scaleIcon();
-					}			
-				});
-			}
+			       	task.scaleIcon();
+				}			
+			});
 		}
 		Helper.processInParallel(jobs);
 		
@@ -490,7 +494,7 @@ public class IconDrawer
 	
 	/**
 	 * Adds icon draw tasks to draw cities.
-	 * Side effect – if a city is placed where it cannot be drawn, this will un-mark it as a city.
+	 * Side effect ï¿½ if a city is placed where it cannot be drawn, this will un-mark it as a city.
 	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
 	 */
 	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
@@ -1159,7 +1163,7 @@ public class IconDrawer
 	 * @param center Center to get icons bounds for.
 	 * @return A rectangle if center had icons drawn. Null otherwise.
 	 */
-	private Rectangle getBoundingBoxOfIconsForCenterFromLastDraw(Center center)
+	private Rectangle getBoundingBoxOfIconsForCenter(Center center)
 	{
 		if (iconsToDraw.get(center) == null)
 		{
@@ -1187,18 +1191,18 @@ public class IconDrawer
 	 * @param centers A collection of centers to get icons bounds for.
 	 * @return A rectangle if any of the centers had icons drawn. Null otherwise.
 	 */
-	public Rectangle getBoundinbBoxOfIconsForCentersFromLastdraw(Collection<Center> centers)
+	public Rectangle getBoundinbBoxOfIconsForCenters(Collection<Center> centers)
 	{
 		Rectangle bounds = null;
 		for (Center center: centers)
 		{
 			if (bounds == null)
 			{
-				bounds = getBoundingBoxOfIconsForCenterFromLastDraw(center);
+				bounds = getBoundingBoxOfIconsForCenter(center);
 			}
 			else
 			{
-				Rectangle b = getBoundingBoxOfIconsForCenterFromLastDraw(center);
+				Rectangle b = getBoundingBoxOfIconsForCenter(center);
 				if (b != null)
 				{
 					bounds.add(b);

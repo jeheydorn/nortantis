@@ -90,39 +90,45 @@ public class MapCreator
 	 * @param centerChanges Edits for centers that need to be re-drawn
 	 * @param edgeChanges If edges changed, this is the list of edge edits that changed
 	 */
-	private void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage fullSizeMap, Set<Center> centersChanged,
-			Set<Edge> edgesChanged)
+	private void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage fullSizedMap,
+			Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
 		double startTime = System.currentTimeMillis();				
 		
 		centersChanged = new HashSet<>(centersChanged);
+		if (edgesChanged != null)
+		{
+			centersChanged.addAll(getCentersFromEdges(mapParts.graph, edgesChanged));
+		}
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 		
+		if (centersChangedBounds == null)
+		{
+			// Nothing changed
+			return;
+		}
+		
+		double sizeMultiplier = calcSizeMultiplier(mapParts.background.mapBounds.getWidth());
+
 		// To handle edge/effects changes outside centersChangedBounds box caused by centers in centersChanged, pad the bounds of the
 		// snippet to replace to include the width of ocean effects, land effects, and with widest possible line that can be drawn,
-		// whichever is largest.
-		
+		// whichever is largest.		
 		double effectsPadding = Math.max(settings.oceanEffectSize, settings.landBlur);
-		// Increase effectsPadding by the maximum width of any line that can be drawn, probably a very wide river. Since it's no easy
-		// way to find that number, just guess.
-		effectsPadding = Math.max(effectsPadding, 20);
+		// Increase effectsPadding by the maximum width of any line that can be drawn, probably a very wide river. Since there's
+		// no easy way to find that number, just guess.
+		// TODO Consider increasing this a little to account for noisy/curved edges.
+		effectsPadding = Math.max(effectsPadding, 8 * sizeMultiplier);
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
 		// Expand snippetToReplaceBounds to include all icons the centers in centersChanged drew the last time they were drawn.
-		Rectangle iconBounds = mapParts.iconDrawer.getBoundinbBoxOfIconsForCentersFromLastdraw(centersChanged);
-		if (iconBounds != null)
 		{
-			replaceBounds = replaceBounds.add(iconBounds);
+			Rectangle iconBounds = mapParts.iconDrawer.getBoundinbBoxOfIconsForCenters(centersChanged);
+			if (iconBounds != null)
+			{
+				replaceBounds = replaceBounds.add(iconBounds);
+			}
 		}
 		
-		// The bounds of the snippet to draw. This is larger than the snippet to replace because ocean/land effects expand beyond the edges
-		// that draw them, and we need those to be included in the snippet to replace.
-		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding);
-		
-		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), centersChanged.iterator().next());
-				
-		double sizeMultiplier = calcSizeMultiplier(mapParts.background.mapBounds.getWidth());
-				
 		applyRegionEdits(mapParts.graph, settings.edits);
 		applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged));
 		if (edgesChanged != null)
@@ -130,10 +136,24 @@ public class MapCreator
 			applyEdgeEdits(mapParts.graph, settings.edits, getEdgeEditsForEdges(settings.edits, edgesChanged));
 		}
 		
+		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersChanged);
+		
+		// Now that we've updated icons to draw in centersChanged, check if we need to expand replaceBounds to include those icons.
+		{
+			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundinbBoxOfIconsForCenters(centersChanged);
+			if (updatedIconBounds != null)
+			{
+				replaceBounds = replaceBounds.add(updatedIconBounds);
+			}
+		}
+		
+		// The bounds of the snippet to draw. This is larger than the snippet to replace because ocean/land effects expand beyond the edges
+		// that draw them, and we need those to be included in the snippet to replace.
+		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding);
+		
+		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), centersChanged.iterator().next());
+						
 		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, drawBounds);
-		
-		
-		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersToDraw);
 		
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
@@ -168,7 +188,7 @@ public class MapCreator
 		
 		if (settings.drawIcons)
 		{
-			Logger.println("Drawing all icons.");
+			Logger.println("Drawing icons.");
 			mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
 		}
 		
@@ -186,9 +206,10 @@ public class MapCreator
 		
 		// Add effects to ocean along coastlines
 		{
-			BufferedImage oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, landMask);
+			BufferedImage oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, landMask, centersToDraw, 
+					drawBounds);
 			if (oceanBlur != null)
-			{
+			{				
 				mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
 				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
 			}
@@ -213,11 +234,19 @@ public class MapCreator
 			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
 		}
 
-
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), 
 				(int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizeMap, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
+		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom); 
+		
+		// TODO Remove debug code
+//		Graphics g = fullSizedMap.createGraphics();
+//		g.setColor(Color.white);
+//		g.drawRect((int) replaceBounds.x, (int) replaceBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
+//		g.setColor(Color.red);
+//		g.drawRect((int) centersChangedBounds.x, (int) centersChangedBounds.y, (int) centersChangedBounds.width, (int) centersChangedBounds.height);
+//		g.dispose();
+		
 		// Also update the snippet in landBackground because the text tool needs that.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(landBackground, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom);
@@ -227,8 +256,9 @@ public class MapCreator
 		
 		// TODO remove time logging code when done testing.
 		double elapsedTime = System.currentTimeMillis() - startTime;
-		Logger.println("Time to do incremental update (in seconds): " + elapsedTime / 1000.0);
-
+		Logger.println("Time to do incremental update: " + elapsedTime / 1000.0);
+		
+		ImageHelper.write(mapSnippet, "mapSnippet.png"); // TODO Remove debug code
 	}
 	
 	/**
@@ -463,7 +493,7 @@ public class MapCreator
 		}
 		
 		{
-			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask);
+			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask, null, null);
 			if (oceanBlur != null)
 			{
 				Logger.println("Adding effects to ocean along coastlines.");
@@ -550,7 +580,7 @@ public class MapCreator
 		if (settings.grungeWidth > 0)
 		{
 			Logger.println("Adding grunge.");
-			// 104567 is an arbitrary number added so that the grung is not the same pattern as
+			// 104567 is an arbitrary number added so that the grunge is not the same pattern as
 			// the background.
 			BufferedImage clouds = FractalBGGenerator.generate(
 					new Random(settings.backgroundRandomSeed + 104567), settings.fractalPower, 
@@ -576,9 +606,14 @@ public class MapCreator
 	 */
 	private BufferedImage darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double sizeMultiplier, 
 			BufferedImage mapOrSnippet, BufferedImage landMask, Background background, Collection<Center> centersToDraw, Rectangle drawBounds)
-	{
+	{		
 		BufferedImage landBlur;
 		int blurLevel = (int) (settings.landBlur * sizeMultiplier);
+		
+		final float scaleForDarkening = 7.6f;
+		int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
+		float scale = ((float)settings.landBlurColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening;		
+
 		if (blurLevel > 0)
 		{
 			Logger.println("Darkening land near shores.");
@@ -597,7 +632,7 @@ public class MapCreator
 				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 				g.setColor(Color.white);
 				graph.drawRegionBorders(g, sizeMultiplier, false, centersToDraw, drawBounds);
-				landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
+				landBlur = ImageHelper.convolveGrayscaleThenScaleAndSquash(coastlineAndLakeShoreMask, kernel, scale);
 				// Remove the land blur from the ocean side of the borders and color the blur
 				// according to each region's blur color.
 				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
@@ -620,26 +655,41 @@ public class MapCreator
 			}
 			else
 			{
-				landBlur = ImageHelper.convolveGrayscale(coastlineAndLakeShoreMask, kernel, true);
+				// TODO remove debug code
+				ImageHelper.write(coastlineAndLakeShoreMask, "coastlineAndLakeShoreMask.png");
+				ImageHelper.write(landMask, "landMask.png");
+				
+				landBlur = ImageHelper.convolveGrayscaleThenScaleAndSquash(coastlineAndLakeShoreMask, kernel, scale);
+				
 				// Remove the land blur from the ocean side of the borders.
 				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+				
+				// TODO remove debug code
+				ImageHelper.write(landBlur, "landBlur.png");
+				
 				return ImageHelper.maskWithColor(mapOrSnippet, settings.landBlurColor, landBlur, true);
 			}
 		}
 		return mapOrSnippet;
 	}
 	
-	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier, BufferedImage landMask)
+	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier, 
+			BufferedImage landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
+		if (drawBounds == null)
+		{
+			drawBounds = graph.bounds;
+		}
+		
 		BufferedImage oceanBlur = null;
 		int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplier);
 		if (blurLevel > 0)
 		{
-			BufferedImage coastlineMask = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+			BufferedImage coastlineMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_BINARY);
 			{
 				Graphics2D g = coastlineMask.createGraphics();
 				g.setColor(Color.white);
-				graph.drawCoastline(g, sizeMultiplier, null, null);
+				graph.drawCoastline(g, sizeMultiplier, centersToDraw, drawBounds);
 			}
 			
 			if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
@@ -654,14 +704,15 @@ public class MapCreator
 					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectSize * sizeMultiplier));
 				}
 				int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
-				oceanBlur = ImageHelper.convolveGrayscale(coastlineMask, kernel, true, 0f, ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)));
+				final float scaleForDarkening = 5.27f;
+				float scale = ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening;
+				oceanBlur = ImageHelper.convolveGrayscaleThenScaleAndSquash(coastlineMask, kernel, scale);
 				// Remove the ocean blur from the land side of the borders.
 				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
 			}
 			else
 			{
-				oceanBlur = new BufferedImage(graph.getWidth(),
-						graph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+				oceanBlur = new BufferedImage((int)drawBounds.width, (int)drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
 
 				double widthBetweenWaves = 12.0 * sizeMultiplier;
 				double lineWidth = 2.0 * sizeMultiplier;
@@ -1221,7 +1272,7 @@ public class MapCreator
 	}
 		
 	/**
-	 * Makes the middle area of a gray scale image darker following a Gauisian blur drop off.
+	 * Makes the middle area of a gray scale image darker following a Gaussian blur drop off.
 	 */
 	private void darkenMiddleOfImage(double resolutionScale, BufferedImage image, int grungeWidth)
 	{
@@ -1232,11 +1283,11 @@ public class MapCreator
 			blurLevel = 1; // Avoid an exception later.
 		// Create a white no-filled in rectangle, then blur it. To be much more efficient, I only create
 		// the upper left corner plus 1 pixel in both directions since the corners and edges are all the
-		// rotated and the edges are all the same except some longer than others.
+		// same except rotated and the edges are all the same except their length.
 		int blurBoxWidth = blurLevel*2 + 1;
 		// There is a blurLevel wide buffer below is so that in the convolution the border from one side of the box won't spread (wrap) to the other side.
 		// I would be especially bad if it did because ImageHelper.convolveGrayscale pads images to be powers of 2 in the width and height.
-		// The white rectangleis also drawn an extra blurLevel from blurBoxWidth, totaling blurLevel*2.
+		// The white rectangles also draw an extra blurLevel from blurBoxWidth, totaling blurLevel*2.
 		BufferedImage blurBox = new BufferedImage(blurBoxWidth + blurLevel*2, blurBoxWidth + blurLevel*2, BufferedImage.TYPE_BYTE_BINARY);
 		Graphics g = blurBox.getGraphics();
 		g.setColor(Color.white);
