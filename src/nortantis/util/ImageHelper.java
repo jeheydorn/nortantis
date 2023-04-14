@@ -375,7 +375,7 @@ public class ImageHelper
 		}
 	}
 	
-	public static void scaleAndSquashLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
+	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
 	{
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
@@ -384,9 +384,6 @@ public class ImageHelper
 				// Make sure the value is above 0. In theory this shouldn't happen if the kernel is positive, but very small 
 				// values below zero can happen I believe due to rounding error.
 				float value = Math.max(0f, array[r][c] * scale);
-				final float steepness = 5f;
-				//float value = (float) (1.0 / (1.0 + Math.exp(-steepness * (value) )));
-				// TODO remove temp code below
 				if (value < 0f)
 				{
 					value = 0f;
@@ -913,19 +910,19 @@ public class ImageHelper
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
 		
-		return realToImage(data, resultType, img.getWidth(), img.getHeight(), true, 0f, 1f, false, 0f);
+		return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
 	}
 	
 	/**
 	 * Convolves a gray-scale image with a kernel. The input image is unchanged.
-	 * The convolved image will be scaled while it is still in floating point representation. Values below 0 will be made 0.
-	 * Values are squashed to avoid them exceeding the maximum pixel value.
+	 * The convolved image will be scaled while it is still in floating point representation. 
+	 * Values below 0 will be made 0. Values above 1 will be made 1.
 	 * @param img Image to convolve
 	 * @param kernel
 	 * @param scale Amount to multiply levels by. 
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscaleThenScaleAndSquash(BufferedImage img, float[][] kernel, float scale)
+	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel);
 		
@@ -960,7 +957,7 @@ public class ImageHelper
 		
 	private static BufferedImage realToImage(ComplexArray data, int bufferedImageType, int imageWidth, int imageHeight, 
 			boolean setContrast, float contrastMin, float contrastMax,
-			boolean scaleAndSquashLevels, float scale)
+			boolean scaleLevels, float scale)
 	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
 		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat()); 
@@ -973,9 +970,9 @@ public class ImageHelper
 			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, 
 					imgColPaddingOver2, imageWidth);
 		}
-		else if (scaleAndSquashLevels)
+		else if (scaleLevels)
 		{
-			scaleAndSquashLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, 
+			scaleLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, 
 					imgColPaddingOver2, imageWidth);
 		}
 		

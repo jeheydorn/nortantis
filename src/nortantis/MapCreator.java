@@ -42,7 +42,10 @@ import nortantis.util.Range;
 public class MapCreator
 {
 	private final double regionBlurColorScale = 0.7;
-
+	/**
+	 * Controls how dark coastlines can get, for both the land and water. Higher values are lighter.
+	 */
+	private static final float coastlineShadingScale = 5.27f;
 	
 	
 	private Random r;
@@ -610,9 +613,11 @@ public class MapCreator
 		BufferedImage landBlur;
 		int blurLevel = (int) (settings.landBlur * sizeMultiplier);
 		
-		final float scaleForDarkening = 7.6f;
+		final float scaleForDarkening = coastlineShadingScale;
 		int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
-		float scale = ((float)settings.landBlurColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening;		
+		double targetStrokeWidth = sizeMultiplier;
+		float scale = ((float)settings.landBlurColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening
+				* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);	
 
 		if (blurLevel > 0)
 		{
@@ -624,7 +629,7 @@ public class MapCreator
 			{
 				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 				g.setColor(Color.white);
-				graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
+				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
 			}
 
 			if (settings.drawRegionColors)
@@ -632,7 +637,7 @@ public class MapCreator
 				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 				g.setColor(Color.white);
 				graph.drawRegionBorders(g, sizeMultiplier, false, centersToDraw, drawBounds);
-				landBlur = ImageHelper.convolveGrayscaleThenScaleAndSquash(coastlineAndLakeShoreMask, kernel, scale);
+				landBlur = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
 				// Remove the land blur from the ocean side of the borders and color the blur
 				// according to each region's blur color.
 				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
@@ -656,16 +661,16 @@ public class MapCreator
 			else
 			{
 				// TODO remove debug code
-				ImageHelper.write(coastlineAndLakeShoreMask, "coastlineAndLakeShoreMask.png");
-				ImageHelper.write(landMask, "landMask.png");
+				//ImageHelper.write(coastlineAndLakeShoreMask, "coastlineAndLakeShoreMask.png");
+				//ImageHelper.write(landMask, "landMask.png");
 				
-				landBlur = ImageHelper.convolveGrayscaleThenScaleAndSquash(coastlineAndLakeShoreMask, kernel, scale);
+				landBlur = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
 				
 				// Remove the land blur from the ocean side of the borders.
 				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
 				
 				// TODO remove debug code
-				ImageHelper.write(landBlur, "landBlur.png");
+				//ImageHelper.write(landBlur, "landBlur.png");
 				
 				return ImageHelper.maskWithColor(mapOrSnippet, settings.landBlurColor, landBlur, true);
 			}
@@ -685,11 +690,13 @@ public class MapCreator
 		int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplier);
 		if (blurLevel > 0)
 		{
+			double targetStrokeWidth = sizeMultiplier; 
 			BufferedImage coastlineMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_BINARY);
 			{
 				Graphics2D g = coastlineMask.createGraphics();
 				g.setColor(Color.white);
-				graph.drawCoastline(g, sizeMultiplier, centersToDraw, drawBounds);
+
+				graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
 			}
 			
 			if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
@@ -704,9 +711,10 @@ public class MapCreator
 					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectSize * sizeMultiplier));
 				}
 				int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
-				final float scaleForDarkening = 5.27f;
-				float scale = ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening;
-				oceanBlur = ImageHelper.convolveGrayscaleThenScaleAndSquash(coastlineMask, kernel, scale);
+				final float scaleForDarkening = coastlineShadingScale;
+				float scale = ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening 
+						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+				oceanBlur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale);
 				// Remove the ocean blur from the land side of the borders.
 				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
 			}
@@ -747,6 +755,18 @@ public class MapCreator
 			}
 		}
 		return oceanBlur;
+	}
+	
+	private static float calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
+	{
+		if (targetStrokeWidth >= 1f)
+		{
+			return 1f;
+		}
+		
+		// The stroke will be drawn a 1 pixel wide because that is the smallest it can be drawn, but that will make the coastline shading relatively
+		// much darker than it should be. In this case multiplying the convolved shading values by the target stroke width lowers them appropriately.
+		return (float) targetStrokeWidth;
 	}
 	
 	private static void assignRandomRegionColors(WorldGraph graph, MapSettings settings)
