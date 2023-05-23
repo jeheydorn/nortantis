@@ -331,7 +331,7 @@ public class Background
 				graph.drawRegionIndexes(regionIndexes.createGraphics(), centersToDraw, drawBounds);
 				BufferedImage landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, 
 						new java.awt.Point((int) drawBounds.x, (int) drawBounds.y));
-				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), (int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);
+				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int)drawBounds.x, (int)replaceBounds.y - (int)drawBounds.y, (int)replaceBounds.width, (int)replaceBounds.height);
 				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
 			}
 		}

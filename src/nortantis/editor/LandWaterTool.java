@@ -223,6 +223,8 @@ public class LandWaterTool extends EditorTool
 	
 	private void handleMousePressOrDrag(MouseEvent e)
 	{
+		highlightHoverCenters(e);
+		
 		if (oceanButton.isSelected() || lakeButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
@@ -433,8 +435,13 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		mapEditingPanel.clearHighlightedCenters();
+		highlightHoverCenters(e);
+	}
 	
+	protected void highlightHoverCenters(MouseEvent e)
+	{
+		mapEditingPanel.clearHighlightedCenters();
+		
 		if (oceanButton.isSelected() || lakeButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected() || landButton.isSelected())
 		{		
 			Set<Center> selected = getSelectedCenters(e.getPoint());
@@ -459,7 +466,7 @@ public class LandWaterTool extends EditorTool
 		}
 		mapEditingPanel.repaint();
 	}
-
+	
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{

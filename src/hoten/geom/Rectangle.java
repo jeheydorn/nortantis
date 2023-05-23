@@ -46,7 +46,17 @@ public class Rectangle
 			return true;
 		}
 		
+		if (other.inBounds(x, y))
+		{
+			return true;
+		}
+		
 		if (inBounds(other.x + other.width, other.y))
+		{
+			return true;
+		}
+		
+		if (other.inBounds(x + width, y))
 		{
 			return true;
 		}
@@ -56,7 +66,17 @@ public class Rectangle
 			return true;
 		}
 		
+		if (other.inBounds(x, y + height))
+		{
+			return true;
+		}
+		
 		if (inBounds(other.x + other.width, other.y + other.height))
+		{
+			return true;
+		}
+		
+		if (other.inBounds(x + width, y + height))
 		{
 			return true;
 		}
@@ -114,6 +134,11 @@ public class Rectangle
 		return new Rectangle(x - paddWidth/2.0, y - paddHeight/2.0, width + paddWidth, height + paddHeight);
 	}
 	
+	public Rectangle floor()
+	{
+		return new Rectangle((int)x, (int)y, (int)width, (int)height);
+	}
+	
 	// TODO Decide if I should keep this, and if it should round up or down
 	public java.awt.Rectangle toAwTRectangle()
 	{
@@ -148,4 +173,12 @@ public class Rectangle
 	{
 		return y;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Rectangle [x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]";
+	}
+	
+	
 }

@@ -145,9 +145,9 @@ public class MapEditingPanel extends ImagePanel
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
 			
-			g.setColor(Color.green);
-			drawCenterOutlines(g, processingCenters);
-			drawEdges(g, processingEdges);
+//			g.setColor(Color.green);
+//			drawCenterOutlines(g, processingCenters);
+//			drawEdges(g, processingEdges);
 		}
 	}
 	

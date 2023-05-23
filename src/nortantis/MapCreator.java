@@ -95,7 +95,7 @@ public class MapCreator
 	 */
 	private void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage fullSizedMap,
 			Set<Center> centersChanged, Set<Edge> edgesChanged)
-	{
+	{		
 		double startTime = System.currentTimeMillis();				
 		
 		centersChanged = new HashSet<>(centersChanged);
@@ -115,12 +115,13 @@ public class MapCreator
 
 		// To handle edge/effects changes outside centersChangedBounds box caused by centers in centersChanged, pad the bounds of the
 		// snippet to replace to include the width of ocean effects, land effects, and with widest possible line that can be drawn,
-		// whichever is largest.		
-		double effectsPadding = Math.max(settings.oceanEffectSize, settings.landBlur);
+		// whichever is largest. The reason this is divided by 2 is because the numerator (before applying Math.ceil) is the size
+		// of the kernel used to create the ocean affects using image convolution, and the extent to which a pixel in the original 
+		// image has an effect when doing convolution is half the width of the kernel. 
+		double effectsPadding = Math.ceil(Math.max(settings.oceanEffectSize, settings.landBlur)) / 2.0;
 		// Increase effectsPadding by the maximum width of any line that can be drawn, probably a very wide river. Since there's
 		// no easy way to find that number, just guess.
-		// TODO Consider increasing this a little to account for noisy/curved edges.
-		effectsPadding = Math.max(effectsPadding, 8 * sizeMultiplier);
+		effectsPadding = Math.max(effectsPadding, 8) * sizeMultiplier;
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
 		// Expand snippetToReplaceBounds to include all icons the centers in centersChanged drew the last time they were drawn.
@@ -150,13 +151,15 @@ public class MapCreator
 			}
 		}
 		
+		replaceBounds = replaceBounds.floor();
+		
 		// The bounds of the snippet to draw. This is larger than the snippet to replace because ocean/land effects expand beyond the edges
 		// that draw them, and we need those to be included in the snippet to replace.
-		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding);
+		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding).floor();
 		
 		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), centersChanged.iterator().next());
 						
-		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, drawBounds);
+		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
 		
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
@@ -237,8 +240,8 @@ public class MapCreator
 			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
 		}
 
-		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)(replaceBounds.x - drawBounds.x), 
-				(int)(replaceBounds.y - drawBounds.y), (int)replaceBounds.width, (int)replaceBounds.height);
+		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int)replaceBounds.x - (int)drawBounds.x, 
+				(int)replaceBounds.y - (int)drawBounds.y, (int)replaceBounds.width, (int)replaceBounds.height);
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom); 
 		

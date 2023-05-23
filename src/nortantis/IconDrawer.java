@@ -446,12 +446,11 @@ public class IconDrawer
 	 */
 	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, Rectangle drawBounds)
 	{	
-		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
+		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>();
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
 		{
 			if (!entry.getKey().isWater)
 			{
-				tasks.addAll(entry.getValue());
 				for (final IconDrawTask task : entry.getValue())
 				{
 					if (drawBounds == null || task.overlaps(drawBounds))

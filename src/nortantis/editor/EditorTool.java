@@ -690,8 +690,8 @@ public abstract class EditorTool
 	{
 		public IncrementalUpdate(Set<Center> centersChanged, Set<Edge> edgesChanged)
 		{
-			this.centersChanged = centersChanged;
-			this.edgesChanged = edgesChanged;
+			this.centersChanged = new HashSet<Center>(centersChanged);
+			this.edgesChanged = new HashSet<Edge>(edgesChanged);
 		}
 		
 		Set<Center> centersChanged;
