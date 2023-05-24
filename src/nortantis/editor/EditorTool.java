@@ -390,14 +390,13 @@ public abstract class EditorTool
 	            	}
 		            else
 	            	{
-	            		mapEditingPanel.clearProcessingCenters();
 		         		mapEditingPanel.clearProcessingEdges();
 		         		// Add back the centers and edges not yet processed.
 		         		for (IncrementalUpdate incrementalUpdate : incrementalUpdatesToDraw)
 		         		{
 		         			if (incrementalUpdate.centersChanged != null)
 		         			{
-		         				mapEditingPanel.addAllProcessingCenters(incrementalUpdate.centersChanged);
+		         				mapEditingPanel.addAllSelectedCenters(incrementalUpdate.centersChanged);
 		         			}
 		         			if (incrementalUpdate.edgesChanged != null)
 		         			{
@@ -419,7 +418,7 @@ public abstract class EditorTool
 	            else
 	            {
 	            	parent.enableOrDisableToolToggleButtonsAndZoom(true);
-	            	mapEditingPanel.clearProcessingCenters();
+	            	mapEditingPanel.clearSelectedCenters();
 	         		mapEditingPanel.clearProcessingEdges();
 	         		mapIsBeingDrawn = false;
 	            }

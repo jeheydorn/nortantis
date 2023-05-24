@@ -628,7 +628,7 @@ public class IconTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{
-		mapEditingPanel.addAllProcessingCenters(centers);
+		mapEditingPanel.addAllSelectedCenters(centers);
 		mapEditingPanel.repaint();
 		
 		createAndShowMapIncrementalUsingCenters(centers);

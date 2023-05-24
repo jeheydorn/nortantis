@@ -495,7 +495,7 @@ public class EditorFrame extends JFrame
 		MapParts mapParts = currentTool.getMapParts(); // This is moved to the new tool so that only the first tool that runs has to certain parts of the map.
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearAreasToDraw();
-		mapEditingPanel.clearProcessingCenters();
+		mapEditingPanel.clearSelectedCenters();
 		mapEditingPanel.clearProcessingEdges();
 		mapEditingPanel.clearHighlightedEdges();
 		currentTool.onSwitchingAway();

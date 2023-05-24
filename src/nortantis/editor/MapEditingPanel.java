@@ -18,10 +18,11 @@ import nortantis.WorldGraph;
 @SuppressWarnings("serial")
 public class MapEditingPanel extends ImagePanel
 {
-	private Color highlightColor = new Color(255,227,74);
+	private final Color highlightColor = new Color(255,227,74);
+	private final Color selectColor = Color.cyan;
 	private List<Area> areas;
 	private Set<Center> highlightedCenters;
-	private Set<Center> processingCenters;
+	private Set<Center> selectedCenters;
 	private WorldGraph graph;
 	private HighlightMode highlightMode;
 	private Collection<Edge> highlightedEdges;
@@ -32,7 +33,7 @@ public class MapEditingPanel extends ImagePanel
 	{
 		super(image);
 		highlightedCenters = new HashSet<>();
-		processingCenters = new HashSet<>();
+		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
 		processingEdges = new HashSet<>();
 	}
@@ -78,21 +79,21 @@ public class MapEditingPanel extends ImagePanel
 			highlightedCenters.clear();
 	}
 	
-	public void addProcessingCenter(Center c)
+	public void addSelectedCenter(Center c)
 	{
-		processingCenters.add(c);
+		selectedCenters.add(c);
 	}
 	
-	public void addAllProcessingCenters(Collection<Center> centers)
+	public void addAllSelectedCenters(Collection<Center> centers)
 	{
-		processingCenters.addAll(centers);
+		selectedCenters.addAll(centers);
 	}
 		
-	public void clearProcessingCenters()
+	public void clearSelectedCenters()
 	{
-		if (processingCenters != null)
+		if (selectedCenters != null)
 		{
-			processingCenters.clear();
+			selectedCenters.clear();
 		}
 	}
 	
@@ -109,11 +110,6 @@ public class MapEditingPanel extends ImagePanel
 	public void clearAreasToDraw()
 	{
 		this.areas = null;
-	}
-	
-	public void setHighlightColor(Color color)
-	{
-		this.highlightColor = color;
 	}
 	
 	public void setCenterHighlightMode(HighlightMode mode)
@@ -145,9 +141,9 @@ public class MapEditingPanel extends ImagePanel
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
 			
-//			g.setColor(Color.green);
-//			drawCenterOutlines(g, processingCenters);
-//			drawEdges(g, processingEdges);
+			g.setColor(selectColor);
+			drawCenterOutlines(g, selectedCenters);
+			drawEdges(g, processingEdges);
 		}
 	}
 	

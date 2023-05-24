@@ -1420,9 +1420,15 @@ public class ImageHelper
 			hsbMap.put(regionId, hsb);
 		}
 		
+		java.awt.Rectangle imageBounds = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
+		
 		for (int y = 0; y < colorIndexes.getHeight(); y++)
 			for (int x = 0; x < colorIndexes.getWidth(); x++)
 			{
+				if (!imageBounds.contains(x + where.x, y + where.y))
+				{
+					continue;
+				}
 				float level = raster.getSampleFloat(x + where.x, y + where.y, 0);
 				int colorKey = colorIndexesRaster.getSample(x, y, 0);				
 				result.setRGB(x, y, colorifyPixel(level, hsbMap.get(colorKey), how));

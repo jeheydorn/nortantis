@@ -95,6 +95,7 @@ public class LandWaterTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				mapEditingPanel.clearSelectedCenters();
 				if (colorChooserPanel != null && areRegionColorsVisible())
 				{
 					boolean isVisible = paintRegionButton.isSelected() || fillRegionColorButton.isSelected();
@@ -167,6 +168,8 @@ public class LandWaterTool extends EditorTool
 					{
 						selectColorFromMapButton.setSelected(false);
 						selectedRegion = null;
+						mapEditingPanel.clearSelectedCenters();
+						
 					}
 					RunSwing.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, "Text color");
 				}
@@ -221,8 +224,13 @@ public class LandWaterTool extends EditorTool
 	{
 	}
 	
-	private void handleMousePressOrDrag(MouseEvent e)
+	private void handleMousePressOrDrag(MouseEvent e, boolean isMouseDrag)
 	{
+		if (mergeRegionsButton.isSelected() && isMouseDrag)
+		{
+			return;
+		}
+		
 		highlightHoverCenters(e);
 		
 		if (oceanButton.isSelected() || lakeButton.isSelected())
@@ -321,6 +329,7 @@ public class LandWaterTool extends EditorTool
 					if (selectedRegion == null)
 					{
 						selectedRegion = region;
+						mapEditingPanel.addAllSelectedCenters(selectedRegion.getCenters());
 					}
 					else
 					{
@@ -328,13 +337,15 @@ public class LandWaterTool extends EditorTool
 						{
 							// Cancel the selection
 							selectedRegion = null;
+							mapEditingPanel.clearSelectedCenters();
 						}
 						else
 						{
+							// Loop over edits instead of region.getCenters() because centers are changed by map drawing, but edits
+							// should only be changed in the current thread.
 							for (CenterEdit c : settings.edits.centerEdits)
 							{
 								assert c != null;
-								assert region != null;
 								if (c.regionId != null && c.regionId == region.id)
 								{
 									c.regionId = selectedRegion.id;
@@ -342,8 +353,9 @@ public class LandWaterTool extends EditorTool
 								
 							}
 							settings.edits.regionEdits.remove(region.id);
-							handleMapChange(region.getCenters());
 							selectedRegion = null;
+							mapEditingPanel.clearSelectedCenters();
+							handleMapChange(region.getCenters());
 						}
 					}
 				}
@@ -413,17 +425,14 @@ public class LandWaterTool extends EditorTool
 	}
 	
 	private void handleMapChange(Set<Center> centers)
-	{
-		mapEditingPanel.addAllProcessingCenters(centers);
-		mapEditingPanel.repaint();
-		
+	{		
 		createAndShowMapIncrementalUsingCenters(centers);	
 	}
 
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
-		handleMousePressOrDrag(e);
+		handleMousePressOrDrag(e, false);
 	}
 
 	@Override
@@ -457,10 +466,6 @@ public class LandWaterTool extends EditorTool
 				{
 					mapEditingPanel.addAllHighlightedCenters(center.region.getCenters());
 				}
-				if (selectedRegion != null)
-				{
-					mapEditingPanel.addAllHighlightedCenters(selectedRegion.getCenters());
-				}
 				mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineGroup);
 			}
 		}
@@ -470,7 +475,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		handleMousePressOrDrag(e);
+		handleMousePressOrDrag(e, true);
 	}
 
 	@Override
@@ -511,6 +516,7 @@ public class LandWaterTool extends EditorTool
 	protected void onAfterUndoRedo(MapChange change)
 	{
 		selectedRegion = null;
+		mapEditingPanel.clearSelectedCenters();
 		createAndShowMapFromChange(change);
 	}
 }
