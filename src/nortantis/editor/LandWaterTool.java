@@ -484,24 +484,15 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.repaint();
 	}
-
-	@Override
-	protected void onBeforeCreateMapFull()
+	
+	@Override 
+	public void onActivate()
 	{
-		// Change a few settings to make map creation faster.
-		settings.resolution = zoom;
-		settings.frayedBorder = false;
-		settings.drawText = false;
-		settings.grungeWidth = 0;
-		settings.drawBorder = false;
-		settings.drawIcons = true;
-		settings.drawRivers = true;
-		
 		mapEditingPanel.setShowLakes(true);
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType)
+	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{
 		return map;
 	}

@@ -737,7 +737,6 @@ public class ImageHelper
 			}
 		return result;
 	}
-
 	
 	/**
 	 * Extracts the specified region from image2, then makes the given mask be the alpha channel

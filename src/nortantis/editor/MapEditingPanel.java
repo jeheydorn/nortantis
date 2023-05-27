@@ -28,6 +28,7 @@ public class MapEditingPanel extends ImagePanel
 	private Collection<Edge> highlightedEdges;
 	private Collection<Edge> processingEdges;
 	private boolean showLakes;
+	public BufferedImage mapFromMapCreator;
 	
 	public MapEditingPanel(BufferedImage image)
 	{

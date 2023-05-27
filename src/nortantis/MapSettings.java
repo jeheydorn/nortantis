@@ -47,13 +47,14 @@ public class MapSettings implements Serializable
 	 *  A scalar multiplied by the map height and width to get the final resolution.
 	 */
 	public double resolution;
-	public int landBlur;
-	public int oceanEffectSize;
+	public int coastShadingLevel;
+	public int oceanEffectsLevel;
+	public int concentricWaveCount;
 	public OceanEffect oceanEffect;
 	public int worldSize;
 	public Color riverColor;
 	public Color roadColor;
-	public Color landBlurColor;
+	public Color coastShadingColor;
 	public Color oceanEffectsColor;
 	public Color coastlineColor;
 	public double centerLandToWaterProbability;
@@ -113,6 +114,7 @@ public class MapSettings implements Serializable
 	 * Default values for new settings
 	 */
 	private final Color defaultRoadColor = Color.black;
+
 	
 	public MapSettings()
 	{
@@ -133,13 +135,14 @@ public class MapSettings implements Serializable
 		Properties result = new Properties();
 		result.setProperty("randomSeed", randomSeed + "");
 		result.setProperty("resolution", resolution + "");
-		result.setProperty("landBlur", landBlur + "");
-		result.setProperty("oceanEffects", oceanEffectSize + "");
+		result.setProperty("landBlur", coastShadingLevel + "");
+		result.setProperty("oceanEffects", oceanEffectsLevel + "");
+		result.setProperty("concentricWaveCount", concentricWaveCount + "");
 		result.setProperty("oceanEffect", oceanEffect + "");
 		result.setProperty("worldSize", worldSize + "");
 		result.setProperty("riverColor", colorToString(riverColor));
 		result.setProperty("roadColor", colorToString(roadColor));
-		result.setProperty("landBlurColor", colorToString(landBlurColor));
+		result.setProperty("landBlurColor", colorToString(coastShadingColor));
 		result.setProperty("oceanEffectsColor", colorToString(oceanEffectsColor));
 		result.setProperty("coastlineColor", colorToString(coastlineColor));
 		result.setProperty("edgeLandToWaterProbability", edgeLandToWaterProbability + "");
@@ -333,18 +336,33 @@ public class MapSettings implements Serializable
 				return Double.parseDouble(props.getProperty("resolution"));
 			}
 		});
-		landBlur = getProperty("landBlur", new Function0<Integer>()
+		coastShadingLevel = getProperty("landBlur", new Function0<Integer>()
 		{
 			public Integer apply()
 			{
-				return (int)(Integer.parseInt(props.getProperty("landBlur")));
+				return (int) Integer.parseInt(props.getProperty("landBlur"));
 			}
 		});
-		oceanEffectSize = getProperty("oceanEffects", new Function0<Integer>()
+		oceanEffectsLevel = getProperty("oceanEffects", new Function0<Integer>()
 		{
 			public Integer apply()
 			{
-				return (int)(Integer.parseInt(props.getProperty("oceanEffects")));
+				return (int)Integer.parseInt(props.getProperty("oceanEffects"));
+			}
+		});
+		concentricWaveCount = getProperty("concentricWaveCount", new Function0<Integer>()
+		{
+			public Integer apply()
+			{
+				// I split concentricWaveCount out as a separate property from oceanEffectSize, so older setting files
+				// won't have the former, and so it must be derived from the latter.
+				if (props.getProperty("concentricWaveCount") == null 
+						|| Integer.parseInt(props.getProperty("concentricWaveCount")) < 1)
+				{
+					return Math.max(1, oceanEffectsLevel / 14);
+				}
+				
+				return (int)Integer.parseInt(props.getProperty("concentricWaveCount"));
 			}
 		});
 		worldSize = getProperty("worldSize", new Function0<Integer>()
@@ -373,7 +391,7 @@ public class MapSettings implements Serializable
 				return parseColor(roadColorString);
 			}
 		});
-		landBlurColor = getProperty("landBlurColor", new Function0<Color>()
+		coastShadingColor = getProperty("landBlurColor", new Function0<Color>()
 		{
 			public Color apply()
 			{

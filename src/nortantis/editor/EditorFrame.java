@@ -65,6 +65,7 @@ public class EditorFrame extends JFrame
 	private TitledBorder toolOptionsPanelBorder;
 	private JMenuItem clearEntireMapButton;
 	private boolean hadEditsAtStartup;
+	public boolean isMapReadyForInteractions;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -102,7 +103,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				if (currentTool.isMapVisible)
+				if (isMapReadyForInteractions)
 				{
 					currentTool.handleMouseClickOnMap(e);
 				}
@@ -111,7 +112,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (currentTool.isMapVisible)
+				if (isMapReadyForInteractions)
 				{
 					currentTool.handleMousePressedOnMap(e);
 				}
@@ -120,7 +121,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				if (currentTool.isMapVisible)
+				if (isMapReadyForInteractions)
 				{
 					currentTool.handleMouseReleasedOnMap(e);
 				}
@@ -133,7 +134,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				if (currentTool.isMapVisible)
+				if (isMapReadyForInteractions)
 				{
 					currentTool.handleMouseMovedOnMap(e);
 				}
@@ -142,7 +143,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (currentTool.isMapVisible)
+				if (isMapReadyForInteractions)
 				{
 					currentTool.handleMouseDraggedOnMap(e);
 				}
@@ -165,7 +166,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				if (currentTool.isMapVisible)
+				if (isMapReadyForInteractions)
 				{
 					currentTool.handleMouseExitedMap(e);
 				}
@@ -369,6 +370,7 @@ public class EditorFrame extends JFrame
 		});
 		
 		handleToolSelected(currentTool);
+		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem()));
 	}
 	
 	private void showMapChangesMessage(RunSwing runSwing)
@@ -514,7 +516,13 @@ public class EditorFrame extends JFrame
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.repaint();
-		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem()));
+		if (mapEditingPanel.mapFromMapCreator != null)
+		{
+			// TODO this needs to be run in a background thread because it can be slow.
+			mapEditingPanel.image = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
+		}
+		currentTool.onActivate();
+		enableOrDisableToolToggleButtonsAndZoom(true);
 	}
 	
 	public void enableOrDisableToolToggleButtonsAndZoom(boolean enable)

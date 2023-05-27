@@ -52,6 +52,9 @@ public class MapCreator
 	// This is a base width for determining how large to draw text and effects.
 	private static final double baseResolution = 1536;
 	
+	private static final int concentricWaveWidthBetweenWaves = 12;
+	private static final int concentricWaveLineWidth = 2;
+	
 	public MapCreator()
 	{
 	}
@@ -115,13 +118,15 @@ public class MapCreator
 
 		// To handle edge/effects changes outside centersChangedBounds box caused by centers in centersChanged, pad the bounds of the
 		// snippet to replace to include the width of ocean effects, land effects, and with widest possible line that can be drawn,
-		// whichever is largest. The reason this is divided by 2 is because the numerator (before applying Math.ceil) is the size
-		// of the kernel used to create the ocean affects using image convolution, and the extent to which a pixel in the original 
-		// image has an effect when doing convolution is half the width of the kernel. 
-		double effectsPadding = Math.ceil(Math.max(settings.oceanEffectSize, settings.landBlur)) / 2.0;
-		// Increase effectsPadding by the maximum width of any line that can be drawn, probably a very wide river. Since there's
-		// no easy way to find that number, just guess.
-		effectsPadding = Math.max(effectsPadding, 8) * sizeMultiplier;
+		// whichever is largest. 
+		double effectsPadding = Math.ceil(Math.max(settings.oceanEffect == OceanEffect.ConcentricWaves ?
+					  settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
+					: settings.oceanEffectsLevel, 
+				settings.coastShadingLevel));
+		// Increase effectsPadding by the width of a coastline, plus one pixel extra just to be safe.
+		effectsPadding += 2;
+		
+		effectsPadding *= sizeMultiplier;
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
 		// Expand snippetToReplaceBounds to include all icons the centers in centersChanged drew the last time they were drawn.
@@ -613,13 +618,13 @@ public class MapCreator
 	private BufferedImage darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double sizeMultiplier, 
 			BufferedImage mapOrSnippet, BufferedImage landMask, Background background, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{		
-		BufferedImage landBlur;
-		int blurLevel = (int) (settings.landBlur * sizeMultiplier);
+		BufferedImage coastShading;
+		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
 		
 		final float scaleForDarkening = coastlineShadingScale;
 		int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 		double targetStrokeWidth = sizeMultiplier;
-		float scale = ((float)settings.landBlurColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening
+		float scale = ((float)settings.coastShadingColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening
 				* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);	
 
 		if (blurLevel > 0)
@@ -640,10 +645,10 @@ public class MapCreator
 				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 				g.setColor(Color.white);
 				graph.drawRegionBorders(g, sizeMultiplier, false, centersToDraw, drawBounds);
-				landBlur = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
+				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
 				// Remove the land blur from the ocean side of the borders and color the blur
 				// according to each region's blur color.
-				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+				coastShading = ImageHelper.maskWithColor(coastShading, Color.black, landMask, false);
 				Map<Integer, Color> colors = new HashMap<>();
 				if (graph.regions.size() > 0)
 				{
@@ -659,23 +664,16 @@ public class MapCreator
 				{
 					colors.put(1, settings.landColor);
 				}
-				return ImageHelper.maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, landBlur, true);
+				return ImageHelper.maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true);
 			}
 			else
 			{
-				// TODO remove debug code
-				//ImageHelper.write(coastlineAndLakeShoreMask, "coastlineAndLakeShoreMask.png");
-				//ImageHelper.write(landMask, "landMask.png");
-				
-				landBlur = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
+				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
 				
 				// Remove the land blur from the ocean side of the borders.
-				landBlur = ImageHelper.maskWithColor(landBlur, Color.black, landMask, false);
+				coastShading = ImageHelper.maskWithColor(coastShading, Color.black, landMask, false);
 				
-				// TODO remove debug code
-				//ImageHelper.write(landBlur, "landBlur.png");
-				
-				return ImageHelper.maskWithColor(mapOrSnippet, settings.landBlurColor, landBlur, true);
+				return ImageHelper.maskWithColor(mapOrSnippet, settings.coastShadingColor, coastShading, true);
 			}
 		}
 		return mapOrSnippet;
@@ -689,9 +687,10 @@ public class MapCreator
 			drawBounds = graph.bounds;
 		}
 		
-		BufferedImage oceanBlur = null;
-		int blurLevel = (int) (settings.oceanEffectSize * sizeMultiplier);
-		if (blurLevel > 0)
+		BufferedImage oceanEffects = null;
+		int oceanEffectsLevelScaled = (int) (settings.oceanEffectsLevel * sizeMultiplier);
+		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur) && oceanEffectsLevelScaled > 0)
+				|| (settings.oceanEffect == OceanEffect.ConcentricWaves && settings.concentricWaveCount > 0))
 		{
 			double targetStrokeWidth = sizeMultiplier; 
 			BufferedImage coastlineMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_BINARY);
@@ -707,29 +706,28 @@ public class MapCreator
 				float[][] kernel;
 				if (settings.oceanEffect == OceanEffect.Ripples)
 				{
-					kernel = ImageHelper.createPositiveSincKernel(blurLevel, 1.0 / sizeMultiplier);
+					kernel = ImageHelper.createPositiveSincKernel(oceanEffectsLevelScaled, 1.0 / sizeMultiplier);
 				} 
 				else
 				{
-					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectSize * sizeMultiplier));
+					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectsLevel * sizeMultiplier));
 				}
 				int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = ((float)settings.oceanEffectsColor.getAlpha()) / ((float)(maxPixelValue)) * scaleForDarkening 
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanBlur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale);
+				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale);
 				// Remove the ocean blur from the land side of the borders.
-				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
+				oceanEffects = ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
 			}
 			else
 			{
-				oceanBlur = new BufferedImage((int)drawBounds.width, (int)drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
+				oceanEffects = new BufferedImage((int)drawBounds.width, (int)drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
 
-				double widthBetweenWaves = 12.0 * sizeMultiplier;
-				double lineWidth = 2.0 * sizeMultiplier;
-				int numWaves = (int)(blurLevel / (widthBetweenWaves + lineWidth));
-				double largestLineWidth = blurLevel - blurLevel % (widthBetweenWaves + lineWidth);
-				for (int i : new Range(0, numWaves))
+				double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
+				double lineWidth = concentricWaveLineWidth * sizeMultiplier;
+				double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + lineWidth);
+				for (int i : new Range(0, settings.concentricWaveCount))
 				{
 					{
 						double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth));
@@ -739,7 +737,7 @@ public class MapCreator
 						}
 						BufferedImage blur = ImageHelper.convolveGrayscale(coastlineMask, ImageHelper.createGaussianKernel((int)whiteWidth), true);
 						ImageHelper.threshold(blur, 1, settings.oceanEffectsColor.getAlpha());
-						ImageHelper.add(oceanBlur, blur);
+						ImageHelper.add(oceanEffects, blur);
 					}
 					
 					{
@@ -750,14 +748,14 @@ public class MapCreator
 						}
 						BufferedImage blur = ImageHelper.convolveGrayscale(coastlineMask, ImageHelper.createGaussianKernel((int)blackWidth), true);
 						ImageHelper.threshold(blur, 1);
-						ImageHelper.subtract(oceanBlur, blur);
+						ImageHelper.subtract(oceanEffects, blur);
 					}
 				}
 				
-				oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
+				oceanEffects = ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
 			}
 		}
-		return oceanBlur;
+		return oceanEffects;
 	}
 	
 	private static float calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)

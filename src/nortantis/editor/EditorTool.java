@@ -62,7 +62,6 @@ public abstract class EditorTool
 	Stack<MapChange> redoStack;
 	protected MapEdits copyOfEditsWhenToolWasSelected;
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
-	protected boolean isMapVisible;
 	
 	public EditorTool(MapSettings settings, EditorFrame parent)
 	{
@@ -116,6 +115,8 @@ public abstract class EditorTool
 	
 	public abstract void onSwitchingAway();
 	
+	public abstract void onActivate();
+	
 	protected abstract JPanel createToolsOptionsPanel();
 	
 	private static final int labelWidth = 80;
@@ -164,12 +165,12 @@ public abstract class EditorTool
 	}
 	
 	/**
-	 * Handles when zoom level changes in the main display.
+	 * Handles when zoom level changes in the main display.onBeforeCreateMapFull
 	 * @param zoomLevel Between 0.25 and 1.
 	 */
 	public void handleZoomChange(double zoomLevel)
 	{
-		isMapVisible = false;
+		parent.isMapReadyForInteractions = false;
 		zoom = zoomLevel;
 		mapEditingPanel.clearAreasToDraw();
 		mapParts = null;
@@ -186,7 +187,15 @@ public abstract class EditorTool
 	protected abstract void handleMouseExitedMap(MouseEvent e);
 
 	
-	protected abstract void onBeforeCreateMapFull();
+	protected void onBeforeCreateMapFull()
+	{
+		settings.resolution = zoom;
+		settings.frayedBorder = false;
+		settings.drawText = false;
+		settings.grungeWidth = 0;
+		settings.drawBorder = false;
+		settings.alwaysUpdateLandBackgroundWithOcean = true;
+	}
 	
 	/**
 	 * Do any processing to the generated map before displaying it, and return the map to display.
@@ -194,7 +203,7 @@ public abstract class EditorTool
 	 * @param map The generated map
 	 * @return The map to display
 	 */
-	protected abstract BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType);
+	protected abstract BufferedImage onBeforeShowMap(BufferedImage map);
 	
 	public void updateChangedCentersOnMap(Set<Center> centersChanged)
 	{
@@ -313,7 +322,7 @@ public abstract class EditorTool
 					}
 					else
 					{
-						BufferedImage map = mapEditingPanel.image;
+						BufferedImage map = mapEditingPanel.mapFromMapCreator;
 						// Incremental update
 						if (centersChanged != null)
 						{
@@ -337,10 +346,9 @@ public abstract class EditorTool
 	        @Override
 	        public void done()
 	        {
-	        	BufferedImage map = null;
 	            try 
 	            {
-	                map = get();
+	            	mapEditingPanel.mapFromMapCreator = get();
 	            } 
 	            catch (InterruptedException ex) 
 	            {
@@ -361,7 +369,7 @@ public abstract class EditorTool
 	            	}
 	            }
 	            
-	            if (map != null)
+	            if (mapEditingPanel.mapFromMapCreator != null)
 	            {	
 					mapEditingPanel.setGraph(mapParts.graph);
 
@@ -373,9 +381,8 @@ public abstract class EditorTool
 	            	{
 	            		copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
 	            	}
-	            	map = onBeforeShowMap(map, updateType);
+	            	mapEditingPanel.image = onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 	            	
-	            	mapEditingPanel.image = map; 
 	            	parent.enableOrDisableToolToggleButtonsAndZoom(true);
 
 	            	mapIsBeingDrawn = false;
@@ -413,7 +420,7 @@ public abstract class EditorTool
 		            mapEditingPanel.repaint();
 		            // Tell the scroll pane to update itself.
 		            mapEditingPanel.revalidate();   
-		            isMapVisible = true;
+		            parent.isMapReadyForInteractions = true;
 	            }
 	            else
 	            {

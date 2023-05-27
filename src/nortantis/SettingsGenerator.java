@@ -57,7 +57,11 @@ public class SettingsGenerator
 		
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		Color oceanColor;
-		if (landColor == settings.landColor)
+		if (settings.oceanEffect == OceanEffect.Ripples)
+		{
+			oceanColor = settings.oceanColor;
+		}
+		else if (landColor == settings.landColor)
 		{
 			oceanColor = settings.oceanColor;
 		}
@@ -66,15 +70,17 @@ public class SettingsGenerator
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
 		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
-		settings.oceanEffectSize = 10 + Math.abs(rand.nextInt(40));
-		settings.landBlur = 10 + Math.abs(rand.nextInt(40));
+		settings.oceanEffectsLevel = 10 + Math.abs(rand.nextInt(40));
+		settings.concentricWaveCount = Math.abs((new Random().nextInt() % 2)) + 2; // 2 or 3. 1 Doesn't look good to me, and 4 is a bit overdone.
+		settings.coastShadingLevel = 10 + Math.abs(rand.nextInt(40));
 		
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		
-		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
+		settings.oceanColor = settings.oceanEffect == OceanEffect.Ripples ? oceanColor
+				: MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 		
 		double landBlurColorScale = 0.5;
-		settings.landBlurColor = new Color((int)(settings.landColor.getRed() * landBlurColorScale), (int)(settings.landColor.getGreen() * landBlurColorScale), (int)(settings.landColor.getBlue() * landBlurColorScale));
+		settings.coastShadingColor = new Color((int)(settings.landColor.getRed() * landBlurColorScale), (int)(settings.landColor.getGreen() * landBlurColorScale), (int)(settings.landColor.getBlue() * landBlurColorScale));
 		if (settings.oceanEffect == OceanEffect.Ripples)
 		{
 			settings.oceanEffectsColor = Color.black;

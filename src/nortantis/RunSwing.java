@@ -87,11 +87,12 @@ public class RunSwing
 	JSlider edgeLandToWaterProbSlider;
 	JSlider centerLandToWaterProbSlider;
 	JSlider scaleSlider;
-	JSlider landBlurSlider;
-	JSlider oceanEffectsSlider;
+	JSlider coastShadingSlider;
+	JSlider oceanEffectsLevelSlider;
+	JSlider concentricWavesLevelSlider;
 	JRadioButton wavesRadioButton;
 	JRadioButton blurRadioButton;
-	JPanel landBlurColorDisplay;
+	JPanel coastShadingColorDisplay;
 	JPanel coastlineColorDisplay;
 	JPanel oceanEffectsColorDisplay;
 	JPanel riverColorDisplay;
@@ -179,11 +180,12 @@ public class RunSwing
 	private JSlider cityProbabilitySlider;
 	public final double cityFrequencySliderScale = 100.0 * 1.0/SettingsGenerator.maxCityProbabillity;
 	private JLabel cityProbabilityLabel;
-	private JButton btnChooseLandBlurColor;
+	private JButton btnChooseCoastShadingColor;
 	private JLabel label_7;
 	private JRadioButton jaggedLinesButton;
 	private JRadioButton smoothLinesButton;
 	private JRadioButton concentricWavesButton;
+	private ActionListener oceanEffectsListener;
 	private JLabel lblCityIconsSubfolder;
 	private JComboBox<String> cityIconsSetComboBox;
 
@@ -902,15 +904,15 @@ public class RunSwing
 				brightnessSlider.setEnabled(drawRegionsCheckBox.isSelected());
 				regionsSeedTextField.setEnabled(drawRegionsCheckBox.isSelected());
 				newRegionSeedButton.setEnabled(drawRegionsCheckBox.isSelected());
-				btnChooseLandBlurColor.setEnabled(!drawRegionsCheckBox.isSelected());
+				btnChooseCoastShadingColor.setEnabled(!drawRegionsCheckBox.isSelected());
 				final String message ="Land blur color selection is disabled because it will use the region color when draw regions is checked.";
 				if (drawRegionsCheckBox.isSelected())
 				{
-					addToTooltip(btnChooseLandBlurColor, message);
+					addToTooltip(btnChooseCoastShadingColor, message);
 				}
 				else
 				{
-					removeFromToolTip(btnChooseLandBlurColor, message);
+					removeFromToolTip(btnChooseCoastShadingColor, message);
 				}
 			}
 		});
@@ -983,74 +985,45 @@ public class RunSwing
 		tabbedPane.addTab("Effects", null, effectsPanel, null);
 		effectsPanel.setLayout(null);
 				
-		JLabel label_1 = new JLabel("Land blur:");
-		label_1.setToolTipText("Adds fading color to coastlines.");
-		label_1.setBounds(10, 93, 82, 15);
-		effectsPanel.add(label_1);
+		JLabel lblCoastlineShading = new JLabel("Coast shading:");
+		lblCoastlineShading.setToolTipText("Adds fading color to coastlines.");
+		lblCoastlineShading.setBounds(10, 93, 109, 15);
+		effectsPanel.add(lblCoastlineShading);
 		
-		landBlurSlider = new JSlider();
-		landBlurSlider.setValue(30);
-		landBlurSlider.setPaintTicks(true);
-		landBlurSlider.setPaintLabels(true);
-		landBlurSlider.setMinorTickSpacing(5);
-		landBlurSlider.setMaximum(100);
-		landBlurSlider.setMajorTickSpacing(20);
-		landBlurSlider.setBounds(129, 82, 245, 79);
-		effectsPanel.add(landBlurSlider);
+		coastShadingSlider = new JSlider();
+		coastShadingSlider.setValue(30);
+		coastShadingSlider.setPaintTicks(true);
+		coastShadingSlider.setPaintLabels(true);
+		coastShadingSlider.setMinorTickSpacing(5);
+		coastShadingSlider.setMaximum(100);
+		coastShadingSlider.setMajorTickSpacing(20);
+		coastShadingSlider.setBounds(129, 82, 245, 79);
+		effectsPanel.add(coastShadingSlider);
 		
-		JLabel label_2 = new JLabel("Ocean effects:");
-		label_2.setToolTipText("Adds fading color or waves to oceans at coastlines.");
-		label_2.setBounds(10, 166, 122, 15);
-		effectsPanel.add(label_2);
-		
-		oceanEffectsSlider = new JSlider();
-		oceanEffectsSlider.setValue(30);
-		oceanEffectsSlider.setPaintTicks(true);
-		oceanEffectsSlider.setPaintLabels(true);
-		oceanEffectsSlider.setMinorTickSpacing(5);
-		oceanEffectsSlider.setMaximum(100);
-		oceanEffectsSlider.setMajorTickSpacing(20);
-		oceanEffectsSlider.setBounds(129, 154, 245, 79);
-		effectsPanel.add(oceanEffectsSlider);
-		
-		JLabel lblOceanEffectType = new JLabel("Ocean effect type:");
-		lblOceanEffectType.setBounds(10, 246, 122, 15);
-		effectsPanel.add(lblOceanEffectType);
-		
-		wavesRadioButton = new JRadioButton("Ripples");
-		wavesRadioButton.setBounds(129, 270, 185, 23);
-		effectsPanel.add(wavesRadioButton);
-		
-		blurRadioButton = new JRadioButton("Blur");
-		blurRadioButton.setBounds(129, 293, 185, 38);
-		effectsPanel.add(blurRadioButton);
-		
-		concentricWavesButton = new JRadioButton("Concentric waves");
-		concentricWavesButton.setBounds(129, 236, 185, 35);
-		effectsPanel.add(concentricWavesButton);
+		JLabel lblOceanEffectsLevel = new JLabel("Ocean effects level:");
+		lblOceanEffectsLevel.setToolTipText("Adds fading color or waves to oceans at coastlines.");
+		lblOceanEffectsLevel.setBounds(10, 264, 122, 15);
+		effectsPanel.add(lblOceanEffectsLevel);
 		
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
-	    oceanEffectButtonGroup.add(wavesRadioButton);
-	    oceanEffectButtonGroup.add(blurRadioButton);
-	    oceanEffectButtonGroup.add(concentricWavesButton);
 		
-		JLabel label_4 = new JLabel("Land blur color:");
-		label_4.setBounds(461, 82, 134, 23);
-		effectsPanel.add(label_4);
+		JLabel lblCoastShadingColor = new JLabel("Coast shading color:");
+		lblCoastShadingColor.setBounds(461, 82, 134, 23);
+		effectsPanel.add(lblCoastShadingColor);
 		
-		landBlurColorDisplay = new JPanel();
-		landBlurColorDisplay.setBackground(new Color(119, 91, 36));
-		landBlurColorDisplay.setBounds(631, 79, 82, 23);
-		effectsPanel.add(landBlurColorDisplay);
+		coastShadingColorDisplay = new JPanel();
+		coastShadingColorDisplay.setBackground(new Color(119, 91, 36));
+		coastShadingColorDisplay.setBounds(631, 79, 82, 23);
+		effectsPanel.add(coastShadingColorDisplay);
 		
-		btnChooseLandBlurColor = new JButton("Choose");
-		btnChooseLandBlurColor.addActionListener(new ActionListener() {
+		btnChooseCoastShadingColor = new JButton("Choose");
+		btnChooseCoastShadingColor.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-		        showColorPicker(effectsPanel, landBlurColorDisplay, "Land blur color");
+		        showColorPicker(effectsPanel, coastShadingColorDisplay, "Land blur color");
 			}
 		});
-		btnChooseLandBlurColor.setBounds(725, 79, 87, 25);
-		effectsPanel.add(btnChooseLandBlurColor);
+		btnChooseCoastShadingColor.setBounds(725, 79, 87, 25);
+		effectsPanel.add(btnChooseCoastShadingColor);
 		
 		JLabel label_5 = new JLabel("Ocean effects color:");
 		label_5.setBounds(461, 120, 152, 23);
@@ -1152,6 +1125,57 @@ public class RunSwing
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
 		lineStyleButtonGroup.add(smoothLinesButton);
+		
+		concentricWavesButton = new JRadioButton("Concentric waves");
+		concentricWavesButton.setBounds(129, 163, 185, 35);
+		effectsPanel.add(concentricWavesButton);
+		oceanEffectButtonGroup.add(concentricWavesButton);
+		oceanEffectsListener = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
+				oceanEffectsLevelSlider.setVisible(!concentricWavesButton.isSelected());
+			}
+		};
+		concentricWavesButton.addActionListener(oceanEffectsListener);
+		
+		wavesRadioButton = new JRadioButton("Ripples");
+		wavesRadioButton.setBounds(129, 197, 185, 23);
+		effectsPanel.add(wavesRadioButton);
+		oceanEffectButtonGroup.add(wavesRadioButton);
+		wavesRadioButton.addActionListener(oceanEffectsListener);
+		
+		blurRadioButton = new JRadioButton("Shade");
+		blurRadioButton.setBounds(129, 220, 185, 38);
+		effectsPanel.add(blurRadioButton);
+		oceanEffectButtonGroup.add(blurRadioButton);
+		blurRadioButton.addActionListener(oceanEffectsListener);
+		
+		JLabel lblOceanEffectType = new JLabel("Ocean effects type:");
+		lblOceanEffectType.setBounds(10, 173, 122, 15);
+		effectsPanel.add(lblOceanEffectType);
+		
+		concentricWavesLevelSlider = new JSlider();
+		concentricWavesLevelSlider.setMinimum(1);
+		concentricWavesLevelSlider.setValue(30);
+		concentricWavesLevelSlider.setPaintTicks(true);
+		concentricWavesLevelSlider.setPaintLabels(true);
+		concentricWavesLevelSlider.setMinorTickSpacing(1);
+		concentricWavesLevelSlider.setMaximum(4);
+		concentricWavesLevelSlider.setMajorTickSpacing(1);
+		concentricWavesLevelSlider.setBounds(129, 252, 134, 79);
+		effectsPanel.add(concentricWavesLevelSlider);
+		
+		oceanEffectsLevelSlider = new JSlider();
+		oceanEffectsLevelSlider.setMinorTickSpacing(5);
+		oceanEffectsLevelSlider.setValue(2);
+		oceanEffectsLevelSlider.setPaintTicks(true);
+		oceanEffectsLevelSlider.setPaintLabels(true);
+		oceanEffectsLevelSlider.setMajorTickSpacing(20);
+		oceanEffectsLevelSlider.setBounds(129, 252, 245, 79);
+		effectsPanel.add(oceanEffectsLevelSlider);
 
 		final JPanel borderPanel = new JPanel();
 		tabbedPane.addTab("Border", borderPanel);
@@ -2134,12 +2158,14 @@ public class RunSwing
 		edgeLandToWaterProbSlider.setValue((int)(settings.edgeLandToWaterProbability * 100));
 		centerLandToWaterProbSlider.setValue((int)(settings.centerLandToWaterProbability * 100));
 		scaleSlider.setValue((int)(settings.resolution * 100));
-		landBlurSlider.setValue(settings.landBlur);
-		oceanEffectsSlider.setValue(settings.oceanEffectSize);
+		coastShadingSlider.setValue(settings.coastShadingLevel);
+		oceanEffectsLevelSlider.setValue(settings.oceanEffectsLevel);
+		concentricWavesLevelSlider.setValue(settings.concentricWaveCount);
 		wavesRadioButton.setSelected(settings.oceanEffect == OceanEffect.Ripples);
 		blurRadioButton.setSelected(settings.oceanEffect == OceanEffect.Blur);
 		concentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.ConcentricWaves);
-		landBlurColorDisplay.setBackground(settings.landBlurColor);
+		oceanEffectsListener.actionPerformed(null);
+		coastShadingColorDisplay.setBackground(settings.coastShadingColor);
 		coastlineColorDisplay.setBackground(settings.coastlineColor);
 		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
 		riverColorDisplay.setBackground(settings.riverColor);
@@ -2280,10 +2306,11 @@ public class RunSwing
 		settings.edgeLandToWaterProbability = edgeLandToWaterProbSlider.getValue() / 100.0;
 		settings.centerLandToWaterProbability = centerLandToWaterProbSlider.getValue() / 100.0;
 		settings.resolution = scaleSlider.getValue() / 100.0;
-		settings.landBlur = landBlurSlider.getValue();
-		settings.oceanEffectSize = oceanEffectsSlider.getValue();
+		settings.coastShadingLevel = coastShadingSlider.getValue();
+		settings.oceanEffectsLevel = oceanEffectsLevelSlider.getValue();
+		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanEffect = wavesRadioButton.isSelected() ? OceanEffect.Ripples : blurRadioButton.isSelected() ? OceanEffect.Blur : OceanEffect.ConcentricWaves;
-		settings.landBlurColor = landBlurColorDisplay.getBackground();
+		settings.coastShadingColor = coastShadingColorDisplay.getBackground();
 		settings.coastlineColor = coastlineColorDisplay.getBackground();
 		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();
 		settings.riverColor = riverColorDisplay.getBackground();

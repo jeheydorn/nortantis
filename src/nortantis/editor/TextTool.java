@@ -218,9 +218,8 @@ public class TextTool extends EditorTool
 	}
 	
 	@Override
-	public void handleZoomChange(double zoomLevel)
-	{	
-		super.handleZoomChange(zoomLevel);
+	public void onActivate()
+	{
 		editTextField.requestFocus();
 	}
 	
@@ -231,21 +230,7 @@ public class TextTool extends EditorTool
 	}
 	
 	@Override
-	protected void onBeforeCreateMapFull()
-	{
-		// Change a few settings to make map creation faster.
-		settings.resolution = zoom;
-		settings.frayedBorder = false;
-		settings.drawText = false;
-		settings.grungeWidth = 0;
-		settings.drawBorder = false;
-		settings.alwaysUpdateLandBackgroundWithOcean = true;
-		settings.drawIcons = true;
-		settings.drawRivers = true;
-	}
-	
-	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType udpateType)
+	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{    
     	// Add text to the map
 		mapWithoutText = map;

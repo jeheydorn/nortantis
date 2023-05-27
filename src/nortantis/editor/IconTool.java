@@ -590,22 +590,17 @@ public class IconTool extends EditorTool
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.repaint();
 	}
-
+	
 	@Override
-	protected void onBeforeCreateMapFull()
+	public void onActivate()
 	{
-		// Change a few settings to make map creation faster.
-		settings.resolution = zoom;
-		settings.frayedBorder = false;
-		settings.drawText = false;
-		settings.grungeWidth = 0;
-		settings.drawBorder = false;
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map, UpdateType updateType)
+	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{	
-		// TODO Figure out how to efficiently handle drawing rivers on top with increment metal drawing.
+		// TODO Figure out how to efficiently handle drawing rivers on top with increment metal drawing. 
+		// I'm thinking of highlighting them in the map editing panel instead of drawing them on top.
 					
 		if (showRiversOnTopCheckBox.isSelected())
 		{
@@ -628,9 +623,6 @@ public class IconTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{
-		mapEditingPanel.addAllSelectedCenters(centers);
-		mapEditingPanel.repaint();
-		
 		createAndShowMapIncrementalUsingCenters(centers);
 	}
 
