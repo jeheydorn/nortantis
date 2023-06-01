@@ -20,6 +20,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -46,6 +47,7 @@ public class LandWaterTool extends EditorTool
 	private JRadioButton mergeRegionsButton;
 	private Region selectedRegion;
 	private JToggleButton selectColorFromMapButton;
+	private JCheckBox highlightLakesCheckbox;
 	
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
@@ -207,6 +209,21 @@ public class LandWaterTool extends EditorTool
 	    }
 	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
 	    
+	    JLabel highlightLakesLabel = new JLabel("");
+	    highlightLakesCheckbox = new JCheckBox("Highlight lakes");
+	    highlightLakesCheckbox.setToolTipText("Highlight lakes to make them easier to see.");
+	    highlightLakesCheckbox.setSelected(true);
+	    EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, highlightLakesLabel, highlightLakesCheckbox);
+	    highlightLakesCheckbox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				mapEditingPanel.setHighlightLakes(highlightLakesCheckbox.isSelected());
+				mapEditingPanel.repaint();
+			}
+		});
+	    
 	    // Prevent the panel from shrinking when components are hidden.
 	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorFrame.toolsPanelWidth - 25, 0)));
 
@@ -328,7 +345,7 @@ public class LandWaterTool extends EditorTool
 					if (selectedRegion == null)
 					{
 						selectedRegion = region;
-						mapEditingPanel.addAllSelectedCenters(selectedRegion.getCenters());
+						mapEditingPanel.addSelectedCenters(selectedRegion.getCenters());
 					}
 					else
 					{
@@ -453,7 +470,7 @@ public class LandWaterTool extends EditorTool
 		if (oceanButton.isSelected() || lakeButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected() || landButton.isSelected())
 		{		
 			Set<Center> selected = getSelectedCenters(e.getPoint());
-			mapEditingPanel.addAllHighlightedCenters(selected);
+			mapEditingPanel.addHighlightedCenters(selected);
 			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 		}
 		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
@@ -463,7 +480,7 @@ public class LandWaterTool extends EditorTool
 			{
 				if (center.region != null)
 				{
-					mapEditingPanel.addAllHighlightedCenters(center.region.getCenters());
+					mapEditingPanel.addHighlightedCenters(center.region.getCenters());
 				}
 				mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineGroup);
 			}
@@ -487,7 +504,7 @@ public class LandWaterTool extends EditorTool
 	@Override 
 	public void onActivate()
 	{
-		mapEditingPanel.setShowLakes(true);
+		mapEditingPanel.setHighlightLakes(highlightLakesCheckbox.isSelected());
 	}
 
 	@Override
@@ -499,7 +516,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		mapEditingPanel.setShowLakes(false);
+		mapEditingPanel.setHighlightLakes(false);
 	}
 
 	@Override

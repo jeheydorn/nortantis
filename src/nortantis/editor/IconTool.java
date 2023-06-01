@@ -66,7 +66,7 @@ public class IconTool extends EditorTool
 	private JPanel riverOptionPanel;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
-	private JCheckBox showRiversOnTopCheckBox;
+	private JCheckBox highlightRiversCheckbox;
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
 
@@ -96,6 +96,7 @@ public class IconTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
+		mapEditingPanel.setHighlightRivers(false);
 	}
 
 	@Override
@@ -280,16 +281,17 @@ public class IconTool extends EditorTool
 	    }
 	    brushSizePanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
 	    
-	    JLabel showRiversLabel = new JLabel("");
-	    showRiversOnTopCheckBox = new JCheckBox("Show rivers on top?");
-	    showRiversOnTopCheckBox.setToolTipText("Temporarily show rivers on top of icons to make them visible in the editor.");
-	    EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, showRiversLabel, showRiversOnTopCheckBox);
-	    showRiversOnTopCheckBox.addActionListener(new ActionListener()
+	    JLabel highlightRiversLabel = new JLabel("");
+	    highlightRiversCheckbox = new JCheckBox("Highlight rivers");
+	    highlightRiversCheckbox.setToolTipText("Highlight rivers to make them easier to see.");
+	    EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, highlightRiversLabel, highlightRiversCheckbox);
+	    highlightRiversCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				// TODO
+				mapEditingPanel.setHighlightRivers(highlightRiversCheckbox.isSelected());
+				mapEditingPanel.repaint();
 			}
 		});
 	    		
@@ -527,7 +529,7 @@ public class IconTool extends EditorTool
 			}
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
-			mapEditingPanel.addAllProcessingEdges(river);
+			mapEditingPanel.addProcessingEdges(river);
 			mapEditingPanel.repaint();
 			
 			if (river.size() > 0)
@@ -559,7 +561,7 @@ public class IconTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedCenters();
 		Set<Center> selected = getSelectedCenters(e.getPoint());
-		mapEditingPanel.addAllHighlightedCenters(selected);
+		mapEditingPanel.addHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);	
 	}
 
@@ -594,19 +596,12 @@ public class IconTool extends EditorTool
 	@Override
 	public void onActivate()
 	{
+		mapEditingPanel.setHighlightRivers(highlightRiversCheckbox.isSelected());
 	}
 
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{	
-		// TODO Figure out how to efficiently handle drawing rivers on top with increment metal drawing. 
-		// I'm thinking of highlighting them in the map editing panel instead of drawing them on top.
-					
-		if (showRiversOnTopCheckBox.isSelected())
-		{
-			MapCreator.drawRivers(parent.settings, parent.mapParts.graph, map, parent.mapParts.sizeMultiplier, null, null);
-		}
-				 		
  		return map;
 	}
 	

@@ -13,6 +13,7 @@ import java.util.Set;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
 import nortantis.ImagePanel;
+import nortantis.MapCreator;
 import nortantis.WorldGraph;
 
 @SuppressWarnings("serial")
@@ -28,7 +29,8 @@ public class MapEditingPanel extends ImagePanel
 	private HighlightMode highlightMode;
 	private Collection<Edge> highlightedEdges;
 	private Collection<Edge> processingEdges;
-	private boolean showLakes;
+	private boolean highlightLakes;
+	private boolean highlightRivers;
 	public BufferedImage mapFromMapCreator;
 	
 	public MapEditingPanel(BufferedImage image)
@@ -50,7 +52,7 @@ public class MapEditingPanel extends ImagePanel
 		highlightedEdges.clear();
 	}
 	
-	public void addAllProcessingEdges(Collection<Edge> edges)
+	public void addProcessingEdges(Collection<Edge> edges)
 	{
 		this.processingEdges.addAll(edges);
 	}
@@ -59,6 +61,7 @@ public class MapEditingPanel extends ImagePanel
 	{
 		this.processingEdges.clear();
 	}
+
 	
 	public void setAreasToDraw(List<Area> areas)
 	{
@@ -70,7 +73,7 @@ public class MapEditingPanel extends ImagePanel
 		highlightedCenters.add(c);
 	}
 	
-	public void addAllHighlightedCenters(Collection<Center> centers)
+	public void addHighlightedCenters(Collection<Center> centers)
 	{
 		highlightedCenters.addAll(centers);
 	}
@@ -86,7 +89,7 @@ public class MapEditingPanel extends ImagePanel
 		selectedCenters.add(c);
 	}
 	
-	public void addAllSelectedCenters(Collection<Center> centers)
+	public void addSelectedCenters(Collection<Center> centers)
 	{
 		selectedCenters.addAll(centers);
 	}
@@ -99,9 +102,14 @@ public class MapEditingPanel extends ImagePanel
 		}
 	}
 	
-	public void setShowLakes(boolean enabled)
+	public void setHighlightLakes(boolean enabled)
 	{
-		this.showLakes = enabled;
+		this.highlightLakes = enabled;
+	}
+	
+	public void setHighlightRivers(boolean enabled)
+	{
+		this.highlightRivers = enabled;
 	}
 	
 	public void setGraph(WorldGraph graph)
@@ -134,17 +142,24 @@ public class MapEditingPanel extends ImagePanel
 		
 		if (graph != null)
 		{
-			if (showLakes)
+			if (highlightLakes)
 			{
 				drawLakes(g);
+			}
+			
+			if (highlightRivers)
+			{
+				drawRivers(g);
 			}
 			
 			g.setColor(highlightColor);
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
 			
-			g.setColor(processingColor);
+			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
+			
+			g.setColor(processingColor);
 			drawEdges(g, processingEdges);
 		}
 	}
@@ -195,5 +210,11 @@ public class MapEditingPanel extends ImagePanel
 				}
 			}
 		}
+	}
+	
+	private void drawRivers(Graphics g)
+	{
+		g.setColor(Color.BLUE);
+		graph.drawRivers((Graphics2D) g, MapCreator.calcSizeMultiplier(graph.getWidth()), null, null);
 	}
 }

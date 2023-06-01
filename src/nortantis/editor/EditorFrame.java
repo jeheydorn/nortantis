@@ -795,7 +795,7 @@ public class EditorFrame extends JFrame
 		         		{
 		         			if (incrementalUpdate.edgesChanged != null)
 		         			{
-		         				mapEditingPanel.addAllProcessingEdges(edgesChanged);
+		         				mapEditingPanel.addProcessingEdges(edgesChanged);
 		         			}
 		         		}
 	            	}

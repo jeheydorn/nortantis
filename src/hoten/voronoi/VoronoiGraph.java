@@ -437,7 +437,7 @@ public abstract class VoronoiGraph {
     	});
     }
     
-    public void drawRivers(Graphics2D g, double riverWidthScale, Collection<Edge> edgesToDraw, Rectangle drawBounds)
+    public void drawRivers(Graphics2D g, double sizeMultiplyer, Collection<Edge> edgesToDraw, Rectangle drawBounds)
     {
 		if (edgesToDraw == null)
 		{
@@ -455,7 +455,7 @@ public abstract class VoronoiGraph {
         {
         	if (e.river > riversThinnerThanThisWillNotBeDrawn)
         	{
-        		int width = Math.max(1, (int)(riverWidthScale + Math.sqrt(e.river * 0.1)));
+        		int width = Math.max(1, (int)(sizeMultiplyer/2.0 + Math.sqrt(e.river * 0.1)));
                 g.setStroke(new BasicStroke(width));
                 drawPath(g, noisyEdges.getNoisyEdge(e.index));
         	}

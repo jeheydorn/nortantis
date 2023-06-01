@@ -1392,7 +1392,7 @@ public class MapCreator
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.riverColor);
 		// Draw rivers thin.
-		graph.drawRivers(g, sizeMultiplier/2.0, edgesToDraw, drawBounds);
+		graph.drawRivers(g, sizeMultiplier, edgesToDraw, drawBounds);
 	}
 	
 	public static Set<String> getAvailableBorderTypes()
