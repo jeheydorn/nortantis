@@ -149,6 +149,8 @@ public class MapCreator
 			applyEdgeEdits(mapParts.graph, settings.edits, getEdgeEditsForEdges(settings.edits, edgesChanged));
 		}
 		
+		mapParts.graph.updateCenterLookupTable(centersChanged);
+		
 		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersChanged);
 		
 		// Now that we've updated icons to draw in centersChanged, check if we need to expand replaceBounds to include those icons.

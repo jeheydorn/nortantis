@@ -10,6 +10,7 @@ import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 import nortantis.TreeType;
+import nortantis.WorldGraph;
 
 /**
  * Center.java
@@ -149,15 +150,15 @@ public class Center
 		return false;
 	}
 	
-	public Rectangle createBoundingBox()
+	public Rectangle createBoundingBoxIncludingPossibleNoisyEdges()
 	{
 		// Start at a point we know is inside the desired bounds.
 		Rectangle bounds = new Rectangle(loc.x, loc.y, 0, 0);
 
 		// Add each corner to the bounds.
-		for (Corner corner : corners)
+		for (Center neighbor: neighbors)
 		{
-			bounds = bounds.add(corner.loc);
+			bounds = bounds.add(neighbor.loc);
 		}
 		
 		return bounds;

@@ -155,38 +155,38 @@ public class WorldGraph extends VoronoiGraph
 
 	@SuppressWarnings("unused")
 	private void testPoliticalRegions()
-    {
-        for (Region region : regions.values())
-        {
-        	for (Center c : region.getCenters())
-        	{
-        		assert !c.isWater;
-        		assert c.region == region;
-        	}
-        	
-        	assert centers.stream().filter(c -> c.region == region).count() == region.size();
-        }
-        assert new HashSet<>(regions.keySet()).size() == regions.size();
-        for (Center c : centers)
-        {
-        	if (!c.isWater)
-        	{
-        		assert c.region != null;
-        	}
-        	else
-        	{
-        		assert c.region == null;
-        	}
-        	
-        	if (c.region != null)
-        	{
-        		assert regions.values().stream().filter(reg -> reg.contains(c)).count() == 1;
-        	}
-        }
-        assert regions.values().stream().mapToInt(reg -> reg.size()).sum() 
-        		+ centers.stream().filter(c -> c.region == null).count() == centers.size();   	
-    }
-    
+	{
+		for (Region region : regions.values())
+		{
+			for (Center c : region.getCenters())
+			{
+				assert !c.isWater;
+				assert c.region == region;
+			}
+
+			assert centers.stream().filter(c -> c.region == region).count() == region.size();
+		}
+		assert new HashSet<>(regions.keySet()).size() == regions.size();
+		for (Center c : centers)
+		{
+			if (!c.isWater)
+			{
+				assert c.region != null;
+			}
+			else
+			{
+				assert c.region == null;
+			}
+
+			if (c.region != null)
+			{
+				assert regions.values().stream().filter(reg -> reg.contains(c)).count() == 1;
+			}
+		}
+		assert regions.values().stream().mapToInt(reg -> reg.size()).sum()
+				+ centers.stream().filter(c -> c.region == null).count() == centers.size();
+	}
+
 	public void drawRegionIndexes(Graphics2D g, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawPolygons(g, centersToDraw, drawBounds, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
@@ -198,102 +198,110 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	private void createPoliticalRegions()
 	{
-    	List<Region> regionList = new ArrayList<>();
-    	
+		List<Region> regionList = new ArrayList<>();
+
 		// Regions start as land Centers on continental plates.
-    	for (TectonicPlate plate : plates)
-    	{
-    		if (plate.type == PlateType.Continental)
-    		{
-    			Region region = new Region();	
-    			plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.addAndSetRegion(c));
-    			regionList.add(region);
-    		}
-    	}
-    	    	    	
-       	for (Region region : regionList)
-    	{
-    		// For each region, divide it by land masses separated by water.
-    		List<Set<Center>> dividedRegion = divideRegionByLand(region);
-    		
-        	if (dividedRegion.size() > 1)
-	    	{
-	    		// The region gets to keep only the largest land mass.
-	    		Set<Center> biggest = dividedRegion.stream().max((l1, l2) -> Integer.compare(l1.size(), l2.size())).get();
-	    		
-    			// then for each small land mass:
-    			for (Set<Center> regionPart : dividedRegion)
-    			{
-    				if (regionPart == biggest)
-    					continue;
-		        	// If that small land mass is connected by land to a different region, then add that land mass to that region.
-	    			Region touchingRegion = findRegionTouching(regionPart);
-	    			if (touchingRegion != null)
-	    			{
-	    				assert region != touchingRegion;
-	    	        	region.removeAll(regionPart);
-	    				touchingRegion.addAll(regionPart);
-	    			}
-		        	//Else leave it in this region
- 	    		}
-	    	}
-    	}
-       	
-    	// Add to smallLandMasses any land which is not in a region.
-    	List<Set<Center>> smallLandMasses = new ArrayList<>(); // stores small pieces of land not in a region.
-       	for (Center center : centers)
-       	{
-       		if (!center.isWater && center.region == null)
-       		{
-       			Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == null, center);
-       			smallLandMasses.add(landMass);
-       		}
-       	}
-       	
-    	// For each region, if region is smaller than minPoliticalRegionSize, make it not a region and add it to smallLandMasses.
-    	List<Integer> toRemove = new ArrayList<>();
-    	for (int i : new Range(regionList.size()))
-    	{
-    		if (regionList.get(i).size() < minPoliticalRegionSize)
-    		{
-    			toRemove.add(i);
-    			Set<Center> smallLandMass = new HashSet<>(regionList.get(i).getCenters());
-    			smallLandMasses.add(smallLandMass);
-    		}
-    	}
-    	Collections.reverse(toRemove);
-    	for (int i : toRemove)
-    	{
-    		regionList.get(i).clear(); // This updates the region pointers in the Centers.
-    		regionList.remove(i);
-    	}
+		for (TectonicPlate plate : plates)
+		{
+			if (plate.type == PlateType.Continental)
+			{
+				Region region = new Region();
+				plate.centers.stream().filter(c -> !c.isWater).forEach(c -> region.addAndSetRegion(c));
+				regionList.add(region);
+			}
+		}
 
-    	// For each land mass in smallLandMasses, add it to the region nearest its centroid.
-    	for (Set<Center> landMass : smallLandMasses)
-    	{
-    		Point centroid = WorldGraph.findCentroid(landMass);
-    		Region closest = findClosestRegion(centroid);
-    		if (closest != null)
-    		{
-    			closest.addAll(landMass);
-    		}
-    		else
-    		{
-    			// This will probably never happen because it means there are no regions on the map at all.
-    			Region region = new Region();
-    			region.addAll(landMass);
-    			regionList.add(region);
-    		}
-    	}
-    	
-    	regions = new TreeMap<>();
+		for (Region region : regionList)
+		{
+			// For each region, divide it by land masses separated by water.
+			List<Set<Center>> dividedRegion = divideRegionByLand(region);
 
-    	// Set the id of each region and add it to the regions map.
-    	for (int i : new Range(regionList.size()))
-    	{
-    		regionList.get(i).id = i;
-    		regions.put(i, regionList.get(i));
-    	}
+			if (dividedRegion.size() > 1)
+			{
+				// The region gets to keep only the largest land mass.
+				Set<Center> biggest = dividedRegion.stream().max((l1, l2) -> Integer.compare(l1.size(), l2.size())).get();
+
+				// then for each small land mass:
+				for (Set<Center> regionPart : dividedRegion)
+				{
+					if (regionPart == biggest)
+						continue;
+					// If that small land mass is connected by land to a
+					// different region, then add that land mass to that region.
+					Region touchingRegion = findRegionTouching(regionPart);
+					if (touchingRegion != null)
+					{
+						assert region != touchingRegion;
+						region.removeAll(regionPart);
+						touchingRegion.addAll(regionPart);
+					}
+					// Else leave it in this region
+				}
+			}
+		}
+
+		// Add to smallLandMasses any land which is not in a region.
+		List<Set<Center>> smallLandMasses = new ArrayList<>(); // stores small
+																// pieces of
+																// land not in a
+																// region.
+		for (Center center : centers)
+		{
+			if (!center.isWater && center.region == null)
+			{
+				Set<Center> landMass = breadthFirstSearch(c -> !c.isWater && c.region == null, center);
+				smallLandMasses.add(landMass);
+			}
+		}
+
+		// For each region, if region is smaller than minPoliticalRegionSize,
+		// make it not a region and add it to smallLandMasses.
+		List<Integer> toRemove = new ArrayList<>();
+		for (int i : new Range(regionList.size()))
+		{
+			if (regionList.get(i).size() < minPoliticalRegionSize)
+			{
+				toRemove.add(i);
+				Set<Center> smallLandMass = new HashSet<>(regionList.get(i).getCenters());
+				smallLandMasses.add(smallLandMass);
+			}
+		}
+		Collections.reverse(toRemove);
+		for (int i : toRemove)
+		{
+			regionList.get(i).clear(); // This updates the region pointers in
+										// the Centers.
+			regionList.remove(i);
+		}
+
+		// For each land mass in smallLandMasses, add it to the region nearest
+		// its centroid.
+		for (Set<Center> landMass : smallLandMasses)
+		{
+			Point centroid = WorldGraph.findCentroid(landMass);
+			Region closest = findClosestRegion(centroid);
+			if (closest != null)
+			{
+				closest.addAll(landMass);
+			}
+			else
+			{
+				// This will probably never happen because it means there are no
+				// regions on the map at all.
+				Region region = new Region();
+				region.addAll(landMass);
+				regionList.add(region);
+			}
+		}
+
+		regions = new TreeMap<>();
+
+		// Set the id of each region and add it to the regions map.
+		for (int i : new Range(regionList.size()))
+		{
+			regionList.get(i).id = i;
+			regions.put(i, regionList.get(i));
+		}
 	}
 
 	/**
@@ -314,7 +322,7 @@ public class WorldGraph extends VoronoiGraph
 		// This could only happen if there are no regions on the graph.
 		return null;
 	}
-	
+
 	public Corner findClosestCorner(Point point)
 	{
 		Center closestCenter = findClosestCenter(point);
@@ -338,49 +346,91 @@ public class WorldGraph extends VoronoiGraph
 		return findClosestCenter(point, false);
 	}
 
-    public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap) 
-    {    	
-    	if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
-    	{
-    		buildCenterLookupTableIfNeeded();
-    		Color color;
-    		try
-    		{
-    			color = new Color(centerLookupTable.getRGB((int)point.x, (int)point.y));
-    		}
-    		catch(IndexOutOfBoundsException e)
-    		{
-    			color = null; 
-    		}
-    		int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
-    		return centers.get(index);
-    	}
-    	else if (!returnNullIfNotOnMap)
-    	{
-        	Optional<Center> opt = centers.stream().filter(c -> c.isBorder)
-            		.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
-        	return opt.get();
-        	
-    	}
-    	return null;
-    }
-    
-    private BufferedImage centerLookupTable;
-    public void buildCenterLookupTableIfNeeded()
-    {
-    	if (centerLookupTable == null)
-    	{
-	    	centerLookupTable = new BufferedImage((int)bounds.width, (int)bounds.height, BufferedImage.TYPE_3BYTE_BGR);
-	    	Graphics2D g = centerLookupTable.createGraphics();
-	       	drawPolygons(g, new Function<Center, Color>()
+	public Center findClosestCenter(Point point, boolean returnNullIfNotOnMap)
+	{
+		if (point.x < getWidth() && point.y < getHeight() && point.x >= 0 && point.y >= 0)
+		{
+			buildCenterLookupTableIfNeeded();
+			Color color;
+			try
+			{
+				color = new Color(centerLookupTable.getRGB((int) point.x, (int) point.y));
+			}
+			catch (IndexOutOfBoundsException e)
+			{
+				color = null;
+			}
+			int index = color.getRed() | (color.getGreen() << 8) | (color.getBlue() << 16);
+			return centers.get(index);
+		}
+		else if (!returnNullIfNotOnMap)
+		{
+			Optional<Center> opt = centers.stream().filter(c -> c.isBorder)
+					.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
+			return opt.get();
+
+		}
+		return null;
+	}
+
+	private BufferedImage centerLookupTable;
+
+	public void buildCenterLookupTableIfNeeded()
+	{
+		if (centerLookupTable == null)
+		{
+			centerLookupTable = new BufferedImage((int) bounds.width, (int) bounds.height, BufferedImage.TYPE_3BYTE_BGR);
+			Graphics2D g = centerLookupTable.createGraphics();
+			drawPolygons(g, new Function<Center, Color>()
+			{
+				public Color apply(Center c)
 				{
-					public Color apply(Center c)
-					{
-						return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
-					}
-				});  
-    	}
-   }
+					return convertCenterIdToColor(c);
+				}
+			});
+		}
+	}
+	
+	/**
+	 * Updates the center lookup table, which is used to lookup which center draws at a given point.
+	 * This needs to be done when a center potentially changed its noisy edges, such as when it switched
+	 * from inland to coast.
+	 * @param centersToUpdate Centers to update
+	 */
+	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
+	{
+		if (centerLookupTable == null)
+		{
+			buildCenterLookupTableIfNeeded();
+		}
+		else
+		{
+			// Include neighbors of each center because if a center changed, that will affect its neighbors as well.
+			Set<Center> centersWithNeighbors = new HashSet<>();
+			for (Center c : centersToUpdate)
+			{
+				centersWithNeighbors.add(c);
+				for (Center neighbor : c.neighbors)
+				{
+					centersWithNeighbors.add(neighbor);
+				}
+			}
+			
+			Graphics2D g = centerLookupTable.createGraphics();
+			drawPolygons(g, centersWithNeighbors, new Function<Center, Color>()
+			{
+				public Color apply(Center c)
+				{
+					return convertCenterIdToColor(c);
+				}
+			});
+		}
+	}
+	
+	private Color convertCenterIdToColor(Center c)
+	{
+		return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
+	}
 
 	/**
 	 * Searches for any region touching and polygon in landMass and returns it
@@ -1070,9 +1120,10 @@ public class WorldGraph extends VoronoiGraph
 		// Add each corner to the bounds.
 		for (Center center : centers)
 		{
-			// Use the centroid of the neighbors instead of this center's own corners because noisy 
+			// Use the centroid of the neighbors instead of this center's own
+			// corners because noisy
 			// edges/curves can extend beyond this center.
-			for (Center neighbor: center.neighbors)
+			for (Center neighbor : center.neighbors)
 			{
 				bounds = bounds.add(neighbor.loc);
 			}

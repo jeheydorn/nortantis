@@ -754,7 +754,7 @@ public abstract class VoronoiGraph {
 		}
     }
     
-    private void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
+    public void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
     {
     	// First I must draw border polygons without noisy edges because the noisy edges don't exist on the borders.
     	for (Center c : centersToRender)
