@@ -50,7 +50,7 @@ public class TextTool extends EditorTool
 	private JRadioButton rotateButton;
 	private JRadioButton deleteButton;
 	private JPanel textTypePanel;
-	private JComboBox<TextType>textTypeComboBox;
+	private JComboBox<TextType> textTypeComboBox;
 	private JPanel textFieldPanel;
 	
 

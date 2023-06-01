@@ -263,9 +263,8 @@ public class MapCreator
 //		g.dispose();
 		
 		// Also update the snippet in landBackground because the text tool needs that.
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(landBackground, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
+		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.landBackground, landBackground, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom);
-		mapParts.landBackground = landBackground;
 				
 		// TODO Handle frayed border and grunge. Need to update the editor to display these first.   
 		

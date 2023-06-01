@@ -512,6 +512,7 @@ public class EditorFrame extends JFrame
 			mapEditingPanel.image = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 		}
 		currentTool.onActivate();
+		mapEditingPanel.repaint();
 		enableOrDisableToolToggleButtonsAndZoom(true);
 	}
 	
