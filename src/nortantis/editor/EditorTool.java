@@ -6,16 +6,13 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.Stack;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -39,18 +36,14 @@ import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextDrawer;
-import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
-import nortantis.util.Range;
 
 public abstract class EditorTool
 {
-	protected double zoom;
 	protected final MapEditingPanel mapEditingPanel;
 	BufferedImage placeHolder;
 	protected MapSettings settings;
 	private JPanel toolOptionsPanel;
-	protected MapParts mapParts;
 	protected EditorFrame parent;
 	public static int spaceBetweenRowsOfComponents = 8;
 	private JToggleButton toggleButton;
@@ -58,10 +51,8 @@ public abstract class EditorTool
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	private boolean mapIsBeingDrawn;
 	private ReentrantLock drawLock;
-	Stack<MapChange> undoStack;
-	Stack<MapChange> redoStack;
-	protected MapEdits copyOfEditsWhenToolWasSelected;
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
+	protected Undoer undoer;
 	
 	public EditorTool(MapSettings settings, EditorFrame parent)
 	{
@@ -71,22 +62,9 @@ public abstract class EditorTool
 		this.mapEditingPanel = parent.mapEditingPanel;
 		mapEditingPanel.setImage(placeHolder);
 		toolOptionsPanel = createToolsOptionsPanel();
-		undoStack = new Stack<>();
-		redoStack = new Stack<>();
 		drawLock  = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
-	}
-	
-	class MapChange
-	{
-		MapEdits edits;
-		UpdateType updateType;
-		
-		public MapChange(MapEdits edits, UpdateType updateType)
-		{
-			this.edits = edits;
-			this.updateType = updateType;
-		}
+		this.undoer = parent.undoer;
 	}
 
 	private BufferedImage createPlaceholderImage()
@@ -165,15 +143,12 @@ public abstract class EditorTool
 	}
 	
 	/**
-	 * Handles when zoom level changes in the main display.onBeforeCreateMapFull
-	 * @param zoomLevel Between 0.25 and 1.
+	 * Handles when zoom level changes in the display.
 	 */
-	public void handleZoomChange(double zoomLevel)
+	public void handleZoomChange()
 	{
 		parent.isMapReadyForInteractions = false;
-		zoom = zoomLevel;
 		mapEditingPanel.clearAreasToDraw();
-		mapParts = null;
 		
 		mapEditingPanel.repaint();
 		createAndShowMapFull();
@@ -189,7 +164,7 @@ public abstract class EditorTool
 	
 	protected void onBeforeCreateMapFull()
 	{
-		settings.resolution = zoom;
+		settings.resolution = parent.zoom;
 		settings.frayedBorder = false;
 		settings.drawText = false;
 		settings.grungeWidth = 0;
@@ -233,40 +208,30 @@ public abstract class EditorTool
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
 	}
 	
-	public void createAndShowMapFromChange(MapChange change)
-	{
-		if (change.updateType == UpdateType.Full)
+	public void createAndShowMapFromChange(MapEdits change)
+	{		
+		Set<Center> centersChanged = getCentersWithChangesInEdits(change);
+		Set<Edge> edgesChanged = null;
+		// Currently createAndShowMap doesn't support drawing both center edits and edge edits at the same time, so there is no
+		// need to find edges changed if centers were changed.
+		if (centersChanged.size() == 0)
 		{
-			createAndShowMapFull();
+			edgesChanged = getEdgesWithChangesInEdits(change);
 		}
-		else
-		{
-			// TODO Loop through the edits in 'before' and find the centers and edges that have changed. Then use those to update the 
-			// map incrementally.
-
-			Set<Center> centersChanged = getCentersWithChangesInEdits(change);
-			Set<Edge> edgesChanged = null;
-			// Currently createAndShowMap doesn't support drawing both center edits and edge edits at the same time, so there is no
-			// need to find edges changed if centers were changed.
-			if (centersChanged.size() == 0)
-			{
-				edgesChanged = getEdgesWithChangesInEdits(change);
-			}
-			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged);
-		}
+		createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged);
 	}
 	
-	private Set<Center> getCentersWithChangesInEdits(MapChange change)
+	private Set<Center> getCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		return settings.edits.centerEdits.stream().filter(cEdit -> cEdit.equals(change.edits.centerEdits.get(cEdit.index)))
-		.map(cEdit -> mapParts.graph.centers.get(cEdit.index))
+		return settings.edits.centerEdits.stream().filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
+		.map(cEdit -> parent.mapParts.graph.centers.get(cEdit.index))
 		.collect(Collectors.toSet());
 	}
 	
-	private Set<Edge> getEdgesWithChangesInEdits(MapChange change)
+	private Set<Edge> getEdgesWithChangesInEdits(MapEdits changeEdits)
 	{
-		return settings.edits.edgeEdits.stream().filter(eEdit -> eEdit.equals(change.edits.edgeEdits.get(eEdit.index)))
-		.map(eEdit -> mapParts.graph.edges.get(eEdit.index))
+		return settings.edits.edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
+		.map(eEdit -> parent.mapParts.graph.edges.get(eEdit.index))
 		.collect(Collectors.toSet());
 	}
 	
@@ -312,11 +277,11 @@ public abstract class EditorTool
 				{	
 					if (updateType == UpdateType.Full)
 					{
-						if (mapParts == null)
+						if (parent.mapParts == null)
 						{
-							mapParts = new MapParts();
+							parent.mapParts = new MapParts();
 						}
-						BufferedImage map = new MapCreator().createMap(settings, null, mapParts);	
+						BufferedImage map = new MapCreator().createMap(settings, null, parent.mapParts);	
 						System.gc();
 						return map;
 					}
@@ -326,12 +291,12 @@ public abstract class EditorTool
 						// Incremental update
 						if (centersChanged != null)
 						{
-							new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
+							new MapCreator().incrementalUpdateCenters(settings, parent.mapParts, map, centersChanged);
 							return map;
 						}
 						else if (edgesChanged != null)
 						{
-							new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
+							new MapCreator().incrementalUpdateEdges(settings, parent.mapParts, map, edgesChanged);
 							return map;
 						}
 						throw new IllegalStateException("Map cannot be re-drawn incremental without passing in what changed.");
@@ -371,16 +336,19 @@ public abstract class EditorTool
 	            
 	            if (mapEditingPanel.mapFromMapCreator != null)
 	            {	
-					mapEditingPanel.setGraph(mapParts.graph);
+					mapEditingPanel.setGraph(parent.mapParts.graph);
 
 	            	initializeCenterEditsIfEmpty();
 	            	initializeRegionEditsIfEmpty();
 	            	initializeEdgeEditsIfEmpty();
 	            	
-	            	if (copyOfEditsWhenToolWasSelected == null)  
+	            	if (undoer.copyOfEditsWhenEditorWasOpened == null)  
 	            	{
-	            		copyOfEditsWhenToolWasSelected = deepCopyMapEdits(settings.edits);
+	            		// This has to be done after the map is drawn rather than when the editor frame is first created because
+	            		// the first time the map is drawn is when the edits are created.
+	            		undoer.copyOfEditsWhenEditorWasOpened = settings.edits.deepCopy();
 	            	}
+	            	
 	            	mapEditingPanel.image = onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 	            	
 	            	parent.enableOrDisableToolToggleButtonsAndZoom(true);
@@ -474,16 +442,6 @@ public abstract class EditorTool
 		
 		return isCausedByOutOfMemoryError(ex.getCause());
 	}
-
-	public MapParts getMapParts()
-	{
-		return mapParts;
-	}
-	
-	public void setMapParts(MapParts parts)
-	{
-		this.mapParts = parts;
-	}
 	
 	public void setToggled(boolean toggled)
 	{
@@ -504,7 +462,7 @@ public abstract class EditorTool
 	{
 		if (settings.edits.centerEdits.isEmpty())
 		{
-			settings.edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);			
+			settings.edits.initializeCenterEdits(parent.mapParts.graph.centers, parent.mapParts.iconDrawer);			
 		}
 	}
 	
@@ -512,7 +470,7 @@ public abstract class EditorTool
 	{
 		if (settings.edits.edgeEdits.isEmpty())
 		{
-			settings.edits.initializeEdgeEdits(mapParts.graph.edges);
+			settings.edits.initializeEdgeEdits(parent.mapParts.graph.edges);
 		}
 	}
 	
@@ -520,93 +478,17 @@ public abstract class EditorTool
 	{
 		if (settings.edits.regionEdits.isEmpty())
 		{
-			settings.edits.initializeRegionEdits(mapParts.graph.regions.values());			
+			settings.edits.initializeRegionEdits(parent.mapParts.graph.regions.values());			
 		}
 	}
 	
-	protected void setUndoPoint()
-	{
-		setUndoPoint(UpdateType.Incremental);
-	}
+	protected abstract void onAfterUndoRedo(MapEdits changeEdits);
 	
-	/***
-	 * Sets a point to which the user can undo changes. 
-	 * @param updateType The type of update that was last made. 
-	 */
-	protected void setUndoPoint(UpdateType updateType)
-	{
-		redoStack.clear();
-		undoStack.push(new MapChange(deepCopyMapEdits(settings.edits), updateType));
-		parent.updateUndoRedoEnabled();
-	}
-	
-	public void undo()
-	{
-		MapChange change = undoStack.pop();
-		redoStack.push(change);
-		if (undoStack.isEmpty())
-		{
-			settings.edits = deepCopyMapEdits(copyOfEditsWhenToolWasSelected);
-		}
-		else
-		{
-			settings.edits = deepCopyMapEdits(undoStack.peek().edits);	
-		}
-		onAfterUndoRedo(change);
-	}
-	
-	public void redo()
-	{
-		MapChange change = redoStack.pop();
-		undoStack.push(change);
-		settings.edits = deepCopyMapEdits(undoStack.peek().edits);
-		onAfterUndoRedo(change);
-	}
-	
-	protected MapEdits deepCopyMapEdits(MapEdits edits)
-	{
-		MapEdits copy = Helper.deepCopy(edits);
-		// Explicitly copy edits.text.areas because it isn't serializable. 
-		if (edits.text != null)
-		{
-			for (int i : new Range(edits.text.size()))
-			{
-				MapText otherText = edits.text.get(i);
-				MapText resultText = copy.text.get(i);
-				if (otherText.areas != null)
-				{
-					resultText.areas = new ArrayList<Area>(otherText.areas.size());
-					for (Area area : otherText.areas)
-					{
-						resultText.areas.add(new Area(area));
-					}
-				}
-			}
-		}
-		return copy;
-	}
-	
-	protected abstract void onAfterUndoRedo(MapChange change);
-
-	public void clearUndoRedoStacks()
-	{
-		undoStack.clear();
-		redoStack.clear();
-	}
-	
-	/**
-	 * Clears the farthest undo point so that when the map is redrawn it will reset that undo point. That way you can't undo past when you selected the current tool.
-	 */
-	public void resetFurthestUndoPoint()
-	{
-		copyOfEditsWhenToolWasSelected = null;
-	}
-
 	protected Set<Center> getSelectedCenters(java.awt.Point point, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
 		
-		Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+		Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
 		if (center != null)
 		{
 			selected.add(center);
@@ -620,7 +502,7 @@ public abstract class EditorTool
 		int brushRadius = brushDiameter/2;
 		
 		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
-		return mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushRadius), center);
+		return parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushRadius), center);
 	}
 	
 	/**
@@ -650,24 +532,25 @@ public abstract class EditorTool
 	
 	public void clearEntireMap()
 	{
-		if (mapParts == null || mapParts.graph == null)
+		if (parent.mapParts == null || parent.mapParts.graph == null)
 		{
 			return;
 		}
 		
 		// Erase text
-		if (mapParts.textDrawer == null)
+		if (parent.mapParts.textDrawer == null)
 		{
 			// The text tool has not been opened. Draw the text once so we can erase it.
-			mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplier(mapParts.graph.getWidth()));	
-			mapParts.textDrawer.drawText(mapParts.graph, ImageHelper.deepCopy(mapParts.landBackground), mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
+			parent.mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplier(parent.mapParts.graph.getWidth()));	
+			parent.mapParts.textDrawer.drawText(parent.mapParts.graph, 
+					ImageHelper.deepCopy(parent.mapParts.landBackground), parent.mapParts.landBackground, parent.mapParts.mountainGroups, parent.mapParts.cityDrawTasks);
 		}
 		for (MapText text : settings.edits.text)
 		{
 			text.value = "";
 		}
 		
-		for (Center center : mapParts.graph.centers)
+		for (Center center : parent.mapParts.graph.centers)
 		{
 			// Change land to ocean
 			settings.edits.centerEdits.get(center.index).isWater = true;
@@ -688,7 +571,7 @@ public abstract class EditorTool
 			}
 		}
 		
-		setUndoPoint(UpdateType.Full);
+		undoer.setUndoPoint(UpdateType.Full, null);
 		createAndShowMapFull();
 	}
 	

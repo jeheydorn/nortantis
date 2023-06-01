@@ -1,5 +1,6 @@
 package nortantis.editor;
 
+import java.awt.geom.Area;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +14,7 @@ import hoten.voronoi.Edge;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
+import nortantis.util.Helper;
 import nortantis.util.Range;
 
 /**
@@ -117,5 +119,28 @@ public class MapEdits implements Serializable
 			CenterTrees trees = entry.getValue();
 			centerEdits.get(index).trees = trees;
 		}
+	}
+	
+	public MapEdits deepCopy()
+	{
+		MapEdits copy = Helper.deepCopy(this);
+		// Explicitly copy edits.text.areas because it isn't serializable. 
+		if (text != null)
+		{
+			for (int i : new Range(text.size()))
+			{
+				MapText otherText = text.get(i);
+				MapText resultText = copy.text.get(i);
+				if (otherText.areas != null)
+				{
+					resultText.areas = new ArrayList<Area>(otherText.areas.size());
+					for (Area area : otherText.areas)
+					{
+						resultText.areas.add(new Area(area));
+					}
+				}
+			}
+		}
+		return copy;
 	}
 }

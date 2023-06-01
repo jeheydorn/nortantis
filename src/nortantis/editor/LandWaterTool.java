@@ -305,7 +305,7 @@ public class LandWaterTool extends EditorTool
 			}	
 			else
 			{
-				Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+				Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
 				if (center != null)
 				{
 					Region region = center.region;
@@ -320,7 +320,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (mergeRegionsButton.isSelected())
 		{
-			Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+			Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
 			if (center != null)
 			{
 				Region region = center.region;
@@ -365,7 +365,7 @@ public class LandWaterTool extends EditorTool
 	
 	private void selectColorFromMap(MouseEvent e)
 	{
-		Center center = mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+		Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
 		if (center != null)
 		{
 			if (center != null && center.region != null)
@@ -397,8 +397,8 @@ public class LandWaterTool extends EditorTool
        	Optional<CenterEdit> opt = settings.edits.centerEdits.stream()
        			.filter(cEdit1 -> cEdit1.regionId != null && settings.edits.regionEdits.get(cEdit1.regionId).color.equals(color))
         		.min((cEdit1, cEdit2) -> Double.compare(
-        				mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), 
-        				mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
+        				parent.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), 
+        				parent.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
        	if (opt.isPresent())
        	{
        		return opt.get().regionId;
@@ -438,7 +438,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		setUndoPoint();
+		undoer.setUndoPoint(this);
 	}
 	
 	@Override
@@ -459,7 +459,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
 		{
-			Center center = mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
+			Center center = parent.mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
 			if (center != null)
 			{
 				if (center.region != null)
@@ -504,10 +504,10 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(MapChange change)
+	protected void onAfterUndoRedo(MapEdits changeEdits)
 	{
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
-		createAndShowMapFromChange(change);
+		createAndShowMapFromChange(changeEdits);
 	}
 }

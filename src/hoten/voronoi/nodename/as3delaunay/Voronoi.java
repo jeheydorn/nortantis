@@ -86,7 +86,6 @@ public final class Voronoi {
             maxWidth = Math.max(maxWidth, p.x);
             maxHeight = Math.max(maxHeight, p.y);
         }
-        System.out.println(maxWidth + "," + maxHeight);
         init(points, colors, new Rectangle(0, 0, maxWidth, maxHeight));
         fortunesAlgorithm();
     }

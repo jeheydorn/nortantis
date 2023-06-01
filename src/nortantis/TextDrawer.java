@@ -205,7 +205,10 @@ public class TextDrawer
 	public void drawText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground,
 			List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{				
-		this.landAndOceanBackground = landAndOceanBackground;
+		if (this.landAndOceanBackground == null)
+		{
+			this.landAndOceanBackground = landAndOceanBackground;
+		}
 
 		if (settings.edits.text.size() > 0)
 		{

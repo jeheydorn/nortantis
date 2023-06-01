@@ -21,7 +21,7 @@ public class ExampleNameGenerator
 		
 		final int numberToGenerate = 50;
 		
-		final String requiredPrefix = "Cha";
+		final String requiredPrefix = "";
 		final String requiredSuffix = "";
 		
 		System.out.println("Person names: ");

@@ -246,7 +246,8 @@ public class TextTool extends EditorTool
 		try
 		{
 			settings.drawText = true;
-			mapParts.textDrawer.drawText(mapParts.graph, mapWithText, mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
+			parent.mapParts.textDrawer.drawText(parent.mapParts.graph, mapWithText, parent.mapParts.landBackground, 
+					parent.mapParts.mountainGroups, parent.mapParts.cityDrawTasks);
 		}
 		catch (Exception e)
 		{
@@ -312,7 +313,7 @@ public class TextTool extends EditorTool
 		if (moveButton.isSelected())
 		{
 			// Begin a drag and drop of a text box.
-			MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
+			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
@@ -323,7 +324,7 @@ public class TextTool extends EditorTool
 		}
 		else if (rotateButton.isSelected())
 		{
-			lastSelected = mapParts.textDrawer.findTextPicked(e.getPoint());
+			lastSelected = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
 			if (lastSelected != null)
 			{
 				// Region and title names cannot be rotated.
@@ -344,11 +345,11 @@ public class TextTool extends EditorTool
 		}
 		else if (deleteButton.isSelected())
 		{
-			MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
+			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
 			if (selectedText != null)
 			{
 				selectedText.value = "";
-				setUndoPoint();
+				undoer.setUndoPoint(this);
 				updateTextInBackgroundThread(null);
 			}
 		}
@@ -379,8 +380,8 @@ public class TextTool extends EditorTool
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
 				for (Area area : lastSelected.areas)
 				{
-					double centerX = lastSelected.location.x * zoom;
-					double centerY = lastSelected.location.y * zoom;
+					double centerX = lastSelected.location.x * parent.zoom;
+					double centerY = lastSelected.location.y * parent.zoom;
 					Area areaCopy = new Area(area);
 					
 					// Undo previous rotation.
@@ -410,17 +411,17 @@ public class TextTool extends EditorTool
 			if (moveButton.isSelected())
 			{
 				// The user dragged and dropped text.
-				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/zoom)), 
-						(int)((e.getY() - mousePressedLocation.y) * (1.0/zoom)));
+				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/parent.zoom)), 
+						(int)((e.getY() - mousePressedLocation.y) * (1.0/parent.zoom)));
 				lastSelected.location = new hoten.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
-				setUndoPoint();
+				undoer.setUndoPoint(this);
 				updateTextInBackgroundThread(lastSelected);
 			}
 			else if (rotateButton.isSelected())
 			{
-				double centerX = lastSelected.location.x / (1.0/zoom);
-				double centerY = lastSelected.location.y / (1.0/zoom);
+				double centerX = lastSelected.location.x / (1.0/parent.zoom);
+				double centerY = lastSelected.location.y / (1.0/parent.zoom);
 				double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
 				// No upside-down text.
 				if (angle > Math.PI/2)
@@ -449,16 +450,16 @@ public class TextTool extends EditorTool
 				{
 					editTextField.grabFocus();
 				}
-				MapText selectedText = mapParts.textDrawer.findTextPicked(e.getPoint());
+				MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
 				handleTextEdit(selectedText);
 			}
 			else if (addButton.isSelected())
 			{
-				MapText addedText = mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
+				MapText addedText = parent.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 						new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
 				settings.edits.text.add(addedText);
 				
-				setUndoPoint();
+				undoer.setUndoPoint(this);
 				updateTextInBackgroundThread(null);
 			}
 		}
@@ -471,7 +472,7 @@ public class TextTool extends EditorTool
 			lastSelected.value = editTextField.getText();
 
 			// Need to re-draw all of the text.
-			setUndoPoint();
+			undoer.setUndoPoint(this);
 			updateTextInBackgroundThread(editButton.isSelected() ? selectedText : null);
 		}
 		else
@@ -517,19 +518,12 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(MapChange change)
+	protected void onAfterUndoRedo(MapEdits changeEdits)
 	{
 		mapEditingPanel.clearAreasToDraw();
 		lastSelected = null;
 		editTextField.setText("");
-		if (change.updateType == UpdateType.Full)
-		{
-			createAndShowMapFull();
-		}
-		else
-		{
-			updateTextInBackgroundThread(null);
-		}
+		updateTextInBackgroundThread(null);
 	}
 	
 

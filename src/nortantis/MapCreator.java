@@ -126,6 +126,10 @@ public class MapCreator
 		// Increase effectsPadding by the width of a coastline, plus one pixel extra just to be safe.
 		effectsPadding += 2;
 		
+		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very wide river.
+		// Since there is no easy way to know what that will be, just guess.
+		effectsPadding = Math.max(effectsPadding, 8);
+		
 		effectsPadding *= sizeMultiplier;
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);

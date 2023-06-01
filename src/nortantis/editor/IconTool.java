@@ -508,7 +508,7 @@ public class IconTool extends EditorTool
 		
 		if (riversButton.isSelected())
 		{
-			riverStart = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+			riverStart = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
 		}
 	}
 
@@ -517,8 +517,8 @@ public class IconTool extends EditorTool
 	{		
 		if (riversButton.isSelected())
 		{
-			Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
-			Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPathGreedy(riverStart, end));
+			Corner end = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+			Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
@@ -536,7 +536,7 @@ public class IconTool extends EditorTool
 			}
 		}
 		
-		setUndoPoint();
+		undoer.setUndoPoint(this);
 	}
 	
 	private Set<Edge> filterOutOceanAndCoastEdges(Set<Edge> edges)
@@ -571,8 +571,8 @@ public class IconTool extends EditorTool
 			if (riverStart != null)
 			{
 				mapEditingPanel.clearHighlightedEdges();
-				Corner end = mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
-				Set<Edge> river = filterOutOceanAndCoastEdges(mapParts.graph.findPathGreedy(riverStart, end));
+				Corner end = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+				Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
 				mapEditingPanel.setHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
@@ -604,16 +604,16 @@ public class IconTool extends EditorTool
 					
 		if (showRiversOnTopCheckBox.isSelected())
 		{
-			MapCreator.drawRivers(settings, mapParts.graph, map, mapParts.sizeMultiplier, null, null);
+			MapCreator.drawRivers(settings, parent.mapParts.graph, map, parent.mapParts.sizeMultiplier, null, null);
 		}
 				 		
  		return map;
 	}
 	
 	@Override
-	protected void onAfterUndoRedo(MapChange change)
+	protected void onAfterUndoRedo(MapEdits changeEdits)
 	{	
-		createAndShowMapFromChange(change);
+		createAndShowMapFromChange(changeEdits);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)

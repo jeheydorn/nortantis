@@ -59,13 +59,16 @@ public class EditorFrame extends JFrame
 	private JComboBox<String> zoomComboBox;
 	public MapEditingPanel mapEditingPanel;
 	boolean areToolToggleButtonsEnabled = true;
-	private JMenuItem undoButton;
-	private JMenuItem redoButton;
+	JMenuItem undoButton;
+	JMenuItem redoButton;
 	private JLabel mapIsDrawingLabel;
 	private TitledBorder toolOptionsPanelBorder;
 	private JMenuItem clearEntireMapButton;
 	private boolean hadEditsAtStartup;
 	public boolean isMapReadyForInteractions;
+	public Undoer undoer;
+	MapParts mapParts;
+	double zoom;
 	
 	/**
 	 * Creates a dialog for editing text.
@@ -183,7 +186,10 @@ public class EditorFrame extends JFrame
 			}
 		});
 
-
+		setupMenuBar(runSwing);
+		undoer = new Undoer(settings, this);
+		undoer.updateUndoRedoEnabled();
+		
 		// Setup tools
 		tools = Arrays.asList(
 				new LandWaterTool(settings, this),
@@ -203,13 +209,13 @@ public class EditorFrame extends JFrame
 		if (currentTool == null)
 		{
 			currentTool = tools.get(2);
-		}
+		}		
 		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		getContentPane().add(scrollPane);
 		
-		setupMenuBar(runSwing);
+
 	
 		JPanel toolsPanel = new JPanel();
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, getContentPane().getHeight()));
@@ -282,9 +288,10 @@ public class EditorFrame extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				UserPreferences.getInstance().zoomLevel = (String)zoomComboBox.getSelectedItem();
-				double zoom = parseZoom((String)zoomComboBox.getSelectedItem());
+				zoom = parseZoom((String)zoomComboBox.getSelectedItem());
 				ImageCache.getInstance().clear();
-				currentTool.handleZoomChange(zoom);
+				mapParts = null;
+				currentTool.handleZoomChange();
 			}
 		});
 		
@@ -370,7 +377,8 @@ public class EditorFrame extends JFrame
 		});
 		
 		handleToolSelected(currentTool);
-		currentTool.handleZoomChange(parseZoom((String)zoomComboBox.getSelectedItem()));
+		zoom = parseZoom((String)zoomComboBox.getSelectedItem());
+		currentTool.handleZoomChange();
 	}
 	
 	private void showMapChangesMessage(RunSwing runSwing)
@@ -439,9 +447,9 @@ public class EditorFrame extends JFrame
 			{
 				if (currentTool != null)
 				{
-					currentTool.undo();
+					undoer.undo();
 				}
-				updateUndoRedoEnabled();
+				undoer.updateUndoRedoEnabled();
 			}
 		});
 
@@ -458,12 +466,12 @@ public class EditorFrame extends JFrame
 			{
 				if (currentTool != null)
 				{
-					currentTool.redo();
+					undoer.redo();
 				}
-				updateUndoRedoEnabled();
+				undoer.updateUndoRedoEnabled();
 			}
 		});
-		
+				
 		clearEntireMapButton = new JMenuItem("Clear Entire Map");
 		mnEdit.add(clearEntireMapButton);
 		clearEntireMapButton.addActionListener(new ActionListener()
@@ -478,47 +486,29 @@ public class EditorFrame extends JFrame
 			}
 		});
 		clearEntireMapButton.setEnabled(false);
-		
-		updateUndoRedoEnabled();
 	}
 	
-	public void updateUndoRedoEnabled()
-	{		
-		boolean undoEnabled = currentTool != null && currentTool.undoStack.size() > 0;
-		undoButton.setEnabled(undoEnabled);
-		boolean redoEnabled = currentTool != null && currentTool.redoStack.size() > 0;
-		redoButton.setEnabled(redoEnabled);
-	}
-	
-	private void handleToolSelected(EditorTool selectedTool)
+	public void handleToolSelected(EditorTool selectedTool)
 	{
 		enableOrDisableToolToggleButtonsAndZoom(false);
 		
-		MapParts mapParts = currentTool.getMapParts(); // This is moved to the new tool so that only the first tool that runs has to certain parts of the map.
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearSelectedCenters();
 		mapEditingPanel.clearProcessingEdges();
 		mapEditingPanel.clearHighlightedEdges();
 		currentTool.onSwitchingAway();
-		currentTool.clearUndoRedoStacks();
-		currentTool.resetFurthestUndoPoint();
-		updateUndoRedoEnabled();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
 		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
-		if (mapParts != null)
-		{
-			currentTool.setMapParts(mapParts);
-		}
 		toolsOptionsPanelContainer.remove(currentToolOptionsPanel);
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.repaint();
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
-			// TODO this needs to be run in a background thread because it can be slow.
+			// TODO this might need to be run in a background thread because it can be slow.
 			mapEditingPanel.image = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 		}
 		currentTool.onActivate();
@@ -543,6 +533,8 @@ public class EditorFrame extends JFrame
 		return zoomPercent / 100.0;
 	}
 	
+
+
 
 }
 
