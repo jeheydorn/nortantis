@@ -77,6 +77,7 @@ public class WorldGraph extends VoronoiGraph
 	// smaller of the two is less than this size, stop.
 	// Prevents small maps from containing only one tectonic plate.
 	final int minSecondtoLastPlateSize = 100;
+	public boolean isForFrayedBorder;
 
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
@@ -95,21 +96,21 @@ public class WorldGraph extends VoronoiGraph
 		setupColors();
 		createPoliticalRegions();
 		setupRandomSeeds(r);
-		buildNoisyEdges(lineStyle);
+		buildNoisyEdges(lineStyle, false);
 	}
 
 	/**
 	 * This constructor doens't create tectonic plates or elevation, and always
 	 * uses jagged lines.
 	 */
-	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision)
+	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision, boolean isForFrayedBorder)
 	{
 		super(r, sizeMultiplyer, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, false);
 		assignBorderToCorners();
 		setupColors();
 		setupRandomSeeds(r);
-		buildNoisyEdges(LineStyle.Jagged);
+		buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
 	}
 
 	private void setupRandomSeeds(Random rand)
@@ -147,9 +148,9 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	public void buildNoisyEdges(LineStyle lineStyle)
+	public void buildNoisyEdges(LineStyle lineStyle, boolean isForFrayedBorder)
 	{
-		noisyEdges = new NoisyEdges(scaleMultiplyer, lineStyle);
+		noisyEdges = new NoisyEdges(scaleMultiplyer, lineStyle, isForFrayedBorder);
 		noisyEdges.buildNoisyEdges(this);
 	}
 

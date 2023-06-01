@@ -570,7 +570,8 @@ public class MapCreator
 		{
 			Logger.println("Adding frayed edges.");
 			WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), 
-					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, settings.pointPrecision);
+					background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, 
+					settings.pointPrecision, true);
 			BufferedImage frayedBorderMask = new BufferedImage(frayGraph.getWidth(),
 					frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 			frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());

@@ -122,7 +122,7 @@ public class GraphCreator
 
     }
     
-    public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer, double pointPrecision)
+    public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer, double pointPrecision, boolean isForFrayedBorder)
     {
         // Zero is most random. Higher values make the polygons more uniform shaped.
         final int numLloydRelaxations = 0;
@@ -131,7 +131,7 @@ public class GraphCreator
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
 
          //assemble the voronoi structure into a usable graph object representing a map
-        final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, sizeMultiplyer, pointPrecision);
+        final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, sizeMultiplyer, pointPrecision, isForFrayedBorder);
         
         return graph;
     }

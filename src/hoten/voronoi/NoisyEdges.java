@@ -28,13 +28,15 @@ public class NoisyEdges
     private Map<Integer, List<Point>> curves;
 
 	private double scaleMultiplyer;
+	private boolean isForFrayedBorder;
     
-    public NoisyEdges(double scaleMultiplyer, LineStyle style) 
+    public NoisyEdges(double scaleMultiplyer, LineStyle style, boolean isForFrayedBorder) 
     {
        	this.scaleMultiplyer = scaleMultiplyer;
         paths = new TreeMap<>();
         curves = new TreeMap<>();
         lineStyle = style;
+        this.isForFrayedBorder = isForFrayedBorder;
     }
 
     // Build noisy line paths for each of the Voronoi edges. There are
@@ -248,6 +250,17 @@ public class NoisyEdges
 			}
 			return null;
 		}
+		else if (type.equals(EdgeType.FrayedBorder))
+		{
+			for (Edge other : corner.protrudes)
+			{
+				if (edge != other && getEdgeDrawType(other) == EdgeType.FrayedBorder)
+				{
+					return other;
+				}
+			}
+			return null;
+		}
 		
 		assert false;
 		return null;
@@ -273,23 +286,37 @@ public class NoisyEdges
 		{
 			return 2;
 		}
+		if (type.equals(EdgeType.FrayedBorder))
+		{
+			return 3;
+		}
 		
 		return 1000; // A number big enough to not create noisy edges
 	}
 	
 	private EdgeType getEdgeDrawType(Edge edge)
 	{
-		if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
+		if (isForFrayedBorder)
 		{
-			return EdgeType.Region;
+			if (edge.d0.isBorder != edge.d1.isBorder)
+			{
+				return EdgeType.FrayedBorder;
+			}
 		}
-		if (edge.d0.isWater != edge.d1.isWater)
+		else
 		{
-			return EdgeType.Coast;
-		}
-		if (edge.river >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
-		{
-			return EdgeType.River;
+			if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
+			{
+				return EdgeType.Region;
+			}
+			if (edge.d0.isWater != edge.d1.isWater)
+			{
+				return EdgeType.Coast;
+			}
+			if (edge.river >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+			{
+				return EdgeType.River;
+			}
 		}
 		
 		return EdgeType.None;
@@ -300,7 +327,8 @@ public class NoisyEdges
 		None,
 		Region,
 		Coast,
-		River
+		River,
+		FrayedBorder
 	}
 	
 	private boolean shouldDrawEdge(Edge edge)
