@@ -31,7 +31,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 
-import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
 import nortantis.util.ImageHelper;
@@ -54,9 +53,9 @@ public class TextTool extends EditorTool
 	private JPanel textFieldPanel;
 	
 
-	public TextTool(MapSettings settings, EditorFrame parent)
+	public TextTool(EditorFrame parent)
 	{
-		super(settings, parent);
+		super(parent);
 
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
@@ -237,7 +236,20 @@ public class TextTool extends EditorTool
 		
 		BufferedImage mapWithText = drawMapWithText();
 		
+		mapEditingPanel.setAreasToDraw(textToSelectAfterDraw == null ? null : textToSelectAfterDraw.areas);
+		mapEditingPanel.repaint();
+    	// Tell the scroll pane to update itself.
+    	mapEditingPanel.revalidate();	        
+
+		
     	return mapWithText;
+	}
+	
+	private MapText textToSelectAfterDraw;
+	private void updateTextInBackgroundThread(final MapText selectedText)
+	{
+		textToSelectAfterDraw = selectedText;
+		parent.createAndShowMapIncrementalUsingCenters(null);
 	}
 	
 	private BufferedImage drawMapWithText()
@@ -245,7 +257,7 @@ public class TextTool extends EditorTool
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
 		try
 		{
-			settings.drawText = true;
+			parent.settings.drawText = true;
 			parent.mapParts.textDrawer.drawText(parent.mapParts.graph, mapWithText, parent.mapParts.landBackground, 
 					parent.mapParts.mountainGroups, parent.mapParts.cityDrawTasks);
 		}
@@ -256,55 +268,10 @@ public class TextTool extends EditorTool
 		}
 		finally
 		{
-			settings.drawText = false;
+			parent.settings.drawText = false;
 		}
 		
 		return mapWithText;
-	}
-
-	private void updateTextInBackgroundThread(final MapText selectedText)
-	{
-	    SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
-	    {
-	        @Override
-	        public BufferedImage doInBackground() 
-	        {	
-				try
-				{
-					BufferedImage map = drawMapWithText();
-					
-					return map;
-				} 
-				catch (Exception e)
-				{
-					e.printStackTrace();
-			        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-				} 
-	        	
-	        	return null;
-	        }
-	        
-	        @Override
-	        public void done()
-	        {
-	        	BufferedImage map = null;
-	            try 
-	            {
-	            	map = get();
-	            } 
-	            catch (InterruptedException | java.util.concurrent.ExecutionException e) 
-	            {
-	                throw new RuntimeException(e);
-	            }
-	            
-              	mapEditingPanel.image = map;
-        		mapEditingPanel.setAreasToDraw(selectedText == null ? null : selectedText.areas);
-        		mapEditingPanel.repaint();
-            	// Tell the scroll pane to update itself.
-            	mapEditingPanel.revalidate();	        
-	        }
-	    };
-	    worker.execute();
 	}
 
 	@Override
@@ -457,7 +424,7 @@ public class TextTool extends EditorTool
 			{
 				MapText addedText = parent.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 						new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
-				settings.edits.text.add(addedText);
+				parent.settings.edits.text.add(addedText);
 				
 				undoer.setUndoPoint(this);
 				updateTextInBackgroundThread(null);
@@ -518,12 +485,20 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(MapEdits changeEdits)
+	protected void onAfterUndoRedo(MapChange change)
 	{
 		mapEditingPanel.clearAreasToDraw();
 		lastSelected = null;
 		editTextField.setText("");
-		updateTextInBackgroundThread(null);
+		
+		if (change.updateType == UpdateType.Full)
+		{
+			parent.createAndShowMapFull();
+		}
+		else
+		{
+			updateTextInBackgroundThread(null);
+		}
 	}
 	
 

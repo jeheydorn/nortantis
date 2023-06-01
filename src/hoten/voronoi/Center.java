@@ -10,7 +10,6 @@ import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 import nortantis.TreeType;
-import nortantis.WorldGraph;
 
 /**
  * Center.java
@@ -155,7 +154,8 @@ public class Center
 		// Start at a point we know is inside the desired bounds.
 		Rectangle bounds = new Rectangle(loc.x, loc.y, 0, 0);
 
-		// Add each corner to the bounds.
+		// Add neighbor's centroid to the bounds. I'm doing this instead of adding each corner to the bounds because noisy edges 
+		// can extend as far as the centroid of a neighbor.
 		for (Center neighbor: neighbors)
 		{
 			bounds = bounds.add(neighbor.loc);

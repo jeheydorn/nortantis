@@ -29,7 +29,6 @@ import javax.swing.JToggleButton;
 
 import hoten.geom.Point;
 import hoten.voronoi.Center;
-import nortantis.MapSettings;
 import nortantis.Region;
 import nortantis.RunSwing;
 
@@ -52,9 +51,9 @@ public class LandWaterTool extends EditorTool
 	private JPanel brushSizePanel;
 	private JPanel selectColorPanel;
 
-	public LandWaterTool(MapSettings settings, EditorFrame dialog)
+	public LandWaterTool(EditorFrame dialog)
 	{
-		super(settings, dialog);
+		super(dialog);
 	}
 
 	@Override
@@ -155,7 +154,7 @@ public class LandWaterTool extends EditorTool
 		    
 		    colorDisplay = new JPanel();
 		    colorDisplay.setPreferredSize(new Dimension(50, 25));
-		    colorDisplay.setBackground(settings.landColor);
+		    colorDisplay.setBackground(parent.settings.landColor);
 	    	
 			JButton chooseButton = new JButton("Choose");
 			chooseButton.setBounds(814, 314, 87, 25);
@@ -216,7 +215,7 @@ public class LandWaterTool extends EditorTool
 	
 	private boolean areRegionColorsVisible()
 	{
-		return settings.drawRegionColors && (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+		return parent.settings.drawRegionColors && (!parent.settings.generateBackgroundFromTexture || parent.settings.colorizeLand);
 	}
 
 	@Override
@@ -239,7 +238,7 @@ public class LandWaterTool extends EditorTool
 			boolean hasChange = false;
 			for (Center center : selected)
 			{
-				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				CenterEdit edit = parent.settings.edits.centerEdits.get(center.index);
 				hasChange |= !edit.isWater;
 				edit.isWater = true;
 				hasChange |= edit.isLake != lakeButton.isSelected();
@@ -262,7 +261,7 @@ public class LandWaterTool extends EditorTool
 				boolean hasChange = false;
 				for (Center center : selected)
 				{
-					CenterEdit edit = settings.edits.centerEdits.get(center.index);
+					CenterEdit edit = parent.settings.edits.centerEdits.get(center.index);
 					hasChange |= edit.isWater;
 					edit.isWater = false;
 					edit.isLake = false;
@@ -282,9 +281,9 @@ public class LandWaterTool extends EditorTool
 			boolean hasChange = false;
 			for (Center center : selected)
 			{
-				CenterEdit edit = settings.edits.centerEdits.get(center.index);
+				CenterEdit edit = parent.settings.edits.centerEdits.get(center.index);
 				// Still need to add region IDs to edits because the user might switch to region editing later.
-				Integer newRegionId = getOrCreateRegionIdForEdit(center, settings.landColor);
+				Integer newRegionId = getOrCreateRegionIdForEdit(center, parent.settings.landColor);
 				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
 				edit.regionId = newRegionId;
 				hasChange |= edit.isWater;
@@ -311,7 +310,7 @@ public class LandWaterTool extends EditorTool
 					Region region = center.region;
 					if (region != null)
 					{
-						RegionEdit edit = settings.edits.regionEdits.get(region.id);
+						RegionEdit edit = parent.settings.edits.regionEdits.get(region.id);
 						edit.color = colorDisplay.getBackground();
 						handleMapChange(region.getCenters());
 					}
@@ -343,7 +342,7 @@ public class LandWaterTool extends EditorTool
 						{
 							// Loop over edits instead of region.getCenters() because centers are changed by map drawing, but edits
 							// should only be changed in the current thread.
-							for (CenterEdit c : settings.edits.centerEdits)
+							for (CenterEdit c : parent.settings.edits.centerEdits)
 							{
 								assert c != null;
 								if (c.regionId != null && c.regionId == region.id)
@@ -352,7 +351,7 @@ public class LandWaterTool extends EditorTool
 								}
 								
 							}
-							settings.edits.regionEdits.remove(region.id);
+							parent.settings.edits.regionEdits.remove(region.id);
 							selectedRegion = null;
 							mapEditingPanel.clearSelectedCenters();
 							handleMapChange(region.getCenters());
@@ -386,16 +385,16 @@ public class LandWaterTool extends EditorTool
 		// If a neighboring center has the desired region color, then use that region.
 		for (Center neighbor : center.neighbors)
 		{
-			CenterEdit neighborEdit = settings.edits.centerEdits.get(neighbor.index);
-			if (neighborEdit.regionId != null && settings.edits.regionEdits.get(neighborEdit.regionId).color.equals(color))
+			CenterEdit neighborEdit = parent.settings.edits.centerEdits.get(neighbor.index);
+			if (neighborEdit.regionId != null && parent.settings.edits.regionEdits.get(neighborEdit.regionId).color.equals(color))
 			{
 				return neighborEdit.regionId;
 			}
 		}
 		
 		// Find the closest region of that color.
-       	Optional<CenterEdit> opt = settings.edits.centerEdits.stream()
-       			.filter(cEdit1 -> cEdit1.regionId != null && settings.edits.regionEdits.get(cEdit1.regionId).color.equals(color))
+       	Optional<CenterEdit> opt = parent.settings.edits.centerEdits.stream()
+       			.filter(cEdit1 -> cEdit1.regionId != null && parent.settings.edits.regionEdits.get(cEdit1.regionId).color.equals(color))
         		.min((cEdit1, cEdit2) -> Double.compare(
         				parent.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), 
         				parent.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
@@ -406,19 +405,19 @@ public class LandWaterTool extends EditorTool
        	else
        	{
        		int largestRegionId;
-       		if (settings.edits.regionEdits.isEmpty())
+       		if (parent.settings.edits.regionEdits.isEmpty())
        		{
        			largestRegionId = -1;
        		}
        		else
        		{
-       			largestRegionId = settings.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId)).get().regionId;
+       			largestRegionId = parent.settings.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId)).get().regionId;
        		}
        		
        		int newRegionId = largestRegionId + 1;
        		
        		RegionEdit regionEdit = new RegionEdit(newRegionId, color);
-       		settings.edits.regionEdits.put(newRegionId, regionEdit);
+       		parent.settings.edits.regionEdits.put(newRegionId, regionEdit);
        		
        		return newRegionId;
        	}
@@ -426,7 +425,7 @@ public class LandWaterTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{		
-		createAndShowMapIncrementalUsingCenters(centers);	
+		parent.createAndShowMapIncrementalUsingCenters(centers);	
 	}
 
 	@Override
@@ -504,10 +503,10 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(MapEdits changeEdits)
+	protected void onAfterUndoRedo(MapChange change)
 	{
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
-		createAndShowMapFromChange(changeEdits);
+		parent.createAndShowMapFromChange(change);
 	}
 }

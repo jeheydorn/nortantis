@@ -64,7 +64,12 @@ public class Undoer
 				editorFrame.handleToolSelected(change.toolThatMadeChange);
 			}
 
-			change.toolThatMadeChange.onAfterUndoRedo(change.edits);
+			change.toolThatMadeChange.onAfterUndoRedo(change);
+		}
+		else
+		{
+			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
+			editorFrame.currentTool.onAfterUndoRedo(change);
 		}
 	}
 	
@@ -78,15 +83,21 @@ public class Undoer
 		// Keep the collection of text edits being drawn in sync with the settings
 		editorFrame.mapParts.textDrawer.setMapTexts(settings.edits.text);
 
-		// TODO switch to the tool that made the change.
+		MapChange changeWithPrevEdits = new MapChange(prevEdits, change.updateType, change.toolThatMadeChange);
 		if (change.toolThatMadeChange != null)
 		{
+			// Switch to the tool that made the change.
 			if (editorFrame.currentTool != change.toolThatMadeChange)
 			{
 				editorFrame.handleToolSelected(change.toolThatMadeChange);
 			}
 			
-			change.toolThatMadeChange.onAfterUndoRedo(prevEdits);
+			change.toolThatMadeChange.onAfterUndoRedo(changeWithPrevEdits);
+		}
+		else
+		{
+			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map.
+			editorFrame.currentTool.onAfterUndoRedo(changeWithPrevEdits);
 		}
 	}
 	

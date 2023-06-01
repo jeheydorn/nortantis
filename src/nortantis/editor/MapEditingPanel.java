@@ -20,6 +20,7 @@ public class MapEditingPanel extends ImagePanel
 {
 	private final Color highlightColor = new Color(255,227,74);
 	private final Color selectColor = Color.cyan;
+	private final Color processingColor = Color.green;
 	private List<Area> areas;
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
@@ -142,7 +143,7 @@ public class MapEditingPanel extends ImagePanel
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
 			
-			g.setColor(selectColor);
+			g.setColor(processingColor);
 			drawCenterOutlines(g, selectedCenters);
 			drawEdges(g, processingEdges);
 		}

@@ -36,7 +36,6 @@ import hoten.voronoi.VoronoiGraph;
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
-import nortantis.MapSettings;
 
 public class IconTool extends EditorTool
 {
@@ -71,9 +70,9 @@ public class IconTool extends EditorTool
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
 
-	public IconTool(MapSettings settings, EditorFrame parent)
+	public IconTool(EditorFrame parent)
 	{
-		super(settings, parent);
+		super(parent);
 		rand = new Random();
 	}
 
@@ -290,7 +289,7 @@ public class IconTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				createAndShowMapFull();
+				// TODO
 			}
 		});
 	    		
@@ -321,7 +320,7 @@ public class IconTool extends EditorTool
 	    JLabel typeLabel = new JLabel("Type:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, iconType == IconType.cities ? settings.cityIconSetName : null))
+	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, iconType == IconType.cities ? parent.settings.cityIconSetName : null))
 	    {
 	    	JRadioButton button = new JRadioButton(groupId);
 	    	group.add(button);
@@ -339,7 +338,8 @@ public class IconTool extends EditorTool
 	    JLabel typeLabel = new JLabel("Cities:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance().getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, settings.cityIconSetName))
+	    for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance()
+	    		.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, parent.settings.cityIconSetName))
 	    {
 	    	JRadioButton button = new JRadioButton(fileNameWithoutWidthOrExtension);
 	    	group.add(button);
@@ -371,7 +371,7 @@ public class IconTool extends EditorTool
 			String rangeId = mountainTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
+				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
 			}
 		}
 		else if (hillsButton.isSelected())
@@ -379,7 +379,7 @@ public class IconTool extends EditorTool
 			String rangeId = hillTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
+				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
 			}
 		}
 		else if (dunesButton.isSelected())
@@ -387,7 +387,7 @@ public class IconTool extends EditorTool
 			String rangeId = duneTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
+				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
 			}		
 		}
 		else if (treesButton.isSelected())
@@ -395,7 +395,7 @@ public class IconTool extends EditorTool
 			String treeType = treeTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				settings.edits.centerEdits.get(center.index).trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, 
+				parent.settings.edits.centerEdits.get(center.index).trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, 
 						Math.abs(rand.nextLong()));
 			}		
 		}
@@ -404,7 +404,7 @@ public class IconTool extends EditorTool
 			String cityName = cityTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.City, cityName);
+				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.City, cityName);
 			}		
 		}
 		else if (eraseButton.isSelected())
@@ -413,11 +413,11 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					settings.edits.centerEdits.get(center.index).trees = null;
-					settings.edits.centerEdits.get(center.index).icon = null;
+					parent.settings.edits.centerEdits.get(center.index).trees = null;
+					parent.settings.edits.centerEdits.get(center.index).icon = null;
 					for (Edge edge : center.borders)
 					{
-						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
+						EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
 						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
 						{
 							eEdit.riverLevel = 0;
@@ -429,7 +429,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
 					{
 						cEdit.icon = null;
@@ -440,7 +440,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Hill)
 					{
 						cEdit.icon = null;
@@ -451,7 +451,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
 					{
 						cEdit.icon = null;
@@ -462,7 +462,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
 					cEdit.trees = null;
 				}	
 			}
@@ -470,7 +470,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
 					{
 						cEdit.icon = null;
@@ -483,7 +483,7 @@ public class IconTool extends EditorTool
 				{
 					for (Edge edge : center.borders)
 					{
-						EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
+						EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
 						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
 						{
 							eEdit.riverLevel = 0;
@@ -523,7 +523,7 @@ public class IconTool extends EditorTool
 			{
 				int base = (riverWidthSlider.getValue() - 1);
 				int riverLevel = (base * base * 2) + VoronoiGraph.riversThinnerThanThisWillNotBeDrawn + 1;
-				settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
+				parent.settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
 			}
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
@@ -532,7 +532,7 @@ public class IconTool extends EditorTool
 			
 			if (river.size() > 0)
 			{
-				createAndShowMapIncrementalUsingEdges(river);
+				parent.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
 		
@@ -604,16 +604,16 @@ public class IconTool extends EditorTool
 					
 		if (showRiversOnTopCheckBox.isSelected())
 		{
-			MapCreator.drawRivers(settings, parent.mapParts.graph, map, parent.mapParts.sizeMultiplier, null, null);
+			MapCreator.drawRivers(parent.settings, parent.mapParts.graph, map, parent.mapParts.sizeMultiplier, null, null);
 		}
 				 		
  		return map;
 	}
 	
 	@Override
-	protected void onAfterUndoRedo(MapEdits changeEdits)
+	protected void onAfterUndoRedo(MapChange change)
 	{	
-		createAndShowMapFromChange(changeEdits);
+		parent.createAndShowMapFromChange(change);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
@@ -623,7 +623,7 @@ public class IconTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{
-		createAndShowMapIncrementalUsingCenters(centers);
+		parent.createAndShowMapIncrementalUsingCenters(centers);
 	}
 
 
