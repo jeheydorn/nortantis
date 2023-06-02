@@ -47,7 +47,7 @@ public class IconDrawer
 	final double treeScale = 4.0/8.0;
 	final double meanPolygonWidth;
 	final int duneWidth;
-	// If a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
+	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
 	final double maxMeansToDraw = 5.0;
 	double maxSizeToDrawIcon;
 	// Max gap (in polygons) between mountains for considering them a single group. Warning:
@@ -144,15 +144,25 @@ public class IconDrawer
 		{
 			if (!c.isMountain && !c.isHill && !c.isWater)
 			{
-				if (c.isRiver() && rand.nextDouble() <= cityProbability*2)
+				// I'm generating these numbers now instead of waiting to see if they are needed in the if statements below because 
+				// there is a problem in the graph such that maps generated at different resolutions can have slight differences in their
+				// rivers, which appears to be caused by floating point precision issues while calculating elevation of corners. 
+				// Thus, the slightest change in a river on one corner could cause a center to change whether it's a river, which
+				// would modify the way the random number generator is called, which would then change everything else used by that 
+				// random number generator after it. But this fix only reduces the issue, since other things will also change
+				// when rivers move.
+				double cityByRiverProbability = rand.nextDouble(); 
+				double cityByCoastProbability = rand.nextDouble();
+				double randomCityProbability = rand.nextDouble();
+				if (c.isRiver() && cityByRiverProbability <= cityProbability*2)
 				{
 					c.isCity = true;
 				}
-				else if (c.isCoast && rand.nextDouble() <= cityProbability*2)
+				else if (c.isCoast && cityByCoastProbability <= cityProbability*2)
 				{
 					c.isCity = true;
 				}
-				else if (rand.nextDouble() <= cityProbability)
+				else if (randomCityProbability <= cityProbability)
 				{
 					c.isCity = true;
 				}

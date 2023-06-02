@@ -90,6 +90,12 @@ public class MapCreatorTest
 		generateAndCompare("allTypesOfEdits.properties");
 	}
 	
+	@Test
+	public void smallWorld_constrainedToForceGeneratingLand()
+	{
+		generateAndCompare("smallWorld_constrainedToForceGeneratingLand.properties");
+	}
+	
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{
 		return Paths.get("unit test files", "expected maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();

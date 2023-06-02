@@ -156,6 +156,9 @@ public class MapEditingPanel extends ImagePanel
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
 			
+			// TODO remove hack
+			selectedCenters.add(graph.centers.get(19842));
+			
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
 			

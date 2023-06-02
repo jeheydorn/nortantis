@@ -76,7 +76,7 @@ public class WorldGraph extends VoronoiGraph
 	// During tectonic plate creation, if there are only two plates left and the
 	// smaller of the two is less than this size, stop.
 	// Prevents small maps from containing only one tectonic plate.
-	final int minSecondtoLastPlateSize = 100;
+	final int minNinthtoLastPlateSize = 100;
 	public boolean isForFrayedBorder;
 
 	// Maps plate ids to plates.
@@ -991,9 +991,10 @@ public class WorldGraph extends VoronoiGraph
 				for (Center n : neighbor.neighbors)
 					n.updateNeighborsNotInSamePlateCount();
 
-				// Stop if there are only two plates left and one of them is
-				// getting too small
-				if (plateCounts.keySet().size() == 2 && Helper.min(plateCounts) <= minSecondtoLastPlateSize)
+				// Stop if there are only nine plates left and one of them is getting too small. This will usually prevent
+				// creating a map this just ocean or has only tiny islands, although it isn't guaranteed since it's
+				// possible all 9 plates will be assigned to oceanic.
+				if (plateCounts.keySet().size() == 9 && Helper.min(plateCounts) <= minNinthtoLastPlateSize)
 				{
 					break;
 				}
@@ -1047,7 +1048,6 @@ public class WorldGraph extends VoronoiGraph
 	 */
 	public static double calcUnilateralLevelOfConvergence(Point p1, PolarCoordinate p1Velocity, Point p2)
 	{
-
 		// Find the angle from c1.location to c2.location:
 		Point cDiff = p2.subtract(p1);
 		double diffAngle = Math.atan2(cDiff.y, cDiff.x);

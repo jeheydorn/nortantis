@@ -668,7 +668,7 @@ public class MapCreator
 				}
 				else
 				{
-					colors.put(1, settings.landColor);
+					colors.put(0, settings.landColor);
 				}
 				return ImageHelper.maskWithMultipleColors(mapOrSnippet, colors, background.regionIndexes, coastShading, true);
 			}
