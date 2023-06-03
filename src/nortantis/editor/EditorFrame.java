@@ -648,9 +648,22 @@ public class EditorFrame extends JFrame
 	
 	private Set<Center> getCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		return settings.edits.centerEdits.stream().filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
+		Set<Center> changedCenters = settings.edits.centerEdits.stream().filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
 		.map(cEdit -> mapParts.graph.centers.get(cEdit.index))
 		.collect(Collectors.toSet());
+		
+		Set<RegionEdit> regionChanges = settings.edits.regionEdits.values().stream().filter(
+				rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId)))
+				.collect(Collectors.toSet());
+		for (RegionEdit rEdit : regionChanges)
+		{
+			Set<Center> regionCenterEdits = changeEdits.centerEdits.stream().filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId)
+					.map(cEdit -> mapParts.graph.centers.get(cEdit.index))
+					.collect(Collectors.toSet());
+			changedCenters.addAll(regionCenterEdits);
+		}
+		
+		return changedCenters;
 	}
 	
 	private Set<Edge> getEdgesWithChangesInEdits(MapEdits changeEdits)
@@ -790,12 +803,18 @@ public class EditorFrame extends JFrame
 		            else
 	            	{
 		         		mapEditingPanel.clearProcessingEdges();
+		         		mapEditingPanel.clearProcessingCenters();
 		         		// Add back the centers and edges not yet processed.
 		         		for (IncrementalUpdate incrementalUpdate : incrementalUpdatesToDraw)
 		         		{
 		         			if (incrementalUpdate.edgesChanged != null)
 		         			{
 		         				mapEditingPanel.addProcessingEdges(edgesChanged);
+		         			}
+
+		         			if (incrementalUpdate.centersChanged != null)
+		         			{
+		         				mapEditingPanel.addProcessingCenters(centersChanged);
 		         			}
 		         		}
 	            	}
