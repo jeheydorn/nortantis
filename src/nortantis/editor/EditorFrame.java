@@ -92,6 +92,8 @@ public class EditorFrame extends JFrame
 	MapSettings settings;
 	private JProgressBar progressBar;
 	private Timer progressBarTimer;
+	private JPanel toolsPanel;
+	private JPanel bottomPanel;
 
 	
 	/**
@@ -241,7 +243,7 @@ public class EditorFrame extends JFrame
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		getContentPane().add(scrollPane);
 			
-		JPanel toolsPanel = new JPanel();
+		toolsPanel = new JPanel();
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, getContentPane().getHeight()));
 		toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
 		getContentPane().add(toolsPanel, BorderLayout.EAST);
@@ -298,7 +300,7 @@ public class EditorFrame extends JFrame
 
 		
 		// Setup bottom panel
-		JPanel bottomPanel = new JPanel();
+		bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
 		bottomPanel.setBorder(BorderFactory.createEmptyBorder(borderWidthBetweenComponents, borderWidthBetweenComponents,
 				borderWidthBetweenComponents, borderWidthBetweenComponents));
@@ -544,7 +546,6 @@ public class EditorFrame extends JFrame
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearSelectedCenters();
-		mapEditingPanel.clearProcessingEdges();
 		mapEditingPanel.clearHighlightedEdges();
 		currentTool.onSwitchingAway();
 		currentTool.setToggled(false);
@@ -554,6 +555,7 @@ public class EditorFrame extends JFrame
 		toolsOptionsPanelContainer.remove(currentToolOptionsPanel);
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
+		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
@@ -837,24 +839,6 @@ public class EditorFrame extends JFrame
 	            		IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
 	            		createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
 	            	}
-		            else
-	            	{
-		         		mapEditingPanel.clearProcessingEdges();
-		         		mapEditingPanel.clearProcessingCenters();
-		         		// Add back the centers and edges not yet processed.
-		         		for (IncrementalUpdate incrementalUpdate : incrementalUpdatesToDraw)
-		         		{
-		         			if (incrementalUpdate.edgesChanged != null)
-		         			{
-		         				mapEditingPanel.addProcessingEdges(edgesChanged);
-		         			}
-
-		         			if (incrementalUpdate.centersChanged != null)
-		         			{
-		         				mapEditingPanel.addProcessingCenters(centersChanged);
-		         			}
-		         		}
-	            	}
 		            
 		            if (updateType == UpdateType.Full)
 		            {
@@ -870,7 +854,6 @@ public class EditorFrame extends JFrame
 	            {
 	            	enableOrDisableToolToggleButtonsAndZoom(true);
 	            	mapEditingPanel.clearSelectedCenters();
-	         		mapEditingPanel.clearProcessingEdges();
 	         		isMapBeingDrawn = false;
 	            }
 	        }

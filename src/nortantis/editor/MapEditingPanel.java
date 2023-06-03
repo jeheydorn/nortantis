@@ -21,15 +21,12 @@ public class MapEditingPanel extends ImagePanel
 {
 	private final Color highlightColor = new Color(255,227,74);
 	private final Color selectColor = Color.orange;
-	private final Color processingColor = Color.green;
 	private List<Area> areas;
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
 	private WorldGraph graph;
 	private HighlightMode highlightMode;
 	private Collection<Edge> highlightedEdges;
-	private Collection<Edge> processingEdges;
-	private Set<Center> processingCenters;
 	private boolean highlightLakes;
 	private boolean highlightRivers;
 	public BufferedImage mapFromMapCreator;
@@ -40,8 +37,6 @@ public class MapEditingPanel extends ImagePanel
 		highlightedCenters = new HashSet<>();
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
-		processingEdges = new HashSet<>();
-		processingCenters = new HashSet<>();
 	}
 	
 	public void setHighlightedEdges(Collection<Edge> edges)
@@ -52,26 +47,6 @@ public class MapEditingPanel extends ImagePanel
 	public void clearHighlightedEdges()
 	{
 		highlightedEdges.clear();
-	}
-	
-	public void addProcessingEdges(Collection<Edge> edges)
-	{
-		this.processingEdges.addAll(edges);
-	}
-	
-	public void clearProcessingEdges()
-	{
-		this.processingEdges.clear();
-	}
-
-	public void addProcessingCenters(Collection<Center> centers)
-	{
-		this.processingCenters.addAll(centers);
-	}
-	
-	public void clearProcessingCenters()
-	{
-		this.processingCenters.clear();
 	}
 	
 	public void setAreasToDraw(List<Area> areas)
@@ -169,10 +144,6 @@ public class MapEditingPanel extends ImagePanel
 			
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
-			
-			g.setColor(processingColor);
-			drawEdges(g, processingEdges);
-			drawCenterOutlines(g, processingCenters);
 		}
 	}
 	

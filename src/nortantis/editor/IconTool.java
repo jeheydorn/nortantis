@@ -529,7 +529,6 @@ public class IconTool extends EditorTool
 			}
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
-			mapEditingPanel.addProcessingEdges(river);
 			mapEditingPanel.repaint();
 			
 			if (river.size() > 0)

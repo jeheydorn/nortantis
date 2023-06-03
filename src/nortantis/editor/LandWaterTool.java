@@ -330,7 +330,6 @@ public class LandWaterTool extends EditorTool
 						RegionEdit edit = parent.settings.edits.regionEdits.get(region.id);
 						edit.color = colorDisplay.getBackground();
 						Set<Center> regionCenters = region.getCenters();
-						mapEditingPanel.addProcessingCenters(regionCenters);
 						handleMapChange(regionCenters);
 					}
 				}
@@ -370,7 +369,6 @@ public class LandWaterTool extends EditorTool
 								}
 								
 							}
-							mapEditingPanel.addProcessingCenters(region.getCenters());
 							parent.settings.edits.regionEdits.remove(region.id);
 							selectedRegion = null;
 							mapEditingPanel.clearSelectedCenters();
