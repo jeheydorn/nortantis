@@ -1,20 +1,22 @@
 package nortantis.editor;
 
+import java.util.ArrayDeque;
 import java.util.Stack;
 
 import nortantis.MapSettings;
 
 public class Undoer
 {
-	private Stack<MapChange> undoStack;
+	private ArrayDeque<MapChange> undoStack;
 	private Stack<MapChange> redoStack;
 	private MapSettings settings;
 	public MapEdits copyOfEditsWhenEditorWasOpened;
 	private EditorFrame editorFrame;
+	private final float maxUndoLevels = 150;
 
 	public Undoer(MapSettings settings, EditorFrame editorFrame)
 	{
-		undoStack = new Stack<>();
+		undoStack = new ArrayDeque<>();
 		redoStack = new Stack<>();
 		this.settings = settings;
 		this.editorFrame = editorFrame;
@@ -38,6 +40,13 @@ public class Undoer
 	{
 		redoStack.clear();
 		undoStack.push(new MapChange(settings.edits.deepCopy(), updateType, tool));
+		
+		// Limit the size of undoStack to prevent memory errors. Each undo point is about 2 MBs.
+		while(undoStack.size() > maxUndoLevels)
+		{
+			undoStack.removeLast();
+		}
+		
 		updateUndoRedoEnabled();
 	}
 	
