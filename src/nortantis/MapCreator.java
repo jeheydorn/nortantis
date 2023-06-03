@@ -99,7 +99,7 @@ public class MapCreator
 	private void incrementalUpdate(final MapSettings settings,  MapParts mapParts, BufferedImage fullSizedMap,
 			Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{		
-		double startTime = System.currentTimeMillis();				
+		//double startTime = System.currentTimeMillis();				
 		
 		centersChanged = new HashSet<>(centersChanged);
 		if (edgesChanged != null)
@@ -256,7 +256,7 @@ public class MapCreator
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom); 
 		
-		// TODO Remove debug code
+		// Debug code
 //		Graphics g = fullSizedMap.createGraphics();
 //		g.setColor(Color.white);
 //		g.drawRect((int) replaceBounds.x, (int) replaceBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
@@ -268,13 +268,9 @@ public class MapCreator
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.landBackground, landBackground, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom);
 				
-		// TODO Handle frayed border and grunge. Need to update the editor to display these first.   
-		
-		// TODO remove time logging code when done testing.
-		double elapsedTime = System.currentTimeMillis() - startTime;
-		Logger.println("Time to do incremental update: " + elapsedTime / 1000.0);
-		
-		ImageHelper.write(mapSnippet, "mapSnippet.png"); // TODO Remove debug code
+		// Print run time
+		//double elapsedTime = System.currentTimeMillis() - startTime;
+		//Logger.println("Time to do incremental update: " + elapsedTime / 1000.0);
 	}
 	
 	/**

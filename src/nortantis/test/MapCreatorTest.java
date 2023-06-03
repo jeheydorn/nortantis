@@ -96,6 +96,12 @@ public class MapCreatorTest
 		generateAndCompare("smallWorld_constrainedToForceGeneratingLand.properties");
 	}
 	
+	@Test
+	public void smallWorld_allTextDeletedByHand_shouldNotRegenerateText()
+	{
+		generateAndCompare("smallWorld_allTextDeletedByHand_shouldNotRegenerateText.properties");
+	}
+	
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{
 		return Paths.get("unit test files", "expected maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();

@@ -177,7 +177,7 @@ public class MapEditingPanel extends ImagePanel
 	
 	private void drawLakes(Graphics g)
 	{
-		g.setColor(Color.BLUE);
+		g.setColor(new Color(0, 130, 230));
 		for (Center c : graph.centers)
 		{
 			if (c.isLake)
@@ -197,7 +197,7 @@ public class MapEditingPanel extends ImagePanel
 	
 	private void drawRivers(Graphics g)
 	{
-		g.setColor(Color.BLUE);
+		g.setColor(new Color(0, 130, 230));
 		graph.drawRivers((Graphics2D) g, MapCreator.calcSizeMultiplier(graph.getWidth()), null, null);
 	}
 }

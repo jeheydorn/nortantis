@@ -68,13 +68,14 @@ public class IconDrawer
 	public Map<Integer, CenterIcon> centerIcons;
 	public Map<Integer, CenterTrees> trees;
 	private double averageCenterWidthBetweenNeighbors;
+	private String cityIconsSetName;
 
 	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
-		ImageCache.getInstance().setCityIconsSetName(cityIconsSetName);
+		this.cityIconsSetName = cityIconsSetName;
 		
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneWidth = (int)(meanPolygonWidth * 1.5);
@@ -217,7 +218,7 @@ public class IconDrawer
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.hills);
 		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance().getIconsWithWidths(IconType.cities);
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance().getIconsWithWidths(IconType.cities, cityIconsSetName);
 		
 		for (Center center : centersToUpdateIconsFor)
 		{
@@ -508,7 +509,7 @@ public class IconDrawer
 	 */
 	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance().getIconsWithWidths(IconType.cities);
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance().getIconsWithWidths(IconType.cities, cityIconsSetName);
 		if (cityIcons.isEmpty())
 		{
 			Logger.println("Cities will not be drawn because there are no city icons.");

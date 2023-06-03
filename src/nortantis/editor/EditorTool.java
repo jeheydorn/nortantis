@@ -18,13 +18,10 @@ import javax.swing.BoxLayout;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.JToggleButton;
-import javax.swing.Box.Filler;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
-import nortantis.ImagePanel;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
 

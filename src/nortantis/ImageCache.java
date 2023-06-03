@@ -51,13 +51,11 @@ public class ImageCache
 	 * The first image in the tuple is the icon. The second image is the mask, which is generated based on the image loaded from disk.
 	 */
 	private ConcurrentHashMapF<IconType, ListMap<String, Tuple2<BufferedImage, BufferedImage>>> iconGroupsAndMasksCache;
-
-	private String cityIconsSetName;
 	
 	/**
-	 * Maps icon type > icon sub-type name > lists of icons, masks, and icon widths, of that sub-type.
+	 * Maps icon type > icon set name > icon sub-type name > lists of icons, masks, and icon widths, of that sub-type.
 	 */
-	private ConcurrentHashMapF<IconType, Map<String, Tuple3<BufferedImage, BufferedImage, Integer>>> iconsWithWidthsCache;
+	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, Map<String, Tuple3<BufferedImage, BufferedImage, Integer>>>> iconsWithWidthsCache;
 	
 	private ConcurrentHashMapF<IconType, Set<String>> iconSetsCache;
 	
@@ -150,13 +148,19 @@ public class ImageCache
 	
 	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> loadAllIconGroupsAndMasksForType(IconType iconType)
 	{
+		return loadAllIconGroupsAndMasksForSetAndType(null, iconType);
+	}
+	
+	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> loadAllIconGroupsAndMasksForSetAndType(String iconSetName, 
+			IconType iconType)
+	{
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> imagesPerGroup = new ListMap<>();
 
 		String[] groupNames = getIconGroupNames(iconType);
 		for (String groupName : groupNames)
 		{
-			String[] fileNames = getIconGroupFileNames(iconType, groupName, getIconSetName(iconType));
-			String groupPath = getIconGroupPath(iconType, groupName, getIconSetName(iconType));
+			String[] fileNames = getIconGroupFileNames(iconType, groupName, iconSetName);
+			String groupPath = getIconGroupPath(iconType, groupName, iconSetName);
 			if (fileNames.length == 0)
 			{
 				continue;
@@ -186,15 +190,17 @@ public class ImageCache
 	 * 
 	 * @return A map from icon names (not including width or extension) to a tuple with the icon, mask, and width.
 	 */
-	public Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> getIconsWithWidths(IconType iconType)
+	public Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> getIconsWithWidths(IconType iconType, String iconSetName)
 	{	
-		return iconsWithWidthsCache.getOrCreate(iconType, () -> loadIconsWithWidths(iconType));
+		return iconsWithWidthsCache.getOrCreate(iconType, 
+				() ->  new ConcurrentHashMapF<>()).getOrCreate(iconSetName == null ? "" : iconSetName,
+				() -> loadIconsWithWidths(iconType, iconSetName));
 	}
 
-	private Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(IconType iconType)
+	private Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(IconType iconType, String iconSetName)
 	{
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new HashMap<>();
-		String[] fileNames = getIconGroupFileNames(iconType, null, getIconSetName(iconType));
+		String[] fileNames = getIconGroupFileNames(iconType, null, iconSetName);
 		if (fileNames.length == 0)
 		{
 			return imagesAndMasks;
@@ -215,7 +221,7 @@ public class ImageCache
 						+ " Rename one of them");
 			}
 
-			Path path = Paths.get(getIconGroupPath(iconType, null, getIconSetName(iconType)), fileName);
+			Path path = Paths.get(getIconGroupPath(iconType, null, iconSetName), fileName);
 			if (!ImageCache.getInstance().containsImageFile(path))
 			{
 				Logger.println("Loading icon: " + path);
@@ -241,24 +247,6 @@ public class ImageCache
 		}
 		
 		return imagesAndMasks;
-	}
-	
-	private String getIconSetName(IconType iconType)
-	{
-		if (iconType == IconType.cities)
-		{
-			return cityIconsSetName;
-		}
-		return null;
-	}
-	
-	/**
-	 * Configures which set of cities should be loaded by methods that load groups of city images.
-	 * @param cityIconsSetName Name of a folder in assets\icons\cities
-	 */
-	public void setCityIconsSetName(String cityIconsSetName)
-	{
-		this.cityIconsSetName = cityIconsSetName;
 	}
 	
 	public Set<String> getIconSets(IconType iconType)
@@ -354,8 +342,12 @@ public class ImageCache
 	
 	public String[] getIconGroupNames(IconType iconType)
 	{
-		String setName = getIconSetName(iconType);
-		return getIconGroupNames(iconType, setName);
+		if (doesUseSets(iconType))
+		{
+			throw new IllegalArgumentException("Icon type " + iconType + " uses sets, so a set must be passed in.");
+		}
+		
+		return getIconGroupNames(iconType, "");
 	}
 	
 	private String[] getIconGroupFileNames(IconType iconType, String groupName, String setName)

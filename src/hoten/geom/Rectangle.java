@@ -139,7 +139,6 @@ public class Rectangle
 		return new Rectangle((int)x, (int)y, (int)width, (int)height);
 	}
 	
-	// TODO Decide if I should keep this, and if it should round up or down
 	public java.awt.Rectangle toAwTRectangle()
 	{
 		// Round up to the nearest integer

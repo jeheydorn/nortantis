@@ -35,7 +35,6 @@ import hoten.voronoi.Edge;
 import hoten.voronoi.VoronoiGraph;
 import nortantis.IconType;
 import nortantis.ImageCache;
-import nortantis.MapCreator;
 
 public class IconTool extends EditorTool
 {
