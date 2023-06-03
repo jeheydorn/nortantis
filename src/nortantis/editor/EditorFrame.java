@@ -43,8 +43,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.JProgressBar;
+import javax.swing.Timer;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
@@ -75,7 +78,6 @@ public class EditorFrame extends JFrame
 	boolean areToolToggleButtonsEnabled = true;
 	JMenuItem undoButton;
 	JMenuItem redoButton;
-	private JLabel mapIsDrawingLabel;
 	private TitledBorder toolOptionsPanelBorder;
 	private JMenuItem clearEntireMapButton;
 	private boolean hadEditsAtStartup;
@@ -85,9 +87,11 @@ public class EditorFrame extends JFrame
 	double zoom;
 	private boolean mapNeedsFullRedraw;
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
-	private boolean mapIsBeingDrawn;
+	private boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
 	MapSettings settings;
+	private JProgressBar progressBar;
+	private Timer progressBarTimer;
 
 	
 	/**
@@ -230,14 +234,13 @@ public class EditorFrame extends JFrame
 		if (currentTool == null)
 		{
 			currentTool = tools.get(2);
-		}		
-		scrollPane = new JScrollPane(currentTool.getDisplayPanel());
+		}
+		
+		scrollPane = new JScrollPane(mapEditingPanel);
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		getContentPane().add(scrollPane);
-		
-
-	
+			
 		JPanel toolsPanel = new JPanel();
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, getContentPane().getHeight()));
 		toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
@@ -277,7 +280,24 @@ public class EditorFrame extends JFrame
 		toolsPanel.add(toolsOptionsPanelContainer);
 		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
-				
+		toolsOptionsPanelContainer.add(Box.createHorizontalGlue());
+						
+		JPanel progressAndBottomPanel = new JPanel();
+		progressAndBottomPanel.setLayout(new BoxLayout(progressAndBottomPanel, BoxLayout.Y_AXIS));
+		// Progress bar
+		JPanel progressBarPanel = new JPanel();
+		progressBarPanel.setLayout(new BoxLayout(progressBarPanel, BoxLayout.X_AXIS));
+		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, borderWidthBetweenComponents - 2,
+				0, borderWidthBetweenComponents));
+		progressBar = new JProgressBar();
+		progressBar.setStringPainted(true);
+		progressBar.setString("Drawing...");
+		progressBar.setIndeterminate(true);
+		progressBar.setVisible(false);
+		progressBarPanel.add(progressBar);
+		progressAndBottomPanel.add(progressBarPanel);
+
+		
 		// Setup bottom panel
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
@@ -302,6 +322,7 @@ public class EditorFrame extends JFrame
 			zoomComboBox.setSelectedItem("50%");
 			UserPreferences.getInstance().zoomLevel = "50%";
 		}
+
 		bottomPanel.add(zoomComboBox);
 		zoomComboBox.addActionListener(new ActionListener()
 		{
@@ -317,11 +338,7 @@ public class EditorFrame extends JFrame
 		});
 		
 		bottomPanel.add(Box.createHorizontalGlue());
-		mapIsDrawingLabel = new JLabel("Drawing...");
-		mapIsDrawingLabel.setVisible(false);
-		bottomPanel.add(mapIsDrawingLabel);
-		bottomPanel.add(Box.createHorizontalGlue());
-
+				
 		JButton doneButton = new JButton("Done");
 		doneButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e){
@@ -332,8 +349,20 @@ public class EditorFrame extends JFrame
 				
 		bottomPanel.add(doneButton);
 		
-		toolsPanel.add(bottomPanel);
-
+		progressAndBottomPanel.add(bottomPanel);
+		toolsPanel.add(progressAndBottomPanel);
+		
+		ActionListener listener = new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				progressBar.setVisible(isMapBeingDrawn);
+			}
+		};
+		progressBarTimer = new Timer(50, listener);
+		progressBarTimer.setInitialDelay(500);
 		
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
@@ -544,8 +573,17 @@ public class EditorFrame extends JFrame
 			tool.setToggleButtonEnabled(enable);
 		}
 		zoomComboBox.setEnabled(enable);
-		mapIsDrawingLabel.setVisible(!enable);
 		clearEntireMapButton.setEnabled(enable);
+		
+		if (enable)
+		{
+			progressBarTimer.stop();
+			progressBar.setVisible(false);
+		}
+		else
+		{
+			progressBarTimer.start();
+		}
 	}
 	
 	private double parseZoom(String zoomStr)
@@ -678,7 +716,7 @@ public class EditorFrame extends JFrame
 	 */
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
-		if (mapIsBeingDrawn)
+		if (isMapBeingDrawn)
 		{
 			if (updateType == UpdateType.Full)
 			{
@@ -692,7 +730,7 @@ public class EditorFrame extends JFrame
 			return;
 		}
 		
-		mapIsBeingDrawn = true;
+		isMapBeingDrawn = true;
 		enableOrDisableToolToggleButtonsAndZoom(false);
 		
 		if (updateType == UpdateType.Full)
@@ -790,7 +828,7 @@ public class EditorFrame extends JFrame
 	            	
 	            	enableOrDisableToolToggleButtonsAndZoom(true);
 
-	            	mapIsBeingDrawn = false;
+	            	isMapBeingDrawn = false;
 		            if (mapNeedsFullRedraw)
 		            {
 		            	createAndShowMapFull();
@@ -834,7 +872,7 @@ public class EditorFrame extends JFrame
 	            	enableOrDisableToolToggleButtonsAndZoom(true);
 	            	mapEditingPanel.clearSelectedCenters();
 	         		mapEditingPanel.clearProcessingEdges();
-	         		mapIsBeingDrawn = false;
+	         		isMapBeingDrawn = false;
 	            }
 	        }
 	 

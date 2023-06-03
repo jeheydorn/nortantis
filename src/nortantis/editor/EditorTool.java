@@ -66,11 +66,6 @@ public abstract class EditorTool
 	
 	public abstract String getImageIconFilePath();
 	
-	public ImagePanel getDisplayPanel()
-	{
-		return mapEditingPanel;
-	}
-	
 	public abstract void onBeforeSaving();
 	
 	public abstract void onSwitchingAway();
@@ -143,6 +138,11 @@ public abstract class EditorTool
 	public void setToggled(boolean toggled)
 	{
 		toggleButton.setSelected(toggled);
+	}
+	
+	public ImagePanel getDisplayPanel()
+	{
+		return mapEditingPanel;
 	}
 	
 	public void setToggleButton(JToggleButton toggleButton)
