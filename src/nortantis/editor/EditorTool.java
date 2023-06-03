@@ -140,11 +140,6 @@ public abstract class EditorTool
 		toggleButton.setSelected(toggled);
 	}
 	
-	public ImagePanel getDisplayPanel()
-	{
-		return mapEditingPanel;
-	}
-	
 	public void setToggleButton(JToggleButton toggleButton)
 	{
 		this.toggleButton = toggleButton;

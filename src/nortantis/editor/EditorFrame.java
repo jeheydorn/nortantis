@@ -280,7 +280,6 @@ public class EditorFrame extends JFrame
 		toolsPanel.add(toolsOptionsPanelContainer);
 		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
-		toolsOptionsPanelContainer.add(Box.createHorizontalGlue());
 						
 		JPanel progressAndBottomPanel = new JPanel();
 		progressAndBottomPanel.setLayout(new BoxLayout(progressAndBottomPanel, BoxLayout.Y_AXIS));
