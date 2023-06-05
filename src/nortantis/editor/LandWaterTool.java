@@ -52,6 +52,7 @@ public class LandWaterTool extends EditorTool
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private JPanel brushSizePanel;
 	private JPanel selectColorPanel;
+	private JCheckBox onlyUpdateLandCheckbox;
 
 	public LandWaterTool(EditorFrame dialog)
 	{
@@ -108,6 +109,11 @@ public class LandWaterTool extends EditorTool
 				{
 					brushSizePanel.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected() || landButton.isSelected());
 				}
+				
+				if (areRegionColorsVisible())
+				{
+					onlyUpdateLandCheckbox.setVisible(paintRegionButton.isSelected());
+				}
 			}
 	    };
 	    oceanButton.addActionListener(listener);
@@ -146,9 +152,10 @@ public class LandWaterTool extends EditorTool
 		    radioButtons.add(landButton);
 		    landButton.addActionListener(listener);
 	    }
+	    	    	    
 	    oceanButton.setSelected(true); // Selected by default
 	    EditorTool.addLabelAndComponentsToPanel(toolOptionsPanel, brushLabel, radioButtons);
-	    
+	    	    
 	    // Color chooser
 	    if (areRegionColorsVisible())
 	    {
@@ -189,7 +196,6 @@ public class LandWaterTool extends EditorTool
 			selectColorPanel = EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, new JLabel(""), selectColorFromMapButton);
 
 	    }
-	    listener.actionPerformed(null);
 
 	    JLabel brushSizeLabel = new JLabel("Brush size:");
 	    brushSizeComboBox = new JComboBox<>();
@@ -223,6 +229,17 @@ public class LandWaterTool extends EditorTool
 				mapEditingPanel.repaint();
 			}
 		});
+	    
+	    if (areRegionColorsVisible())
+	    {
+		    JLabel onlyUpdateLandLabel = new JLabel("");
+		    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
+		    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
+		    EditorTool.addLabelAndComponentToPanel(toolOptionsPanel, onlyUpdateLandLabel, onlyUpdateLandCheckbox);
+	    }
+	    
+	    listener.actionPerformed(null);
+
 	    
 	    // Prevent the panel from shrinking when components are hidden.
 	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(EditorFrame.toolsPanelWidth - 25, 0)));
@@ -279,6 +296,10 @@ public class LandWaterTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit edit = parent.settings.edits.centerEdits.get(center.index);
+					if (onlyUpdateLandCheckbox.isSelected() && edit.isWater)
+					{
+						continue;
+					}
 					hasChange |= edit.isWater;
 					edit.isWater = false;
 					edit.isLake = false;
