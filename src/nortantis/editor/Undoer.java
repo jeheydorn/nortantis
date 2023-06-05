@@ -80,6 +80,8 @@ public class Undoer
 			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
 			editorFrame.currentTool.onAfterUndoRedo(change);
 		}
+		
+		editorFrame.updateEditsPointerInRunSwing();	
 	}
 	
 	public void redo()
@@ -108,6 +110,8 @@ public class Undoer
 			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map.
 			editorFrame.currentTool.onAfterUndoRedo(changeWithPrevEdits);
 		}
+		
+		editorFrame.updateEditsPointerInRunSwing();
 	}
 	
 	public void updateUndoRedoEnabled()

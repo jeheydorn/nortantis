@@ -93,6 +93,7 @@ public class EditorFrame extends JFrame
 	private Timer progressBarTimer;
 	private JPanel toolsPanel;
 	private JPanel bottomPanel;
+	private RunSwing parent;
 
 	
 	/**
@@ -118,6 +119,8 @@ public class EditorFrame extends JFrame
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
 		this.settings = settings;
+		this.parent = runSwing;
+		updateEditsPointerInRunSwing();
 		
 		final EditorFrame thisFrame = this;
 		setBounds(100, 100, 1122, 701);
@@ -414,7 +417,7 @@ public class EditorFrame extends JFrame
 				else
 				{
 			    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
-			    	runSwing.edits = settings.edits;				
+					updateEditsPointerInRunSwing();				
 				}
 				
 				runSwing.frame.setEnabled(true);
@@ -432,6 +435,16 @@ public class EditorFrame extends JFrame
 		handleToolSelected(currentTool);
 		zoom = parseZoom((String)zoomComboBox.getSelectedItem());
 		handleZoomChange();
+	}
+	
+	/**
+	 * Updates the pointer to the edits in the parent GUI to the edits being used in the editor. This is necessary
+	 * so that when you either save in the editor or close the editor and then save, the edits are stored/saved.
+	 * Note that undo/redo create deep copies of the edits, which means they have to update this pointer.
+	 */
+	public void updateEditsPointerInRunSwing()
+	{
+		parent.edits = settings.edits;
 	}
 	
 	private void showMapChangesMessage(RunSwing runSwing)

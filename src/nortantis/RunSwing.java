@@ -1677,6 +1677,7 @@ public class RunSwing
 			public void actionPerformed(ActionEvent arg0)
 			{
 				frame.setEnabled(false);
+				ImageCache.getInstance().clear();
 		        JFrame editorFrame;
 		        editorFrame = new EditorFrame(getSettingsFromGUI(), runSwing);
 				editorFrame.setVisible(true);
