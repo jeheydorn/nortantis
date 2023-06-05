@@ -51,7 +51,7 @@ public abstract class VoronoiGraph
 	 */
 	private double riverDensity = 1.0 / 14.0;
 	protected double scaleMultiplyer;
-	public static final int riversThinnerThanThisWillNotBeDrawn = 2;
+	public static final int riversThisSizeOrSmallerWillNotBeDrawn = 2;
 
 	final static double verySmall = 0.0000001;
 	double pointPrecision;
@@ -462,7 +462,7 @@ public abstract class VoronoiGraph
 
 		for (Edge e : edgesToDraw)
 		{
-			if (e.river > riversThinnerThanThisWillNotBeDrawn)
+			if (e.river > riversThisSizeOrSmallerWillNotBeDrawn)
 			{
 				int width = Math.max(1, (int) (sizeMultiplyer / 2.0 + Math.sqrt(e.river * 0.1)));
 				g.setStroke(new BasicStroke(width));
@@ -658,7 +658,7 @@ public abstract class VoronoiGraph
 	{
 		drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge ->
 		{
-			if (ignoreRiverEdges && edge.river > riversThinnerThanThisWillNotBeDrawn)
+			if (ignoreRiverEdges && edge.river > riversThisSizeOrSmallerWillNotBeDrawn)
 			{
 				// Don't draw region boundaries where there are rivers.
 				return false;

@@ -34,6 +34,4 @@ public class EdgeEdit implements Serializable
 		EdgeEdit other = (EdgeEdit) obj;
 		return index == other.index && riverLevel == other.riverLevel;
 	}
-	
-	
 }

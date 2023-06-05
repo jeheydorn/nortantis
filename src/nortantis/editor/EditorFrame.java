@@ -984,10 +984,7 @@ public class EditorFrame extends JFrame
 			for (Edge edge : center.borders)
 			{
 				EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
-				if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
-				{
-					eEdit.riverLevel = 0;
-				}
+				eEdit.riverLevel = 0;
 			}
 		}
 		

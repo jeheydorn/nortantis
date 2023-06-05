@@ -108,7 +108,7 @@ public class Center
 	{
 		for (Edge edge : borders)
 		{
-			if (edge.river >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+			if (edge.river >= VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 			{
 				return true;
 			}

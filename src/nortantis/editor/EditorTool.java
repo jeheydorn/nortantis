@@ -1,6 +1,7 @@
 package nortantis.editor;
 
 import java.awt.Color;
+
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -8,6 +9,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,8 +24,11 @@ import javax.swing.JToggleButton;
 
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
+import hoten.voronoi.Edge;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
+import java.util.Map;
+import java.util.HashMap;
 
 public abstract class EditorTool
 {
@@ -168,6 +173,91 @@ public abstract class EditorTool
 		
 		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
 		return parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushRadius), center);
+	}
+	
+	
+	protected Set<Edge> getSelectedEdges(java.awt.Point point, int brushDiameter)
+	{
+		if (brushDiameter <= 1)
+		{
+			return Collections.singleton(getClosestEdge(point));
+		}
+		else
+		{
+			hoten.geom.Point graphPoint = new hoten.geom.Point(point.x, point.y);
+			Center closestCenter = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+			Set<Center> overlapping = parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushDiameter), closestCenter);
+			Set<Edge> selected = new HashSet<>();
+			for (Center center : overlapping)
+			{
+				for (Edge edge : center.borders)
+				{
+					if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushDiameter)
+							|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushDiameter)
+					{
+						selected.add(edge);
+					}
+				}
+			}
+			return selected;
+		}
+	}
+	
+	private Edge getClosestEdge(java.awt.Point point)
+	{
+		Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+		Edge closest = null;
+		double closestDistance = Double.POSITIVE_INFINITY;
+		hoten.geom.Point graphPoint = new hoten.geom.Point(point.x, point.y);
+		for (Edge edge : center.borders)
+		{
+			hoten.geom.Point centroid;
+			if (edge.v0 == null && edge.v1 != null)
+			{
+				centroid = edge.v1.loc;
+			}
+			else if (edge.v1 == null && edge.v0 != null)
+			{
+				centroid = edge.v0.loc;
+			}
+			else if (edge.v0 == null && edge.v1 == null)
+			{
+				continue;
+			}
+			else
+			{
+				centroid = edge.v0.loc.add(edge.v1.loc).mult(0.5);	
+			}
+			
+			if (centroid == null)
+			{
+				continue;
+			}
+			
+			if (closest == null)
+			{
+				closest = edge;
+				if (centroid != null)
+				{
+					closestDistance = centroid.distanceTo(graphPoint);
+				}
+				continue;
+			}
+			else
+			{
+				if (centroid != null)
+				{
+					double distance = centroid.distanceTo(graphPoint);
+					if (distance < closestDistance)
+					{
+						closest = edge;
+						closestDistance = distance;
+					}
+				}
+				
+			}
+		}
+		return closest;
 	}
 	
 	/**

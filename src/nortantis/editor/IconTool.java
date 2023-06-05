@@ -33,6 +33,7 @@ import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
 import hoten.voronoi.VoronoiGraph;
+import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageCache;
 
@@ -419,7 +420,7 @@ public class IconTool extends EditorTool
 					for (Edge edge : center.borders)
 					{
 						EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
-						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
+						if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 						{
 							eEdit.riverLevel = 0;
 						}
@@ -480,17 +481,14 @@ public class IconTool extends EditorTool
 			}
 			else if (eraseRiversButton.isSelected())
 			{
-				for (Center center : selected)
+				// When deleting rivers with the single-point brush size, highlight the closest edge instead of a polygon.
+				Set<Edge> possibleRivers = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+				for (Edge edge : possibleRivers)
 				{
-					for (Edge edge : center.borders)
-					{
-						EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
-						if (eEdit.riverLevel >= VoronoiGraph.riversThinnerThanThisWillNotBeDrawn)
-						{
-							eEdit.riverLevel = 0;
-						}
-					}
-				}	
+					EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
+					eEdit.riverLevel = 0;
+				}
+				mapEditingPanel.clearHighlightedEdges();
 			}
 		}
 		handleMapChange(selected);
@@ -523,7 +521,7 @@ public class IconTool extends EditorTool
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
-				int riverLevel = (base * base * 2) + VoronoiGraph.riversThinnerThanThisWillNotBeDrawn + 1;
+				int riverLevel = (base * base * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
 				parent.settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
 			}
 			riverStart = null;
@@ -547,20 +545,35 @@ public class IconTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		
 		if (!riversButton.isSelected())
 		{
-			highlightHoverCenters(e);
+			highlightHoverCentersOrEdges(e);
 			mapEditingPanel.repaint();
 		}
 	}
 	
-	private void highlightHoverCenters(MouseEvent e)
+	private void highlightHoverCentersOrEdges(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		Set<Center> selected = getSelectedCenters(e.getPoint());
-		mapEditingPanel.addHighlightedCenters(selected);
-		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);	
+		mapEditingPanel.clearHighlightedEdges();
+		if (eraseRiversButton.isSelected())
+		{
+			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+			for (Edge edge : candidates)
+			{
+				EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
+				if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+				{
+					mapEditingPanel.addHighlightedEdge(edge);
+				}
+			}
+		}
+		else
+		{
+			Set<Center> selected = getSelectedCenters(e.getPoint());
+			mapEditingPanel.addHighlightedCenters(selected);
+			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);	
+		}
 	}
 
 	@Override
@@ -573,13 +586,13 @@ public class IconTool extends EditorTool
 				mapEditingPanel.clearHighlightedEdges();
 				Corner end = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
 				Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
-				mapEditingPanel.setHighlightedEdges(river);
+				mapEditingPanel.addHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
 		}
 		else
 		{
-			highlightHoverCenters(e);
+			highlightHoverCentersOrEdges(e);
 			handleMousePressOrDrag(e);
 		}
 	}

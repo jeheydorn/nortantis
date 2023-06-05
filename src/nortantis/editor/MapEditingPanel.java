@@ -39,9 +39,14 @@ public class MapEditingPanel extends ImagePanel
 		highlightedEdges = new HashSet<>();
 	}
 	
-	public void setHighlightedEdges(Collection<Edge> edges)
+	public void addHighlightedEdges(Collection<Edge> edges)
 	{
-		this.highlightedEdges = edges;
+		highlightedEdges.addAll(edges);
+	}
+	
+	public void addHighlightedEdge(Edge edge)
+	{
+		highlightedEdges.add(edge);
 	}
 	
 	public void clearHighlightedEdges()
