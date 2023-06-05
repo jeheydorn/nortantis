@@ -601,6 +601,10 @@ public class IconTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
+		if (eraseRiversButton.isSelected())
+		{
+			mapEditingPanel.clearHighlightedEdges();
+		}
 		mapEditingPanel.repaint();
 	}
 	
