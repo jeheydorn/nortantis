@@ -283,7 +283,13 @@ public class IconDrawer
 					}
 					else if (cityImages.size() > 0)
 					{
+						// Either the city image is missing, or the icon set name changed. Choose a new image in a deterministic but random way.
 						cityIconName = chooseNewGroupId(cityImages.keySet(), cEdit.icon.iconName);
+						if (cityIconName != null)
+						{
+							// Store the city icon name so that if someone later adds or removes other city icons, it doesn't affect which one is used for this center.
+							cEdit.icon.iconName = cityIconName;
+						}
 					}
 					if (cityIconName != null)
 					{
