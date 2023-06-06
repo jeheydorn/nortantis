@@ -81,7 +81,7 @@ public class IconDrawer
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneWidth = (int)(meanPolygonWidth * 1.5);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
-		cityScale = meanPolygonWidth * (1.0 / 9.0);
+		cityScale = meanPolygonWidth * (1.0 / 11.0);
 		centerIcons = new HashMap<>();
 		trees = new HashMap<>();
 		
