@@ -290,7 +290,14 @@ public class ImageCache
 	
 	private static String getFileNameBaseWithoutWidth(String fileName)
 	{
-		return fileName.substring(0, fileName.lastIndexOf("width="));
+		if (fileName.contains("width="))
+		{
+			return fileName.substring(0, fileName.lastIndexOf("width="));
+		}
+		else
+		{
+			return fileName;
+		}
 	}
 	
 	/**

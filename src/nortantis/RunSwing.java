@@ -1679,8 +1679,16 @@ public class RunSwing
 				frame.setEnabled(false);
 				ImageCache.getInstance().clear();
 		        JFrame editorFrame;
+		        try
+		        {
 		        editorFrame = new EditorFrame(getSettingsFromGUI(), runSwing);
 				editorFrame.setVisible(true);
+		        }
+		        catch(Exception ex)
+		        {
+		        	JOptionPane.showMessageDialog(null, "Error while attempting to open editor: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+		        	ex.printStackTrace();
+		        }
 			}			
 		});
 		editorMenu.add(launchEditorMenuItem);
