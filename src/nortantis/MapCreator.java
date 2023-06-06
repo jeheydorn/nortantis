@@ -220,7 +220,6 @@ public class MapCreator
 		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
 
 		// Draw mask for land vs ocean.
-		Logger.println("Adding land.");
 		BufferedImage landMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_BINARY);
 		{
 			Graphics2D g = landMask.createGraphics();
@@ -231,7 +230,7 @@ public class MapCreator
 				Color.black, landMask, false);
 
 		mapSnippet = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet, landMask,
-				mapParts.background, centersToDraw, drawBounds);
+				mapParts.background, centersToDraw, drawBounds, false);
 
 		// Store the current version of mapSnippet for a background when drawing
 		// icons later.
@@ -252,7 +251,6 @@ public class MapCreator
 
 		if (settings.drawIcons)
 		{
-			Logger.println("Drawing icons.");
 			mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
 		}
 
@@ -480,7 +478,7 @@ public class MapCreator
 			background.land = null;
 		}
 
-		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null);
+		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null, true);
 
 		// Store the current version of the map for a background when drawing
 		// icons later.
@@ -676,7 +674,7 @@ public class MapCreator
 	 */
 	private BufferedImage darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double sizeMultiplier,
 			BufferedImage mapOrSnippet, BufferedImage landMask, Background background, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
+			Rectangle drawBounds, boolean addLoggingEntry)
 	{
 		BufferedImage coastShading;
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
@@ -689,7 +687,10 @@ public class MapCreator
 
 		if (blurLevel > 0)
 		{
-			Logger.println("Darkening land near shores.");
+			if (addLoggingEntry)
+			{
+				Logger.println("Darkening land near shores.");
+			}
 			float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 
 			BufferedImage coastlineAndLakeShoreMask = new BufferedImage(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(),

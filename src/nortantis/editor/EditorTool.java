@@ -192,8 +192,8 @@ public abstract class EditorTool
 			{
 				for (Edge edge : center.borders)
 				{
-					if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushDiameter)
-							|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushDiameter)
+					if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushDiameter/2)
+							|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushDiameter/2)
 					{
 						selected.add(edge);
 					}

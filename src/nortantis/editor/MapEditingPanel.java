@@ -30,6 +30,8 @@ public class MapEditingPanel extends ImagePanel
 	private boolean highlightLakes;
 	private boolean highlightRivers;
 	public BufferedImage mapFromMapCreator;
+	private java.awt.Point brushLocation;
+	private int brushDiameter;
 	
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -37,6 +39,18 @@ public class MapEditingPanel extends ImagePanel
 		highlightedCenters = new HashSet<>();
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
+	}
+	
+	public void showBrush(java.awt.Point location, int brushDiameter)
+	{
+		brushLocation = location;
+		this.brushDiameter = brushDiameter;
+	}
+	
+	public void hideBrush()
+	{
+		brushLocation = null;
+		brushDiameter = 0;
 	}
 	
 	public void addHighlightedEdges(Collection<Edge> edges)
@@ -146,10 +160,19 @@ public class MapEditingPanel extends ImagePanel
 			g.setColor(highlightColor);
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
+			if (brushLocation != null)
+			{
+				drawBrush(g);
+			}
 			
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
 		}
+	}
+	
+	private void drawBrush(Graphics g)
+	{
+		g.drawOval(brushLocation.x - brushDiameter/2, brushLocation.y - brushDiameter/2, brushDiameter, brushDiameter);
 	}
 	
 	private void drawCenterOutlines(Graphics g, Set<Center> centers)

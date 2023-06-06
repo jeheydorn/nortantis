@@ -559,6 +559,7 @@ public class EditorFrame extends JFrame
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearSelectedCenters();
 		mapEditingPanel.clearHighlightedEdges();
+		mapEditingPanel.hideBrush();
 		currentTool.onSwitchingAway();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;

@@ -547,18 +547,24 @@ public class IconTool extends EditorTool
 	{
 		if (!riversButton.isSelected())
 		{
-			highlightHoverCentersOrEdges(e);
+			highlightHoverCentersOrEdgesAndBrush(e);
 			mapEditingPanel.repaint();
 		}
 	}
 	
-	private void highlightHoverCentersOrEdges(MouseEvent e)
+	private void highlightHoverCentersOrEdgesAndBrush(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearHighlightedEdges();
+		mapEditingPanel.hideBrush();
 		if (eraseRiversButton.isSelected())
 		{
-			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+			if (brushDiameter > 1)
+			{
+				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
+			}
+			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
 			for (Edge edge : candidates)
 			{
 				EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
@@ -592,7 +598,7 @@ public class IconTool extends EditorTool
 		}
 		else
 		{
-			highlightHoverCentersOrEdges(e);
+			highlightHoverCentersOrEdgesAndBrush(e);
 			handleMousePressOrDrag(e);
 		}
 	}
@@ -601,6 +607,7 @@ public class IconTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.hideBrush();
 		if (eraseRiversButton.isSelected())
 		{
 			mapEditingPanel.clearHighlightedEdges();
