@@ -47,6 +47,7 @@ public class IconDrawer
 	final double treeScale = 4.0/8.0;
 	final double meanPolygonWidth;
 	final int duneWidth;
+	final double cityScale;
 	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
 	final double maxMeansToDraw = 5.0;
 	double maxSizeToDrawIcon;
@@ -80,6 +81,7 @@ public class IconDrawer
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneWidth = (int)(meanPolygonWidth * 1.5);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
+		cityScale = meanPolygonWidth * (1.0 / 24.0);
 		centerIcons = new HashMap<>();
 		trees = new HashMap<>();
 		
@@ -297,7 +299,7 @@ public class IconDrawer
 						mask = cityImages.get(cityIconName).getSecond();
 						iconsToDraw.getOrCreate(center).add(
 								new IconDrawTask(cityImage, mask, center.loc, 
-										(int)(cityImages.get(cityIconName).getThird() * sizeMultiplyer), true, true, cityIconName));
+										(int)(cityImages.get(cityIconName).getThird() * sizeMultiplyer * cityScale), true, true, cityIconName));
 					}
 				}
 
@@ -531,7 +533,7 @@ public class IconDrawer
 			if (c.isCity)
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-				int scaledWidth = (int)(cityIcons.get(cityName).getThird() * sizeMultiplyer);
+				int scaledWidth = (int)(cityIcons.get(cityName).getThird() * sizeMultiplyer * cityScale);
 				BufferedImage icon = cityIcons.get(cityName).getFirst();
 				
 				IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true, cityName);
