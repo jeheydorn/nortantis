@@ -557,7 +557,7 @@ public class IconTool extends EditorTool
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearHighlightedEdges();
 		mapEditingPanel.hideBrush();
-		if (eraseRiversButton.isSelected())
+		if (eraseButton.isSelected() && eraseRiversButton.isSelected())
 		{
 			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
 			if (brushDiameter > 1)
@@ -608,7 +608,7 @@ public class IconTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.hideBrush();
-		if (eraseRiversButton.isSelected())
+		if (eraseButton.isSelected() && eraseRiversButton.isSelected())
 		{
 			mapEditingPanel.clearHighlightedEdges();
 		}
