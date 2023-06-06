@@ -77,7 +77,7 @@ public class TextTool extends EditorTool
 				{
 					rotateButton.doClick();
 				}
-				else if ((e.getKeyCode() == KeyEvent.VK_M) && e.isAltDown())
+				else if (((e.getKeyCode() == KeyEvent.VK_M) || (e.getKeyCode() == KeyEvent.VK_G)) && e.isAltDown())
 				{
 					moveButton.doClick();
 				}
@@ -134,7 +134,7 @@ public class TextTool extends EditorTool
 		    group.add(moveButton);
 		    radioButtons.add(moveButton);
 		    moveButton.addActionListener(listener);
-		    moveButton.setToolTipText("Move text (alt+M)");
+		    moveButton.setToolTipText("Move text (alt+M) or (alt+G)");
 	
 		    addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
 		    group.add(addButton);
@@ -195,12 +195,19 @@ public class TextTool extends EditorTool
 			handleTextEdit(lastSelected);
 		}
 		
-		mapEditingPanel.clearAreasToDraw();
-		lastSelected = null;
-		mapEditingPanel.repaint();
+		if (addButton.isSelected() || deleteButton.isSelected())
+		{
+			mapEditingPanel.clearAreasToDraw();
+			lastSelected = null;
+			mapEditingPanel.repaint();
+		}
 		textTypePanel.setVisible(addButton.isSelected());
-		editTextField.setText("");
 		textFieldPanel.setVisible(editButton.isSelected());
+		if (editButton.isSelected() && lastSelected != null)
+		{
+			editTextField.setText(lastSelected.value);
+			editTextField.requestFocus();
+		}
 	}
 		
 	@Override
@@ -319,6 +326,24 @@ public class TextTool extends EditorTool
 				updateTextInBackgroundThread(null);
 			}
 		}
+		else if (addButton.isSelected())
+		{
+			MapText addedText = parent.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
+					new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
+			parent.settings.edits.text.add(addedText);
+			
+			undoer.setUndoPoint(this);
+			updateTextInBackgroundThread(null);
+		}
+		else if (editButton.isSelected())
+		{
+			if (!editTextField.hasFocus())
+			{
+				editTextField.grabFocus();
+			}
+			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
+			handleTextEdit(selectedText);
+		}
 	}
 	
 	@Override
@@ -407,28 +432,6 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		// If the map has been drawn...
-		if (mapWithoutText != null)
-		{
-			if (editButton.isSelected())
-			{
-				if (!editTextField.hasFocus())
-				{
-					editTextField.grabFocus();
-				}
-				MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
-				handleTextEdit(selectedText);
-			}
-			else if (addButton.isSelected())
-			{
-				MapText addedText = parent.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
-						new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
-				parent.settings.edits.text.add(addedText);
-				
-				undoer.setUndoPoint(this);
-				updateTextInBackgroundThread(null);
-			}
-		}
 	}
 	
 	private void handleTextEdit(MapText selectedText)
