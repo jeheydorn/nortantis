@@ -462,7 +462,7 @@ public abstract class VoronoiGraph
 
 		for (Edge e : edgesToDraw)
 		{
-			if (e.river > riversThisSizeOrSmallerWillNotBeDrawn)
+			if (e.river > riversThisSizeOrSmallerWillNotBeDrawn && !e.isOceanOrLakeOrShore())
 			{
 				int width = Math.max(1, (int) (sizeMultiplyer / 2.0 + Math.sqrt(e.river * 0.1)));
 				g.setStroke(new BasicStroke(width));

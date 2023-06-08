@@ -313,7 +313,7 @@ public class NoisyEdges
 			{
 				return EdgeType.Coast;
 			}
-			if (edge.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+			if (edge.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && !edge.isOceanOrLakeOrShore())
 			{
 				return EdgeType.River;
 			}

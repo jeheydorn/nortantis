@@ -253,6 +253,14 @@ public class MapCreator
 		{
 			mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
 		}
+		
+		// Add the rivers to landBackground so that the text doesn't erase them.
+		// I do this whether or not I draw text because I might draw the text later.
+		// This is done after icon drawing so that rivers draw behind icons.
+		if (settings.drawRivers)
+		{
+			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
+		}
 
 		// Draw ocean
 		{
@@ -286,14 +294,6 @@ public class MapCreator
 			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
 			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
-		}
-
-		// Add the rivers to landBackground so that the text doesn't erase them.
-		// I do this whether or not I draw text
-		// because I might draw the text later.
-		if (settings.drawRivers)
-		{
-			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
 		}
 
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
@@ -536,6 +536,14 @@ public class MapCreator
 			iconDrawer.drawAllIcons(map, landBackground, null);
 		}
 
+		// Add the rivers to landBackground so that the text doesn't erase them.
+		// I do this whether or not I draw text because I might draw the text later.
+		// This is done after icon drawing so that rivers draw behind icons.
+		if (settings.drawRivers)
+		{
+			drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
+		}
+
 		Logger.println("Drawing ocean.");
 		{
 			if (background.ocean.getWidth() != graph.getWidth() || background.ocean.getHeight() != graph.getHeight())
@@ -578,14 +586,6 @@ public class MapCreator
 			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
-		}
-
-		// Add the rivers to landBackground so that the text doesn't erase them.
-		// I do this whether or not I draw text
-		// because I might draw the text later.
-		if (settings.drawRivers)
-		{
-			drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
 		}
 
 		if (mapParts != null)
