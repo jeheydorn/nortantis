@@ -38,6 +38,13 @@ public class Undoer
 	 */
 	protected void setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
+		MapEdits prevEdits = undoStack.isEmpty() ? copyOfEditsWhenEditorWasOpened : undoStack.peek().edits;
+		if (settings.edits.equals(prevEdits))
+		{
+			// Don't create an undo point if nothing changed.
+			return;
+		}
+		
 		redoStack.clear();
 		undoStack.push(new MapChange(settings.edits.deepCopy(), updateType, tool));
 		

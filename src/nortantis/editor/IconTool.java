@@ -36,6 +36,7 @@ import hoten.voronoi.VoronoiGraph;
 import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageCache;
+import nortantis.MapParts;
 
 public class IconTool extends EditorTool
 {
@@ -406,7 +407,15 @@ public class IconTool extends EditorTool
 			String cityName = cityTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.City, cityName);
+				CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityName);
+				// Only add the city if it will be drawn. That way, if somebody later shrinks the city image or swaps out 
+				// the image files, previously hidden cities don't start popping up along coastlines and lakes.
+				// Note that all icons can fail to draw because they would overlap an ocean or lake, but I don't think it's
+				// a big deal for other icon types.
+				if (parent.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
+				{
+					parent.settings.edits.centerEdits.get(center.index).icon = cityIcon;
+				}
 			}		
 		}
 		else if (eraseButton.isSelected())

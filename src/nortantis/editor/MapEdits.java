@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -38,7 +39,7 @@ public class MapEdits implements Serializable
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
 	/**
-	 * Not stored. A flat the editor uses to tell TextDrawer to generate text and store it as edits.
+	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
 	 */
 	public boolean bakeGeneratedTextAsEdits;
 		
@@ -142,5 +143,19 @@ public class MapEdits implements Serializable
 			}
 		}
 		return copy;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MapEdits other = (MapEdits) obj;
+		return Objects.equals(centerEdits, other.centerEdits) && Objects.equals(edgeEdits, other.edgeEdits)
+				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
 	}
 }

@@ -4,6 +4,7 @@ import java.awt.geom.Area;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import hoten.geom.Point;
 
@@ -17,7 +18,7 @@ public class MapText implements Serializable
 {
 	public String value;
 	/**
-	 * The (possibly rotated) bounding boxes of the text. This only has size 2 areas if the text has 2 lines.
+	 * The (possibly rotated) bounding boxes of the text. This usually has only 1 area. It only has 2 areas if the text has 2 lines.
 	 */
 	public transient List<Area> areas;
 	
@@ -53,6 +54,26 @@ public class MapText implements Serializable
 	{
 		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location="
 				+ location + "]";
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(angle, location, type, value);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MapText other = (MapText) obj;
+		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Objects.equals(location, other.location)
+				&& type == other.type && Objects.equals(value, other.value);
 	}
 
 }

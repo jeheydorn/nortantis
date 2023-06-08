@@ -314,6 +314,30 @@ public class IconDrawer
 		drawTreesForCenters(centersToUpdateIconsFor);
 	}
 	
+	public boolean doesCityFitOnLand(Center center, CenterIcon cityIcon)
+	{
+		if (center == null || cityIcon == null)
+		{
+			return true;
+		}
+		
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance().getIconsWithWidths(IconType.cities, cityIconsSetName);
+		Tuple3<BufferedImage, BufferedImage, Integer> tuple = cityImages.get(cityIcon.iconName);
+		if (tuple == null)
+		{
+			// Not a city icon
+			return false;
+		}
+		
+		BufferedImage cityImage = cityImages.get(cityIcon.iconName).getFirst();
+		BufferedImage mask = cityImages.get(cityIcon.iconName).getSecond();
+
+		// Create an icon draw task just for checking if the city fits on land. It won't actually be drawn.
+		IconDrawTask task = new IconDrawTask(cityImage, mask, center.loc, 
+				(int)(cityImages.get(cityIcon.iconName).getThird() * cityScale), true, true, cityIcon.iconName);
+		return !isIconTouchingWater(task);
+	}
+	
 	private void clearIconsForCenters(Collection<Center> centers)
 	{
 		for (Center center : centers)
@@ -502,6 +526,7 @@ public class IconDrawer
 		
 		for (final IconDrawTask task : tasks)
 		{
+			// Updates to the line below will will likely need to also update doesCityFitOnLand. 
 			if (!isIconTouchingWater(task))
 			{
 				drawIconWithBackgroundAndMask(mapOrSnippet, task.icon, task.mask, background, ((int)task.centerLoc.x) - xToSubtract,
@@ -537,6 +562,7 @@ public class IconDrawer
 				BufferedImage icon = cityIcons.get(cityName).getFirst();
 				
 				IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), c.loc, scaledWidth, true, true, cityName);
+				// Updates to the line below will will likely need to also update doesCityFitOnLand.
 				if (!isIconTouchingWater(task))
 				{
 					if (addIconDrawTasks)

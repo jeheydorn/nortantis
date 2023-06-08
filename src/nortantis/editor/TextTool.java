@@ -424,6 +424,7 @@ public class TextTool extends EditorTool
 					angle += Math.PI;				
 				}
 				lastSelected.angle = angle;
+				undoer.setUndoPoint(this);
 				updateTextInBackgroundThread(lastSelected);
 			}
 		}
