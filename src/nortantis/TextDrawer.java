@@ -439,11 +439,8 @@ public class TextDrawer
 	 */
 	public String generateNameOfTypeForTextEditor(TextType type)
 	{
-		if (type.equals(TextType.Mountain_range) || type.equals(TextType.Other_mountains) 
-				|| type.equals(TextType.River))
-		{
-			nameCompiler.setSeed(System.currentTimeMillis());
-		}
+		nameCompiler.setSeed(System.currentTimeMillis());
+		r.setSeed(System.currentTimeMillis());
 		
 		Object subType = null;
 		
