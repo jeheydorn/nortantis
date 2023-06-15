@@ -14,6 +14,7 @@ public class UserPreferences
 	public String lastLoadedSettingsFile = "";
 	public String lastEditorTool = "";
 	public String zoomLevel = "";
+	public String displayResolution = "";
 	public boolean hideMapChangesWarning;
 	public boolean hideAspectRatioWarning;
 	public boolean hideHeightMapWithEditsWarning;
@@ -44,6 +45,8 @@ public class UserPreferences
 					lastEditorTool = props.getProperty("lastEditTool");
 				if (props.containsKey("zoomLevel"))
 					zoomLevel = props.getProperty("zoomLevel");
+				if (props.containsKey("displayResolution"))
+					displayResolution = props.getProperty("displayResolution");
 				if (props.containsKey("hideMapChangesWarning"))
 					hideMapChangesWarning = Boolean.parseBoolean(props.getProperty("hideMapChangesWarning"));
 				if (props.containsKey("hideAspectRatioWarning"))
@@ -64,6 +67,7 @@ public class UserPreferences
 		props.setProperty("lastLoadedSettingsFile", lastLoadedSettingsFile);
 		props.setProperty("lastEditTool", lastEditorTool);
 		props.setProperty("zoomLevel", zoomLevel);
+		props.setProperty("displayResolution", displayResolution);
 		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
 		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
 		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");

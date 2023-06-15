@@ -3,6 +3,9 @@ package nortantis.editor;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.Collection;
@@ -10,14 +13,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.imgscalr.Scalr.Method;
+
+import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.WorldGraph;
+import nortantis.util.ImageHelper;
+import nortantis.util.Range;
 
 @SuppressWarnings("serial")
-public class MapEditingPanel extends ImagePanel
+public class MapEditingPanel extends ImagePanel implements MouseWheelListener
 {
 	private final Color highlightColor = new Color(255,227,74);
 	private final Color selectColor = Color.orange;
@@ -32,13 +40,18 @@ public class MapEditingPanel extends ImagePanel
 	public BufferedImage mapFromMapCreator;
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
+	private double zoom;
+	private EditorFrame editorFrame;
 	
-	public MapEditingPanel(BufferedImage image)
+	public MapEditingPanel(BufferedImage image, EditorFrame editorFrame)
 	{
 		super(image);
 		highlightedCenters = new HashSet<>();
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
+		zoom = 1.0;
+		this.editorFrame = editorFrame;
+		addMouseWheelListener(this);
 	}
 	
 	public void showBrush(java.awt.Point location, int brushDiameter)
@@ -136,6 +149,19 @@ public class MapEditingPanel extends ImagePanel
 	protected void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
+		
+		if (brushLocation != null)
+		{
+			g.setColor(highlightColor);
+			drawBrush(g);
+		}
+		
+		// Handle zoom
+		AffineTransform transform = new AffineTransform();
+		transform.scale(zoom, zoom);
+		((Graphics2D)g).transform(transform);
+				
+		// Handle drawing/highlighting
 		if (areas != null)
 		{
 			g.setColor(highlightColor);
@@ -160,10 +186,6 @@ public class MapEditingPanel extends ImagePanel
 			g.setColor(highlightColor);
 			drawCenterOutlines(g, highlightedCenters);
 			drawEdges(g, highlightedEdges);
-			if (brushLocation != null)
-			{
-				drawBrush(g);
-			}
 			
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
@@ -227,5 +249,23 @@ public class MapEditingPanel extends ImagePanel
 	{
 		g.setColor(new Color(0, 130, 230));
 		graph.drawRivers((Graphics2D) g, MapCreator.calcSizeMultiplier(graph.getWidth()), null, null);
+	}
+	
+	public void setZoom(double zoom)
+	{
+		this.zoom = zoom;
+	}
+
+	@Override
+	public void mouseWheelMoved(MouseWheelEvent e)
+	{
+		if (e.isControlDown())
+		{
+			editorFrame.handleMouseWheelChangingZoom(e);
+		}
+		else
+		{
+			e.getComponent().getParent().dispatchEvent(e);
+		}
 	}
 }

@@ -75,12 +75,12 @@ public class MapCreator
 	 * @param edgesChanged
 	 *            Edits that changed
 	 */
-	public void incrementalUpdateEdges(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap, Set<Edge> edgesChanged)
+	public Rectangle incrementalUpdateEdges(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap, Set<Edge> edgesChanged)
 	{
 		// I could be a little more efficient by only re-drawing the edges that
 		// changed, but re-drawing the centers too is good enough.
 		Set<Center> centersChagned = getCentersFromEdges(mapParts.graph, edgesChanged);
-		incrementalUpdate(settings, mapParts, fullSizeMap, centersChagned, edgesChanged);
+		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChagned, edgesChanged);
 	}
 
 	/**
@@ -99,10 +99,10 @@ public class MapCreator
 	 * @param centerChanges
 	 *            Edits for centers that need to be re-drawn
 	 */
-	public void incrementalUpdateCenters(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap,
+	public Rectangle incrementalUpdateCenters(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap,
 			Set<Center> centersChanged)
 	{
-		incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, null);
+		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, null);
 	}
 
 	/**
@@ -123,7 +123,7 @@ public class MapCreator
 	 * @param edgeChanges
 	 *            If edges changed, this is the list of edge edits that changed
 	 */
-	private void incrementalUpdate(final MapSettings settings, MapParts mapParts, BufferedImage fullSizedMap, Set<Center> centersChanged,
+	private Rectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, BufferedImage fullSizedMap, Set<Center> centersChanged,
 			Set<Edge> edgesChanged)
 	{
 		// double startTime = System.currentTimeMillis();
@@ -138,7 +138,7 @@ public class MapCreator
 		if (centersChangedBounds == null)
 		{
 			// Nothing changed
-			return;
+			return null;
 		}
 
 		double sizeMultiplier = calcSizeMultiplier(mapParts.background.mapBounds.getWidth());
@@ -301,17 +301,6 @@ public class MapCreator
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
 				boundsInSourceToCopyFrom);
 
-		// Debug code
-		// Graphics g = fullSizedMap.createGraphics();
-		// g.setColor(Color.white);
-		// g.drawRect((int) replaceBounds.x, (int) replaceBounds.y, (int)
-		// replaceBounds.width, (int) replaceBounds.height);
-		// g.setColor(Color.red);
-		// g.drawRect((int) centersChangedBounds.x, (int)
-		// centersChangedBounds.y, (int) centersChangedBounds.width, (int)
-		// centersChangedBounds.height);
-		// g.dispose();
-
 		// Also update the snippet in landBackground because the text tool needs
 		// that.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.landBackground, landBackground,
@@ -319,8 +308,9 @@ public class MapCreator
 
 		// Print run time
 		// double elapsedTime = System.currentTimeMillis() - startTime;
-		// Logger.println("Time to do incremental update: " + elapsedTime /
-		// 1000.0);
+		// Logger.println("Time to do incremental update: " + elapsedTime / 1000.0);
+		
+		return replaceBounds;
 	}
 
 	/**

@@ -1464,14 +1464,15 @@ public class TextDrawer
 	 * If the given point lands within the bounding box of a piece of text, this
 	 * returns the first one found. Else null is returned.
 	 */
-	public MapText findTextPicked(java.awt.Point point)
+	public MapText findTextPicked(hoten.geom.Point point)
 	{
+		java.awt.Point awtPoint = point.toAwtPoint();
 		for (MapText mp : mapTexts)
 		{
 			if (mp.value.length() > 0)
 				for (Area a : mp.areas)
 				{
-					if (a.contains(point))
+					if (a.contains(awtPoint))
 						return mp;
 				}
 		}

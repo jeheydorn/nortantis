@@ -342,7 +342,7 @@ public class LandWaterTool extends EditorTool
 			}	
 			else
 			{
-				Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+				Center center = parent.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 				if (center != null)
 				{
 					Region region = center.region;
@@ -358,7 +358,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (mergeRegionsButton.isSelected())
 		{
-			Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+			Center center = parent.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 			if (center != null)
 			{
 				Region region = center.region;
@@ -403,7 +403,7 @@ public class LandWaterTool extends EditorTool
 	
 	private void selectColorFromMap(MouseEvent e)
 	{
-		Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(e.getX(), e.getY()));
+		Center center = parent.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 		if (center != null)
 		{
 			if (center != null && center.region != null)
@@ -497,7 +497,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
 		{
-			Center center = parent.mapParts.graph.findClosestCenter(new Point(e.getX(), e.getY()), true);			
+			Center center = parent.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()), true);			
 			if (center != null)
 			{
 				if (center.region != null)

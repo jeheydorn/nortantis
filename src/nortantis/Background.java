@@ -238,12 +238,12 @@ public class Background
 			// The library I'm using to scale images and make them look nice has a bug where the width or height might be one pixel off, although rarely. So here I'm making sure it is correct.
 			if (land.getHeight() != (int)mapBounds.getHeight())
 			{
-				land = ImageHelper.scaleFastByHeightAndWidth(land, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
+				land = ImageHelper.scaleByWidthAndHeightFast(land, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
 			}
 			ocean = ImageHelper.scaleByWidth(ocean, (int)mapBounds.getWidth());
 			if (ocean.getHeight() != (int)mapBounds.getHeight())
 			{
-				ocean = ImageHelper.scaleFastByHeightAndWidth(ocean, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
+				ocean = ImageHelper.scaleByWidthAndHeightFast(ocean, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
 			}
 		}
 		

@@ -286,7 +286,7 @@ public class TextTool extends EditorTool
 		if (moveButton.isSelected())
 		{
 			// Begin a drag and drop of a text box.
-			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
+			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
@@ -297,7 +297,7 @@ public class TextTool extends EditorTool
 		}
 		else if (rotateButton.isSelected())
 		{
-			lastSelected = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
+			lastSelected = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (lastSelected != null)
 			{
 				// Region and title names cannot be rotated.
@@ -318,7 +318,7 @@ public class TextTool extends EditorTool
 		}
 		else if (deleteButton.isSelected())
 		{
-			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
+			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				selectedText.value = "";
@@ -329,7 +329,7 @@ public class TextTool extends EditorTool
 		else if (addButton.isSelected())
 		{
 			MapText addedText = parent.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
-					new hoten.geom.Point(e.getPoint().x, e.getPoint().y));
+					getPointOnGraph(e.getPoint()));
 			parent.settings.edits.text.add(addedText);
 			
 			undoer.setUndoPoint(this);
@@ -341,7 +341,7 @@ public class TextTool extends EditorTool
 			{
 				editTextField.grabFocus();
 			}
-			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(e.getPoint());
+			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			handleTextEdit(selectedText);
 		}
 	}

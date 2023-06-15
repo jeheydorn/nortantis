@@ -154,11 +154,16 @@ public abstract class EditorTool
 	
 	protected abstract void onAfterUndoRedo(MapChange change);
 	
-	protected Set<Center> getSelectedCenters(java.awt.Point point, int brushDiameter)
+	public hoten.geom.Point getPointOnGraph(java.awt.Point point)
+	{
+		return new hoten.geom.Point(point.x * (1.0 / parent.zoom), point.y * (1.0 / parent.zoom));
+	}
+	
+	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
 		
-		Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+		Center center = parent.mapParts.graph.findClosestCenter(getPointOnGraph(pointFromMouse));
 		if (center != null)
 		{
 			selected.add(center);
@@ -169,31 +174,33 @@ public abstract class EditorTool
 			return selected;
 		}
 		
-		int brushRadius = brushDiameter/2;
+		int brushRadius = (int)((double)(brushDiameter / parent.zoom)) / 2;
 		
 		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
-		return parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushRadius), center);
+		return parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
 	}
 	
 	
-	protected Set<Edge> getSelectedEdges(java.awt.Point point, int brushDiameter)
+	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		if (brushDiameter <= 1)
 		{
-			return Collections.singleton(getClosestEdge(point));
+			return Collections.singleton(getClosestEdge(getPointOnGraph(pointFromMouse)));
 		}
 		else
 		{
-			hoten.geom.Point graphPoint = new hoten.geom.Point(point.x, point.y);
-			Center closestCenter = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
-			Set<Center> overlapping = parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, point, brushDiameter), closestCenter);
+			hoten.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
+			Center closestCenter = parent.mapParts.graph.findClosestCenter(graphPoint);
+			Set<Center> overlapping = parent.mapParts.graph.breadthFirstSearch(
+					(c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / parent.zoom), closestCenter);
 			Set<Edge> selected = new HashSet<>();
+			int brushRadius = (int)((double)(brushDiameter / parent.zoom)) / 2;
 			for (Center center : overlapping)
 			{
 				for (Edge edge : center.borders)
 				{
-					if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushDiameter/2)
-							|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushDiameter/2)
+					if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius)
+							|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
 					{
 						selected.add(edge);
 					}
@@ -203,12 +210,11 @@ public abstract class EditorTool
 		}
 	}
 	
-	private Edge getClosestEdge(java.awt.Point point)
+	private Edge getClosestEdge(hoten.geom.Point point)
 	{
-		Center center = parent.mapParts.graph.findClosestCenter(new hoten.geom.Point(point.getX(), point.getY()));
+		Center center = parent.mapParts.graph.findClosestCenter(point);
 		Edge closest = null;
 		double closestDistance = Double.POSITIVE_INFINITY;
-		hoten.geom.Point graphPoint = new hoten.geom.Point(point.x, point.y);
 		for (Edge edge : center.borders)
 		{
 			hoten.geom.Point centroid;
@@ -239,7 +245,7 @@ public abstract class EditorTool
 				closest = edge;
 				if (centroid != null)
 				{
-					closestDistance = centroid.distanceTo(graphPoint);
+					closestDistance = centroid.distanceTo(point);
 				}
 				continue;
 			}
@@ -247,7 +253,7 @@ public abstract class EditorTool
 			{
 				if (centroid != null)
 				{
-					double distance = centroid.distanceTo(graphPoint);
+					double distance = centroid.distanceTo(point);
 					if (distance < closestDistance)
 					{
 						closest = edge;
@@ -265,7 +271,7 @@ public abstract class EditorTool
 	 * Note that this isn't super precise because it doesn't account for the edge of the circle protruding into the center without overlapping
 	 * any of the center's corners or centroid.
 	 */
-	private boolean isCenterOverlappingCircle(Center center, Point circleCenter, double radius)
+	private boolean isCenterOverlappingCircle(Center center, hoten.geom.Point circleCenter, double radius)
 	{
 		for (Corner corner : center.corners)
 		{
@@ -278,7 +284,7 @@ public abstract class EditorTool
 		return isPointWithinCircle(center.loc.x, center.loc.y, circleCenter, radius);
 	}
 	
-	private boolean isPointWithinCircle(double x, double y, Point circleCenter, double radius)
+	private boolean isPointWithinCircle(double x, double y, hoten.geom.Point circleCenter, double radius)
 	{
 		double deltaX = x - circleCenter.x;
 		double deltaY = y - circleCenter.y;

@@ -7,11 +7,15 @@ import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
@@ -27,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -40,6 +45,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
@@ -48,9 +54,12 @@ import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
+import org.imgscalr.Scalr.Method;
+
+import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
-import hoten.voronoi.VoronoiGraph;
+import nortantis.DimensionDouble;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapParts;
@@ -61,6 +70,7 @@ import nortantis.TextDrawer;
 import nortantis.UserPreferences;
 import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
+import nortantis.util.Tuple2;
 
 @SuppressWarnings("serial")
 public class EditorFrame extends JFrame
@@ -70,6 +80,8 @@ public class EditorFrame extends JFrame
 	List<EditorTool> tools;
 	public static final int borderWidthBetweenComponents = 4;
 	public static final int toolsPanelWidth = 280;
+	// Controls how large 100% zoom is, in pixels.
+	final double oneHundredPercentMapWidth = 4096;
 	private JPanel toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
 	private JComboBox<String> zoomComboBox;
@@ -83,7 +95,9 @@ public class EditorFrame extends JFrame
 	public boolean isMapReadyForInteractions;
 	public Undoer undoer;
 	MapParts mapParts;
+	private List<String> zoomLevels;
 	double zoom;
+	double displayResolution;
 	private boolean mapNeedsFullRedraw;
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	private boolean isMapBeingDrawn;
@@ -94,26 +108,33 @@ public class EditorFrame extends JFrame
 	private JPanel toolsPanel;
 	private JPanel bottomPanel;
 	private RunSwing parent;
+	private final String fitToWindowZoomLevel = "Fit to Window";
+	private JMenu displayResolutionMenu;
 
-	
 	/**
 	 * Creates a dialog for editing text.
-	 * @param settings Settings for the map. The user's edits will be stored in settings.edits.
-	 * 	      Other fields in settings may be modified in the editing process and will not be stored 
-	 * 		  after the editor closes.
-	 * @throws IOException 
+	 * 
+	 * @param settings
+	 *            Settings for the map. The user's edits will be stored in
+	 *            settings.edits. Other fields in settings may be modified in
+	 *            the editing process and will not be stored after the editor
+	 *            closes.
+	 * @throws IOException
 	 */
 	public EditorFrame(final MapSettings settings, final RunSwing runSwing)
 	{
 		hadEditsAtStartup = !settings.edits.isEmpty();
 		if (settings.edits.isEmpty())
 		{
-			// This is in case the user closes the editor before it finishes generating the first time. This
-			// assignment causes the edits being created by the generator to be discarded. This is necessary
-			// to prevent a case where there are edits but the UI doesn't realize it.
+			// This is in case the user closes the editor before it finishes
+			// generating the first time. This
+			// assignment causes the edits being created by the generator to be
+			// discarded. This is necessary
+			// to prevent a case where there are edits but the UI doesn't
+			// realize it.
 			settings.edits = new MapEdits();
 		}
-		
+
 		if (!hadEditsAtStartup)
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
@@ -121,15 +142,15 @@ public class EditorFrame extends JFrame
 		this.settings = settings;
 		this.parent = runSwing;
 		updateEditsPointerInRunSwing();
-		
+
 		final EditorFrame thisFrame = this;
 		setBounds(100, 100, 1122, 701);
 
 		getContentPane().setLayout(new BorderLayout());
-		
-		mapEditingPanel = new MapEditingPanel(null);
+
+		mapEditingPanel = new MapEditingPanel(null, this);
 		mapEditingPanel.setLayout(new BorderLayout());
-		
+
 		mapEditingPanel.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -140,7 +161,7 @@ public class EditorFrame extends JFrame
 					currentTool.handleMouseClickOnMap(e);
 				}
 			}
-			
+
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
@@ -158,11 +179,12 @@ public class EditorFrame extends JFrame
 					currentTool.handleMouseReleasedOnMap(e);
 				}
 			}
+
 		});
-		
+
 		mapEditingPanel.addMouseMotionListener(new MouseMotionListener()
 		{
-			
+
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
@@ -171,7 +193,7 @@ public class EditorFrame extends JFrame
 					currentTool.handleMouseMovedOnMap(e);
 				}
 			}
-			
+
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
@@ -181,20 +203,20 @@ public class EditorFrame extends JFrame
 				}
 			}
 		});
-		
+
 		mapEditingPanel.addMouseListener(new MouseListener()
 		{
-			
+
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
 			}
-			
+
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
 			}
-			
+
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
@@ -203,28 +225,24 @@ public class EditorFrame extends JFrame
 					currentTool.handleMouseExitedMap(e);
 				}
 			}
-			
+
 			@Override
 			public void mouseEntered(MouseEvent e)
 			{
 			}
-			
+
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
 			}
 		});
 
-		setupMenuBar(runSwing);
+		setupMenuBar(runSwing, thisFrame);
 		undoer = new Undoer(settings, this);
 		undoer.updateUndoRedoEnabled();
-		
+
 		// Setup tools
-		tools = Arrays.asList(
-				new LandWaterTool(this),
-				new IconTool(this),
-				new TextTool(this)
-				);
+		tools = Arrays.asList(new LandWaterTool(this), new IconTool(this), new TextTool(this));
 		if (UserPreferences.getInstance().lastEditorTool != "")
 		{
 			for (EditorTool tool : tools)
@@ -239,12 +257,12 @@ public class EditorFrame extends JFrame
 		{
 			currentTool = tools.get(2);
 		}
-		
+
 		scrollPane = new JScrollPane(mapEditingPanel);
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		getContentPane().add(scrollPane);
-			
+
 		toolsPanel = new JPanel();
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, getContentPane().getHeight()));
 		toolsPanel.setLayout(new BoxLayout(toolsPanel, BoxLayout.Y_AXIS));
@@ -277,21 +295,21 @@ public class EditorFrame extends JFrame
 			});
 			toolSelectPanel.add(toolButton);
 		}
-		
+
 		toolsOptionsPanelContainer = new JPanel();
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
 		toolsPanel.add(toolsOptionsPanelContainer);
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), currentTool.getToolbarName() + " Options");
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+				currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
-						
+
 		JPanel progressAndBottomPanel = new JPanel();
 		progressAndBottomPanel.setLayout(new BoxLayout(progressAndBottomPanel, BoxLayout.Y_AXIS));
 		// Progress bar
 		JPanel progressBarPanel = new JPanel();
 		progressBarPanel.setLayout(new BoxLayout(progressBarPanel, BoxLayout.X_AXIS));
-		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, borderWidthBetweenComponents - 2,
-				0, borderWidthBetweenComponents));
+		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, borderWidthBetweenComponents - 2, 0, borderWidthBetweenComponents));
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressBar.setString("Drawing...");
@@ -300,30 +318,30 @@ public class EditorFrame extends JFrame
 		progressBarPanel.add(progressBar);
 		progressAndBottomPanel.add(progressBarPanel);
 
-		
 		// Setup bottom panel
 		bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
 		bottomPanel.setBorder(BorderFactory.createEmptyBorder(borderWidthBetweenComponents, borderWidthBetweenComponents,
 				borderWidthBetweenComponents, borderWidthBetweenComponents));
-		
+
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
-		
+
+		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%" });
 		zoomComboBox = new JComboBoxFixed<>();
-		zoomComboBox.addItem("25%");
-		zoomComboBox.addItem("50%");
-		zoomComboBox.addItem("75%");
-		zoomComboBox.addItem("100%");
-		zoomComboBox.addItem("125%");
-		if (UserPreferences.getInstance().zoomLevel != "")
+		for (String level : zoomLevels)
+		{
+			zoomComboBox.addItem(level);
+		}
+		if (UserPreferences.getInstance().zoomLevel != "" && zoomLevels.contains(UserPreferences.getInstance().zoomLevel))
 		{
 			zoomComboBox.setSelectedItem(UserPreferences.getInstance().zoomLevel);
 		}
 		else
 		{
-			zoomComboBox.setSelectedItem("50%");
-			UserPreferences.getInstance().zoomLevel = "50%";
+			final String defaultZoomLevel = "50%";
+			zoomComboBox.setSelectedItem(defaultZoomLevel);
+			UserPreferences.getInstance().zoomLevel = defaultZoomLevel;
 		}
 
 		bottomPanel.add(zoomComboBox);
@@ -332,32 +350,32 @@ public class EditorFrame extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				UserPreferences.getInstance().zoomLevel = (String)zoomComboBox.getSelectedItem();
-				zoom = parseZoom((String)zoomComboBox.getSelectedItem());
-				ImageCache.getInstance().clear();
-				mapParts = null;
-				handleZoomChange();
+				UserPreferences.getInstance().zoomLevel = (String) zoomComboBox.getSelectedItem();
+				updateDisplayedMapFromGeneratedMap();
+				mapEditingPanel.repaint();
+				mapEditingPanel.revalidate();
 			}
 		});
-		
+
 		bottomPanel.add(Box.createHorizontalGlue());
-				
+
 		JButton doneButton = new JButton("Done");
-		doneButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e){
-				thisFrame.dispatchEvent(new WindowEvent(
-	                    thisFrame, WindowEvent.WINDOW_CLOSING));
+		doneButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				thisFrame.dispatchEvent(new WindowEvent(thisFrame, WindowEvent.WINDOW_CLOSING));
 			}
 		});
-				
+
 		bottomPanel.add(doneButton);
-		
+
 		progressAndBottomPanel.add(bottomPanel);
 		toolsPanel.add(progressAndBottomPanel);
-		
+
 		ActionListener listener = new ActionListener()
 		{
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -366,8 +384,9 @@ public class EditorFrame extends JFrame
 		};
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
-		
-		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
+
+		// Using KeyEventDispatcher instead of KeyListener makes the keys work
+		// when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
 		{
 			private boolean isSaving;
@@ -382,7 +401,7 @@ public class EditorFrame extends JFrame
 						return false;
 					}
 					isSaving = true;
-					
+
 					try
 					{
 						// Save
@@ -392,61 +411,148 @@ public class EditorFrame extends JFrame
 					{
 						isSaving = false;
 					}
-				}				
+				}
 				return false;
 			}
 		};
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
-		
+
 		addWindowListener(new WindowAdapter()
 		{
-		    @Override
+			@Override
 			public void windowClosing(WindowEvent e)
 			{
 				KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(myKeyEventDispatcher);
 				UserPreferences.getInstance().lastEditorTool = currentTool.getToolbarName();
 				currentTool.onSwitchingAway();
-				
+
 				if (settings.edits.isEmpty())
 				{
-					// This happens if the user closes the editor before it finishes generating the first time. This
-					// assignment causes the edits being created by the generator to be discarded. This is necessary
-					// to prevent a case where there are edits but the UI doesn't realize it.
+					// This happens if the user closes the editor before it
+					// finishes generating the first time. This
+					// assignment causes the edits being created by the
+					// generator to be discarded. This is necessary
+					// to prevent a case where there are edits but the UI
+					// doesn't realize it.
 					settings.edits = new MapEdits();
 				}
 				else
 				{
-			    	// Undo and redo assign edits, so re-assign the pointer in RunSwing.
-					updateEditsPointerInRunSwing();				
+					// Undo and redo assign edits, so re-assign the pointer in
+					// RunSwing.
+					updateEditsPointerInRunSwing();
 				}
-				
+
 				runSwing.frame.setEnabled(true);
-				runSwing.updateFieldsWhenEditsChange();	
+				runSwing.updateFieldsWhenEditsChange();
 				if (!hadEditsAtStartup && !settings.edits.isEmpty())
 				{
 					showMapChangesMessage(runSwing);
 				}
 			}
 		});
-		
-		drawLock  = new ReentrantLock();
+
+		addComponentListener(new ComponentAdapter()
+		{
+			public void componentResized(ComponentEvent componentEvent)
+			{
+				if (fitToWindowZoomLevel.equals((String) zoomComboBox.getSelectedItem()))
+				{
+					createAndShowMapIncrementalUsingCenters(null);
+				}
+			}
+		});
+
+		drawLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
-		
+
 		handleToolSelected(currentTool);
-		zoom = parseZoom((String)zoomComboBox.getSelectedItem());
-		handleZoomChange();
+		displayResolution = parsePercentage(UserPreferences.getInstance().displayResolution);
+		updateDisplayedMapFromGeneratedMap();
+		mapEditingPanel.repaint();
+		handleDisplayResolutionChange(UserPreferences.getInstance().displayResolution);
 	}
 	
+	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
+	{
+		int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
+		int newIndex = zoomComboBox.getSelectedIndex() + scrollDirection;
+		if (newIndex < 0)
+		{
+			newIndex = 0;
+		}
+		else if (newIndex > zoomComboBox.getItemCount() - 1)
+		{
+			newIndex = zoomComboBox.getItemCount() - 1;
+		}
+		if (newIndex != zoomComboBox.getSelectedIndex())
+		{
+			zoomComboBox.setSelectedIndex(newIndex);
+			updateDisplayedMapFromGeneratedMap();
+		}
+	}
+
+	public void updateDisplayedMapFromGeneratedMap()
+	{
+		zoom = translateZoomLevel((String) zoomComboBox.getSelectedItem());
+		if (mapEditingPanel.mapFromMapCreator != null)
+		{
+			BufferedImage mapWithExtraStuff = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
+			mapEditingPanel.setZoom(zoom);
+			mapEditingPanel.image = ImageHelper.scaleByWidth(mapWithExtraStuff, (int) (mapWithExtraStuff.getWidth() * zoom),
+					Method.BALANCED);
+		}
+	}
+
+	private double translateZoomLevel(String zoomLevel)
+	{
+		if (zoomLevel == null)
+		{
+			return 1.0;
+		}
+		else if (zoomLevel.equals(fitToWindowZoomLevel))
+		{
+			if (mapEditingPanel.mapFromMapCreator != null)
+			{
+				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
+				Dimension size = new Dimension(scrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+						scrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+
+				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
+						mapEditingPanel.mapFromMapCreator.getHeight());
+				return fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth();
+			}
+			else
+			{
+				return 1.0;
+			}
+		}
+		else
+		{
+			double percentage = parsePercentage(zoomLevel);
+			if (mapEditingPanel.mapFromMapCreator != null)
+			{
+				return (oneHundredPercentMapWidth * percentage) / mapEditingPanel.mapFromMapCreator.getWidth();
+			}
+			else
+			{
+				return 1.0;
+			}
+		}
+	}
+
 	/**
-	 * Updates the pointer to the edits in the parent GUI to the edits being used in the editor. This is necessary
-	 * so that when you either save in the editor or close the editor and then save, the edits are stored/saved.
-	 * Note that undo/redo create deep copies of the edits, which means they have to update this pointer.
+	 * Updates the pointer to the edits in the parent GUI to the edits being
+	 * used in the editor. This is necessary so that when you either save in the
+	 * editor or close the editor and then save, the edits are stored/saved.
+	 * Note that undo/redo create deep copies of the edits, which means they
+	 * have to update this pointer.
 	 */
 	public void updateEditsPointerInRunSwing()
 	{
 		parent.edits = settings.edits;
 	}
-	
+
 	private void showMapChangesMessage(RunSwing runSwing)
 	{
 		if (!UserPreferences.getInstance().hideMapChangesWarning)
@@ -464,20 +570,18 @@ public class EditorFrame extends JFrame
 			UserPreferences.getInstance().hideMapChangesWarning = checkBox.isSelected();
 		}
 	}
-	
-	private void setupMenuBar(RunSwing runSwing)
+
+	private void setupMenuBar(RunSwing runSwing, final EditorFrame thisFrame)
 	{
 		JMenuBar menuBar = new JMenuBar();
 		this.getContentPane().add(menuBar, BorderLayout.NORTH);
-		
+
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
-		
+
 		JMenuItem mntmSave = new JMenuItem("Save");
 		mnFile.add(mntmSave);
-		mntmSave.setAccelerator(KeyStroke.getKeyStroke(
-		        KeyEvent.VK_S, 
-		        KeyEvent.CTRL_DOWN_MASK));
+		mntmSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
 		mntmSave.addActionListener(new ActionListener()
 		{
 			@Override
@@ -486,7 +590,7 @@ public class EditorFrame extends JFrame
 				runSwing.saveSettings(mntmSave);
 			}
 		});
-		
+
 		JMenuItem mntmSaveAs = new JMenuItem("Save As...");
 		mnFile.add(mntmSaveAs);
 		mntmSaveAs.addActionListener(new ActionListener()
@@ -495,17 +599,15 @@ public class EditorFrame extends JFrame
 			public void actionPerformed(ActionEvent arg0)
 			{
 				runSwing.saveSettingsAs(mntmSaveAs);
-			}			
+			}
 		});
-		
+
 		JMenu mnEdit = new JMenu("Edit");
 		menuBar.add(mnEdit);
-		
+
 		undoButton = new JMenuItem("Undo");
 		mnEdit.add(undoButton);
-		undoButton.setAccelerator(KeyStroke.getKeyStroke(
-		        KeyEvent.VK_Z, 
-		        KeyEvent.CTRL_DOWN_MASK));
+		undoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
 		undoButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -519,12 +621,9 @@ public class EditorFrame extends JFrame
 			}
 		});
 
-
 		redoButton = new JMenuItem("Redo");
 		mnEdit.add(redoButton);
-		redoButton.setAccelerator(KeyStroke.getKeyStroke(
-		        java.awt.event.KeyEvent.VK_Z, 
-		        ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
+		redoButton.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
 		redoButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -537,7 +636,7 @@ public class EditorFrame extends JFrame
 				undoer.updateUndoRedoEnabled();
 			}
 		});
-				
+
 		clearEntireMapButton = new JMenuItem("Clear Entire Map");
 		mnEdit.add(clearEntireMapButton);
 		clearEntireMapButton.addActionListener(new ActionListener()
@@ -549,12 +648,78 @@ public class EditorFrame extends JFrame
 			}
 		});
 		clearEntireMapButton.setEnabled(false);
+
+		JMenu mnView = new JMenu("View");
+		menuBar.add(mnView);
+
+		displayResolutionMenu = new JMenu("Display Resolution");
+		mnView.add(displayResolutionMenu);
+
+		ActionListener resolutionListener = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				String text = ((JRadioButtonMenuItem) e.getSource()).getText();
+				UserPreferences.getInstance().displayResolution = text;
+				thisFrame.handleDisplayResolutionChange(text);
+			}
+		};
+
+		ButtonGroup resolutionButtonGroup = new ButtonGroup();
+
+		JRadioButtonMenuItem radioButton50Percent = new JRadioButtonMenuItem("50%");
+		radioButton50Percent.addActionListener(resolutionListener);
+		displayResolutionMenu.add(radioButton50Percent);
+		resolutionButtonGroup.add(radioButton50Percent);
+
+		JRadioButtonMenuItem radioButton75Percent = new JRadioButtonMenuItem("75%");
+		radioButton75Percent.addActionListener(resolutionListener);
+		displayResolutionMenu.add(radioButton75Percent);
+		resolutionButtonGroup.add(radioButton75Percent);
+
+		JRadioButtonMenuItem radioButton100Percent = new JRadioButtonMenuItem("100%");
+		radioButton100Percent.addActionListener(resolutionListener);
+		displayResolutionMenu.add(radioButton100Percent);
+		resolutionButtonGroup.add(radioButton100Percent);
+
+		JRadioButtonMenuItem radioButton125Percent = new JRadioButtonMenuItem("125%");
+		radioButton125Percent.addActionListener(resolutionListener);
+		displayResolutionMenu.add(radioButton125Percent);
+		resolutionButtonGroup.add(radioButton125Percent);
+
+		if (UserPreferences.getInstance().displayResolution != null && !UserPreferences.getInstance().displayResolution.equals(""))
+		{
+			boolean found = false;
+			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent,
+					radioButton100Percent, radioButton125Percent })
+			{
+				if (UserPreferences.getInstance().displayResolution.equals(resolutionOption.getText()))
+				{
+					resolutionOption.setSelected(true);
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				// Shouldn't happen. This means the user preferences have a bad
+				// value.
+				radioButton100Percent.setSelected(true);
+				UserPreferences.getInstance().displayResolution = radioButton100Percent.getText();
+			}
+		}
+		else
+		{
+			radioButton75Percent.setSelected(true);
+			UserPreferences.getInstance().displayResolution = radioButton75Percent.getText();
+		}
 	}
-	
+
 	public void handleToolSelected(EditorTool selectedTool)
 	{
 		enableOrDisableToolToggleButtonsAndZoom(false);
-		
+
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearSelectedCenters();
@@ -572,23 +737,27 @@ public class EditorFrame extends JFrame
 		toolsOptionsPanelContainer.repaint();
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
-			mapEditingPanel.image = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
+			updateDisplayedMapFromGeneratedMap();
 		}
 		currentTool.onActivate();
 		mapEditingPanel.repaint();
 		enableOrDisableToolToggleButtonsAndZoom(true);
 	}
-	
+
 	public void enableOrDisableToolToggleButtonsAndZoom(boolean enable)
 	{
 		areToolToggleButtonsEnabled = enable;
-		for (EditorTool tool: tools)
+		for (EditorTool tool : tools)
 		{
 			tool.setToggleButtonEnabled(enable);
 		}
 		zoomComboBox.setEnabled(enable);
 		clearEntireMapButton.setEnabled(enable);
-		
+		if (displayResolutionMenu != null)
+		{
+			displayResolutionMenu.setEnabled(enable);
+		}
+
 		if (enable)
 		{
 			progressBarTimer.stop();
@@ -599,13 +768,13 @@ public class EditorFrame extends JFrame
 			progressBarTimer.start();
 		}
 	}
-	
-	private double parseZoom(String zoomStr)
+
+	private double parsePercentage(String zoomStr)
 	{
 		double zoomPercent = Double.parseDouble(zoomStr.substring(0, zoomStr.length() - 1));
 		return zoomPercent / 100.0;
 	}
-	
+
 	private class IncrementalUpdate
 	{
 		public IncrementalUpdate(Set<Center> centersChanged, Set<Edge> edgesChanged)
@@ -619,17 +788,17 @@ public class EditorFrame extends JFrame
 				this.edgesChanged = new HashSet<Edge>(edgesChanged);
 			}
 		}
-		
+
 		Set<Center> centersChanged;
 		Set<Edge> edgesChanged;
-		
+
 		public void add(IncrementalUpdate other)
 		{
 			if (other == null)
 			{
 				return;
 			}
-			
+
 			if (centersChanged != null && other.centersChanged != null)
 			{
 				centersChanged.addAll(other.centersChanged);
@@ -638,7 +807,7 @@ public class EditorFrame extends JFrame
 			{
 				centersChanged = new HashSet<>(other.centersChanged);
 			}
-			
+
 			if (edgesChanged != null && other.edgesChanged != null)
 			{
 				edgesChanged.addAll(other.edgesChanged);
@@ -649,37 +818,38 @@ public class EditorFrame extends JFrame
 			}
 		}
 	}
-	
+
 	public void updateChangedCentersOnMap(Set<Center> centersChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, centersChanged, null);
 	}
-	
+
 	public void updateChangedEdgesOnMap(Set<Edge> edgesChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
 	}
-	
+
 	/**
-	 * Redraws the map, then displays it. Use only with UpdateType.Full and UpdateType.Quick.
+	 * Redraws the map, then displays it. Use only with UpdateType.Full and
+	 * UpdateType.Quick.
 	 */
 	public void createAndShowMapFull()
-	{		
+	{
 		createAndShowMap(UpdateType.Full, null, null);
 	}
-	
+
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, centersChanged, null);
 	}
-	
+
 	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
 	}
-	
+
 	public void createAndShowMapFromChange(MapChange change)
-	{		
+	{
 		if (change.updateType == UpdateType.Full)
 		{
 			createAndShowMapFull();
@@ -688,7 +858,8 @@ public class EditorFrame extends JFrame
 		{
 			Set<Center> centersChanged = getCentersWithChangesInEdits(change.edits);
 			Set<Edge> edgesChanged = null;
-			// Currently createAndShowMap doesn't support drawing both center edits and edge edits at the same time, so there is no
+			// Currently createAndShowMap doesn't support drawing both center
+			// edits and edge edits at the same time, so there is no
 			// need to find edges changed if centers were changed.
 			if (centersChanged.size() == 0)
 			{
@@ -697,34 +868,32 @@ public class EditorFrame extends JFrame
 			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged);
 		}
 	}
-	
+
 	private Set<Center> getCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		Set<Center> changedCenters = settings.edits.centerEdits.stream().filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
-		.map(cEdit -> mapParts.graph.centers.get(cEdit.index))
-		.collect(Collectors.toSet());
-		
-		Set<RegionEdit> regionChanges = settings.edits.regionEdits.values().stream().filter(
-				rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId)))
-				.collect(Collectors.toSet());
+		Set<Center> changedCenters = settings.edits.centerEdits.stream()
+				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
+				.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
+
+		Set<RegionEdit> regionChanges = settings.edits.regionEdits.values().stream()
+				.filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
 		for (RegionEdit rEdit : regionChanges)
 		{
-			Set<Center> regionCenterEdits = changeEdits.centerEdits.stream().filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId)
-					.map(cEdit -> mapParts.graph.centers.get(cEdit.index))
-					.collect(Collectors.toSet());
+			Set<Center> regionCenterEdits = changeEdits.centerEdits.stream()
+					.filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId)
+					.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
 			changedCenters.addAll(regionCenterEdits);
 		}
-		
+
 		return changedCenters;
 	}
-	
+
 	private Set<Edge> getEdgesWithChangesInEdits(MapEdits changeEdits)
 	{
 		return settings.edits.edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
-		.map(eEdit -> mapParts.graph.edges.get(eEdit.index))
-		.collect(Collectors.toSet());
+				.map(eEdit -> mapParts.graph.edges.get(eEdit.index)).collect(Collectors.toSet());
 	}
-	
+
 	/**
 	 * Redraws the map, then displays it
 	 */
@@ -743,32 +912,32 @@ public class EditorFrame extends JFrame
 			}
 			return;
 		}
-		
+
 		isMapBeingDrawn = true;
 		enableOrDisableToolToggleButtonsAndZoom(false);
-		
+
 		if (updateType == UpdateType.Full)
 		{
 			adjustSettingsForEditor();
 		}
-		
-		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>() 
-	    {
-	        @Override
-	        public BufferedImage doInBackground() throws IOException 
-	        {	
-	        	drawLock.lock();
+
+		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
+		{
+			@Override
+			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException
+			{
+				drawLock.lock();
 				try
-				{	
+				{
 					if (updateType == UpdateType.Full)
 					{
 						if (mapParts == null)
 						{
 							mapParts = new MapParts();
 						}
-						BufferedImage map = new MapCreator().createMap(settings, null, mapParts);	
+						BufferedImage map = new MapCreator().createMap(settings, null, mapParts);
 						System.gc();
-						return map;
+						return new Tuple2<>(map, null);
 					}
 					else
 					{
@@ -776,107 +945,114 @@ public class EditorFrame extends JFrame
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0)
 						{
-							new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
-							return map;
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
+							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (edgesChanged != null && edgesChanged.size() > 0)
 						{
-							new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
-							return map;
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
+							return new Tuple2<>(map, replaceBounds);
 						}
 						else
 						{
 							// Nothing to do.
-							return map;
+							return new Tuple2<>(map, null);
 						}
 					}
-				} 
+				}
 				finally
 				{
 					drawLock.unlock();
 				}
-	        }
-	        
-	        @Override
-	        public void done()
-	        {
-	            try 
-	            {
-	            	mapEditingPanel.mapFromMapCreator = get();
-	            } 
-	            catch (InterruptedException ex) 
-	            {
-	                throw new RuntimeException(ex);
-	            }
-	            catch (Exception ex)
-	            {
-	            	if (isCausedByOutOfMemoryError(ex))
-	            	{
-	            		String outOfMemoryMessage =  "Out of memory. Try lowering the zoom or allocating more memory to the Java heap space.";
-	            		JOptionPane.showMessageDialog(null, outOfMemoryMessage, "Error", JOptionPane.ERROR_MESSAGE);
-	            		ex.printStackTrace();
-	            	}
-	            	else
-	            	{
-	            		JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-	            		ex.printStackTrace();
-	            	}
-	            }
-	            
-	            if (mapEditingPanel.mapFromMapCreator != null)
-	            {	
+			}
+
+			@Override
+			public void done()
+			{
+				Rectangle replaceBounds = null;
+				try
+				{
+					Tuple2<BufferedImage, Rectangle> tuple = get();
+					mapEditingPanel.mapFromMapCreator = tuple.getFirst();
+					replaceBounds = tuple.getSecond();
+				}
+				catch (InterruptedException ex)
+				{
+					throw new RuntimeException(ex);
+				}
+				catch (Exception ex)
+				{
+					if (isCausedByOutOfMemoryError(ex))
+					{
+						String outOfMemoryMessage = "Out of memory. Try lowering the zoom or allocating more memory to the Java heap space.";
+						JOptionPane.showMessageDialog(null, outOfMemoryMessage, "Error", JOptionPane.ERROR_MESSAGE);
+						ex.printStackTrace();
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+						ex.printStackTrace();
+					}
+				}
+
+				if (mapEditingPanel.mapFromMapCreator != null)
+				{
 					mapEditingPanel.setGraph(mapParts.graph);
 
-	            	initializeCenterEditsIfEmpty();
-	            	initializeRegionEditsIfEmpty();
-	            	initializeEdgeEditsIfEmpty();
-	            	
-	            	if (undoer.copyOfEditsWhenEditorWasOpened == null)  
-	            	{
-	            		// This has to be done after the map is drawn rather than when the editor frame is first created because
-	            		// the first time the map is drawn is when the edits are created.
-	            		undoer.copyOfEditsWhenEditorWasOpened = settings.edits.deepCopy();
-	            	}
-	            	
-	            	mapEditingPanel.image = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
-	            	
-	            	enableOrDisableToolToggleButtonsAndZoom(true);
+					initializeCenterEditsIfEmpty();
+					initializeRegionEditsIfEmpty();
+					initializeEdgeEditsIfEmpty();
 
-	            	isMapBeingDrawn = false;
-		            if (mapNeedsFullRedraw)
-		            {
-		            	createAndShowMapFull();
-		            }
-		            else if (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0)
-		            {
-	            		IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
-	            		createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
-	            	}
-		            
-		            if (updateType == UpdateType.Full)
-		            {
-		            	mapNeedsFullRedraw = false;
-		            }
-	             		     
-		            mapEditingPanel.repaint();
-		            // Tell the scroll pane to update itself.
-		            mapEditingPanel.revalidate();   
-		            isMapReadyForInteractions = true;
-	            }
-	            else
-	            {
-	            	enableOrDisableToolToggleButtonsAndZoom(true);
-	            	mapEditingPanel.clearSelectedCenters();
-	         		isMapBeingDrawn = false;
-	            }
-	        }
-	 
-	    };
-	    worker.execute();
+					if (undoer.copyOfEditsWhenEditorWasOpened == null)
+					{
+						// This has to be done after the map is drawn rather
+						// than when the editor frame is first created because
+						// the first time the map is drawn is when the edits are
+						// created.
+						undoer.copyOfEditsWhenEditorWasOpened = settings.edits.deepCopy();
+					}
+
+					updateDisplayedMapFromGeneratedMap();
+
+					enableOrDisableToolToggleButtonsAndZoom(true);
+
+					isMapBeingDrawn = false;
+					if (mapNeedsFullRedraw)
+					{
+						createAndShowMapFull();
+					}
+					else if (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0)
+					{
+						IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
+						createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
+					}
+
+					if (updateType == UpdateType.Full)
+					{
+						mapNeedsFullRedraw = false;
+					}
+
+					mapEditingPanel.repaint();
+					// Tell the scroll pane to update itself.
+					mapEditingPanel.revalidate();
+					isMapReadyForInteractions = true;
+				}
+				else
+				{
+					enableOrDisableToolToggleButtonsAndZoom(true);
+					mapEditingPanel.clearSelectedCenters();
+					isMapBeingDrawn = false;
+				}
+			}
+
+		};
+		worker.execute();
 	}
-	
+
 	/**
-	 * Combines the incremental updates in incrementalUpdatesToDraw so they can be drawn together. Clears out incrementalUpdatesToDraw.
+	 * Combines the incremental updates in incrementalUpdatesToDraw so they can
+	 * be drawn together. Clears out incrementalUpdatesToDraw.
+	 * 
 	 * @return The combined update to draw
 	 */
 	private IncrementalUpdate combineAndGetNextIncrementalUpdateToDraw()
@@ -885,13 +1061,13 @@ public class EditorFrame extends JFrame
 		{
 			return null;
 		}
-		
+
 		IncrementalUpdate result = incrementalUpdatesToDraw.pop();
 		if (incrementalUpdatesToDraw.size() == 1)
 		{
 			return result;
 		}
-		
+
 		while (incrementalUpdatesToDraw.size() > 0)
 		{
 			IncrementalUpdate next = incrementalUpdatesToDraw.pop();
@@ -899,30 +1075,30 @@ public class EditorFrame extends JFrame
 		}
 		return result;
 	}
-	
+
 	private boolean isCausedByOutOfMemoryError(Throwable ex)
 	{
 		if (ex == null)
 		{
 			return false;
 		}
-		
+
 		if (ex instanceof OutOfMemoryError)
 		{
 			return true;
 		}
-		
+
 		return isCausedByOutOfMemoryError(ex.getCause());
 	}
-	
+
 	private void initializeCenterEditsIfEmpty()
 	{
 		if (settings.edits.centerEdits.isEmpty())
 		{
-			settings.edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);			
+			settings.edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);
 		}
 	}
-	
+
 	private void initializeEdgeEditsIfEmpty()
 	{
 		if (settings.edits.edgeEdits.isEmpty())
@@ -930,47 +1106,51 @@ public class EditorFrame extends JFrame
 			settings.edits.initializeEdgeEdits(mapParts.graph.edges);
 		}
 	}
-	
+
 	private void initializeRegionEditsIfEmpty()
 	{
 		if (settings.edits.regionEdits.isEmpty())
 		{
-			settings.edits.initializeRegionEdits(mapParts.graph.regions.values());			
+			settings.edits.initializeRegionEdits(mapParts.graph.regions.values());
 		}
 	}
-	
+
 	/**
 	 * Handles when zoom level changes in the display.
 	 */
-	public void handleZoomChange()
+	public void handleDisplayResolutionChange(String resolutionText)
 	{
+		displayResolution = parsePercentage(resolutionText);
 		isMapReadyForInteractions = false;
 		mapEditingPanel.clearAreasToDraw();
-		
 		mapEditingPanel.repaint();
+
+		ImageCache.getInstance().clear();
+		mapParts = null;
 		createAndShowMapFull();
 	}
-	
+
 	public void clearEntireMap()
 	{
 		if (mapParts == null || mapParts.graph == null)
 		{
 			return;
 		}
-		
+
 		// Erase text
 		if (mapParts.textDrawer == null)
 		{
-			// The text tool has not been opened. Draw the text once so we can erase it.
-			mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplier(mapParts.graph.getWidth()));	
-			mapParts.textDrawer.drawText(mapParts.graph, 
-					ImageHelper.deepCopy(mapParts.landBackground), mapParts.landBackground, mapParts.mountainGroups, mapParts.cityDrawTasks);
+			// The text tool has not been opened. Draw the text once so we can
+			// erase it.
+			mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplier(mapParts.graph.getWidth()));
+			mapParts.textDrawer.drawText(mapParts.graph, ImageHelper.deepCopy(mapParts.landBackground), mapParts.landBackground,
+					mapParts.mountainGroups, mapParts.cityDrawTasks);
 		}
 		for (MapText text : settings.edits.text)
 		{
 			text.value = "";
 		}
-		
+
 		for (Center center : mapParts.graph.centers)
 		{
 			// Change land to ocean
@@ -980,7 +1160,7 @@ public class EditorFrame extends JFrame
 			// Erase icons
 			settings.edits.centerEdits.get(center.index).trees = null;
 			settings.edits.centerEdits.get(center.index).icon = null;
-			
+
 			// Erase rivers
 			for (Edge edge : center.borders)
 			{
@@ -988,14 +1168,14 @@ public class EditorFrame extends JFrame
 				eEdit.riverLevel = 0;
 			}
 		}
-		
+
 		undoer.setUndoPoint(UpdateType.Full, null);
 		createAndShowMapFull();
 	}
-	
+
 	private void adjustSettingsForEditor()
 	{
-		settings.resolution = zoom;
+		settings.resolution = displayResolution;
 		settings.frayedBorder = false;
 		settings.drawText = false;
 		settings.grungeWidth = 0;
@@ -1003,4 +1183,3 @@ public class EditorFrame extends JFrame
 		settings.alwaysUpdateLandBackgroundWithOcean = true;
 	}
 }
-

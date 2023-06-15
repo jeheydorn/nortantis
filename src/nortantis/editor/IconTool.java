@@ -516,7 +516,7 @@ public class IconTool extends EditorTool
 		
 		if (riversButton.isSelected())
 		{
-			riverStart = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+			riverStart = parent.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
 	}
 
@@ -525,7 +525,7 @@ public class IconTool extends EditorTool
 	{		
 		if (riversButton.isSelected())
 		{
-			Corner end = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+			Corner end = parent.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 			Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
 			for (Edge edge : river)
 			{
@@ -599,7 +599,7 @@ public class IconTool extends EditorTool
 			if (riverStart != null)
 			{
 				mapEditingPanel.clearHighlightedEdges();
-				Corner end = parent.mapParts.graph.findClosestCorner(new Point(e.getX(), e.getY()));
+				Corner end = parent.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 				Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
 				mapEditingPanel.addHighlightedEdges(river);
 				mapEditingPanel.repaint();
@@ -642,9 +642,9 @@ public class IconTool extends EditorTool
 		parent.createAndShowMapFromChange(change);
 	}
 	
-	private Set<Center> getSelectedCenters(java.awt.Point point)
+	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
 	{
-		return getSelectedCenters(point, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+		return getSelectedCenters(pointFromMouse, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
 	}
 	
 	private void handleMapChange(Set<Center> centers)
