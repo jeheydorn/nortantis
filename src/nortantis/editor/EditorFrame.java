@@ -512,23 +512,34 @@ public class EditorFrame extends JFrame
 			{
 				java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
 				double scale = zoom / oldZoom;
-				java.awt.Point currentCentroid;
 				java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
 				if (mousePosition != null && (zoom > oldZoom))
 				{
-					currentCentroid = mousePosition;
+					// Zoom toward the mouse's position, keeping the point currently under the mouse the same if possible.
+					scrollTo = new java.awt.Rectangle(
+							(int)(mousePosition.x * scale) - mousePosition.x + visible.x, 
+							(int)(mousePosition.y * scale) - mousePosition.y + visible.y, 
+							visible.width, 
+							visible.height);
+					// If I should change my mind and want the scroll to put the mouse position into the center of the screen, then here's that code:
+//					java.awt.Point target = new java.awt.Point((int)(mousePosition.x * scale),(int)(mousePosition.y * scale));
+//					scrollTo = new java.awt.Rectangle(
+//							target.x - visible.width/2, 
+//							target.y - visible.height/2, 
+//							visible.width, 
+//							visible.height);
 				}
 				else
 				{
-					// Point on the map in the center of the map editing panel.
-					currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
+					// Zoom toward or away from the current center of the screen.
+					java.awt.Point 	currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
+					java.awt.Point targetCentroid = new java.awt.Point((int)(currentCentroid.x * scale),(int)(currentCentroid.y * scale));
+					scrollTo = new java.awt.Rectangle(
+							targetCentroid.x - visible.width/2, 
+							targetCentroid.y - visible.height/2, 
+							visible.width, 
+							visible.height);
 				}
-				java.awt.Point targetCentroid = new java.awt.Point((int)(currentCentroid.x * scale),(int)(currentCentroid.y * scale));
-				scrollTo = new java.awt.Rectangle(
-						targetCentroid.x - visible.width/2, 
-						targetCentroid.y - visible.height/2, 
-						visible.width, 
-						visible.height);
 			}
 
 			BufferedImage mapWithExtraStuff = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
