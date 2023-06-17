@@ -97,7 +97,7 @@ public class EditorFrame extends JFrame
 	MapParts mapParts;
 	private List<String> zoomLevels;
 	double zoom;
-	double displayResolution;
+	double imageQualityScale;
 	private boolean mapNeedsFullRedraw;
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	private boolean isMapBeingDrawn;
@@ -109,7 +109,10 @@ public class EditorFrame extends JFrame
 	private JPanel bottomPanel;
 	private RunSwing parent;
 	private final String fitToWindowZoomLevel = "Fit to Window";
-	private JMenu displayResolutionMenu;
+	private JMenu imageQualityMenu;
+	private JRadioButtonMenuItem radioButton75Percent;
+	private JRadioButtonMenuItem radioButton100Percent;
+	private JRadioButtonMenuItem radioButton125Percent;
 
 	/**
 	 * Creates a dialog for editing text.
@@ -326,6 +329,7 @@ public class EditorFrame extends JFrame
 
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
+		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels, adjust View > Image Quality.");
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -351,7 +355,7 @@ public class EditorFrame extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				UserPreferences.getInstance().zoomLevel = (String) zoomComboBox.getSelectedItem();
-				updateDisplayedMapFromGeneratedMap();
+				updateDisplayedMapFromGeneratedMap(true);
 				mapEditingPanel.repaint();
 				mapEditingPanel.revalidate();
 			}
@@ -467,40 +471,80 @@ public class EditorFrame extends JFrame
 		incrementalUpdatesToDraw = new ArrayDeque<>();
 
 		handleToolSelected(currentTool);
-		displayResolution = parsePercentage(UserPreferences.getInstance().displayResolution);
-		updateDisplayedMapFromGeneratedMap();
+		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
+		updateDisplayedMapFromGeneratedMap(false);
 		mapEditingPanel.repaint();
-		handleDisplayResolutionChange(UserPreferences.getInstance().displayResolution);
+		handleImageQualityChange(UserPreferences.getInstance().editorImageQuality);
 	}
 	
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
 	{
-		int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
-		int newIndex = zoomComboBox.getSelectedIndex() + scrollDirection;
-		if (newIndex < 0)
+		if (isMapReadyForInteractions)
 		{
-			newIndex = 0;
-		}
-		else if (newIndex > zoomComboBox.getItemCount() - 1)
-		{
-			newIndex = zoomComboBox.getItemCount() - 1;
-		}
-		if (newIndex != zoomComboBox.getSelectedIndex())
-		{
-			zoomComboBox.setSelectedIndex(newIndex);
-			updateDisplayedMapFromGeneratedMap();
+			int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
+			int newIndex = zoomComboBox.getSelectedIndex() + scrollDirection;
+			if (newIndex < 0)
+			{
+				newIndex = 0;
+			}
+			else if (newIndex > zoomComboBox.getItemCount() - 1)
+			{
+				newIndex = zoomComboBox.getItemCount() - 1;
+			}
+			if (newIndex != zoomComboBox.getSelectedIndex())
+			{
+				zoomComboBox.setSelectedIndex(newIndex);
+				updateDisplayedMapFromGeneratedMap(true);
+			}
 		}
 	}
 
-	public void updateDisplayedMapFromGeneratedMap()
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged)
 	{
+		double oldZoom = zoom;
 		zoom = translateZoomLevel((String) zoomComboBox.getSelectedItem());
+				
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
+			java.awt.Rectangle scrollTo = null;
+
+			if (updateScrollLocationIfZoomChanged && zoom != oldZoom)
+			{
+				java.awt.Rectangle visible = mapEditingPanel.getVisibleRect();
+				double scale = zoom / oldZoom;
+				java.awt.Point currentCentroid;
+				java.awt.Point mousePosition = mapEditingPanel.getMousePosition();
+				if (mousePosition != null && (zoom > oldZoom))
+				{
+					currentCentroid = mousePosition;
+				}
+				else
+				{
+					// Point on the map in the center of the map editing panel.
+					currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
+				}
+				java.awt.Point targetCentroid = new java.awt.Point((int)(currentCentroid.x * scale),(int)(currentCentroid.y * scale));
+				scrollTo = new java.awt.Rectangle(
+						targetCentroid.x - visible.width/2, 
+						targetCentroid.y - visible.height/2, 
+						visible.width, 
+						visible.height);
+			}
+
 			BufferedImage mapWithExtraStuff = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 			mapEditingPanel.setZoom(zoom);
 			mapEditingPanel.image = ImageHelper.scaleByWidth(mapWithExtraStuff, (int) (mapWithExtraStuff.getWidth() * zoom),
 					Method.BALANCED);
+			
+			if (scrollTo != null)
+			{
+				// For some reason I have to do a whole bunch of revalidation or else scrollRectToVisible doesn't realize the map has changed size.
+				mapEditingPanel.revalidate();
+				scrollPane.revalidate();
+				this.revalidate();
+				
+				mapEditingPanel.scrollRectToVisible(scrollTo);
+			}
 		}
 	}
 
@@ -652,8 +696,9 @@ public class EditorFrame extends JFrame
 		JMenu mnView = new JMenu("View");
 		menuBar.add(mnView);
 
-		displayResolutionMenu = new JMenu("Display Resolution");
-		mnView.add(displayResolutionMenu);
+		imageQualityMenu = new JMenu("Image Quality");
+		mnView.add(imageQualityMenu);
+		imageQualityMenu.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image using the Generate button in the main window. Higher values make the editor slower.");
 
 		ActionListener resolutionListener = new ActionListener()
 		{
@@ -661,40 +706,36 @@ public class EditorFrame extends JFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				String text = ((JRadioButtonMenuItem) e.getSource()).getText();
-				UserPreferences.getInstance().displayResolution = text;
-				thisFrame.handleDisplayResolutionChange(text);
+				UserPreferences.getInstance().editorImageQuality = text;
+				thisFrame.handleImageQualityChange(text);
+				
+				showImageQualityMessage();
 			}
 		};
 
 		ButtonGroup resolutionButtonGroup = new ButtonGroup();
 
-		JRadioButtonMenuItem radioButton50Percent = new JRadioButtonMenuItem("50%");
-		radioButton50Percent.addActionListener(resolutionListener);
-		displayResolutionMenu.add(radioButton50Percent);
-		resolutionButtonGroup.add(radioButton50Percent);
-
-		JRadioButtonMenuItem radioButton75Percent = new JRadioButtonMenuItem("75%");
+		radioButton75Percent = new JRadioButtonMenuItem("Low");
 		radioButton75Percent.addActionListener(resolutionListener);
-		displayResolutionMenu.add(radioButton75Percent);
+		imageQualityMenu.add(radioButton75Percent);
 		resolutionButtonGroup.add(radioButton75Percent);
 
-		JRadioButtonMenuItem radioButton100Percent = new JRadioButtonMenuItem("100%");
+		radioButton100Percent = new JRadioButtonMenuItem("Medium");
 		radioButton100Percent.addActionListener(resolutionListener);
-		displayResolutionMenu.add(radioButton100Percent);
+		imageQualityMenu.add(radioButton100Percent);
 		resolutionButtonGroup.add(radioButton100Percent);
 
-		JRadioButtonMenuItem radioButton125Percent = new JRadioButtonMenuItem("125%");
+		radioButton125Percent = new JRadioButtonMenuItem("High");
 		radioButton125Percent.addActionListener(resolutionListener);
-		displayResolutionMenu.add(radioButton125Percent);
+		imageQualityMenu.add(radioButton125Percent);
 		resolutionButtonGroup.add(radioButton125Percent);
 
-		if (UserPreferences.getInstance().displayResolution != null && !UserPreferences.getInstance().displayResolution.equals(""))
+		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
 		{
 			boolean found = false;
-			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent,
-					radioButton100Percent, radioButton125Percent })
+			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton75Percent, radioButton100Percent, radioButton125Percent })
 			{
-				if (UserPreferences.getInstance().displayResolution.equals(resolutionOption.getText()))
+				if (UserPreferences.getInstance().editorImageQuality.equals(resolutionOption.getText()))
 				{
 					resolutionOption.setSelected(true);
 					found = true;
@@ -706,13 +747,35 @@ public class EditorFrame extends JFrame
 				// Shouldn't happen. This means the user preferences have a bad
 				// value.
 				radioButton100Percent.setSelected(true);
-				UserPreferences.getInstance().displayResolution = radioButton100Percent.getText();
+				UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
 			}
 		}
 		else
 		{
-			radioButton75Percent.setSelected(true);
-			UserPreferences.getInstance().displayResolution = radioButton75Percent.getText();
+			radioButton100Percent.setSelected(true);
+			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
+		}
+	}
+	
+	private void showImageQualityMessage()
+	{
+		if (!UserPreferences.getInstance().hideImageQualityMessage)
+		{
+			Dimension size = new Dimension(400, 115);
+			JPanel panel = new JPanel();
+			panel.setPreferredSize(size);
+			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+			JLabel label = new JLabel("<html>Changing the image quality in the editor is only for the purpose of either speeding"
+					+ " up the editor by using a lower quality, or viewing more details at higher zoom levels using a higher quality."
+					+ " It does not affect the quality of the map exported to an image when you press the Generate button in the"
+					+ " main window.</html>");
+			panel.add(label);
+			label.setMaximumSize(size);
+			panel.add(Box.createVerticalStrut(18));
+			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+			panel.add(checkBox);
+			JOptionPane.showMessageDialog(this, panel, "Tip", JOptionPane.INFORMATION_MESSAGE);
+			UserPreferences.getInstance().hideImageQualityMessage = checkBox.isSelected();
 		}
 	}
 
@@ -737,7 +800,7 @@ public class EditorFrame extends JFrame
 		toolsOptionsPanelContainer.repaint();
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
-			updateDisplayedMapFromGeneratedMap();
+			updateDisplayedMapFromGeneratedMap(false);
 		}
 		currentTool.onActivate();
 		mapEditingPanel.repaint();
@@ -753,9 +816,11 @@ public class EditorFrame extends JFrame
 		}
 		zoomComboBox.setEnabled(enable);
 		clearEntireMapButton.setEnabled(enable);
-		if (displayResolutionMenu != null)
+		if (imageQualityMenu != null)
 		{
-			displayResolutionMenu.setEnabled(enable);
+			radioButton75Percent.setEnabled(enable);
+			radioButton100Percent.setEnabled(enable);
+			radioButton125Percent.setEnabled(enable);
 		}
 
 		if (enable)
@@ -1012,7 +1077,7 @@ public class EditorFrame extends JFrame
 						undoer.copyOfEditsWhenEditorWasOpened = settings.edits.deepCopy();
 					}
 
-					updateDisplayedMapFromGeneratedMap();
+					updateDisplayedMapFromGeneratedMap(false);
 
 					enableOrDisableToolToggleButtonsAndZoom(true);
 
@@ -1118,9 +1183,10 @@ public class EditorFrame extends JFrame
 	/**
 	 * Handles when zoom level changes in the display.
 	 */
-	public void handleDisplayResolutionChange(String resolutionText)
+	public void handleImageQualityChange(String resolutionText)
 	{
-		displayResolution = parsePercentage(resolutionText);
+		updateImageQualityScale(resolutionText);
+		
 		isMapReadyForInteractions = false;
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.repaint();
@@ -1128,6 +1194,22 @@ public class EditorFrame extends JFrame
 		ImageCache.getInstance().clear();
 		mapParts = null;
 		createAndShowMapFull();
+	}
+	
+	private void updateImageQualityScale(String imageQualityText)
+	{
+		if (imageQualityText.equals(radioButton75Percent.getText()))
+		{
+			imageQualityScale = 0.75;
+		}
+		else if (imageQualityText.equals(radioButton100Percent.getText()))
+		{
+			imageQualityScale = 1.0;
+		}
+		else if (imageQualityText.equals(radioButton125Percent.getText()))
+		{
+			imageQualityScale = 1.25;
+		}
 	}
 
 	public void clearEntireMap()
@@ -1175,7 +1257,7 @@ public class EditorFrame extends JFrame
 
 	private void adjustSettingsForEditor()
 	{
-		settings.resolution = displayResolution;
+		settings.resolution = imageQualityScale;
 		settings.frayedBorder = false;
 		settings.drawText = false;
 		settings.grungeWidth = 0;

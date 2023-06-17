@@ -14,10 +14,11 @@ public class UserPreferences
 	public String lastLoadedSettingsFile = "";
 	public String lastEditorTool = "";
 	public String zoomLevel = "";
-	public String displayResolution = "";
+	public String editorImageQuality = "";
 	public boolean hideMapChangesWarning;
 	public boolean hideAspectRatioWarning;
 	public boolean hideHeightMapWithEditsWarning;
+	public boolean hideImageQualityMessage;
 	
 	public static UserPreferences instance;
 	
@@ -45,14 +46,16 @@ public class UserPreferences
 					lastEditorTool = props.getProperty("lastEditTool");
 				if (props.containsKey("zoomLevel"))
 					zoomLevel = props.getProperty("zoomLevel");
-				if (props.containsKey("displayResolution"))
-					displayResolution = props.getProperty("displayResolution");
+				if (props.containsKey("editorImageQuality"))
+					editorImageQuality = props.getProperty("editorImageQuality");
 				if (props.containsKey("hideMapChangesWarning"))
 					hideMapChangesWarning = Boolean.parseBoolean(props.getProperty("hideMapChangesWarning"));
 				if (props.containsKey("hideAspectRatioWarning"))
 					hideAspectRatioWarning = Boolean.parseBoolean(props.getProperty("hideAspectRatioWarning"));
 				if (props.containsKey("hideHeightMapWithEditsWarning"))
 					hideHeightMapWithEditsWarning = Boolean.parseBoolean(props.getProperty("hideHeightMapWithEditsWarning"));
+				if (props.containsKey("hideImageQualityMessage"))
+					hideImageQualityMessage = Boolean.parseBoolean(props.getProperty("hideImageQualityMessage"));
 			}
 		} 
 		catch (IOException e)
@@ -67,10 +70,11 @@ public class UserPreferences
 		props.setProperty("lastLoadedSettingsFile", lastLoadedSettingsFile);
 		props.setProperty("lastEditTool", lastEditorTool);
 		props.setProperty("zoomLevel", zoomLevel);
-		props.setProperty("displayResolution", displayResolution);
+		props.setProperty("editorImageQuality", editorImageQuality);
 		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
 		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
 		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");
+		props.setProperty("hideImageQualityMessage", hideImageQualityMessage + "");
 		
 		try
 		{

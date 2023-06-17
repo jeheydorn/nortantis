@@ -209,6 +209,12 @@ public class IconTool extends EditorTool
 		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.hills);
 		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.sand);
 		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.trees);
+		// Prevent cacti from being the default tree brush
+		if (treeTypes.buttons.size() > 1 && treeTypes.buttons.get(0).getText().equals("cacti"))
+		{
+			treeTypes.buttons.get(1).setSelected(true);
+		}
+		
 		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
 		
 		// River options

@@ -374,7 +374,7 @@ public class RunSwing
 			        {
 						ImageCache.getInstance().clear();
 						
-						BufferedImage map = new MapCreator().createMap(settings, null, null);
+						BufferedImage map = new MapCreator().createMap(settings.deepCopy(), null, null);
 						System.gc();
 						
 						Logger.println("Opening the map in your system's default image editor.");
@@ -429,7 +429,9 @@ public class RunSwing
 			        {	
 			        	Dimension bounds = new Dimension(previewPanel.getWidth(), previewPanel.getHeight());
 			        	
-			        	BufferedImage map = new MapCreator().createMap(settings, bounds, null);
+			        	// Copy the settings because generating at differing resolutions can make slight changes in text positions, 
+			        	// which will trigger the prompt to save when closing.
+			        	BufferedImage map = new MapCreator().createMap(settings.deepCopy(), bounds, null);
 			        	System.gc();
 						return map;
 			        }
@@ -1714,7 +1716,7 @@ public class RunSwing
 		lblMapEditsMessage = new JLabel("<html>Fields on this tab and some on other tabs are disabled because this"
 				+ " map has edits. If you wish to enable those fields, you can either clear your "
 				+ "edits (" + editorMenu.getText() + " -> " + clearEditsMenuItem.getText() + "),"
-					+ " or create a new random map by going to File > New.</html>");
+					+ " or create a new random map by going to File > New Random Settings.</html>");
 		lblMapEditsMessage.setBounds(12, 285, 913, 50);
 		lblMapEditsMessage.setVisible(false);
 		terrainPanel.add(lblMapEditsMessage);

@@ -1073,6 +1073,11 @@ public class MapSettings implements Serializable
 		return toProperties().equals(o.toProperties());
 	}
 	
+	public MapSettings deepCopy()
+	{
+		return Helper.deepCopy(this);
+	}
+	
 	public enum LineStyle
 	{
 		Jagged,
