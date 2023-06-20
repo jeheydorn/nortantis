@@ -127,7 +127,6 @@ public class BackgroundGenerator
 			
 			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
 			kernel = null;
-			randomImage = null;
 			
 			if (numberOfColorChannels == 1)
 			{
@@ -152,7 +151,8 @@ public class BackgroundGenerator
 					}
 			}
 		}
-				
+		
+		randomImage = null;
 		BufferedImage result = ImageHelper.matchHistogram(allChannels, texture);
 		result = ImageHelper.extractRegion(result, 0, 0, targetCols, targetRows);
 		
@@ -217,7 +217,12 @@ public class BackgroundGenerator
 	{		
 		long startTime = System.currentTimeMillis();
 		
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), ImageHelper.read("C:\\Users\\Joseph\\Dropbox\\Joseph\\Games\\SailGame\\textures\\seeds\\maple trunk.png"), 1024, 1024, false);
+		BufferedImage image = ImageHelper.read("C:\\Users\\jehey\\Dropbox\\Joseph\\map waves.png");
+		if (image == null)
+		{
+			out.print("Unable to load image.");
+		}
+		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), image, 1024, 1024, false);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 		
 		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime)/1000.0);

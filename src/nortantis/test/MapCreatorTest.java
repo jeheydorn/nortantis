@@ -102,6 +102,24 @@ public class MapCreatorTest
 		generateAndCompare("smallWorld_allTextDeletedByHand_shouldNotRegenerateText.properties");
 	}
 	
+	@Test
+	public void backgroundFromTexture_landNotColorized()
+	{
+		generateAndCompare("backgroundFromTexture_landNotColorized.properties");
+	}
+	
+	@Test
+	public void backgroundFromTexture_nothingColorized()
+	{
+		generateAndCompare("backgroundFromTexture_nothingColorized.properties");
+	}
+	
+	@Test
+	public void backgroundFromTexture_oceanNotColorized()
+	{
+		generateAndCompare("backgroundFromTexture_oceanNotColorized.properties");
+	}
+	
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{
 		return Paths.get("unit test files", "expected maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();

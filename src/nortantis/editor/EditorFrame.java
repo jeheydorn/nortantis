@@ -521,13 +521,6 @@ public class EditorFrame extends JFrame
 							(int)(mousePosition.y * scale) - mousePosition.y + visible.y, 
 							visible.width, 
 							visible.height);
-					// If I should change my mind and want the scroll to put the mouse position into the center of the screen, then here's that code:
-//					java.awt.Point target = new java.awt.Point((int)(mousePosition.x * scale),(int)(mousePosition.y * scale));
-//					scrollTo = new java.awt.Rectangle(
-//							target.x - visible.width/2, 
-//							target.y - visible.height/2, 
-//							visible.width, 
-//							visible.height);
 				}
 				else
 				{

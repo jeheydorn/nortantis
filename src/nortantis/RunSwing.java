@@ -797,7 +797,7 @@ public class RunSwing
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				updateBackgroundPanelFieldStates();
+				updateBackgroundAndRegionPanelFieldStates();
 			}		
 		};
 		
@@ -871,12 +871,12 @@ public class RunSwing
 		backgroundPanel.add(btnsBrowseTextureImage);
 		
 		colorizeOceanCheckbox = new JCheckBox("");
-		colorizeOceanCheckbox.setToolTipText("Whether or not to change the ocean texture to a custom color");
+		colorizeOceanCheckbox.setToolTipText("Whether to change the ocean texture to a custom color");
 		colorizeOceanCheckbox.setBounds(448, 315, 129, 23);
 		backgroundPanel.add(colorizeOceanCheckbox);
 		
 		colorizeLandCheckbox = new JCheckBox("");
-		colorizeLandCheckbox.setToolTipText("Whether or not to change the land texture to a custom color");
+		colorizeLandCheckbox.setToolTipText("Whether to change the land texture to a custom color");
 		colorizeLandCheckbox.setBounds(705, 315, 129, 23);
 		backgroundPanel.add(colorizeLandCheckbox);
 		
@@ -885,7 +885,7 @@ public class RunSwing
 			@Override
 			public void itemStateChanged(ItemEvent e) 
 			{
-				updateBackgroundPanelFieldStates();
+				updateBackgroundAndRegionPanelFieldStates();
 			}
 		};
 
@@ -894,7 +894,7 @@ public class RunSwing
 		regionsPanel.setLayout(null);
 		
 		drawRegionsCheckBox = new JCheckBox("Draw regions");
-		drawRegionsCheckBox.setToolTipText("When checked, political region borders and background colors will be drawn. This will only work with generated background image.");
+		drawRegionsCheckBox.setToolTipText("When checked, political region borders and background colors will be drawn. This will only work with a generated background image.");
 		drawRegionsCheckBox.setBounds(8, 8, 129, 23);
 		drawRegionsCheckBox.addActionListener(new ActionListener()
 		{
@@ -1724,6 +1724,19 @@ public class RunSwing
 		frame.pack();
 	}
 	
+	private void updateDrawRegionsCheckboxEnabled()
+	{
+		if (rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeLandCheckbox.isSelected()))
+		{
+			drawRegionsCheckBox.setEnabled(true);
+		}
+		else
+		{
+			drawRegionsCheckBox.setSelected(false);
+			drawRegionsCheckBox.setEnabled(false);
+		}
+	}
+	
 	private static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem)
 	{
 		comboBox.removeAllItems();
@@ -1823,7 +1836,7 @@ public class RunSwing
 		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}
 	
-	private void updateBackgroundPanelFieldStates()
+	private void updateBackgroundAndRegionPanelFieldStates()
 	{
 		boolean isGeneratedBackground = rdbtnGeneratedFromTexture.isSelected() || rdbtnFractal.isSelected();
 		btnChooseLandColor.setVisible(isGeneratedBackground);
@@ -1854,11 +1867,7 @@ public class RunSwing
 		lblLandBackgroundImage.setVisible(rdbtnFromFiles.isSelected());
 		landBackgroundImageFilename.setVisible(rdbtnFromFiles.isSelected());
 		
-		drawRegionsCheckBox.setEnabled(rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected());
-		if (!drawRegionsCheckBox.isEnabled())
-		{
-				drawRegionsCheckBox.setSelected(false);
-		}
+		updateDrawRegionsCheckboxEnabled();
 		boolean regionControlsSelected = (rdbtnFractal.isSelected() || rdbtnGeneratedFromTexture.isSelected()) && drawRegionsCheckBox.isSelected();
 		hueSlider.setEnabled(regionControlsSelected);
 		saturationSlider.setEnabled(regionControlsSelected);
@@ -1870,7 +1879,7 @@ public class RunSwing
 		{
 			updateBackgroundImageDisplays();
 		}
-
+		
 	}
 	
 	private void updateBackgroundImageDisplays()
