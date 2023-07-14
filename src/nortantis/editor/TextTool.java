@@ -355,11 +355,14 @@ public class TextTool extends EditorTool
 			{
 				// The user is dragging a text box.
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
+				hoten.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				hoten.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
 				for (Area area : lastSelected.areas)
 				{
 					Area areaCopy = new Area(area);
 					AffineTransform t = new AffineTransform();
-					t.translate(e.getX() - mousePressedLocation.x, e.getY() - mousePressedLocation.y);
+					t.translate((int)(graphPointMouseLocation.x - graphPointMousePressedLocation.x), 
+							(int)(graphPointMouseLocation.y - graphPointMousePressedLocation.y));
 					areaCopy.transform(t);
 					transformedAreas.add(areaCopy);
 				}
@@ -369,10 +372,12 @@ public class TextTool extends EditorTool
 			else if (rotateButton.isSelected())
 			{
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
+				hoten.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+
 				for (Area area : lastSelected.areas)
 				{
-					double centerX = lastSelected.location.x * parent.zoom;
-					double centerY = lastSelected.location.y * parent.zoom;
+					double centerX = lastSelected.location.x;
+					double centerY = lastSelected.location.y;
 					Area areaCopy = new Area(area);
 					
 					// Undo previous rotation.
@@ -382,7 +387,7 @@ public class TextTool extends EditorTool
 					
 					// Add new rotation.
 					AffineTransform t = new AffineTransform();
-					double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
+					double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX);
 					t.rotate(angle, centerX, centerY);
 					
 					areaCopy.transform(t);
