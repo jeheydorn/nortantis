@@ -215,20 +215,21 @@ public class RunSwing
 		}
 
 		// TODO Get this working
-//		final String subFolderAddedByWindowsInstaller = "app";
-//		if (!Files.isDirectory(Paths.get(AssetsPath.get()))
-//				&& Files.isDirectory(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get())))
-//		{
-//			AssetsPath.set(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get()).toString());
-//		}
+		final String subFolderAddedByWindowsInstaller = "app";
+		if (!Files.isDirectory(Paths.get(AssetsPath.get()))
+				&& Files.isDirectory(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get())))
+		{
+			AssetsPath.set(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get()).toString());
+		}
 
+		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
 		{
 			public void run()
 			{
 				try
 				{
-					RunSwing window = new RunSwing();
+					RunSwing window = new RunSwing(fileToOpen);
 					window.frame.setVisible(true);
 				}
 				catch (Exception e)
@@ -242,13 +243,20 @@ public class RunSwing
 	/**
 	 * Create the application.
 	 */
-	public RunSwing()
+	public RunSwing(String fileToOpen)
 	{
 		createGUI();
 
 		try
 		{
-			if (Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
+			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) 
+					&& new File(fileToOpen).exists())
+			{
+				loadSettingsIntoGUI(fileToOpen);
+				openSettingsFilePath = Paths.get(fileToOpen);
+				updateFrameTitle();
+			}
+			else if (Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
 			{
 				loadSettingsIntoGUI(UserPreferences.getInstance().lastLoadedSettingsFile);
 				openSettingsFilePath = Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile);

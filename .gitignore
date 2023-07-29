@@ -39,3 +39,5 @@ map with new cities.properties
 temp.properties
 /unit test files/expected maps
 /unit test files/failed maps
+*.msi
+Nortantis.jar
