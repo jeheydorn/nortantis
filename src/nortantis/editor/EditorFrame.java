@@ -15,11 +15,11 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -68,6 +68,7 @@ import nortantis.MapText;
 import nortantis.RunSwing;
 import nortantis.TextDrawer;
 import nortantis.UserPreferences;
+import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.Tuple2;
@@ -142,6 +143,7 @@ public class EditorFrame extends JFrame
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
+		setIconImage(ImageHelper.read(Paths.get(AssetsPath.get(), "internal/taskbar icon.png").toString()));
 		this.settings = settings;
 		this.parent = runSwing;
 		updateEditsPointerInRunSwing();
@@ -409,7 +411,7 @@ public class EditorFrame extends JFrame
 					try
 					{
 						// Save
-						runSwing.saveSettings(scrollPane);
+						runSwing.saveSettings(thisFrame);
 					}
 					finally
 					{
@@ -454,6 +456,14 @@ public class EditorFrame extends JFrame
 					showMapChangesMessage(runSwing);
 				}
 			}
+			
+            @Override
+            public void windowActivated(WindowEvent e) 
+            {
+            	// There's a bug in Windows where all of my swing components disappear when you lock the screen and unlock it.
+            	// The is a fix that works most of the time.
+                thisFrame.repaint();
+            }
 		});
 
 		addComponentListener(new ComponentAdapter()
@@ -537,8 +547,9 @@ public class EditorFrame extends JFrame
 
 			BufferedImage mapWithExtraStuff = currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 			mapEditingPanel.setZoom(zoom);
+			Method method = zoom < 0.3 ? Method.QUALITY : Method.BALANCED;
 			mapEditingPanel.image = ImageHelper.scaleByWidth(mapWithExtraStuff, (int) (mapWithExtraStuff.getWidth() * zoom),
-					Method.BALANCED);
+					method);
 			
 			if (scrollTo != null)
 			{
@@ -635,7 +646,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				runSwing.saveSettings(mntmSave);
+				runSwing.saveSettings(thisFrame);
 			}
 		});
 
@@ -646,7 +657,7 @@ public class EditorFrame extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				runSwing.saveSettingsAs(mntmSaveAs);
+				runSwing.saveSettingsAs(thisFrame);
 			}
 		});
 
@@ -990,10 +1001,10 @@ public class EditorFrame extends JFrame
 			adjustSettingsForEditor();
 		}
 
-		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
+		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
 		{
 			@Override
-			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException
+			public BufferedImage doInBackground() throws IOException
 			{
 				drawLock.lock();
 				try
@@ -1006,7 +1017,7 @@ public class EditorFrame extends JFrame
 						}
 						BufferedImage map = new MapCreator().createMap(settings, null, mapParts);
 						System.gc();
-						return new Tuple2<>(map, null);
+						return map;
 					}
 					else
 					{
@@ -1014,18 +1025,18 @@ public class EditorFrame extends JFrame
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
-							return new Tuple2<>(map, replaceBounds);
+							new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
+							return map;
 						}
 						else if (edgesChanged != null && edgesChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
-							return new Tuple2<>(map, replaceBounds);
+							new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
+							return map;
 						}
 						else
 						{
 							// Nothing to do.
-							return new Tuple2<>(map, null);
+							return map;
 						}
 					}
 				}
@@ -1038,12 +1049,9 @@ public class EditorFrame extends JFrame
 			@Override
 			public void done()
 			{
-				Rectangle replaceBounds = null;
 				try
 				{
-					Tuple2<BufferedImage, Rectangle> tuple = get();
-					mapEditingPanel.mapFromMapCreator = tuple.getFirst();
-					replaceBounds = tuple.getSecond();
+					mapEditingPanel.mapFromMapCreator = get();
 				}
 				catch (InterruptedException ex)
 				{

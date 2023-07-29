@@ -217,8 +217,8 @@ public class ImageCache
 			String fileNameBaseWithoutWidth = getFileNameBaseWithoutWidth(fileName);
 			if (imagesAndMasks.containsKey(fileNameBaseWithoutWidth))
 			{
-				throw new RuntimeException("There are multiple icons for " + iconType + " named '" + fileNameBaseWithoutWidth + "' whose file names only differ by the width."
-						+ " Rename one of them");
+				throw new RuntimeException("There are multiple icons for " + iconType + " named '" + fileNameBaseWithoutWidth + "' whose file names only differ by their width."
+						+ " Rename one of them.");
 			}
 
 			Path path = Paths.get(getIconGroupPath(iconType, null, iconSetName), fileName);

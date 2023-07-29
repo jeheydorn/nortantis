@@ -28,10 +28,10 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 
-import hoten.geom.Point;
 import hoten.voronoi.Center;
 import nortantis.Region;
 import nortantis.RunSwing;
+import nortantis.util.AssetsPath;
 
 public class LandWaterTool extends EditorTool
 {
@@ -68,7 +68,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get("assets/internal/Land Water tool.png").toString();
+		return Paths.get(AssetsPath.get(), "internal/Land Water tool.png").toString();
 	}
 	
 	@Override

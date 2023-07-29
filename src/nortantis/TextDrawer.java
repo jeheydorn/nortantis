@@ -36,6 +36,7 @@ import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
@@ -161,7 +162,7 @@ public class TextDrawer
 		        	String[] parts = line.split("\t");
 		        	if (parts.length != 2)
 		        	{
-		        		System.out.println("Warning: No string pair found in " + filename + " at line " + lineNum + ".");
+		        		Logger.println("Warning: No string pair found in " + filename + " at line " + lineNum + ".");
 		        		continue;
 		        	}
 		        	result.add(new Pair<>(parts[0], parts[1]));
@@ -183,13 +184,13 @@ public class TextDrawer
 	private List<String> readNameList(String filename)
 	{
 		List<String> result = new ArrayList<>();
-		try(BufferedReader br = new BufferedReader(new FileReader(new File(filename)))) 
+		try(BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
 		{
 		    for(String line; (line = br.readLine()) != null; )
 		    {
 		    	// Remove white space lines.
 		        if (!line.trim().isEmpty())
-		        {
+		        {		        	
 		        	result.add(line);
 		        }
 		    }

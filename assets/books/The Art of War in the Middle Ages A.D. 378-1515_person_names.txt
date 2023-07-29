@@ -24,7 +24,7 @@ Marshal
 Isaac Comnenus
 Keil
 Magnus Maximus
-Margaret‚
+Margaret√¢
 Mahomet II
 Carmagnola
 Sultan Murad
@@ -45,10 +45,10 @@ Dunois
 Don Ramon de Cardona
 Gerard
 Henry V
-Henry‚
+Henry√¢
 Bloreheath
 Halidon Hill
-William‚
+William√¢
 Du Guesclin
 Trajan
 Justinian
@@ -58,9 +58,9 @@ Kossova
 Orchan
 Sigismund
 Kyrie
-Neville‚
+Neville√¢
 Stilicho
-Leopold‚
+Leopold√¢
 Rudolf
 Franks
 Laupen
@@ -88,7 +88,7 @@ Henry
 Flanders
 Billmen
 Khaled
-Richard C≈
+Richard C√Ö
 Eadward
 Bruce
 Maurice
@@ -132,7 +132,7 @@ Gaston
 Margaret
 Morat
 Charles V
-Harold‚
+Harold√¢
 Felix
 Richard
 Cassel

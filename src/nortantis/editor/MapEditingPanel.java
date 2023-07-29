@@ -13,16 +13,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.imgscalr.Scalr.Method;
-
-import hoten.geom.Rectangle;
 import hoten.voronoi.Center;
 import hoten.voronoi.Edge;
 import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.WorldGraph;
-import nortantis.util.ImageHelper;
-import nortantis.util.Range;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends ImagePanel implements MouseWheelListener

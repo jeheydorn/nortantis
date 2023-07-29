@@ -35,16 +35,15 @@ public class Background
 	
 	public Background(MapSettings settings, Dimension maxDimensions)
 	{
-		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture && !settings.transparentBackground;
+		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
         shouldDrawRegionColors = settings.drawRegionColors 
 		&& !backgroundFromFilesNotGenerated 
-		&& (!settings.generateBackgroundFromTexture || settings.colorizeLand)
-		&& !settings.transparentBackground;
-
+		&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+        
         BufferedImage landGeneratedBackground;
 		landColorifyAlgorithm = ColorifyAlgorithm.none;
 		mapBounds = calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
-		if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
+		if (settings.generateBackground || settings.generateBackgroundFromTexture)
 		{
 
 			borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
@@ -53,8 +52,9 @@ public class Background
 			{
 				// Fractal generated background images
 				
+				final float fractalPower = 1.3f;
 				BufferedImage oceanGeneratedBackground = FractalBGGenerator.generate(
-						new Random(settings.backgroundRandomSeed), settings.fractalPower, 
+						new Random(settings.backgroundRandomSeed), fractalPower, 
 						(int)mapBounds.getWidth() + borderWidthScaled * 2, (int)mapBounds.getHeight() + borderWidthScaled * 2, 0.75f);
 				landGeneratedBackground = oceanGeneratedBackground;
 				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
@@ -259,7 +259,7 @@ public class Background
 			
 	DimensionDouble calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
-		if (settings.generateBackground || settings.generateBackgroundFromTexture || settings.transparentBackground)
+		if (settings.generateBackground || settings.generateBackgroundFromTexture)
 		{
 			DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
 					settings.generatedHeight * settings.resolution);

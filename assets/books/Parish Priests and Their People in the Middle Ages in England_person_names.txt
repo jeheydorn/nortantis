@@ -5,7 +5,7 @@ Ralph Mayre
 Sidbury
 Austin
 Stapledon
-Stephen ¬
+Stephen √Ç
 Bartram Midforde
 Sandall
 Thomas de Roos
@@ -48,7 +48,7 @@ Charles Howard
 Holme
 Lupton
 God
-Rotherham‚
+Rotherham√¢
 Horton
 Sigebert
 Dawlash
@@ -82,7 +82,7 @@ Ely
 Withington
 Urswick
 Osbert
-Edmund Stafford‚
+Edmund Stafford√¢
 Thomas de Waterdene
 Langton
 Elfleda
@@ -116,14 +116,14 @@ Holinshed
 Warham
 William de Tres
 HARL
-St. Stephen‚
+St. Stephen√¢
 Jewish Sabbath
 Claudius
-Weseham‚
+Weseham√¢
 John Drawlace
 Lenten Booke
 Ewen
-Bishop Stapledon‚
+Bishop Stapledon√¢
 Delamere
 Kent
 John Holhom
@@ -190,7 +190,7 @@ Preston
 John of St. Clair
 Bocton Aluph
 Thomas Grene
-John‚
+John√¢
 Bishop of Messina
 Constance
 William Godthank
@@ -233,7 +233,7 @@ Sebbidune
 Agnes Walworth
 Rob
 Robert Beckton
-Bishop‚
+Bishop√¢
 Sutton
 Ethelbald
 Henry Lexington
@@ -274,7 +274,7 @@ Headdon
 Otho
 Edmund
 Leighton Buzzard
-Robert de Brunne‚
+Robert de Brunne√¢
 Levites
 Islop
 John Hewet
@@ -322,7 +322,7 @@ E. VI
 Nicolas
 Spartlingus
 John Gilby
-Aldhelm‚
+Aldhelm√¢
 Royal
 Katharine
 Harlow
@@ -351,10 +351,10 @@ John Ball
 John Percy
 Radix Virtutum Humilitas
 Scott
-Henry VII.‚
+Henry VII.√¢
 Nastrond
 Kettelwell
-Albin‚
+Albin√¢
 Charles Martel
 Bartholomew de Wendon
 Athanasius
@@ -377,7 +377,7 @@ Barton
 Bacup
 Edward Lovekyn
 Roger de Clinton
-Henry III.‚
+Henry III.√¢
 Richard Mortimer
 St. Wilfred
 Charles V.
@@ -444,7 +444,7 @@ John Pryn
 Richard Birchal
 Leofric
 Montgomery
-William Richardson Curat‚
+William Richardson Curat√¢
 Waltheof
 St. Clement
 John Doffenby
@@ -467,7 +467,7 @@ Brigg
 W. Parker
 Henry Machyn
 Thor
-Langton‚
+Langton√¢
 BRIGG
 G. VI
 Crede
@@ -509,7 +509,7 @@ Peter Lombard
 Walter Robins
 Robert
 Saxon
-Dom Johan Graytrigg‚
+Dom Johan Graytrigg√¢
 Wm. FitzStephen
 Professor Skeat
 Nicholas Blackburn
@@ -522,7 +522,7 @@ Stephen Sprot
 Richard Coren
 Masse
 Alnwick
-Peckham‚
+Peckham√¢
 Agnus Dei
 Rossendale
 Thorold Rogers
@@ -540,7 +540,7 @@ Bradfield
 Storey
 Sidnacester
 W. Swerd
-S. Michael‚
+S. Michael√¢
 Lateran
 St. Ellen
 Dalby
@@ -557,7 +557,7 @@ Grandisson
 Simon Barton
 Rothwell
 John Audelay
-Peter Fishacre‚
+Peter Fishacre√¢
 Black
 Anselm
 Stow
@@ -573,8 +573,8 @@ Archdeacon Darley
 John Hamden
 Bartholomew Burghersh
 Dacor
-God‚
-St. Alban‚
+God√¢
+St. Alban√¢
 Charles I.
 Rayner
 Brian
@@ -662,7 +662,7 @@ Richard I.
 Alexander
 Bishop Roger
 Thomas Aquinas
-Thomas √ Kempis
+Thomas √É Kempis
 Richard Towgall
 Beauchief
 Roger Lord la Ware
@@ -696,7 +696,7 @@ John de Vesey
 Ottobon
 Henry II
 Beatrix Hanlay
-John Myrk‚
+John Myrk√¢
 Arbor Vitiorum
 Hast
 Kirby Misperton
@@ -725,10 +725,10 @@ Robert Dean
 Great Withyford
 G. de Breaute
 Rushbrook Hall
-Jones‚
+Jones√¢
 Burton Noveray
 Bologna
-regina c√
+regina c√É
 Ethelbert of Kent
 Godmund
 Baldwyn de Frevyle
@@ -963,7 +963,7 @@ Julian
 St. Lawrence Pountney
 Ramsden
 Constantine
-Jesus Christ‚
+Jesus Christ√¢
 William of Warrenne
 Sloane
 John Ermyn
@@ -1041,7 +1041,7 @@ Henry III
 Juxon
 Ecclie de Hampstap
 Doli
-Benedict Biscop‚
+Benedict Biscop√¢
 John Mansel
 Yorke
 Charles Shawe
@@ -1108,7 +1108,7 @@ Francis Hamden
 Richard III
 Edyngdon
 Walter Langton
-Will‚
+Will√¢
 ARBOR VIRTVTVM
 Walter Stanreth
 Elfric

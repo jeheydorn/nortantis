@@ -29,7 +29,7 @@ public class GraphCreator
     public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
     		double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision)
     {
-		double startTime = System.currentTimeMillis();
+//		double startTime = System.currentTimeMillis();
         
         //make the initial underlying voronoi structure
         final Voronoi v = new Voronoi(numSites, width, height, r, null);
@@ -38,22 +38,10 @@ public class GraphCreator
         final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
     		   nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, lineStyle, pointPrecision);
         
-		double elapsedTime = System.currentTimeMillis() - startTime;
-		Logger.println("Time to generate graph (in seconds): " + elapsedTime
-				/ 1000.0);
-
-//
-//        final BufferedImage img = new BufferedImage((int)width, (int)height, BufferedImage.TYPE_INT_RGB);
-//        Graphics2D g = img.createGraphics();
-//        boolean drawPlates = false;
-//        boolean drawElevations = false;
-//        boolean drawNoisyEdges = true;
-//        boolean drawLandAndOceanBlackAndWhiteOnly = false;
-//        graph.paint(g, true, drawPlates, drawElevations, drawNoisyEdges, drawLandAndOceanBlackAndWhiteOnly, false,
-//        		false);
-//        // Save the image to a file.
-//        File outputfile = new File("biomes.png");
-//        ImageIO.write(img, "png", outputfile);
+        // Debug code to log elapsed time.
+//		double elapsedTime = System.currentTimeMillis() - startTime;
+//		Logger.println("Time to generate graph (in seconds): " + elapsedTime
+//				/ 1000.0);
         
         return graph;
     }

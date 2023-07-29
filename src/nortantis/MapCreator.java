@@ -640,7 +640,8 @@ public class MapCreator
 			// 104567 is an arbitrary number added so that the grunge is not the
 			// same pattern as
 			// the background.
-			BufferedImage clouds = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), settings.fractalPower,
+			final float fractalPower = 1.3f;
+			BufferedImage clouds = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower,
 					(int) map.getWidth(), (int) map.getHeight(), 0.75f);
 			// Whiten the middle of clouds.
 			darkenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);

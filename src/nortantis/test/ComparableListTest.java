@@ -34,7 +34,6 @@ public class ComparableListTest
 		set.add(list3);
 		set.add(list4);
 		
-		System.out.println(set);
 		List<ComparableList<Character>> setList = new ArrayList<>(set);
 		assertEquals(setList.get(0), list4);
 		assertEquals(setList.get(1), list1);

@@ -102,15 +102,11 @@ public class SettingsGenerator
 		settings.frayedBorderColor = MapCreator.generateColorFromBaseColor(rand, settings.frayedBorderColor, hueRange, saturationRange, brightnessRange);
 		
 		settings.worldSize = (rand.nextInt((maxWorldSize - minWorldSizeForRandomSettings) / worldSizePrecision) + minWorldSizeForRandomSettings / worldSizePrecision) * worldSizePrecision;
-		
-		settings.frayedBorder = rand.nextDouble() > 0.5;
-		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		settings.frayedBorderSize = 100 + Math.abs(rand.nextInt(20000));
-		
+				
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 		
-		final double drawBorderProbability = 0.25;
-		settings.drawBorder = rand.nextDouble() > drawBorderProbability;
+		final double drawBorderProbability = 0.75;
+		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
 		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
 		if (!borderTypes.isEmpty())
 		{
@@ -119,7 +115,6 @@ public class SettingsGenerator
 			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
 			if (settings.borderType.equals("dashes"))
 			{
-				settings.frayedBorder = false;
 				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
 			}
 			else
@@ -127,6 +122,25 @@ public class SettingsGenerator
 				settings.borderWidth = Math.abs(rand.nextInt(200)) + 100;
 			}
 		}
+		
+		if (settings.drawBorder)
+		{
+			if (settings.borderType.equals("dashes"))
+			{
+				settings.frayedBorder = false;
+			}
+			else
+			{
+				settings.frayedBorder = rand.nextDouble() > 0.5;
+			}
+		}
+		else
+		{
+			settings.frayedBorder = true;
+		}
+		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
+		settings.frayedBorderSize = 100 + Math.abs(rand.nextInt(20000));
+
 		
 		if (rand.nextDouble() > 0.25)
 		{

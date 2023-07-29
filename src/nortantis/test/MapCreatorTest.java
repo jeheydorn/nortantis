@@ -51,74 +51,98 @@ public class MapCreatorTest
 	@Test
 	public void frayedEdge_regionColors_textureImageBackground()
 	{
-		generateAndCompare("frayedEdge_regionColors_textureImageBackground.properties");
+		generateAndCompare("frayedEdge_regionColors_textureImageBackground.nort");
 	}
 	
 	@Test
 	public void noText_NoRegions_SquareBackground_ConcentricWaves()
 	{
-		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves.properties");
+		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves.nort");
 	}
 	
 	@Test
 	public void noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits()
 	{
-		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits.properties");
+		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves_WithEdits.nort");
 	}
 	
 	@Test
 	public void preventCreatingOnlyOneTectonicPlate()
 	{
-		generateAndCompare("preventCreatingOnlyOneTectonicPlate.properties");
+		generateAndCompare("preventCreatingOnlyOneTectonicPlate.nort");
 	}
 	
 	@Test
 	public void noText_WithCities_GoldenRatio()
 	{
-		generateAndCompare("noText_WithCities_GoldenRatio.properties");
+		generateAndCompare("noText_WithCities_GoldenRatio.nort");
 	}
 	
 	@Test
 	public void noText_WithCities_GoldenRatio_withEdits()
 	{
-		generateAndCompare("noText_WithCities_GoldenRatio_withEdits.properties");
+		generateAndCompare("noText_WithCities_GoldenRatio_withEdits.nort");
 	}
 	
 	@Test
 	public void allTypesOfEdits()
 	{
-		generateAndCompare("allTypesOfEdits.properties");
+		generateAndCompare("allTypesOfEdits.nort");
 	}
 	
 	@Test
 	public void smallWorld_constrainedToForceGeneratingLand()
 	{
-		generateAndCompare("smallWorld_constrainedToForceGeneratingLand.properties");
+		generateAndCompare("smallWorld_constrainedToForceGeneratingLand.nort");
 	}
 	
 	@Test
 	public void smallWorld_allTextDeletedByHand_shouldNotRegenerateText()
 	{
-		generateAndCompare("smallWorld_allTextDeletedByHand_shouldNotRegenerateText.properties");
+		generateAndCompare("smallWorld_allTextDeletedByHand_shouldNotRegenerateText.nort");
 	}
 	
 	@Test
 	public void backgroundFromTexture_landNotColorized()
 	{
-		generateAndCompare("backgroundFromTexture_landNotColorized.properties");
+		generateAndCompare("backgroundFromTexture_landNotColorized.nort");
 	}
 	
 	@Test
 	public void backgroundFromTexture_nothingColorized()
 	{
-		generateAndCompare("backgroundFromTexture_nothingColorized.properties");
+		generateAndCompare("backgroundFromTexture_nothingColorized.nort");
 	}
 	
 	@Test
 	public void backgroundFromTexture_oceanNotColorized()
 	{
-		generateAndCompare("backgroundFromTexture_oceanNotColorized.properties");
+		generateAndCompare("backgroundFromTexture_oceanNotColorized.nort");
 	}
+	
+	@Test
+	public void generatedSpecialCharacterInTitleAndColorChanges_replacementCharacterRemoved()
+	{
+		generateAndCompare("generatedSpecialCharacterInTitleAndColorChanges_replacementCharacterRemoved.nort");
+	}	
+	
+	@Test
+	public void propertiesConversion_allColorsChanged()
+	{
+		generateAndCompare("propertiesConversion_allColorsChanged.properties");
+	}	
+	
+	@Test
+	public void propertiesConversion_allTypesOfEdits()
+	{
+		generateAndCompare("propertiesConversion_allTypesOfEdits.properties");
+	}	
+	
+	@Test
+	public void propertiesConversion_noText_WithCities_GoldenRatio()
+	{
+		generateAndCompare("propertiesConversion_noText_WithCities_GoldenRatio.properties");
+	}	
 	
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{

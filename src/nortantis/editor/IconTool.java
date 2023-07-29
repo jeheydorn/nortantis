@@ -28,15 +28,13 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 
-import hoten.geom.Point;
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
 import hoten.voronoi.VoronoiGraph;
-import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageCache;
-import nortantis.MapParts;
+import nortantis.util.AssetsPath;
 
 public class IconTool extends EditorTool
 {
@@ -86,7 +84,7 @@ public class IconTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get("assets/internal/Icon tool.png").toString();
+		return Paths.get(AssetsPath.get(), "internal/Icon tool.png").toString();
 	}
 
 	@Override

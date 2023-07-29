@@ -32,6 +32,7 @@ import javax.swing.JTextField;
 
 import nortantis.MapText;
 import nortantis.TextType;
+import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.JTextFieldFixed;
@@ -219,7 +220,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get("assets/internal/Text tool.png").toString();
+		return Paths.get(AssetsPath.get(), "internal/Text tool.png").toString();
 	}
 	
 	@Override

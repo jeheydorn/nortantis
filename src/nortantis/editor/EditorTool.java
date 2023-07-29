@@ -1,7 +1,6 @@
 package nortantis.editor;
 
 import java.awt.Color;
-
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -27,8 +26,6 @@ import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
-import java.util.Map;
-import java.util.HashMap;
 
 public abstract class EditorTool
 {

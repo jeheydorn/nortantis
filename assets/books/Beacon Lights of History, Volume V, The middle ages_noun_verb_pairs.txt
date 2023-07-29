@@ -18,8 +18,8 @@ abilities	needed
 abilities	rewarded
 abstractions	depend
 absurdity	seen
-abã	persecuted
-abã	shield
+abÃ£	persecuted
+abÃ£	shield
 acceptance	seems
 accounts	regarded
 accusers	answer
@@ -1874,7 +1874,7 @@ hunger	satisfied
 husband	dined
 husbandmen	raised
 hut	shed
-hã	encountered
+hÃ£	encountered
 idea	based
 idea	fight
 idea	prepared

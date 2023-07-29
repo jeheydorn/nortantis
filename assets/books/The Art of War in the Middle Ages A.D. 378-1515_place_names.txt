@@ -18,7 +18,7 @@ Hedgeley Moor
 Constantinople
 Eastern Germany
 Britain
-St. Louis‚
+St. Louis√¢
 Benevento
 Freiburg
 Picardy
@@ -53,11 +53,11 @@ Zug
 Vire
 Selkirk
 Bloreheath
-Gibbon‚
+Gibbon√¢
 Normandy
 CRESSY
 Du Guesclin
-Wallace‚
+Wallace√¢
 Acquitaine
 North-Western Europe
 Waterloo
@@ -69,7 +69,7 @@ Cappadocia
 Rome
 BANNOCKBURN
 Hapsburg
-Leopold‚
+Leopold√¢
 Jerusalem
 Egeri
 Laupen
@@ -93,7 +93,7 @@ St. Lo
 Russia
 Erlach
 Pydna
-Kyriel‚
+Kyriel√¢
 Radama
 El Teb
 Maupertuis
@@ -103,7 +103,7 @@ Balkan
 Casilinum
 Flanders
 Rhone
-Salisbury‚
+Salisbury√¢
 Barnet
 Fabyan
 Lancaster
@@ -121,7 +121,7 @@ South Russia
 Eastern Europe
 Lucern
 Grafton
-Charles‚
+Charles√¢
 Saracens
 Poictiers
 Greece
@@ -153,7 +153,7 @@ Thuringia
 Vegetius
 Zisca
 Ravenna
-Harold‚
+Harold√¢
 Bouvines
 St. Louis
 Cassel
@@ -174,8 +174,8 @@ Ticonderoga
 Northampton
 Lipan
 Rosbecque
-Bruce‚
-Leo‚
+Bruce√¢
+Leo√¢
 South Welsh
 Lake
 Austria
