@@ -25,4 +25,4 @@ jpackage ^
 RMDIR /S /Q installer_input
 
 
-::pause
+pause
