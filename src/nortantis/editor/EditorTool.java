@@ -21,11 +21,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
+import org.imgscalr.Scalr.Method;
+
 import hoten.voronoi.Center;
 import hoten.voronoi.Corner;
 import hoten.voronoi.Edge;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
+import nortantis.util.ImageHelper;
 
 public abstract class EditorTool
 {
@@ -51,14 +54,15 @@ public abstract class EditorTool
 	private BufferedImage createPlaceholderImage()
 	{
 		String message = "Drawing the map. Some details like borders and grunge are not shown in edit mode.";
-		Font font = MapSettings.parseFont("URW Chancery L\t0\t25");
+		final int scale = 2;
+		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30 * scale);
 		Point textBounds = TextDrawer.getTextBounds(message, font);
-		BufferedImage placeHolder = new BufferedImage(textBounds.x + 10, textBounds.y + 20, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage placeHolder = new BufferedImage((textBounds.x + 10) * scale, (textBounds.y + 20) * scale, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = placeHolder.createGraphics();
 		g.setFont(font);
-		g.setColor(Color.BLACK);
+		g.setColor(new Color(168, 168, 168));
 		g.drawString(message, 8, textBounds.y + 5);
-		return placeHolder;
+		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth() / scale, Method.QUALITY);
 	}
 	
 	public abstract String getToolbarName();

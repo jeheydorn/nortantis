@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-10"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-10">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="libraries/JLargeArrays-1.2.jar"/>
 	<classpathentry kind="lib" path="libraries/commons-io-2.4.jar"/>
 	<classpathentry kind="lib" path="libraries/commons-math3-3.2.jar"/>
@@ -10,5 +14,6 @@
 	<classpathentry kind="lib" path="libraries/org.hamcrest.core_1.3.0.v201303031735.jar"/>
 	<classpathentry kind="lib" path="libraries/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="libraries/JTransforms-3.1-with-dependencies.jar" sourcepath="library-sources/JTransforms-3.1-sources.jar"/>
+	<classpathentry kind="lib" path="libraries/flatlaf-3.1.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

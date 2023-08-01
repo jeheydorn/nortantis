@@ -1,6 +1,8 @@
 package nortantis.editor;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.KeyEventDispatcher;
@@ -262,11 +264,13 @@ public class EditorFrame extends JFrame
 		{
 			currentTool = tools.get(2);
 		}
-
+		
+		
 		scrollPane = new JScrollPane(mapEditingPanel);
 		// Speed up the scroll speed.
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 		getContentPane().add(scrollPane);
+				
 
 		toolsPanel = new JPanel();
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, getContentPane().getHeight()));
@@ -358,8 +362,10 @@ public class EditorFrame extends JFrame
 			{
 				UserPreferences.getInstance().zoomLevel = (String) zoomComboBox.getSelectedItem();
 				updateDisplayedMapFromGeneratedMap(true);
-				mapEditingPanel.repaint();
 				mapEditingPanel.revalidate();
+				scrollPane.revalidate();
+				mapEditingPanel.repaint();
+				scrollPane.repaint();
 			}
 		});
 
@@ -390,6 +396,7 @@ public class EditorFrame extends JFrame
 		};
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
+		
 
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work
 		// when any component is focused.
@@ -1109,9 +1116,10 @@ public class EditorFrame extends JFrame
 						mapNeedsFullRedraw = false;
 					}
 
-					mapEditingPanel.repaint();
 					// Tell the scroll pane to update itself.
 					mapEditingPanel.revalidate();
+					mapEditingPanel.repaint();
+					
 					isMapReadyForInteractions = true;
 				}
 				else

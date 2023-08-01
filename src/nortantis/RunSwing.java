@@ -66,6 +66,9 @@ import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.EditorFrame;
@@ -207,14 +210,15 @@ public class RunSwing
 	{
 		try
 		{
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			 UIManager.setLookAndFeel( new FlatDarkLaf() );
 		}
-		catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
+		catch (Exception e)
 		{
+			System.out.println("Error while setting look and feel: " + e.getMessage());
 			e.printStackTrace();
 		}
-
-		// TODO Get this working
+				
 		final String subFolderAddedByWindowsInstaller = "app";
 		if (!Files.isDirectory(Paths.get(AssetsPath.get()))
 				&& Files.isDirectory(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get())))
@@ -434,7 +438,7 @@ public class RunSwing
 		topPanel.add(previewPanel);
 		previewPanel.setLayout(null);
 		previewPanel.setPreferredSize(new Dimension(512, 288));
-		previewPanel.setBackground(Color.WHITE);
+		previewPanel.setBorder(BorderFactory.createLineBorder(UIManager.getColor("controlShadow")));
 
 		btnPreview = new JButton("Preview");
 		btnPreview.setToolTipText("Quickly generate a low resolution map.");
