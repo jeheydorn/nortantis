@@ -356,10 +356,6 @@ public class MapCreator
 		}
 
 		double sizeMultiplier = calcSizeMultiplier(background.mapBounds.getWidth());
-		if (mapParts != null)
-		{
-			mapParts.sizeMultiplier = sizeMultiplier;
-		}
 
 		TextDrawer textDrawer = null;
 		if (mapParts == null || mapParts.textDrawer == null)
@@ -442,10 +438,6 @@ public class MapCreator
 			// include nearby hills.
 			mountainAndHillGroups = pair.getSecond();
 			pair = null;
-			if (mapParts != null)
-			{
-				mapParts.mountainGroups = mountainGroups;
-			}
 		}
 		else
 		{
@@ -493,8 +485,6 @@ public class MapCreator
 		{
 			Logger.println("Adding mountains and hills.");
 			iconDrawer.addMountainsAndHills(mountainGroups, mountainAndHillGroups);
-			if (mapParts != null)
-				mapParts.mountainGroups = mountainGroups;
 
 			Logger.println("Adding sand dunes.");
 			iconDrawer.addSandDunes();
@@ -504,11 +494,6 @@ public class MapCreator
 
 			Logger.println("Adding cities.");
 			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
-
-			if (mapParts != null)
-			{
-				mapParts.cityDrawTasks = cities;
-			}
 		}
 
 		if (settings.drawRoads)
@@ -592,9 +577,16 @@ public class MapCreator
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
-		// Call drawText below regardless of settings.drawText to create the
-		// MapText objects even when text is not shown.
-		textDrawer.drawText(graph, map, landBackground, mountainGroups, cities);
+		if (settings.edits.text.size() > 0)
+		{
+			textDrawer.drawTextFromEdits(graph, map, landBackground);
+		}
+		else
+		{
+			// Call drawText below regardless of settings.drawText to create the
+			// MapText objects even when text is not shown.
+			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
+		}
 		landBackground = null;
 
 		if (settings.drawBorder)

@@ -203,7 +203,19 @@ public class TextDrawer
 		return result;
 	}
 	
-	public void drawText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground,
+	public void drawTextFromEdits(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground)
+	{
+		if (this.landAndOceanBackground == null)
+		{
+			this.landAndOceanBackground = landAndOceanBackground;
+		}
+		
+		drawTextFromEdits(map, graph);
+		
+		this.landAndOceanBackground = null;
+	}
+	
+	public void generateText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground,
 			List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{				
 		if (this.landAndOceanBackground == null)
@@ -211,22 +223,16 @@ public class TextDrawer
 			this.landAndOceanBackground = landAndOceanBackground;
 		}
 
-		if (settings.edits.text.size() > 0)
-		{
-			// Text has already been generated and the user has opened the panel to modify it.
-			drawUserModifiedText(map, graph);
-		}
-		else
-		{
-			cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());;
+		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());;
 
-			if (mountainRanges == null)
-			{
-				mountainRanges = new ArrayList<>(0);
-			}
-			generateText(map, graph, mountainRanges, cityDrawTasks);
+		if (mountainRanges == null)
+		{
+			mountainRanges = new ArrayList<>(0);
 		}
 		
+		generateText(map, graph, mountainRanges, cityDrawTasks);
+		
+		this.landAndOceanBackground = null;
 	}
 	
 	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
@@ -360,7 +366,7 @@ public class TextDrawer
 	 * @param graph
 	 * @param g
 	 */
-	public synchronized void drawUserModifiedText(BufferedImage map, WorldGraph graph)
+	private synchronized void drawTextFromEdits(BufferedImage map, WorldGraph graph)
 	{
 		Graphics2D g = map.createGraphics();
 

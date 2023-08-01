@@ -265,8 +265,7 @@ public class TextTool extends EditorTool
 		try
 		{
 			parent.settings.drawText = true;
-			parent.mapParts.textDrawer.drawText(parent.mapParts.graph, mapWithText, parent.mapParts.landBackground, 
-					parent.mapParts.mountainGroups, parent.mapParts.cityDrawTasks);
+			parent.mapParts.textDrawer.drawTextFromEdits(parent.mapParts.graph, mapWithText, parent.mapParts.landBackground);
 		}
 		catch (Exception e)
 		{

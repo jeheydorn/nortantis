@@ -185,14 +185,6 @@ public class Background
 					}
 				}
 			}
-			else
-			{
-				// Transparent background
-				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-				land = ImageHelper.createWhiteTransparentImage((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
-				ocean = land;
-				landGeneratedBackground = land;
-			}
 			
 			if (settings.drawRegionColors)
 			{

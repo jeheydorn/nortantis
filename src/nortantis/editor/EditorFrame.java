@@ -1240,14 +1240,6 @@ public class EditorFrame extends JFrame
 		}
 
 		// Erase text
-		if (mapParts.textDrawer == null)
-		{
-			// The text tool has not been opened. Draw the text once so we can
-			// erase it.
-			mapParts.textDrawer = new TextDrawer(settings, MapCreator.calcSizeMultiplier(mapParts.graph.getWidth()));
-			mapParts.textDrawer.drawText(mapParts.graph, ImageHelper.deepCopy(mapParts.landBackground), mapParts.landBackground,
-					mapParts.mountainGroups, mapParts.cityDrawTasks);
-		}
 		for (MapText text : settings.edits.text)
 		{
 			text.value = "";

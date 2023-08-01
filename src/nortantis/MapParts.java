@@ -19,22 +19,17 @@ public class MapParts
 	public WorldGraph graph;
 	
 	/**
-	 * Used only as an output during map creation.
+	 *  Input and output.
 	 */
 	public BufferedImage landBackground;
-	
-	/**
-	 * Used only as an output during map creation.
-	 */
-	public List<Set<Center>> mountainGroups;
-	
+		
 	/**
 	 * Used only as an output during map creation.
 	 */
 	public TextDrawer textDrawer;
 	
 	/*
-	 * Input and output. But regionColors will be generated each time.
+	 * Input and output.
 	 */
 	public Background background;
 	
@@ -42,15 +37,6 @@ public class MapParts
 	 * Input and output.
 	 */
 	public IconDrawer iconDrawer;
-	
-	/**
-	 * Used only as an output during map creation.
-	 */
-	public double sizeMultiplier;
-	
-	/**
-	 * Used only as an output during map creation;
-	 */
-	public List<IconDrawTask> cityDrawTasks;
+
 	
 }
