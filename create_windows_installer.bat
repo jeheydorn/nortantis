@@ -6,6 +6,7 @@ MKDIR %inputFolder%
 Xcopy "assets" "%inputFolder%/assets" /E /I
 DEL "%inputFolder%\assets\books\SSA *"
 copy Nortantis.jar %inputFolder%/Nortantis.jar
+DEL "Nortantis-*.msi"
 
 jpackage ^
 --input "%inputFolder%" ^
