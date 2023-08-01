@@ -41,4 +41,3 @@ temp.properties
 /unit test files/expected maps/*
 /unit test files/failed maps
 /unit test files/failed maps/*
-*.msi
