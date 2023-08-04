@@ -3,7 +3,7 @@ package nortantis;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
-import hoten.geom.Point;
+import nortantis.graph.geom.Point;
 
 /**
  * Stores things needed to draw an icon onto the map.
@@ -59,12 +59,12 @@ class IconDrawTask implements Comparable<IconDrawTask>
 		return new Area(new java.awt.Rectangle((int)(centerLoc.x - scaledWidth/2.0), (int)(centerLoc.y - scaledHeight/2.0), scaledWidth, scaledHeight));
 	}
 	
-	public hoten.geom.Rectangle createBounds()
+	public nortantis.graph.geom.Rectangle createBounds()
 	{
-		return new hoten.geom.Rectangle(centerLoc.x - scaledWidth/2.0, centerLoc.y - scaledHeight/2.0, scaledWidth, scaledHeight);
+		return new nortantis.graph.geom.Rectangle(centerLoc.x - scaledWidth/2.0, centerLoc.y - scaledHeight/2.0, scaledWidth, scaledHeight);
 	}
 	
-	public boolean overlaps(hoten.geom.Rectangle bounds)
+	public boolean overlaps(nortantis.graph.geom.Rectangle bounds)
 	{
 		return createBounds().overlaps(bounds);
 	}

@@ -26,15 +26,15 @@ import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
-import hoten.geom.Point;
-import hoten.geom.Rectangle;
-import hoten.voronoi.Center;
-import hoten.voronoi.Corner;
-import hoten.voronoi.Edge;
-import hoten.voronoi.NoisyEdges;
-import hoten.voronoi.VoronoiGraph;
-import hoten.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.MapSettings.LineStyle;
+import nortantis.graph.geom.Point;
+import nortantis.graph.geom.Rectangle;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Corner;
+import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.NoisyEdges;
+import nortantis.graph.voronoi.VoronoiGraph;
+import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 

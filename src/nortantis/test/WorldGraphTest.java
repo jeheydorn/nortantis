@@ -5,9 +5,9 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import hoten.geom.Point;
 import nortantis.PolarCoordinate;
 import nortantis.WorldGraph;
+import nortantis.graph.geom.Point;
 
 public class WorldGraphTest 
 {	

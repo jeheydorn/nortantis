@@ -19,16 +19,16 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import hoten.geom.Point;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterIconType;
-import nortantis.editor.CenterTrees;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.MapEdits;
-import nortantis.editor.RegionEdit;
+import nortantis.graph.geom.Point;
+import nortantis.swing.CenterEdit;
+import nortantis.swing.CenterIcon;
+import nortantis.swing.CenterIconType;
+import nortantis.swing.CenterTrees;
+import nortantis.swing.EdgeEdit;
+import nortantis.swing.MapEdits;
+import nortantis.swing.RegionEdit;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 

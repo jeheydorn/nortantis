@@ -18,14 +18,14 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
-import hoten.geom.Point;
-import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterIconType;
-import nortantis.editor.CenterTrees;
-import nortantis.editor.EdgeEdit;
-import nortantis.editor.MapEdits;
-import nortantis.editor.RegionEdit;
+import nortantis.graph.geom.Point;
+import nortantis.swing.CenterEdit;
+import nortantis.swing.CenterIcon;
+import nortantis.swing.CenterIconType;
+import nortantis.swing.CenterTrees;
+import nortantis.swing.EdgeEdit;
+import nortantis.swing.MapEdits;
+import nortantis.swing.RegionEdit;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
 import nortantis.util.Logger;
@@ -76,8 +76,6 @@ public class MapSettings implements Serializable
 	public Color landColor;
 	public int generatedWidth;
 	public int generatedHeight;
-	public String landBackgroundImage;
-	public String oceanBackgroundImage;
 	public int hueRange;
 	public int saturationRange;
 	public int brightnessRange;
@@ -198,8 +196,6 @@ public class MapSettings implements Serializable
 		root.put("landColor", colorToString(landColor));
 		root.put("generatedWidth", generatedWidth);
 		root.put("generatedHeight", generatedHeight);
-		root.put("landBackgroundImage", landBackgroundImage);
-		root.put("oceanBackgroundImage", oceanBackgroundImage);
 		
 		// Region settings
 		root.put("drawRegionColors", drawRegionColors);
@@ -423,16 +419,7 @@ public class MapSettings implements Serializable
 		landColor = parseColor((String) root.get("landColor"));
 		generatedWidth = (int) (long) root.get("generatedWidth");
 		generatedHeight = (int) (long) root.get("generatedHeight");
-		
-		if (root.containsKey("landBackgroundImage"))
-		{
-			landBackgroundImage = (String) root.get("landBackgroundImage");
-		}
-		if (root.containsKey("oceanBackgroundImage"))
-		{
-			oceanBackgroundImage = (String) root.get("oceanBackgroundImage");
-		}
-		
+				
 		drawRegionColors = (boolean) root.get("drawRegionColors");
 		regionsRandomSeed = (long) root.get("regionsRandomSeed");
 		hueRange = (int) (long) root.get("hueRange");
@@ -678,8 +665,6 @@ public class MapSettings implements Serializable
 		landColor = old.landColor;
 		generatedWidth = old.generatedWidth;
 		generatedHeight = old.generatedHeight;
-		landBackgroundImage = old.landBackgroundImage;
-		oceanBackgroundImage = old.oceanBackgroundImage;
 		hueRange = old.hueRange;
 		saturationRange = old.saturationRange;
 		brightnessRange = old.brightnessRange;

@@ -4,8 +4,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import hoten.geom.Point;
 import nortantis.PolarCoordinate;
+import nortantis.graph.geom.Point;
 
 public class PolarCoordinateTest
 {

@@ -2,7 +2,7 @@ package nortantis.test;
 
 import org.junit.Test;
 
-import hoten.voronoi.VoronoiGraph;
+import nortantis.graph.voronoi.VoronoiGraph;
 
 public class VoronoiGraphTest 
 {	

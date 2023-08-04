@@ -1,6 +1,6 @@
 package nortantis;
 
-import hoten.geom.Point;
+import nortantis.graph.geom.Point;
 
 public class PolarCoordinate 
 {

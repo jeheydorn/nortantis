@@ -6,7 +6,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import hoten.voronoi.Corner;
+import nortantis.graph.voronoi.Corner;
 
 public class River implements Iterable<Corner>
 {

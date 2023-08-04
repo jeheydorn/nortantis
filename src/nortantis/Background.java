@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import hoten.geom.Rectangle;
-import hoten.voronoi.Center;
+import nortantis.graph.geom.Rectangle;
+import nortantis.graph.voronoi.Center;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 

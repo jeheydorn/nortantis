@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
+import nortantis.graph.geom.Point;
+import nortantis.graph.voronoi.Center;
 
 /**
  * Represents a political region on the map.

@@ -28,10 +28,10 @@ import java.util.stream.Collectors;
 import org.apache.commons.math3.exception.NoDataException;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
-import hoten.geom.Point;
-import hoten.voronoi.Center;
-import hoten.voronoi.Corner;
-import hoten.voronoi.Edge;
+import nortantis.graph.geom.Point;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Corner;
+import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 import nortantis.util.Helper;
@@ -1471,7 +1471,7 @@ public class TextDrawer
 	 * If the given point lands within the bounding box of a piece of text, this
 	 * returns the first one found. Else null is returned.
 	 */
-	public MapText findTextPicked(hoten.geom.Point point)
+	public MapText findTextPicked(nortantis.graph.geom.Point point)
 	{
 		java.awt.Point awtPoint = point.toAwtPoint();
 		for (MapText mp : mapTexts)

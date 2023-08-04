@@ -13,8 +13,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import hoten.voronoi.Center;
-import hoten.voronoi.Edge;
+import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Edge;
 import nortantis.util.OrderlessPair;
 import nortantis.util.Range;
 

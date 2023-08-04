@@ -3,32 +3,31 @@ package nortantis.util;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
-
-import nortantis.RunSwing;
+import nortantis.swing.MainWindow;
 
 public class Logger
 {
-	
+
 	public static void println()
-	{		
-		if (RunSwing.isRunning())
+	{
+		if (MainWindow.isRunning())
 		{
 			try
 			{
 				SwingUtilities.invokeAndWait(new Runnable()
 				{
-				    @Override
-				    public void run()
-				    {
-				    	RunSwing.getConsoleOutputTextArea().append("\n");
-				    }
+					@Override
+					public void run()
+					{
+						MainWindow.getConsoleOutputTextArea().append("\n");
+					}
 				});
-			} catch (InvocationTargetException | InterruptedException e)
+			}
+			catch (InvocationTargetException | InterruptedException e)
 			{
 				e.printStackTrace();
 			}
-			
-			
+
 		}
 		else
 		{
@@ -38,19 +37,20 @@ public class Logger
 
 	public static void println(final String message)
 	{
-		if (RunSwing.isRunning())
+		if (MainWindow.isRunning())
 		{
 			try
 			{
 				SwingUtilities.invokeAndWait(new Runnable()
 				{
-				    @Override
-				    public void run()
-				    {
-				    	RunSwing.getConsoleOutputTextArea().append(message + "\n");
-				    }
+					@Override
+					public void run()
+					{
+						MainWindow.getConsoleOutputTextArea().append(message + "\n");
+					}
 				});
-			} catch (InvocationTargetException | InterruptedException e)
+			}
+			catch (InvocationTargetException | InterruptedException e)
 			{
 				e.printStackTrace();
 			}
@@ -58,6 +58,29 @@ public class Logger
 		else
 		{
 			System.out.println(message);
+		}
+	}
+
+	public static void clear()
+	{
+		if (MainWindow.isRunning())
+		{
+			try
+			{
+
+				SwingUtilities.invokeAndWait(new Runnable()
+				{
+					@Override
+					public void run()
+					{
+						MainWindow.getConsoleOutputTextArea().setText("");
+					}
+				});
+			}
+			catch (InvocationTargetException | InterruptedException e)
+			{
+				e.printStackTrace();
+			}
 		}
 	}
 }

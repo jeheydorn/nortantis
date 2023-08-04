@@ -71,8 +71,8 @@ import com.formdev.flatlaf.FlatLightLaf;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
-import nortantis.editor.EditorFrame;
-import nortantis.editor.MapEdits;
+import nortantis.swing.EditorFrame;
+import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
@@ -132,7 +132,6 @@ public class RunSwing
 	 * A flag to prevent warnings about text edits while loading settings into
 	 * the gui.
 	 */
-	boolean loadingSettings;
 	private JCheckBox chckbxDrawBoldBackground;
 	private JSlider hueSlider;
 	private JSlider saturationSlider;
@@ -2216,8 +2215,6 @@ public class RunSwing
 
 	private void loadSettingsIntoGUI(String propertiesFilePath)
 	{
-		loadingSettings = true;
-
 		MapSettings settings = new MapSettings(propertiesFilePath);
 		loadSettingsIntoGUI(settings);
 	}
@@ -2229,8 +2226,6 @@ public class RunSwing
 	 */
 	private void loadSettingsIntoGUI(MapSettings settings)
 	{
-		loadingSettings = true;
-
 		sizeSlider.setValue(settings.worldSize);
 		randomSeedTextField.setText(Long.toString(settings.randomSeed));
 		edgeLandToWaterProbSlider.setValue((int) (settings.edgeLandToWaterProbability * 100));
@@ -2347,8 +2342,6 @@ public class RunSwing
 
 		updateLastSettingsLoadedOrSaved(settings);
 		lastSettingsLoadedOrSaved.edits = Helper.deepCopy(lastSettingsLoadedOrSaved.edits);
-
-		loadingSettings = false;
 	}
 
 	private void updateLastSettingsLoadedOrSaved(MapSettings settings)

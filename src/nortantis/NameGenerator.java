@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 
 import org.junit.runner.Computer;
 
-import nortantis.nlp.CharacterNGram;
 import nortantis.util.Range;
 
 public class NameGenerator

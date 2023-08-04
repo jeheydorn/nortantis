@@ -25,9 +25,9 @@ import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
-import hoten.geom.Point;
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
+import nortantis.graph.geom.Point;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
