@@ -28,6 +28,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import nortantis.MapText;
@@ -52,6 +53,8 @@ public class TextTool extends EditorTool
 	private JPanel textTypePanel;
 	private JComboBox<TextType> textTypeComboBox;
 	private JPanel textFieldPanel;
+	private JPanel booksAndLabelPanel;
+	private JPanel booksPanel;
 	
 
 	public TextTool(MainWindow parent)
@@ -179,6 +182,18 @@ public class TextTool extends EditorTool
 		{
 			textTypeComboBox.addItem(type);				
 		}
+		
+		booksAndLabelPanel = new JPanel();
+		booksAndLabelPanel.setLayout(new BoxLayout(booksAndLabelPanel, BoxLayout.Y_AXIS));
+		
+		JLabel lblBooks = new JLabel("Books:");
+		lblBooks.setToolTipText("Selected books will be used to generate new names.");
+		booksAndLabelPanel.add(lblBooks);
+
+		booksPanel = new JPanel();
+		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(booksPanel, parent.settings);
+		booksAndLabelPanel.add(booksScrollPane);
+		toolOptionsPanel.add(booksAndLabelPanel);
 		
 		// Prevent the panel from shrinking when components are hidden.
 		toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelWidth - 25, 0)));

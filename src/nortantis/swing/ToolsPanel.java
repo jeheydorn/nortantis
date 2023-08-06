@@ -38,14 +38,14 @@ public class ToolsPanel extends JPanel
 	List<EditorTool> tools;
 	private JPanel toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
-	private JComboBox<String> zoomComboBox;
+	JComboBox<String> zoomComboBox;
 	private JComboBox<String> cityIconsSetComboBox;
 	public MapEditingPanel mapEditingPanel;
 	private List<String> zoomLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
-	private final String fitToWindowZoomLevel = "Fit to Window";
+	static final String fitToWindowZoomLevel = "Fit to Window";
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
 	private JSlider hueSlider;
@@ -202,19 +202,7 @@ public class ToolsPanel extends JPanel
 				settings.cityIconSetName);
 		
 		booksPanel.removeAll();
-		for (String book : MainWindow.getAllBooks())
-		{
-			final JCheckBox checkBox = new JCheckBox(book);
-			booksPanel.add(checkBox);
-			checkBox.setSelected(settings.books.contains(book));
-			checkBox.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-				}
-			});
-		}
+		MainWindow.createBooksCheckboxes(booksPanel, settings);
 	}
 	
 	public void getSettingsFromGUI(MapSettings settings)
@@ -281,6 +269,7 @@ public class ToolsPanel extends JPanel
 	{
 		// TODO Hide everything in the text tool options and show a message explaining that text drawing is disabled.
 		
+		// TODO Somehow access the booksAndLablePanel from TextTool.
 		
 		booksPanel.setEnabled(drawText);
 		for (Component component : booksPanel.getComponents())

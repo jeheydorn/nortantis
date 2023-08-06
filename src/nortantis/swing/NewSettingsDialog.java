@@ -1,6 +1,8 @@
 package nortantis.swing;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Random;
+import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -43,11 +46,8 @@ public class NewSettingsDialog extends JDialog
 	JSlider centerLandToWaterProbSlider;
 	private JComboBox<String> dimensionsComboBox;
 	private ImagePanel previewPanel;
-	private JTextField textRandomSeedTextField;
-	private JTextField regionsSeedTextField;
-	private JButton newRegionSeedButton;
 	private JLabel lblSize;
-	private JLabel lblEdgeLandtowaterRatio;
+	private JLabel lblEdgeLandToWaterRatio;
 	private JLabel lblCenterLandtowaterRatio;
 	private JLabel lblDimensions;
 	JPanel booksPanel;
@@ -58,6 +58,7 @@ public class NewSettingsDialog extends JDialog
 
 	public NewSettingsDialog(MainWindow mainWindow)
 	{
+		super(mainWindow, "Create New Map", Dialog.ModalityType.APPLICATION_MODAL);
 		setSize(900, 700);
 		
 		settings = SettingsGenerator.generate();
@@ -146,6 +147,7 @@ public class NewSettingsDialog extends JDialog
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
 		generatorSettingsPanel.add(rightPanel);
 		
+		// TODO Add buttons for regenerating theme or land.
 		
 		lblDimensions = new JLabel("Dimensions:");
 		lblDimensions.setToolTipText(
@@ -175,12 +177,9 @@ public class NewSettingsDialog extends JDialog
 		SwingHelper.addLabelAndComponentToPanel(leftPanel, lblSize, worldSizeSlider);
 
 		
-		// TODO Continue here
-		lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
-		lblEdgeLandtowaterRatio
+		lblEdgeLandToWaterRatio = new JLabel("Edge land probability:");
+		lblEdgeLandToWaterRatio
 				.setToolTipText("The probability that a tectonic plate touching the edge of the map will be land rather than ocean.");
-		lblEdgeLandtowaterRatio.setBounds(461, 12, 239, 22);
-		terrainPanel.add(lblEdgeLandtowaterRatio);
 
 		edgeLandToWaterProbSlider = new JSlider();
 		edgeLandToWaterProbSlider.setValue(70);
@@ -188,7 +187,6 @@ public class NewSettingsDialog extends JDialog
 		edgeLandToWaterProbSlider.setPaintLabels(true);
 		edgeLandToWaterProbSlider.setMinorTickSpacing(25);
 		edgeLandToWaterProbSlider.setMajorTickSpacing(25);
-		edgeLandToWaterProbSlider.setBounds(565, 32, 245, 79);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 			for (int i = edgeLandToWaterProbSlider.getMinimum(); i < edgeLandToWaterProbSlider.getMaximum()
@@ -198,13 +196,11 @@ public class NewSettingsDialog extends JDialog
 			}
 			edgeLandToWaterProbSlider.setLabelTable(labelTable);
 		}
-		terrainPanel.add(edgeLandToWaterProbSlider);
+		SwingHelper.addLabelAndComponentToPanel(rightPanel, lblCenterLandtowaterRatio, edgeLandToWaterProbSlider);
 
 		lblCenterLandtowaterRatio = new JLabel("Center land probability:");
 		lblCenterLandtowaterRatio
 				.setToolTipText("The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.");
-		lblCenterLandtowaterRatio.setBounds(461, 111, 254, 22);
-		terrainPanel.add(lblCenterLandtowaterRatio);
 
 		centerLandToWaterProbSlider = new JSlider();
 		centerLandToWaterProbSlider.setValue(70);
@@ -212,7 +208,6 @@ public class NewSettingsDialog extends JDialog
 		centerLandToWaterProbSlider.setPaintLabels(true);
 		centerLandToWaterProbSlider.setMinorTickSpacing(25);
 		centerLandToWaterProbSlider.setMajorTickSpacing(25);
-		centerLandToWaterProbSlider.setBounds(565, 131, 245, 79);
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 			for (int i = centerLandToWaterProbSlider.getMinimum(); i < centerLandToWaterProbSlider.getMaximum()
@@ -222,9 +217,17 @@ public class NewSettingsDialog extends JDialog
 			}
 			centerLandToWaterProbSlider.setLabelTable(labelTable);
 		}
-		terrainPanel.add(centerLandToWaterProbSlider);
+		SwingHelper.addLabelAndComponentToPanel(rightPanel, lblCenterLandtowaterRatio, centerLandToWaterProbSlider);
 
+		
+		JLabel lblBooks = new JLabel("Books:");
+		lblBooks.setToolTipText("Selected books will be used to generate new names.");
+		leftPanel.add(lblBooks);
 
+		booksPanel = new JPanel();
+		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(booksPanel, settings);
+		leftPanel.add(booksScrollPane);
+		
 		
 		// TODO decide if I want these sliders.
 //		lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
@@ -274,17 +277,7 @@ public class NewSettingsDialog extends JDialog
 //			centerLandToWaterProbSlider.setLabelTable(labelTable);
 //		}
 //		terrainPanel.add(centerLandToWaterProbSlider);
-		
-		// TODO Consolidate this into a method and re-use it in the Text tool for adding text.
-		JLabel lblBooks = new JLabel("Books:");
-		lblBooks.setToolTipText("Selected books will be used to generate new names.");
 
-		JScrollPane booksScrollPane = new JScrollPane();
-		fontsPane.add(booksScrollPane);
-
-		booksPanel = new JPanel();
-		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
-		booksScrollPane.setViewportView(booksPanel);
 				
 	}
 	
@@ -296,6 +289,28 @@ public class NewSettingsDialog extends JDialog
 	private MapSettings getSettingsFromGUI()
 	{
 		// TODO
+		MapSettings resultSettings = settings.deepCopy();
+		resultSettings.worldSize = worldSizeSlider.getValue();
+		resultSettings.randomSeed = Long.parseLong(randomSeedTextField.getText());
+		resultSettings.edgeLandToWaterProbability = edgeLandToWaterProbSlider.getValue() / 100.0;
+		resultSettings.centerLandToWaterProbability = centerLandToWaterProbSlider.getValue() / 100.0;
+		
+		Dimension generatedDimensions = getGeneratedBackgroundDimensionsFromGUI();
+		resultSettings.generatedWidth = (int) generatedDimensions.getWidth();
+		resultSettings.generatedHeight = (int) generatedDimensions.getHeight();
+		
+		resultSettings.books = new TreeSet<>();
+		for (Component component : booksPanel.getComponents())
+		{
+			if (component instanceof JCheckBox)
+			{
+				JCheckBox checkBox = (JCheckBox) component;
+				if (checkBox.isSelected())
+					resultSettings.books.add(checkBox.getText());
+			}
+		}
+		
+		return resultSettings;
 	}
 	
 	private Dimension getGeneratedBackgroundDimensionsFromGUI()

@@ -86,8 +86,6 @@ import nortantis.RunSwing;
 import nortantis.SettingsGenerator;
 import nortantis.TextDrawer;
 import nortantis.UserPreferences;
-import nortantis.controller.MainController;
-import nortantis.controller.MainWindow;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -128,7 +126,6 @@ public class MainWindow extends JFrame
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	public boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
-	MapSettings settings;
 	private JMenu imageQualityMenu;
 	private JRadioButtonMenuItem radioButton75Percent;
 	private JRadioButtonMenuItem radioButton100Percent;
@@ -139,34 +136,41 @@ public class MainWindow extends JFrame
 	public MainWindow(String fileToOpen)
 	{
 		super(frameTitleBase);
+
 		createGUI();
 
+		MapSettings settings;
 		try
 		{
 			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) 
 					&& new File(fileToOpen).exists())
 			{
-				loadSettingsIntoGUI(fileToOpen);
+				settings = new MapSettings(fileToOpen);
 				openSettingsFilePath = Paths.get(fileToOpen);
 				updateFrameTitle();
 			}
 			else if (Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
 			{
-				loadSettingsIntoGUI(UserPreferences.getInstance().lastLoadedSettingsFile);
+				settings = new MapSettings(UserPreferences.getInstance().lastLoadedSettingsFile);
 				openSettingsFilePath = Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile);
 				updateFrameTitle();
 			}
 			else
 			{
-				generateAndloadNewSettings();
+				settings = SettingsGenerator.generate();
 			}
 		}
 		catch (Exception e)
 		{
 			// This means they moved their settings or their settings were
 			// corrupted somehow. Load the defaults.
-			generateAndloadNewSettings();
+			settings = SettingsGenerator.generate();
 		}
+		
+		loadSettingsIntoGUI(settings);
+		
+		// TODO Make the undoer settings based instead of edits based.
+		undoer = new Undoer(settings, this);
 		
 		hadEditsAtStartup = !settings.edits.isEmpty();
 		if (settings.edits.isEmpty())
@@ -187,7 +191,7 @@ public class MainWindow extends JFrame
 
 	}
 	
-	private void createGUI(final MapSettings settings)
+	private void createGUI()
 	{
 		getContentPane().setLayout(new BorderLayout());
 
@@ -234,7 +238,6 @@ public class MainWindow extends JFrame
 			}
 		});
 		
-		final MainWindow thisFrame = this;
 		setSize(1122, 701);
 		
 		createMenuBar();
@@ -249,17 +252,22 @@ public class MainWindow extends JFrame
 
 		frame.pack();
 		
-		undoer = new Undoer(settings, this);
 		undoer.updateUndoRedoEnabled();
 		
 		drawLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
 
-		toolsPanel.handleToolSelected(currentTool);
+		toolsPanel.handleToolSelected(toolsPanel.currentTool);
 		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
 		updateDisplayedMapFromGeneratedMap(false);
 		mapEditingPanel.repaint();
 		handleImageQualityChange(UserPreferences.getInstance().editorImageQuality);
+	}
+	
+	private void launchNewSettingsDialog()
+	{
+		NewSettingsDialog dialog = new NewSettingsDialog(this);
+		dialog.setVisible(true);
 	}
 	
 	private void createThemePanel()
@@ -276,13 +284,14 @@ public class MainWindow extends JFrame
 	
 	private void createConsoleOutput()
 	{
-		// TODO Either use a JSplitPane or create this in a separate popup.
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(10, 417, 389, 260);
-		topPanel.add(scrollPane);
 		txtConsoleOutput = new JTextArea();
 		scrollPane.setViewportView(txtConsoleOutput);
 		txtConsoleOutput.setEditable(false);
+		
+		// TODO Add the scrollPane somewhere.
+		// TODO Either use a JSplitPane or create this in a separate popup.
 	}
 	
 	private void createMapEditingPanel()
@@ -387,7 +396,7 @@ public class MainWindow extends JFrame
 		{
 			public void componentResized(ComponentEvent componentEvent)
 			{
-				if (fitToWindowZoomLevel.equals(toolsPanel.getZoomString()))
+				if (ToolsPanel.fitToWindowZoomLevel.equals(toolsPanel.getZoomString()))
 				{
 					createAndShowMapIncrementalUsingCenters(null);
 				}
@@ -413,7 +422,7 @@ public class MainWindow extends JFrame
 				boolean cancelPressed = checkForUnsavedChanges();
 				if (!cancelPressed)
 				{
-					generateAndloadNewSettings();
+					launchNewSettingsDialog();
 				}
 			}
 		});
@@ -452,7 +461,8 @@ public class MainWindow extends JFrame
 				if (status == JFileChooser.APPROVE_OPTION)
 				{
 					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
-					loadSettingsIntoGUI(fileChooser.getSelectedFile().getAbsolutePath());
+					MapSettings settings = new MapSettings(openSettingsFilePath.toString());
+					loadSettingsIntoGUI(settings);
 					updateFrameTitle();
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
@@ -493,17 +503,16 @@ public class MainWindow extends JFrame
 			}
 		});
 		
-		// TODO Conver this to a PNG export workflow
-		btnGenerate = new JButton("Generate");
-		btnGenerate.setToolTipText("Generate a map with the settings above.");
-		btnGenerate.setBounds(0, 0, 112, 25);
-		generatePanel.add(btnGenerate);
-		btnGenerate.addActionListener(new ActionListener()
+		// TODO Convert this to a PNG export workflow
+		JMenuItem mntmExportMapAsImage = new JMenuItem("Export map as image");
+		fileMenu.add(mntmExportMapAsImage);
+		mntmExportMapAsImage.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				btnGenerate.setEnabled(false);
-				btnPreview.setEnabled(false);
+				// TODO Show a dialog that prompts for resolution. Make it modal to prevent other map generation stuff while it's happening.
+				// TODO Maybe also prevent it from running while the map is drawing.
+				
 				final MapSettings settings = getSettingsFromGUI();
 
 				txtConsoleOutput.setText("");
@@ -534,8 +543,6 @@ public class MainWindow extends JFrame
 						{
 							handleBackgroundThreadException(ex);
 						}
-						btnGenerate.setEnabled(true);
-						btnPreview.setEnabled(true);
 					}
 				};
 				worker.execute();
@@ -550,8 +557,9 @@ public class MainWindow extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				btnGenerate.setEnabled(false);
-				btnPreview.setEnabled(false);
+				// TODO Show a dialog that prompts for resolution. Make it modal to prevent other map generation stuff while it's happening.
+				// TODO Maybe also prevent it from running while the map is drawing.
+				
 				showHeightMapWithEditsWarning();
 
 				txtConsoleOutput.setText("");
@@ -580,8 +588,6 @@ public class MainWindow extends JFrame
 						{
 							handleBackgroundThreadException(ex);
 						}
-						btnGenerate.setEnabled(true);
-						btnPreview.setEnabled(true);
 					}
 				};
 				worker.execute();
@@ -589,29 +595,7 @@ public class MainWindow extends JFrame
 			}
 
 		});
-
-		editorMenu = new JMenu("Editor");
-		menuBar.add(editorMenu);
-
-		clearEditsMenuItem = new JMenuItem("Clear Edits");
-		clearEditsMenuItem.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent arg0)
-			{
-				int n = JOptionPane.showConfirmDialog(frame, "All map edits will be deleted. Do you wish to continue?", "",
-						JOptionPane.YES_NO_OPTION);
-				if (n == JOptionPane.YES_OPTION)
-				{
-					edits = new MapEdits();
-					updateFieldsWhenEditsChange();
-				}
-			}
-		});
-		editorMenu.add(clearEditsMenuItem);
 		
-		// Start of menu options originally from editor window:
-
 		JMenu mnEdit = new JMenu("Edit");
 		menuBar.add(mnEdit);
 
@@ -623,7 +607,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (currentTool != null)
+				if (toolsPanel.currentTool != null)
 				{
 					undoer.undo();
 				}
@@ -639,7 +623,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (currentTool != null)
+				if (toolsPanel.currentTool != null)
 				{
 					undoer.redo();
 				}
@@ -728,18 +712,18 @@ public class MainWindow extends JFrame
 		if (isMapReadyForInteractions)
 		{
 			int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
-			int newIndex = zoomComboBox.getSelectedIndex() + scrollDirection;
+			int newIndex = toolsPanel.zoomComboBox.getSelectedIndex() + scrollDirection;
 			if (newIndex < 0)
 			{
 				newIndex = 0;
 			}
-			else if (newIndex > zoomComboBox.getItemCount() - 1)
+			else if (newIndex > toolsPanel.zoomComboBox.getItemCount() - 1)
 			{
-				newIndex = zoomComboBox.getItemCount() - 1;
+				newIndex = toolsPanel.zoomComboBox.getItemCount() - 1;
 			}
-			if (newIndex != zoomComboBox.getSelectedIndex())
+			if (newIndex != toolsPanel.zoomComboBox.getSelectedIndex())
 			{
-				zoomComboBox.setSelectedIndex(newIndex);
+				toolsPanel.zoomComboBox.setSelectedIndex(newIndex);
 				updateDisplayedMapFromGeneratedMap(true);
 			}
 		}
@@ -748,7 +732,7 @@ public class MainWindow extends JFrame
 	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged)
 	{
 		double oldZoom = zoom;
-		zoom = translateZoomLevel((String) zoomComboBox.getSelectedItem());
+		zoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
 				
 		if (mapEditingPanel.mapFromMapCreator != null)
 		{
@@ -810,7 +794,7 @@ public class MainWindow extends JFrame
 		{
 			return 1.0;
 		}
-		else if (zoomLevel.equals(fitToWindowZoomLevel))
+		else if (zoomLevel.equals(ToolsPanel.fitToWindowZoomLevel))
 		{
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
@@ -998,11 +982,11 @@ public class MainWindow extends JFrame
 
 	private Set<Center> getCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		Set<Center> changedCenters = settings.edits.centerEdits.stream()
+		Set<Center> changedCenters = edits.centerEdits.stream()
 				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
 				.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
 
-		Set<RegionEdit> regionChanges = settings.edits.regionEdits.values().stream()
+		Set<RegionEdit> regionChanges = edits.regionEdits.values().stream()
 				.filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
 		for (RegionEdit rEdit : regionChanges)
 		{
@@ -1017,7 +1001,7 @@ public class MainWindow extends JFrame
 
 	private Set<Edge> getEdgesWithChangesInEdits(MapEdits changeEdits)
 	{
-		return settings.edits.edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
+		return edits.edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
 				.map(eEdit -> mapParts.graph.edges.get(eEdit.index)).collect(Collectors.toSet());
 	}
 
@@ -1317,19 +1301,7 @@ public class MainWindow extends JFrame
 		settings.drawBorder = false;
 		settings.alwaysUpdateLandBackgroundWithOcean = true;
 	}
-	
-	private void generateAndloadNewSettings()
-	{
-		openSettingsFilePath = null;
-		MapSettings randomSettings = SettingsGenerator.generate();
-		loadSettingsIntoGUI(randomSettings);
-		updateFrameTitle();
-		updateBackgroundImageDisplays();
-		UserPreferences.getInstance().lastLoadedSettingsFile = "";
-		previewPanel.setImage(null);
-		previewPanel.repaint();
-	}
-	
+		
 	void handleBackgroundThreadException(Exception ex)
 	{
 		if (ex instanceof ExecutionException)
@@ -1675,5 +1647,28 @@ public class MainWindow extends JFrame
 		}
 		Collections.sort(result);
 		return result;
+	}
+	
+	public static JScrollPane createBooksScrollPane(JPanel booksPanel, MapSettings settings)
+	{
+		JScrollPane booksScrollPane = new JScrollPane();
+
+		booksPanel.removeAll();
+		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
+		booksScrollPane.setViewportView(booksPanel);
+		
+		createBooksCheckboxes(booksPanel, settings);
+		
+		return booksScrollPane;
+	}
+	
+	public static void createBooksCheckboxes(JPanel booksPanel, MapSettings settings)
+	{
+		for (String book : getAllBooks())
+		{
+			final JCheckBox checkBox = new JCheckBox(book);
+			booksPanel.add(checkBox);
+			checkBox.setSelected(settings.books.contains(book));
+		}
 	}
 }
