@@ -359,10 +359,12 @@ public class ImageCache
 	
 	private String[] getIconGroupFileNames(IconType iconType, String groupName, String setName)
 	{
+		String groupNameToUse = groupName == null ? "" : groupName;
+		String setNameToUse = setName == null ? "" : setName;
 		return iconGroupFilesNamesCache.getOrCreate(iconType, 
-				() ->  new ConcurrentHashMapF<>()).getOrCreate(groupName == null ? "" : groupName,
-				() -> new ConcurrentHashMapF<>()).getOrCreate(setName == null ? "" : setName, 
-				() -> loadIconGroupFileNames(iconType, groupName, setName));
+				() ->  new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
+				() -> new ConcurrentHashMapF<>()).getOrCreate(setNameToUse, 
+				() -> loadIconGroupFileNames(iconType, groupNameToUse, setNameToUse));
 	}
 	
 	private static String[] loadIconGroupFileNames(IconType iconType, String groupName, String setName)

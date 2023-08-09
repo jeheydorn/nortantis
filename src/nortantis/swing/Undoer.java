@@ -13,13 +13,15 @@ public class Undoer
 	public MapEdits copyOfEditsWhenEditorWasOpened;
 	private MainWindow mainWindow;
 	private final float maxUndoLevels = 150;
+	private ToolsPanel toolsPanel;
 
-	public Undoer(MapSettings settings, MainWindow mainWindow)
+	public Undoer(MapSettings settings, MainWindow mainWindow, ToolsPanel toolsPanel)
 	{
 		undoStack = new ArrayDeque<>();
 		redoStack = new Stack<>();
 		this.settings = settings;
 		this.mainWindow = mainWindow;
+		this.toolsPanel = toolsPanel;
 	}
 	
 	/***
@@ -75,9 +77,9 @@ public class Undoer
 		
 		if (change.toolThatMadeChange != null)
 		{
-			if (mainWindow.currentTool != change.toolThatMadeChange)
+			if (toolsPanel.currentTool != change.toolThatMadeChange)
 			{
-				mainWindow.handleToolSelected(change.toolThatMadeChange);
+				toolsPanel.handleToolSelected(change.toolThatMadeChange);
 			}
 
 			change.toolThatMadeChange.onAfterUndoRedo(change);
@@ -85,10 +87,10 @@ public class Undoer
 		else
 		{
 			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
-			mainWindow.currentTool.onAfterUndoRedo(change);
+			toolsPanel.currentTool.onAfterUndoRedo(change);
 		}
 		
-		mainWindow.updateEditsPointerInRunSwing();	
+		//mainWindow.updateEditsPointerInRunSwing(); TODO	
 	}
 	
 	public void redo()
@@ -105,9 +107,9 @@ public class Undoer
 		if (change.toolThatMadeChange != null)
 		{
 			// Switch to the tool that made the change.
-			if (mainWindow.currentTool != change.toolThatMadeChange)
+			if (toolsPanel.currentTool != change.toolThatMadeChange)
 			{
-				mainWindow.handleToolSelected(change.toolThatMadeChange);
+				toolsPanel.handleToolSelected(change.toolThatMadeChange);
 			}
 			
 			change.toolThatMadeChange.onAfterUndoRedo(changeWithPrevEdits);
@@ -115,10 +117,10 @@ public class Undoer
 		else
 		{
 			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map.
-			mainWindow.currentTool.onAfterUndoRedo(changeWithPrevEdits);
+			toolsPanel.currentTool.onAfterUndoRedo(changeWithPrevEdits);
 		}
 		
-		mainWindow.updateEditsPointerInRunSwing();
+		// mainWindow.updateEditsPointerInRunSwing(); TODO
 	}
 	
 	public void updateUndoRedoEnabled()

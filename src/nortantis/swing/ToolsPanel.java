@@ -7,7 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.List;
-import java.util.TreeSet;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -18,6 +18,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
@@ -39,8 +40,6 @@ public class ToolsPanel extends JPanel
 	private JPanel toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
 	JComboBox<String> zoomComboBox;
-	private JComboBox<String> cityIconsSetComboBox;
-	public MapEditingPanel mapEditingPanel;
 	private List<String> zoomLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
@@ -51,8 +50,8 @@ public class ToolsPanel extends JPanel
 	private JSlider hueSlider;
 	private JSlider brightnessSlider;
 	private JSlider saturationSlider;
-	private JPanel booksPanel;
-
+	JPanel booksPanel;
+	String cityIconsType;
 
 	
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel)
@@ -60,7 +59,7 @@ public class ToolsPanel extends JPanel
 		this.mainWindow = mainWindow;
 		
 		// Setup tools
-		tools = Arrays.asList(new LandWaterTool(mainWindow), new IconTool(mainWindow), new TextTool(mainWindow));
+		tools = Arrays.asList(new LandWaterTool(mainWindow, this), new IconTool(mainWindow, this), new TextTool(mainWindow, this));
 		if (UserPreferences.getInstance().lastEditorTool != "")
 		{
 			for (EditorTool tool : tools)
@@ -107,10 +106,11 @@ public class ToolsPanel extends JPanel
 			toolSelectPanel.add(toolButton);
 		}
 
-		toolsOptionsPanelContainer = new JPanel();
+			toolsOptionsPanelContainer = new JPanel();
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
-		add(toolsOptionsPanelContainer);
+		JScrollPane toolsOptionsScrollPane = new JScrollPane(toolsOptionsPanelContainer);
+		add(toolsOptionsScrollPane);
 		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
 				currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
@@ -194,46 +194,43 @@ public class ToolsPanel extends JPanel
 	
 	public void loadSettingsIntoGUI(MapSettings settings)
 	{
-		hueSlider.setValue(settings.hueRange);
-		saturationSlider.setValue(settings.saturationRange);
-		brightnessSlider.setValue(settings.brightnessRange);
-		
-		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities), 
-				settings.cityIconSetName);
-		
+		// TODO put back
+//		hueSlider.setValue(settings.hueRange);
+//		saturationSlider.setValue(settings.saturationRange);
+//		brightnessSlider.setValue(settings.brightnessRange);
+				
 		booksPanel.removeAll();
-		MainWindow.createBooksCheckboxes(booksPanel, settings);
+		MainWindow.createBooksCheckboxes(booksPanel, settings.books);
+		
+		cityIconsType = settings.cityIconSetName;
 	}
 	
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		settings.hueRange = hueSlider.getValue();
-		settings.saturationRange = saturationSlider.getValue();
-		settings.brightnessRange = brightnessSlider.getValue();
+		// TODO Put back when ready
+//		settings.hueRange = hueSlider.getValue();
+//		settings.saturationRange = saturationSlider.getValue();
+//		settings.brightnessRange = brightnessSlider.getValue();
 		
-		settings.books = new TreeSet<>();
-		for (Component component : booksPanel.getComponents())
-		{
-			if (component instanceof JCheckBox)
-			{
-				JCheckBox checkBox = (JCheckBox) component;
-				if (checkBox.isSelected())
-					settings.books.add(checkBox.getText());
-			}
-		}
-
-		settings.cityIconSetName = (String) cityIconsSetComboBox.getSelectedItem();
+		settings.books = MainWindow.getSelectedBooks(booksPanel);
+		
+		settings.cityIconSetName = cityIconsType;
+	}
+	
+	public Set<String> getSelectedBooks()
+	{
+		 return MainWindow.getSelectedBooks(booksPanel);
 	}
 	
 	public void handleToolSelected(EditorTool selectedTool)
 	{
 		enableOrDisableToolToggleButtonsAndZoom(false);
 
-		mapEditingPanel.clearHighlightedCenters();
-		mapEditingPanel.clearAreasToDraw();
-		mapEditingPanel.clearSelectedCenters();
-		mapEditingPanel.clearHighlightedEdges();
-		mapEditingPanel.hideBrush();
+		mainWindow.mapEditingPanel.clearHighlightedCenters();
+		mainWindow.mapEditingPanel.clearAreasToDraw();
+		mainWindow.mapEditingPanel.clearSelectedCenters();
+		mainWindow.mapEditingPanel.clearHighlightedEdges();
+		mainWindow.mapEditingPanel.hideBrush();
 		currentTool.onSwitchingAway();
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
@@ -244,12 +241,12 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
-		if (mapEditingPanel.mapFromMapCreator != null)
+		if (mainWindow.mapEditingPanel.mapFromMapCreator != null)
 		{
 			mainWindow.updateDisplayedMapFromGeneratedMap(false);
 		}
 		currentTool.onActivate();
-		mapEditingPanel.repaint();
+		mainWindow.mapEditingPanel.repaint();
 		enableOrDisableToolToggleButtonsAndZoom(true);
 	}
 	

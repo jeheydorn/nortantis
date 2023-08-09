@@ -2,11 +2,14 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -205,12 +208,12 @@ public class SettingsGenerator
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 		
-		Dimension dimension = RunSwing.parseGenerateBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, RunSwing.getAllowedDimmensions()));
+		Dimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(ProbabilityHelper.sampleUniform(rand, getAllowedDimmensions()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
 		
 		settings.books.clear();
-		List<String> allBooks = RunSwing.getAllBooks();
+		List<String> allBooks = getAllBooks();
 		if (allBooks.size() < 3)
 		{
 			settings.books.addAll(allBooks);
@@ -239,5 +242,40 @@ public class SettingsGenerator
 		settings.regionsRandomSeed = seed;
 		settings.backgroundRandomSeed = seed;
 		settings.textRandomSeed = seed;
+	}
+	
+	public static List<String> getAllowedDimmensions()
+	{
+		List<String> result = new ArrayList<>();
+		result.add("4096 x 4096 (square)");
+		result.add("4096 x 2304 (16 by 9)");
+		result.add("4096 x 2531 (golden ratio)");
+		return result;
+	}
+	
+	public static Dimension parseGeneratedBackgroundDimensionsFromDropdown(String selected)
+	{
+		selected = selected.substring(0, selected.indexOf("("));
+		String[] parts = selected.split("x");
+		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+	}
+	
+	public static List<String> getAllBooks()
+	{
+		String[] filenames = new File(Paths.get(AssetsPath.get(), "books").toString()).list(new FilenameFilter()
+		{
+			public boolean accept(File arg0, String name)
+			{
+				return name.endsWith("_place_names.txt");
+			}
+		});
+
+		List<String> result = new ArrayList<>();
+		for (String filename : filenames)
+		{
+			result.add(filename.replace("_place_names.txt", ""));
+		}
+		Collections.sort(result);
+		return result;
 	}
 }

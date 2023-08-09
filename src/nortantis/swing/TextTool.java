@@ -17,6 +17,7 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -54,12 +55,11 @@ public class TextTool extends EditorTool
 	private JComboBox<TextType> textTypeComboBox;
 	private JPanel textFieldPanel;
 	private JPanel booksAndLabelPanel;
-	private JPanel booksPanel;
 	
 
-	public TextTool(MainWindow parent)
+	public TextTool(MainWindow parent, ToolsPanel toolsPanel)
 	{
-		super(parent);
+		super(parent, toolsPanel);
 
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
@@ -115,7 +115,6 @@ public class TextTool extends EditorTool
 		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
 				
 		{
-			JLabel actionsLabel = new JLabel("Action:");
 			ButtonGroup group = new ButtonGroup();
 		    List<JRadioButton> radioButtons = new ArrayList<>();
 		    
@@ -159,7 +158,7 @@ public class TextTool extends EditorTool
 		    deleteButton.addActionListener(listener);
 		    deleteButton.setToolTipText("Delete text (alt+D)");	
 	
-		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, actionsLabel, radioButtons);
+		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Action:", "", radioButtons);
 		}
 		
 		editTextField = new JTextFieldFixed();
@@ -172,11 +171,10 @@ public class TextTool extends EditorTool
 		textFieldPanel.add(editTextField);
 		toolOptionsPanel.add(textFieldPanel);
 		
-		JLabel lblTextType = new JLabel("Text type:");
 		
 		textTypeComboBox = new JComboBoxFixed<>();
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		textTypePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, lblTextType, textTypeComboBox);
+		textTypePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Text type:", "", textTypeComboBox);
 		
 		for (TextType type : TextType.values())
 		{
@@ -190,8 +188,8 @@ public class TextTool extends EditorTool
 		lblBooks.setToolTipText("Selected books will be used to generate new names.");
 		booksAndLabelPanel.add(lblBooks);
 
-		booksPanel = new JPanel();
-		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(booksPanel, parent.settings);
+		toolsPanel.booksPanel = new JPanel();
+		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(toolsPanel.booksPanel, getSelectedBooks());
 		booksAndLabelPanel.add(booksScrollPane);
 		toolOptionsPanel.add(booksAndLabelPanel);
 		
@@ -202,6 +200,11 @@ public class TextTool extends EditorTool
 		
 	    editButton.doClick(); 		
 		return toolOptionsPanel;
+	}
+	
+	public Set<String> getSelectedBooks()
+	{
+		 return MainWindow.getSelectedBooks(toolsPanel.booksPanel);
 	}
 	
 	private void handleActionChanged()
@@ -272,7 +275,7 @@ public class TextTool extends EditorTool
 	private void updateTextInBackgroundThread(final MapText selectedText)
 	{
 		textToSelectAfterDraw = selectedText;
-		parent.createAndShowMapIncrementalUsingCenters(null);
+		mainWindow.createAndShowMapIncrementalUsingCenters(null);
 	}
 	
 	private BufferedImage drawMapWithText()
@@ -280,17 +283,12 @@ public class TextTool extends EditorTool
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
 		try
 		{
-			parent.settings.drawText = true;
-			parent.mapParts.textDrawer.drawTextFromEdits(parent.mapParts.graph, mapWithText, parent.mapParts.landBackground);
+			mainWindow.mapParts.textDrawer.drawTextFromEdits(mainWindow.mapParts.graph, mapWithText, mainWindow.mapParts.landBackground);
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 	        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-		}
-		finally
-		{
-			parent.settings.drawText = false;
 		}
 		
 		return mapWithText;
@@ -302,7 +300,7 @@ public class TextTool extends EditorTool
 		if (moveButton.isSelected())
 		{
 			// Begin a drag and drop of a text box.
-			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
@@ -313,7 +311,7 @@ public class TextTool extends EditorTool
 		}
 		else if (rotateButton.isSelected())
 		{
-			lastSelected = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			lastSelected = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (lastSelected != null)
 			{
 				// Region and title names cannot be rotated.
@@ -334,7 +332,7 @@ public class TextTool extends EditorTool
 		}
 		else if (deleteButton.isSelected())
 		{
-			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				selectedText.value = "";
@@ -344,9 +342,9 @@ public class TextTool extends EditorTool
 		}
 		else if (addButton.isSelected())
 		{
-			MapText addedText = parent.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
+			MapText addedText = mainWindow.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 					getPointOnGraph(e.getPoint()));
-			parent.settings.edits.text.add(addedText);
+			mainWindow.edits.text.add(addedText);
 			
 			undoer.setUndoPoint(this);
 			updateTextInBackgroundThread(null);
@@ -357,7 +355,7 @@ public class TextTool extends EditorTool
 			{
 				editTextField.grabFocus();
 			}
-			MapText selectedText = parent.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			handleTextEdit(selectedText);
 		}
 	}
@@ -423,8 +421,8 @@ public class TextTool extends EditorTool
 			if (moveButton.isSelected())
 			{
 				// The user dragged and dropped text.
-				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/parent.zoom)), 
-						(int)((e.getY() - mousePressedLocation.y) * (1.0/parent.zoom)));
+				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/mainWindow.zoom)), 
+						(int)((e.getY() - mousePressedLocation.y) * (1.0/mainWindow.zoom)));
 				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
 				undoer.setUndoPoint(this);
@@ -432,8 +430,8 @@ public class TextTool extends EditorTool
 			}
 			else if (rotateButton.isSelected())
 			{
-				double centerX = lastSelected.location.x / (1.0/parent.zoom);
-				double centerY = lastSelected.location.y / (1.0/parent.zoom);
+				double centerX = lastSelected.location.x / (1.0/mainWindow.zoom);
+				double centerY = lastSelected.location.y / (1.0/mainWindow.zoom);
 				double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
 				// No upside-down text.
 				if (angle > Math.PI/2)
@@ -517,7 +515,7 @@ public class TextTool extends EditorTool
 		
 		if (change.updateType == UpdateType.Full)
 		{
-			parent.createAndShowMapFull();
+			mainWindow.createAndShowMapFull();
 		}
 		else
 		{

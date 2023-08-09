@@ -5,9 +5,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
+import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -22,33 +22,23 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultFocusManager;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -57,18 +47,13 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
-import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
-import javax.swing.Timer;
 import javax.swing.UIManager;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
@@ -82,19 +67,14 @@ import nortantis.MapCreator;
 import nortantis.MapParts;
 import nortantis.MapSettings;
 import nortantis.MapText;
-import nortantis.RunSwing;
 import nortantis.SettingsGenerator;
 import nortantis.TextDrawer;
 import nortantis.UserPreferences;
-import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
-import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
-import nortantis.util.JComboBoxFixed;
 import nortantis.util.Logger;
-import nortantis.util.Tuple2;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame
@@ -103,7 +83,6 @@ public class MainWindow extends JFrame
 	Path openSettingsFilePath;
 	private boolean forceSaveAs;
 	MapSettings lastSettingsLoadedOrSaved;
-	public JFrame frame;
 	static final String frameTitleBase = "Nortantis Fantasy Map Generator";
 	public MapEdits edits;
 	public JMenuItem clearEditsMenuItem;
@@ -116,7 +95,6 @@ public class MainWindow extends JFrame
 	JMenuItem undoButton;
 	JMenuItem redoButton;
 	private JMenuItem clearEntireMapButton;
-	private boolean hadEditsAtStartup;
 	public boolean isMapReadyForInteractions;
 	public Undoer undoer;
 	MapParts mapParts;
@@ -132,6 +110,7 @@ public class MainWindow extends JFrame
 	private JRadioButtonMenuItem radioButton125Percent;
 	private ThemePanel themePanel;
 	private ToolsPanel toolsPanel;
+	private double resolutionForImageExport;
 		
 	public MainWindow(String fileToOpen)
 	{
@@ -139,7 +118,7 @@ public class MainWindow extends JFrame
 
 		createGUI();
 
-		MapSettings settings;
+		MapSettings settings = null;
 		try
 		{
 			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot) 
@@ -149,56 +128,41 @@ public class MainWindow extends JFrame
 				openSettingsFilePath = Paths.get(fileToOpen);
 				updateFrameTitle();
 			}
-			else if (Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
+			else if (!UserPreferences.getInstance().lastLoadedSettingsFile.isEmpty() 
+					&& Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
 			{
 				settings = new MapSettings(UserPreferences.getInstance().lastLoadedSettingsFile);
 				openSettingsFilePath = Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile);
 				updateFrameTitle();
 			}
-			else
-			{
-				settings = SettingsGenerator.generate();
-			}
 		}
 		catch (Exception e)
 		{
-			// This means they moved their settings or their settings were
-			// corrupted somehow. Load the defaults.
-			settings = SettingsGenerator.generate();
+			// This means they moved their settings or their settings were corrupted somehow.
+			e.printStackTrace();
 		}
 		
-		loadSettingsIntoGUI(settings);
-		
-		// TODO Make the undoer settings based instead of edits based.
-		undoer = new Undoer(settings, this);
-		
-		hadEditsAtStartup = !settings.edits.isEmpty();
-		if (settings.edits.isEmpty())
+		if (settings != null)
 		{
-			// This is in case the user closes the editor before it finishes
-			// generating the first time. This
-			// assignment causes the edits being created by the generator to be
-			// discarded. This is necessary
-			// to prevent a case where there are edits but the UI doesn't
-			// realize it.
-			settings.edits = new MapEdits();
+			loadSettingsIntoGUI(settings);
 		}
-
-		if (!hadEditsAtStartup)
+		else
 		{
-			settings.edits.bakeGeneratedTextAsEdits = true;
+			// TODO make sure this message is correct.
+			mapEditingPanel.image = createPlaceholderImage("Welcome to Nortantis. To create a map, go to File > New Random Map.");
+			mapEditingPanel.repaint();
 		}
-
 	}
 	
 	private void createGUI()
 	{
+		getContentPane().setPreferredSize(new Dimension(1214, 701));
 		getContentPane().setLayout(new BorderLayout());
 
 		setIconImage(ImageHelper.read(Paths.get(AssetsPath.get(), "internal/taskbar icon.png").toString()));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		
-		frame.addWindowListener(new WindowAdapter()
+		addWindowListener(new WindowAdapter()
 		{
 			@Override
 			public void windowClosing(WindowEvent event)
@@ -217,7 +181,7 @@ public class MainWindow extends JFrame
 							UserPreferences.getInstance().lastLoadedSettingsFile = "";
 						}
 						UserPreferences.getInstance().save();
-						frame.dispose();
+						dispose();
 						System.exit(0);
 					}
 				}
@@ -234,12 +198,10 @@ public class MainWindow extends JFrame
 				// There's a bug in Windows where all of my swing components
 				// disappear when you lock the screen and unlock it.
 				// The is a fix that works most of the time.
-				frame.repaint();
+				repaint();
 			}
 		});
-		
-		setSize(1122, 701);
-		
+				
 		createMenuBar();
 		
 		createThemePanel();
@@ -250,18 +212,10 @@ public class MainWindow extends JFrame
 		
 		createConsoleOutput();
 
-		frame.pack();
-		
-		undoer.updateUndoRedoEnabled();
-		
+		pack();
+				
 		drawLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
-
-		toolsPanel.handleToolSelected(toolsPanel.currentTool);
-		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
-		updateDisplayedMapFromGeneratedMap(false);
-		mapEditingPanel.repaint();
-		handleImageQualityChange(UserPreferences.getInstance().editorImageQuality);
 	}
 	
 	private void launchNewSettingsDialog()
@@ -406,13 +360,15 @@ public class MainWindow extends JFrame
 	
 	private void createMenuBar()
 	{
+		final MainWindow mainWindow = this;
+		
 		JMenuBar menuBar = new JMenuBar();
-		frame.setJMenuBar(menuBar);
+		setJMenuBar(menuBar);
 
 		JMenu fileMenu = new JMenu("File");
 		menuBar.add(fileMenu);
 
-		final JMenuItem mntmNew = new JMenuItem("New Random Settings");
+		final JMenuItem mntmNew = new JMenuItem("New Random Map");
 		fileMenu.add(mntmNew);
 		mntmNew.addActionListener(new ActionListener()
 		{
@@ -457,7 +413,7 @@ public class MainWindow extends JFrame
 								|| f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
 					}
 				});
-				int status = fileChooser.showOpenDialog(frame);
+				int status = fileChooser.showOpenDialog(mainWindow);
 				if (status == JFileChooser.APPROVE_OPTION)
 				{
 					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
@@ -467,7 +423,7 @@ public class MainWindow extends JFrame
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(frame, FilenameUtils.getName(openSettingsFilePath.toString())
+						JOptionPane.showMessageDialog(mainWindow, FilenameUtils.getName(openSettingsFilePath.toString())
 								+ " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
 								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()), 
@@ -488,7 +444,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				saveSettings(frame);
+				saveSettings(mainWindow);
 			}
 		});
 
@@ -499,7 +455,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				saveSettingsAs(frame);
+				saveSettingsAs(mainWindow);
 			}
 		});
 		
@@ -510,42 +466,7 @@ public class MainWindow extends JFrame
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				// TODO Show a dialog that prompts for resolution. Make it modal to prevent other map generation stuff while it's happening.
-				// TODO Maybe also prevent it from running while the map is drawing.
-				
-				final MapSettings settings = getSettingsFromGUI();
-
-				txtConsoleOutput.setText("");
-				SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
-				{
-					@Override
-					public BufferedImage doInBackground() throws Exception
-					{
-						ImageCache.getInstance().clear();
-
-						BufferedImage map = new MapCreator().createMap(settings.deepCopy(), null, null);
-						System.gc();
-
-						Logger.println("Opening the map in your system's default image editor.");
-						String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-						Logger.println("Map written to " + fileName);
-						return map;
-					}
-
-					@Override
-					public void done()
-					{
-						try
-						{
-							get();
-						}
-						catch (Exception ex)
-						{
-							handleBackgroundThreadException(ex);
-						}
-					}
-				};
-				worker.execute();
+				handleExportAsImagePressed();
 			}
 		});
 		
@@ -562,13 +483,17 @@ public class MainWindow extends JFrame
 				
 				showHeightMapWithEditsWarning();
 
-				txtConsoleOutput.setText("");
+				Logger.clear();
 				SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
 				{
 					@Override
 					public BufferedImage doInBackground() throws IOException
 					{
 						MapSettings settings = getSettingsFromGUI();
+						
+						double resolutionScale = 1.0; // TODO Pull this from a setting in a new heightmap export dialog.
+						settings.resolution = resolutionScale;
+						
 						Logger.println("Creating a heightmap...");
 						BufferedImage heightMap = new MapCreator().createHeightMap(settings);
 						Logger.println("Opening the heightmap in your system's default image editor.");
@@ -600,6 +525,7 @@ public class MainWindow extends JFrame
 		menuBar.add(mnEdit);
 
 		undoButton = new JMenuItem("Undo");
+		undoButton.setEnabled(false);
 		mnEdit.add(undoButton);
 		undoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
 		undoButton.addActionListener(new ActionListener()
@@ -616,6 +542,7 @@ public class MainWindow extends JFrame
 		});
 
 		redoButton = new JMenuItem("Redo");
+		redoButton.setEnabled(false);
 		mnEdit.add(redoButton);
 		redoButton.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
 		redoButton.addActionListener(new ActionListener()
@@ -824,24 +751,6 @@ public class MainWindow extends JFrame
 			}
 		}
 	}
-
-	private void showMapChangesMessage(RunSwing runSwing)
-	{
-		if (!UserPreferences.getInstance().hideMapChangesWarning)
-		{
-			JPanel panel = new JPanel();
-			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			panel.add(new JLabel("<html>Some fields in the generator are now disabled to ensure your map remains"
-					+ "<br>compatible with your edits. If a field is disabled for this reason, a message is added"
-					+ "<br>to the field's tool tip. If you wish to enable those fields, you can either clear your "
-					+ "<br>edits (Editor > Clear Edits), or create a new random map by going to File > New.</html>"));
-			panel.add(Box.createVerticalStrut(18));
-			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-			panel.add(checkBox);
-			JOptionPane.showMessageDialog(runSwing.frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
-			UserPreferences.getInstance().hideMapChangesWarning = checkBox.isSelected();
-		}
-	}
 	
 	private void showImageQualityMessage()
 	{
@@ -1026,17 +935,28 @@ public class MainWindow extends JFrame
 
 		isMapBeingDrawn = true;
 		enableOrDisableToolToggleButtonsAndZoom(false);
-
-		if (updateType == UpdateType.Full)
+		
+		final MapSettings settings = getSettingsFromGUI();
+		settings.resolution = imageQualityScale;
+		settings.alwaysUpdateLandBackgroundWithOcean = true;
+		
+		if (settings.edits.isEmpty())
 		{
-			adjustSettingsForEditor();
+			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
+
+		// TODO remove these and draw everything
+		settings.frayedBorder = false;
+		settings.drawText = false;
+		settings.grungeWidth = 0;
+		settings.drawBorder = false;
 
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
 		{
 			@Override
 			public BufferedImage doInBackground() throws IOException
-			{
+			{				
+				Logger.clear();
 				drawLock.lock();
 				try
 				{
@@ -1092,14 +1012,14 @@ public class MainWindow extends JFrame
 				{
 					if (isCausedByOutOfMemoryError(ex))
 					{
+						ex.printStackTrace();
 						String outOfMemoryMessage = "Out of memory. Try lowering the zoom or allocating more memory to the Java heap space.";
 						JOptionPane.showMessageDialog(null, outOfMemoryMessage, "Error", JOptionPane.ERROR_MESSAGE);
-						ex.printStackTrace();
 					}
 					else
 					{
-						JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 						ex.printStackTrace();
+						JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 
@@ -1117,7 +1037,7 @@ public class MainWindow extends JFrame
 						// than when the editor frame is first created because
 						// the first time the map is drawn is when the edits are
 						// created.
-						undoer.copyOfEditsWhenEditorWasOpened = settings.edits.deepCopy();
+						undoer.copyOfEditsWhenEditorWasOpened = edits.deepCopy();
 					}
 
 					updateDisplayedMapFromGeneratedMap(false);
@@ -1202,25 +1122,25 @@ public class MainWindow extends JFrame
 
 	private void initializeCenterEditsIfEmpty()
 	{
-		if (settings.edits.centerEdits.isEmpty())
+		if (edits.centerEdits.isEmpty())
 		{
-			settings.edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);
+			edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);
 		}
 	}
 
 	private void initializeEdgeEditsIfEmpty()
 	{
-		if (settings.edits.edgeEdits.isEmpty())
+		if (edits.edgeEdits.isEmpty())
 		{
-			settings.edits.initializeEdgeEdits(mapParts.graph.edges);
+			edits.initializeEdgeEdits(mapParts.graph.edges);
 		}
 	}
 
 	private void initializeRegionEditsIfEmpty()
 	{
-		if (settings.edits.regionEdits.isEmpty())
+		if (edits.regionEdits.isEmpty())
 		{
-			settings.edits.initializeRegionEdits(mapParts.graph.regions.values());
+			edits.initializeRegionEdits(mapParts.graph.regions.values());
 		}
 	}
 
@@ -1264,7 +1184,7 @@ public class MainWindow extends JFrame
 		}
 
 		// Erase text
-		for (MapText text : settings.edits.text)
+		for (MapText text : edits.text)
 		{
 			text.value = "";
 		}
@@ -1272,34 +1192,23 @@ public class MainWindow extends JFrame
 		for (Center center : mapParts.graph.centers)
 		{
 			// Change land to ocean
-			settings.edits.centerEdits.get(center.index).isWater = true;
-			settings.edits.centerEdits.get(center.index).isLake = false;
+			edits.centerEdits.get(center.index).isWater = true;
+			edits.centerEdits.get(center.index).isLake = false;
 
 			// Erase icons
-			settings.edits.centerEdits.get(center.index).trees = null;
-			settings.edits.centerEdits.get(center.index).icon = null;
+			edits.centerEdits.get(center.index).trees = null;
+			edits.centerEdits.get(center.index).icon = null;
 
 			// Erase rivers
 			for (Edge edge : center.borders)
 			{
-				EdgeEdit eEdit = settings.edits.edgeEdits.get(edge.index);
+				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
 				eEdit.riverLevel = 0;
 			}
 		}
 
 		undoer.setUndoPoint(UpdateType.Full, null);
 		createAndShowMapFull();
-	}
-
-	private void adjustSettingsForEditor()
-	{
-		// TODO remove these
-		settings.resolution = imageQualityScale;
-		settings.frayedBorder = false;
-		settings.drawText = false;
-		settings.grungeWidth = 0;
-		settings.drawBorder = false;
-		settings.alwaysUpdateLandBackgroundWithOcean = true;
 	}
 		
 	void handleBackgroundThreadException(Exception ex)
@@ -1345,8 +1254,9 @@ public class MainWindow extends JFrame
 		return txtConsoleOutput;
 	}
 
-	private void handleExportToImagePressed()
+	private void handleExportAsImagePressed()
 	{
+		// TODO Put these UI elements somewhere.
 		JSlider scaleSlider = new JSlider();
 		scaleSlider.setPaintLabels(true);
 		scaleSlider.setBounds(131, 12, 245, 79);
@@ -1369,7 +1279,47 @@ public class MainWindow extends JFrame
 			}
 			scaleSlider.setLabelTable(labelTable);
 		}
-		backgroundPanel.add(scaleSlider);
+		
+		
+		// TODO Show a dialog that prompts for resolution. Make it modal to prevent other map generation stuff while it's happening.
+		// TODO Maybe also prevent it from running while the map is drawing.
+		
+		// TODO Pull this from the setting in the export dialog, and store it into resolutionForImageExport.
+		resolutionForImageExport = 1.0; 
+		
+		final MapSettings settings = getSettingsFromGUI();
+
+		Logger.clear();
+		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
+		{
+			@Override
+			public BufferedImage doInBackground() throws Exception
+			{
+				ImageCache.getInstance().clear();
+
+				BufferedImage map = new MapCreator().createMap(settings.deepCopy(), null, null);
+				System.gc();
+
+				Logger.println("Opening the map in your system's default image editor.");
+				String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
+				Logger.println("Map written to " + fileName);
+				return map;
+			}
+
+			@Override
+			public void done()
+			{
+				try
+				{
+					get();
+				}
+				catch (Exception ex)
+				{
+					handleBackgroundThreadException(ex);
+				}
+			}
+		};
+		worker.execute();
 	}
 	
 	private int calcMaximumResolution()
@@ -1417,21 +1367,26 @@ public class MainWindow extends JFrame
 			panel.add(Box.createVerticalStrut(18));
 			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
 			panel.add(checkBox);
-			JOptionPane.showMessageDialog(frame, panel, "", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, panel, "", JOptionPane.INFORMATION_MESSAGE);
 			UserPreferences.getInstance().hideHeightMapWithEditsWarning = checkBox.isSelected();
 		}
 	}
 
 	public boolean checkForUnsavedChanges()
 	{
+		if (lastSettingsLoadedOrSaved == null)
+		{
+			return false;
+		}
+		
 		final MapSettings currentSettings = getSettingsFromGUI();
-
+		
 		if (!currentSettings.equals(lastSettingsLoadedOrSaved))
 		{
-			int n = JOptionPane.showConfirmDialog(frame, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
+			int n = JOptionPane.showConfirmDialog(this, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
 			{
-				saveSettings(frame);
+				saveSettings(this);
 			}
 			else if (n == JOptionPane.NO_OPTION)
 			{
@@ -1518,6 +1473,7 @@ public class MainWindow extends JFrame
 			{
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
+			}
 			
 			updateFrameTitle();
 		}
@@ -1530,17 +1486,21 @@ public class MainWindow extends JFrame
 		{
 			title += " - " + FilenameUtils.getName(openSettingsFilePath.toString());
 		}
-		frame.setTitle(title);
+		setTitle(title);
 	}
 	
 	private void loadSettingsIntoGUI(MapSettings settings)
 	{
+		updateLastSettingsLoadedOrSaved(settings);
 		edits = settings.edits;
 		themePanel.loadSettingsIntoGUI(settings);
 		toolsPanel.loadSettingsIntoGUI(settings);
 		
 		updateFrameTitle();
-		updateLastSettingsLoadedOrSaved(settings);
+		
+		// TODO Make the undoer settings based instead of edits based.
+		undoer = new Undoer(settings, this, toolsPanel);
+		undoer.updateUndoRedoEnabled();
 	}
 	
 	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
@@ -1551,16 +1511,24 @@ public class MainWindow extends JFrame
 	private MapSettings getSettingsFromGUI()
 	{
 		MapSettings settings = new MapSettings();
-		settings.edits = edits; // TODO Consider getting this from the editor stuff
+		if (edits != null)
+		{
+			settings.edits = edits.deepCopy();
+		}
+		else
+		{
+			edits = new MapEdits();
+		}
+		
+		settings.resolution = resolutionForImageExport;
 		
 		// TODO get these settings from wherever I end up storing them behind the scenes
-		settings.worldSize = worldSizeSlider.getValue();
-		settings.randomSeed = Long.parseLong(randomSeedTextField.getText());
-		settings.edgeLandToWaterProbability = edgeLandToWaterProbSlider.getValue() / 100.0;
-		settings.centerLandToWaterProbability = centerLandToWaterProbSlider.getValue() / 100.0;
-		Dimension generatedDimensions = getGeneratedBackgroundDimensionsFromGUI();
-		settings.generatedWidth = (int) generatedDimensions.getWidth();
-		settings.generatedHeight = (int) generatedDimensions.getHeight();
+		settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
+		settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
+		settings.edgeLandToWaterProbability = lastSettingsLoadedOrSaved.edgeLandToWaterProbability;
+		settings.centerLandToWaterProbability = lastSettingsLoadedOrSaved.centerLandToWaterProbability;
+		settings.generatedWidth = lastSettingsLoadedOrSaved.generatedWidth;
+		settings.generatedHeight = lastSettingsLoadedOrSaved.generatedHeight;
 
 		
 		themePanel.getSettingsFromGUI(settings);
@@ -1570,10 +1538,12 @@ public class MainWindow extends JFrame
 		{
 			// Copy over any settings which do not have a UI element.
 			settings.pointPrecision = lastSettingsLoadedOrSaved.pointPrecision;
-			settings.textRandomSeed = Long.parseLong(textRandomSeedTextField.getText());
-			settings.regionsRandomSeed = Long.parseLong(regionsSeedTextField.getText());
-
+			settings.textRandomSeed = lastSettingsLoadedOrSaved.textRandomSeed;
+			settings.regionsRandomSeed = lastSettingsLoadedOrSaved.regionsRandomSeed;
+			settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
 		}
+		
+		settings.books = toolsPanel.getSelectedBooks();
 		
 		return settings;
 	}
@@ -1581,6 +1551,16 @@ public class MainWindow extends JFrame
 	public void handleColorRegionsChanged(boolean colorRegions)
 	{
 		toolsPanel.handleColorRegionsChanged(colorRegions);
+	}
+	
+	public boolean areRegionColorsVisible()
+	{
+		return themePanel.areRegionColorsVisible();
+	}
+	
+	public Color getLandColor()
+	{
+		return themePanel.getLandColor();
 	}
 	
 	public void handleDrawTextChanged(boolean drawText)
@@ -1619,7 +1599,7 @@ public class MainWindow extends JFrame
 				try
 				{
 					MainWindow mainWindow = new MainWindow(fileToOpen);
-					mainWindow.frame.setVisible(true);
+					mainWindow.setVisible(true);
 				}
 				catch (Exception e)
 				{
@@ -1629,27 +1609,7 @@ public class MainWindow extends JFrame
 		});
 	}
 	
-
-	public static List<String> getAllBooks()
-	{
-		String[] filenames = new File(Paths.get(AssetsPath.get(), "books").toString()).list(new FilenameFilter()
-		{
-			public boolean accept(File arg0, String name)
-			{
-				return name.endsWith("_place_names.txt");
-			}
-		});
-
-		List<String> result = new ArrayList<>();
-		for (String filename : filenames)
-		{
-			result.add(filename.replace("_place_names.txt", ""));
-		}
-		Collections.sort(result);
-		return result;
-	}
-	
-	public static JScrollPane createBooksScrollPane(JPanel booksPanel, MapSettings settings)
+	public static JScrollPane createBooksScrollPane(JPanel booksPanel, Set<String> selectedBooks)
 	{
 		JScrollPane booksScrollPane = new JScrollPane();
 
@@ -1657,18 +1617,49 @@ public class MainWindow extends JFrame
 		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
 		booksScrollPane.setViewportView(booksPanel);
 		
-		createBooksCheckboxes(booksPanel, settings);
+		createBooksCheckboxes(booksPanel, selectedBooks);
 		
 		return booksScrollPane;
 	}
 	
-	public static void createBooksCheckboxes(JPanel booksPanel, MapSettings settings)
+	public static void createBooksCheckboxes(JPanel booksPanel, Set<String> selectedBooks)
 	{
-		for (String book : getAllBooks())
+		for (String book : SettingsGenerator.getAllBooks())
 		{
 			final JCheckBox checkBox = new JCheckBox(book);
 			booksPanel.add(checkBox);
-			checkBox.setSelected(settings.books.contains(book));
+			checkBox.setSelected(selectedBooks.contains(book));
 		}
+	}
+	
+	public static Set<String> getSelectedBooks(JPanel booksPanel)
+	{
+		Set<String> books = new TreeSet<>();
+		for (Component component : booksPanel.getComponents())
+		{
+			if (component instanceof JCheckBox)
+			{
+				JCheckBox checkBox = (JCheckBox) component;
+				if (checkBox.isSelected())
+				{
+					books.add(checkBox.getText());
+				}
+			}
+		}
+		
+		return books;
+	}
+
+	private BufferedImage createPlaceholderImage(String message)
+	{
+		final int scale = 2;
+		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30 * scale);
+		Point textBounds = TextDrawer.getTextBounds(message, font);
+		BufferedImage placeHolder = new BufferedImage((textBounds.x + 10), (textBounds.y + 20), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = placeHolder.createGraphics();
+		g.setFont(font);
+		g.setColor(new Color(168, 168, 168));
+		g.drawString(message, 8, textBounds.y + 5);
+		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth() / scale, Method.QUALITY);
 	}
 }

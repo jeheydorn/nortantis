@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +21,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -69,10 +71,11 @@ public class IconTool extends EditorTool
 	private JCheckBox highlightRiversCheckbox;
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
+	private JPanel cityTypePanel;
 
-	public IconTool(MainWindow parent)
+	public IconTool(MainWindow parent, ToolsPanel toolsPanel)
 	{
-		super(parent);
+		super(parent, toolsPanel);
 		rand = new Random();
 	}
 
@@ -109,7 +112,6 @@ public class IconTool extends EditorTool
 		
 		// Tools
 		{
-			JLabel brushLabel = new JLabel("Brush:");
 			ButtonGroup group = new ButtonGroup();
 			List<JComponent> radioButtons = new ArrayList<>();
 			
@@ -200,7 +202,7 @@ public class IconTool extends EditorTool
 			});
 
 	
-		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, brushLabel, 
+		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Brush:", "", 
 		    		radioButtons);
 		}
 	    
@@ -214,20 +216,40 @@ public class IconTool extends EditorTool
 			treeTypes.buttons.get(1).setSelected(true);
 		}
 		
+		JLabel lblType = new JLabel(toolsPanel.cityIconsType == null || toolsPanel.cityIconsType.isEmpty() ? "<not set>"
+				: toolsPanel.cityIconsType);
+		JButton changeButton = new JButton("Change");
+		changeButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				// TODO Throw up a modal dialog that warns what will happen and sets toolsPanel.cityIconsType. 
+				// It should also update lblType and cause a full re-draw.
+				
+				//toolsPanel.cityIconsSetComboBox = new JComboBox<String>();	
+				
+				//SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities), 
+					//	settings.cityIconSetName);
+
+			}
+		});
+		cityTypePanel = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "City icons type:", "", 
+				Arrays.asList(lblType, changeButton));
+		
 		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
 		
 		// River options
 		{
-			JLabel widthLabel = new JLabel("Width:");
 			riverWidthSlider = new JSlider(1, 15);
 			riverWidthSlider.setValue(1);
 			riverWidthSlider.setPreferredSize(new Dimension(160, 50));
-		    riverOptionPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, widthLabel, riverWidthSlider);
+			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
+		    riverOptionPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Width:", "", riverWidthSlider);
 		}
 		
 		// Eraser options
 		{
-		    JLabel typeLabel = new JLabel("Erase:");
 		    ButtonGroup group = new ButtonGroup();
 		    List<JRadioButton> radioButtons = new ArrayList<>();
 		    
@@ -260,16 +282,15 @@ public class IconTool extends EditorTool
 		    radioButtons.add(eraseRiversButton);
 
 		    eraseAllButton.setSelected(true);
-		    eraseOptionsPanel = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, typeLabel, radioButtons);
+		    eraseOptionsPanel = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Erase:", "", radioButtons);
 		}
 		
-		JLabel densityLabel = new JLabel("density:");
 		densitySlider = new JSlider(1, 50);
 		densitySlider.setValue(10);
 		densitySlider.setPreferredSize(new Dimension(160, 50));
-		densityPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, densityLabel, densitySlider);
+		SwingHelper.setSliderWidthForSidePanel(densitySlider);
+		densityPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Density:", "", densitySlider);
 	    
-	    JLabel brushSizeLabel = new JLabel("Brush size:");
 	    brushSizeComboBox = new JComboBox<>();
 	    int largest = Collections.max(brushSizes);
 	    for (int brushSize : brushSizes)
@@ -285,12 +306,11 @@ public class IconTool extends EditorTool
 	    	g.fillOval(largest/2 - brushSize/2, largest/2 - brushSize/2, brushSize, brushSize);
 	    	brushSizeComboBox.addItem(new ImageIcon(image));
 	    }
-	    brushSizePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, brushSizeLabel, brushSizeComboBox);
+	    brushSizePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
 	    
-	    JLabel highlightRiversLabel = new JLabel("");
 	    highlightRiversCheckbox = new JCheckBox("Highlight rivers");
 	    highlightRiversCheckbox.setToolTipText("Highlight rivers to make them easier to see.");
-	    SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, highlightRiversLabel, highlightRiversCheckbox);
+	    SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", highlightRiversCheckbox);
 	    highlightRiversCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -306,13 +326,7 @@ public class IconTool extends EditorTool
 	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelWidth - 25, 0)));
 	    
 		mountainsButton.doClick();
-		
-		// TODO Decide what to do with this:
-		lblCityIconsSubfolder = new JLabel("City icon type:");
-
-		cityIconsSetComboBox = new JComboBox<String>();
-
-	    
+			    
 	    return toolOptionsPanel;
 	}
 	
@@ -323,6 +337,7 @@ public class IconTool extends EditorTool
 		duneTypes.panel.setVisible(dunesButton.isSelected());
 		treeTypes.panel.setVisible(treesButton.isSelected());
 		cityTypes.panel.setVisible(citiesButton.isSelected());
+		cityTypePanel.setVisible(citiesButton.isSelected());
 		densityPanel.setVisible(treesButton.isSelected());
 		eraseOptionsPanel.setVisible(eraseButton.isSelected());
 		riverOptionPanel.setVisible(riversButton.isSelected());
@@ -331,10 +346,9 @@ public class IconTool extends EditorTool
 	
 	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, IconType iconType)
 	{
-	    JLabel typeLabel = new JLabel("Type:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, iconType == IconType.cities ? parent.settings.cityIconSetName : null))
+	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, iconType == IconType.cities ? toolsPanel.cityIconsType : null))
 	    {
 	    	JRadioButton button = new JRadioButton(groupId);
 	    	group.add(button);
@@ -344,16 +358,15 @@ public class IconTool extends EditorTool
 	    {
 	    	((JRadioButton)radioButtons.get(0)).setSelected(true);
 	    }
-	    return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, typeLabel, radioButtons), radioButtons);
+	    return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Type:", "", radioButtons), radioButtons);
 	}
 	
 	private IconTypeButtons createRadioButtonsForCities(JPanel toolOptionsPanel)
 	{
-	    JLabel typeLabel = new JLabel("Cities:");
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
 	    for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance()
-	    		.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, parent.settings.cityIconSetName))
+	    		.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, toolsPanel.cityIconsType))
 	    {
 	    	JRadioButton button = new JRadioButton(fileNameWithoutWidthOrExtension);
 	    	group.add(button);
@@ -363,7 +376,7 @@ public class IconTool extends EditorTool
 	    {
 	    	((JRadioButton)radioButtons.get(0)).setSelected(true);
 	    }
-	    return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, typeLabel, radioButtons), radioButtons);
+	    return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Cities:", "", radioButtons), radioButtons);
 	}
 
 	@Override
@@ -385,7 +398,7 @@ public class IconTool extends EditorTool
 			String rangeId = mountainTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
+				mainWindow.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
 			}
 		}
 		else if (hillsButton.isSelected())
@@ -393,7 +406,7 @@ public class IconTool extends EditorTool
 			String rangeId = hillTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
+				mainWindow.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
 			}
 		}
 		else if (dunesButton.isSelected())
@@ -401,7 +414,7 @@ public class IconTool extends EditorTool
 			String rangeId = duneTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				parent.settings.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
+				mainWindow.edits.centerEdits.get(center.index).icon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
 			}		
 		}
 		else if (treesButton.isSelected())
@@ -409,7 +422,7 @@ public class IconTool extends EditorTool
 			String treeType = treeTypes.getSelectedOption();
 			for (Center center : selected)
 			{
-				parent.settings.edits.centerEdits.get(center.index).trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, 
+				mainWindow.edits.centerEdits.get(center.index).trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, 
 						Math.abs(rand.nextLong()));
 			}		
 		}
@@ -423,9 +436,9 @@ public class IconTool extends EditorTool
 				// the image files, previously hidden cities don't start popping up along coastlines and lakes.
 				// Note that all icons can fail to draw because they would overlap an ocean or lake, but I don't think it's
 				// a big deal for other icon types.
-				if (parent.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
+				if (mainWindow.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 				{
-					parent.settings.edits.centerEdits.get(center.index).icon = cityIcon;
+					mainWindow.edits.centerEdits.get(center.index).icon = cityIcon;
 				}
 			}		
 		}
@@ -435,11 +448,11 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					parent.settings.edits.centerEdits.get(center.index).trees = null;
-					parent.settings.edits.centerEdits.get(center.index).icon = null;
+					mainWindow.edits.centerEdits.get(center.index).trees = null;
+					mainWindow.edits.centerEdits.get(center.index).icon = null;
 					for (Edge edge : center.borders)
 					{
-						EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
+						EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
 						if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 						{
 							eEdit.riverLevel = 0;
@@ -451,7 +464,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
 					{
 						cEdit.icon = null;
@@ -462,7 +475,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Hill)
 					{
 						cEdit.icon = null;
@@ -473,7 +486,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
 					{
 						cEdit.icon = null;
@@ -484,7 +497,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					cEdit.trees = null;
 				}	
 			}
@@ -492,7 +505,7 @@ public class IconTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					CenterEdit cEdit = parent.settings.edits.centerEdits.get(center.index);
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
 					{
 						cEdit.icon = null;
@@ -505,7 +518,7 @@ public class IconTool extends EditorTool
 				Set<Edge> possibleRivers = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()));
 				for (Edge edge : possibleRivers)
 				{
-					EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
+					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
 					eEdit.riverLevel = 0;
 				}
 				mapEditingPanel.clearHighlightedEdges();
@@ -527,7 +540,7 @@ public class IconTool extends EditorTool
 		
 		if (riversButton.isSelected())
 		{
-			riverStart = parent.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+			riverStart = mainWindow.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
 	}
 
@@ -536,13 +549,13 @@ public class IconTool extends EditorTool
 	{		
 		if (riversButton.isSelected())
 		{
-			Corner end = parent.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-			Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
+			Corner end = mainWindow.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+			Set<Edge> river = filterOutOceanAndCoastEdges(mainWindow.mapParts.graph.findPathGreedy(riverStart, end));
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
 				int riverLevel = (base * base * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
-				parent.settings.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
+				mainWindow.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
 			}
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
@@ -550,7 +563,7 @@ public class IconTool extends EditorTool
 			
 			if (river.size() > 0)
 			{
-				parent.createAndShowMapIncrementalUsingEdges(river);
+				mainWindow.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
 		
@@ -587,7 +600,7 @@ public class IconTool extends EditorTool
 			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
 			for (Edge edge : candidates)
 			{
-				EdgeEdit eEdit = parent.settings.edits.edgeEdits.get(edge.index);
+				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
 				if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 				{
 					mapEditingPanel.addHighlightedEdge(edge);
@@ -610,8 +623,8 @@ public class IconTool extends EditorTool
 			if (riverStart != null)
 			{
 				mapEditingPanel.clearHighlightedEdges();
-				Corner end = parent.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-				Set<Edge> river = filterOutOceanAndCoastEdges(parent.mapParts.graph.findPathGreedy(riverStart, end));
+				Corner end = mainWindow.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+				Set<Edge> river = filterOutOceanAndCoastEdges(mainWindow.mapParts.graph.findPathGreedy(riverStart, end));
 				mapEditingPanel.addHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
@@ -650,7 +663,7 @@ public class IconTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo(MapChange change)
 	{	
-		parent.createAndShowMapFromChange(change);
+		mainWindow.createAndShowMapFromChange(change);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
@@ -660,7 +673,7 @@ public class IconTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{
-		parent.createAndShowMapIncrementalUsingCenters(centers);
+		mainWindow.createAndShowMapIncrementalUsingCenters(centers);
 	}
 
 

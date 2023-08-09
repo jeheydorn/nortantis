@@ -9,8 +9,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.runner.Computer;
-
 import nortantis.util.Range;
 
 public class NameGenerator

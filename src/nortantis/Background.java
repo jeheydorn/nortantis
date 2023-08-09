@@ -3,7 +3,6 @@ package nortantis;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,291 +28,226 @@ public class Background
 	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
-	// regionIndexes is a gray scale image where the level of each pixel is the index of the region it is in.
+	// regionIndexes is a gray scale image where the level of each pixel is the
+	// index of the region it is in.
 	BufferedImage regionIndexes;
 	private int borderWidthScaled;
-	
+
 	public Background(MapSettings settings, Dimension maxDimensions)
 	{
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
-        shouldDrawRegionColors = settings.drawRegionColors 
-		&& !backgroundFromFilesNotGenerated 
-		&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
-        
-        BufferedImage landGeneratedBackground;
+		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
+				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+
+		BufferedImage landGeneratedBackground;
 		landColorifyAlgorithm = ColorifyAlgorithm.none;
 		mapBounds = calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
-		if (settings.generateBackground || settings.generateBackgroundFromTexture)
-		{
 
-			borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-										
-			if (settings.generateBackground)
+		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+
+		if (settings.generateBackground)
+		{
+			// Fractal generated background images
+
+			final float fractalPower = 1.3f;
+			BufferedImage oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
+					(int) mapBounds.getWidth() + borderWidthScaled * 2, (int) mapBounds.getHeight() + borderWidthScaled * 2, 0.75f);
+			landGeneratedBackground = oceanGeneratedBackground;
+			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
+			borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
+					ImageHelper.ColorifyAlgorithm.algorithm2);
+
+			if (settings.drawBorder)
 			{
-				// Fractal generated background images
-				
-				final float fractalPower = 1.3f;
-				BufferedImage oceanGeneratedBackground = FractalBGGenerator.generate(
-						new Random(settings.backgroundRandomSeed), fractalPower, 
-						(int)mapBounds.getWidth() + borderWidthScaled * 2, (int)mapBounds.getHeight() + borderWidthScaled * 2, 0.75f);
-				landGeneratedBackground = oceanGeneratedBackground;
-				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm2);
-				
+				ocean = removeBorderPadding(borderBackground);
+			}
+			else
+			{
+				ocean = borderBackground;
+				borderBackground = null;
+			}
+
+			if (shouldDrawRegionColors)
+			{
+				// Drawing region colors must be done later because it depends
+				// on the graph.
+				land = removeBorderPadding(landGeneratedBackground);
+			}
+			else
+			{
+				land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
+				landGeneratedBackground = null;
+			}
+		}
+		else if (settings.generateBackgroundFromTexture)
+		{
+			// Generate the background images from a texture
+
+			BufferedImage texture;
+			try
+			{
+				texture = ImageCache.getInstance().getImageFromFile(Paths.get(settings.backgroundTextureImage));
+			}
+			catch (RuntimeException e)
+			{
+				throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
+			}
+
+			BufferedImage oceanGeneratedBackground;
+			if (settings.colorizeOcean)
+			{
+				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
+						ImageHelper.convertToGrayscale(texture), (int) mapBounds.getHeight() + borderWidthScaled * 2,
+						(int) mapBounds.getWidth() + borderWidthScaled * 2);
+				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
+						ImageHelper.ColorifyAlgorithm.algorithm3);
 				if (settings.drawBorder)
 				{
-					ocean = removeBorderPadding(borderBackground);
+					ocean = ImageHelper.deepCopy(removeBorderPadding(borderBackground));
 				}
 				else
 				{
 					ocean = borderBackground;
 					borderBackground = null;
 				}
-				
-				if (shouldDrawRegionColors)
+			}
+			else
+			{
+				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
+						texture, (int) mapBounds.getHeight() + borderWidthScaled * 2, (int) mapBounds.getWidth() + borderWidthScaled * 2);
+				if (settings.drawBorder)
 				{
-					// Drawing region colors must be done later because it depends on the graph.
-					land = removeBorderPadding(landGeneratedBackground);
+					ocean = removeBorderPadding(oceanGeneratedBackground);
+					borderBackground = oceanGeneratedBackground;
 				}
 				else
 				{
-					land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, landColorifyAlgorithm);
-					landGeneratedBackground = null;
+					ocean = oceanGeneratedBackground;
 				}
-			}
-			else if (settings.generateBackgroundFromTexture)
-			{
-				// Generate the background images from a texture
-				
-				BufferedImage texture;
-				try
-				{
-					texture = ImageCache.getInstance().getImageFromFile(Paths.get(settings.backgroundTextureImage));
-				}
-				catch (RuntimeException e)
-				{
-					throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
-				}
-				
-				BufferedImage oceanGeneratedBackground;
-				if (settings.colorizeOcean)
-				{
-					oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-						new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), 
-						(int)mapBounds.getHeight() + borderWidthScaled * 2, (int)mapBounds.getWidth() + borderWidthScaled * 2);
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, ImageHelper.ColorifyAlgorithm.algorithm3);
-					if (settings.drawBorder)
-					{
-						ocean = ImageHelper.deepCopy(removeBorderPadding(borderBackground));
-					}
-					else
-					{
-						ocean = borderBackground;
-						borderBackground = null;
-					}
-				}
-				else
-				{
-					oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), texture, (int)mapBounds.getHeight() + borderWidthScaled *  2, 
-							(int)mapBounds.getWidth() + borderWidthScaled * 2);
-					if (settings.drawBorder)
-					{
-						ocean = removeBorderPadding(oceanGeneratedBackground);
-						borderBackground = oceanGeneratedBackground;
-					}
-					else
-					{
-						ocean = oceanGeneratedBackground;
-					}
-				}
-				
-				if (settings.colorizeLand == settings.colorizeOcean)
-				{
-					// Don't generate the same image twice.
-					landGeneratedBackground = oceanGeneratedBackground;
-					
-					if (settings.colorizeLand)
-					{
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;					
-						if (shouldDrawRegionColors)
-						{
-							// Drawing region colors must be done later because it depends on the graph.
-							land = removeBorderPadding(landGeneratedBackground);
-						}
-						else
-						{
-							land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
-						}
-					}
-					else
-					{
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-						land = removeBorderPadding(landGeneratedBackground);
-					}
-				}
-				else
-				{
-					if (settings.colorizeLand)
-					{
-						// It's necessary to generate landGeneratedBackground at a larger size including border width, then crop out the part we want because 
-						// otherwise the random texture of the land won't match the texture of the ocean.
-						
-						landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture), 
-							(int)mapBounds.getHeight() + borderWidthScaled * 2,
-							(int)mapBounds.getWidth() + borderWidthScaled * 2);
-						if (shouldDrawRegionColors)
-						{
-							// Drawing region colors must be done later because it depends on the graph.
-							land = removeBorderPadding(landGeneratedBackground);
-						}
-						else
-						{
-							land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor, ImageHelper.ColorifyAlgorithm.algorithm3);
-						}
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
-					}
-					else
-					{
-						landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(settings.backgroundRandomSeed), texture, 
-								(int)mapBounds.getHeight() + borderWidthScaled * 2, 
-								(int)mapBounds.getWidth() + borderWidthScaled * 2);
-						land = removeBorderPadding(landGeneratedBackground);
-						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-					}
-				}
-			}
-			
-			if (settings.drawRegionColors)
-			{
-				landBeforeRegionColoring = land;
-			}
-		}
-		else
-		{
-			// The background images are from files
-			if (settings.drawBorder)
-			{
-				throw new IllegalArgumentException("Drawing a border with background images from files is not supported. Uncheck Border > Draw border.");
-			}
-			
-			try
-			{
-				land = ImageCache.getInstance().getImageFromFile((new File(settings.landBackgroundImage).toPath()));
-				land = ImageHelper.convertToBufferedImageOfType(land, BufferedImage.TYPE_INT_RGB);
-			}
-			catch(Exception e)
-			{
-				throw new IllegalArgumentException("Error while reading land background image from " 
-						+ settings.landBackgroundImage + ": " + e.getMessage(), e);
-			}
-			try
-			{
-				ocean = ImageCache.getInstance().getImageFromFile((new File(settings.oceanBackgroundImage).toPath()));
-				ocean = ImageHelper.convertToBufferedImageOfType(ocean, BufferedImage.TYPE_INT_RGB);
-			}
-			catch(Exception e)
-			{
-				throw new IllegalArgumentException("Error while reading ocean background image from " 
-						+ settings.oceanBackgroundImage + ": " + e.getMessage(), e);
 			}
 
-			mapBounds = new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
-			if (maxDimensions != null)
+			if (settings.colorizeLand == settings.colorizeOcean)
 			{
-				mapBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBounds.getWidth(),
-						mapBounds.getHeight());
+				// Don't generate the same image twice.
+				landGeneratedBackground = oceanGeneratedBackground;
+
+				if (settings.colorizeLand)
+				{
+					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+					if (shouldDrawRegionColors)
+					{
+						// Drawing region colors must be done later because it
+						// depends on the graph.
+						land = removeBorderPadding(landGeneratedBackground);
+					}
+					else
+					{
+						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor,
+								ImageHelper.ColorifyAlgorithm.algorithm3);
+					}
+				}
+				else
+				{
+					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+					land = removeBorderPadding(landGeneratedBackground);
+				}
 			}
-			land = ImageHelper.scaleByWidth(land, (int)mapBounds.getWidth());
-			// The library I'm using to scale images and make them look nice has a bug where the width or height might be one pixel off, although rarely. So here I'm making sure it is correct.
-			if (land.getHeight() != (int)mapBounds.getHeight())
+			else
 			{
-				land = ImageHelper.scaleByWidthAndHeightFast(land, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
-			}
-			ocean = ImageHelper.scaleByWidth(ocean, (int)mapBounds.getWidth());
-			if (ocean.getHeight() != (int)mapBounds.getHeight())
-			{
-				ocean = ImageHelper.scaleByWidthAndHeightFast(ocean, (int)mapBounds.getWidth(), (int)mapBounds.getHeight());
+				if (settings.colorizeLand)
+				{
+					// It's necessary to generate landGeneratedBackground at a
+					// larger size including border width, then crop out the
+					// part we want because
+					// otherwise the random texture of the land won't match the
+					// texture of the ocean.
+
+					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
+							(int) mapBounds.getHeight() + borderWidthScaled * 2, (int) mapBounds.getWidth() + borderWidthScaled * 2);
+					if (shouldDrawRegionColors)
+					{
+						// Drawing region colors must be done later because it
+						// depends on the graph.
+						land = removeBorderPadding(landGeneratedBackground);
+					}
+					else
+					{
+						land = ImageHelper.colorify(removeBorderPadding(landGeneratedBackground), settings.landColor,
+								ImageHelper.ColorifyAlgorithm.algorithm3);
+					}
+					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
+				}
+				else
+				{
+					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
+							new Random(settings.backgroundRandomSeed), texture, (int) mapBounds.getHeight() + borderWidthScaled * 2,
+							(int) mapBounds.getWidth() + borderWidthScaled * 2);
+					land = removeBorderPadding(landGeneratedBackground);
+					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+				}
 			}
 		}
-		
+
+		if (settings.drawRegionColors)
+		{
+			landBeforeRegionColoring = land;
+		}
+
 		if (borderBackground != null)
 		{
 			borderBounds = new Dimension(borderBackground.getWidth(), borderBackground.getHeight());
 		}
 		else
 		{
-			borderBounds = new Dimension((int)mapBounds.getWidth(), (int)mapBounds.getHeight());
+			borderBounds = new Dimension((int) mapBounds.getWidth(), (int) mapBounds.getHeight());
 		}
 	}
-			
+
 	DimensionDouble calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
-		if (settings.generateBackground || settings.generateBackgroundFromTexture)
+		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
+				settings.generatedHeight * settings.resolution);
+		if (maxDimensions != null)
 		{
-			DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
+			int borderWidth = 0;
+			if (settings.drawBorder)
+			{
+				borderWidth = (int) (settings.borderWidth * settings.resolution);
+			}
+			DimensionDouble mapBoundsPlusBorder = new DimensionDouble(mapBounds.getWidth() + borderWidth * 2,
+					mapBounds.getHeight() + borderWidth * 2);
+
+			DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
+					mapBoundsPlusBorder.getHeight());
+			// Change the resolution to match the new bounds.
+			settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
+
+			DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
 					settings.generatedHeight * settings.resolution);
-			if (maxDimensions != null)
-			{
-				int borderWidth = 0;
-				if (settings.drawBorder)
-				{
-					borderWidth = (int) (settings.borderWidth * settings.resolution);
-				}
-				DimensionDouble mapBoundsPlusBorder = new DimensionDouble(
-						mapBounds.getWidth() + borderWidth * 2,
-						mapBounds.getHeight() + borderWidth * 2);
-
-				DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
-						mapBoundsPlusBorder.getHeight());
-				// Change the resolution to match the new bounds.
-				settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
-				
-				DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution, 
-						settings.generatedHeight * settings.resolution);
-				mapBounds = scaledMapBounds;
-			}
-			return mapBounds;
+			mapBounds = scaledMapBounds;
 		}
-		else
-		{
-			// The background is from files.
-			BufferedImage land;
-			try
-			{
-				land = ImageCache.getInstance().getImageFromFile(new File(settings.landBackgroundImage).toPath());
-			}
-			catch(Exception e)
-			{
-				throw new IllegalArgumentException("Error while reading land background image from " 
-						+ settings.landBackgroundImage + ": " + e.getMessage());
-			}
-
-			return new DimensionDouble(land.getWidth()*settings.resolution, land.getHeight()*settings.resolution);
-		}
+		return mapBounds;
 	}
-	
+
 	private BufferedImage removeBorderPadding(BufferedImage image)
 	{
-		return ImageHelper.extractRegion(image, borderWidthScaled, borderWidthScaled, 
-				(int)(image.getWidth() - borderWidthScaled * 2),
-				(int)(image.getHeight() - borderWidthScaled * 2));
+		return ImageHelper.extractRegion(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2),
+				(int) (image.getHeight() - borderWidthScaled * 2));
 	}
-	
-	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph, Set<Center> centersToDraw, Rectangle drawBounds, 
+
+	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph, Set<Center> centersToDraw, Rectangle drawBounds,
 			Rectangle replaceBounds)
 	{
 		if (shouldDrawRegionColors)
 		{
 			// The image "land" is generated but doesn't yet have colors.
-		
+
 			if (drawBounds == null || centersToDraw == null)
 			{
 				regionIndexes = new BufferedImage(land.getWidth(), land.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 				graph.drawRegionIndexes(regionIndexes.createGraphics(), null, null);
-				
+
 				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
 			}
 			else
@@ -321,14 +255,17 @@ public class Background
 				// Update only a piece of the land
 				regionIndexes = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
 				graph.drawRegionIndexes(regionIndexes.createGraphics(), centersToDraw, drawBounds);
-				BufferedImage landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, 
+				BufferedImage landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
 						new java.awt.Point((int) drawBounds.x, (int) drawBounds.y));
-				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int)drawBounds.x, (int)replaceBounds.y - (int)drawBounds.y, (int)replaceBounds.width, (int)replaceBounds.height);
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
+				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
+						(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
+						boundsInSourceToCopyFrom);
 			}
 		}
-		
-		// Fixes a bug where graph width or height is not exactly the same as image width and heights due to rounding issues.
+
+		// Fixes a bug where graph width or height is not exactly the same as
+		// image width and heights due to rounding issues.
 		if (backgroundFromFilesNotGenerated)
 		{
 			if (land.getWidth() != graph.getWidth())
@@ -341,24 +278,24 @@ public class Background
 			}
 		}
 	}
-	
-	private BufferedImage drawRegionColors(WorldGraph graph, BufferedImage fractalBG, BufferedImage pixelColors, 
+
+	private BufferedImage drawRegionColors(WorldGraph graph, BufferedImage fractalBG, BufferedImage pixelColors,
 			ImageHelper.ColorifyAlgorithm colorfiyAlgorithm, java.awt.Point where)
-	{	
+	{
 		if (graph.regions.isEmpty())
 		{
 			return ImageHelper.convertImageToType(fractalBG, BufferedImage.TYPE_INT_RGB);
 		}
-		
+
 		Map<Integer, Color> regionBackgroundColors = new HashMap<>();
 		for (Map.Entry<Integer, Region> regionEntry : graph.regions.entrySet())
 		{
 			regionBackgroundColors.put(regionEntry.getKey(), regionEntry.getValue().backgroundColor);
 		}
-				
+
 		return ImageHelper.colorifyMulti(fractalBG, regionBackgroundColors, pixelColors, colorfiyAlgorithm, where);
 	}
-	
+
 	public BufferedImage createOceanSnippet(Rectangle boundsToCopyFrom)
 	{
 		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toAwTRectangle());

@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -10,13 +11,10 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FilenameFilter;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Random;
+
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -30,29 +28,29 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
-import org.jdesktop.swingx.JXTaskPane;
-import org.jdesktop.swingx.JXTaskPaneContainer;
 import nortantis.BGColorCancelHandler;
 import nortantis.BGColorPreviewPanel;
 import nortantis.BackgroundGenerator;
 import nortantis.FractalBGGenerator;
+import nortantis.IconType;
+import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
-import nortantis.SettingsGenerator;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
-import nortantis.util.AssetsPath;
+import nortantis.SettingsGenerator;
 import nortantis.util.ImageHelper;
 import nortantis.util.JFontChooser;
 import nortantis.util.SwingHelper;
 
 @SuppressWarnings("serial")
-public class ThemePanel extends JScrollPane
+public class ThemePanel extends JTabbedPane
 {
 	JSlider coastShadingSlider;
 	JSlider oceanEffectsLevelSlider;
@@ -89,7 +87,6 @@ public class ThemePanel extends JScrollPane
 	private JComboBox<String> borderTypeComboBox;
 	private JSlider borderWidthSlider;
 	private JCheckBox drawBorderCheckbox;
-	private JLabel lblFrayedEdgeSize;
 	private JSlider frayedEdgePolygonCountSlider;
 	private JSlider frayedEdgeShadingSlider;
 	private JCheckBox frayedEdgeCheckbox;
@@ -108,26 +105,28 @@ public class ThemePanel extends JScrollPane
 	JPanel textColorDisplay;
 	JPanel boldBackgroundColorDisplay;
 	private JCheckBox chckbxDrawBoldBackground;
+	final int widthToSubtractFromTabPanels = 2;
 	
 
 
 	public ThemePanel(MainWindow mainWindow)
 	{
 		setPreferredSize(new Dimension(SwingHelper.sidePanelWidth, mainWindow.getContentPane().getHeight()));
-		JXTaskPaneContainer taskPaneContainer = new JXTaskPaneContainer();
-		JScrollPane scrollPane = new JScrollPane(taskPaneContainer);
-		add(scrollPane);
+
 		
-		taskPaneContainer.add(createBackgroundPane(mainWindow));
-		taskPaneContainer.add(createEffectsPane(mainWindow));
-		taskPaneContainer.add(createBorderPane(mainWindow));
-		taskPaneContainer.add(createFontsPane(mainWindow));
+		addTab("Background", createBackgroundPane(mainWindow));
+		addTab("Border", createBorderPanel(mainWindow));
+		addTab("Effects", createEffectsPanel(mainWindow));
+		addTab("Fonts", createFontsPanel(mainWindow));
 	}
 	
-	private JXTaskPane createBackgroundPane(MainWindow mainWindow)
+	private Component createBackgroundPane(MainWindow mainWindow)
 	{
-		final JXTaskPane backgroundPane = new JXTaskPane("Background");
-		backgroundPane.setLayout(new BoxLayout(backgroundPane, BoxLayout.Y_AXIS));
+		final JPanel backgroundPanel = new JPanel();
+		backgroundPanel.setLayout(new BoxLayout(backgroundPanel, BoxLayout.Y_AXIS));
+		backgroundPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
+
+		JScrollPane scrollPane = new JScrollPane(backgroundPanel);
 
 		backgroundImageButtonGroupListener = new ActionListener()
 		{
@@ -137,8 +136,6 @@ public class ThemePanel extends JScrollPane
 			}
 		};
 
-		JLabel lblBackground = new JLabel("Background:");
-		lblBackground.setToolTipText("Select how to generate the background image.");
 		
 		rdbtnFractal = new JRadioButton("Fractal noise");
 		rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
@@ -150,12 +147,10 @@ public class ThemePanel extends JScrollPane
 		backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
 		backgoundImageButtonGroup.add(rdbtnFractal);
 		
-		SwingHelper.addLabelAndComponentsToPanelVertical(backgroundPane, lblBackground, Arrays.asList(rdbtnFractal, rdbtnGeneratedFromTexture));
+		SwingHelper.addLabelAndComponentsToPanelVertical(backgroundPanel, "Background:", "Select how to generate the background image.",
+				Arrays.asList(rdbtnFractal, rdbtnGeneratedFromTexture));
 		
 		
-		lblBackgroundRandomSeed = new JLabel("Random seed:");
-		lblBackgroundRandomSeed.setToolTipText("The random seed used to generate the background image. Note that the background texture will also change based on the resolution you draw at.");
-
 		backgroundSeedTextField = new JTextField();
 		backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
 		backgroundSeedTextField.setColumns(10);
@@ -173,7 +168,8 @@ public class ThemePanel extends JScrollPane
 			}
 		});
 		btnNewBackgroundSeed.setToolTipText("Generate a new random seed.");
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(backgroundPane, lblBackgroundRandomSeed, 
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(backgroundPanel, "Random seed:", 
+				"The random seed used to generate the background image. Note that the background texture will also change based on the resolution you draw at.",
 				Arrays.asList(backgroundSeedTextField, btnNewBackgroundSeed));
 		
 		
@@ -224,7 +220,7 @@ public class ThemePanel extends JScrollPane
 			container.add(leftPanel);
 			container.add(landDisplayPanel);
 			
-			backgroundPane.add(container);
+			backgroundPanel.add(container);
 		}
 		
 	
@@ -266,12 +262,12 @@ public class ThemePanel extends JScrollPane
 			container.add(leftPanel);
 			container.add(oceanDisplayPanel);
 			
-			backgroundPane.add(container);
+			backgroundPanel.add(container);
 		}
 
 
 		lblTextureImage = new JLabel("Texture image:");
-		backgroundPane.add(lblTextureImage);
+		backgroundPanel.add(lblTextureImage);
 
 		textureImageFilename = new JTextField();
 		textureImageFilename.setColumns(10);
@@ -298,7 +294,7 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				String filename = chooseImageFile(backgroundPane, textureImageFilename.getText());
+				String filename = chooseImageFile(backgroundPanel, textureImageFilename.getText());
 				if (filename != null)
 					textureImageFilename.setText(filename);
 			}
@@ -309,24 +305,107 @@ public class ThemePanel extends JScrollPane
 		textureFilePanel.add(textureImageFilename);
 		textureFilePanel.add(btnsBrowseTextureImage);
 		
-		return backgroundPane;
+		return scrollPane;
 	}		
 	
-	private JXTaskPane createEffectsPane(MainWindow mainWindow)
+	private Component createBorderPanel(MainWindow mainWindow)
 	{
-		final JXTaskPane effectsPane = new JXTaskPane("Effects");
-		effectsPane.setLayout(new BoxLayout(effectsPane, BoxLayout.Y_AXIS));
+		final JPanel borderPanel = new JPanel();
+		borderPanel.setLayout(new BoxLayout(borderPanel, BoxLayout.Y_AXIS));
+		borderPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
 
-		JLabel lblLineStyle = new JLabel("Line style:");
+		JScrollPane scrollPane = new JScrollPane(borderPanel);
+
+		drawBorderCheckbox = new JCheckBox("Draw border");
+		drawBorderCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
+		drawBorderCheckbox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
+				borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
+			}
+		});
+		borderPanel.add(drawBorderCheckbox);
+		
+
+		borderTypeComboBox = new JComboBox<String>();
+		SwingHelper.addLabelAndComponentToPanel(borderPanel, "Border type:", "The set of images to draw for the border", borderTypeComboBox);
+
+
+		borderWidthSlider = new JSlider();
+		borderWidthSlider.setToolTipText("");
+		borderWidthSlider.setValue(100);
+		borderWidthSlider.setSnapToTicks(false);
+		borderWidthSlider.setPaintTicks(true);
+		borderWidthSlider.setPaintLabels(true);
+		borderWidthSlider.setMinorTickSpacing(50);
+		borderWidthSlider.setMaximum(800);
+		borderWidthSlider.setMajorTickSpacing(200);
+		SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
+		SwingHelper.addLabelAndComponentToPanel(borderPanel, "Border width:", "Width of the border in pixels, scaled if resolution is scaled",
+				borderWidthSlider);
+
+
+		frayedEdgeCheckbox = new JCheckBox("Draw frayed edges");
+		frayedEdgeCheckbox.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+				frayedEdgePolygonCountSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+			}
+		});
+		borderPanel.add(frayedEdgeCheckbox);
+
+		
+		frayedEdgeShadingSlider = new JSlider();
+		frayedEdgeShadingSlider.setValue(30);
+		frayedEdgeShadingSlider.setPaintTicks(true);
+		frayedEdgeShadingSlider.setPaintLabels(true);
+		frayedEdgeShadingSlider.setMinorTickSpacing(50);
+		frayedEdgeShadingSlider.setMaximum(500);
+		frayedEdgeShadingSlider.setMajorTickSpacing(100);
+		SwingHelper.setSliderWidthForSidePanel(frayedEdgeShadingSlider);
+		SwingHelper.addLabelAndComponentToPanel(borderPanel, "Fray shading width:",
+				"The width of shading drawn around frayed edges. The color used is the grunge color."
+				, frayedEdgeShadingSlider);
+		
+
+		frayedEdgePolygonCountSlider = new JSlider();
+		frayedEdgePolygonCountSlider.setPaintTicks(true);
+		frayedEdgePolygonCountSlider.setPaintLabels(true);
+		frayedEdgePolygonCountSlider.setMinorTickSpacing(5000);
+		frayedEdgePolygonCountSlider.setMaximum(50000);
+		frayedEdgePolygonCountSlider.setMinimum(100);
+		frayedEdgePolygonCountSlider.setMajorTickSpacing(20000);
+		SwingHelper.setSliderWidthForSidePanel(frayedEdgePolygonCountSlider);
+		SwingHelper.addLabelAndComponentToPanel(borderPanel, "Fray polygon count:", "The number of polygons used when creating the frayed border. "
+				+ "Higher values make the fray smaller.",
+				frayedEdgePolygonCountSlider);
+		
+		return scrollPane;
+	}
+	
+	private Component createEffectsPanel(MainWindow mainWindow)
+	{
+		final JPanel effectsPanel = new JPanel();
+		effectsPanel.setLayout(new BoxLayout(effectsPanel, BoxLayout.Y_AXIS));
+		effectsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
+
+		JScrollPane scrollPane = new JScrollPane(effectsPanel);
+
 
 		jaggedLinesButton = new JRadioButton("Jagged");
-		effectsPane.add(jaggedLinesButton);
+		effectsPanel.add(jaggedLinesButton);
 		smoothLinesButton = new JRadioButton("Smooth");
-		effectsPane.add(smoothLinesButton);
+		effectsPanel.add(smoothLinesButton);
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
 		lineStyleButtonGroup.add(smoothLinesButton);
-		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPane, lblLineStyle, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Line style:", 
+				"The style of lines to use when drawing coastlines, lakeshores, and region boundaries",
 				Arrays.asList(jaggedLinesButton, smoothLinesButton));
 		
 		
@@ -351,9 +430,8 @@ public class ThemePanel extends JScrollPane
 				}
 			}
 		});
-		effectsPane.add(colorRegionsCheckBox);
+		SwingHelper.addLeftAlignedComponent(effectsPanel, colorRegionsCheckBox);
 		
-		JLabel lblCoastShadingColor = new JLabel("Coast shading color:");
 		
 		coastShadingColorDisplay = new JPanel();
 		coastShadingColorDisplay.setSize(82, 23);
@@ -363,15 +441,12 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPane, coastShadingColorDisplay, "Coast Shading Color");
+				showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color");
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPane, lblCoastShadingColor, 
-				Arrays.asList(coastlineColorDisplay, btnChooseCoastShadingColor));
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Coast shading color:", "", 
+				Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor));
 
-		
-		JLabel lblCoastlineShading = new JLabel("Coast shading:");
-		lblCoastlineShading.setToolTipText("How far in from coastlines to shade land.");
 
 		coastShadingSlider = new JSlider();
 		coastShadingSlider.setValue(30);
@@ -380,10 +455,11 @@ public class ThemePanel extends JScrollPane
 		coastShadingSlider.setMinorTickSpacing(5);
 		coastShadingSlider.setMaximum(100);
 		coastShadingSlider.setMajorTickSpacing(20);
-		SwingHelper.addLabelAndComponentToPanel(effectsPane, lblCoastlineShading, coastShadingSlider);
+		SwingHelper.setSliderWidthForSidePanel(coastShadingSlider);
+		SwingHelper.addLabelAndComponentToPanel(effectsPanel, "Coast shading:", "How far in from coastlines to shade land.",
+				coastShadingSlider);
 		
 		
-		JLabel lblCoastlineColor = new JLabel("Coastline color:");
 
 		coastlineColorDisplay = new JPanel();
 		coastlineColorDisplay.setSize(82, 23);
@@ -393,15 +469,13 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPane, coastlineColorDisplay, "Coastline Color");
+				showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline Color");
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPane, lblCoastlineColor, 
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Coastline color:", "", 
 				Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor));
 		
 
-		JLabel lblOceanEffectType = new JLabel("Ocean effects type:");
-		
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
 
 		concentricWavesButton = new JRadioButton("Concentric waves");
@@ -418,19 +492,16 @@ public class ThemePanel extends JScrollPane
 		concentricWavesButton.addActionListener(oceanEffectsListener);
 
 		ripplesRadioButton = new JRadioButton("Ripples");
-		effectsPane.add(ripplesRadioButton);
+		effectsPanel.add(ripplesRadioButton);
 		oceanEffectButtonGroup.add(ripplesRadioButton);
 		ripplesRadioButton.addActionListener(oceanEffectsListener);
 
 		shadeRadioButton = new JRadioButton("Shade");
-		effectsPane.add(shadeRadioButton);
+		effectsPanel.add(shadeRadioButton);
 		oceanEffectButtonGroup.add(shadeRadioButton);
 		shadeRadioButton.addActionListener(oceanEffectsListener);
-		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPane, lblOceanEffectType, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Ocean effects type:", "", 
 				Arrays.asList(concentricWavesButton, ripplesRadioButton, shadeRadioButton));
-
-		JLabel lblOceanEffectsColor = new JLabel("Ocean effects color:");
-		effectsPane.add(lblOceanEffectsColor);
 
 		oceanEffectsColorDisplay = new JPanel();
 		oceanEffectsColorDisplay.setSize(82, 23);
@@ -440,16 +511,14 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPane, oceanEffectsColorDisplay, "Ocean Effects Color");
+				showColorPicker(effectsPanel, oceanEffectsColorDisplay, "Ocean Effects Color");
 			}
 		});
 		btnChooseOceanEffectsColor.setToolTipText("Choose a color for ocean effects near coastlines. Transparency is supported.");
-		effectsPane.add(btnChooseOceanEffectsColor);
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPane, lblOceanEffectsColor, 
+		effectsPanel.add(btnChooseOceanEffectsColor);
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Ocean effects color:", "", 
 				Arrays.asList(oceanEffectsColorDisplay, btnChooseOceanEffectsColor));
 		
-		JLabel lblOceanEffectsLevel = new JLabel("Ocean effects level:");
-		lblOceanEffectsLevel.setToolTipText("How far from coastlines ocean effects should extend.");
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -459,6 +528,7 @@ public class ThemePanel extends JScrollPane
 		concentricWavesLevelSlider.setMinorTickSpacing(1);
 		concentricWavesLevelSlider.setMaximum(4);
 		concentricWavesLevelSlider.setMajorTickSpacing(1);
+		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);
 
 		oceanEffectsLevelSlider = new JSlider();
 		oceanEffectsLevelSlider.setMinorTickSpacing(5);
@@ -466,12 +536,10 @@ public class ThemePanel extends JScrollPane
 		oceanEffectsLevelSlider.setPaintTicks(true);
 		oceanEffectsLevelSlider.setPaintLabels(true);
 		oceanEffectsLevelSlider.setMajorTickSpacing(20);
-		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPane, lblOceanEffectsLevel, 
+		SwingHelper.setSliderWidthForSidePanel(oceanEffectsLevelSlider);
+		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Ocean effects level:", "How far from coastlines ocean effects should extend.",
 				Arrays.asList(concentricWavesLevelSlider, oceanEffectsLevelSlider));
 
-
-		JLabel lblRiverColor = new JLabel("River color:");
-		lblRiverColor.setToolTipText("Rivers will be drawn this color.");
 
 		riverColorDisplay = new JPanel();
 		riverColorDisplay.setSize(82, 23);
@@ -481,15 +549,12 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPane, riverColorDisplay, "River Color");
+				showColorPicker(effectsPanel, riverColorDisplay, "River Color");
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPane, lblRiverColor, 
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "River color:", "Rivers will be drawn this color.", 
 				Arrays.asList(riverColorDisplay, riverColorChooseButton));
 		
-
-		JLabel grungeColorLabel = new JLabel("Edge/Grunge color:");
-		grungeColorLabel.setToolTipText("Frayed edges and grunge will be this color");
 
 		grungeColorDisplay = new JPanel();
 		grungeColorDisplay.setSize(82, 23);
@@ -499,15 +564,12 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				showColorPicker(effectsPane, grungeColorDisplay, "Grunge Color");
+				showColorPicker(effectsPanel, grungeColorDisplay, "Grunge Color");
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPane, grungeColorLabel, 
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Edge/Grunge color:", "Grunge and frayed edge shading will be this color",
 				Arrays.asList(grungeColorDisplay, grungeColorChooseButton));
 
-
-		JLabel lblGrunge = new JLabel("Grunge:");
-		lblGrunge.setToolTipText("Determines the width of grunge on the edges of the map. 0 means none. ");
 
 		grungeSlider = new JSlider();
 		grungeSlider.setValue(0);
@@ -516,104 +578,27 @@ public class ThemePanel extends JScrollPane
 		grungeSlider.setMinorTickSpacing(100);
 		grungeSlider.setMaximum(2000);
 		grungeSlider.setMajorTickSpacing(500);
-		SwingHelper.addLabelAndComponentToPanel(effectsPane, lblGrunge, grungeSlider);
+		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
+		SwingHelper.addLabelAndComponentToPanel(effectsPanel, "Grunge:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
 		
-		return effectsPane;
+	    // Prevent the panel from expanding and shrinking.
+		//effectsPanel.add(Box.createVerticalStrut(100000));
+		
+		return scrollPane;
 	}
 	
-	private JXTaskPane createBorderPane(MainWindow mainWindow)
+	private Component createFontsPanel(MainWindow mainWindow)
 	{
-		final JXTaskPane borderPane = new JXTaskPane("Border");
-		borderPane.setLayout(new BoxLayout(borderPane, BoxLayout.Y_AXIS));
+		final JPanel fontsPanel = new JPanel();
+		fontsPanel.setLayout(new BoxLayout(fontsPanel, BoxLayout.Y_AXIS));
+		fontsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
 
-		drawBorderCheckbox = new JCheckBox("Draw border");
-		drawBorderCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
-		drawBorderCheckbox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
-				borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
-			}
-		});
-		borderPane.add(drawBorderCheckbox);
-		
-
-		JLabel lblBorderType = new JLabel("Border type:");
-		lblBorderType.setToolTipText("The set of images to draw for the border");
-
-		borderTypeComboBox = new JComboBox<String>();
-		SwingHelper.addLabelAndComponentToPanel(borderPane, lblBorderType, borderTypeComboBox);
-
-		
-		JLabel lblBorderWidth = new JLabel("Border width:");
-		lblBorderWidth.setToolTipText("Width of the border in pixels, scaled if resolution is scaled");
-
-		borderWidthSlider = new JSlider();
-		borderWidthSlider.setToolTipText("");
-		borderWidthSlider.setValue(100);
-		borderWidthSlider.setSnapToTicks(false);
-		borderWidthSlider.setPaintTicks(true);
-		borderWidthSlider.setPaintLabels(true);
-		borderWidthSlider.setMinorTickSpacing(50);
-		borderWidthSlider.setMaximum(800);
-		borderWidthSlider.setMajorTickSpacing(200);
-		SwingHelper.addLabelAndComponentToPanel(borderPane, lblBorderWidth, borderWidthSlider);
-
-
-		frayedEdgeCheckbox = new JCheckBox("Draw frayed edges");
-		frayedEdgeCheckbox.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
-				frayedEdgePolygonCountSlider.setEnabled(frayedEdgeCheckbox.isSelected());
-			}
-		});
-		borderPane.add(frayedEdgeCheckbox);
-
-		
-		JLabel lblFrayedEdgeShading = new JLabel("Shading width:");
-		lblFrayedEdgeShading.setToolTipText("The width of shading drawn around frayed edges. The color used is the grunge color.");
-
-		frayedEdgeShadingSlider = new JSlider();
-		frayedEdgeShadingSlider.setValue(30);
-		frayedEdgeShadingSlider.setPaintTicks(true);
-		frayedEdgeShadingSlider.setPaintLabels(true);
-		frayedEdgeShadingSlider.setMinorTickSpacing(50);
-		frayedEdgeShadingSlider.setMaximum(500);
-		frayedEdgeShadingSlider.setMajorTickSpacing(100);
-		SwingHelper.addLabelAndComponentToPanel(borderPane, lblFrayedEdgeShading, frayedEdgeShadingSlider);
-		
-
-		lblFrayedEdgeSize = new JLabel("Polygon count:");
-		lblFrayedEdgeSize.setToolTipText("The number of polygons used when creating the frayed border. "
-				+ "Higher values make the fray smaller.");
-
-		frayedEdgePolygonCountSlider = new JSlider();
-		frayedEdgePolygonCountSlider.setPaintTicks(true);
-		frayedEdgePolygonCountSlider.setPaintLabels(true);
-		frayedEdgePolygonCountSlider.setMinorTickSpacing(5000);
-		frayedEdgePolygonCountSlider.setMaximum(50000);
-		frayedEdgePolygonCountSlider.setMinimum(100);
-		frayedEdgePolygonCountSlider.setMajorTickSpacing(20000);
-		SwingHelper.addLabelAndComponentToPanel(borderPane, lblFrayedEdgeSize, frayedEdgePolygonCountSlider);
-		
-		return borderPane;
-	}
-	
-	private JXTaskPane createFontsPane(MainWindow mainWindow)
-	{
-		final JXTaskPane fontsPane = new JXTaskPane("Fonts");
-		fontsPane.setLayout(new BoxLayout(fontsPane, BoxLayout.Y_AXIS));
+		JScrollPane scrollPane = new JScrollPane(fontsPanel);
 
 		drawTextCheckBox = new JCheckBox("Draw text");
 		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
-		fontsPane.add(drawTextCheckBox);
+		fontsPanel.add(drawTextCheckBox);
 		
-		
-		JLabel lblTitleFont = new JLabel("Title font:");
 
 		titleFontDisplay = new JLabel("");
 
@@ -622,14 +607,13 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				runFontChooser(fontsPane, titleFontDisplay);
+				runFontChooser(fontsPanel, titleFontDisplay);
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPane, lblTitleFont, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPanel, "Title font:", "",
 				Arrays.asList(titleFontDisplay, btnTitleFont));
 		
 		
-		JLabel lblRegionFont = new JLabel("Region font:");
 
 		regionFontDisplay = new JLabel("");
 
@@ -638,15 +622,13 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				runFontChooser(fontsPane, regionFontDisplay);
+				runFontChooser(fontsPanel, regionFontDisplay);
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPane, lblRegionFont, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPanel, "Region font:", "", 
 				Arrays.asList(regionFontDisplay, btnRegionFont));
 
 
-
-		JLabel lblMountainRangeFont = new JLabel("Mountain range font:");
 
 		mountainRangeFontDisplay = new JLabel("");
 
@@ -655,15 +637,13 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				runFontChooser(fontsPane, mountainRangeFontDisplay);
+				runFontChooser(fontsPanel, mountainRangeFontDisplay);
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPane, lblMountainRangeFont, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPanel, "Mountain range font:", "",
 				Arrays.asList(mountainRangeFontDisplay, btnMountainRangeFont));
 
 		
-
-		JLabel lblMountainGroupFont = new JLabel("Cities/mountains font:");
 
 		otherMountainsFontDisplay = new JLabel("");
 
@@ -672,14 +652,12 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				runFontChooser(fontsPane, otherMountainsFontDisplay);
+				runFontChooser(fontsPanel, otherMountainsFontDisplay);
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPane, lblMountainGroupFont, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPanel, "Cities/mountains font:", "", 
 				Arrays.asList(otherMountainsFontDisplay, btnOtherMountainsFont));
 		
-
-		JLabel lblRiverFont = new JLabel("River font:");
 
 		riverFontDisplay = new JLabel("");
 
@@ -688,15 +666,12 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				runFontChooser(fontsPane, riverFontDisplay);
+				runFontChooser(fontsPanel, riverFontDisplay);
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPane, lblRiverFont, 
+		SwingHelper.addLabelAndComponentsToPanelVertical(fontsPanel, "River font:", "",
 				Arrays.asList(riverFontDisplay, btnRiverFont));
 
-		
-
-		JLabel lblTextColor = new JLabel("Text color:");
 
 		textColorDisplay = new JPanel();
 		textColorDisplay.setSize(82, 23);
@@ -706,19 +681,17 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPickerWithPreviewPanel(fontsPane, textColorDisplay, "Text Color");
+				showColorPickerWithPreviewPanel(fontsPanel, textColorDisplay, "Text Color");
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(fontsPane, lblTextColor, 
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(fontsPanel, "Text color:", "", 
 				Arrays.asList(textColorDisplay, btnChooseTextColor));
 		
 
 		chckbxDrawBoldBackground = new JCheckBox("Draw bold background");
-		fontsPane.add(chckbxDrawBoldBackground);
+		fontsPanel.add(chckbxDrawBoldBackground);
 		
 		
-		JLabel lblBoldBackgroundColor = new JLabel("Bold background color:");
-		lblBoldBackgroundColor.setToolTipText("Title and region names will be given a bold background in this color.");
 
 		boldBackgroundColorDisplay = new JPanel();
 		boldBackgroundColorDisplay.setBackground(new Color(244, 226, 194));
@@ -729,10 +702,11 @@ public class ThemePanel extends JScrollPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPickerWithPreviewPanel(fontsPane, boldBackgroundColorDisplay, "Bold Background Color");
+				showColorPickerWithPreviewPanel(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color");
 			}
 		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(fontsPane, lblBoldBackgroundColor, 
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(fontsPanel, "Bold background color:", 
+				"If '" + chckbxDrawBoldBackground.getText() + "' is checked, title and region names will be given a bold background in this color.",
 				Arrays.asList(boldBackgroundColorDisplay, btnChooseBoldBackgroundColor));
 		
 		
@@ -763,7 +737,7 @@ public class ThemePanel extends JScrollPane
 			}
 		});
 
-		return fontsPane;
+		return scrollPane;
 	}
 
 	private void updateDrawRegionsCheckboxEnabledAndSelected()
@@ -1047,7 +1021,6 @@ public class ThemePanel extends JScrollPane
 		drawBorderCheckbox.doClick();
 
 		updateBackgroundImageDisplays();
-
 	}
 
 	public void getSettingsFromGUI(MapSettings settings)
@@ -1120,4 +1093,13 @@ public class ThemePanel extends JScrollPane
 		component.setToolTipText(currentToolTop.replace(message, ""));
 	}
 
+	public boolean areRegionColorsVisible()
+	{
+		return colorRegionsCheckBox.isSelected();
+	}
+	
+	public Color getLandColor()
+	{
+		return landDisplayPanel.getColor();
+	}
 }

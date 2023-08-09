@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -13,11 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
@@ -33,35 +27,20 @@ import nortantis.util.ImageHelper;
 public abstract class EditorTool
 {
 	protected final MapEditingPanel mapEditingPanel;
-	BufferedImage placeHolder;
 	private JPanel toolOptionsPanel;
-	protected MainWindow parent;
+	protected MainWindow mainWindow;
 	private JToggleButton toggleButton;
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	protected Undoer undoer;
+	protected ToolsPanel toolsPanel;
 	
-	public EditorTool(MainWindow parent)
+	public EditorTool(MainWindow parent, ToolsPanel toolsPanel)
 	{
-		this.parent = parent;
-		placeHolder = createPlaceholderImage();
+		this.mainWindow = parent;
+		this.toolsPanel = toolsPanel;
 		mapEditingPanel = parent.mapEditingPanel;
-		mapEditingPanel.setImage(placeHolder);
 		toolOptionsPanel = createToolsOptionsPanel();
 		undoer = parent.undoer;
-	}
-
-	private BufferedImage createPlaceholderImage()
-	{
-		String message = "Drawing the map. Some details like borders and grunge are not shown in edit mode.";
-		final int scale = 2;
-		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30 * scale);
-		Point textBounds = TextDrawer.getTextBounds(message, font);
-		BufferedImage placeHolder = new BufferedImage((textBounds.x + 10) * scale, (textBounds.y + 20) * scale, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = placeHolder.createGraphics();
-		g.setFont(font);
-		g.setColor(new Color(168, 168, 168));
-		g.drawString(message, 8, textBounds.y + 5);
-		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth() / scale, Method.QUALITY);
 	}
 	
 	public abstract String getToolbarName();
@@ -119,14 +98,14 @@ public abstract class EditorTool
 	
 	public nortantis.graph.geom.Point getPointOnGraph(java.awt.Point point)
 	{
-		return new nortantis.graph.geom.Point(point.x * (1.0 / parent.zoom), point.y * (1.0 / parent.zoom));
+		return new nortantis.graph.geom.Point(point.x * (1.0 / mainWindow.zoom), point.y * (1.0 / mainWindow.zoom));
 	}
 	
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
 		
-		Center center = parent.mapParts.graph.findClosestCenter(getPointOnGraph(pointFromMouse));
+		Center center = mainWindow.mapParts.graph.findClosestCenter(getPointOnGraph(pointFromMouse));
 		if (center != null)
 		{
 			selected.add(center);
@@ -137,10 +116,10 @@ public abstract class EditorTool
 			return selected;
 		}
 		
-		int brushRadius = (int)((double)(brushDiameter / parent.zoom)) / 2;
+		int brushRadius = (int)((double)(brushDiameter / mainWindow.zoom)) / 2;
 		
 		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
-		return parent.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
+		return mainWindow.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
 	}
 	
 	
@@ -153,11 +132,11 @@ public abstract class EditorTool
 		else
 		{
 			nortantis.graph.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
-			Center closestCenter = parent.mapParts.graph.findClosestCenter(graphPoint);
-			Set<Center> overlapping = parent.mapParts.graph.breadthFirstSearch(
-					(c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / parent.zoom), closestCenter);
+			Center closestCenter = mainWindow.mapParts.graph.findClosestCenter(graphPoint);
+			Set<Center> overlapping = mainWindow.mapParts.graph.breadthFirstSearch(
+					(c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
 			Set<Edge> selected = new HashSet<>();
-			int brushRadius = (int)((double)(brushDiameter / parent.zoom)) / 2;
+			int brushRadius = (int)((double)(brushDiameter / mainWindow.zoom)) / 2;
 			for (Center center : overlapping)
 			{
 				for (Edge edge : center.borders)
@@ -175,7 +154,7 @@ public abstract class EditorTool
 	
 	private Edge getClosestEdge(nortantis.graph.geom.Point point)
 	{
-		Center center = parent.mapParts.graph.findClosestCenter(point);
+		Center center = mainWindow.mapParts.graph.findClosestCenter(point);
 		Edge closest = null;
 		double closestDistance = Double.POSITIVE_INFINITY;
 		for (Edge edge : center.borders)

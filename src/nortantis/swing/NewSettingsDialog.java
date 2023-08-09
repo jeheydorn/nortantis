@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
@@ -8,15 +7,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
 import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -46,9 +41,7 @@ public class NewSettingsDialog extends JDialog
 	JSlider centerLandToWaterProbSlider;
 	private JComboBox<String> dimensionsComboBox;
 	private ImagePanel previewPanel;
-	private JLabel lblSize;
 	private JLabel lblEdgeLandToWaterRatio;
-	private JLabel lblCenterLandtowaterRatio;
 	private JLabel lblDimensions;
 	JPanel booksPanel;
 	MapSettings settings;
@@ -149,22 +142,17 @@ public class NewSettingsDialog extends JDialog
 		
 		// TODO Add buttons for regenerating theme or land.
 		
-		lblDimensions = new JLabel("Dimensions:");
-		lblDimensions.setToolTipText(
-				"Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while"
-				+ " exporting. This doesn't include the border, if you add one.");
-		
 		
 		dimensionsComboBox = new JComboBox<>();
-		for (String dimension : getAllowedDimmensions())
+		for (String dimension : SettingsGenerator.getAllowedDimmensions())
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
-		SwingHelper.addLabelAndComponentToPanel(leftPanel, lblDimensions, dimensionsComboBox);
+		SwingHelper.addLabelAndComponentToPanel(leftPanel, "Dimensions:",
+				"Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while"
+						+ " exporting. This doesn't include the border, if you add one.",
+				dimensionsComboBox);
 
-
-		lblSize = new JLabel("World size:");
-		lblSize.setToolTipText("The number of polygons in the randomly generated world.");
 
 		worldSizeSlider = new JSlider();
 		worldSizeSlider.setSnapToTicks(true);
@@ -174,12 +162,9 @@ public class NewSettingsDialog extends JDialog
 		worldSizeSlider.setPaintTicks(true);
 		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
 		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
-		SwingHelper.addLabelAndComponentToPanel(leftPanel, lblSize, worldSizeSlider);
+		SwingHelper.addLabelAndComponentToPanel(leftPanel, "World size:", "The number of polygons in the randomly generated world.",
+				worldSizeSlider);
 
-		
-		lblEdgeLandToWaterRatio = new JLabel("Edge land probability:");
-		lblEdgeLandToWaterRatio
-				.setToolTipText("The probability that a tectonic plate touching the edge of the map will be land rather than ocean.");
 
 		edgeLandToWaterProbSlider = new JSlider();
 		edgeLandToWaterProbSlider.setValue(70);
@@ -196,11 +181,10 @@ public class NewSettingsDialog extends JDialog
 			}
 			edgeLandToWaterProbSlider.setLabelTable(labelTable);
 		}
-		SwingHelper.addLabelAndComponentToPanel(rightPanel, lblCenterLandtowaterRatio, edgeLandToWaterProbSlider);
+		SwingHelper.addLabelAndComponentToPanel(rightPanel, "Edge land probability:", 
+				"The probability that a tectonic plate touching the edge of the map will be land rather than ocean.",
+				edgeLandToWaterProbSlider);
 
-		lblCenterLandtowaterRatio = new JLabel("Center land probability:");
-		lblCenterLandtowaterRatio
-				.setToolTipText("The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.");
 
 		centerLandToWaterProbSlider = new JSlider();
 		centerLandToWaterProbSlider.setValue(70);
@@ -217,7 +201,9 @@ public class NewSettingsDialog extends JDialog
 			}
 			centerLandToWaterProbSlider.setLabelTable(labelTable);
 		}
-		SwingHelper.addLabelAndComponentToPanel(rightPanel, lblCenterLandtowaterRatio, centerLandToWaterProbSlider);
+		SwingHelper.addLabelAndComponentToPanel(rightPanel, "Center land probability:",
+				"The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.",
+				centerLandToWaterProbSlider);
 
 		
 		JLabel lblBooks = new JLabel("Books:");
@@ -225,7 +211,7 @@ public class NewSettingsDialog extends JDialog
 		leftPanel.add(lblBooks);
 
 		booksPanel = new JPanel();
-		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(booksPanel, settings);
+		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(booksPanel, settings.books);
 		leftPanel.add(booksScrollPane);
 		
 		
@@ -233,7 +219,6 @@ public class NewSettingsDialog extends JDialog
 //		lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
 //		lblEdgeLandtowaterRatio
 //				.setToolTipText("The probability that a tectonic plate touching the edge of the map will be land rather than ocean.");
-//		lblEdgeLandtowaterRatio.setBounds(461, 12, 239, 22);
 //		terrainPanel.add(lblEdgeLandtowaterRatio);
 //
 //		edgeLandToWaterProbSlider = new JSlider();
@@ -242,7 +227,6 @@ public class NewSettingsDialog extends JDialog
 //		edgeLandToWaterProbSlider.setPaintLabels(true);
 //		edgeLandToWaterProbSlider.setMinorTickSpacing(25);
 //		edgeLandToWaterProbSlider.setMajorTickSpacing(25);
-//		edgeLandToWaterProbSlider.setBounds(565, 32, 245, 79);
 //		{
 //			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 //			for (int i = edgeLandToWaterProbSlider.getMinimum(); i < edgeLandToWaterProbSlider.getMaximum()
@@ -257,7 +241,6 @@ public class NewSettingsDialog extends JDialog
 //		lblCenterLandtowaterRatio = new JLabel("Center land probability:");
 //		lblCenterLandtowaterRatio
 //				.setToolTipText("The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.");
-//		lblCenterLandtowaterRatio.setBounds(461, 111, 254, 22);
 //		terrainPanel.add(lblCenterLandtowaterRatio);
 //
 //		centerLandToWaterProbSlider = new JSlider();
@@ -266,7 +249,6 @@ public class NewSettingsDialog extends JDialog
 //		centerLandToWaterProbSlider.setPaintLabels(true);
 //		centerLandToWaterProbSlider.setMinorTickSpacing(25);
 //		centerLandToWaterProbSlider.setMajorTickSpacing(25);
-//		centerLandToWaterProbSlider.setBounds(565, 131, 245, 79);
 //		{
 //			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
 //			for (int i = centerLandToWaterProbSlider.getMinimum(); i < centerLandToWaterProbSlider.getMaximum()
@@ -278,7 +260,8 @@ public class NewSettingsDialog extends JDialog
 //		}
 //		terrainPanel.add(centerLandToWaterProbSlider);
 
-				
+		
+		// TODO Add Accept button. And when pressed, Call MainWindow.createPlaceholderImage with the message: "Drawing the map..."
 	}
 	
 	private void loadSettingsIntoGUI(MapSettings settings)
@@ -324,15 +307,6 @@ public class NewSettingsDialog extends JDialog
 		selected = selected.substring(0, selected.indexOf("("));
 		String[] parts = selected.split("x");
 		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
-	}
-	
-	public static List<String> getAllowedDimmensions()
-	{
-		List<String> result = new ArrayList<>();
-		result.add("4096 x 4096 (square)");
-		result.add("4096 x 2304 (16 by 9)");
-		result.add("4096 x 2531 (golden ratio)");
-		return result;
 	}
 	
 	private int getDimensionIndexFromDimensions(int generatedWidth, int generatedHeight)

@@ -28,7 +28,6 @@ import nortantis.swing.MapEdits;
 import nortantis.swing.RegionEdit;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
-import nortantis.util.Logger;
 
 /**
  * For parsing and storing map settings.

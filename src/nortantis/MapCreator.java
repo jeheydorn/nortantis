@@ -330,10 +330,6 @@ public class MapCreator
 	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts) throws IOException
 	{
 		Logger.println("Creating the map");
-		if (!Files.exists(Paths.get(settings.landBackgroundImage)))
-			throw new IllegalArgumentException("Land background image file does not exists: " + settings.landBackgroundImage);
-		if (!Files.exists(Paths.get(settings.oceanBackgroundImage)))
-			throw new IllegalArgumentException("Ocean background image file does not exists: " + settings.oceanBackgroundImage);
 
 		double startTime = System.currentTimeMillis();
 
