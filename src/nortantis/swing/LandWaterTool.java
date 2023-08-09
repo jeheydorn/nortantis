@@ -163,8 +163,7 @@ public class LandWaterTool extends EditorTool
 	    // Color chooser
 	    if (areRegionColorsVisible())
 	    {   
-		    colorDisplay = new JPanel();
-		    colorDisplay.setPreferredSize(new Dimension(50, 25));
+		    colorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		    //colorDisplay.setBackground(mainWindow.settings.landColor); // TODO Replace this with a field in this tool for changing the base color and generating new ones.
 	    	
 			JButton chooseButton = new JButton("Choose");

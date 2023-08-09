@@ -14,7 +14,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -38,8 +37,6 @@ import nortantis.BGColorCancelHandler;
 import nortantis.BGColorPreviewPanel;
 import nortantis.BackgroundGenerator;
 import nortantis.FractalBGGenerator;
-import nortantis.IconType;
-import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
@@ -72,7 +69,6 @@ public class ThemePanel extends JTabbedPane
 	private Dimension backgroundDisplaySize = new Dimension(200, 100);
 	private JCheckBox colorRegionsCheckBox;
 	private JSlider grungeSlider;
-	private JLabel lblBackgroundRandomSeed;
 	private JTextField textureImageFilename;
 	private JLabel lblTextureImage;
 	private JLabel lblOceanColor;
@@ -435,15 +431,14 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addLeftAlignedComponent(effectsPanel, colorRegionsCheckBox);
 		
 		
-		coastShadingColorDisplay = new JPanel();
-		coastShadingColorDisplay.setSize(82, 23);
+		coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		btnChooseCoastShadingColor = new JButton("Choose");
 		btnChooseCoastShadingColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color");
+				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color");
 			}
 		});
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Coast shading color:", "", 
@@ -463,15 +458,14 @@ public class ThemePanel extends JTabbedPane
 		
 		
 
-		coastlineColorDisplay = new JPanel();
-		coastlineColorDisplay.setSize(82, 23);
+		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		JButton buttonChooseCoastlineColor = new JButton("Choose");
 		buttonChooseCoastlineColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline Color");
+				SwingHelper.showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline Color");
 			}
 		});
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Coastline color:", "", 
@@ -505,15 +499,14 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Ocean effects type:", "", 
 				Arrays.asList(concentricWavesButton, ripplesRadioButton, shadeRadioButton));
 
-		oceanEffectsColorDisplay = new JPanel();
-		oceanEffectsColorDisplay.setSize(82, 23);
+		oceanEffectsColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		
 		JButton btnChooseOceanEffectsColor = new JButton("Choose");
 		btnChooseOceanEffectsColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPanel, oceanEffectsColorDisplay, "Ocean Effects Color");
+				SwingHelper.showColorPicker(effectsPanel, oceanEffectsColorDisplay, "Ocean Effects Color");
 			}
 		});
 		btnChooseOceanEffectsColor.setToolTipText("Choose a color for ocean effects near coastlines. Transparency is supported.");
@@ -543,30 +536,28 @@ public class ThemePanel extends JTabbedPane
 				Arrays.asList(concentricWavesLevelSlider, oceanEffectsLevelSlider));
 
 
-		riverColorDisplay = new JPanel();
-		riverColorDisplay.setSize(82, 23);
+		riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		JButton riverColorChooseButton = new JButton("Choose");
 		riverColorChooseButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPicker(effectsPanel, riverColorDisplay, "River Color");
+				SwingHelper.showColorPicker(effectsPanel, riverColorDisplay, "River Color");
 			}
 		});
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "River color:", "Rivers will be drawn this color.", 
 				Arrays.asList(riverColorDisplay, riverColorChooseButton));
 		
 
-		grungeColorDisplay = new JPanel();
-		grungeColorDisplay.setSize(82, 23);
+		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		final JButton grungeColorChooseButton = new JButton("Choose");
 		grungeColorChooseButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				showColorPicker(effectsPanel, grungeColorDisplay, "Grunge Color");
+				SwingHelper.showColorPicker(effectsPanel, grungeColorDisplay, "Grunge Color");
 			}
 		});
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Edge/Grunge color:", "Grunge and frayed edge shading will be this color",
@@ -675,15 +666,14 @@ public class ThemePanel extends JTabbedPane
 				Arrays.asList(riverFontDisplay, btnRiverFont));
 
 
-		textColorDisplay = new JPanel();
-		textColorDisplay.setSize(82, 23);
+		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		final JButton btnChooseTextColor = new JButton("Choose");
 		btnChooseTextColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPickerWithPreviewPanel(fontsPanel, textColorDisplay, "Text Color");
+				SwingHelper.showColorPickerWithPreviewPanel(fontsPanel, textColorDisplay, "Text Color");
 			}
 		});
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(fontsPanel, "Text color:", "", 
@@ -695,16 +685,14 @@ public class ThemePanel extends JTabbedPane
 		
 		
 
-		boldBackgroundColorDisplay = new JPanel();
-		boldBackgroundColorDisplay.setBackground(new Color(244, 226, 194));
-		boldBackgroundColorDisplay.setSize(82, 23);
+		boldBackgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
 		btnChooseBoldBackgroundColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				showColorPickerWithPreviewPanel(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color");
+				SwingHelper.showColorPickerWithPreviewPanel(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color");
 			}
 		});
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(fontsPanel, "Bold background color:", 
@@ -910,32 +898,6 @@ public class ThemePanel extends JTabbedPane
 			fontDisplay.setText(font.getFontName());
 			fontDisplay.setFont(font);
 		}
-	}
-
-	private static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title)
-	{
-		final JColorChooser colorChooser = new JColorChooser(colorDisplay.getBackground());
-		colorChooser.setPreviewPanel(new JPanel());
-
-		ActionListener okHandler = new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				colorDisplay.setBackground(colorChooser.getColor());
-			}
-
-		};
-		Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false, colorChooser, okHandler, null);
-		dialog.setVisible(true);
-
-	}
-
-	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
-	{
-		Color c = JColorChooser.showDialog(parent, "", colorDisplay.getBackground());
-		if (c != null)
-			colorDisplay.setBackground(c);
 	}
 
 	/**

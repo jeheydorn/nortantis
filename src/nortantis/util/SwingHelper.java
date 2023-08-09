@@ -2,7 +2,10 @@ package nortantis.util;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Collection;
 import java.util.List;
 
@@ -140,5 +143,33 @@ public class SwingHelper
 	public static void setSliderWidthForSidePanel(JSlider slider)
 	{
 		slider.setPreferredSize(new Dimension(sliderWidth, slider.getPreferredSize().height));
+	}
+	
+	
+	public static JPanel createColorPickerPreviewPanel()
+	{
+		JPanel panel = new JPanel();
+		panel.setPreferredSize(new Dimension(50, 25));
+		panel.setBackground(Color.BLACK);
+		return panel;
+	}
+
+	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title)
+	{
+		final JColorChooser colorChooser = new JColorChooser(colorDisplay.getBackground());
+		colorChooser.setPreviewPanel(new JPanel());
+
+		ActionListener okHandler = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				colorDisplay.setBackground(colorChooser.getColor());
+			}
+
+		};
+		Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false, colorChooser, okHandler, null);
+		dialog.setVisible(true);
+
 	}
 }
