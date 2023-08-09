@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -106,8 +107,9 @@ public class ToolsPanel extends JPanel
 			toolSelectPanel.add(toolButton);
 		}
 
-			toolsOptionsPanelContainer = new JPanel();
+		toolsOptionsPanelContainer = new JPanel();
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
+
 		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
 		JScrollPane toolsOptionsScrollPane = new JScrollPane(toolsOptionsPanelContainer);
 		add(toolsOptionsScrollPane);

@@ -57,7 +57,6 @@ public class SwingHelper
 		panel.add(compPanelWrapper);
 		panel.add(Box.createHorizontalGlue());
 		
-		//panel.setMaximumSize(new Dimension(sidePanelWidth - 5, panel.getMaximumSize().height));
 		
 		return panel;
 	}

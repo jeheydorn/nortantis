@@ -392,9 +392,11 @@ public class ThemePanel extends JTabbedPane
 	{
 		final JPanel effectsPanel = new JPanel();
 		effectsPanel.setLayout(new BoxLayout(effectsPanel, BoxLayout.Y_AXIS));
-		effectsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
-
-		JScrollPane scrollPane = new JScrollPane(effectsPanel);
+		
+		JPanel container = new JPanel();
+		container.add(effectsPanel);
+		
+		JScrollPane scrollPane = new JScrollPane(container);
 
 
 		jaggedLinesButton = new JRadioButton("Jagged");

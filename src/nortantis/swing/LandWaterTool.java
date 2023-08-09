@@ -85,7 +85,7 @@ public class LandWaterTool extends EditorTool
 	protected JPanel createToolsOptionsPanel()
 	{
 		JPanel toolOptionsPanel = new JPanel();
-		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // TODO - Isn't this line canceled out by the one after it?
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
 		
