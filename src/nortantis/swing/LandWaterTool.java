@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -32,13 +33,12 @@ import javax.swing.JToggleButton;
 import nortantis.Region;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.AssetsPath;
-import nortantis.util.SwingHelper;
 
 public class LandWaterTool extends EditorTool
 {
 
 	private JPanel colorDisplay;
-	private JPanel colorChooserPanel;
+	private RowHider colorChooserHider;
 	
 	private JRadioButton landButton;
 	private JRadioButton oceanButton;
@@ -51,8 +51,8 @@ public class LandWaterTool extends EditorTool
 	private JCheckBox highlightLakesCheckbox;
 	
 	private JComboBox<ImageIcon> brushSizeComboBox;
-	private JPanel brushSizePanel;
-	private JPanel selectColorPanel;
+	private RowHider brushSizeHider;
+	private RowHider selectColorHider;
 	private JCheckBox onlyUpdateLandCheckbox;
 	
 	private JSlider hueSlider;
@@ -84,10 +84,12 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
+		SwingHelper.resetGridY();
+		
 		JPanel toolOptionsPanel = new JPanel();
 		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // TODO - Isn't this line canceled out by the one after it?
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
+		toolOptionsPanel.setLayout(new GridBagLayout());
 		
 		
 		List<JComponent> radioButtons = new ArrayList<>();
@@ -102,16 +104,16 @@ public class LandWaterTool extends EditorTool
 			public void actionPerformed(ActionEvent e)
 			{
 				mapEditingPanel.clearSelectedCenters();
-				if (colorChooserPanel != null && areRegionColorsVisible())
+				if (colorChooserHider != null && areRegionColorsVisible())
 				{
 					boolean isVisible = paintRegionButton.isSelected() || fillRegionColorButton.isSelected();
-					colorChooserPanel.setVisible(isVisible);
-					selectColorPanel.setVisible(isVisible);
+					colorChooserHider.setVisible(isVisible);
+					selectColorHider.setVisible(isVisible);
 				}
 				
 				if (brushSizeComboBox != null)
 				{
-					brushSizePanel.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected() || landButton.isSelected());
+					brushSizeHider.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected() || landButton.isSelected());
 				}
 				
 				if (areRegionColorsVisible())
@@ -190,11 +192,11 @@ public class LandWaterTool extends EditorTool
 			chooserPanel.add(Box.createHorizontalGlue());
 			chooserPanel.add(chooseButton);
 			
-			colorChooserPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Color:", "", chooserPanel);
+			colorChooserHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Color:", "", chooserPanel);
 			
 			selectColorFromMapButton = new JToggleButton("Select color from map");
 			selectColorFromMapButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
-			selectColorPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", selectColorFromMapButton);
+			selectColorHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", selectColorFromMapButton);
 
 	    }
 
@@ -213,7 +215,7 @@ public class LandWaterTool extends EditorTool
 	    	g.fillOval(largest/2 - brushSize/2, largest/2 - brushSize/2, brushSize, brushSize);
 	    	brushSizeComboBox.addItem(new ImageIcon(image));
 	    }
-	    brushSizePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
+	    brushSizeHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
 	    
 	    
 	    highlightLakesCheckbox = new JCheckBox("Highlight lakes");

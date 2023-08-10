@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -38,7 +39,6 @@ import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.JTextFieldFixed;
-import nortantis.util.SwingHelper;
 
 public class TextTool extends EditorTool
 {
@@ -51,7 +51,7 @@ public class TextTool extends EditorTool
 	private JRadioButton addButton;
 	private JRadioButton rotateButton;
 	private JRadioButton deleteButton;
-	private JPanel textTypePanel;
+	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
 	private JPanel textFieldPanel;
 	private JPanel booksAndLabelPanel;
@@ -109,10 +109,12 @@ public class TextTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
+		SwingHelper.resetGridY();
+		
 		JPanel toolOptionsPanel = new JPanel();
 		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
+		toolOptionsPanel.setLayout(new GridBagLayout());
 				
 		{
 			ButtonGroup group = new ButtonGroup();
@@ -174,7 +176,7 @@ public class TextTool extends EditorTool
 		
 		textTypeComboBox = new JComboBoxFixed<>();
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		textTypePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Text type:", "", textTypeComboBox);
+		textTypeHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Text type:", "", textTypeComboBox);
 		
 		for (TextType type : TextType.values())
 		{
@@ -223,7 +225,7 @@ public class TextTool extends EditorTool
 			lastSelected = null;
 			mapEditingPanel.repaint();
 		}
-		textTypePanel.setVisible(addButton.isSelected());
+		textTypeHider.setVisible(addButton.isSelected());
 		textFieldPanel.setVisible(editButton.isSelected());
 		if (editButton.isSelected() && lastSelected != null)
 		{

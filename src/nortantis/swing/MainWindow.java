@@ -8,6 +8,7 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -76,7 +77,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
-import nortantis.util.SwingHelper;
+import nortantis.util.Range;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame
@@ -152,7 +153,9 @@ public class MainWindow extends JFrame
 		else
 		{
 			// TODO make sure this message is correct.
-			mapEditingPanel.image = createPlaceholderImage("Welcome to Nortantis. To create a map, go to File > New Random Map.");
+			mapEditingPanel.image = createPlaceholderImage(new String[] {
+					"Welcome to Nortantis. To create a map, go to", 
+					"File > New Random Map."});
 			mapEditingPanel.repaint();
 		}
 	}
@@ -1651,16 +1654,35 @@ public class MainWindow extends JFrame
 		return books;
 	}
 
-	private BufferedImage createPlaceholderImage(String message)
+	private BufferedImage createPlaceholderImage(String[] message)
 	{
+		if (message.length == 0)
+		{
+			return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+		}
+		
 		final int scale = 2;
 		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30 * scale);
-		Point textBounds = TextDrawer.getTextBounds(message, font);
-		BufferedImage placeHolder = new BufferedImage((textBounds.x + 10), (textBounds.y + 20), BufferedImage.TYPE_INT_ARGB);
+		int fontHeight = TextDrawer.getFontHeight(font);
+		
+		Dimension textBounds = TextDrawer.getTextBounds(message[0], font);
+		for (int i : new Range(1, message.length))
+		{
+			Dimension lineBounds = TextDrawer.getTextBounds(message[i], font);
+			textBounds = new Dimension(Math.max(textBounds.width, lineBounds.width), 
+					textBounds.height + lineBounds.height);
+		}
+		
+		BufferedImage placeHolder = new BufferedImage((textBounds.width + 15), (textBounds.height + 20), BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = placeHolder.createGraphics();
 		g.setFont(font);
 		g.setColor(new Color(168, 168, 168));
-		g.drawString(message, 8, textBounds.y + 5);
+		
+		for (int i : new Range(message.length))
+		{
+			g.drawString(message[i], 14, fontHeight + (i * fontHeight));
+		}
+		
 		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth() / scale, Method.QUALITY);
 	}
 }

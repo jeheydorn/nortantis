@@ -31,7 +31,6 @@ import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.UserPreferences;
 import nortantis.util.JComboBoxFixed;
-import nortantis.util.SwingHelper;
 
 @SuppressWarnings("serial")
 public class ToolsPanel extends JPanel

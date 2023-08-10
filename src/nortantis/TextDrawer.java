@@ -1251,11 +1251,21 @@ public class TextDrawer
 		return true;
 	}
 	
-	public static java.awt.Point getTextBounds(String text, Font font)
+	public static java.awt.Dimension getTextBounds(String text, Font font)
 	{
-		FontMetrics metrics = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(font);
-		return new java.awt.Point(metrics.stringWidth(text), 
-				metrics.getHeight());
+		FontMetrics metrics = getFontMetrics(font);
+		return new java.awt.Dimension(metrics.stringWidth(text), metrics.getHeight());
+	}
+	
+	private static FontMetrics getFontMetrics(Font font)
+	{
+		return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(font);
+	}
+	
+	public static int getFontHeight(Font font)
+	{
+		FontMetrics metrics = getFontMetrics(font);
+		return metrics.getAscent() + metrics.getDescent();
 	}
 	
 	private static int getFontHeight(FontMetrics metrics)

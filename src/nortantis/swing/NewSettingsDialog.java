@@ -30,7 +30,6 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.util.Logger;
 import nortantis.util.Range;
-import nortantis.util.SwingHelper;
 
 @SuppressWarnings("serial")
 public class NewSettingsDialog extends JDialog

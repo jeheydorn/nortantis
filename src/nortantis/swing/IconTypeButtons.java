@@ -7,12 +7,12 @@ import javax.swing.JRadioButton;
 
 public class IconTypeButtons
 {
-	public JPanel panel;
+	public RowHider hider;
 	public List<JRadioButton> buttons;
 	
-	public IconTypeButtons(JPanel panel, List<JRadioButton> buttons)
+	public IconTypeButtons(RowHider hider, List<JRadioButton> buttons)
 	{
-		this.panel = panel;
+		this.hider = hider;
 		this.buttons = buttons;
 	}
 	

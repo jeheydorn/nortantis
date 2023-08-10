@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -37,7 +38,6 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.util.AssetsPath;
-import nortantis.util.SwingHelper;
 
 public class IconTool extends EditorTool
 {
@@ -45,7 +45,7 @@ public class IconTool extends EditorTool
 	private JRadioButton mountainsButton;
 	private JRadioButton treesButton;
 	private JComboBox<ImageIcon> brushSizeComboBox;
-	private JPanel brushSizePanel;
+	private RowHider brushSizeHider;
 	private JRadioButton hillsButton;
 	private JRadioButton dunesButton;
 	private IconTypeButtons mountainTypes;
@@ -55,23 +55,23 @@ public class IconTool extends EditorTool
 	private IconTypeButtons cityTypes;
 	private JSlider densitySlider;
 	private Random rand;
-	private JPanel densityPanel;
+	private RowHider densityHider;
 	private JRadioButton eraseButton;
 	private JRadioButton eraseAllButton;
 	private JRadioButton eraseMountainsButton;
 	private JRadioButton eraseHillsButton;
 	private JRadioButton eraseDunesButton;
 	private JRadioButton eraseTreesButton;
-	private JPanel eraseOptionsPanel;
+	private RowHider eraseOptionsHider;
 	private JRadioButton riversButton;
 	private JRadioButton citiesButton;
-	private JPanel riverOptionPanel;
+	private RowHider riverOptionHider;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
 	private JCheckBox highlightRiversCheckbox;
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
-	private JPanel cityTypePanel;
+	private RowHider cityTypeHider;
 
 	public IconTool(MainWindow parent, ToolsPanel toolsPanel)
 	{
@@ -105,10 +105,12 @@ public class IconTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
+		SwingHelper.resetGridY();
+		
 		JPanel toolOptionsPanel = new JPanel();
 		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		toolOptionsPanel.setLayout(new BoxLayout(toolOptionsPanel, BoxLayout.Y_AXIS));
+		toolOptionsPanel.setLayout(new GridBagLayout());
 		
 		// Tools
 		{
@@ -234,7 +236,7 @@ public class IconTool extends EditorTool
 
 			}
 		});
-		cityTypePanel = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "City icons type:", "", 
+		cityTypeHider = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "City icons type:", "", 
 				Arrays.asList(lblType, changeButton));
 		
 		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
@@ -245,7 +247,7 @@ public class IconTool extends EditorTool
 			riverWidthSlider.setValue(1);
 			riverWidthSlider.setPreferredSize(new Dimension(160, 50));
 			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
-		    riverOptionPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Width:", "", riverWidthSlider);
+		    riverOptionHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Width:", "", riverWidthSlider);
 		}
 		
 		// Eraser options
@@ -282,14 +284,14 @@ public class IconTool extends EditorTool
 		    radioButtons.add(eraseRiversButton);
 
 		    eraseAllButton.setSelected(true);
-		    eraseOptionsPanel = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Erase:", "", radioButtons);
+		    eraseOptionsHider = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Erase:", "", radioButtons);
 		}
 		
 		densitySlider = new JSlider(1, 50);
 		densitySlider.setValue(10);
 		densitySlider.setPreferredSize(new Dimension(160, 50));
 		SwingHelper.setSliderWidthForSidePanel(densitySlider);
-		densityPanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Density:", "", densitySlider);
+		densityHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Density:", "", densitySlider);
 	    
 	    brushSizeComboBox = new JComboBox<>();
 	    int largest = Collections.max(brushSizes);
@@ -306,7 +308,7 @@ public class IconTool extends EditorTool
 	    	g.fillOval(largest/2 - brushSize/2, largest/2 - brushSize/2, brushSize, brushSize);
 	    	brushSizeComboBox.addItem(new ImageIcon(image));
 	    }
-	    brushSizePanel = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
+	    brushSizeHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
 	    
 	    highlightRiversCheckbox = new JCheckBox("Highlight rivers");
 	    highlightRiversCheckbox.setToolTipText("Highlight rivers to make them easier to see.");
@@ -332,16 +334,16 @@ public class IconTool extends EditorTool
 	
 	private void updateTypePanels()
 	{
-		mountainTypes.panel.setVisible(mountainsButton.isSelected());
-		hillTypes.panel.setVisible(hillsButton.isSelected());
-		duneTypes.panel.setVisible(dunesButton.isSelected());
-		treeTypes.panel.setVisible(treesButton.isSelected());
-		cityTypes.panel.setVisible(citiesButton.isSelected());
-		cityTypePanel.setVisible(citiesButton.isSelected());
-		densityPanel.setVisible(treesButton.isSelected());
-		eraseOptionsPanel.setVisible(eraseButton.isSelected());
-		riverOptionPanel.setVisible(riversButton.isSelected());
-		brushSizePanel.setVisible(!riversButton.isSelected());
+		mountainTypes.hider.setVisible(mountainsButton.isSelected());
+		hillTypes.hider.setVisible(hillsButton.isSelected());
+		duneTypes.hider.setVisible(dunesButton.isSelected());
+		treeTypes.hider.setVisible(treesButton.isSelected());
+		cityTypes.hider.setVisible(citiesButton.isSelected());
+		cityTypeHider.setVisible(citiesButton.isSelected());
+		densityHider.setVisible(treesButton.isSelected());
+		eraseOptionsHider.setVisible(eraseButton.isSelected());
+		riverOptionHider.setVisible(riversButton.isSelected());
+		brushSizeHider.setVisible(!riversButton.isSelected());
 	}
 	
 	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, IconType iconType)
