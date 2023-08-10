@@ -50,6 +50,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
@@ -75,6 +76,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
+import nortantis.util.SwingHelper;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame
@@ -87,7 +89,7 @@ public class MainWindow extends JFrame
 	public MapEdits edits;
 	public JMenuItem clearEditsMenuItem;
 
-	JScrollPane scrollPane;
+	JScrollPane mapEditingScrollPane;
 	// Controls how large 100% zoom is, in pixels.
 	final double oneHundredPercentMapWidth = 4096;
 	public MapEditingPanel mapEditingPanel;
@@ -111,7 +113,8 @@ public class MainWindow extends JFrame
 	private ThemePanel themePanel;
 	private ToolsPanel toolsPanel;
 	private double resolutionForImageExport;
-		
+
+	
 	public MainWindow(String fileToOpen)
 	{
 		super(frameTitleBase);
@@ -203,12 +206,23 @@ public class MainWindow extends JFrame
 		});
 				
 		createMenuBar();
-		
-		createThemePanel();
 				
+		themePanel = new ThemePanel(this);
+		themePanel.setMinimumSize(new Dimension(SwingHelper.sidePanelWidth, themePanel.getMinimumSize().height));
 		createMapEditingPanel();
+		mapEditingScrollPane.setMinimumSize(new Dimension(500, themePanel.getMinimumSize().height));
+		toolsPanel = new ToolsPanel(this, mapEditingPanel);
+		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelWidth, toolsPanel.getMinimumSize().height));
+		//toolsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth, toolsPanel.getPreferredSize().height));
 		
-		createToolsPanel(mapEditingPanel);
+		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanel, mapEditingScrollPane);
+		splitPane1.setOneTouchExpandable(true);
+		JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane1, toolsPanel);
+		splitPane2.setResizeWeight(1.0);
+		splitPane2.setOneTouchExpandable(true);
+		getContentPane().add(splitPane2, BorderLayout.CENTER);
+		
+
 		
 		createConsoleOutput();
 
@@ -222,18 +236,6 @@ public class MainWindow extends JFrame
 	{
 		NewSettingsDialog dialog = new NewSettingsDialog(this);
 		dialog.setVisible(true);
-	}
-	
-	private void createThemePanel()
-	{
-		themePanel = new ThemePanel(this);
-		getContentPane().add(themePanel, BorderLayout.WEST);
-	}
-	
-	private void createToolsPanel(MapEditingPanel mapEditingPanel)
-	{
-		toolsPanel = new ToolsPanel(this, mapEditingPanel);
-		getContentPane().add(toolsPanel, BorderLayout.EAST);
 	}
 	
 	private void createConsoleOutput()
@@ -339,14 +341,10 @@ public class MainWindow extends JFrame
 			}
 		});
 		
-		
-		
-		scrollPane = new JScrollPane(mapEditingPanel);
-		// Speed up the scroll speed.
-		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-		getContentPane().add(scrollPane);
+		mapEditingScrollPane = new JScrollPane(mapEditingPanel);
 
-		addComponentListener(new ComponentAdapter()
+		// TODO Make sure the below works. It use to be on the frame.
+		mapEditingScrollPane.addComponentListener(new ComponentAdapter()
 		{
 			public void componentResized(ComponentEvent componentEvent)
 			{
@@ -356,6 +354,9 @@ public class MainWindow extends JFrame
 				}
 			}
 		});
+
+		// Speed up the scroll speed.
+		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 	}
 	
 	private void createMenuBar()
@@ -702,16 +703,16 @@ public class MainWindow extends JFrame
 			{
 				// For some reason I have to do a whole bunch of revalidation or else scrollRectToVisible doesn't realize the map has changed size.
 				mapEditingPanel.revalidate();
-				scrollPane.revalidate();
+				mapEditingScrollPane.revalidate();
 				this.revalidate();
 				
 				mapEditingPanel.scrollRectToVisible(scrollTo);
 			}
 			
 			mapEditingPanel.revalidate();
-			scrollPane.revalidate();
+			mapEditingScrollPane.revalidate();
 			mapEditingPanel.repaint();
-			scrollPane.repaint();
+			mapEditingScrollPane.repaint();
 		}
 	}
 
@@ -726,8 +727,8 @@ public class MainWindow extends JFrame
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				Dimension size = new Dimension(scrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-						scrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+				Dimension size = new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
 				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
 						mapEditingPanel.mapFromMapCreator.getHeight());
@@ -1576,7 +1577,7 @@ public class MainWindow extends JFrame
 		try
 		{
 			//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			 UIManager.setLookAndFeel( new FlatDarkLaf() );
+			UIManager.setLookAndFeel( new FlatDarkLaf() );
 		}
 		catch (Exception e)
 		{

@@ -189,7 +189,9 @@ public class TextTool extends EditorTool
 		booksAndLabelPanel.add(lblBooks);
 
 		toolsPanel.booksPanel = new JPanel();
+
 		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(toolsPanel.booksPanel, getSelectedBooks());
+
 		booksAndLabelPanel.add(booksScrollPane);
 		toolOptionsPanel.add(booksAndLabelPanel);
 		

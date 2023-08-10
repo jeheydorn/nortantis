@@ -80,7 +80,7 @@ public class ToolsPanel extends JPanel
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
 		JPanel toolSelectPanel = new JPanel(new FlowLayout());
-		toolSelectPanel.setMaximumSize(new Dimension(SwingHelper.sidePanelWidth, 20));
+		toolSelectPanel.setMaximumSize(new Dimension(toolSelectPanel.getMaximumSize().width, 20));
 		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tools"));
 		add(toolSelectPanel);
 		for (EditorTool tool : tools)
