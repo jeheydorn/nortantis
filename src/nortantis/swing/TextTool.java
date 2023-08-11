@@ -198,7 +198,7 @@ public class TextTool extends EditorTool
 		toolOptionsPanel.add(booksAndLabelPanel);
 		
 		// Prevent the panel from shrinking when components are hidden.
-		toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelWidth - 25, 0)));
+		toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelPreferredWidth - 25, 0)));
 		
 		toolOptionsPanel.add(Box.createVerticalGlue());
 		

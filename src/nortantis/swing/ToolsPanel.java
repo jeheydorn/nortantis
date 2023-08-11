@@ -56,6 +56,9 @@ public class ToolsPanel extends JPanel
 	
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel)
 	{
+		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, getPreferredSize().height));
+		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
+		
 		this.mainWindow = mainWindow;
 		
 		// Setup tools
@@ -75,7 +78,7 @@ public class ToolsPanel extends JPanel
 			currentTool = tools.get(2);
 		}
 
-		setPreferredSize(new Dimension(SwingHelper.sidePanelWidth, mainWindow.getContentPane().getHeight()));
+		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
 		JPanel toolSelectPanel = new JPanel(new FlowLayout());

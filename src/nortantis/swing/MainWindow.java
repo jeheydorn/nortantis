@@ -211,12 +211,9 @@ public class MainWindow extends JFrame
 		createMenuBar();
 				
 		themePanel = new ThemePanel(this);
-		themePanel.setMinimumSize(new Dimension(SwingHelper.sidePanelWidth, themePanel.getMinimumSize().height));
 		createMapEditingPanel();
 		mapEditingScrollPane.setMinimumSize(new Dimension(500, themePanel.getMinimumSize().height));
 		toolsPanel = new ToolsPanel(this, mapEditingPanel);
-		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelWidth, toolsPanel.getMinimumSize().height));
-		//toolsPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth, toolsPanel.getPreferredSize().height));
 		
 		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanel, mapEditingScrollPane);
 		splitPane1.setOneTouchExpandable(true);

@@ -243,7 +243,7 @@ public class LandWaterTool extends EditorTool
 
 	    
 	    // Prevent the panel from shrinking when components are hidden.
-	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelWidth - 25, 0)));
+	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelPreferredWidth - 25, 0)));
 	    
 	    // TODO Put these where they belong:
 //		hueSlider = new JSlider();

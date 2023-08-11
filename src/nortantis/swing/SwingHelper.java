@@ -21,6 +21,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
@@ -30,12 +31,14 @@ import nortantis.util.Tuple2;
 
 public class SwingHelper
 {
-	public static int spaceBetweenRowsOfComponents = 8;
+	public static final int spaceBetweenRowsOfComponents = 8;
 	public static final int borderWidthBetweenComponents = 4;
-	public static final int sidePanelWidth = 310;
+	public static final int sidePanelPreferredWidth = 300;
+	public static final int sidePanelMinimumWidth = 300;
 	private static final int sliderWidth = 170;
 	private static final int rowVerticalInset = 10;
-	public static int colorPickerLeftPadding = 2;
+	public static final int colorPickerLeftPadding = 2;
+	public static final int sidePanelScrollSpeed = 11; 
 	
 	private static int curY = 0;
 	
@@ -105,10 +108,10 @@ public class SwingHelper
 	
 	public static Tuple2<JPanel, JScrollPane> createPanelForLabeledComponents()
 	{
-		JPanel panel = new JPanel();
+		JPanel panel = new VerticallyScrollablePanel();
 		panel.setLayout(new GridBagLayout());
 		JScrollPane scrollPane = new JScrollPane(panel);
-		scrollPane.getVerticalScrollBar().setUnitIncrement(10);
+		scrollPane.getVerticalScrollBar().setUnitIncrement(sidePanelScrollSpeed);
 		return new Tuple2<>(panel, scrollPane);
 	}
 	
@@ -156,13 +159,51 @@ public class SwingHelper
 			colorDisplay.setBackground(c);
 	}
 	
-	public static void addLeftAlignedComponent(JComponent parent, JComponent comp)
+	public static void addLeftAlignedComponent(JPanel parent, JComponent component)
 	{
-		JPanel panel = new JPanel();
-		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
-		panel.add(comp);
-		panel.add(Box.createHorizontalGlue());
-		parent.add(panel);
+		GridBagConstraints cc = new GridBagConstraints();
+		cc.fill = GridBagConstraints.HORIZONTAL;
+		cc.gridx = 0;
+		cc.gridy = curY;
+		cc.weightx = 1;
+		cc.anchor = GridBagConstraints.LINE_START;
+		cc.insets = new Insets(rowVerticalInset, 5, rowVerticalInset, 5);
+		parent.add(component, cc);
+		
+		curY++;
+	}
+	
+	public static void addSeperator(JPanel panelToAddTo)
+	{
+		final int minHeight = 2;
+		
+		{
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.HORIZONTAL;
+			c.gridx = 0;
+			c.gridy = curY;
+			c.weightx = 0.5;
+			c.anchor = GridBagConstraints.LINE_START;
+			c.insets = new Insets(0, 5, 0, 0);
+			JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+			sep.setMinimumSize(new Dimension(0, minHeight));
+			panelToAddTo.add(sep, c);
+		}
+
+		{
+			GridBagConstraints c = new GridBagConstraints();
+			c.fill = GridBagConstraints.HORIZONTAL;
+			c.gridx = 1;
+			c.gridy = curY;
+			c.weightx = 0.5;
+			c.anchor = GridBagConstraints.LINE_START;
+			c.insets = new Insets(0, 0, 0, 5);
+			JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
+			sep.setMinimumSize(new Dimension(0, minHeight));
+			panelToAddTo.add(sep, c);
+		}
+
+		curY++;
 	}
 	
 	public static void setSliderWidthForSidePanel(JSlider slider)

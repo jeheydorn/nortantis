@@ -29,6 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -111,25 +112,26 @@ public class ThemePanel extends JTabbedPane
 
 	public ThemePanel(MainWindow mainWindow)
 	{
-		setPreferredSize(new Dimension(SwingHelper.sidePanelWidth, mainWindow.getContentPane().getHeight()));
+		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
+		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
+
 
 		
-		addTab("Background", createBackgroundPane(mainWindow));
+		addTab("Background", createBackgroundPanel(mainWindow));
 		addTab("Border", createBorderPanel(mainWindow));
 		addTab("Effects", createEffectsPanel(mainWindow));
 		addTab("Fonts", createFontsPanel(mainWindow));
 	}
 	
-	private Component createBackgroundPane(MainWindow mainWindow)
+	private Component createBackgroundPanel(MainWindow mainWindow)
 	{
 		SwingHelper.resetGridY();
-
-		final JPanel backgroundPanel = new JPanel();
+		
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		JPanel backgroundPanel = panelAndScrollPane.getFirst();
 		backgroundPanel.setLayout(new GridBagLayout());
-		backgroundPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
 
-		JScrollPane scrollPane = new JScrollPane(backgroundPanel);
-
+		
 		backgroundImageButtonGroupListener = new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -331,18 +333,18 @@ public class ThemePanel extends JTabbedPane
 		textureFilePanel.add(textureImageFilename);
 		textureFilePanel.add(btnsBrowseTextureImage);
 		
-		return scrollPane;
+		SwingHelper.addVerticalFillerRow(backgroundPanel);
+		return panelAndScrollPane.getSecond();
 	}		
 	
 	private Component createBorderPanel(MainWindow mainWindow)
 	{
 		SwingHelper.resetGridY();
 
-		final JPanel borderPanel = new JPanel();
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		JPanel borderPanel = panelAndScrollPane.getFirst();
 		borderPanel.setLayout(new GridBagLayout());
-		borderPanel.setPreferredSize(new Dimension(SwingHelper.sidePanelWidth - widthToSubtractFromTabPanels, getHeight()));
 
-		JScrollPane scrollPane = new JScrollPane(borderPanel);
 
 		drawBorderCheckbox = new JCheckBox("Draw border");
 		drawBorderCheckbox.setToolTipText("When checked, a border will be drawn around the map.");
@@ -413,7 +415,8 @@ public class ThemePanel extends JTabbedPane
 				+ "Higher values make the fray smaller.",
 				frayedEdgePolygonCountSlider);
 		
-		return scrollPane;
+		SwingHelper.addVerticalFillerRow(borderPanel);
+		return panelAndScrollPane.getSecond();
 	}
 	
 	private Component createEffectsPanel(MainWindow mainWindow)
@@ -423,7 +426,8 @@ public class ThemePanel extends JTabbedPane
 		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
 		JPanel effectsPanel = panelAndScrollPane.getFirst();
 		effectsPanel.setLayout(new GridBagLayout());
-
+		
+		
 		jaggedLinesButton = new JRadioButton("Jagged");
 		effectsPanel.add(jaggedLinesButton);
 		smoothLinesButton = new JRadioButton("Smooth");
@@ -434,6 +438,22 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Line style:", 
 				"The style of lines to use when drawing coastlines, lakeshores, and region boundaries",
 				Arrays.asList(jaggedLinesButton, smoothLinesButton));
+		SwingHelper.addSeperator(effectsPanel);
+		
+		
+		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+
+		JButton buttonChooseCoastlineColor = new JButton("Choose");
+		buttonChooseCoastlineColor.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				SwingHelper.showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline Color");
+			}
+		});
+		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Coastline color:", "", 
+				SwingHelper.colorPickerLeftPadding,
+				Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor));
 		
 		
 		coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -459,24 +479,8 @@ public class ThemePanel extends JTabbedPane
 		coastShadingSlider.setMaximum(100);
 		coastShadingSlider.setMajorTickSpacing(20);
 		SwingHelper.setSliderWidthForSidePanel(coastShadingSlider);
-		SwingHelper.addLabelAndComponentToPanel(effectsPanel, "Coast shading:", "How far in from coastlines to shade land.",
+		SwingHelper.addLabelAndComponentToPanel(effectsPanel, "Coast shading width:", "How far in from coastlines to shade land.",
 				coastShadingSlider);
-		
-		
-
-		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-		JButton buttonChooseCoastlineColor = new JButton("Choose");
-		buttonChooseCoastlineColor.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				SwingHelper.showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline Color");
-			}
-		});
-		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Coastline color:", "", 
-				SwingHelper.colorPickerLeftPadding,
-				Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor));
 		
 
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
@@ -540,8 +544,9 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectsLevelSlider.setPaintLabels(true);
 		oceanEffectsLevelSlider.setMajorTickSpacing(20);
 		SwingHelper.setSliderWidthForSidePanel(oceanEffectsLevelSlider);
-		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Ocean effects level:", "How far from coastlines ocean effects should extend.",
+		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Ocean effects width:", "How far from coastlines ocean effects should extend.",
 				Arrays.asList(concentricWavesLevelSlider, oceanEffectsLevelSlider));
+		SwingHelper.addSeperator(effectsPanel);
 
 
 		riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -557,6 +562,7 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "River color:", "Rivers will be drawn this color.",
 				SwingHelper.colorPickerLeftPadding,
 				Arrays.asList(riverColorDisplay, riverColorChooseButton));
+		SwingHelper.addSeperator(effectsPanel);
 		
 
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -582,11 +588,10 @@ public class ThemePanel extends JTabbedPane
 		grungeSlider.setMaximum(2000);
 		grungeSlider.setMajorTickSpacing(500);
 		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
-		SwingHelper.addLabelAndComponentToPanel(effectsPanel, "Grunge:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
+		SwingHelper.addLabelAndComponentToPanel(effectsPanel, "Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
 		
 		
 		SwingHelper.addVerticalFillerRow(effectsPanel);
-		
 		return panelAndScrollPane.getSecond();
 	}
 	
@@ -594,10 +599,10 @@ public class ThemePanel extends JTabbedPane
 	{		
 		SwingHelper.resetGridY();
 	
-		final JPanel fontsPanel = new JPanel();
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		JPanel fontsPanel = panelAndScrollPane.getFirst();
 		fontsPanel.setLayout(new GridBagLayout());
 
-		JScrollPane scrollPane = new JScrollPane(fontsPanel);
 
 		drawTextCheckBox = new JCheckBox("Draw text");
 		drawTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
@@ -739,8 +744,9 @@ public class ThemePanel extends JTabbedPane
 				mainWindow.handleDrawTextChanged(drawTextCheckBox.isSelected());
 			}
 		});
-
-		return scrollPane;
+		
+		SwingHelper.addVerticalFillerRow(fontsPanel);
+		return panelAndScrollPane.getSecond();
 	}
 
 	private void updateDrawRegionsCheckboxEnabledAndSelected()
