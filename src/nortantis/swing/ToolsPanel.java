@@ -83,7 +83,7 @@ public class ToolsPanel extends JPanel
 
 		JPanel toolSelectPanel = new JPanel(new FlowLayout());
 		toolSelectPanel.setMaximumSize(new Dimension(toolSelectPanel.getMaximumSize().width, 20));
-		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Tools"));
+		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Editing Tools"));
 		add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
@@ -96,6 +96,7 @@ public class ToolsPanel extends JPanel
 			{
 				e.printStackTrace();
 			}
+			toolButton.setToolTipText(tool.getToolbarName());
 			toolButton.setMaximumSize(new Dimension(50, 50));
 			tool.setToggleButton(toolButton);
 			toolButton.addActionListener(new ActionListener()
@@ -106,8 +107,11 @@ public class ToolsPanel extends JPanel
 					handleToolSelected(tool);
 				}
 			});
+			tool.updateBorder();
 			toolSelectPanel.add(toolButton);
 		}
+		
+		currentTool.setToggled(true);
 
 		toolsOptionsPanelContainer = new JPanel();
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
@@ -148,7 +152,7 @@ public class ToolsPanel extends JPanel
 		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels,"
 				+ " adjust View > Image Quality.");
 
-		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%" });
+		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%", "150%" });
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{
@@ -164,6 +168,11 @@ public class ToolsPanel extends JPanel
 			zoomComboBox.setSelectedItem(defaultZoomLevel);
 			UserPreferences.getInstance().zoomLevel = defaultZoomLevel;
 		}
+		
+		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
+		// causes bottomPanel to expand vertically.
+		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
+
 
 		bottomPanel.add(zoomComboBox);
 		zoomComboBox.addActionListener(new ActionListener()

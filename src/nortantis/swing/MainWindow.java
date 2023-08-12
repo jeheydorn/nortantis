@@ -111,6 +111,7 @@ public class MainWindow extends JFrame
 	private JRadioButtonMenuItem radioButton75Percent;
 	private JRadioButtonMenuItem radioButton100Percent;
 	private JRadioButtonMenuItem radioButton125Percent;
+	private JRadioButtonMenuItem radioButton150Percent;
 	private ThemePanel themePanel;
 	private ToolsPanel toolsPanel;
 	private double resolutionForImageExport;
@@ -461,7 +462,7 @@ public class MainWindow extends JFrame
 		});
 		
 		// TODO Convert this to a PNG export workflow
-		JMenuItem mntmExportMapAsImage = new JMenuItem("Export map as image");
+		JMenuItem mntmExportMapAsImage = new JMenuItem("Export As Image");
 		fileMenu.add(mntmExportMapAsImage);
 		mntmExportMapAsImage.addActionListener(new ActionListener()
 		{
@@ -607,11 +608,17 @@ public class MainWindow extends JFrame
 		radioButton125Percent.addActionListener(resolutionListener);
 		imageQualityMenu.add(radioButton125Percent);
 		resolutionButtonGroup.add(radioButton125Percent);
+		
+		radioButton150Percent = new JRadioButtonMenuItem("Very High");
+		radioButton150Percent.addActionListener(resolutionListener);
+		imageQualityMenu.add(radioButton150Percent);
+		resolutionButtonGroup.add(radioButton150Percent);
 
 		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
 		{
 			boolean found = false;
-			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton75Percent, radioButton100Percent, radioButton125Percent })
+			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] 
+					{ radioButton75Percent, radioButton100Percent, radioButton125Percent, radioButton150Percent })
 			{
 				if (UserPreferences.getInstance().editorImageQuality.equals(resolutionOption.getText()))
 				{
@@ -785,6 +792,7 @@ public class MainWindow extends JFrame
 			radioButton75Percent.setEnabled(enable);
 			radioButton100Percent.setEnabled(enable);
 			radioButton125Percent.setEnabled(enable);
+			radioButton150Percent.setEnabled(enable);
 		}
 
 		toolsPanel.enableOrDisableToolToggleButtonsAndZoom(enable);
@@ -1174,6 +1182,10 @@ public class MainWindow extends JFrame
 		else if (imageQualityText.equals(radioButton125Percent.getText()))
 		{
 			imageQualityScale = 1.25;
+		}
+		else if (imageQualityText.equals(radioButton150Percent.getText()))
+		{
+			imageQualityScale = 1.5;
 		}
 	}
 

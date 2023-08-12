@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.swing;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;

@@ -15,8 +15,11 @@ import java.util.Set;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
+import javax.swing.UIManager;
 
 import org.imgscalr.Scalr.Method;
+
+import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
@@ -83,6 +86,24 @@ public abstract class EditorTool
 	public void setToggled(boolean toggled)
 	{
 		toggleButton.setSelected(toggled);
+		updateBorder();
+	}
+	
+	public void updateBorder()
+	{
+		if (UIManager.getLookAndFeel() instanceof FlatDarkLaf)
+		{
+			final int width = 4;
+			if (toggleButton.isSelected())
+			{
+				int shade = 140;
+				toggleButton.setBorder(BorderFactory.createLineBorder(new Color(shade, shade, shade), width));
+			}
+			else
+			{
+				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
+			}
+		}
 	}
 	
 	public void setToggleButton(JToggleButton toggleButton)

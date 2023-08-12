@@ -259,7 +259,6 @@ public class NewSettingsDialog extends JDialog
 //		}
 //		terrainPanel.add(centerLandToWaterProbSlider);
 
-		
 		// TODO Add Accept button. And when pressed, Call MainWindow.createPlaceholderImage with the message: "Drawing the map..."
 	}
 	
