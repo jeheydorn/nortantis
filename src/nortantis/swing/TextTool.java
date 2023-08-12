@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
@@ -25,6 +26,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -33,12 +35,14 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
+import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.JTextFieldFixed;
+import nortantis.util.Tuple2;
 
 public class TextTool extends EditorTool
 {
@@ -53,8 +57,12 @@ public class TextTool extends EditorTool
 	private JRadioButton deleteButton;
 	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
-	private JPanel textFieldPanel;
-	private JPanel booksAndLabelPanel;
+	private RowHider editTextFieldHider;
+	private RowHider booksHider;
+	private JPanel booksPanel;
+	private JLabel drawTextDisabledLabel;
+	private RowHider drawTextDisabledLabelHider;
+
 	
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel)
@@ -111,11 +119,13 @@ public class TextTool extends EditorTool
 	{
 		SwingHelper.resetGridY();
 		
-		JPanel toolOptionsPanel = new JPanel();
-		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		JPanel toolOptionsPanel = SwingHelper.createPanelForLabeledComponents();		
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		toolOptionsPanel.setLayout(new GridBagLayout());
 				
+		drawTextDisabledLabel = new JLabel("<html>This tool is disabled because drawing text is disabled in the Fonts tab.</html>");
+		drawTextDisabledLabelHider = SwingHelper.addLeftAlignedComponent(toolOptionsPanel, drawTextDisabledLabel);
+		drawTextDisabledLabelHider.setVisible(false);
+
 		{
 			ButtonGroup group = new ButtonGroup();
 		    List<JRadioButton> radioButtons = new ArrayList<>();
@@ -162,16 +172,10 @@ public class TextTool extends EditorTool
 	
 		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Action:", "", radioButtons);
 		}
+				
 		
 		editTextField = new JTextFieldFixed();
-		int borderWidth = SwingHelper.borderWidthBetweenComponents;
-		editTextField.setBorder(BorderFactory.createEmptyBorder(borderWidth, borderWidth, borderWidth, borderWidth));
-		editTextField.setColumns(18);
-		textFieldPanel = new JPanel();
-		textFieldPanel.setLayout(new BoxLayout(textFieldPanel, BoxLayout.X_AXIS));
-		textFieldPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, SwingHelper.spaceBetweenRowsOfComponents, 0));
-		textFieldPanel.add(editTextField);
-		toolOptionsPanel.add(textFieldPanel);
+		editTextFieldHider = SwingHelper.addLeftAlignedComponent(toolOptionsPanel, editTextField);
 		
 		
 		textTypeComboBox = new JComboBoxFixed<>();
@@ -183,38 +187,23 @@ public class TextTool extends EditorTool
 			textTypeComboBox.addItem(type);				
 		}
 		
-		booksAndLabelPanel = new JPanel();
-		booksAndLabelPanel.setLayout(new BoxLayout(booksAndLabelPanel, BoxLayout.Y_AXIS));
+				
+		booksPanel = SwingHelper.createBooksPanel();
+		booksHider = SwingHelper.addLeftAlignedComponentWithStackedLabel(toolOptionsPanel, "Books for generating text:", 
+				"Selected books will be used to generate new names.", booksPanel);
 		
-		JLabel lblBooks = new JLabel("Books:");
-		lblBooks.setToolTipText("Selected books will be used to generate new names.");
-		booksAndLabelPanel.add(lblBooks);
-
-		toolsPanel.booksPanel = new JPanel();
-
-		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(toolsPanel.booksPanel, getSelectedBooks());
-
-		booksAndLabelPanel.add(booksScrollPane);
-		toolOptionsPanel.add(booksAndLabelPanel);
 		
-		// Prevent the panel from shrinking when components are hidden.
-		toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelPreferredWidth - 25, 0)));
-		
-		toolOptionsPanel.add(Box.createVerticalGlue());
-		
-	    editButton.doClick(); 		
+	    editButton.doClick();
+	    		
+	    
+	    SwingHelper.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
-	}
-	
-	public Set<String> getSelectedBooks()
-	{
-		 return MainWindow.getSelectedBooks(toolsPanel.booksPanel);
 	}
 	
 	private void handleActionChanged()
 	{
 		// Keep any text edits being done.
-		if (textFieldPanel.isVisible())
+		if (editTextFieldHider.isVisible())
 		{
 			handleTextEdit(lastSelected);
 		}
@@ -226,11 +215,19 @@ public class TextTool extends EditorTool
 			mapEditingPanel.repaint();
 		}
 		textTypeHider.setVisible(addButton.isSelected());
-		textFieldPanel.setVisible(editButton.isSelected());
+		booksHider.setVisible(addButton.isSelected());
+		editTextFieldHider.setVisible(editButton.isSelected());
 		if (editButton.isSelected() && lastSelected != null)
 		{
 			editTextField.setText(lastSelected.value);
 			editTextField.requestFocus();
+		}
+		
+		// For some reason this is necessary to prevent the text editing field from flattening sometimes.
+		if (getToolOptionsPanel() != null)
+		{
+			getToolOptionsPanel().revalidate();
+			getToolOptionsPanel().repaint();
 		}
 	}
 		
@@ -491,7 +488,7 @@ public class TextTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		// Keep any text edits being done.
-		if (textFieldPanel.isVisible())
+		if (editTextFieldHider.isVisible())
 		{
 			if (lastSelected != null && !editTextField.getText().equals(lastSelected.value))
 			{
@@ -525,6 +522,22 @@ public class TextTool extends EditorTool
 		{
 			updateTextInBackgroundThread(null);
 		}
+	}
+
+	@Override
+	public void loadSettingsIntoGUI(MapSettings settings)
+	{
+		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
+		
+		// TODO Hide everything in the text tool options and show a message explaining that text drawing is disabled.
+		SwingHelper.setEnabled(getToolOptionsPanel(), settings.drawText);
+		drawTextDisabledLabelHider.setVisible(!settings.drawText);
+	}
+
+	@Override
+	public void getSettingsFromGUI(MapSettings settings)
+	{
+		settings.books = SwingHelper.getSelectedBooksFromGUI(booksPanel);
 	}
 	
 

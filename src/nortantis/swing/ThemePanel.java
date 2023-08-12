@@ -72,7 +72,7 @@ public class ThemePanel extends JTabbedPane
 	private BGColorPreviewPanel oceanDisplayPanel;
 	private BGColorPreviewPanel landDisplayPanel;
 	private ActionListener backgroundImageButtonGroupListener;
-	private Dimension backgroundDisplaySize = new Dimension(100, 100);
+	private Dimension backgroundDisplaySize = new Dimension(150, 110);
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 	private JSlider grungeSlider;
 	private JTextField textureImageFilename;
@@ -104,6 +104,8 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox chckbxDrawBoldBackground;
 	final int widthToSubtractFromTabPanels = 2;
 	private RowHider textureImageHider;
+	private RowHider colorizeOceanCheckboxHider;
+	private RowHider colorizeLandCheckboxHider;
 	
 
 
@@ -113,7 +115,6 @@ public class ThemePanel extends JTabbedPane
 		
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
-
 
 		
 		addTab("Background", createBackgroundPanel(mainWindow));
@@ -126,7 +127,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		SwingHelper.resetGridY();
 		
-		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel backgroundPanel = panelAndScrollPane.getFirst();
 		backgroundPanel.setLayout(new GridBagLayout());
 
@@ -221,7 +222,7 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addSeperator(backgroundPanel);
 		colorizeLandCheckbox = new JCheckBox("Color land");
 		colorizeLandCheckbox.setToolTipText("Whether to change the land texture to a custom color");
-		SwingHelper.addLeftAlignedComponent(backgroundPanel, colorizeLandCheckbox);
+		colorizeLandCheckboxHider = SwingHelper.addLeftAlignedComponent(backgroundPanel, colorizeLandCheckbox);
 		
 		
 		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
@@ -256,7 +257,7 @@ public class ThemePanel extends JTabbedPane
 		landDisplayPanel.setLayout(null);
 		landDisplayPanel.setPreferredSize(backgroundDisplaySize);
 		landDisplayPanel.setMinimumSize(backgroundDisplaySize);
-		landDisplayPanel.setBackground(Color.WHITE);
+		landDisplayPanel.setBackground(Color.BLACK);
 
 		btnChooseLandColor = new JButton("Choose");
 		btnChooseLandColor.addActionListener(new ActionListener()
@@ -276,8 +277,8 @@ public class ThemePanel extends JTabbedPane
 		
 		{
 			JPanel container = new JPanel();
-			container.setLayout(new BorderLayout());
-			container.add(landDisplayPanel, BorderLayout.CENTER);
+			container.setLayout(new FlowLayout());
+			container.add(landDisplayPanel);
 			btnChooseLandColor.setAlignmentX(CENTER_ALIGNMENT);
 
 			SwingHelper.addLabelAndComponentsToPanelVertical(backgroundPanel, "Land color:", "The color of the land background.", 
@@ -288,13 +289,13 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addSeperator(backgroundPanel);
 		colorizeOceanCheckbox = new JCheckBox("Color ocean");
 		colorizeOceanCheckbox.setToolTipText("Whether to change the ocean texture to a custom color");
-		SwingHelper.addLeftAlignedComponent(backgroundPanel, colorizeOceanCheckbox);
+		colorizeOceanCheckboxHider = SwingHelper.addLeftAlignedComponent(backgroundPanel, colorizeOceanCheckbox);
 		
 		oceanDisplayPanel = new BGColorPreviewPanel();
 		oceanDisplayPanel.setLayout(null);
 		oceanDisplayPanel.setPreferredSize(backgroundDisplaySize);
 		oceanDisplayPanel.setMinimumSize(backgroundDisplaySize);
-		oceanDisplayPanel.setBackground(Color.WHITE);
+		oceanDisplayPanel.setBackground(Color.BLACK);
 		
 		btnChooseOceanColor = new JButton("Choose");
 		btnChooseOceanColor.addActionListener(new ActionListener()
@@ -314,8 +315,8 @@ public class ThemePanel extends JTabbedPane
 				
 		{
 			JPanel container = new JPanel();
-			container.setLayout((new BorderLayout()));
-			container.add(oceanDisplayPanel, BorderLayout.CENTER);
+			container.setLayout((new FlowLayout()));
+			container.add(oceanDisplayPanel);
 			btnChooseOceanColor.setAlignmentX(CENTER_ALIGNMENT);
 
 			SwingHelper.addLabelAndComponentsToPanelVertical(backgroundPanel, "Ocean color:", "The color of the ocean.", 
@@ -331,7 +332,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		SwingHelper.resetGridY();
 
-		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel borderPanel = panelAndScrollPane.getFirst();
 		borderPanel.setLayout(new GridBagLayout());
 
@@ -414,15 +415,13 @@ public class ThemePanel extends JTabbedPane
 	{
 		SwingHelper.resetGridY();
 
-		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel effectsPanel = panelAndScrollPane.getFirst();
 		effectsPanel.setLayout(new GridBagLayout());
 		
 		
 		jaggedLinesButton = new JRadioButton("Jagged");
-		effectsPanel.add(jaggedLinesButton);
 		smoothLinesButton = new JRadioButton("Smooth");
-		effectsPanel.add(smoothLinesButton);
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
 		lineStyleButtonGroup.add(smoothLinesButton);
@@ -490,12 +489,10 @@ public class ThemePanel extends JTabbedPane
 		concentricWavesButton.addActionListener(oceanEffectsListener);
 
 		ripplesRadioButton = new JRadioButton("Ripples");
-		effectsPanel.add(ripplesRadioButton);
 		oceanEffectButtonGroup.add(ripplesRadioButton);
 		ripplesRadioButton.addActionListener(oceanEffectsListener);
 
 		shadeRadioButton = new JRadioButton("Shade");
-		effectsPanel.add(shadeRadioButton);
 		oceanEffectButtonGroup.add(shadeRadioButton);
 		shadeRadioButton.addActionListener(oceanEffectsListener);
 		SwingHelper.addLabelAndComponentsToPanelVertical(effectsPanel, "Ocean effects type:", "", 
@@ -512,7 +509,6 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		btnChooseOceanEffectsColor.setToolTipText("Choose a color for ocean effects near coastlines. Transparency is supported.");
-		effectsPanel.add(btnChooseOceanEffectsColor);
 		SwingHelper.addLabelAndComponentsToPanelHorizontal(effectsPanel, "Ocean effects color:", "",
 				SwingHelper.colorPickerLeftPadding,
 				Arrays.asList(oceanEffectsColorDisplay, btnChooseOceanEffectsColor));
@@ -590,7 +586,7 @@ public class ThemePanel extends JTabbedPane
 	{		
 		SwingHelper.resetGridY();
 	
-		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelForLabeledComponents();
+		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel fontsPanel = panelAndScrollPane.getFirst();
 		fontsPanel.setLayout(new GridBagLayout());
 
@@ -681,8 +677,6 @@ public class ThemePanel extends JTabbedPane
 				btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 				btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(enableTextCheckBox.isSelected());
-				
-				mainWindow.handleDrawTextChanged(enableTextCheckBox.isSelected());
 			}
 		});
 		
@@ -692,7 +686,7 @@ public class ThemePanel extends JTabbedPane
 
 	private void updateDrawRegionsCheckboxEnabledAndSelected()
 	{
-		if (rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeLandCheckbox.isSelected()))
+		if (landSupportsColoring())
 		{
 			landColoringMethodComboBox.setEnabled(true);
 		}
@@ -702,25 +696,34 @@ public class ThemePanel extends JTabbedPane
 			landColoringMethodComboBox.setEnabled(false);
 		}
 	}
+	
+	private boolean landSupportsColoring()
+	{
+		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeLandCheckbox.isSelected());
+	}
+	
+	private boolean oceanSupportsColoring()
+	{
+		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeOceanCheckbox.isSelected());
+	}
 
 	private void updateBackgroundAndRegionFieldStates(MainWindow mainWindow)
 	{
 		// TODO These should all use hiders
 		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		colorizeOceanCheckbox.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		colorizeLandCheckbox.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		btnChooseOceanColor.setEnabled(colorizeOceanCheckbox.isSelected());
-		btnChooseLandColor.setEnabled(colorizeLandCheckbox.isSelected());
+		colorizeLandCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
+		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
+		btnChooseLandColor.setEnabled(landSupportsColoring());
 
 		updateDrawRegionsCheckboxEnabledAndSelected();
-		mainWindow.handleColorRegionsChanged(areRegionColorsVisible());
 
 		updateBackgroundImageDisplays();
 	}
 
 	private void updateBackgroundImageDisplays()
 	{
-		Dimension bounds = new Dimension(backgroundDisplaySize.width, backgroundDisplaySize.height * 2);
+		Dimension bounds = new Dimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
 
 		BufferedImage oceanBackground;
 		BufferedImage landBackground;
@@ -801,18 +804,13 @@ public class ThemePanel extends JTabbedPane
 		{
 			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
 			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
-			oceanBackground = landBackground = ImageHelper.createWhiteTransparentImage(bounds.width, bounds.height);
+			oceanBackground = landBackground = ImageHelper.createBlackImage(bounds.width, bounds.height);
 		}
 
-		oceanDisplayPanel.setImage(
-				ImageHelper.extractRegion(oceanBackground, 0, 0, oceanBackground.getWidth(), oceanDisplayPanel.getHeight() / 2));
-		oceanDisplayPanel.setSize(new Dimension(oceanBackground.getWidth(), oceanBackground.getHeight() / 2));
+		oceanDisplayPanel.setImage(oceanBackground);
 		oceanDisplayPanel.repaint();
 
-		landDisplayPanel.setImage(
-				ImageHelper.extractRegion(landBackground, 0, landBackground.getHeight() / 2, landBackground.getWidth(), 
-						landDisplayPanel.getHeight() / 2));
-		landDisplayPanel.setSize(new Dimension(landBackground.getWidth(), landBackground.getHeight() / 2));
+		landDisplayPanel.setImage(landBackground);
 		landDisplayPanel.repaint();
 	}
 
@@ -848,7 +846,6 @@ public class ThemePanel extends JTabbedPane
 	private void handleLandColoringMethodChanged()
 	{
 		boolean colorRegions = areRegionColorsVisible();
-		mainWindow.handleColorRegionsChanged(colorRegions);
 		btnChooseCoastShadingColor.setEnabled(!colorRegions);
 		final String message = "Coast shading color selection is disabled because it will use the region color when draw"
 				+ " regions is checked.";
@@ -1023,7 +1020,7 @@ public class ThemePanel extends JTabbedPane
 		component.setToolTipText(currentToolTop.replace(message, ""));
 	}
 
-	public boolean areRegionColorsVisible()
+	private boolean areRegionColorsVisible()
 	{
 		return landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
 	}

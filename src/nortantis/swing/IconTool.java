@@ -33,6 +33,8 @@ import javax.swing.JSlider;
 
 import nortantis.IconType;
 import nortantis.ImageCache;
+import nortantis.MapSettings;
+import nortantis.SettingsGenerator;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
@@ -72,6 +74,8 @@ public class IconTool extends EditorTool
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
 	private RowHider cityTypeHider;
+	private JLabel lblCityIconType;
+	private final String cityTypeNotSetPlaceholder = "<not set>";
 
 	public IconTool(MainWindow parent, ToolsPanel toolsPanel)
 	{
@@ -107,10 +111,9 @@ public class IconTool extends EditorTool
 	{
 		SwingHelper.resetGridY();
 		
-		JPanel toolOptionsPanel = new JPanel();
-		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		JPanel toolOptionsPanel = SwingHelper.createPanelForLabeledComponents();		
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		toolOptionsPanel.setLayout(new GridBagLayout());
+
 		
 		// Tools
 		{
@@ -218,8 +221,7 @@ public class IconTool extends EditorTool
 			treeTypes.buttons.get(1).setSelected(true);
 		}
 		
-		JLabel lblType = new JLabel(toolsPanel.cityIconsType == null || toolsPanel.cityIconsType.isEmpty() ? "<not set>"
-				: toolsPanel.cityIconsType);
+		lblCityIconType = new JLabel("<not set>");
 		JButton changeButton = new JButton("Change");
 		changeButton.addActionListener(new ActionListener()
 		{
@@ -237,7 +239,7 @@ public class IconTool extends EditorTool
 			}
 		});
 		cityTypeHider = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "City icons type:", "", 
-				Arrays.asList(lblType, changeButton));
+				Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
 		
 		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
 		
@@ -245,7 +247,6 @@ public class IconTool extends EditorTool
 		{
 			riverWidthSlider = new JSlider(1, 15);
 			riverWidthSlider.setValue(1);
-			riverWidthSlider.setPreferredSize(new Dimension(160, 50));
 			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
 		    riverOptionHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Width:", "", riverWidthSlider);
 		}
@@ -289,7 +290,6 @@ public class IconTool extends EditorTool
 		
 		densitySlider = new JSlider(1, 50);
 		densitySlider.setValue(10);
-		densitySlider.setPreferredSize(new Dimension(160, 50));
 		SwingHelper.setSliderWidthForSidePanel(densitySlider);
 		densityHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Density:", "", densitySlider);
 	    
@@ -324,11 +324,9 @@ public class IconTool extends EditorTool
 		});
 	    		
 	    
-	    // Prevent the panel from shrinking when components are hidden.
-	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelPreferredWidth - 25, 0)));
-	    
 		mountainsButton.doClick();
-			    
+		
+		SwingHelper.addVerticalFillerRow(toolOptionsPanel);
 	    return toolOptionsPanel;
 	}
 	
@@ -350,7 +348,8 @@ public class IconTool extends EditorTool
 	{
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
-	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, iconType == IconType.cities ? toolsPanel.cityIconsType : null))
+	    for (String groupId : ImageCache.getInstance().getIconGroupNames(iconType, 
+	    		iconType == IconType.cities ? lblCityIconType.getText() : null))
 	    {
 	    	JRadioButton button = new JRadioButton(groupId);
 	    	group.add(button);
@@ -365,10 +364,30 @@ public class IconTool extends EditorTool
 	
 	private IconTypeButtons createRadioButtonsForCities(JPanel toolOptionsPanel)
 	{
-	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
+
+	    String cityType;
+		if (lblCityIconType.getText().isEmpty() || lblCityIconType.getText().equals(cityTypeNotSetPlaceholder))
+		{
+			Set<String> cityTypes = ImageCache.getInstance().getIconSets(IconType.cities);
+			if (cityTypes.isEmpty())
+			{
+				return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Cities:", "", radioButtons), 
+						radioButtons);
+			}
+			else
+			{
+				cityType = cityTypes.iterator().next();
+			}
+		}
+		else
+		{
+			cityType = lblCityIconType.getText();
+		}
+		
+	    ButtonGroup group = new ButtonGroup();
 	    for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance()
-	    		.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, toolsPanel.cityIconsType))
+	    		.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, cityType))
 	    {
 	    	JRadioButton button = new JRadioButton(fileNameWithoutWidthOrExtension);
 	    	group.add(button);
@@ -676,6 +695,19 @@ public class IconTool extends EditorTool
 	private void handleMapChange(Set<Center> centers)
 	{
 		mainWindow.createAndShowMapIncrementalUsingCenters(centers);
+	}
+
+	@Override
+	public void loadSettingsIntoGUI(MapSettings settings)
+	{
+		lblCityIconType.setText(settings.cityIconSetName);	
+		// TODO re-create cityTypes radio buttons
+	}
+
+	@Override
+	public void getSettingsFromGUI(MapSettings settings)
+	{
+		settings.cityIconSetName = lblCityIconType.getText();
 	}
 
 

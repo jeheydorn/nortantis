@@ -731,6 +731,7 @@ public class ImageHelper
 		return result;
 	}
 	
+	// TODO Remove this if I don't end up using it to create spaces in panels.
 	public static BufferedImage createWhiteTransparentImage(int width, int height)
 	{
 		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -739,6 +740,19 @@ public class ImageHelper
 			{		
 				int mc = (255 << 24) | 0x00ffffff;
 	            int newColor = Color.white.getRGB() & mc;
+	            
+				result.setRGB(x, y, newColor);
+			}
+		return result;
+	}
+	
+	public static BufferedImage createBlackImage(int width, int height)
+	{
+		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		for (int y = 0; y < height; y++)
+			for (int x = 0; x < width; x++)
+			{		
+	            int newColor = Color.black.getRGB();
 	            
 				result.setRGB(x, y, newColor);
 			}

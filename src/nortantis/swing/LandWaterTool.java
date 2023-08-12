@@ -27,12 +27,15 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 
+import nortantis.MapSettings;
 import nortantis.Region;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.AssetsPath;
+import nortantis.util.Tuple2;
 
 public class LandWaterTool extends EditorTool
 {
@@ -58,6 +61,7 @@ public class LandWaterTool extends EditorTool
 	private JSlider hueSlider;
 	private JSlider saturationSlider;
 	private JSlider brightnessSlider;
+	private boolean areRegionColorsVisible;
 
 	public LandWaterTool(MainWindow mainWindow, ToolsPanel toolsPanel)
 	{
@@ -86,10 +90,8 @@ public class LandWaterTool extends EditorTool
 	{
 		SwingHelper.resetGridY();
 		
-		JPanel toolOptionsPanel = new JPanel();
-		toolOptionsPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // TODO - Isn't this line canceled out by the one after it?
+		JPanel toolOptionsPanel = SwingHelper.createPanelForLabeledComponents();
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		toolOptionsPanel.setLayout(new GridBagLayout());
 		
 		
 		List<JComponent> radioButtons = new ArrayList<>();
@@ -97,14 +99,13 @@ public class LandWaterTool extends EditorTool
 		oceanButton = new JRadioButton("Ocean");
 	    group.add(oceanButton);
 	    radioButtons.add(oceanButton);
-	    toolOptionsPanel.add(oceanButton);
 		ActionListener listener = new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				mapEditingPanel.clearSelectedCenters();
-				if (colorChooserHider != null && areRegionColorsVisible())
+				if (colorChooserHider != null && areRegionColorsVisible)
 				{
 					boolean isVisible = paintRegionButton.isSelected() || fillRegionColorButton.isSelected();
 					colorChooserHider.setVisible(isVisible);
@@ -116,7 +117,7 @@ public class LandWaterTool extends EditorTool
 					brushSizeHider.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected() || landButton.isSelected());
 				}
 				
-				if (areRegionColorsVisible())
+				if (areRegionColorsVisible)
 				{
 					onlyUpdateLandCheckbox.setVisible(paintRegionButton.isSelected());
 				}
@@ -127,7 +128,6 @@ public class LandWaterTool extends EditorTool
 	    lakeButton = new JRadioButton("Lake");
 	    group.add(lakeButton);
 	    radioButtons.add(lakeButton);
-	    toolOptionsPanel.add(lakeButton);
 	    lakeButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines.");
 	    lakeButton.addActionListener(listener);
 	    
@@ -135,7 +135,7 @@ public class LandWaterTool extends EditorTool
 	    fillRegionColorButton = new JRadioButton("Fill region color");
 	    mergeRegionsButton = new JRadioButton("Merge regions");
 	    landButton = new JRadioButton("Land");
-	    if (areRegionColorsVisible())
+	    if (areRegionColorsVisible)
 	    {
 			
 		    group.add(paintRegionButton);
@@ -163,7 +163,7 @@ public class LandWaterTool extends EditorTool
 	    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Brush:", "", radioButtons);
 	    	    
 	    // Color chooser
-	    if (areRegionColorsVisible())
+	    if (areRegionColorsVisible)
 	    {   
 		    colorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		    //colorDisplay.setBackground(mainWindow.settings.landColor); // TODO Replace this with a field in this tool for changing the base color and generating new ones.
@@ -232,7 +232,7 @@ public class LandWaterTool extends EditorTool
 			}
 		});
 	    
-	    if (areRegionColorsVisible())
+	    if (areRegionColorsVisible)
 	    {
 		    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
 		    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
@@ -242,8 +242,6 @@ public class LandWaterTool extends EditorTool
 	    listener.actionPerformed(null);
 
 	    
-	    // Prevent the panel from shrinking when components are hidden.
-	    toolOptionsPanel.add(Box.createRigidArea(new Dimension(SwingHelper.sidePanelPreferredWidth - 25, 0)));
 	    
 	    // TODO Put these where they belong:
 //		hueSlider = new JSlider();
@@ -291,13 +289,8 @@ public class LandWaterTool extends EditorTool
 //		brightnessSlider.setBounds(150, 243, 245, 79);
 //		regionsPanel.add(brightnessSlider);
 
-
+	    SwingHelper.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
-	}
-	
-	private boolean areRegionColorsVisible()
-	{
-		return mainWindow.areRegionColorsVisible();
 	}
 
 	@Override
@@ -595,5 +588,31 @@ public class LandWaterTool extends EditorTool
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
 		mainWindow.createAndShowMapFromChange(change);
+	}
+
+	@Override
+	public void loadSettingsIntoGUI(MapSettings settings)
+	{
+		// TODO Handle draw region colors changed
+		areRegionColorsVisible = settings.drawRegionColors;
+		
+		// TODO put back
+//		hueSlider.setValue(settings.hueRange);
+//		saturationSlider.setValue(settings.saturationRange);
+//		brightnessSlider.setValue(settings.brightnessRange);
+
+		
+	}
+
+	@Override
+	public void getSettingsFromGUI(MapSettings settings)
+	{
+		// TODO Put back when ready
+//		settings.hueRange = hueSlider.getValue();
+//		settings.saturationRange = saturationSlider.getValue();
+//		settings.brightnessRange = brightnessSlider.getValue();
+
+
+		
 	}
 }

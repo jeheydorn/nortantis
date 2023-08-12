@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -14,11 +15,15 @@ import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -30,6 +35,7 @@ import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
 
+import nortantis.SettingsGenerator;
 import nortantis.util.JFontChooser;
 import nortantis.util.Pair;
 import nortantis.util.Tuple2;
@@ -57,7 +63,8 @@ public class SwingHelper
 		lc.weightx = 0.4;
 		lc.anchor = GridBagConstraints.NORTHEAST;
 		lc.insets = new Insets(rowVerticalInset, 5, rowVerticalInset, 5);
-		panelToAddTo.add(createWrappingLabel(labelText, tooltip), lc);
+		JLabel label = createWrappingLabel(labelText, tooltip);
+		panelToAddTo.add(label, lc);
 		
 		GridBagConstraints cc = new GridBagConstraints();
 		cc.fill = GridBagConstraints.HORIZONTAL;
@@ -70,10 +77,10 @@ public class SwingHelper
 		
 		curY++;
 		
-		return new RowHider(lc, cc);
+		return new RowHider(label, component);
 	}
 	
-	private static Component createWrappingLabel(String text, String tooltip)
+	private static JLabel createWrappingLabel(String text, String tooltip)
 	{
 		JLabel label = new JLabel("<html>" + text + "</html>");
 		label.setToolTipText(tooltip);
@@ -111,13 +118,19 @@ public class SwingHelper
 		return addLabelAndComponentToPanel(panelToAddTo, labelText, tooltip, compPanel);
 	}
 	
-	public static Tuple2<JPanel, JScrollPane> createPanelForLabeledComponents()
+	public static Tuple2<JPanel, JScrollPane> createPanelAndScrollPaneForLabeledComponents()
 	{
-		JPanel panel = new VerticallyScrollablePanel();
-		panel.setLayout(new GridBagLayout());
+		JPanel panel = createPanelForLabeledComponents();
 		JScrollPane scrollPane = new JScrollPane(panel);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(sidePanelScrollSpeed);
 		return new Tuple2<>(panel, scrollPane);
+	}
+	
+	public static JPanel createPanelForLabeledComponents()
+	{
+		JPanel panel = new VerticallyScrollablePanel();
+		panel.setLayout(new GridBagLayout());
+		return panel;
 	}
 	
 	public static void resetGridY()
@@ -164,18 +177,36 @@ public class SwingHelper
 			colorDisplay.setBackground(c);
 	}
 	
-	public static void addLeftAlignedComponent(JPanel parent, JComponent component)
+	public static RowHider addLeftAlignedComponent(JPanel parent, JComponent component)
+	{
+		return addLeftAlignedComponent(parent, component, rowVerticalInset, rowVerticalInset);
+	}
+	
+	public static RowHider addLeftAlignedComponent(JPanel parent, JComponent component, int topInset, int bottomInset)
 	{
 		GridBagConstraints cc = new GridBagConstraints();
 		cc.fill = GridBagConstraints.HORIZONTAL;
 		cc.gridx = 0;
+		cc.gridwidth = 2;
 		cc.gridy = curY;
 		cc.weightx = 1;
 		cc.anchor = GridBagConstraints.LINE_START;
-		cc.insets = new Insets(rowVerticalInset, 5, rowVerticalInset, 5);
+		cc.insets = new Insets(topInset, 5, bottomInset, 5);
 		parent.add(component, cc);
 		
 		curY++;
+		
+		return new RowHider(component);
+	}
+	
+	public static RowHider addLeftAlignedComponentWithStackedLabel(JPanel parent, String labelText, String toolTip, JComponent component)
+	{
+		JLabel label = new JLabel(labelText);
+		label.setToolTipText(toolTip);
+		RowHider labelHider = SwingHelper.addLeftAlignedComponent(parent, label, rowVerticalInset, 2);
+		RowHider compHider = SwingHelper.addLeftAlignedComponent(parent, component, 0, rowVerticalInset);
+		
+		return new RowHider(labelHider, compHider);
 	}
 	
 	public static void addSeperator(JPanel panelToAddTo)
@@ -284,6 +315,74 @@ public class SwingHelper
 			Font font = fontChooser.getSelectedFont();
 			fontDisplay.setText(font.getFontName());
 			fontDisplay.setFont(font);
+		}
+	}
+	
+	public static JPanel createBooksPanel()
+	{
+		JPanel booksPanel = new JPanel();
+		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
+		
+		createBooksCheckboxes(booksPanel);
+		
+		return booksPanel;
+	}
+	
+	public static void createBooksCheckboxes(JPanel booksPanel)
+	{
+		for (String book : SettingsGenerator.getAllBooks())
+		{
+			final JCheckBox checkBox = new JCheckBox(book);
+			booksPanel.add(checkBox);
+		}
+	}
+	
+	// TODO remove
+//	public static List<JCheckBox> createBooksCheckboxes()
+//	{
+//		return SettingsGenerator.getAllBooks().stream().map(bookName -> new JCheckBox(bookName)).collect(Collectors.toList());
+//	}
+	
+	public static void checkSelectedBooks(JPanel booksPanel, Set<String> selectedBooks)
+	{
+		for (Component component : booksPanel.getComponents())
+		{
+			if (component instanceof JCheckBox)
+			{
+				JCheckBox checkBox = (JCheckBox) component;
+				checkBox.setSelected(selectedBooks.contains(checkBox.getText()));
+			}
+		}
+	}
+	
+	
+	public static Set<String> getSelectedBooksFromGUI(JPanel booksPanel)
+	{
+		Set<String> books = new TreeSet<>();
+		for (Component component : booksPanel.getComponents())
+		{
+			if (component instanceof JCheckBox)
+			{
+				JCheckBox checkBox = (JCheckBox) component;
+				if (checkBox.isSelected())
+				{
+					books.add(checkBox.getText());
+				}
+			}
+		}
+		
+		return books;
+	}
+	
+	public static void setEnabled(Component component, boolean enabled)
+	{
+		component.setEnabled(enabled);
+		if (component instanceof Container)
+		{
+			for (Component child : ((Container) component).getComponents())
+			{
+				setEnabled(child, enabled);
+			}
 		}
 	}
 }

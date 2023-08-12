@@ -254,4 +254,8 @@ public abstract class EditorTool
 		double deltaY = y - circleCenter.y;
 		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
+	
+	public abstract void loadSettingsIntoGUI(MapSettings settings);
+	
+	public abstract void getSettingsFromGUI(MapSettings settings);
 }

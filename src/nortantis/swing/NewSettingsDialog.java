@@ -30,6 +30,7 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.util.Logger;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 @SuppressWarnings("serial")
 public class NewSettingsDialog extends JDialog
@@ -209,10 +210,10 @@ public class NewSettingsDialog extends JDialog
 		lblBooks.setToolTipText("Selected books will be used to generate new names.");
 		leftPanel.add(lblBooks);
 
-		booksPanel = new JPanel();
-		JScrollPane booksScrollPane = MainWindow.createBooksScrollPane(booksPanel, settings.books);
-		leftPanel.add(booksScrollPane);
-		
+//		Tuple2<JPanel, JScrollPane> tuple = SwingHelper.createBooksPanelAndScrollPane();
+//		booksPanel = tuple.getFirst();
+//		JScrollPane booksScrollPane = tuple.getSecond();
+//		leftPanel.add(booksScrollPane);
 		
 		// TODO decide if I want these sliders.
 //		lblEdgeLandtowaterRatio = new JLabel("Edge land probability:");
@@ -265,6 +266,7 @@ public class NewSettingsDialog extends JDialog
 	private void loadSettingsIntoGUI(MapSettings settings)
 	{
 		// TODO
+		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
 	}
 	
 	private MapSettings getSettingsFromGUI()

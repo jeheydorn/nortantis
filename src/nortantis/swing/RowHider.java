@@ -1,29 +1,42 @@
 package nortantis.swing;
 
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.GridBagConstraints;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class RowHider
-{
-	private GridBagConstraints lc;
-	private GridBagConstraints cc;
-
-	public RowHider(GridBagConstraints lc, GridBagConstraints cc)
+{	
+	private List<Component> components;
+	private boolean isVisible;
+	
+	public RowHider(Component... components)
 	{
-		this.lc = lc;
-		this.cc = cc;
+		this.components = Arrays.asList(components);
+		isVisible = true;
+	}
+	
+	public RowHider(RowHider other1, RowHider other2)
+	{
+		this.components = new ArrayList<>(other1.components);
+		this.components.addAll(other2.components);
+		isVisible = true;
 	}
 	 
 	public void setVisible(boolean visible)
 	{
-		if (visible)
+		isVisible = visible;
+		
+		for (Component comp : components)
 		{
-			lc.weighty = 1.0;
-			cc.weighty = 1.0;
+			comp.setVisible(visible);
 		}
-		else
-		{
-			lc.weighty = 0.0;
-			cc.weighty = 0.0;
-		}
+	}
+	
+	public boolean isVisible()
+	{
+		return isVisible;
 	}
 }

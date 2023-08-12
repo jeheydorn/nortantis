@@ -37,7 +37,7 @@ public class ToolsPanel extends JPanel
 {
 	EditorTool currentTool;
 	List<EditorTool> tools;
-	private JPanel toolsOptionsPanelContainer;
+	private JScrollPane toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
 	JComboBox<String> zoomComboBox;
 	private List<String> zoomLevels;
@@ -47,11 +47,6 @@ public class ToolsPanel extends JPanel
 	static final String fitToWindowZoomLevel = "Fit to Window";
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
-	private JSlider hueSlider;
-	private JSlider brightnessSlider;
-	private JSlider saturationSlider;
-	JPanel booksPanel;
-	String cityIconsType;
 
 	
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel)
@@ -113,15 +108,14 @@ public class ToolsPanel extends JPanel
 		
 		currentTool.setToggled(true);
 
-		toolsOptionsPanelContainer = new JPanel();
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
+		toolsOptionsPanelContainer = new JScrollPane(currentToolOptionsPanel);
 
-		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
-		JScrollPane toolsOptionsScrollPane = new JScrollPane(toolsOptionsPanelContainer);
-		add(toolsOptionsScrollPane);
+		add(toolsOptionsPanelContainer);
 		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
 				currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
+
 
 		JPanel progressAndBottomPanel = new JPanel();
 		progressAndBottomPanel.setLayout(new BoxLayout(progressAndBottomPanel, BoxLayout.Y_AXIS));
@@ -207,32 +201,18 @@ public class ToolsPanel extends JPanel
 	
 	public void loadSettingsIntoGUI(MapSettings settings)
 	{
-		// TODO put back
-//		hueSlider.setValue(settings.hueRange);
-//		saturationSlider.setValue(settings.saturationRange);
-//		brightnessSlider.setValue(settings.brightnessRange);
-				
-		booksPanel.removeAll();
-		MainWindow.createBooksCheckboxes(booksPanel, settings.books);
-		
-		cityIconsType = settings.cityIconSetName;
+		for (EditorTool tool : tools)
+		{
+			tool.loadSettingsIntoGUI(settings);
+		}
 	}
 	
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		// TODO Put back when ready
-//		settings.hueRange = hueSlider.getValue();
-//		settings.saturationRange = saturationSlider.getValue();
-//		settings.brightnessRange = brightnessSlider.getValue();
-		
-		settings.books = MainWindow.getSelectedBooks(booksPanel);
-		
-		settings.cityIconSetName = cityIconsType;
-	}
-	
-	public Set<String> getSelectedBooks()
-	{
-		 return MainWindow.getSelectedBooks(booksPanel);
+		for (EditorTool tool : tools)
+		{
+			tool.getSettingsFromGUI(settings);
+		}
 	}
 	
 	public void handleToolSelected(EditorTool selectedTool)
@@ -249,9 +229,8 @@ public class ToolsPanel extends JPanel
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
 		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
-		toolsOptionsPanelContainer.remove(currentToolOptionsPanel);
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
-		toolsOptionsPanelContainer.add(currentToolOptionsPanel);
+		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
 		if (mainWindow.mapEditingPanel.mapFromMapCreator != null)
@@ -262,34 +241,10 @@ public class ToolsPanel extends JPanel
 		mainWindow.mapEditingPanel.repaint();
 		enableOrDisableToolToggleButtonsAndZoom(true);
 	}
-	
-	public void handleColorRegionsChanged(boolean colorRegions)
-	{
-		// TODO
 
-
-	}
-	
 	public String getZoomString()
 	{
 		return (String) zoomComboBox.getSelectedItem();
-	}
-
-	public void handleDrawTextChanged(boolean drawText)
-	{
-		// TODO Hide everything in the text tool options and show a message explaining that text drawing is disabled.
-		
-		// TODO Somehow access the booksAndLablePanel from TextTool.
-		
-		booksPanel.setEnabled(drawText);
-		for (Component component : booksPanel.getComponents())
-		{
-			if (component instanceof JCheckBox)
-			{
-				JCheckBox checkBox = (JCheckBox) component;
-				checkBox.setEnabled(drawText);
-			}
-		}
 	}
 	
 	public void enableOrDisableToolToggleButtonsAndZoom(boolean enable)

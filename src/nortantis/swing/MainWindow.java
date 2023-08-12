@@ -78,6 +78,7 @@ import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame
@@ -1556,30 +1557,14 @@ public class MainWindow extends JFrame
 			settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
 		}
 		
-		settings.books = toolsPanel.getSelectedBooks();
-		
 		return settings;
-	}
-	
-	public void handleColorRegionsChanged(boolean colorRegions)
-	{
-		toolsPanel.handleColorRegionsChanged(colorRegions);
-	}
-	
-	public boolean areRegionColorsVisible()
-	{
-		return themePanel.areRegionColorsVisible();
 	}
 	
 	public Color getLandColor()
 	{
 		return themePanel.getLandColor();
 	}
-	
-	public void handleDrawTextChanged(boolean drawText)
-	{
-		toolsPanel.handleDrawTextChanged(drawText);
-	}
+
 	
 	/**
 	 * Launch the application.
@@ -1620,47 +1605,6 @@ public class MainWindow extends JFrame
 				}
 			}
 		});
-	}
-	
-	public static JScrollPane createBooksScrollPane(JPanel booksPanel, Set<String> selectedBooks)
-	{
-		JScrollPane booksScrollPane = new JScrollPane();
-
-		booksPanel.removeAll();
-		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
-		booksScrollPane.setViewportView(booksPanel);
-		
-		createBooksCheckboxes(booksPanel, selectedBooks);
-		
-		return booksScrollPane;
-	}
-	
-	public static void createBooksCheckboxes(JPanel booksPanel, Set<String> selectedBooks)
-	{
-		for (String book : SettingsGenerator.getAllBooks())
-		{
-			final JCheckBox checkBox = new JCheckBox(book);
-			booksPanel.add(checkBox);
-			checkBox.setSelected(selectedBooks.contains(book));
-		}
-	}
-	
-	public static Set<String> getSelectedBooks(JPanel booksPanel)
-	{
-		Set<String> books = new TreeSet<>();
-		for (Component component : booksPanel.getComponents())
-		{
-			if (component instanceof JCheckBox)
-			{
-				JCheckBox checkBox = (JCheckBox) component;
-				if (checkBox.isSelected())
-				{
-					books.add(checkBox.getText());
-				}
-			}
-		}
-		
-		return books;
 	}
 
 	private BufferedImage createPlaceholderImage(String[] message)
