@@ -194,8 +194,8 @@ public class TextTool extends EditorTool
 		
 		
 	    editButton.doClick();
-	    		
 	    
+	    SwingHelper.addHorizontalSpacerRowToHelpComponentAlignment(toolOptionsPanel, 0.6);
 	    SwingHelper.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
 	}
@@ -266,7 +266,7 @@ public class TextTool extends EditorTool
 		mapEditingPanel.setAreasToDraw(textToSelectAfterDraw == null ? null : textToSelectAfterDraw.areas);
 		mapEditingPanel.repaint();
     	// Tell the scroll pane to update itself.
-    	mapEditingPanel.revalidate();	        
+    	mapEditingPanel.revalidate();
 
 		
     	return mapWithText;

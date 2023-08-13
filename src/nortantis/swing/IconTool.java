@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -40,6 +41,7 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.util.AssetsPath;
+import nortantis.util.Tuple2;
 
 public class IconTool extends EditorTool
 {
@@ -293,22 +295,11 @@ public class IconTool extends EditorTool
 		SwingHelper.setSliderWidthForSidePanel(densitySlider);
 		densityHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Density:", "", densitySlider);
 	    
-	    brushSizeComboBox = new JComboBox<>();
-	    int largest = Collections.max(brushSizes);
-	    for (int brushSize : brushSizes)
-	    {
-	    	if (brushSize == 1)
-	    	{
-	    		brushSize = 4; // Needed to make it visible
-	    	}
-	    	BufferedImage image = new BufferedImage(largest, largest, BufferedImage.TYPE_INT_ARGB);
-	    	Graphics2D g = image.createGraphics();
-	    	g.setColor(Color.white);
-	    	g.setColor(Color.black);
-	    	g.fillOval(largest/2 - brushSize/2, largest/2 - brushSize/2, brushSize, brushSize);
-	    	brushSizeComboBox.addItem(new ImageIcon(image));
-	    }
-	    brushSizeHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
+		
+		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = SwingHelper.createBrushSizeComboBox(toolOptionsPanel, brushSizes);
+	    brushSizeComboBox = brushSizeTuple.getFirst();
+	    brushSizeHider = brushSizeTuple.getSecond();
+	 
 	    
 	    highlightRiversCheckbox = new JCheckBox("Highlight rivers");
 	    highlightRiversCheckbox.setToolTipText("Highlight rivers to make them easier to see.");
@@ -326,6 +317,7 @@ public class IconTool extends EditorTool
 	    
 		mountainsButton.doClick();
 		
+	    SwingHelper.addHorizontalSpacerRowToHelpComponentAlignment(toolOptionsPanel, 0.666);
 		SwingHelper.addVerticalFillerRow(toolOptionsPanel);
 	    return toolOptionsPanel;
 	}

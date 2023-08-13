@@ -34,9 +34,10 @@ public abstract class EditorTool
 	private JPanel toolOptionsPanel;
 	protected MainWindow mainWindow;
 	private JToggleButton toggleButton;
-	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	protected Undoer undoer;
 	protected ToolsPanel toolsPanel;
+	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
+	
 	
 	public EditorTool(MainWindow parent, ToolsPanel toolsPanel)
 	{

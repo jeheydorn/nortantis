@@ -200,23 +200,11 @@ public class LandWaterTool extends EditorTool
 
 	    }
 
-	    brushSizeComboBox = new JComboBox<>();
-	    int largest = Collections.max(brushSizes);
-	    for (int brushSize : brushSizes)
-	    {
-	    	if (brushSize == 1)
-	    	{
-	    		brushSize = 4; // Needed to make it visible
-	    	}
-	    	BufferedImage image = new BufferedImage(largest, largest, BufferedImage.TYPE_INT_ARGB);
-	    	Graphics2D g = image.createGraphics();
-	    	g.setColor(Color.white);
-	    	g.setColor(Color.black);
-	    	g.fillOval(largest/2 - brushSize/2, largest/2 - brushSize/2, brushSize, brushSize);
-	    	brushSizeComboBox.addItem(new ImageIcon(image));
-	    }
-	    brushSizeHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Brush size:", "", brushSizeComboBox);
-	    
+	
+	    Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = SwingHelper.createBrushSizeComboBox(toolOptionsPanel, brushSizes);
+	    brushSizeComboBox = brushSizeTuple.getFirst();
+	    brushSizeHider = brushSizeTuple.getSecond();
+	 
 	    
 	    highlightLakesCheckbox = new JCheckBox("Highlight lakes");
 	    highlightLakesCheckbox.setToolTipText("Highlight lakes to make them easier to see.");
@@ -289,6 +277,7 @@ public class LandWaterTool extends EditorTool
 //		brightnessSlider.setBounds(150, 243, 245, 79);
 //		regionsPanel.add(brightnessSlider);
 
+	    SwingHelper.addHorizontalSpacerRowToHelpComponentAlignment(toolOptionsPanel, 0.66);
 	    SwingHelper.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
 	}
