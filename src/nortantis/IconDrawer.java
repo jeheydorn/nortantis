@@ -19,14 +19,14 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIcon;
+import nortantis.editor.CenterIconType;
+import nortantis.editor.CenterTrees;
 import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
-import nortantis.swing.CenterEdit;
-import nortantis.swing.CenterIcon;
-import nortantis.swing.CenterIconType;
-import nortantis.swing.CenterTrees;
 import nortantis.swing.MapEdits;
 import nortantis.util.Coordinate;
 import nortantis.util.Function;

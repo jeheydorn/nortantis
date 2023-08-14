@@ -1,10 +1,9 @@
 package nortantis.swing;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
@@ -13,14 +12,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import nortantis.ImagePanel;
 import nortantis.MapCreator;
 import nortantis.WorldGraph;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 
 @SuppressWarnings("serial")
-public class MapEditingPanel extends ImagePanel implements MouseWheelListener
+public class MapEditingPanel extends ImagePanel
 {
 	private final Color highlightColor = new Color(255,227,74);
 	private final Color selectColor = Color.orange;
@@ -36,17 +34,17 @@ public class MapEditingPanel extends ImagePanel implements MouseWheelListener
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
 	private double zoom;
-	private MainWindow mainWindow;
 	
-	public MapEditingPanel(BufferedImage image, MainWindow mainWindow)
+	public MapEditingPanel(BufferedImage image)
 	{
 		super(image);
 		highlightedCenters = new HashSet<>();
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
 		zoom = 1.0;
-		this.mainWindow = mainWindow;
-		addMouseWheelListener(this);
+
+		// TODO Remove this line if it isn't necessary. If it is necessary, then maybe move it to ImagePanel.
+		setLayout(new BorderLayout()); 
 	}
 	
 	public void showBrush(java.awt.Point location, int brushDiameter)
@@ -249,18 +247,5 @@ public class MapEditingPanel extends ImagePanel implements MouseWheelListener
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
-	}
-
-	@Override
-	public void mouseWheelMoved(MouseWheelEvent e)
-	{
-		if (e.isControlDown())
-		{
-			mainWindow.handleMouseWheelChangingZoom(e);
-		}
-		else
-		{
-			e.getComponent().getParent().dispatchEvent(e);
-		}
 	}
 }

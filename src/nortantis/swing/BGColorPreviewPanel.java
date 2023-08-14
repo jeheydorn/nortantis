@@ -7,7 +7,6 @@ import javax.swing.JColorChooser;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import nortantis.ImagePanel;
 import nortantis.util.ImageHelper;
 
 /**

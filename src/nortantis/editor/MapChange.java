@@ -1,10 +1,14 @@
-package nortantis.swing;
+package nortantis.editor;
+
+import nortantis.swing.EditorTool;
+import nortantis.swing.MapEdits;
+import nortantis.swing.UpdateType;
 
 public class MapChange
 {
-	MapEdits edits;
-	UpdateType updateType;
-	EditorTool toolThatMadeChange;
+	public MapEdits edits;
+	public UpdateType updateType;
+	public EditorTool toolThatMadeChange;
 	
 	public MapChange(MapEdits edits, UpdateType updateType, EditorTool toolThatMadeChange)
 	{

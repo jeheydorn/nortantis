@@ -1,4 +1,4 @@
-package nortantis.swing;
+package nortantis.editor;
 
 public enum CenterIconType
 {

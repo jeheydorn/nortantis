@@ -1,16 +1,12 @@
 package nortantis.swing;
 
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,15 +20,17 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 
 import nortantis.MapSettings;
 import nortantis.Region;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.MapChange;
+import nortantis.editor.MapUpdater;
+import nortantis.editor.RegionEdit;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.AssetsPath;
 import nortantis.util.Tuple2;
@@ -63,9 +61,9 @@ public class LandWaterTool extends EditorTool
 	private JSlider brightnessSlider;
 	private boolean areRegionColorsVisible;
 
-	public LandWaterTool(MainWindow mainWindow, ToolsPanel toolsPanel)
+	public LandWaterTool(MainWindow mainWindow, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
-		super(mainWindow, toolsPanel);
+		super(mainWindow, toolsPanel, mapUpdater);
 	}
 
 	@Override
@@ -372,7 +370,7 @@ public class LandWaterTool extends EditorTool
 			}	
 			else
 			{
-				Center center = mainWindow.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
+				Center center = mapUpdater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 				if (center != null)
 				{
 					Region region = center.region;
@@ -388,7 +386,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (mergeRegionsButton.isSelected())
 		{
-			Center center = mainWindow.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
+			Center center = mapUpdater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 			if (center != null)
 			{
 				Region region = center.region;
@@ -433,7 +431,7 @@ public class LandWaterTool extends EditorTool
 	
 	private void selectColorFromMap(MouseEvent e)
 	{
-		Center center = mainWindow.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
+		Center center = mapUpdater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
 		if (center != null)
 		{
 			if (center != null && center.region != null)
@@ -465,8 +463,8 @@ public class LandWaterTool extends EditorTool
        	Optional<CenterEdit> opt = mainWindow.edits.centerEdits.stream()
        			.filter(cEdit1 -> cEdit1.regionId != null && mainWindow.edits.regionEdits.get(cEdit1.regionId).color.equals(color))
         		.min((cEdit1, cEdit2) -> Double.compare(
-        				mainWindow.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), 
-        				mainWindow.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
+        				mapUpdater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc), 
+        				mapUpdater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
        	if (opt.isPresent())
        	{
        		return opt.get().regionId;
@@ -494,7 +492,7 @@ public class LandWaterTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{		
-		mainWindow.createAndShowMapIncrementalUsingCenters(centers);	
+		mapUpdater.createAndShowMapIncrementalUsingCenters(centers);	
 	}
 
 	@Override
@@ -527,7 +525,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected())
 		{
-			Center center = mainWindow.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()), true);			
+			Center center = mapUpdater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()), true);			
 			if (center != null)
 			{
 				if (center.region != null)
@@ -576,7 +574,7 @@ public class LandWaterTool extends EditorTool
 	{
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
-		mainWindow.createAndShowMapFromChange(change);
+		mapUpdater.createAndShowMapFromChange(change);
 	}
 
 	@Override

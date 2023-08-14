@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Stack;
 
 import nortantis.MapSettings;
+import nortantis.editor.MapChange;
 
 public class Undoer
 {
@@ -73,7 +74,7 @@ public class Undoer
 		}
 		
 		// Keep the collection of text edits being drawn in sync with the settings
-		mainWindow.mapParts.textDrawer.setMapTexts(settings.edits.text);
+		mainWindow.mapUpdater.mapParts.textDrawer.setMapTexts(settings.edits.text);
 		
 		if (change.toolThatMadeChange != null)
 		{
@@ -101,7 +102,7 @@ public class Undoer
 		settings.edits = undoStack.peek().edits.deepCopy();
 		
 		// Keep the collection of text edits being drawn in sync with the settings
-		mainWindow.mapParts.textDrawer.setMapTexts(settings.edits.text);
+		mainWindow.mapUpdater.mapParts.textDrawer.setMapTexts(settings.edits.text);
 
 		MapChange changeWithPrevEdits = new MapChange(prevEdits, change.updateType, change.toolThatMadeChange);
 		if (change.toolThatMadeChange != null)

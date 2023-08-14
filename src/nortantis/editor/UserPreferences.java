@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.editor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;

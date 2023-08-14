@@ -1,35 +1,29 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
-import nortantis.IconType;
-import nortantis.ImageCache;
 import nortantis.MapSettings;
-import nortantis.UserPreferences;
+import nortantis.editor.MapUpdater;
+import nortantis.editor.UserPreferences;
 import nortantis.util.JComboBoxFixed;
 
 @SuppressWarnings("serial")
@@ -49,7 +43,7 @@ public class ToolsPanel extends JPanel
 	MainWindow mainWindow;
 
 	
-	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel)
+	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater mapUpdater)
 	{
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, getPreferredSize().height));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
@@ -57,7 +51,9 @@ public class ToolsPanel extends JPanel
 		this.mainWindow = mainWindow;
 		
 		// Setup tools
-		tools = Arrays.asList(new LandWaterTool(mainWindow, this), new IconTool(mainWindow, this), new TextTool(mainWindow, this));
+		tools = Arrays.asList(new LandWaterTool(mainWindow, this, mapUpdater), 
+				new IconTool(mainWindow, this, mapUpdater), 
+				new TextTool(mainWindow, this, mapUpdater));
 		if (UserPreferences.getInstance().lastEditorTool != "")
 		{
 			for (EditorTool tool : tools)
@@ -190,7 +186,7 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(mainWindow.isMapBeingDrawn);
+				progressBar.setVisible(mapUpdater.isMapBeingDrawn);
 			}
 		};
 		progressBarTimer = new Timer(50, listener);

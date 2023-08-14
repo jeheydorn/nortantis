@@ -1,9 +1,5 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.GridBagLayout;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -19,30 +15,26 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
+import nortantis.editor.MapChange;
+import nortantis.editor.MapUpdater;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.JTextFieldFixed;
-import nortantis.util.Tuple2;
 
 public class TextTool extends EditorTool
 {
@@ -65,9 +57,9 @@ public class TextTool extends EditorTool
 
 	
 
-	public TextTool(MainWindow parent, ToolsPanel toolsPanel)
+	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
-		super(parent, toolsPanel);
+		super(parent, toolsPanel, mapUpdater);
 
 		// Using KeyEventDispatcher instead of KeyListener makes the keys work when any component is focused.
 		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
@@ -276,7 +268,7 @@ public class TextTool extends EditorTool
 	private void updateTextInBackgroundThread(final MapText selectedText)
 	{
 		textToSelectAfterDraw = selectedText;
-		mainWindow.createAndShowMapIncrementalUsingCenters(null);
+		mapUpdater.createAndShowMapIncrementalUsingCenters(null);
 	}
 	
 	private BufferedImage drawMapWithText()
@@ -284,7 +276,7 @@ public class TextTool extends EditorTool
 		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
 		try
 		{
-			mainWindow.mapParts.textDrawer.drawTextFromEdits(mainWindow.mapParts.graph, mapWithText, mainWindow.mapParts.landBackground);
+			mapUpdater.mapParts.textDrawer.drawTextFromEdits(mapUpdater.mapParts.graph, mapWithText, mapUpdater.mapParts.landBackground);
 		}
 		catch (Exception e)
 		{
@@ -301,7 +293,7 @@ public class TextTool extends EditorTool
 		if (moveButton.isSelected())
 		{
 			// Begin a drag and drop of a text box.
-			MapText selectedText = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
@@ -312,7 +304,7 @@ public class TextTool extends EditorTool
 		}
 		else if (rotateButton.isSelected())
 		{
-			lastSelected = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			lastSelected = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (lastSelected != null)
 			{
 				// Region and title names cannot be rotated.
@@ -333,7 +325,7 @@ public class TextTool extends EditorTool
 		}
 		else if (deleteButton.isSelected())
 		{
-			MapText selectedText = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				selectedText.value = "";
@@ -343,7 +335,7 @@ public class TextTool extends EditorTool
 		}
 		else if (addButton.isSelected())
 		{
-			MapText addedText = mainWindow.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
+			MapText addedText = mapUpdater.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 					getPointOnGraph(e.getPoint()));
 			mainWindow.edits.text.add(addedText);
 			
@@ -356,7 +348,7 @@ public class TextTool extends EditorTool
 			{
 				editTextField.grabFocus();
 			}
-			MapText selectedText = mainWindow.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			handleTextEdit(selectedText);
 		}
 	}
@@ -516,7 +508,7 @@ public class TextTool extends EditorTool
 		
 		if (change.updateType == UpdateType.Full)
 		{
-			mainWindow.createAndShowMapFull();
+			mapUpdater.createAndShowMapFull();
 		}
 		else
 		{

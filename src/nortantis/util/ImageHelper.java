@@ -3,6 +3,7 @@ package nortantis.util;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -27,6 +28,8 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
+import nortantis.MapSettings;
+import nortantis.TextDrawer;
 import nortantis.graph.geom.Point;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
@@ -1744,5 +1747,37 @@ public class ImageHelper
 		}
 		
 		return result;
+	}
+	
+	public static BufferedImage createPlaceholderImage(String[] message)
+	{
+		if (message.length == 0)
+		{
+			return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+		}
+		
+		final int scale = 2;
+		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30 * scale);
+		int fontHeight = TextDrawer.getFontHeight(font);
+		
+		Dimension textBounds = TextDrawer.getTextBounds(message[0], font);
+		for (int i : new Range(1, message.length))
+		{
+			Dimension lineBounds = TextDrawer.getTextBounds(message[i], font);
+			textBounds = new Dimension(Math.max(textBounds.width, lineBounds.width), 
+					textBounds.height + lineBounds.height);
+		}
+		
+		BufferedImage placeHolder = new BufferedImage((textBounds.width + 15), (textBounds.height + 20), BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = placeHolder.createGraphics();
+		g.setFont(font);
+		g.setColor(new Color(168, 168, 168));
+		
+		for (int i : new Range(message.length))
+		{
+			g.drawString(message[i], 14, fontHeight + (i * fontHeight));
+		}
+		
+		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth() / scale, Method.QUALITY);
 	}
 }

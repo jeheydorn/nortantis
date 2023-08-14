@@ -1,7 +1,10 @@
 package nortantis.swing;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+
+import javax.swing.JPanel;
+import javax.swing.Scrollable;
 
 @SuppressWarnings("serial")
 /***

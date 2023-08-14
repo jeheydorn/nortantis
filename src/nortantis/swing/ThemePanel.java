@@ -1,13 +1,10 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -17,7 +14,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -31,11 +27,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
-import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
@@ -48,7 +42,6 @@ import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
 import nortantis.util.ImageHelper;
-import nortantis.util.JFontChooser;
 import nortantis.util.Tuple2;
 
 @SuppressWarnings("serial")
@@ -129,7 +122,6 @@ public class ThemePanel extends JTabbedPane
 		
 		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel backgroundPanel = panelAndScrollPane.getFirst();
-		backgroundPanel.setLayout(new GridBagLayout());
 
 		
 		backgroundImageButtonGroupListener = new ActionListener()
@@ -334,7 +326,6 @@ public class ThemePanel extends JTabbedPane
 
 		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel borderPanel = panelAndScrollPane.getFirst();
-		borderPanel.setLayout(new GridBagLayout());
 
 
 		drawBorderCheckbox = new JCheckBox("Create border");
@@ -417,7 +408,6 @@ public class ThemePanel extends JTabbedPane
 
 		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel effectsPanel = panelAndScrollPane.getFirst();
-		effectsPanel.setLayout(new GridBagLayout());
 		
 		
 		jaggedLinesButton = new JRadioButton("Jagged");
@@ -588,7 +578,6 @@ public class ThemePanel extends JTabbedPane
 	
 		Tuple2<JPanel, JScrollPane> panelAndScrollPane = SwingHelper.createPanelAndScrollPaneForLabeledComponents();
 		JPanel fontsPanel = panelAndScrollPane.getFirst();
-		fontsPanel.setLayout(new GridBagLayout());
 
 
 		enableTextCheckBox = new JCheckBox("Enable text");

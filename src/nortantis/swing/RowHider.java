@@ -1,8 +1,6 @@
 package nortantis.swing;
 
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.GridBagConstraints;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

@@ -1,10 +1,5 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Graphics2D;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -12,7 +7,6 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -20,7 +14,6 @@ import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -35,7 +28,13 @@ import javax.swing.JSlider;
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
-import nortantis.SettingsGenerator;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterIcon;
+import nortantis.editor.CenterIconType;
+import nortantis.editor.CenterTrees;
+import nortantis.editor.EdgeEdit;
+import nortantis.editor.MapChange;
+import nortantis.editor.MapUpdater;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
@@ -79,9 +78,9 @@ public class IconTool extends EditorTool
 	private JLabel lblCityIconType;
 	private final String cityTypeNotSetPlaceholder = "<not set>";
 
-	public IconTool(MainWindow parent, ToolsPanel toolsPanel)
+	public IconTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
-		super(parent, toolsPanel);
+		super(parent, toolsPanel, mapUpdater);
 		rand = new Random();
 	}
 
@@ -449,7 +448,7 @@ public class IconTool extends EditorTool
 				// the image files, previously hidden cities don't start popping up along coastlines and lakes.
 				// Note that all icons can fail to draw because they would overlap an ocean or lake, but I don't think it's
 				// a big deal for other icon types.
-				if (mainWindow.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
+				if (mapUpdater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 				{
 					mainWindow.edits.centerEdits.get(center.index).icon = cityIcon;
 				}
@@ -553,7 +552,7 @@ public class IconTool extends EditorTool
 		
 		if (riversButton.isSelected())
 		{
-			riverStart = mainWindow.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+			riverStart = mapUpdater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
 	}
 
@@ -562,8 +561,8 @@ public class IconTool extends EditorTool
 	{		
 		if (riversButton.isSelected())
 		{
-			Corner end = mainWindow.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-			Set<Edge> river = filterOutOceanAndCoastEdges(mainWindow.mapParts.graph.findPathGreedy(riverStart, end));
+			Corner end = mapUpdater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+			Set<Edge> river = filterOutOceanAndCoastEdges(mapUpdater.mapParts.graph.findPathGreedy(riverStart, end));
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
@@ -576,7 +575,7 @@ public class IconTool extends EditorTool
 			
 			if (river.size() > 0)
 			{
-				mainWindow.createAndShowMapIncrementalUsingEdges(river);
+				mapUpdater.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
 		
@@ -636,8 +635,8 @@ public class IconTool extends EditorTool
 			if (riverStart != null)
 			{
 				mapEditingPanel.clearHighlightedEdges();
-				Corner end = mainWindow.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-				Set<Edge> river = filterOutOceanAndCoastEdges(mainWindow.mapParts.graph.findPathGreedy(riverStart, end));
+				Corner end = mapUpdater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+				Set<Edge> river = filterOutOceanAndCoastEdges(mapUpdater.mapParts.graph.findPathGreedy(riverStart, end));
 				mapEditingPanel.addHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
@@ -676,7 +675,7 @@ public class IconTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo(MapChange change)
 	{	
-		mainWindow.createAndShowMapFromChange(change);
+		mapUpdater.createAndShowMapFromChange(change);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
@@ -686,7 +685,7 @@ public class IconTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{
-		mainWindow.createAndShowMapIncrementalUsingCenters(centers);
+		mapUpdater.createAndShowMapIncrementalUsingCenters(centers);
 	}
 
 	@Override

@@ -1,4 +1,4 @@
-package nortantis.swing;
+package nortantis.editor;
 
 import java.io.Serializable;
 import java.util.Objects;
