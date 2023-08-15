@@ -29,6 +29,7 @@ public abstract class MapUpdater
 	public MapParts mapParts;
 	private boolean createEditsIfNotPresentAndUseMapParts;
 	private Dimension maxMapSize;
+	private boolean enabled;
 
 	/**
 	 * 
@@ -114,6 +115,11 @@ public abstract class MapUpdater
 	 */
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
+		if (!enabled)
+		{
+			return;
+		}
+		
 		if (isMapBeingDrawn)
 		{
 			if (updateType == UpdateType.Full)
@@ -140,10 +146,10 @@ public abstract class MapUpdater
 		}
 
 		// TODO remove these and draw everything
-		settings.frayedBorder = false;
-		settings.drawText = false;
-		settings.grungeWidth = 0;
-		settings.drawBorder = false;
+//		settings.frayedBorder = false;
+//		settings.drawText = false;
+//		settings.grungeWidth = 0;
+//		settings.drawBorder = false;
 
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
 		{
@@ -156,10 +162,16 @@ public abstract class MapUpdater
 				{
 					if (updateType == UpdateType.Full)
 					{
+						if (maxMapSize != null && maxMapSize.width <= 0 || maxMapSize.height <= 0)
+						{
+							return null;
+						}
+
 						if (mapParts == null && createEditsIfNotPresentAndUseMapParts)
 						{
 							mapParts = new MapParts();
 						}
+						
 						BufferedImage map = new MapCreator().createMap(settings, maxMapSize, mapParts);
 						System.gc();
 						return map;
@@ -227,7 +239,7 @@ public abstract class MapUpdater
 						initializeEdgeEditsIfEmpty();
 					}
 										
-					onFinishedDrawing(map);
+					onFinishedDrawing(map, mapNeedsFullRedraw || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0));
 					
 					isMapBeingDrawn = false;
 					if (mapNeedsFullRedraw)
@@ -262,7 +274,7 @@ public abstract class MapUpdater
 	
 	protected abstract MapSettings getSettingsFromGUI();
 	
-	protected abstract void onFinishedDrawing(BufferedImage map);
+	protected abstract void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued);
 	
 	protected abstract void onFailedToDraw();
 
@@ -384,5 +396,10 @@ public abstract class MapUpdater
 				edgesChanged = new HashSet<>(other.edgesChanged);
 			}
 		}
+	}
+	
+	public void setEnabled(boolean enabled)
+	{
+		this.enabled = enabled;
 	}
 }

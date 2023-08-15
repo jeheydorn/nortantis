@@ -115,7 +115,7 @@ public class TextTool extends EditorTool
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
 		drawTextDisabledLabel = new JLabel("<html>This tool is disabled because drawing text is disabled in the Fonts tab.</html>");
-		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(toolOptionsPanel, drawTextDisabledLabel);
+		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(drawTextDisabledLabel);
 		drawTextDisabledLabelHider.setVisible(false);
 
 		{
@@ -167,7 +167,7 @@ public class TextTool extends EditorTool
 				
 		
 		editTextField = new JTextFieldFixed();
-		editTextFieldHider = organizer.addLeftAlignedComponent(toolOptionsPanel, editTextField);
+		editTextFieldHider = organizer.addLeftAlignedComponent(editTextField);
 		
 		
 		textTypeComboBox = new JComboBoxFixed<>();
@@ -180,9 +180,9 @@ public class TextTool extends EditorTool
 		}
 		
 				
-		booksPanel = SwingHelper.createBooksPanel();
-		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(toolOptionsPanel, "Books for generating text:", 
-				"Selected books will be used to generate new names.", booksPanel);
+		booksPanel = SwingHelper.createBooksPanel(() -> mainWindow.handleChange());
+		booksHider = organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.", 
+				booksPanel);
 		
 		
 	    editButton.doClick();

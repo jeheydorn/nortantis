@@ -59,6 +59,7 @@ public class MapSettings implements Serializable
 	public double centerLandToWaterProbability;
 	public double edgeLandToWaterProbability;
 	public boolean frayedBorder;
+	public int frayedBorderSize;
 	public Color frayedBorderColor;
 	public int frayedBorderBlurLevel;
 	public int grungeWidth;
@@ -96,7 +97,6 @@ public class MapSettings implements Serializable
 	public boolean drawBorder;
 	public String borderType;
 	public int borderWidth;
-	public int frayedBorderSize;
 	public boolean drawIcons = true;
 	public boolean drawRivers = true; // Not saved
 	public boolean drawRoads = true;

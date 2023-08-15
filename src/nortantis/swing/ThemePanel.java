@@ -26,7 +26,6 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
@@ -207,7 +206,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSeperator();
 		colorizeLandCheckbox = new JCheckBox("Color land");
 		colorizeLandCheckbox.setToolTipText("Whether to change the land texture to a custom color");
-		colorizeLandCheckboxHider = organizer.addLeftAlignedComponent(backgroundPanel, colorizeLandCheckbox);
+		colorizeLandCheckboxHider = organizer.addLeftAlignedComponent(colorizeLandCheckbox);
 		
 		
 		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
@@ -273,7 +272,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSeperator();
 		colorizeOceanCheckbox = new JCheckBox("Color ocean");
 		colorizeOceanCheckbox.setToolTipText("Whether to change the ocean texture to a custom color");
-		colorizeOceanCheckboxHider = organizer.addLeftAlignedComponent(backgroundPanel, colorizeOceanCheckbox);
+		colorizeOceanCheckboxHider = organizer.addLeftAlignedComponent(colorizeOceanCheckbox);
 		
 		oceanDisplayPanel = new BGColorPreviewPanel();
 		oceanDisplayPanel.setLayout(null);
@@ -328,7 +327,7 @@ public class ThemePanel extends JTabbedPane
 				borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
 			}
 		});
-		organizer.addLeftAlignedComponent(borderPanel, drawBorderCheckbox);
+		organizer.addLeftAlignedComponent(drawBorderCheckbox);
 		
 
 		borderTypeComboBox = new JComboBox<String>();
@@ -358,7 +357,7 @@ public class ThemePanel extends JTabbedPane
 				frayedEdgePolygonCountSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 			}
 		});
-		organizer.addLeftAlignedComponent(borderPanel, frayedEdgeCheckbox);
+		organizer.addLeftAlignedComponent(frayedEdgeCheckbox);
 
 		
 		frayedEdgeShadingSlider = new JSlider();
@@ -557,7 +556,7 @@ public class ThemePanel extends JTabbedPane
 
 		enableTextCheckBox = new JCheckBox("Enable text");
 		enableTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
-		organizer.addLeftAlignedComponent(fontsPanel, enableTextCheckBox);
+		organizer.addLeftAlignedComponent(enableTextCheckBox);
 		organizer.addSeperator();
 
 		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70);
@@ -598,7 +597,7 @@ public class ThemePanel extends JTabbedPane
 		
 		organizer.addSeperator();
 		chckbxDrawBoldBackground = new JCheckBox("Bold background");
-		organizer.addLeftAlignedComponent(fontsPanel, chckbxDrawBoldBackground);
+		organizer.addLeftAlignedComponent(chckbxDrawBoldBackground);
 		
 		
 
@@ -992,7 +991,7 @@ public class ThemePanel extends JTabbedPane
 		return landDisplayPanel.getColor();
 	}
 	
-	private enum LandColoringMethod
+	public enum LandColoringMethod
 	{
 		SingleColor("Single Color"),
 		ColorPoliticalRegions("Color Political Regions");

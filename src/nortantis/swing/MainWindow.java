@@ -138,9 +138,7 @@ public class MainWindow extends JFrame
 		else
 		{
 			// TODO make sure this message is correct.
-			mapEditingPanel.image = ImageHelper
-					.createPlaceholderImage(new String[] { "Welcome to Nortantis. To create a map, go to", "File > New Random Map." });
-			mapEditingPanel.repaint();
+			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create a map, go to", "File > New Random Map." });
 		}
 	}
 
@@ -377,7 +375,7 @@ public class MainWindow extends JFrame
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map)
+			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued)
 			{
 				mapEditingPanel.mapFromMapCreator = map;
 				mapEditingPanel.setGraph(mapParts.graph);
@@ -393,7 +391,10 @@ public class MainWindow extends JFrame
 
 				updateDisplayedMapFromGeneratedMap(false);
 
-				enableOrDisableToolToggleButtonsAndZoom(true);
+				if (!anotherDrawIsQueued)
+				{
+					enableOrDisableToolToggleButtonsAndZoom(true);
+				}
 
 				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
@@ -1190,7 +1191,7 @@ public class MainWindow extends JFrame
 		setTitle(title);
 	}
 
-	private void loadSettingsIntoGUI(MapSettings settings)
+	void loadSettingsIntoGUI(MapSettings settings)
 	{
 		updateLastSettingsLoadedOrSaved(settings);
 		edits = settings.edits;
@@ -1250,6 +1251,24 @@ public class MainWindow extends JFrame
 	public Color getLandColor()
 	{
 		return themePanel.getLandColor();
+	}
+	
+	public void addChangeListener(Component component)
+	{
+		SwingHelper.addListener(component, () -> handleChange());
+	}
+	
+	public void handleChange()
+	{
+		// TODO set undo point once I have undoer working outside of editor tools.
+		mapUpdater.createAndShowMapFull();
+	}
+	
+	
+	void setPlaceholderImage(String[] message)
+	{
+		mapEditingPanel.image = ImageHelper.createPlaceholderImage(message);
+		mapEditingPanel.repaint();
 	}
 
 	/**

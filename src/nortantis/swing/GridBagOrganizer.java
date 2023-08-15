@@ -173,34 +173,59 @@ public class GridBagOrganizer
 		return scrollPane;
 	}
 	
-	public RowHider addLeftAlignedComponent(JPanel parent, JComponent component)
+	public RowHider addLeftAlignedComponent(Component component)
 	{
-		return addLeftAlignedComponent(parent, component, rowVerticalInset, rowVerticalInset);
+		return addLeftAlignedComponent(component, rowVerticalInset, rowVerticalInset);
+	}
+	
+	public RowHider addLeftAlignedComponent(Component component, boolean allowToExpandVertically)
+	{
+		return addLeftAlignedComponent(component, rowVerticalInset, rowVerticalInset, allowToExpandVertically);
+	}
+	
+	public RowHider addLeftAlignedComponent(Component component, int topInset, int bottomInset)
+	{
+		return addLeftAlignedComponent(component, topInset, bottomInset, true);
 	}
 
-	public RowHider addLeftAlignedComponent(JPanel parent, JComponent component, int topInset, int bottomInset)
+	public RowHider addLeftAlignedComponent(Component component, int topInset, int bottomInset, boolean allowToExpandVertically)
 	{
 		GridBagConstraints cc = new GridBagConstraints();
-		cc.fill = GridBagConstraints.HORIZONTAL;
+		if (allowToExpandVertically)
+		{
+			cc.fill = GridBagConstraints.BOTH;
+		}
+		else
+		{
+			cc.fill = GridBagConstraints.HORIZONTAL;
+		}
 		cc.gridx = 0;
 		cc.gridwidth = 2;
 		cc.gridy = curY;
 		cc.weightx = 1;
+		if (allowToExpandVertically)
+		{
+			cc.weighty = 1;
+		}
+		else
+		{
+			cc.weighty = 0;
+		}
 		cc.anchor = GridBagConstraints.LINE_START;
 		cc.insets = new Insets(topInset, 5, bottomInset, 5);
-		parent.add(component, cc);
+		panel.add(component, cc);
 
 		curY++;
 
 		return new RowHider(component);
 	}
 
-	public RowHider addLeftAlignedComponentWithStackedLabel(JPanel parent, String labelText, String toolTip, JComponent component)
+	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component)
 	{
 		JLabel label = new JLabel(labelText);
 		label.setToolTipText(toolTip);
-		RowHider labelHider = addLeftAlignedComponent(parent, label, rowVerticalInset, 2);
-		RowHider compHider = addLeftAlignedComponent(parent, component, 0, rowVerticalInset);
+		RowHider labelHider = addLeftAlignedComponent(label, rowVerticalInset, 2);
+		RowHider compHider = addLeftAlignedComponent(component, 0, rowVerticalInset);
 
 		return new RowHider(labelHider, compHider);
 	}

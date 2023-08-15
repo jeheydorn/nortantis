@@ -1,46 +1,33 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
-import javax.swing.Box;
+import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.JTextComponent;
 
 import nortantis.SettingsGenerator;
-import nortantis.util.JFontChooser;
-import nortantis.util.Tuple2;
 
 public class SwingHelper
 {
@@ -111,22 +98,26 @@ public class SwingHelper
 	}
 
 
-	public static JPanel createBooksPanel()
+	public static JPanel createBooksPanel(Runnable actionToRunWhenSelectionChanges)
 	{
 		JPanel booksPanel = new JPanel();
 		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
 
-		createBooksCheckboxes(booksPanel);
+		createBooksCheckboxes(booksPanel, actionToRunWhenSelectionChanges);
 
 		return booksPanel;
 	}
 
-	public static void createBooksCheckboxes(JPanel booksPanel)
+	private static void createBooksCheckboxes(JPanel booksPanel, Runnable actionToRunWhenSelectionChanges)
 	{
 		for (String book : SettingsGenerator.getAllBooks())
 		{
 			final JCheckBox checkBox = new JCheckBox(book);
 			booksPanel.add(checkBox);
+			if (actionToRunWhenSelectionChanges != null)
+			{
+				addListener(checkBox, actionToRunWhenSelectionChanges);
+			}
 		}
 	}
 
@@ -178,8 +169,89 @@ public class SwingHelper
 			}
 		}
 	}
+	
+	@SuppressWarnings("rawtypes")
+	public static void addListener(Component component, Runnable action)
+	{
+		if (component instanceof AbstractButton)
+		{
+			((AbstractButton)component).addActionListener(new ActionListener()
+			{
+				
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					action.run();
+				}
+			});
+		}
+		else if (component instanceof JComboBox)
+		{
+			((JComboBox) component).addActionListener(new ActionListener()
+			{
+				
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					action.run();
+				}
+			});
+		}
+		else if (component instanceof JSlider)
+		{
+			((JSlider)component).addChangeListener(new ChangeListener()
+			{
+				
+				@Override
+				public void stateChanged(ChangeEvent e)
+				{
+					action.run();
+				}
+			});
+		}
+		else if (component instanceof JTextComponent)
+		{
+			((JTextComponent)component).getDocument().addDocumentListener(new DocumentListener()
+			{
 
-	static void handleBackgroundThreadException(Exception ex)
+				@Override
+				public void insertUpdate(DocumentEvent e)
+				{
+					// TODO Decide if this needs to run action.
+					
+				}
+
+				@Override
+				public void removeUpdate(DocumentEvent e)
+				{
+					// TODO Decide if this needs to run action.
+					
+				}
+
+				@Override
+				public void changedUpdate(DocumentEvent e)
+				{
+					action.run();
+				}
+				
+			});
+		}
+	}
+	
+	// TODO remove it not used
+	public static void addListenerToThisAndAllChildren(Component component, Runnable action)
+	{
+		addListener(component, action);
+		if (component instanceof Container)
+		{
+			for (Component child : ((Container) component).getComponents())
+			{
+				addListenerToThisAndAllChildren(child, action);
+			}
+		}
+	}
+
+	public static void handleBackgroundThreadException(Exception ex)
 	{
 		if (ex instanceof ExecutionException)
 		{

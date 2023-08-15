@@ -4,10 +4,13 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.Hashtable;
 import java.util.TreeSet;
@@ -15,6 +18,7 @@ import java.util.TreeSet;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -25,13 +29,13 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.Timer;
-import javax.swing.border.EtchedBorder;
 
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
+import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 
@@ -47,48 +51,48 @@ public class NewSettingsDialog extends JDialog
 	private JProgressBar progressBar;
 	private MapUpdater mapUpdater;
 	private MapEditingPanel mapEditingPanel;
-	private JScrollPane mapEditingScrollPane;
-	private Dimension defaultSize = new Dimension(900, 700);
+	private Dimension defaultSize = new Dimension(800, 700);
 	private Timer progressBarTimer;
 	public final double cityFrequencySliderScale = 100.0 * 1.0 / SettingsGenerator.maxCityProbabillity;
 	private JSlider cityFrequencySlider;
 	private JComboBox<String> cityIconsSetComboBox;
+	private JPanel mapEditingPanelContainer;
+	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
+
 
 	public NewSettingsDialog(MainWindow mainWindow)
 	{
 		super(mainWindow, "Create New Map", Dialog.ModalityType.APPLICATION_MODAL);
 
-		createGUI();
+		createGUI(mainWindow);
 
 		settings = SettingsGenerator.generate();
 		loadSettingsIntoGUI(settings);
-
+		
+		mapUpdater.setEnabled(true);
+		mapUpdater.createAndShowMapFull();
 	}
 
-	private void createGUI()
+	private void createGUI(MainWindow mainWindow)
 	{
 		setSize(defaultSize);
-		JPanel container = new JPanel();
-		add(container);
-		container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+		setMinimumSize(defaultSize);
+		
+		GridBagOrganizer organizer = new GridBagOrganizer();
+		JPanel container = organizer.panel;
+		add(organizer.panel);
 		container.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+		container.setPreferredSize(defaultSize);
 
 		JPanel generatorSettingsPanel = new JPanel();
 		generatorSettingsPanel.setLayout(new BoxLayout(generatorSettingsPanel, BoxLayout.X_AXIS));
-		container.add(generatorSettingsPanel);
-
-		createRightPanel(generatorSettingsPanel);
+		organizer.addLeftAlignedComponent(generatorSettingsPanel, 0, 0, false);
 
 		createLeftPanel(generatorSettingsPanel);
-
-		JPanel labelWrapper = new JPanel();
-		labelWrapper.setLayout(new BoxLayout(labelWrapper, BoxLayout.X_AXIS));
-		labelWrapper.add(new JLabel("<html> The World Size and Dimensions of the map cannot be changed once the map is created. Other "
-				+ "settings here are only to help guide the random generator to what you want. Terrain, theme, colors, "
-				+ "icons, background, border, and text can all be changed after creating the map. </html>"));
-		container.add(labelWrapper);
-		labelWrapper.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-
+		generatorSettingsPanel.add(Box.createHorizontalStrut(20));
+		createRightPanel(generatorSettingsPanel);
+		
+		
 		JPanel randomizePanel = new JPanel();
 		randomizePanel.setLayout(new BoxLayout(randomizePanel, BoxLayout.X_AXIS));
 		randomizePanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
@@ -114,18 +118,12 @@ public class NewSettingsDialog extends JDialog
 			}
 		});
 		randomizePanel.add(randomizeLandButton);
-		container.add(randomizePanel);
+		organizer.addLeftAlignedComponent(randomizePanel, 0, 0, false);
 
+		
 		createMapEditingPanel();
 		createMapUpdater();
-		container.add(mapEditingScrollPane);
-
-		progressBar = new JProgressBar();
-		progressBar.setStringPainted(true);
-		progressBar.setString("Drawing...");
-		progressBar.setIndeterminate(true);
-		progressBar.setVisible(false);
-		container.add(progressBar);
+		organizer.addLeftAlignedComponent(mapEditingPanelContainer, 0, 0, true);
 
 		ActionListener listener = new ActionListener()
 		{
@@ -138,22 +136,71 @@ public class NewSettingsDialog extends JDialog
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
 
+		
 		JPanel bottomPanel = new JPanel();
-		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		JButton cancelButton = new JButton("Cancel"); // TODO Add keyboard
-														// shortcut
-		bottomPanel.add(cancelButton);
-		JButton acceptButton = new JButton("Create Map"); // TODO Add keyboard
-															// shortcut
-		bottomPanel.add(acceptButton);
-		container.add(bottomPanel);
+		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
+		
+		progressBar = new JProgressBar();
+		progressBar.setStringPainted(true);
+		progressBar.setString("Drawing...");
+		progressBar.setIndeterminate(true);
+		progressBar.setVisible(false);
+		bottomPanel.add(progressBar);
+		bottomPanel.add(Box.createHorizontalGlue());
+		
 
-		// TODO When accept is pressed, Call
-		// MainWindow.createPlaceholderImage with the message: "Drawing the
-		// map..."
+		JPanel bottomButtonsPanel = new JPanel();														
+		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
+		JButton createMapButton = new JButton("<html>C<u>r</u>eate Map</html>");
+		bottomButtonsPanel.add(createMapButton);
+		createMapButton.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				onCreateMap(mainWindow);
+			}
+		});
+											
+
+		bottomPanel.add(bottomButtonsPanel);
+		organizer.addLeftAlignedComponent(bottomPanel, 0, 0, false);
+
+		
+		addComponentListener(new ComponentAdapter()
+		{
+			public void componentResized(ComponentEvent componentEvent)
+			{
+				mapUpdater.setMaxMapSize(getMapDrawingAreaSize());
+				handleChange();
+			}
+		});
+		
+		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
+		{
+			public boolean dispatchKeyEvent(KeyEvent e)
+			{
+				if ((e.getKeyCode() == KeyEvent.VK_R) && e.isAltDown())
+				{
+					createMapButton.doClick();
+				}
+			return false;
+			}
+		};
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
+		
+		pack();
+	}
+	
+	private void onCreateMap(MainWindow mainWindow)
+	{
+		mainWindow.setPlaceholderImage(new String[] {"Drawing the map..."});
+		mainWindow.loadSettingsIntoGUI(getSettingsFromGUI());
+		dispose();
 	}
 
-	private void createRightPanel(JPanel generatorSettingsPanel)
+	private void createLeftPanel(JPanel generatorSettingsPanel)
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
@@ -165,7 +212,8 @@ public class NewSettingsDialog extends JDialog
 		{
 			dimensionsComboBox.addItem(dimension);
 		}
-		organizer.addLabelAndComponentToPanel("Dimensions:", "Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while"
+		addChangeListener(dimensionsComboBox);
+		organizer.addLabelAndComponentToPanel("Dimensions: <br>(cannot be changed in editor)", "Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while"
 				+ " exporting. This doesn't include the border, if you add one.",
 				dimensionsComboBox);
 
@@ -177,7 +225,9 @@ public class NewSettingsDialog extends JDialog
 		worldSizeSlider.setPaintTicks(true);
 		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
 		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
-		organizer.addLabelAndComponentToPanel("World size:", "The number of polygons in the randomly generated world.", worldSizeSlider);
+		addChangeListener(worldSizeSlider);
+		organizer.addLabelAndComponentToPanel("World size: <br>(cannot be changed in editor)", "The number of polygons in the randomly generated world.", worldSizeSlider);
+		
 
 		edgeLandToWaterProbSlider = new JSlider();
 		edgeLandToWaterProbSlider.setValue(70);
@@ -194,6 +244,7 @@ public class NewSettingsDialog extends JDialog
 			}
 			edgeLandToWaterProbSlider.setLabelTable(labelTable);
 		}
+		addChangeListener(edgeLandToWaterProbSlider);
 		organizer.addLabelAndComponentToPanel("Edge land probability:", "The probability that a tectonic plate touching the edge of the map will be land rather than ocean.",
 				edgeLandToWaterProbSlider);
 
@@ -212,13 +263,26 @@ public class NewSettingsDialog extends JDialog
 			}
 			centerLandToWaterProbSlider.setLabelTable(labelTable);
 		}
+		addChangeListener(centerLandToWaterProbSlider);
 		organizer.addLabelAndComponentToPanel("Center land probability:", "The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.",
 				centerLandToWaterProbSlider);
-
+		
+		
+		landColoringMethodComboBox = new JComboBox<LandColoringMethod>();
+		for (LandColoringMethod method : LandColoringMethod.values())
+		{
+			landColoringMethodComboBox.addItem(method);
+		}
+		
+		addChangeListener(landColoringMethodComboBox);
+		organizer.addLabelAndComponentToPanel("Land coloring method:", "How to color the land.", 
+				landColoringMethodComboBox);
+		
+		
 		organizer.addVerticalFillerRow(leftPanel);
 	}
 
-	private void createLeftPanel(JPanel generatorSettingsPanel)
+	private void createRightPanel(JPanel generatorSettingsPanel)
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
@@ -234,38 +298,78 @@ public class NewSettingsDialog extends JDialog
 		cityFrequencySlider.setMinimum(0);
 		cityFrequencySlider.setMaximum(100);
 		cityFrequencySlider.setMajorTickSpacing(25);
+		addChangeListener(cityFrequencySlider);
 		organizer.addLabelAndComponentToPanel("City frequency:", "Higher values create more cities. Lower values create less cities. Zero means no cities.",
 				cityFrequencySlider);
 
 		cityIconsSetComboBox = new JComboBox<String>();
+		addChangeListener(cityIconsSetComboBox);
 		organizer.addLabelAndComponentToPanel("City icon type:", "Higher values create more cities. Lower values create less cities. Zero means no cities.",
 				cityIconsSetComboBox);
 
-		// TODO Put books checkboxes in a scroll pane to make books panel a
-		// fixed size.
-		booksPanel = SwingHelper.createBooksPanel();
-		// booksPanel.setSize(new Dimension(350, 200));
+		
+		booksPanel = SwingHelper.createBooksPanel(() -> handleChange());
 		JScrollPane booksScrollPane = new JScrollPane(booksPanel);
-		Dimension size = new Dimension(350, 300);
-		booksScrollPane.setBounds(0, 0, size.width, size.height);
-		JPanel absolute = new JPanel();
-		absolute.setLayout(null);
-		absolute.add(booksScrollPane);
-		absolute.setPreferredSize(size);
-		organizer.addLeftAlignedComponentWithStackedLabel(rightPanel, "Books for generating text:",
-				"Selected books will be used to generate new names.", absolute);
+		booksScrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
+		Dimension size = new Dimension(360, 130);
+		booksScrollPane.setPreferredSize(size);
+		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.",
+				booksScrollPane);
 
 		organizer.addVerticalFillerRow(rightPanel);
 	}
 
 	private void randomizeTheme()
 	{
-		// TODO
+		MapSettings randomSettings = SettingsGenerator.generate();
+		settings.coastShadingLevel = randomSettings.coastShadingLevel;
+		settings.oceanEffectsLevel = randomSettings.oceanEffectsLevel;
+		settings.concentricWaveCount = randomSettings.concentricWaveCount;
+		settings.oceanEffect = randomSettings.oceanEffect;
+		settings.riverColor = randomSettings.riverColor;
+		settings.roadColor = randomSettings.roadColor;
+		settings.coastShadingColor = randomSettings.coastShadingColor;
+		settings.oceanEffectsColor = randomSettings.oceanEffectsColor;
+		settings.coastlineColor = randomSettings.coastlineColor;
+		settings.frayedBorder = randomSettings.frayedBorder;
+		settings.frayedBorderSize = randomSettings.frayedBorderSize;
+		settings.frayedBorderColor = randomSettings.frayedBorderColor;
+		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
+		settings.grungeWidth = randomSettings.grungeWidth;
+		settings.generateBackground = randomSettings.generateBackground;
+		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
+		settings.colorizeOcean = randomSettings.colorizeOcean;
+		settings.colorizeLand = randomSettings.colorizeLand;
+		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
+		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
+		settings.oceanColor = randomSettings.oceanColor;
+		settings.landColor = randomSettings.landColor;
+		settings.hueRange = randomSettings.hueRange;
+		settings.saturationRange = randomSettings.saturationRange;
+		settings.brightnessRange = randomSettings.brightnessRange;
+		settings.titleFont = randomSettings.titleFont;
+		settings.regionFont = randomSettings.regionFont;
+		settings.mountainRangeFont = randomSettings.mountainRangeFont;
+		settings.otherMountainsFont = randomSettings.otherMountainsFont;
+		settings.riverFont = randomSettings.riverFont;
+		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
+		settings.textColor = randomSettings.textColor;
+		settings.drawBoldBackground = randomSettings.drawBoldBackground;
+		settings.drawRegionColors = randomSettings.drawRegionColors;
+		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
+		settings.drawBorder = randomSettings.drawBorder;
+		settings.borderType = randomSettings.borderType;
+		settings.borderWidth = randomSettings.borderWidth;
+		settings.lineStyle = randomSettings.lineStyle;
+		
+		handleChange();
 	}
 
 	private void randomizeLand()
 	{
-		// TODO
+		MapSettings randomSettings = SettingsGenerator.generate();
+		settings.randomSeed = randomSettings.randomSeed;
+		handleChange();
 	}
 
 	private void createMapEditingPanel()
@@ -273,23 +377,9 @@ public class NewSettingsDialog extends JDialog
 		BufferedImage placeHolder = ImageHelper.createPlaceholderImage(new String[] { "Drawing..." });
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
-		mapEditingScrollPane = new JScrollPane(mapEditingPanel);
-
-		// TODO Make sure the below works. It use to be on the frame.
-		mapEditingScrollPane.addComponentListener(new ComponentAdapter()
-		{
-			public void componentResized(ComponentEvent componentEvent)
-			{
-				enableOrDisableProgressBar(true); // TODO Also call this in
-													// other places where the
-													// map is redrawn.
-				mapUpdater.setMaxMapSize(getMapDrawingAreaSize());
-				mapUpdater.createAndShowMapFull();
-			}
-		});
-
-		// Speed up the scroll speed.
-		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+		mapEditingPanelContainer = new JPanel();
+		mapEditingPanelContainer.setLayout(new FlowLayout(FlowLayout.CENTER));
+		mapEditingPanelContainer.add(mapEditingPanel);
 	}
 
 	private void createMapUpdater()
@@ -316,15 +406,19 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map)
+			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued)
 			{
 				mapEditingPanel.image = map;
 
-				enableOrDisableProgressBar(false);
+				if (!anotherDrawIsQueued)
+				{
+					enableOrDisableProgressBar(false);
+				}
 
-				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
 				mapEditingPanel.repaint();
+				thisDialog.revalidate();
+				thisDialog.repaint();
 			}
 
 			@Override
@@ -350,30 +444,42 @@ public class NewSettingsDialog extends JDialog
 
 		};
 		mapUpdater.setMaxMapSize(getMapDrawingAreaSize());
+		mapUpdater.setEnabled(false);
 	}
 
 	private Dimension getMapDrawingAreaSize()
 	{
-		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-		return new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-				mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
+		return new Dimension(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+				mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
 	}
 
 	private void loadSettingsIntoGUI(MapSettings settings)
 	{
-		// TODO
-		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
-
+		dimensionsComboBox.setSelectedIndex(
+				getDimensionIndexFromDimensions(settings.generatedWidth, settings.generatedHeight));
+		worldSizeSlider.setValue(settings.worldSize);
+		edgeLandToWaterProbSlider.setValue((int) (settings.edgeLandToWaterProbability * 100));
+		centerLandToWaterProbSlider.setValue((int) (settings.centerLandToWaterProbability * 100));
+		if (settings.drawRegionColors)
+		{
+			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.ColorPoliticalRegions);
+		}
+		else
+		{
+			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
+		}
+		
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
 		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities),
 				settings.cityIconSetName);
-
+		
+		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
 	}
 
 	private MapSettings getSettingsFromGUI()
 	{
-		// TODO
 		MapSettings resultSettings = settings.deepCopy();
 		resultSettings.worldSize = worldSizeSlider.getValue();
 		resultSettings.edgeLandToWaterProbability = edgeLandToWaterProbSlider.getValue() / 100.0;
@@ -382,6 +488,8 @@ public class NewSettingsDialog extends JDialog
 		Dimension generatedDimensions = getGeneratedBackgroundDimensionsFromGUI();
 		resultSettings.generatedWidth = (int) generatedDimensions.getWidth();
 		resultSettings.generatedHeight = (int) generatedDimensions.getHeight();
+		
+		resultSettings.drawRegionColors = landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
 
 		resultSettings.books = new TreeSet<>();
 		for (Component component : booksPanel.getComponents())
@@ -394,8 +502,8 @@ public class NewSettingsDialog extends JDialog
 			}
 		}
 
-		settings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
-		settings.cityIconSetName = (String) cityIconsSetComboBox.getSelectedItem();
+		resultSettings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
+		resultSettings.cityIconSetName = (String) cityIconsSetComboBox.getSelectedItem();
 
 		return resultSettings;
 	}
@@ -439,4 +547,16 @@ public class NewSettingsDialog extends JDialog
 		}
 
 	}
+	
+	public void addChangeListener(Component component)
+	{
+		SwingHelper.addListener(component, () -> handleChange());
+	}
+	
+	public void handleChange()
+	{
+		enableOrDisableProgressBar(true); 
+		mapUpdater.createAndShowMapFull();
+	}
+
 }
