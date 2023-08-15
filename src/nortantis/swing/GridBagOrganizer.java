@@ -263,7 +263,7 @@ public class GridBagOrganizer
 		curY++;
 	}
 
-	public Tuple2<JLabel, JButton> addFontChooser(String labelText, int height)
+	public Tuple2<JLabel, JButton> addFontChooser(String labelText, int height, Runnable okAction)
 	{
 		// TODO Make the choose button stay to the left when the display label
 		// gets big.
@@ -279,7 +279,7 @@ public class GridBagOrganizer
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
-				runFontChooser(panel, fontDisplay);
+				runFontChooser(panel, fontDisplay, okAction);
 			}
 		});
 		JPanel chooseButtonHolder = new JPanel();
@@ -291,7 +291,7 @@ public class GridBagOrganizer
 		return new Tuple2<>(fontDisplay, chooseButton);
 	}
 
-	private void runFontChooser(JComponent parent, JLabel fontDisplay)
+	private void runFontChooser(JComponent parent, JLabel fontDisplay, Runnable okAction)
 	{
 		JFontChooser fontChooser = new JFontChooser();
 		fontChooser.setSelectedFont(fontDisplay.getFont());
@@ -301,6 +301,7 @@ public class GridBagOrganizer
 			Font font = fontChooser.getSelectedFont();
 			fontDisplay.setText(font.getFontName());
 			fontDisplay.setFont(font);
+			okAction.run();
 		}
 	}
 	

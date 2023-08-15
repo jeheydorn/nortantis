@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
@@ -21,6 +22,7 @@ import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -39,7 +41,6 @@ public class SwingHelper
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 11;
 
-
 	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem)
 	{
 		comboBox.removeAllItems();
@@ -57,14 +58,6 @@ public class SwingHelper
 		}
 	}
 
-	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
-	{
-		Color c = JColorChooser.showDialog(parent, "", colorDisplay.getBackground());
-		if (c != null)
-			colorDisplay.setBackground(c);
-	}
-
-
 	public static void setSliderWidthForSidePanel(JSlider slider)
 	{
 		slider.setPreferredSize(new Dimension(sliderWidth, slider.getPreferredSize().height));
@@ -78,9 +71,51 @@ public class SwingHelper
 		return panel;
 	}
 
-	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title)
+	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
 	{
-		final JColorChooser colorChooser = new JColorChooser(colorDisplay.getBackground());
+		showColorPickerWithPreviewPanel(parent, colorDisplay, title, () ->
+		{
+		});
+	}
+
+	public static JColorChooser createColorChooserWithOnlyGoodPanels(Color initialColor)
+	{
+		JColorChooser colorChooser = new JColorChooser(initialColor);
+
+		AbstractColorChooserPanel[] panels = colorChooser.getChooserPanels();
+		for (int i = panels.length - 1; i >= 0; i--)
+		{
+			if (panels[i].getDisplayName().equalsIgnoreCase("Swatches") || panels[i].getDisplayName().equalsIgnoreCase("CMYK"))
+			{
+				colorChooser.removeChooserPanel(panels[i]);
+			}
+		}
+
+		return colorChooser;
+	}
+
+	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
+	{
+		JColorChooser colorChooser = createColorChooserWithOnlyGoodPanels(colorDisplay.getBackground());
+
+		ActionListener okHandler = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				colorDisplay.setBackground(colorChooser.getColor());
+				okAction.run();
+			}
+
+		};
+
+		Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false, colorChooser, okHandler, null);
+		dialog.setVisible(true);
+	}
+
+	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
+	{
+		final JColorChooser colorChooser = createColorChooserWithOnlyGoodPanels(colorDisplay.getBackground());
 		colorChooser.setPreviewPanel(new JPanel());
 
 		ActionListener okHandler = new ActionListener()
@@ -89,6 +124,7 @@ public class SwingHelper
 			public void actionPerformed(ActionEvent e)
 			{
 				colorDisplay.setBackground(colorChooser.getColor());
+				okAction.run();
 			}
 
 		};
@@ -96,7 +132,6 @@ public class SwingHelper
 		dialog.setVisible(true);
 
 	}
-
 
 	public static JPanel createBooksPanel(Runnable actionToRunWhenSelectionChanges)
 	{
@@ -169,15 +204,15 @@ public class SwingHelper
 			}
 		}
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public static void addListener(Component component, Runnable action)
 	{
 		if (component instanceof AbstractButton)
 		{
-			((AbstractButton)component).addActionListener(new ActionListener()
+			((AbstractButton) component).addActionListener(new ActionListener()
 			{
-				
+
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
@@ -189,7 +224,7 @@ public class SwingHelper
 		{
 			((JComboBox) component).addActionListener(new ActionListener()
 			{
-				
+
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
@@ -199,9 +234,9 @@ public class SwingHelper
 		}
 		else if (component instanceof JSlider)
 		{
-			((JSlider)component).addChangeListener(new ChangeListener()
+			((JSlider) component).addChangeListener(new ChangeListener()
 			{
-				
+
 				@Override
 				public void stateChanged(ChangeEvent e)
 				{
@@ -211,21 +246,21 @@ public class SwingHelper
 		}
 		else if (component instanceof JTextComponent)
 		{
-			((JTextComponent)component).getDocument().addDocumentListener(new DocumentListener()
+			((JTextComponent) component).getDocument().addDocumentListener(new DocumentListener()
 			{
 
 				@Override
 				public void insertUpdate(DocumentEvent e)
 				{
 					// TODO Decide if this needs to run action.
-					
+
 				}
 
 				@Override
 				public void removeUpdate(DocumentEvent e)
 				{
 					// TODO Decide if this needs to run action.
-					
+
 				}
 
 				@Override
@@ -233,11 +268,11 @@ public class SwingHelper
 				{
 					action.run();
 				}
-				
+
 			});
 		}
 	}
-	
+
 	// TODO remove it not used
 	public static void addListenerToThisAndAllChildren(Component component, Runnable action)
 	{

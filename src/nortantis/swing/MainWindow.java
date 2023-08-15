@@ -137,7 +137,6 @@ public class MainWindow extends JFrame
 		}
 		else
 		{
-			// TODO make sure this message is correct.
 			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create a map, go to", "File > New Random Map." });
 		}
 	}
@@ -1251,11 +1250,6 @@ public class MainWindow extends JFrame
 	public Color getLandColor()
 	{
 		return themePanel.getLandColor();
-	}
-	
-	public void addChangeListener(Component component)
-	{
-		SwingHelper.addListener(component, () -> handleChange());
 	}
 	
 	public void handleChange()

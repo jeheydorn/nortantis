@@ -231,6 +231,8 @@ public class IconTool extends EditorTool
 				// TODO Throw up a modal dialog that warns what will happen and sets toolsPanel.cityIconsType. 
 				// It should also update lblType and cause a full re-draw.
 				
+				// TODO Call MainWindow.handleChange if the city icon set is changed.
+				
 				//toolsPanel.cityIconsSetComboBox = new JComboBox<String>();	
 				
 				//SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities), 
