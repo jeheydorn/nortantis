@@ -86,9 +86,9 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
-		SwingHelper.resetGridY();
+		GridBagOrganizer organizer = new GridBagOrganizer();
 		
-		JPanel toolOptionsPanel = SwingHelper.createPanelForLabeledComponents();
+		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 		
 		
@@ -158,7 +158,7 @@ public class LandWaterTool extends EditorTool
 	    }
 	    	    	    
 	    oceanButton.setSelected(true); // Selected by default
-	    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Brush:", "", radioButtons);
+	    organizer.addLabelAndComponentsToPanelVertical("Brush:", "", radioButtons);
 	    	    
 	    // Color chooser
 	    if (areRegionColorsVisible)
@@ -190,16 +190,16 @@ public class LandWaterTool extends EditorTool
 			chooserPanel.add(Box.createHorizontalGlue());
 			chooserPanel.add(chooseButton);
 			
-			colorChooserHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Color:", "", chooserPanel);
+			colorChooserHider = organizer.addLabelAndComponentToPanel("Color:", "", chooserPanel);
 			
 			selectColorFromMapButton = new JToggleButton("Select color from map");
 			selectColorFromMapButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
-			selectColorHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", selectColorFromMapButton);
+			selectColorHider = organizer.addLabelAndComponentToPanel("", "", selectColorFromMapButton);
 
 	    }
 
 	
-	    Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = SwingHelper.createBrushSizeComboBox(toolOptionsPanel, brushSizes);
+	    Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 	    brushSizeComboBox = brushSizeTuple.getFirst();
 	    brushSizeHider = brushSizeTuple.getSecond();
 	 
@@ -207,7 +207,7 @@ public class LandWaterTool extends EditorTool
 	    highlightLakesCheckbox = new JCheckBox("Highlight lakes");
 	    highlightLakesCheckbox.setToolTipText("Highlight lakes to make them easier to see.");
 	    highlightLakesCheckbox.setSelected(true);
-	    SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", highlightLakesCheckbox);
+	    organizer.addLabelAndComponentToPanel("", "", highlightLakesCheckbox);
 	    highlightLakesCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -222,7 +222,7 @@ public class LandWaterTool extends EditorTool
 	    {
 		    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
 		    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
-		    SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", onlyUpdateLandCheckbox);
+		    organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
 	    }
 	    
 	    listener.actionPerformed(null);
@@ -275,8 +275,8 @@ public class LandWaterTool extends EditorTool
 //		brightnessSlider.setBounds(150, 243, 245, 79);
 //		regionsPanel.add(brightnessSlider);
 
-	    SwingHelper.addHorizontalSpacerRowToHelpComponentAlignment(toolOptionsPanel, 0.66);
-	    SwingHelper.addVerticalFillerRow(toolOptionsPanel);
+	    organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
+	    organizer.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
 	}
 

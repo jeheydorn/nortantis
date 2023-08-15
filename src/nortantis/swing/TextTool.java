@@ -109,13 +109,13 @@ public class TextTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
-		SwingHelper.resetGridY();
+		GridBagOrganizer organizer = new GridBagOrganizer();
 		
-		JPanel toolOptionsPanel = SwingHelper.createPanelForLabeledComponents();		
+		JPanel toolOptionsPanel = organizer.panel;		
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 				
 		drawTextDisabledLabel = new JLabel("<html>This tool is disabled because drawing text is disabled in the Fonts tab.</html>");
-		drawTextDisabledLabelHider = SwingHelper.addLeftAlignedComponent(toolOptionsPanel, drawTextDisabledLabel);
+		drawTextDisabledLabelHider = organizer.addLeftAlignedComponent(toolOptionsPanel, drawTextDisabledLabel);
 		drawTextDisabledLabelHider.setVisible(false);
 
 		{
@@ -162,17 +162,17 @@ public class TextTool extends EditorTool
 		    deleteButton.addActionListener(listener);
 		    deleteButton.setToolTipText("Delete text (alt+D)");	
 	
-		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Action:", "", radioButtons);
+		    organizer.addLabelAndComponentsToPanelVertical("Action:", "", radioButtons);
 		}
 				
 		
 		editTextField = new JTextFieldFixed();
-		editTextFieldHider = SwingHelper.addLeftAlignedComponent(toolOptionsPanel, editTextField);
+		editTextFieldHider = organizer.addLeftAlignedComponent(toolOptionsPanel, editTextField);
 		
 		
 		textTypeComboBox = new JComboBoxFixed<>();
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
-		textTypeHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Text type:", "", textTypeComboBox);
+		textTypeHider = organizer.addLabelAndComponentToPanel("Text type:", "", textTypeComboBox);
 		
 		for (TextType type : TextType.values())
 		{
@@ -181,14 +181,14 @@ public class TextTool extends EditorTool
 		
 				
 		booksPanel = SwingHelper.createBooksPanel();
-		booksHider = SwingHelper.addLeftAlignedComponentWithStackedLabel(toolOptionsPanel, "Books for generating text:", 
+		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(toolOptionsPanel, "Books for generating text:", 
 				"Selected books will be used to generate new names.", booksPanel);
 		
 		
 	    editButton.doClick();
 	    
-	    SwingHelper.addHorizontalSpacerRowToHelpComponentAlignment(toolOptionsPanel, 0.6);
-	    SwingHelper.addVerticalFillerRow(toolOptionsPanel);
+	    organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
+	    organizer.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
 	}
 	

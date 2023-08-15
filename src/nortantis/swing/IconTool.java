@@ -110,9 +110,9 @@ public class IconTool extends EditorTool
 	@Override
 	protected JPanel createToolsOptionsPanel()
 	{
-		SwingHelper.resetGridY();
+		GridBagOrganizer organizer = new GridBagOrganizer();
 		
-		JPanel toolOptionsPanel = SwingHelper.createPanelForLabeledComponents();		
+		JPanel toolOptionsPanel = organizer.panel;		
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
 		
@@ -208,14 +208,13 @@ public class IconTool extends EditorTool
 			});
 
 	
-		    SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Brush:", "", 
-		    		radioButtons);
+		    organizer.addLabelAndComponentsToPanelVertical("Brush:", "", radioButtons);
 		}
 	    
-		mountainTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.mountains);
-		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.hills);
-		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.sand);
-		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, IconType.trees);
+		mountainTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.mountains);
+		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.hills);
+		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.sand);
+		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.trees);
 		// Prevent cacti from being the default tree brush
 		if (treeTypes.buttons.size() > 1 && treeTypes.buttons.get(0).getText().equals("cacti"))
 		{
@@ -239,17 +238,16 @@ public class IconTool extends EditorTool
 
 			}
 		});
-		cityTypeHider = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "City icons type:", "", 
-				Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
+		cityTypeHider = organizer.addLabelAndComponentsToPanelVertical("City icons type:", "", Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
 		
-		cityTypes = createRadioButtonsForCities(toolOptionsPanel);
+		cityTypes = createRadioButtonsForCities(toolOptionsPanel, organizer);
 		
 		// River options
 		{
 			riverWidthSlider = new JSlider(1, 15);
 			riverWidthSlider.setValue(1);
 			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
-		    riverOptionHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Width:", "", riverWidthSlider);
+		    riverOptionHider = organizer.addLabelAndComponentToPanel("Width:", "", riverWidthSlider);
 		}
 		
 		// Eraser options
@@ -286,23 +284,23 @@ public class IconTool extends EditorTool
 		    radioButtons.add(eraseRiversButton);
 
 		    eraseAllButton.setSelected(true);
-		    eraseOptionsHider = SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Erase:", "", radioButtons);
+		    eraseOptionsHider = organizer.addLabelAndComponentsToPanelVertical("Erase:", "", radioButtons);
 		}
 		
 		densitySlider = new JSlider(1, 50);
 		densitySlider.setValue(10);
 		SwingHelper.setSliderWidthForSidePanel(densitySlider);
-		densityHider = SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "Density:", "", densitySlider);
+		densityHider = organizer.addLabelAndComponentToPanel("Density:", "", densitySlider);
 	    
 		
-		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = SwingHelper.createBrushSizeComboBox(toolOptionsPanel, brushSizes);
+		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 	    brushSizeComboBox = brushSizeTuple.getFirst();
 	    brushSizeHider = brushSizeTuple.getSecond();
 	 
 	    
 	    highlightRiversCheckbox = new JCheckBox("Highlight rivers");
 	    highlightRiversCheckbox.setToolTipText("Highlight rivers to make them easier to see.");
-	    SwingHelper.addLabelAndComponentToPanel(toolOptionsPanel, "", "", highlightRiversCheckbox);
+	    organizer.addLabelAndComponentToPanel("", "", highlightRiversCheckbox);
 	    highlightRiversCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -316,8 +314,8 @@ public class IconTool extends EditorTool
 	    
 		mountainsButton.doClick();
 		
-	    SwingHelper.addHorizontalSpacerRowToHelpComponentAlignment(toolOptionsPanel, 0.666);
-		SwingHelper.addVerticalFillerRow(toolOptionsPanel);
+		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
+		organizer.addVerticalFillerRow(toolOptionsPanel);
 	    return toolOptionsPanel;
 	}
 	
@@ -335,7 +333,7 @@ public class IconTool extends EditorTool
 		brushSizeHider.setVisible(!riversButton.isSelected());
 	}
 	
-	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, IconType iconType)
+	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, GridBagOrganizer organizer, IconType iconType)
 	{
 	    ButtonGroup group = new ButtonGroup();
 	    List<JRadioButton> radioButtons = new ArrayList<>();
@@ -350,10 +348,10 @@ public class IconTool extends EditorTool
 	    {
 	    	((JRadioButton)radioButtons.get(0)).setSelected(true);
 	    }
-	    return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Type:", "", radioButtons), radioButtons);
+	    return new IconTypeButtons(organizer.addLabelAndComponentsToPanelVertical("Type:", "", radioButtons), radioButtons);
 	}
 	
-	private IconTypeButtons createRadioButtonsForCities(JPanel toolOptionsPanel)
+	private IconTypeButtons createRadioButtonsForCities(JPanel toolOptionsPanel, GridBagOrganizer organizer)
 	{
 	    List<JRadioButton> radioButtons = new ArrayList<>();
 
@@ -363,7 +361,7 @@ public class IconTool extends EditorTool
 			Set<String> cityTypes = ImageCache.getInstance().getIconSets(IconType.cities);
 			if (cityTypes.isEmpty())
 			{
-				return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Cities:", "", radioButtons), 
+				return new IconTypeButtons(organizer.addLabelAndComponentsToPanelVertical("Cities:", "", radioButtons), 
 						radioButtons);
 			}
 			else
@@ -388,7 +386,7 @@ public class IconTool extends EditorTool
 	    {
 	    	((JRadioButton)radioButtons.get(0)).setSelected(true);
 	    }
-	    return new IconTypeButtons(SwingHelper.addLabelAndComponentsToPanelVertical(toolOptionsPanel, "Cities:", "", radioButtons), radioButtons);
+	    return new IconTypeButtons(organizer.addLabelAndComponentsToPanelVertical("Cities:", "", radioButtons), radioButtons);
 	}
 
 	@Override

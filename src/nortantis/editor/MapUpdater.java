@@ -27,15 +27,20 @@ public abstract class MapUpdater
 	public boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
 	public MapParts mapParts;
-	private boolean createEditsIfNotPresent;
+	private boolean createEditsIfNotPresentAndUseMapParts;
 	private Dimension maxMapSize;
 
-	
-	public MapUpdater(boolean createEditsIfNotPresent)
+	/**
+	 * 
+	 * @param createEditsIfNotPresentAndUseMapParts  When true, drawing the map for the first time will fill in MapSettings.Edits,
+	 *                                               and a MapParts object will be used. Only set this to false if the map will
+	 *                                               only do full re-draws.
+	 */
+	public MapUpdater(boolean createEditsIfNotPresentAndUseMapParts)
 	{
 		drawLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
-		this.createEditsIfNotPresent = createEditsIfNotPresent;
+		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
 
 	}
 
@@ -129,7 +134,7 @@ public abstract class MapUpdater
 		final MapSettings settings = getSettingsFromGUI();
 		settings.alwaysUpdateLandBackgroundWithOcean = true;
 		
-		if (createEditsIfNotPresent && settings.edits.isEmpty())
+		if (createEditsIfNotPresentAndUseMapParts && settings.edits.isEmpty())
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
@@ -151,7 +156,7 @@ public abstract class MapUpdater
 				{
 					if (updateType == UpdateType.Full)
 					{
-						if (mapParts == null)
+						if (mapParts == null && createEditsIfNotPresentAndUseMapParts)
 						{
 							mapParts = new MapParts();
 						}
@@ -215,7 +220,7 @@ public abstract class MapUpdater
 				
 				if (map != null)
 				{
-					if (createEditsIfNotPresent)
+					if (createEditsIfNotPresentAndUseMapParts)
 					{
 						initializeCenterEditsIfEmpty();
 						initializeRegionEditsIfEmpty();
