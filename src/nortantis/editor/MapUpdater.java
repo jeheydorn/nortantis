@@ -33,16 +33,16 @@ public abstract class MapUpdater
 
 	/**
 	 * 
-	 * @param createEditsIfNotPresentAndUseMapParts  When true, drawing the map for the first time will fill in MapSettings.Edits,
-	 *                                               and a MapParts object will be used. Only set this to false if the map will
-	 *                                               only do full re-draws.
+	 * @param createEditsIfNotPresentAndUseMapParts
+	 *            When true, drawing the map for the first time will fill in
+	 *            MapSettings.Edits, and a MapParts object will be used. Only
+	 *            set this to false if the map will only do full re-draws.
 	 */
 	public MapUpdater(boolean createEditsIfNotPresentAndUseMapParts)
 	{
 		drawLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
 		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
-
 	}
 
 	/**
@@ -51,6 +51,44 @@ public abstract class MapUpdater
 	 */
 	public void createAndShowMapFull()
 	{
+		if (mapParts != null)
+		{
+			// Clear all cached map parts to force a full re-draw of everything.
+			mapParts = new MapParts();
+		}
+
+		createAndShowMap(UpdateType.Full, null, null);
+	}
+
+	public void createAndAndShowMapTextChange()
+	{
+		createAndShowMap(UpdateType.Full, null, null);
+	}
+
+	public void createAndShowMapTerrainChange()
+	{
+		if (mapParts != null)
+		{
+			// Clearing this causes map drawing to re-draw terrain.
+			mapParts.mapBeforeAddingText = null;
+			
+			mapParts.mountainGroups = null;
+			mapParts.cities = null;
+		}
+
+		createAndShowMap(UpdateType.Full, null, null);
+	}
+
+	public void createAndShowMapGrungeOrFrayedEdgeChange()
+	{
+		if (mapParts != null)
+		{
+			mapParts.frayedBorderBlur = null;
+			mapParts.frayedBorderColor = null;
+			mapParts.frayedBorderMask = null;
+			mapParts.grunge = null;
+		}
+
 		createAndShowMap(UpdateType.Full, null, null);
 	}
 
@@ -119,7 +157,7 @@ public abstract class MapUpdater
 		{
 			return;
 		}
-		
+
 		if (isMapBeingDrawn)
 		{
 			if (updateType == UpdateType.Full)
@@ -136,33 +174,27 @@ public abstract class MapUpdater
 
 		isMapBeingDrawn = true;
 		onBeginDraw();
-		
+
 		final MapSettings settings = getSettingsFromGUI();
 		settings.alwaysUpdateLandBackgroundWithOcean = true;
-		
+
 		if (createEditsIfNotPresentAndUseMapParts && settings.edits.isEmpty())
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
 
-		// TODO remove these and draw everything
-//		settings.frayedBorder = false;
-//		settings.drawText = false;
-//		settings.grungeWidth = 0;
-//		settings.drawBorder = false;
-
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
 		{
 			@Override
 			public BufferedImage doInBackground() throws IOException
-			{				
+			{
 				Logger.clear();
 				drawLock.lock();
 				try
 				{
 					if (updateType == UpdateType.Full)
 					{
-						if (maxMapSize != null && maxMapSize.width <= 0 || maxMapSize.height <= 0)
+						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;
 						}
@@ -171,7 +203,7 @@ public abstract class MapUpdater
 						{
 							mapParts = new MapParts();
 						}
-						
+
 						BufferedImage map = new MapCreator().createMap(settings, maxMapSize, mapParts);
 						System.gc();
 						return map;
@@ -209,7 +241,7 @@ public abstract class MapUpdater
 				BufferedImage map = null;
 				try
 				{
-					 map = get();
+					map = get();
 				}
 				catch (InterruptedException ex)
 				{
@@ -229,7 +261,7 @@ public abstract class MapUpdater
 						JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 					}
 				}
-				
+
 				if (map != null)
 				{
 					if (createEditsIfNotPresentAndUseMapParts)
@@ -238,9 +270,11 @@ public abstract class MapUpdater
 						initializeRegionEditsIfEmpty();
 						initializeEdgeEditsIfEmpty();
 					}
-										
-					onFinishedDrawing(map, mapNeedsFullRedraw || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0));
-					
+
+					onFinishedDrawing(map,
+							mapNeedsFullRedraw || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0),
+							settings.drawBorder ? (int)(settings.borderWidth * settings.resolution) : 0);
+
 					isMapBeingDrawn = false;
 					if (mapNeedsFullRedraw)
 					{
@@ -262,24 +296,22 @@ public abstract class MapUpdater
 					onFailedToDraw();
 				}
 
-
-	
 			}
 
 		};
 		worker.execute();
 	}
-	
+
 	protected abstract void onBeginDraw();
-	
+
 	protected abstract MapSettings getSettingsFromGUI();
-	
-	protected abstract void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued);
-	
+
+	protected abstract void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn);
+
 	protected abstract void onFailedToDraw();
 
 	protected abstract MapEdits getEdits();
-	
+
 	protected abstract BufferedImage getCurrentMapForIncrementalUpdate();
 
 	/**
@@ -308,7 +340,7 @@ public abstract class MapUpdater
 		}
 		return result;
 	}
-	
+
 	private void initializeCenterEditsIfEmpty()
 	{
 		if (getEdits().centerEdits.isEmpty())
@@ -332,7 +364,6 @@ public abstract class MapUpdater
 			getEdits().initializeRegionEdits(mapParts.graph.regions.values());
 		}
 	}
-	
 
 	private boolean isCausedByOutOfMemoryError(Throwable ex)
 	{
@@ -348,7 +379,7 @@ public abstract class MapUpdater
 
 		return isCausedByOutOfMemoryError(ex.getCause());
 	}
-	
+
 	public void setMaxMapSize(Dimension dimension)
 	{
 		maxMapSize = dimension;
@@ -397,9 +428,22 @@ public abstract class MapUpdater
 			}
 		}
 	}
-	
+
 	public void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;
+	}
+
+	public void clearCache()
+	{
+		drawLock.lock();
+		try
+		{
+			mapParts = null;
+		}
+		finally
+		{
+			drawLock.unlock();
+		}
 	}
 }

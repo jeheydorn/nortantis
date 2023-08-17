@@ -161,16 +161,7 @@ public class MapCreatorTest
 		MapSettings settings = new MapSettings(settingsPath);
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
-		BufferedImage actual;
-		try
-		{
-			actual = mapCreator.createMap(settings, null, null);
-		} 
-		catch (IOException e)
-		{
-			fail("Unable to generate map due to exception: " + e.getMessage());
-			return;
-		}
+		BufferedImage actual = mapCreator.createMap(settings, null, null);
 
 		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())

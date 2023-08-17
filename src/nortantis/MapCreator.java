@@ -39,6 +39,7 @@ import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.Range;
+import nortantis.util.Tuple4;
 
 public class MapCreator
 {
@@ -76,7 +77,8 @@ public class MapCreator
 	 * @param edgesChanged
 	 *            Edits that changed
 	 */
-	public Rectangle incrementalUpdateEdges(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap, Set<Edge> edgesChanged)
+	public Rectangle incrementalUpdateEdges(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap,
+			Set<Edge> edgesChanged)
 	{
 		// I could be a little more efficient by only re-drawing the edges that
 		// changed, but re-drawing the centers too is good enough.
@@ -124,8 +126,8 @@ public class MapCreator
 	 * @param edgeChanges
 	 *            If edges changed, this is the list of edge edits that changed
 	 */
-	private Rectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, BufferedImage fullSizedMap, Set<Center> centersChanged,
-			Set<Edge> edgesChanged)
+	private Rectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, BufferedImage fullSizedMap,
+			Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
 		// double startTime = System.currentTimeMillis();
 
@@ -189,7 +191,7 @@ public class MapCreator
 			}
 			if (centersChanged != null)
 			{
-				edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));				
+				edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
 			}
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
@@ -254,9 +256,10 @@ public class MapCreator
 		{
 			mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
 		}
-		
+
 		// Add the rivers to landBackground so that the text doesn't erase them.
-		// I do this whether or not I draw text because I might draw the text later.
+		// I do this whether or not I draw text because I might draw the text
+		// later.
 		// This is done after icon drawing so that rivers draw behind icons.
 		if (settings.drawRivers)
 		{
@@ -309,8 +312,9 @@ public class MapCreator
 
 		// Print run time
 		// double elapsedTime = System.currentTimeMillis() - startTime;
-		// Logger.println("Time to do incremental update: " + elapsedTime / 1000.0);
-		
+		// Logger.println("Time to do incremental update: " + elapsedTime /
+		// 1000.0);
+
 		return replaceBounds;
 	}
 
@@ -328,7 +332,7 @@ public class MapCreator
 	 *            will be stored in it.
 	 * @return The map
 	 */
-	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts) throws IOException
+	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
 	{
 		Logger.println("Creating the map");
 
@@ -389,6 +393,152 @@ public class MapCreator
 			graph = mapParts.graph;
 		}
 
+		BufferedImage map;
+		BufferedImage landBackground;
+		List<Set<Center>> mountainGroups;
+		List<IconDrawTask> cities;
+		if (mapParts == null || mapParts.mapBeforeAddingText == null)
+		{
+			Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts,
+					graph, background, sizeMultiplier);
+			
+			map = tuple.getFirst();
+			landBackground = tuple.getSecond();
+			mountainGroups = tuple.getThird();
+			cities = tuple.getFourth();
+		}
+		else
+		{
+			map = ImageHelper.deepCopy(mapParts.mapBeforeAddingText);
+			landBackground = mapParts.landBackground;
+			mountainGroups = mapParts.mountainGroups;
+			cities = mapParts.cities;
+		}
+
+		if (settings.drawText)
+		{
+			Logger.println("Adding text.");
+
+			if (settings.drawRegionColors)
+			{
+				Graphics2D g = landBackground.createGraphics();
+				g.setColor(settings.coastlineColor);
+				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+			}
+		}
+		if (settings.edits.text.size() > 0)
+		{
+			textDrawer.drawTextFromEdits(graph, map, landBackground);
+		}
+		else
+		{
+			// Call drawText below regardless of settings.drawText to create the
+			// MapText objects even when text is not shown.
+			
+			// Note that mountainGroups and cities should always be populated at this point if the map has mountains or cities
+			// because the code path above that skips drawing terrain and uses mapParts.mapBeforeAddingText instead will only be hit
+			// if the map has already been drawn in the editor, and so text will be drawn from edits instead of taking this code path.
+			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
+		}
+		landBackground = null;
+
+		if (settings.drawBorder)
+		{
+			Logger.println("Adding border.");
+			map = background.addBorder(map);
+			if (mapParts == null)
+			{
+				background.borderBackground = null;
+			}
+		}
+
+		if (settings.frayedBorder)
+		{
+			Logger.println("Adding frayed edges.");
+			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
+			BufferedImage frayedBorderBlur;
+			BufferedImage frayedBorderMask;
+			if (mapParts != null && mapParts.frayedBorderBlur != null && mapParts.frayedBorderMask != null)
+			{
+				frayedBorderMask = mapParts.frayedBorderMask;
+				frayedBorderBlur = mapParts.frayedBorderBlur;
+			}
+			else
+			{
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(),
+						background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, true);
+				frayedBorderMask = new BufferedImage(frayGraph.getWidth(), frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+				frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
+				map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+				if (blurLevel > 0)
+				{
+					float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
+					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true);
+					map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
+				}
+				else
+				{
+					frayedBorderBlur = null;
+				}
+			}
+
+			if (mapParts != null)
+			{
+				mapParts.frayedBorderBlur = frayedBorderBlur;
+				mapParts.frayedBorderMask = frayedBorderMask;
+				mapParts.frayedBorderColor = settings.frayedBorderColor;
+			}
+		}
+		else
+		{
+			// Use the random number generator the same whether or not we draw a
+			// frayed border.
+			r.nextLong();
+		}
+		background = null;
+
+		if (settings.grungeWidth > 0)
+		{
+			Logger.println("Adding grunge.");
+			BufferedImage grunge;
+
+			if (mapParts != null && mapParts.grunge != null)
+			{
+				grunge = mapParts.grunge;
+			}
+			else
+			{
+				// 104567 is an arbitrary number added so that the grunge is not
+				// the
+				// same pattern as
+				// the background.
+				final float fractalPower = 1.3f;
+				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, (int) map.getWidth(),
+						(int) map.getHeight(), 0.75f);
+				// Whiten the middle of clouds.
+				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
+			}
+
+			// Add the cloud mask to the map.
+			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+
+			if (mapParts != null)
+			{
+				mapParts.grunge = grunge;
+			}
+		}
+
+		double elapsedTime = System.currentTimeMillis() - startTime;
+		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
+
+		Logger.println("Done creating map.");
+
+		return map;
+	}
+
+	private Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings,
+			MapParts mapParts, WorldGraph graph, Background background, double sizeMultiplier)
+	{
 		applyRegionEdits(graph, settings.edits);
 		applyCenterEdits(graph, settings.edits, null);
 		applyEdgeEdits(graph, settings.edits, null);
@@ -431,6 +581,10 @@ public class MapCreator
 			// All mountain ranges and smaller groups of mountains (include
 			// mountains that are alone).
 			mountainGroups = pair.getFirst();
+			if (mapParts != null)
+			{
+				mapParts.mountainGroups = mountainGroups;
+			}
 			// All mountain ranges and smaller groups of mountains extended to
 			// include nearby hills.
 			mountainAndHillGroups = pair.getSecond();
@@ -491,6 +645,10 @@ public class MapCreator
 
 			Logger.println("Adding cities.");
 			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
+			if (mapParts != null)
+			{
+				mapParts.cities = cities;
+			}
 		}
 
 		if (settings.drawRoads)
@@ -509,7 +667,8 @@ public class MapCreator
 		}
 
 		// Add the rivers to landBackground so that the text doesn't erase them.
-		// I do this whether or not I draw text because I might draw the text later.
+		// I do this whether or not I draw text because I might draw the text
+		// later.
 		// This is done after icon drawing so that rivers draw behind icons.
 		if (settings.drawRivers)
 		{
@@ -561,90 +720,12 @@ public class MapCreator
 		}
 
 		if (mapParts != null)
+		{
+			mapParts.mapBeforeAddingText = ImageHelper.deepCopy(map);
 			mapParts.landBackground = landBackground;
-
-		if (settings.drawText)
-		{
-			Logger.println("Adding text.");
-
-			if (settings.drawRegionColors)
-			{
-				Graphics2D g = landBackground.createGraphics();
-				g.setColor(settings.coastlineColor);
-				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
-			}
-		}
-		if (settings.edits.text.size() > 0)
-		{
-			textDrawer.drawTextFromEdits(graph, map, landBackground);
-		}
-		else
-		{
-			// Call drawText below regardless of settings.drawText to create the
-			// MapText objects even when text is not shown.
-			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
-		}
-		landBackground = null;
-
-		if (settings.drawBorder)
-		{
-			Logger.println("Adding border.");
-			map = addBorderToMap(settings, map, background);
-			if (mapParts == null)
-			{
-				background.borderBackground = null;
-			}
 		}
 
-		if (settings.frayedBorder)
-		{
-			Logger.println("Adding frayed edges.");
-			WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(), background.borderBounds.getHeight(),
-					settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, settings.pointPrecision, true);
-			BufferedImage frayedBorderMask = new BufferedImage(frayGraph.getWidth(), frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-			frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
-
-			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
-			if (blurLevel > 0)
-			{
-				float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-				BufferedImage frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true);
-
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
-
-			}
-			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
-		}
-		else
-		{
-			// Use the random number generator the same whether or not we draw a
-			// frayed border.
-			r.nextLong();
-		}
-		background = null;
-
-		if (settings.grungeWidth > 0)
-		{
-			Logger.println("Adding grunge.");
-			// 104567 is an arbitrary number added so that the grunge is not the
-			// same pattern as
-			// the background.
-			final float fractalPower = 1.3f;
-			BufferedImage clouds = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower,
-					(int) map.getWidth(), (int) map.getHeight(), 0.75f);
-			// Whiten the middle of clouds.
-			darkenMiddleOfImage(settings.resolution, clouds, settings.grungeWidth);
-
-			// Add the cloud mask to the map.
-			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, clouds, true);
-		}
-
-		double elapsedTime = System.currentTimeMillis() - startTime;
-		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
-
-		Logger.println("Done creating map.");
-
-		return map;
+		return new Tuple4<>(map, landBackground, mountainGroups, cities);
 	}
 
 	/**
@@ -1010,342 +1091,6 @@ public class MapCreator
 		}
 	}
 
-	private BufferedImage addBorderToMap(MapSettings settings, BufferedImage map, Background background)
-	{
-		int borderWidthScaled = (int) (settings.borderWidth * settings.resolution);
-
-		if (borderWidthScaled == 0)
-		{
-			return map;
-		}
-
-		Graphics2D g = background.borderBackground.createGraphics();
-		background.borderBackground.getGraphics().drawImage(map, borderWidthScaled, borderWidthScaled, null);
-		map = background.borderBackground;
-
-		Path allBordersPath = Paths.get(AssetsPath.get(), "borders");
-		Path borderPath = Paths.get(allBordersPath.toString(), settings.borderType);
-		if (!Files.exists(borderPath))
-		{
-			throw new RuntimeException(
-					"The selected border type '" + settings.borderType + "' does not have a folder for images in " + allBordersPath + ".");
-		}
-
-		// Corners
-		BufferedImage upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
-		if (upperLeftCorner != null)
-		{
-			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, borderWidthScaled);
-		}
-		BufferedImage upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
-		if (upperRightCorner != null)
-		{
-			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, borderWidthScaled);
-		}
-		BufferedImage lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
-		if (lowerLeftCorner != null)
-		{
-			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, borderWidthScaled);
-		}
-		BufferedImage lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
-		if (lowerRightCorner != null)
-		{
-			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, borderWidthScaled);
-		}
-
-		if (upperLeftCorner == null)
-		{
-			if (upperRightCorner != null)
-			{
-				upperLeftCorner = createCornerFromCornerByFlipping(upperRightCorner, CornerType.upperRight, CornerType.upperLeft);
-			}
-			else if (lowerLeftCorner != null)
-			{
-				upperLeftCorner = createCornerFromCornerByFlipping(lowerLeftCorner, CornerType.lowerLeft, CornerType.upperLeft);
-			}
-			else if (lowerRightCorner != null)
-			{
-				upperLeftCorner = createCornerFromCornerByFlipping(lowerRightCorner, CornerType.lowerRight, CornerType.upperLeft);
-			}
-			else
-			{
-				throw new RuntimeException("Couldn't find any corner images in " + borderPath);
-			}
-		}
-		if (upperRightCorner == null)
-		{
-			upperRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.upperRight);
-		}
-		if (lowerLeftCorner == null)
-		{
-			lowerLeftCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerLeft);
-		}
-		if (lowerRightCorner == null)
-		{
-			lowerRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
-		}
-
-		g.drawImage(upperLeftCorner, 0, 0, null);
-		g.drawImage(upperRightCorner, (int) background.borderBounds.getWidth() - borderWidthScaled, 0, null);
-		g.drawImage(lowerLeftCorner, 0, (int) background.borderBounds.getHeight() - borderWidthScaled, null);
-		g.drawImage(lowerRightCorner, (int) background.borderBounds.getWidth() - borderWidthScaled,
-				(int) background.borderBounds.getHeight() - borderWidthScaled, null);
-
-		// Edges
-		BufferedImage topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
-		if (topEdge != null)
-		{
-			topEdge = ImageHelper.scaleByHeight(topEdge, borderWidthScaled);
-		}
-		BufferedImage bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
-		if (bottomEdge != null)
-		{
-			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
-		}
-		BufferedImage leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
-		if (leftEdge != null)
-		{
-			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
-		}
-		BufferedImage rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
-		if (rightEdge != null)
-		{
-			rightEdge = ImageHelper.scaleByHeight(rightEdge, borderWidthScaled);
-		}
-
-		if (topEdge == null)
-		{
-			if (rightEdge != null)
-			{
-				topEdge = createEdgeFromEdge(rightEdge, EdgeType.Right, EdgeType.Top);
-			}
-			else if (leftEdge != null)
-			{
-				topEdge = createEdgeFromEdge(leftEdge, EdgeType.Left, EdgeType.Top);
-			}
-			else if (bottomEdge != null)
-			{
-				topEdge = createEdgeFromEdge(bottomEdge, EdgeType.Bottom, EdgeType.Top);
-			}
-			else
-			{
-				throw new RuntimeException("Couldn't find any edge images in " + borderPath);
-			}
-		}
-		if (rightEdge == null)
-		{
-			rightEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Right);
-		}
-		if (leftEdge == null)
-		{
-			leftEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Left);
-		}
-		if (bottomEdge == null)
-		{
-			bottomEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Bottom);
-		}
-
-		// Draw the edges
-
-		// Top and bottom edges
-		for (int i : new Range(2))
-		{
-			BufferedImage edge = i == 0 ? topEdge : bottomEdge;
-			final int y = i == 0 ? 0 : map.getHeight() - borderWidthScaled;
-
-			int end = map.getWidth() - borderWidthScaled;
-			int increment = edge.getWidth();
-			for (int x = borderWidthScaled; x < end; x += increment)
-			{
-				int distanceRemaining = end - x;
-				if (distanceRemaining >= increment)
-				{
-					g.drawImage(edge, x, y, null);
-				}
-				else
-				{
-					// The image is too long/tall to draw in the remaining
-					// space.
-					BufferedImage partToDraw = ImageHelper.extractRegion(edge, 0, 0, distanceRemaining, borderWidthScaled);
-					g.drawImage(partToDraw, x, y, null);
-				}
-			}
-		}
-
-		// Left and right edges
-		for (int i : new Range(2))
-		{
-			BufferedImage edge = i == 0 ? leftEdge : rightEdge;
-			final int x = i == 0 ? 0 : map.getWidth() - borderWidthScaled;
-
-			int end = map.getHeight() - borderWidthScaled;
-			int increment = edge.getHeight();
-			for (int y = borderWidthScaled; y < end; y += increment)
-			{
-				int distanceRemaining = end - y;
-				if (distanceRemaining >= increment)
-				{
-					g.drawImage(edge, x, y, null);
-				}
-				else
-				{
-					// The image is too long/tall to draw in the remaining
-					// space.
-					BufferedImage partToDraw = ImageHelper.extractRegion(edge, 0, 0, borderWidthScaled, distanceRemaining);
-					g.drawImage(partToDraw, x, y, null);
-				}
-			}
-		}
-
-		g.dispose();
-
-		return map;
-	}
-
-	private BufferedImage createEdgeFromEdge(BufferedImage edgeIn, EdgeType edgeTypeIn, EdgeType outputType)
-	{
-		switch (edgeTypeIn)
-		{
-		case Bottom:
-			switch (outputType)
-			{
-			case Bottom:
-				return edgeIn;
-			case Left:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			case Right:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			case Top:
-				return ImageHelper.flipOnYAxis(edgeIn);
-			}
-		case Left:
-			switch (outputType)
-			{
-			case Bottom:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			case Left:
-				return edgeIn;
-			case Right:
-				return ImageHelper.flipOnXAxis(edgeIn);
-			case Top:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			}
-		case Right:
-			switch (outputType)
-			{
-			case Bottom:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			case Left:
-				return ImageHelper.flipOnXAxis(edgeIn);
-			case Right:
-				return edgeIn;
-			case Top:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			}
-		case Top:
-			switch (outputType)
-			{
-			case Bottom:
-				return ImageHelper.flipOnYAxis(edgeIn);
-			case Left:
-				return ImageHelper.rotate90Degrees(edgeIn, false);
-			case Right:
-				return ImageHelper.rotate90Degrees(edgeIn, true);
-			case Top:
-				return edgeIn;
-			}
-		}
-
-		throw new IllegalStateException("Unable to create a border edge from the edges given");
-	}
-
-	private enum EdgeType
-	{
-		Top, Bottom, Left, Right
-	}
-
-	private BufferedImage createCornerFromCornerByFlipping(BufferedImage cornerIn, CornerType inputCornerType, CornerType outputType)
-	{
-		switch (inputCornerType)
-		{
-		case lowerLeft:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return cornerIn;
-			case lowerRight:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			case upperLeft:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			case upperRight:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			}
-			break;
-		case lowerRight:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			case lowerRight:
-				return cornerIn;
-			case upperLeft:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			case upperRight:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			}
-		case upperLeft:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			case lowerRight:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			case upperLeft:
-				return cornerIn;
-			case upperRight:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			}
-		case upperRight:
-			switch (outputType)
-			{
-			case lowerLeft:
-				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
-			case lowerRight:
-				return ImageHelper.flipOnYAxis(cornerIn);
-			case upperLeft:
-				return ImageHelper.flipOnXAxis(cornerIn);
-			case upperRight:
-				return cornerIn;
-			}
-		}
-
-		throw new IllegalStateException("Unable to flip corner image.");
-	}
-
-	private enum CornerType
-	{
-		upperLeft, upperRight, lowerLeft, lowerRight
-	}
-
-	private BufferedImage loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
-	{
-		File[] cornerArray = new File(path.toString()).listFiles(file -> file.getName().contains(inFileName));
-		if (cornerArray.length == 0)
-		{
-			if (throwExceptionIfMissing)
-				throw new RuntimeException(
-						"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
-			else
-				return null;
-		}
-		if (cornerArray.length > 1)
-		{
-			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
-		}
-
-		return ImageHelper.read(cornerArray[0].getPath());
-	}
-
 	/**
 	 * Makes the middle area of a gray scale image darker following a Gaussian
 	 * blur drop off.
@@ -1527,37 +1272,4 @@ public class MapCreator
 		}
 		return edgeEdits;
 	}
-
-	// public static void main(String[] args) throws IOException
-	// {
-	// if (args.length > 1)
-	// Logger.println("usage: MapCreator.java properties_filename");
-	//
-	// String propsFilename = "map_settings.properties";
-	// if (args.length > 0)
-	// propsFilename = args[0];
-	// Properties props = new Properties();
-	// props.load(new FileInputStream(propsFilename));
-	//
-	// MapSettings settings = new MapSettings(propsFilename);
-	//
-	// // settings.randomSeed = System.currentTimeMillis();
-	//
-	// BufferedImage map;
-	// MapCreator creator = new MapCreator();
-	//
-	// try
-	// {
-	// map = creator.createMap(settings, null, null);
-	// }
-	// finally
-	// {
-	// ImageHelper.shutdownThreadPool();
-	// }
-	//
-	// ImageHelper.openImageInSystemDefaultEditor(map, "map_" +
-	// settings.randomSeed);
-	//
-	// }
-
 }

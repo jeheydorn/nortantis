@@ -2,7 +2,11 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,7 +15,9 @@ import java.util.Set;
 
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
+import nortantis.util.Range;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
 /**
@@ -24,6 +30,7 @@ public class Background
 	BufferedImage ocean;
 	DimensionDouble mapBounds;
 	Dimension borderBounds;
+	int borderWidth;
 	BufferedImage borderBackground;
 	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
@@ -32,6 +39,8 @@ public class Background
 	// index of the region it is in.
 	BufferedImage regionIndexes;
 	private int borderWidthScaled;
+	private String borderType;
+	
 
 	public Background(MapSettings settings, Dimension maxDimensions)
 	{
@@ -44,7 +53,8 @@ public class Background
 		mapBounds = calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-
+		borderType = settings.borderType;
+		
 		if (settings.generateBackground)
 		{
 			// Fractal generated background images
@@ -230,7 +240,7 @@ public class Background
 		return mapBounds;
 	}
 
-	private BufferedImage removeBorderPadding(BufferedImage image)
+	public BufferedImage removeBorderPadding(BufferedImage image)
 	{
 		return ImageHelper.extractRegion(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2),
 				(int) (image.getHeight() - borderWidthScaled * 2));
@@ -300,5 +310,357 @@ public class Background
 	{
 		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toAwTRectangle());
 	}
+	
+	public BufferedImage addBorder(BufferedImage map)
+	{
+		if (borderWidthScaled == 0)
+		{
+			return map;
+		}
+		
+		BufferedImage result = ImageHelper.deepCopy(borderBackground);
+		Graphics2D g = result.createGraphics();
+		g.drawImage(map, borderWidthScaled, borderWidthScaled, null);
+				
+		Path allBordersPath = Paths.get(AssetsPath.get(), "borders");
+		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
+		if (!Files.exists(borderPath))
+		{
+			throw new RuntimeException(
+					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
+		}
 
+		// Corners
+		BufferedImage upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
+		if (upperLeftCorner != null)
+		{
+			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, borderWidthScaled);
+		}
+		BufferedImage upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
+		if (upperRightCorner != null)
+		{
+			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, borderWidthScaled);
+		}
+		BufferedImage lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
+		if (lowerLeftCorner != null)
+		{
+			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, borderWidthScaled);
+		}
+		BufferedImage lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
+		if (lowerRightCorner != null)
+		{
+			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, borderWidthScaled);
+		}
+
+		if (upperLeftCorner == null)
+		{
+			if (upperRightCorner != null)
+			{
+				upperLeftCorner = createCornerFromCornerByFlipping(upperRightCorner, CornerType.upperRight, CornerType.upperLeft);
+			}
+			else if (lowerLeftCorner != null)
+			{
+				upperLeftCorner = createCornerFromCornerByFlipping(lowerLeftCorner, CornerType.lowerLeft, CornerType.upperLeft);
+			}
+			else if (lowerRightCorner != null)
+			{
+				upperLeftCorner = createCornerFromCornerByFlipping(lowerRightCorner, CornerType.lowerRight, CornerType.upperLeft);
+			}
+			else
+			{
+				throw new RuntimeException("Couldn't find any corner images in " + borderPath);
+			}
+		}
+		if (upperRightCorner == null)
+		{
+			upperRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.upperRight);
+		}
+		if (lowerLeftCorner == null)
+		{
+			lowerLeftCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerLeft);
+		}
+		if (lowerRightCorner == null)
+		{
+			lowerRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
+		}
+
+		g.drawImage(upperLeftCorner, 0, 0, null);
+		g.drawImage(upperRightCorner, (int) borderBounds.getWidth() - borderWidthScaled, 0, null);
+		g.drawImage(lowerLeftCorner, 0, (int) borderBounds.getHeight() - borderWidthScaled, null);
+		g.drawImage(lowerRightCorner, (int) borderBounds.getWidth() - borderWidthScaled,
+				(int) borderBounds.getHeight() - borderWidthScaled, null);
+
+		// Edges
+		BufferedImage topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
+		if (topEdge != null)
+		{
+			topEdge = ImageHelper.scaleByHeight(topEdge, borderWidthScaled);
+		}
+		BufferedImage bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
+		if (bottomEdge != null)
+		{
+			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
+		}
+		BufferedImage leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
+		if (leftEdge != null)
+		{
+			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
+		}
+		BufferedImage rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
+		if (rightEdge != null)
+		{
+			rightEdge = ImageHelper.scaleByHeight(rightEdge, borderWidthScaled);
+		}
+
+		if (topEdge == null)
+		{
+			if (rightEdge != null)
+			{
+				topEdge = createEdgeFromEdge(rightEdge, EdgeType.Right, EdgeType.Top);
+			}
+			else if (leftEdge != null)
+			{
+				topEdge = createEdgeFromEdge(leftEdge, EdgeType.Left, EdgeType.Top);
+			}
+			else if (bottomEdge != null)
+			{
+				topEdge = createEdgeFromEdge(bottomEdge, EdgeType.Bottom, EdgeType.Top);
+			}
+			else
+			{
+				throw new RuntimeException("Couldn't find any edge images in " + borderPath);
+			}
+		}
+		if (rightEdge == null)
+		{
+			rightEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Right);
+		}
+		if (leftEdge == null)
+		{
+			leftEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Left);
+		}
+		if (bottomEdge == null)
+		{
+			bottomEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Bottom);
+		}
+
+		// Draw the edges
+
+		// Top and bottom edges
+		for (int i : new Range(2))
+		{
+			BufferedImage edge = i == 0 ? topEdge : bottomEdge;
+			final int y = i == 0 ? 0 : map.getHeight() + borderWidthScaled;
+
+			int end = map.getWidth() - borderWidthScaled;
+			int increment = edge.getWidth();
+			for (int x = borderWidthScaled; x < end; x += increment)
+			{
+				int distanceRemaining = end - x;
+				if (distanceRemaining >= increment)
+				{
+					g.drawImage(edge, x, y, null);
+				}
+				else
+				{
+					// The image is too long/tall to draw in the remaining
+					// space.
+					BufferedImage partToDraw = ImageHelper.extractRegion(edge, 0, 0, distanceRemaining, borderWidthScaled);
+					g.drawImage(partToDraw, x, y, null);
+				}
+			}
+		}
+
+		// Left and right edges
+		for (int i : new Range(2))
+		{
+			BufferedImage edge = i == 0 ? leftEdge : rightEdge;
+			final int x = i == 0 ? 0 : map.getWidth() + borderWidthScaled;
+
+			int end = map.getHeight() - borderWidthScaled;
+			int increment = edge.getHeight();
+			for (int y = borderWidthScaled; y < end; y += increment)
+			{
+				int distanceRemaining = end - y;
+				if (distanceRemaining >= increment)
+				{
+					g.drawImage(edge, x, y, null);
+				}
+				else
+				{
+					// The image is too long/tall to draw in the remaining
+					// space.
+					BufferedImage partToDraw = ImageHelper.extractRegion(edge, 0, 0, borderWidthScaled, distanceRemaining);
+					g.drawImage(partToDraw, x, y, null);
+				}
+			}
+		}
+
+		g.dispose();
+		
+		return result;
+	}
+	
+	public BufferedImage copyMapIntoBorder(BufferedImage mapWithoutBorder, BufferedImage border)
+	{
+		if (borderWidthScaled == 0)
+		{
+			return mapWithoutBorder;
+		}
+
+		Graphics2D g = border.createGraphics();
+		border.getGraphics().drawImage(mapWithoutBorder, borderWidthScaled, borderWidthScaled, null);
+		g.dispose();
+		
+		return border;
+	}
+
+	private BufferedImage createEdgeFromEdge(BufferedImage edgeIn, EdgeType edgeTypeIn, EdgeType outputType)
+	{
+		switch (edgeTypeIn)
+		{
+		case Bottom:
+			switch (outputType)
+			{
+			case Bottom:
+				return edgeIn;
+			case Left:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			case Right:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			case Top:
+				return ImageHelper.flipOnYAxis(edgeIn);
+			}
+		case Left:
+			switch (outputType)
+			{
+			case Bottom:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			case Left:
+				return edgeIn;
+			case Right:
+				return ImageHelper.flipOnXAxis(edgeIn);
+			case Top:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			}
+		case Right:
+			switch (outputType)
+			{
+			case Bottom:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			case Left:
+				return ImageHelper.flipOnXAxis(edgeIn);
+			case Right:
+				return edgeIn;
+			case Top:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			}
+		case Top:
+			switch (outputType)
+			{
+			case Bottom:
+				return ImageHelper.flipOnYAxis(edgeIn);
+			case Left:
+				return ImageHelper.rotate90Degrees(edgeIn, false);
+			case Right:
+				return ImageHelper.rotate90Degrees(edgeIn, true);
+			case Top:
+				return edgeIn;
+			}
+		}
+
+		throw new IllegalStateException("Unable to create a border edge from the edges given");
+	}
+
+	private enum EdgeType
+	{
+		Top, Bottom, Left, Right
+	}
+
+	private BufferedImage createCornerFromCornerByFlipping(BufferedImage cornerIn, CornerType inputCornerType, CornerType outputType)
+	{
+		switch (inputCornerType)
+		{
+		case lowerLeft:
+			switch (outputType)
+			{
+			case lowerLeft:
+				return cornerIn;
+			case lowerRight:
+				return ImageHelper.flipOnXAxis(cornerIn);
+			case upperLeft:
+				return ImageHelper.flipOnYAxis(cornerIn);
+			case upperRight:
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+			}
+			break;
+		case lowerRight:
+			switch (outputType)
+			{
+			case lowerLeft:
+				return ImageHelper.flipOnXAxis(cornerIn);
+			case lowerRight:
+				return cornerIn;
+			case upperLeft:
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+			case upperRight:
+				return ImageHelper.flipOnYAxis(cornerIn);
+			}
+		case upperLeft:
+			switch (outputType)
+			{
+			case lowerLeft:
+				return ImageHelper.flipOnYAxis(cornerIn);
+			case lowerRight:
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+			case upperLeft:
+				return cornerIn;
+			case upperRight:
+				return ImageHelper.flipOnXAxis(cornerIn);
+			}
+		case upperRight:
+			switch (outputType)
+			{
+			case lowerLeft:
+				return ImageHelper.flipOnXAxis(ImageHelper.flipOnYAxis(cornerIn));
+			case lowerRight:
+				return ImageHelper.flipOnYAxis(cornerIn);
+			case upperLeft:
+				return ImageHelper.flipOnXAxis(cornerIn);
+			case upperRight:
+				return cornerIn;
+			}
+		}
+
+		throw new IllegalStateException("Unable to flip corner image.");
+	}
+
+	private enum CornerType
+	{
+		upperLeft, upperRight, lowerLeft, lowerRight
+	}
+
+	private BufferedImage loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
+	{
+		File[] cornerArray = new File(path.toString()).listFiles(file -> file.getName().contains(inFileName));
+		if (cornerArray.length == 0)
+		{
+			if (throwExceptionIfMissing)
+				throw new RuntimeException(
+						"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+			else
+				return null;
+		}
+		if (cornerArray.length > 1)
+		{
+			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+		}
+
+		return ImageHelper.read(cornerArray[0].getPath());
+	}
+	
+	public int getBorderWidthScaledByResolution()
+	{
+		return borderWidthScaled;
+	}
 }

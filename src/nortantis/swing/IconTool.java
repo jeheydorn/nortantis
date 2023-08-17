@@ -448,7 +448,7 @@ public class IconTool extends EditorTool
 				// the image files, previously hidden cities don't start popping up along coastlines and lakes.
 				// Note that all icons can fail to draw because they would overlap an ocean or lake, but I don't think it's
 				// a big deal for other icon types.
-				if (mapUpdater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
+				if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 				{
 					mainWindow.edits.centerEdits.get(center.index).icon = cityIcon;
 				}
@@ -552,7 +552,7 @@ public class IconTool extends EditorTool
 		
 		if (riversButton.isSelected())
 		{
-			riverStart = mapUpdater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+			riverStart = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
 	}
 
@@ -561,8 +561,8 @@ public class IconTool extends EditorTool
 	{		
 		if (riversButton.isSelected())
 		{
-			Corner end = mapUpdater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-			Set<Edge> river = filterOutOceanAndCoastEdges(mapUpdater.mapParts.graph.findPathGreedy(riverStart, end));
+			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+			Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
 			for (Edge edge : river)
 			{
 				int base = (riverWidthSlider.getValue() - 1);
@@ -575,7 +575,7 @@ public class IconTool extends EditorTool
 			
 			if (river.size() > 0)
 			{
-				mapUpdater.createAndShowMapIncrementalUsingEdges(river);
+				updater.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
 		
@@ -635,8 +635,8 @@ public class IconTool extends EditorTool
 			if (riverStart != null)
 			{
 				mapEditingPanel.clearHighlightedEdges();
-				Corner end = mapUpdater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-				Set<Edge> river = filterOutOceanAndCoastEdges(mapUpdater.mapParts.graph.findPathGreedy(riverStart, end));
+				Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
+				Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
 				mapEditingPanel.addHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
@@ -675,7 +675,7 @@ public class IconTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo(MapChange change)
 	{	
-		mapUpdater.createAndShowMapFromChange(change);
+		updater.createAndShowMapFromChange(change);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
@@ -685,7 +685,7 @@ public class IconTool extends EditorTool
 	
 	private void handleMapChange(Set<Center> centers)
 	{
-		mapUpdater.createAndShowMapIncrementalUsingCenters(centers);
+		updater.createAndShowMapIncrementalUsingCenters(centers);
 	}
 
 	@Override

@@ -34,6 +34,7 @@ public class MapEditingPanel extends ImagePanel
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
 	private double zoom;
+	private int borderWidth;
 	
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -149,9 +150,10 @@ public class MapEditingPanel extends ImagePanel
 			drawBrush(g);
 		}
 		
-		// Handle zoom
+		// Handle zoom and border width. This transform transforms from graph space to image space.
 		AffineTransform transform = new AffineTransform();
 		transform.scale(zoom, zoom);
+		transform.translate(borderWidth, borderWidth);
 		((Graphics2D)g).transform(transform);
 				
 		// Handle drawing/highlighting
@@ -247,5 +249,10 @@ public class MapEditingPanel extends ImagePanel
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
+	}
+	
+	public void setBorderWidth(int borderWidth)
+	{
+		this.borderWidth = borderWidth;
 	}
 }

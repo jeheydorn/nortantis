@@ -43,7 +43,7 @@ public class ToolsPanel extends JPanel
 	MainWindow mainWindow;
 
 	
-	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater mapUpdater)
+	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
 	{
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, getPreferredSize().height));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
@@ -51,9 +51,9 @@ public class ToolsPanel extends JPanel
 		this.mainWindow = mainWindow;
 		
 		// Setup tools
-		tools = Arrays.asList(new LandWaterTool(mainWindow, this, mapUpdater), 
-				new IconTool(mainWindow, this, mapUpdater), 
-				new TextTool(mainWindow, this, mapUpdater));
+		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), 
+				new IconTool(mainWindow, this, updater), 
+				new TextTool(mainWindow, this, updater));
 		if (UserPreferences.getInstance().lastEditorTool != "")
 		{
 			for (EditorTool tool : tools)
@@ -186,7 +186,7 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(mapUpdater.isMapBeingDrawn);
+				progressBar.setVisible(updater.isMapBeingDrawn);
 			}
 		};
 		progressBarTimer = new Timer(50, listener);

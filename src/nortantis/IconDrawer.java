@@ -752,7 +752,7 @@ public class IconDrawer
 		}
 	}
 		
-	public void addTrees() throws IOException
+	public void addTrees()
 	{
 		addCenterTrees();
 		drawTreesForCenters(graph.centers);

@@ -205,10 +205,7 @@ public class TextDrawer
 	
 	public void drawTextFromEdits(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground)
 	{
-		if (this.landAndOceanBackground == null)
-		{
-			this.landAndOceanBackground = landAndOceanBackground;
-		}
+		this.landAndOceanBackground = landAndOceanBackground;
 		
 		drawTextFromEdits(map, graph);
 		
@@ -218,10 +215,7 @@ public class TextDrawer
 	public void generateText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground,
 			List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
 	{				
-		if (this.landAndOceanBackground == null)
-		{
-			this.landAndOceanBackground = landAndOceanBackground;
-		}
+		this.landAndOceanBackground = landAndOceanBackground;
 
 		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());;
 

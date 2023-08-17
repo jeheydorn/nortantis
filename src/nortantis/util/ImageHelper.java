@@ -773,7 +773,7 @@ public class ImageHelper
 			throw new IllegalArgumentException("Expected mask to be type BufferedImage.TYPE_BYTE_GRAY.");
     	
     	if (image1.getWidth() != image2.getWidth())
-    		throw new IllegalArgumentException();
+    		throw new IllegalArgumentException("Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth());
        	if (image1.getHeight() != image2.getHeight())
     		throw new IllegalArgumentException();
        	

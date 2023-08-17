@@ -14,15 +14,17 @@ public class Undoer
 	public MapEdits copyOfEditsWhenEditorWasOpened;
 	private MainWindow mainWindow;
 	private final float maxUndoLevels = 150;
-	private ToolsPanel toolsPanel;
 
-	public Undoer(MapSettings settings, MainWindow mainWindow, ToolsPanel toolsPanel)
+	public Undoer(MainWindow mainWindow)
+	{
+		this.mainWindow = mainWindow;
+	}
+	
+	public void reset(MapSettings settings)
 	{
 		undoStack = new ArrayDeque<>();
 		redoStack = new Stack<>();
 		this.settings = settings;
-		this.mainWindow = mainWindow;
-		this.toolsPanel = toolsPanel;
 	}
 	
 	/***
@@ -74,13 +76,13 @@ public class Undoer
 		}
 		
 		// Keep the collection of text edits being drawn in sync with the settings
-		mainWindow.mapUpdater.mapParts.textDrawer.setMapTexts(settings.edits.text);
+		mainWindow.updater.mapParts.textDrawer.setMapTexts(settings.edits.text);
 		
 		if (change.toolThatMadeChange != null)
 		{
-			if (toolsPanel.currentTool != change.toolThatMadeChange)
+			if (mainWindow.toolsPanel.currentTool != change.toolThatMadeChange)
 			{
-				toolsPanel.handleToolSelected(change.toolThatMadeChange);
+				mainWindow.toolsPanel.handleToolSelected(change.toolThatMadeChange);
 			}
 
 			change.toolThatMadeChange.onAfterUndoRedo(change);
@@ -88,7 +90,7 @@ public class Undoer
 		else
 		{
 			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
-			toolsPanel.currentTool.onAfterUndoRedo(change);
+			mainWindow.toolsPanel.currentTool.onAfterUndoRedo(change);
 		}
 		
 		//mainWindow.updateEditsPointerInRunSwing(); TODO	
@@ -102,15 +104,15 @@ public class Undoer
 		settings.edits = undoStack.peek().edits.deepCopy();
 		
 		// Keep the collection of text edits being drawn in sync with the settings
-		mainWindow.mapUpdater.mapParts.textDrawer.setMapTexts(settings.edits.text);
+		mainWindow.updater.mapParts.textDrawer.setMapTexts(settings.edits.text);
 
 		MapChange changeWithPrevEdits = new MapChange(prevEdits, change.updateType, change.toolThatMadeChange);
 		if (change.toolThatMadeChange != null)
 		{
 			// Switch to the tool that made the change.
-			if (toolsPanel.currentTool != change.toolThatMadeChange)
+			if (mainWindow.toolsPanel.currentTool != change.toolThatMadeChange)
 			{
-				toolsPanel.handleToolSelected(change.toolThatMadeChange);
+				mainWindow.toolsPanel.handleToolSelected(change.toolThatMadeChange);
 			}
 			
 			change.toolThatMadeChange.onAfterUndoRedo(changeWithPrevEdits);
@@ -118,7 +120,7 @@ public class Undoer
 		else
 		{
 			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map.
-			toolsPanel.currentTool.onAfterUndoRedo(changeWithPrevEdits);
+			mainWindow.toolsPanel.currentTool.onAfterUndoRedo(changeWithPrevEdits);
 		}
 		
 		// mainWindow.updateEditsPointerInRunSwing(); TODO

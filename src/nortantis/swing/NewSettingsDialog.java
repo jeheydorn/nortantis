@@ -30,6 +30,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.Timer;
 
+import org.junit.runner.Computer;
+
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -49,7 +51,7 @@ public class NewSettingsDialog extends JDialog
 	JPanel booksPanel;
 	MapSettings settings;
 	private JProgressBar progressBar;
-	private MapUpdater mapUpdater;
+	private MapUpdater updater;
 	private MapEditingPanel mapEditingPanel;
 	private Dimension defaultSize = new Dimension(800, 700);
 	private Timer progressBarTimer;
@@ -69,8 +71,8 @@ public class NewSettingsDialog extends JDialog
 		settings = SettingsGenerator.generate();
 		loadSettingsIntoGUI(settings);
 		
-		mapUpdater.setEnabled(true);
-		mapUpdater.createAndShowMapFull();
+		updater.setEnabled(true);
+		updater.createAndShowMapFull();
 	}
 
 	private void createGUI(MainWindow mainWindow)
@@ -130,7 +132,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(mapUpdater.isMapBeingDrawn);
+				progressBar.setVisible(updater.isMapBeingDrawn);
 			}
 		};
 		progressBarTimer = new Timer(50, listener);
@@ -172,7 +174,7 @@ public class NewSettingsDialog extends JDialog
 		{
 			public void componentResized(ComponentEvent componentEvent)
 			{
-				mapUpdater.setMaxMapSize(getMapDrawingAreaSize());
+				updater.setMaxMapSize(getMapDrawingAreaSize());
 				handleMapChange();
 			}
 		});
@@ -195,7 +197,6 @@ public class NewSettingsDialog extends JDialog
 	
 	private void onCreateMap(MainWindow mainWindow)
 	{
-		mainWindow.setPlaceholderImage(new String[] {"Drawing the map..."}); // TODO Move this to a function in MainWindow and re-use it when opening map settings, including when first opening the window.
 		mainWindow.loadSettingsIntoGUI(getSettingsFromGUI());
 		dispose();
 	}
@@ -385,7 +386,7 @@ public class NewSettingsDialog extends JDialog
 	private void createMapUpdater()
 	{
 		final NewSettingsDialog thisDialog = this;
-		mapUpdater = new MapUpdater(false)
+		updater = new MapUpdater(false)
 		{
 
 			@Override
@@ -406,7 +407,7 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued)
+			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn)
 			{
 				mapEditingPanel.image = map;
 
@@ -443,8 +444,8 @@ public class NewSettingsDialog extends JDialog
 			}
 
 		};
-		mapUpdater.setMaxMapSize(getMapDrawingAreaSize());
-		mapUpdater.setEnabled(false);
+		updater.setMaxMapSize(getMapDrawingAreaSize());
+		updater.setEnabled(false);
 	}
 
 	private Dimension getMapDrawingAreaSize()
@@ -556,7 +557,7 @@ public class NewSettingsDialog extends JDialog
 	public void handleMapChange()
 	{
 		enableOrDisableProgressBar(true); 
-		mapUpdater.createAndShowMapFull();
+		updater.createAndShowMapFull();
 	}
 
 }

@@ -90,15 +90,14 @@ public class MainWindow extends JFrame
 	public Undoer undoer;
 	double zoom;
 	double imageQualityScale;
-	private JMenu imageQualityMenu;
+	private JMenu displayQualityMenu;
 	private JRadioButtonMenuItem radioButton75Percent;
 	private JRadioButtonMenuItem radioButton100Percent;
 	private JRadioButtonMenuItem radioButton125Percent;
 	private JRadioButtonMenuItem radioButton150Percent;
 	private ThemePanel themePanel;
-	private ToolsPanel toolsPanel;
-	private double resolutionForImageExport;
-	MapUpdater mapUpdater;
+	ToolsPanel toolsPanel;
+	MapUpdater updater;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -191,10 +190,12 @@ public class MainWindow extends JFrame
 
 		createMenuBar();
 
+		undoer = new Undoer(this);
+
 		themePanel = new ThemePanel(this);
 		createMapEditingPanel();
 		createMapUpdater();
-		toolsPanel = new ToolsPanel(this, mapEditingPanel, mapUpdater);
+		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
 
 		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanel, mapEditingScrollPane);
 		splitPane1.setOneTouchExpandable(true);
@@ -212,6 +213,7 @@ public class MainWindow extends JFrame
 	private void launchNewSettingsDialog()
 	{
 		NewSettingsDialog dialog = new NewSettingsDialog(this);
+		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
 
@@ -344,7 +346,7 @@ public class MainWindow extends JFrame
 			{
 				if (ToolsPanel.fitToWindowZoomLevel.equals(toolsPanel.getZoomString()))
 				{
-					mapUpdater.createAndShowMapIncrementalUsingCenters(null);
+					updater.createAndShowMapIncrementalUsingCenters(null);
 				}
 			}
 		});
@@ -356,7 +358,7 @@ public class MainWindow extends JFrame
 	private void createMapUpdater()
 	{
 		final MainWindow mainWindow = this;
-		mapUpdater = new MapUpdater(true)
+		updater = new MapUpdater(true)
 		{
 
 			@Override
@@ -370,13 +372,15 @@ public class MainWindow extends JFrame
 			{
 				MapSettings settings = mainWindow.getSettingsFromGUI();
 				settings.resolution = imageQualityScale;
+				// Editors add these things after the main draw to allow quickly updating them later.
 				return settings;
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued)
+			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn)
 			{
 				mapEditingPanel.mapFromMapCreator = map;
+				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 
 				if (undoer.copyOfEditsWhenEditorWasOpened == null)
@@ -558,7 +562,6 @@ public class MainWindow extends JFrame
 					public BufferedImage doInBackground() throws IOException
 					{
 						MapSettings settings = getSettingsFromGUI();
-
 						double resolutionScale = 1.0; // TODO Pull this from a
 														// setting in a new
 														// heightmap export
@@ -644,10 +647,10 @@ public class MainWindow extends JFrame
 		JMenu mnView = new JMenu("View");
 		menuBar.add(mnView);
 
-		imageQualityMenu = new JMenu("Image Quality");
-		mnView.add(imageQualityMenu);
-		imageQualityMenu.setToolTipText(
-				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image using the Generate button in the main window. Higher values make the editor slower.");
+		displayQualityMenu = new JMenu("Display Quality");
+		mnView.add(displayQualityMenu);
+		displayQualityMenu.setToolTipText(
+				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 
 		ActionListener resolutionListener = new ActionListener()
 		{
@@ -666,22 +669,22 @@ public class MainWindow extends JFrame
 
 		radioButton75Percent = new JRadioButtonMenuItem("Low");
 		radioButton75Percent.addActionListener(resolutionListener);
-		imageQualityMenu.add(radioButton75Percent);
+		displayQualityMenu.add(radioButton75Percent);
 		resolutionButtonGroup.add(radioButton75Percent);
 
 		radioButton100Percent = new JRadioButtonMenuItem("Medium");
 		radioButton100Percent.addActionListener(resolutionListener);
-		imageQualityMenu.add(radioButton100Percent);
+		displayQualityMenu.add(radioButton100Percent);
 		resolutionButtonGroup.add(radioButton100Percent);
 
 		radioButton125Percent = new JRadioButtonMenuItem("High");
 		radioButton125Percent.addActionListener(resolutionListener);
-		imageQualityMenu.add(radioButton125Percent);
+		displayQualityMenu.add(radioButton125Percent);
 		resolutionButtonGroup.add(radioButton125Percent);
 
 		radioButton150Percent = new JRadioButtonMenuItem("Very High");
 		radioButton150Percent.addActionListener(resolutionListener);
-		imageQualityMenu.add(radioButton150Percent);
+		displayQualityMenu.add(radioButton150Percent);
 		resolutionButtonGroup.add(radioButton150Percent);
 
 		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
@@ -710,6 +713,7 @@ public class MainWindow extends JFrame
 			radioButton100Percent.setSelected(true);
 			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
 		}
+		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
 	}
 
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
@@ -836,7 +840,7 @@ public class MainWindow extends JFrame
 			JPanel panel = new JPanel();
 			panel.setPreferredSize(size);
 			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			JLabel label = new JLabel("<html>Changing the image quality in the editor is only for the purpose of either speeding"
+			JLabel label = new JLabel("<html>Changing the Display Quality in the editor is only for the purpose of either speeding"
 					+ " up the editor by using a lower quality, or viewing more details at higher zoom levels using a higher quality."
 					+ " It does not affect the quality of the map exported to an image when you press the Generate button in the"
 					+ " main window.</html>");
@@ -855,7 +859,7 @@ public class MainWindow extends JFrame
 		areToolToggleButtonsEnabled = enable;
 
 		clearEntireMapButton.setEnabled(enable);
-		if (imageQualityMenu != null)
+		if (displayQualityMenu != null)
 		{
 			radioButton75Percent.setEnabled(enable);
 			radioButton100Percent.setEnabled(enable);
@@ -884,8 +888,8 @@ public class MainWindow extends JFrame
 		mapEditingPanel.repaint();
 
 		ImageCache.getInstance().clear();
-		mapUpdater.mapParts = null;
-		mapUpdater.createAndShowMapFull();
+		updater.mapParts = null;
+		updater.createAndShowMapFull();
 	}
 
 	private void updateImageQualityScale(String imageQualityText)
@@ -910,7 +914,7 @@ public class MainWindow extends JFrame
 
 	public void clearEntireMap()
 	{
-		if (mapUpdater.mapParts == null || mapUpdater.mapParts.graph == null)
+		if (updater.mapParts == null || updater.mapParts.graph == null)
 		{
 			return;
 		}
@@ -921,7 +925,7 @@ public class MainWindow extends JFrame
 			text.value = "";
 		}
 
-		for (Center center : mapUpdater.mapParts.graph.centers)
+		for (Center center : updater.mapParts.graph.centers)
 		{
 			// Change land to ocean
 			edits.centerEdits.get(center.index).isWater = true;
@@ -940,7 +944,7 @@ public class MainWindow extends JFrame
 		}
 
 		undoer.setUndoPoint(UpdateType.Full, null);
-		mapUpdater.createAndShowMapFull();
+		updater.createAndShowMapTerrainChange();
 	}
 
 	public static boolean isRunning()
@@ -980,12 +984,9 @@ public class MainWindow extends JFrame
 		}
 
 		// TODO Show a dialog that prompts for resolution. Make it modal to
-		// prevent other map generation stuff while it's happening.
+		// prevent other map generation stuff while it's happening. 
+		// Store the resolution into lastSettingsLoadedOrSaved.resolution.
 		// TODO Maybe also prevent it from running while the map is drawing.
-
-		// TODO Pull this from the setting in the export dialog, and store it
-		// into resolutionForImageExport.
-		resolutionForImageExport = 1.0;
 
 		final MapSettings settings = getSettingsFromGUI();
 
@@ -1192,16 +1193,23 @@ public class MainWindow extends JFrame
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
+		updater.setEnabled(false);
+		
+		// TODO Make the undoer settings-based instead of edits-based.
+		undoer.reset(settings);
+		undoer.updateUndoRedoEnabled();
+
 		updateLastSettingsLoadedOrSaved(settings);
 		edits = settings.edits;
 		themePanel.loadSettingsIntoGUI(settings);
 		toolsPanel.loadSettingsIntoGUI(settings);
 
 		updateFrameTitle();
-
-		// TODO Make the undoer settings based instead of edits based.
-		undoer = new Undoer(settings, this, toolsPanel);
-		undoer.updateUndoRedoEnabled();
+		
+		updater.clearCache();
+		updater.setEnabled(true);
+		setPlaceholderImage(new String[] {"Drawing map..."});
+		updater.createAndShowMapFull();
 	}
 
 	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
@@ -1211,20 +1219,16 @@ public class MainWindow extends JFrame
 
 	private MapSettings getSettingsFromGUI()
 	{
-		MapSettings settings = new MapSettings();
+		MapSettings settings = lastSettingsLoadedOrSaved.deepCopy();
 		if (edits != null)
 		{
-			settings.edits = edits.deepCopy();
+			settings.edits = edits;
 		}
 		else
 		{
 			edits = new MapEdits();
 		}
 
-		settings.resolution = resolutionForImageExport;
-
-		// TODO get these settings from wherever I end up storing them behind
-		// the scenes
 		settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
 		settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
 		settings.edgeLandToWaterProbability = lastSettingsLoadedOrSaved.edgeLandToWaterProbability;
@@ -1252,14 +1256,7 @@ public class MainWindow extends JFrame
 		return themePanel.getLandColor();
 	}
 	
-	public void handleChange()
-	{
-		// TODO set undo point once I have undoer working outside of editor tools.
-		mapUpdater.createAndShowMapFull();
-	}
-	
-	
-	void setPlaceholderImage(String[] message)
+	private void setPlaceholderImage(String[] message)
 	{
 		mapEditingPanel.image = ImageHelper.createPlaceholderImage(message);
 		mapEditingPanel.repaint();

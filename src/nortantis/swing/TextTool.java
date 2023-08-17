@@ -26,6 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
@@ -38,7 +39,6 @@ import nortantis.util.JTextFieldFixed;
 
 public class TextTool extends EditorTool
 {
-	private BufferedImage mapWithoutText;
 	private JTextField editTextField;
 	private MapText lastSelected;
 	private Point mousePressedLocation;
@@ -180,7 +180,7 @@ public class TextTool extends EditorTool
 		}
 		
 				
-		booksPanel = SwingHelper.createBooksPanel(() -> mainWindow.handleChange());
+		booksPanel = SwingHelper.createBooksPanel(() -> {});
 		booksHider = organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.", 
 				booksPanel);
 		
@@ -250,41 +250,22 @@ public class TextTool extends EditorTool
 	@Override
 	protected BufferedImage onBeforeShowMap(BufferedImage map)
 	{    
-    	// Add text to the map
-		mapWithoutText = map;
-		
-		BufferedImage mapWithText = drawMapWithText();
-		
 		mapEditingPanel.setAreasToDraw(textToSelectAfterDraw == null ? null : textToSelectAfterDraw.areas);
 		mapEditingPanel.repaint();
     	// Tell the scroll pane to update itself.
     	mapEditingPanel.revalidate();
 
 		
-    	return mapWithText;
+    	return map;
 	}
 	
 	private MapText textToSelectAfterDraw;
 	private void updateTextInBackgroundThread(final MapText selectedText)
 	{
 		textToSelectAfterDraw = selectedText;
-		mapUpdater.createAndShowMapIncrementalUsingCenters(null);
-	}
-	
-	private BufferedImage drawMapWithText()
-	{		
-		BufferedImage mapWithText = ImageHelper.deepCopy(mapWithoutText);
-		try
-		{
-			mapUpdater.mapParts.textDrawer.drawTextFromEdits(mapUpdater.mapParts.graph, mapWithText, mapUpdater.mapParts.landBackground);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-	        JOptionPane.showMessageDialog(null, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-		}
-		
-		return mapWithText;
+		// Pass in null to make the updater not actually change the map. The main goal is just to use the updater to call 
+		// onBeforeShowMap in a background thread to apply text changes.
+		updater.createAndAndShowMapTextChange();
 	}
 
 	@Override
@@ -293,7 +274,7 @@ public class TextTool extends EditorTool
 		if (moveButton.isSelected())
 		{
 			// Begin a drag and drop of a text box.
-			MapText selectedText = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				mousePressedLocation = e.getPoint();
@@ -304,7 +285,7 @@ public class TextTool extends EditorTool
 		}
 		else if (rotateButton.isSelected())
 		{
-			lastSelected = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			lastSelected = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (lastSelected != null)
 			{
 				// Region and title names cannot be rotated.
@@ -325,7 +306,7 @@ public class TextTool extends EditorTool
 		}
 		else if (deleteButton.isSelected())
 		{
-			MapText selectedText = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
 			{
 				selectedText.value = "";
@@ -335,7 +316,7 @@ public class TextTool extends EditorTool
 		}
 		else if (addButton.isSelected())
 		{
-			MapText addedText = mapUpdater.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
+			MapText addedText = updater.mapParts.textDrawer.createUserAddedText((TextType)textTypeComboBox.getSelectedItem(), 
 					getPointOnGraph(e.getPoint()));
 			mainWindow.edits.text.add(addedText);
 			
@@ -348,7 +329,7 @@ public class TextTool extends EditorTool
 			{
 				editTextField.grabFocus();
 			}
-			MapText selectedText = mapUpdater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+			MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			handleTextEdit(selectedText);
 		}
 	}
@@ -508,7 +489,7 @@ public class TextTool extends EditorTool
 		
 		if (change.updateType == UpdateType.Full)
 		{
-			mapUpdater.createAndShowMapFull();
+			updater.createAndShowMapFull();
 		}
 		else
 		{

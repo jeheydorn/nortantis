@@ -10,7 +10,7 @@ import nortantis.graph.geom.Point;
  * @author joseph
  *
  */
-class IconDrawTask implements Comparable<IconDrawTask>
+public class IconDrawTask implements Comparable<IconDrawTask>
 {
 	BufferedImage icon;
 	BufferedImage mask;
