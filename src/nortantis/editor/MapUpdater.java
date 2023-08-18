@@ -22,7 +22,7 @@ import nortantis.util.Logger;
 
 public abstract class MapUpdater
 {
-	private boolean mapNeedsFullRedraw;
+	private UpdateType mapNeedsNonIncrementalUpdateForType;
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	public boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
@@ -46,50 +46,31 @@ public abstract class MapUpdater
 	}
 
 	/**
-	 * Redraws the map, then displays it. Use only with UpdateType.Full and
-	 * UpdateType.Quick.
+	 * Redraws the entire map, then displays it.
 	 */
 	public void createAndShowMapFull()
 	{
-		if (mapParts != null)
-		{
-			// Clear all cached map parts to force a full re-draw of everything.
-			mapParts = new MapParts();
-		}
-
 		createAndShowMap(UpdateType.Full, null, null);
 	}
 
 	public void createAndAndShowMapTextChange()
 	{
-		createAndShowMap(UpdateType.Full, null, null);
+		createAndShowMap(UpdateType.Text, null, null);
+	}
+	
+	public void createAndShowMapFontsChange()
+	{
+		createAndShowMap(UpdateType.Fonts, null, null);
 	}
 
 	public void createAndShowMapTerrainChange()
 	{
-		if (mapParts != null)
-		{
-			// Clearing this causes map drawing to re-draw terrain.
-			mapParts.mapBeforeAddingText = null;
-			
-			mapParts.mountainGroups = null;
-			mapParts.cities = null;
-		}
-
-		createAndShowMap(UpdateType.Full, null, null);
+		createAndShowMap(UpdateType.Terrain, null, null);
 	}
 
 	public void createAndShowMapGrungeOrFrayedEdgeChange()
 	{
-		if (mapParts != null)
-		{
-			mapParts.frayedBorderBlur = null;
-			mapParts.frayedBorderColor = null;
-			mapParts.frayedBorderMask = null;
-			mapParts.grunge = null;
-		}
-
-		createAndShowMap(UpdateType.Full, null, null);
+		createAndShowMap(UpdateType.GrungeAndFray, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
@@ -104,9 +85,9 @@ public abstract class MapUpdater
 
 	public void createAndShowMapFromChange(MapChange change)
 	{
-		if (change.updateType == UpdateType.Full)
+		if (change.updateType != UpdateType.Incremental)
 		{
-			createAndShowMapFull();
+			createAndShowMap(change.updateType, null, null);
 		}
 		else
 		{
@@ -147,6 +128,57 @@ public abstract class MapUpdater
 		return getEdits().edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
 				.map(eEdit -> mapParts.graph.edges.get(eEdit.index)).collect(Collectors.toSet());
 	}
+	
+	/**
+	 * Clears values from mapParts as needed to trigger those parts to re-redraw based on what type of update we're making.
+	 * @param updateType
+	 */
+	private void clearMapPartsAsNeeded(UpdateType updateType)
+	{
+		if (mapParts == null)
+		{
+			return;
+		}
+		
+		if (updateType == UpdateType.Full)
+		{
+			if (mapParts != null)
+			{
+				mapParts = new MapParts();
+			}
+		}
+		else if (updateType == UpdateType.Incremental)
+		{
+			
+		}
+		else if (updateType == UpdateType.Text)
+		{
+			
+		}
+		else if (updateType == UpdateType.Fonts)
+		{
+			mapParts.textDrawer = null;
+		}
+		else if (updateType == UpdateType.Terrain)
+		{
+			mapParts.mapBeforeAddingText = null;
+			
+			mapParts.mountainGroups = null;
+			mapParts.cities = null;
+		}
+		else if (updateType == UpdateType.GrungeAndFray)
+		{
+			mapParts.frayedBorderBlur = null;
+			mapParts.frayedBorderColor = null;
+			mapParts.frayedBorderMask = null;
+			mapParts.grunge = null;
+		}
+		else
+		{
+			throw new IllegalStateException("Unrecognized update type: " + updateType);
+		}
+
+	}
 
 	/**
 	 * Redraws the map, then displays it
@@ -160,14 +192,28 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			if (updateType == UpdateType.Full)
-			{
-				mapNeedsFullRedraw = true;
-				incrementalUpdatesToDraw.clear();
-			}
-			else if (updateType == UpdateType.Incremental)
+			if (updateType == UpdateType.Incremental)
 			{
 				incrementalUpdatesToDraw.add(new IncrementalUpdate(centersChanged, edgesChanged));
+			}
+			else if (updateType == UpdateType.Full)
+			{
+				mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
+				incrementalUpdatesToDraw.clear();
+			}
+			else 
+			{
+				if (mapNeedsNonIncrementalUpdateForType == null)
+				{
+					mapNeedsNonIncrementalUpdateForType = updateType;
+				}
+				else if (mapNeedsNonIncrementalUpdateForType != updateType)
+				{
+					// Two different types of non-incremental updates have been requested. Just run a full update
+					// to avoid needing to somehow merge the updates.
+					mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
+					incrementalUpdatesToDraw.clear();
+				}
 			}
 			return;
 		}
@@ -192,13 +238,15 @@ public abstract class MapUpdater
 				drawLock.lock();
 				try
 				{
-					if (updateType == UpdateType.Full)
+					clearMapPartsAsNeeded(updateType);
+					
+					if (updateType != UpdateType.Incremental)
 					{
 						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;
 						}
-
+						
 						if (mapParts == null && createEditsIfNotPresentAndUseMapParts)
 						{
 							mapParts = new MapParts();
@@ -272,13 +320,13 @@ public abstract class MapUpdater
 					}
 
 					onFinishedDrawing(map,
-							mapNeedsFullRedraw || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0),
+							mapNeedsNonIncrementalUpdateForType != null || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0),
 							settings.drawBorder ? (int)(settings.borderWidth * settings.resolution) : 0);
 
 					isMapBeingDrawn = false;
-					if (mapNeedsFullRedraw)
+					if (mapNeedsNonIncrementalUpdateForType != null)
 					{
-						createAndShowMapFull();
+						createAndShowMap(mapNeedsNonIncrementalUpdateForType, null, null);
 					}
 					else if (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0)
 					{
@@ -286,10 +334,7 @@ public abstract class MapUpdater
 						createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
 					}
 
-					if (updateType == UpdateType.Full)
-					{
-						mapNeedsFullRedraw = false;
-					}
+					mapNeedsNonIncrementalUpdateForType = null;
 				}
 				else
 				{
@@ -432,18 +477,5 @@ public abstract class MapUpdater
 	public void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;
-	}
-
-	public void clearCache()
-	{
-		drawLock.lock();
-		try
-		{
-			mapParts = null;
-		}
-		finally
-		{
-			drawLock.unlock();
-		}
 	}
 }

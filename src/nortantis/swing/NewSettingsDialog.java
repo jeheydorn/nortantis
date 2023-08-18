@@ -197,7 +197,9 @@ public class NewSettingsDialog extends JDialog
 	
 	private void onCreateMap(MainWindow mainWindow)
 	{
+		mainWindow.clearOpenSettingsFilePath();
 		mainWindow.loadSettingsIntoGUI(getSettingsFromGUI());
+		
 		dispose();
 	}
 

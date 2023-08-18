@@ -487,14 +487,8 @@ public class TextTool extends EditorTool
 		lastSelected = null;
 		editTextField.setText("");
 		
-		if (change.updateType == UpdateType.Full)
-		{
-			updater.createAndShowMapFull();
-		}
-		else
-		{
-			updateTextInBackgroundThread(null);
-		}
+		textToSelectAfterDraw = null;
+		updater.createAndShowMapFromChange(change);
 	}
 
 	@Override

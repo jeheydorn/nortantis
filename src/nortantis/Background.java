@@ -452,7 +452,7 @@ public class Background
 			BufferedImage edge = i == 0 ? topEdge : bottomEdge;
 			final int y = i == 0 ? 0 : map.getHeight() + borderWidthScaled;
 
-			int end = map.getWidth() - borderWidthScaled;
+			int end = map.getWidth() + borderWidthScaled;
 			int increment = edge.getWidth();
 			for (int x = borderWidthScaled; x < end; x += increment)
 			{
@@ -477,7 +477,7 @@ public class Background
 			BufferedImage edge = i == 0 ? leftEdge : rightEdge;
 			final int x = i == 0 ? 0 : map.getWidth() + borderWidthScaled;
 
-			int end = map.getHeight() - borderWidthScaled;
+			int end = map.getHeight() + borderWidthScaled;
 			int increment = edge.getHeight();
 			for (int y = borderWidthScaled; y < end; y += increment)
 			{

@@ -593,23 +593,23 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
 		organizer.addSeperator();
 
-		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70, () -> handleTextChange());
+		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70, () -> handleFontsChange());
 		titleFontDisplay = tupleTitle.getFirst();
 		JButton btnTitleFont = tupleTitle.getSecond();
 	
-		Tuple2<JLabel, JButton> tupleRegion = organizer.addFontChooser("Region font:", 40, () -> handleTextChange());
+		Tuple2<JLabel, JButton> tupleRegion = organizer.addFontChooser("Region font:", 40, () -> handleFontsChange());
 		regionFontDisplay = tupleRegion.getFirst();
 		JButton btnRegionFont = tupleRegion.getSecond();
 	
-		Tuple2<JLabel, JButton> tupleMountainRange = organizer.addFontChooser("Mountain range font:", 30, () -> handleTextChange());
+		Tuple2<JLabel, JButton> tupleMountainRange = organizer.addFontChooser("Mountain range font:", 30, () -> handleFontsChange());
 		mountainRangeFontDisplay = tupleMountainRange.getFirst();
 		JButton btnMountainRangeFont = tupleMountainRange.getSecond();
 	
-		Tuple2<JLabel, JButton> tupleCitiesMountains = organizer.addFontChooser("Cities/mountains font:", 30, () -> handleTextChange());
+		Tuple2<JLabel, JButton> tupleCitiesMountains = organizer.addFontChooser("Cities/mountains font:", 30, () -> handleFontsChange());
 		otherMountainsFontDisplay = tupleCitiesMountains.getFirst();
 		JButton btnOtherMountainsFont = tupleCitiesMountains.getSecond();
 	
-		Tuple2<JLabel, JButton> tupleRiver = organizer.addFontChooser("River font:", 30, () -> handleTextChange());
+		Tuple2<JLabel, JButton> tupleRiver = organizer.addFontChooser("River font:", 30, () -> handleFontsChange());
 		riverFontDisplay = tupleRiver.getFirst();
 		JButton btnRiverFont = tupleRiver.getSecond();
 	
@@ -623,7 +623,7 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				SwingHelper.showColorPickerWithPreviewPanel(fontsPanel, textColorDisplay, "Text Color",
-						() -> handleTextChange());
+						() -> handleFontsChange());
 			}
 		});
 		organizer.addLabelAndComponentsToPanelHorizontal("Text color:", "", SwingHelper.colorPickerLeftPadding, 
@@ -644,7 +644,7 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				SwingHelper.showColorPickerWithPreviewPanel(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color",
-						() -> handleTextChange());
+						() -> handleFontsChange());
 			}
 		});
 		organizer.addLabelAndComponentsToPanelHorizontal("Bold background color:", "If '" + chckbxDrawBoldBackground.getText() + 
@@ -659,7 +659,7 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
-				handleTextChange();
+				handleFontsChange();
 			}
 		});
 
@@ -676,7 +676,7 @@ public class ThemePanel extends JTabbedPane
 				btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 				btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(enableTextCheckBox.isSelected());
-				handleTextChange();
+				handleFontsChange();
 			}
 		});
 		
@@ -1058,9 +1058,9 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.updater.createAndShowMapTerrainChange();
 	}
 	
-	private void handleTextChange()
+	private void handleFontsChange()
 	{
-		mainWindow.updater.createAndAndShowMapTextChange();
+		mainWindow.updater.createAndShowMapFontsChange();
 	}
 	
 	private void createMapChangeListenerForFullRedraw(Component component)

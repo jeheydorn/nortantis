@@ -71,7 +71,7 @@ import nortantis.util.Logger;
 public class MainWindow extends JFrame
 {
 	private static JTextArea txtConsoleOutput;
-	Path openSettingsFilePath;
+	private Path openSettingsFilePath;
 	private boolean forceSaveAs;
 	MapSettings lastSettingsLoadedOrSaved;
 	static final String frameTitleBase = "Nortantis Fantasy Map Generator";
@@ -1190,6 +1190,11 @@ public class MainWindow extends JFrame
 		}
 		setTitle(title);
 	}
+	
+	public void clearOpenSettingsFilePath()
+	{
+		openSettingsFilePath = null;
+	}
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
@@ -1206,7 +1211,6 @@ public class MainWindow extends JFrame
 
 		updateFrameTitle();
 		
-		updater.clearCache();
 		updater.setEnabled(true);
 		setPlaceholderImage(new String[] {"Drawing map..."});
 		updater.createAndShowMapFull();
