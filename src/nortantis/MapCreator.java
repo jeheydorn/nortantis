@@ -302,13 +302,51 @@ public class MapCreator
 
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
-				boundsInSourceToCopyFrom);
 
-		// Also update the snippet in landBackground because the text tool needs
+		// Update the snippet in landBackground because the text tool needs
 		// that.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.landBackground, landBackground,
-				replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom);
+				replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom, 0);
+
+		// If present, also update the cached version of the map before adding text so so that incremental updates show up in the Text tool
+		if (mapParts.mapBeforeAddingText != null)
+		{
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
+					boundsInSourceToCopyFrom, 0);
+		}
+		
+		java.awt.Point drawBoundsUpperLeftCornerAdjustedForBorder = 
+				new java.awt.Point(drawBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
+						drawBounds.upperLeftCornerAsAwtPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+
+		// Add frayed border
+		if (settings.frayedBorder)
+		{
+			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
+			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true, 
+					drawBoundsUpperLeftCornerAdjustedForBorder);
+			if (blurLevel > 0)
+			{
+				mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true,
+						drawBoundsUpperLeftCornerAdjustedForBorder);
+			}
+		}
+		
+		// Add grunge
+		if (settings.grungeWidth > 0)
+		{
+			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, 
+					drawBoundsUpperLeftCornerAdjustedForBorder);
+		}
+		
+		java.awt.Point replaceBoundsUpperLeftCornerAdjustedForBorder = 
+				new java.awt.Point(replaceBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
+						replaceBounds.upperLeftCornerAsAwtPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+		// Update the snippet in the main map.
+		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
+				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
+
+
 
 		// Print run time
 		// double elapsedTime = System.currentTimeMillis() - startTime;
@@ -519,7 +557,7 @@ public class MapCreator
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
 			}
 
-			// Add the cloud mask to the map.
+			// Add the grunge to the map.
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
 
 			if (mapParts != null)

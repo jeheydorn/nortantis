@@ -270,7 +270,7 @@ public class Background
 				java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 						(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
-						boundsInSourceToCopyFrom);
+						boundsInSourceToCopyFrom, 0);
 			}
 		}
 

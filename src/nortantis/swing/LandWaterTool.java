@@ -218,12 +218,9 @@ public class LandWaterTool extends EditorTool
 			}
 		});
 	    
-	    if (areRegionColorsVisible)
-	    {
-		    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
-		    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
-		    organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
-	    }
+	    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
+	    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
+	    organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
 	    
 	    listener.actionPerformed(null);
 
@@ -587,7 +584,8 @@ public class LandWaterTool extends EditorTool
 //		hueSlider.setValue(settings.hueRange);
 //		saturationSlider.setValue(settings.saturationRange);
 //		brightnessSlider.setValue(settings.brightnessRange);
-
+		
+		onlyUpdateLandCheckbox.setVisible(areRegionColorsVisible);
 		
 	}
 

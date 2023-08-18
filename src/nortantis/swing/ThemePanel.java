@@ -148,17 +148,28 @@ public class ThemePanel extends JTabbedPane
 			public void changedUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
-				handleFullRedraw(); // TODO See if I need to add this line to the other two methods.
+				if (new File(textureImageFilename.getText()).exists())
+				{
+					handleFullRedraw();
+				}
 			}
 
 			public void removeUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
+				if (new File(textureImageFilename.getText()).exists())
+				{
+					handleFullRedraw();
+				}
 			}
 
 			public void insertUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
+				if (new File(textureImageFilename.getText()).exists())
+				{
+					handleFullRedraw();
+				}
 			}
 		});
 
@@ -422,9 +433,9 @@ public class ThemePanel extends JTabbedPane
 		
 		
 		jaggedLinesButton = new JRadioButton("Jagged");
-		createMapChangeListenerForTerrainChange(jaggedLinesButton);
+		createMapChangeListenerForFullRedraw(jaggedLinesButton);
 		smoothLinesButton = new JRadioButton("Smooth");
-		createMapChangeListenerForTerrainChange(smoothLinesButton);
+		createMapChangeListenerForFullRedraw(smoothLinesButton);
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
 		lineStyleButtonGroup.add(smoothLinesButton);

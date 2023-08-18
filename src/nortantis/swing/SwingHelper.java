@@ -252,15 +252,13 @@ public class SwingHelper
 				@Override
 				public void insertUpdate(DocumentEvent e)
 				{
-					// TODO Decide if this needs to run action.
-
+					action.run();
 				}
 
 				@Override
 				public void removeUpdate(DocumentEvent e)
 				{
-					// TODO Decide if this needs to run action.
-
+					action.run();
 				}
 
 				@Override

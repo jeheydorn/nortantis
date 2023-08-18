@@ -1124,8 +1124,6 @@ public class IconDrawer
 		// The mask image is a resolve of the intersection of the 3 silhouettes.
 		
 		BufferedImage mask = new BufferedImage(icon.getWidth(), icon.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-		Graphics2D g = mask.createGraphics();
-		g.setColor(Color.white);
 		WritableRaster maskRaster = mask.getRaster();
 		Raster topRaster = topSilhouette.getRaster();
 		Raster leftRaster = leftSilhouette.getRaster();

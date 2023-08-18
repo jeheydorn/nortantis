@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
@@ -236,7 +237,7 @@ public class TextDrawer
 		
 		graphBounds = new Area(new java.awt.Rectangle(0, 0, graph.getWidth(), graph.getHeight()));
 
-		Graphics2D g = map.createGraphics();
+		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
 		g.setColor(settings.textColor);
 		
 		addTitle(map, graph, g);
@@ -362,7 +363,11 @@ public class TextDrawer
 	 */
 	private synchronized void drawTextFromEdits(BufferedImage map, WorldGraph graph)
 	{
-		Graphics2D g = map.createGraphics();
+		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
+		RenderingHints rh = new RenderingHints(
+	             RenderingHints.KEY_TEXT_ANTIALIASING,
+	             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+	    g.setRenderingHints(rh);
 
 		g.setColor(settings.textColor);
 
@@ -1044,7 +1049,7 @@ public class TextDrawer
 	
 		BufferedImage textBG = new BufferedImage(textWidth + padding*2, textHeight + padding*2, BufferedImage.TYPE_BYTE_GRAY);
 				
-		Graphics2D bG = textBG.createGraphics();
+		Graphics2D bG = ImageHelper.createGraphicsWithRenderingHints(textBG);
 		bG.setFont(g.getFont());
 		bG.setColor(Color.white);
 		bG.drawString(text, padding, padding + metrics.getAscent());
