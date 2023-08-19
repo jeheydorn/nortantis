@@ -8,52 +8,63 @@ import nortantis.swing.MainWindow;
 
 public class Logger
 {
-
+	private ILoggerTarget target;
+	
+	private Logger()
+	{
+	}
+	
+	private static Logger instance;
+	private static Logger getInstance()
+	{
+		if (instance == null)
+		{
+			instance = new Logger();
+		}
+		
+		return instance;
+	}
+	
+	public static void setLoggerTarget(ILoggerTarget target)
+	{
+		getInstance().target = target;
+	}
+	
 	public static void println()
 	{
-		if (MainWindow.isRunning())
-		{
-			try
-			{
-				SwingUtilities.invokeAndWait(new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						MainWindow.getConsoleOutputTextArea().append("\n");
-					}
-				});
-			}
-			catch (InvocationTargetException | InterruptedException e)
-			{
-				e.printStackTrace();
-			}
-
-		}
-		else
-		{
-			System.out.println();
-		}
+		println("");
 	}
 
 	public static void println(final String message)
 	{
-		if (MainWindow.isRunning())
+		println(message, false);
+	}
+	
+	public static void println(final String message, boolean runInCurrentThread)
+	{
+		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
-			try
+			if (runInCurrentThread)
 			{
-				SwingUtilities.invokeAndWait(new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						MainWindow.getConsoleOutputTextArea().append(message + "\n");
-					}
-				});
+				getInstance().appendToTarget(message + "\n");
 			}
-			catch (InvocationTargetException | InterruptedException e)
+			else
 			{
-				e.printStackTrace();
+				try
+				{
+					SwingUtilities.invokeAndWait(new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							getInstance().appendToTarget(message + "\n");
+						}
+					});
+				}
+				catch (InvocationTargetException | InterruptedException e)
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 		else
@@ -61,10 +72,15 @@ public class Logger
 			System.out.println(message);
 		}
 	}
+	
+	private synchronized void appendToTarget(String message)
+	{
+		getInstance().target.appendLoggerMessage(message);
+	}
 
 	public static void clear()
 	{
-		if (MainWindow.isRunning())
+		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
 			try
 			{
@@ -74,7 +90,7 @@ public class Logger
 					@Override
 					public void run()
 					{
-						MainWindow.getConsoleOutputTextArea().setText("");
+						getInstance().clearTarget();
 					}
 				});
 			}
@@ -84,4 +100,11 @@ public class Logger
 			}
 		}
 	}
+	
+	private synchronized void clearTarget()
+	{
+		getInstance().target.clearLoggerMessages();
+	}
+
+	
 }

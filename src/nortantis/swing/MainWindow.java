@@ -21,11 +21,13 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Hashtable;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -48,6 +50,7 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr.Method;
@@ -65,13 +68,14 @@ import nortantis.editor.UserPreferences;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
+import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
-public class MainWindow extends JFrame
+public class MainWindow extends JFrame implements ILoggerTarget
 {
-	private static JTextArea txtConsoleOutput;
+	private JTextArea txtConsoleOutput;
 	private Path openSettingsFilePath;
 	private boolean forceSaveAs;
 	MapSettings lastSettingsLoadedOrSaved;
@@ -87,7 +91,6 @@ public class MainWindow extends JFrame
 	JMenuItem undoButton;
 	JMenuItem redoButton;
 	private JMenuItem clearEntireMapButton;
-	public boolean isMapReadyForInteractions;
 	public Undoer undoer;
 	double zoom;
 	double imageQualityScale;
@@ -101,11 +104,14 @@ public class MainWindow extends JFrame
 	MapUpdater updater;
 	private JCheckBoxMenuItem highlightLakesButton;
 	private JCheckBoxMenuItem highlightRiversButton;
+	private JScrollPane consoleOutputPane;
 
 	public MainWindow(String fileToOpen)
 	{
 		super(frameTitleBase);
 
+		Logger.setLoggerTarget(this);
+		
 		createGUI();
 
 		MapSettings settings = null;
@@ -199,15 +205,19 @@ public class MainWindow extends JFrame
 		createMapEditingPanel();
 		createMapUpdater();
 		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
+		
+		createConsoleOutput();
 
-		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, themePanel, mapEditingScrollPane);
+		JSplitPane splitPane0 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, themePanel, consoleOutputPane);
+		splitPane0.setDividerLocation(9999999);
+		splitPane0.setResizeWeight(1.0);
+		
+		JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane0, mapEditingScrollPane);
 		splitPane1.setOneTouchExpandable(true);
 		JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane1, toolsPanel);
 		splitPane2.setResizeWeight(1.0);
 		splitPane2.setOneTouchExpandable(true);
 		getContentPane().add(splitPane2, BorderLayout.CENTER);
-
-		createConsoleOutput();
 
 		pack();
 
@@ -222,14 +232,14 @@ public class MainWindow extends JFrame
 
 	private void createConsoleOutput()
 	{
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 417, 389, 260);
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		txtConsoleOutput = new JTextArea();
-		scrollPane.setViewportView(txtConsoleOutput);
 		txtConsoleOutput.setEditable(false);
+		panel.add(txtConsoleOutput);
 
-		// TODO Add the scrollPane somewhere.
-		// TODO Either use a JSplitPane or create this in a separate popup.
+		consoleOutputPane = new JScrollPane(panel);
+		consoleOutputPane.setMinimumSize(new Dimension(0, 0));
 	}
 
 	private void createMapEditingPanel()
@@ -242,7 +252,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				if (isMapReadyForInteractions)
+				if (updater.isMapReadyForInteractions())
 				{
 					toolsPanel.currentTool.handleMouseClickOnMap(e);
 				}
@@ -251,7 +261,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (isMapReadyForInteractions)
+				if (updater.isMapReadyForInteractions())
 				{
 					toolsPanel.currentTool.handleMousePressedOnMap(e);
 				}
@@ -260,7 +270,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				if (isMapReadyForInteractions)
+				if (updater.isMapReadyForInteractions())
 				{
 					toolsPanel.currentTool.handleMouseReleasedOnMap(e);
 				}
@@ -274,7 +284,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				if (isMapReadyForInteractions)
+				if (updater.isMapReadyForInteractions())
 				{
 					toolsPanel.currentTool.handleMouseMovedOnMap(e);
 				}
@@ -283,7 +293,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (isMapReadyForInteractions)
+				if (updater.isMapReadyForInteractions())
 				{
 					toolsPanel.currentTool.handleMouseDraggedOnMap(e);
 				}
@@ -305,7 +315,7 @@ public class MainWindow extends JFrame
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				if (isMapReadyForInteractions)
+				if (updater.isMapReadyForInteractions())
 				{
 					toolsPanel.currentTool.handleMouseExitedMap(e);
 				}
@@ -411,8 +421,6 @@ public class MainWindow extends JFrame
 				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
 				mapEditingPanel.repaint();
-
-				isMapReadyForInteractions = true;
 			}
 
 			@Override
@@ -754,7 +762,7 @@ public class MainWindow extends JFrame
 
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
 	{
-		if (isMapReadyForInteractions)
+		if (updater.isMapReadyForInteractions())
 		{
 			int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
 			int newIndex = toolsPanel.zoomComboBox.getSelectedIndex() + scrollDirection;
@@ -926,7 +934,6 @@ public class MainWindow extends JFrame
 	{
 		updateImageQualityScale(resolutionText);
 
-		isMapReadyForInteractions = false;
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.repaint();
 
@@ -988,16 +995,6 @@ public class MainWindow extends JFrame
 
 		undoer.setUndoPoint(UpdateType.Full, null);
 		updater.createAndShowMapTerrainChange();
-	}
-
-	public static boolean isRunning()
-	{
-		return txtConsoleOutput != null;
-	}
-
-	public static JTextArea getConsoleOutputTextArea()
-	{
-		return txtConsoleOutput;
 	}
 
 	private void handleExportAsImagePressed()
@@ -1158,7 +1155,7 @@ public class MainWindow extends JFrame
 			{
 				settings.writeToFile(openSettingsFilePath.toString());
 				updateLastSettingsLoadedOrSaved(settings);
-				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
+				Logger.println("Settings saved to " + openSettingsFilePath.toString(), true);
 			}
 			catch (IOException e)
 			{
@@ -1211,7 +1208,7 @@ public class MainWindow extends JFrame
 			try
 			{
 				settings.writeToFile(openSettingsFilePath.toString());
-				getConsoleOutputTextArea().append("Settings saved to " + openSettingsFilePath.toString() + "\n");
+				Logger.println("Settings saved to " + openSettingsFilePath.toString(), true);
 				updateLastSettingsLoadedOrSaved(settings);
 			}
 			catch (IOException e)
@@ -1348,5 +1345,29 @@ public class MainWindow extends JFrame
 				}
 			}
 		});
+	}
+
+	@Override
+	public void appendLoggerMessage(String message)
+	{
+		txtConsoleOutput.append(message);
+		consoleOutputPane.revalidate(); 
+		consoleOutputPane.repaint();
+	}
+
+	@Override
+	public void clearLoggerMessages()
+	{
+		txtConsoleOutput.setText("");
+		txtConsoleOutput.revalidate();
+		txtConsoleOutput.repaint();
+		consoleOutputPane.revalidate();
+		consoleOutputPane.repaint();
+	}
+	
+	@Override
+	public boolean isReadyForLogging()
+	{
+		return txtConsoleOutput != null;
 	}
 }

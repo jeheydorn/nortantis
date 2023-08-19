@@ -30,6 +30,7 @@ public abstract class MapUpdater
 	private boolean createEditsIfNotPresentAndUseMapParts;
 	private Dimension maxMapSize;
 	private boolean enabled;
+	private boolean isMapReadyForInteractions;
 
 	/**
 	 * 
@@ -219,6 +220,10 @@ public abstract class MapUpdater
 		}
 
 		isMapBeingDrawn = true;
+		if (updateType != UpdateType.Incremental)
+		{
+			isMapReadyForInteractions = false;
+		}
 		onBeginDraw();
 
 		final MapSettings settings = getSettingsFromGUI();
@@ -233,7 +238,10 @@ public abstract class MapUpdater
 			@Override
 			public BufferedImage doInBackground() throws IOException
 			{
-				Logger.clear();
+				if (updateType != UpdateType.Incremental)
+				{
+					Logger.clear();
+				}
 				drawLock.lock();
 				try
 				{
@@ -317,9 +325,10 @@ public abstract class MapUpdater
 						initializeRegionEditsIfEmpty();
 						initializeEdgeEditsIfEmpty();
 					}
-
+					
+					boolean anotherDrawIsQueued = mapNeedsNonIncrementalUpdateForType != null || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0);
 					onFinishedDrawing(map,
-							mapNeedsNonIncrementalUpdateForType != null || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0),
+							anotherDrawIsQueued,
 							settings.drawBorder ? (int)(settings.borderWidth * settings.resolution) : 0);
 
 					isMapBeingDrawn = false;
@@ -332,8 +341,9 @@ public abstract class MapUpdater
 						IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
 						createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
 					}
-
+					
 					mapNeedsNonIncrementalUpdateForType = null;
+					isMapReadyForInteractions = true;
 				}
 				else
 				{
@@ -476,5 +486,10 @@ public abstract class MapUpdater
 	public void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;
+	}
+	
+	public boolean isMapReadyForInteractions()
+	{
+		return isMapReadyForInteractions;
 	}
 }
