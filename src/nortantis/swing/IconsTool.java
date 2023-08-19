@@ -42,7 +42,7 @@ import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.util.AssetsPath;
 import nortantis.util.Tuple2;
 
-public class IconTool extends EditorTool
+public class IconsTool extends EditorTool
 {
 
 	private JRadioButton mountainsButton;
@@ -71,14 +71,13 @@ public class IconTool extends EditorTool
 	private RowHider riverOptionHider;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
-	private JCheckBox highlightRiversCheckbox;
 	private JRadioButton eraseRiversButton;
 	private JRadioButton eraseCitiesButton;
 	private RowHider cityTypeHider;
 	private JLabel lblCityIconType;
 	private final String cityTypeNotSetPlaceholder = "<not set>";
 
-	public IconTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
+	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
 		super(parent, toolsPanel, mapUpdater);
 		rand = new Random();
@@ -223,21 +222,15 @@ public class IconTool extends EditorTool
 		
 		lblCityIconType = new JLabel("<not set>");
 		JButton changeButton = new JButton("Change");
+		IconsTool thisTool = this;
 		changeButton.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
-			{
-				// TODO Throw up a modal dialog that warns what will happen and sets toolsPanel.cityIconsType. 
-				// It should also update lblType and cause a full re-draw.
-				
-				// TODO Call MainWindow.handleChange if the city icon set is changed.
-				
-				//toolsPanel.cityIconsSetComboBox = new JComboBox<String>();	
-				
-				//SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities), 
-					//	settings.cityIconSetName);
-
+			{ 
+				CityTypeChangeDialog dialog = new CityTypeChangeDialog(mainWindow, thisTool, lblCityIconType.getText());
+				dialog.setLocationRelativeTo(toolsPanel);
+				dialog.setVisible(true);
 			}
 		});
 		cityTypeHider = organizer.addLabelAndComponentsToPanelVertical("City icons type:", "", Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
@@ -298,21 +291,7 @@ public class IconTool extends EditorTool
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 	    brushSizeComboBox = brushSizeTuple.getFirst();
 	    brushSizeHider = brushSizeTuple.getSecond();
-	 
-	    
-	    highlightRiversCheckbox = new JCheckBox("Highlight rivers");
-	    highlightRiversCheckbox.setToolTipText("Highlight rivers to make them easier to see.");
-	    organizer.addLabelAndComponentToPanel("", "", highlightRiversCheckbox);
-	    highlightRiversCheckbox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				mapEditingPanel.setHighlightRivers(highlightRiversCheckbox.isSelected());
-				mapEditingPanel.repaint();
-			}
-		});
-	    		
+	 	    		
 	    
 		mountainsButton.doClick();
 		
@@ -663,7 +642,6 @@ public class IconTool extends EditorTool
 	@Override
 	public void onActivate()
 	{
-		mapEditingPanel.setHighlightRivers(highlightRiversCheckbox.isSelected());
 	}
 
 	@Override
@@ -701,7 +679,21 @@ public class IconTool extends EditorTool
 		settings.cityIconSetName = lblCityIconType.getText();
 	}
 
-
-
+	@Override
+	public boolean shouldShowTextWhenTextIsEnabled()
+	{
+		return false;
+	}
+	
+	public void setCityIconsType(String cityIconType)
+	{
+		if (cityIconType.equals(lblCityIconType.getText()))
+		{
+			return;
+		}
+		
+		lblCityIconType.setText(cityIconType == null ? cityTypeNotSetPlaceholder : cityIconType);
+		updater.createAndShowMapFull();
+	}
 
 }

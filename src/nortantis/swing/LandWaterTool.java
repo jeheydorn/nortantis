@@ -49,7 +49,6 @@ public class LandWaterTool extends EditorTool
 	private JRadioButton mergeRegionsButton;
 	private Region selectedRegion;
 	private JToggleButton selectColorFromMapButton;
-	private JCheckBox highlightLakesCheckbox;
 	
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private RowHider brushSizeHider;
@@ -203,27 +202,12 @@ public class LandWaterTool extends EditorTool
 	    brushSizeComboBox = brushSizeTuple.getFirst();
 	    brushSizeHider = brushSizeTuple.getSecond();
 	 
-	    
-	    highlightLakesCheckbox = new JCheckBox("Highlight lakes");
-	    highlightLakesCheckbox.setToolTipText("Highlight lakes to make them easier to see.");
-	    highlightLakesCheckbox.setSelected(true);
-	    organizer.addLabelAndComponentToPanel("", "", highlightLakesCheckbox);
-	    highlightLakesCheckbox.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				mapEditingPanel.setHighlightLakes(highlightLakesCheckbox.isSelected());
-				mapEditingPanel.repaint();
-			}
-		});
-	    
+	    	    
 	    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
 	    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
 	    organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
 	    
 	    listener.actionPerformed(null);
-
 	    
 	    
 	    // TODO Put these where they belong:
@@ -551,7 +535,6 @@ public class LandWaterTool extends EditorTool
 	@Override 
 	public void onActivate()
 	{
-		mapEditingPanel.setHighlightLakes(highlightLakesCheckbox.isSelected());
 	}
 
 	@Override
@@ -596,8 +579,11 @@ public class LandWaterTool extends EditorTool
 //		settings.hueRange = hueSlider.getValue();
 //		settings.saturationRange = saturationSlider.getValue();
 //		settings.brightnessRange = brightnessSlider.getValue();
+	}
 
-
-		
+	@Override
+	public boolean shouldShowTextWhenTextIsEnabled()
+	{
+		return false;
 	}
 }

@@ -80,7 +80,6 @@ public class MapSettings implements Serializable
 	public int saturationRange;
 	public int brightnessRange;
 	public boolean drawText;
-	public boolean alwaysUpdateLandBackgroundWithOcean; // Not saved
 	public long textRandomSeed;
 	public Set<String> books;
 	public Font titleFont;

@@ -259,5 +259,7 @@ public abstract class EditorTool
 	
 	public abstract void loadSettingsIntoGUI(MapSettings settings);
 	
+	public abstract boolean shouldShowTextWhenTextIsEnabled();
+	
 	public abstract void getSettingsFromGUI(MapSettings settings);
 }

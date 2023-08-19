@@ -96,6 +96,7 @@ public class ThemePanel extends JTabbedPane
 	private RowHider textureImageHider;
 	private RowHider colorizeOceanCheckboxHider;
 	private RowHider colorizeLandCheckboxHider;
+	private RowHider textHiddenMessageHider;
 	
 
 
@@ -602,6 +603,8 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox = new JCheckBox("Enable text");
 		enableTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
+		textHiddenMessageHider = organizer.addLeftAlignedComponent(new JLabel("<html>Text is currently hidden because the selected editing tool does not display text.</html>"));
+		showOrHideTextHiddenMessage();
 		organizer.addSeperator();
 
 		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70, () -> handleFontsChange());
@@ -687,12 +690,23 @@ public class ThemePanel extends JTabbedPane
 				btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 				btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
 				chckbxDrawBoldBackground.setEnabled(enableTextCheckBox.isSelected());
-				handleFontsChange();
+				showOrHideTextHiddenMessage();
+				handleTextChange();
 			}
 		});
 		
 		organizer.addVerticalFillerRow(fontsPanel);
 		return organizer.createScrollPane();
+	}
+	
+	void showOrHideTextHiddenMessage()
+	{
+		boolean currentToolSupportsText = true;
+		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null)
+		{
+			currentToolSupportsText = mainWindow.toolsPanel.currentTool.shouldShowTextWhenTextIsEnabled();
+		}
+		textHiddenMessageHider.setVisible(enableTextCheckBox.isSelected() && !currentToolSupportsText);
 	}
 
 	private void updateDrawRegionsCheckboxEnabledAndSelected()
@@ -1072,6 +1086,11 @@ public class ThemePanel extends JTabbedPane
 	private void handleFontsChange()
 	{
 		mainWindow.updater.createAndShowMapFontsChange();
+	}
+	
+	private void handleTextChange()
+	{
+		mainWindow.updater.createAndShowMapTextChange();
 	}
 	
 	private void createMapChangeListenerForFullRedraw(Component component)

@@ -30,6 +30,7 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -95,9 +96,11 @@ public class MainWindow extends JFrame
 	private JRadioButtonMenuItem radioButton100Percent;
 	private JRadioButtonMenuItem radioButton125Percent;
 	private JRadioButtonMenuItem radioButton150Percent;
-	private ThemePanel themePanel;
+	ThemePanel themePanel;
 	ToolsPanel toolsPanel;
 	MapUpdater updater;
+	private JCheckBoxMenuItem highlightLakesButton;
+	private JCheckBoxMenuItem highlightRiversButton;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -372,7 +375,13 @@ public class MainWindow extends JFrame
 			{
 				MapSettings settings = mainWindow.getSettingsFromGUI();
 				settings.resolution = imageQualityScale;
-				// Editors add these things after the main draw to allow quickly updating them later.
+				if (settings.drawText)
+				{
+					if (toolsPanel.currentTool != null && !toolsPanel.currentTool.shouldShowTextWhenTextIsEnabled())
+					{
+						settings.drawText = false;
+					}
+				}
 				return settings;
 			}
 
@@ -651,6 +660,33 @@ public class MainWindow extends JFrame
 		mnView.add(displayQualityMenu);
 		displayQualityMenu.setToolTipText(
 				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+		
+		highlightLakesButton = new JCheckBoxMenuItem("Highlight Lakes");
+		highlightLakesButton.setToolTipText("Highlight lakes to make them easier to see.");
+		highlightLakesButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				mapEditingPanel.setHighlightLakes(highlightLakesButton.isSelected());
+				mapEditingPanel.repaint();
+			}
+		});
+		mnView.add(highlightLakesButton);
+		
+	    highlightRiversButton = new JCheckBoxMenuItem("Highlight rivers");
+	    highlightRiversButton.setToolTipText("Highlight rivers to make them easier to see.");
+	    highlightRiversButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				mapEditingPanel.setHighlightRivers(highlightRiversButton.isSelected());
+				mapEditingPanel.repaint();
+			}
+		});
+	    mnView.add(highlightRiversButton);
+
 
 		ActionListener resolutionListener = new ActionListener()
 		{
@@ -774,7 +810,14 @@ public class MainWindow extends JFrame
 			BufferedImage mapWithExtraStuff = toolsPanel.currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
 			mapEditingPanel.setZoom(zoom);
 			Method method = zoom < 0.3 ? Method.QUALITY : Method.BALANCED;
-			mapEditingPanel.image = ImageHelper.scaleByWidth(mapWithExtraStuff, (int) (mapWithExtraStuff.getWidth() * zoom), method);
+			int zoomedWidth =  (int) (mapWithExtraStuff.getWidth() * zoom);
+			if (zoomedWidth <= 0)
+			{
+				// Prevents a crash if someone collapses the map editing panel.
+				zoomedWidth = 600;
+			}
+			
+			mapEditingPanel.image = ImageHelper.scaleByWidth(mapWithExtraStuff, zoomedWidth, method);
 
 			if (scrollTo != null)
 			{

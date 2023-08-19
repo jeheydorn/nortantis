@@ -265,7 +265,7 @@ public class TextTool extends EditorTool
 		textToSelectAfterDraw = selectedText;
 		// Pass in null to make the updater not actually change the map. The main goal is just to use the updater to call 
 		// onBeforeShowMap in a background thread to apply text changes.
-		updater.createAndAndShowMapTextChange();
+		updater.createAndShowMapTextChange();
 	}
 
 	@Override
@@ -507,6 +507,10 @@ public class TextTool extends EditorTool
 		settings.books = SwingHelper.getSelectedBooksFromGUI(booksPanel);
 	}
 	
-
+	@Override
+	public boolean shouldShowTextWhenTextIsEnabled()
+	{
+		return true;
+	}
 
 }

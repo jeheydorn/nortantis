@@ -53,7 +53,7 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.Full, null, null);
 	}
 
-	public void createAndAndShowMapTextChange()
+	public void createAndShowMapTextChange()
 	{
 		createAndShowMap(UpdateType.Text, null, null);
 	}
@@ -222,7 +222,6 @@ public abstract class MapUpdater
 		onBeginDraw();
 
 		final MapSettings settings = getSettingsFromGUI();
-		settings.alwaysUpdateLandBackgroundWithOcean = true;
 
 		if (createEditsIfNotPresentAndUseMapParts && settings.edits.isEmpty())
 		{

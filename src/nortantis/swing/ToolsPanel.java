@@ -41,6 +41,7 @@ public class ToolsPanel extends JPanel
 	static final String fitToWindowZoomLevel = "Fit to Window";
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
+	MapUpdater updater;
 
 	
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
@@ -49,10 +50,11 @@ public class ToolsPanel extends JPanel
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
 		
 		this.mainWindow = mainWindow;
+		this.updater = updater;
 		
 		// Setup tools
 		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), 
-				new IconTool(mainWindow, this, updater), 
+				new IconsTool(mainWindow, this, updater), 
 				new TextTool(mainWindow, this, updater));
 		if (UserPreferences.getInstance().lastEditorTool != "")
 		{
@@ -231,11 +233,14 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.repaint();
 		if (mainWindow.mapEditingPanel.mapFromMapCreator != null)
 		{
-			mainWindow.updateDisplayedMapFromGeneratedMap(false);
+			// TODO
+			updater.createAndShowMapTextChange();
+			//mainWindow.updateDisplayedMapFromGeneratedMap(false);
 		}
 		currentTool.onActivate();
 		mainWindow.mapEditingPanel.repaint();
 		enableOrDisableToolToggleButtonsAndZoom(true);
+		mainWindow.themePanel.showOrHideTextHiddenMessage();
 	}
 
 	public String getZoomString()

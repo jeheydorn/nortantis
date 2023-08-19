@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -269,11 +270,8 @@ public class MapCreator
 		// Draw ocean
 		{
 			BufferedImage oceanSnippet = mapParts.background.createOceanSnippet(drawBounds);
-			if (settings.drawText || settings.alwaysUpdateLandBackgroundWithOcean)
-			{
-				// Needed for drawing text
-				landBackground = ImageHelper.maskWithImage(landBackground, oceanSnippet, landMask);
-			}
+			// Needed for drawing text
+			landBackground = ImageHelper.maskWithImage(landBackground, oceanSnippet, landMask);
 
 			mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanSnippet, landMask);
 		}
@@ -308,22 +306,23 @@ public class MapCreator
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.landBackground, landBackground,
 				replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom, 0);
 
-		// If present, also update the cached version of the map before adding text so so that incremental updates show up in the Text tool
+		// If present, also update the cached version of the map before adding
+		// text so so that incremental updates show up in the Text tool
 		if (mapParts.mapBeforeAddingText != null)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet, replaceBounds.upperLeftCornerAsAwtPoint(),
-					boundsInSourceToCopyFrom, 0);
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet,
+					replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom, 0);
 		}
-		
-		java.awt.Point drawBoundsUpperLeftCornerAdjustedForBorder = 
-				new java.awt.Point(drawBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
-						drawBounds.upperLeftCornerAsAwtPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+
+		java.awt.Point drawBoundsUpperLeftCornerAdjustedForBorder = new java.awt.Point(
+				drawBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
+				drawBounds.upperLeftCornerAsAwtPoint().y + mapParts.background.getBorderWidthScaledByResolution());
 
 		// Add frayed border
 		if (settings.frayedBorder)
 		{
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
-			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true, 
+			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
 					drawBoundsUpperLeftCornerAdjustedForBorder);
 			if (blurLevel > 0)
 			{
@@ -331,22 +330,20 @@ public class MapCreator
 						drawBoundsUpperLeftCornerAdjustedForBorder);
 			}
 		}
-		
+
 		// Add grunge
 		if (settings.grungeWidth > 0)
 		{
-			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, 
+			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true,
 					drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
-		
-		java.awt.Point replaceBoundsUpperLeftCornerAdjustedForBorder = 
-				new java.awt.Point(replaceBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
-						replaceBounds.upperLeftCornerAsAwtPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+
+		java.awt.Point replaceBoundsUpperLeftCornerAdjustedForBorder = new java.awt.Point(
+				replaceBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
+				replaceBounds.upperLeftCornerAsAwtPoint().y + mapParts.background.getBorderWidthScaledByResolution());
 		// Update the snippet in the main map.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
-
-
 
 		// Print run time
 		// double elapsedTime = System.currentTimeMillis() - startTime;
@@ -439,7 +436,7 @@ public class MapCreator
 		{
 			Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts,
 					graph, background, sizeMultiplier);
-			
+
 			map = tuple.getFirst();
 			landBackground = tuple.getSecond();
 			mountainGroups = tuple.getThird();
@@ -457,27 +454,27 @@ public class MapCreator
 		{
 			Logger.println("Adding text.");
 
-			if (settings.drawRegionColors)
+			if (settings.edits.text.size() > 0)
 			{
-				Graphics2D g = landBackground.createGraphics();
-				g.setColor(settings.coastlineColor);
-				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+				textDrawer.drawTextFromEdits(graph, map, landBackground);
+				ImageHelper.write(map, "mapWithTextDrawn.png");
+			}
+			else
+			{
+				// Call drawText below regardless of settings.drawText to create
+				// the
+				// MapText objects even when text is not shown.
+
+				// Note that mountainGroups and cities should always be
+				// populated at this point if the map has mountains or cities
+				// because the code path above that skips drawing terrain and
+				// uses mapParts.mapBeforeAddingText instead will only be hit
+				// if the map has already been drawn in the editor, and so text
+				// will be drawn from edits instead of taking this code path.
+				textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
 			}
 		}
-		if (settings.edits.text.size() > 0)
-		{
-			textDrawer.drawTextFromEdits(graph, map, landBackground);
-		}
-		else
-		{
-			// Call drawText below regardless of settings.drawText to create the
-			// MapText objects even when text is not shown.
-			
-			// Note that mountainGroups and cities should always be populated at this point if the map has mountains or cities
-			// because the code path above that skips drawing terrain and uses mapParts.mapBeforeAddingText instead will only be hit
-			// if the map has already been drawn in the editor, and so text will be drawn from edits instead of taking this code path.
-			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
-		}
+
 		landBackground = null;
 
 		if (settings.drawBorder)
@@ -507,17 +504,21 @@ public class MapCreator
 						background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, true);
 				frayedBorderMask = new BufferedImage(frayGraph.getWidth(), frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 				frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
-				map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
 				if (blurLevel > 0)
 				{
 					float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
 					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true);
-					map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
 				}
 				else
 				{
 					frayedBorderBlur = null;
 				}
+			}
+			
+			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+			if (blurLevel > 0)
+			{
+				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
 			}
 
 			if (mapParts != null)
@@ -657,9 +658,17 @@ public class MapCreator
 
 		if (settings.drawRegionColors)
 		{
-			Graphics2D g = map.createGraphics();
-			g.setColor(settings.coastlineColor);
-			graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+			{
+				Graphics2D g = map.createGraphics();
+				g.setColor(settings.coastlineColor);
+				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+			}
+			
+			{
+				Graphics2D g = landBackground.createGraphics();
+				g.setColor(settings.coastlineColor);
+				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+			}
 		}
 
 		if (settings.drawRivers)
@@ -721,11 +730,8 @@ public class MapCreator
 						"The given ocean background image does not" + " have the same aspect ratio as the given land background image.");
 			}
 
-			if (settings.drawText || settings.alwaysUpdateLandBackgroundWithOcean)
-			{
-				// Needed for drawing text
-				landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
-			}
+			// Needed for drawing text
+			landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
 
 			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
 
