@@ -422,6 +422,34 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentToPanel("Fray polygon count:", "The number of polygons used when creating the frayed border. "
 				+ "Higher values make the fray smaller.", frayedEdgePolygonCountSlider);
 		
+		
+		organizer.addSeperator();
+		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+
+		final JButton grungeColorChooseButton = new JButton("Choose");
+		grungeColorChooseButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent arg0)
+			{
+				SwingHelper.showColorPicker(borderPanel, grungeColorDisplay, "Grunge Color", () -> handleFrayedEdgeOrGrungeChange());
+			}
+		});
+		organizer.addLabelAndComponentsToPanelHorizontal("Edge/Grunge color:", "Grunge and frayed edge shading will be this color", SwingHelper.colorPickerLeftPadding,
+				Arrays.asList(grungeColorDisplay, grungeColorChooseButton));
+
+
+		grungeSlider = new JSlider();
+		grungeSlider.setValue(0);
+		grungeSlider.setPaintTicks(true);
+		grungeSlider.setPaintLabels(true);
+		grungeSlider.setMinorTickSpacing(100);
+		grungeSlider.setMaximum(2000); 
+		grungeSlider.setMajorTickSpacing(500);
+		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
+		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
+		organizer.addLabelAndComponentToPanel("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
+
+		
 		organizer.addVerticalFillerRow(borderPanel);
 		return organizer.createScrollPane();
 	}
@@ -560,34 +588,7 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponentsToPanelHorizontal("River color:", "Rivers will be drawn this color.", SwingHelper.colorPickerLeftPadding,
 				Arrays.asList(riverColorDisplay, riverColorChooseButton));
-		organizer.addSeperator();
-		
-
-		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-		final JButton grungeColorChooseButton = new JButton("Choose");
-		grungeColorChooseButton.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent arg0)
-			{
-				SwingHelper.showColorPicker(effectsPanel, grungeColorDisplay, "Grunge Color", () -> handleFrayedEdgeOrGrungeChange());
-			}
-		});
-		organizer.addLabelAndComponentsToPanelHorizontal("Edge/Grunge color:", "Grunge and frayed edge shading will be this color", SwingHelper.colorPickerLeftPadding,
-				Arrays.asList(grungeColorDisplay, grungeColorChooseButton));
-
-
-		grungeSlider = new JSlider();
-		grungeSlider.setValue(0);
-		grungeSlider.setPaintTicks(true);
-		grungeSlider.setPaintLabels(true);
-		grungeSlider.setMinorTickSpacing(100);
-		grungeSlider.setMaximum(2000); 
-		grungeSlider.setMajorTickSpacing(500);
-		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
-		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
-		organizer.addLabelAndComponentToPanel("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
-		
+				
 		
 		organizer.addVerticalFillerRow(effectsPanel);
 		return organizer.createScrollPane();
