@@ -582,7 +582,7 @@ public class ThemePanel extends JTabbedPane
 		grungeSlider.setPaintTicks(true);
 		grungeSlider.setPaintLabels(true);
 		grungeSlider.setMinorTickSpacing(100);
-		grungeSlider.setMaximum(2000);
+		grungeSlider.setMaximum(2000); 
 		grungeSlider.setMajorTickSpacing(500);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
 		SwingHelper.setSliderWidthForSidePanel(grungeSlider);

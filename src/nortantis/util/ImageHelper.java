@@ -783,13 +783,10 @@ public class ImageHelper
 	public static BufferedImage createBlackImage(int width, int height)
 	{
 		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		for (int y = 0; y < height; y++)
-			for (int x = 0; x < width; x++)
-			{
-				int newColor = Color.black.getRGB();
-
-				result.setRGB(x, y, newColor);
-			}
+		Graphics2D g = result.createGraphics();
+		g.setColor(Color.black);
+		g.drawRect(0, 0, result.getWidth(), result.getHeight());
+		g.dispose();
 		return result;
 	}
 
@@ -968,11 +965,13 @@ public class ImageHelper
 	 *            bit pixels, or 65535 for 16 bit. This is better than
 	 *            maximizing the contrast of the result because the result is a
 	 *            BufferedImage, which has less precise values than floats.
+	 * @param paddImageToAvoidWrapping  Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges.
+	 *                            Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast)
+	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
-		ComplexArray data = convolveGrayscale(img, kernel);
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
@@ -991,11 +990,13 @@ public class ImageHelper
 	 * @param kernel
 	 * @param scale
 	 *            Amount to multiply levels by.
+	 * @param paddImageToAvoidWrapping  Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges.
+	 *                            Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale)
-	{
-		ComplexArray data = convolveGrayscale(img, kernel);
+	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
+	{	
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
@@ -1003,10 +1004,12 @@ public class ImageHelper
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
-	private static ComplexArray convolveGrayscale(BufferedImage img, float[][] kernel)
+	private static ComplexArray convolveGrayscale(BufferedImage img, float[][] kernel, boolean paddImageToAvoidWrapping)
 	{
-		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth(), kernel[0].length));
-		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight(), kernel.length));
+		int colsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel[0].length / 2 : 0;
+		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
+		int rowsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel.length / 2 : 0;
+		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight() + rowsPaddingToAvoidWrapping, kernel.length));
 		// Make sure rows and cols are greater than 1 for JTransforms.
 		if (cols < 2)
 			cols = 2;
@@ -1686,13 +1689,13 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage blur(BufferedImage image, int blurLevel)
+	public static BufferedImage blur(BufferedImage image, int blurLevel, boolean paddImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
 			return image;
 		}
-		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false);
+		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, paddImageToAvoidWrapping);
 	}
 
 	public static void threshold(BufferedImage image, int threshold)

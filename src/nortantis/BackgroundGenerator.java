@@ -125,7 +125,7 @@ public class BackgroundGenerator
 				}
 			}
 			
-			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true);
+			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
 			kernel = null;
 			
 			if (numberOfColorChannels == 1)
@@ -178,8 +178,8 @@ public class BackgroundGenerator
 	{
 		float x = (2 * t / alpha) - 1;
 		// The number 0.367879 is the value of the smoothing function at alpha/2, which is its maximum. 
-		// I multiply by 1/0.367879 to make the range of the smoothing function [0,1].
-		return (float)Math.exp(-1 / (1 - (x * x))) * (1f / 0.367879f);		
+		// I divide by 0.367879 to make the range of the smoothing function [0,1].
+		return ((float)Math.exp(-1 / (1 - (x * x)))) / 0.367879f;		
 	}
 
 	private static BufferedImage cropTextureSmallerIfNeeded(BufferedImage texture, int rows, int cols)

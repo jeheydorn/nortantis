@@ -507,7 +507,7 @@ public class MapCreator
 				if (blurLevel > 0)
 				{
 					float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true);
+					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true, true);
 				}
 				else
 				{
@@ -554,6 +554,7 @@ public class MapCreator
 				final float fractalPower = 1.3f;
 				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, (int) map.getWidth(),
 						(int) map.getHeight(), 0.75f);
+				
 				// Whiten the middle of clouds.
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
 			}
@@ -811,7 +812,7 @@ public class MapCreator
 				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 				g.setColor(Color.white);
 				graph.drawRegionBorders(g, sizeMultiplier, false, centersToDraw, drawBounds);
-				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
+				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
 				// Remove the land blur from the ocean side of the borders and
 				// color the blur
 				// according to each region's blur color.
@@ -836,7 +837,7 @@ public class MapCreator
 			}
 			else
 			{
-				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale);
+				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
 
 				// Remove the land blur from the ocean side of the borders.
 				coastShading = ImageHelper.maskWithColor(coastShading, Color.black, landMask, false);
@@ -885,7 +886,7 @@ public class MapCreator
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale);
+				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				// Remove the ocean blur from the land side of the borders.
 				oceanEffects = ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
 			}
@@ -905,7 +906,7 @@ public class MapCreator
 							continue;
 						}
 						BufferedImage blur = ImageHelper.convolveGrayscale(coastlineMask,
-								ImageHelper.createGaussianKernel((int) whiteWidth), true);
+								ImageHelper.createGaussianKernel((int) whiteWidth), true, true);
 						ImageHelper.threshold(blur, 1, settings.oceanEffectsColor.getAlpha());
 						ImageHelper.add(oceanEffects, blur);
 					}
@@ -917,7 +918,7 @@ public class MapCreator
 							continue;
 						}
 						BufferedImage blur = ImageHelper.convolveGrayscale(coastlineMask,
-								ImageHelper.createGaussianKernel((int) blackWidth), true);
+								ImageHelper.createGaussianKernel((int) blackWidth), true, true);
 						ImageHelper.threshold(blur, 1);
 						ImageHelper.subtract(oceanEffects, blur);
 					}
@@ -1146,38 +1147,38 @@ public class MapCreator
 		int blurLevel = (int) (grungeWidth * resolutionScale);
 		if (blurLevel == 0)
 			blurLevel = 1; // Avoid an exception later.
-		// Create a white no-filled in rectangle, then blur it. To be much more
+		
+		// Create a white non-filled in rectangle, then blur it. To be much more
 		// efficient, I only create
 		// the upper left corner plus 1 pixel in both directions since the
 		// corners and edges are all the
 		// same except rotated and the edges are all the same except their
 		// length.
-		int blurBoxWidth = blurLevel * 2 + 1;
-		// There is a blurLevel wide buffer below is so that in the convolution
-		// the border from one side of the box won't spread (wrap) to the other
-		// side.
-		// I would be especially bad if it did because
-		// ImageHelper.convolveGrayscale pads images to be powers of 2 in the
-		// width and height.
-		// The white rectangles also draw an extra blurLevel from blurBoxWidth,
-		// totaling blurLevel*2.
-		BufferedImage blurBox = new BufferedImage(blurBoxWidth + blurLevel * 2, blurBoxWidth + blurLevel * 2,
-				BufferedImage.TYPE_BYTE_BINARY);
+		
+		int lineWidth = (int) (resolutionScale);
+		if (lineWidth == 0)
+		{
+			lineWidth = 1;
+		}
+		int blurBoxWidth = blurLevel * 2 + lineWidth + 1;
+		BufferedImage blurBox = new BufferedImage(blurBoxWidth, blurBoxWidth, BufferedImage.TYPE_BYTE_BINARY);
 		Graphics g = blurBox.getGraphics();
+		
+		// Fill the image with white.
 		g.setColor(Color.white);
-		g.fillRect(0, 0, blurBoxWidth + blurLevel, blurBoxWidth + blurLevel);
+		g.fillRect(0, 0, blurBoxWidth, blurBoxWidth);
 
-		int rectWidth = (int) (resolutionScale);
-		if (rectWidth == 0)
-			rectWidth = 1;
-
-		// Erase the white rectangle border from the right and button sides.
+		// Remove the white from everywhere except a lineWidth wide line along the top and left sides.
 		g.setColor(Color.black);
-		g.fillRect(rectWidth, rectWidth, blurBoxWidth + blurLevel, blurBoxWidth + blurLevel);
+		g.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
 
 		// Use Gaussian blur on the box.
-		float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-		blurBox = ImageHelper.convolveGrayscale(blurBox, kernel, true);
+		blurBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true);
+
+		// Remove what was the white lines from the top and left, so we're keeping only the blur that came off the white lines.
+		blurBox = ImageHelper.copySnippet(blurBox, 
+				new java.awt.Rectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
+
 
 		// Multiply the image by blurBox. Also remove the padded edges off of
 		// blurBox.
@@ -1190,19 +1191,19 @@ public class MapCreator
 				float imageLevel = imageRaster.getSample(x, y, 0);
 
 				// Retrieve the blur level as though blurBox has all 4 quadrants
-				// and middle created, even has only the upper left.
+				// and middle created, even though it only only has the upper left corner.
 				int blurBoxX;
 				if (x > blurLevel)
 				{
-					if (image.getWidth() - x < blurLevel)
+					if (x < image.getWidth() - blurLevel)
 					{
-						// x is under the right corner.
-						blurBoxX = image.getWidth() - x;
+						// x is between the corners.
+						blurBoxX = blurBox.getWidth() - 1;
 					}
 					else
 					{
-						// x is between the corners.
-						blurBoxX = blurBoxWidth + 1;
+						// x is under the right corner.
+						blurBoxX = image.getWidth() - x;						
 					}
 				}
 				else
@@ -1214,22 +1215,20 @@ public class MapCreator
 				int blurBoxY;
 				if (y > blurLevel)
 				{
-					if (image.getHeight() - y < blurLevel)
+					if (y < image.getHeight() - blurLevel)
 					{
-						// y is under the right corner.
-						blurBoxY = image.getHeight() - y;
+						blurBoxY = blurBox.getHeight() - 1;
 					}
 					else
 					{
-						// x is between the corners.
-						blurBoxY = blurBoxWidth + 1;
+						blurBoxY = image.getHeight() - y;						
 					}
 				}
 				else
 				{
-					// y is under the left corner.
 					blurBoxY = y;
 				}
+				
 				float blurBoxLevel = blurBoxRaster.getSample(blurBoxX, blurBoxY, 0);
 
 				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel) / 255f);
