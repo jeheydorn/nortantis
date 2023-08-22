@@ -1473,6 +1473,7 @@ public class TextDrawer
 	 */
 	private MapText createMapText(String text, Point location, double angle, TextType type, List<Area> areas)
 	{
+		// Divide by settings.resolution so that the location does not depend on the resolution we're drawing at.
 		return new MapText(text, new Point(location.x / settings.resolution, location.y / settings.resolution), angle, type, areas);
 	}
 

@@ -361,11 +361,12 @@ public class TextTool extends EditorTool
 			{
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-
+				int borderWidthScaled = updater.mapParts.background.getBorderWidthScaledByResolution();
+				
 				for (Area area : lastSelected.areas)
 				{
-					double centerX = lastSelected.location.x;
-					double centerY = lastSelected.location.y;
+					double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
+					double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
 					Area areaCopy = new Area(area);
 					
 					// Undo previous rotation.
@@ -394,9 +395,14 @@ public class TextTool extends EditorTool
 		{
 			if (moveButton.isSelected())
 			{
-				// The user dragged and dropped text.
-				Point translation = new Point((int)((e.getX() - mousePressedLocation.x) * (1.0/mainWindow.zoom)), 
-						(int)((e.getY() - mousePressedLocation.y) * (1.0/mainWindow.zoom)));
+				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				nortantis.graph.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+
+				// The user dragged and dropped text. 
+				// Divide the translation by mainWindow.displayQualityScale because MapText locations are stored as if
+				// the map is generated at 100% resolution.
+				Point translation = new Point((int)((graphPointMouseLocation.x - graphPointMousePressedLocation.x) / mainWindow.displayQualityScale), 
+						(int)((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
 				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
 				undoer.setUndoPoint(this);
@@ -404,9 +410,14 @@ public class TextTool extends EditorTool
 			}
 			else if (rotateButton.isSelected())
 			{
-				double centerX = lastSelected.location.x / (1.0/mainWindow.zoom);
-				double centerY = lastSelected.location.y / (1.0/mainWindow.zoom);
-				double angle = Math.atan2(e.getY() - centerY, e.getX() - centerX);
+				double centerX = lastSelected.location.x;
+				double centerY = lastSelected.location.y;
+				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				// I'm dividing graphPointMouseLocation by mainWindow.displayQualityScale here because  lastSelected.location 
+				// is not multiplied by mainWindow.displayQualityScale. This is because MapTexts are always stored as if
+				// the map were generated at 100% resolution.
+				double angle = Math.atan2((graphPointMouseLocation.y / mainWindow.displayQualityScale) - centerY, 
+						(graphPointMouseLocation.x / mainWindow.displayQualityScale) - centerX);
 				// No upside-down text.
 				if (angle > Math.PI/2)
 				{

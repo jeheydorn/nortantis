@@ -93,7 +93,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem clearEntireMapButton;
 	public Undoer undoer;
 	double zoom;
-	double imageQualityScale;
+	double displayQualityScale;
 	private JMenu displayQualityMenu;
 	private JRadioButtonMenuItem radioButton75Percent;
 	private JRadioButtonMenuItem radioButton100Percent;
@@ -384,7 +384,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			protected MapSettings getSettingsFromGUI()
 			{
 				MapSettings settings = mainWindow.getSettingsFromGUI();
-				settings.resolution = imageQualityScale;
+				settings.resolution = displayQualityScale;
 				if (settings.drawText)
 				{
 					if (toolsPanel.currentTool != null && !toolsPanel.currentTool.shouldShowTextWhenTextIsEnabled())
@@ -874,6 +874,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			double percentage = parsePercentage(zoomLevel);
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
+				// Divide by the size of the generated map because the map's displayed size should be the same
+				// no matter the resolution it generated at.
 				return (oneHundredPercentMapWidth * percentage) / mapEditingPanel.mapFromMapCreator.getWidth();
 			}
 			else
@@ -946,19 +948,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (imageQualityText.equals(radioButton75Percent.getText()))
 		{
-			imageQualityScale = 0.75;
+			displayQualityScale = 0.75;
 		}
 		else if (imageQualityText.equals(radioButton100Percent.getText()))
 		{
-			imageQualityScale = 1.0;
+			displayQualityScale = 1.0;
 		}
 		else if (imageQualityText.equals(radioButton125Percent.getText()))
 		{
-			imageQualityScale = 1.25;
+			displayQualityScale = 1.25;
 		}
 		else if (imageQualityText.equals(radioButton150Percent.getText()))
 		{
-			imageQualityScale = 1.5;
+			displayQualityScale = 1.5;
 		}
 	}
 
