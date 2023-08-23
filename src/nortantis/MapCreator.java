@@ -411,6 +411,7 @@ public class MapCreator
 		else
 		{
 			textDrawer = mapParts.textDrawer;
+			textDrawer.setSettings(settings);
 		}
 
 		WorldGraph graph;
@@ -604,8 +605,7 @@ public class MapCreator
 		else
 		{
 			iconDrawer = mapParts.iconDrawer;
-			needToAddIcons = false; // The icon drawer is from cache, so it
-									// already knows what icons to draw.
+			needToAddIcons = !settings.edits.hasIconEdits;
 			r.nextLong(); // Use the random number generator the same as if I
 							// had created the icon drawer.
 		}

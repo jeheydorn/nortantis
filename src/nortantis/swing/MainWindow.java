@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Hashtable;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -79,6 +80,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private Path openSettingsFilePath;
 	private boolean forceSaveAs;
 	MapSettings lastSettingsLoadedOrSaved;
+	boolean hasDrawnCurrentMapAtLeastOnce;
 	static final String frameTitleBase = "Nortantis Fantasy Map Generator";
 	public MapEdits edits;
 	public JMenuItem clearEditsMenuItem;
@@ -252,28 +254,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseClicked(MouseEvent e)
 			{
-				if (updater.isMapReadyForInteractions())
-				{
-					toolsPanel.currentTool.handleMouseClickOnMap(e);
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
 			}
 
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (updater.isMapReadyForInteractions())
-				{
-					toolsPanel.currentTool.handleMousePressedOnMap(e);
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent e)
 			{
-				if (updater.isMapReadyForInteractions())
-				{
-					toolsPanel.currentTool.handleMouseReleasedOnMap(e);
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
 			}
 
 		});
@@ -284,19 +277,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				if (updater.isMapReadyForInteractions())
-				{
-					toolsPanel.currentTool.handleMouseMovedOnMap(e);
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
 			}
 
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (updater.isMapReadyForInteractions())
-				{
-					toolsPanel.currentTool.handleMouseDraggedOnMap(e);
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
 			}
 		});
 
@@ -315,10 +302,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseExited(MouseEvent e)
 			{
-				if (updater.isMapReadyForInteractions())
-				{
-					toolsPanel.currentTool.handleMouseExitedMap(e);
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseExitedMap(e));
 			}
 
 			@Override
@@ -383,7 +367,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected MapSettings getSettingsFromGUI()
 			{
-				MapSettings settings = mainWindow.getSettingsFromGUI();
+				MapSettings settings = mainWindow.getSettingsFromGUI(false);
 				settings.resolution = displayQualityScale;
 				if (settings.drawText)
 				{
@@ -401,14 +385,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.mapFromMapCreator = map;
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
-
-				if (undoer.copyOfEditsWhenEditorWasOpened == null)
+				
+				if (!undoer.isInitialized())
 				{
 					// This has to be done after the map is drawn rather
 					// than when the editor frame is first created because
 					// the first time the map is drawn is when the edits are
 					// created.
-					undoer.copyOfEditsWhenEditorWasOpened = edits.deepCopy();
+					undoer.initialize(mainWindow.getSettingsFromGUI(true));
+				}
+				
+				if (!hasDrawnCurrentMapAtLeastOnce)
+				{
+					hasDrawnCurrentMapAtLeastOnce = true;
+					// Drawing for the first time can create or modify the edits, so update them in lastSettingsLoadedOrSaved.
+					lastSettingsLoadedOrSaved.edits = edits.deepCopy();
 				}
 
 				updateDisplayedMapFromGeneratedMap(false);
@@ -578,7 +569,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					@Override
 					public BufferedImage doInBackground() throws IOException
 					{
-						MapSettings settings = getSettingsFromGUI();
+						MapSettings settings = getSettingsFromGUI(false);
 						double resolutionScale = 1.0; // TODO Pull this from a
 														// setting in a new
 														// heightmap export
@@ -762,7 +753,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
 	{
-		if (updater.isMapReadyForInteractions())
+		updater.doIfMapIsReadyForInteractions(() -> 
 		{
 			int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
 			int newIndex = toolsPanel.zoomComboBox.getSelectedIndex() + scrollDirection;
@@ -779,7 +770,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				toolsPanel.zoomComboBox.setSelectedIndex(newIndex);
 				updateDisplayedMapFromGeneratedMap(true);
 			}
-		}
+		});
 	}
 
 	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged)
@@ -966,37 +957,40 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void clearEntireMap()
 	{
-		if (updater.mapParts == null || updater.mapParts.graph == null)
+		updater.doWhenMapIsReadyForInteractions(() -> 
 		{
-			return;
-		}
-
-		// Erase text
-		for (MapText text : edits.text)
-		{
-			text.value = "";
-		}
-
-		for (Center center : updater.mapParts.graph.centers)
-		{
-			// Change land to ocean
-			edits.centerEdits.get(center.index).isWater = true;
-			edits.centerEdits.get(center.index).isLake = false;
-
-			// Erase icons
-			edits.centerEdits.get(center.index).trees = null;
-			edits.centerEdits.get(center.index).icon = null;
-
-			// Erase rivers
-			for (Edge edge : center.borders)
+			if (updater.mapParts == null || updater.mapParts.graph == null)
 			{
-				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
-				eEdit.riverLevel = 0;
+				return;
 			}
-		}
 
-		undoer.setUndoPoint(UpdateType.Full, null);
-		updater.createAndShowMapTerrainChange();
+			// Erase text
+			for (MapText text : edits.text)
+			{
+				text.value = "";
+			}
+
+			for (Center center : updater.mapParts.graph.centers)
+			{
+				// Change land to ocean
+				edits.centerEdits.get(center.index).isWater = true;
+				edits.centerEdits.get(center.index).isLake = false;
+
+				// Erase icons
+				edits.centerEdits.get(center.index).trees = null;
+				edits.centerEdits.get(center.index).icon = null;
+
+				// Erase rivers
+				for (Edge edge : center.borders)
+				{
+					EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
+					eEdit.riverLevel = 0;
+				}
+			}
+
+			undoer.setUndoPoint(UpdateType.Full, null);
+			updater.createAndShowMapTerrainChange();
+		});
 	}
 
 	private void handleExportAsImagePressed()
@@ -1030,7 +1024,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// Store the resolution into lastSettingsLoadedOrSaved.resolution.
 		// TODO Maybe also prevent it from running while the map is drawing.
 
-		final MapSettings settings = getSettingsFromGUI();
+		final MapSettings settings = getSettingsFromGUI(false);
 
 		Logger.clear();
 		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
@@ -1122,9 +1116,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			return false;
 		}
 
-		final MapSettings currentSettings = getSettingsFromGUI();
-
-		if (!currentSettings.equals(lastSettingsLoadedOrSaved))
+		if (settingsHaveUnsavedChanges())
 		{
 			int n = JOptionPane.showConfirmDialog(this, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
 			if (n == JOptionPane.YES_OPTION)
@@ -1142,6 +1134,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		return false;
 	}
+	
+	private boolean settingsHaveUnsavedChanges()
+	{
+		final MapSettings currentSettings = getSettingsFromGUI(false);
+
+		if (hasDrawnCurrentMapAtLeastOnce)
+		{
+			return !currentSettings.equals(lastSettingsLoadedOrSaved);
+		}
+		else
+		{
+			// Ignore edits in this comparison because the first draw can create or change edits, and the user cannot modify the
+			// edits until the map has been drawn.
+			return !currentSettings.equalsIgnoringEdits(lastSettingsLoadedOrSaved);
+		}
+	}
 
 	public void saveSettings(Component parent)
 	{
@@ -1152,7 +1160,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		else
 		{
-			final MapSettings settings = getSettingsFromGUI();
+			final MapSettings settings = getSettingsFromGUI(false);
 			try
 			{
 				settings.writeToFile(openSettingsFilePath.toString());
@@ -1206,7 +1214,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				openSettingsFilePath = Paths.get(openSettingsFilePath.toString() + MapSettings.fileExtensionWithDot);
 			}
 
-			final MapSettings settings = getSettingsFromGUI();
+			final MapSettings settings = getSettingsFromGUI(false);
 			try
 			{
 				settings.writeToFile(openSettingsFilePath.toString());
@@ -1240,22 +1248,33 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
-		updater.setEnabled(false);
+		hasDrawnCurrentMapAtLeastOnce = false;
 		
-		// TODO Make the undoer settings-based instead of edits-based.
-		undoer.reset(settings);
+		// Don't initialize if settings.edits is null because the undoer needs the edits to work.
+		if (settings.edits != null)
+		{
+			undoer.initialize(settings);
+		}
 		undoer.updateUndoRedoEnabled();
 
 		updateLastSettingsLoadedOrSaved(settings);
-		edits = settings.edits;
-		themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings);
+		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
 
 		updateFrameTitle();
 		
-		updater.setEnabled(true);
 		setPlaceholderImage(new String[] {"Drawing map..."});
 		updater.createAndShowMapFull();
+	}
+	
+	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
+	{
+		updater.setEnabled(false);
+		undoer.setEnabled(false);
+		edits = settings.edits;
+		themePanel.loadSettingsIntoGUI(settings);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
+		undoer.setEnabled(true);
+		updater.setEnabled(true);
 	}
 
 	private void updateLastSettingsLoadedOrSaved(MapSettings settings)
@@ -1263,16 +1282,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		lastSettingsLoadedOrSaved = settings.deepCopy();
 	}
 
-	private MapSettings getSettingsFromGUI()
+	MapSettings getSettingsFromGUI(boolean deepCopyEdits)
 	{
-		MapSettings settings = lastSettingsLoadedOrSaved.deepCopy();
-		if (edits != null)
+		MapSettings settings = lastSettingsLoadedOrSaved.deepCopyExceptEdits();
+		if (deepCopyEdits)
 		{
-			settings.edits = edits;
+			settings.edits = edits.deepCopy();
 		}
 		else
 		{
-			edits = new MapEdits();
+			settings.edits = edits;
 		}
 
 		settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
@@ -1306,6 +1325,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		mapEditingPanel.image = ImageHelper.createPlaceholderImage(message);
 		mapEditingPanel.repaint();
+	}
+	
+	void handleThemeChange()
+	{
+		// This check is to filter out automatic changes caused by loadSettingsIntoGUI.
+		if (undoer.isEnabled())
+		{
+			// Allow editor tools to update based on changes in the themes panel.
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true);
+		}
 	}
 
 	/**

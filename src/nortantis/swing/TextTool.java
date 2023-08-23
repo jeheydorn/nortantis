@@ -310,7 +310,7 @@ public class TextTool extends EditorTool
 			if (selectedText != null)
 			{
 				selectedText.value = "";
-				undoer.setUndoPoint(this);
+				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updateTextInBackgroundThread(null);
 			}
 		}
@@ -320,7 +320,7 @@ public class TextTool extends EditorTool
 					getPointOnGraph(e.getPoint()));
 			mainWindow.edits.text.add(addedText);
 			
-			undoer.setUndoPoint(this);
+			undoer.setUndoPoint(UpdateType.Text, this);
 			updateTextInBackgroundThread(null);
 		}
 		else if (editButton.isSelected())
@@ -405,7 +405,7 @@ public class TextTool extends EditorTool
 						(int)((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
 				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
-				undoer.setUndoPoint(this);
+				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updateTextInBackgroundThread(lastSelected);
 			}
 			else if (rotateButton.isSelected())
@@ -428,7 +428,7 @@ public class TextTool extends EditorTool
 					angle += Math.PI;				
 				}
 				lastSelected.angle = angle;
-				undoer.setUndoPoint(this);
+				undoer.setUndoPoint(UpdateType.Text, this);
 				updateTextInBackgroundThread(lastSelected);
 			}
 		}
@@ -446,7 +446,7 @@ public class TextTool extends EditorTool
 			lastSelected.value = editTextField.getText();
 
 			// Need to re-draw all of the text.
-			undoer.setUndoPoint(this);
+			undoer.setUndoPoint(UpdateType.Text, this);
 			updateTextInBackgroundThread(editButton.isSelected() ? selectedText : null);
 		}
 		else
@@ -499,15 +499,13 @@ public class TextTool extends EditorTool
 		editTextField.setText("");
 		
 		textToSelectAfterDraw = null;
-		updater.createAndShowMapFromChange(change);
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
 	{
 		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
 		
-		// TODO Hide everything in the text tool options and show a message explaining that text drawing is disabled.
 		SwingHelper.setEnabled(getToolOptionsPanel(), settings.drawText);
 		drawTextDisabledLabelHider.setVisible(!settings.drawText);
 	}

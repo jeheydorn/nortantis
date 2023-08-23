@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -26,6 +27,7 @@ public abstract class MapUpdater
 	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	public boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
+	private ReentrantLock interactionsLock;
 	public MapParts mapParts;
 	private boolean createEditsIfNotPresentAndUseMapParts;
 	private Dimension maxMapSize;
@@ -42,6 +44,7 @@ public abstract class MapUpdater
 	public MapUpdater(boolean createEditsIfNotPresentAndUseMapParts)
 	{
 		drawLock = new ReentrantLock();
+		interactionsLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
 		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
 	}
@@ -92,14 +95,14 @@ public abstract class MapUpdater
 		}
 		else
 		{
-			Set<Center> centersChanged = getCentersWithChangesInEdits(change.edits);
+			Set<Center> centersChanged = getCentersWithChangesInEdits(change.settings.edits);
 			Set<Edge> edgesChanged = null;
 			// Currently createAndShowMap doesn't support drawing both center
 			// edits and edge edits at the same time, so there is no
 			// need to find edges changed if centers were changed.
 			if (centersChanged.size() == 0)
 			{
-				edgesChanged = getEdgesWithChangesInEdits(change.edits);
+				edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
 			}
 			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged);
 		}
@@ -241,6 +244,7 @@ public abstract class MapUpdater
 				if (updateType != UpdateType.Incremental)
 				{
 					Logger.clear();
+					interactionsLock.lock();
 				}
 				drawLock.lock();
 				try
@@ -287,6 +291,10 @@ public abstract class MapUpdater
 				finally
 				{
 					drawLock.unlock();
+					if (updateType != UpdateType.Incremental)
+					{
+						interactionsLock.unlock();
+					}
 				}
 			}
 
@@ -488,8 +496,54 @@ public abstract class MapUpdater
 		this.enabled = enabled;
 	}
 	
-	public boolean isMapReadyForInteractions()
+	public void doIfMapIsReadyForInteractions(Runnable action)
 	{
-		return isMapReadyForInteractions;
+		doIfMapIsReadyForInteractions(action, true);
+	}
+	
+	public void doWhenMapIsReadyForInteractions(Runnable action)
+	{
+		doIfMapIsReadyForInteractions(action, false);
+	}
+	
+	private void doIfMapIsReadyForInteractions(Runnable action, boolean skipIfLocked)
+	{
+		// One might wonder why I have both a boolean flag (isMapReadyForInteractions) and a lock (interactionsLock) to prevent user 
+		// interactions while a map is doing a non-incremental draw. The reason for the flag is to prevent new user interactions
+		// after a draw is started and before the draw has finished (since some of the drawing is done in the event dispatch thread
+		// after the map finishes drawing in a swing worker thread). The lock is needed to prevent new swing worker threads from starting
+		// drawing a map while the event dispatch thread is still handling a user interaction (since doing so could result in something like
+		// mapParts.graph being null, which would cause a crash).
+		if (isMapReadyForInteractions)
+		{
+			boolean isLocked = false;
+			try
+			{
+				if (skipIfLocked)
+				{
+					isLocked = interactionsLock.tryLock(0, TimeUnit.MILLISECONDS);
+				}
+				else
+				{
+					interactionsLock.lock();
+					isLocked = true;
+				}
+				
+				if (isLocked)
+				{
+					action.run();
+				}
+			}
+			catch (InterruptedException e1)
+			{
+			}
+			finally 
+			{
+				if (isLocked)
+				{
+					interactionsLock.unlock();
+				}
+			}
+		}
 	}
 }

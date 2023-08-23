@@ -66,18 +66,17 @@ public class TextDrawer
 	private BufferedImage landAndOceanBackground;
 	private CopyOnWriteArrayList<MapText> mapTexts;
 	private List<Area> cityAreas;
-	Random r;
-	long originalSeed;
+	private Random r;
 	private NameGenerator placeNameGenerator;
 	private NameGenerator personNameGenerator;
 	private NameCompiler nameCompiler;
-	Area graphBounds;
+	private Area graphBounds;
 	private Font titleFontScaled;
 	private Font regionFontScaled;
 	private Font mountainRangeFontScaled;
 	private Font citiesAndOtherMountainsFontScaled;
 	private Font riverFontScaled;
-	Set<String> namesGenerated;
+	private Set<String> namesGenerated;
 	
 	/**
 	 * 
@@ -114,7 +113,6 @@ public class TextDrawer
 		// I create a new Random instead of passing one in so that small differences in the way 
 		// the random number generator is used previous to the TextDrawer do not change the text.
 		this.r = new Random(settings.textRandomSeed);
-		this.originalSeed = settings.textRandomSeed;
 		this.namesGenerated = new HashSet<>();
 				
 		List<String> placeNames = new ArrayList<>();

@@ -1,14 +1,17 @@
 package nortantis.swing;
 
 import java.awt.Color;
+import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
@@ -20,11 +23,14 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
+import javax.swing.border.EtchedBorder;
 
+import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.Region;
 import nortantis.editor.CenterEdit;
@@ -59,6 +65,11 @@ public class LandWaterTool extends EditorTool
 	private JSlider saturationSlider;
 	private JSlider brightnessSlider;
 	private boolean areRegionColorsVisible;
+	private RowHider onlyUpdateLandCheckboxHider;
+	private RowHider generateColorButtonHider;
+	private RowHider colorGeneratorSettingsHider;
+	private JPanel baseColorPanel;
+	private ActionListener brushActionListener;
 
 	public LandWaterTool(MainWindow mainWindow, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -96,108 +107,113 @@ public class LandWaterTool extends EditorTool
 		oceanButton = new JRadioButton("Ocean");
 	    group.add(oceanButton);
 	    radioButtons.add(oceanButton);
-		ActionListener listener = new ActionListener()
+		brushActionListener = new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				mapEditingPanel.clearSelectedCenters();
-				if (colorChooserHider != null && areRegionColorsVisible)
+				if (areRegionColorsVisible)
 				{
 					boolean isVisible = paintRegionButton.isSelected() || fillRegionColorButton.isSelected();
 					colorChooserHider.setVisible(isVisible);
 					selectColorHider.setVisible(isVisible);
+					generateColorButtonHider.setVisible(isVisible);
+					colorGeneratorSettingsHider.setVisible(isVisible);
+					onlyUpdateLandCheckbox.setVisible(paintRegionButton.isSelected());
 				}
-				
+				else
+				{
+					colorChooserHider.setVisible(false);
+					selectColorHider.setVisible(false);
+					generateColorButtonHider.setVisible(false);
+					colorGeneratorSettingsHider.setVisible(false);
+					onlyUpdateLandCheckbox.setVisible(false);
+				}
+	
 				if (brushSizeComboBox != null)
 				{
 					brushSizeHider.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected() || landButton.isSelected());
 				}
 				
-				if (areRegionColorsVisible)
-				{
-					onlyUpdateLandCheckbox.setVisible(paintRegionButton.isSelected());
-				}
 			}
 	    };
-	    oceanButton.addActionListener(listener);
+	    oceanButton.addActionListener(brushActionListener);
 	    
 	    lakeButton = new JRadioButton("Lake");
 	    group.add(lakeButton);
 	    radioButtons.add(lakeButton);
 	    lakeButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines.");
-	    lakeButton.addActionListener(listener);
+	    lakeButton.addActionListener(brushActionListener);
 	    
 	    paintRegionButton = new JRadioButton("Paint region");
 	    fillRegionColorButton = new JRadioButton("Fill region color");
 	    mergeRegionsButton = new JRadioButton("Merge regions");
 	    landButton = new JRadioButton("Land");
-	    if (areRegionColorsVisible)
-	    {
-			
-		    group.add(paintRegionButton);
-		    radioButtons.add(paintRegionButton);
-		    paintRegionButton.addActionListener(listener);
 
-		    
-		    group.add(fillRegionColorButton);
-		    radioButtons.add(fillRegionColorButton);
-		    fillRegionColorButton.addActionListener(listener);
-		    
-		   
-		    group.add(mergeRegionsButton);
-		    radioButtons.add(mergeRegionsButton);
-		    mergeRegionsButton.addActionListener(listener);
-	    }
-	    else
-	    {
-		    group.add(landButton);
-		    radioButtons.add(landButton);
-		    landButton.addActionListener(listener);
-	    }
-	    	    	    
+	    group.add(paintRegionButton);
+	    radioButtons.add(paintRegionButton);
+	    paintRegionButton.addActionListener(brushActionListener);
+
+	    
+	    group.add(fillRegionColorButton);
+	    radioButtons.add(fillRegionColorButton);
+	    fillRegionColorButton.addActionListener(brushActionListener);
+	    
+	   
+	    group.add(mergeRegionsButton);
+	    radioButtons.add(mergeRegionsButton);
+	    mergeRegionsButton.addActionListener(brushActionListener);
+	    
+	    group.add(landButton);
+	    radioButtons.add(landButton);
+	    landButton.addActionListener(brushActionListener);
+    	    	    
 	    oceanButton.setSelected(true); // Selected by default
 	    organizer.addLabelAndComponentsToPanelVertical("Brush:", "", radioButtons);
 	    	    
 	    // Color chooser
-	    if (areRegionColorsVisible)
-	    {   
-		    colorDisplay = SwingHelper.createColorPickerPreviewPanel();
-		    //colorDisplay.setBackground(mainWindow.settings.landColor); // TODO Replace this with a field in this tool for changing the base color and generating new ones.
-	    	
-			JButton chooseButton = new JButton("Choose");
-			chooseButton.setBounds(814, 314, 87, 25);
-			chooseButton = new JButton("Choose");
-			chooseButton.addActionListener(new ActionListener() 
+	    colorDisplay = SwingHelper.createColorPickerPreviewPanel();
+	    colorDisplay.setBackground(Color.black);
+	    
+    	
+		JButton chooseButton = new JButton("Choose");
+		chooseButton.addActionListener(new ActionListener() 
+		{
+			public void actionPerformed(ActionEvent e) 
 			{
-				public void actionPerformed(ActionEvent e) 
-				{
-					if (selectColorFromMapButton.isSelected())
-					{
-						selectColorFromMapButton.setSelected(false);
-						selectedRegion = null;
-						mapEditingPanel.clearSelectedCenters();
-						
-					}
-					SwingHelper.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, "Text color");
-				}
-			});
-			
-			JPanel chooserPanel = new JPanel();
-			chooserPanel.setLayout(new BoxLayout(chooserPanel, BoxLayout.X_AXIS));
-			chooserPanel.add(colorDisplay);
-			chooserPanel.add(Box.createHorizontalGlue());
-			chooserPanel.add(chooseButton);
-			
-			colorChooserHider = organizer.addLabelAndComponentToPanel("Color:", "", chooserPanel);
-			
-			selectColorFromMapButton = new JToggleButton("Select color from map");
-			selectColorFromMapButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
-			selectColorHider = organizer.addLabelAndComponentToPanel("", "", selectColorFromMapButton);
+				cancelSelectColorFromMap();
+				SwingHelper.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, "Region Color");
+			}
+		});
+		colorChooserHider = organizer.addLabelAndComponentsToPanelHorizontal("Color:", "", SwingHelper.colorPickerLeftPadding,
+				Arrays.asList(colorDisplay, chooseButton));
+		
+		
+		selectColorFromMapButton = new JToggleButton("Select Color From Map");
+		selectColorFromMapButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
+		selectColorHider = organizer.addLabelAndComponentToPanel("", "", selectColorFromMapButton, 0);
 
-	    }
 
-	
+		JButton generateColorButton = new JButton("Generate Color");
+		generateColorButton.setToolTipText("Generate a new color based on the random generation settings below.");
+		generateColorButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				cancelSelectColorFromMap();
+				Color newColor = MapCreator.generateColorFromBaseColor(new Random(), baseColorPanel.getBackground(), 
+						hueSlider.getValue(), saturationSlider.getValue(), brightnessSlider.getValue());
+				colorDisplay.setBackground(newColor);
+			}
+		});
+		generateColorButtonHider = organizer.addLabelAndComponentToPanel("", "", generateColorButton, 2);
+
+		
+		colorGeneratorSettingsHider = organizer.addLeftAlignedComponent(createColorGeneratorOptionsPanel(toolOptionsPanel));
+		
+		
 	    Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 	    brushSizeComboBox = brushSizeTuple.getFirst();
 	    brushSizeHider = brushSizeTuple.getSecond();
@@ -205,60 +221,93 @@ public class LandWaterTool extends EditorTool
 	    	    
 	    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
 	    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
-	    organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
+	    onlyUpdateLandCheckboxHider = organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
 	    
-	    listener.actionPerformed(null);
+	    showOrHideRegionColoringOptions();
 	    
 	    
-	    // TODO Put these where they belong:
-//		hueSlider = new JSlider();
-//		hueSlider.setPaintTicks(true);
-//		hueSlider.setPaintLabels(true);
-//		hueSlider.setMinorTickSpacing(20);
-//		hueSlider.setMajorTickSpacing(100);
-//		hueSlider.setMaximum(360);
-//		hueSlider.setBounds(150, 82, 245, 79);
-//		regionsPanel.add(hueSlider);
-//
-//		lblHueRange = new JLabel("Hue range:");
-//		lblHueRange.setToolTipText(
-//				"The possible range of hue values for generated region colors. The range is centered at the land color hue.");
-//		lblHueRange.setBounds(12, 94, 101, 23);
-//		regionsPanel.add(lblHueRange);
-//
-//		lblSaturationRange = new JLabel("Saturation range:");
-//		lblSaturationRange.setToolTipText(
-//				"The possible range of saturation values for generated region colors. The range is centered at the land color saturation.");
-//		lblSaturationRange.setBounds(12, 175, 129, 23);
-//		regionsPanel.add(lblSaturationRange);
-//
-//		saturationSlider = new JSlider();
-//		saturationSlider.setPaintTicks(true);
-//		saturationSlider.setPaintLabels(true);
-//		saturationSlider.setMinorTickSpacing(20);
-//		saturationSlider.setMaximum(255);
-//		saturationSlider.setMajorTickSpacing(100);
-//		saturationSlider.setBounds(150, 163, 245, 79);
-//		regionsPanel.add(saturationSlider);
-//
-//		lblBrightnessRange = new JLabel("Brightness range:");
-//		lblBrightnessRange.setToolTipText(
-//				"The possible range of brightness values for generated region colors. The range is centered at the land color brightness.");
-//		lblBrightnessRange.setBounds(12, 255, 129, 23);
-//		regionsPanel.add(lblBrightnessRange);
-//
-//		brightnessSlider = new JSlider();
-//		brightnessSlider.setPaintTicks(true);
-//		brightnessSlider.setPaintLabels(true);
-//		brightnessSlider.setMinorTickSpacing(20);
-//		brightnessSlider.setMaximum(255);
-//		brightnessSlider.setMajorTickSpacing(100);
-//		brightnessSlider.setBounds(150, 243, 245, 79);
-//		regionsPanel.add(brightnessSlider);
 
 	    organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
 	    organizer.addVerticalFillerRow(toolOptionsPanel);
 		return toolOptionsPanel;
+	}
+	
+	private JPanel createColorGeneratorOptionsPanel(JPanel toolOptionsPanel)
+	{
+		GridBagOrganizer organizer = new GridBagOrganizer();
+		organizer.panel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Color Generator Settings"));
+		
+		
+		baseColorPanel = SwingHelper.createColorPickerPreviewPanel();
+		final JButton baseColorChooseButton = new JButton("Choose");
+		baseColorChooseButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent arg0)
+			{
+				SwingHelper.showColorPicker(toolOptionsPanel, baseColorPanel, "Base Color", () -> {});
+			}
+		});
+		organizer.addLabelAndComponentsToPanelHorizontal("Base color:", 
+				"The base color for generating new region colors. This is the map's land color when not coloring regions.", 
+				SwingHelper.borderWidthBetweenComponents, 
+				Arrays.asList(baseColorPanel, baseColorChooseButton));
+
+		
+		hueSlider = new JSlider();
+		hueSlider.setPaintTicks(true);
+		hueSlider.setPaintLabels(true);
+		hueSlider.setMinorTickSpacing(20);
+		hueSlider.setMajorTickSpacing(100);
+		hueSlider.setMaximum(360);
+		organizer.addLabelAndComponentToPanel("Hue range:", 
+				"The possible range of hue values for generated region colors. The range is centered at the base color hue.", 
+				hueSlider);
+
+
+		saturationSlider = new JSlider();
+		saturationSlider.setPaintTicks(true);
+		saturationSlider.setPaintLabels(true);
+		saturationSlider.setMinorTickSpacing(20);
+		saturationSlider.setMaximum(255);
+		saturationSlider.setMajorTickSpacing(100);
+		organizer.addLabelAndComponentToPanel("Saturation range:", 
+				"The possible range of saturation values for generated region colors. The range is centered at the land color saturation.", 
+				saturationSlider);
+
+		
+		brightnessSlider = new JSlider();
+		brightnessSlider.setPaintTicks(true);
+		brightnessSlider.setPaintLabels(true);
+		brightnessSlider.setMinorTickSpacing(20);
+		brightnessSlider.setMaximum(255);
+		brightnessSlider.setMajorTickSpacing(100);
+		organizer.addLabelAndComponentToPanel("Brightness range:", 
+				"The possible range of brightness values for generated region colors. The range is centered at the land color brightness.", 
+				brightnessSlider);
+		
+		return organizer.panel;
+	}
+	
+	private void showOrHideRegionColoringOptions()
+	{
+    	paintRegionButton.setVisible(areRegionColorsVisible);
+    	fillRegionColorButton.setVisible(areRegionColorsVisible);
+    	mergeRegionsButton.setVisible(areRegionColorsVisible);
+    	landButton.setVisible(!areRegionColorsVisible);
+    	
+    	colorChooserHider.setVisible(areRegionColorsVisible);
+    	selectColorHider.setVisible(areRegionColorsVisible);
+    	
+    	if (areRegionColorsVisible && landButton.isSelected())
+    	{
+    		paintRegionButton.setSelected(true);
+    	}
+    	else if (!areRegionColorsVisible && 
+    			(paintRegionButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected()))
+    	{
+    		landButton.setSelected(true);
+    	}
+    	brushActionListener.actionPerformed(null);
 	}
 
 	@Override
@@ -423,6 +472,16 @@ public class LandWaterTool extends EditorTool
 		}
 	}
 	
+	private void cancelSelectColorFromMap()
+	{
+		if (selectColorFromMapButton.isSelected())
+		{
+			selectColorFromMapButton.setSelected(false);
+			selectedRegion = null;
+			mapEditingPanel.clearSelectedCenters();
+		}
+	}
+	
 	private Set<Center> getSelectedCenters(java.awt.Point point)
 	{
 		return getSelectedCenters(point, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
@@ -485,7 +544,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		undoer.setUndoPoint(this);
+		undoer.setUndoPoint(UpdateType.Incremental, this);
 	}
 	
 	@Override
@@ -554,31 +613,41 @@ public class LandWaterTool extends EditorTool
 	{
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
-		updater.createAndShowMapFromChange(change);
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
 	{
 		// TODO Handle draw region colors changed
 		areRegionColorsVisible = settings.drawRegionColors;
-		
-		// TODO put back
-//		hueSlider.setValue(settings.hueRange);
-//		saturationSlider.setValue(settings.saturationRange);
-//		brightnessSlider.setValue(settings.brightnessRange);
-		
-		onlyUpdateLandCheckbox.setVisible(areRegionColorsVisible);
-		
+
+		if (!isUndoRedoOrAutomaticChange)
+		{
+			// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
+			// because it feels word to me to have them change with undo/redo since they don't directly affect the map.
+			baseColorPanel.setBackground(settings.landColor);
+			hueSlider.setValue(settings.hueRange);
+			saturationSlider.setValue(settings.saturationRange);
+			brightnessSlider.setValue(settings.brightnessRange);
+			
+			// I'm setting this color here because I only want it to change when you create new settings or load settings from a file, 
+			// not on undo/redo or in response to the Theme panel changing.
+			colorDisplay.setBackground(settings.landColor);
+		}
+
+		showOrHideRegionColoringOptions();
 	}
 
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		// TODO Put back when ready
-//		settings.hueRange = hueSlider.getValue();
-//		settings.saturationRange = saturationSlider.getValue();
-//		settings.brightnessRange = brightnessSlider.getValue();
+		if (areRegionColorsVisible)
+		{
+			settings.landColor = baseColorPanel.getBackground();
+		}
+		settings.hueRange = hueSlider.getValue();
+		settings.saturationRange = saturationSlider.getValue();
+		settings.brightnessRange = brightnessSlider.getValue();
 	}
 
 	@Override

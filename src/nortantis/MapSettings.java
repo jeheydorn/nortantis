@@ -152,8 +152,13 @@ public class MapSettings implements Serializable
 		Helper.writeToFile(filePath, json);
 	}
 	
-	@SuppressWarnings("unchecked")
 	private String toJson()
+	{
+		return toJson(false);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String toJson(boolean skipEdits)
 	{
 		JSONObject root = new JSONObject();
 		
@@ -232,13 +237,16 @@ public class MapSettings implements Serializable
 		root.put("drawRoads", drawRoads);
 		
 		// User edits.
-		JSONObject editsJson = new JSONObject();
-		root.put("edits", editsJson);
-		editsJson.put("textEdits", textEditsToJson());
-		editsJson.put("centerEdits", centerEditsToJson());
-		editsJson.put("regionEdits", regionEditsToJson());
-		editsJson.put("edgeEdits", edgeEditsToJson());
-		editsJson.put("hasIconEdits", edits.hasIconEdits);
+		if (edits != null && !skipEdits)
+		{
+			JSONObject editsJson = new JSONObject();
+			root.put("edits", editsJson);
+			editsJson.put("textEdits", textEditsToJson());
+			editsJson.put("centerEdits", centerEditsToJson());
+			editsJson.put("regionEdits", regionEditsToJson());
+			editsJson.put("edgeEdits", edgeEditsToJson());
+			editsJson.put("hasIconEdits", edits.hasIconEdits);
+		}
 		
 		return root.toJSONString();
 	}
@@ -709,12 +717,36 @@ public class MapSettings implements Serializable
 	public boolean equals(Object other)
 	{
 		MapSettings o = (MapSettings)other;
+		
+//		Helper.writeToFile("this.json", toJson());
+//		Helper.writeToFile("other.json", o.toJson());
+		
 		return toJson().equals(o.toJson());
+	}
+	
+	public boolean equalsIgnoringEdits(MapSettings other)
+	{
+		return toJson(true).equals(other.toJson(true));
 	}
 	
 	public MapSettings deepCopy()
 	{
-		return Helper.deepCopy(this);
+		MapSettings copy = Helper.deepCopy(this);
+		if (copy.edits != null)
+		{
+			copy.edits.copyMapEdits(this.edits);
+		}
+		
+		return copy;
+	}
+	
+	public MapSettings deepCopyExceptEdits()
+	{
+		MapEdits editsTemp = edits;
+		edits = null;
+		MapSettings copy = Helper.deepCopy(this);
+		edits = editsTemp;
+		return copy;
 	}
 	
 	public enum LineStyle

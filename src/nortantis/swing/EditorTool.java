@@ -257,7 +257,7 @@ public abstract class EditorTool
 		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
 	
-	public abstract void loadSettingsIntoGUI(MapSettings settings);
+	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange);
 	
 	public abstract boolean shouldShowTextWhenTextIsEnabled();
 	

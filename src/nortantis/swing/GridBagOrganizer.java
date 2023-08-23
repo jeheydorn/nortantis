@@ -48,14 +48,18 @@ public class GridBagOrganizer
 	
 	public RowHider addLabelAndComponentToPanel(String labelText, String tooltip, JComponent component)
 	{
-
+		return addLabelAndComponentToPanel(labelText, tooltip, component, rowVerticalInset);
+	}
+	
+	public RowHider addLabelAndComponentToPanel(String labelText, String tooltip, JComponent component, int topInset)
+	{
 		GridBagConstraints lc = new GridBagConstraints();
 		lc.fill = GridBagConstraints.HORIZONTAL;
 		lc.gridx = 0;
 		lc.gridy = curY;
 		lc.weightx = labelWeight;
 		lc.anchor = GridBagConstraints.NORTHEAST;
-		lc.insets = new Insets(rowVerticalInset, 5, rowVerticalInset, 5);
+		lc.insets = new Insets(topInset, 5, rowVerticalInset, 5);
 		JLabel label = createWrappingLabel(labelText, tooltip);
 		panel.add(label, lc);
 
@@ -65,7 +69,7 @@ public class GridBagOrganizer
 		cc.gridy = curY;
 		cc.weightx = componentWeight;
 		cc.anchor = GridBagConstraints.LINE_START;
-		cc.insets = new Insets(rowVerticalInset, 5, rowVerticalInset, 5);
+		cc.insets = new Insets(topInset, 5, rowVerticalInset, 5);
 		panel.add(component, cc);
 
 		curY++;

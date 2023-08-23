@@ -22,6 +22,7 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 
 import nortantis.MapSettings;
+import nortantis.editor.MapChange;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.util.JComboBoxFixed;
@@ -97,7 +98,7 @@ public class ToolsPanel extends JPanel
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					handleToolSelected(tool);
+					handleToolSelected(tool, false);
 				}
 			});
 			tool.updateBorder();
@@ -197,11 +198,11 @@ public class ToolsPanel extends JPanel
 
 	}
 	
-	public void loadSettingsIntoGUI(MapSettings settings)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
 	{
 		for (EditorTool tool : tools)
 		{
-			tool.loadSettingsIntoGUI(settings);
+			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
 		}
 	}
 	
@@ -213,7 +214,7 @@ public class ToolsPanel extends JPanel
 		}
 	}
 	
-	public void handleToolSelected(EditorTool selectedTool)
+	public void handleToolSelected(EditorTool selectedTool, boolean isFromUndoRedo)
 	{
 		enableOrDisableToolToggleButtonsAndZoom(false);
 
@@ -231,15 +232,12 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
-		if (mainWindow.mapEditingPanel.mapFromMapCreator != null)
+		if (!isFromUndoRedo)
 		{
-			// TODO
 			updater.createAndShowMapTextChange();
-			//mainWindow.updateDisplayedMapFromGeneratedMap(false);
 		}
+		
 		currentTool.onActivate();
-		mainWindow.mapEditingPanel.repaint();
-		enableOrDisableToolToggleButtonsAndZoom(true);
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
 	}
 

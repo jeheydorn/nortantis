@@ -558,7 +558,7 @@ public class IconsTool extends EditorTool
 			}
 		}
 		
-		undoer.setUndoPoint(this);
+		undoer.setUndoPoint(UpdateType.Incremental, this);
 	}
 	
 	private Set<Edge> filterOutOceanAndCoastEdges(Set<Edge> edges)
@@ -653,7 +653,6 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterUndoRedo(MapChange change)
 	{	
-		updater.createAndShowMapFromChange(change);
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
@@ -667,7 +666,7 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
 	{
 		lblCityIconType.setText(settings.cityIconSetName);	
 		// TODO re-create cityTypes radio buttons

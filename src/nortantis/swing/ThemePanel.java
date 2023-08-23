@@ -97,6 +97,7 @@ public class ThemePanel extends JTabbedPane
 	private RowHider colorizeOceanCheckboxHider;
 	private RowHider colorizeLandCheckboxHider;
 	private RowHider textHiddenMessageHider;
+	private RowHider landColorHider;
 	
 
 
@@ -290,7 +291,7 @@ public class ThemePanel extends JTabbedPane
 			container.add(landDisplayPanel);
 			btnChooseLandColor.setAlignmentX(CENTER_ALIGNMENT);
 
-			organizer.addLabelAndComponentsToPanelVertical("Land color:", "The color of the land background.", Arrays.asList(container, Box.createVerticalStrut(5), btnChooseLandColor));
+			landColorHider = organizer.addLabelAndComponentsToPanelVertical("Land color:", "The color of the land background.", Arrays.asList(container, Box.createVerticalStrut(5), btnChooseLandColor));
 		}
 		
 	
@@ -882,6 +883,8 @@ public class ThemePanel extends JTabbedPane
 		{
 			removeFromToolTip(btnChooseCoastShadingColor, message);
 		}
+		
+		landColorHider.setVisible(!colorRegions);
 	}
 
 	/**
@@ -1002,10 +1005,13 @@ public class ThemePanel extends JTabbedPane
 		settings.backgroundTextureImage = textureImageFilename.getText();
 		settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
 		settings.oceanColor = oceanDisplayPanel.getColor();
-		settings.landColor = landDisplayPanel.getColor();
-
 		settings.drawRegionColors = areRegionColorsVisible();
+		if (!settings.drawRegionColors)
+		{
+			settings.landColor = landDisplayPanel.getColor();
+		}
 
+	
 		settings.titleFont = titleFontDisplay.getFont();
 		settings.regionFont = regionFontDisplay.getFont();
 		settings.mountainRangeFont = mountainRangeFontDisplay.getFont();
@@ -1081,16 +1087,22 @@ public class ThemePanel extends JTabbedPane
 	
 	private void handleTerrainChange()
 	{
+		mainWindow.handleThemeChange();
+		mainWindow.undoer.setUndoPoint(UpdateType.Terrain, null);
 		mainWindow.updater.createAndShowMapTerrainChange();
 	}
 	
 	private void handleFontsChange()
 	{
+		mainWindow.handleThemeChange();
+		mainWindow.undoer.setUndoPoint(UpdateType.Fonts, null);
 		mainWindow.updater.createAndShowMapFontsChange();
 	}
 	
 	private void handleTextChange()
 	{
+		mainWindow.handleThemeChange();
+		mainWindow.undoer.setUndoPoint(UpdateType.Text, null);
 		mainWindow.updater.createAndShowMapTextChange();
 	}
 	
@@ -1101,6 +1113,8 @@ public class ThemePanel extends JTabbedPane
 	
 	private void handleFullRedraw()
 	{
+		mainWindow.handleThemeChange();
+		mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
 		mainWindow.updater.createAndShowMapFull();
 	}
 	
@@ -1111,6 +1125,8 @@ public class ThemePanel extends JTabbedPane
 	
 	private void handleFrayedEdgeOrGrungeChange()
 	{
+		mainWindow.handleThemeChange();
+		mainWindow.undoer.setUndoPoint(UpdateType.GrungeAndFray, null);
 		mainWindow.updater.createAndShowMapGrungeOrFrayedEdgeChange();
 	}
 }
