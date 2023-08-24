@@ -89,7 +89,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	// Controls how large 100% zoom is, in pixels.
 	final double oneHundredPercentMapWidth = 4096;
 	public MapEditingPanel mapEditingPanel;
-	boolean areToolToggleButtonsEnabled = true;
 	JMenuItem undoButton;
 	JMenuItem redoButton;
 	private JMenuItem clearEntireMapButton;
@@ -361,7 +360,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected void onBeginDraw()
 			{
-				enableOrDisableToolToggleButtonsAndZoom(false);
+				showAsDrawing(true);
 			}
 
 			@Override
@@ -406,7 +405,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (!anotherDrawIsQueued)
 				{
-					enableOrDisableToolToggleButtonsAndZoom(true);
+					showAsDrawing(false);
 				}
 
 				// Tell the scroll pane to update itself.
@@ -417,7 +416,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected void onFailedToDraw()
 			{
-				enableOrDisableToolToggleButtonsAndZoom(true);
+				showAsDrawing(false);
 				mapEditingPanel.clearSelectedCenters();
 				isMapBeingDrawn = false;
 			}
@@ -898,20 +897,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void enableOrDisableToolToggleButtonsAndZoom(boolean enable)
+	public void showAsDrawing(boolean isDrawing)
 	{
-		areToolToggleButtonsEnabled = enable;
+		clearEntireMapButton.setEnabled(!isDrawing);
+		// TODO test to see if I need these
+//		if (displayQualityMenu != null)
+//		{
+//			radioButton75Percent.setEnabled(!isDrawing);
+//			radioButton100Percent.setEnabled(!isDrawing);
+//			radioButton125Percent.setEnabled(!isDrawing);
+//			radioButton150Percent.setEnabled(!isDrawing);
+//		}
 
-		clearEntireMapButton.setEnabled(enable);
-		if (displayQualityMenu != null)
-		{
-			radioButton75Percent.setEnabled(enable);
-			radioButton100Percent.setEnabled(enable);
-			radioButton125Percent.setEnabled(enable);
-			radioButton150Percent.setEnabled(enable);
-		}
-
-		toolsPanel.enableOrDisableToolToggleButtonsAndZoom(enable);
+		toolsPanel.showAsDrawing(isDrawing);
 	}
 
 	private double parsePercentage(String zoomStr)
@@ -927,11 +925,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		updateImageQualityScale(resolutionText);
 
-		mapEditingPanel.clearAreasToDraw();
-		mapEditingPanel.repaint();
-
 		ImageCache.getInstance().clear();
-		updater.mapParts = null;
 		updater.createAndShowMapFull();
 	}
 

@@ -216,7 +216,7 @@ public class ToolsPanel extends JPanel
 	
 	public void handleToolSelected(EditorTool selectedTool, boolean isFromUndoRedo)
 	{
-		enableOrDisableToolToggleButtonsAndZoom(false);
+		showAsDrawing(true);
 
 		mainWindow.mapEditingPanel.clearHighlightedCenters();
 		mainWindow.mapEditingPanel.clearAreasToDraw();
@@ -246,23 +246,18 @@ public class ToolsPanel extends JPanel
 		return (String) zoomComboBox.getSelectedItem();
 	}
 	
-	public void enableOrDisableToolToggleButtonsAndZoom(boolean enable)
-	{
-		for (EditorTool tool : tools)
-		{
-			tool.setToggleButtonEnabled(enable);
-		}
-		
-		zoomComboBox.setEnabled(enable);
+	public void showAsDrawing(boolean isDrawing)
+	{	
+		zoomComboBox.setEnabled(!isDrawing);
 
-		if (enable)
+		if (isDrawing)
 		{
-			progressBarTimer.stop();
-			progressBar.setVisible(false);
+			progressBarTimer.start();
 		}
 		else
 		{
-			progressBarTimer.start();
+			progressBarTimer.stop();
+			progressBar.setVisible(false);
 		}
 
 	}

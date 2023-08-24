@@ -109,11 +109,6 @@ public abstract class EditorTool
 		this.toggleButton = toggleButton;
 	}
 	
-	public void setToggleButtonEnabled(boolean enabled)
-	{
-		toggleButton.setEnabled(enabled);
-	}
-	
 	protected abstract void onAfterUndoRedo(MapChange change);
 	
 	public nortantis.graph.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
