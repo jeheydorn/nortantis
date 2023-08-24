@@ -26,6 +26,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
+import org.junit.runner.Computer;
 
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
@@ -198,14 +199,127 @@ public class ImageHelper
 		return xSize;
 	}
 
-	public static BufferedImage scaleByWidthAndHeightFast(BufferedImage inImage, int xSize, int ySize)
+	// TODO remove this if I don't end up using it.
+//	public static BufferedImage scaleUsingBiCubicInterpolation(BufferedImage image, double scale)
+//	{
+//		int newWidth = (int) (image.getWidth() * scale);
+//		int newHeight = (int) (image.getHeight() * scale);
+//		BufferedImage newImage = new BufferedImage(newWidth, newHeight, image.getType());
+//		for (int y = 0; y < newHeight; y++)
+//		{
+//			for (int x = 0; x < newWidth; x++)
+//			{
+//				int x1 = (int) (x / scale);
+//				int y1 = (int) (y / scale);
+//				int x2 = Math.min(x1 + 1, image.getWidth() - 1);
+//				int y2 = Math.min(y1 + 1, image.getHeight() - 1);
+//				double dx = x / scale - x1;
+//				double dy = y / scale - y1;
+//				Color c00 = new Color(image.getRGB(x1, y1));
+//				Color c01 = new Color(image.getRGB(x2, y1));
+//				Color c10 = new Color(image.getRGB(x1, y2));
+//				Color c11 = new Color(image.getRGB(x2, y2));
+//				int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
+//				int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
+//				int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
+//				newImage.setRGB(x, y, new Color(r0, g0, b0).getRGB());
+//			}
+//		}
+//		return newImage;
+//	}
+
+	public static int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
 	{
-		BufferedImage scaledImage = new BufferedImage(xSize, ySize, inImage.getType());
-		Graphics2D graphics2D = scaledImage.createGraphics();
-		graphics2D.drawImage(inImage, 0, 0, xSize, ySize, null);
-		graphics2D.dispose();
-		return scaledImage;
+		double v0 = v00 * (1 - dx) + v01 * dx;
+		double v1 = v10 * (1 - dx) + v11 * dx;
+		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
+	
+	/**
+	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target.
+	 * This implementation bicubic scaling is about five times slower than the one used by ImgScalr, but 
+	 * is much faster when I only want to update a small piece of a scaled image.
+	 * @param source The unscaled image.
+	 * @param target The scaled image
+	 * @param boundsInSource The area in the source image that will be scaled and placed into the target image.
+	 */
+	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.graph.geom.Rectangle boundsInSource)
+	{
+		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
+				
+		// I'm padding the width and height by 1 pixel to account for integer truncation.
+		java.awt.Rectangle pixelsToUpdate = new java.awt.Rectangle(
+				(int) (boundsInSource.x * scale),
+				(int) (boundsInSource.y * scale),
+				Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1),
+				Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1));
+
+		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
+		{
+			for (int x = pixelsToUpdate.x; x < pixelsToUpdate.x + pixelsToUpdate.width; x++)
+			{
+				int x1 = (int) (x / scale);
+				int y1 = (int) (y / scale);
+				int x2 = Math.min(x1 + 1, source.getWidth() - 1);
+				int y2 = Math.min(y1 + 1, source.getHeight() - 1);
+				double dx = x / scale - x1;
+				double dy = y / scale - y1;
+				Color c00 = new Color(source.getRGB(x1, y1));
+				Color c01 = new Color(source.getRGB(x2, y1));
+				Color c10 = new Color(source.getRGB(x1, y2));
+				Color c11 = new Color(source.getRGB(x2, y2));
+				int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
+				int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
+				int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
+				target.setRGB(x, y, new Color(r0, g0, b0).getRGB());
+			}
+		}
+	}
+
+	// TODO remove this if I don't end up using it.
+//	public static BufferedImage scaleUsingAreaAveraging(BufferedImage image, double scaleFactor)
+//	{
+//		int newWidth = (int) (image.getWidth() * scaleFactor);
+//		int newHeight = (int) (image.getHeight() * scaleFactor);
+//		BufferedImage newImage = new BufferedImage(newWidth, newHeight, image.getType());
+//		for (int y = 0; y < newHeight; y++)
+//		{
+//			for (int x = 0; x < newWidth; x++)
+//			{
+//				// Calculate the corresponding pixel in the original image
+//				double origX = x / scaleFactor;
+//				double origY = y / scaleFactor;
+//
+//				// Calculate the average color of the surrounding pixels
+//				int totalR = 0;
+//				int totalG = 0;
+//				int totalB = 0;
+//				int count = 0;
+//				for (int dy = -1; dy <= 1; dy++)
+//				{
+//					for (int dx = -1; dx <= 1; dx++)
+//					{
+//						int px = (int) (origX + dx);
+//						int py = (int) (origY + dy);
+//						if (px >= 0 && px < image.getWidth() && py >= 0 && py < image.getHeight())
+//						{
+//							Color color = new Color(image.getRGB(px, py));
+//							totalR += (int) (color.getRed());
+//							totalG += (int) (color.getGreen());
+//							totalB += (int) (color.getBlue());
+//							count++;
+//						}
+//					}
+//				}
+//
+//				// Set the pixel in the new image to the average color
+//				Color avgColor = new Color(totalR / count, totalG / count, totalB / count);
+//				newImage.setRGB(x, y, avgColor.getRGB());
+//			}
+//		}
+//
+//		return newImage;
+//	}
 
 	/**
 	 * 
@@ -548,7 +662,7 @@ public class ImageHelper
 				{
 					continue;
 				}
-				
+
 				Color col = new Color(image.getRGB(x, y));
 
 				int maskLevel = mRaster.getSample(xInMask, yInMask, 0);
@@ -965,11 +1079,15 @@ public class ImageHelper
 	 *            bit pixels, or 65535 for 16 bit. This is better than
 	 *            maximizing the contrast of the result because the result is a
 	 *            BufferedImage, which has less precise values than floats.
-	 * @param paddImageToAvoidWrapping  Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges.
-	 *                            Set this flag to add black padding pixels to the edge of the image to avoid this.
+	 * @param paddImageToAvoidWrapping
+	 *            Normally, in wage convolution done using fast Fourier
+	 *            transforms will do wrapping when calculating values of pixels
+	 *            along edges. Set this flag to add black padding pixels to the
+	 *            edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
+	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast,
+			boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -990,12 +1108,16 @@ public class ImageHelper
 	 * @param kernel
 	 * @param scale
 	 *            Amount to multiply levels by.
-	 * @param paddImageToAvoidWrapping  Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along edges.
-	 *                            Set this flag to add black padding pixels to the edge of the image to avoid this.
+	 * @param paddImageToAvoidWrapping
+	 *            Normally, in wage convolution done using fast Fourier
+	 *            transforms will do wrapping when calculating values of pixels
+	 *            along edges. Set this flag to add black padding pixels to the
+	 *            edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
-	{	
+	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale,
+			boolean paddImageToAvoidWrapping)
+	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
@@ -1793,10 +1915,9 @@ public class ImageHelper
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
 	public static void copySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source,
-			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom,
-			int widthOfBorderToNotDrawOn)
+			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
-		java.awt.Rectangle targetBounds = new java.awt.Rectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, 
+		java.awt.Rectangle targetBounds = new java.awt.Rectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
 				target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
 		{

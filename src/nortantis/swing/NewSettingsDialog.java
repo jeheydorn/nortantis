@@ -37,6 +37,7 @@ import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
+import nortantis.graph.geom.Rectangle;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
@@ -409,7 +410,7 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn)
+			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, Rectangle incrementalChangeArea)
 			{
 				mapEditingPanel.image = map;
 

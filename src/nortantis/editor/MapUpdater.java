@@ -15,11 +15,13 @@ import javax.swing.SwingWorker;
 
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.swing.MapEdits;
 import nortantis.swing.UpdateType;
 import nortantis.util.Logger;
+import nortantis.util.Tuple2;
 
 public abstract class MapUpdater
 {
@@ -61,7 +63,7 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.Text, null, null);
 	}
-	
+
 	public void createAndShowMapFontsChange()
 	{
 		createAndShowMap(UpdateType.Fonts, null, null);
@@ -132,9 +134,11 @@ public abstract class MapUpdater
 		return getEdits().edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
 				.map(eEdit -> mapParts.graph.edges.get(eEdit.index)).collect(Collectors.toSet());
 	}
-	
+
 	/**
-	 * Clears values from mapParts as needed to trigger those parts to re-redraw based on what type of update we're making.
+	 * Clears values from mapParts as needed to trigger those parts to re-redraw
+	 * based on what type of update we're making.
+	 * 
 	 * @param updateType
 	 */
 	private void clearMapPartsAsNeeded(UpdateType updateType)
@@ -143,7 +147,7 @@ public abstract class MapUpdater
 		{
 			return;
 		}
-		
+
 		if (updateType == UpdateType.Full)
 		{
 			if (mapParts != null)
@@ -153,11 +157,11 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.Incremental)
 		{
-			
+
 		}
 		else if (updateType == UpdateType.Text)
 		{
-			
+
 		}
 		else if (updateType == UpdateType.Fonts)
 		{
@@ -166,7 +170,7 @@ public abstract class MapUpdater
 		else if (updateType == UpdateType.Terrain)
 		{
 			mapParts.mapBeforeAddingText = null;
-			
+
 			mapParts.mountainGroups = null;
 			mapParts.cities = null;
 		}
@@ -205,7 +209,7 @@ public abstract class MapUpdater
 				mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
 				incrementalUpdatesToDraw.clear();
 			}
-			else 
+			else
 			{
 				if (mapNeedsNonIncrementalUpdateForType == null)
 				{
@@ -213,7 +217,8 @@ public abstract class MapUpdater
 				}
 				else if (mapNeedsNonIncrementalUpdateForType != updateType)
 				{
-					// Two different types of non-incremental updates have been requested. Just run a full update
+					// Two different types of non-incremental updates have been
+					// requested. Just run a full update
 					// to avoid needing to somehow merge the updates.
 					mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
 					incrementalUpdatesToDraw.clear();
@@ -236,10 +241,10 @@ public abstract class MapUpdater
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
 
-		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
+		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
 		{
 			@Override
-			public BufferedImage doInBackground() throws IOException
+			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException
 			{
 				if (updateType != UpdateType.Incremental)
 				{
@@ -250,14 +255,14 @@ public abstract class MapUpdater
 				try
 				{
 					clearMapPartsAsNeeded(updateType);
-					
+
 					if (updateType != UpdateType.Incremental)
 					{
 						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;
 						}
-						
+
 						if (mapParts == null && createEditsIfNotPresentAndUseMapParts)
 						{
 							mapParts = new MapParts();
@@ -265,7 +270,7 @@ public abstract class MapUpdater
 
 						BufferedImage map = new MapCreator().createMap(settings, maxMapSize, mapParts);
 						System.gc();
-						return map;
+						return new Tuple2<>(map, null);
 					}
 					else
 					{
@@ -273,18 +278,18 @@ public abstract class MapUpdater
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0)
 						{
-							new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
-							return map;
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
+							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (edgesChanged != null && edgesChanged.size() > 0)
 						{
-							new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
-							return map;
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
+							return new Tuple2<>(map, replaceBounds);
 						}
 						else
 						{
 							// Nothing to do.
-							return map;
+							return new Tuple2<>(map, null);
 						}
 					}
 				}
@@ -302,9 +307,12 @@ public abstract class MapUpdater
 			public void done()
 			{
 				BufferedImage map = null;
+				Rectangle replaceBounds = null;
 				try
 				{
-					map = get();
+					Tuple2<BufferedImage, Rectangle> tuple = get();
+					map = tuple.getFirst();
+					replaceBounds = tuple.getSecond();
 				}
 				catch (InterruptedException ex)
 				{
@@ -333,11 +341,17 @@ public abstract class MapUpdater
 						initializeRegionEditsIfEmpty();
 						initializeEdgeEditsIfEmpty();
 					}
-					
-					boolean anotherDrawIsQueued = mapNeedsNonIncrementalUpdateForType != null || (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0);
-					onFinishedDrawing(map,
-							anotherDrawIsQueued,
-							settings.drawBorder ? (int)(settings.borderWidth * settings.resolution) : 0);
+
+					boolean anotherDrawIsQueued = mapNeedsNonIncrementalUpdateForType != null
+							|| (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0);
+					if (updateType == UpdateType.Incremental)
+					{
+						// TODO
+					}
+					int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+					onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth, 
+							replaceBounds == null ? null : 
+								new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth, replaceBounds.width, replaceBounds.height));
 
 					isMapBeingDrawn = false;
 					if (mapNeedsNonIncrementalUpdateForType != null)
@@ -349,7 +363,7 @@ public abstract class MapUpdater
 						IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
 						createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
 					}
-					
+
 					mapNeedsNonIncrementalUpdateForType = null;
 					isMapReadyForInteractions = true;
 				}
@@ -368,7 +382,8 @@ public abstract class MapUpdater
 
 	protected abstract MapSettings getSettingsFromGUI();
 
-	protected abstract void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn);
+	protected abstract void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+			Rectangle incrementalChangeArea);
 
 	protected abstract void onFailedToDraw();
 
@@ -495,24 +510,30 @@ public abstract class MapUpdater
 	{
 		this.enabled = enabled;
 	}
-	
+
 	public void doIfMapIsReadyForInteractions(Runnable action)
 	{
 		doIfMapIsReadyForInteractions(action, true);
 	}
-	
+
 	public void doWhenMapIsReadyForInteractions(Runnable action)
 	{
 		doIfMapIsReadyForInteractions(action, false);
 	}
-	
+
 	private void doIfMapIsReadyForInteractions(Runnable action, boolean skipIfLocked)
 	{
-		// One might wonder why I have both a boolean flag (isMapReadyForInteractions) and a lock (interactionsLock) to prevent user 
-		// interactions while a map is doing a non-incremental draw. The reason for the flag is to prevent new user interactions
-		// after a draw is started and before the draw has finished (since some of the drawing is done in the event dispatch thread
-		// after the map finishes drawing in a swing worker thread). The lock is needed to prevent new swing worker threads from starting
-		// drawing a map while the event dispatch thread is still handling a user interaction (since doing so could result in something like
+		// One might wonder why I have both a boolean flag
+		// (isMapReadyForInteractions) and a lock (interactionsLock) to prevent
+		// user
+		// interactions while a map is doing a non-incremental draw. The reason
+		// for the flag is to prevent new user interactions
+		// after a draw is started and before the draw has finished (since some
+		// of the drawing is done in the event dispatch thread
+		// after the map finishes drawing in a swing worker thread). The lock is
+		// needed to prevent new swing worker threads from starting
+		// drawing a map while the event dispatch thread is still handling a
+		// user interaction (since doing so could result in something like
 		// mapParts.graph being null, which would cause a crash).
 		if (isMapReadyForInteractions)
 		{
@@ -528,7 +549,7 @@ public abstract class MapUpdater
 					interactionsLock.lock();
 					isLocked = true;
 				}
-				
+
 				if (isLocked)
 				{
 					action.run();
@@ -537,7 +558,7 @@ public abstract class MapUpdater
 			catch (InterruptedException e1)
 			{
 			}
-			finally 
+			finally
 			{
 				if (isLocked)
 				{

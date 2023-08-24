@@ -248,15 +248,12 @@ public class TextTool extends EditorTool
 	}
 	
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map)
+	protected void onBeforeShowMap()
 	{    
 		mapEditingPanel.setAreasToDraw(textToSelectAfterDraw == null ? null : textToSelectAfterDraw.areas);
 		mapEditingPanel.repaint();
     	// Tell the scroll pane to update itself.
     	mapEditingPanel.revalidate();
-
-		
-    	return map;
 	}
 	
 	private MapText textToSelectAfterDraw;

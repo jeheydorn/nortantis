@@ -597,9 +597,8 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map)
+	protected void onBeforeShowMap()
 	{
-		return map;
 	}
 
 	@Override

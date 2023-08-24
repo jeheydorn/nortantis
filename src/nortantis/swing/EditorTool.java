@@ -78,7 +78,7 @@ public abstract class EditorTool
 	 * @param map The generated map
 	 * @return The map to display
 	 */
-	protected abstract BufferedImage onBeforeShowMap(BufferedImage map);
+	protected abstract void onBeforeShowMap();
 	
 
 	public void setToggled(boolean toggled)

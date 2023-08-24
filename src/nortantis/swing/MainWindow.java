@@ -66,6 +66,7 @@ import nortantis.MapText;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
+import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
@@ -379,7 +380,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn)
+			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn, Rectangle incrementalChangeArea)
 			{
 				mapEditingPanel.mapFromMapCreator = map;
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
@@ -401,7 +402,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					lastSettingsLoadedOrSaved.edits = edits.deepCopy();
 				}
 
-				updateDisplayedMapFromGeneratedMap(false);
+				updateDisplayedMapFromGeneratedMap(false, incrementalChangeArea);
 
 				if (!anotherDrawIsQueued)
 				{
@@ -767,12 +768,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (newIndex != toolsPanel.zoomComboBox.getSelectedIndex())
 			{
 				toolsPanel.zoomComboBox.setSelectedIndex(newIndex);
-				updateDisplayedMapFromGeneratedMap(true);
+				updateDisplayedMapFromGeneratedMap(true, null);
 			}
 		});
 	}
 
-	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged)
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, Rectangle incrementalChangeArea)
 	{
 		double oldZoom = zoom;
 		zoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
@@ -805,17 +806,38 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 			}
 
-			BufferedImage mapWithExtraStuff = toolsPanel.currentTool.onBeforeShowMap(mapEditingPanel.mapFromMapCreator);
+			toolsPanel.currentTool.onBeforeShowMap();
 			mapEditingPanel.setZoom(zoom);
 			Method method = zoom < 0.3 ? Method.QUALITY : Method.BALANCED;
-			int zoomedWidth =  (int) (mapWithExtraStuff.getWidth() * zoom);
+			int zoomedWidth =  (int) (mapEditingPanel.mapFromMapCreator.getWidth() * zoom);
 			if (zoomedWidth <= 0)
 			{
 				// Prevents a crash if someone collapses the map editing panel.
 				zoomedWidth = 600;
 			}
 			
-			mapEditingPanel.image = ImageHelper.scaleByWidth(mapWithExtraStuff, zoomedWidth, method);
+			if (method == Method.QUALITY)
+			{
+				// Can't incrementally zoom. Zoom the whole thing.
+				mapEditingPanel.image = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method);
+			}
+			else
+			{
+				
+				if (incrementalChangeArea == null)
+				{
+					// It's important that this image scaling is done using the same method as the increment case below
+					// (when incrementalChangeArea != null) because the incremental case will update pieces of the image
+					// created below. Both use bicubic interpolation. I don't use my own bicubic interpolation for the
+					// full image case because it's 5x slower than the below method, which uses ImgScalr, which uses
+					// built-in Java image scaling.
+					mapEditingPanel.image = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method);			
+				}
+				else
+				{
+					ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, mapEditingPanel.image, incrementalChangeArea);
+				}
+			}
 
 			if (scrollTo != null)
 			{

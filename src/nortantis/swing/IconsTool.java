@@ -697,9 +697,8 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	protected BufferedImage onBeforeShowMap(BufferedImage map)
+	protected void onBeforeShowMap()
 	{	
- 		return map;
 	}
 	
 	@Override

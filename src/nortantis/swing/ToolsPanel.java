@@ -174,7 +174,7 @@ public class ToolsPanel extends JPanel
 			public void actionPerformed(ActionEvent e)
 			{
 				UserPreferences.getInstance().zoomLevel = (String) zoomComboBox.getSelectedItem();
-				mainWindow.updateDisplayedMapFromGeneratedMap(true);
+				mainWindow.updateDisplayedMapFromGeneratedMap(true, null);
 			}
 		});
 
