@@ -247,12 +247,13 @@ public class ImageHelper
 	{
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
 				
-		// I'm padding the width and height by 1 pixel to account for integer truncation.
+		int upperLeftX = Math.max(0, (int) (boundsInSource.x * scale));
+		int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
+		// The +1's below are because I'm padding the width and height by 1 pixel to account for integer truncation.
 		java.awt.Rectangle pixelsToUpdate = new java.awt.Rectangle(
-				(int) (boundsInSource.x * scale),
-				(int) (boundsInSource.y * scale),
-				Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1),
-				Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1));
+				upperLeftX, upperLeftY,
+				Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
+				Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 
 		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
 		{
@@ -275,51 +276,6 @@ public class ImageHelper
 			}
 		}
 	}
-
-	// TODO remove this if I don't end up using it.
-//	public static BufferedImage scaleUsingAreaAveraging(BufferedImage image, double scaleFactor)
-//	{
-//		int newWidth = (int) (image.getWidth() * scaleFactor);
-//		int newHeight = (int) (image.getHeight() * scaleFactor);
-//		BufferedImage newImage = new BufferedImage(newWidth, newHeight, image.getType());
-//		for (int y = 0; y < newHeight; y++)
-//		{
-//			for (int x = 0; x < newWidth; x++)
-//			{
-//				// Calculate the corresponding pixel in the original image
-//				double origX = x / scaleFactor;
-//				double origY = y / scaleFactor;
-//
-//				// Calculate the average color of the surrounding pixels
-//				int totalR = 0;
-//				int totalG = 0;
-//				int totalB = 0;
-//				int count = 0;
-//				for (int dy = -1; dy <= 1; dy++)
-//				{
-//					for (int dx = -1; dx <= 1; dx++)
-//					{
-//						int px = (int) (origX + dx);
-//						int py = (int) (origY + dy);
-//						if (px >= 0 && px < image.getWidth() && py >= 0 && py < image.getHeight())
-//						{
-//							Color color = new Color(image.getRGB(px, py));
-//							totalR += (int) (color.getRed());
-//							totalG += (int) (color.getGreen());
-//							totalB += (int) (color.getBlue());
-//							count++;
-//						}
-//					}
-//				}
-//
-//				// Set the pixel in the new image to the average color
-//				Color avgColor = new Color(totalR / count, totalG / count, totalB / count);
-//				newImage.setRGB(x, y, avgColor.getRGB());
-//			}
-//		}
-//
-//		return newImage;
-//	}
 
 	/**
 	 * 
