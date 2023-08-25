@@ -34,7 +34,6 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.Region;
 import nortantis.editor.CenterEdit;
-import nortantis.editor.MapChange;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.RegionEdit;
 import nortantis.graph.voronoi.Center;
@@ -608,16 +607,17 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(MapChange change)
+	protected void onAfterUndoRedo()
 	{
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
+		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.repaint();
 	}
 
 	@Override
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
 	{
-		// TODO Handle draw region colors changed
 		areRegionColorsVisible = settings.drawRegionColors;
 
 		if (!isUndoRedoOrAutomaticChange)

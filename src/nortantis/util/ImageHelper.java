@@ -314,7 +314,7 @@ public class ImageHelper
 		normalize(kernel);
 		return kernel;
 	}
-
+	
 	public static float[][] createFractalKernel(int size, double p)
 	{
 		if (size == 0)

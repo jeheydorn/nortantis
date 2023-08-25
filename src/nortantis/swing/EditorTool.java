@@ -17,7 +17,6 @@ import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.MapSettings;
-import nortantis.editor.MapChange;
 import nortantis.editor.MapUpdater;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
@@ -109,7 +108,7 @@ public abstract class EditorTool
 		this.toggleButton = toggleButton;
 	}
 	
-	protected abstract void onAfterUndoRedo(MapChange change);
+	protected abstract void onAfterUndoRedo();
 	
 	public nortantis.graph.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
 	{

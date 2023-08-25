@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -29,6 +30,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
+import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
@@ -39,8 +41,10 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
+import nortantis.graph.geom.Rectangle;
 import nortantis.util.ImageHelper;
 import nortantis.util.Tuple2;
+import nortantis.util.Tuple4;
 
 @SuppressWarnings("serial")
 public class ThemePanel extends JTabbedPane
@@ -746,98 +750,156 @@ public class ThemePanel extends JTabbedPane
 
 		updateBackgroundImageDisplays();
 	}
-
+	
 	private void updateBackgroundImageDisplays()
 	{
-		Dimension bounds = new Dimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
+		Dimension size = new Dimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
+
+		SwingWorker<Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm>, Void> worker 
+			= new SwingWorker<Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm>, Void>()
+		{
+
+			@Override
+			protected Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> doInBackground() throws Exception
+			{
+				long seed;
+				try
+				{
+					seed = Long.parseLong(backgroundSeedTextField.getText());
+				}
+				catch (NumberFormatException e) 
+				{
+					seed = 0;
+				}
+				
+				
+				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(),
+						colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(), rdbtnGeneratedFromTexture.isSelected(),
+						textureImageFilename.getText());
+			}
+		
+			@Override
+			public void done()
+			{
+				Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple;
+				try
+				{
+					tuple = get();
+				}
+				catch (InterruptedException | ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+				
+				BufferedImage oceanBackground = tuple.getFirst();
+				ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm = tuple.getSecond();
+				BufferedImage landBackground = tuple.getThird();
+				ImageHelper.ColorifyAlgorithm landColorifyAlgorithm = tuple.getFourth();
+				
+				oceanDisplayPanel.setColorifyAlgorithm(oceanColorifyAlgorithm);
+				oceanDisplayPanel.setImage(oceanBackground);
+				oceanDisplayPanel.repaint();
+
+				landDisplayPanel.setColorifyAlgorithm(landColorifyAlgorithm);
+				landDisplayPanel.setImage(landBackground);
+				landDisplayPanel.repaint();
+			}
+		};
+		
+		worker.execute();
+	}
+
+	private static Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
+			Dimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
+			String textureImageFileName)
+	{
 
 		BufferedImage oceanBackground;
+		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
 		BufferedImage landBackground;
-		if (rdbtnFractal.isSelected())
+		ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+		
+		if (isFractal)
 		{
-			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
-			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm2);
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
+			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 
-			oceanBackground = landBackground = FractalBGGenerator.generate(new Random(Integer.parseInt(backgroundSeedTextField.getText())),
-					1.3f, bounds.width, bounds.height, 0.75f);
+			oceanBackground = landBackground = FractalBGGenerator.generate(new Random(seed),
+					1.3f, size.width, size.height, 0.75f);
 		}
-		else if (rdbtnGeneratedFromTexture.isSelected())
+		else if (isFromTexture)
 		{
 			BufferedImage texture;
 			try
 			{
-				texture = ImageHelper.read(textureImageFilename.getText());
+				texture = ImageHelper.read(textureImageFileName);
 
-				if (colorizeOceanCheckbox.isSelected())
+				if (colorizeLand)
 				{
-					oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
 					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(Integer.parseInt(backgroundSeedTextField.getText())), ImageHelper.convertToGrayscale(texture),
-							bounds.height, bounds.width);
+							new Random(seed), ImageHelper.convertToGrayscale(texture),
+							size.height, size.width);
 				}
 				else
 				{
-					oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 
 					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture, bounds.height,
-							bounds.width);
+							new Random(seed), texture, size.height,
+							size.width);
 				}
 
-				if (colorizeLandCheckbox.isSelected() == colorizeOceanCheckbox.isSelected())
+				if (colorizeLand == colorizeOcean)
 				{
 					// No need to generate the same image twice.
 					landBackground = oceanBackground;
-					if (colorizeLandCheckbox.isSelected())
+					if (colorizeLand)
 					{
-						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 					}
 					else
 					{
-						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 					}
 				}
 				else
 				{
-					if (colorizeLandCheckbox.isSelected())
+					if (colorizeLand)
 					{
-						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.algorithm3);
+						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
 						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(Integer.parseInt(backgroundSeedTextField.getText())), ImageHelper.convertToGrayscale(texture),
-								bounds.height, bounds.width);
+								new Random(seed), ImageHelper.convertToGrayscale(texture),
+								size.height, size.width);
 					}
 					else
 					{
-						landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
+						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 
 						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-								new Random(Integer.parseInt(backgroundSeedTextField.getText())), texture, bounds.height,
-								bounds.width);
+								new Random(seed), texture, size.height,
+								size.width);
 					}
 				}
 			}
 			catch (RuntimeException e)
 			{
-				oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
-				landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
-				oceanBackground = landBackground = new BufferedImage(bounds.width, bounds.height,
+				oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+				oceanBackground = landBackground = new BufferedImage(size.width, size.height,
 						BufferedImage.TYPE_INT_ARGB);
 			}
 		}
 		else
 		{
-			oceanDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
-			landDisplayPanel.setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm.none);
-			oceanBackground = landBackground = ImageHelper.createBlackImage(bounds.width, bounds.height);
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
+			oceanBackground = landBackground = ImageHelper.createBlackImage(size.width, size.height);
 		}
 
-		oceanDisplayPanel.setImage(oceanBackground);
-		oceanDisplayPanel.repaint();
-
-		landDisplayPanel.setImage(landBackground);
-		landDisplayPanel.repaint();
+		return new Tuple4<>(oceanBackground, oceanColorifyAlgorithm, landBackground, landColorifyAlgorithm);
 	}
 
 
@@ -1003,7 +1065,14 @@ public class ThemePanel extends JTabbedPane
 		settings.colorizeOcean = colorizeOceanCheckbox.isSelected();
 		settings.colorizeLand = colorizeLandCheckbox.isSelected();
 		settings.backgroundTextureImage = textureImageFilename.getText();
-		settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
+		try
+		{
+			settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
+		}
+		catch (NumberFormatException e)
+		{
+			settings.backgroundRandomSeed = 0;
+		}
 		settings.oceanColor = oceanDisplayPanel.getColor();
 		settings.drawRegionColors = areRegionColorsVisible();
 		if (!settings.drawRegionColors)

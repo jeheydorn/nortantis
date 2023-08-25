@@ -97,6 +97,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	double zoom;
 	double displayQualityScale;
 	private JMenu displayQualityMenu;
+	private JRadioButtonMenuItem radioButton50Percent;
 	private JRadioButtonMenuItem radioButton75Percent;
 	private JRadioButtonMenuItem radioButton100Percent;
 	private JRadioButtonMenuItem radioButton125Percent;
@@ -617,9 +618,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					undoer.undo();
+					updater.doWhenMapIsReadyForInteractions(() -> 
+							{
+								undoer.undo();
+							});
 				}
-				undoer.updateUndoRedoEnabled();
 			}
 		});
 
@@ -634,9 +637,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					undoer.redo();
+					updater.doWhenMapIsReadyForInteractions(() -> 
+					{
+						undoer.redo();	
+					});
 				}
-				undoer.updateUndoRedoEnabled();
 			}
 		});
 
@@ -702,6 +707,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		ButtonGroup resolutionButtonGroup = new ButtonGroup();
 
+		radioButton50Percent = new JRadioButtonMenuItem("Very Low");
+		radioButton50Percent.addActionListener(resolutionListener);
+		displayQualityMenu.add(radioButton50Percent);
+		resolutionButtonGroup.add(radioButton50Percent);
+
 		radioButton75Percent = new JRadioButtonMenuItem("Low");
 		radioButton75Percent.addActionListener(resolutionListener);
 		displayQualityMenu.add(radioButton75Percent);
@@ -725,7 +735,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
 		{
 			boolean found = false;
-			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton75Percent, radioButton100Percent,
+			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent, radioButton100Percent,
 					radioButton125Percent, radioButton150Percent })
 			{
 				if (UserPreferences.getInstance().editorImageQuality.equals(resolutionOption.getText()))
@@ -922,15 +932,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public void showAsDrawing(boolean isDrawing)
 	{
 		clearEntireMapButton.setEnabled(!isDrawing);
-		// TODO test to see if I need these
-//		if (displayQualityMenu != null)
-//		{
-//			radioButton75Percent.setEnabled(!isDrawing);
-//			radioButton100Percent.setEnabled(!isDrawing);
-//			radioButton125Percent.setEnabled(!isDrawing);
-//			radioButton150Percent.setEnabled(!isDrawing);
-//		}
-
 		toolsPanel.showAsDrawing(isDrawing);
 	}
 
@@ -953,7 +954,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void updateImageQualityScale(String imageQualityText)
 	{
-		if (imageQualityText.equals(radioButton75Percent.getText()))
+		if (imageQualityText.equals(radioButton50Percent.getText()))
+		{
+			displayQualityScale = 0.50;
+		}
+		else if (imageQualityText.equals(radioButton75Percent.getText()))
 		{
 			displayQualityScale = 0.75;
 		}

@@ -1494,9 +1494,15 @@ public class TextDrawer
 		return null;
 	}
 	
-	public void setSettings(MapSettings mapSettings)
+	public void setSettingsAndMapTexts(MapSettings mapSettings)
 	{
 		this.settings = mapSettings;
+		if (mapSettings != null && mapSettings.edits != null && mapSettings.edits.text != null)
+		{
+			// Make sure the pointer to mapSettings.edits.text matches between the one in this TextDrawer. They can be different because 
+			// undo/redo deep copy the map texts.
+			mapTexts = mapSettings.edits.text;
+		}
 	}
 
 	/**

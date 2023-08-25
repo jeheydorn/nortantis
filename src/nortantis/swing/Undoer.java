@@ -71,8 +71,13 @@ public class Undoer
 			return;
 		}
 		
-		MapChange change = undoStack.pop();
-		redoStack.push(change);
+		if (undoStack.size() == 0)
+		{
+			return;
+		}
+		
+		MapChange changeToUndo = undoStack.pop();
+		redoStack.push(changeToUndo);
 		MapSettings settings;
 		if (undoStack.isEmpty())
 		{
@@ -85,25 +90,23 @@ public class Undoer
 			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
 		}
 		
-		// Keep the collection of text edits being drawn in sync with the settings
-		mainWindow.updater.mapParts.textDrawer.setMapTexts(settings.edits.text);
-		
-		if (change.toolThatMadeChange != null)
+		if (changeToUndo.toolThatMadeChange != null)
 		{
-			if (mainWindow.toolsPanel.currentTool != change.toolThatMadeChange)
+			if (mainWindow.toolsPanel.currentTool != changeToUndo.toolThatMadeChange)
 			{
-				mainWindow.toolsPanel.handleToolSelected(change.toolThatMadeChange, true);
+				mainWindow.toolsPanel.handleToolSelected(changeToUndo.toolThatMadeChange, true);
 			}
 
-			change.toolThatMadeChange.onAfterUndoRedo(change);
+			changeToUndo.toolThatMadeChange.onAfterUndoRedo();
 		}
 		else
 		{
 			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
-			mainWindow.toolsPanel.currentTool.onAfterUndoRedo(change);			
+			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
 		
-		mainWindow.updater.createAndShowMapFromChange(change);
+		mainWindow.updater.createAndShowMapFromChange(changeToUndo);
+		updateUndoRedoEnabled();
 	}
 	
 	public void redo()
@@ -112,34 +115,37 @@ public class Undoer
 		{
 			return;
 		}
-
-		MapSettings prevSettings = mainWindow.getSettingsFromGUI(true);
-		MapChange change = redoStack.pop();
-		undoStack.push(change);
-		MapSettings newSettings = undoStack.peek().settings.deepCopy();
-		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true);
 		
-		// Keep the collection of text edits being drawn in sync with the settings
-		mainWindow.updater.mapParts.textDrawer.setMapTexts(newSettings.edits.text);
+		if (redoStack.size() == 0)
+		{
+			return;
+		}
 
-		MapChange changeWithPrevSettings = new MapChange(prevSettings, change.updateType, change.toolThatMadeChange);
-		if (change.toolThatMadeChange != null)
+		MapSettings currentSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened.deepCopy() : undoStack.peek().settings;
+		MapChange changeToRedo = redoStack.pop();
+		undoStack.push(changeToRedo);
+		MapSettings newSettings = changeToRedo.settings.deepCopy();
+		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true);
+
+		if (changeToRedo.toolThatMadeChange != null)
 		{
 			// Switch to the tool that made the change.
-			if (mainWindow.toolsPanel.currentTool != change.toolThatMadeChange)
+			if (mainWindow.toolsPanel.currentTool != changeToRedo.toolThatMadeChange)
 			{
-				mainWindow.toolsPanel.handleToolSelected(change.toolThatMadeChange, true);
+				mainWindow.toolsPanel.handleToolSelected(changeToRedo.toolThatMadeChange, true);
 			}
 			
-			change.toolThatMadeChange.onAfterUndoRedo(changeWithPrevSettings);
+			changeToRedo.toolThatMadeChange.onAfterUndoRedo();
 		}
 		else
 		{
-			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map.
-			mainWindow.toolsPanel.currentTool.onAfterUndoRedo(changeWithPrevSettings);
+			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map or the Theme panel.
+			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
 		
-		mainWindow.updater.createAndShowMapFromChange(change);
+		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange);
+		mainWindow.updater.createAndShowMapFromChange(changeWithPrevSettings);
+		updateUndoRedoEnabled();
 	}
 	
 	public void updateUndoRedoEnabled()

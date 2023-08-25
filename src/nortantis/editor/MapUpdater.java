@@ -5,7 +5,10 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -35,6 +38,7 @@ public abstract class MapUpdater
 	private Dimension maxMapSize;
 	private boolean enabled;
 	private boolean isMapReadyForInteractions;
+	private Queue<Runnable> tasksToRunWhenMapReady;
 
 	/**
 	 * 
@@ -49,6 +53,7 @@ public abstract class MapUpdater
 		interactionsLock = new ReentrantLock();
 		incrementalUpdatesToDraw = new ArrayDeque<>();
 		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
+		tasksToRunWhenMapReady = new ConcurrentLinkedQueue<>();
 	}
 
 	/**
@@ -89,6 +94,14 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
 	}
 
+	/**
+	 * Redraws the map based on a change that was made.
+	 * 
+	 * For incremental drawing, this compares the edits in the change with the current state of the edits from getEdits()
+	 * to determine what changed. 
+	 * 
+	 * @param change The 'before' state. Used to determine what needs to be redrawn.
+	 */
 	public void createAndShowMapFromChange(MapChange change)
 	{
 		if (change.updateType != UpdateType.Incremental)
@@ -148,6 +161,7 @@ public abstract class MapUpdater
 			return;
 		}
 
+		// Note - Any update type which clear graph should block incremental updates in markToDrawLater when mapNeedsNonIncrementalUpdateForType is that update type.
 		if (updateType == UpdateType.Full)
 		{
 			if (mapParts != null)
@@ -187,6 +201,65 @@ public abstract class MapUpdater
 		}
 
 	}
+	
+	private void markToDrawLater(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
+	{
+		if (updateType == UpdateType.Incremental)
+		{
+			// Any update types which clear graph should be included in the if statement below.
+			if (mapNeedsNonIncrementalUpdateForType != UpdateType.Full)
+			{
+				incrementalUpdatesToDraw.add(new IncrementalUpdate(centersChanged, edgesChanged));	
+			}
+		}
+		else if (updateType == UpdateType.Full)
+		{
+			mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
+			incrementalUpdatesToDraw.clear();
+		}
+		else
+		{
+			if (mapNeedsNonIncrementalUpdateForType == null)
+			{
+				mapNeedsNonIncrementalUpdateForType = updateType;
+			}
+			else if (mapNeedsNonIncrementalUpdateForType != updateType)
+			{
+				// Two different types of non-incremental updates have been
+				// requested. Just run a full update
+				// to avoid needing to somehow merge the updates.
+				mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
+				incrementalUpdatesToDraw.clear();
+			}
+		}
+	}
+	
+	/**
+	 * Creates a new set that has the most up-to-date version of the centers in the given set.
+	 * This is necessary because incremental and full redraws can run out of order, and as a result, a full redraw might recreate the graph,
+	 * while an incremental change is waiting to run, causing centersChanged (passed to createAndShowMap) to hold Center objects no longer 
+	 * in the graph, and so they could be out of date.
+	 */
+	private Set<Center> getCurrentCenters(Set<Center> centers)
+	{
+		if (centers == null)
+		{
+			return null;
+		}
+		return centers.stream().map(c -> mapParts.graph.centers.get(c.index)).collect(Collectors.toSet());
+	}
+	
+	/**
+	 * Like getCurrentCenters but for edges.
+	 */
+	private Set<Edge> getCurrentEdges(Set<Edge> edges)
+	{
+		if (edges == null)
+		{
+			return null;
+		}
+		return edges.stream().map(e -> mapParts.graph.edges.get(e.index)).collect(Collectors.toSet());
+	}
 
 	/**
 	 * Redraws the map, then displays it
@@ -200,30 +273,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			if (updateType == UpdateType.Incremental)
-			{
-				incrementalUpdatesToDraw.add(new IncrementalUpdate(centersChanged, edgesChanged));
-			}
-			else if (updateType == UpdateType.Full)
-			{
-				mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
-				incrementalUpdatesToDraw.clear();
-			}
-			else
-			{
-				if (mapNeedsNonIncrementalUpdateForType == null)
-				{
-					mapNeedsNonIncrementalUpdateForType = updateType;
-				}
-				else if (mapNeedsNonIncrementalUpdateForType != updateType)
-				{
-					// Two different types of non-incremental updates have been
-					// requested. Just run a full update
-					// to avoid needing to somehow merge the updates.
-					mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
-					incrementalUpdatesToDraw.clear();
-				}
-			}
+			markToDrawLater(updateType, centersChanged, edgesChanged);
 			return;
 		}
 
@@ -273,17 +323,17 @@ public abstract class MapUpdater
 						return new Tuple2<>(map, null);
 					}
 					else
-					{
+					{	
 						BufferedImage map = getCurrentMapForIncrementalUpdate();
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map, centersChanged);
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map, getCurrentCenters(centersChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (edgesChanged != null && edgesChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map, edgesChanged);
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map, getCurrentEdges(edgesChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else
@@ -344,10 +394,6 @@ public abstract class MapUpdater
 
 					boolean anotherDrawIsQueued = mapNeedsNonIncrementalUpdateForType != null
 							|| (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0);
-					if (updateType == UpdateType.Incremental)
-					{
-						// TODO
-					}
 					int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 					onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth, 
 							replaceBounds == null ? null : 
@@ -356,9 +402,11 @@ public abstract class MapUpdater
 					isMapBeingDrawn = false;
 					if (mapNeedsNonIncrementalUpdateForType != null)
 					{
-						createAndShowMap(mapNeedsNonIncrementalUpdateForType, null, null);
+						UpdateType toPass = mapNeedsNonIncrementalUpdateForType;
+						mapNeedsNonIncrementalUpdateForType = null;
+						createAndShowMap(toPass, null, null);
 					}
-					else if (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0)
+					else if (incrementalUpdatesToDraw.size() > 0)
 					{
 						IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
 						createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
@@ -372,12 +420,16 @@ public abstract class MapUpdater
 					onFailedToDraw();
 				}
 
+				while(tasksToRunWhenMapReady.size() > 0)
+				{
+					tasksToRunWhenMapReady.poll().run();
+				}
 			}
 
 		};
 		worker.execute();
 	}
-
+	
 	protected abstract void onBeginDraw();
 
 	protected abstract MapSettings getSettingsFromGUI();
@@ -405,6 +457,7 @@ public abstract class MapUpdater
 		}
 
 		IncrementalUpdate result = incrementalUpdatesToDraw.pop();
+
 		if (incrementalUpdatesToDraw.size() == 1)
 		{
 			return result;
@@ -540,19 +593,21 @@ public abstract class MapUpdater
 			boolean isLocked = false;
 			try
 			{
-				if (skipIfLocked)
-				{
-					isLocked = interactionsLock.tryLock(0, TimeUnit.MILLISECONDS);
-				}
-				else
-				{
-					interactionsLock.lock();
-					isLocked = true;
-				}
-
+				isLocked = interactionsLock.tryLock(0, TimeUnit.MILLISECONDS);
 				if (isLocked)
 				{
 					action.run();
+				}
+				else
+				{
+					if (skipIfLocked)
+					{
+						return;
+					}
+					else
+					{
+						tasksToRunWhenMapReady.add(action);
+					}
 				}
 			}
 			catch (InterruptedException e1)
@@ -564,6 +619,13 @@ public abstract class MapUpdater
 				{
 					interactionsLock.unlock();
 				}
+			}
+		}
+		else
+		{
+			if (!skipIfLocked)
+			{
+				tasksToRunWhenMapReady.add(action);
 			}
 		}
 	}

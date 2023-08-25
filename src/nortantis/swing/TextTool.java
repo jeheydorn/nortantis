@@ -30,7 +30,6 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
-import nortantis.editor.MapChange;
 import nortantis.editor.MapUpdater;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
@@ -489,9 +488,10 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo(MapChange change)
+	protected void onAfterUndoRedo()
 	{
 		mapEditingPanel.clearAreasToDraw();
+		mapEditingPanel.repaint();
 		lastSelected = null;
 		editTextField.setText("");
 		

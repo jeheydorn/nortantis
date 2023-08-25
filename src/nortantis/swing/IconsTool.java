@@ -38,7 +38,6 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
-import nortantis.editor.MapChange;
 import nortantis.editor.MapUpdater;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
@@ -702,8 +701,10 @@ public class IconsTool extends EditorTool
 	}
 	
 	@Override
-	protected void onAfterUndoRedo(MapChange change)
+	protected void onAfterUndoRedo()
 	{	
+		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.repaint();
 	}
 	
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)

@@ -411,7 +411,7 @@ public class MapCreator
 		else
 		{
 			textDrawer = mapParts.textDrawer;
-			textDrawer.setSettings(settings);
+			textDrawer.setSettingsAndMapTexts(settings);
 		}
 
 		WorldGraph graph;
