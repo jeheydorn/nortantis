@@ -98,7 +98,7 @@ public class ToolsPanel extends JPanel
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					handleToolSelected(tool, false);
+					handleToolSelected(tool);
 				}
 			});
 			tool.updateBorder();
