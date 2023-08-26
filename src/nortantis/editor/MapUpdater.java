@@ -3,9 +3,11 @@ package nortantis.editor;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.channels.IllegalSelectorException;
 import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -28,8 +30,6 @@ import nortantis.util.Tuple2;
 
 public abstract class MapUpdater
 {
-	private UpdateType mapNeedsNonIncrementalUpdateForType;
-	private ArrayDeque<IncrementalUpdate> incrementalUpdatesToDraw;
 	public boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
 	private ReentrantLock interactionsLock;
@@ -39,6 +39,7 @@ public abstract class MapUpdater
 	private boolean enabled;
 	private boolean isMapReadyForInteractions;
 	private Queue<Runnable> tasksToRunWhenMapReady;
+	private ArrayDeque<MapUpdate> updatesToDraw;
 
 	/**
 	 * 
@@ -51,9 +52,9 @@ public abstract class MapUpdater
 	{
 		drawLock = new ReentrantLock();
 		interactionsLock = new ReentrantLock();
-		incrementalUpdatesToDraw = new ArrayDeque<>();
 		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
 		tasksToRunWhenMapReady = new ConcurrentLinkedQueue<>();
+		updatesToDraw = new ArrayDeque<>();
 	}
 
 	/**
@@ -204,34 +205,7 @@ public abstract class MapUpdater
 	
 	private void markToDrawLater(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
-		if (updateType == UpdateType.Incremental)
-		{
-			// Any update types which clear graph should be included in the if statement below.
-			if (mapNeedsNonIncrementalUpdateForType != UpdateType.Full)
-			{
-				incrementalUpdatesToDraw.add(new IncrementalUpdate(centersChanged, edgesChanged));	
-			}
-		}
-		else if (updateType == UpdateType.Full)
-		{
-			mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
-			incrementalUpdatesToDraw.clear();
-		}
-		else
-		{
-			if (mapNeedsNonIncrementalUpdateForType == null)
-			{
-				mapNeedsNonIncrementalUpdateForType = updateType;
-			}
-			else if (mapNeedsNonIncrementalUpdateForType != updateType)
-			{
-				// Two different types of non-incremental updates have been
-				// requested. Just run a full update
-				// to avoid needing to somehow merge the updates.
-				mapNeedsNonIncrementalUpdateForType = UpdateType.Full;
-				incrementalUpdatesToDraw.clear();
-			}
-		}
+		updatesToDraw.push(new MapUpdate(updateType, centersChanged, edgesChanged));
 	}
 	
 	/**
@@ -392,27 +366,21 @@ public abstract class MapUpdater
 						initializeEdgeEditsIfEmpty();
 					}
 
-					boolean anotherDrawIsQueued = mapNeedsNonIncrementalUpdateForType != null
-							|| (updateType == UpdateType.Incremental && incrementalUpdatesToDraw.size() > 0);
+					MapUpdate next = combineAndGetNextUpdateToDraw();
+
+					boolean anotherDrawIsQueued = next != null;
 					int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 					onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth, 
 							replaceBounds == null ? null : 
 								new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth, replaceBounds.width, replaceBounds.height));
 
 					isMapBeingDrawn = false;
-					if (mapNeedsNonIncrementalUpdateForType != null)
+					
+					if (next != null)
 					{
-						UpdateType toPass = mapNeedsNonIncrementalUpdateForType;
-						mapNeedsNonIncrementalUpdateForType = null;
-						createAndShowMap(toPass, null, null);
+						createAndShowMap(next.updateType, next.centersChanged, next.edgesChanged);
 					}
-					else if (incrementalUpdatesToDraw.size() > 0)
-					{
-						IncrementalUpdate incrementalUpdate = combineAndGetNextIncrementalUpdateToDraw();
-						createAndShowMap(UpdateType.Incremental, incrementalUpdate.centersChanged, incrementalUpdate.edgesChanged);
-					}
-
-					mapNeedsNonIncrementalUpdateForType = null;
+					
 					isMapReadyForInteractions = true;
 				}
 				else
@@ -444,31 +412,38 @@ public abstract class MapUpdater
 	protected abstract BufferedImage getCurrentMapForIncrementalUpdate();
 
 	/**
-	 * Combines the incremental updates in incrementalUpdatesToDraw so they can
-	 * be drawn together. Clears out incrementalUpdatesToDraw.
+	 * Combines the updates in updatesToDraw when it makes sense to do so, they can
+	 * be drawn together.
 	 * 
 	 * @return The combined update to draw
 	 */
-	private IncrementalUpdate combineAndGetNextIncrementalUpdateToDraw()
+	private MapUpdate combineAndGetNextUpdateToDraw()
 	{
-		if (incrementalUpdatesToDraw.size() == 0)
+		if (updatesToDraw.isEmpty())
 		{
 			return null;
 		}
-
-		IncrementalUpdate result = incrementalUpdatesToDraw.pop();
-
-		if (incrementalUpdatesToDraw.size() == 1)
+		
+		Optional<MapUpdate> full = updatesToDraw.stream().filter(update -> update.updateType == UpdateType.Full).findFirst();
+		if (full.isPresent())
 		{
-			return result;
+			// There's a full update on the queue. We only need to do that one.
+			updatesToDraw.clear();
+			return full.get();
 		}
-
-		while (incrementalUpdatesToDraw.size() > 0)
+		else
 		{
-			IncrementalUpdate next = incrementalUpdatesToDraw.pop();
-			result.add(next);
+			// Combine incremental updates until we hit one that isn't incremental.
+			MapUpdate update = updatesToDraw.poll();
+			if (update.updateType == UpdateType.Incremental)
+			{
+				while (updatesToDraw.size() > 0 && updatesToDraw.peek().updateType == UpdateType.Incremental)
+				{
+					update.add(updatesToDraw.poll());
+				}
+			}
+			return update;
 		}
-		return result;
 	}
 
 	private void initializeCenterEditsIfEmpty()
@@ -514,11 +489,12 @@ public abstract class MapUpdater
 	{
 		maxMapSize = dimension;
 	}
-
-	private class IncrementalUpdate
+	
+	private class MapUpdate
 	{
-		public IncrementalUpdate(Set<Center> centersChanged, Set<Edge> edgesChanged)
+		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
 		{
+			this.updateType = updateType;
 			if (centersChanged != null)
 			{
 				this.centersChanged = new HashSet<Center>(centersChanged);
@@ -531,12 +507,22 @@ public abstract class MapUpdater
 
 		Set<Center> centersChanged;
 		Set<Edge> edgesChanged;
+		UpdateType updateType;
 
-		public void add(IncrementalUpdate other)
+		public void add(MapUpdate other)
 		{
 			if (other == null)
 			{
 				return;
+			}
+			
+			if (updateType != UpdateType.Incremental)
+			{
+				throw new IllegalStateException();
+			}
+			if (other.updateType != UpdateType.Incremental)
+			{
+				throw new IllegalArgumentException();
 			}
 
 			if (centersChanged != null && other.centersChanged != null)
