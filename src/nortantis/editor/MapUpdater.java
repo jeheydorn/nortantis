@@ -202,12 +202,7 @@ public abstract class MapUpdater
 		}
 
 	}
-	
-	private void markToDrawLater(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
-	{
-		updatesToDraw.push(new MapUpdate(updateType, centersChanged, edgesChanged));
-	}
-	
+		
 	/**
 	 * Creates a new set that has the most up-to-date version of the centers in the given set.
 	 * This is necessary because incremental and full redraws can run out of order, and as a result, a full redraw might recreate the graph,
@@ -247,7 +242,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			markToDrawLater(updateType, centersChanged, edgesChanged);
+			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged));
 			return;
 		}
 
