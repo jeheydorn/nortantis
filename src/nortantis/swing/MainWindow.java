@@ -591,7 +591,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						}
 						catch (Exception ex)
 						{
-							SwingHelper.handleBackgroundThreadException(ex);
+							SwingHelper.handleBackgroundThreadException(ex, false);
 						}
 					}
 				};
@@ -1339,5 +1339,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	void setResolutionToSave(double resolutionToSave)
 	{
 		this.resolutionToSave = resolutionToSave;
+	}
+	
+	double getResolutionToSave()
+	{
+		return resolutionToSave;
 	}
 }

@@ -284,7 +284,7 @@ public class SwingHelper
 		}
 	}
 
-	public static void handleBackgroundThreadException(Exception ex)
+	public static void handleBackgroundThreadException(Exception ex, boolean isExport)
 	{
 		if (ex instanceof ExecutionException)
 		{
@@ -294,7 +294,8 @@ public class SwingHelper
 				if (ex.getCause() instanceof OutOfMemoryError)
 				{
 					JOptionPane.showMessageDialog(null,
-							"Out of memory. Try allocating more memory to the Java heap space, or decrease the resolution in the Background tab.",
+							isExport ? "Out of memory. Try exporting at a lower resolution." :
+							"Out of memory. Try decreasing the Display Quality in the View menu.",
 							"Error", JOptionPane.ERROR_MESSAGE);
 				}
 				else

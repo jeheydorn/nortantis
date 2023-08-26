@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
+import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.graph.geom.Rectangle;
@@ -264,7 +265,7 @@ public abstract class MapUpdater
 		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
 		{
 			@Override
-			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException
+			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException, CancelledException
 			{
 				if (updateType != UpdateType.Incremental)
 				{
@@ -288,7 +289,17 @@ public abstract class MapUpdater
 							mapParts = new MapParts();
 						}
 
-						BufferedImage map = new MapCreator().createMap(settings, maxMapSize, mapParts);
+						BufferedImage map;
+						try
+						{
+							map = new MapCreator().createMap(settings, maxMapSize, mapParts);
+						}
+						catch (CancelledException e)
+						{
+							Logger.println("Map creation cancelled.");
+							return new Tuple2<>(null, null);
+						}
+
 						System.gc();
 						return new Tuple2<>(map, null);
 					}

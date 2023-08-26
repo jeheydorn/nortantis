@@ -53,6 +53,7 @@ public class MapCreator
 
 	private static final int concentricWaveWidthBetweenWaves = 12;
 	private static final int concentricWaveLineWidth = 2;
+	private boolean isCanceled;
 
 	public MapCreator()
 	{
@@ -364,6 +365,7 @@ public class MapCreator
 	 * @return The map
 	 */
 	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
+			throws CancelledException
 	{
 		Logger.println("Creating the map");
 
@@ -387,6 +389,8 @@ public class MapCreator
 			mapParts.background = background;
 		}
 
+		checkForCancel();
+
 		double sizeMultiplier = calcSizeMultiplier(background.mapBounds.getWidth());
 
 		TextDrawer textDrawer = null;
@@ -409,6 +413,8 @@ public class MapCreator
 			textDrawer = mapParts.textDrawer;
 			textDrawer.setSettingsAndMapTexts(settings);
 		}
+		
+		checkForCancel();
 
 		WorldGraph graph;
 		if (mapParts == null || mapParts.graph == null)
@@ -424,6 +430,8 @@ public class MapCreator
 		{
 			graph = mapParts.graph;
 		}
+		
+		checkForCancel();
 
 		BufferedImage map;
 		BufferedImage landBackground;
@@ -433,6 +441,8 @@ public class MapCreator
 		{
 			Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts,
 					graph, background, sizeMultiplier);
+			
+			checkForCancel();
 
 			map = tuple.getFirst();
 			landBackground = tuple.getSecond();
@@ -446,6 +456,8 @@ public class MapCreator
 			mountainGroups = null;
 			cities = null;
 		}
+		
+		checkForCancel();
 
 		if (settings.drawText)
 		{
@@ -482,6 +494,8 @@ public class MapCreator
 				background.borderBackground = null;
 			}
 		}
+		
+		checkForCancel();
 
 		if (settings.frayedBorder)
 		{
@@ -531,6 +545,8 @@ public class MapCreator
 			r.nextLong();
 		}
 		background = null;
+		
+		checkForCancel();
 
 		if (settings.grungeWidth > 0)
 		{
@@ -550,6 +566,8 @@ public class MapCreator
 				final float fractalPower = 1.3f;
 				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, (int) map.getWidth(),
 						(int) map.getHeight(), 0.75f);
+				
+				checkForCancel();
 
 				// Whiten the middle of clouds.
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
@@ -563,6 +581,8 @@ public class MapCreator
 				mapParts.grunge = grunge;
 			}
 		}
+		
+		checkForCancel();
 
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
@@ -578,6 +598,8 @@ public class MapCreator
 		applyRegionEdits(graph, settings.edits);
 		applyCenterEdits(graph, settings.edits, null);
 		applyEdgeEdits(graph, settings.edits, null);
+		
+		checkForCancel();
 
 		background.doSetupThatNeedsGraph(settings, graph, null, null, null);
 		if (mapParts == null)
@@ -625,6 +647,8 @@ public class MapCreator
 		{
 			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers);
 		}
+		
+		checkForCancel();
 
 		// Draw mask for land vs ocean.
 		Logger.println("Adding land.");
@@ -643,10 +667,14 @@ public class MapCreator
 		}
 
 		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null, true);
+		
+		checkForCancel();
 
 		// Store the current version of the map for a background when drawing
 		// icons later.
 		BufferedImage landBackground = ImageHelper.deepCopy(map);
+		
+		checkForCancel();
 
 		if (settings.drawRegionColors)
 		{
@@ -662,6 +690,8 @@ public class MapCreator
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
+		
+		checkForCancel();
 
 		if (settings.drawRivers)
 		{
@@ -669,6 +699,8 @@ public class MapCreator
 			Logger.println("Adding rivers.");
 			drawRivers(settings, graph, map, sizeMultiplier, null, null);
 		}
+		
+		checkForCancel();
 
 		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
@@ -694,12 +726,16 @@ public class MapCreator
 			// roadDrawer.markRoads();
 			// roadDrawer.drawRoads(map, sizeMultiplier);
 		}
+		
+		checkForCancel();
 
 		if (settings.drawIcons)
 		{
 			Logger.println("Drawing all icons.");
 			iconDrawer.drawAllIcons(map, landBackground, null);
 		}
+		
+		checkForCancel();
 
 		// Add the rivers to landBackground so that the text doesn't erase them.
 		// I do this whether or not I draw text because I might draw the text
@@ -709,6 +745,8 @@ public class MapCreator
 		{
 			drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
 		}
+		
+		checkForCancel();
 
 		Logger.println("Drawing ocean.");
 		{
@@ -728,6 +766,8 @@ public class MapCreator
 				background.ocean = null;
 			}
 		}
+		
+		checkForCancel();
 
 		{
 			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask, null, null);
@@ -738,6 +778,8 @@ public class MapCreator
 				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
 			}
 		}
+		
+		checkForCancel();
 
 		// Draw coastlines.
 		{
@@ -758,6 +800,14 @@ public class MapCreator
 		}
 
 		return new Tuple4<>(map, landBackground, mountainGroups, cities);
+	}
+	
+	private void checkForCancel()
+	{
+		if (isCanceled)
+		{
+			throw new CancelledException();
+		}
 	}
 
 	/**
@@ -1256,9 +1306,9 @@ public class MapCreator
 					blurBoxY2 = y2;
 				}
 
-				float blurBoxLevel = Math.max(blurBoxRaster.getSample(blurBoxX1, blurBoxY1, 0),
-						Math.max(blurBoxRaster.getSample(blurBoxX2, blurBoxY1, 0),
-								Math.max(blurBoxRaster.getSample(blurBoxX1, blurBoxY2, 0), blurBoxRaster.getSample(blurBoxX2, blurBoxY2, 0))));
+				float blurBoxLevel = Math.max(blurBoxRaster.getSample(blurBoxX1, blurBoxY1, 0), Math.max(
+						blurBoxRaster.getSample(blurBoxX2, blurBoxY1, 0),
+						Math.max(blurBoxRaster.getSample(blurBoxX1, blurBoxY2, 0), blurBoxRaster.getSample(blurBoxX2, blurBoxY2, 0))));
 
 				imageRaster.setSample(x, y, 0, (imageLevel * blurBoxLevel) / 255f);
 			}
@@ -1343,5 +1393,10 @@ public class MapCreator
 			}
 		}
 		return edgeEdits;
+	}
+	
+	public void cancel()
+	{
+		isCanceled = true;
 	}
 }

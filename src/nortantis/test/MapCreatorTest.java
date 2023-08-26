@@ -11,6 +11,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.util.Helper;
@@ -160,7 +161,8 @@ public class MapCreatorTest
 		MapSettings settings = new MapSettings(settingsPath);
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
-		BufferedImage actual = mapCreator.createMap(settings, null, null);
+		BufferedImage actual;
+		actual = mapCreator.createMap(settings, null, null);
 
 		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())

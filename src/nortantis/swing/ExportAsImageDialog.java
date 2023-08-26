@@ -9,6 +9,8 @@ import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.util.Hashtable;
 
@@ -21,6 +23,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JSlider;
 import javax.swing.SwingWorker;
 
+import nortantis.CancelledException;
 import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
@@ -35,6 +38,7 @@ public class ExportAsImageDialog extends JDialog
 	private JButton cancelButton;
 	private JButton exportButton;
 	private JSlider resolutionSlider;
+	private MapCreator mapCreator;
 
 	public ExportAsImageDialog(MainWindow mainWindow)
 	{
@@ -67,6 +71,7 @@ public class ExportAsImageDialog extends JDialog
 			}
 			resolutionSlider.setLabelTable(labelTable);
 		}
+		resolutionSlider.setValue((int)(mainWindow.getResolutionToSave() * 100));
 		organizer.addLabelAndComponentToPanel("Resolution:", "This percentage is multiplied by the size of the map to determine "
 				+ "the resolution to draw at. The maximum allowed resolution is determined by the amount of memory on this device.", 
 				resolutionSlider);
@@ -92,6 +97,10 @@ public class ExportAsImageDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				exportButton.setEnabled(false);
+				resolutionSlider.setEnabled(false);
+				mapCreator = new MapCreator();
+
 				// Run the export through doWhenMapIsReadyForInteractions so that we don't risk running out of memory
 				// or end up clearing the image cache while a draw is still going.
 				mainWindow.updater.doWhenMapIsReadyForInteractions(() -> exportMapAndCloseDialog(mainWindow, resolutionSlider.getValue() / 100.0));
@@ -105,6 +114,10 @@ public class ExportAsImageDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				if (mapCreator != null)
+				{
+					mapCreator.cancel();
+				}
 				dispose();
 			}
 		});
@@ -127,14 +140,53 @@ public class ExportAsImageDialog extends JDialog
 			}
 		};
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
+		
+		addWindowListener(new WindowListener()
+		{
+			
+			@Override
+			public void windowOpened(WindowEvent e)
+			{
+			}
+			
+			@Override
+			public void windowIconified(WindowEvent e)
+			{
+			}
+			
+			@Override
+			public void windowDeiconified(WindowEvent e)
+			{
+			}
+			
+			@Override
+			public void windowDeactivated(WindowEvent e)
+			{
+			}
+			
+			@Override
+			public void windowClosing(WindowEvent e)
+			{
+				if (mapCreator != null)
+				{
+					mapCreator.cancel();
+				}
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e)
+			{
+			}
+			
+			@Override
+			public void windowActivated(WindowEvent e)
+			{
+			}
+		});
 	}
 	
 	private void exportMapAndCloseDialog(MainWindow mainWindow, double resolution)
-	{
-		cancelButton.setEnabled(false);
-		exportButton.setEnabled(false);
-		resolutionSlider.setEnabled(false);
-		
+	{		
 		progressBar.setVisible(true);
 		mainWindow.setResolutionToSave(resolution);
 		final MapSettings settings = mainWindow.getSettingsFromGUI(false).deepCopy();
@@ -148,7 +200,17 @@ public class ExportAsImageDialog extends JDialog
 				Logger.clear();
 				ImageCache.getInstance().clear();
 
-				BufferedImage map = new MapCreator().createMap(settings, null, null);
+				BufferedImage map;
+				try
+				{
+					map = mapCreator.createMap(settings, null, null);
+				}
+				catch (CancelledException e)
+				{
+					Logger.println("Map creation cancelled.");
+					return null;
+				}
+				
 				System.gc();
 
 				Logger.println("Opening the map in your system's default image editor.");
@@ -167,7 +229,7 @@ public class ExportAsImageDialog extends JDialog
 				}
 				catch (Exception ex)
 				{
-					SwingHelper.handleBackgroundThreadException(ex);
+					SwingHelper.handleBackgroundThreadException(ex, true);
 				}
 				
 				dispose();
