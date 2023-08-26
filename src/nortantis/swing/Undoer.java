@@ -94,7 +94,7 @@ public class Undoer
 		{
 			if (mainWindow.toolsPanel.currentTool != changeToUndo.toolThatMadeChange)
 			{
-				mainWindow.toolsPanel.handleToolSelected(changeToUndo.toolThatMadeChange, true);
+				mainWindow.toolsPanel.handleToolSelected(changeToUndo.toolThatMadeChange);
 			}
 
 			changeToUndo.toolThatMadeChange.onAfterUndoRedo();
@@ -132,7 +132,7 @@ public class Undoer
 			// Switch to the tool that made the change.
 			if (mainWindow.toolsPanel.currentTool != changeToRedo.toolThatMadeChange)
 			{
-				mainWindow.toolsPanel.handleToolSelected(changeToRedo.toolThatMadeChange, true);
+				mainWindow.toolsPanel.handleToolSelected(changeToRedo.toolThatMadeChange);
 			}
 			
 			changeToRedo.toolThatMadeChange.onAfterUndoRedo();

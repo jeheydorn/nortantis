@@ -306,7 +306,7 @@ public class TextTool extends EditorTool
 			if (selectedText != null)
 			{
 				selectedText.value = "";
-				undoer.setUndoPoint(UpdateType.Incremental, this);
+				undoer.setUndoPoint(UpdateType.Text, this);
 				updateTextInBackgroundThread(null);
 			}
 		}
@@ -401,7 +401,7 @@ public class TextTool extends EditorTool
 						(int)((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
 				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
 						+ lastSelected.location.y + translation.y);
-				undoer.setUndoPoint(UpdateType.Incremental, this);
+				undoer.setUndoPoint(UpdateType.Text, this);
 				updateTextInBackgroundThread(lastSelected);
 			}
 			else if (rotateButton.isSelected())

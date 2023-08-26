@@ -214,7 +214,7 @@ public class ToolsPanel extends JPanel
 		}
 	}
 	
-	public void handleToolSelected(EditorTool selectedTool, boolean isFromUndoRedo)
+	public void handleToolSelected(EditorTool selectedTool)
 	{
 		showAsDrawing(true);
 
@@ -232,7 +232,7 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
-		if (!isFromUndoRedo)
+		//if (!isFromUndoRedo)
 		{
 			updater.createAndShowMapTextChange();
 		}
