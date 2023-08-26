@@ -237,6 +237,7 @@ public class TextTool extends EditorTool
 	@Override
 	public void onActivate()
 	{
+		updater.createAndShowMapTextChange();
 		editTextField.requestFocus();
 	}
 	
@@ -466,7 +467,7 @@ public class TextTool extends EditorTool
 
 	@Override
 	public void onSwitchingAway()
-	{
+	{		
 		// Keep any text edits being done.
 		if (editTextFieldHider.isVisible())
 		{
@@ -475,6 +476,8 @@ public class TextTool extends EditorTool
 				lastSelected.value = editTextField.getText();
 			}
 		}
+		
+		updater.createAndShowMapTextChange();
 	}
 
 	@Override

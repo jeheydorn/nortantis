@@ -223,20 +223,18 @@ public class ToolsPanel extends JPanel
 		mainWindow.mapEditingPanel.clearSelectedCenters();
 		mainWindow.mapEditingPanel.clearHighlightedEdges();
 		mainWindow.mapEditingPanel.hideBrush();
-		currentTool.onSwitchingAway();
+		EditorTool prevTool = currentTool;
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
+		// I'm calling onSwitchingAway after setting currentTool because the place EditorTool.shouldShowTextWhenTextIsEnabled 
+		// in MainWindow.createMapUpdater depends on it. 
+		prevTool.onSwitchingAway();
 		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
-		toolsOptionsPanelContainer.repaint();
-		//if (!isFromUndoRedo)
-		{
-			updater.createAndShowMapTextChange();
-		}
-		
+		toolsOptionsPanelContainer.repaint();		
 		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
 	}
