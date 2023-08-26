@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +19,6 @@ import javax.swing.Box;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -315,7 +313,7 @@ public class IconsTool extends EditorTool
 		mountainsButton.doClick();
 		
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
-		organizer.addVerticalFillerRow(toolOptionsPanel);
+		organizer.addVerticalFillerRow();
 	    return toolOptionsPanel;
 	}
 	
@@ -490,16 +488,7 @@ public class IconsTool extends EditorTool
 			{
 				for (Center center : selected)
 				{
-					mainWindow.edits.centerEdits.get(center.index).trees = null;
-					mainWindow.edits.centerEdits.get(center.index).icon = null;
-					for (Edge edge : center.borders)
-					{
-						EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-						if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
-						{
-							eEdit.riverLevel = 0;
-						}
-					}
+					eraseIconAndTreeEdits(center, mainWindow.edits);
 				}
 			}
 			else if (eraseMountainsButton.isSelected())
@@ -567,6 +556,20 @@ public class IconsTool extends EditorTool
 			}
 		}
 		handleMapChange(selected);
+	}
+	
+	static void eraseIconAndTreeEdits(Center center, MapEdits edits)
+	{
+		edits.centerEdits.get(center.index).trees = null;
+		edits.centerEdits.get(center.index).icon = null;
+		for (Edge edge : center.borders)
+		{
+			EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
+			if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+			{
+				eEdit.riverLevel = 0;
+			}
+		}
 	}
 	
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)

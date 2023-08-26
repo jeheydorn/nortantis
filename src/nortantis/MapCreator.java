@@ -8,11 +8,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -447,8 +443,8 @@ public class MapCreator
 		{
 			map = ImageHelper.deepCopy(mapParts.mapBeforeAddingText);
 			landBackground = mapParts.landBackground;
-			mountainGroups = mapParts.mountainGroups;
-			cities = mapParts.cities;
+			mountainGroups = null;
+			cities = null;
 		}
 
 		if (settings.drawText)
@@ -458,7 +454,6 @@ public class MapCreator
 			if (settings.edits.text.size() > 0)
 			{
 				textDrawer.drawTextFromEdits(graph, map, landBackground);
-				ImageHelper.write(map, "mapWithTextDrawn.png");
 			}
 			else
 			{
@@ -621,10 +616,6 @@ public class MapCreator
 			// All mountain ranges and smaller groups of mountains (include
 			// mountains that are alone).
 			mountainGroups = pair.getFirst();
-			if (mapParts != null)
-			{
-				mapParts.mountainGroups = mountainGroups;
-			}
 			// All mountain ranges and smaller groups of mountains extended to
 			// include nearby hills.
 			mountainAndHillGroups = pair.getSecond();
@@ -693,10 +684,6 @@ public class MapCreator
 
 			Logger.println("Adding cities.");
 			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
-			if (mapParts != null)
-			{
-				mapParts.cities = cities;
-			}
 		}
 
 		if (settings.drawRoads)

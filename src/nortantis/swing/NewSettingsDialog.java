@@ -30,8 +30,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.Timer;
 
-import org.junit.runner.Computer;
-
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -83,7 +81,7 @@ public class NewSettingsDialog extends JDialog
 		
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		JPanel container = organizer.panel;
-		add(organizer.panel);
+		add(container);
 		container.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
 		container.setPreferredSize(defaultSize);
 
@@ -283,7 +281,7 @@ public class NewSettingsDialog extends JDialog
 				landColoringMethodComboBox);
 		
 		
-		organizer.addVerticalFillerRow(leftPanel);
+		organizer.addVerticalFillerRow();
 	}
 
 	private void createRightPanel(JPanel generatorSettingsPanel)
@@ -320,7 +318,7 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:", "Selected books will be used to generate new names.",
 				booksScrollPane);
 
-		organizer.addVerticalFillerRow(rightPanel);
+		organizer.addVerticalFillerRow();
 	}
 
 	private void randomizeTheme()

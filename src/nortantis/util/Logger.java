@@ -4,8 +4,6 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
-import nortantis.swing.MainWindow;
-
 public class Logger
 {
 	private ILoggerTarget target;

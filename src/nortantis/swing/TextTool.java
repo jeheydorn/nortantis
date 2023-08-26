@@ -11,7 +11,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
-import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,18 +20,15 @@ import javax.swing.ButtonGroup;
 import javax.swing.DefaultFocusManager;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
-import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.util.AssetsPath;
-import nortantis.util.ImageHelper;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.JTextFieldFixed;
 
@@ -187,7 +183,7 @@ public class TextTool extends EditorTool
 	    editButton.doClick();
 	    
 	    organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
-	    organizer.addVerticalFillerRow(toolOptionsPanel);
+	    organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
 	}
 	
@@ -358,7 +354,6 @@ public class TextTool extends EditorTool
 			{
 				List<Area> transformedAreas = new ArrayList<>(lastSelected.areas.size());
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				int borderWidthScaled = updater.mapParts.background.getBorderWidthScaledByResolution();
 				
 				for (Area area : lastSelected.areas)
 				{

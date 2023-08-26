@@ -21,14 +21,11 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Hashtable;
-import java.util.concurrent.TimeUnit;
 
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -51,7 +48,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr.Method;
@@ -108,6 +104,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JCheckBoxMenuItem highlightLakesButton;
 	private JCheckBoxMenuItem highlightRiversButton;
 	private JScrollPane consoleOutputPane;
+	private double resolutionToSave;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -448,9 +445,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		JMenu fileMenu = new JMenu("File");
 		menuBar.add(fileMenu);
 
-		final JMenuItem mntmNew = new JMenuItem("New Random Map");
-		fileMenu.add(mntmNew);
-		mntmNew.addActionListener(new ActionListener()
+		final JMenuItem newRandomMapMenuItem = new JMenuItem("New Random Map");
+		fileMenu.add(newRandomMapMenuItem);
+		newRandomMapMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
@@ -463,9 +460,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		final JMenuItem mntmLoadSettings = new JMenuItem("Open");
-		fileMenu.add(mntmLoadSettings);
-		mntmLoadSettings.addActionListener(new ActionListener()
+		final JMenuItem loadSettingsMenuItem = new JMenuItem("Open");
+		fileMenu.add(loadSettingsMenuItem);
+		loadSettingsMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
@@ -516,10 +513,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		final JMenuItem mntmSave = new JMenuItem("Save");
-		mntmSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
-		fileMenu.add(mntmSave);
-		mntmSave.addActionListener(new ActionListener()
+		final JMenuItem saveMenuItem = new JMenuItem("Save");
+		saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
+		fileMenu.add(saveMenuItem);
+		saveMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
@@ -528,9 +525,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		final JMenuItem mntmSaveAs = new JMenuItem("Save As...");
-		fileMenu.add(mntmSaveAs);
-		mntmSaveAs.addActionListener(new ActionListener()
+		final JMenuItem saveAsMenItem = new JMenuItem("Save As...");
+		fileMenu.add(saveAsMenItem);
+		saveAsMenItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
@@ -540,9 +537,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 
 		// TODO Convert this to a PNG export workflow
-		JMenuItem mntmExportMapAsImage = new JMenuItem("Export As Image");
-		fileMenu.add(mntmExportMapAsImage);
-		mntmExportMapAsImage.addActionListener(new ActionListener()
+		JMenuItem exportMapAsImageMenuItem = new JMenuItem("Export as Image");
+		fileMenu.add(exportMapAsImageMenuItem);
+		exportMapAsImageMenuItem.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent arg0)
 			{
@@ -550,9 +547,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		JMenuItem mntmExportHeightmap = new JMenuItem("Export Heightmap");
-		fileMenu.add(mntmExportHeightmap);
-		mntmExportHeightmap.addActionListener(new ActionListener()
+		JMenuItem exportHeightmapMenuItem = new JMenuItem("Export Heightmap");
+		fileMenu.add(exportHeightmapMenuItem);
+		exportHeightmapMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
@@ -604,12 +601,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		});
 
-		JMenu mnEdit = new JMenu("Edit");
-		menuBar.add(mnEdit);
+		JMenu editMenu = new JMenu("Edit");
+		menuBar.add(editMenu);
 
 		undoButton = new JMenuItem("Undo");
 		undoButton.setEnabled(false);
-		mnEdit.add(undoButton);
+		editMenu.add(undoButton);
 		undoButton.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
 		undoButton.addActionListener(new ActionListener()
 		{
@@ -628,7 +625,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		redoButton = new JMenuItem("Redo");
 		redoButton.setEnabled(false);
-		mnEdit.add(redoButton);
+		editMenu.add(redoButton);
 		redoButton.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, ActionEvent.CTRL_MASK | ActionEvent.SHIFT_MASK));
 		redoButton.addActionListener(new ActionListener()
 		{
@@ -639,14 +636,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					updater.doWhenMapIsReadyForInteractions(() -> 
 					{
-						undoer.redo();	
+						undoer.redo();
 					});
 				}
 			}
 		});
 
 		clearEntireMapButton = new JMenuItem("Clear Entire Map");
-		mnEdit.add(clearEntireMapButton);
+		editMenu.add(clearEntireMapButton);
 		clearEntireMapButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -657,11 +654,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		clearEntireMapButton.setEnabled(false);
 
-		JMenu mnView = new JMenu("View");
-		menuBar.add(mnView);
+		JMenu viewMenu = new JMenu("View");
+		menuBar.add(viewMenu);
 
 		displayQualityMenu = new JMenu("Display Quality");
-		mnView.add(displayQualityMenu);
+		viewMenu.add(displayQualityMenu);
 		displayQualityMenu.setToolTipText(
 				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 		
@@ -676,7 +673,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.repaint();
 			}
 		});
-		mnView.add(highlightLakesButton);
+		viewMenu.add(highlightLakesButton);
 		
 	    highlightRiversButton = new JCheckBoxMenuItem("Highlight rivers");
 	    highlightRiversButton.setToolTipText("Highlight rivers to make them easier to see.");
@@ -689,7 +686,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.repaint();
 			}
 		});
-	    mnView.add(highlightRiversButton);
+	    viewMenu.add(highlightRiversButton);
 
 
 		ActionListener resolutionListener = new ActionListener()
@@ -1016,98 +1013,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void handleExportAsImagePressed()
 	{
-		// TODO Put these UI elements somewhere.
-		JSlider scaleSlider = new JSlider();
-		scaleSlider.setPaintLabels(true);
-		scaleSlider.setBounds(131, 12, 245, 79);
-		scaleSlider.setValue(100);
-		scaleSlider.setSnapToTicks(true);
-		scaleSlider.setPaintTicks(true);
-		scaleSlider.setMinorTickSpacing(25);
-		scaleSlider.setMajorTickSpacing(25);
-		scaleSlider.setMinimum(25);
-		scaleSlider.setMaximum(calcMaximumResolution());
-		int labelFrequency = scaleSlider.getMaximum() < 300 ? 50 : 100;
-		{
-			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
-			for (int i = scaleSlider.getMinimum(); i < scaleSlider.getMaximum() + 1; i += scaleSlider.getMinorTickSpacing())
-			{
-				if (i % labelFrequency == 0)
-				{
-					labelTable.put(i, new JLabel(i + "%"));
-				}
-			}
-			scaleSlider.setLabelTable(labelTable);
-		}
+		ExportAsImageDialog dialog = new ExportAsImageDialog(this);
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
 
-		// TODO Show a dialog that prompts for resolution. Make it modal to
-		// prevent other map generation stuff while it's happening. 
-		// Store the resolution into lastSettingsLoadedOrSaved.resolution.
-		// TODO Maybe also prevent it from running while the map is drawing.
 
-		final MapSettings settings = getSettingsFromGUI(false);
-
-		Logger.clear();
-		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
-		{
-			@Override
-			public BufferedImage doInBackground() throws Exception
-			{
-				ImageCache.getInstance().clear();
-
-				BufferedImage map = new MapCreator().createMap(settings.deepCopy(), null, null);
-				System.gc();
-
-				Logger.println("Opening the map in your system's default image editor.");
-				String fileName = ImageHelper.openImageInSystemDefaultEditor(map, "map_" + settings.randomSeed);
-				Logger.println("Map written to " + fileName);
-				return map;
-			}
-
-			@Override
-			public void done()
-			{
-				try
-				{
-					get();
-				}
-				catch (Exception ex)
-				{
-					SwingHelper.handleBackgroundThreadException(ex);
-				}
-			}
-		};
-		worker.execute();
-	}
-
-	private int calcMaximumResolution()
-	{
-		long maxBytes = Runtime.getRuntime().maxMemory();
-		// The required memory is quadratic in the resolution used.
-		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2)
-		// = 148468.
-		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
-
-		// The FFT-based code will create arrays in powers of 2.
-		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
-		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
-		// Average with the original prediction because not all code is
-		// FFT-based.
-		maxResolution = (maxResolution + resolutionAtNextPowerOf2) / 2;
-
-		if (maxResolution > 500)
-		{
-			// This is in case Runtime.maxMemory returns Long's max value, which
-			// it says it will if it fails.
-			return 1000;
-		}
-		if (maxResolution < 100)
-		{
-			return 100;
-		}
-		// The resolution slider uses multiples of 25.
-		maxResolution -= maxResolution % 25;
-		return maxResolution;
 	}
 
 	private void showHeightMapWithEditsWarning()
@@ -1291,6 +1201,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
+		resolutionToSave = settings.resolution;
 		edits = settings.edits;
 		themePanel.loadSettingsIntoGUI(settings);
 		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
@@ -1315,6 +1226,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			settings.edits = edits;
 		}
 
+		settings.resolution = resolutionToSave;
+		
 		settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
 		settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
 		settings.edgeLandToWaterProbability = lastSettingsLoadedOrSaved.edgeLandToWaterProbability;
@@ -1421,5 +1334,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public boolean isReadyForLogging()
 	{
 		return txtConsoleOutput != null;
+	}
+	
+	void setResolutionToSave(double resolutionToSave)
+	{
+		this.resolutionToSave = resolutionToSave;
 	}
 }

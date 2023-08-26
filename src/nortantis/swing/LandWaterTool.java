@@ -1,11 +1,9 @@
 package nortantis.swing;
 
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,15 +13,12 @@ import java.util.Random;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
@@ -119,7 +114,7 @@ public class LandWaterTool extends EditorTool
 					selectColorHider.setVisible(isVisible);
 					generateColorButtonHider.setVisible(isVisible);
 					colorGeneratorSettingsHider.setVisible(isVisible);
-					onlyUpdateLandCheckbox.setVisible(paintRegionButton.isSelected());
+					onlyUpdateLandCheckboxHider.setVisible(paintRegionButton.isSelected());
 				}
 				else
 				{
@@ -227,7 +222,7 @@ public class LandWaterTool extends EditorTool
 	    
 
 	    organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
-	    organizer.addVerticalFillerRow(toolOptionsPanel);
+	    organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
 	}
 	
@@ -330,6 +325,7 @@ public class LandWaterTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
+				IconsTool.eraseIconAndTreeEdits(center, mainWindow.edits);
 				hasChange |= !edit.isWater;
 				edit.isWater = true;
 				hasChange |= edit.isLake != lakeButton.isSelected();

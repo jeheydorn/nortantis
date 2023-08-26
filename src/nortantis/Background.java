@@ -17,8 +17,8 @@ import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
-import nortantis.util.Range;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.Range;
 
 /**
  * An assortment of things needed to draw the background.

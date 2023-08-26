@@ -2,15 +2,11 @@ package nortantis.editor;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.util.List;
-import java.util.Set;
 
 import nortantis.Background;
-import nortantis.IconDrawTask;
 import nortantis.IconDrawer;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
-import nortantis.graph.voronoi.Center;
 
 /**
  * Holds pieces of a map created while generating it which are needed for editing it. This is also used to cache some parts
@@ -70,8 +66,6 @@ public class MapParts
 	 * the editor can re-draw quickly. This is also useful as a cache when re-drawing to hide text in the editor.
 	 */
 	public BufferedImage mapBeforeAddingText;
-	public List<Set<Center>> mountainGroups;
-	public List<IconDrawTask> cities;
 
 	
 }

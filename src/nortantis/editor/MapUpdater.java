@@ -3,10 +3,8 @@ package nortantis.editor;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.nio.channels.IllegalSelectorException;
 import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -98,10 +96,12 @@ public abstract class MapUpdater
 	/**
 	 * Redraws the map based on a change that was made.
 	 * 
-	 * For incremental drawing, this compares the edits in the change with the current state of the edits from getEdits()
-	 * to determine what changed. 
+	 * For incremental drawing, this compares the edits in the change with the
+	 * current state of the edits from getEdits() to determine what changed.
 	 * 
-	 * @param change The 'before' state. Used to determine what needs to be redrawn.
+	 * @param change
+	 *            The 'before' state. Used to determine what needs to be
+	 *            redrawn.
 	 */
 	public void createAndShowMapFromChange(MapChange change)
 	{
@@ -162,7 +162,9 @@ public abstract class MapUpdater
 			return;
 		}
 
-		// Note - Any update type which clear graph should block incremental updates in markToDrawLater when mapNeedsNonIncrementalUpdateForType is that update type.
+		// Note - Any update type which clear graph should block incremental
+		// updates in markToDrawLater when mapNeedsNonIncrementalUpdateForType
+		// is that update type.
 		if (updateType == UpdateType.Full)
 		{
 			if (mapParts != null)
@@ -185,9 +187,6 @@ public abstract class MapUpdater
 		else if (updateType == UpdateType.Terrain)
 		{
 			mapParts.mapBeforeAddingText = null;
-
-			mapParts.mountainGroups = null;
-			mapParts.cities = null;
 		}
 		else if (updateType == UpdateType.GrungeAndFray)
 		{
@@ -202,12 +201,14 @@ public abstract class MapUpdater
 		}
 
 	}
-		
+
 	/**
-	 * Creates a new set that has the most up-to-date version of the centers in the given set.
-	 * This is necessary because incremental and full redraws can run out of order, and as a result, a full redraw might recreate the graph,
-	 * while an incremental change is waiting to run, causing centersChanged (passed to createAndShowMap) to hold Center objects no longer 
-	 * in the graph, and so they could be out of date.
+	 * Creates a new set that has the most up-to-date version of the centers in
+	 * the given set. This is necessary because incremental and full redraws can
+	 * run out of order, and as a result, a full redraw might recreate the
+	 * graph, while an incremental change is waiting to run, causing
+	 * centersChanged (passed to createAndShowMap) to hold Center objects no
+	 * longer in the graph, and so they could be out of date.
 	 */
 	private Set<Center> getCurrentCenters(Set<Center> centers)
 	{
@@ -217,7 +218,7 @@ public abstract class MapUpdater
 		}
 		return centers.stream().map(c -> mapParts.graph.centers.get(c.index)).collect(Collectors.toSet());
 	}
-	
+
 	/**
 	 * Like getCurrentCenters but for edges.
 	 */
@@ -292,17 +293,19 @@ public abstract class MapUpdater
 						return new Tuple2<>(map, null);
 					}
 					else
-					{	
+					{
 						BufferedImage map = getCurrentMapForIncrementalUpdate();
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map, getCurrentCenters(centersChanged));
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map,
+									getCurrentCenters(centersChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (edgesChanged != null && edgesChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map, getCurrentEdges(edgesChanged));
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
+									getCurrentEdges(edgesChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else
@@ -365,17 +368,18 @@ public abstract class MapUpdater
 
 					boolean anotherDrawIsQueued = next != null;
 					int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-					onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth, 
-							replaceBounds == null ? null : 
-								new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth, replaceBounds.width, replaceBounds.height));
+					onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
+							replaceBounds == null ? null
+									: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+											replaceBounds.width, replaceBounds.height));
 
 					isMapBeingDrawn = false;
-					
+
 					if (next != null)
 					{
 						createAndShowMap(next.updateType, next.centersChanged, next.edgesChanged);
 					}
-					
+
 					isMapReadyForInteractions = true;
 				}
 				else
@@ -383,7 +387,7 @@ public abstract class MapUpdater
 					onFailedToDraw();
 				}
 
-				while(tasksToRunWhenMapReady.size() > 0)
+				while (tasksToRunWhenMapReady.size() > 0)
 				{
 					tasksToRunWhenMapReady.poll().run();
 				}
@@ -392,7 +396,7 @@ public abstract class MapUpdater
 		};
 		worker.execute();
 	}
-	
+
 	protected abstract void onBeginDraw();
 
 	protected abstract MapSettings getSettingsFromGUI();
@@ -407,8 +411,8 @@ public abstract class MapUpdater
 	protected abstract BufferedImage getCurrentMapForIncrementalUpdate();
 
 	/**
-	 * Combines the updates in updatesToDraw when it makes sense to do so, they can
-	 * be drawn together.
+	 * Combines the updates in updatesToDraw when it makes sense to do so, they
+	 * can be drawn together.
 	 * 
 	 * @return The combined update to draw
 	 */
@@ -418,7 +422,7 @@ public abstract class MapUpdater
 		{
 			return null;
 		}
-		
+
 		Optional<MapUpdate> full = updatesToDraw.stream().filter(update -> update.updateType == UpdateType.Full).findFirst();
 		if (full.isPresent())
 		{
@@ -428,14 +432,12 @@ public abstract class MapUpdater
 		}
 		else
 		{
-			// Combine incremental updates until we hit one that isn't incremental.
+			// Combine incremental updates until we hit one that isn't
+			// incremental.
 			MapUpdate update = updatesToDraw.poll();
-			if (update.updateType == UpdateType.Incremental)
+			while (updatesToDraw.size() > 0 && updatesToDraw.peek().updateType == update.updateType)
 			{
-				while (updatesToDraw.size() > 0 && updatesToDraw.peek().updateType == UpdateType.Incremental)
-				{
-					update.add(updatesToDraw.poll());
-				}
+				update.add(updatesToDraw.poll());
 			}
 			return update;
 		}
@@ -484,7 +486,7 @@ public abstract class MapUpdater
 	{
 		maxMapSize = dimension;
 	}
-	
+
 	private class MapUpdate
 	{
 		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
@@ -510,32 +512,31 @@ public abstract class MapUpdater
 			{
 				return;
 			}
-			
-			if (updateType != UpdateType.Incremental)
-			{
-				throw new IllegalStateException();
-			}
-			if (other.updateType != UpdateType.Incremental)
+
+			if (updateType != other.updateType)
 			{
 				throw new IllegalArgumentException();
 			}
 
-			if (centersChanged != null && other.centersChanged != null)
+			if (updateType == UpdateType.Incremental)
 			{
-				centersChanged.addAll(other.centersChanged);
-			}
-			else if (centersChanged == null && other.centersChanged != null)
-			{
-				centersChanged = new HashSet<>(other.centersChanged);
-			}
+				if (centersChanged != null && other.centersChanged != null)
+				{
+					centersChanged.addAll(other.centersChanged);
+				}
+				else if (centersChanged == null && other.centersChanged != null)
+				{
+					centersChanged = new HashSet<>(other.centersChanged);
+				}
 
-			if (edgesChanged != null && other.edgesChanged != null)
-			{
-				edgesChanged.addAll(other.edgesChanged);
-			}
-			else if (edgesChanged == null && other.edgesChanged != null)
-			{
-				edgesChanged = new HashSet<>(other.edgesChanged);
+				if (edgesChanged != null && other.edgesChanged != null)
+				{
+					edgesChanged.addAll(other.edgesChanged);
+				}
+				else if (edgesChanged == null && other.edgesChanged != null)
+				{
+					edgesChanged = new HashSet<>(other.edgesChanged);
+				}
 			}
 		}
 	}

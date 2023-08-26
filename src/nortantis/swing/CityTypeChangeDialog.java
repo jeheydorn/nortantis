@@ -38,7 +38,7 @@ public class CityTypeChangeDialog extends JDialog
 				currentCityIconType);
 		organizer.addLabelAndComponentToPanel("City icon type:", "", cityIconsSetComboBox);
 						
-		organizer.addVerticalFillerRow(panel);
+		organizer.addVerticalFillerRow();
 
 		JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));

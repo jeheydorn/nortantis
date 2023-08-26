@@ -41,7 +41,6 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
-import nortantis.graph.geom.Rectangle;
 import nortantis.util.ImageHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
@@ -202,6 +201,26 @@ public class ThemePanel extends JTabbedPane
 		backgroundSeedTextField = new JTextField();
 		backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
 		backgroundSeedTextField.setColumns(10);
+		backgroundSeedTextField.getDocument().addDocumentListener(new DocumentListener()
+		{
+			public void changedUpdate(DocumentEvent e)
+			{
+				updateBackgroundImageDisplays();
+				handleFullRedraw();
+			}
+
+			public void removeUpdate(DocumentEvent e)
+			{
+				updateBackgroundImageDisplays();
+				handleFullRedraw();
+			}
+
+			public void insertUpdate(DocumentEvent e)
+			{
+				updateBackgroundImageDisplays();
+				handleFullRedraw();
+			}
+		});
 
 		btnNewBackgroundSeed = new JButton("New Seed");
 		btnNewBackgroundSeed.addActionListener(new ActionListener()
@@ -209,9 +228,6 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent arg0)
 			{
 				backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
-
-				// Update the background image for the land/ocean background
-				// displays.
 				updateBackgroundImageDisplays();
 				handleFullRedraw();
 			}
@@ -344,7 +360,7 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		
-		organizer.addVerticalFillerRow(backgroundPanel);
+		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}		
 	
@@ -455,7 +471,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentToPanel("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
 
 		
-		organizer.addVerticalFillerRow(borderPanel);
+		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
 	
@@ -595,7 +611,7 @@ public class ThemePanel extends JTabbedPane
 				Arrays.asList(riverColorDisplay, riverColorChooseButton));
 				
 		
-		organizer.addVerticalFillerRow(effectsPanel);
+		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
 	
@@ -701,7 +717,7 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		
-		organizer.addVerticalFillerRow(fontsPanel);
+		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
 	
@@ -1038,6 +1054,9 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.doClick();
 
 		updateBackgroundImageDisplays();
+		
+		// For some reason I have to repaint to get color display panels to draw correctly.
+		repaint();
 	}
 
 	public void getSettingsFromGUI(MapSettings settings)

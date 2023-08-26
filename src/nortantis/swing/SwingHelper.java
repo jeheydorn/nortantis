@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
@@ -124,6 +123,7 @@ public class SwingHelper
 			public void actionPerformed(ActionEvent e)
 			{
 				colorDisplay.setBackground(colorChooser.getColor());
+				colorDisplay.repaint();
 				okAction.run();
 			}
 

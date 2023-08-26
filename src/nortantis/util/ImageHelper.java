@@ -26,7 +26,6 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
-import org.junit.runner.Computer;
 
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;

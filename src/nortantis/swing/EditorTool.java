@@ -2,7 +2,6 @@ package nortantis.swing;
 
 import java.awt.Color;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;

@@ -119,7 +119,7 @@ public class GridBagOrganizer
 		curY = 0;
 	}
 
-	public void addVerticalFillerRow(JPanel panel)
+	public void addVerticalFillerRow()
 	{
 		GridBagConstraints c = new GridBagConstraints();
 		c.fill = GridBagConstraints.VERTICAL;
