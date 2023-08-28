@@ -1,4 +1,5 @@
 package nortantis.editor;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -6,11 +7,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
 
-
 public class UserPreferences
 {
 	private final String userPrefsFileName = "user preferences";
-	
+
 	public String lastLoadedSettingsFile = "";
 	public String lastEditorTool = "";
 	public String zoomLevel = "";
@@ -19,9 +19,11 @@ public class UserPreferences
 	public boolean hideAspectRatioWarning;
 	public boolean hideHeightMapWithEditsWarning;
 	public boolean hideImageQualityMessage;
-	
+	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
+	public ExportAction defaultExportAction = defaultDefaultExportAction;
+
 	public static UserPreferences instance;
-	
+
 	public static UserPreferences getInstance()
 	{
 		if (instance == null)
@@ -30,7 +32,7 @@ public class UserPreferences
 		}
 		return instance;
 	}
-	
+
 	private UserPreferences()
 	{
 		final Properties props = new Properties();
@@ -39,31 +41,57 @@ public class UserPreferences
 			if (Files.exists(Paths.get(userPrefsFileName)))
 			{
 				props.load(new FileInputStream(userPrefsFileName));
-				
+
 				if (props.containsKey("lastLoadedSettingsFile"))
+				{
 					lastLoadedSettingsFile = props.getProperty("lastLoadedSettingsFile");
+				}
 				if (props.containsKey("lastEditTool"))
+				{
 					lastEditorTool = props.getProperty("lastEditTool");
+				}
 				if (props.containsKey("zoomLevel"))
+				{
 					zoomLevel = props.getProperty("zoomLevel");
+				}
 				if (props.containsKey("editorImageQuality"))
+				{
 					editorImageQuality = props.getProperty("editorImageQuality");
+				}
 				if (props.containsKey("hideMapChangesWarning"))
+				{
 					hideMapChangesWarning = Boolean.parseBoolean(props.getProperty("hideMapChangesWarning"));
+				}
 				if (props.containsKey("hideAspectRatioWarning"))
+				{
 					hideAspectRatioWarning = Boolean.parseBoolean(props.getProperty("hideAspectRatioWarning"));
+				}
 				if (props.containsKey("hideHeightMapWithEditsWarning"))
+				{
 					hideHeightMapWithEditsWarning = Boolean.parseBoolean(props.getProperty("hideHeightMapWithEditsWarning"));
+				}
 				if (props.containsKey("hideImageQualityMessage"))
+				{
 					hideImageQualityMessage = Boolean.parseBoolean(props.getProperty("hideImageQualityMessage"));
+				}
+				if (props.containsKey("defaultExportAction"))
+				{
+					try
+					{
+						defaultExportAction = ExportAction.valueOf(props.getProperty("defaultExportAction"));
+					}
+					catch (IllegalArgumentException e)
+					{
+					}
+				}
 			}
-		} 
+		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void save()
 	{
 		Properties props = new Properties();
@@ -75,11 +103,13 @@ public class UserPreferences
 		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
 		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");
 		props.setProperty("hideImageQualityMessage", hideImageQualityMessage + "");
-		
+		props.setProperty("defaultExportAction", defaultExportAction != null ? defaultExportAction.toString() 
+				: defaultDefaultExportAction.toString());
+
 		try
 		{
 			props.store(new PrintWriter(userPrefsFileName.toString()), "");
-		} 
+		}
 		catch (Exception e)
 		{
 			e.printStackTrace();

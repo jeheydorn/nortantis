@@ -105,6 +105,7 @@ public class MapSettings implements Serializable
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
+	public String imageExportPath;
 	
 	/**
 	 * Default values for new settings
@@ -235,6 +236,7 @@ public class MapSettings implements Serializable
 		root.put("frayedBorderSize", frayedBorderSize);
 		root.put("drawIcons", drawIcons);
 		root.put("drawRoads", drawRoads);
+		root.put("imageExportPath", imageExportPath);
 		
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -480,6 +482,7 @@ public class MapSettings implements Serializable
 		}
 		
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
+		imageExportPath = (String) root.get("imageExportPath");
 		
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.

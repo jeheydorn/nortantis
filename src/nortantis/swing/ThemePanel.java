@@ -920,7 +920,7 @@ public class ThemePanel extends JTabbedPane
 
 
 
-	private static String chooseImageFile(JComponent parent, String curFolder)
+	private static String chooseImageFile(Component parent, String curFolder)
 	{
 		File currentFolder = new File(curFolder);
 		JFileChooser fileChooser = new JFileChooser();

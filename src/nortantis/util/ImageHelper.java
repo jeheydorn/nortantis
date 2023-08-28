@@ -1680,7 +1680,7 @@ public class ImageHelper
 		}
 		else
 		{
-			throw new RuntimeException("Unable to open the map because java's Desktop is not supported");
+			throw new RuntimeException("Unable to open the map because Java's Desktop is not supported");
 		}
 	}
 

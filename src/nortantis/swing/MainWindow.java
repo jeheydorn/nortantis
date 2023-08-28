@@ -105,6 +105,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JCheckBoxMenuItem highlightRiversButton;
 	private JScrollPane consoleOutputPane;
 	private double resolutionToSave;
+	String imageExportPath;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -1202,6 +1203,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
 		resolutionToSave = settings.resolution;
+		imageExportPath = settings.imageExportPath;
 		edits = settings.edits;
 		themePanel.loadSettingsIntoGUI(settings);
 		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
@@ -1226,14 +1228,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			settings.edits = edits;
 		}
 
+		// Settings which have a UI in a popup.
 		settings.resolution = resolutionToSave;
-		
-		settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
-		settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
-		settings.edgeLandToWaterProbability = lastSettingsLoadedOrSaved.edgeLandToWaterProbability;
-		settings.centerLandToWaterProbability = lastSettingsLoadedOrSaved.centerLandToWaterProbability;
-		settings.generatedWidth = lastSettingsLoadedOrSaved.generatedWidth;
-		settings.generatedHeight = lastSettingsLoadedOrSaved.generatedHeight;
+		settings.imageExportPath = imageExportPath;
 
 		themePanel.getSettingsFromGUI(settings);
 		toolsPanel.getSettingsFromGUI(settings);
@@ -1245,6 +1242,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			settings.textRandomSeed = lastSettingsLoadedOrSaved.textRandomSeed;
 			settings.regionsRandomSeed = lastSettingsLoadedOrSaved.regionsRandomSeed;
 			settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
+
+			// Copy over settings with a UI only in the new map dialog.
+			settings.worldSize = lastSettingsLoadedOrSaved.worldSize;
+			settings.randomSeed = lastSettingsLoadedOrSaved.randomSeed;
+			settings.edgeLandToWaterProbability = lastSettingsLoadedOrSaved.edgeLandToWaterProbability;
+			settings.centerLandToWaterProbability = lastSettingsLoadedOrSaved.centerLandToWaterProbability;
+			settings.generatedWidth = lastSettingsLoadedOrSaved.generatedWidth;
+			settings.generatedHeight = lastSettingsLoadedOrSaved.generatedHeight;
 		}
 
 		return settings;
@@ -1344,5 +1349,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	double getResolutionToSave()
 	{
 		return resolutionToSave;
+	}
+	
+	public Path getOpenSettingsFilePath()
+	{
+		return openSettingsFilePath;
 	}
 }
