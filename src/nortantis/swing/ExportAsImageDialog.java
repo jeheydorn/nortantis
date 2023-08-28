@@ -62,6 +62,7 @@ public class ExportAsImageDialog extends JDialog
 	private RowHider pathChooserHider;
 	private JRadioButton fileRadioButton;
 	private JRadioButton openInViewerRadioButton;
+	List<String> allowedExtension = Arrays.asList("png", "jpg", "jpeg");
 
 	public ExportAsImageDialog(MainWindow mainWindow)
 	{
@@ -136,11 +137,14 @@ public class ExportAsImageDialog extends JDialog
 				{
 					curPath = mainWindow.getOpenSettingsFilePath() == null ? Paths.get("~").toAbsolutePath().toString() 
 							: mainWindow.getOpenSettingsFilePath().toString();
+					String folder = new File(curPath).getParent();
+					Path fileSavePath = Paths.get(folder, FilenameUtils.getBaseName(curPath) + ".png").toAbsolutePath();
+					pathField.setText(fileSavePath.toString());
 				}
-						
-				String folder = new File(curPath).getParent();
-				Path fileSavePath = Paths.get(folder, FilenameUtils.getBaseName(curPath) + ".png").toAbsolutePath();
-				pathField.setText(fileSavePath.toString());
+				else
+				{
+					pathField.setText(curPath);
+				}
 			}
 			catch (Exception ex)
 			{
@@ -212,7 +216,6 @@ public class ExportAsImageDialog extends JDialog
 						Path path = Paths.get(pathField.getText());
 						exportPath = path.toString();
 						
-						List<String> allowedExtension = Arrays.asList("png", "jpg", "jpeg");
 						String extension = FilenameUtils.getExtension(path.getFileName().toString());
 						if (extension.isEmpty())
 						{
@@ -223,6 +226,13 @@ public class ExportAsImageDialog extends JDialog
 							JOptionPane.showMessageDialog(getContentPane(), "The export file must be a png or jpeg image.", 
 									"Error", JOptionPane.ERROR_MESSAGE);
 							return;
+						}
+						
+						if (new File(exportPath).isDirectory())
+						{
+							JOptionPane.showMessageDialog(getContentPane(), "There is a directory with the same name as the export file, in the same folder.", 
+									"Error", JOptionPane.ERROR_MESSAGE);
+							return;						
 						}
 					}
 					catch (InvalidPathException ex) 
@@ -422,7 +432,7 @@ public class ExportAsImageDialog extends JDialog
 		return maxResolution;
 	}
 	
-	static String chooseImageFileDestination(Component parent, String filePath)
+	private String chooseImageFileDestination(Component parent, String filePath)
 	{
 		String folder = Paths.get(FilenameUtils.getPath(filePath)).toAbsolutePath().toString();
 		JFileChooser fileChooser = new JFileChooser();
@@ -438,7 +448,7 @@ public class ExportAsImageDialog extends JDialog
 			@Override
 			public boolean accept(File f)
 			{
-				return f.isDirectory() || f.getName().endsWith(".png");
+				return f.isDirectory() || allowedExtension.contains(FilenameUtils.getExtension(f.getName()));
 			}
 		});
 		
