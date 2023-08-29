@@ -171,21 +171,24 @@ public class SettingsGenerator
 			settings.generateBackground = false;
 			settings.generateBackgroundFromTexture = true;
 			
-			Path exampleTexturesPath = Paths.get(AssetsPath.get(), "example textures");
-			List<Path> textureFiles;
-			try
-			{
-				textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
-			}
-			catch(IOException ex)
-			{
-				throw new RuntimeException("The example textures folder does not exist.", ex);
-			}
-			
-			if (textureFiles.size() > 0)
-			{
-				settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toString();
-			}
+		}
+		
+		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching 
+		// to the background texture file path field.
+		Path exampleTexturesPath = Paths.get(AssetsPath.get(), "example textures");
+		List<Path> textureFiles;
+		try
+		{
+			textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
+		}
+		catch(IOException ex)
+		{
+			throw new RuntimeException("The example textures folder does not exist.", ex);
+		}
+		
+		if (textureFiles.size() > 0)
+		{
+			settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toString();
 		}
 		
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;

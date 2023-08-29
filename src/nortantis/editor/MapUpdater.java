@@ -671,6 +671,7 @@ public abstract class MapUpdater
 		{
 			currentNonIncrementalMapCreator.cancel();
 		}
+		tasksToRunWhenMapReady.clear();
 	}
 	
 
