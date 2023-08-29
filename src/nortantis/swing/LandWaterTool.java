@@ -202,11 +202,7 @@ public class LandWaterTool extends EditorTool
 				colorDisplay.setBackground(newColor);
 			}
 		});
-		generateColorButtonHider = organizer.addLabelAndComponentToPanel("", "", generateColorButton, 2);
-
-		
-		colorGeneratorSettingsHider = organizer.addLeftAlignedComponent(createColorGeneratorOptionsPanel(toolOptionsPanel));
-		
+		generateColorButtonHider = organizer.addLabelAndComponentToPanel("", "", generateColorButton, 2);		
 		
 	    Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 	    brushSizeComboBox = brushSizeTuple.getFirst();
@@ -216,6 +212,10 @@ public class LandWaterTool extends EditorTool
 	    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
 	    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
 	    onlyUpdateLandCheckboxHider = organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
+	    
+	    
+		colorGeneratorSettingsHider = organizer.addLeftAlignedComponent(createColorGeneratorOptionsPanel(toolOptionsPanel));
+
 	    
 	    showOrHideRegionColoringOptions();
 	    

@@ -724,8 +724,8 @@ public class IconsTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
 	{
 		lblCityIconType.setText(settings.cityIconSetName);	
-		// TODO re-create cityTypes radio buttons
 		showSelectedCityTypeButtons();
+		updateTypePanels();
 	}
 
 	@Override

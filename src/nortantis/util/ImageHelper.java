@@ -16,8 +16,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -37,6 +39,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.graph.geom.Point;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
@@ -561,6 +564,7 @@ public class ImageHelper
 		{
 			region = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
 		}
+		final IntRectangle regionFinal = region;
 
 		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY && mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
 			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY" + " or TYPE_BYTE_BINARY.");
@@ -580,21 +584,35 @@ public class ImageHelper
 
 		BufferedImage result = new BufferedImage((int) region.width, (int) region.height, image1.getType());
 		Raster mRaster = mask.getRaster();
-		for (int y = region.y; y < region.height; y++)
-			for (int x = region.x; x < region.width; x++)
-			{
-				Color color1 = new Color(image1.getRGB(x, y));
-				Color color2 = new Color(image2.getRGB(x, y));
-				double maskLevel = ((double) mRaster.getSampleDouble(x + (int) region.x, y + (int) region.y, 0));
-				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
-					maskLevel /= 255.0;
 
-				int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
-				int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
-				int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-				int combined = (r << 16) | (g << 8) | b;
-				result.setRGB(x, y, combined);
-			}
+		int numTasks = ThreadHelper.getInstance().getThreadCount();
+		List<Runnable> tasks = new ArrayList<>(numTasks);
+		int rowsPerJob = region.height / numTasks;
+		for (int taskNumber : new Range(numTasks))
+		{
+			tasks.add(() ->
+			{
+				int endY = taskNumber == numTasks - 1 ? regionFinal.height : regionFinal.y + ((taskNumber + 1) * rowsPerJob);
+				for (int y = regionFinal.y + (taskNumber * rowsPerJob); y < endY; y++)
+					for (int x = regionFinal.x; x < regionFinal.width; x++)
+					{
+						Color color1 = new Color(image1.getRGB(x, y));
+						Color color2 = new Color(image2.getRGB(x, y));
+						double maskLevel = ((double) mRaster.getSampleDouble(x + (int) regionFinal.x, y + (int) regionFinal.y, 0));
+						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+							maskLevel /= 255.0;
+
+						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
+						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
+						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
+						int combined = (r << 16) | (g << 8) | b;
+						result.setRGB(x, y, combined);
+					}
+
+			});
+		}
+		ThreadHelper.getInstance().processInParallel(tasks);
+
 		return result;
 	}
 
@@ -626,45 +644,61 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		Raster mRaster = mask.getRaster();
 		Raster alphaRaster = image.getAlphaRaster();
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
+
+		// Process rows in parallel to speed things up a little. In my tests, doing so was 41% faster 
+		// (when only counting time in this method).
+		int numTasks = ThreadHelper.getInstance().getThreadCount();
+		List<Runnable> tasks = new ArrayList<>(numTasks);
+		int rowsPerJob = image.getHeight() / numTasks;
+		for (int taskNumber : new Range(numTasks))
+		{
+			tasks.add(() ->
 			{
-				int xInMask = x + imageOffsetInMask.x;
-				int yInMask = y + imageOffsetInMask.y;
-				if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+				int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
+				for (int y = taskNumber * rowsPerJob; y < endY; y++)
 				{
-					continue;
+					for (int x = 0; x < image.getWidth(); x++)
+					{
+						int xInMask = x + imageOffsetInMask.x;
+						int yInMask = y + imageOffsetInMask.y;
+						if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+						{
+							continue;
+						}
+
+						Color col = new Color(image.getRGB(x, y));
+
+						int maskLevel = mRaster.getSample(xInMask, yInMask, 0);
+						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						{
+							if (invertMask)
+								maskLevel = 255 - maskLevel;
+
+							int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+							int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+							int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+							Color combined = new Color(r, g, b, alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+							result.setRGB(x, y, combined.getRGB());
+						}
+						else
+						{
+							// TYPE_BYTE_BINARY
+
+							if (invertMask)
+								maskLevel = 1 - maskLevel;
+
+							int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+							int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+							int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+							Color combined = new Color(r, g, b, alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+							result.setRGB(x, y, combined.getRGB());
+						}
+					}
 				}
+			});
+		}
+		ThreadHelper.getInstance().processInParallel(tasks);
 
-				Color col = new Color(image.getRGB(x, y));
-
-				int maskLevel = mRaster.getSample(xInMask, yInMask, 0);
-				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
-				{
-					if (invertMask)
-						maskLevel = 255 - maskLevel;
-
-					int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-					Color combined = new Color(r, g, b, alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
-					result.setRGB(x, y, combined.getRGB());
-				}
-				else
-				{
-					// TYPE_BYTE_BINARY
-
-					if (invertMask)
-						maskLevel = 1 - maskLevel;
-
-					int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-					int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-					int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-					Color combined = new Color(r, g, b, alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
-					result.setRGB(x, y, combined.getRGB());
-				}
-
-			}
 		return result;
 	}
 
@@ -691,40 +725,55 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		Raster mRaster = mask.getRaster();
 		Raster colorIndexesRaster = colorIndexes.getRaster();
-		for (int y = 0; y < image.getHeight(); y++)
-			for (int x = 0; x < image.getWidth(); x++)
+
+		int numTasks = ThreadHelper.getInstance().getThreadCount();
+		List<Runnable> tasks = new ArrayList<>(numTasks);
+		int rowsPerJob = image.getHeight() / numTasks;
+		for (int taskNumber : new Range(numTasks))
+		{
+			tasks.add(() ->
 			{
-				Color col = new Color(image.getRGB(x, y));
-				Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
-
-				int maskLevel = mRaster.getSample(x, y, 0);
-				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+				int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
+				for (int y = taskNumber * rowsPerJob; y < endY; y++)
 				{
-					if (invertMask)
-						maskLevel = 255 - maskLevel;
+					for (int x = 0; x < image.getWidth(); x++)
+					{
+						Color col = new Color(image.getRGB(x, y));
+						Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
 
-					int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-					int combined = (r << 16) | (g << 8) | b;
-					result.setRGB(x, y, combined);
+						int maskLevel = mRaster.getSample(x, y, 0);
+						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						{
+							if (invertMask)
+								maskLevel = 255 - maskLevel;
+
+							int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+							int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+							int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+							int combined = (r << 16) | (g << 8) | b;
+							result.setRGB(x, y, combined);
+						}
+						else
+						{
+							// TYPE_BYTE_BINARY
+
+							if (invertMask)
+								maskLevel = 255 - maskLevel;
+
+							int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+							int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+							int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+							int combined = (r << 16) | (g << 8) | b;
+							result.setRGB(x, y, combined);
+						}
+					}
 				}
-				else
-				{
-					// TYPE_BYTE_BINARY
+			});
+		}
+		ThreadHelper.getInstance().processInParallel(tasks);
 
-					if (invertMask)
-						maskLevel = 255 - maskLevel;
-
-					int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-					int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-					int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-					int combined = (r << 16) | (g << 8) | b;
-					result.setRGB(x, y, combined);
-				}
-
-			}
 		return result;
+
 	}
 
 	/**
@@ -1647,11 +1696,12 @@ public class ImageHelper
 			{
 				if (image.getType() == BufferedImage.TYPE_INT_ARGB)
 				{
-					// JPEG does not support transparency. Trying to write an image with transparent pixels causes 
-					// it to silently not be created. 
+					// JPEG does not support transparency. Trying to write an
+					// image with transparent pixels causes
+					// it to silently not be created.
 					image = convertARGBtoRGB(image);
 				}
-				
+
 				Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
 
 				if (!writers.hasNext())

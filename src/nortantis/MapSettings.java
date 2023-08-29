@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -725,18 +726,6 @@ public class MapSettings implements Serializable
 		}
 	}
 	
-	@Override
-	public boolean equals(Object other)
-	{
-		MapSettings o = (MapSettings)other;
-		
-		// Code for debugging:
-//		Helper.writeToFile("this.json", toJson());
-//		Helper.writeToFile("other.json", o.toJson());
-		
-		return toJson().equals(o.toJson());
-	}
-	
 	public boolean equalsIgnoringEdits(MapSettings other)
 	{
 		return toJson(true).equals(other.toJson(true));
@@ -777,4 +766,56 @@ public class MapSettings implements Serializable
 	
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		MapSettings other = (MapSettings) obj;
+		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
+				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
+				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
+				&& brightnessRange == other.brightnessRange
+				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
+				&& Objects.equals(cityIconSetName, other.cityIconSetName)
+				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
+				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
+				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
+				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
+				&& Objects.equals(defaultRoadColor, other.defaultRoadColor) && drawBoldBackground == other.drawBoldBackground
+				&& drawBorder == other.drawBorder && drawIcons == other.drawIcons && drawRegionColors == other.drawRegionColors
+				&& drawRivers == other.drawRivers && drawRoads == other.drawRoads && drawText == other.drawText
+				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
+				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
+				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
+				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
+				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
+				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
+				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
+				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
+				&& hueRange == other.hueRange && Objects.equals(imageExportPath, other.imageExportPath)
+				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Objects.equals(oceanColor, other.oceanColor)
+				&& oceanEffect == other.oceanEffect && Objects.equals(oceanEffectsColor, other.oceanEffectsColor)
+				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
+				&& randomSeed == other.randomSeed && Objects.equals(regionFont, other.regionFont)
+				&& regionsRandomSeed == other.regionsRandomSeed
+				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
+				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
+				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
+				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
+				&& Objects.equals(titleFont, other.titleFont) && Objects.equals(version, other.version) && worldSize == other.worldSize;
+	}
 }

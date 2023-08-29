@@ -4,6 +4,7 @@ import java.util.ArrayDeque;
 import java.util.Stack;
 
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.editor.MapChange;
 
 public class Undoer
@@ -43,7 +44,7 @@ public class Undoer
 		{
 			return;
 		}
-		
+				
 		MapSettings prevSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened : undoStack.peek().settings;
 		MapSettings currentSettings = mainWindow.getSettingsFromGUI(true);
 		if (currentSettings.equals(prevSettings))

@@ -193,7 +193,9 @@ public class ThemePanel extends JTabbedPane
 			{
 				String filename = chooseImageFile(backgroundPanel, textureImageFilename.getText());
 				if (filename != null)
+				{
 					textureImageFilename.setText(filename);
+				}
 			}
 		});
 		
@@ -220,7 +222,10 @@ public class ThemePanel extends JTabbedPane
 			public void removeUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
-				handleFullRedraw();
+				if (!backgroundSeedTextField.getText().isEmpty())
+				{
+					handleFullRedraw();
+				}
 			}
 
 			public void insertUpdate(DocumentEvent e)
@@ -237,7 +242,6 @@ public class ThemePanel extends JTabbedPane
 			{
 				backgroundSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
 				updateBackgroundImageDisplays();
-				handleFullRedraw();
 			}
 		});
 		btnNewBackgroundSeed.setToolTipText("Generate a new random seed.");

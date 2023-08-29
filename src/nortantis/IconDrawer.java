@@ -36,6 +36,7 @@ import nortantis.util.ListMap;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.Range;
+import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple3;
 
@@ -518,7 +519,7 @@ public class IconDrawer
 				}			
 			});
 		}
-		Helper.processInParallel(jobs);
+		ThreadHelper.getInstance().processInParallel(jobs);
 		
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
