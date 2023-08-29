@@ -194,8 +194,10 @@ public class NewSettingsDialog extends JDialog
 		mainWindow.updater.dowWhenMapIsNotDrawing(() ->
 		{
 			mainWindow.clearOpenSettingsFilePath();
-			mainWindow.loadSettingsIntoGUI(getSettingsFromGUI());
-
+			MapSettings settings = getSettingsFromGUI();
+			mainWindow.loadSettingsIntoGUI(settings);
+			mainWindow.enableOrDisableFieldsThatRequireMap(true, settings);
+			
 			dispose();
 		});
 	}

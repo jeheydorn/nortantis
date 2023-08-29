@@ -650,4 +650,10 @@ public class LandWaterTool extends EditorTool
 	{
 		return false;
 	}
+
+	@Override
+	public void handleEnablingAndDisabling(MapSettings settings)
+	{
+		// There's nothing to do because this tool never disables anything.
+	}
 }

@@ -101,6 +101,14 @@ public class ThemePanel extends JTabbedPane
 	private RowHider colorizeLandCheckboxHider;
 	private RowHider textHiddenMessageHider;
 	private RowHider landColorHider;
+	private JButton btnChooseBoldBackgroundColor;
+	private JButton btnTitleFont;
+	private JButton btnRegionFont;
+	private JButton btnMountainRangeFont;
+	private JButton btnOtherMountainsFont;
+	private JButton btnRiverFont;
+	private JButton btnChooseTextColor;
+	private ActionListener enableTextCheckboxActionListener;
 	
 
 
@@ -377,8 +385,7 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
-				borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
+				handleEnablingAndDisabling();
 				handleFullRedraw();
 			}
 		});
@@ -410,8 +417,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
-				frayedEdgePolygonCountSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+				handleEnablingAndDisabling();
 				handleFrayedEdgeOrGrungeChange();
 			}
 		});
@@ -631,29 +637,29 @@ public class ThemePanel extends JTabbedPane
 
 		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70, () -> handleFontsChange());
 		titleFontDisplay = tupleTitle.getFirst();
-		JButton btnTitleFont = tupleTitle.getSecond();
+		btnTitleFont = tupleTitle.getSecond();
 	
 		Tuple2<JLabel, JButton> tupleRegion = organizer.addFontChooser("Region font:", 40, () -> handleFontsChange());
 		regionFontDisplay = tupleRegion.getFirst();
-		JButton btnRegionFont = tupleRegion.getSecond();
+		btnRegionFont = tupleRegion.getSecond();
 	
 		Tuple2<JLabel, JButton> tupleMountainRange = organizer.addFontChooser("Mountain range font:", 30, () -> handleFontsChange());
 		mountainRangeFontDisplay = tupleMountainRange.getFirst();
-		JButton btnMountainRangeFont = tupleMountainRange.getSecond();
+		btnMountainRangeFont = tupleMountainRange.getSecond();
 	
 		Tuple2<JLabel, JButton> tupleCitiesMountains = organizer.addFontChooser("Cities/mountains font:", 30, () -> handleFontsChange());
 		otherMountainsFontDisplay = tupleCitiesMountains.getFirst();
-		JButton btnOtherMountainsFont = tupleCitiesMountains.getSecond();
+		btnOtherMountainsFont = tupleCitiesMountains.getSecond();
 	
 		Tuple2<JLabel, JButton> tupleRiver = organizer.addFontChooser("River font:", 30, () -> handleFontsChange());
 		riverFontDisplay = tupleRiver.getFirst();
-		JButton btnRiverFont = tupleRiver.getSecond();
+		btnRiverFont = tupleRiver.getSecond();
 	
 
 		organizer.addSeperator();
 		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
-		final JButton btnChooseTextColor = new JButton("Choose");
+		btnChooseTextColor = new JButton("Choose");
 		btnChooseTextColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -674,7 +680,7 @@ public class ThemePanel extends JTabbedPane
 
 		boldBackgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
-		final JButton btnChooseBoldBackgroundColor = new JButton("Choose");
+		btnChooseBoldBackgroundColor = new JButton("Choose");
 		btnChooseBoldBackgroundColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -694,28 +700,23 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
+				handleEnablingAndDisabling();
 				handleFontsChange();
 			}
 		});
 
 
-		enableTextCheckBox.addActionListener(new ActionListener()
+		enableTextCheckboxActionListener = new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				btnTitleFont.setEnabled(enableTextCheckBox.isSelected());
-				btnRegionFont.setEnabled(enableTextCheckBox.isSelected());
-				btnMountainRangeFont.setEnabled(enableTextCheckBox.isSelected());
-				btnOtherMountainsFont.setEnabled(enableTextCheckBox.isSelected());
-				btnRiverFont.setEnabled(enableTextCheckBox.isSelected());
-				btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
-				btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
-				chckbxDrawBoldBackground.setEnabled(enableTextCheckBox.isSelected());
+				handleEnablingAndDisabling();
 				showOrHideTextHiddenMessage();
 				handleTextChange();
 			}
-		});
+		};
+
+		enableTextCheckBox.addActionListener(enableTextCheckboxActionListener);
 		
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
@@ -733,15 +734,12 @@ public class ThemePanel extends JTabbedPane
 
 	private void updateDrawRegionsCheckboxEnabledAndSelected()
 	{
-		if (landSupportsColoring())
-		{
-			landColoringMethodComboBox.setEnabled(true);
-		}
-		else
+		if (!landSupportsColoring())
 		{
 			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
-			landColoringMethodComboBox.setEnabled(false);
 		}
+		
+		handleEnablingAndDisabling();
 	}
 	
 	private boolean landSupportsColoring()
@@ -759,8 +757,7 @@ public class ThemePanel extends JTabbedPane
 		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeLandCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
-		btnChooseLandColor.setEnabled(landSupportsColoring());
+		handleEnablingAndDisabling();
 
 		updateDrawRegionsCheckboxEnabledAndSelected();
 
@@ -950,7 +947,7 @@ public class ThemePanel extends JTabbedPane
 	private void handleLandColoringMethodChanged()
 	{
 		boolean colorRegions = areRegionColorsVisible();
-		btnChooseCoastShadingColor.setEnabled(!colorRegions);
+		handleEnablingAndDisabling();
 		final String message = "Coast shading color selection is disabled because it will use the region color when draw"
 				+ " regions is checked.";
 		if (colorRegions)
@@ -1029,8 +1026,8 @@ public class ThemePanel extends JTabbedPane
 
 		// Do a click to update other components on the panel as enabled or
 		// disabled.
-		enableTextCheckBox.setSelected(!settings.drawText);
-		enableTextCheckBox.doClick();
+		enableTextCheckBox.setSelected(settings.drawText);
+		enableTextCheckboxActionListener.actionPerformed(null);
 
 		titleFontDisplay.setFont(settings.titleFont);
 		titleFontDisplay.setText(settings.titleFont.getName());
@@ -1216,5 +1213,44 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.handleThemeChange();
 		mainWindow.undoer.setUndoPoint(UpdateType.GrungeAndFray, null);
 		mainWindow.updater.createAndShowMapGrungeOrFrayedEdgeChange();
+	}
+	
+	private void handleEnablingAndDisabling()
+	{
+		borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
+		borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
+
+		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+		frayedEdgePolygonCountSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+
+		btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
+		
+		btnTitleFont.setEnabled(enableTextCheckBox.isSelected());
+		btnRegionFont.setEnabled(enableTextCheckBox.isSelected());
+		btnMountainRangeFont.setEnabled(enableTextCheckBox.isSelected());
+		btnOtherMountainsFont.setEnabled(enableTextCheckBox.isSelected());
+		btnRiverFont.setEnabled(enableTextCheckBox.isSelected());
+		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
+		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
+		chckbxDrawBoldBackground.setEnabled(enableTextCheckBox.isSelected());
+		
+		landColoringMethodComboBox.setEnabled(landSupportsColoring());
+
+		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
+		btnChooseLandColor.setEnabled(landSupportsColoring());
+		
+		btnChooseCoastShadingColor.setEnabled(!areRegionColorsVisible());
+
+	}
+	
+	void enableOrDisableEverything(boolean enable)
+	{
+		SwingHelper.setEnabled(this, enable);
+		
+		if (enable)
+		{
+			// Call this to disable any fields that should be disabled.
+			handleEnablingAndDisabling();
+		}
 	}
 }

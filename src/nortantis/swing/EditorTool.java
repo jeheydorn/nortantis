@@ -255,4 +255,10 @@ public abstract class EditorTool
 	public abstract boolean shouldShowTextWhenTextIsEnabled();
 	
 	public abstract void getSettingsFromGUI(MapSettings settings);
+	
+	/**
+	 * If this tool enables or disables any components, it should be done in this method so that the framework can call it to
+	 * re-disable components after enabling everything in the tools options panel when the editor is ready to use.
+	 */
+	public abstract void handleEnablingAndDisabling(MapSettings settings);
 }

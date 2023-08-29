@@ -51,6 +51,7 @@ import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr.Method;
+import org.junit.runner.Computer;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
@@ -104,8 +105,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JCheckBoxMenuItem highlightLakesButton;
 	private JCheckBoxMenuItem highlightRiversButton;
 	private JScrollPane consoleOutputPane;
-	private double resolutionToSave;
+	double exportResolution;
 	String imageExportPath;
+	double heightmapExportResolution;
+	String heightmapExportPath;
+	private JMenuItem saveMenuItem;
+	private JMenuItem saveAsMenItem;
+	private JMenuItem exportMapAsImageMenuItem;
+	private JMenuItem exportHeightmapMenuItem;
+	private JMenu editMenu;
+	private JMenu viewMenu;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -147,7 +156,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		else
 		{
 			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create a map, go to", "File > New Random Map." });
+			enableOrDisableFieldsThatRequireMap(false, null);
 		}
+	}
+	
+	
+	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
+	{
+		saveMenuItem.setEnabled(enable);
+		saveAsMenItem.setEnabled(enable);
+		exportMapAsImageMenuItem.setEnabled(enable);
+		exportHeightmapMenuItem.setEnabled(enable);
+		editMenu.setEnabled(enable);
+		viewMenu.setEnabled(enable);
+		
+		themePanel.enableOrDisableEverything(enable);
+		toolsPanel.enableOrDisableEverything(enable, settings);
 	}
 
 	private void createGUI()
@@ -461,6 +485,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 
 		final JMenuItem loadSettingsMenuItem = new JMenuItem("Open");
+		loadSettingsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(loadSettingsMenuItem);
 		loadSettingsMenuItem.addActionListener(new ActionListener()
 		{
@@ -495,8 +520,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
 					MapSettings settings = new MapSettings(openSettingsFilePath.toString());
-					loadSettingsIntoGUI(settings);
+					
+					updater.cancel();
+					updater.dowWhenMapIsNotDrawing(() -> 
+					{
+						loadSettingsIntoGUI(settings);	
+					});
+					
 					updateFrameTitle();
+					enableOrDisableFieldsThatRequireMap(true, settings);
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
@@ -513,7 +545,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		final JMenuItem saveMenuItem = new JMenuItem("Save");
+		saveMenuItem = new JMenuItem("Save");
 		saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(saveMenuItem);
 		saveMenuItem.addActionListener(new ActionListener()
@@ -525,7 +557,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		final JMenuItem saveAsMenItem = new JMenuItem("Save As...");
+		saveAsMenItem = new JMenuItem("Save As...");
 		fileMenu.add(saveAsMenItem);
 		saveAsMenItem.addActionListener(new ActionListener()
 		{
@@ -536,8 +568,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		// TODO Convert this to a PNG export workflow
-		JMenuItem exportMapAsImageMenuItem = new JMenuItem("Export as Image");
+		exportMapAsImageMenuItem = new JMenuItem("Export as Image");
 		fileMenu.add(exportMapAsImageMenuItem);
 		exportMapAsImageMenuItem.addActionListener(new ActionListener()
 		{
@@ -547,61 +578,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		JMenuItem exportHeightmapMenuItem = new JMenuItem("Export Heightmap");
+		exportHeightmapMenuItem = new JMenuItem("Export Heightmap");
 		fileMenu.add(exportHeightmapMenuItem);
 		exportHeightmapMenuItem.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				// TODO Show a dialog that prompts for resolution. Make it modal
-				// to prevent other map generation stuff while it's happening.
-				// TODO Maybe also prevent it from running while the map is
-				// drawing.
-
-				showHeightMapWithEditsWarning();
-
-				Logger.clear();
-				SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
-				{
-					@Override
-					public BufferedImage doInBackground() throws IOException
-					{
-						MapSettings settings = getSettingsFromGUI(false);
-						double resolutionScale = 1.0; // TODO Pull this from a
-														// setting in a new
-														// heightmap export
-														// dialog.
-						settings.resolution = resolutionScale;
-
-						Logger.println("Creating a heightmap...");
-						BufferedImage heightMap = new MapCreator().createHeightMap(settings);
-						Logger.println("Opening the heightmap in your system's default image editor.");
-						String fileName = ImageHelper.openImageInSystemDefaultEditor(heightMap, "heightmap");
-						Logger.println("Heightmap written to " + fileName);
-						return heightMap;
-					}
-
-					@Override
-					public void done()
-					{
-						try
-						{
-							get();
-						}
-						catch (Exception ex)
-						{
-							SwingHelper.handleBackgroundThreadException(ex, mainWindow, false);
-						}
-					}
-				};
-				worker.execute();
-
+				handleExportHeightmapPressed();
 			}
-
 		});
 
-		JMenu editMenu = new JMenu("Edit");
+		editMenu = new JMenu("Edit");
 		menuBar.add(editMenu);
 
 		undoButton = new JMenuItem("Undo");
@@ -654,7 +642,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		clearEntireMapButton.setEnabled(false);
 
-		JMenu viewMenu = new JMenu("View");
+		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
 
 		displayQualityMenu = new JMenu("Display Quality");
@@ -697,8 +685,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				String text = ((JRadioButtonMenuItem) e.getSource()).getText();
 				UserPreferences.getInstance().editorImageQuality = text;
 				handleImageQualityChange(text);
-
-				showImageQualityMessage();
 			}
 		};
 
@@ -904,28 +890,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	private void showImageQualityMessage()
-	{
-		if (!UserPreferences.getInstance().hideImageQualityMessage)
-		{
-			Dimension size = new Dimension(400, 115);
-			JPanel panel = new JPanel();
-			panel.setPreferredSize(size);
-			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			JLabel label = new JLabel("<html>Changing the Display Quality in the editor is only for the purpose of either speeding"
-					+ " up the editor by using a lower quality, or viewing more details at higher zoom levels using a higher quality."
-					+ " It does not affect the quality of the map exported to an image when you press the Generate button in the"
-					+ " main window.</html>");
-			panel.add(label);
-			label.setMaximumSize(size);
-			panel.add(Box.createVerticalStrut(18));
-			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-			panel.add(checkBox);
-			JOptionPane.showMessageDialog(this, panel, "Tip", JOptionPane.INFORMATION_MESSAGE);
-			UserPreferences.getInstance().hideImageQualityMessage = checkBox.isSelected();
-		}
-	}
-
 	public void showAsDrawing(boolean isDrawing)
 	{
 		clearEntireMapButton.setEnabled(!isDrawing);
@@ -1013,11 +977,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void handleExportAsImagePressed()
 	{
-		ExportAsImageDialog dialog = new ExportAsImageDialog(this);
+		ImageExportDialog dialog = new ImageExportDialog(this, ImageExportType.Map);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
-
-
+	}
+	
+	private void handleExportHeightmapPressed()
+	{
+		ImageExportDialog dialog = new ImageExportDialog(this, ImageExportType.Heightmap);
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
 	}
 
 	private void showHeightMapWithEditsWarning()
@@ -1201,8 +1170,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
-		resolutionToSave = settings.resolution;
+		exportResolution = settings.resolution;
 		imageExportPath = settings.imageExportPath;
+		heightmapExportResolution = settings.heightmapResolution;
+		heightmapExportPath = settings.heightmapExportPath;
 		edits = settings.edits;
 		themePanel.loadSettingsIntoGUI(settings);
 		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
@@ -1228,8 +1199,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		// Settings which have a UI in a popup.
-		settings.resolution = resolutionToSave;
+		settings.resolution = exportResolution;
 		settings.imageExportPath = imageExportPath;
+		settings.heightmapResolution = heightmapExportResolution;
+		settings.heightmapExportPath = heightmapExportPath;
 
 		themePanel.getSettingsFromGUI(settings);
 		toolsPanel.getSettingsFromGUI(settings);
@@ -1338,16 +1311,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public boolean isReadyForLogging()
 	{
 		return txtConsoleOutput != null;
-	}
-	
-	void setResolutionToSave(double resolutionToSave)
-	{
-		this.resolutionToSave = resolutionToSave;
-	}
-	
-	double getResolutionToSave()
-	{
-		return resolutionToSave;
 	}
 	
 	public Path getOpenSettingsFilePath()

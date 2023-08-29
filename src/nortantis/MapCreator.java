@@ -364,8 +364,7 @@ public class MapCreator
 	 *            will be stored in it.
 	 * @return The map
 	 */
-	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts)
-			throws CancelledException
+	public BufferedImage createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts) throws CancelledException
 	{
 		Logger.println("Creating the map");
 
@@ -413,7 +412,7 @@ public class MapCreator
 			textDrawer = mapParts.textDrawer;
 			textDrawer.setSettingsAndMapTexts(settings);
 		}
-		
+
 		checkForCancel();
 
 		WorldGraph graph;
@@ -430,7 +429,7 @@ public class MapCreator
 		{
 			graph = mapParts.graph;
 		}
-		
+
 		checkForCancel();
 
 		BufferedImage map;
@@ -441,7 +440,7 @@ public class MapCreator
 		{
 			Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts,
 					graph, background, sizeMultiplier);
-			
+
 			checkForCancel();
 
 			map = tuple.getFirst();
@@ -456,31 +455,34 @@ public class MapCreator
 			mountainGroups = null;
 			cities = null;
 		}
-		
+
 		checkForCancel();
 
 		if (settings.drawText)
 		{
 			Logger.println("Adding text.");
+		}
+		else
+		{
+			Logger.println("Creating text but not drawing it.");
+		}
 
-			if (settings.edits.text.size() > 0)
-			{
-				textDrawer.drawTextFromEdits(graph, map, landBackground);
-			}
-			else
-			{
-				// Call drawText below regardless of settings.drawText to create
-				// the
-				// MapText objects even when text is not shown.
+		if (settings.edits.text.size() > 0)
+		{
+			textDrawer.drawTextFromEdits(graph, map, landBackground);
+		}
+		else
+		{
+			// Call generateText below regardless of settings.drawText to create
+			// the MapText objects even when text is not shown.
 
-				// Note that mountainGroups and cities should always be
-				// populated at this point if the map has mountains or cities
-				// because the code path above that skips drawing terrain and
-				// uses mapParts.mapBeforeAddingText instead will only be hit
-				// if the map has already been drawn in the editor, and so text
-				// will be drawn from edits instead of taking this code path.
-				textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
-			}
+			// Note that mountainGroups and cities should always be
+			// populated at this point if the map has mountains or cities
+			// because the code path above that skips drawing terrain and
+			// uses mapParts.mapBeforeAddingText instead will only be hit
+			// if the map has already been drawn in the editor, and so text
+			// will be drawn from edits instead of taking this code path.
+			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
 		}
 
 		landBackground = null;
@@ -494,7 +496,7 @@ public class MapCreator
 				background.borderBackground = null;
 			}
 		}
-		
+
 		checkForCancel();
 
 		if (settings.frayedBorder)
@@ -545,7 +547,7 @@ public class MapCreator
 			r.nextLong();
 		}
 		background = null;
-		
+
 		checkForCancel();
 
 		if (settings.grungeWidth > 0)
@@ -566,7 +568,7 @@ public class MapCreator
 				final float fractalPower = 1.3f;
 				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, (int) map.getWidth(),
 						(int) map.getHeight(), 0.75f);
-				
+
 				checkForCancel();
 
 				// Whiten the middle of clouds.
@@ -581,7 +583,7 @@ public class MapCreator
 				mapParts.grunge = grunge;
 			}
 		}
-		
+
 		checkForCancel();
 
 		double elapsedTime = System.currentTimeMillis() - startTime;
@@ -598,7 +600,7 @@ public class MapCreator
 		applyRegionEdits(graph, settings.edits);
 		applyCenterEdits(graph, settings.edits, null);
 		applyEdgeEdits(graph, settings.edits, null);
-		
+
 		checkForCancel();
 
 		background.doSetupThatNeedsGraph(settings, graph, null, null, null);
@@ -647,7 +649,7 @@ public class MapCreator
 		{
 			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers);
 		}
-		
+
 		checkForCancel();
 
 		// Draw mask for land vs ocean.
@@ -667,13 +669,13 @@ public class MapCreator
 		}
 
 		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null, true);
-		
+
 		checkForCancel();
 
 		// Store the current version of the map for a background when drawing
 		// icons later.
 		BufferedImage landBackground = ImageHelper.deepCopy(map);
-		
+
 		checkForCancel();
 
 		if (settings.drawRegionColors)
@@ -690,7 +692,7 @@ public class MapCreator
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
-		
+
 		checkForCancel();
 
 		if (settings.drawRivers)
@@ -699,7 +701,7 @@ public class MapCreator
 			Logger.println("Adding rivers.");
 			drawRivers(settings, graph, map, sizeMultiplier, null, null);
 		}
-		
+
 		checkForCancel();
 
 		List<IconDrawTask> cities = null;
@@ -726,7 +728,7 @@ public class MapCreator
 			// roadDrawer.markRoads();
 			// roadDrawer.drawRoads(map, sizeMultiplier);
 		}
-		
+
 		checkForCancel();
 
 		if (settings.drawIcons)
@@ -734,7 +736,7 @@ public class MapCreator
 			Logger.println("Drawing all icons.");
 			iconDrawer.drawAllIcons(map, landBackground, null);
 		}
-		
+
 		checkForCancel();
 
 		// Add the rivers to landBackground so that the text doesn't erase them.
@@ -745,7 +747,7 @@ public class MapCreator
 		{
 			drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
 		}
-		
+
 		checkForCancel();
 
 		Logger.println("Drawing ocean.");
@@ -766,7 +768,7 @@ public class MapCreator
 				background.ocean = null;
 			}
 		}
-		
+
 		checkForCancel();
 
 		{
@@ -778,7 +780,7 @@ public class MapCreator
 				landBackground = ImageHelper.maskWithColor(landBackground, settings.oceanEffectsColor, oceanBlur, true);
 			}
 		}
-		
+
 		checkForCancel();
 
 		// Draw coastlines.
@@ -801,7 +803,7 @@ public class MapCreator
 
 		return new Tuple4<>(map, landBackground, mountainGroups, cities);
 	}
-	
+
 	private void checkForCancel()
 	{
 		if (isCanceled)
@@ -1332,7 +1334,8 @@ public class MapCreator
 	public BufferedImage createHeightMap(MapSettings settings)
 	{
 		r = new Random(settings.randomSeed);
-		DimensionDouble mapBounds = new Background(settings, null).calcMapBoundsAndAdjustResolutionIfNeeded(settings, null);
+		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.heightmapResolution,
+				settings.generatedHeight * settings.heightmapResolution);
 		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
 		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
@@ -1394,12 +1397,12 @@ public class MapCreator
 		}
 		return edgeEdits;
 	}
-	
+
 	public void cancel()
 	{
 		isCanceled = true;
 	}
-	
+
 	public boolean isCanceled()
 	{
 		return isCanceled;

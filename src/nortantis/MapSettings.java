@@ -106,6 +106,8 @@ public class MapSettings implements Serializable
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
 	public String imageExportPath;
+	public String heightmapExportPath;
+	public double heightmapResolution = 1.0;
 	
 	/**
 	 * Default values for new settings
@@ -237,6 +239,8 @@ public class MapSettings implements Serializable
 		root.put("drawIcons", drawIcons);
 		root.put("drawRoads", drawRoads);
 		root.put("imageExportPath", imageExportPath);
+		root.put("heightmapExportPath", heightmapExportPath);
+		root.put("heightmapResolution", heightmapResolution);
 		
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -483,6 +487,11 @@ public class MapSettings implements Serializable
 		
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
 		imageExportPath = (String) root.get("imageExportPath");
+		heightmapExportPath = (String) root.get("heightmapExportPath");
+		if (root.containsKey("heightmapResolution"))
+		{
+			heightmapResolution = (double) root.get("heightmapResolution");	
+		}
 		
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
@@ -721,6 +730,7 @@ public class MapSettings implements Serializable
 	{
 		MapSettings o = (MapSettings)other;
 		
+		// Code for debugging:
 //		Helper.writeToFile("this.json", toJson());
 //		Helper.writeToFile("other.json", o.toJson());
 		

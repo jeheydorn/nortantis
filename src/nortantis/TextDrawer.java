@@ -1069,7 +1069,8 @@ public class TextDrawer
 		
 		Font original = g.getFont();
 		Color originalColor = g.getColor();
-		Font background = g.getFont().deriveFont(1, (int)(g.getFont().getSize()));
+		int style = original.isItalic() ? Font.BOLD | Font.ITALIC : Font.BOLD;
+		Font background = g.getFont().deriveFont(style, (int)(g.getFont().getSize()));
 		FontMetrics metrics = g.getFontMetrics(original);
 		
 		Point curLoc = new Point(location.x , location.y);

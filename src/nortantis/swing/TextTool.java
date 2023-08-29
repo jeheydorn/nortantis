@@ -501,7 +501,7 @@ public class TextTool extends EditorTool
 	{
 		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
 		
-		SwingHelper.setEnabled(getToolOptionsPanel(), settings.drawText);
+		handleEnablingAndDisabling(settings);
 		drawTextDisabledLabelHider.setVisible(!settings.drawText);
 	}
 
@@ -515,6 +515,12 @@ public class TextTool extends EditorTool
 	public boolean shouldShowTextWhenTextIsEnabled()
 	{
 		return true;
+	}
+
+	@Override
+	public void handleEnablingAndDisabling(MapSettings settings)
+	{
+		SwingHelper.setEnabled(getToolOptionsPanel(), settings.drawText);
 	}
 
 }

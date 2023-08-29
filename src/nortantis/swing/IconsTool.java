@@ -753,4 +753,9 @@ public class IconsTool extends EditorTool
 		updater.createAndShowMapFull();
 	}
 
+	@Override
+	public void handleEnablingAndDisabling(MapSettings settings)
+	{
+	}
+
 }

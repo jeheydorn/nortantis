@@ -258,4 +258,25 @@ public class ToolsPanel extends JPanel
 		}
 
 	}
+	
+	void enableOrDisableEverything(boolean enable, MapSettings settings)
+	{
+		SwingHelper.setEnabled(this, enable);
+		
+		if (enable)
+		{
+			if (!mainWindow.updater.isMapBeingDrawn())
+			{
+				zoomComboBox.setEnabled(enable);
+			}
+			
+			if (settings != null)
+			{
+				for (EditorTool tool : tools)
+				{
+					tool.handleEnablingAndDisabling(settings);
+				}
+			}
+		}
+	}
 }

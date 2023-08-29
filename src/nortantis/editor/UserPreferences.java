@@ -18,9 +18,9 @@ public class UserPreferences
 	public boolean hideMapChangesWarning;
 	public boolean hideAspectRatioWarning;
 	public boolean hideHeightMapWithEditsWarning;
-	public boolean hideImageQualityMessage;
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
-	public ExportAction defaultExportAction = defaultDefaultExportAction;
+	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
+	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 
 	public static UserPreferences instance;
 
@@ -70,15 +70,21 @@ public class UserPreferences
 				{
 					hideHeightMapWithEditsWarning = Boolean.parseBoolean(props.getProperty("hideHeightMapWithEditsWarning"));
 				}
-				if (props.containsKey("hideImageQualityMessage"))
-				{
-					hideImageQualityMessage = Boolean.parseBoolean(props.getProperty("hideImageQualityMessage"));
-				}
-				if (props.containsKey("defaultExportAction"))
+				if (props.containsKey("defaultMapExportAction"))
 				{
 					try
 					{
-						defaultExportAction = ExportAction.valueOf(props.getProperty("defaultExportAction"));
+						defaultMapExportAction = ExportAction.valueOf(props.getProperty("defaultMapExportAction"));
+					}
+					catch (IllegalArgumentException e)
+					{
+					}
+				}
+				if (props.containsKey("defaultHeightmapExportAction"))
+				{
+					try
+					{
+						defaultHeightmapExportAction = ExportAction.valueOf(props.getProperty("defaultHeightmapExportAction"));
 					}
 					catch (IllegalArgumentException e)
 					{
@@ -102,8 +108,9 @@ public class UserPreferences
 		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
 		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
 		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");
-		props.setProperty("hideImageQualityMessage", hideImageQualityMessage + "");
-		props.setProperty("defaultExportAction", defaultExportAction != null ? defaultExportAction.toString() 
+		props.setProperty("defaultMapExportAction", defaultMapExportAction != null ? defaultMapExportAction.toString() 
+				: defaultDefaultExportAction.toString());
+		props.setProperty("defaultHeightmapExportAction", defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() 
 				: defaultDefaultExportAction.toString());
 
 		try
