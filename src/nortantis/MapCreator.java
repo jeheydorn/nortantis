@@ -1399,4 +1399,9 @@ public class MapCreator
 	{
 		isCanceled = true;
 	}
+	
+	public boolean isCanceled()
+	{
+		return isCanceled;
+	}
 }

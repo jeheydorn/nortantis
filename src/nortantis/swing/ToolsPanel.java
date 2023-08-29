@@ -188,7 +188,7 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				progressBar.setVisible(updater.isMapBeingDrawn);
+				progressBar.setVisible(updater.isMapBeingDrawn());
 			}
 		};
 		progressBarTimer = new Timer(50, listener);

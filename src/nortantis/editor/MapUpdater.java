@@ -29,7 +29,7 @@ import nortantis.util.Tuple2;
 
 public abstract class MapUpdater
 {
-	public boolean isMapBeingDrawn;
+	private boolean isMapBeingDrawn;
 	private ReentrantLock drawLock;
 	private ReentrantLock interactionsLock;
 	public MapParts mapParts;
@@ -39,6 +39,7 @@ public abstract class MapUpdater
 	private boolean isMapReadyForInteractions;
 	private Queue<Runnable> tasksToRunWhenMapReady;
 	private ArrayDeque<MapUpdate> updatesToDraw;
+	private MapCreator currentNonIncrementalMapCreator;
 
 	/**
 	 * 
@@ -292,7 +293,8 @@ public abstract class MapUpdater
 						BufferedImage map;
 						try
 						{
-							map = new MapCreator().createMap(settings, maxMapSize, mapParts);
+							currentNonIncrementalMapCreator = new MapCreator();
+							map = currentNonIncrementalMapCreator.createMap(settings, maxMapSize, mapParts);
 						}
 						catch (CancelledException e)
 						{
@@ -396,6 +398,7 @@ public abstract class MapUpdater
 				else
 				{
 					onFailedToDraw();
+					isMapBeingDrawn = false;
 				}
 
 				while (tasksToRunWhenMapReady.size() > 0)
@@ -622,4 +625,53 @@ public abstract class MapUpdater
 			}
 		}
 	}
+	
+	public void dowWhenMapIsNotDrawing(Runnable action)
+	{
+		if (!isMapBeingDrawn)
+		{
+			boolean isLocked = false;
+			try
+			{
+				isLocked = drawLock.tryLock(0, TimeUnit.MILLISECONDS);
+				if (isLocked)
+				{
+					action.run();
+				}
+				else
+				{
+					tasksToRunWhenMapReady.add(action);
+				}
+			}
+			catch (InterruptedException e1)
+			{
+			}
+			finally
+			{
+				if (isLocked)
+				{
+					drawLock.unlock();
+				}
+			}
+		}
+		else
+		{
+			tasksToRunWhenMapReady.add(action);
+		}
+	}
+
+	public boolean isMapBeingDrawn()
+	{
+		return isMapBeingDrawn;
+	}
+	
+	public void cancel()
+	{
+		if (currentNonIncrementalMapCreator != null && isMapBeingDrawn)
+		{
+			currentNonIncrementalMapCreator.cancel();
+		}
+	}
+	
+
 }

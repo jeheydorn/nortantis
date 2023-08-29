@@ -13,12 +13,19 @@ import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.analysis.function.Sinc;
@@ -199,33 +206,38 @@ public class ImageHelper
 	}
 
 	// TODO remove this if I don't end up using it.
-//	public static BufferedImage scaleUsingBiCubicInterpolation(BufferedImage image, double scale)
-//	{
-//		int newWidth = (int) (image.getWidth() * scale);
-//		int newHeight = (int) (image.getHeight() * scale);
-//		BufferedImage newImage = new BufferedImage(newWidth, newHeight, image.getType());
-//		for (int y = 0; y < newHeight; y++)
-//		{
-//			for (int x = 0; x < newWidth; x++)
-//			{
-//				int x1 = (int) (x / scale);
-//				int y1 = (int) (y / scale);
-//				int x2 = Math.min(x1 + 1, image.getWidth() - 1);
-//				int y2 = Math.min(y1 + 1, image.getHeight() - 1);
-//				double dx = x / scale - x1;
-//				double dy = y / scale - y1;
-//				Color c00 = new Color(image.getRGB(x1, y1));
-//				Color c01 = new Color(image.getRGB(x2, y1));
-//				Color c10 = new Color(image.getRGB(x1, y2));
-//				Color c11 = new Color(image.getRGB(x2, y2));
-//				int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
-//				int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
-//				int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
-//				newImage.setRGB(x, y, new Color(r0, g0, b0).getRGB());
-//			}
-//		}
-//		return newImage;
-//	}
+	// public static BufferedImage scaleUsingBiCubicInterpolation(BufferedImage
+	// image, double scale)
+	// {
+	// int newWidth = (int) (image.getWidth() * scale);
+	// int newHeight = (int) (image.getHeight() * scale);
+	// BufferedImage newImage = new BufferedImage(newWidth, newHeight,
+	// image.getType());
+	// for (int y = 0; y < newHeight; y++)
+	// {
+	// for (int x = 0; x < newWidth; x++)
+	// {
+	// int x1 = (int) (x / scale);
+	// int y1 = (int) (y / scale);
+	// int x2 = Math.min(x1 + 1, image.getWidth() - 1);
+	// int y2 = Math.min(y1 + 1, image.getHeight() - 1);
+	// double dx = x / scale - x1;
+	// double dy = y / scale - y1;
+	// Color c00 = new Color(image.getRGB(x1, y1));
+	// Color c01 = new Color(image.getRGB(x2, y1));
+	// Color c10 = new Color(image.getRGB(x1, y2));
+	// Color c11 = new Color(image.getRGB(x2, y2));
+	// int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(),
+	// c11.getRed(), dx, dy);
+	// int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(),
+	// c11.getGreen(), dx, dy);
+	// int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(),
+	// c11.getBlue(), dx, dy);
+	// newImage.setRGB(x, y, new Color(r0, g0, b0).getRGB());
+	// }
+	// }
+	// return newImage;
+	// }
 
 	public static int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
 	{
@@ -233,24 +245,30 @@ public class ImageHelper
 		double v1 = v10 * (1 - dx) + v11 * dx;
 		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
-	
+
 	/**
-	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target.
-	 * This implementation bicubic scaling is about five times slower than the one used by ImgScalr, but 
-	 * is much faster when I only want to update a small piece of a scaled image.
-	 * @param source The unscaled image.
-	 * @param target The scaled image
-	 * @param boundsInSource The area in the source image that will be scaled and placed into the target image.
+	 * Update one piece of a scaled image. Takes an area defined by
+	 * boundsInSource and scales it into target. This implementation bicubic
+	 * scaling is about five times slower than the one used by ImgScalr, but is
+	 * much faster when I only want to update a small piece of a scaled image.
+	 * 
+	 * @param source
+	 *            The unscaled image.
+	 * @param target
+	 *            The scaled image
+	 * @param boundsInSource
+	 *            The area in the source image that will be scaled and placed
+	 *            into the target image.
 	 */
 	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.graph.geom.Rectangle boundsInSource)
 	{
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
-				
+
 		int upperLeftX = Math.max(0, (int) (boundsInSource.x * scale));
 		int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
-		// The +1's below are because I'm padding the width and height by 1 pixel to account for integer truncation.
-		java.awt.Rectangle pixelsToUpdate = new java.awt.Rectangle(
-				upperLeftX, upperLeftY,
+		// The +1's below are because I'm padding the width and height by 1
+		// pixel to account for integer truncation.
+		java.awt.Rectangle pixelsToUpdate = new java.awt.Rectangle(upperLeftX, upperLeftY,
 				Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
 				Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 
@@ -313,7 +331,7 @@ public class ImageHelper
 		normalize(kernel);
 		return kernel;
 	}
-	
+
 	public static float[][] createFractalKernel(int size, double p)
 	{
 		if (size == 0)
@@ -1624,7 +1642,39 @@ public class ImageHelper
 	{
 		try
 		{
-			ImageIO.write(image, FilenameUtils.getExtension(fileName), new File(fileName));
+			String extension = FilenameUtils.getExtension(fileName).toLowerCase();
+			if (extension.equals("jpg") || extension.equals("jpeg"))
+			{
+				if (image.getType() == BufferedImage.TYPE_INT_ARGB)
+				{
+					// JPEG does not support transparency. Trying to write an image with transparent pixels causes 
+					// it to silently not be created. 
+					image = convertARGBtoRGB(image);
+				}
+				
+				Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
+
+				if (!writers.hasNext())
+					throw new IllegalStateException("No writers found for jpg format.");
+
+				ImageWriter writer = (ImageWriter) writers.next();
+				OutputStream os = new FileOutputStream(new File(fileName));
+				ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+				writer.setOutput(ios);
+
+				ImageWriteParam param = writer.getDefaultWriteParam();
+
+				param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+				final float quality = 0.95f;
+				param.setCompressionQuality(quality);
+
+				writer.write(null, new IIOImage(ImageHelper.convertARGBtoRGB(image), null, null), param);
+
+			}
+			else
+			{
+				ImageIO.write(image, FilenameUtils.getExtension(fileName), new File(fileName));
+			}
 		}
 		catch (IOException e)
 		{
@@ -1951,5 +2001,31 @@ public class ImageHelper
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		return g;
+	}
+
+	public static BufferedImage convertARGBtoRGB(BufferedImage image)
+	{
+		BufferedImage newImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = newImage.createGraphics();
+		g.drawImage(image, 0, 0, null);
+		g.dispose();
+		for (int i = 0; i < newImage.getWidth(); i++)
+		{
+			for (int j = 0; j < newImage.getHeight(); j++)
+			{
+				int argb = newImage.getRGB(i, j);
+				int alpha = (argb >> 24) & 0xff;
+				int rgb = argb & 0x00ffffff;
+				if (alpha != 0)
+				{
+					newImage.setRGB(i, j, rgb);
+				}
+				else
+				{
+					newImage.setRGB(i, j, 0x000000);
+				}
+			}
+		}
+		return newImage;
 	}
 }

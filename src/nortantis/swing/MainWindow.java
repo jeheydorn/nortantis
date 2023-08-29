@@ -418,7 +418,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearSelectedCenters();
-				isMapBeingDrawn = false;
 			}
 
 			@Override
@@ -592,7 +591,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						}
 						catch (Exception ex)
 						{
-							SwingHelper.handleBackgroundThreadException(ex, false);
+							SwingHelper.handleBackgroundThreadException(ex, mainWindow, false);
 						}
 					}
 				};

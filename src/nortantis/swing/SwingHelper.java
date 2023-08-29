@@ -284,7 +284,7 @@ public class SwingHelper
 		}
 	}
 
-	public static void handleBackgroundThreadException(Exception ex, boolean isExport)
+	public static void handleBackgroundThreadException(Exception ex, Component parent, boolean isExport)
 	{
 		if (ex instanceof ExecutionException)
 		{
@@ -293,28 +293,28 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (ex.getCause() instanceof OutOfMemoryError)
 				{
-					JOptionPane.showMessageDialog(null,
+					JOptionPane.showMessageDialog(parent,
 							isExport ? "Out of memory. Try exporting at a lower resolution." :
 							"Out of memory. Try decreasing the Display Quality in the View menu.",
 							"Error", JOptionPane.ERROR_MESSAGE);
 				}
 				else
 				{
-					JOptionPane.showMessageDialog(null, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(parent, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 			else
 			{
 				// Should never happen.
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(null, "An ExecutionException error occured with no cause: " + ex.getMessage(), "Error",
+				JOptionPane.showMessageDialog(parent, "An ExecutionException error occured with no cause: " + ex.getMessage(), "Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else
 		{
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(null, "An unexpected error occured: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(parent, "An unexpected error occured: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }
