@@ -470,6 +470,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		menuBar.add(fileMenu);
 
 		final JMenuItem newRandomMapMenuItem = new JMenuItem("New Random Map");
+		newRandomMapMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(newRandomMapMenuItem);
 		newRandomMapMenuItem.addActionListener(new ActionListener()
 		{
