@@ -240,7 +240,10 @@ public class SwingHelper
 				@Override
 				public void stateChanged(ChangeEvent e)
 				{
-					action.run();
+					if (!((JSlider) component).getValueIsAdjusting())
+					{
+						action.run();
+					}
 				}
 			});
 		}

@@ -214,7 +214,7 @@ public class Background
 		}
 	}
 
-	DimensionDouble calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
+	static DimensionDouble calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
 		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
 				settings.generatedHeight * settings.resolution);

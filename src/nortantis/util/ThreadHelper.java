@@ -84,6 +84,16 @@ public class ThreadHelper
 		return results;
 	}
 	
+	public <T> Future<T> submit(Callable<T> job)
+	{
+		return exService.submit(job);
+	}
+	
+	public Future<?> submit(Runnable job)
+	{
+		return exService.submit(job);
+	}
+	
 	public int getThreadCount()
 	{
 		return threadCount;

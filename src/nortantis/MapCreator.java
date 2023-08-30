@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import nortantis.MapSettings.OceanEffect;
@@ -36,6 +38,7 @@ import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.Range;
+import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple4;
 
 public class MapCreator
@@ -371,6 +374,27 @@ public class MapCreator
 		double startTime = System.currentTimeMillis();
 
 		r = new Random(settings.randomSeed);
+		
+		// Kick of a job to create the graph while the background is being created.
+		Future<WorldGraph> task = ThreadHelper.getInstance().submit(() ->
+		{
+			if (mapParts == null || mapParts.graph == null)
+			{
+				Logger.println("Creating the graph.");
+				DimensionDouble mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
+				double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
+				WorldGraph graphCreated = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
+				if (mapParts != null)
+				{
+					mapParts.graph = graphCreated;
+				}
+				return graphCreated;
+			}
+			else
+			{
+				return mapParts.graph;
+			}
+		});
 
 		Background background;
 		if (mapParts != null && mapParts.background != null)
@@ -416,20 +440,20 @@ public class MapCreator
 		checkForCancel();
 
 		WorldGraph graph;
-		if (mapParts == null || mapParts.graph == null)
+		try
 		{
-			Logger.println("Creating the graph.");
-			graph = createGraph(settings, background.mapBounds.getWidth(), background.mapBounds.getHeight(), r, sizeMultiplier);
-			if (mapParts != null)
-			{
-				mapParts.graph = graph;
-			}
+			graph = task.get();
 		}
-		else
+		catch (InterruptedException e)
 		{
-			graph = mapParts.graph;
+			throw new RuntimeException(e);
+		}
+		catch (ExecutionException e)
+		{
+			throw new RuntimeException(e);
 		}
 
+		
 		checkForCancel();
 
 		BufferedImage map;
@@ -512,8 +536,10 @@ public class MapCreator
 			}
 			else
 			{
+				// The frayedBorderSize is on a logarithmic scale. 0 should be the minimum value, which will give 100 polygons.
+				int polygonCount = (int) (Math.pow(2, settings.frayedBorderSize) * 2 + 100);
 				WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(),
-						background.borderBounds.getHeight(), settings.frayedBorderSize, new Random(r.nextLong()), sizeMultiplier, true);
+						background.borderBounds.getHeight(), polygonCount, new Random(r.nextLong()), sizeMultiplier, true);
 				frayedBorderMask = new BufferedImage(frayGraph.getWidth(), frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 				frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
 				if (blurLevel > 0)

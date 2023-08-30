@@ -34,6 +34,7 @@ public class SettingsGenerator
 	public static int maxWorldSize = 30000;
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0/40.0;
+	public static int maxFrayedEdgeSizeForUI = 15;
 
 	public static MapSettings generate()
 	{
@@ -142,7 +143,7 @@ public class SettingsGenerator
 			settings.frayedBorder = true;
 		}
 		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		settings.frayedBorderSize = 100 + Math.abs(rand.nextInt(20000));
+		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(9));
 
 		
 		if (rand.nextDouble() > 0.25)

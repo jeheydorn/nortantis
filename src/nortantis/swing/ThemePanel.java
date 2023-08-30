@@ -41,6 +41,7 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
+import nortantis.SettingsGenerator;
 import nortantis.util.ImageHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
@@ -79,7 +80,7 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<String> borderTypeComboBox;
 	private JSlider borderWidthSlider;
 	private JCheckBox drawBorderCheckbox;
-	private JSlider frayedEdgePolygonCountSlider;
+	private JSlider frayedEdgeSizeSlider;
 	private JSlider frayedEdgeShadingSlider;
 	private JCheckBox frayedEdgeCheckbox;
 	private JButton btnChooseCoastShadingColor;
@@ -441,17 +442,17 @@ public class ThemePanel extends JTabbedPane
 				frayedEdgeShadingSlider);
 		
 
-		frayedEdgePolygonCountSlider = new JSlider();
-		frayedEdgePolygonCountSlider.setPaintTicks(true);
-		frayedEdgePolygonCountSlider.setPaintLabels(true);
-		frayedEdgePolygonCountSlider.setMinorTickSpacing(5000);
-		frayedEdgePolygonCountSlider.setMaximum(50000);
-		frayedEdgePolygonCountSlider.setMinimum(100);
-		frayedEdgePolygonCountSlider.setMajorTickSpacing(20000);
-		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgePolygonCountSlider);
-		SwingHelper.setSliderWidthForSidePanel(frayedEdgePolygonCountSlider);
-		organizer.addLabelAndComponentToPanel("Fray polygon count:", "The number of polygons used when creating the frayed border. "
-				+ "Higher values make the fray smaller.", frayedEdgePolygonCountSlider);
+		frayedEdgeSizeSlider = new JSlider();
+		frayedEdgeSizeSlider.setPaintTicks(true);
+		frayedEdgeSizeSlider.setPaintLabels(true);
+		frayedEdgeSizeSlider.setMinorTickSpacing(1);
+		frayedEdgeSizeSlider.setMaximum(SettingsGenerator.maxFrayedEdgeSizeForUI);
+		frayedEdgeSizeSlider.setMinimum(1);
+		frayedEdgeSizeSlider.setMajorTickSpacing(2);
+		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeSizeSlider);
+		SwingHelper.setSliderWidthForSidePanel(frayedEdgeSizeSlider);
+		organizer.addLabelAndComponentToPanel("Fray size:", "The number of polygons used when creating the frayed border. "
+				+ "Higher values make the fray smaller.", frayedEdgeSizeSlider);
 		
 		
 		organizer.addSeperator();
@@ -990,7 +991,7 @@ public class ThemePanel extends JTabbedPane
 		frayedEdgeCheckbox.doClick();
 		grungeColorDisplay.setBackground(settings.frayedBorderColor);
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
-		frayedEdgePolygonCountSlider.setValue(settings.frayedBorderSize);
+		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
 		if (settings.lineStyle.equals(LineStyle.Jagged))
 		{
@@ -1075,7 +1076,9 @@ public class ThemePanel extends JTabbedPane
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
 		settings.frayedBorderColor = grungeColorDisplay.getBackground();
 		settings.frayedBorderBlurLevel = frayedEdgeShadingSlider.getValue();
-		settings.frayedBorderSize = frayedEdgePolygonCountSlider.getValue();
+		// Make increasing frayed edge values cause the number of polygons to decrease so that the fray gets large with
+		// larger values of the slider.
+		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
 		settings.grungeWidth = grungeSlider.getValue();
 		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged : LineStyle.Smooth;
 
@@ -1225,7 +1228,7 @@ public class ThemePanel extends JTabbedPane
 		borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
 
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
-		frayedEdgePolygonCountSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+		frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 
 		btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
 		
