@@ -1210,7 +1210,8 @@ public class TextDrawer
 			{
 				return false;
 			}
-			text.areas = Arrays.asList(area1, area2);
+			text.area = area1; // TODO handle area2
+			text.bounds = bounds1; // TODO handle bounds2
 
 			if (settings.drawText)
 			{
@@ -1235,7 +1236,8 @@ public class TextDrawer
 				return false;
 			}
 			
-			text.areas = Collections.singletonList(area);
+			text.area = area;
+			text.bounds = bounds;
 			
 			if (settings.drawText)
 			{
@@ -1388,7 +1390,8 @@ public class TextDrawer
 				return false;
 			}
 		}
-		text.areas = Collections.singletonList(area);
+		text.area = area;
+		text.bounds = bounds;
 		// Update the text location with the offset.
 		text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
 		
@@ -1396,9 +1399,6 @@ public class TextDrawer
 		{
 			Point textStart = new Point((int)(bounds.getLocation().x), (int)(bounds.getLocation().y + metrics.getAscent()));
 			drawBackgroundBlendingForText(map, g, textStart, text.angle, metrics, text.value);
-		
-			//g.drawRect(bounds.x, bounds.y, bounds.width, bounds.height);
-
 			g.drawString(text.value, (int) textStart.x, (int) textStart.y);
 		}
 		g.setTransform(orig);
@@ -1438,9 +1438,9 @@ public class TextDrawer
 			// Ignore empty text and ignore edited text.
 			if (mp.value.length() > 0)
 			{
-				for (Area a : mp.areas)
+				if (mp.area != null)
 				{
-					Area aCopy = new Area(a);
+					Area aCopy = new Area(mp.area);
 					aCopy.intersect(bounds);
 					if (!aCopy.isEmpty())
 						return true;
@@ -1464,16 +1464,8 @@ public class TextDrawer
 	 */
 	private MapText createMapText(String text, Point location, double angle, TextType type)
 	{
-		return createMapText(text, location, angle, type, new ArrayList<Area>(0));
-	}
-	
-	/**
-	 * Creates a new MapText, taking settings.resolution into account.
-	 */
-	private MapText createMapText(String text, Point location, double angle, TextType type, List<Area> areas)
-	{
 		// Divide by settings.resolution so that the location does not depend on the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / settings.resolution, location.y / settings.resolution), angle, type, areas);
+		return new MapText(text, new Point(location.x / settings.resolution, location.y / settings.resolution), angle, type);
 	}
 
 	/**
@@ -1486,11 +1478,13 @@ public class TextDrawer
 		for (MapText mp : mapTexts)
 		{
 			if (mp.value.length() > 0)
-				for (Area a : mp.areas)
+			{
+				if (mp.area != null)
 				{
-					if (a.contains(awtPoint))
+					if (mp.area.contains(awtPoint))
 						return mp;
 				}
+			}
 		}
 		return null;
 	}
@@ -1514,7 +1508,7 @@ public class TextDrawer
 		String name = generateNameOfTypeForTextEditor(type);
 		// Getting the id must be done after calling generateNameOfType because said method increments textCounter
 		// before generating the name.
-		MapText mapText = createMapText(name, location, 0.0, type, new ArrayList<Area>(0));
+		MapText mapText = createMapText(name, location, 0.0, type);
 		return mapText;
 	}
 	

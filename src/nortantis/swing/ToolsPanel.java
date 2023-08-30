@@ -218,7 +218,7 @@ public class ToolsPanel extends JPanel
 		showAsDrawing(true);
 
 		mainWindow.mapEditingPanel.clearHighlightedCenters();
-		mainWindow.mapEditingPanel.clearAreasToDraw();
+		mainWindow.mapEditingPanel.clearTextBox();
 		mainWindow.mapEditingPanel.clearSelectedCenters();
 		mainWindow.mapEditingPanel.clearHighlightedEdges();
 		mainWindow.mapEditingPanel.hideBrush();

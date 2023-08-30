@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
@@ -13,7 +14,9 @@ import java.util.List;
 import java.util.Set;
 
 import nortantis.MapCreator;
+import nortantis.MapText;
 import nortantis.WorldGraph;
+import nortantis.graph.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 
@@ -22,7 +25,6 @@ public class MapEditingPanel extends ImagePanel
 {
 	private final Color highlightColor = new Color(255,227,74);
 	private final Color selectColor = Color.orange;
-	private List<Area> areas;
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
 	private WorldGraph graph;
@@ -34,7 +36,11 @@ public class MapEditingPanel extends ImagePanel
 	private java.awt.Point brushLocation;
 	private int brushDiameter;
 	private double zoom;
+	private double resolution;
 	private int borderWidth;
+	private Point textBoxLocation;
+	private Rectangle textBoxBounds;
+	private double textBoxAngle;
 	
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -43,6 +49,7 @@ public class MapEditingPanel extends ImagePanel
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
 		zoom = 1.0;
+		resolution = 1.0;
 
 		// TODO Remove this line if it isn't necessary. If it is necessary, then maybe move it to ImagePanel.
 		setLayout(new BorderLayout()); 
@@ -75,9 +82,25 @@ public class MapEditingPanel extends ImagePanel
 		highlightedEdges.clear();
 	}
 	
-	public void setAreasToDraw(List<Area> areas)
+	public void setTextBoxToDraw(nortantis.graph.geom.Point location, Rectangle bounds, double angle)
 	{
-		this.areas = areas;
+		this.textBoxLocation = location;
+		this.textBoxBounds = bounds;
+		this.textBoxAngle = angle;
+	}
+	
+	public void setTextBoxToDraw(MapText text)
+	{
+		this.textBoxLocation = text.location;
+		this.textBoxBounds = text.bounds;
+		this.textBoxAngle = text.angle;
+	}
+	
+	public void clearTextBox()
+	{
+		this.textBoxLocation = null;
+		this.textBoxBounds = null;
+		this.textBoxAngle = 0.0;
 	}
 	
 	public void addHighlightedCenter(Center c)
@@ -128,11 +151,6 @@ public class MapEditingPanel extends ImagePanel
 	{
 		this.graph = graph;
 	}
-
-	public void clearAreasToDraw()
-	{
-		this.areas = null;
-	}
 	
 	public void setCenterHighlightMode(HighlightMode mode)
 	{
@@ -157,13 +175,9 @@ public class MapEditingPanel extends ImagePanel
 		((Graphics2D)g).transform(transform);
 				
 		// Handle drawing/highlighting
-		if (areas != null)
+		if (textBoxBounds != null)
 		{
-			g.setColor(highlightColor);
-			for (Area a : areas)
-			{
-				((Graphics2D)g).draw(a);
-			}
+			drawTextBox(((Graphics2D)g));
 		}
 		
 		if (graph != null)
@@ -185,6 +199,23 @@ public class MapEditingPanel extends ImagePanel
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
 		}
+	}
+	
+	private void drawTextBox(Graphics2D g)
+	{
+		Graphics2D g2 = ((Graphics2D)g);
+		g.setColor(highlightColor);
+		AffineTransform originalTransformCopy = new AffineTransform(g2.getTransform());
+		
+		double centerX = textBoxLocation.x * resolution;
+		double centerY = textBoxLocation.y * resolution;
+					
+		// Rotate the area
+		g2.rotate(textBoxAngle, centerX, centerY);
+		
+		g2.drawRect(textBoxBounds.x, textBoxBounds.y, textBoxBounds.width, textBoxBounds.height);
+		
+		g2.setTransform(originalTransformCopy);
 	}
 	
 	private void drawBrush(Graphics g)
@@ -249,6 +280,11 @@ public class MapEditingPanel extends ImagePanel
 	public void setZoom(double zoom)
 	{
 		this.zoom = zoom;
+	}
+	
+	public void setResolution(double resolution)
+	{
+		this.resolution = resolution;
 	}
 	
 	public void setBorderWidth(int borderWidth)

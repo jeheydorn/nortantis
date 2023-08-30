@@ -736,7 +736,7 @@ public class MapSettings implements Serializable
 		MapSettings copy = Helper.deepCopy(this);
 		if (copy.edits != null)
 		{
-			copy.edits.copyMapEdits(this.edits);
+			copy.edits.copyTextAreas(this.edits);
 		}
 		
 		return copy;

@@ -131,25 +131,21 @@ public class MapEdits implements Serializable
 	{
 		MapEdits copy = Helper.deepCopy(this);
 		// Explicitly copy edits.text.areas because it isn't serializable. 
-		copyMapEdits(copy);
+		copyTextAreas(copy);
 		return copy;
 	}
 	
-	public void copyMapEdits(MapEdits from)
+	public void copyTextAreas(MapEdits to)
 	{
 		if (text != null)
 		{
 			for (int i : new Range(text.size()))
 			{
-				MapText otherText = text.get(i);
-				MapText resultText = from.text.get(i);
-				if (otherText.areas != null)
+				MapText thisText = text.get(i);
+				MapText toText = to.text.get(i);
+				if (thisText.area != null)
 				{
-					resultText.areas = new ArrayList<Area>(otherText.areas.size());
-					for (Area area : otherText.areas)
-					{
-						resultText.areas.add(new Area(area));
-					}
+					toText.area = new Area(thisText.area);
 				}
 			}
 		}
