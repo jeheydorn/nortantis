@@ -5,9 +5,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
-import java.awt.MouseInfo;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -270,9 +267,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		consoleOutputPane.setMinimumSize(new Dimension(0, 0));
 	}
 
-	java.awt.Point mouseLocationForScrolling;
-	java.awt.Point mouseLocationOnMapEditingPanel;
-	boolean spacePressed;
+	java.awt.Point mouseLocationForMiddleButtonDrag;
 
 	private void createMapEditingPanel()
 	{
@@ -299,7 +294,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 				else if (SwingUtilities.isMiddleMouseButton(e))
 				{
-					mouseLocationForScrolling = e.getPoint();
+					mouseLocationForMiddleButtonDrag = e.getPoint();
 				}
 			}
 
@@ -319,19 +314,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				mouseLocationOnMapEditingPanel = e.getPoint();
-				if (spacePressed)
-				{
-					if (mouseLocationForScrolling != null)
-					{
-						mapEditingScrollPane.requestFocus();
-						scrollToNewMouseLocation(e.getPoint());
-					}
-				}
-				else
-				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
-				}
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
 			}
 
 			@Override
@@ -343,7 +326,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 				else if (SwingUtilities.isMiddleMouseButton(e))
 				{
-					scrollToNewMouseLocation(e.getPoint());
+					if (mouseLocationForMiddleButtonDrag != null)
+					{
+						int deltaX = mouseLocationForMiddleButtonDrag.x - e.getX();
+						int deltaY = mouseLocationForMiddleButtonDrag.y - e.getY();
+						mapEditingScrollPane.getVerticalScrollBar()
+								.setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
+						mapEditingScrollPane.getHorizontalScrollBar()
+								.setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
+					}
 				}
 			}
 		});
@@ -411,44 +402,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		// Speed up the scroll speed.
 		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher()
-		{
-			@Override
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if (e.getID() == KeyEvent.KEY_PRESSED)
-				{
-					if (e.getKeyCode() == KeyEvent.VK_SPACE && !spacePressed)
-					{
-						spacePressed = true;
-						mouseLocationForScrolling = mouseLocationOnMapEditingPanel;
-					}
-				}
-				else if (e.getID() == KeyEvent.KEY_RELEASED)
-				{
-					if (e.getKeyCode() == KeyEvent.VK_SPACE)
-					{
-						spacePressed = false;
-					}
-				}
-				return false;
-			}
-		});
-	}
-
-	private void scrollToNewMouseLocation(java.awt.Point mouseLocation)
-	{
-		if (mouseLocationForScrolling != null)
-		{
-			int deltaX = mouseLocationForScrolling.x - mouseLocation.x;
-			if (deltaX > 4)
-			{
-			}
-			int deltaY = mouseLocationForScrolling.y - mouseLocation.y;
-			mapEditingScrollPane.getVerticalScrollBar().setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
-			mapEditingScrollPane.getHorizontalScrollBar().setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
-		}
 	}
 
 	private void createMapUpdater()
