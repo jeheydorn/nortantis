@@ -362,10 +362,6 @@ public class TextDrawer
 	private synchronized void drawTextFromEdits(BufferedImage map, WorldGraph graph)
 	{
 		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
-		RenderingHints rh = new RenderingHints(
-	             RenderingHints.KEY_TEXT_ANTIALIASING,
-	             RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-	    g.setRenderingHints(rh);
 
 		g.setColor(settings.textColor);
 

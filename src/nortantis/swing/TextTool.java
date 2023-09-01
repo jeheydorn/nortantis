@@ -38,9 +38,7 @@ public class TextTool extends EditorTool
 	private MapText lastSelected;
 	private Point mousePressedLocation;
 	private JRadioButton editButton;
-	private JRadioButton moveButton;
 	private JRadioButton addButton;
-	private JRadioButton rotateButton;
 	private JRadioButton deleteButton;
 	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
@@ -49,6 +47,8 @@ public class TextTool extends EditorTool
 	private JPanel booksPanel;
 	private JLabel drawTextDisabledLabel;
 	private RowHider drawTextDisabledLabelHider;
+	private boolean isRotating;
+	private boolean isMoving;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -71,14 +71,6 @@ public class TextTool extends EditorTool
 				else if ((e.getKeyCode() == KeyEvent.VK_E) && e.isAltDown())
 				{
 					editButton.doClick();
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_R) && e.isAltDown())
-				{
-					rotateButton.doClick();
-				}
-				else if (((e.getKeyCode() == KeyEvent.VK_M) || (e.getKeyCode() == KeyEvent.VK_G)) && e.isAltDown())
-				{
-					moveButton.doClick();
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_D) && e.isAltDown())
 				{
@@ -132,23 +124,11 @@ public class TextTool extends EditorTool
 			editButton.addActionListener(listener);
 			editButton.setToolTipText("Edit text (alt+E)");
 
-			moveButton = new JRadioButton("<HTML><U>M</U>ove</HTML>");
-			group.add(moveButton);
-			radioButtons.add(moveButton);
-			moveButton.addActionListener(listener);
-			moveButton.setToolTipText("Move text (alt+M) or (alt+G)");
-
 			addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
 			group.add(addButton);
 			radioButtons.add(addButton);
 			addButton.addActionListener(listener);
 			addButton.setToolTipText("Add new text of the selected text type (alt+A)");
-
-			rotateButton = new JRadioButton("<HTML><U>R</U>otate</HTML>");
-			group.add(rotateButton);
-			radioButtons.add(rotateButton);
-			rotateButton.addActionListener(listener);
-			rotateButton.setToolTipText("Rotate text (alt+R) will");
 
 			deleteButton = new JRadioButton("<HTML><U>D</U>elete</HTML>");
 			group.add(deleteButton);
@@ -271,47 +251,10 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
-		if (moveButton.isSelected())
-		{
-			// Begin a drag and drop of a text box.
-			MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
-			if (selectedText != null)
-			{
-				mousePressedLocation = e.getPoint();
-			}
-			lastSelected = selectedText;
-			if (selectedText == null)
-			{
-				mapEditingPanel.clearTextBox();
-			}
-			else
-			{
-				mapEditingPanel.setTextBoxToDraw(selectedText);
-			}
-			mapEditingPanel.repaint();
-		}
-		else if (rotateButton.isSelected())
-		{
-			lastSelected = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
-			if (lastSelected != null)
-			{
-				// Region and title names cannot be rotated.
-				if (lastSelected.type != TextType.Region && lastSelected.type != TextType.Title)
-				{
-					mapEditingPanel.setTextBoxToDraw(lastSelected);
-				}
-				else
-				{
-					lastSelected = null;
-				}
-			}
-			else
-			{
-				mapEditingPanel.clearTextBox();
-			}
-			mapEditingPanel.repaint();
-		}
-		else if (deleteButton.isSelected())
+		isRotating = false;
+		isMoving = false;
+		
+		if (deleteButton.isSelected())
 		{
 			MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 			if (selectedText != null)
@@ -332,12 +275,25 @@ public class TextTool extends EditorTool
 		}
 		else if (editButton.isSelected())
 		{
-			if (!editTextField.hasFocus())
+			if (lastSelected != null && mapEditingPanel.isInTextRotateTool(e.getPoint()))
 			{
-				editTextField.grabFocus();
+				//mousePressedLocation = e.getPoint(); // TODO decide if I need this
+				isRotating = true;
 			}
-			MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
-			handleTextEdit(selectedText);
+			else if (lastSelected != null && mapEditingPanel.isInTextMoveTool(e.getPoint()))
+			{
+				isMoving = true;
+				mousePressedLocation = e.getPoint();
+			}
+			else
+			{
+				if (!editTextField.hasFocus())
+				{
+					editTextField.grabFocus();
+				}
+				MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+				handleTextEdit(selectedText);
+			}
 		}
 	}
 
@@ -346,7 +302,7 @@ public class TextTool extends EditorTool
 	{
 		if (lastSelected != null)
 		{
-			if (moveButton.isSelected())
+			if (isMoving)
 			{
 				// The user is dragging a text box.
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
@@ -363,7 +319,7 @@ public class TextTool extends EditorTool
 				mapEditingPanel.setTextBoxToDraw(location, bounds, lastSelected.angle);
 				mapEditingPanel.repaint();
 			}
-			else if (rotateButton.isSelected())
+			else if (isRotating)
 			{
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 
@@ -381,7 +337,7 @@ public class TextTool extends EditorTool
 	{
 		if (lastSelected != null)
 		{
-			if (moveButton.isSelected())
+			if (isMoving)
 			{
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 				nortantis.graph.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
@@ -398,7 +354,7 @@ public class TextTool extends EditorTool
 				undoer.setUndoPoint(UpdateType.Text, this);
 				updateTextInBackgroundThread(lastSelected);
 			}
-			else if (rotateButton.isSelected())
+			else if (isRotating)
 			{
 				double centerX = lastSelected.location.x;
 				double centerY = lastSelected.location.y;
@@ -423,6 +379,7 @@ public class TextTool extends EditorTool
 				lastSelected.angle = angle;
 				undoer.setUndoPoint(UpdateType.Text, this);
 				updateTextInBackgroundThread(lastSelected);
+				isRotating = false;
 			}
 		}
 	}

@@ -5,13 +5,18 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.imgscalr.Scalr.Method;
 
 import nortantis.MapCreator;
 import nortantis.MapText;
@@ -19,6 +24,8 @@ import nortantis.WorldGraph;
 import nortantis.graph.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.util.AssetsPath;
+import nortantis.util.ImageHelper;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends ImagePanel
@@ -41,6 +48,12 @@ public class MapEditingPanel extends ImagePanel
 	private Point textBoxLocation;
 	private Rectangle textBoxBounds;
 	private double textBoxAngle;
+	private BufferedImage rotateTextIconScaled;
+	private Area rotateToolArea;
+	private BufferedImage moveTextIconScaled;
+	private Area moveToolArea;
+	private AffineTransform baseTransform;
+
 	
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -162,11 +175,16 @@ public class MapEditingPanel extends ImagePanel
 	{
 		super.paintComponent(g);
 		
+		// TODO Decide if I want this. It makes lines really faint when zoomed out all the way.
+		//((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
 		if (brushLocation != null)
 		{
 			g.setColor(highlightColor);
 			drawBrush(g);
 		}
+		
+		baseTransform = ((Graphics2D) g).getTransform();
 		
 		// Handle zoom and border width. This transform transforms from graph space to image space.
 		AffineTransform transform = new AffineTransform();
@@ -205,7 +223,7 @@ public class MapEditingPanel extends ImagePanel
 	{
 		Graphics2D g2 = ((Graphics2D)g);
 		g.setColor(highlightColor);
-		AffineTransform originalTransformCopy = new AffineTransform(g2.getTransform());
+		AffineTransform originalTransformCopy = g2.getTransform();
 		
 		double centerX = textBoxLocation.x * resolution;
 		double centerY = textBoxLocation.y * resolution;
@@ -213,9 +231,51 @@ public class MapEditingPanel extends ImagePanel
 		// Rotate the area
 		g2.rotate(textBoxAngle, centerX, centerY);
 		
+		int padding = (int)(9 * resolution);
 		g2.drawRect(textBoxBounds.x, textBoxBounds.y, textBoxBounds.width, textBoxBounds.height);
+
+		
+		{
+			int x = textBoxBounds.x + textBoxBounds.width + padding;
+			int y = textBoxBounds.y + (textBoxBounds.height / 2) - (rotateTextIconScaled.getHeight()/2);
+			g2.drawImage(rotateTextIconScaled, x, y, null);
+			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateTextIconScaled.getWidth(), rotateTextIconScaled.getHeight()));
+			rotateToolArea.transform(g2.getTransform());
+		}
+		
+		{
+			int x = textBoxBounds.x + (int)(Math.round(textBoxBounds.width / 2.0)) - (int)(Math.round(moveTextIconScaled.getWidth() / 2.0));
+			int y = textBoxBounds.y - (moveTextIconScaled.getHeight()) - padding;
+			g2.drawImage(moveTextIconScaled, x, y, null);
+			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveTextIconScaled.getWidth(), moveTextIconScaled.getHeight()));
+			moveToolArea.transform(g2.getTransform());
+		}
 		
 		g2.setTransform(originalTransformCopy);
+	}
+	
+	public boolean isInTextRotateTool(java.awt.Point point)
+	{
+		if (rotateToolArea == null || baseTransform == null)
+		{
+			return false;
+		}
+		
+		java.awt.Point tPoint = new java.awt.Point();
+		baseTransform.transform(point, tPoint);
+		return rotateToolArea.contains(tPoint);
+	}
+	
+	public boolean isInTextMoveTool(java.awt.Point point)
+	{
+		if (moveToolArea == null || baseTransform == null)
+		{
+			return false;
+		}
+		
+		java.awt.Point tPoint = new java.awt.Point();
+		baseTransform.transform(point, tPoint);
+		return moveToolArea.contains(tPoint);
 	}
 	
 	private void drawBrush(Graphics g)
@@ -285,6 +345,10 @@ public class MapEditingPanel extends ImagePanel
 	public void setResolution(double resolution)
 	{
 		this.resolution = resolution;
+		BufferedImage rotateIcon = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "rotate text.png").toString());
+		rotateTextIconScaled = ImageHelper.scaleByWidth(rotateIcon, (int)(rotateIcon.getWidth() * resolution * 0.15), Method.ULTRA_QUALITY);
+		BufferedImage moveIcon = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "move text.png").toString());
+		moveTextIconScaled = ImageHelper.scaleByWidth(moveIcon, (int)(moveIcon.getWidth() * resolution * 0.15), Method.ULTRA_QUALITY);
 	}
 	
 	public void setBorderWidth(int borderWidth)
