@@ -7,6 +7,7 @@ import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.geom.AffineTransform;
 import java.util.Collection;
 import java.util.Set;
 import java.util.TreeSet;
@@ -319,5 +320,12 @@ public class SwingHelper
 			ex.printStackTrace();
 			JOptionPane.showMessageDialog(parent, "An unexpected error occured: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
+	}
+	
+	public static java.awt.Point transform(java.awt.Point point, AffineTransform transform)
+	{
+		java.awt.Point result = new java.awt.Point();
+		transform.transform(point, result);
+		return result;
 	}
 }

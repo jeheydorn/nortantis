@@ -24,16 +24,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Hashtable;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -41,24 +37,20 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.JSlider;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr.Method;
-import org.junit.runner.Computer;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.DimensionDouble;
 import nortantis.ImageCache;
-import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.editor.EdgeEdit;
@@ -1026,26 +1018,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		dialog.setVisible(true);
 	}
 
-	private void showHeightMapWithEditsWarning()
-	{
-		if (edits != null && !edits.isEmpty() && !UserPreferences.getInstance().hideHeightMapWithEditsWarning)
-		{
-			Dimension size = new Dimension(400, 80);
-			JPanel panel = new JPanel();
-			panel.setPreferredSize(size);
-			panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-			JLabel label = new JLabel(
-					"<html>Edits made in the editor, such as land, water, and mountains, " + "are not applied to height maps. </html>");
-			panel.add(label);
-			label.setMaximumSize(size);
-			panel.add(Box.createVerticalStrut(18));
-			JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-			panel.add(checkBox);
-			JOptionPane.showMessageDialog(this, panel, "", JOptionPane.INFORMATION_MESSAGE);
-			UserPreferences.getInstance().hideHeightMapWithEditsWarning = checkBox.isSelected();
-		}
-	}
-
 	public boolean checkForUnsavedChanges()
 	{
 		if (lastSettingsLoadedOrSaved == null)
@@ -1187,6 +1159,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
 		hasDrawnCurrentMapAtLeastOnce = false;
+		mapEditingPanel.clearAllSelectionsAndHighlights();
 
 		// Don't initialize if settings.edits is null because the undoer needs
 		// the edits to work.

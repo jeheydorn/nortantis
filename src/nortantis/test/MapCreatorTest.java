@@ -11,7 +11,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.util.Helper;

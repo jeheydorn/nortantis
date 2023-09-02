@@ -143,9 +143,9 @@ public class MapEdits implements Serializable
 			{
 				MapText thisText = text.get(i);
 				MapText toText = to.text.get(i);
-				if (thisText.area != null)
+				if (thisText.line1Area != null)
 				{
-					toText.area = new Area(thisText.area);
+					toText.line1Area = new Area(thisText.line1Area);
 				}
 			}
 		}

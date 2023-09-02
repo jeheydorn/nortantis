@@ -9,8 +9,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Area;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +60,7 @@ public class TextTool extends EditorTool
 			{
 				if (e.getKeyCode() == KeyEvent.VK_ENTER)
 				{
-					handleTextEdit(lastSelected);
+					handleSelectingTextToEdit(lastSelected);
 				}
 				else if ((e.getKeyCode() == KeyEvent.VK_A) && e.isAltDown())
 				{
@@ -144,6 +142,20 @@ public class TextTool extends EditorTool
 
 		textTypeComboBox = new JComboBoxFixed<>();
 		textTypeComboBox.setSelectedItem(TextType.Other_mountains);
+		textTypeComboBox.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (editButton.isSelected() && lastSelected != null)
+				{
+					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
+					updateTextInBackgroundThread(lastSelected);
+				}
+				
+			}
+		});
 		textTypeHider = organizer.addLabelAndComponentToPanel("Text type:", "", textTypeComboBox);
 
 		for (TextType type : TextType.values())
@@ -166,21 +178,20 @@ public class TextTool extends EditorTool
 
 	private void handleActionChanged()
 	{
-		// Keep any text edits being done.
 		if (editTextFieldHider.isVisible())
 		{
-			handleTextEdit(lastSelected);
+			// Keep any text edits that were being done, and hide the edit fields.
+			handleSelectingTextToEdit(null);
 		}
 
 		if (addButton.isSelected() || deleteButton.isSelected())
 		{
-			mapEditingPanel.clearTextBox();
 			lastSelected = null;
-			mapEditingPanel.repaint();
 		}
+		
 		textTypeHider.setVisible(addButton.isSelected());
 		booksHider.setVisible(addButton.isSelected());
-		editTextFieldHider.setVisible(editButton.isSelected());
+		editTextFieldHider.setVisible(false);
 		if (editButton.isSelected() && lastSelected != null)
 		{
 			editTextField.setText(lastSelected.value);
@@ -195,6 +206,7 @@ public class TextTool extends EditorTool
 			getToolOptionsPanel().repaint();
 		}
 	}
+
 
 	@Override
 	public String getToolbarName()
@@ -218,7 +230,7 @@ public class TextTool extends EditorTool
 	@Override
 	public void onBeforeSaving()
 	{
-		handleTextEdit(lastSelected);
+		handleSelectingTextToEdit(lastSelected);
 	}
 
 	@Override
@@ -287,12 +299,8 @@ public class TextTool extends EditorTool
 			}
 			else
 			{
-				if (!editTextField.hasFocus())
-				{
-					editTextField.grabFocus();
-				}
 				MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
-				handleTextEdit(selectedText);
+				handleSelectingTextToEdit(selectedText);
 			}
 		}
 	}
@@ -311,12 +319,15 @@ public class TextTool extends EditorTool
 				int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
-				java.awt.Rectangle bounds = new java.awt.Rectangle(lastSelected.bounds.x + deltaX, lastSelected.bounds.y + deltaY,
-						lastSelected.bounds.width, lastSelected.bounds.height);
+				java.awt.Rectangle line1Bounds = new java.awt.Rectangle(lastSelected.line1Bounds.x + deltaX, lastSelected.line1Bounds.y + deltaY,
+						lastSelected.line1Bounds.width, lastSelected.line1Bounds.height);
+				java.awt.Rectangle line2Bounds = lastSelected.line2Bounds == null ? null : 
+					new java.awt.Rectangle(lastSelected.line2Bounds.x + deltaX, lastSelected.line2Bounds.y + deltaY,
+							lastSelected.line2Bounds.width, lastSelected.line2Bounds.height);
 				nortantis.graph.geom.Point location = new nortantis.graph.geom.Point(
 						lastSelected.location.x + (deltaX / mainWindow.displayQualityScale),
 						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale));
-				mapEditingPanel.setTextBoxToDraw(location, bounds, lastSelected.angle);
+				mapEditingPanel.setTextBoxToDraw(location, line1Bounds, line2Bounds, lastSelected.angle);
 				mapEditingPanel.repaint();
 			}
 			else if (isRotating)
@@ -326,7 +337,7 @@ public class TextTool extends EditorTool
 				double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
 				double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
 				double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX);
-				mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.bounds, angle);
+				mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, angle);
 				mapEditingPanel.repaint();
 			}
 		}
@@ -389,38 +400,44 @@ public class TextTool extends EditorTool
 	{
 	}
 
-	private void handleTextEdit(MapText selectedText)
+	private void handleSelectingTextToEdit(MapText selectedText)
 	{
-		if (lastSelected != null && !editTextField.getText().equals(lastSelected.value))
+		if (lastSelected != null && 
+				!(editTextField.getText().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)))
 		{
+			// The user changed the last selected text. Need to save the change.
 			lastSelected.value = editTextField.getText();
+			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
 
 			// Need to re-draw all of the text.
 			undoer.setUndoPoint(UpdateType.Text, this);
 			updateTextInBackgroundThread(editButton.isSelected() ? selectedText : null);
 		}
-		else
-		{
-			// Just a quick highlights update.
-			if (selectedText == null)
-			{
-				mapEditingPanel.clearTextBox();
-			}
-			else
-			{
-				mapEditingPanel.setTextBoxToDraw(selectedText);
-			}
-			mapEditingPanel.repaint();
-		}
-
+		
 		if (selectedText == null)
 		{
+			mapEditingPanel.clearTextBox();
 			editTextField.setText("");
+			editTextFieldHider.setVisible(false);
+			textTypeHider.setVisible(false);
 		}
 		else
 		{
+			mapEditingPanel.setTextBoxToDraw(selectedText);
 			editTextField.setText(selectedText.value);
+			editTextFieldHider.setVisible(true);
+			if (!editTextField.hasFocus())
+			{
+				editTextField.grabFocus();
+			}
+			// Prevent textTypeComboBox's action listener from doing anything on the next line.
+			lastSelected = null; 
+			
+			textTypeComboBox.setSelectedItem(selectedText.type);
+			textTypeHider.setVisible(true);
 		}
+		mapEditingPanel.repaint();
+
 
 		lastSelected = selectedText;
 	}

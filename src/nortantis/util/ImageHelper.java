@@ -39,7 +39,6 @@ import org.jtransforms.fft.FloatFFT_2D;
 import nortantis.ComplexArray;
 import nortantis.DimensionDouble;
 import nortantis.MapSettings;
-import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.graph.geom.Point;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
@@ -930,6 +929,12 @@ public class ImageHelper
 	 * Extracts the specified region from image2, then makes the given mask be
 	 * the alpha channel of that extracted region, then draws the extracted
 	 * region onto image1.
+	 * @param image1 The image to draw to.
+	 * @param image2 The background image which the mask indicates to pull pixel values from.
+	 * @param mask Pixel values tell how to combine values from image1 and image2.
+	 * @param xLoc X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before rotation is applied.
+	 * @param yLoc Like xLoc, but for Y component.
+	 * @param angle Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
 	public static void combineImagesWithMaskInRegion(BufferedImage image1, BufferedImage image2, BufferedImage mask, int xLoc, int yLoc,
 			double angle)
@@ -951,22 +956,21 @@ public class ImageHelper
 			{
 				int grayLevel = maskRaster.getSample(x, y, 0);
 				Color r = new Color(region.getRGB(x, y), true);
-				int alphaLevel = Math.min(r.getAlpha(), grayLevel); // Don't
-																	// clobber
-																	// the alpha
-																	// level
-																	// from the
-																	// region.
+				
+				// Don't clobber the alpha level from the region.
+				int alphaLevel = Math.min(r.getAlpha(), grayLevel); 
+
 				// Only change the alpha channel of the region.
 				region.setRGB(x, y, new Color(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
 			}
 
 		// This pivot must exactly match the one used in extractRotatedRegion
 		// above.
-		Point pivot = new Point(xLoc + mask.getWidth() / 2, yLoc + mask.getHeight() / 2);
+		Point pivot = new Point(xLoc + mask.getWidth() / 2, yLoc + (mask.getHeight() / 2));
 
 		Graphics2D g1 = image1.createGraphics();
 		g1.rotate(angle, pivot.x, pivot.y);
+		g1.drawRect(xLoc, yLoc, region.getWidth(), region.getHeight());
 		g1.drawImage(region, xLoc, yLoc, null);
 		// g1.drawRect(xLoc, yLoc, region.getWidth(), region.getHeight());
 
@@ -2024,10 +2028,10 @@ public class ImageHelper
 		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30);
 		int fontHeight = TextDrawer.getFontHeight(font);
 
-		Dimension textBounds = TextDrawer.getTextBounds(message[0], font);
+		Dimension textBounds = TextDrawer.getTextDimensions(message[0], font);
 		for (int i : new Range(1, message.length))
 		{
-			Dimension lineBounds = TextDrawer.getTextBounds(message[i], font);
+			Dimension lineBounds = TextDrawer.getTextDimensions(message[i], font);
 			textBounds = new Dimension(Math.max(textBounds.width, lineBounds.width), textBounds.height + lineBounds.height);
 		}
 

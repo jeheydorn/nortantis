@@ -24,7 +24,6 @@ public class CityTypeChangeDialog extends JDialog
 		super(mainWindow, "Change City Type", Dialog.ModalityType.APPLICATION_MODAL);
 		
 		GridBagOrganizer organizer = new GridBagOrganizer();
-		JPanel panel = organizer.panel;
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
 		setSize(new Dimension(450, 240));
 		

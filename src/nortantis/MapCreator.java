@@ -493,7 +493,7 @@ public class MapCreator
 
 		if (settings.edits.text.size() > 0)
 		{
-			textDrawer.drawTextFromEdits(graph, map, landBackground);
+			textDrawer.drawTextFromEdits(map, landBackground, graph);
 		}
 		else
 		{

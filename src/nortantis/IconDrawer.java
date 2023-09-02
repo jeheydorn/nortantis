@@ -30,7 +30,6 @@ import nortantis.swing.MapEdits;
 import nortantis.util.Coordinate;
 import nortantis.util.Function;
 import nortantis.util.HashMapF;
-import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;

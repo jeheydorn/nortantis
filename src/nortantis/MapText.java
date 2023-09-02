@@ -1,11 +1,8 @@
 package nortantis;
 
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import nortantis.graph.geom.Point;
@@ -20,9 +17,10 @@ public class MapText implements Serializable
 {
 	public String value;
 	/**
-	 * The (possibly rotated) bounding boxes of the text. This usually has only 1 area.
+	 * The (possibly rotated) bounding boxes of the text.
 	 */
-	public transient Area area;
+	public transient Area line1Area;
+	public transient Area line2Area;
 	
 	public TextType type;
 	
@@ -32,13 +30,11 @@ public class MapText implements Serializable
 	public double angle;
 	
 	/**
-	 * If the user has moved the text, then this store the location. null means let the generator determine the location.
-	 * For text that can be rotated, the text will be draw such that the center of it's bounding box is at this location.
-	 * For text that cannot be rotated (title and region names), the bounding box of the text will be determined by
-	 * font metrics added to this location. TODO Update this description when I make all text rotatable.
+	 * For text that has one line, this is the center of the text both horizontally and vertically.
+	 * For text that has multiple lines, this is the horizontal center and the vertical center between the two lines.
 	 * 
 	 * This is stored in a resolution-invariant way, meaning the creating the map at a different resolution will give the same location
-	 * (although it is subject to floating point precision error).
+	 * (within the limits of floating point precision).
 	 */
 	public Point location;
 	
@@ -48,21 +44,25 @@ public class MapText implements Serializable
 	 * 
 	 * Unlike the location, the bounds does vary with the resolution.
 	 */
-	public Rectangle bounds;
+	public Rectangle line1Bounds;
+	public Rectangle line2Bounds;
 	
-	public MapText(String text, Point location, double angle, TextType type, Area area, Rectangle bounds)
+	public MapText(String text, Point location, double angle, TextType type, Area line1Area, Area line2Area, 
+			Rectangle line1Bounds, Rectangle line2Bounds)
 	{
 		this.value = text;
-		this.area = area;
+		this.line1Area = line1Area;
+		this.line2Area = line2Area;
 		this.location = location;
 		this.angle = angle;
 		this.type = type;
-		this.bounds = bounds;
+		this.line1Bounds = line1Bounds;
+		this.line2Bounds = line2Bounds;
 	}
 
 	public MapText(String text, Point location, double angle, TextType type)
 	{
-		this(text, location, angle, type, null, null);
+		this(text, location, angle, type, null, null, null, null);
 	}
 
 	@Override
