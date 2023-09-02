@@ -937,7 +937,7 @@ public class ImageHelper
 	 * @param angle Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
 	public static void combineImagesWithMaskInRegion(BufferedImage image1, BufferedImage image2, BufferedImage mask, int xLoc, int yLoc,
-			double angle)
+			double angle, Point pivot)
 	{
 		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("Expected mask to be type BufferedImage.TYPE_BYTE_GRAY.");
@@ -948,7 +948,7 @@ public class ImageHelper
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
-		BufferedImage region = extractRotatedRegion(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle);
+		BufferedImage region = extractRotatedRegion(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
 		Raster maskRaster = mask.getRaster();
 		for (int y = 0; y < region.getHeight(); y++)
@@ -964,15 +964,9 @@ public class ImageHelper
 				region.setRGB(x, y, new Color(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
 			}
 
-		// This pivot must exactly match the one used in extractRotatedRegion
-		// above.
-		Point pivot = new Point(xLoc + mask.getWidth() / 2, yLoc + (mask.getHeight() / 2));
-
 		Graphics2D g1 = image1.createGraphics();
 		g1.rotate(angle, pivot.x, pivot.y);
-		g1.drawRect(xLoc, yLoc, region.getWidth(), region.getHeight());
 		g1.drawImage(region, xLoc, yLoc, null);
-		// g1.drawRect(xLoc, yLoc, region.getWidth(), region.getHeight());
 
 	}
 
@@ -982,14 +976,17 @@ public class ImageHelper
 	}
 
 	/**
+	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at
+	 * the given angle about the given pivot.
+	 * 
 	 * Warning: This adds an alpha channel, so the output image may not be the
 	 * same type as the input image.
 	 */
-	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc, int width, int height, double angle)
+	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
 	{
 		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D gResult = result.createGraphics();
-		gResult.rotate(-angle, width / 2, height / 2);
+		gResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
 		gResult.translate(-xLoc, -yLoc);
 		gResult.drawImage(image, 0, 0, null);
 

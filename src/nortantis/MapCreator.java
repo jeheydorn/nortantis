@@ -374,6 +374,8 @@ public class MapCreator
 		double startTime = System.currentTimeMillis();
 
 		r = new Random(settings.randomSeed);
+		DimensionDouble mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
+		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
 		
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> task = ThreadHelper.getInstance().submit(() ->
@@ -381,8 +383,6 @@ public class MapCreator
 			if (mapParts == null || mapParts.graph == null)
 			{
 				Logger.println("Creating the graph.");
-				DimensionDouble mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
-				double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
 				WorldGraph graphCreated = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
 				if (mapParts != null)
 				{
@@ -404,7 +404,7 @@ public class MapCreator
 		else
 		{
 			Logger.println("Generating the background image.");
-			background = new Background(settings, maxDimensions);
+			background = new Background(settings, mapBounds);
 		}
 
 		if (mapParts != null)
@@ -413,8 +413,6 @@ public class MapCreator
 		}
 
 		checkForCancel();
-
-		double sizeMultiplier = calcSizeMultiplier(background.mapBounds.getWidth());
 
 		TextDrawer textDrawer = null;
 		if (mapParts == null || mapParts.textDrawer == null)
@@ -460,7 +458,7 @@ public class MapCreator
 		BufferedImage landBackground;
 		List<Set<Center>> mountainGroups;
 		List<IconDrawTask> cities;
-		if (mapParts == null || mapParts.mapBeforeAddingText == null)
+		if (mapParts == null || mapParts.mapBeforeAddingText == null || settings.edits.text.size() == 0)
 		{
 			Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts,
 					graph, background, sizeMultiplier);

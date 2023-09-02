@@ -32,6 +32,13 @@ public class Undoer
 		copyOfSettingsWhenEditorWasOpened = settings.deepCopy();
 	}
 	
+	public void reset()
+	{
+		undoStack = null;
+		redoStack = null;
+		copyOfSettingsWhenEditorWasOpened = null;		
+	}
+	
 	/***
 	 * Sets a point to which the user can undo changes. 
 	 * @param updateType The type of update that was last made. 
@@ -81,6 +88,9 @@ public class Undoer
 		MapSettings settings;
 		if (undoStack.isEmpty())
 		{
+			// This should not happen because the undoer should not be initialized until the edits are created.
+			assert !copyOfSettingsWhenEditorWasOpened.edits.isEmpty();
+			
 			settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
 			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
 		}

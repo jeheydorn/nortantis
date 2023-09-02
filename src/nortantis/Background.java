@@ -42,7 +42,7 @@ public class Background
 	private String borderType;
 	
 
-	public Background(MapSettings settings, Dimension maxDimensions)
+	public Background(MapSettings settings, DimensionDouble mapBounds)
 	{
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
@@ -50,7 +50,7 @@ public class Background
 
 		BufferedImage landGeneratedBackground;
 		landColorifyAlgorithm = ColorifyAlgorithm.none;
-		mapBounds = calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
+		this.mapBounds = mapBounds;
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 		borderType = settings.borderType;

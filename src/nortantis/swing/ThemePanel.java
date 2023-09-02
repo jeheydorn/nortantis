@@ -110,6 +110,7 @@ public class ThemePanel extends JTabbedPane
 	private JButton btnRiverFont;
 	private JButton btnChooseTextColor;
 	private ActionListener enableTextCheckboxActionListener;
+	private ActionListener frayedEdgeCheckboxActionListener;
 	
 
 
@@ -418,14 +419,15 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addSeperator();
 		frayedEdgeCheckbox = new JCheckBox("Fray edges");
-		frayedEdgeCheckbox.addActionListener(new ActionListener()
+		frayedEdgeCheckboxActionListener = new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
 				handleEnablingAndDisabling();
 				handleFrayedEdgeOrGrungeChange();
 			}
-		});
+		};
+		frayedEdgeCheckbox.addActionListener(frayedEdgeCheckboxActionListener);
 		organizer.addLeftAlignedComponent(frayedEdgeCheckbox);
 
 		
@@ -985,10 +987,10 @@ public class ThemePanel extends JTabbedPane
 		coastlineColorDisplay.setBackground(settings.coastlineColor);
 		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
 		riverColorDisplay.setBackground(settings.riverColor);
-		frayedEdgeCheckbox.setSelected(!settings.frayedBorder);
+		frayedEdgeCheckbox.setSelected(settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or
 		// disabled.
-		frayedEdgeCheckbox.doClick();
+		frayedEdgeCheckboxActionListener.actionPerformed(null);
 		grungeColorDisplay.setBackground(settings.frayedBorderColor);
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);

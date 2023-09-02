@@ -230,7 +230,6 @@ public class TextDrawer
 		this.landAndOceanBackground = landAndOceanBackground;
 
 		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());
-		;
 
 		if (mountainRanges == null)
 		{
@@ -1034,7 +1033,7 @@ public class TextDrawer
 	 * of mountains or trees.
 	 */
 	private void drawBackgroundBlendingForText(BufferedImage map, Graphics2D g, Point textStart, Dimension textSize, double angle,
-			FontMetrics metrics, String text)
+			FontMetrics metrics, String text, Point pivot)
 	{
 		// This magic number below is a result of trial and error to get the
 		// blur levels to look right.
@@ -1058,8 +1057,8 @@ public class TextDrawer
 		ImageHelper.threshold(haze, 1);
 		haze = ImageHelper.convolveGrayscale(haze, ImageHelper.createGaussianKernel(kernelSize), true, false);
 
-		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) textStart.x) - padding,
-				(int) (textStart.y) - metrics.getAscent() - padding, angle);
+		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) Math.round(textStart.x)) - padding,
+				(int) Math.round(textStart.y) - metrics.getAscent() - padding, angle, pivot);
 	}
 
 	private void drawStringWithBoldBackground(Graphics2D g, String name, Point textStart, double angle)
@@ -1388,7 +1387,7 @@ public class TextDrawer
 			{
 				{
 					Point textStart = new Point(bounds1.x, bounds1.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, false);
+					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, textLocation);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(g, line1, textStart, text.angle);
@@ -1401,7 +1400,7 @@ public class TextDrawer
 				if (line2 != null)
 				{
 					Point textStart = new Point(bounds2.x, bounds2.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, true);
+					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, textLocation);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(g, line2, textStart, text.angle);
