@@ -656,4 +656,9 @@ public class LandWaterTool extends EditorTool
 	{
 		// There's nothing to do because this tool never disables anything.
 	}
+
+	@Override
+	public void onBeforeLoadingNewMap()
+	{
+	}
 }

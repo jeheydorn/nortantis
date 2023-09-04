@@ -758,4 +758,9 @@ public class IconsTool extends EditorTool
 	{
 	}
 
+	@Override
+	public void onBeforeLoadingNewMap()
+	{
+	}
+
 }

@@ -261,4 +261,6 @@ public abstract class EditorTool
 	 * re-disable components after enabling everything in the tools options panel when the editor is ready to use.
 	 */
 	public abstract void handleEnablingAndDisabling(MapSettings settings);
+	
+	public abstract void onBeforeLoadingNewMap();
 }

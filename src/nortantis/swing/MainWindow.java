@@ -975,6 +975,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				return;
 			}
+			
+			toolsPanel.resetToolsForNewMap();
 
 			// Erase text
 			for (MapText text : edits.text)
@@ -1025,7 +1027,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			return false;
 		}
-
+		
 		if (settingsHaveUnsavedChanges())
 		{
 			int n = JOptionPane.showConfirmDialog(this, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
@@ -1163,6 +1165,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingPanel.clearAllSelectionsAndHighlights();
 
 		updateLastSettingsLoadedOrSaved(settings);		
+		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
 
 		updateFrameTitle();

@@ -205,6 +205,14 @@ public class ToolsPanel extends JPanel
 		}
 	}
 	
+	public void resetToolsForNewMap()
+	{
+		for (EditorTool tool : tools)
+		{
+			tool.onBeforeLoadingNewMap();
+		}
+	}
+	
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		for (EditorTool tool : tools)

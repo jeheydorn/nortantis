@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.imgscalr.Scalr.Method;
@@ -52,6 +53,7 @@ public class MapEditingPanel extends ImagePanel
 	private Area moveToolArea;
 	private AffineTransform baseTransform;
 	private Rectangle textBoxBoundsLine2;
+	private List<Area> areasToDraw;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -116,6 +118,16 @@ public class MapEditingPanel extends ImagePanel
 		this.textBoxBoundsLine1 = null;
 		this.textBoxBoundsLine2 = null;
 		this.textBoxAngle = 0.0;
+	}
+	
+	public void setAreasToDraw(List<Area> areas)
+	{
+		this.areasToDraw = areas;
+	}
+	
+	public void clearAreasToDraw()
+	{
+		this.areasToDraw = null;
 	}
 
 	public void addHighlightedCenter(Center c)
@@ -193,10 +205,13 @@ public class MapEditingPanel extends ImagePanel
 		((Graphics2D) g).transform(transform);
 
 		// Handle drawing/highlighting
+		
 		if (textBoxBoundsLine1 != null)
 		{
 			drawTextBox(((Graphics2D) g));
 		}
+		
+		drawAreas(g);
 
 		if (graph != null)
 		{
@@ -238,14 +253,32 @@ public class MapEditingPanel extends ImagePanel
 			g2.drawRect(textBoxBoundsLine2.x, textBoxBoundsLine2.y, textBoxBoundsLine2.width, textBoxBoundsLine2.height);
 		}
 
+		// Place the image for the rotation tool.
 		{
-			int x = textBoxBoundsLine1.x + textBoxBoundsLine1.width + padding;
-			int y = textBoxBoundsLine1.y + (textBoxBoundsLine1.height / 2) - (rotateTextIconScaled.getHeight() / 2);
+			int x;
+			if (textBoxBoundsLine2 == null)
+			{
+				x = textBoxBoundsLine1.x + textBoxBoundsLine1.width + padding;
+			}
+			else
+			{
+				x = Math.max(textBoxBoundsLine1.x + textBoxBoundsLine1.width, textBoxBoundsLine2.x + textBoxBoundsLine2.width)+ padding;
+			}
+			int y;
+			if (textBoxBoundsLine2 == null)
+			{
+				y = textBoxBoundsLine1.y + (textBoxBoundsLine1.height / 2) - (rotateTextIconScaled.getHeight() / 2); 
+			}
+			else
+			{
+				y = (int)(centerY - (rotateTextIconScaled.getHeight() / 2.0));
+			}
 			g2.drawImage(rotateTextIconScaled, x, y, null);
 			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateTextIconScaled.getWidth(), rotateTextIconScaled.getHeight()));
 			rotateToolArea.transform(g2.getTransform());
 		}
 
+		// Place the image for the move tool.
 		{
 			int x = textBoxBoundsLine1.x + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
 					- (int) (Math.round(moveTextIconScaled.getWidth() / 2.0));
@@ -285,6 +318,18 @@ public class MapEditingPanel extends ImagePanel
 	private void drawBrush(Graphics g)
 	{
 		g.drawOval(brushLocation.x - brushDiameter / 2, brushLocation.y - brushDiameter / 2, brushDiameter, brushDiameter);
+	}
+	
+	private void drawAreas(Graphics g)
+	{
+		if (areasToDraw != null)
+		{
+			g.setColor(highlightColor);
+			for (Area area : areasToDraw)
+			{
+				((Graphics2D)g).draw(area);
+			}
+		}
 	}
 
 	private void drawCenterOutlines(Graphics g, Set<Center> centers)
@@ -349,11 +394,15 @@ public class MapEditingPanel extends ImagePanel
 	public void setResolution(double resolution)
 	{
 		this.resolution = resolution;
+		
+		// Determines the size at which the rotation and move tool icons appear.
+		final double iconScale = 0.2;
+		
 		BufferedImage rotateIcon = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "rotate text.png").toString());
-		rotateTextIconScaled = ImageHelper.scaleByWidth(rotateIcon, (int) (rotateIcon.getWidth() * resolution * 0.15),
+		rotateTextIconScaled = ImageHelper.scaleByWidth(rotateIcon, (int) (rotateIcon.getWidth() * resolution * iconScale),
 				Method.ULTRA_QUALITY);
 		BufferedImage moveIcon = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "move text.png").toString());
-		moveTextIconScaled = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * 0.15), Method.ULTRA_QUALITY);
+		moveTextIconScaled = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY);
 	}
 
 	public void setBorderWidth(int borderWidth)
@@ -367,6 +416,7 @@ public class MapEditingPanel extends ImagePanel
 		clearSelectedCenters();
 		clearHighlightedCenters();
 		clearHighlightedEdges();
-
+		hideBrush();
+		clearAreasToDraw();
 	}
 }

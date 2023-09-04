@@ -7,6 +7,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -1061,10 +1062,13 @@ public class TextDrawer
 				(int) Math.round(textStart.y) - metrics.getAscent() - padding, angle, pivot);
 	}
 
-	private void drawStringWithBoldBackground(Graphics2D g, String name, Point textStart, double angle)
+	private void drawStringWithBoldBackground(Graphics2D g, String name, Point textStart, double angle, Point pivot)
 	{
 		if (name.length() == 0)
 			return;
+
+		// We're assuming g's transform is already rotated. As such, we don't
+		// need to handle rotation when drawing text here.
 
 		Font original = g.getFont();
 		Color originalColor = g.getColor();
@@ -1072,20 +1076,19 @@ public class TextDrawer
 		Font background = g.getFont().deriveFont(style, (int) (g.getFont().getSize()));
 		FontMetrics metrics = g.getFontMetrics(original);
 
-		Point curLoc = new Point(textStart.x, textStart.y);
+		Point curLocNotRotated = new Point(textStart);
 		for (int i : new Range(name.length()))
 		{
 			g.setFont(background);
 			g.setColor(settings.boldBackgroundColor);
-			g.drawString("" + name.charAt(i), (int) curLoc.x, (int) curLoc.y);
+			g.drawString("" + name.charAt(i), (int) curLocNotRotated.x, (int) curLocNotRotated.y);
 
 			g.setFont(original);
 			g.setColor(originalColor);
-			g.drawString("" + name.charAt(i), (int) curLoc.x, (int) curLoc.y);
+			g.drawString("" + name.charAt(i), (int) curLocNotRotated.x, (int) curLocNotRotated.y);
 
 			int charWidth = metrics.stringWidth("" + name.charAt(i));
-			curLoc.x += charWidth * Math.sin(angle);
-			curLoc.y += charWidth * Math.cos(angle);
+			curLocNotRotated = new Point(curLocNotRotated.x + charWidth, curLocNotRotated.y);
 		}
 	}
 
@@ -1156,16 +1159,19 @@ public class TextDrawer
 		int height = getFontHeight(metrics);
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 		Point upperLeftCornerRotated = rotate(new Point(textLocation.x - width / 2, textLocation.y - height / 2), textLocation, text.angle);
-		Point lowerLeftCornerRotated = rotate(new Point(textLocation.x - width / 2, textLocation.y + height / 2), textLocation, text.angle);		
-		Point upperRightCornerRotated = rotate(new Point(textLocation.x + width / 2, textLocation.y - height / 2), textLocation, text.angle);
-		Point lowerRightCornerRotated = rotate(new Point(textLocation.x + width / 2, textLocation.y + height / 2), textLocation, text.angle);
+		Point lowerLeftCornerRotated = rotate(new Point(textLocation.x - width / 2, textLocation.y + height / 2), textLocation, text.angle);
+		Point upperRightCornerRotated = rotate(new Point(textLocation.x + width / 2, textLocation.y - height / 2), textLocation,
+				text.angle);
+		Point lowerRightCornerRotated = rotate(new Point(textLocation.x + width / 2, textLocation.y + height / 2), textLocation,
+				text.angle);
 
 		if (text.value.split(" ").length > 1 && (!centerLocations.contains(graph.findClosestCenter(upperLeftCornerRotated).loc)
 				|| !centerLocations.contains(graph.findClosestCenter(lowerLeftCornerRotated).loc)
 				|| !centerLocations.contains(graph.findClosestCenter(upperRightCornerRotated).loc)
 				|| !centerLocations.contains(graph.findClosestCenter(lowerRightCornerRotated).loc)))
 		{
-			// The text doesn't fit into centerLocations. Draw it split onto two lines.
+			// The text doesn't fit into centerLocations. Draw it split onto two
+			// lines.
 			Pair<String> lines = addLineBreakNearMiddleIfPossible(text.value);
 			String nameLine1 = lines.getFirst();
 			String nameLine2 = lines.getSecond();
@@ -1178,12 +1184,12 @@ public class TextDrawer
 		}
 	}
 
-	public static Point rotate(Point point, Point center, double angle)
+	public static Point rotate(Point point, Point pivot, double angle)
 	{
-		double cos = Math.cos(angle);
 		double sin = Math.sin(angle);
-		double newX = (cos * (point.x - center.x)) + (sin * (point.y - center.y)) + center.x;
-		double newY = (cos * (point.y - center.y)) - (sin * (point.x - center.x)) + center.y;
+		double cos = Math.cos(angle);
+		double newX = (cos * (point.x - pivot.x)) - (sin * (point.y - pivot.y)) + pivot.x;
+		double newY = (sin * (point.x - pivot.x)) + (cos * (point.y - pivot.y)) + pivot.y;
 		return new Point(newX, newY);
 	}
 
@@ -1217,8 +1223,8 @@ public class TextDrawer
 	private static java.awt.Dimension getTextDimensions(String text, FontMetrics metrics)
 	{
 		return new java.awt.Dimension(metrics.stringWidth(text), metrics.getAscent() + metrics.getDescent());
-	}	
-	
+	}
+
 	private static FontMetrics getFontMetrics(Font font)
 	{
 		return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics().getFontMetrics(font);
@@ -1315,7 +1321,7 @@ public class TextDrawer
 	{
 		return drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null, true);
 	}
-	
+
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, double riseOffset, boolean enableBoundsChecking, MapText text,
 			boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset)
 	{
@@ -1323,7 +1329,7 @@ public class TextDrawer
 		{
 			line2 = null;
 		}
-		
+
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 		Dimension line1Size = getTextDimensions(line1, g.getFontMetrics());
 		Dimension line2Size = line2 == null ? null : getTextDimensions(line2, g.getFontMetrics());
@@ -1333,7 +1339,7 @@ public class TextDrawer
 			// The text is too small to draw.
 			return false;
 		}
-		
+
 		if (line2Size != null && (line2Size.width == 0 || line2Size.height == 0))
 		{
 			// There is a second line, and it's too small to draw.
@@ -1350,19 +1356,15 @@ public class TextDrawer
 
 			int fontHeight = getFontHeight(g.getFontMetrics());
 			// Make sure we don't draw on top of existing text.
-			java.awt.Rectangle bounds1 = new java.awt.Rectangle(
-					(int) (pivot.x - line1Size.width / 2), 
-					(int) (pivot.y - line1Size.height / 2) - (line2 == null ? 0 : fontHeight/2),
-					line1Size.width, line1Size.height);
-			java.awt.Rectangle bounds2 = line2 == null ? null : 
-				new java.awt.Rectangle(
-						(int) (pivot.x - line2Size.width / 2), 
-						(int) (pivot.y - (line2Size.height / 2) + fontHeight/2),
-					line2Size.width, line2Size.height);
+			java.awt.Rectangle bounds1 = new java.awt.Rectangle((int) (pivot.x - line1Size.width / 2),
+					(int) (pivot.y - line1Size.height / 2) - (line2 == null ? 0 : fontHeight / 2), line1Size.width, line1Size.height);
+			java.awt.Rectangle bounds2 = line2 == null ? null
+					: new java.awt.Rectangle((int) (pivot.x - line2Size.width / 2),
+							(int) (pivot.y - (line2Size.height / 2) + fontHeight / 2), line2Size.width, line2Size.height);
 			Area area1 = new Area(bounds1).createTransformedArea(g.getTransform());
 			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(g.getTransform());
-			if (enableBoundsChecking && (overlapsExistingTextOrCityOrIsOffMap(area1) 
-					|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2))))
+			if (enableBoundsChecking
+					&& (overlapsExistingTextOrCityOrIsOffMap(area1) || (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2))))
 			{
 				// If there is a riseOffset, try negating it to put the name
 				// below the object instead of above.
@@ -1390,7 +1392,7 @@ public class TextDrawer
 					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, textLocation);
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(g, line1, textStart, text.angle);
+						drawStringWithBoldBackground(g, line1, textStart, text.angle, textLocation);
 					}
 					else
 					{
@@ -1403,13 +1405,13 @@ public class TextDrawer
 					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, textLocation);
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(g, line2, textStart, text.angle);
+						drawStringWithBoldBackground(g, line2, textStart, text.angle, textLocation);
 					}
 					else
 					{
 						g.drawString(line2, (int) textStart.x, (int) textStart.y);
 					}
-				}	
+				}
 			}
 
 			return true;
@@ -1454,31 +1456,43 @@ public class TextDrawer
 			{
 				if (mp.line1Area != null)
 				{
-					Area aCopy = new Area(mp.line1Area);
-					aCopy.intersect(bounds);
-					if (!aCopy.isEmpty())
+					if (doAreasIntersect(bounds, mp.line1Area))
+					{
 						return true;
+					}
 				}
-				
+
 				if (mp.line2Area != null)
 				{
-					Area aCopy = new Area(mp.line2Area);
-					aCopy.intersect(bounds);
-					if (!aCopy.isEmpty())
+					if (doAreasIntersect(bounds, mp.line2Area))
+					{
 						return true;
+					}
 				}
 			}
 		}
 
 		for (Area a : cityAreas)
 		{
-			Area aCopy = new Area(a);
-			aCopy.intersect(bounds);
-			if (!aCopy.isEmpty())
+			if (doAreasIntersect(bounds, a))
+			{
 				return true;
+			}
 		}
 
 		return !graphBounds.contains(bounds.getBounds2D());
+	}
+	
+	public static boolean doAreasIntersect(Area area1, Area area2) 
+	{
+		if (area1 == null || area2 == null)
+		{
+			return false;
+		}
+		
+		Area copy = new Area(area1);
+		copy.intersect(area2);
+	    return !copy.isEmpty();
 	}
 
 	/**
@@ -1513,9 +1527,27 @@ public class TextDrawer
 					if (mp.line2Area.contains(awtPoint))
 						return mp;
 				}
-}
+			}
 		}
 		return null;
+	}
+	
+	public List<MapText> findTextSelectedByBrush(nortantis.graph.geom.Point point, double brushDiameter)
+	{
+		Area brush = new Area(new Ellipse2D.Double(point.x - brushDiameter/2.0, point.y - brushDiameter/2.0, brushDiameter, brushDiameter));
+		List<MapText> result = new ArrayList<>();
+		
+		for (MapText mp : mapTexts)
+		{
+			if (mp.value.length() > 0)
+			{
+				if (doAreasIntersect(brush, mp.line1Area) || doAreasIntersect(brush, mp.line2Area))
+				{
+					result.add(mp);
+				}
+			}
+		}
+		return result;
 	}
 
 	public void setSettingsAndMapTexts(MapSettings mapSettings)

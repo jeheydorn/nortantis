@@ -250,7 +250,7 @@ public abstract class MapUpdater
 		}
 
 		isMapBeingDrawn = true;
-		if (updateType != UpdateType.Incremental)
+		if (updateType != UpdateType.Incremental && updateType != UpdateType.Text)
 		{
 			isMapReadyForInteractions = false;
 		}
@@ -268,7 +268,7 @@ public abstract class MapUpdater
 			@Override
 			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException, CancelledException
 			{
-				if (updateType != UpdateType.Incremental)
+				if (updateType != UpdateType.Incremental && updateType != UpdateType.Text)
 				{
 					Logger.clear();
 					interactionsLock.lock();
@@ -331,7 +331,7 @@ public abstract class MapUpdater
 				finally
 				{
 					drawLock.unlock();
-					if (updateType != UpdateType.Incremental)
+					if (updateType != UpdateType.Incremental && updateType != UpdateType.Text)
 					{
 						interactionsLock.unlock();
 					}
@@ -574,9 +574,8 @@ public abstract class MapUpdater
 	{
 		// One might wonder why I have both a boolean flag
 		// (isMapReadyForInteractions) and a lock (interactionsLock) to prevent
-		// user
-		// interactions while a map is doing a non-incremental draw. The reason
-		// for the flag is to prevent new user interactions
+		// user interactions while a map is doing a non-incremental draw. The
+		// reason for the flag is to prevent new user interactions
 		// after a draw is started and before the draw has finished (since some
 		// of the drawing is done in the event dispatch thread
 		// after the map finishes drawing in a swing worker thread). The lock is
@@ -625,7 +624,7 @@ public abstract class MapUpdater
 			}
 		}
 	}
-	
+
 	public void dowWhenMapIsNotDrawing(Runnable action)
 	{
 		if (!isMapBeingDrawn)
@@ -664,7 +663,7 @@ public abstract class MapUpdater
 	{
 		return isMapBeingDrawn;
 	}
-	
+
 	public void cancel()
 	{
 		if (currentNonIncrementalMapCreator != null && isMapBeingDrawn)
@@ -673,6 +672,5 @@ public abstract class MapUpdater
 		}
 		tasksToRunWhenMapReady.clear();
 	}
-	
 
 }
