@@ -8,20 +8,20 @@ import javax.swing.JRadioButton;
 public class IconTypeButtons
 {
 	public RowHider hider;
-	public List<JRadioButton> buttons;
+	public List<RadioButtonWithImage> buttons;
 	
 	/**
 	 * Optional. Used for replacing the radio buttons.
 	 */
 	public JPanel buttonsPanel;
 	
-	public IconTypeButtons(RowHider hider, List<JRadioButton> buttons)
+	public IconTypeButtons(RowHider hider, List<RadioButtonWithImage> buttons)
 	{
 		this.hider = hider;
 		this.buttons = buttons;
 	}
 	
-	public IconTypeButtons(RowHider hider, List<JRadioButton> buttons, JPanel buttonsPanel)
+	public IconTypeButtons(RowHider hider, List<RadioButtonWithImage> buttons, JPanel buttonsPanel)
 	{
 		this.hider = hider;
 		this.buttons = buttons;
@@ -30,9 +30,9 @@ public class IconTypeButtons
 	
 	public String getSelectedOption()
 	{
-		for (JRadioButton button : buttons)
+		for (RadioButtonWithImage button : buttons)
 		{
-			if (button.isSelected())
+			if (button.getRadioButton().isSelected())
 			{
 				return button.getText();
 			}

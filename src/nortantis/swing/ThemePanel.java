@@ -829,7 +829,7 @@ public class ThemePanel extends JTabbedPane
 		worker.execute();
 	}
 
-	private static Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
+	static Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
 			Dimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
 			String textureImageFileName)
 	{
@@ -854,7 +854,7 @@ public class ThemePanel extends JTabbedPane
 			{
 				texture = ImageHelper.read(textureImageFileName);
 
-				if (colorizeLand)
+				if (colorizeOcean)
 				{
 					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
@@ -862,7 +862,7 @@ public class ThemePanel extends JTabbedPane
 							new Random(seed), ImageHelper.convertToGrayscale(texture),
 							size.height, size.width);
 				}
-				else
+				else 
 				{
 					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 

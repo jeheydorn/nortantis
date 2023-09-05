@@ -178,17 +178,25 @@ public class ImageHelper
 			ySize = 1;
 		return ySize;
 	}
-
+	
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */
 	public static BufferedImage scaleByHeight(BufferedImage inImage, int ySize)
 	{
+		return scaleByHeight(inImage, ySize, Method.QUALITY);
+	}
+	
+	/**
+	 * Scales the given image, preserving aspect ratio.
+	 */
+	public static BufferedImage scaleByHeight(BufferedImage inImage, int ySize, Method method)
+	{
 		int xSize = getWidthWhenScaledByHeight(inImage, ySize);
 
 		// This library is described at
 		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
-		BufferedImage scaled = Scalr.resize(inImage, Method.QUALITY, xSize, ySize);
+		BufferedImage scaled = Scalr.resize(inImage, method, xSize, ySize);
 
 		if (isSupportedGrayscaleType(inImage) && !isSupportedGrayscaleType(scaled))
 		{
