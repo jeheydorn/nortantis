@@ -79,6 +79,7 @@ public class SettingsGenerator
 		settings.coastShadingLevel = 10 + Math.abs(rand.nextInt(40));
 		
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
+		settings.regionBaseColor = settings.landColor;
 		
 		settings.oceanColor = settings.oceanEffect == OceanEffect.Ripples ? oceanColor
 				: MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);

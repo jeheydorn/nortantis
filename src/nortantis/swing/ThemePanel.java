@@ -1122,10 +1122,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		settings.oceanColor = oceanDisplayPanel.getColor();
 		settings.drawRegionColors = areRegionColorsVisible();
-		if (!settings.drawRegionColors)
-		{
-			settings.landColor = landDisplayPanel.getColor();
-		}
+		settings.landColor = landDisplayPanel.getColor();
 
 		settings.titleFont = titleFontDisplay.getFont();
 		settings.regionFont = regionFontDisplay.getFont();

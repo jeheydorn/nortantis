@@ -139,6 +139,23 @@ public class Rectangle
 		return new Rectangle((int) x, (int) y, (int) width, (int) height);
 	}
 
+	public Rectangle findIntersection(Rectangle r2)
+	{
+		double x1 = Math.max(this.x, r2.x);
+		double y1 = Math.max(this.y, r2.y);
+		double x2 = Math.min(this.x + this.width, r2.x + r2.width);
+		double y2 = Math.min(this.y + this.height, r2.y + r2.height);
+
+		if (x1 < x2 && y1 < y2)
+		{
+			return new Rectangle(x1, y1, x2 - x1, y2 - y1);
+		}
+		else
+		{
+			return null;
+		}
+	}
+
 	public java.awt.Rectangle toAwTRectangle()
 	{
 		// Round up to the nearest integer

@@ -620,14 +620,14 @@ public class LandWaterTool extends EditorTool
 		{
 			// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
 			// because it feels word to me to have them change with undo/redo since they don't directly affect the map.
-			baseColorPanel.setBackground(settings.landColor);
+			baseColorPanel.setBackground(settings.regionBaseColor);
 			hueSlider.setValue(settings.hueRange);
 			saturationSlider.setValue(settings.saturationRange);
 			brightnessSlider.setValue(settings.brightnessRange);
 			
 			// I'm setting this color here because I only want it to change when you create new settings or load settings from a file, 
 			// not on undo/redo or in response to the Theme panel changing.
-			colorDisplay.setBackground(settings.landColor);
+			colorDisplay.setBackground(settings.regionBaseColor);
 		}
 
 		showOrHideRegionColoringOptions();
@@ -636,10 +636,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		if (areRegionColorsVisible)
-		{
-			settings.landColor = baseColorPanel.getBackground();
-		}
+		settings.regionBaseColor = baseColorPanel.getBackground();
 		settings.hueRange = hueSlider.getValue();
 		settings.saturationRange = saturationSlider.getValue();
 		settings.brightnessRange = brightnessSlider.getValue();

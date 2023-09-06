@@ -837,7 +837,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.image = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method);
+				mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
 			}
 			else
 			{
@@ -853,11 +853,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// full image case because it's 5x slower than the below
 					// method, which uses ImgScalr, which uses
 					// built-in Java image scaling.
-					mapEditingPanel.image = ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method);
+					mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
 				}
 				else
 				{
-					ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, mapEditingPanel.image, incrementalChangeArea);
+					// These two images will be the same if the zoom and display quality are the same, in which case ImageHelper.scaleByWidth
+					// called above returns the input image.
+					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
+					{
+						ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, mapEditingPanel.getImage(), incrementalChangeArea);
+					}
 				}
 			}
 
@@ -1259,7 +1264,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.image = ImageHelper.createPlaceholderImage(message);
+		mapEditingPanel.setImage(ImageHelper.createPlaceholderImage(message));
 		mapEditingPanel.repaint();
 	}
 
@@ -1282,7 +1287,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		try
 		{
-			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			UIManager.setLookAndFeel(new FlatDarkLaf());
 		}
 		catch (Exception e)

@@ -14,7 +14,7 @@ public class RadioButtonWithImage extends JPanel
 {
 
 	private JRadioButton radioButton;
-	ImagePanel imageDisplay;
+	private ImagePanel imageDisplay;
 
 	public RadioButtonWithImage(String text, BufferedImage image)
 	{
@@ -30,7 +30,7 @@ public class RadioButtonWithImage extends JPanel
 		imageDisplay = new ImagePanel();
 		JPanel imageDisplayHolder = new JPanel();
 		imageDisplayHolder.setLayout(new BoxLayout(imageDisplayHolder, BoxLayout.X_AXIS));
-		imageDisplayHolder.add(Box.createHorizontalStrut(21));
+		imageDisplayHolder.add(Box.createHorizontalStrut(17));
 		imageDisplayHolder.add(imageDisplay);
 		imageDisplayHolder.add(Box.createHorizontalGlue());
 		add(imageDisplayHolder);

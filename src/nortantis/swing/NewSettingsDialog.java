@@ -348,6 +348,7 @@ public class NewSettingsDialog extends JDialog
 		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
 		settings.oceanColor = randomSettings.oceanColor;
 		settings.landColor = randomSettings.landColor;
+		settings.regionBaseColor = randomSettings.regionBaseColor;
 		settings.hueRange = randomSettings.hueRange;
 		settings.saturationRange = randomSettings.saturationRange;
 		settings.brightnessRange = randomSettings.brightnessRange;
@@ -413,15 +414,13 @@ public class NewSettingsDialog extends JDialog
 			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
 					Rectangle incrementalChangeArea)
 			{
-				mapEditingPanel.image = map;
+				mapEditingPanel.setImage(map);
 
 				if (!anotherDrawIsQueued)
 				{
 					enableOrDisableProgressBar(false);
 				}
 
-				mapEditingPanel.revalidate();
-				mapEditingPanel.repaint();
 				thisDialog.revalidate();
 				thisDialog.repaint();
 			}

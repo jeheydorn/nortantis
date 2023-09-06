@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 @SuppressWarnings("serial")
 public class ImagePanel extends JPanel
 {
-	public BufferedImage image;
+	private BufferedImage image;
 	
 	public ImagePanel()
 	{
@@ -26,6 +26,11 @@ public class ImagePanel extends JPanel
 		this.image = image;
 		revalidate();
 		repaint();
+	}
+	
+	public BufferedImage getImage()
+	{
+		return image;
 	}
 	
 	@Override

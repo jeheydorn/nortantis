@@ -75,6 +75,7 @@ public class MapSettings implements Serializable
 	public long backgroundRandomSeed;
 	public Color oceanColor;
 	public Color landColor;
+	public Color regionBaseColor;
 	public int generatedWidth;
 	public int generatedHeight;
 	public int hueRange;
@@ -201,6 +202,7 @@ public class MapSettings implements Serializable
 		root.put("colorizeLand", colorizeLand);
 		root.put("oceanColor", colorToString(oceanColor));
 		root.put("landColor", colorToString(landColor));
+		root.put("regionBaseColor", colorToString(regionBaseColor));
 		root.put("generatedWidth", generatedWidth);
 		root.put("generatedHeight", generatedHeight);
 		
@@ -430,6 +432,16 @@ public class MapSettings implements Serializable
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));
 		landColor = parseColor((String) root.get("landColor"));
+		
+		if (root.containsKey("regionBaseColor") && root.get("regionBaseColor") != null && !((String)root.get("regionBaseColor")).isEmpty())
+		{
+			regionBaseColor = parseColor((String) root.get("regionBaseColor"));
+		}
+		else
+		{
+			regionBaseColor = landColor;
+		}
+		
 		generatedWidth = (int) (long) root.get("generatedWidth");
 		generatedHeight = (int) (long) root.get("generatedHeight");
 				
@@ -767,6 +779,7 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
+
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -810,12 +823,14 @@ public class MapSettings implements Serializable
 				&& oceanEffect == other.oceanEffect && Objects.equals(oceanEffectsColor, other.oceanEffectsColor)
 				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
-				&& randomSeed == other.randomSeed && Objects.equals(regionFont, other.regionFont)
-				&& regionsRandomSeed == other.regionsRandomSeed
+				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
+				&& Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
 				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
 				&& Objects.equals(titleFont, other.titleFont) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+
+	
 }

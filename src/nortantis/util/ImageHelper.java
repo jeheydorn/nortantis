@@ -249,13 +249,6 @@ public class ImageHelper
 	// return newImage;
 	// }
 
-	public static int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
-	{
-		double v0 = v00 * (1 - dx) + v01 * dx;
-		double v1 = v10 * (1 - dx) + v11 * dx;
-		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
-	}
-
 	/**
 	 * Update one piece of a scaled image. Takes an area defined by
 	 * boundsInSource and scales it into target. This implementation bicubic
@@ -272,6 +265,9 @@ public class ImageHelper
 	 */
 	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.graph.geom.Rectangle boundsInSource)
 	{
+		boolean sourceHasAlpha = source.getType() == BufferedImage.TYPE_INT_ARGB;
+		boolean targetHasAlpha = target.getType() == BufferedImage.TYPE_INT_ARGB;
+		
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
 
 		int upperLeftX = Math.max(0, (int) (boundsInSource.x * scale));
@@ -292,16 +288,31 @@ public class ImageHelper
 				int y2 = Math.min(y1 + 1, source.getHeight() - 1);
 				double dx = x / scale - x1;
 				double dy = y / scale - y1;
-				Color c00 = new Color(source.getRGB(x1, y1));
-				Color c01 = new Color(source.getRGB(x2, y1));
-				Color c10 = new Color(source.getRGB(x1, y2));
-				Color c11 = new Color(source.getRGB(x2, y2));
+				Color c00 = new Color(source.getRGB(x1, y1), sourceHasAlpha);
+				Color c01 = new Color(source.getRGB(x2, y1), sourceHasAlpha);
+				Color c10 = new Color(source.getRGB(x1, y2), sourceHasAlpha);
+				Color c11 = new Color(source.getRGB(x2, y2), sourceHasAlpha);
 				int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
 				int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
 				int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
-				target.setRGB(x, y, new Color(r0, g0, b0).getRGB());
+				if (targetHasAlpha)
+				{
+					int a0 = interpolate(c00.getAlpha(), c01.getAlpha(), c10.getAlpha(), c11.getAlpha(), dx, dy);
+					target.setRGB(x, y, new Color(r0, g0, b0, a0).getRGB());
+				}
+				else
+				{
+					target.setRGB(x, y, new Color(r0, g0, b0).getRGB());
+				}
 			}
 		}
+	}
+	
+	public static int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
+	{
+		double v0 = v00 * (1 - dx) + v01 * dx;
+		double v1 = v10 * (1 - dx) + v11 * dx;
+		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
 
 	/**

@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
+import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +62,7 @@ import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
 {
+	private final boolean showIconPreviewsUsingLandBackground = true;
 	private JRadioButton mountainsButton;
 	private JRadioButton treesButton;
 	private JComboBox<ImageIcon> brushSizeComboBox;
@@ -325,6 +327,12 @@ public class IconsTool extends EditorTool
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
+		
+		if (!showIconPreviewsUsingLandBackground)
+		{
+			updateIconTypeButtonPreviewImages(null);
+		}
+		
 		return toolOptionsPanel;
 	}
 
@@ -448,8 +456,6 @@ public class IconsTool extends EditorTool
 					}
 
 					button.setImage(previewImage);
-					button.imageDisplay.revalidate();
-					button.imageDisplay.repaint();
 				}
 			};
 
@@ -464,7 +470,7 @@ public class IconsTool extends EditorTool
 
 	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images)
 	{
-		final int maxRowWidth = 150;
+		final int maxRowWidth = 154;
 		final int scaledHeight = 30;
 
 		// Find the size needed for the preview
@@ -492,14 +498,31 @@ public class IconsTool extends EditorTool
 		// Create the background image for the preview
 		final int padding = 9;
 		Dimension size = new Dimension(largestRowWidth + (padding * 2), (rowCount * scaledHeight) + (padding * 2));
-		Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
-				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
-						settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
-		BufferedImage previewImage = tuple.getThird();
-		previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
+
+		BufferedImage previewImage;
+		if (showIconPreviewsUsingLandBackground)
+		{
+			Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
+					.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
+							settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
+			previewImage = tuple.getThird();
+			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
+		}
+		else
+		{
+			previewImage = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+		}
+		
 		previewImage = fadeEdges(previewImage, padding - 2);
 
 		Graphics2D g = previewImage.createGraphics();
+		
+		if (!showIconPreviewsUsingLandBackground)
+		{
+			g.setColor(new Color(152, 152, 152));
+			g.fillRect(0, 0, size.width, size.height);
+		}
+		
 		int x = padding;
 		int y = padding;
 		for (BufferedImage image : images)
@@ -913,7 +936,7 @@ public class IconsTool extends EditorTool
 		lblCityIconType.setText(settings.cityIconTypeName);
 		showSelectedCityTypeButtons();
 		updateTypePanels();
-		if (changeEffectsBackgroundImages)
+		if (showIconPreviewsUsingLandBackground && changeEffectsBackgroundImages)
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}

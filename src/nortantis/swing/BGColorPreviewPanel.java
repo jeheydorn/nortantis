@@ -63,7 +63,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 
 		if (color == null || colorifyAlgorithm == ImageHelper.ColorifyAlgorithm.none)
 		{
-			this.image = originalBackground;
+			super.setImage(originalBackground);
 		}
 		else
 		{
@@ -75,7 +75,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	{
 		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)
 		{
-			image = ImageHelper.colorify(originalBackground, color, colorifyAlgorithm);
+			super.setImage(ImageHelper.colorify(originalBackground, color, colorifyAlgorithm));
 		}
 	}
 
