@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -18,7 +19,9 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.Timer;
+import javax.swing.UIManager;
 import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
 import nortantis.MapSettings;
@@ -76,7 +79,7 @@ public class ToolsPanel extends JPanel
 
 		JPanel toolSelectPanel = new JPanel(new FlowLayout());
 		toolSelectPanel.setMaximumSize(new Dimension(toolSelectPanel.getMaximumSize().width, 20));
-		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Editing Tools"));
+		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
 		add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
@@ -110,7 +113,7 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer = new JScrollPane(currentToolOptionsPanel);
 
 		add(toolsOptionsPanelContainer);
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
 				currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 
