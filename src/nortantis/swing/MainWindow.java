@@ -1078,7 +1078,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				settings.writeToFile(openSettingsFilePath.toString());
 				updateLastSettingsLoadedOrSaved(settings);
-				Logger.println("Settings saved to " + openSettingsFilePath.toString(), true);
+				Logger.println("Settings saved to " + openSettingsFilePath.toString());
 			}
 			catch (IOException e)
 			{
@@ -1131,7 +1131,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			try
 			{
 				settings.writeToFile(openSettingsFilePath.toString());
-				Logger.println("Settings saved to " + openSettingsFilePath.toString(), true);
+				Logger.println("Settings saved to " + openSettingsFilePath.toString());
 				updateLastSettingsLoadedOrSaved(settings);
 			}
 			catch (IOException e)
@@ -1200,8 +1200,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 		edits = settings.edits;
-		themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
+		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
@@ -1263,7 +1263,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingPanel.repaint();
 	}
 
-	void handleThemeChange()
+	void handleThemeChange(boolean changeEffectsBackgroundImages)
 	{
 		// This check is to filter out automatic changes caused by
 		// loadSettingsIntoGUI.
@@ -1271,7 +1271,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Allow editor tools to update based on changes in the themes
 			// panel.
-			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true);
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages);
 		}
 	}
 

@@ -612,7 +612,7 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
 		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
 

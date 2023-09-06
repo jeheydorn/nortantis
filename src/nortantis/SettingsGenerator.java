@@ -145,19 +145,12 @@ public class SettingsGenerator
 		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
 		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(9));
 
+		settings.cityProbability =  0.25 * maxCityProbabillity;
 		
-		if (rand.nextDouble() > 0.25)
+		Set<String> cityIconTypes = ImageCache.getInstance().getIconGroupNames(IconType.cities);
+		if (cityIconTypes.size() > 0)
 		{
-			settings.cityProbability =  0.25 * maxCityProbabillity;
-		}
-		else
-		{
-			settings.cityProbability = 0.0;
-		}
-		Set<String> cityIconSets = ImageCache.getInstance().getIconSets(IconType.cities);
-		if (cityIconSets.size() > 0)
-		{
-			settings.cityIconSetName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconSets));
+			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
 		}
 		
 		settings.drawRegionColors = rand.nextDouble() > 0.25;

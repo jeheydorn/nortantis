@@ -637,7 +637,7 @@ public class MapCreator
 		boolean needToAddIcons;
 		if (mapParts == null || mapParts.iconDrawer == null)
 		{
-			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconSetName);
+			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconTypeName);
 			if (mapParts != null)
 			{
 				mapParts.iconDrawer = iconDrawer;

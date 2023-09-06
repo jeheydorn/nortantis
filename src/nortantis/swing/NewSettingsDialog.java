@@ -56,7 +56,7 @@ public class NewSettingsDialog extends JDialog
 	private Timer progressBarTimer;
 	public final double cityFrequencySliderScale = 100.0 * 1.0 / SettingsGenerator.maxCityProbabillity;
 	private JSlider cityFrequencySlider;
-	private JComboBox<String> cityIconsSetComboBox;
+	private JComboBox<String> cityIconsTypeComboBox;
 	private JPanel mapEditingPanelContainer;
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 
@@ -307,10 +307,10 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponentToPanel("City frequency:",
 				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
 
-		cityIconsSetComboBox = new JComboBox<String>();
-		createMapChangeListener(cityIconsSetComboBox);
+		cityIconsTypeComboBox = new JComboBox<String>();
+		createMapChangeListener(cityIconsTypeComboBox);
 		organizer.addLabelAndComponentToPanel("City icon type:",
-				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityIconsSetComboBox);
+				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityIconsTypeComboBox);
 
 		booksPanel = SwingHelper.createBooksPanel(() -> handleMapChange());
 		JScrollPane booksScrollPane = new JScrollPane(booksPanel);
@@ -475,8 +475,8 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
-		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconSets(IconType.cities),
-				settings.cityIconSetName);
+		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox, ImageCache.getInstance().getIconGroupNames(IconType.cities),
+				settings.cityIconTypeName);
 
 		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
 	}
@@ -506,7 +506,7 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		resultSettings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
-		resultSettings.cityIconSetName = (String) cityIconsSetComboBox.getSelectedItem();
+		resultSettings.cityIconTypeName = (String) cityIconsTypeComboBox.getSelectedItem();
 
 		return resultSettings;
 	}

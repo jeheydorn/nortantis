@@ -11,11 +11,13 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -52,7 +54,9 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
+import nortantis.util.Range;
 import nortantis.util.Tuple2;
+import nortantis.util.Tuple3;
 import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
@@ -346,8 +350,7 @@ public class IconsTool extends EditorTool
 	{
 		ButtonGroup group = new ButtonGroup();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
-		String iconSetName = iconType == IconType.cities ? lblCityIconType.getText() : null;
-		for (String groupName : ImageCache.getInstance().getIconGroupNames(iconType, iconSetName))
+		for (String groupName : ImageCache.getInstance().getIconGroupNames(iconType))
 		{
 			RadioButtonWithImage button = new RadioButtonWithImage(groupName, null);
 			group.add(button.getRadioButton());
@@ -362,18 +365,64 @@ public class IconsTool extends EditorTool
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
 	{
-		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, null, mountainTypes);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, null, hillTypes);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, null, duneTypes);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, null, treeTypes);
-		
+		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes);
+
 		for (Map.Entry<String, IconTypeButtons> entry : cityTypeButtonsMap.entrySet())
 		{
-			updateOneIconTypeButtonPreviewImages(settings, IconType.cities, entry.getKey(), entry.getValue());
+			String cityIconType = entry.getKey();
+			updateCityButtonPreviewImage(settings, cityIconType, entry.getValue());
 		}
 	}
 
-	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, String iconSetName, IconTypeButtons buttons)
+	private void updateCityButtonPreviewImage(MapSettings settings, String cityIconType, IconTypeButtons buttons)
+	{
+		SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<>()
+		{
+			@Override
+			protected List<BufferedImage> doInBackground() throws Exception
+			{
+				List<BufferedImage> previewImages = new ArrayList<>();
+				Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance()
+						.getIconsWithWidths(IconType.cities, cityIconType);
+
+				for (RadioButtonWithImage button : buttons.buttons)
+				{
+					String cityIconNameWithoutWidthOrExtension = button.getText();
+					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst();
+					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon));
+					previewImages.add(preview);
+				}
+				
+				return previewImages;
+			}
+
+			@Override
+			public void done()
+			{
+				List<BufferedImage> previewImages;
+				try
+				{
+					previewImages = get();
+				}
+				catch (InterruptedException | ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+
+				for (int i : new Range(previewImages.size()))
+				{
+					buttons.buttons.get(i).setImage(previewImages.get(i));
+				}
+			}
+		};
+
+		worker.execute();
+	}
+
+	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons)
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
@@ -382,7 +431,7 @@ public class IconsTool extends EditorTool
 				@Override
 				protected BufferedImage doInBackground() throws Exception
 				{
-					return createIconPreview(settings, iconType, iconSetName, button.getText());
+					return createIconPreviewForGroup(settings, iconType, button.getText());
 				}
 
 				@Override
@@ -408,9 +457,13 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private BufferedImage createIconPreview(MapSettings settings, IconType iconType, String iconSetName, String groupName)
+	private BufferedImage createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName)
 	{
-		List<BufferedImage> images = ImageCache.getInstance().loadIconGroup(iconType, iconSetName, groupName);
+		return createIconPreview(settings, ImageCache.getInstance().loadIconGroup(iconType, groupName));
+	}
+
+	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images)
+	{
 		final int maxRowWidth = 150;
 		final int scaledHeight = 30;
 
@@ -431,7 +484,7 @@ public class IconsTool extends EditorTool
 				{
 					rowWidth += scaledWidth;
 				}
-				
+
 				largestRowWidth = Math.max(largestRowWidth, rowWidth);
 			}
 		}
@@ -465,7 +518,7 @@ public class IconsTool extends EditorTool
 
 		return previewImage;
 	}
-	
+
 	private BufferedImage fadeEdges(BufferedImage image, int fadeWidth)
 	{
 		BufferedImage box = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
@@ -484,7 +537,7 @@ public class IconsTool extends EditorTool
 	{
 		cityTypeButtonsMap = new HashMap<>();
 
-		Set<String> cityTypes = ImageCache.getInstance().getIconSets(IconType.cities);
+		Set<String> cityTypes = ImageCache.getInstance().getIconGroupNames(IconType.cities);
 
 		if (cityTypes.isEmpty())
 		{
@@ -496,7 +549,7 @@ public class IconsTool extends EditorTool
 			List<RadioButtonWithImage> radioButtons = new ArrayList<>();
 			ButtonGroup group = new ButtonGroup();
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance()
-					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, null, cityType))
+					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
 			{
 				RadioButtonWithImage button = new RadioButtonWithImage(fileNameWithoutWidthOrExtension, null);
 				group.add(button.getRadioButton());
@@ -855,18 +908,21 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
-		lblCityIconType.setText(settings.cityIconSetName);
+		lblCityIconType.setText(settings.cityIconTypeName);
 		showSelectedCityTypeButtons();
 		updateTypePanels();
-		updateIconTypeButtonPreviewImages(settings);
+		if (changeEffectsBackgroundImages)
+		{
+			updateIconTypeButtonPreviewImages(settings);
+		}
 	}
 
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		settings.cityIconSetName = lblCityIconType.getText();
+		settings.cityIconTypeName = lblCityIconType.getText();
 	}
 
 	@Override

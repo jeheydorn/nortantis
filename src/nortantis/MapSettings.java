@@ -102,7 +102,7 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
-	public String cityIconSetName;
+	public String cityIconTypeName;
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
@@ -212,7 +212,7 @@ public class MapSettings implements Serializable
 		root.put("brightnessRange", brightnessRange);
 		
 		// Icon sets
-		root.put("cityIconSetName", cityIconSetName);
+		root.put("cityIconSetName", cityIconTypeName);
 
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
@@ -443,11 +443,11 @@ public class MapSettings implements Serializable
 		
 		if (root.containsKey("cityIconSetName"))
 		{
-			cityIconSetName = (String) root.get("cityIconSetName");
+			cityIconTypeName = (String) root.get("cityIconSetName");
 		}
 		else
 		{
-			cityIconSetName = "";
+			cityIconTypeName = "";
 		}
 	
 		drawText = (boolean) root.get("drawText");
@@ -709,7 +709,7 @@ public class MapSettings implements Serializable
 		drawRoads = old.drawRoads;
 		cityProbability = old.cityProbability;
 		lineStyle = old.lineStyle;
-		cityIconSetName = old.cityIconSetName;
+		cityIconTypeName = old.cityIconSetName;
 		pointPrecision = old.pointPrecision;
 		edits = old.edits;
 
@@ -788,7 +788,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
 				&& brightnessRange == other.brightnessRange
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
-				&& Objects.equals(cityIconSetName, other.cityIconSetName)
+				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
 				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
 				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand

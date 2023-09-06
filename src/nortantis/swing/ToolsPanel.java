@@ -197,11 +197,11 @@ public class ToolsPanel extends JPanel
 
 	}
 	
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
 		for (EditorTool tool : tools)
 		{
-			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange);
+			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
 		}
 	}
 	
