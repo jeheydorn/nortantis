@@ -1,18 +1,24 @@
 package nortantis.editor;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
+
+import nortantis.util.Logger;
 
 public class UserPreferences
 {
 	private final String userPrefsFileName = "user preferences";
 
-	public String lastLoadedSettingsFile = "";
-	public String lastEditorTool = "";
 	public String zoomLevel = "";
 	public String editorImageQuality = "";
 	public boolean hideMapChangesWarning;
@@ -21,6 +27,8 @@ public class UserPreferences
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
+	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
+	private final int maxRecentMaps = 15;
 
 	public static UserPreferences instance;
 
@@ -42,14 +50,6 @@ public class UserPreferences
 			{
 				props.load(new FileInputStream(userPrefsFileName));
 
-				if (props.containsKey("lastLoadedSettingsFile"))
-				{
-					lastLoadedSettingsFile = props.getProperty("lastLoadedSettingsFile");
-				}
-				if (props.containsKey("lastEditTool"))
-				{
-					lastEditorTool = props.getProperty("lastEditTool");
-				}
 				if (props.containsKey("zoomLevel"))
 				{
 					zoomLevel = props.getProperty("zoomLevel");
@@ -90,19 +90,45 @@ public class UserPreferences
 					{
 					}
 				}
+				
+				if (props.containsKey("recentMapFilePaths"))
+				{
+					String[] filePaths = props.getProperty("recentMapFilePaths").split("\t");
+					for (String filePath : filePaths)
+					{
+						if (new File(filePath).exists())
+						{
+							recentMapFilePaths.add(filePath);
+						}
+					}
+				}
 			}
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
+			Logger.printError("Error while loading user preferences:", e);
 		}
+	}
+	
+	public void addRecentMapFilePath(String filePath)
+	{
+		recentMapFilePaths.remove(filePath);
+		recentMapFilePaths.addFirst(filePath);
+		while (recentMapFilePaths.size() > maxRecentMaps)
+		{
+			recentMapFilePaths.pollLast();
+		}
+	}
+	
+	public Collection<String> getRecentMapFilePaths()
+	{
+		return Collections.unmodifiableCollection(recentMapFilePaths);
 	}
 
 	public void save()
 	{
 		Properties props = new Properties();
-		props.setProperty("lastLoadedSettingsFile", lastLoadedSettingsFile);
-		props.setProperty("lastEditTool", lastEditorTool);
 		props.setProperty("zoomLevel", zoomLevel);
 		props.setProperty("editorImageQuality", editorImageQuality);
 		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
@@ -112,6 +138,7 @@ public class UserPreferences
 				: defaultDefaultExportAction.toString());
 		props.setProperty("defaultHeightmapExportAction", defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() 
 				: defaultDefaultExportAction.toString());
+		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 
 		try
 		{
@@ -120,6 +147,7 @@ public class UserPreferences
 		catch (Exception e)
 		{
 			e.printStackTrace();
+			Logger.printError("Error while saving user preferences:", e);
 		}
 	}
 }

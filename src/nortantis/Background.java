@@ -198,6 +198,10 @@ public class Background
 				}
 			}
 		}
+		else
+		{
+			throw new IllegalArgumentException("Creating maps from custom land and ocean background images is no longer supported.");
+		}
 
 		if (settings.drawRegionColors)
 		{

@@ -108,6 +108,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem exportHeightmapMenuItem;
 	private JMenu editMenu;
 	private JMenu viewMenu;
+	private JMenu recentSettingsMenuItem;
+	java.awt.Point mouseLocationForMiddleButtonDrag;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -117,38 +119,25 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		createGUI();
 
-		MapSettings settings = null;
+		boolean isMapOpen = false;
 		try
 		{
 			if (fileToOpen != null && !fileToOpen.isEmpty() && fileToOpen.endsWith(MapSettings.fileExtensionWithDot)
 					&& new File(fileToOpen).exists())
 			{
-				settings = new MapSettings(fileToOpen);
-				openSettingsFilePath = Paths.get(fileToOpen);
-				updateFrameTitle();
-			}
-			else if (!UserPreferences.getInstance().lastLoadedSettingsFile.isEmpty()
-					&& Files.exists(Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile)))
-			{
-				settings = new MapSettings(UserPreferences.getInstance().lastLoadedSettingsFile);
-				openSettingsFilePath = Paths.get(UserPreferences.getInstance().lastLoadedSettingsFile);
-				updateFrameTitle();
+				openMap(new File(fileToOpen).getAbsolutePath());
+				isMapOpen = true;
 			}
 		}
 		catch (Exception e)
 		{
-			// This means they moved their settings or their settings were
-			// corrupted somehow.
 			e.printStackTrace();
+			Logger.printError("Error while opening map passed in on the command line:", e);
 		}
 
-		if (settings != null)
+		if (!isMapOpen)
 		{
-			loadSettingsIntoGUI(settings);
-		}
-		else
-		{
-			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create a map, go to", "File > New Random Map." });
+			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 	}
@@ -184,14 +173,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					boolean cancelPressed = checkForUnsavedChanges();
 					if (!cancelPressed)
 					{
-						if (openSettingsFilePath != null)
-						{
-							UserPreferences.getInstance().lastLoadedSettingsFile = openSettingsFilePath.toString();
-						}
-						else
-						{
-							UserPreferences.getInstance().lastLoadedSettingsFile = "";
-						}
 						UserPreferences.getInstance().save();
 						dispose();
 						System.exit(0);
@@ -201,6 +182,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					ex.printStackTrace();
 					JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					Logger.printError("Error while closing:", ex);
 				}
 			}
 
@@ -258,8 +240,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		consoleOutputPane = new JScrollPane(panel);
 		consoleOutputPane.setMinimumSize(new Dimension(0, 0));
 	}
-
-	java.awt.Point mouseLocationForMiddleButtonDrag;
 
 	private void createMapEditingPanel()
 	{
@@ -467,6 +447,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearSelectedCenters();
+				setPlaceholderImage(new String[] { "Map failed to draw due to an error." });
+				
+				// TODO Decide if this is safe. In theory, enabling fields now could lead to errors with the undoer since edits might not have been created.
+				// But leaving fields disabled makes the user unable to fix the error.
+				enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false));
 			}
 
 			@Override
@@ -544,16 +529,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				int status = fileChooser.showOpenDialog(mainWindow);
 				if (status == JFileChooser.APPROVE_OPTION)
 				{
-					openSettingsFilePath = Paths.get(fileChooser.getSelectedFile().getAbsolutePath());
-					MapSettings settings = new MapSettings(openSettingsFilePath.toString());
-
-					updater.cancel();
-					updater.dowWhenMapIsNotDrawing(() ->
-					{
-						loadSettingsIntoGUI(settings);
-					});
-
-					updateFrameTitle();
+					openMap(fileChooser.getSelectedFile().getAbsolutePath());
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
@@ -569,6 +545,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			}
 		});
+
+		recentSettingsMenuItem = new JMenu("Open Recent");
+		fileMenu.add(recentSettingsMenuItem);
+		createOrUpdateRecentMapMenuButtons();
 
 		saveMenuItem = new JMenuItem("Save");
 		saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
@@ -768,6 +748,72 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
 	}
 
+	private void createOrUpdateRecentMapMenuButtons()
+	{
+		recentSettingsMenuItem.removeAll();
+		boolean hasRecents = false;
+
+		for (String filePath : UserPreferences.getInstance().getRecentMapFilePaths())
+		{
+			String fileName = FilenameUtils.getName(filePath);
+			JMenuItem item = new JMenuItem(fileName);
+			recentSettingsMenuItem.add(item);
+			hasRecents = true;
+			item.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					boolean cancelPressed = checkForUnsavedChanges();
+					if (cancelPressed)
+					{
+						return;
+					}
+
+					openMap(filePath);
+				}
+			});
+		}
+
+		recentSettingsMenuItem.setEnabled(hasRecents);
+	}
+
+	private void openMap(String absolutePath)
+	{
+		if (!(new File(absolutePath).exists()))
+		{
+			JOptionPane.showMessageDialog(null, "The map '" + absolutePath + "' cannot be opened because it does not exist.",
+					"Unable to Open Map", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+
+		try
+		{
+			openSettingsFilePath = Paths.get(absolutePath);
+			if (!MapSettings.isOldPropertiesFile(absolutePath))
+			{
+				UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
+				createOrUpdateRecentMapMenuButtons();
+			}
+			MapSettings settings = new MapSettings(openSettingsFilePath.toString());
+
+			updater.cancel();
+			updater.dowWhenMapIsNotDrawing(() ->
+			{
+				loadSettingsIntoGUI(settings);
+			});
+
+			updateFrameTitle();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
+					JOptionPane.ERROR_MESSAGE);
+			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
+		}
+	}
+
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
 	{
 		updater.doIfMapIsReadyForInteractions(() ->
@@ -857,7 +903,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 				else
 				{
-					// These two images will be the same if the zoom and display quality are the same, in which case ImageHelper.scaleByWidth
+					// These two images will be the same if the zoom and display
+					// quality are the same, in which case
+					// ImageHelper.scaleByWidth
 					// called above returns the input image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
@@ -980,7 +1028,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				return;
 			}
-			
+
 			toolsPanel.resetToolsForNewMap();
 
 			// Erase text
@@ -1032,7 +1080,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			return false;
 		}
-		
+
 		if (settingsHaveUnsavedChanges())
 		{
 			int n = JOptionPane.showConfirmDialog(this, "Settings have been modfied. Save changes?", "", JOptionPane.YES_NO_CANCEL_OPTION);
@@ -1055,6 +1103,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private boolean settingsHaveUnsavedChanges()
 	{
 		final MapSettings currentSettings = getSettingsFromGUI(false);
+
+		// Debug code
+		// try
+		// {
+		// currentSettings.writeToFile("currentSettings.json");
+		// lastSettingsLoadedOrSaved.writeToFile("lastSettingsLoadedOrSaved.json");
+		// }
+		// catch (IOException e)
+		// {
+		// e.printStackTrace();
+		// }
 
 		if (hasDrawnCurrentMapAtLeastOnce)
 		{
@@ -1081,13 +1140,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			final MapSettings settings = getSettingsFromGUI(false);
 			try
 			{
-				settings.writeToFile(openSettingsFilePath.toString());
-				updateLastSettingsLoadedOrSaved(settings);
-				Logger.println("Settings saved to " + openSettingsFilePath.toString());
+				saveMap(settings, openSettingsFilePath.toString());
 			}
 			catch (IOException e)
 			{
 				e.printStackTrace();
+				Logger.printError("Error while saving map.", e);
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
 			updateFrameTitle();
@@ -1135,18 +1193,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			final MapSettings settings = getSettingsFromGUI(false);
 			try
 			{
-				settings.writeToFile(openSettingsFilePath.toString());
-				Logger.println("Settings saved to " + openSettingsFilePath.toString());
-				updateLastSettingsLoadedOrSaved(settings);
+				saveMap(settings, openSettingsFilePath.toString());
 			}
 			catch (IOException e)
 			{
 				e.printStackTrace();
+				Logger.printError("Erorr while saving settings to a new file:", e);
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
 
 			updateFrameTitle();
 		}
+	}
+
+	private void saveMap(MapSettings settings, String absolutePath) throws IOException
+	{
+		settings.writeToFile(absolutePath);
+		Logger.println("Settings saved to " + openSettingsFilePath.toString());
+		updateLastSettingsLoadedOrSaved(settings);
+		UserPreferences.getInstance().addRecentMapFilePath(absolutePath);
+		createOrUpdateRecentMapMenuButtons();
 	}
 
 	private void updateFrameTitle()
@@ -1169,14 +1235,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		hasDrawnCurrentMapAtLeastOnce = false;
 		mapEditingPanel.clearAllSelectionsAndHighlights();
 
-		updateLastSettingsLoadedOrSaved(settings);		
+		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
 
 		updateFrameTitle();
 
 		setPlaceholderImage(new String[] { "Drawing map..." });
-		
+
 		undoer.reset();
 		if (settings.edits != null && !settings.edits.isEmpty())
 		{
@@ -1185,14 +1251,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		else
 		{
-			// Disable almost all fields and don't re enable them until the map has drawn at least once.
-			// This is necessary because the undoer needs to be initialized with a version of the settings that has edits
-			// before it can start setting undo points, and if the map doesn't already have edits, 
-			// such as if it's a new map or loaded from a file that didn't have edits, then the edits will be created when
+			// Disable almost all fields and don't re enable them until the map
+			// has drawn at least once.
+			// This is necessary because the undoer needs to be initialized with
+			// a version of the settings that has edits
+			// before it can start setting undo points, and if the map doesn't
+			// already have edits,
+			// such as if it's a new map or loaded from a file that didn't have
+			// edits, then the edits will be created when
 			// the first draw finishes.
 			enableOrDisableFieldsThatRequireMap(false, settings);
 		}
-		
+
 		updater.createAndShowMapFull();
 	}
 
@@ -1287,7 +1357,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		try
 		{
-			//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			UIManager.setLookAndFeel(new FlatDarkLaf());
 		}
 		catch (Exception e)
@@ -1315,6 +1385,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 				catch (Exception e)
 				{
+					System.out.println("Error while starting the program: " + e.getMessage());
 					e.printStackTrace();
 				}
 			}

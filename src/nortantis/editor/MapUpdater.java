@@ -23,6 +23,7 @@ import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.swing.MapEdits;
+import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
 import nortantis.util.Logger;
 import nortantis.util.Tuple2;
@@ -355,17 +356,7 @@ public abstract class MapUpdater
 				}
 				catch (Exception ex)
 				{
-					if (isCausedByOutOfMemoryError(ex))
-					{
-						ex.printStackTrace();
-						String outOfMemoryMessage = "Out of memory. Try lowering the zoom or allocating more memory to the Java heap space.";
-						JOptionPane.showMessageDialog(null, outOfMemoryMessage, "Error", JOptionPane.ERROR_MESSAGE);
-					}
-					else
-					{
-						ex.printStackTrace();
-						JOptionPane.showMessageDialog(null, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-					}
+					SwingHelper.handleBackgroundThreadException(ex, null, false);
 				}
 
 				if (map != null)
@@ -479,21 +470,6 @@ public abstract class MapUpdater
 		{
 			getEdits().initializeRegionEdits(mapParts.graph.regions.values());
 		}
-	}
-
-	private boolean isCausedByOutOfMemoryError(Throwable ex)
-	{
-		if (ex == null)
-		{
-			return false;
-		}
-
-		if (ex instanceof OutOfMemoryError)
-		{
-			return true;
-		}
-
-		return isCausedByOutOfMemoryError(ex.getCause());
 	}
 
 	public void setMaxMapSize(Dimension dimension)

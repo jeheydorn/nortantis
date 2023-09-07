@@ -4,6 +4,8 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 public class Logger
 {
 	private ILoggerTarget target;
@@ -32,6 +34,18 @@ public class Logger
 	public static void println()
 	{
 		println("");
+	}
+	
+	public static void printError(String message, Throwable e)
+	{
+		if (e == null)
+		{
+			return;
+		}
+		
+		println(message);
+		println(e.getMessage());
+		println(ExceptionUtils.getStackTrace(e));
 	}
 
 	public static void println(final String message)

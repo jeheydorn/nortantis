@@ -1016,14 +1016,14 @@ public class ThemePanel extends JTabbedPane
 		riverFontDisplay.setText(settings.riverFont.getName());
 		textColorDisplay.setBackground(settings.textColor);
 		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
-		chckbxDrawBoldBackground.setSelected(!settings.drawBoldBackground);
-		chckbxDrawBoldBackground.doClick();
+		chckbxDrawBoldBackground.setSelected(settings.drawBoldBackground);
+		chckbxDrawBoldBackground.getActionListeners()[0].actionPerformed(null);
 
 		// Borders
 		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(), settings.borderType);
 		borderWidthSlider.setValue(settings.borderWidth);
-		drawBorderCheckbox.setSelected(!settings.drawBorder);
-		drawBorderCheckbox.doClick();
+		drawBorderCheckbox.setSelected(settings.drawBorder);
+		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -1065,6 +1065,11 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		if (!textureImageFilename.getText().equals(settings.backgroundTextureImage))
+		{
+			return true;
+		}
+		
+		if (!landDisplayPanel.getColor().equals(settings.landColor))
 		{
 			return true;
 		}

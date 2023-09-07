@@ -30,6 +30,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
 import nortantis.SettingsGenerator;
+import nortantis.util.Logger;
 
 public class SwingHelper
 {
@@ -295,31 +296,52 @@ public class SwingHelper
 			if (ex.getCause() != null)
 			{
 				ex.getCause().printStackTrace();
-				if (ex.getCause() instanceof OutOfMemoryError)
+				if (isCausedByOutOfMemoryError(ex))
 				{
-					JOptionPane.showMessageDialog(parent,
-							isExport ? "Out of memory. Try exporting at a lower resolution." :
-							"Out of memory. Try decreasing the Display Quality in the View menu.",
-							"Error", JOptionPane.ERROR_MESSAGE);
+					String message =  isExport ? "Out of memory. Try exporting at a lower resolution." :
+						"Out of memory. Try decreasing the Display Quality in the View menu.";
+					Logger.printError(message, ex);
+					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
 				}
 				else
 				{
-					JOptionPane.showMessageDialog(parent, ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+					String message = "Error while creating map:";
+					Logger.printError(message, ex.getCause());
+					JOptionPane.showMessageDialog(parent, message + " " + ex.getCause().getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
 			}
 			else
 			{
 				// Should never happen.
 				ex.printStackTrace();
-				JOptionPane.showMessageDialog(parent, "An ExecutionException error occured with no cause: " + ex.getMessage(), "Error",
+				String message = "An ExecutionException error occured with no cause: ";
+				Logger.printError(message, ex);
+				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error",
 						JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else
 		{
 			ex.printStackTrace();
-			JOptionPane.showMessageDialog(parent, "An unexpected error occured: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+			String message = "An unexpected error occured: ";
+			Logger.printError(message, ex);
+			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
+	}
+	
+	private static boolean isCausedByOutOfMemoryError(Throwable ex)
+	{
+		if (ex == null)
+		{
+			return false;
+		}
+
+		if (ex instanceof OutOfMemoryError)
+		{
+			return true;
+		}
+
+		return isCausedByOutOfMemoryError(ex.getCause());
 	}
 	
 	public static java.awt.Point transform(java.awt.Point point, AffineTransform transform)

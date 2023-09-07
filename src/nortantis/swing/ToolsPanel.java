@@ -28,6 +28,7 @@ import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.util.JComboBoxFixed;
+import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
 public class ToolsPanel extends JPanel
@@ -59,20 +60,7 @@ public class ToolsPanel extends JPanel
 		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), 
 				new IconsTool(mainWindow, this, updater), 
 				new TextTool(mainWindow, this, updater));
-		if (UserPreferences.getInstance().lastEditorTool != "")
-		{
-			for (EditorTool tool : tools)
-			{
-				if (tool.getToolbarName().equals(UserPreferences.getInstance().lastEditorTool))
-				{
-					currentTool = tool;
-				}
-			}
-		}
-		if (currentTool == null)
-		{
-			currentTool = tools.get(2);
-		}
+		currentTool = tools.get(2);
 
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -91,6 +79,7 @@ public class ToolsPanel extends JPanel
 			catch (Exception e)
 			{
 				e.printStackTrace();
+				Logger.printError("Error while setting an image for a tool: ", e);
 			}
 			toolButton.setToolTipText(tool.getToolbarName());
 			toolButton.setMaximumSize(new Dimension(50, 50));
@@ -196,8 +185,6 @@ public class ToolsPanel extends JPanel
 		};
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
-		
-
 	}
 	
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)

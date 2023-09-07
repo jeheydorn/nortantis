@@ -15,5 +15,6 @@
 	<classpathentry kind="lib" path="libraries/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="libraries/JTransforms-3.1-with-dependencies.jar" sourcepath="library-sources/JTransforms-3.1-sources.jar"/>
 	<classpathentry kind="lib" path="libraries/flatlaf-3.1.1.jar"/>
+	<classpathentry kind="lib" path="libraries/commons-lang3-3.13.0.jar" sourcepath="library-doc/commons-lang3-3.13.0-javadoc.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
