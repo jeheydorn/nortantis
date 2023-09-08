@@ -110,6 +110,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu viewMenu;
 	private JMenu recentSettingsMenuItem;
 	java.awt.Point mouseLocationForMiddleButtonDrag;
+	private JMenu helpMenu;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -360,7 +361,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingScrollPane = new JScrollPane(mapEditingPanel);
 		mapEditingScrollPane.setMinimumSize(new Dimension(500, themePanel.getMinimumSize().height));
 
-		// TODO Make sure the below works. It use to be on the frame.
 		mapEditingScrollPane.addComponentListener(new ComponentAdapter()
 		{
 			public void componentResized(ComponentEvent componentEvent)
@@ -411,7 +411,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 
-				// TODO Remove
 				if (!undoer.isInitialized())
 				{
 					// This has to be done after the map is drawn rather
@@ -449,7 +448,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.clearSelectedCenters();
 				setPlaceholderImage(new String[] { "Map failed to draw due to an error." });
 				
-				// TODO Decide if this is safe. In theory, enabling fields now could lead to errors with the undoer since edits might not have been created.
+				// In theory, enabling fields now could lead to the undoer not working quite right since edits might not have been created.
 				// But leaving fields disabled makes the user unable to fix the error.
 				enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false));
 			}
@@ -746,6 +745,28 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
 		}
 		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
+		
+		
+		helpMenu = new JMenu("Help");
+		menuBar.add(helpMenu);
+		
+		JMenuItem aboutNortantisItem = new JMenuItem("About Nortantis");
+		helpMenu.add(aboutNortantisItem);
+		aboutNortantisItem.addActionListener(new ActionListener()
+		{	
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				showAboutNortantisDialog();
+			}
+		});
+	}
+	
+	private void showAboutNortantisDialog()
+	{
+		AboutNortantisDialog dialog = new AboutNortantisDialog(this);
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
 	}
 
 	private void createOrUpdateRecentMapMenuButtons()

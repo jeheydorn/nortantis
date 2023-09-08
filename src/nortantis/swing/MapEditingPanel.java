@@ -63,10 +63,6 @@ public class MapEditingPanel extends ImagePanel
 		highlightedEdges = new HashSet<>();
 		zoom = 1.0;
 		resolution = 1.0;
-
-		// TODO Remove this line if it isn't necessary. If it is necessary, then
-		// maybe move it to ImagePanel.
-		setLayout(new BorderLayout());
 	}
 
 	public void showBrush(java.awt.Point location, int brushDiameter)

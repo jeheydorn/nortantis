@@ -220,7 +220,7 @@ public class NewSettingsDialog extends JDialog
 			dimensionsComboBox.addItem(dimension);
 		}
 		createMapChangeListener(dimensionsComboBox);
-		organizer.addLabelAndComponentToPanel("Dimensions: <br>(cannot be changed in editor)",
+		organizer.addLabelAndComponent("Dimensions: <br>(cannot be changed in editor)",
 				"Dimensions of the map when exported at 100% resolution, although the resolution can be scaled up or down while"
 						+ " exporting. This doesn't include the border, if you add one.",
 				dimensionsComboBox);
@@ -234,7 +234,7 @@ public class NewSettingsDialog extends JDialog
 		worldSizeSlider.setMinimum(SettingsGenerator.minWorldSize);
 		worldSizeSlider.setMaximum(SettingsGenerator.maxWorldSize);
 		createMapChangeListener(worldSizeSlider);
-		organizer.addLabelAndComponentToPanel("World size: <br>(cannot be changed in editor)",
+		organizer.addLabelAndComponent("World size: <br>(cannot be changed in editor)",
 				"The number of polygons in the randomly generated world.", worldSizeSlider);
 
 		edgeLandToWaterProbSlider = new JSlider();
@@ -253,7 +253,7 @@ public class NewSettingsDialog extends JDialog
 			edgeLandToWaterProbSlider.setLabelTable(labelTable);
 		}
 		createMapChangeListener(edgeLandToWaterProbSlider);
-		organizer.addLabelAndComponentToPanel("Edge land probability:",
+		organizer.addLabelAndComponent("Edge land probability:",
 				"The probability that a tectonic plate touching the edge of the map will be land rather than ocean.",
 				edgeLandToWaterProbSlider);
 
@@ -273,7 +273,7 @@ public class NewSettingsDialog extends JDialog
 			centerLandToWaterProbSlider.setLabelTable(labelTable);
 		}
 		createMapChangeListener(centerLandToWaterProbSlider);
-		organizer.addLabelAndComponentToPanel("Center land probability:",
+		organizer.addLabelAndComponent("Center land probability:",
 				"The probability that a tectonic plate not touching the edge of the map will be land rather than ocean.",
 				centerLandToWaterProbSlider);
 
@@ -284,7 +284,7 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		createMapChangeListener(landColoringMethodComboBox);
-		organizer.addLabelAndComponentToPanel("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
+		organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
 
 		organizer.addVerticalFillerRow();
 	}
@@ -305,12 +305,12 @@ public class NewSettingsDialog extends JDialog
 		cityFrequencySlider.setMaximum(100);
 		cityFrequencySlider.setMajorTickSpacing(25);
 		createMapChangeListener(cityFrequencySlider);
-		organizer.addLabelAndComponentToPanel("City frequency:",
+		organizer.addLabelAndComponent("City frequency:",
 				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
 
 		cityIconsTypeComboBox = new JComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
-		organizer.addLabelAndComponentToPanel("City icon type:",
+		organizer.addLabelAndComponent("City icon type:",
 				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityIconsTypeComboBox);
 
 		booksPanel = SwingHelper.createBooksPanel(() -> handleMapChange());

@@ -112,7 +112,7 @@ public class ImageExportDialog extends JDialog
 				: "This percentage is multiplied by the dimensions of the map to determine the resolution to draw at. Higher resolutions"
 						+ " will give more detailed terrain.";
 		resolutionSlider.setValue((int) ((type == ImageExportType.Map ? mainWindow.exportResolution : mainWindow.heightmapExportResolution) * 100));
-		organizer.addLabelAndComponentToPanel("Resolution:",
+		organizer.addLabelAndComponent("Resolution:",
 				tooltip,
 				resolutionSlider);
 
@@ -136,7 +136,7 @@ public class ImageExportDialog extends JDialog
 		buttonGroup.add(fileRadioButton);
 		buttonGroup.add(openInViewerRadioButton);
 
-		organizer.addLabelAndComponentsToPanelVertical("Export action:", "Select what to do with the generated image.",
+		organizer.addLabelAndComponentsVertical("Export action:", "Select what to do with the generated image.",
 				Arrays.asList(fileRadioButton, openInViewerRadioButton));
 
 		JTextField pathField = new JTextField();
@@ -188,7 +188,7 @@ public class ImageExportDialog extends JDialog
 		pathPanel.add(browseSavePathButton);
 		pathPanel.add(Box.createHorizontalGlue());
 
-		pathChooserHider = organizer.addLabelAndComponentsToPanelVertical("Export file path:", "",
+		pathChooserHider = organizer.addLabelAndComponentsVertical("Export file path:", "",
 				Arrays.asList(pathField, Box.createVerticalStrut(5), pathPanel));
 
 		progressBar = new JProgressBar();

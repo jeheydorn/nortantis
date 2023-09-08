@@ -131,21 +131,21 @@ public class TextTool extends EditorTool
 			group.add(editButton);
 			radioButtons.add(editButton);
 			editButton.addActionListener(listener);
-			editButton.setToolTipText("Edit text (alt+E)");
+			editButton.setToolTipText("Edit text (Alt+E)");
 
 			addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
 			group.add(addButton);
 			radioButtons.add(addButton);
 			addButton.addActionListener(listener);
-			addButton.setToolTipText("Add new text of the selected text type (alt+A)");
+			addButton.setToolTipText("Add new text of the selected text type (Alt+A)");
 
 			deleteButton = new JRadioButton("<HTML><U>D</U>elete</HTML>");
 			group.add(deleteButton);
 			radioButtons.add(deleteButton);
 			deleteButton.addActionListener(listener);
-			deleteButton.setToolTipText("Delete text (alt+D)");
+			deleteButton.setToolTipText("Delete text (Alt+D)");
 
-			organizer.addLabelAndComponentsToPanelVertical("Action:", "", radioButtons);
+			organizer.addLabelAndComponentsVertical("Action:", "", radioButtons);
 		}
 
 		editTextField = new JTextField();
@@ -178,7 +178,7 @@ public class TextTool extends EditorTool
 
 			}
 		});
-		textTypeHider = organizer.addLabelAndComponentToPanel("Text type:", "", textTypeComboBox);
+		textTypeHider = organizer.addLabelAndComponent("Text type:", "", textTypeComboBox);
 
 		for (TextType type : TextType.values())
 		{
@@ -202,7 +202,7 @@ public class TextTool extends EditorTool
 				}
 			}
 		});
-		clearRotationButtonHider = organizer.addLabelAndComponentsToPanelHorizontal("", "", 0, Arrays.asList(clearRotationButton));
+		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
 
 		
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
@@ -345,8 +345,6 @@ public class TextTool extends EditorTool
 		{
 			if (lastSelected != null && mapEditingPanel.isInTextRotateTool(e.getPoint()))
 			{
-				// mousePressedLocation = e.getPoint(); // TODO decide if I need
-				// this
 				isRotating = true;
 			}
 			else if (lastSelected != null && mapEditingPanel.isInTextMoveTool(e.getPoint()))

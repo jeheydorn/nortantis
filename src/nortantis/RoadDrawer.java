@@ -120,7 +120,7 @@ public class RoadDrawer
 	{
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.roadColor);
-		// TODO - make the parameters below of the dashed line the maps that in
+		// TODO - Add the parameters below for the dashed line in MapSettings.
 		Stroke dashed = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
 		g.setStroke(dashed);
 		

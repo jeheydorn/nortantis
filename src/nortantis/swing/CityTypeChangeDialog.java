@@ -35,7 +35,7 @@ public class CityTypeChangeDialog extends JDialog
 		JComboBox<String> cityIconsSetComboBox = new JComboBox<String>();
 		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconGroupNames(IconType.cities), 
 				currentCityIconType);
-		organizer.addLabelAndComponentToPanel("City icon type:", "", cityIconsSetComboBox);
+		organizer.addLabelAndComponent("City icon type:", "", cityIconsSetComboBox);
 						
 		organizer.addVerticalFillerRow();
 

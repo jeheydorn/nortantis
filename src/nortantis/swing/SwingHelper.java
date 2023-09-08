@@ -157,14 +157,7 @@ public class SwingHelper
 			}
 		}
 	}
-
-	// TODO remove
-	// public static List<JCheckBox> createBooksCheckboxes()
-	// {
-	// return SettingsGenerator.getAllBooks().stream().map(bookName -> new
-	// JCheckBox(bookName)).collect(Collectors.toList());
-	// }
-
+	
 	public static void checkSelectedBooks(JPanel booksPanel, Set<String> selectedBooks)
 	{
 		for (Component component : booksPanel.getComponents())
@@ -273,19 +266,6 @@ public class SwingHelper
 				}
 
 			});
-		}
-	}
-
-	// TODO remove it not used
-	public static void addListenerToThisAndAllChildren(Component component, Runnable action)
-	{
-		addListener(component, action);
-		if (component instanceof Container)
-		{
-			for (Component child : ((Container) component).getComponents())
-			{
-				addListenerToThisAndAllChildren(child, action);
-			}
 		}
 	}
 

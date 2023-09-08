@@ -164,7 +164,7 @@ public class LandWaterTool extends EditorTool
 	    landButton.addActionListener(brushActionListener);
     	    	    
 	    oceanButton.setSelected(true); // Selected by default
-	    organizer.addLabelAndComponentsToPanelVertical("Brush:", "", radioButtons);
+	    organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
 	    	    
 	    // Color chooser
 	    colorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -180,13 +180,13 @@ public class LandWaterTool extends EditorTool
 				SwingHelper.showColorPickerWithPreviewPanel(toolOptionsPanel, colorDisplay, "Region Color");
 			}
 		});
-		colorChooserHider = organizer.addLabelAndComponentsToPanelHorizontal("Color:", "", SwingHelper.colorPickerLeftPadding,
-				Arrays.asList(colorDisplay, chooseButton));
+		colorChooserHider = organizer.addLabelAndComponentsHorizontal("Color:", "", Arrays.asList(colorDisplay, chooseButton),
+				SwingHelper.colorPickerLeftPadding);
 		
 		
 		selectColorFromMapButton = new JToggleButton("Select Color From Map");
 		selectColorFromMapButton.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
-		selectColorHider = organizer.addLabelAndComponentToPanel("", "", selectColorFromMapButton, 0);
+		selectColorHider = organizer.addLabelAndComponent("", "", selectColorFromMapButton, 0);
 
 
 		JButton generateColorButton = new JButton("Generate Color");
@@ -202,7 +202,7 @@ public class LandWaterTool extends EditorTool
 				colorDisplay.setBackground(newColor);
 			}
 		});
-		generateColorButtonHider = organizer.addLabelAndComponentToPanel("", "", generateColorButton, 2);		
+		generateColorButtonHider = organizer.addLabelAndComponent("", "", generateColorButton, 2);		
 		
 	    Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 	    brushSizeComboBox = brushSizeTuple.getFirst();
@@ -211,7 +211,7 @@ public class LandWaterTool extends EditorTool
 	    	    
 	    onlyUpdateLandCheckbox = new JCheckBox("Only update land");
 	    onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
-	    onlyUpdateLandCheckboxHider = organizer.addLabelAndComponentToPanel("", "", onlyUpdateLandCheckbox);
+	    onlyUpdateLandCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateLandCheckbox);
 	    
 	    
 		colorGeneratorSettingsHider = organizer.addLeftAlignedComponent(createColorGeneratorOptionsPanel(toolOptionsPanel));
@@ -241,10 +241,10 @@ public class LandWaterTool extends EditorTool
 				SwingHelper.showColorPicker(toolOptionsPanel, baseColorPanel, "Base Color", () -> {});
 			}
 		});
-		organizer.addLabelAndComponentsToPanelHorizontal("Base color:", 
+		organizer.addLabelAndComponentsHorizontal("Base color:", 
 				"The base color for generating new region colors. This is the map's land color when not coloring regions.", 
-				SwingHelper.borderWidthBetweenComponents, 
-				Arrays.asList(baseColorPanel, baseColorChooseButton));
+				Arrays.asList(baseColorPanel, baseColorChooseButton), 
+				SwingHelper.borderWidthBetweenComponents);
 
 		
 		hueSlider = new JSlider();
@@ -253,7 +253,7 @@ public class LandWaterTool extends EditorTool
 		hueSlider.setMinorTickSpacing(20);
 		hueSlider.setMajorTickSpacing(100);
 		hueSlider.setMaximum(360);
-		organizer.addLabelAndComponentToPanel("Hue range:", 
+		organizer.addLabelAndComponent("Hue range:", 
 				"The possible range of hue values for generated region colors. The range is centered at the base color hue.", 
 				hueSlider);
 
@@ -264,7 +264,7 @@ public class LandWaterTool extends EditorTool
 		saturationSlider.setMinorTickSpacing(20);
 		saturationSlider.setMaximum(255);
 		saturationSlider.setMajorTickSpacing(100);
-		organizer.addLabelAndComponentToPanel("Saturation range:", 
+		organizer.addLabelAndComponent("Saturation range:", 
 				"The possible range of saturation values for generated region colors. The range is centered at the land color saturation.", 
 				saturationSlider);
 
@@ -275,7 +275,7 @@ public class LandWaterTool extends EditorTool
 		brightnessSlider.setMinorTickSpacing(20);
 		brightnessSlider.setMaximum(255);
 		brightnessSlider.setMajorTickSpacing(100);
-		organizer.addLabelAndComponentToPanel("Brightness range:", 
+		organizer.addLabelAndComponent("Brightness range:", 
 				"The possible range of brightness values for generated region colors. The range is centered at the land color brightness.", 
 				brightnessSlider);
 		
