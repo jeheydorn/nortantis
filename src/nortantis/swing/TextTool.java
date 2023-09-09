@@ -47,6 +47,7 @@ public class TextTool extends EditorTool
 	private JRadioButton deleteButton;
 	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
+	private TextType textTypeForAdds;
 	private RowHider editTextFieldHider;
 	private RowHider booksHider;
 	private JPanel booksPanel;
@@ -170,6 +171,11 @@ public class TextTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				if (addButton.isSelected())
+				{
+					textTypeForAdds = (TextType) textTypeComboBox.getSelectedItem();
+				}
+				
 				if (editButton.isSelected() && lastSelected != null)
 				{
 					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
@@ -179,6 +185,7 @@ public class TextTool extends EditorTool
 			}
 		});
 		textTypeHider = organizer.addLabelAndComponent("Text type:", "", textTypeComboBox);
+		textTypeForAdds = TextType.City;
 
 		for (TextType type : TextType.values())
 		{
@@ -235,6 +242,11 @@ public class TextTool extends EditorTool
 		if (addButton.isSelected() || deleteButton.isSelected())
 		{
 			lastSelected = null;
+		}
+		
+		if (addButton.isSelected())
+		{
+			textTypeComboBox.setSelectedItem(textTypeForAdds);
 		}
 
 		textTypeHider.setVisible(addButton.isSelected());
