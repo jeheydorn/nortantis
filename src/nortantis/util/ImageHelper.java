@@ -46,11 +46,9 @@ import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 public class ImageHelper
 {
 	/**
-	 * This should be called before closing the program if methods have been
-	 * called which use jTransforms or other thread pools.
+	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
 	 * 
-	 * For some reason this doesn't need to be called when running a GUI, and
-	 * will throw an errror if you do.
+	 * For some reason this doesn't need to be called when running a GUI, and will throw an errror if you do.
 	 */
 	public static void shutdownThreadPool()
 	{
@@ -178,7 +176,7 @@ public class ImageHelper
 			ySize = 1;
 		return ySize;
 	}
-	
+
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */
@@ -186,7 +184,7 @@ public class ImageHelper
 	{
 		return scaleByHeight(inImage, ySize, Method.QUALITY);
 	}
-	
+
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */
@@ -214,35 +212,52 @@ public class ImageHelper
 			xSize = 1;
 		return xSize;
 	}
+	
+	// TODO remove if I don't use this
+	public static BufferedImage scaleBiCubicByWidth(BufferedImage image, int width)
+	{
+		int height = getHeightWhenScaledByWidth(image, width);
+		BufferedImage result = new BufferedImage(width, height, image.getType());
+		scaleInto(image, result, null);
+		return result;
+	}
 
 	/**
-	 * Update one piece of a scaled image. Takes an area defined by
-	 * boundsInSource and scales it into target. This implementation bicubic
-	 * scaling is about five times slower than the one used by ImgScalr, but is
-	 * much faster when I only want to update a small piece of a scaled image.
+	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic
+	 * scaling is about five times slower than the one used by ImgScalr, but is much faster when I only want to update a small piece of a
+	 * scaled image.
 	 * 
 	 * @param source
 	 *            The unscaled image.
 	 * @param target
 	 *            The scaled image
 	 * @param boundsInSource
-	 *            The area in the source image that will be scaled and placed
-	 *            into the target image.
+	 *            The area in the source image that will be scaled and placed into the target image.
 	 */
 	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.graph.geom.Rectangle boundsInSource)
 	{
 		boolean sourceHasAlpha = source.getType() == BufferedImage.TYPE_INT_ARGB;
 		boolean targetHasAlpha = target.getType() == BufferedImage.TYPE_INT_ARGB;
-		
+
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
 
-		int upperLeftX = Math.max(0, (int) (boundsInSource.x * scale));
-		int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
-		// The +1's below are because I'm padding the width and height by 1
-		// pixel to account for integer truncation.
-		java.awt.Rectangle pixelsToUpdate = new java.awt.Rectangle(upperLeftX, upperLeftY,
-				Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
-				Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
+		java.awt.Rectangle pixelsToUpdate;
+		if (boundsInSource == null)
+		{
+			pixelsToUpdate = new java.awt.Rectangle(0, 0, target.getWidth(), target.getHeight());
+		}
+		else
+		{
+			int upperLeftX = Math.max(0, (int) (boundsInSource.x * scale));
+			int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
+			// The +1's below are because I'm padding the width and height by 1
+			// pixel to account for integer truncation.
+			pixelsToUpdate = new java.awt.Rectangle(
+					upperLeftX, upperLeftY, 
+					Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
+					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY)
+			);
+		}
 
 		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
 		{
@@ -273,19 +288,19 @@ public class ImageHelper
 			}
 		}
 	}
-	
+
 	public static int interpolate(int v00, int v01, int v10, int v11, double dx, double dy)
 	{
 		double v0 = v00 * (1 - dx) + v01 * dx;
 		double v1 = v10 * (1 - dx) + v11 * dx;
 		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
+	
 
 	/**
 	 * 
 	 * @param size
-	 *            Number of pixels from 3 standard deviations from one side of
-	 *            the Guassian to the other.
+	 *            Number of pixels from 3 standard deviations from one side of the Guassian to the other.
 	 * @return
 	 */
 	public static float[][] createGaussianKernel(int size)
@@ -371,8 +386,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Maximizes the contrast of the given grayscale image. The image must be a
-	 * supported grayscale type.
+	 * Maximizes the contrast of the given grayscale image. The image must be a supported grayscale type.
 	 */
 	public static void maximizeContrastGrayscale(BufferedImage image)
 	{
@@ -425,8 +439,7 @@ public class ImageHelper
 	}
 
 	/*
-	 * Scales values in the given array such that the minimum is targetMin, and
-	 * the maximum is targetMax.
+	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
 	 */
 	public static void setContrast(float[][] array, float targetMin, float targetMax)
 	{
@@ -461,7 +474,7 @@ public class ImageHelper
 			}
 		}
 	}
-	
+
 	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
 	{
 		for (int r = rowStart; r < rowStart + rows; r++)
@@ -487,8 +500,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Multiplies each pixel by the given scale. The image must be a supported
-	 * grayscale type
+	 * Multiplies each pixel by the given scale. The image must be a supported grayscale type
 	 */
 	public static void scaleGrayLevels(BufferedImage image, float scale)
 	{
@@ -534,13 +546,11 @@ public class ImageHelper
 	}
 
 	/**
-	 * Each pixel in the resulting image is a linear combination of that pixel
-	 * from image1 and from image2 using the gray levels in the given mask. The
-	 * mask must be BufferedImage.TYPE_BYTE_GRAY.
+	 * Each pixel in the resulting image is a linear combination of that pixel from image1 and from image2 using the gray levels in the
+	 * given mask. The mask must be BufferedImage.TYPE_BYTE_GRAY.
 	 * 
 	 * @param region
-	 *            Specifies only a region to create rather than masking the
-	 *            entire images.
+	 *            Specifies only a region to create rather than masking the entire images.
 	 */
 	public static BufferedImage maskWithImage(BufferedImage image1, BufferedImage image2, BufferedImage mask, IntRectangle region)
 	{
@@ -601,8 +611,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Equivalent to combining a solid color image with an image and a mask in
-	 * maskWithImage(...) except this way is more efficient.
+	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
 	 */
 	public static BufferedImage maskWithColor(BufferedImage image, Color color, BufferedImage mask, boolean invertMask)
 	{
@@ -610,14 +619,14 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException(
-					"In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
+					"In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight()
+			);
 
 		return maskWithColorInRegion(image, color, mask, invertMask, new java.awt.Point(0, 0));
 	}
 
 	/**
-	 * Equivalent to combining a solid color image with an image and a mask in
-	 * maskWithImage(...) except this way is more efficient.
+	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
 	 */
 	public static BufferedImage maskWithColorInRegion(BufferedImage image, Color color, BufferedImage mask, boolean invertMask,
 			java.awt.Point imageOffsetInMask)
@@ -629,7 +638,7 @@ public class ImageHelper
 		Raster mRaster = mask.getRaster();
 		Raster alphaRaster = image.getAlphaRaster();
 
-		// Process rows in parallel to speed things up a little. In my tests, doing so was 41% faster 
+		// Process rows in parallel to speed things up a little. In my tests, doing so was 41% faster
 		// (when only counting time in this method).
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
@@ -690,8 +699,7 @@ public class ImageHelper
 	 * Like maskWithColor except multiple colors can be specified.
 	 * 
 	 * @param colorIndexes
-	 *            Each pixel stores a gray level which (converted to an int) is
-	 *            an index into colors.
+	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
 	public static BufferedImage maskWithMultipleColors(BufferedImage image, Map<Integer, Color> colors, BufferedImage colorIndexes,
 			BufferedImage mask, boolean invertMask)
@@ -761,13 +769,11 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates a new BufferedImage in which the values of the given alphaMask to
-	 * be the alpha channel in image.
+	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
 	 * 
 	 * @param image
 	 * @param alphaMask
-	 *            Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the
-	 *            same dimension as image.
+	 *            Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the same dimension as image.
 	 * @param invertMask
 	 *            If true, the alpha values from alphaMask will be inverted.
 	 * @return
@@ -783,18 +789,15 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates a new BufferedImage in which the values of the given alphaMask to
-	 * be the alpha channel in image.
+	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
 	 * 
 	 * @param image
 	 * @param alphaMask
-	 *            Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the
-	 *            same dimension as image.
+	 *            Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the same dimension as image.
 	 * @param invertMask
 	 *            If true, the alpha values from alphaMask will be inverted.
 	 * @param imageOffsetInMask
-	 *            Used if the image is smaller than the mask, so only a piece of
-	 *            the mask should be used.
+	 *            Used if the image is smaller than the mask, so only a piece of the mask should be used.
 	 * @return A new image
 	 */
 	public static BufferedImage setAlphaFromMaskInRegion(BufferedImage image, BufferedImage alphaMask, boolean invertMask,
@@ -850,19 +853,22 @@ public class ImageHelper
 
 		if (redChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but red chanel image has width " + redChanel.getWidth() + ".");
+					"Alpha chanel width is " + alphaChanel.getWidth() + " but red chanel image has width " + redChanel.getWidth() + "."
+			);
 		if (redChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (greenChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException("Alpha chanel width is " + alphaChanel.getWidth() + " but green chanel image has width "
-					+ greenChanel.getWidth() + ".");
+			throw new IllegalArgumentException(
+					"Alpha chanel width is " + alphaChanel.getWidth() + " but green chanel image has width " + greenChanel.getWidth() + "."
+			);
 		if (greenChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (blueChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but blue chanel image has width " + blueChanel.getWidth() + ".");
+					"Alpha chanel width is " + alphaChanel.getWidth() + " but blue chanel image has width " + blueChanel.getWidth() + "."
+			);
 		if (blueChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
@@ -896,15 +902,22 @@ public class ImageHelper
 	}
 
 	/**
-	 * Extracts the specified region from image2, then makes the given mask be
-	 * the alpha channel of that extracted region, then draws the extracted
-	 * region onto image1.
-	 * @param image1 The image to draw to.
-	 * @param image2 The background image which the mask indicates to pull pixel values from.
-	 * @param mask Pixel values tell how to combine values from image1 and image2.
-	 * @param xLoc X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before rotation is applied.
-	 * @param yLoc Like xLoc, but for Y component.
-	 * @param angle Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
+	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the
+	 * extracted region onto image1.
+	 * 
+	 * @param image1
+	 *            The image to draw to.
+	 * @param image2
+	 *            The background image which the mask indicates to pull pixel values from.
+	 * @param mask
+	 *            Pixel values tell how to combine values from image1 and image2.
+	 * @param xLoc
+	 *            X component of the upper left corner at which image2 pixel values will be drawn into image1, using the mask, before
+	 *            rotation is applied.
+	 * @param yLoc
+	 *            Like xLoc, but for Y component.
+	 * @param angle
+	 *            Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
 	public static void combineImagesWithMaskInRegion(BufferedImage image1, BufferedImage image2, BufferedImage mask, int xLoc, int yLoc,
 			double angle, Point pivot)
@@ -914,7 +927,8 @@ public class ImageHelper
 
 		if (image1.getWidth() != image2.getWidth())
 			throw new IllegalArgumentException(
-					"Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth());
+					"Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth()
+			);
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
@@ -926,9 +940,9 @@ public class ImageHelper
 			{
 				int grayLevel = maskRaster.getSample(x, y, 0);
 				Color r = new Color(region.getRGB(x, y), true);
-				
+
 				// Don't clobber the alpha level from the region.
-				int alphaLevel = Math.min(r.getAlpha(), grayLevel); 
+				int alphaLevel = Math.min(r.getAlpha(), grayLevel);
 
 				// Only change the alpha channel of the region.
 				region.setRGB(x, y, new Color(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
@@ -946,13 +960,13 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at
-	 * the given angle about the given pivot.
+	 * Creates an image the requested width and height that contains a region extracted from 'image', rotated at the given angle about the
+	 * given pivot.
 	 * 
-	 * Warning: This adds an alpha channel, so the output image may not be the
-	 * same type as the input image.
+	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */
-	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
+	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc, int width, int height, double angle,
+			Point pivot)
 	{
 		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D gResult = result.createGraphics();
@@ -967,8 +981,7 @@ public class ImageHelper
 	 * 
 	 * Creates a copy of a piece of an image.
 	 * 
-	 * It is important the the result is a copy even if the desired region is
-	 * exactly the input.
+	 * It is important the the result is a copy even if the desired region is exactly the input.
 	 */
 	public static BufferedImage extractRegion(BufferedImage image, int xLoc, int yLoc, int width, int height)
 	{
@@ -981,8 +994,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates a rotated version of the input image 90 degrees either clockwise
-	 * or counter-clockwise. =
+	 * Creates a rotated version of the input image 90 degrees either clockwise or counter-clockwise. =
 	 */
 	public static BufferedImage rotate90Degrees(BufferedImage image, boolean isClockwise)
 	{
@@ -1006,9 +1018,7 @@ public class ImageHelper
 	}
 
 	/**
-	 * From
-	 * http://stackoverflow.com/questions/13605248/java-converting-image-to-
-	 * bufferedimage
+	 * From http://stackoverflow.com/questions/13605248/java-converting-image-to- bufferedimage
 	 * 
 	 * Converts a given Image into a BufferedImage of the specified type.
 	 * 
@@ -1058,25 +1068,19 @@ public class ImageHelper
 	}
 
 	/**
-	 * Convolves a gray-scale image and with a kernel. The input image is
-	 * unchanged.
+	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 * 
 	 * @param img
 	 *            Image to convolve
 	 * @param kernel
 	 *            The kernel to convolve with.
 	 * @param maximizeContrast
-	 *            Iff true, the contrast of the convolved image will be
-	 *            maximized while it is still in floating point representation.
-	 *            In the result the pixel values will range from 0 to 255 for 8
-	 *            bit pixels, or 65535 for 16 bit. This is better than
-	 *            maximizing the contrast of the result because the result is a
-	 *            BufferedImage, which has less precise values than floats.
+	 *            Iff true, the contrast of the convolved image will be maximized while it is still in floating point representation. In the
+	 *            result the pixel values will range from 0 to 255 for 8 bit pixels, or 65535 for 16 bit. This is better than maximizing the
+	 *            contrast of the result because the result is a BufferedImage, which has less precise values than floats.
 	 * @param paddImageToAvoidWrapping
-	 *            Normally, in wage convolution done using fast Fourier
-	 *            transforms will do wrapping when calculating values of pixels
-	 *            along edges. Set this flag to add black padding pixels to the
-	 *            edge of the image to avoid this.
+	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
+	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast,
@@ -1091,10 +1095,8 @@ public class ImageHelper
 	}
 
 	/**
-	 * Convolves a gray-scale image with a kernel. The input image is unchanged.
-	 * The convolved image will be scaled while it is still in floating point
-	 * representation. Values below 0 will be made 0. Values above 1 will be
-	 * made 1.
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
+	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
 	 * 
 	 * @param img
 	 *            Image to convolve
@@ -1102,10 +1104,8 @@ public class ImageHelper
 	 * @param scale
 	 *            Amount to multiply levels by.
 	 * @param paddImageToAvoidWrapping
-	 *            Normally, in wage convolution done using fast Fourier
-	 *            transforms will do wrapping when calculating values of pixels
-	 *            along edges. Set this flag to add black padding pixels to the
-	 *            edge of the image to avoid this.
+	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
+	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
 	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale,
@@ -1155,16 +1155,19 @@ public class ImageHelper
 
 		if (setContrast)
 		{
-			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
-					imageWidth);
+			setContrast(
+					data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
+					imageWidth
+			);
 		}
 		else if (scaleLevels)
 		{
 			scaleLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
-				imageWidth, bufferedImageType);
+		BufferedImage result = arrayToImage(
+				data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, bufferedImageType
+		);
 		return result;
 	}
 
@@ -1212,8 +1215,7 @@ public class ImageHelper
 	 * @param cols
 	 *            Number of columns in the output
 	 * @param flipXAndYAxis
-	 *            For kernels. Flip the kernel along the x and y axis as I get
-	 *            the values from it. This is needed to do convolution instead
+	 *            For kernels. Flip the kernel along the x and y axis as I get the values from it. This is needed to do convolution instead
 	 *            of cross-correlation.
 	 * @return
 	 */
@@ -1231,8 +1233,9 @@ public class ImageHelper
 				{
 					if (flipXAndYAxis)
 					{
-						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2,
-								input[input.length - 1 - r][input[0].length - 1 - c]);
+						data.setRealInput(
+								c + columnPaddingOver2, r + rowPaddingOver2, input[input.length - 1 - r][input[0].length - 1 - c]
+						);
 					}
 					else
 					{
@@ -1311,7 +1314,7 @@ public class ImageHelper
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				float value = array[r][c] * maxPixelValue;
+				float value = Math.min(maxPixelValue, array[r][c] * maxPixelValue);
 				raster.setSample(c - colStart, r - rowStart, 0, value);
 			}
 		}
@@ -1506,8 +1509,7 @@ public class ImageHelper
 	 * @param how
 	 *            Algorithm to use when determining pixel colors
 	 * @param where
-	 *            Allows colorifying only a snippet of image. Null means
-	 *            colorify the whole image.
+	 *            Allows colorifying only a snippet of image. Null means colorify the whole image.
 	 * @return
 	 */
 	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how, java.awt.Rectangle where)
@@ -1524,7 +1526,8 @@ public class ImageHelper
 
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException(
-					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType()));
+					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType())
+			);
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
 		Raster raster = image.getRaster();
 
@@ -1587,25 +1590,20 @@ public class ImageHelper
 	}
 
 	/**
-	 * Like colorify but for multiple colors. Colorifies an image using a an
-	 * array of colors and a second image which maps those colors to pixels.
-	 * This way you can specify multiple colors for the resulting image.
+	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to
+	 * pixels. This way you can specify multiple colors for the resulting image.
 	 * 
 	 * @param image
 	 *            The image to colorify
 	 * @param colorMap
-	 *            Used as a map from region index (in politicalRegions) to
-	 *            region color.
+	 *            Used as a map from region index (in politicalRegions) to region color.
 	 * @param colorIndexes
-	 *            Each pixel stores a gray level which (converted to an int) is
-	 *            an index into colors.
+	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 * @param how
 	 *            Determines the algorithm to use for coloring pixels
 	 * @param where
-	 *            Allows colorifying only a snippet of image. If given, then it
-	 *            is assumed that colorIndex is possibly smaller than image, and
-	 *            this point is the upper left corner in image where the result
-	 *            should be extracted from, using the width and height of
+	 *            Allows colorifying only a snippet of image. If given, then it is assumed that colorIndex is possibly smaller than image,
+	 *            and this point is the upper left corner in image where the result should be extracted from, using the width and height of
 	 *            colorIndexes.
 	 */
 	public static BufferedImage colorifyMulti(BufferedImage image, Map<Integer, Color> colorMap, BufferedImage colorIndexes,
@@ -1613,7 +1611,8 @@ public class ImageHelper
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException(
-					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType()));
+					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType())
+			);
 		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
 
@@ -1858,8 +1857,7 @@ public class ImageHelper
 	 * @param image
 	 *            Input and output image.
 	 * @param threshold
-	 *            Pixel values equal to or greater than this value will be set
-	 *            to highValue. Pixel values lower than this will be set to 0.
+	 *            Pixel values equal to or greater than this value will be set to highValue. Pixel values lower than this will be set to 0.
 	 * @param highValue
 	 *            Value pixels will be set to if thresholded high.
 	 */
@@ -1915,13 +1913,15 @@ public class ImageHelper
 		if (!isSupportedGrayscaleType(target))
 		{
 			throw new IllegalArgumentException(
-					"Unsupported target image type for subtracting: " + bufferedImageTypeToString(target.getType()));
+					"Unsupported target image type for subtracting: " + bufferedImageTypeToString(target.getType())
+			);
 		}
 
 		if (!isSupportedGrayscaleType(other))
 		{
 			throw new IllegalArgumentException(
-					"Unsupported other image type for subtracting: " + bufferedImageTypeToString(other.getType()));
+					"Unsupported other image type for subtracting: " + bufferedImageTypeToString(other.getType())
+			);
 		}
 
 		WritableRaster out = target.getRaster();
@@ -1936,15 +1936,16 @@ public class ImageHelper
 	}
 
 	/**
-	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and
-	 * pastes that snippet into target at the location defined by
+	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
 	public static void copySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source,
 			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
-		java.awt.Rectangle targetBounds = new java.awt.Rectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
-				target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
+		java.awt.Rectangle targetBounds = new java.awt.Rectangle(
+				widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2,
+				target.getHeight() - widthOfBorderToNotDrawOn * 2
+		);
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
 		{
 			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)

@@ -447,7 +447,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				showAsDrawing(false);
 				mapEditingPanel.clearSelectedCenters();
 				setPlaceholderImage(new String[] { "Map failed to draw due to an error." });
-				
+
 				// In theory, enabling fields now could lead to the undoer not working quite right since edits might not have been created.
 				// But leaving fields disabled makes the user unable to fix the error.
 				enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false));
@@ -532,11 +532,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(mainWindow, FilenameUtils.getName(openSettingsFilePath.toString())
-								+ " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
-								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
-						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
-								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot);
+						JOptionPane.showMessageDialog(
+								mainWindow,
+								FilenameUtils.getName(
+										openSettingsFilePath.toString()
+								) + " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
+										+ MapSettings.fileExtensionWithDot + "' file.",
+								"File Converted", JOptionPane.INFORMATION_MESSAGE
+						);
+						openSettingsFilePath = Paths.get(
+								FilenameUtils.getFullPath(openSettingsFilePath.toString()),
+								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot
+						);
 						forceSaveAs = true;
 					}
 
@@ -652,7 +659,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		displayQualityMenu = new JMenu("Display Quality");
 		viewMenu.add(displayQualityMenu);
 		displayQualityMenu.setToolTipText(
-				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower."
+		);
 
 		highlightLakesButton = new JCheckBoxMenuItem("Highlight Lakes");
 		highlightLakesButton.setToolTipText("Highlight lakes to make them easier to see.");
@@ -745,15 +753,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
 		}
 		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
-		
-		
+
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
-		
+
 		JMenuItem aboutNortantisItem = new JMenuItem("About Nortantis");
 		helpMenu.add(aboutNortantisItem);
 		aboutNortantisItem.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -761,7 +768,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 	}
-	
+
 	private void showAboutNortantisDialog()
 	{
 		AboutNortantisDialog dialog = new AboutNortantisDialog(this);
@@ -803,8 +810,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (!(new File(absolutePath).exists()))
 		{
-			JOptionPane.showMessageDialog(null, "The map '" + absolutePath + "' cannot be opened because it does not exist.",
-					"Unable to Open Map", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(
+					null, "The map '" + absolutePath + "' cannot be opened because it does not exist.", "Unable to Open Map",
+					JOptionPane.ERROR_MESSAGE
+			);
 			return;
 		}
 
@@ -829,8 +838,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
-					JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(
+					null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
+					JOptionPane.ERROR_MESSAGE
+			);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
 		}
 	}
@@ -875,18 +886,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					// Zoom toward the mouse's position, keeping the point
 					// currently under the mouse the same if possible.
-					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x,
-							(int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width, visible.height);
+					scrollTo = new java.awt.Rectangle(
+							(int) (mousePosition.x * scale) - mousePosition.x + visible.x,
+							(int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width, visible.height
+					);
 				}
 				else
 				{
 					// Zoom toward or away from the current center of the
 					// screen.
 					java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale),
-							(int) (currentCentroid.y * scale));
-					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2,
-							visible.width, visible.height);
+					java.awt.Point targetCentroid = new java.awt.Point(
+							(int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale)
+					);
+					scrollTo = new java.awt.Rectangle(
+							targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height
+					);
 				}
 			}
 
@@ -924,10 +939,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 				else
 				{
-					// These two images will be the same if the zoom and display
-					// quality are the same, in which case
-					// ImageHelper.scaleByWidth
-					// called above returns the input image.
+					// These two images will be the same if the zoom and display quality are the same, in which case
+					// ImageHelper.scaleByWidth called above returns the input image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
 						ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, mapEditingPanel.getImage(), incrementalChangeArea);
@@ -965,11 +978,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				Dimension size = new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+				Dimension size = new Dimension(
+						mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom
+				);
 
-				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
-						mapEditingPanel.mapFromMapCreator.getHeight());
+				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(
+						size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight()
+				);
 				return (fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
