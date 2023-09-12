@@ -1370,6 +1370,7 @@ public class TextDrawer
 				// below the object instead of above.
 				if (riseOffset != 0.0 && allowNegatingRizeOffset)
 				{
+					g.setTransform(orig);
 					return drawNameRotated(map, g, -riseOffset, enableBoundsChecking, text, boldBackground, line1, line2, false);
 				}
 				else
