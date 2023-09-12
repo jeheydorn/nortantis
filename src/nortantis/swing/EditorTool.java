@@ -113,9 +113,10 @@ public abstract class EditorTool
 	{
 		int borderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 		double zoom = mainWindow.zoom;
+		double osScale = mapEditingPanel.osScale;
 		return new nortantis.graph.geom.Point(
-				(((pointOnMapEditingPanel.x - (borderWidth * zoom)) * (1.0 / zoom))), 
-				(((pointOnMapEditingPanel.y - (borderWidth * zoom)) * (1.0 / zoom))));
+				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)), 
+				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
 	}
 	
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
@@ -133,7 +134,7 @@ public abstract class EditorTool
 			return selected;
 		}
 		
-		int brushRadius = (int)((double)(brushDiameter / mainWindow.zoom)) / 2;
+		int brushRadius = (int)((double)((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
 		
 		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
 		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
@@ -153,7 +154,7 @@ public abstract class EditorTool
 			Set<Center> overlapping = updater.mapParts.graph.breadthFirstSearch(
 					(c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
 			Set<Edge> selected = new HashSet<>();
-			int brushRadius = (int)((double)(brushDiameter / mainWindow.zoom)) / 2;
+			int brushRadius = (int)((double)((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)) / 2;
 			for (Center center : overlapping)
 			{
 				for (Edge edge : center.borders)

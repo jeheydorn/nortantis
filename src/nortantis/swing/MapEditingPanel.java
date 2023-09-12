@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
@@ -27,7 +28,7 @@ import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 
 @SuppressWarnings("serial")
-public class MapEditingPanel extends ImagePanel
+public class MapEditingPanel extends UnscaledImagePanel
 {
 	private final Color highlightColor = new Color(255, 227, 74);
 	private final Color selectColor = Color.orange;
@@ -51,7 +52,6 @@ public class MapEditingPanel extends ImagePanel
 	private Area rotateToolArea;
 	private BufferedImage moveTextIconScaled;
 	private Area moveToolArea;
-	private AffineTransform baseTransform;
 	private Rectangle textBoxBoundsLine2;
 	private List<Area> areasToDraw;
 
@@ -182,16 +182,16 @@ public class MapEditingPanel extends ImagePanel
 
 	@Override
 	protected void paintComponent(Graphics g)
-	{
+	{	
 		super.paintComponent(g);
 
+		Graphics2D g2 = ((Graphics2D) g);
 		if (brushLocation != null)
 		{
 			g.setColor(highlightColor);
-			drawBrush(g);
+			drawBrush(g2);
 		}
 
-		baseTransform = ((Graphics2D) g).getTransform();
 
 		// Handle zoom and border width. This transform transforms from graph
 		// space to image space.
@@ -289,31 +289,34 @@ public class MapEditingPanel extends ImagePanel
 
 	public boolean isInTextRotateTool(java.awt.Point point)
 	{
-		if (rotateToolArea == null || baseTransform == null)
+		if (rotateToolArea == null)
 		{
 			return false;
 		}
 
 		java.awt.Point tPoint = new java.awt.Point();
-		baseTransform.transform(point, tPoint);
+		transformWithOsScaling.transform(point, tPoint);
 		return rotateToolArea.contains(tPoint);
 	}
 
 	public boolean isInTextMoveTool(java.awt.Point point)
 	{
-		if (moveToolArea == null || baseTransform == null)
+		if (moveToolArea == null)
 		{
 			return false;
 		}
 
 		java.awt.Point tPoint = new java.awt.Point();
-		baseTransform.transform(point, tPoint);
+		transformWithOsScaling.transform(point, tPoint);
 		return moveToolArea.contains(tPoint);
 	}
 
-	private void drawBrush(Graphics g)
+	private void drawBrush(Graphics2D g)
 	{
+		AffineTransform t = g.getTransform();
+		g.setTransform(transformWithOsScaling);
 		g.drawOval(brushLocation.x - brushDiameter / 2, brushLocation.y - brushDiameter / 2, brushDiameter, brushDiameter);
+		g.setTransform(t);
 	}
 	
 	private void drawAreas(Graphics g)

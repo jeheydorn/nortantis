@@ -461,7 +461,7 @@ public class ImageHelper
 			}
 		}
 	}
-
+	
 	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
 	{
 		for (int r = rowStart; r < rowStart + rows; r++)

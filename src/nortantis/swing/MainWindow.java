@@ -970,7 +970,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
 						mapEditingPanel.mapFromMapCreator.getHeight());
-				return fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth();
+				return (fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
 			{

@@ -454,8 +454,8 @@ public class NewSettingsDialog extends JDialog
 	private Dimension getMapDrawingAreaSize()
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new Dimension(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-				mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
+		return new Dimension((int)((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale),
+				(int)((mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale));
 
 	}
 
