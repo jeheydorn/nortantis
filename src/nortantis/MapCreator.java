@@ -483,6 +483,16 @@ public class MapCreator
 			mountainGroups = null;
 			cities = null;
 		}
+		
+		checkForCancel();
+		
+		//Add region boundaries to landBackground so that they show up when text draws.
+		if (settings.drawRegionColors)
+		{
+			Graphics2D g = landBackground.createGraphics();
+			g.setColor(settings.coastlineColor);
+			graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+		}
 
 		checkForCancel();
 
@@ -715,12 +725,6 @@ public class MapCreator
 		{
 			{
 				Graphics2D g = map.createGraphics();
-				g.setColor(settings.coastlineColor);
-				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
-			}
-
-			{
-				Graphics2D g = landBackground.createGraphics();
 				g.setColor(settings.coastlineColor);
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}

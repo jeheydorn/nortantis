@@ -1075,5 +1075,4 @@ public class IconsTool extends EditorTool
 	public void onBeforeLoadingNewMap()
 	{
 	}
-
 }

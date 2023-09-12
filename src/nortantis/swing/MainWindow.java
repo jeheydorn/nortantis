@@ -111,6 +111,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu recentSettingsMenuItem;
 	java.awt.Point mouseLocationForMiddleButtonDrag;
 	private JMenu helpMenu;
+	private JMenuItem refreshMenuItem;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -365,6 +366,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			public void componentResized(ComponentEvent componentEvent)
 			{
+				updateZoomOptionsBasedOnWindowSize();
 				if (ToolsPanel.fitToWindowZoomLevel.equals(toolsPanel.getZoomString()))
 				{
 					updater.createAndShowMapIncrementalUsingCenters(null);
@@ -583,6 +585,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		fileMenu.add(exportMapAsImageMenuItem);
 		exportMapAsImageMenuItem.addActionListener(new ActionListener()
 		{
+			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
 				handleExportAsImagePressed();
@@ -599,6 +602,25 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				handleExportHeightmapPressed();
 			}
 		});
+		
+		refreshMenuItem = new JMenuItem("Refresh Images and Redraw");
+		fileMenu.add(refreshMenuItem);
+		refreshMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				updater.dowWhenMapIsNotDrawing(() -> 
+				{
+					ImageCache.getInstance().clear();
+					updater.createAndShowMapFull();
+					// Tell Icons tool to refresh image previews
+					toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), false, true);
+				});
+
+			}
+		});
+		
 
 		editMenu = new JMenu("Edit");
 		menuBar.add(editMenu);
@@ -965,6 +987,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			mapEditingPanel.repaint();
 			mapEditingScrollPane.repaint();
 		}
+	}
+	
+	private void updateZoomOptionsBasedOnWindowSize()
+	{
+		double minZoom = translateZoomLevel(ToolsPanel.fitToWindowZoomLevel);
+		String selectedZoom = (String) toolsPanel.getZoomString();
+		toolsPanel.zoomComboBox.removeAllItems();
+		for (String level : toolsPanel.zoomLevels)
+		{
+			if (translateZoomLevel(level) >= minZoom)
+			{
+				toolsPanel.zoomComboBox.addItem(level);
+			}
+		}
+		toolsPanel.zoomComboBox.setSelectedItem(selectedZoom);
 	}
 
 	private double translateZoomLevel(String zoomLevel)

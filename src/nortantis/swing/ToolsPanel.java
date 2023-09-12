@@ -38,7 +38,7 @@ public class ToolsPanel extends JPanel
 	private JScrollPane toolsOptionsPanelContainer;
 	private JPanel currentToolOptionsPanel;
 	JComboBox<String> zoomComboBox;
-	private List<String> zoomLevels;
+	List<String> zoomLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
