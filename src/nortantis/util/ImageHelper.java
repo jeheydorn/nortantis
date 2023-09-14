@@ -212,15 +212,6 @@ public class ImageHelper
 			xSize = 1;
 		return xSize;
 	}
-	
-	// TODO remove if I don't use this
-	public static BufferedImage scaleBiCubicByWidth(BufferedImage image, int width)
-	{
-		int height = getHeightWhenScaledByWidth(image, width);
-		BufferedImage result = new BufferedImage(width, height, image.getType());
-		scaleInto(image, result, null);
-		return result;
-	}
 
 	/**
 	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic

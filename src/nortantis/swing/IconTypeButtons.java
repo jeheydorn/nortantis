@@ -3,7 +3,6 @@ package nortantis.swing;
 import java.util.List;
 
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 
 public class IconTypeButtons
 {

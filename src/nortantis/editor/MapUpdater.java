@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 
 import nortantis.CancelledException;
