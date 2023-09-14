@@ -244,7 +244,6 @@ public class CustomImagesDialog extends JDialog
 			public void actionPerformed(ActionEvent e)
 			{
 				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), originalCustomImagesPath);
-				UserPreferences.getInstance().customImagesPath = customImagesFolderField.getText();
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
 					JOptionPane.showMessageDialog(null, "Installed images successfully copied into " 
@@ -255,6 +254,15 @@ public class CustomImagesDialog extends JDialog
 				// If the custom images folder changed, then refresh images and redraw the map.
 				if (isChanged)
 				{
+					UserPreferences.getInstance().customImagesPath = customImagesFolderField.getText();
+					if (customImagesFolderField.getText() == null || customImagesFolderField.getText().isEmpty())
+					{
+						AssetsPath.setOverridablePath(AssetsPath.getInstallPath());
+					}
+					else
+					{
+						AssetsPath.setOverridablePath(customImagesFolderField.getText());
+					}
 					mainWindow.handleImagesRefresh();
 				}
 
