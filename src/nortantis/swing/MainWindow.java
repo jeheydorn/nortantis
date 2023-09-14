@@ -611,14 +611,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				updater.dowWhenMapIsNotDrawing(() ->
-				{
-					ImageCache.getInstance().clear();
-					updater.createAndShowMapFull();
-					// Tell Icons tool to refresh image previews
-					toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), false, true);
-				});
-
+				handleImagesRefresh();
 			}
 		});
 
@@ -799,6 +792,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAboutNortantisDialog();
 			}
+		});
+	}
+	
+	void handleImagesRefresh()
+	{
+		updater.dowWhenMapIsNotDrawing(() ->
+		{
+			ImageCache.getInstance().clear();
+			updater.createAndShowMapFull();
+			// Tell Icons tool to refresh image previews
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), false, true);
 		});
 	}
 

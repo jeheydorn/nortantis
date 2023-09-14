@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -33,6 +34,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.runner.Computer;
 
 import nortantis.editor.UserPreferences;
 import nortantis.util.AssetsPath;
@@ -52,6 +54,8 @@ public class CustomImagesDialog extends JDialog
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		content.setLayout(new BorderLayout());
 
+		String originalCustomImagesPath = UserPreferences.getInstance().customImagesPath;
+
 		int space = 6;
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
@@ -68,23 +72,23 @@ public class CustomImagesDialog extends JDialog
 
 		int spaceBetweenPaths = 2;
 		organizer.addLeftAlignedComponent(
-				new JLabel("<custom images folder>/borders/<border type>/<border images>"), space, spaceBetweenPaths, false
+				new JLabel("<custom images folder>" + File.separator + "borders" + File.separator + "<border type>" + File.separator + "<border images>"), space, spaceBetweenPaths, false
 		);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<custom images folder>/icons/cities/<city type>/<city images>"), spaceBetweenPaths, spaceBetweenPaths, false
+				new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "cities" + File.separator + "<city type>" + File.separator + "<city images>"), spaceBetweenPaths, spaceBetweenPaths, false
 		);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<custom images folder>/icons/hills/<hill type>/<hill images>"), spaceBetweenPaths, spaceBetweenPaths, false
+				new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "hills" + File.separator + "<hill type>" + File.separator + "<hill images>"), spaceBetweenPaths, spaceBetweenPaths, false
 		);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<custom images folder>/icons/mountains/<mountain type>/<mountain images>"), spaceBetweenPaths,
+				new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "mountains" + File.separator + "<mountain type>" + File.separator + "<mountain images>"), spaceBetweenPaths,
 				spaceBetweenPaths, false
 		);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<custom images folder>/icons/sand/<sand type>/<sand images>"), spaceBetweenPaths, spaceBetweenPaths, false
+				new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "sand" + File.separator + "<sand type>" + File.separator + "<sand images>"), spaceBetweenPaths, spaceBetweenPaths, false
 		);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<custom images folder>/icons/trees/<tree type>/<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false
+				new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "trees" + File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false
 		);
 
 		organizer.addLeftAlignedComponent(
@@ -239,6 +243,7 @@ public class CustomImagesDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), originalCustomImagesPath);
 				UserPreferences.getInstance().customImagesPath = customImagesFolderField.getText();
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
@@ -247,7 +252,11 @@ public class CustomImagesDialog extends JDialog
 							"Success", JOptionPane.INFORMATION_MESSAGE);
 				}
 				
-				// TODO If the custom images folder changed, then I should probably refresh images and redraw the map.
+				// If the custom images folder changed, then refresh images and redraw the map.
+				if (isChanged)
+				{
+					mainWindow.handleImagesRefresh();
+				}
 
 				dispose();
 			}
