@@ -15,6 +15,7 @@ import javax.swing.JPanel;
 
 import nortantis.IconType;
 import nortantis.ImageCache;
+import nortantis.MapSettings;
 
 @SuppressWarnings("serial")
 public class CityTypeChangeDialog extends JDialog
@@ -47,7 +48,8 @@ public class CityTypeChangeDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				iconsTool.setCityIconsType((String) cityIconsSetComboBox.getSelectedItem());
+				MapSettings settings = mainWindow.getSettingsFromGUI(false);
+				iconsTool.setCityIconsType(settings, (String) cityIconsSetComboBox.getSelectedItem());
 				dispose();	
 			}
 		});

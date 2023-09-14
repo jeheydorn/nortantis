@@ -1706,7 +1706,14 @@ public class ImageHelper
 	{
 		try
 		{
-			return ImageIO.read(new File(fileName));
+			BufferedImage image = ImageIO.read(new File(fileName));
+			if (image == null)
+			{
+				throw new RuntimeException("Can't read the file " + fileName + ". This can happen if the file is an unsupported format or is corrupted, "
+						+ "such as if you saved it with a file extension that doesn't match its actual format." );
+			}
+			
+			return image;
 		}
 		catch (IOException e)
 		{

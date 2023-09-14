@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -47,9 +48,10 @@ public class UserPreferences
 		final Properties props = new Properties();
 		try
 		{
-			if (Files.exists(Paths.get(userPrefsFileName)))
+			Path filePath = Paths.get(getSavePath().toString(), userPrefsFileName);
+			if (Files.exists(filePath))
 			{
-				props.load(new FileInputStream(userPrefsFileName));
+				props.load(new FileInputStream(filePath.toString()));
 
 				if (props.containsKey("zoomLevel"))
 				{
@@ -91,15 +93,15 @@ public class UserPreferences
 					{
 					}
 				}
-				
+
 				if (props.containsKey("recentMapFilePaths"))
 				{
 					String[] filePaths = props.getProperty("recentMapFilePaths").split("\t");
-					for (String filePath : filePaths)
+					for (String path : filePaths)
 					{
-						if (new File(filePath).exists())
+						if (new File(path).exists())
 						{
-							recentMapFilePaths.add(filePath);
+							recentMapFilePaths.add(path);
 						}
 					}
 				}
@@ -115,7 +117,7 @@ public class UserPreferences
 			Logger.printError("Error while loading user preferences:", e);
 		}
 	}
-	
+
 	public void addRecentMapFilePath(String filePath)
 	{
 		recentMapFilePaths.remove(filePath);
@@ -125,7 +127,7 @@ public class UserPreferences
 			recentMapFilePaths.pollLast();
 		}
 	}
-	
+
 	public Collection<String> getRecentMapFilePaths()
 	{
 		return Collections.unmodifiableCollection(recentMapFilePaths);
@@ -139,21 +141,45 @@ public class UserPreferences
 		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
 		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
 		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");
-		props.setProperty("defaultMapExportAction", defaultMapExportAction != null ? defaultMapExportAction.toString() 
-				: defaultDefaultExportAction.toString());
-		props.setProperty("defaultHeightmapExportAction", defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() 
-				: defaultDefaultExportAction.toString());
+		props.setProperty(
+				"defaultMapExportAction",
+				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString()
+		);
+		props.setProperty(
+				"defaultHeightmapExportAction",
+				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString()
+		);
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("customImagesPath", customImagesPath == null ? "" : customImagesPath);
 
 		try
 		{
-			props.store(new PrintWriter(userPrefsFileName.toString()), "");
+			Path savePath = getSavePath();
+			Files.createDirectories(savePath);
+			props.store(new PrintWriter(Paths.get(savePath.toString(), userPrefsFileName).toString()), "");
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 			Logger.printError("Error while saving user preferences:", e);
 		}
+	}
+
+	private Path getSavePath()
+	{
+		String OS = System.getProperty("os.name").toUpperCase();
+		if (OS.contains("WIN"))
+		{
+			return Paths.get(System.getenv("APPDATA"), "Nortantis");
+		}
+		else if (OS.contains("MAC"))
+		{
+			return Paths.get(System.getProperty("user.home"), ".Nortantis");
+		}
+		else if (OS.contains("NUX"))
+		{
+			return Paths.get(System.getProperty("user.home"), "Nortantis");
+		}
+		return Paths.get(System.getProperty("user.dir"));
 	}
 }

@@ -1,0 +1,1 @@
+Uninstall-Package -Name Nortantis

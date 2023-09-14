@@ -43,6 +43,7 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr.Method;
@@ -153,6 +154,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		exportHeightmapMenuItem.setEnabled(enable);
 		editMenu.setEnabled(enable);
 		viewMenu.setEnabled(enable);
+		refreshMenuItem.setEnabled(enable);
 
 		themePanel.enableOrDisableEverything(enable);
 		toolsPanel.enableOrDisableEverything(enable, settings);
@@ -821,7 +823,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		for (String filePath : UserPreferences.getInstance().getRecentMapFilePaths())
 		{
 			String fileName = FilenameUtils.getName(filePath);
-			JMenuItem item = new JMenuItem(fileName);
+			JMenuItem item = new JMenuItem(fileName + "  (" + Paths.get(FilenameUtils.getPath(filePath)).toString() + ")");
 			recentSettingsMenuItem.add(item);
 			hasRecents = true;
 			item.addActionListener(new ActionListener()
@@ -1250,7 +1252,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(currentFolder);
@@ -1445,6 +1447,35 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages);
 		}
 	}
+	
+	@Override
+	public void appendLoggerMessage(String message)
+	{
+		txtConsoleOutput.append(message);
+		consoleOutputPane.revalidate();
+		consoleOutputPane.repaint();
+	}
+
+	@Override
+	public void clearLoggerMessages()
+	{
+		txtConsoleOutput.setText("");
+		txtConsoleOutput.revalidate();
+		txtConsoleOutput.repaint();
+		consoleOutputPane.revalidate();
+		consoleOutputPane.repaint();
+	}
+
+	@Override
+	public boolean isReadyForLogging()
+	{
+		return txtConsoleOutput != null;
+	}
+
+	public Path getOpenSettingsFilePath()
+	{
+		return openSettingsFilePath;
+	}
 
 	/**
 	 * Launch the application.
@@ -1474,6 +1505,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			AssetsPath.setOverridablePath(customImagesPath);
 		}
+		else
+		{
+			AssetsPath.setOverridablePath(AssetsPath.getInstallPath());
+		}
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
@@ -1492,34 +1527,5 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 			}
 		});
-	}
-
-	@Override
-	public void appendLoggerMessage(String message)
-	{
-		txtConsoleOutput.append(message);
-		consoleOutputPane.revalidate();
-		consoleOutputPane.repaint();
-	}
-
-	@Override
-	public void clearLoggerMessages()
-	{
-		txtConsoleOutput.setText("");
-		txtConsoleOutput.revalidate();
-		txtConsoleOutput.repaint();
-		consoleOutputPane.revalidate();
-		consoleOutputPane.repaint();
-	}
-
-	@Override
-	public boolean isReadyForLogging()
-	{
-		return txtConsoleOutput != null;
-	}
-
-	public Path getOpenSettingsFilePath()
-	{
-		return openSettingsFilePath;
 	}
 }

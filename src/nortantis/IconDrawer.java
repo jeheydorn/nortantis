@@ -930,7 +930,7 @@ public class IconDrawer
 		for (Center t : corner.touches)
 		{
 			CenterTrees tTrees = trees.get(t.index);
-			if (tTrees == null || tTrees.treeType == null && tTrees.treeType.equals(""))
+			if (tTrees == null || tTrees.treeType == null || tTrees.treeType.equals(""))
 			{
 				continue;
 			}

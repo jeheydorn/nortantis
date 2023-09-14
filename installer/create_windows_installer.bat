@@ -23,6 +23,7 @@ jpackage ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dfile.encoding=UTF-8 ^
 --license-file end_user_license_agreement.txt
+:: Line to create Windows console: --win-console ^
 
 RMDIR /S /Q installer_input
 
