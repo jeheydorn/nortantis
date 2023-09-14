@@ -112,6 +112,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	java.awt.Point mouseLocationForMiddleButtonDrag;
 	private JMenu helpMenu;
 	private JMenuItem refreshMenuItem;
+	private JMenuItem customImagesMenuItem;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -162,7 +163,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1214, 701));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(ImageHelper.read(Paths.get(AssetsPath.get(), "internal/taskbar icon.png").toString()));
+		setIconImage(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString()));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()
@@ -602,7 +603,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				handleExportHeightmapPressed();
 			}
 		});
-		
+
 		refreshMenuItem = new JMenuItem("Refresh Images and Redraw");
 		fileMenu.add(refreshMenuItem);
 		refreshMenuItem.addActionListener(new ActionListener()
@@ -610,7 +611,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				updater.dowWhenMapIsNotDrawing(() -> 
+				updater.dowWhenMapIsNotDrawing(() ->
 				{
 					ImageCache.getInstance().clear();
 					updater.createAndShowMapFull();
@@ -620,7 +621,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			}
 		});
-		
 
 		editMenu = new JMenu("Edit");
 		menuBar.add(editMenu);
@@ -674,6 +674,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 		clearEntireMapButton.setEnabled(false);
+
+		customImagesMenuItem = new JMenuItem("Custom Images");
+		editMenu.add(customImagesMenuItem);
+		customImagesMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleCustomImagesPressed(fileMenu.getText(), refreshMenuItem.getText());
+			}
+		});
 
 		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
@@ -793,7 +804,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void showAboutNortantisDialog()
 	{
-		AboutNortantisDialog dialog = new AboutNortantisDialog(this);
+		AboutDialog dialog = new AboutDialog(this);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
@@ -988,7 +999,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			mapEditingScrollPane.repaint();
 		}
 	}
-	
+
 	private void updateZoomOptionsBasedOnWindowSize()
 	{
 		double minZoom = translateZoomLevel(ToolsPanel.fitToWindowZoomLevel);
@@ -1144,6 +1155,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void handleExportHeightmapPressed()
 	{
 		ImageExportDialog dialog = new ImageExportDialog(this, ImageExportType.Heightmap);
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
+	}
+
+	private void handleCustomImagesPressed(String fileMenuName, String nameOfMenuOptionToRefreshImages)
+	{
+		CustomImagesDialog dialog = new CustomImagesDialog(this, fileMenuName, nameOfMenuOptionToRefreshImages);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
@@ -1441,10 +1459,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 
 		final String subFolderAddedByWindowsInstaller = "app";
-		if (!Files.isDirectory(Paths.get(AssetsPath.get()))
-				&& Files.isDirectory(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get())))
+		if (!Files.isDirectory(Paths.get(AssetsPath.getInstallPath()))
+				&& Files.isDirectory(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.getInstallPath())))
 		{
-			AssetsPath.set(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.get()).toString());
+			AssetsPath.setInstallPath((Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.getInstallPath()).toString()));
+		}
+
+		String customImagesPath = UserPreferences.getInstance().customImagesPath;
+		if (customImagesPath != null && !customImagesPath.isEmpty() && new File(UserPreferences.getInstance().customImagesPath).exists())
+		{
+			AssetsPath.setOverridablePath(customImagesPath);
 		}
 
 		String fileToOpen = args.length > 0 ? args[0] : "";

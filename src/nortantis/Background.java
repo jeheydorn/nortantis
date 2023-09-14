@@ -326,7 +326,7 @@ public class Background
 		Graphics2D g = result.createGraphics();
 		g.drawImage(map, borderWidthScaled, borderWidthScaled, null);
 				
-		Path allBordersPath = Paths.get(AssetsPath.get(), "borders");
+		Path allBordersPath = Paths.get(AssetsPath.getOverridablePath(), "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
 		if (!Files.exists(borderPath))
 		{

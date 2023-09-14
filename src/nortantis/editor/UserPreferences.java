@@ -29,6 +29,7 @@ public class UserPreferences
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
+	public String customImagesPath;
 
 	public static UserPreferences instance;
 
@@ -102,6 +103,10 @@ public class UserPreferences
 						}
 					}
 				}
+				if (props.containsKey("customImagesPath"))
+				{
+					customImagesPath = props.getProperty("customImagesPath");
+				}
 			}
 		}
 		catch (IOException e)
@@ -139,6 +144,7 @@ public class UserPreferences
 		props.setProperty("defaultHeightmapExportAction", defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() 
 				: defaultDefaultExportAction.toString());
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
+		props.setProperty("customImagesPath", customImagesPath == null ? "" : customImagesPath);
 
 		try
 		{

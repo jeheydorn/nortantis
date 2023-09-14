@@ -36,9 +36,9 @@ import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
-public class AboutNortantisDialog extends JDialog
+public class AboutDialog extends JDialog
 {
-	public AboutNortantisDialog(MainWindow mainWindow)
+	public AboutDialog(MainWindow mainWindow)
 	{
 		super(mainWindow, "About Nortantis", Dialog.ModalityType.APPLICATION_MODAL);
 		setResizable(false);
@@ -47,7 +47,7 @@ public class AboutNortantisDialog extends JDialog
 		add(content, BorderLayout.CENTER);
 		content.setLayout(new BorderLayout());
 		content.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		BufferedImage nortantisImage = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "taskbar icon medium size.png").toString());
+		BufferedImage nortantisImage = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "taskbar icon medium size.png").toString());
 		content.add(new ImagePanel(nortantisImage), BorderLayout.WEST);
 
 		JPanel rightPanel = new JPanel();

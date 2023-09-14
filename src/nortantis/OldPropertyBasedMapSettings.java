@@ -374,7 +374,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				String result = props.getProperty("backgroundTextureImage");
 				if (result == null)
-					result = Paths.get(AssetsPath.get(), "example textures").toString();
+					result = Paths.get(AssetsPath.getInstallPath(), "example textures").toString();
 				return result;
 			}
 		});

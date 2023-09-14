@@ -397,10 +397,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Determines the size at which the rotation and move tool icons appear.
 		final double iconScale = 0.2;
 		
-		BufferedImage rotateIcon = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "rotate text.png").toString());
+		BufferedImage rotateIcon = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString());
 		rotateTextIconScaled = ImageHelper.scaleByWidth(rotateIcon, (int) (rotateIcon.getWidth() * resolution * iconScale),
 				Method.ULTRA_QUALITY);
-		BufferedImage moveIcon = ImageHelper.read(Paths.get(AssetsPath.get(), "internal", "move text.png").toString());
+		BufferedImage moveIcon = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString());
 		moveTextIconScaled = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY);
 	}
 

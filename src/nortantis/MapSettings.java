@@ -427,7 +427,7 @@ public class MapSettings implements Serializable
 		}
 		if (backgroundTextureImage == null || backgroundTextureImage.isEmpty())
 		{
-			backgroundTextureImage = Paths.get(AssetsPath.get(), "example textures").toString();
+			backgroundTextureImage = Paths.get(AssetsPath.getInstallPath(), "example textures").toString();
 		}
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));

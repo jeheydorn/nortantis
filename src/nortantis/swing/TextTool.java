@@ -282,7 +282,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.get(), "internal/Text tool.png").toString();
+		return Paths.get(AssetsPath.getInstallPath(), "internal/Text tool.png").toString();
 	}
 
 	@Override

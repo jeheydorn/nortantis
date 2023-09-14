@@ -2,13 +2,27 @@ package nortantis.util;
 
 public class AssetsPath
 {
-	private static String assetsPath = "assets";
-	public static String get()
+	private static String installPath = "assets";
+	private static String overridablePath = "assets";
+	
+	public static String getInstallPath()
 	{
-		return assetsPath;
+		return installPath;
 	}
-	public static void set(String path)
+	
+	public static String getOverridablePath()
 	{
-		assetsPath = path;
+		return overridablePath;
+	}
+	
+	public static void setInstallPath(String path)
+	{
+		installPath = path;
+	}
+
+
+	public static void setOverridablePath(String path)
+	{
+		overridablePath = path;
 	}
 }

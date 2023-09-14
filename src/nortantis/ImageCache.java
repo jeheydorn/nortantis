@@ -313,7 +313,7 @@ public class ImageCache
 
 	public static Set<String> loadIconGroupNames(IconType iconType)
 	{
-		String path = Paths.get(AssetsPath.get(), "icons", iconType.toString()).toString();
+		String path = Paths.get(AssetsPath.getOverridablePath(), "icons", iconType.toString()).toString();
 
 		String[] folderNames = new File(path).list(new FilenameFilter()
 		{
@@ -384,7 +384,7 @@ public class ImageCache
 
 	private static String getIconGroupPath(IconType iconType, String groupName)
 	{
-		return Paths.get(AssetsPath.get(), "icons", iconType.toString(), groupName).toString();
+		return Paths.get(AssetsPath.getOverridablePath(), "icons", iconType.toString(), groupName).toString();
 	}
 
 	public void clear()

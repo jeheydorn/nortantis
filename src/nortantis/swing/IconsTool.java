@@ -125,7 +125,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.get(), "internal/Icon tool.png").toString();
+		return Paths.get(AssetsPath.getInstallPath(), "internal/Icon tool.png").toString();
 	}
 
 	@Override
@@ -458,6 +458,10 @@ public class IconsTool extends EditorTool
 				for (RadioButtonWithImage button : buttons.buttons)
 				{
 					String cityIconNameWithoutWidthOrExtension = button.getText();
+					if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+					{
+						throw new IllegalArgumentException("No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+					}
 					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst();
 					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon));
 					previewImages.add(preview);

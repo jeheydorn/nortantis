@@ -60,7 +60,7 @@ public class GraphCreator
         heightMap = ImageHelper.blur(heightMap, (int)IconDrawer.findMeanCenterWidth(graph) / 2, false);
        
         // Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
-        BufferedImage mountains = ImageHelper.read(Paths.get(AssetsPath.get(), "internal/mountain texture.png").toString());
+        BufferedImage mountains = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/mountain texture.png").toString());
         if (mountains.getType() != BufferedImage.TYPE_USHORT_GRAY)
         {
         	mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);

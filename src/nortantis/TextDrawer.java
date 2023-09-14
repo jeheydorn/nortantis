@@ -133,10 +133,10 @@ public class TextDrawer
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : settings.books)
 		{
-			placeNames.addAll(readNameList(AssetsPath.get() + "/books/" + book + "_place_names.txt"));
-			personNames.addAll(readNameList(AssetsPath.get() + "/books/" + book + "_person_names.txt"));
-			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs(AssetsPath.get() + "/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_place_names.txt"));
+			personNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_person_names.txt"));
+			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,

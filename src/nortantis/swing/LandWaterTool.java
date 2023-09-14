@@ -79,7 +79,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.get(), "internal/Land Water tool.png").toString();
+		return Paths.get(AssetsPath.getInstallPath(), "internal/Land Water tool.png").toString();
 	}
 	
 	@Override

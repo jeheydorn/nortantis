@@ -46,7 +46,7 @@ public class NameCompiler
 		List<String> lines;
 		try
 		{
-			lines = Files.readAllLines(Paths.get(AssetsPath.get(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
+			lines = Files.readAllLines(Paths.get(AssetsPath.getInstallPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
 		} catch (IOException e)
 		{
 			throw new RuntimeException("Unable to read word dictionary file.", e);

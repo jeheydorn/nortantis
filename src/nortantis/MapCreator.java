@@ -1382,7 +1382,7 @@ public class MapCreator
 
 	public static Set<String> getAvailableBorderTypes()
 	{
-		File[] directories = new File(Paths.get(AssetsPath.get(), "borders").toString()).listFiles(File::isDirectory);
+		File[] directories = new File(Paths.get(AssetsPath.getOverridablePath(), "borders").toString()).listFiles(File::isDirectory);
 		return new TreeSet<String>(Arrays.stream(directories).map(file -> file.getName()).collect(Collectors.toList()));
 	}
 

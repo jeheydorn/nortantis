@@ -27,7 +27,7 @@ import nortantis.util.Range;
  */
 public class SettingsGenerator
 {
-	private static String defaultSettingsFile = Paths.get(AssetsPath.get(), "internal/old_paper.properties").toString();
+	private static String defaultSettingsFile = Paths.get(AssetsPath.getInstallPath(), "internal/old_paper.properties").toString();
 	public static int minWorldSize = 2000;
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes can result to in a map that is all land or all ocean.
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
@@ -170,7 +170,7 @@ public class SettingsGenerator
 		
 		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching 
 		// to the background texture file path field.
-		Path exampleTexturesPath = Paths.get(AssetsPath.get(), "example textures");
+		Path exampleTexturesPath = Paths.get(AssetsPath.getInstallPath(), "example textures");
 		List<Path> textureFiles;
 		try
 		{
@@ -260,7 +260,7 @@ public class SettingsGenerator
 	
 	public static List<String> getAllBooks()
 	{
-		String[] filenames = new File(Paths.get(AssetsPath.get(), "books").toString()).list(new FilenameFilter()
+		String[] filenames = new File(Paths.get(AssetsPath.getInstallPath(), "books").toString()).list(new FilenameFilter()
 		{
 			public boolean accept(File arg0, String name)
 			{
