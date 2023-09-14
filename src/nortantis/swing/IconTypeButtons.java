@@ -15,12 +15,6 @@ public class IconTypeButtons
 	 */
 	public JPanel buttonsPanel;
 	
-	public IconTypeButtons(RowHider hider, List<RadioButtonWithImage> buttons)
-	{
-		this.hider = hider;
-		this.buttons = buttons;
-	}
-	
 	public IconTypeButtons(RowHider hider, List<RadioButtonWithImage> buttons, JPanel buttonsPanel)
 	{
 		this.hider = hider;

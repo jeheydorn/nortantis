@@ -242,6 +242,7 @@ public class IconsTool extends EditorTool
 
 		ActionListener modeListener = new ActionListener()
 		{
+
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -274,18 +275,15 @@ public class IconsTool extends EditorTool
 		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
 		eraseModeButton.setToolTipText("Erase using the selected brush (Alt+E)");
 		eraseModeButton.addActionListener(modeListener);
-		modeHider = organizer.addLabelAndComponentsHorizontal("Mode:", "Whether to draw or erase using the selected brush type.",
-				Arrays.asList(drawModeButton, eraseModeButton), 0, 5);
+		modeHider = organizer.addLabelAndComponentsHorizontal(
+				"Mode:", "Whether to draw or erase using the selected brush type.", Arrays.asList(drawModeButton, eraseModeButton), 0, 5
+		);
 
-		mountainTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.mountains);
-		hillTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.hills);
-		duneTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.sand);
-		treeTypes = createRadioButtonsForIconType(toolOptionsPanel, organizer, IconType.trees);
-		// Prevent cacti from being the default tree brush
-		if (treeTypes.buttons.size() > 1 && treeTypes.buttons.get(0).getText().equals("cacti"))
-		{
-			treeTypes.buttons.get(1).getRadioButton().setSelected(true);
-		}
+		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes);
+		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes);
+		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes);
+		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes);
+		selectDefaultTreesButtion();
 
 		lblCityIconType = new JLabel("<not set>");
 		JButton changeButton = new JButton("Change");
@@ -300,10 +298,11 @@ public class IconsTool extends EditorTool
 				dialog.setVisible(true);
 			}
 		});
-		cityTypeHider = organizer.addLabelAndComponentsVertical("City icons type:", "",
-				Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
+		cityTypeHider = organizer.addLabelAndComponentsVertical(
+				"City icons type:", "", Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton)
+		);
 
-		createRadioButtonsForCities(toolOptionsPanel, organizer);
+		createOrUpdateRadioButtonsForCities(organizer);
 		showSelectedCityTypeButtons();
 
 		// River options
@@ -322,8 +321,7 @@ public class IconsTool extends EditorTool
 					riverWidthDisplay.setText(riverWidthSlider.getValue() + "");
 				}
 			});
-			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:", "",
-					Arrays.asList(riverWidthSlider, riverWidthDisplay));
+			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:", "", Arrays.asList(riverWidthSlider, riverWidthDisplay));
 		}
 
 		densitySlider = new JSlider(1, 50);
@@ -334,21 +332,19 @@ public class IconsTool extends EditorTool
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
-		
-		
+
 		onlyUpdateMountainsCheckbox = new JCheckBox("Only update mountains");
 		onlyUpdateMountainsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateMountainsCheckbox);
-		
+
 		onlyUpdateHillsCheckbox = new JCheckBox("Only update hills");
 		onlyUpdateHillsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateHillsCheckbox);
-		
+
 		onlyUpdateTreesCheckbox = new JCheckBox("Only update trees");
 		onlyUpdateTreesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateTreesCheckbox);
-		
+
 		onlyUpdateDunesCheckbox = new JCheckBox("Only update dunes");
 		onlyUpdateDunesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateDunesCheckbox);
-		
-		
+
 		mountainsButton.doClick();
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
@@ -362,6 +358,17 @@ public class IconsTool extends EditorTool
 		}
 
 		return toolOptionsPanel;
+	}
+
+	/**
+	 * Prevents cacti from being the default tree brush
+	 */
+	private void selectDefaultTreesButtion()
+	{
+		if (treeTypes.buttons.size() > 1 && treeTypes.buttons.get(0).getText().equals("cacti"))
+		{
+			treeTypes.buttons.get(1).getRadioButton().setSelected(true);
+		}
 	}
 
 	private void setupKeyboardShortcuts()
@@ -389,8 +396,10 @@ public class IconsTool extends EditorTool
 
 	private void updateTypePanels()
 	{
-		modeHider.setVisible(mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected()
-				|| treesButton.isSelected() || riversButton.isSelected() || citiesButton.isSelected());
+		modeHider.setVisible(
+				mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected() || treesButton.isSelected()
+						|| riversButton.isSelected() || citiesButton.isSelected()
+		);
 
 		mountainTypes.hider.setVisible(mountainsButton.isSelected() && drawModeButton.isSelected());
 		hillTypes.hider.setVisible(hillsButton.isSelected() && drawModeButton.isSelected());
@@ -399,21 +408,22 @@ public class IconsTool extends EditorTool
 		IconTypeButtons cityTypeButtons = getSelectedCityTypeButtons();
 		if (cityTypeButtons != null)
 		{
-			cityTypeButtons.hider.setVisible(citiesButton.isSelected()&& drawModeButton.isSelected());
+			cityTypeButtons.hider.setVisible(citiesButton.isSelected() && drawModeButton.isSelected());
 		}
 		cityTypeHider.setVisible(citiesButton.isSelected() && drawModeButton.isSelected());
 		densityHider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
 		riverOptionHider.setVisible(riversButton.isSelected() && drawModeButton.isSelected());
-		brushSizeHider.setVisible(!(riversButton.isSelected() && drawModeButton.isSelected()) 
-				&& !(citiesButton.isSelected() && drawModeButton.isSelected()));
-		
+		brushSizeHider.setVisible(
+				!(riversButton.isSelected() && drawModeButton.isSelected()) && !(citiesButton.isSelected() && drawModeButton.isSelected())
+		);
+
 		onlyUpdateMountainsCheckboxHider.setVisible(mountainsButton.isSelected() && drawModeButton.isSelected());
 		onlyUpdateHillsCheckboxHider.setVisible(hillsButton.isSelected() && drawModeButton.isSelected());
 		onlyUpdateDunesCheckboxHider.setVisible(dunesButton.isSelected() && drawModeButton.isSelected());
 		onlyUpdateTreesCheckboxHider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
 	}
 
-	private IconTypeButtons createRadioButtonsForIconType(JPanel toolOptionsPanel, GridBagOrganizer organizer, IconType iconType)
+	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing)
 	{
 		ButtonGroup group = new ButtonGroup();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
@@ -427,7 +437,34 @@ public class IconsTool extends EditorTool
 		{
 			radioButtons.get(0).getRadioButton().setSelected(true);
 		}
-		return new IconTypeButtons(organizer.addLabelAndComponentsVertical("Type:", "", radioButtons), radioButtons);
+
+		if (existing == null)
+		{
+			JPanel buttonsPanel = new JPanel();
+			return new IconTypeButtons(
+					organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", radioButtons, buttonsPanel), radioButtons,
+					buttonsPanel
+			);
+		}
+		else
+		{
+			existing.buttons = radioButtons;
+			GridBagOrganizer.updateComponentsPanelVertical(radioButtons, existing.buttonsPanel);
+			return existing;
+		}
+
+	}
+
+	@Override
+	public void handleImagesRefresh()
+	{
+		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes);
+		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes);
+		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes);
+		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes);
+		selectDefaultTreesButtion();
+
+		createOrUpdateRadioButtonsForCities(null);
 	}
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
@@ -460,7 +497,9 @@ public class IconsTool extends EditorTool
 					String cityIconNameWithoutWidthOrExtension = button.getText();
 					if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
 					{
-						throw new IllegalArgumentException("No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+						throw new IllegalArgumentException(
+								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'"
+						);
 					}
 					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst();
 					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon));
@@ -566,8 +605,10 @@ public class IconsTool extends EditorTool
 		if (showIconPreviewsUsingLandBackground)
 		{
 			Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
-					.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
-							settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
+					.createBackgroundImageDisplaysImages(
+							size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand, settings.generateBackground,
+							settings.generateBackgroundFromTexture, settings.backgroundTextureImage
+					);
 			previewImage = tuple.getThird();
 			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
 		}
@@ -619,15 +660,25 @@ public class IconsTool extends EditorTool
 		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
 	}
 
-	private void createRadioButtonsForCities(JPanel toolOptionsPanel, GridBagOrganizer organizer)
+	private void createOrUpdateRadioButtonsForCities(GridBagOrganizer organizer)
 	{
-		cityTypeButtonsMap = new HashMap<>();
-
 		Set<String> cityTypes = ImageCache.getInstance().getIconGroupNames(IconType.cities);
 
-		if (cityTypes.isEmpty())
+		if (cityTypeButtonsMap == null)
 		{
-			return;
+			cityTypeButtonsMap = new HashMap<>();
+		}
+		else
+		{
+			for (String cityType : cityTypeButtonsMap.keySet())
+			{
+				if (!cityTypes.contains(cityType))
+				{
+					cityTypeButtonsMap.get(cityType).buttons = new ArrayList<>();
+					cityTypeButtonsMap.get(cityType).buttonsPanel.removeAll();
+					cityTypeButtonsMap.get(cityType).hider.setVisible(false);
+				}
+			}
 		}
 
 		for (String cityType : cityTypes)
@@ -644,12 +695,26 @@ public class IconsTool extends EditorTool
 			if (radioButtons.size() > 0)
 			{
 				radioButtons.get(0).getRadioButton().setSelected(true);
+			}
 
+			IconTypeButtons existing = cityTypeButtonsMap.get(cityType);
+			if (existing == null)
+			{
+				JPanel buttonsPanel = new JPanel();
 				IconTypeButtons iconTypeButtons = new IconTypeButtons(
-						organizer.addLabelAndComponentsVertical("Cities:", "", radioButtons), radioButtons);
+						organizer.addLabelAndComponentsVerticalWithComponentPanel("Cities:", "", radioButtons, buttonsPanel), radioButtons,
+						buttonsPanel
+				);
 				cityTypeButtonsMap.put(cityType, iconTypeButtons);
 			}
+			else
+			{
+				existing.buttons = radioButtons;
+				GridBagOrganizer.updateComponentsPanelVertical(radioButtons, existing.buttonsPanel);
+			}
+
 		}
+
 	}
 
 	private void showSelectedCityTypeButtons()
@@ -801,8 +866,7 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					cEdit.trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0,
-							Math.abs(rand.nextLong()));
+					cEdit.trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
 				}
 			}
 			else
@@ -862,7 +926,7 @@ public class IconsTool extends EditorTool
 				eraseIconAndTreeEdits(center, mainWindow.edits);
 			}
 		}
-		
+
 		handleMapChange(selected);
 	}
 

@@ -31,8 +31,7 @@ public abstract class EditorTool
 	protected ToolsPanel toolsPanel;
 	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
 	protected MapUpdater updater;
-	
-	
+
 	public EditorTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
 		this.mainWindow = parent;
@@ -42,49 +41,52 @@ public abstract class EditorTool
 		undoer = parent.undoer;
 		this.updater = mapUpdater;
 	}
-	
+
 	public abstract String getToolbarName();
-	
+
 	public abstract String getImageIconFilePath();
-	
+
 	public abstract void onBeforeSaving();
-	
+
 	public abstract void onSwitchingAway();
-	
+
 	public abstract void onActivate();
-	
+
 	protected abstract JPanel createToolsOptionsPanel();
-	
 
-
-	
 	public JPanel getToolOptionsPanel()
 	{
 		return toolOptionsPanel;
 	}
 
 	protected abstract void handleMouseClickOnMap(MouseEvent e);
+
 	protected abstract void handleMousePressedOnMap(MouseEvent e);
+
 	protected abstract void handleMouseReleasedOnMap(MouseEvent e);
+
 	protected abstract void handleMouseMovedOnMap(MouseEvent e);
+
 	protected abstract void handleMouseDraggedOnMap(MouseEvent e);
+
 	protected abstract void handleMouseExitedMap(MouseEvent e);
-	
+
 	/**
-	 * Do any processing to the generated map before displaying it, and return the map to display.
-	 * This is also the earliest time when mapParts is initialized.
-	 * @param map The generated map
+	 * Do any processing to the generated map before displaying it, and return the map to display. This is also the earliest time when
+	 * mapParts is initialized.
+	 * 
+	 * @param map
+	 *            The generated map
 	 * @return The map to display
 	 */
 	protected abstract void onBeforeShowMap();
-	
 
 	public void setToggled(boolean toggled)
 	{
 		toggleButton.setSelected(toggled);
 		updateBorder();
 	}
-	
+
 	public void updateBorder()
 	{
 		if (UIManager.getLookAndFeel() instanceof FlatDarkLaf)
@@ -101,46 +103,47 @@ public abstract class EditorTool
 			}
 		}
 	}
-	
+
 	public void setToggleButton(JToggleButton toggleButton)
 	{
 		this.toggleButton = toggleButton;
 	}
-	
+
 	protected abstract void onAfterUndoRedo();
-	
+
 	public nortantis.graph.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
 	{
 		int borderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 		double zoom = mainWindow.zoom;
 		double osScale = mapEditingPanel.osScale;
 		return new nortantis.graph.geom.Point(
-				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)), 
-				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
+				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
+				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale))
+		);
 	}
-	
+
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
-		
+
 		Center center = updater.mapParts.graph.findClosestCenter(getPointOnGraph(pointFromMouse));
 		if (center != null)
 		{
 			selected.add(center);
 		}
-			
+
 		if (brushDiameter <= 1)
 		{
 			return selected;
 		}
-		
-		int brushRadius = (int)((double)((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
-		
+
+		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
+
 		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
-		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
+		return updater.mapParts.graph
+				.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
 	}
-	
-	
+
 	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		if (brushDiameter <= 1)
@@ -151,10 +154,10 @@ public abstract class EditorTool
 		{
 			nortantis.graph.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
 			Center closestCenter = updater.mapParts.graph.findClosestCenter(graphPoint);
-			Set<Center> overlapping = updater.mapParts.graph.breadthFirstSearch(
-					(c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
+			Set<Center> overlapping = updater.mapParts.graph
+					.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
 			Set<Edge> selected = new HashSet<>();
-			int brushRadius = (int)((double)((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)) / 2;
+			int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)) / 2;
 			for (Center center : overlapping)
 			{
 				for (Edge edge : center.borders)
@@ -169,7 +172,7 @@ public abstract class EditorTool
 			return selected;
 		}
 	}
-	
+
 	private Edge getClosestEdge(nortantis.graph.geom.Point point)
 	{
 		Center center = updater.mapParts.graph.findClosestCenter(point);
@@ -192,14 +195,14 @@ public abstract class EditorTool
 			}
 			else
 			{
-				centroid = edge.v0.loc.add(edge.v1.loc).mult(0.5);	
+				centroid = edge.v0.loc.add(edge.v1.loc).mult(0.5);
 			}
-			
+
 			if (centroid == null)
 			{
 				continue;
 			}
-			
+
 			if (closest == null)
 			{
 				closest = edge;
@@ -220,16 +223,15 @@ public abstract class EditorTool
 						closestDistance = distance;
 					}
 				}
-				
+
 			}
 		}
 		return closest;
 	}
-	
+
 	/**
-	 * Determines if a center is overlapping the given circle. 
-	 * Note that this isn't super precise because it doesn't account for the edge of the circle protruding into the center without overlapping
-	 * any of the center's corners or centroid.
+	 * Determines if a center is overlapping the given circle. Note that this isn't super precise because it doesn't account for the edge of
+	 * the circle protruding into the center without overlapping any of the center's corners or centroid.
 	 */
 	private boolean isCenterOverlappingCircle(Center center, nortantis.graph.geom.Point circleCenter, double radius)
 	{
@@ -240,28 +242,33 @@ public abstract class EditorTool
 				return true;
 			}
 		}
-		
+
 		return isPointWithinCircle(center.loc.x, center.loc.y, circleCenter, radius);
 	}
-	
+
 	private boolean isPointWithinCircle(double x, double y, nortantis.graph.geom.Point circleCenter, double radius)
 	{
 		double deltaX = x - circleCenter.x;
 		double deltaY = y - circleCenter.y;
 		return Math.sqrt((deltaX * deltaX) + (deltaY * deltaY)) <= radius;
 	}
-	
-	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages);
-	
+
+	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange,
+			boolean changeEffectsBackgroundImages);
+
 	public abstract boolean shouldShowTextWhenTextIsEnabled();
-	
+
 	public abstract void getSettingsFromGUI(MapSettings settings);
-	
+
 	/**
-	 * If this tool enables or disables any components, it should be done in this method so that the framework can call it to
-	 * re-disable components after enabling everything in the tools options panel when the editor is ready to use.
+	 * If this tool enables or disables any components, it should be done in this method so that the framework can call it to re-disable
+	 * components after enabling everything in the tools options panel when the editor is ready to use.
 	 */
 	public abstract void handleEnablingAndDisabling(MapSettings settings);
-	
+
 	public abstract void onBeforeLoadingNewMap();
+
+	public void handleImagesRefresh()
+	{
+	}
 }

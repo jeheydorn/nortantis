@@ -235,6 +235,18 @@ public class ToolsPanel extends JPanel
 		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
 	}
+	
+	public void handleImagesRefresh(MapSettings settings)
+	{
+		// Cause the Icons tool to update its image radio buttons
+		for (EditorTool tool : tools)
+		{
+			tool.handleImagesRefresh();
+		}
+
+		// Trigger re-creation of image previews in the Icons tool
+		loadSettingsIntoGUI(settings, false, true);
+}
 
 	public String getZoomString()
 	{

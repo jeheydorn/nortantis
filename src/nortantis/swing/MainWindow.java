@@ -802,7 +802,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			ImageCache.getInstance().clear();
 			updater.createAndShowMapFull();
 			// Tell Icons tool to refresh image previews
-			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), false, true);
+			toolsPanel.handleImagesRefresh(getSettingsFromGUI(false));
 		});
 	}
 
