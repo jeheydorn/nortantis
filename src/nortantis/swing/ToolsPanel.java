@@ -45,19 +45,19 @@ public class ToolsPanel extends JPanel
 	MainWindow mainWindow;
 	MapUpdater updater;
 
-	
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
 	{
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, getPreferredSize().height));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
-		
+
 		this.mainWindow = mainWindow;
 		this.updater = updater;
-		
+
 		// Setup tools
-		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), 
-				new IconsTool(mainWindow, this, updater), 
-				new TextTool(mainWindow, this, updater));
+		tools = Arrays.asList(
+				new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater),
+				new TextTool(mainWindow, this, updater)
+		);
 		currentTool = tools.get(2);
 
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
@@ -65,7 +65,8 @@ public class ToolsPanel extends JPanel
 
 		JPanel toolSelectPanel = new JPanel(new FlowLayout());
 		toolSelectPanel.setMaximumSize(new Dimension(toolSelectPanel.getMaximumSize().width, 20));
-		toolSelectPanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
+		toolSelectPanel
+				.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
 		add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
@@ -93,25 +94,26 @@ public class ToolsPanel extends JPanel
 			tool.updateBorder();
 			toolSelectPanel.add(toolButton);
 		}
-		
+
 		currentTool.setToggled(true);
 
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer = new JScrollPane(currentToolOptionsPanel);
 
 		add(toolsOptionsPanelContainer);
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
-				currentTool.getToolbarName() + " Options");
+		toolOptionsPanelBorder = BorderFactory
+				.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
-
 
 		JPanel progressAndBottomPanel = new JPanel();
 		progressAndBottomPanel.setLayout(new BoxLayout(progressAndBottomPanel, BoxLayout.Y_AXIS));
 		// Progress bar
 		JPanel progressBarPanel = new JPanel();
 		progressBarPanel.setLayout(new BoxLayout(progressBarPanel, BoxLayout.X_AXIS));
-		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0, 
-						SwingHelper.borderWidthBetweenComponents));
+		progressBarPanel.setBorder(
+				BorderFactory
+						.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0, SwingHelper.borderWidthBetweenComponents)
+		);
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressBar.setString("Drawing...");
@@ -123,16 +125,18 @@ public class ToolsPanel extends JPanel
 		// Setup bottom panel
 		bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
-		bottomPanel.setBorder(BorderFactory.createEmptyBorder(
-				SwingHelper.borderWidthBetweenComponents, 
-				SwingHelper.borderWidthBetweenComponents,
-				SwingHelper.borderWidthBetweenComponents, 
-				SwingHelper.borderWidthBetweenComponents));
+		bottomPanel.setBorder(
+				BorderFactory.createEmptyBorder(
+						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
+						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents
+				)
+		);
 
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
-		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels,"
-				+ " adjust View > Image Quality.");
+		lblZoom.setToolTipText(
+				"Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels," + " adjust View > Image Quality."
+		);
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%", "150%", "200%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -150,11 +154,10 @@ public class ToolsPanel extends JPanel
 			zoomComboBox.setSelectedItem(defaultZoomLevel);
 			UserPreferences.getInstance().zoomLevel = defaultZoomLevel;
 		}
-		
+
 		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
 		// causes bottomPanel to expand vertically.
 		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
-
 
 		bottomPanel.add(zoomComboBox);
 		zoomComboBox.addActionListener(new ActionListener()
@@ -184,7 +187,7 @@ public class ToolsPanel extends JPanel
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
 	}
-	
+
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
 		for (EditorTool tool : tools)
@@ -192,7 +195,7 @@ public class ToolsPanel extends JPanel
 			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
 		}
 	}
-	
+
 	public void resetToolsForNewMap()
 	{
 		for (EditorTool tool : tools)
@@ -200,7 +203,7 @@ public class ToolsPanel extends JPanel
 			tool.onBeforeLoadingNewMap();
 		}
 	}
-	
+
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		for (EditorTool tool : tools)
@@ -208,7 +211,7 @@ public class ToolsPanel extends JPanel
 			tool.getSettingsFromGUI(settings);
 		}
 	}
-	
+
 	public void handleToolSelected(EditorTool selectedTool)
 	{
 		showAsDrawing(true);
@@ -222,18 +225,18 @@ public class ToolsPanel extends JPanel
 		currentTool.setToggled(false);
 		currentTool = selectedTool;
 		currentTool.setToggled(true);
-		// I'm calling onSwitchingAway after setting currentTool because the place EditorTool.shouldShowTextWhenTextIsEnabled 
-		// in MainWindow.createMapUpdater depends on it. 
+		// I'm calling onSwitchingAway after setting currentTool because the place EditorTool.shouldShowTextWhenTextIsEnabled
+		// in MainWindow.createMapUpdater depends on it.
 		prevTool.onSwitchingAway();
 		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
 		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
 		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
-		toolsOptionsPanelContainer.repaint();		
+		toolsOptionsPanelContainer.repaint();
 		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
 	}
-	
+
 	public void handleImagesRefresh(MapSettings settings)
 	{
 		// Cause the Icons tool to update its image radio buttons
@@ -242,17 +245,20 @@ public class ToolsPanel extends JPanel
 			tool.handleImagesRefresh();
 		}
 
-		// Trigger re-creation of image previews in the Icons tool
-		loadSettingsIntoGUI(settings, false, true);
-}
+		if (settings != null)
+		{
+			// Trigger re-creation of image previews in the Icons tool
+			loadSettingsIntoGUI(settings, false, true);
+		}
+	}
 
 	public String getZoomString()
 	{
 		return (String) zoomComboBox.getSelectedItem();
 	}
-	
+
 	public void showAsDrawing(boolean isDrawing)
-	{	
+	{
 		zoomComboBox.setEnabled(!isDrawing);
 
 		if (isDrawing)
@@ -266,18 +272,18 @@ public class ToolsPanel extends JPanel
 		}
 
 	}
-	
+
 	void enableOrDisableEverything(boolean enable, MapSettings settings)
 	{
 		SwingHelper.setEnabled(this, enable);
-		
+
 		if (enable)
 		{
 			if (!mainWindow.updater.isMapBeingDrawn())
 			{
 				zoomComboBox.setEnabled(enable);
 			}
-			
+
 			if (settings != null)
 			{
 				for (EditorTool tool : tools)

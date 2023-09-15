@@ -152,7 +152,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
-		editMenu.setEnabled(enable);
+
+		undoButton.setEnabled(enable);
+		redoButton.setEnabled(enable);
+		clearEntireMapButton.setEnabled(enable);
+		
 		viewMenu.setEnabled(enable);
 		refreshMenuItem.setEnabled(enable);
 
@@ -802,9 +806,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.dowWhenMapIsNotDrawing(() ->
 		{
 			ImageCache.getInstance().clear();
-			updater.createAndShowMapFull();
+			// I'm allowing refreshing images before settings are loaded when changing the custom images path before opening maps, 
+			// but that means I need to handle lastSettingsLoadedOrSaved being null here.
+			MapSettings settings = lastSettingsLoadedOrSaved == null ? null : getSettingsFromGUI(false);
+			if (settings != null)
+			{
+				updater.createAndShowMapFull();
+			}
 			// Tell Icons tool to refresh image previews
-			toolsPanel.handleImagesRefresh(getSettingsFromGUI(false));
+			toolsPanel.handleImagesRefresh(settings);
 		});
 	}
 

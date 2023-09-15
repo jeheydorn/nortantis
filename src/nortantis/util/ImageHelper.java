@@ -156,9 +156,14 @@ public class ImageHelper
 	{
 		int ySize = getHeightWhenScaledByWidth(inImage, xSize);
 
+		return scale(inImage, xSize, ySize, method);
+	}
+	
+	public static BufferedImage scale(BufferedImage inImage, int width, int height, Method method)
+	{
 		// This library is described at
 		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
-		BufferedImage scaled = Scalr.resize(inImage, method, xSize, ySize);
+		BufferedImage scaled = Scalr.resize(inImage, method, width, height);
 
 		if (isSupportedGrayscaleType(inImage) && !isSupportedGrayscaleType(scaled))
 		{

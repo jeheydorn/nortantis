@@ -56,6 +56,36 @@ public class HistogramEqualizer
 		return lookupTable;
 	}
 	
+	private static int[] createLookupTableWithLinearInterpolation(int[] histogram, int imageArea)
+	{
+		int sum = 0;
+		int[] lookupTable = new int[histogram.length];
+		double scale = (lookupTable.length - 1)/(double)imageArea;
+		int lastNonZeroIndex = 0;
+		
+		
+		for (int r = 0; r < lookupTable.length; r++)
+		{
+			if (histogram[r] != 0 || r == 0)
+			{
+				sum += histogram[r];
+				lookupTable[r] = (int) (scale * sum);
+
+				// Interpolate the values between lastNonZeroIndex and r.
+				for (int i = lastNonZeroIndex + 1; i < r; i++)
+				{
+					float s =  ((float)(i - lastNonZeroIndex)) / ((float)(r - lastNonZeroIndex));
+					int interpolated = (int)(s * lookupTable[lastNonZeroIndex] + (1.0 - s) *  lookupTable[r]);
+					lookupTable[i] = interpolated;
+				}
+				
+				lastNonZeroIndex = r;
+			}
+		}
+		
+		return lookupTable;
+	}
+	
 	public void createInverse()
 	{
 		inverses = new ArrayList<>();
@@ -184,15 +214,12 @@ public class HistogramEqualizer
 		return applyLookupTables(inImage, inverses);
 	}
 	
-	private BufferedImage applyLookupTables(BufferedImage inImage,List<int[]> lookupTables)
+	private BufferedImage applyLookupTables(BufferedImage inImage, List<int[]> lookupTables)
 	{	
 		int width = inImage.getWidth();
 		int height = inImage.getHeight();
 		BufferedImage outImage = new BufferedImage(width, height, imageType);
 
-		// Note: There is a bug where if the target is gray and the source is color, 
-		// the result has white spots. This doesn't happen if the target is color.
-		
 		WritableRaster in = inImage.getRaster();
 		WritableRaster out = outImage.getRaster();
 
@@ -222,7 +249,6 @@ public class HistogramEqualizer
 					int b = lookupTables.get(2)[inColor.getBlue()];
 					Color outColor = new Color(r, g, b, 255);
 					outImage.setRGB(x, y, outColor.getRGB());
-
 				}
 			}
 		}

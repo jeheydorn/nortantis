@@ -11,6 +11,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -34,6 +35,9 @@ import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
+
+import org.apache.commons.io.FilenameUtils;
+import org.junit.runner.Computer;
 
 import nortantis.BackgroundGenerator;
 import nortantis.FractalBGGenerator;
@@ -189,7 +193,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				String filename = chooseImageFile(backgroundPanel, textureImageFilename.getText());
+				String filename = chooseImageFile(backgroundPanel, FilenameUtils.getFullPath(textureImageFilename.getText()));
 				if (filename != null)
 				{
 					textureImageFilename.setText(filename);

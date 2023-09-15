@@ -8,6 +8,8 @@ import java.awt.image.Raster;
 import java.io.IOException;
 import java.util.Random;
 
+import org.imgscalr.Scalr.Method;
+
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 
@@ -153,7 +155,23 @@ public class BackgroundGenerator
 		}
 		
 		randomImage = null;
-		BufferedImage result = ImageHelper.matchHistogram(allChannels, texture);
+		
+		// If the texture is small, scale it with interpolation to create a better histogram for histogram matching.
+		// This reduces frequency of bright white spots on the resulting image.
+		BufferedImage colorsForHistogramMatching;
+		if (texture.getWidth() < targetCols || texture.getHeight() < targetRows)
+		{
+			colorsForHistogramMatching = ImageHelper.scale(texture, 
+					Math.max(texture.getWidth(), targetCols), 
+					Math.max(texture.getHeight(), targetRows), 
+					Method.BALANCED);
+		}
+		else
+		{
+			colorsForHistogramMatching = texture;
+		}
+		
+		BufferedImage result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
 		result = ImageHelper.extractRegion(result, 0, 0, targetCols, targetRows);
 		
 		return result;

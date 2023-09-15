@@ -156,7 +156,7 @@ public class SettingsGenerator
 		
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
 		
-		if (rand.nextDouble() > 0.5)
+		if (rand.nextDouble() > 0.25)
 		{
 			settings.generateBackground = true;
 			settings.generateBackgroundFromTexture = false;
@@ -183,7 +183,7 @@ public class SettingsGenerator
 		
 		if (textureFiles.size() > 0)
 		{
-			settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toString();
+			settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toAbsolutePath().toString();
 		}
 		
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;

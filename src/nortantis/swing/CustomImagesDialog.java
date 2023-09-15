@@ -164,7 +164,7 @@ public class CustomImagesDialog extends JDialog
 				File folder = new File(customImagesFolderField.getText());
 				if (!folder.exists())
 				{
-					folder = FileSystemView.getFileSystemView().getHomeDirectory();
+					folder = FileSystemView.getFileSystemView().getDefaultDirectory();
 				}
 				JFileChooser folderChooser = new JFileChooser(folder);
 				folderChooser.setDialogTitle("Select a Folder");
