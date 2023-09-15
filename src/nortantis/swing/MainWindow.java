@@ -156,7 +156,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		undoButton.setEnabled(enable);
 		redoButton.setEnabled(enable);
 		clearEntireMapButton.setEnabled(enable);
-		
+
 		viewMenu.setEnabled(enable);
 		refreshMenuItem.setEnabled(enable);
 
@@ -800,13 +800,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 	}
-	
+
 	void handleImagesRefresh()
 	{
 		updater.dowWhenMapIsNotDrawing(() ->
 		{
 			ImageCache.getInstance().clear();
-			// I'm allowing refreshing images before settings are loaded when changing the custom images path before opening maps, 
+			// I'm allowing refreshing images before settings are loaded when changing the custom images path before opening maps,
 			// but that means I need to handle lastSettingsLoadedOrSaved being null here.
 			MapSettings settings = lastSettingsLoadedOrSaved == null ? null : getSettingsFromGUI(false);
 			if (settings != null)
@@ -975,15 +975,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (incrementalChangeArea == null)
 				{
-					// It's important that this image scaling is done using the
-					// same method as the increment case below
-					// (when incrementalChangeArea != null) because the
-					// incremental case will update pieces of the image
-					// created below. Both use bicubic interpolation. I don't
-					// use my own bicubic interpolation for the
-					// full image case because it's 5x slower than the below
-					// method, which uses ImgScalr, which uses
-					// built-in Java image scaling.
+					// It's important that this image scaling is done using the same method as the increment case below
+					// (when incrementalChangeArea != null), or at least close enough that people can't tell the difference.
+					// The reason is that the incremental case will update pieces of the image created below.
+					// I don't use ImageHelper.scaleInto for the full image case because it's 5x slower than the below
+					// method, which uses ImgScalr, which uses built-in Java image scaling.
 					mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
 				}
 				else
@@ -1262,7 +1258,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+				: openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(currentFolder);
@@ -1457,7 +1454,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages);
 		}
 	}
-	
+
 	@Override
 	public void appendLoggerMessage(String message)
 	{
