@@ -135,7 +135,7 @@ public class ToolsPanel extends JPanel
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
 		lblZoom.setToolTipText(
-				"Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels," + " adjust View > Image Quality."
+				"Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels," + " adjust View > Display Quality."
 		);
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%", "150%", "200%" });

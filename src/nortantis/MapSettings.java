@@ -380,6 +380,11 @@ public class MapSettings implements Serializable
 		}
 
 		version = (String) root.get("version");
+		if (isVersionGreatherThanCurrent(version))
+		{
+			throw new RuntimeException("The map cannot be loaded because it was made in a new version of Nortantis. That map's version is " 
+					+ version + ", but you're Nortantis version is " + currentVersion + ". Try again with a newer version of Nortantis.");
+		}
 		randomSeed = (long) root.get("randomSeed");
 		resolution = (double) root.get("resolution");
 		coastShadingLevel = (int) (long) root.get("coastShadingLevel");
@@ -736,6 +741,11 @@ public class MapSettings implements Serializable
 			System.out.println("Exception while parsing json in conversion. JSON: " + json);
 			throw e;
 		}
+	}
+	
+	private boolean isVersionGreatherThanCurrent(String version)
+	{
+		return Double.parseDouble(version) > Double.parseDouble(currentVersion);
 	}
 	
 	public boolean equalsIgnoringEdits(MapSettings other)

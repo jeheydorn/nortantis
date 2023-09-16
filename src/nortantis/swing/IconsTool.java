@@ -309,7 +309,7 @@ public class IconsTool extends EditorTool
 					riverWidthDisplay.setText(riverWidthSlider.getValue() + "");
 				}
 			});
-			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:", "", Arrays.asList(riverWidthSlider, riverWidthDisplay));
+			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:", "River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.", Arrays.asList(riverWidthSlider, riverWidthDisplay));
 		}
 
 		densitySlider = new JSlider(1, 50);
@@ -322,15 +322,19 @@ public class IconsTool extends EditorTool
 		brushSizeHider = brushSizeTuple.getSecond();
 
 		onlyUpdateMountainsCheckbox = new JCheckBox("Only update mountains");
+		onlyUpdateMountainsCheckbox.setToolTipText("When checked, mountains will only be drawn over existing mountains, making it easier to change the images used by a group of mountains.");
 		onlyUpdateMountainsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateMountainsCheckbox);
 
 		onlyUpdateHillsCheckbox = new JCheckBox("Only update hills");
+		onlyUpdateHillsCheckbox.setToolTipText("When checked, hills will only be drawn over existing hills, making it easier to change the images used by a group of hills.");
 		onlyUpdateHillsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateHillsCheckbox);
 
 		onlyUpdateTreesCheckbox = new JCheckBox("Only update trees");
+		onlyUpdateTreesCheckbox.setToolTipText("When checked, trees will only be drawn over existing trees, making it easier to change the images used by a group of trees.");
 		onlyUpdateTreesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateTreesCheckbox);
 
 		onlyUpdateDunesCheckbox = new JCheckBox("Only update dunes");
+		onlyUpdateDunesCheckbox.setToolTipText("When checked, dunes will only be drawn over existing dunes, making it easier to change the images used by a group of dunes.");
 		onlyUpdateDunesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateDunesCheckbox);
 
 		mountainsButton.doClick();

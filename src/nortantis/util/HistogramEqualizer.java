@@ -56,36 +56,6 @@ public class HistogramEqualizer
 		return lookupTable;
 	}
 	
-	private static int[] createLookupTableWithLinearInterpolation(int[] histogram, int imageArea)
-	{
-		int sum = 0;
-		int[] lookupTable = new int[histogram.length];
-		double scale = (lookupTable.length - 1)/(double)imageArea;
-		int lastNonZeroIndex = 0;
-		
-		
-		for (int r = 0; r < lookupTable.length; r++)
-		{
-			if (histogram[r] != 0 || r == 0)
-			{
-				sum += histogram[r];
-				lookupTable[r] = (int) (scale * sum);
-
-				// Interpolate the values between lastNonZeroIndex and r.
-				for (int i = lastNonZeroIndex + 1; i < r; i++)
-				{
-					float s =  ((float)(i - lastNonZeroIndex)) / ((float)(r - lastNonZeroIndex));
-					int interpolated = (int)(s * lookupTable[lastNonZeroIndex] + (1.0 - s) *  lookupTable[r]);
-					lookupTable[i] = interpolated;
-				}
-				
-				lastNonZeroIndex = r;
-			}
-		}
-		
-		return lookupTable;
-	}
-	
 	public void createInverse()
 	{
 		inverses = new ArrayList<>();

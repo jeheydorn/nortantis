@@ -36,6 +36,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.runner.Computer;
 
@@ -99,7 +100,7 @@ public class ThemePanel extends JTabbedPane
 	JLabel riverFontDisplay;
 	JPanel textColorDisplay;
 	JPanel boldBackgroundColorDisplay;
-	private JCheckBox chckbxDrawBoldBackground;
+	private JCheckBox drawBoldBackgroundCheckbox;
 	final int widthToSubtractFromTabPanels = 2;
 	private RowHider textureImageHider;
 	private RowHider colorizeOceanCheckboxHider;
@@ -207,7 +208,7 @@ public class ThemePanel extends JTabbedPane
 		textureFileChooseButtonPanel.add(Box.createHorizontalGlue());
 
 		textureImageHider = organizer.addLabelAndComponentsVertical("Texture image:",
-				"Text that will be used to randomly generate a background.",
+				"Texture image that will be used to randomly generate a background.",
 				Arrays.asList(textureImageFilename, Box.createVerticalStrut(5), textureFileChooseButtonPanel));
 
 		backgroundSeedTextField = new JTextField();
@@ -407,11 +408,12 @@ public class ThemePanel extends JTabbedPane
 		borderWidthSlider.setMajorTickSpacing(200);
 		createMapChangeListenerForFullRedraw(borderWidthSlider);
 		SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
-		organizer.addLabelAndComponent("Border width:", "Width of the border in pixels, scaled if resolution is scaled",
+		organizer.addLabelAndComponent("Border width:", "Width of the border in pixels, scaled according to the resolution the map is drawn at.",
 				borderWidthSlider);
 
 		organizer.addSeperator();
 		frayedEdgeCheckbox = new JCheckBox("Fray edges");
+		frayedEdgeCheckbox.setToolTipText("Whether to fray the edges of the map.");
 		frayedEdgeCheckboxActionListener = new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -445,7 +447,7 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeSizeSlider);
 		SwingHelper.setSliderWidthForSidePanel(frayedEdgeSizeSlider);
 		organizer.addLabelAndComponent("Fray size:",
-				"The number of polygons used when creating the frayed border. " + "Higher values make the fray smaller.",
+				"Determines the number of polygons used when creating the frayed border. Higher values make the fray larger.",
 				frayedEdgeSizeSlider);
 
 		organizer.addSeperator();
@@ -506,7 +508,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(effectsPanel, coastlineColorDisplay, "Coastline Color", () -> handleTerrainChange());
 			}
 		});
-		organizer.addLabelAndComponentsHorizontal("Coastline color:", "", Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor),
+		organizer.addLabelAndComponentsHorizontal("Coastline color:", "The color of the coastline", Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor),
 				SwingHelper.colorPickerLeftPadding);
 
 		coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -519,7 +521,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () -> handleTerrainChange());
 			}
 		});
-		organizer.addLabelAndComponentsHorizontal("Coast shading color:", "", Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor),
+		organizer.addLabelAndComponentsHorizontal("Coast shading color:", "Land near coastlines will be shaded this color. Transparency is supported.", Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor),
 				SwingHelper.colorPickerLeftPadding);
 
 		coastShadingSlider = new JSlider();
@@ -556,7 +558,7 @@ public class ThemePanel extends JTabbedPane
 		shadeRadioButton = new JRadioButton("Shade");
 		oceanEffectButtonGroup.add(shadeRadioButton);
 		shadeRadioButton.addActionListener(oceanEffectsListener);
-		organizer.addLabelAndComponentsVertical("Ocean effects type:", "",
+		organizer.addLabelAndComponentsVertical("Ocean effects type:", "How to draw either waves or shading in the ocean along coastlines",
 				Arrays.asList(concentricWavesButton, ripplesRadioButton, shadeRadioButton));
 
 		oceanEffectsColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -570,7 +572,7 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		btnChooseOceanEffectsColor.setToolTipText("Choose a color for ocean effects near coastlines. Transparency is supported.");
-		organizer.addLabelAndComponentsHorizontal("Ocean effects color:", "", Arrays.asList(oceanEffectsColorDisplay, btnChooseOceanEffectsColor),
+		organizer.addLabelAndComponentsHorizontal("Ocean effects color:", "The color of the ocean effects. Transparency is supported.", Arrays.asList(oceanEffectsColorDisplay, btnChooseOceanEffectsColor),
 				SwingHelper.colorPickerLeftPadding);
 
 		concentricWavesLevelSlider = new JSlider();
@@ -620,7 +622,7 @@ public class ThemePanel extends JTabbedPane
 		JPanel fontsPanel = organizer.panel;
 
 		enableTextCheckBox = new JCheckBox("Enable text");
-		enableTextCheckBox.setToolTipText("Enable/disable drawing of generated names.");
+		enableTextCheckBox.setToolTipText("Enable/disable drawing text. When unselected, text will still exist, but will not be shown.");
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
 		textHiddenMessageHider = organizer.addLeftAlignedComponent(
 				new JLabel("<html>Text is currently hidden because the selected editing tool does not display text.</html>"));
@@ -662,8 +664,9 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.colorPickerLeftPadding);
 
 		organizer.addSeperator();
-		chckbxDrawBoldBackground = new JCheckBox("Bold background");
-		organizer.addLeftAlignedComponent(chckbxDrawBoldBackground);
+		drawBoldBackgroundCheckbox = new JCheckBox("Bold background");
+		drawBoldBackgroundCheckbox.setToolTipText("Whether to draw bolded letters behind region and title text to highlight them.");
+		organizer.addLeftAlignedComponent(drawBoldBackgroundCheckbox);
 
 		boldBackgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
@@ -677,11 +680,11 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		organizer.addLabelAndComponentsHorizontal("Bold background color:",
-				"If '" + chckbxDrawBoldBackground.getText()
+				"If '" + drawBoldBackgroundCheckbox.getText()
 						+ "' is checked, title and region names will be given a bold background in this color.",
 				Arrays.asList(boldBackgroundColorDisplay, btnChooseBoldBackgroundColor), SwingHelper.colorPickerLeftPadding);
 
-		chckbxDrawBoldBackground.addActionListener(new ActionListener()
+		drawBoldBackgroundCheckbox.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
@@ -898,7 +901,8 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public boolean accept(File f)
 			{
-				return true;
+				String extension = FilenameUtils.getExtension(f.getName()).toLowerCase();
+				return f.isDirectory() || extension.equals("png") || extension.equals("jpg") || extension.equals("jpeg");
 			}
 		});
 		int status = fileChooser.showOpenDialog(parent);
@@ -1020,8 +1024,8 @@ public class ThemePanel extends JTabbedPane
 		riverFontDisplay.setText(settings.riverFont.getName());
 		textColorDisplay.setBackground(settings.textColor);
 		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
-		chckbxDrawBoldBackground.setSelected(settings.drawBoldBackground);
-		chckbxDrawBoldBackground.getActionListeners()[0].actionPerformed(null);
+		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
+		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		// Borders
 		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(), settings.borderType);
@@ -1140,7 +1144,7 @@ public class ThemePanel extends JTabbedPane
 		settings.riverFont = riverFontDisplay.getFont();
 		settings.textColor = textColorDisplay.getBackground();
 		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
-		settings.drawBoldBackground = chckbxDrawBoldBackground.isSelected();
+		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
 
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
@@ -1258,7 +1262,7 @@ public class ThemePanel extends JTabbedPane
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 		frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 
-		btnChooseBoldBackgroundColor.setEnabled(chckbxDrawBoldBackground.isSelected());
+		btnChooseBoldBackgroundColor.setEnabled(drawBoldBackgroundCheckbox.isSelected());
 
 		btnTitleFont.setEnabled(enableTextCheckBox.isSelected());
 		btnRegionFont.setEnabled(enableTextCheckBox.isSelected());
@@ -1267,7 +1271,7 @@ public class ThemePanel extends JTabbedPane
 		btnRiverFont.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
-		chckbxDrawBoldBackground.setEnabled(enableTextCheckBox.isSelected());
+		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
 
 		landColoringMethodComboBox.setEnabled(landSupportsColoring());
 

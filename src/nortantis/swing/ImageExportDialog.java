@@ -482,7 +482,10 @@ public class ImageExportDialog extends JDialog
 
 	private int calcMaximumResolution()
 	{
-		long maxBytes = Runtime.getRuntime().maxMemory();
+		// Reserve some space for the editor. 
+		int bytesReservedForEditor = 900 * 1024 * 1024;
+
+		long maxBytes = Runtime.getRuntime().maxMemory() - bytesReservedForEditor;
 		// The required memory is quadratic in the resolution used.
 		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2)
 		// = 148468.

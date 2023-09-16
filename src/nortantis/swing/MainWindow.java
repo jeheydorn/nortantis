@@ -975,11 +975,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (incrementalChangeArea == null)
 				{
-					// It's important that this image scaling is done using the same method as the increment case below
+					// It's important that this image scaling is done using the same method as the incremental case below
 					// (when incrementalChangeArea != null), or at least close enough that people can't tell the difference.
 					// The reason is that the incremental case will update pieces of the image created below.
 					// I don't use ImageHelper.scaleInto for the full image case because it's 5x slower than the below
-					// method, which uses ImgScalr, which uses built-in Java image scaling.
+					// method, which uses ImgScalr.
 					mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
 				}
 				else
