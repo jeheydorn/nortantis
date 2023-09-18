@@ -366,6 +366,11 @@ public abstract class MapUpdater
 						initializeRegionEditsIfEmpty();
 						initializeEdgeEditsIfEmpty();
 					}
+					
+					if (mapParts != null)
+					{
+						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(settings.edits, mapParts.graph);
+					}
 
 					MapUpdate next = combineAndGetNextUpdateToDraw();
 

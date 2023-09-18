@@ -22,13 +22,19 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	boolean ignoreMaxSize;
 	String fileName;
 	
-	public IconDrawTask(BufferedImage icon, BufferedImage mask, Point centerLoc, int scaledWidth,
+	/**
+	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn. 
+	 */
+	boolean failedToDraw;
+	IconType type;
+	
+	public IconDrawTask(BufferedImage icon, BufferedImage mask, IconType type, Point centerLoc, int scaledWidth,
 			boolean needsScale, boolean ignoreMaxSize)
 	{
-		this(icon, mask, centerLoc, scaledWidth, needsScale, ignoreMaxSize, "");
+		this(icon, mask, type, centerLoc, scaledWidth, needsScale, ignoreMaxSize, "");
 	}
 
-	public IconDrawTask(BufferedImage icon, BufferedImage mask, Point centerLoc, int scaledWidth,
+	public IconDrawTask(BufferedImage icon, BufferedImage mask, IconType type, Point centerLoc, int scaledWidth,
 			boolean needsScale, boolean ignoreMaxSize, String fileName)
 	{
 		this.icon = icon;
@@ -36,6 +42,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.centerLoc = centerLoc;
 		this.scaledWidth = scaledWidth;
 		this.needsScale = needsScale;
+		this.type = type;
 		
    		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
    		scaledHeight = (int)(scaledWidth/aspectRatio);

@@ -843,15 +843,10 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityName);
-					// Only add the city if it will be drawn. That way, if
-					// somebody
-					// later shrinks the city image or swaps out
-					// the image files, previously hidden cities don't start
-					// popping
-					// up along coastlines and lakes.
-					// Note that all icons can fail to draw because they would
-					// overlap an ocean or lake, but I don't think it's
-					// a big deal for other icon types.
+					// Only add the city if it will be drawn. That way, we don't set an undo point for a city that won't draw.
+					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the icon
+					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it 
+					// in place to save creating an extra undo point here.
 					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 					{
 						mainWindow.edits.centerEdits.get(center.index).icon = cityIcon;

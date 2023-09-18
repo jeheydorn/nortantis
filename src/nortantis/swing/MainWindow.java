@@ -54,6 +54,7 @@ import nortantis.DimensionDouble;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.Stopwatch;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
@@ -262,7 +263,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
+					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
 				}
 			}
 
@@ -271,7 +272,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
+					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 				}
 				else if (SwingUtilities.isMiddleMouseButton(e))
 				{
@@ -284,7 +285,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
+					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
 				}
 			}
 
@@ -295,7 +296,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
+				doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
 			}
 
 			@Override
@@ -303,7 +304,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
+					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
 				}
 				else if (SwingUtilities.isMiddleMouseButton(e))
 				{
@@ -383,6 +384,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		// Speed up the scroll speed.
 		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
+	}
+
+	private void doIfMapIsReadyForInteractionsAndLockEdits(Runnable action)
+	{
+		try
+		{
+			edits.lock();
+			updater.doIfMapIsReadyForInteractions(action);
+		}
+		finally
+		{
+			edits.unlock();
+		}
 	}
 
 	private void createMapUpdater()
@@ -1499,7 +1513,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			System.out.println("Error while setting look and feel: " + e.getMessage());
 			e.printStackTrace();
 		}
-		
+
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
 		{

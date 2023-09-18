@@ -166,7 +166,7 @@ public class MapCreator
 		// Expand snippetToReplaceBounds to include all icons the centers in
 		// centersChanged drew the last time they were drawn.
 		{
-			Rectangle iconBounds = mapParts.iconDrawer.getBoundinbBoxOfIconsForCenters(centersChanged);
+			Rectangle iconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsForCenters(centersChanged);
 			if (iconBounds != null)
 			{
 				replaceBounds = replaceBounds.add(iconBounds);
@@ -199,7 +199,7 @@ public class MapCreator
 		// Now that we've updated icons to draw in centersChanged, check if we
 		// need to expand replaceBounds to include those icons.
 		{
-			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundinbBoxOfIconsForCenters(centersChanged);
+			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsForCenters(centersChanged);
 			if (updatedIconBounds != null)
 			{
 				replaceBounds = replaceBounds.add(updatedIconBounds);
@@ -481,10 +481,10 @@ public class MapCreator
 			mountainGroups = null;
 			cities = null;
 		}
-		
+
 		checkForCancel();
-		
-		//Add region boundaries to landBackground so that they show up when text draws.
+
+		// Add region boundaries to landBackground so that they show up when text draws.
 		if (settings.drawRegionColors)
 		{
 			Graphics2D g = landBackground.createGraphics();
@@ -1101,20 +1101,29 @@ public class MapCreator
 			return;
 		}
 
-		for (RegionEdit edit : edits.regionEdits.values())
+		try
 		{
-			Region region = graph.regions.get(edit.regionId);
-			if (region == null)
+			edits.lock();
+
+			for (RegionEdit edit : edits.regionEdits.values())
 			{
-				region = new Region();
-				region.id = edit.regionId;
-				region.backgroundColor = edit.color;
-				graph.regions.put(edit.regionId, region);
+				Region region = graph.regions.get(edit.regionId);
+				if (region == null)
+				{
+					region = new Region();
+					region.id = edit.regionId;
+					region.backgroundColor = edit.color;
+					graph.regions.put(edit.regionId, region);
+				}
+				else
+				{
+					region.backgroundColor = edit.color;
+				}
 			}
-			else
-			{
-				region.backgroundColor = edit.color;
-			}
+		}
+		finally
+		{
+			edits.unlock();
 		}
 	}
 
@@ -1132,62 +1141,71 @@ public class MapCreator
 			);
 		}
 
-		if (centerChanges == null)
+		try
 		{
-			centerChanges = edits.centerEdits;
-		}
+			edits.lock();
 
-		for (CenterEdit cEdit : centerChanges)
-		{
-			Center center = graph.centers.get(cEdit.index);
-			boolean needsRebuild = center.isWater != cEdit.isWater;
-			center.isWater = cEdit.isWater;
-			center.isLake = cEdit.isLake;
-
-			Integer regionId = cEdit.regionId;
-			if (regionId != null)
+			if (centerChanges == null)
 			{
-				Region region = graph.regions.get(regionId);
-				// region can be null if the map is edited while drawing it. If
-				// that happens, then the region color of this center will be
-				// updated the next time the map draws.
-				if (region != null)
+				centerChanges = edits.centerEdits;
+			}
+
+			for (CenterEdit cEdit : centerChanges)
+			{
+				Center center = graph.centers.get(cEdit.index);
+				boolean needsRebuild = center.isWater != cEdit.isWater;
+				center.isWater = cEdit.isWater;
+				center.isLake = cEdit.isLake;
+
+				Integer regionId = cEdit.regionId;
+				if (regionId != null)
 				{
-					if (center.region != null && center.region.id != region.id)
+					Region region = graph.regions.get(regionId);
+					// region can be null if the map is edited while drawing it. If
+					// that happens, then the region color of this center will be
+					// updated the next time the map draws.
+					if (region != null)
 					{
-						needsRebuild = true;
-					}
-					region.addAndSetRegion(center);
-					// We don't know which region the center came from, so
-					// remove it from of them except the one it is in.
-					for (Region r : graph.regions.values())
-					{
-						if (r.id != region.id)
+						if (center.region != null && center.region.id != region.id)
 						{
-							r.remove(center);
+							needsRebuild = true;
+						}
+						region.addAndSetRegion(center);
+						// We don't know which region the center came from, so
+						// remove it from of them except the one it is in.
+						for (Region r : graph.regions.values())
+						{
+							if (r.id != region.id)
+							{
+								r.remove(center);
+							}
 						}
 					}
 				}
-			}
 
-			if (center.isWater && center.region != null)
-			{
-				center.region.remove(center);
-				center.region = null;
-				needsRebuild = true;
-			}
+				if (center.isWater && center.region != null)
+				{
+					center.region.remove(center);
+					center.region = null;
+					needsRebuild = true;
+				}
 
-			if (needsRebuild)
-			{
-				graph.rebuildNoisyEdgesForCenter(center);
-			}
+				if (needsRebuild)
+				{
+					graph.rebuildNoisyEdgesForCenter(center);
+				}
 
-			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
-			{
-				// This is so that if you edit mountains before text, the text
-				// drawer generates names for your mountains.
-				center.isMountain = true;
+				if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
+				{
+					// This is so that if you edit mountains before text, the text
+					// drawer generates names for your mountains.
+					center.isMountain = true;
+				}
 			}
+		}
+		finally
+		{
+			edits.unlock();
 		}
 	}
 
@@ -1204,24 +1222,33 @@ public class MapCreator
 			);
 		}
 
-		if (edgeChanges == null)
+		try
 		{
-			edgeChanges = edits.edgeEdits;
-		}
+			edits.lock();
 
-		for (EdgeEdit eEdit : edgeChanges)
+			if (edgeChanges == null)
+			{
+				edgeChanges = edits.edgeEdits;
+			}
+
+			for (EdgeEdit eEdit : edgeChanges)
+			{
+				Edge edge = graph.edges.get(eEdit.index);
+				boolean needsRebuild = false;
+				if (eEdit.riverLevel != edge.river && edge.d0 != null)
+				{
+					needsRebuild = true;
+				}
+				graph.edges.get(eEdit.index).river = eEdit.riverLevel;
+				if (needsRebuild)
+				{
+					graph.rebuildNoisyEdgesForCenter(edge.d0);
+				}
+			}
+		}
+		finally
 		{
-			Edge edge = graph.edges.get(eEdit.index);
-			boolean needsRebuild = false;
-			if (eEdit.riverLevel != edge.river && edge.d0 != null)
-			{
-				needsRebuild = true;
-			}
-			graph.edges.get(eEdit.index).river = eEdit.riverLevel;
-			if (needsRebuild)
-			{
-				graph.rebuildNoisyEdgesForCenter(edge.d0);
-			}
+			edits.unlock();
 		}
 	}
 

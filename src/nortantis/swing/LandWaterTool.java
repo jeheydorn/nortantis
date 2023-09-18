@@ -345,6 +345,7 @@ public class LandWaterTool extends EditorTool
 			else
 			{
 				Set<Center> selected = getSelectedCenters(e.getPoint());
+
 				boolean hasChange = false;
 				for (Center center : selected)
 				{
