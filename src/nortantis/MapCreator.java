@@ -1101,29 +1101,20 @@ public class MapCreator
 			return;
 		}
 
-		try
+		for (RegionEdit edit : edits.regionEdits.values())
 		{
-			edits.lock();
-
-			for (RegionEdit edit : edits.regionEdits.values())
+			Region region = graph.regions.get(edit.regionId);
+			if (region == null)
 			{
-				Region region = graph.regions.get(edit.regionId);
-				if (region == null)
-				{
-					region = new Region();
-					region.id = edit.regionId;
-					region.backgroundColor = edit.color;
-					graph.regions.put(edit.regionId, region);
-				}
-				else
-				{
-					region.backgroundColor = edit.color;
-				}
+				region = new Region();
+				region.id = edit.regionId;
+				region.backgroundColor = edit.color;
+				graph.regions.put(edit.regionId, region);
 			}
-		}
-		finally
-		{
-			edits.unlock();
+			else
+			{
+				region.backgroundColor = edit.color;
+			}
 		}
 	}
 
@@ -1141,71 +1132,62 @@ public class MapCreator
 			);
 		}
 
-		try
+		if (centerChanges == null)
 		{
-			edits.lock();
+			centerChanges = edits.centerEdits;
+		}
 
-			if (centerChanges == null)
+		for (CenterEdit cEdit : centerChanges)
+		{
+			Center center = graph.centers.get(cEdit.index);
+			boolean needsRebuild = center.isWater != cEdit.isWater;
+			center.isWater = cEdit.isWater;
+			center.isLake = cEdit.isLake;
+
+			Integer regionId = cEdit.regionId;
+			if (regionId != null)
 			{
-				centerChanges = edits.centerEdits;
-			}
-
-			for (CenterEdit cEdit : centerChanges)
-			{
-				Center center = graph.centers.get(cEdit.index);
-				boolean needsRebuild = center.isWater != cEdit.isWater;
-				center.isWater = cEdit.isWater;
-				center.isLake = cEdit.isLake;
-
-				Integer regionId = cEdit.regionId;
-				if (regionId != null)
+				Region region = graph.regions.get(regionId);
+				// region can be null if the map is edited while drawing it. If
+				// that happens, then the region color of this center will be
+				// updated the next time the map draws.
+				if (region != null)
 				{
-					Region region = graph.regions.get(regionId);
-					// region can be null if the map is edited while drawing it. If
-					// that happens, then the region color of this center will be
-					// updated the next time the map draws.
-					if (region != null)
+					if (center.region != null && center.region.id != region.id)
 					{
-						if (center.region != null && center.region.id != region.id)
+						needsRebuild = true;
+					}
+					region.addAndSetRegion(center);
+					// We don't know which region the center came from, so
+					// remove it from of them except the one it is in.
+					for (Region r : graph.regions.values())
+					{
+						if (r.id != region.id)
 						{
-							needsRebuild = true;
-						}
-						region.addAndSetRegion(center);
-						// We don't know which region the center came from, so
-						// remove it from of them except the one it is in.
-						for (Region r : graph.regions.values())
-						{
-							if (r.id != region.id)
-							{
-								r.remove(center);
-							}
+							r.remove(center);
 						}
 					}
 				}
-
-				if (center.isWater && center.region != null)
-				{
-					center.region.remove(center);
-					center.region = null;
-					needsRebuild = true;
-				}
-
-				if (needsRebuild)
-				{
-					graph.rebuildNoisyEdgesForCenter(center);
-				}
-
-				if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
-				{
-					// This is so that if you edit mountains before text, the text
-					// drawer generates names for your mountains.
-					center.isMountain = true;
-				}
 			}
-		}
-		finally
-		{
-			edits.unlock();
+
+			if (center.isWater && center.region != null)
+			{
+				center.region.remove(center);
+				center.region = null;
+				needsRebuild = true;
+			}
+
+			if (needsRebuild)
+			{
+				graph.rebuildNoisyEdgesForCenter(center);
+			}
+
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
+			{
+				// This is so that if you edit mountains before text, the text
+				// drawer generates names for your mountains.
+				center.isMountain = true;
+			}
 		}
 	}
 
@@ -1222,33 +1204,24 @@ public class MapCreator
 			);
 		}
 
-		try
+		if (edgeChanges == null)
 		{
-			edits.lock();
-
-			if (edgeChanges == null)
-			{
-				edgeChanges = edits.edgeEdits;
-			}
-
-			for (EdgeEdit eEdit : edgeChanges)
-			{
-				Edge edge = graph.edges.get(eEdit.index);
-				boolean needsRebuild = false;
-				if (eEdit.riverLevel != edge.river && edge.d0 != null)
-				{
-					needsRebuild = true;
-				}
-				graph.edges.get(eEdit.index).river = eEdit.riverLevel;
-				if (needsRebuild)
-				{
-					graph.rebuildNoisyEdgesForCenter(edge.d0);
-				}
-			}
+			edgeChanges = edits.edgeEdits;
 		}
-		finally
+
+		for (EdgeEdit eEdit : edgeChanges)
 		{
-			edits.unlock();
+			Edge edge = graph.edges.get(eEdit.index);
+			boolean needsRebuild = false;
+			if (eEdit.riverLevel != edge.river && edge.d0 != null)
+			{
+				needsRebuild = true;
+			}
+			graph.edges.get(eEdit.index).river = eEdit.riverLevel;
+			if (needsRebuild)
+			{
+				graph.rebuildNoisyEdgesForCenter(edge.d0);
+			}
 		}
 	}
 

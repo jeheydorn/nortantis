@@ -19,6 +19,7 @@ public class CenterIcon implements Serializable
 	 * An alternative to using iconIndex.
 	 */
 	public String iconName;
+	
 	public CenterIcon(CenterIconType iconType, String iconGroupId, int iconIndex)
 	{
 		this.iconType = iconType;
@@ -32,6 +33,20 @@ public class CenterIcon implements Serializable
 		this.iconGroupId = "";
 		this.iconIndex = -1;
 		this.iconName = iconName;
+	}
+	
+	private CenterIcon()
+	{
+	}
+	
+	public CenterIcon deepCopy()
+	{
+		CenterIcon copy = new CenterIcon();
+		copy.iconType = iconType;
+		copy.iconGroupId = iconGroupId;
+		copy.iconIndex = iconIndex;
+		copy.iconName = iconName;
+		return copy;
 	}
 
 	@Override

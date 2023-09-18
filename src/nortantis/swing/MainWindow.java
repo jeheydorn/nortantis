@@ -263,7 +263,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseClickOnMap(e));
 				}
 			}
 
@@ -272,7 +272,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 				}
 				else if (SwingUtilities.isMiddleMouseButton(e))
 				{
@@ -285,7 +285,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseReleasedOnMap(e));
 				}
 			}
 
@@ -296,7 +296,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseMoved(MouseEvent e)
 			{
-				doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
+				updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseMovedOnMap(e));
 			}
 
 			@Override
@@ -304,7 +304,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (SwingUtilities.isLeftMouseButton(e))
 				{
-					doIfMapIsReadyForInteractionsAndLockEdits(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
 				}
 				else if (SwingUtilities.isMiddleMouseButton(e))
 				{
@@ -385,20 +385,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// Speed up the scroll speed.
 		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 	}
-
-	private void doIfMapIsReadyForInteractionsAndLockEdits(Runnable action)
-	{
-		try
-		{
-			edits.lock();
-			updater.doIfMapIsReadyForInteractions(action);
-		}
-		finally
-		{
-			edits.unlock();
-		}
-	}
-
+	
 	private void createMapUpdater()
 	{
 		final MainWindow mainWindow = this;

@@ -33,12 +33,6 @@ import nortantis.util.Range;
 public class MapEdits implements Serializable
 {
 	/**
-	 * This class has to be thread safe because it can be modified by the editor while it is viewed from the generator.
-	 * To accomplish this, editor code that changes edits and drawing code that reads edits should call lock() and unlock() 
-	 * around usage of any fields that are not already thread safe.
-	 */
-	
-	/**
 	 * Text the user has edited, added, moved, or rotated. The key is the text id.
 	 */
 	public CopyOnWriteArrayList<MapText> text;
@@ -46,7 +40,6 @@ public class MapEdits implements Serializable
 	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
-	private ReentrantLock lock;
 	
 	/**
 	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
@@ -59,7 +52,6 @@ public class MapEdits implements Serializable
 		centerEdits = new ArrayList<>();
 		regionEdits = new ConcurrentHashMap<>();
 		edgeEdits = new ArrayList<>();
-		lock = new ReentrantLock();
 	}
 
 	public boolean isEmpty()
@@ -135,7 +127,32 @@ public class MapEdits implements Serializable
 	
 	public MapEdits deepCopy()
 	{
-		MapEdits copy = Helper.deepCopy(this);
+		//MapEdits copy = Helper.deepCopy(this);
+		MapEdits copy = new MapEdits();
+		for (MapText mText : text)
+		{
+			copy.text.add(mText.deepCopy());
+		}
+		
+		for (CenterEdit cEdit : centerEdits)
+		{
+			copy.centerEdits.add(cEdit.deepCopy());
+		}
+		
+		for (Map.Entry<Integer, RegionEdit> entry : regionEdits.entrySet())
+		{
+			copy.regionEdits.put(entry.getKey(), entry.getValue().deepCopy());
+		}
+		
+		copy.hasIconEdits = hasIconEdits;
+		
+		for (EdgeEdit eEdit : edgeEdits)
+		{
+			copy.edgeEdits.add(eEdit.deepCopy());
+		}
+		
+		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
+		
 		// Explicitly copy edits.text.areas because it isn't serializable. 
 		copyTextAreas(copy);
 		return copy;
@@ -169,15 +186,5 @@ public class MapEdits implements Serializable
 		MapEdits other = (MapEdits) obj;
 		return Objects.equals(centerEdits, other.centerEdits) && Objects.equals(edgeEdits, other.edgeEdits)
 				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
-	}
-	
-	public void lock()
-	{
-		lock.lock();
-	}
-	
-	public void unlock()
-	{
-		lock.unlock();
 	}
 }

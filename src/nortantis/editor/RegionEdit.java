@@ -14,6 +14,11 @@ public class RegionEdit implements Serializable
 		this.color = color;
 		this.regionId = regionId;
 	}
+	
+	public RegionEdit deepCopy()
+	{
+		return new RegionEdit(regionId, color);
+	}
 
 	@Override
 	public int hashCode()

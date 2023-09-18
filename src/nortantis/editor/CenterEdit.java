@@ -30,6 +30,13 @@ public class CenterEdit implements Serializable
 		this.trees = trees;
 		this.isLake = isLake;
 	}
+	
+	public CenterEdit deepCopy()
+	{
+		return new CenterEdit(index, isWater, isLake, regionId, 
+				icon == null ? null : icon.deepCopy(), 
+				trees == null ? null : trees.deepCopy());
+	}
 
 	@Override
 	public int hashCode()

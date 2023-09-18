@@ -20,6 +20,11 @@ public class CenterTrees implements Serializable
 		this.density = density;
 		this.randomSeed = seed;
 	}
+	
+	public CenterTrees deepCopy()
+	{
+		return new CenterTrees(treeType, density, randomSeed);
+	}
 
 	@Override
 	public boolean equals(Object obj)

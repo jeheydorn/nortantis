@@ -77,6 +77,20 @@ public class MapText implements Serializable
 	{
 		return Objects.hash(angle, location, type, value);
 	}
+	
+	public MapText deepCopy() 
+	{
+	    String value = this.value;
+	    Area line1Area = this.line1Area == null ? null : new Area(this.line1Area);
+	    Area line2Area = this.line2Area == null ? null : new Area(this.line2Area);
+	    TextType type = this.type;
+	    double angle = this.angle;
+	    Point location = new Point(this.location.x, this.location.y);
+	    Rectangle line1Bounds = this.line1Bounds == null ? null : new Rectangle(this.line1Bounds);
+	    Rectangle line2Bounds = this.line2Bounds == null ? null : new Rectangle(this.line2Bounds);
+
+	    return new MapText(value, location, angle, type, line1Area, line2Area, line1Bounds, line2Bounds);
+	}
 
 	@Override
 	public boolean equals(Object obj)

@@ -15,6 +15,11 @@ public class EdgeEdit implements Serializable
 		this.riverLevel = riverLevel;
 		this.index = index;
 	}
+	
+	public EdgeEdit deepCopy()
+	{
+		return new EdgeEdit(index, riverLevel);
+	}
 
 	@Override
 	public int hashCode()

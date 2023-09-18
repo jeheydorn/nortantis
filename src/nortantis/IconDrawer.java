@@ -225,9 +225,6 @@ public class IconDrawer
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance()
 				.getIconsWithWidths(IconType.cities, cityIconType);
 
-		try
-		{
-			edits.lock();
 			for (Center center : centersToUpdateIconsFor)
 			{
 				CenterEdit cEdit = edits.centerEdits.get(center.index);
@@ -321,11 +318,6 @@ public class IconDrawer
 			}
 
 			drawTreesForCenters(centersToUpdateIconsFor);
-		}
-		finally
-		{
-			edits.unlock();
-		}
 	}
 
 	public boolean doesCityFitOnLand(Center center, CenterIcon cityIcon)
@@ -563,9 +555,6 @@ public class IconDrawer
 	 */
 	public void removeIconEditsThatFailedToDraw(MapEdits edits, WorldGraph graph)
 	{
-		try
-		{
-			edits.lock();
 			for (CenterEdit cEdit : edits.centerEdits)
 			{
 				// I only handle center icons, not trees, since I don't want to stop drawing all trees for a center just because
@@ -589,12 +578,6 @@ public class IconDrawer
 					}
 				}
 			}
-
-		}
-		finally
-		{
-			edits.unlock();
-		}
 	}
 
 	/**

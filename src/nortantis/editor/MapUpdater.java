@@ -18,6 +18,7 @@ import javax.swing.SwingWorker;
 import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -262,6 +263,12 @@ public abstract class MapUpdater
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
+		
+		// Switch settings.edits to a copy avoid race conditions where the draw code is reading the edits while the editor is changing the edits. 
+		Stopwatch sw = new Stopwatch("copy");
+		MapEdits originalEdits = settings.edits;
+		settings.edits = settings.edits.deepCopy();
+		sw.printElapsedTime();
 
 		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
 		{
@@ -369,7 +376,7 @@ public abstract class MapUpdater
 					
 					if (mapParts != null)
 					{
-						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(settings.edits, mapParts.graph);
+						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(originalEdits, mapParts.graph);
 					}
 
 					MapUpdate next = combineAndGetNextUpdateToDraw();
