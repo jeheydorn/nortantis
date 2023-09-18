@@ -1499,24 +1499,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			System.out.println("Error while setting look and feel: " + e.getMessage());
 			e.printStackTrace();
 		}
-
-		final String subFolderAddedByWindowsInstaller = "app";
-		if (!Files.isDirectory(Paths.get(AssetsPath.getInstallPath()))
-				&& Files.isDirectory(Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.getInstallPath())))
-		{
-			AssetsPath.setInstallPath((Paths.get(subFolderAddedByWindowsInstaller, AssetsPath.getInstallPath()).toString()));
-		}
-
-		String customImagesPath = UserPreferences.getInstance().customImagesPath;
-		if (customImagesPath != null && !customImagesPath.isEmpty() && new File(UserPreferences.getInstance().customImagesPath).exists())
-		{
-			AssetsPath.setOverridablePath(customImagesPath);
-		}
-		else
-		{
-			AssetsPath.setOverridablePath(AssetsPath.getInstallPath());
-		}
-
+		
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
 		{
