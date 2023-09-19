@@ -263,12 +263,6 @@ public abstract class MapUpdater
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
-		
-		// Switch settings.edits to a copy avoid race conditions where the draw code is reading the edits while the editor is changing the edits. 
-		Stopwatch sw = new Stopwatch("copy");
-		MapEdits originalEdits = settings.edits;
-		settings.edits = settings.edits.deepCopy();
-		sw.printElapsedTime();
 
 		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
 		{
@@ -369,14 +363,14 @@ public abstract class MapUpdater
 				{
 					if (createEditsIfNotPresentAndUseMapParts)
 					{
-						initializeCenterEditsIfEmpty();
-						initializeRegionEditsIfEmpty();
-						initializeEdgeEditsIfEmpty();
+						initializeCenterEditsIfEmpty(settings.edits);
+						initializeRegionEditsIfEmpty(settings.edits);
+						initializeEdgeEditsIfEmpty(settings.edits);
 					}
 					
 					if (mapParts != null)
 					{
-						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(originalEdits, mapParts.graph);
+						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(settings.edits, mapParts.graph);
 					}
 
 					MapUpdate next = combineAndGetNextUpdateToDraw();
@@ -459,27 +453,27 @@ public abstract class MapUpdater
 		}
 	}
 
-	private void initializeCenterEditsIfEmpty()
+	private void initializeCenterEditsIfEmpty(MapEdits edits)
 	{
-		if (getEdits().centerEdits.isEmpty())
+		if (edits.centerEdits.isEmpty())
 		{
-			getEdits().initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);
+			edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);
 		}
 	}
 
-	private void initializeEdgeEditsIfEmpty()
+	private void initializeEdgeEditsIfEmpty(MapEdits edits)
 	{
-		if (getEdits().edgeEdits.isEmpty())
+		if (edits.edgeEdits.isEmpty())
 		{
-			getEdits().initializeEdgeEdits(mapParts.graph.edges);
+			edits.initializeEdgeEdits(mapParts.graph.edges);
 		}
 	}
 
-	private void initializeRegionEditsIfEmpty()
+	private void initializeRegionEditsIfEmpty(MapEdits edits)
 	{
-		if (getEdits().regionEdits.isEmpty())
+		if (edits.regionEdits.isEmpty())
 		{
-			getEdits().initializeRegionEdits(mapParts.graph.regions.values());
+			edits.initializeRegionEdits(mapParts.graph.regions.values());
 		}
 	}
 
