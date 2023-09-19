@@ -37,6 +37,20 @@ public class CenterEdit implements Serializable
 				icon == null ? null : icon.deepCopy(), 
 				trees == null ? null : trees.deepCopy());
 	}
+	
+	public synchronized CenterEdit deepCopyWithLock()
+	{
+		return deepCopy();
+	}
+	
+	public synchronized void setValuesWithLock(boolean isWater, boolean isLake, Integer regionId, CenterIcon icon, CenterTrees trees)
+	{
+		this.isWater = isWater;
+		this.regionId = regionId;
+		this.icon = icon;
+		this.trees = trees;
+		this.isLake = isLake;
+	}
 
 	@Override
 	public int hashCode()

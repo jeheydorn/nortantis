@@ -327,9 +327,8 @@ public class LandWaterTool extends EditorTool
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
 				IconsTool.eraseIconAndTreeEdits(center, mainWindow.edits);
 				hasChange |= !edit.isWater;
-				edit.isWater = true;
 				hasChange |= edit.isLake != lakeButton.isSelected();
-				edit.isLake = lakeButton.isSelected(); 
+				edit.setValuesWithLock(true, lakeButton.isSelected(), edit.regionId, edit.icon, edit.trees);
 			}
 			if (hasChange)
 			{
@@ -355,11 +354,9 @@ public class LandWaterTool extends EditorTool
 						continue;
 					}
 					hasChange |= edit.isWater;
-					edit.isWater = false;
-					edit.isLake = false;
 					Integer newRegionId = getOrCreateRegionIdForEdit(center, colorDisplay.getBackground());
 					hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
-					edit.regionId = newRegionId;
+					edit.setValuesWithLock(false, false, newRegionId, edit.icon, edit.trees);
 				}
 				if (hasChange)
 				{
@@ -377,10 +374,8 @@ public class LandWaterTool extends EditorTool
 				// Still need to add region IDs to edits because the user might switch to region editing later.
 				Integer newRegionId = getOrCreateRegionIdForEdit(center, mainWindow.getLandColor());
 				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
-				edit.regionId = newRegionId;
 				hasChange |= edit.isWater;
-				edit.isWater = false;
-				edit.isLake = false;
+				edit.setValuesWithLock(false, false, newRegionId, edit.icon, edit.trees);
 			}
 			if (hasChange)
 			{
@@ -440,7 +435,7 @@ public class LandWaterTool extends EditorTool
 								assert c != null;
 								if (c.regionId != null && c.regionId == region.id)
 								{
-									c.regionId = selectedRegion.id;
+									c.setValuesWithLock(c.isWater, c.isLake, selectedRegion.id, c.icon, c.trees);
 								}
 								
 							}

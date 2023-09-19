@@ -737,7 +737,8 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					cEdit.icon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
+					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 				}
 			}
 			else
@@ -747,7 +748,7 @@ public class IconsTool extends EditorTool
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
 					{
-						cEdit.icon = null;
+						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
 					}
 				}
 			}
@@ -764,7 +765,8 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					cEdit.icon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
+					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 				}
 			}
 			else
@@ -774,7 +776,7 @@ public class IconsTool extends EditorTool
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Hill)
 					{
-						cEdit.icon = null;
+						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
 					}
 				}
 			}
@@ -791,7 +793,8 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					cEdit.icon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
+					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 				}
 			}
 			else
@@ -801,7 +804,7 @@ public class IconsTool extends EditorTool
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
 					{
-						cEdit.icon = null;
+						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
 					}
 				}
 			}
@@ -818,7 +821,8 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					cEdit.trees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
+					CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong())); 
+					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, newTrees);
 				}
 			}
 			else
@@ -826,7 +830,7 @@ public class IconsTool extends EditorTool
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					cEdit.trees = null;
+					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, null);
 				}
 			}
 		}
@@ -849,7 +853,8 @@ public class IconsTool extends EditorTool
 					// in place to save creating an extra undo point here, although it might not be necessary.
 					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 					{
-						mainWindow.edits.centerEdits.get(center.index).icon = cityIcon;
+						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
 					}
 				}
 			}
@@ -860,7 +865,7 @@ public class IconsTool extends EditorTool
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
 					{
-						cEdit.icon = null;
+						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
 					}
 				}
 			}
@@ -878,8 +883,8 @@ public class IconsTool extends EditorTool
 
 	static void eraseIconAndTreeEdits(Center center, MapEdits edits)
 	{
-		edits.centerEdits.get(center.index).trees = null;
-		edits.centerEdits.get(center.index).icon = null;
+		CenterEdit cEdit = edits.centerEdits.get(center.index);
+		cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, null);
 		for (Edge edge : center.borders)
 		{
 			EdgeEdit eEdit = edits.edgeEdits.get(edge.index);

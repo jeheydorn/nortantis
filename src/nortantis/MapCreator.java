@@ -1139,6 +1139,9 @@ public class MapCreator
 
 		for (CenterEdit cEdit : centerChanges)
 		{
+			// Use a copy so that we can't hit a race condition where the editor changes the object while we're reading from it.
+			cEdit = cEdit.deepCopyWithLock();
+			
 			Center center = graph.centers.get(cEdit.index);
 			boolean needsRebuild = center.isWater != cEdit.isWater;
 			center.isWater = cEdit.isWater;
@@ -1180,13 +1183,6 @@ public class MapCreator
 			if (needsRebuild)
 			{
 				graph.rebuildNoisyEdgesForCenter(center);
-			}
-
-			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
-			{
-				// This is so that if you edit mountains before text, the text
-				// drawer generates names for your mountains.
-				center.isMountain = true;
 			}
 		}
 	}

@@ -43,6 +43,7 @@ import nortantis.util.Pair;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
+import nortantis.util.Tuple4;
 
 public class TextDrawer
 {
@@ -1325,7 +1326,7 @@ public class TextDrawer
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, double riseOffset, boolean enableBoundsChecking, MapText text,
 			boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset)
 	{
-		if (line2 == "")
+		if (line2 != null && line2.equals(""))
 		{
 			line2 = null;
 		}
@@ -1383,8 +1384,11 @@ public class TextDrawer
 			text.line2Area = area2;
 			text.line1Bounds = bounds1;
 			text.line2Bounds = bounds2;
-			// Update the text location with the offset.
-			text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
+			if (riseOffset != 0)
+			{
+				// Update the text location with the offset. This only happens when generating new text, not when making changes in the editor.
+				text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
+			}
 
 			if (settings.drawText)
 			{

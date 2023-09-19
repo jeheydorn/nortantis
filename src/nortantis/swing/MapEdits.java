@@ -25,7 +25,12 @@ import nortantis.util.Helper;
 import nortantis.util.Range;
 
 /**
- * Stores edits made by a user to a map. These are stored as modifications from the generated content.
+ * Stores edits made by a user to a map. This is initialized from the generated map the first time the map is drawn, and then afterwards 
+ * the edits are the source of truth for what the map should look like.
+ * 
+ * Everything in this class that can change after the edits are first generated needs to be thread safe so that the editor can edit 
+ * it wall the map creator draws. And the text drawer needs to update MapText objects with areas and bounds.
+ * 
  * @author joseph
  *
  */
