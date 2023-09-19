@@ -504,6 +504,14 @@ public class MapSettings implements Serializable
 		}
 		
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
+		if (frayedBorderSize >= 100)
+		{
+			// Convert from the old format the held the number of the polygons to the new format that uses a small scale.
+			// The +1 is just to make sure we don't try to find the log of 0.
+			frayedBorderSize = (int) (Math.log((((frayedBorderSize - 100) / 2) + 1)) / Math.log(2));
+		}
+		
+		
 		imageExportPath = (String) root.get("imageExportPath");
 		heightmapExportPath = (String) root.get("heightmapExportPath");
 		if (root.containsKey("heightmapResolution"))
@@ -753,17 +761,26 @@ public class MapSettings implements Serializable
 		return toJson(true).equals(other.toJson(true));
 	}
 	
+	/**
+	 * Creates a deep copy of this.
+	 * Note - This is not thread safe because it temporarily changes the edits pointer in this.
+	 */
 	public MapSettings deepCopy()
 	{
-		MapSettings copy = Helper.deepCopy(this);
-		if (copy.edits != null)
+		// I'm copying edits without using Helper.deepCopy because my hand-written deep copy method is 10x faster.
+		MapSettings copy = deepCopyExceptEdits();
+		if (edits != null)
 		{
-			copy.edits.copyTextAreas(this.edits);
+			copy.edits = edits.deepCopy();
 		}
 		
 		return copy;
 	}
 	
+	/**
+	 * Creates a deep copy of this, except for the edits object, which will be the same pointer in the copy.
+	 * Note - This is not thread safe because it temporarily changes the edits pointer in this.
+	 */
 	public MapSettings deepCopyExceptEdits()
 	{
 		MapEdits editsTemp = edits;

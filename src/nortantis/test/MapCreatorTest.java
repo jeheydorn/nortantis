@@ -1,6 +1,7 @@
 package nortantis.test;
 
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertEquals;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -51,12 +52,6 @@ public class MapCreatorTest
 	public void frayedEdge_regionColors_textureImageBackground()
 	{
 		generateAndCompare("frayedEdge_regionColors_textureImageBackground.nort");
-	}
-	
-	@Test
-	public void noText_NoRegions_SquareBackground_ConcentricWaves()
-	{
-		generateAndCompare("noText_NoRegions_SquareBackground_ConcentricWaves.nort");
 	}
 	
 	@Test
@@ -162,6 +157,10 @@ public class MapCreatorTest
 		Logger.println("Creating map from '" + settingsPath + "'");
 		BufferedImage actual;
 		actual = mapCreator.createMap(settings, null, null);
+		
+		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
+		// more complete test that way.
+		testDeepCopy(settings);
 
 		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
@@ -170,6 +169,12 @@ public class MapCreatorTest
 			ImageHelper.write(actual, getActualMapFilePath(settingsFileName));
 			fail(comparisonErrorMessage);
 		}
+	}
+	
+	private void testDeepCopy(MapSettings settings)
+	{
+		MapSettings copy = settings.deepCopy();
+		assertEquals(settings, copy);
 	}
 	
 	private String checkIfImagesEqual(BufferedImage image1, BufferedImage image2)

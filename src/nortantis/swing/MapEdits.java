@@ -158,27 +158,9 @@ public class MapEdits implements Serializable
 		
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		
-		// Explicitly copy edits.text.areas because it isn't serializable. 
-		copyTextAreas(copy);
 		return copy;
 	}
 	
-	public void copyTextAreas(MapEdits to)
-	{
-		if (text != null)
-		{
-			for (int i : new Range(text.size()))
-			{
-				MapText thisText = text.get(i);
-				MapText toText = to.text.get(i);
-				if (thisText.line1Area != null)
-				{
-					toText.line1Area = new Area(thisText.line1Area);
-				}
-			}
-		}
-	}
-
 	@Override
 	public boolean equals(Object obj)
 	{

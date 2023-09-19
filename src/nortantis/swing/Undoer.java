@@ -50,6 +50,14 @@ public class Undoer
 		{
 			return;
 		}
+		
+		if (undoStack == null)
+		{
+			// This can happen even when !enabled if a map fails to draw and so reset has been called but initialize has not, 
+			// because the editor allows user to change settings so they can fix the issue that caused the map to fail to draw.
+			// It will mean that the undo stack will not contain their change, but I'm okay with that.
+			return;
+		}
 				
 		MapSettings prevSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened : undoStack.peek().settings;
 		MapSettings currentSettings = mainWindow.getSettingsFromGUI(true);
@@ -74,6 +82,11 @@ public class Undoer
 	public void undo()
 	{
 		if (!enabled)
+		{
+			return;
+		}
+		
+		if (undoStack == null)
 		{
 			return;
 		}
@@ -126,6 +139,11 @@ public class Undoer
 			return;
 		}
 		
+		if (redoStack == null)
+		{
+			return;
+		}
+		
 		if (redoStack.size() == 0)
 		{
 			return;
@@ -160,9 +178,9 @@ public class Undoer
 	
 	public void updateUndoRedoEnabled()
 	{		
-		boolean undoEnabled = enabled && undoStack.size() > 0;
+		boolean undoEnabled = enabled && undoStack != null && undoStack.size() > 0;
 		mainWindow.undoButton.setEnabled(undoEnabled);
-		boolean redoEnabled = enabled && redoStack.size() > 0;
+		boolean redoEnabled = enabled && redoStack != null && redoStack.size() > 0;
 		mainWindow.redoButton.setEnabled(redoEnabled);
 	}
 
