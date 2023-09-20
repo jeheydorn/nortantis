@@ -1,3 +1,5 @@
+REM Before running this script, in Eclipse, change AssetsPath.isInstalled to true and then export as a runnable jar file named Nortantis.jar.
+
 set inputFolder=installer_input
 set exeName=Nortantis
 
@@ -22,7 +24,6 @@ jpackage ^
 --app-version "0.1" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dfile.encoding=UTF-8 ^
---win-console ^
 --license-file end_user_license_agreement.txt
 
 REM Line to create Windows console: --win-console ^

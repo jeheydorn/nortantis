@@ -310,7 +310,7 @@ public class NewSettingsDialog extends JDialog
 		cityIconsTypeComboBox = new JComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
 		organizer.addLabelAndComponent("City icon type:",
-				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityIconsTypeComboBox);
+				"The set of city images to use.", cityIconsTypeComboBox);
 
 		booksPanel = SwingHelper.createBooksPanel(() -> handleMapChange());
 		JScrollPane booksScrollPane = new JScrollPane(booksPanel);

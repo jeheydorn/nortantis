@@ -1382,8 +1382,9 @@ public class TextDrawer
 			}
 			text.line1Area = area1;
 			text.line2Area = area2;
-			text.line1Bounds = bounds1;
-			text.line2Bounds = bounds2;
+			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved before the text is redrawn.
+			text.line1Bounds = new java.awt.Rectangle((int)(bounds1.x - textLocation.x), (int)(bounds1.y - textLocation.y), bounds1.width, bounds1.height);
+			text.line2Bounds = bounds2 == null ? null : new java.awt.Rectangle((int)(bounds2.x - textLocation.x), (int)(bounds2.y - textLocation.y), bounds2.width, bounds2.height);
 			if (riseOffset != 0)
 			{
 				// Update the text location with the offset. This only happens when generating new text, not when making changes in the editor.

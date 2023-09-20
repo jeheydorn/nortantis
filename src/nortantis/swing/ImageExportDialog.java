@@ -54,7 +54,7 @@ import nortantis.util.Logger;
 public class ImageExportDialog extends JDialog
 {
 	private JProgressBar progressBar;
-	boolean isCanceled;
+	private boolean isCanceled;
 	private JButton cancelButton;
 	private JButton exportButton;
 	private JSlider resolutionSlider;
@@ -322,6 +322,7 @@ public class ImageExportDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				isCanceled = true;
 				if (mapCreator != null)
 				{
 					mapCreator.cancel();
@@ -434,7 +435,13 @@ public class ImageExportDialog extends JDialog
 				}
 
 				System.gc();
-
+				
+				if (isCanceled)
+				{
+					Logger.println((type == ImageExportType.Map ? "Map" : "Heightmap") + " creation cancelled.");
+					return null;					
+				}
+				
 				String fileName;
 				if (exportAction == ExportAction.OpenInDefaultImageViewer)
 				{
@@ -466,7 +473,7 @@ public class ImageExportDialog extends JDialog
 					isError = true;
 				}
 				
-				if (exportAction == ExportAction.SaveToFile && !isError && !mapCreator.isCanceled())
+				if (exportAction == ExportAction.SaveToFile && !isError && !isCanceled)
 				{
 					progressBar.setVisible(false);
 					JOptionPane.showMessageDialog(getContentPane(), (type == ImageExportType.Map ? "Map" : "Heightmap") 

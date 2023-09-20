@@ -198,5 +198,4 @@ public class MapCreatorTest
 		}
 		return null;
 	}
-
 }

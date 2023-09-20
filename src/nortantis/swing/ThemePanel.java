@@ -917,8 +917,9 @@ public class ThemePanel extends JTabbedPane
 	{
 		boolean colorRegions = areRegionColorsVisible();
 		handleEnablingAndDisabling();
-		final String message = "Coast shading color selection is disabled because it will use the region color when draw"
-				+ " regions is checked.";
+		final String message = "Coast shading color selection is disabled because it will use the region color when the land coloring"
+				+ " method is '" + LandColoringMethod.ColorPoliticalRegions + "'.";
+		
 		if (colorRegions)
 		{
 			addToTooltip(btnChooseCoastShadingColor, message);

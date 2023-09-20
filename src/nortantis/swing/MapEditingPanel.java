@@ -92,17 +92,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setTextBoxToDraw(nortantis.graph.geom.Point location, Rectangle line1Bounds, Rectangle line2Bounds, double angle)
 	{
-		this.textBoxLocation = location;
-		this.textBoxBoundsLine1 = line1Bounds;
-		this.textBoxBoundsLine2 = line2Bounds;
+		this.textBoxLocation = location == null ? null : new nortantis.graph.geom.Point(location);
+		this.textBoxBoundsLine1 = line1Bounds == null ? null : new Rectangle(line1Bounds);
+		this.textBoxBoundsLine2 = line2Bounds == null ? null : new Rectangle(line2Bounds);
 		this.textBoxAngle = angle;
 	}
 
 	public void setTextBoxToDraw(MapText text)
 	{
-		this.textBoxLocation = text.location;
-		this.textBoxBoundsLine1 = text.line1Bounds;
-		this.textBoxBoundsLine2 = text.line2Bounds;
+		this.textBoxLocation = text.location == null ? null : new nortantis.graph.geom.Point(text.location);
+		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : new Rectangle(text.line1Bounds);
+		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : new Rectangle(text.line2Bounds);
 		this.textBoxAngle = text.angle;
 	}
 
@@ -241,10 +241,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.rotate(textBoxAngle, centerX, centerY);
 
 		int padding = (int) (9 * resolution);
-		g2.drawRect(textBoxBoundsLine1.x, textBoxBoundsLine1.y, textBoxBoundsLine1.width, textBoxBoundsLine1.height);
+		g2.drawRect((int)(textBoxBoundsLine1.x + centerX), (int)(textBoxBoundsLine1.y + centerY), textBoxBoundsLine1.width, textBoxBoundsLine1.height);
 		if (textBoxBoundsLine2 != null)
 		{
-			g2.drawRect(textBoxBoundsLine2.x, textBoxBoundsLine2.y, textBoxBoundsLine2.width, textBoxBoundsLine2.height);
+			g2.drawRect((int)(textBoxBoundsLine2.x + centerX), (int)(textBoxBoundsLine2.y + centerY), textBoxBoundsLine2.width, textBoxBoundsLine2.height);
 		}
 
 		// Place the image for the rotation tool.
@@ -252,16 +252,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 			int x;
 			if (textBoxBoundsLine2 == null)
 			{
-				x = textBoxBoundsLine1.x + textBoxBoundsLine1.width + padding;
+				x = (int)(textBoxBoundsLine1.x + centerX) + textBoxBoundsLine1.width + padding;
 			}
 			else
 			{
-				x = Math.max(textBoxBoundsLine1.x + textBoxBoundsLine1.width, textBoxBoundsLine2.x + textBoxBoundsLine2.width)+ padding;
+				x = Math.max((int)(textBoxBoundsLine1.x + centerX) + textBoxBoundsLine1.width, (int)(textBoxBoundsLine2.x + centerX) + textBoxBoundsLine2.width)+ padding;
 			}
 			int y;
 			if (textBoxBoundsLine2 == null)
 			{
-				y = textBoxBoundsLine1.y + (textBoxBoundsLine1.height / 2) - (rotateTextIconScaled.getHeight() / 2); 
+				y = (int)(textBoxBoundsLine1.y + centerY) + (textBoxBoundsLine1.height / 2) - (rotateTextIconScaled.getHeight() / 2); 
 			}
 			else
 			{
@@ -274,9 +274,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			int x = textBoxBoundsLine1.x + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
+			int x = (int)(textBoxBoundsLine1.x + centerX) + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
 					- (int) (Math.round(moveTextIconScaled.getWidth() / 2.0));
-			int y = textBoxBoundsLine1.y - (moveTextIconScaled.getHeight()) - padding;
+			int y =(int)(textBoxBoundsLine1.y + centerY) - (moveTextIconScaled.getHeight()) - padding;
 			g2.drawImage(moveTextIconScaled, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveTextIconScaled.getWidth(), moveTextIconScaled.getHeight()));
 			moveToolArea.transform(g2.getTransform());

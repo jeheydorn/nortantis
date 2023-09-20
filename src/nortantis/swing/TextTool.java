@@ -59,7 +59,6 @@ public class TextTool extends EditorTool
 	private RowHider brushSizeHider;
 	private RowHider clearRotationButtonHider;
 
-
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
 		super(parent, toolsPanel, mapUpdater);
@@ -175,11 +174,11 @@ public class TextTool extends EditorTool
 				{
 					textTypeForAdds = (TextType) textTypeComboBox.getSelectedItem();
 				}
-				
+
 				if (editButton.isSelected() && lastSelected != null)
 				{
 					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
-					updateTextInBackgroundThread(lastSelected);
+					updateTextInBackgroundThread();
 				}
 
 			}
@@ -191,13 +190,12 @@ public class TextTool extends EditorTool
 		{
 			textTypeComboBox.addItem(type);
 		}
-		
-		
+
 		JButton clearRotationButton = new JButton("Rotate to Horizontal");
 		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
 		TextTool thisTool = this;
 		clearRotationButton.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -205,23 +203,23 @@ public class TextTool extends EditorTool
 				{
 					lastSelected.angle = 0;
 					undoer.setUndoPoint(UpdateType.Text, thisTool);
+					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
 					updater.createAndShowMapTextChange();
 				}
 			}
 		});
 		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
 
-		
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
-	    brushSizeComboBox = brushSizeTuple.getFirst();
-	    brushSizeHider = brushSizeTuple.getSecond();
-
+		brushSizeComboBox = brushSizeTuple.getFirst();
+		brushSizeHider = brushSizeTuple.getSecond();
 
 		booksPanel = SwingHelper.createBooksPanel(() ->
 		{
 		});
-		booksHider = organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:",
-				"Selected books will be used to generate new names.", booksPanel);
+		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(
+				"Books for generating text:", "Selected books will be used to generate new names.", booksPanel
+		);
 
 		editButton.doClick();
 
@@ -243,7 +241,7 @@ public class TextTool extends EditorTool
 		{
 			lastSelected = null;
 		}
-		
+
 		if (addButton.isSelected())
 		{
 			textTypeComboBox.setSelectedItem(textTypeForAdds);
@@ -266,7 +264,7 @@ public class TextTool extends EditorTool
 			getToolOptionsPanel().revalidate();
 			getToolOptionsPanel().repaint();
 		}
-		
+
 		brushSizeHider.setVisible(deleteButton.isSelected());
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.repaint();
@@ -305,16 +303,18 @@ public class TextTool extends EditorTool
 		{
 			mapEditingPanel.clearTextBox();
 		}
-		else
+		// Only set the text box if the user didn't select another text while the draw was happening.
+		else if (!isMoving && !isRotating)
 		{
 			mapEditingPanel.setTextBoxToDraw(lastSelected);
 		}
+
 		mapEditingPanel.repaint();
 		// Tell the scroll pane to update itself.
 		mapEditingPanel.revalidate();
 	}
 
-	private void updateTextInBackgroundThread(final MapText selectedText)
+	private void updateTextInBackgroundThread()
 	{
 		updater.createAndShowMapTextChange();
 	}
@@ -335,23 +335,23 @@ public class TextTool extends EditorTool
 			mapEditingPanel.clearAreasToDraw();
 			if (mapTextsSelected.size() > 0)
 			{
-				updateTextInBackgroundThread(null);
+				updateTextInBackgroundThread();
 			}
 		}
 		else if (addButton.isSelected())
 		{
-			MapText addedText = updater.mapParts.textDrawer.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(),
-					getPointOnGraph(e.getPoint()));
+			MapText addedText = updater.mapParts.textDrawer
+					.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(), getPointOnGraph(e.getPoint()));
 			mainWindow.edits.text.add(addedText);
 
 			undoer.setUndoPoint(UpdateType.Text, this);
-			
+
 			lastSelected = addedText;
 			editButton.setSelected(true);
 			handleActionChanged();
 			handleSelectingTextToEdit(addedText, true);
-			
-			updateTextInBackgroundThread(null);
+
+			updateTextInBackgroundThread();
 		}
 		else if (editButton.isSelected())
 		{
@@ -386,15 +386,11 @@ public class TextTool extends EditorTool
 				int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
-				java.awt.Rectangle line1Bounds = new java.awt.Rectangle(lastSelected.line1Bounds.x + deltaX,
-						lastSelected.line1Bounds.y + deltaY, lastSelected.line1Bounds.width, lastSelected.line1Bounds.height);
-				java.awt.Rectangle line2Bounds = lastSelected.line2Bounds == null ? null
-						: new java.awt.Rectangle(lastSelected.line2Bounds.x + deltaX, lastSelected.line2Bounds.y + deltaY,
-								lastSelected.line2Bounds.width, lastSelected.line2Bounds.height);
 				nortantis.graph.geom.Point location = new nortantis.graph.geom.Point(
 						lastSelected.location.x + (deltaX / mainWindow.displayQualityScale),
-						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale));
-				mapEditingPanel.setTextBoxToDraw(location, line1Bounds, line2Bounds, lastSelected.angle);
+						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale)
+				);
+				mapEditingPanel.setTextBoxToDraw(location, lastSelected.line1Bounds, lastSelected.line2Bounds, lastSelected.angle);
 				mapEditingPanel.repaint();
 			}
 			else if (isRotating)
@@ -418,7 +414,7 @@ public class TextTool extends EditorTool
 			mapEditingPanel.clearAreasToDraw();
 			if (mapTextsSelected.size() > 0)
 			{
-				updateTextInBackgroundThread(null);
+				updateTextInBackgroundThread();
 			}
 		}
 	}
@@ -434,30 +430,31 @@ public class TextTool extends EditorTool
 				nortantis.graph.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
 
 				// The user dragged and dropped text.
-				// Divide the translation by mainWindow.displayQualityScale
-				// because MapText locations are stored as if
+				// Divide the translation by mainWindow.displayQualityScale because MapText locations are stored as if
 				// the map is generated at 100% resolution.
 				Point translation = new Point(
 						(int) ((graphPointMouseLocation.x - graphPointMousePressedLocation.x) / mainWindow.displayQualityScale),
-						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
-				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
-						+lastSelected.location.y + translation.y);
+						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale)
+				);
+				lastSelected.location = new nortantis.graph.geom.Point(
+						lastSelected.location.x + translation.x, + lastSelected.location.y + translation.y
+				);
 				undoer.setUndoPoint(UpdateType.Text, this);
-				updateTextInBackgroundThread(lastSelected);
+				updateTextInBackgroundThread();
+				isMoving = false;
 			}
 			else if (isRotating)
 			{
 				double centerX = lastSelected.location.x;
 				double centerY = lastSelected.location.y;
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				// I'm dividing graphPointMouseLocation by
-				// mainWindow.displayQualityScale here because
-				// lastSelected.location
-				// is not multiplied by mainWindow.displayQualityScale. This is
-				// because MapTexts are always stored as if
-				// the map were generated at 100% resolution.
-				double angle = Math.atan2((graphPointMouseLocation.y / mainWindow.displayQualityScale) - centerY,
-						(graphPointMouseLocation.x / mainWindow.displayQualityScale) - centerX);
+				// I'm dividing graphPointMouseLocation by mainWindow.displayQualityScale here because
+				// lastSelected.location is not multiplied by mainWindow.displayQualityScale. This is
+				// because MapTexts are always stored as if the map were generated at 100% resolution.
+				double angle = Math.atan2(
+						(graphPointMouseLocation.y / mainWindow.displayQualityScale) - centerY,
+						(graphPointMouseLocation.x / mainWindow.displayQualityScale) - centerX
+				);
 				// No upside-down text.
 				if (angle > Math.PI / 2)
 				{
@@ -469,16 +466,16 @@ public class TextTool extends EditorTool
 				}
 				lastSelected.angle = angle;
 				undoer.setUndoPoint(UpdateType.Text, this);
-				updateTextInBackgroundThread(lastSelected);
+				updateTextInBackgroundThread();
 				isRotating = false;
 			}
 		}
-		
+
 		if (deleteButton.isSelected())
 		{
 			mapEditingPanel.clearAreasToDraw();
 			mapEditingPanel.repaint();
-			
+
 			// This won't actually set an undo point unless text was deleted because Undoer is smart enough to discard undo points
 			// that didn't change anything.
 			undoer.setUndoPoint(UpdateType.Text, this);
@@ -501,7 +498,7 @@ public class TextTool extends EditorTool
 
 			// Need to re-draw all of the text.
 			undoer.setUndoPoint(UpdateType.Text, this);
-			updateTextInBackgroundThread(editButton.isSelected() ? selectedText : null);
+			updateTextInBackgroundThread();
 		}
 
 		if (selectedText == null)
@@ -542,11 +539,11 @@ public class TextTool extends EditorTool
 		{
 			handleSelectingTextToEdit(lastSelected, false);
 		}
-		
+
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.clearAreasToDraw();
 		mapEditingPanel.clearTextBox();
-		
+
 		updater.createAndShowMapTextChange();
 	}
 
@@ -556,7 +553,7 @@ public class TextTool extends EditorTool
 		if (deleteButton.isSelected())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-			
+
 			List<Area> areas = new ArrayList<>();
 			for (MapText text : mapTextsSelected)
 			{
@@ -578,7 +575,7 @@ public class TextTool extends EditorTool
 			mapEditingPanel.repaint();
 		}
 	}
-	
+
 	private List<MapText> getMapTextsSelectedByCurrentBrushSizeAndShowBrush(java.awt.Point mouseLocation)
 	{
 		List<MapText> mapTextsSelected = null;
@@ -586,7 +583,8 @@ public class TextTool extends EditorTool
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
-			mapTextsSelected = updater.mapParts.textDrawer.findTextSelectedByBrush(getPointOnGraph(mouseLocation), brushDiameter / mainWindow.zoom);
+			mapTextsSelected = updater.mapParts.textDrawer
+					.findTextSelectedByBrush(getPointOnGraph(mouseLocation), brushDiameter / mainWindow.zoom);
 		}
 		else
 		{
@@ -597,7 +595,7 @@ public class TextTool extends EditorTool
 				mapTextsSelected = Collections.singletonList(selected);
 			}
 		}
-		
+
 		mapEditingPanel.repaint();
 		return mapTextsSelected == null ? new ArrayList<>() : mapTextsSelected;
 	}
@@ -634,7 +632,7 @@ public class TextTool extends EditorTool
 			{
 				handleSelectingTextToEdit(null, false);
 			}
-			
+
 			mapEditingPanel.clearTextBox();
 			mapEditingPanel.clearAreasToDraw();
 			mapEditingPanel.hideBrush();
