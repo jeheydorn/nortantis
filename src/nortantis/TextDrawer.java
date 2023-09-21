@@ -128,7 +128,7 @@ public class TextDrawer
 		this.r = new Random(settings.textRandomSeed);
 		this.namesGenerated = new HashSet<>();
 
-		createOrUpdateNameGenerators(settings.books);
+		processBooks(settings.books);
 
 		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
 				(int) (settings.titleFont.getSize() * sizeMultiplyer));
@@ -143,7 +143,7 @@ public class TextDrawer
 
 	}
 	
-	public void createOrUpdateNameGenerators(Set<String> books)
+	public void processBooks(Set<String> books)
 	{
 		List<String> placeNames = new ArrayList<>();
 		List<String> personNames = new ArrayList<>();

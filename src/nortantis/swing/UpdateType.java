@@ -8,4 +8,5 @@ public enum UpdateType
 	Fonts,
 	Terrain,
 	GrungeAndFray,
+	ReprocessBooks,
 }

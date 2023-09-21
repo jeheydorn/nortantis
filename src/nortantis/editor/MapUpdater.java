@@ -108,6 +108,11 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null);
 	}
+	
+	public void reprocessBooks()
+	{
+		createAndShowMap(UpdateType.ReprocessBooks, null, null, null);
+	}
 
 	/**
 	 * Redraws the map based on a change that was made.
@@ -211,6 +216,10 @@ public abstract class MapUpdater
 			mapParts.frayedBorderMask = null;
 			mapParts.grunge = null;
 		}
+		else if (updateType == UpdateType.ReprocessBooks)
+		{
+			
+		}
 		else
 		{
 			throw new IllegalStateException("Unrecognized update type: " + updateType);
@@ -246,6 +255,11 @@ public abstract class MapUpdater
 		}
 		return edges.stream().map(e -> mapParts.graph.edges.get(e.index)).collect(Collectors.toSet());
 	}
+	
+	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
+	{
+		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
+	}
 
 	/**
 	 * Redraws the map, then displays it
@@ -264,11 +278,15 @@ public abstract class MapUpdater
 		}
 
 		isMapBeingDrawn = true;
-		if (updateType != UpdateType.Incremental && updateType != UpdateType.Text)
+		if (!isUpdateTypeThatAllowsInteractions(updateType))
 		{
 			isMapReadyForInteractions = false;
 		}
-		onBeginDraw();
+		
+		if (updateType != UpdateType.ReprocessBooks)
+		{
+			onBeginDraw();
+		}
 
 		final MapSettings settings = getSettingsFromGUI();
 
@@ -282,7 +300,7 @@ public abstract class MapUpdater
 			@Override
 			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException, CancelledException
 			{
-				if (updateType != UpdateType.Incremental && updateType != UpdateType.Text)
+				if (!isUpdateTypeThatAllowsInteractions(updateType))
 				{
 					Logger.clear();
 					interactionsLock.lock();
@@ -292,8 +310,39 @@ public abstract class MapUpdater
 				{
 					clearMapPartsAsNeeded(updateType);
 
-					if (updateType != UpdateType.Incremental)
+					if (updateType == UpdateType.Incremental)
 					{
+						BufferedImage map = getCurrentMapForIncrementalUpdate();
+						// Incremental update
+						if (centersChanged != null && centersChanged.size() > 0)
+						{
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map,
+									getCurrentCenters(centersChanged));
+							return new Tuple2<>(map, replaceBounds);
+						}
+						else if (edgesChanged != null && edgesChanged.size() > 0)
+						{
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
+									getCurrentEdges(edgesChanged));
+							return new Tuple2<>(map, replaceBounds);
+						}
+						else
+						{
+							// Nothing to do.
+							return new Tuple2<>(map, null);
+						}
+					}
+					else if (updateType == UpdateType.ReprocessBooks)
+					{
+						if (mapParts != null && mapParts.textDrawer != null)
+						{
+							mapParts.textDrawer.processBooks(settings.books);
+						}
+						return new Tuple2<>(null, null);
+					}
+					else
+					{
+						
 						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;
@@ -319,33 +368,11 @@ public abstract class MapUpdater
 						System.gc();
 						return new Tuple2<>(map, null);
 					}
-					else
-					{
-						BufferedImage map = getCurrentMapForIncrementalUpdate();
-						// Incremental update
-						if (centersChanged != null && centersChanged.size() > 0)
-						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map,
-									getCurrentCenters(centersChanged));
-							return new Tuple2<>(map, replaceBounds);
-						}
-						else if (edgesChanged != null && edgesChanged.size() > 0)
-						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
-									getCurrentEdges(edgesChanged));
-							return new Tuple2<>(map, replaceBounds);
-						}
-						else
-						{
-							// Nothing to do.
-							return new Tuple2<>(map, null);
-						}
-					}
 				}
 				finally
 				{
 					drawLock.unlock();
-					if (updateType != UpdateType.Incremental && updateType != UpdateType.Text)
+					if (!isUpdateTypeThatAllowsInteractions(updateType))
 					{
 						interactionsLock.unlock();
 					}
@@ -360,8 +387,11 @@ public abstract class MapUpdater
 				try
 				{
 					Tuple2<BufferedImage, Rectangle> tuple = get();
-					map = tuple.getFirst();
-					replaceBounds = tuple.getSecond();
+					if (tuple != null)
+					{
+						map = tuple.getFirst();
+						replaceBounds = tuple.getSecond();
+					}
 				}
 				catch (InterruptedException ex)
 				{
@@ -388,12 +418,15 @@ public abstract class MapUpdater
 					
 					MapUpdate next = combineAndGetNextUpdateToDraw();
 
-					boolean anotherDrawIsQueued = next != null;
-					int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-					onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
-							replaceBounds == null ? null
-									: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-											replaceBounds.width, replaceBounds.height));
+					if (updateType != UpdateType.ReprocessBooks)
+					{
+						boolean anotherDrawIsQueued = next != null;
+						int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
+								replaceBounds == null ? null
+										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+												replaceBounds.width, replaceBounds.height));
+					}
 
 					isMapBeingDrawn = false;
 					
@@ -414,7 +447,10 @@ public abstract class MapUpdater
 				}
 				else
 				{
-					onFailedToDraw();
+					if (updateType != UpdateType.ReprocessBooks)
+					{
+						onFailedToDraw();
+					}
 					isMapBeingDrawn = false;
 				}
 

@@ -218,13 +218,7 @@ public class TextTool extends EditorTool
 
 		booksPanel = SwingHelper.createBooksPanel(() ->
 		{
-			updater.dowWhenMapIsNotDrawing(() ->
-			{
-				if (updater.mapParts != null && updater.mapParts.textDrawer != null)
-				{
-					updater.mapParts.textDrawer.createOrUpdateNameGenerators(SwingHelper.getSelectedBooksFromGUI(booksPanel));
-				}
-			});
+			updater.reprocessBooks();
 		});
 		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(
 				"Books for generating text:", "Selected books will be used to generate new names.", booksPanel
@@ -335,18 +329,26 @@ public class TextTool extends EditorTool
 		}
 		else if (addButton.isSelected())
 		{
-			MapText addedText = updater.mapParts.textDrawer
-					.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(), getPointOnGraph(e.getPoint()));
-			mainWindow.edits.text.add(addedText);
+			// This is differed if the map is currently drawing so that we don't try to generate text while the text drawer is reprocessing
+			// books after a book checkbox was checked.
+			updater.dowWhenMapIsNotDrawing(() ->
+			{
+				if (addButton.isSelected())
+				{
+					MapText addedText = updater.mapParts.textDrawer
+							.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(), getPointOnGraph(e.getPoint()));
+					mainWindow.edits.text.add(addedText);
 
-			undoer.setUndoPoint(UpdateType.Text, this);
+					undoer.setUndoPoint(UpdateType.Text, this);
 
-			lastSelected = addedText;
-			editButton.setSelected(true);
-			handleActionChanged();
-			handleSelectingTextToEdit(addedText, true);
+					lastSelected = addedText;
+					editButton.setSelected(true);
+					handleActionChanged();
+					handleSelectingTextToEdit(addedText, true);
 
-			updater.createAndShowMapTextChange();
+					updater.createAndShowMapTextChange();
+				}
+			});
 		}
 		else if (editButton.isSelected())
 		{
