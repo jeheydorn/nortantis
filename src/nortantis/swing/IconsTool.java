@@ -3,8 +3,6 @@ package nortantis.swing;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -24,7 +22,6 @@ import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultFocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -261,9 +258,11 @@ public class IconsTool extends EditorTool
 		drawModeButton.setToolTipText("Draw using the selected brush (Alt+D)");
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
+		drawModeButton.setMnemonic(KeyEvent.VK_D);
 		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
 		eraseModeButton.setToolTipText("Erase using the selected brush (Alt+E)");
 		eraseModeButton.addActionListener(modeListener);
+		eraseModeButton.setMnemonic(KeyEvent.VK_E);
 		modeHider = organizer.addLabelAndComponentsHorizontal(
 				"Mode:", "Whether to draw or erase using the selected brush type.", Arrays.asList(drawModeButton, eraseModeButton), 0, 5
 		);
@@ -342,8 +341,6 @@ public class IconsTool extends EditorTool
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
 
-		setupKeyboardShortcuts();
-
 		if (!showIconPreviewsUsingLandBackground)
 		{
 			updateIconTypeButtonPreviewImages(null);
@@ -361,29 +358,6 @@ public class IconsTool extends EditorTool
 		{
 			treeTypes.buttons.get(1).getRadioButton().setSelected(true);
 		}
-	}
-
-	private void setupKeyboardShortcuts()
-	{
-		// Using KeyEventDispatcher instead of KeyListener makes the keys work
-		// when any component is focused.
-		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
-		{
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if ((e.getKeyCode() == KeyEvent.VK_E) && e.isAltDown())
-				{
-					eraseModeButton.doClick();
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_D) && e.isAltDown())
-				{
-					drawModeButton.doClick();
-				}
-
-				return false;
-			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
 	}
 
 	private void updateTypePanels()
@@ -468,7 +442,8 @@ public class IconsTool extends EditorTool
 
 	private void updateCityButtonPreviewImages(MapSettings settings)
 	{
-		String cityType = lblCityIconType.getText();
+		final String cityType = lblCityIconType.getText();
+		final List<String> iconNamesWithoutWidthOrExtension = cityButtons.buttons.stream().map((button) -> button.getText()).collect(Collectors.toList());
 		SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<>()
 		{
 			@Override
@@ -478,9 +453,8 @@ public class IconsTool extends EditorTool
 				Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance()
 						.getIconsWithWidths(IconType.cities, cityType);
 
-				for (RadioButtonWithImage button : cityButtons.buttons)
+				for (String cityIconNameWithoutWidthOrExtension : iconNamesWithoutWidthOrExtension)
 				{
-					String cityIconNameWithoutWidthOrExtension = button.getText();
 					if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
 					{
 						throw new IllegalArgumentException(
@@ -507,6 +481,13 @@ public class IconsTool extends EditorTool
 				{
 					throw new RuntimeException(e);
 				}
+				
+				if (!cityType.equals(lblCityIconType.getText()))
+				{
+					// The user changed the city type while we were updating the city icons from a previous change. Do nothing. 
+					// The next update will set the icons on the buttons.
+					return;
+				}
 
 				for (int i : new Range(previewImages.size()))
 				{
@@ -522,12 +503,13 @@ public class IconsTool extends EditorTool
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
+			final String buttonText = button.getText();
 			SwingWorker<BufferedImage, Void> worker = new SwingWorker<>()
 			{
 				@Override
 				protected BufferedImage doInBackground() throws Exception
 				{
-					return createIconPreviewForGroup(settings, iconType, button.getText());
+					return createIconPreviewForGroup(settings, iconType, buttonText);
 				}
 
 				@Override
@@ -1058,7 +1040,7 @@ public class IconsTool extends EditorTool
 			createOrUpdateRadioButtonsForCities(null);
 		}
 		updateTypePanels();
-		if (showIconPreviewsUsingLandBackground && changeEffectsBackgroundImages)
+		if (showIconPreviewsUsingLandBackground && (changeEffectsBackgroundImages || isCityTypeChange))
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}

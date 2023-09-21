@@ -1,7 +1,5 @@
 package nortantis.swing;
 
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,8 +7,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.geom.Area;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -22,7 +18,6 @@ import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultFocusManager;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -64,43 +59,6 @@ public class TextTool extends EditorTool
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
 		super(parent, toolsPanel, mapUpdater);
-
-		// Using KeyEventDispatcher instead of KeyListener makes the keys work
-		// when any component is focused.
-		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
-		{
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if (e.getKeyCode() == KeyEvent.VK_ENTER)
-				{
-					handleSelectingTextToEdit(lastSelected, false);
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_A) && e.isAltDown())
-				{
-					addButton.doClick();
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_E) && e.isAltDown())
-				{
-					editButton.doClick();
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_D) && e.isAltDown())
-				{
-					deleteButton.doClick();
-				}
-
-				return false;
-			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
-
-		parent.addWindowListener(new WindowAdapter()
-		{
-			public void windowClosing(WindowEvent e)
-			{
-				KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(myKeyEventDispatcher);
-			}
-		});
-
 	}
 
 	@Override
@@ -133,18 +91,21 @@ public class TextTool extends EditorTool
 			group.add(editButton);
 			radioButtons.add(editButton);
 			editButton.addActionListener(listener);
+			editButton.setMnemonic(KeyEvent.VK_E);
 			editButton.setToolTipText("Edit text (Alt+E)");
 
 			addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
 			group.add(addButton);
 			radioButtons.add(addButton);
 			addButton.addActionListener(listener);
+			addButton.setMnemonic(KeyEvent.VK_A);
 			addButton.setToolTipText("Add new text of the selected text type (Alt+A)");
 
 			deleteButton = new JRadioButton("<HTML><U>D</U>elete</HTML>");
 			group.add(deleteButton);
 			radioButtons.add(deleteButton);
 			deleteButton.addActionListener(listener);
+			deleteButton.setMnemonic(KeyEvent.VK_D);
 			deleteButton.setToolTipText("Delete text (Alt+D)");
 
 			organizer.addLabelAndComponentsVertical("Action:", "", radioButtons);
@@ -160,6 +121,14 @@ public class TextTool extends EditorTool
 				{
 					handleSelectingTextToEdit(lastSelected, false);
 				}
+			}
+		});
+		editTextField.addActionListener(new ActionListener()
+		{	
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleSelectingTextToEdit(lastSelected, false);
 			}
 		});
 		editTextFieldHider = organizer.addLeftAlignedComponent(editTextField);
@@ -593,7 +562,7 @@ public class TextTool extends EditorTool
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			mapTextsSelected = updater.mapParts.textDrawer
-					.findTextSelectedByBrush(getPointOnGraph(mouseLocation), brushDiameter / mainWindow.zoom);
+					.findTextSelectedByBrush(getPointOnGraph(mouseLocation), (brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
 		}
 		else
 		{

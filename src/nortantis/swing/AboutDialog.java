@@ -7,8 +7,6 @@ import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -23,7 +21,6 @@ import java.nio.file.Paths;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -74,6 +71,7 @@ public class AboutDialog extends JDialog
 		content.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton closeButton = new JButton("<html><u>C</u>lose</html>");
+		closeButton.setMnemonic(KeyEvent.VK_C);
 		closeButton.addActionListener(new ActionListener()
 		{	
 			@Override
@@ -83,21 +81,6 @@ public class AboutDialog extends JDialog
 			}
 		});
 		bottomPanel.add(closeButton);
-		
-		
-
-		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
-		{
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if ((e.getKeyCode() == KeyEvent.VK_C) && e.isAltDown())
-				{
-					closeButton.doClick();
-				}
-				return false;
-			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
 		
 		pack();
 	}

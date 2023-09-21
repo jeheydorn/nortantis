@@ -5,8 +5,6 @@ import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -19,7 +17,6 @@ import java.util.Objects;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -235,6 +232,7 @@ public class CustomImagesDialog extends JDialog
 		content.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton okayButton = new JButton("<html><u>O</u>K</html>");
+		okayButton.setMnemonic(KeyEvent.VK_O);
 		okayButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -269,6 +267,7 @@ public class CustomImagesDialog extends JDialog
 		bottomPanel.add(okayButton);
 
 		JButton cancelButton = new JButton("<html><u>C</u>ancel</html>");
+		cancelButton.setMnemonic(KeyEvent.VK_C);
 		cancelButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -278,23 +277,6 @@ public class CustomImagesDialog extends JDialog
 			}
 		});
 		bottomPanel.add(cancelButton);
-
-		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
-		{
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if ((e.getKeyCode() == KeyEvent.VK_C) && e.isAltDown())
-				{
-					cancelButton.doClick();
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_O) && e.isAltDown())
-				{
-					okayButton.doClick();
-				}
-				return false;
-			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
 	}
 
 	private boolean mergeInstalledImagesIntoCustomFolderIfEmpty(String customImagesFolder)

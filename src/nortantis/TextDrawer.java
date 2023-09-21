@@ -43,7 +43,6 @@ import nortantis.util.Pair;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
-import nortantis.util.Tuple4;
 
 public class TextDrawer
 {

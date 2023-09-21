@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIconType;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;

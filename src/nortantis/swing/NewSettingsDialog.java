@@ -4,8 +4,6 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -18,7 +16,6 @@ import java.util.TreeSet;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -148,6 +145,7 @@ public class NewSettingsDialog extends JDialog
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton createMapButton = new JButton("<html>C<u>r</u>eate Map</html>");
+		createMapButton.setMnemonic(KeyEvent.VK_R);
 		bottomButtonsPanel.add(createMapButton);
 		createMapButton.addActionListener(new ActionListener()
 		{
@@ -170,19 +168,6 @@ public class NewSettingsDialog extends JDialog
 				handleMapChange();
 			}
 		});
-
-		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
-		{
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if ((e.getKeyCode() == KeyEvent.VK_R) && e.isAltDown())
-				{
-					createMapButton.doClick();
-				}
-				return false;
-			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
 
 		pack();
 	}

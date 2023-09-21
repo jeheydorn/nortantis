@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import java.awt.geom.Area;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,7 +8,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.ReentrantLock;
 
 import nortantis.IconDrawer;
 import nortantis.MapText;
@@ -21,7 +19,6 @@ import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
-import nortantis.util.Helper;
 import nortantis.util.Range;
 
 /**

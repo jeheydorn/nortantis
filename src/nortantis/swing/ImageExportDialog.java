@@ -5,8 +5,6 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.KeyEventDispatcher;
-import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -25,7 +23,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultFocusManager;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -227,6 +224,7 @@ public class ImageExportDialog extends JDialog
 		JPanel bottomButtonsPanel = new JPanel();
 		bottomButtonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		exportButton = new JButton("<html><u>E</u>xport</html>");
+		exportButton.setMnemonic(KeyEvent.VK_E);
 		exportButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -317,6 +315,7 @@ public class ImageExportDialog extends JDialog
 		bottomButtonsPanel.add(exportButton);
 
 		cancelButton = new JButton("<html><u>C</u>ancel</html>");
+		cancelButton.setMnemonic(KeyEvent.VK_C);
 		cancelButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -332,23 +331,6 @@ public class ImageExportDialog extends JDialog
 		});
 		bottomButtonsPanel.add(cancelButton);
 		contents.add(bottomButtonsPanel, BorderLayout.SOUTH);
-
-		KeyEventDispatcher myKeyEventDispatcher = new DefaultFocusManager()
-		{
-			public boolean dispatchKeyEvent(KeyEvent e)
-			{
-				if ((e.getKeyCode() == KeyEvent.VK_E) && e.isAltDown())
-				{
-					exportButton.doClick();
-				}
-				else if ((e.getKeyCode() == KeyEvent.VK_C) && e.isAltDown())
-				{
-					cancelButton.doClick();
-				}
-				return false;
-			}
-		};
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(myKeyEventDispatcher);
 
 		addWindowListener(new WindowListener()
 		{

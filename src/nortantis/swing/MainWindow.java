@@ -21,7 +21,6 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -54,7 +53,6 @@ import nortantis.DimensionDouble;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
-import nortantis.Stopwatch;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
