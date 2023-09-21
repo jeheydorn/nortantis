@@ -74,9 +74,9 @@ public abstract class EditorTool
 	/**
 	 * Do any processing to the generated map before displaying it, and return the map to display. This is also the earliest time when
 	 * mapParts is initialized.
-	 * 
 	 * @param map
 	 *            The generated map
+	 * 
 	 * @return The map to display
 	 */
 	protected abstract void onBeforeShowMap();

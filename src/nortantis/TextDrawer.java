@@ -128,11 +128,28 @@ public class TextDrawer
 		this.r = new Random(settings.textRandomSeed);
 		this.namesGenerated = new HashSet<>();
 
+		createOrUpdateNameGenerators(settings.books);
+
+		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
+				(int) (settings.titleFont.getSize() * sizeMultiplyer));
+		regionFontScaled = settings.regionFont.deriveFont(settings.regionFont.getStyle(),
+				(int) (settings.regionFont.getSize() * sizeMultiplyer));
+		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
+				(int) (settings.mountainRangeFont.getSize() * sizeMultiplyer));
+		citiesAndOtherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
+				(int) (settings.otherMountainsFont.getSize() * sizeMultiplyer));
+		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
+				(int) (settings.riverFont.getSize() * sizeMultiplyer));
+
+	}
+	
+	public void createOrUpdateNameGenerators(Set<String> books)
+	{
 		List<String> placeNames = new ArrayList<>();
 		List<String> personNames = new ArrayList<>();
 		List<Pair<String>> nounAdjectivePairs = new ArrayList<>();
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
-		for (String book : settings.books)
+		for (String book : books)
 		{
 			placeNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_place_names.txt"));
 			personNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_person_names.txt"));
@@ -146,18 +163,6 @@ public class TextDrawer
 				probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
 
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
-
-		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
-				(int) (settings.titleFont.getSize() * sizeMultiplyer));
-		regionFontScaled = settings.regionFont.deriveFont(settings.regionFont.getStyle(),
-				(int) (settings.regionFont.getSize() * sizeMultiplyer));
-		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
-				(int) (settings.mountainRangeFont.getSize() * sizeMultiplyer));
-		citiesAndOtherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
-				(int) (settings.otherMountainsFont.getSize() * sizeMultiplyer));
-		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
-				(int) (settings.riverFont.getSize() * sizeMultiplyer));
-
 	}
 
 	private List<Pair<String>> readStringPairs(String filename)

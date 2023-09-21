@@ -16,7 +16,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -178,7 +180,7 @@ public class TextTool extends EditorTool
 				if (editButton.isSelected() && lastSelected != null)
 				{
 					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
-					updateTextInBackgroundThread();
+					updater.createAndShowMapTextChange();
 				}
 
 			}
@@ -216,6 +218,13 @@ public class TextTool extends EditorTool
 
 		booksPanel = SwingHelper.createBooksPanel(() ->
 		{
+			updater.dowWhenMapIsNotDrawing(() ->
+			{
+				if (updater.mapParts != null && updater.mapParts.textDrawer != null)
+				{
+					updater.mapParts.textDrawer.createOrUpdateNameGenerators(SwingHelper.getSelectedBooksFromGUI(booksPanel));
+				}
+			});
 		});
 		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(
 				"Books for generating text:", "Selected books will be used to generate new names.", booksPanel
@@ -266,7 +275,7 @@ public class TextTool extends EditorTool
 		}
 
 		brushSizeHider.setVisible(deleteButton.isSelected());
-		mapEditingPanel.clearAreasToDraw();
+		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
 		mapEditingPanel.hideBrush();
 	}
@@ -314,11 +323,6 @@ public class TextTool extends EditorTool
 		mapEditingPanel.revalidate();
 	}
 
-	private void updateTextInBackgroundThread()
-	{
-		updater.createAndShowMapTextChange();
-	}
-
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
@@ -327,16 +331,7 @@ public class TextTool extends EditorTool
 
 		if (deleteButton.isSelected())
 		{
-			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-			for (MapText text : mapTextsSelected)
-			{
-				text.value = "";
-			}
-			mapEditingPanel.clearAreasToDraw();
-			if (mapTextsSelected.size() > 0)
-			{
-				updateTextInBackgroundThread();
-			}
+			deleteTexts(e.getPoint());
 		}
 		else if (addButton.isSelected())
 		{
@@ -351,7 +346,7 @@ public class TextTool extends EditorTool
 			handleActionChanged();
 			handleSelectingTextToEdit(addedText, true);
 
-			updateTextInBackgroundThread();
+			updater.createAndShowMapTextChange();
 		}
 		else if (editButton.isSelected())
 		{
@@ -369,6 +364,40 @@ public class TextTool extends EditorTool
 				MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
 				handleSelectingTextToEdit(selectedText, true);
 			}
+		}
+	}
+
+	private void deleteTexts(Point mouseLocation)
+	{
+		List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation);
+		mapEditingPanel.addProcessingAreasFromTexts(mapTextsSelected);
+		for (MapText text : mapTextsSelected)
+		{
+			text.value = "";
+		}
+		mapEditingPanel.clearHighlightedAreas();
+		mapEditingPanel.repaint();
+		if (mapTextsSelected.size() > 0)
+		{
+			Set<Area> areasToRemove = new HashSet<>();
+			for (MapText text : mapTextsSelected)
+			{
+				if (text.line1Area != null)
+				{
+					areasToRemove.add(text.line1Area);
+				}
+
+				if (text.line2Area != null)
+				{
+					areasToRemove.add(text.line2Area);
+				}
+			}
+
+			updater.createAndShowMapTextChange(() ->
+			{
+				mapEditingPanel.removeProcessingAreas(areasToRemove);
+				mapEditingPanel.repaint();
+			});
 		}
 	}
 
@@ -406,16 +435,7 @@ public class TextTool extends EditorTool
 		}
 		else if (deleteButton.isSelected())
 		{
-			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-			for (MapText text : mapTextsSelected)
-			{
-				text.value = "";
-			}
-			mapEditingPanel.clearAreasToDraw();
-			if (mapTextsSelected.size() > 0)
-			{
-				updateTextInBackgroundThread();
-			}
+			deleteTexts(e.getPoint());
 		}
 	}
 
@@ -437,10 +457,10 @@ public class TextTool extends EditorTool
 						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale)
 				);
 				lastSelected.location = new nortantis.graph.geom.Point(
-						lastSelected.location.x + translation.x, + lastSelected.location.y + translation.y
+						lastSelected.location.x + translation.x, +lastSelected.location.y + translation.y
 				);
 				undoer.setUndoPoint(UpdateType.Text, this);
-				updateTextInBackgroundThread();
+				updater.createAndShowMapTextChange();
 				isMoving = false;
 			}
 			else if (isRotating)
@@ -466,14 +486,14 @@ public class TextTool extends EditorTool
 				}
 				lastSelected.angle = angle;
 				undoer.setUndoPoint(UpdateType.Text, this);
-				updateTextInBackgroundThread();
+				updater.createAndShowMapTextChange();
 				isRotating = false;
 			}
 		}
 
 		if (deleteButton.isSelected())
 		{
-			mapEditingPanel.clearAreasToDraw();
+			mapEditingPanel.clearHighlightedAreas();
 			mapEditingPanel.repaint();
 
 			// This won't actually set an undo point unless text was deleted because Undoer is smart enough to discard undo points
@@ -498,7 +518,7 @@ public class TextTool extends EditorTool
 
 			// Need to re-draw all of the text.
 			undoer.setUndoPoint(UpdateType.Text, this);
-			updateTextInBackgroundThread();
+			updater.createAndShowMapTextChange();
 		}
 
 		if (selectedText == null)
@@ -541,8 +561,9 @@ public class TextTool extends EditorTool
 		}
 
 		mapEditingPanel.hideBrush();
-		mapEditingPanel.clearAreasToDraw();
+		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearTextBox();
+		mapEditingPanel.clearProcessingAreas();
 
 		updater.createAndShowMapTextChange();
 	}
@@ -553,21 +574,7 @@ public class TextTool extends EditorTool
 		if (deleteButton.isSelected())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-
-			List<Area> areas = new ArrayList<>();
-			for (MapText text : mapTextsSelected)
-			{
-				if (text.line1Area != null)
-				{
-					areas.add(text.line1Area);
-				}
-
-				if (text.line2Area != null)
-				{
-					areas.add(text.line2Area);
-				}
-			}
-			mapEditingPanel.setAreasToDraw(areas);
+			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
 		}
 		else
 		{
@@ -604,7 +611,7 @@ public class TextTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.hideBrush();
-		mapEditingPanel.clearAreasToDraw();
+		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
 	}
 
@@ -633,9 +640,7 @@ public class TextTool extends EditorTool
 				handleSelectingTextToEdit(null, false);
 			}
 
-			mapEditingPanel.clearTextBox();
-			mapEditingPanel.clearAreasToDraw();
-			mapEditingPanel.hideBrush();
+			mapEditingPanel.clearAllSelectionsAndHighlights();
 			mapEditingPanel.repaint();
 		}
 	}

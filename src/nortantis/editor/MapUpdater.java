@@ -4,7 +4,10 @@ import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -63,37 +66,47 @@ public abstract class MapUpdater
 	 */
 	public void createAndShowMapFull()
 	{
-		createAndShowMap(UpdateType.Full, null, null);
+		createAndShowMap(UpdateType.Full, null, null, null);
 	}
 
 	public void createAndShowMapTextChange()
 	{
-		createAndShowMap(UpdateType.Text, null, null);
+		createAndShowMapTextChange(null);
+	}
+
+	public void createAndShowMapTextChange(Runnable callback)
+	{
+		List<Runnable> callbacks = new ArrayList<>();
+		if (callback != null)
+		{
+			callbacks.add(callback);
+		}
+		createAndShowMap(UpdateType.Text, null, null, callbacks);
 	}
 
 	public void createAndShowMapFontsChange()
 	{
-		createAndShowMap(UpdateType.Fonts, null, null);
+		createAndShowMap(UpdateType.Fonts, null, null, null);
 	}
 
 	public void createAndShowMapTerrainChange()
 	{
-		createAndShowMap(UpdateType.Terrain, null, null);
+		createAndShowMap(UpdateType.Terrain, null, null, null);
 	}
 
 	public void createAndShowMapGrungeOrFrayedEdgeChange()
 	{
-		createAndShowMap(UpdateType.GrungeAndFray, null, null);
+		createAndShowMap(UpdateType.GrungeAndFray, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, centersChanged, null);
+		createAndShowMap(UpdateType.Incremental, centersChanged, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, null, edgesChanged);
+		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null);
 	}
 
 	/**
@@ -110,7 +123,7 @@ public abstract class MapUpdater
 	{
 		if (change.updateType != UpdateType.Incremental)
 		{
-			createAndShowMap(change.updateType, null, null);
+			createAndShowMap(change.updateType, null, null, null);
 		}
 		else
 		{
@@ -123,7 +136,7 @@ public abstract class MapUpdater
 			{
 				edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
 			}
-			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged);
+			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, null);
 		}
 	}
 
@@ -237,7 +250,7 @@ public abstract class MapUpdater
 	/**
 	 * Redraws the map, then displays it
 	 */
-	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
+	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> callbacks)
 	{
 		if (!enabled)
 		{
@@ -246,7 +259,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged));
+			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, callbacks));
 			return;
 		}
 
@@ -372,7 +385,7 @@ public abstract class MapUpdater
 					{
 						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(settings.edits, mapParts.graph);
 					}
-
+					
 					MapUpdate next = combineAndGetNextUpdateToDraw();
 
 					boolean anotherDrawIsQueued = next != null;
@@ -383,10 +396,18 @@ public abstract class MapUpdater
 											replaceBounds.width, replaceBounds.height));
 
 					isMapBeingDrawn = false;
+					
+					if (callbacks != null)
+					{
+						for (Runnable runnable : callbacks)
+						{
+							runnable.run();
+						}
+					}
 
 					if (next != null)
 					{
-						createAndShowMap(next.updateType, next.centersChanged, next.edgesChanged);
+						createAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.callbacks);
 					}
 
 					isMapReadyForInteractions = true;
@@ -442,8 +463,8 @@ public abstract class MapUpdater
 		}
 		else
 		{
-			// Combine incremental updates until we hit one that isn't
-			// incremental.
+			// Combine other types updates until we hit one that isn't
+			// the same type.
 			MapUpdate update = updatesToDraw.poll();
 			while (updatesToDraw.size() > 0 && updatesToDraw.peek().updateType == update.updateType)
 			{
@@ -484,7 +505,12 @@ public abstract class MapUpdater
 
 	private class MapUpdate
 	{
-		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged)
+		Set<Center> centersChanged;
+		Set<Edge> edgesChanged;
+		UpdateType updateType;
+		List<Runnable> callbacks;
+
+		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> callbacks)
 		{
 			this.updateType = updateType;
 			if (centersChanged != null)
@@ -495,11 +521,15 @@ public abstract class MapUpdater
 			{
 				this.edgesChanged = new HashSet<Edge>(edgesChanged);
 			}
+			if (callbacks != null)
+			{
+				this.callbacks = callbacks;				
+			}
+			else
+			{
+				this.callbacks = new ArrayList<>();
+			}
 		}
-
-		Set<Center> centersChanged;
-		Set<Edge> edgesChanged;
-		UpdateType updateType;
 
 		public void add(MapUpdate other)
 		{
@@ -512,6 +542,8 @@ public abstract class MapUpdater
 			{
 				throw new IllegalArgumentException();
 			}
+			
+			callbacks.addAll(other.callbacks);
 
 			if (updateType == UpdateType.Incremental)
 			{

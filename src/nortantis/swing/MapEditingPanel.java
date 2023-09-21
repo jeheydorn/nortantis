@@ -9,6 +9,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,7 @@ import nortantis.util.ImageHelper;
 public class MapEditingPanel extends UnscaledImagePanel
 {
 	private final Color highlightColor = new Color(255, 227, 74);
+	private final Color processingColor = Color.orange;
 	private final Color selectColor = Color.orange;
 	private Set<Center> highlightedCenters;
 	private Set<Center> selectedCenters;
@@ -51,7 +53,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private BufferedImage moveTextIconScaled;
 	private Area moveToolArea;
 	private Rectangle textBoxBoundsLine2;
-	private List<Area> areasToDraw;
+	private Set<Area> highlightedAreas;
+	private Set<Area> processingAreas;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -114,14 +117,70 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxAngle = 0.0;
 	}
 	
-	public void setAreasToDraw(List<Area> areas)
+	public void setHighlightedAreasFromTexts(List<MapText> texts)
 	{
-		this.areasToDraw = areas;
+		Set<Area> areas = new HashSet<>();
+		for (MapText text : texts)
+		{
+			if (text.line1Area != null)
+			{
+				areas.add(text.line1Area);
+			}
+
+			if (text.line2Area != null)
+			{
+				areas.add(text.line2Area);
+			}
+		}
+		this.highlightedAreas = areas;
 	}
 	
-	public void clearAreasToDraw()
+	public void clearHighlightedAreas()
 	{
-		this.areasToDraw = null;
+		this.highlightedAreas = null;
+	}
+	
+	public void addProcessingAreasFromTexts(List<MapText> texts)
+	{
+		Set<Area> areas = new HashSet<>();
+		for (MapText text : texts)
+		{
+			if (text.line1Area != null)
+			{
+				areas.add(text.line1Area);
+			}
+
+			if (text.line2Area != null)
+			{
+				areas.add(text.line2Area);
+			}
+		}
+		if (processingAreas == null)
+		{
+			processingAreas = areas;
+		}
+		else
+		{
+			processingAreas.addAll(areas);
+		}
+	}
+	
+	public void removeProcessingAreas(Set<Area> areasToRemove)
+	{
+		if (processingAreas == null)
+		{
+			return;
+		}
+		
+		for (Area area : areasToRemove)
+		{
+			processingAreas.remove(area);
+		}
+	}
+	
+	public void clearProcessingAreas()
+	{
+		this.processingAreas = null;
 	}
 
 	public void addHighlightedCenter(Center c)
@@ -319,14 +378,24 @@ public class MapEditingPanel extends UnscaledImagePanel
 	
 	private void drawAreas(Graphics g)
 	{
-		if (areasToDraw != null)
+		if (highlightedAreas != null)
 		{
 			g.setColor(highlightColor);
-			for (Area area : areasToDraw)
+			for (Area area : highlightedAreas)
 			{
 				((Graphics2D)g).draw(area);
 			}
 		}
+		
+		if (processingAreas != null)
+		{
+			g.setColor(processingColor);
+			for (Area area : processingAreas)
+			{
+				((Graphics2D)g).draw(area);
+			}
+		}
+
 	}
 
 	private void drawCenterOutlines(Graphics g, Set<Center> centers)
@@ -414,6 +483,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearHighlightedCenters();
 		clearHighlightedEdges();
 		hideBrush();
-		clearAreasToDraw();
+		clearHighlightedAreas();
+		clearProcessingAreas();
 	}
 }
