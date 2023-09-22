@@ -113,6 +113,11 @@ public class ThemePanel extends JTabbedPane
 	private JButton btnChooseTextColor;
 	private ActionListener enableTextCheckboxActionListener;
 	private ActionListener frayedEdgeCheckboxActionListener;
+	private RowHider coastShadingColorHider;
+	private RowHider coastShadingColorDisabledMessageHider;
+	private JCheckBox drawGrungeCheckbox;
+	private ActionListener drawGrungeCheckboxActionListener;
+	private JButton grungeColorChooseButton;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -448,9 +453,24 @@ public class ThemePanel extends JTabbedPane
 				frayedEdgeSizeSlider);
 
 		organizer.addSeperator();
+		
+		drawGrungeCheckbox = new JCheckBox("Draw grunge");
+		drawGrungeCheckbox.setToolTipText("Whether to draw grunge around the edges of the map.");
+		drawGrungeCheckboxActionListener = new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				handleEnablingAndDisabling();
+				handleFrayedEdgeOrGrungeChange();
+			}
+		};
+		drawGrungeCheckbox.addActionListener(drawGrungeCheckboxActionListener);
+		organizer.addLeftAlignedComponent(drawGrungeCheckbox);
+
+		
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
-		final JButton grungeColorChooseButton = new JButton("Choose");
+		grungeColorChooseButton = new JButton("Choose");
 		grungeColorChooseButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent arg0)
@@ -518,8 +538,15 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () -> handleTerrainChange());
 			}
 		});
-		organizer.addLabelAndComponentsHorizontal("Coast shading color:", "Land near coastlines will be shaded this color. Transparency is supported.", Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor),
+		String coastShadingColorLabelText = "Coast shading color:";
+		coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText, "Land near coastlines will be shaded this color. Transparency is supported.", Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor),
 				SwingHelper.colorPickerLeftPadding);
+		
+		final String message = "<html>Disabled because the land coloring"
+				+ " method is '" + LandColoringMethod.ColorPoliticalRegions + "'.<html>";
+		coastShadingColorDisabledMessageHider = organizer.addLabelAndComponent(coastShadingColorLabelText, "", new JLabel(message));
+		coastShadingColorDisabledMessageHider.setVisible(false);
+
 
 		coastShadingSlider = new JSlider();
 		coastShadingSlider.setValue(30);
@@ -661,7 +688,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.colorPickerLeftPadding);
 
 		organizer.addSeperator();
-		drawBoldBackgroundCheckbox = new JCheckBox("Bold background");
+		drawBoldBackgroundCheckbox = new JCheckBox("Bold background for region and title names");
 		drawBoldBackgroundCheckbox.setToolTipText("Whether to draw bolded letters behind region and title text to highlight them.");
 		organizer.addLeftAlignedComponent(drawBoldBackgroundCheckbox);
 
@@ -914,18 +941,10 @@ public class ThemePanel extends JTabbedPane
 	{
 		boolean colorRegions = areRegionColorsVisible();
 		handleEnablingAndDisabling();
-		final String message = "Coast shading color selection is disabled because it will use the region color when the land coloring"
-				+ " method is '" + LandColoringMethod.ColorPoliticalRegions + "'.";
-		
-		if (colorRegions)
-		{
-			addToTooltip(btnChooseCoastShadingColor, message);
-		}
-		else
-		{
-			removeFromToolTip(btnChooseCoastShadingColor, message);
-		}
 
+		coastShadingColorHider.setVisible(!colorRegions);
+		coastShadingColorDisabledMessageHider.setVisible(colorRegions);
+		
 		landColorHider.setVisible(!colorRegions);
 	}
 
@@ -954,6 +973,8 @@ public class ThemePanel extends JTabbedPane
 		// Do a click here to update other components on the panel as enabled or
 		// disabled.
 		frayedEdgeCheckboxActionListener.actionPerformed(null);
+		drawGrungeCheckbox.setSelected(settings.drawGrunge);
+		drawGrungeCheckboxActionListener.actionPerformed(null);
 		grungeColorDisplay.setBackground(settings.frayedBorderColor);
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
@@ -1114,6 +1135,7 @@ public class ThemePanel extends JTabbedPane
 		// decrease so that the fray gets large with
 		// larger values of the slider.
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
+		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
 		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged : LineStyle.Smooth;
 
@@ -1259,6 +1281,9 @@ public class ThemePanel extends JTabbedPane
 
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 		frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+		
+		grungeColorChooseButton.setEnabled(drawGrungeCheckbox.isSelected());
+		grungeSlider.setEnabled(drawGrungeCheckbox.isSelected());
 
 		btnChooseBoldBackgroundColor.setEnabled(drawBoldBackgroundCheckbox.isSelected());
 

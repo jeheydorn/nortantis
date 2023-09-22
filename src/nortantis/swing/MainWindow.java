@@ -443,6 +443,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					showAsDrawing(false);
 				}
+				
+				mapEditingPanel.setHighlightRivers(highlightRiversButton.isSelected());
+				mapEditingPanel.setHighlightLakes(highlightLakesButton.isSelected());
 
 				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
@@ -706,7 +709,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		viewMenu.add(highlightLakesButton);
 
-		highlightRiversButton = new JCheckBoxMenuItem("Highlight rivers");
+		highlightRiversButton = new JCheckBoxMenuItem("Highlight Rivers");
 		highlightRiversButton.setToolTipText("Highlight rivers to make them easier to see.");
 		highlightRiversButton.addActionListener(new ActionListener()
 		{
@@ -788,6 +791,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
 
+		final MainWindow thisWindow = this;
+		JMenuItem keyboardShortcutsItem = new JMenuItem("Keyboard Shortcuts");
+		helpMenu.add(keyboardShortcutsItem);
+		keyboardShortcutsItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JOptionPane.showMessageDialog(
+						thisWindow, 
+						"<html>Keyboard shortcuts for navigating the map:"
+						+ "<ul>"
+						+ "<li>Zoom: Ctrl + mouse wheel</li>"
+						+ "<li>Pan: Hold mouse middle button and drag</li>"
+						+ "</ul>"
+						+ "</html>",
+						"Keyboard Shortcuts",
+						JOptionPane.INFORMATION_MESSAGE);
+			}
+		});
+		
 		JMenuItem aboutNortantisItem = new JMenuItem("About Nortantis");
 		helpMenu.add(aboutNortantisItem);
 		aboutNortantisItem.addActionListener(new ActionListener()
@@ -1366,7 +1390,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// the first draw finishes.
 			enableOrDisableFieldsThatRequireMap(false, settings);
 		}
-
+		
 		updater.createAndShowMapFull();
 	}
 

@@ -334,7 +334,7 @@ public class MapCreator
 		}
 
 		// Add grunge
-		if (settings.grungeWidth > 0)
+		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
 			mapSnippet = ImageHelper.maskWithColorInRegion(
 					mapSnippet, settings.frayedBorderColor, mapParts.grunge, true, drawBoundsUpperLeftCornerAdjustedForBorder
@@ -589,7 +589,7 @@ public class MapCreator
 
 		checkForCancel();
 
-		if (settings.grungeWidth > 0)
+		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
 			Logger.println("Adding grunge.");
 			BufferedImage grunge;

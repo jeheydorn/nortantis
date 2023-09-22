@@ -29,6 +29,7 @@ import nortantis.util.ImageHelper;
 public class MapEditingPanel extends UnscaledImagePanel
 {
 	private final Color highlightColor = new Color(255, 227, 74);
+	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color processingColor = Color.orange;
 	private final Color selectColor = Color.orange;
 	private Set<Center> highlightedCenters;
@@ -427,7 +428,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawLakes(Graphics g)
 	{
-		g.setColor(new Color(0, 130, 230));
+		g.setColor(waterHighlightColor);
 		for (Center c : graph.centers)
 		{
 			if (c.isLake)
@@ -447,7 +448,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawRivers(Graphics g)
 	{
-		g.setColor(new Color(0, 130, 230));
+		g.setColor(waterHighlightColor);
 		graph.drawRivers((Graphics2D) g, MapCreator.calcSizeMultiplier(graph.getWidth()), null, null);
 	}
 
@@ -484,5 +485,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		hideBrush();
 		clearHighlightedAreas();
 		clearProcessingAreas();
+		highlightRivers = false;
+		highlightLakes = false;
 	}
 }

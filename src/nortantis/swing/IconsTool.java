@@ -122,7 +122,6 @@ public class IconsTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		mapEditingPanel.setHighlightRivers(false);
 	}
 
 	@Override

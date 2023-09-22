@@ -235,6 +235,11 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.repaint();
 		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
+		
+		if (!updater.isMapBeingDrawn())
+		{
+			showAsDrawing(false);
+		}
 	}
 
 	public void handleImagesRefresh(MapSettings settings)

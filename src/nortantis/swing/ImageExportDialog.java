@@ -88,9 +88,9 @@ public class ImageExportDialog extends JDialog
 		resolutionSlider.setValue(100);
 		resolutionSlider.setSnapToTicks(true);
 		resolutionSlider.setPaintTicks(true);
-		resolutionSlider.setMinorTickSpacing(10);
-		resolutionSlider.setMajorTickSpacing(10);
-		resolutionSlider.setMinimum(10);
+		resolutionSlider.setMinorTickSpacing(25);
+		resolutionSlider.setMajorTickSpacing(25);
+		resolutionSlider.setMinimum(25);
 		resolutionSlider.setMaximum(calcMaximumResolution());
 		int labelFrequency = resolutionSlider.getMaximum() < 300 ? 50 : 100;
 		{

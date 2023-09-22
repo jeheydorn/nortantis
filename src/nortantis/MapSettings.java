@@ -64,6 +64,7 @@ public class MapSettings implements Serializable
 	public Color frayedBorderColor;
 	public int frayedBorderBlurLevel;
 	public int grungeWidth;
+	public boolean drawGrunge;
 	/**
 	 * This setting actually means fractal generated as opposed to generated from texture.
 	 */
@@ -189,6 +190,7 @@ public class MapSettings implements Serializable
 		root.put("frayedBorderColor", colorToString(frayedBorderColor));
 		root.put("frayedBorderBlurLevel", frayedBorderBlurLevel);
 		root.put("grungeWidth", grungeWidth);
+		root.put("drawGrunge", drawGrunge);
 		root.put("cityProbability", cityProbability);
 		root.put("lineStyle", lineStyle.toString());
 		root.put("pointPrecision", pointPrecision);
@@ -416,6 +418,14 @@ public class MapSettings implements Serializable
 			frayedBorderBlurLevel = (int) (long) root.get("frayedBorderBlurLevel");
 		}
 		grungeWidth = (int) (long) root.get("grungeWidth");
+		if (root.containsKey("drawGrunge"))
+		{
+			drawGrunge = (boolean) root.get("drawGrunge");
+		}
+		else
+		{
+			drawGrunge = true;
+		}
 		cityProbability = (double) root.get("cityProbability");
 		lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));
 		pointPrecision = (double) root.get("pointPrecision");
@@ -699,6 +709,7 @@ public class MapSettings implements Serializable
 		frayedBorderColor = old.frayedBorderColor;
 		frayedBorderBlurLevel = old.frayedBorderBlurLevel;
 		grungeWidth = old.grungeWidth;
+		drawGrunge = true;
 		generateBackground = old.generateBackground;
 		generateBackgroundFromTexture = old.generateBackgroundFromTexture;
 		colorizeOcean = old.colorizeOcean;
