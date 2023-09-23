@@ -59,4 +59,9 @@ public class Counter <T extends Comparable<T>> implements Serializable
 				return item;
 		}
 	}	
+	
+	public boolean isEmpty()
+	{
+		return totalCount == 0;
+	}
 }

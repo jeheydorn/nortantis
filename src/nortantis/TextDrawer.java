@@ -554,7 +554,7 @@ public class TextDrawer
 		}
 		else if (type.equals(TextType.Mountain_range))
 		{
-			double probabilityOfCompiledName = 0.7;
+			double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.7;
 			if (r.nextDouble() < probabilityOfCompiledName)
 			{
 				return compileName("%s Range", requireUnique);
@@ -568,7 +568,7 @@ public class TextDrawer
 		{
 			OtherMountainsType mountainType = subType == null ? OtherMountainsType.Mountains : (OtherMountainsType) subType;
 			String format = getOtherMountainNameFormat(mountainType);
-			double probabilityOfCompiledName = 0.5;
+			double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
 			if (r.nextDouble() < probabilityOfCompiledName)
 			{
 				return compileName(format, requireUnique);
@@ -638,7 +638,7 @@ public class TextDrawer
 		{
 			RiverType riverType = subType == null ? RiverType.Large : (RiverType) subType;
 			String format = getRiverNameFormat(riverType);
-			double probabilityOfCompiledName = 0.5;
+			double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
 			if (r.nextDouble() < probabilityOfCompiledName)
 			{
 				return compileName(format, requireUnique);
@@ -722,13 +722,33 @@ public class TextDrawer
 
 	public String generatePlaceName(String format, boolean requireUnique)
 	{
-		Function0<String> nameCreator = () -> placeNameGenerator.generateName();
+		return generatePlaceName(format, requireUnique, "");
+	}
+
+	public String generatePlaceName(String format, boolean requireUnique, String requiredPrefix)
+	{
+		if (placeNameGenerator.isEmpty() && !personNameGenerator.isEmpty())
+		{
+			// Switch to person names
+			return generatePersonName(format, requireUnique, requiredPrefix);
+		}
+		Function0<String> nameCreator = () -> placeNameGenerator.generateName(requiredPrefix);
 		return innerCreateUniqueName(format, requireUnique, nameCreator);
 	}
 
 	public String generatePersonName(String format, boolean requireUnique)
 	{
-		Function0<String> nameCreator = () -> personNameGenerator.generateName();
+		return generatePersonName(format, requireUnique, "");
+	}
+
+	public String generatePersonName(String format, boolean requireUnique, String requiredPrefix)
+	{
+		if (personNameGenerator.isEmpty() && !placeNameGenerator.isEmpty())
+		{
+			// Switch to place names
+			return generatePlaceName(format, requireUnique, requiredPrefix);
+		}
+		Function0<String> nameCreator = () -> personNameGenerator.generateName(requiredPrefix);
 		return innerCreateUniqueName(format, requireUnique, nameCreator);
 	}
 
@@ -757,8 +777,7 @@ public class TextDrawer
 				return name;
 			}
 		}
-		throw new RuntimeException(
-				"Unable to create enough unique names. You can select more books, or shrink the world size, or try a different seed.");
+		throw new NotEnoughNamesException();
 
 	}
 

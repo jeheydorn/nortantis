@@ -29,6 +29,7 @@ public class UserPreferences
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
 	public String customImagesPath;
+	public NameType nameGeneratorDefaultType = NameType.Person;
 
 	public static UserPreferences instance;
 
@@ -107,6 +108,11 @@ public class UserPreferences
 				{
 					customImagesPath = props.getProperty("customImagesPath");
 				}
+				
+				if (props.containsKey("nameGeneratorDefaultType"))
+				{
+					nameGeneratorDefaultType = NameType.valueOf(props.getProperty("nameGeneratorDefaultType"));
+				}
 			}
 		}
 		catch (IOException e)
@@ -149,6 +155,7 @@ public class UserPreferences
 		);
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("customImagesPath", customImagesPath == null ? "" : customImagesPath);
+		props.setProperty("nameGeneratorDefaultType", nameGeneratorDefaultType.toString());
 
 		try
 		{

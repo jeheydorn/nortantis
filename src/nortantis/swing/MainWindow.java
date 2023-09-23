@@ -113,6 +113,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu helpMenu;
 	private JMenuItem refreshMenuItem;
 	private JMenuItem customImagesMenuItem;
+	private JMenu toolsMenu;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -156,6 +157,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		redoButton.setEnabled(enable);
 		clearEntireMapButton.setEnabled(enable);
 
+		toolsMenu.setEnabled(enable);
+		
 		viewMenu.setEnabled(enable);
 		refreshMenuItem.setEnabled(enable);
 
@@ -676,17 +679,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		clearEntireMapButton.setEnabled(false);
 
-		customImagesMenuItem = new JMenuItem("Custom Images");
-		editMenu.add(customImagesMenuItem);
-		customImagesMenuItem.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				handleCustomImagesPressed(fileMenu.getText(), refreshMenuItem.getText());
-			}
-		});
-
 		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
 
@@ -787,6 +779,32 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
 		}
 		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
+		
+		toolsMenu = new JMenu("Tools");
+		menuBar.add(toolsMenu);
+		
+		JMenuItem nameGeneratorMenuItem = new JMenuItem("Name Generator");
+		toolsMenu.add(nameGeneratorMenuItem);
+		nameGeneratorMenuItem.addActionListener(new ActionListener()
+		{	
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleNameGeneratorPressed();
+			}
+		});
+		
+		customImagesMenuItem = new JMenuItem("Custom Images");
+		toolsMenu.add(customImagesMenuItem);
+		customImagesMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleCustomImagesPressed(fileMenu.getText(), refreshMenuItem.getText());
+			}
+		});
+
 
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
@@ -1197,6 +1215,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void handleCustomImagesPressed(String fileMenuName, String nameOfMenuOptionToRefreshImages)
 	{
 		CustomImagesDialog dialog = new CustomImagesDialog(this, fileMenuName, nameOfMenuOptionToRefreshImages);
+		dialog.setLocationRelativeTo(this);
+		dialog.setVisible(true);
+	}
+	
+	private void handleNameGeneratorPressed()
+	{
+		MapSettings settings = getSettingsFromGUI(false);
+		NameGeneratorDialog dialog = new NameGeneratorDialog(this, settings);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}

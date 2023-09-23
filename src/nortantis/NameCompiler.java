@@ -266,6 +266,11 @@ public class NameCompiler
 		return verb;
 	}
 	
+	public boolean isEmpty()
+	{
+		return counter.isEmpty();
+	}
+	
 	public static void test()
 	{
 		final NameCompiler compiler = new NameCompiler(new Random(), new ArrayList<Pair<String>>(),

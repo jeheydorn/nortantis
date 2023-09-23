@@ -56,7 +56,9 @@ public class ListCounterMap <T extends Comparable<T>> implements Serializable
 	{
 		Counter<T> counter = map.get(key);
 		if (counter == null)
+		{
 			return null;
+		}
 		return counter.sample(r);
 	}
 		

@@ -70,12 +70,12 @@ public class CharacterNGram
 		namesFromCorpora = new HashSet<>(phrases);
 	}
 	
-	public String generateNameNotInCorpora() throws NotEnoughNamesException
+	public String generateNameNotInCorpora(String requiredPrefix) throws NotEnoughNamesException
 	{
 		final int maxRetries = 20;
 		for (@SuppressWarnings("unused") int retry : new Range(maxRetries))
 		{
-			String name = generateName();
+			String name = generateName(requiredPrefix);
 			if (name.length() < 2)
 			{
 				continue;
@@ -90,7 +90,7 @@ public class CharacterNGram
 		throw new NotEnoughNamesException();
 	}
 	
-	private String generateName()
+	private String generateName(String requiredPrefix)
 	{
 		if (lcMap.size() == 0)
 			throw new IllegalStateException("At least one book must be selected to generate text.");
@@ -100,19 +100,37 @@ public class CharacterNGram
 			lastChars.add(startToken);
 		}
 		
-		String result = "";
-		char next;
+		for (char c : requiredPrefix.toLowerCase().toCharArray())
+		{
+			lastChars.remove(0);
+			lastChars.add(c);
+		}
+
+		String result = requiredPrefix.toLowerCase();
+
+		Character next;
 		do
 		{
 			next = lcMap.sampleConditional(r, lastChars);
+			if (next == null)
+			{
+				throw new NotEnoughNamesException();
+			}
 			lastChars.remove(0);
 			lastChars.add(next);
 			if (next != endToken)
+			{
 				result += next;
+			}
 		}
 		while(next != endToken);
 
 		return result;
+	}
+	
+	public boolean isEmpty()
+	{
+		return lcMap.size() == 0;
 	}
 	
 	public static void main(String[] args)
@@ -121,6 +139,6 @@ public class CharacterNGram
 		CharacterNGram generator = new CharacterNGram(new Random(), 3);
 		generator.addData(strs);
 		for (@SuppressWarnings("unused") int i : new Range(10))
-			System.out.println(generator.generateName());
+			System.out.println(generator.generateName(""));
 	}
 }
