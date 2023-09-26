@@ -600,7 +600,12 @@ public class TextTool extends EditorTool
 	@Override
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
-		booksWidget.checkSelectedBooks(settings.books);
+		// I'm excluding this when isUndoRedoOrAutomaticChange=false because I don't think undue redo should change the book selection,
+		// since changing the book selection doesn't change the map.
+		if (!isUndoRedoOrAutomaticChange)
+		{
+			booksWidget.checkSelectedBooks(settings.books);
+		}
 
 		handleEnablingAndDisabling(settings);
 		drawTextDisabledLabelHider.setVisible(!settings.drawText);

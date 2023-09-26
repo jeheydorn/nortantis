@@ -612,10 +612,10 @@ public class LandWaterTool extends EditorTool
 	{
 		areRegionColorsVisible = settings.drawRegionColors;
 
+		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
+		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
 		if (!isUndoRedoOrAutomaticChange)
 		{
-			// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
-			// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
 			baseColorPanel.setBackground(settings.regionBaseColor);
 			hueSlider.setValue(settings.hueRange);
 			saturationSlider.setValue(settings.saturationRange);
