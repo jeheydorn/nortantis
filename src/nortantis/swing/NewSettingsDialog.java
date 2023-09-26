@@ -44,7 +44,7 @@ public class NewSettingsDialog extends JDialog
 	JSlider edgeLandToWaterProbSlider;
 	JSlider centerLandToWaterProbSlider;
 	private JComboBox<String> dimensionsComboBox;
-	JPanel booksPanel;
+	BooksWidget booksWidget;
 	MapSettings settings;
 	private JProgressBar progressBar;
 	private MapUpdater updater;
@@ -297,13 +297,10 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponent("City icon type:",
 				"The set of city images to use.", cityIconsTypeComboBox);
 
-		booksPanel = SwingHelper.createBooksPanel(() -> handleMapChange());
-		JScrollPane booksScrollPane = new JScrollPane(booksPanel);
-		booksScrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
-		Dimension size = new Dimension(360, 130);
-		booksScrollPane.setPreferredSize(size);
+		booksWidget = new BooksWidget(true, () -> handleMapChange());
+		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 140));
 		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:",
-				"Selected books will be used to generate new names.", booksScrollPane);
+				"Selected books will be used to generate new names.", booksWidget.getContentPanel());
 
 		organizer.addVerticalFillerRow();
 	}
@@ -462,7 +459,7 @@ public class NewSettingsDialog extends JDialog
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox, ImageCache.getInstance().getIconGroupNames(IconType.cities),
 				settings.cityIconTypeName);
 
-		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
+		booksWidget.checkSelectedBooks(settings.books);
 	}
 
 	private MapSettings getSettingsFromGUI()
@@ -478,16 +475,7 @@ public class NewSettingsDialog extends JDialog
 
 		resultSettings.drawRegionColors = landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
 
-		resultSettings.books = new TreeSet<>();
-		for (Component component : booksPanel.getComponents())
-		{
-			if (component instanceof JCheckBox)
-			{
-				JCheckBox checkBox = (JCheckBox) component;
-				if (checkBox.isSelected())
-					resultSettings.books.add(checkBox.getText());
-			}
-		}
+		resultSettings.books = booksWidget.getSelectedBooks();
 
 		resultSettings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
 		resultSettings.cityIconTypeName = (String) cityIconsTypeComboBox.getSelectedItem();

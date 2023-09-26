@@ -12,13 +12,15 @@ import java.util.Arrays;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 
 import nortantis.MapSettings;
+import nortantis.NotEnoughNamesException;
 import nortantis.TextDrawer;
 import nortantis.editor.NameType;
 import nortantis.editor.UserPreferences;
@@ -28,12 +30,13 @@ import nortantis.util.Range;
 public class NameGeneratorDialog extends JDialog
 {
 	private JTextArea textBox;
+	final int numberToGenerate = 50;
 
 	public NameGeneratorDialog(MainWindow mainWindow, MapSettings settings)
 	{
 		super(mainWindow, "Name Generator", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(800, 700));
-		
+		setSize(new Dimension(500, 900));
+
 		JPanel contents = new JPanel();
 		contents.setLayout(new BorderLayout());
 		getContentPane().add(contents);
@@ -44,52 +47,56 @@ public class NameGeneratorDialog extends JDialog
 		JRadioButton personNameRadioButton = new JRadioButton("Person");
 		buttonGroup.add(personNameRadioButton);
 		JRadioButton placeNameRadioButton = new JRadioButton("Place");
-		buttonGroup.add(personNameRadioButton);
-		organizer.addLabelAndComponentsVertical("Name type:", "", Arrays.asList(personNameRadioButton, placeNameRadioButton));
+		buttonGroup.add(placeNameRadioButton);
+		organizer.addLabelAndComponentsHorizontal("Name type:", "", Arrays.asList(personNameRadioButton, placeNameRadioButton));
 
-		if (UserPreferences.getInstance().nameGeneratorDefaultType == NameType.Person)
-		{
-			personNameRadioButton.setSelected(true);
-		}
-		else
-		{
-			placeNameRadioButton.setSelected(true);
-		}
+		final String beginsWithLabel = "Begins with:";
+		JTextField beginsWith = new JTextField();
+		organizer.addLabelAndComponent(beginsWithLabel, "Constrains generated names to start with the given letters.", beginsWith);
 
-		JPanel booksPanel = SwingHelper.createBooksPanel(() ->
-		{
-		});
-		JScrollPane booksScrollPane = new JScrollPane(booksPanel);
-		booksScrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
-		Dimension size = new Dimension(360, 130);
-		booksScrollPane.setPreferredSize(size);
-		organizer.addLeftAlignedComponentWithStackedLabel(
-				"Books for generating text:", "Selected books will be used to generate names.", booksScrollPane
-		);
-		
+		final String endsWithLabel = "Ends with:";
+		JTextField endsWith = new JTextField();
+		organizer.addLabelAndComponent(endsWithLabel, "Constraints generated names to end with these letters.", endsWith, 0);
+
+		personNameRadioButton.setSelected(true);
+
+		BooksWidget booksWidget = new BooksWidget(true, null);
+		booksWidget.checkSelectedBooks(settings.books);
+		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating names:", "Selected books will be used to generate names.",
+				booksWidget.getContentPanel(), GridBagOrganizer.rowVerticalInset, 2, true, 0.2);
+
 		JPanel generatePanel = new JPanel();
 		generatePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		JButton generateButton = new JButton("<html><u>G</u>enerate Names<html>");
 		generatePanel.add(generateButton);
 		generateButton.setMnemonic(KeyEvent.VK_G);
-		organizer.addLeftAlignedComponent(generatePanel, false);
+		organizer.addLeftAlignedComponent(generatePanel, 0, 0, false);
+		final NameGeneratorDialog thisDialog = this;
 		generateButton.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				TextDrawer textDrawer = new TextDrawer(settings, 1.0);
-				NameType type = personNameRadioButton.isSelected() ? NameType.Person : NameType.Place; 
-				// TODO create fields for prefix and suffix and hook them up here.
-				textBox.setText(generateNamesForType(50, type, "", "", textDrawer));
+				if (!beginsWith.getText().chars().allMatch(Character::isLetter) || !endsWith.getText().chars().allMatch(Character::isLetter))
+				{
+					String message = beginsWithLabel.replace(":", "") + " and " + endsWithLabel.replace(":", "")
+							+ " must contain only letters.";
+					JOptionPane.showMessageDialog(thisDialog, message, "Error", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+
+				MapSettings settingsToUse = settings.deepCopy();
+				settingsToUse.books = booksWidget.getSelectedBooks();
+				settingsToUse.textRandomSeed = System.currentTimeMillis();
+				TextDrawer textDrawer = new TextDrawer(settingsToUse, 1.0);
+				NameType type = personNameRadioButton.isSelected() ? NameType.Person : NameType.Place;
+				textBox.setText(generateNamesForType(numberToGenerate, type, beginsWith.getText(), endsWith.getText(), textDrawer));
 			}
 		});
 
-		
-		textBox = new JTextArea(50, 50);
+		textBox = new JTextArea(numberToGenerate, 30);
 		JScrollPane textBoxScrollPane = new JScrollPane(textBox);
-		organizer.addLeftAlignedComponentWithStackedLabel("Generated names:", "", textBoxScrollPane);
-
+		organizer.addLeftAlignedComponentWithStackedLabel("Generated names:", "", textBoxScrollPane, true, 0.8);
 
 		JPanel bottomButtonsPanel = new JPanel();
 		contents.add(bottomButtonsPanel, BorderLayout.SOUTH);
@@ -102,17 +109,18 @@ public class NameGeneratorDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				settings.books = SwingHelper.getSelectedBooksFromGUI(booksPanel);
+				settings.books = booksWidget.getSelectedBooks();
 				mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
 				dispose();
 			}
 		});
 		bottomButtonsPanel.add(doneButton);
 	}
-	
-	private String generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix, TextDrawer textDrawer)
+
+	private String generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix,
+			TextDrawer textDrawer)
 	{
-		final int maxAttempts = 10000;
+		final int maxAttempts = 100000;
 		String names = "";
 
 		for (@SuppressWarnings("unused")
@@ -140,21 +148,37 @@ public class NameGeneratorDialog extends JDialog
 						}
 					}
 				}
-				catch(Exception ex)
+				catch (NotEnoughNamesException ex)
+				{
+					if (requiredSuffix.length() > 0)
+					{
+						return names + (names.isEmpty() ? "" : "\n")
+								+ "Error: Unable to generate enough names with the given books and requested suffix. "
+								+ "Try either adding more books or removing or reducing the suffix.";
+					}
+					else if (requiredPrefix.length() > 0)
+					{
+						return names + (names.isEmpty() ? "" : "\n")
+								+ "Error: Unable to generate enough names with the given books and required prefix. "
+								+ "Try including more books or removing or reducing the prefix.";
+					}
+					return names + (names.isEmpty() ? "" : "\n") + "Error: Unable to generate enough names. Try including more books.";
+				}
+				catch (Exception ex)
 				{
 					return names + (names.isEmpty() ? "" : "\n") + "Error: " + ex.getMessage();
 				}
-				
+
 				attemptCount++;
 				if (attemptCount >= maxAttempts)
 				{
 					return names + (names.isEmpty() ? "" : "\n") + "Unable to generate enough names with the given contraints. "
-							+ "Try using more books or reducing the required suffix.";
+							+ "Try using more books or reducing the suffix.";
 				}
 			}
-			names = names + "\n" + name;
+			names = names + (names.isEmpty() ? "" : "\n") + name;
 		}
-		
+
 		return names;
 	}
 }

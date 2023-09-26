@@ -135,59 +135,6 @@ public class SwingHelper
 
 	}
 
-	public static JPanel createBooksPanel(Runnable actionToRunWhenSelectionChanges)
-	{
-		JPanel booksPanel = new JPanel();
-		booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.Y_AXIS));
-
-		createBooksCheckboxes(booksPanel, actionToRunWhenSelectionChanges);
-
-		return booksPanel;
-	}
-
-	private static void createBooksCheckboxes(JPanel booksPanel, Runnable actionToRunWhenSelectionChanges)
-	{
-		for (String book : SettingsGenerator.getAllBooks())
-		{
-			final JCheckBox checkBox = new JCheckBox(book);
-			booksPanel.add(checkBox);
-			if (actionToRunWhenSelectionChanges != null)
-			{
-				addListener(checkBox, actionToRunWhenSelectionChanges);
-			}
-		}
-	}
-	
-	public static void checkSelectedBooks(JPanel booksPanel, Set<String> selectedBooks)
-	{
-		for (Component component : booksPanel.getComponents())
-		{
-			if (component instanceof JCheckBox)
-			{
-				JCheckBox checkBox = (JCheckBox) component;
-				checkBox.setSelected(selectedBooks.contains(checkBox.getText()));
-			}
-		}
-	}
-
-	public static Set<String> getSelectedBooksFromGUI(JPanel booksPanel)
-	{
-		Set<String> books = new TreeSet<>();
-		for (Component component : booksPanel.getComponents())
-		{
-			if (component instanceof JCheckBox)
-			{
-				JCheckBox checkBox = (JCheckBox) component;
-				if (checkBox.isSelected())
-				{
-					books.add(checkBox.getText());
-				}
-			}
-		}
-
-		return books;
-	}
-
 	public static void setEnabled(Component component, boolean enabled)
 	{
 		component.setEnabled(enabled);

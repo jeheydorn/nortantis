@@ -47,7 +47,7 @@ public class TextTool extends EditorTool
 	private TextType textTypeForAdds;
 	private RowHider editTextFieldHider;
 	private RowHider booksHider;
-	private JPanel booksPanel;
+	private BooksWidget booksWidget;
 	private JLabel drawTextDisabledLabel;
 	private RowHider drawTextDisabledLabelHider;
 	private boolean isRotating;
@@ -185,12 +185,12 @@ public class TextTool extends EditorTool
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
 
-		booksPanel = SwingHelper.createBooksPanel(() ->
+		booksWidget = new BooksWidget(false, () ->
 		{
 			updater.reprocessBooks();
 		});
 		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(
-				"Books for generating text:", "Selected books will be used to generate new names.", booksPanel
+				"Books for generating text:", "Selected books will be used to generate new names.", booksWidget.getContentPanel()
 		);
 
 		editButton.doClick();
@@ -600,7 +600,7 @@ public class TextTool extends EditorTool
 	@Override
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
-		SwingHelper.checkSelectedBooks(booksPanel, settings.books);
+		booksWidget.checkSelectedBooks(settings.books);
 
 		handleEnablingAndDisabling(settings);
 		drawTextDisabledLabelHider.setVisible(!settings.drawText);
@@ -619,7 +619,7 @@ public class TextTool extends EditorTool
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		settings.books = SwingHelper.getSelectedBooksFromGUI(booksPanel);
+		settings.books = booksWidget.getSelectedBooks();
 	}
 
 	@Override
