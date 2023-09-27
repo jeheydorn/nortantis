@@ -1078,9 +1078,9 @@ public class IconDrawer
 			int x = (int) (loc.x);
 			int y = (int) (loc.y);
 
-			double sqrtSize = Math.sqrt(averageCenterWidthBetweenNeighbors);
-			x += rand.nextGaussian() * sqrtSize * 2.0;
-			y += rand.nextGaussian() * sqrtSize * 2.0;
+			final double scale = (averageCenterWidthBetweenNeighbors / 10.0);
+			x += rand.nextGaussian() * scale;
+			y += rand.nextGaussian() * scale;
 
 			iconsToDraw.getOrCreate(center)
 					.add(new IconDrawTask(image, mask, IconType.trees, new Point(x, y), (int) image.getWidth(), false, false));
