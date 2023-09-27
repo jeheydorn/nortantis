@@ -21,6 +21,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -406,36 +407,6 @@ public abstract class VoronoiGraph
 			g.setColor(new Color(grayLevel, grayLevel, grayLevel));
 			drawUsingTriangles(g, c, true);
 		}
-	}
-
-	public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
-	{
-		drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>()
-		{
-			public Color apply(Center c)
-			{
-				return c.isWater ? Color.black : Color.white;
-			}
-		});
-
-		// Code useful for debugging
-		// g.setColor(Color.WHITE);
-		// for (Corner c : corners)
-		// {
-		// for (Corner adjacent : c.adjacent)
-		// {
-		// g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x,
-		// (int)adjacent.loc.y);
-		// }
-		// }
-		//
-		// for (Edge e : edges)
-		// {
-		// g.setStroke(new BasicStroke(1));
-		// g.setColor(Color.YELLOW);
-		// g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x,
-		// (int) e.d1.loc.y);
-		// }
 	}
 
 	public void drawBiomes(Graphics2D g)

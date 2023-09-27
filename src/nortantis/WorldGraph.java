@@ -21,6 +21,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -529,6 +530,113 @@ public class WorldGraph extends VoronoiGraph
 	public void drawBorderWhite(Graphics2D g)
 	{
 		drawPolygons(g, c -> c.isBorder ? Color.white : Color.black);
+	}
+	
+	public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
+	{
+		drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>()
+		{
+			public Color apply(Center c)
+			{
+				return c.isWater ? Color.black : Color.white;
+			}
+		});
+
+		// Code useful for debugging
+		// g.setColor(Color.WHITE);
+		// for (Corner c : corners)
+		// {
+		// for (Corner adjacent : c.adjacent)
+		// {
+		// g.drawLine((int)c.loc.x, (int)c.loc.y, (int) adjacent.loc.x,
+		// (int)adjacent.loc.y);
+		// }
+		// }
+		//
+		// for (Edge e : edges)
+		// {
+		// g.setStroke(new BasicStroke(1));
+		// g.setColor(Color.YELLOW);
+		// g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x,
+		// (int) e.d1.loc.y);
+		// }
+	}
+	
+	public void drawLandAndLandLockedLakesBlack(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
+	{
+		if (centersToRender == null)
+		{
+			centersToRender = centers;
+		}
+		
+		Set<Center> landAndLandLockedLakes = findLandAndLandLockedLakes(centersToRender);
+		drawPolygons(g, landAndLandLockedLakes, drawBounds, new Function<Center, Color>()
+		{
+			public Color apply(Center c)
+			{
+				return Color.black;
+			}
+		});
+	}
+	
+	private Set<Center> findLandAndLandLockedLakes(Collection<Center> centersToSearch)
+	{
+		Set<Center> result = new HashSet<>();
+		Set<Center> explored = new HashSet<>();
+		for (Center center : centersToSearch)
+		{
+			if (explored.contains(center))
+			{
+				continue;
+			}
+			
+			if (!center.isWater)
+			{
+				result.add(center);
+			}
+			
+			if (center.isLake)
+			{
+				Set<Center> lake = breadthFirstSearch((c) -> c.isLake, center);
+				if (!isLakeTouchingOcean(lake))
+				{
+					result.addAll(lake);
+				}
+				
+				explored.addAll(lake);
+			}
+		}
+		
+		return result;
+	}
+	
+	private boolean isLakeTouchingOcean(Set<Center> lake)
+	{
+		for (Center lc : lake)
+		{
+			if (lc.neighbors.stream().anyMatch((neighbor) -> neighbor.isWater && !neighbor.isLake))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public Set<Center> getNeighboringLakes(Set<Center> centersToSearch)
+	{
+		Set<Center> result = new HashSet<>();
+		for (Center center : centersToSearch)
+		{
+			for (Center neighbor : center.neighbors)
+			{
+				if (neighbor.isLake && !result.contains(neighbor) && !centersToSearch.contains(neighbor))
+				{
+					Set<Center> lake = breadthFirstSearch((c) -> c.isLake && !centersToSearch.contains(c), neighbor);
+					result.addAll(lake);
+				}
+			}
+		}
+		return result;
 	}
 
 	public int getWidth()

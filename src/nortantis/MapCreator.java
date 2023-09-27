@@ -122,6 +122,15 @@ public class MapCreator
 		// double startTime = System.currentTimeMillis();
 
 		centersChanged = new HashSet<>(centersChanged);
+		
+		// If any of the centers changed are are touching a lake, add the lake too since adding the change could have 
+		// changed whether the lake is land-locked, which will change how it's drawn.
+		Set<Center> neighboringLakes = mapParts.graph.getNeighboringLakes(centersChanged);
+		if (!neighboringLakes.isEmpty())
+		{
+			centersChanged.addAll(neighboringLakes);
+		}
+		
 		if (edgesChanged != null)
 		{
 			centersChanged.addAll(getCentersFromEdges(mapParts.graph, edgesChanged));
@@ -274,7 +283,7 @@ public class MapCreator
 
 		// Add effects to ocean along coastlines
 		{
-			BufferedImage oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, landMask, centersToDraw, drawBounds);
+			BufferedImage oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, centersToDraw, drawBounds);
 			if (oceanBlur != null)
 			{
 				mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
@@ -797,6 +806,7 @@ public class MapCreator
 			landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
 
 			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
+			landMask = null;
 
 			if (mapParts == null)
 			{
@@ -807,7 +817,7 @@ public class MapCreator
 		checkForCancel();
 
 		{
-			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask, null, null);
+			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, null, null);
 			if (oceanBlur != null)
 			{
 				Logger.println("Adding effects to ocean along coastlines.");
@@ -924,7 +934,7 @@ public class MapCreator
 		return mapOrSnippet;
 	}
 
-	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier, BufferedImage landMask,
+	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
@@ -964,8 +974,8 @@ public class MapCreator
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
-				// Remove the ocean blur from the land side of the borders.
-				oceanEffects = ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
+				// Remove the ocean blur from land and lakes.
+				graph.drawLandAndLandLockedLakesBlack(oceanEffects.createGraphics(), centersToDraw, drawBounds);
 			}
 			else
 			{
@@ -1009,7 +1019,7 @@ public class MapCreator
 					}
 				}
 
-				oceanEffects = ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
+				graph.drawLandAndLandLockedLakesBlack(oceanEffects.createGraphics(), centersToDraw, drawBounds);
 			}
 		}
 		return oceanEffects;
