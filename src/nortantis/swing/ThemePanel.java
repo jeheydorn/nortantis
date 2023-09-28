@@ -669,7 +669,7 @@ public class ThemePanel extends JTabbedPane
 		otherMountainsFontDisplay = tupleCitiesMountains.getFirst();
 		btnOtherMountainsFont = tupleCitiesMountains.getSecond();
 
-		Tuple2<JLabel, JButton> tupleRiver = organizer.addFontChooser("River font:", 30, () -> handleFontsChange());
+		Tuple2<JLabel, JButton> tupleRiver = organizer.addFontChooser("River/lake font:", 30, () -> handleFontsChange());
 		riverFontDisplay = tupleRiver.getFirst();
 		btnRiverFont = tupleRiver.getSecond();
 

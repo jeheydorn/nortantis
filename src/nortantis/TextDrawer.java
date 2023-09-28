@@ -83,11 +83,9 @@ public class TextDrawer
 	/**
 	 * 
 	 * @param settings
-	 *            The map settings to use. Some of these settings are for text
-	 *            drawing.
+	 *            The map settings to use. Some of these settings are for text drawing.
 	 * @param sizeMultiplyer
-	 *            The font size of text drawn will be multiplied by this value.
-	 *            This allows the map to be scaled larger or smaller.
+	 *            The font size of text drawn will be multiplied by this value. This allows the map to be scaled larger or smaller.
 	 */
 	public TextDrawer(MapSettings settings, double sizeMultiplyer)
 	{
@@ -141,7 +139,7 @@ public class TextDrawer
 				(int) (settings.riverFont.getSize() * sizeMultiplyer));
 
 	}
-	
+
 	public void processBooks(Set<String> books)
 	{
 		List<String> placeNames = new ArrayList<>();
@@ -231,7 +229,7 @@ public class TextDrawer
 	}
 
 	public void generateText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground, List<Set<Center>> mountainRanges,
-			List<IconDrawTask> cityDrawTasks)
+			List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
 
@@ -242,12 +240,13 @@ public class TextDrawer
 			mountainRanges = new ArrayList<>(0);
 		}
 
-		generateText(map, graph, mountainRanges, cityDrawTasks);
+		generateText(map, graph, mountainRanges, cityDrawTasks, lakes);
 
 		this.landAndOceanBackground = null;
 	}
 
-	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks)
+	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks,
+			List<Set<Center>> lakes)
 	{
 		// All text drawn must be done so in order from highest to lowest
 		// priority because if I try to draw
@@ -345,6 +344,13 @@ public class TextDrawer
 						riverNameRiseHeight * settings.resolution, true, TextType.River);
 			}
 
+		}
+
+		for (Set<Center> lake : lakes)
+		{
+			String name = generateNameOfType(TextType.Lake, null, true);
+			Set<Point> locations = extractLocationsFromCenters(lake);
+			drawNameRotated(map, g, name, locations, 0.0, true, TextType.Lake);
 		}
 
 		g.dispose();
@@ -450,14 +456,19 @@ public class TextDrawer
 				g.setFont(riverFontScaled);
 				drawNameRotated(map, g, 0, false, text, false);
 			}
+			else if (text.type == TextType.Lake)
+			{
+				g.setFont(riverFontScaled);
+				drawNameRotated(map, g, 0, false, text, false);
+			}
 		}
 
 		g.dispose();
 	}
 
 	/**
-	 * Generates a name of the specified type. This is for when the user adds
-	 * new text to the map. It is not used when the map text is first generated.
+	 * Generates a name of the specified type. This is for when the user adds new text to the map. It is not used when the map text is first
+	 * generated.
 	 * 
 	 */
 	public String generateNameOfTypeForTextEditor(TextType type)
@@ -505,11 +516,9 @@ public class TextDrawer
 	 * @param type
 	 *            The type of name
 	 * @param subType
-	 *            A sub-type specific to the type specified. null means default
-	 *            type.
+	 *            A sub-type specific to the type specified. null means default type.
 	 * @param requireUnique
-	 *            Whether generated names must be never seen in the extracted
-	 *            book names nor previously generated. If unique name generating
+	 *            Whether generated names must be never seen in the extracted book names nor previously generated. If unique name generating
 	 *            fails, an exception will be thrown.
 	 */
 	private String generateNameOfType(TextType type, Object subType, boolean requireUnique)
@@ -657,6 +666,40 @@ public class TextDrawer
 				{
 					return generatePlaceName(format, requireUnique);
 				}
+			}
+		}
+		else if (type.equals(TextType.Lake))
+		{
+			final String nameBeforeLakeFormat = "%s Lake";
+			String format = ProbabilityHelper.sampleCategorical(r,
+					Arrays.asList(new Tuple2<>(0.6, nameBeforeLakeFormat), new Tuple2<>(0.4, "Lake %s")));
+			
+			if (format.equals(nameBeforeLakeFormat))
+			{
+				double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
+				if (r.nextDouble() < probabilityOfCompiledName)
+				{
+					return compileName(format, requireUnique);
+				}
+				else
+				{
+					double probabilityOfPersonName = 0.5;
+					if (r.nextDouble() < probabilityOfPersonName)
+					{
+						// Person name
+						// Make the name possessive.
+						format = format.replace("%s", "%s's");
+						return generatePersonName(format, requireUnique);
+					}
+					else
+					{
+						return generatePlaceName(format, requireUnique);
+					}
+				}
+			}
+			else
+			{
+				return generatePlaceName(format, requireUnique);
 			}
 		}
 		else
@@ -910,8 +953,7 @@ public class TextDrawer
 	}
 
 	/**
-	 * Searches along edges to find corners which are connected by a river. If
-	 * the river forks, only one direction is followed.
+	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed.
 	 * 
 	 * @param last
 	 *            The search will not go in the direction of this corner.
@@ -1053,9 +1095,8 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name to the map with the area around the name drawn from
-	 * landAndOceanBackground to make it readable when the name is drawn on top
-	 * of mountains or trees.
+	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is
+	 * drawn on top of mountains or trees.
 	 */
 	private void drawBackgroundBlendingForText(BufferedImage map, Graphics2D g, Point textStart, Dimension textSize, double angle,
 			FontMetrics metrics, String text, Point pivot)
@@ -1167,9 +1208,8 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the given location (centroid). If the name cannot
-	 * be drawn on one line and still fit with the given locations, then it will
-	 * be drawn on 2 lines.
+	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given
+	 * locations, then it will be drawn on 2 lines.
 	 * 
 	 * The actual drawing step is skipped if settings.drawText = false.
 	 * 
@@ -1272,18 +1312,15 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the centroid of the given plateCenters. The angle
-	 * the name is drawn at is the least squares line through the plate centers.
-	 * This does not break text into multiple lines.
+	 * Draws the given name at the centroid of the given plateCenters. The angle the name is drawn at is the least squares line through the
+	 * plate centers. This does not break text into multiple lines.
 	 * 
 	 * Side effect: This adds a new MapText to mapTexts.
 	 * 
 	 * @param riseOffset
-	 *            The text will be raised (positive y) by this much distance
-	 *            above the centroid when drawn. The rotation will be applied to
-	 *            this location. If there is already a name drawn above the
-	 *            object, I try negating the riseOffset to draw the name below
-	 *            it. Positive y is down.
+	 *            The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to
+	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
+	 *            Positive y is down.
 	 */
 	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, double riseOffset,
 			boolean enableBoundsChecking, TextType type)
@@ -1325,18 +1362,14 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the given location (centroid), at the given
-	 * angle. This does not break text into multiple lines.
+	 * Draws the given name at the given location (centroid), at the given angle. This does not break text into multiple lines.
 	 * 
-	 * If settings.drawText = false, then this method will not do the actual
-	 * text writing, but will still update the MapText text.
+	 * If settings.drawText = false, then this method will not do the actual text writing, but will still update the MapText text.
 	 * 
 	 * @param riseOffset
-	 *            The text will be raised (positive y) by this much distance
-	 *            above the centroid when drawn. The rotation will be applied to
-	 *            this location. If there is already a name drawn above the
-	 *            object, I try negating the riseOffset to draw the name below
-	 *            it. Positive y is down.
+	 *            The text will be raised (positive y) by this much distance above the centroid when drawn. The rotation will be applied to
+	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
+	 *            Positive y is down.
 	 * 
 	 * @return true iff the text was drawn.
 	 */
@@ -1405,12 +1438,17 @@ public class TextDrawer
 			}
 			text.line1Area = area1;
 			text.line2Area = area2;
-			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved before the text is redrawn.
-			text.line1Bounds = new java.awt.Rectangle((int)(bounds1.x - textLocation.x), (int)(bounds1.y - textLocation.y), bounds1.width, bounds1.height);
-			text.line2Bounds = bounds2 == null ? null : new java.awt.Rectangle((int)(bounds2.x - textLocation.x), (int)(bounds2.y - textLocation.y), bounds2.width, bounds2.height);
+			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
+			// before the text is redrawn.
+			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - textLocation.x), (int) (bounds1.y - textLocation.y), bounds1.width,
+					bounds1.height);
+			text.line2Bounds = bounds2 == null ? null
+					: new java.awt.Rectangle((int) (bounds2.x - textLocation.x), (int) (bounds2.y - textLocation.y), bounds2.width,
+							bounds2.height);
 			if (riseOffset != 0)
 			{
-				// Update the text location with the offset. This only happens when generating new text, not when making changes in the editor.
+				// Update the text location with the offset. This only happens when generating new text, not when making changes in the
+				// editor.
 				text.location = new Point(pivot.x / settings.resolution, pivot.y / settings.resolution);
 			}
 
@@ -1511,17 +1549,17 @@ public class TextDrawer
 
 		return !graphBounds.contains(bounds.getBounds2D());
 	}
-	
-	public static boolean doAreasIntersect(Area area1, Area area2) 
+
+	public static boolean doAreasIntersect(Area area1, Area area2)
 	{
 		if (area1 == null || area2 == null)
 		{
 			return false;
 		}
-		
+
 		Area copy = new Area(area1);
 		copy.intersect(area2);
-	    return !copy.isEmpty();
+		return !copy.isEmpty();
 	}
 
 	/**
@@ -1535,8 +1573,7 @@ public class TextDrawer
 	}
 
 	/**
-	 * If the given point lands within the bounding box of a piece of text, this
-	 * returns the first one found. Else null is returned.
+	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
 	 */
 	public MapText findTextPicked(nortantis.graph.geom.Point point)
 	{
@@ -1560,12 +1597,13 @@ public class TextDrawer
 		}
 		return null;
 	}
-	
+
 	public List<MapText> findTextSelectedByBrush(nortantis.graph.geom.Point point, double brushDiameter)
 	{
-		Area brush = new Area(new Ellipse2D.Double(point.x - brushDiameter/2.0, point.y - brushDiameter/2.0, brushDiameter, brushDiameter));
+		Area brush = new Area(
+				new Ellipse2D.Double(point.x - brushDiameter / 2.0, point.y - brushDiameter / 2.0, brushDiameter, brushDiameter));
 		List<MapText> result = new ArrayList<>();
-		
+
 		for (MapText mp : mapTexts)
 		{
 			if (mp.value.length() > 0)

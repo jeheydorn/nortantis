@@ -464,6 +464,13 @@ public class MapCreator
 		}
 
 		checkForCancel();
+		
+		
+		List<Set<Center>> lakes = null;
+		if (settings.edits.text.size() == 0)
+		{
+			lakes = graph.markLakes();
+		}
 
 		BufferedImage map;
 		BufferedImage landBackground;
@@ -526,7 +533,7 @@ public class MapCreator
 			// uses mapParts.mapBeforeAddingText instead will only be hit
 			// if the map has already been drawn in the editor, and so text
 			// will be drawn from edits instead of taking this code path.
-			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities);
+			textDrawer.generateText(graph, map, landBackground, mountainGroups, cities, lakes);
 		}
 
 		landBackground = null;

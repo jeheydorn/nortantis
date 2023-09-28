@@ -101,8 +101,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * This constructor doens't create tectonic plates or elevation, and always
-	 * uses jagged lines.
+	 * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
 	 */
 	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision, boolean isForFrayedBorder)
 	{
@@ -195,8 +194,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Creates political regions. When done, all non-ocean centers will have a
-	 * political region assigned.
+	 * Creates political regions. When done, all non-ocean centers will have a political region assigned.
 	 */
 	private void createPoliticalRegions()
 	{
@@ -307,8 +305,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds the region closest (in terms of Cartesian distance) to the given
-	 * point.
+	 * Finds the region closest (in terms of Cartesian distance) to the given point.
 	 */
 	private Region findClosestRegion(Point point)
 	{
@@ -392,12 +389,13 @@ public class WorldGraph extends VoronoiGraph
 			});
 		}
 	}
-	
+
 	/**
-	 * Updates the center lookup table, which is used to lookup which center draws at a given point.
-	 * This needs to be done when a center potentially changed its noisy edges, such as when it switched
-	 * from inland to coast.
-	 * @param centersToUpdate Centers to update
+	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
+	 * potentially changed its noisy edges, such as when it switched from inland to coast.
+	 * 
+	 * @param centersToUpdate
+	 *            Centers to update
 	 */
 	public void updateCenterLookupTable(Collection<Center> centersToUpdate)
 	{
@@ -417,7 +415,7 @@ public class WorldGraph extends VoronoiGraph
 					centersWithNeighbors.add(neighbor);
 				}
 			}
-			
+
 			Graphics2D g = centerLookupTable.createGraphics();
 			drawPolygons(g, centersWithNeighbors, new Function<Center, Color>()
 			{
@@ -428,18 +426,16 @@ public class WorldGraph extends VoronoiGraph
 			});
 		}
 	}
-	
+
 	private Color convertCenterIdToColor(Center c)
 	{
 		return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
 	}
 
 	/**
-	 * Searches for any region touching and polygon in landMass and returns it
-	 * if found. Otherwise returns null.
+	 * Searches for any region touching and polygon in landMass and returns it if found. Otherwise returns null.
 	 * 
-	 * Assumes all Centers in landMass either all have the same region, or are
-	 * all null.
+	 * Assumes all Centers in landMass either all have the same region, or are all null.
 	 */
 	private Region findRegionTouching(Set<Center> landMass)
 	{
@@ -457,8 +453,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Splits apart a region by parts connect by land (not including land from
-	 * another region).
+	 * Splits apart a region by parts connect by land (not including land from another region).
 	 * 
 	 * @param region
 	 * @return
@@ -531,7 +526,7 @@ public class WorldGraph extends VoronoiGraph
 	{
 		drawPolygons(g, c -> c.isBorder ? Color.white : Color.black);
 	}
-	
+
 	public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
 	{
 		drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>()
@@ -561,14 +556,14 @@ public class WorldGraph extends VoronoiGraph
 		// (int) e.d1.loc.y);
 		// }
 	}
-	
+
 	public void drawLandAndLandLockedLakesBlack(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
 	{
 		if (centersToRender == null)
 		{
 			centersToRender = centers;
 		}
-		
+
 		Set<Center> landAndLandLockedLakes = findLandAndLandLockedLakes(centersToRender);
 		drawPolygons(g, landAndLandLockedLakes, drawBounds, new Function<Center, Color>()
 		{
@@ -578,7 +573,7 @@ public class WorldGraph extends VoronoiGraph
 			}
 		});
 	}
-	
+
 	private Set<Center> findLandAndLandLockedLakes(Collection<Center> centersToSearch)
 	{
 		Set<Center> result = new HashSet<>();
@@ -589,12 +584,12 @@ public class WorldGraph extends VoronoiGraph
 			{
 				continue;
 			}
-			
+
 			if (!center.isWater)
 			{
 				result.add(center);
 			}
-			
+
 			if (center.isLake)
 			{
 				Set<Center> lake = breadthFirstSearch((c) -> c.isLake, center);
@@ -602,14 +597,14 @@ public class WorldGraph extends VoronoiGraph
 				{
 					result.addAll(lake);
 				}
-				
+
 				explored.addAll(lake);
 			}
 		}
-		
+
 		return result;
 	}
-	
+
 	private boolean isLakeTouchingOcean(Set<Center> lake)
 	{
 		for (Center lc : lake)
@@ -621,7 +616,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return false;
 	}
-	
+
 	public Set<Center> getNeighboringLakes(Set<Center> centersToSearch)
 	{
 		Set<Center> result = new HashSet<>();
@@ -639,6 +634,54 @@ public class WorldGraph extends VoronoiGraph
 		return result;
 	}
 
+	public List<Set<Center>> markLakes()
+	{
+		// This threshold allows me to distinguish between lakes and oceans.
+		final int maxLakeSize = 120;
+
+		Set<Center> explored = new HashSet<>();
+		List<Set<Center>> lakes = new ArrayList<>();
+		for (Center center : centers)
+		{
+			if (!center.isWater)
+			{
+				continue;
+			}
+
+			if (explored.contains(center))
+			{
+				continue;
+			}
+
+			explored.add(center);
+
+			Set<Center> potentialLake = breadthFirstSearch((c) ->
+				{
+					if (explored.contains(c))
+					{
+						return false;
+					}
+					
+					explored.add(c);
+
+					return c.isWater;
+				}, center);
+			
+			// The second condition excludes lakes that touch the edge of the map, since it's hard to tell whether those should be ocean or lake,
+			// And the more conservative choice is to say it's not a lake.
+			if (potentialLake.size() <= maxLakeSize && !potentialLake.stream().anyMatch(c -> c.isBorder))
+			{
+				lakes.add(potentialLake);
+				for (Center l : potentialLake)
+				{
+					l.isLake = true;
+				}
+			}
+		}
+
+		return lakes;
+	}
+	
 	public int getWidth()
 	{
 		return (int) bounds.width;
@@ -1141,8 +1184,7 @@ public class WorldGraph extends VoronoiGraph
 	 * @param c1Velocity
 	 *            The velocity of the plate c1 is on.
 	 * @param c2
-	 *            A center along a tectonic plate border: not the same tectonic
-	 *            plate as c1
+	 *            A center along a tectonic plate border: not the same tectonic plate as c1
 	 * @param c2Velocity
 	 *            The velocity of the plate c2 is on.
 	 */
@@ -1170,8 +1212,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Calculates the minimum distance (in radians) from angle a1 to angle a2.
-	 * The result will be in the range [0, pi].
+	 * Calculates the minimum distance (in radians) from angle a1 to angle a2. The result will be in the range [0, pi].
 	 * 
 	 * @param a1
 	 *            An angle in radians. This must be between 0 and 2*pi.
@@ -1242,9 +1283,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Converts a center to an area. This does not include noisy edges because I
-	 * couldn't figure out how to draw them in order correctly around the
-	 * center.
+	 * Converts a center to an area. This does not include noisy edges because I couldn't figure out how to draw them in order correctly
+	 * around the center.
 	 * 
 	 * @param center
 	 * @return
@@ -1435,20 +1475,16 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Uses A* search to find the shortest path between the 2 given centers
-	 * using Delaunay edges.
+	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
 	 * 
 	 * @param start
 	 *            Where to begin the search
 	 * @param end
 	 *            The goal
 	 * @param calculateWeight
-	 *            Finds the weight of an edge for determining whether to explore
-	 *            it. This should be the weight of it the Delaunay edge. Likely
-	 *            this will be calculated based on the distance from one end of
-	 *            the Delaunay age
-	 * @return A path if one is found; null if the and is unreachable from the
-	 *         start.
+	 *            Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge.
+	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
+	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
 	public List<Edge> findShortestPath(Center start, Center end, Function<Edge, Double> calculateWeight)
 	{
