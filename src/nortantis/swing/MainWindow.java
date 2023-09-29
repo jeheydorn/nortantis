@@ -115,6 +115,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem customImagesMenuItem;
 	private JMenu toolsMenu;
 	private JRadioButtonMenuItem[] displayQualityButtons;
+	private JMenuItem nameGeneratorMenuItem;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -158,7 +159,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		redoButton.setEnabled(enable);
 		clearEntireMapButton.setEnabled(enable);
 
-		toolsMenu.setEnabled(enable);
+		nameGeneratorMenuItem.setEnabled(enable);
 		
 		for (JRadioButtonMenuItem button : displayQualityButtons)
 		{
@@ -527,7 +528,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null ? Paths.get(".") : openSettingsFilePath;
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setCurrentDirectory(currentFolder);
@@ -792,7 +793,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		toolsMenu = new JMenu("Tools");
 		menuBar.add(toolsMenu);
 		
-		JMenuItem nameGeneratorMenuItem = new JMenuItem("Name Generator");
+		nameGeneratorMenuItem = new JMenuItem("Name Generator");
 		toolsMenu.add(nameGeneratorMenuItem);
 		nameGeneratorMenuItem.addActionListener(new ActionListener()
 		{	

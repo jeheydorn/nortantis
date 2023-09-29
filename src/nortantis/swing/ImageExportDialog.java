@@ -35,6 +35,7 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -75,12 +76,14 @@ public class ImageExportDialog extends JDialog
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		contents.add(organizer.panel, BorderLayout.CENTER);
-		
+
 		if (type == ImageExportType.Heightmap)
 		{
-			organizer.addLeftAlignedComponent(new JLabel("<html>This option exports a map's height data as a 16-bit grayscale image for use in"
-					+ " other applications such as creating a videogame world. Note that the heightmap will not"
-					+ " reflect changes made by editing brushes, such as adding or removing land or changing mountain placement.</html>"), false);
+			organizer.addLeftAlignedComponent(
+					new JLabel("<html>This option exports a map's height data as a 16-bit grayscale image for use in"
+							+ " other applications such as creating a videogame world. Note that the heightmap will not"
+							+ " reflect changes made by editing brushes, such as adding or removing land or changing mountain placement.</html>"),
+					false);
 		}
 
 		resolutionSlider = new JSlider();
@@ -104,14 +107,14 @@ public class ImageExportDialog extends JDialog
 			}
 			resolutionSlider.setLabelTable(labelTable);
 		}
-		String tooltip = type == ImageExportType.Map ? "This percentage is multiplied by the size of the map to determine "
-				+ "the resolution to draw at. The maximum allowed resolution is determined by the amount of memory on this device."
+		String tooltip = type == ImageExportType.Map
+				? "This percentage is multiplied by the size of the map to determine "
+						+ "the resolution to draw at. The maximum allowed resolution is determined by the amount of memory on this device."
 				: "This percentage is multiplied by the dimensions of the map to determine the resolution to draw at. Higher resolutions"
 						+ " will give more detailed terrain.";
-		resolutionSlider.setValue((int) ((type == ImageExportType.Map ? mainWindow.exportResolution : mainWindow.heightmapExportResolution) * 100));
-		organizer.addLabelAndComponent("Resolution:",
-				tooltip,
-				resolutionSlider);
+		resolutionSlider
+				.setValue((int) ((type == ImageExportType.Map ? mainWindow.exportResolution : mainWindow.heightmapExportResolution) * 100));
+		organizer.addLabelAndComponent("Resolution:", tooltip, resolutionSlider);
 
 		ActionListener radioButtonListener = new ActionListener()
 		{
@@ -144,7 +147,9 @@ public class ImageExportDialog extends JDialog
 				String curPath = type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath;
 				if (curPath == null || curPath.isEmpty())
 				{
-					curPath = mainWindow.getOpenSettingsFilePath() == null ? Paths.get(".").toAbsolutePath().toString()
+					curPath = mainWindow.getOpenSettingsFilePath() == null
+							? Paths.get(FileSystemView.getFileSystemView().getDefaultDirectory().toPath().toString(),
+									"unnamed").toString()
 							: mainWindow.getOpenSettingsFilePath().toString();
 					String folder = new File(curPath).getParent();
 					String fileBaseName = FilenameUtils.getBaseName(curPath);
@@ -218,7 +223,7 @@ public class ImageExportDialog extends JDialog
 				fileRadioButton.setSelected(true);
 			}
 		}
-		
+
 		radioButtonListener.actionPerformed(null);
 
 		JPanel bottomButtonsPanel = new JPanel();
@@ -238,6 +243,13 @@ public class ImageExportDialog extends JDialog
 					// Validate pathField's text
 					try
 					{
+						if (pathField.getText() == null || pathField.getText().isEmpty())
+						{
+							JOptionPane.showMessageDialog(getContentPane(), "Export file path is required.", "Error",
+									JOptionPane.ERROR_MESSAGE);
+							return;
+						}
+						
 						Path path = Paths.get(pathField.getText());
 						exportPath = path.toString();
 
@@ -260,11 +272,10 @@ public class ImageExportDialog extends JDialog
 									JOptionPane.ERROR_MESSAGE);
 							return;
 						}
-						
+
 						if (!new File(new File(exportPath).getParent()).exists())
 						{
-							JOptionPane.showMessageDialog(getContentPane(),
-									"The export file folder does not exist.", "Error",
+							JOptionPane.showMessageDialog(getContentPane(), "The export file folder does not exist.", "Error",
 									JOptionPane.ERROR_MESSAGE);
 							return;
 						}
@@ -417,18 +428,18 @@ public class ImageExportDialog extends JDialog
 				}
 
 				System.gc();
-				
+
 				if (isCanceled)
 				{
 					Logger.println((type == ImageExportType.Map ? "Map" : "Heightmap") + " creation cancelled.");
-					return null;					
+					return null;
 				}
-				
+
 				String fileName;
 				if (exportAction == ExportAction.OpenInDefaultImageViewer)
 				{
-					Logger.println("Opening the " + (type == ImageExportType.Map ? "map" : "heightmap") 
-								+ " in your system's default image editor.");
+					Logger.println("Opening the " + (type == ImageExportType.Map ? "map" : "heightmap")
+							+ " in your system's default image editor.");
 					fileName = ImageHelper.openImageInSystemDefaultEditor(result, "map_" + settings.randomSeed);
 				}
 				else
@@ -454,12 +465,12 @@ public class ImageExportDialog extends JDialog
 					SwingHelper.handleBackgroundThreadException(ex, getContentPane(), true);
 					isError = true;
 				}
-				
+
 				if (exportAction == ExportAction.SaveToFile && !isError && !isCanceled)
 				{
 					progressBar.setVisible(false);
-					JOptionPane.showMessageDialog(getContentPane(), (type == ImageExportType.Map ? "Map" : "Heightmap") 
-							+ " successfully exported.", "Success",
+					JOptionPane.showMessageDialog(getContentPane(),
+							(type == ImageExportType.Map ? "Map" : "Heightmap") + " successfully exported.", "Success",
 							JOptionPane.INFORMATION_MESSAGE);
 				}
 
@@ -471,7 +482,7 @@ public class ImageExportDialog extends JDialog
 
 	private int calcMaximumResolution()
 	{
-		// Reserve some space for the editor. 
+		// Reserve some space for the editor.
 		int bytesReservedForEditor = 900 * 1024 * 1024;
 
 		long maxBytes = Runtime.getRuntime().maxMemory() - bytesReservedForEditor;

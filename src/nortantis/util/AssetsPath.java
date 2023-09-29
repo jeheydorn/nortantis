@@ -42,7 +42,7 @@ public class AssetsPath
 		}
 		
 		String customImagesPath = UserPreferences.getInstance().customImagesPath;
-		if (customImagesPath != null && !customImagesPath.isEmpty() && new File(UserPreferences.getInstance().customImagesPath).exists())
+		if (customImagesPath != null && !customImagesPath.isEmpty())
 		{
 			overridablePath = customImagesPath;
 		}

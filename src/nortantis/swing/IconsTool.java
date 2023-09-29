@@ -1032,8 +1032,8 @@ public class IconsTool extends EditorTool
 	@Override
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
-		boolean isCityTypeChange = !settings.cityIconTypeName.equals(lblCityIconType.getText());
-		lblCityIconType.setText(settings.cityIconTypeName);
+		boolean isCityTypeChange = !(settings.cityIconTypeName == null ? "" : settings.cityIconTypeName).equals(lblCityIconType.getText());
+		lblCityIconType.setText((settings.cityIconTypeName == null ? "" : settings.cityIconTypeName));
 		if (isCityTypeChange)
 		{
 			createOrUpdateRadioButtonsForCities(null);

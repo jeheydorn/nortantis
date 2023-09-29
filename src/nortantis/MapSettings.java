@@ -38,7 +38,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "0.1";
+	public static final String currentVersion = "1.0";
 	public static final double defaultPointPrecision = 2.0;
 
 	public String version;
@@ -471,6 +471,10 @@ public class MapSettings implements Serializable
 		if (root.containsKey("cityIconSetName"))
 		{
 			cityIconTypeName = (String) root.get("cityIconSetName");
+			if (cityIconTypeName == null)
+			{
+				cityIconTypeName = "";
+			}
 		}
 		else
 		{

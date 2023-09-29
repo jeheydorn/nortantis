@@ -291,7 +291,7 @@ public class ImageCache
 	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
 	{
 		String[] folderNames = getIconGroupFileNames(iconType, groupName);
-		Set<String> result = new HashSet<String>();
+		Set<String> result = new TreeSet<String>();
 		for (int i : new Range(folderNames.length))
 		{
 			result.add(getFileNameBaseWithoutWidth(folderNames[i]));
