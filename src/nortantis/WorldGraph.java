@@ -637,7 +637,7 @@ public class WorldGraph extends VoronoiGraph
 	public List<Set<Center>> markLakes()
 	{
 		// This threshold allows me to distinguish between lakes and oceans.
-		final int maxLakeSize = 50;
+		final int maxLakeSize = 120;
 
 		Set<Center> explored = new HashSet<>();
 		List<Set<Center>> lakes = new ArrayList<>();
