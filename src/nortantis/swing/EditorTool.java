@@ -127,7 +127,11 @@ public abstract class EditorTool
 		Set<Center> selected = new HashSet<Center>();
 
 		Center center = updater.mapParts.graph.findClosestCenter(getPointOnGraph(pointFromMouse));
-		if (center != null)
+		if (center == null)
+		{
+			return selected;
+		}
+		else
 		{
 			selected.add(center);
 		}

@@ -332,6 +332,13 @@ public class TextDrawer
 		}
 
 		g.setFont(riverFontScaled);
+		for (Set<Center> lake : lakes)
+		{
+			String name = generateNameOfType(TextType.Lake, null, true);
+			Set<Point> locations = extractLocationsFromCenters(lake);
+			drawNameRotated(map, g, name, locations, 0.0, true, TextType.Lake);
+		}
+
 		List<River> rivers = findRivers(graph);
 		for (River river : rivers)
 		{
@@ -344,13 +351,6 @@ public class TextDrawer
 						riverNameRiseHeight * settings.resolution, true, TextType.River);
 			}
 
-		}
-
-		for (Set<Center> lake : lakes)
-		{
-			String name = generateNameOfType(TextType.Lake, null, true);
-			Set<Point> locations = extractLocationsFromCenters(lake);
-			drawNameRotated(map, g, name, locations, 0.0, true, TextType.Lake);
 		}
 
 		g.dispose();

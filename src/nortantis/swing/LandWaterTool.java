@@ -551,6 +551,14 @@ public class LandWaterTool extends EditorTool
 		if (oceanButton.isSelected() || lakeButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected() || landButton.isSelected())
 		{		
 			Set<Center> selected = getSelectedCenters(e.getPoint());
+			
+			// Debug code
+//			System.out.println("Highlighted center indexes:");
+//			for (Center center : selected)
+//			{
+//				System.out.println(center.index);
+//			}
+			
 			mapEditingPanel.addHighlightedCenters(selected);
 			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 		}

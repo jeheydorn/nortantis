@@ -136,7 +136,13 @@ public class MapCreatorTest
 	public void propertiesConversion_noText_WithCities_GoldenRatio()
 	{
 		generateAndCompare("propertiesConversion_noText_WithCities_GoldenRatio.properties");
-	}	
+	}
+	
+	@Test
+	public void regressionTest_polygonsOnTopBug()
+	{
+		generateAndCompare("regressionTest_polygonsOnTopBug.nort");
+	}
 	
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{

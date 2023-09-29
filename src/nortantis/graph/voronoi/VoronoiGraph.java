@@ -184,6 +184,7 @@ public abstract class VoronoiGraph
 		y[1] = (int) c1.loc.y;
 		x[2] = (int) c2.loc.x;
 		y[2] = (int) c2.loc.y;
+		
 		g.fillPolygon(x, y, 3);
 	}
 
@@ -388,7 +389,7 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawCorner(Graphics2D g)
+	public void drawCorners(Graphics2D g)
 	{
 		g.setColor(Color.WHITE);
 		for (Corner c : corners)
@@ -557,7 +558,7 @@ public abstract class VoronoiGraph
 
 					if (closeEnough(edgeCorner1.loc.x, edgeCorner2.loc.x, 1) || closeEnough(edgeCorner1.loc.y, edgeCorner2.loc.y, 1))
 					{
-						// Both corners on on a single border.
+						// Both corners are on a single border.
 
 						if (drawElevation)
 						{
@@ -577,14 +578,9 @@ public abstract class VoronoiGraph
 						x[1] = (int) edgeCorner1.loc.x;
 						y[1] = (int) edgeCorner1.loc.y;
 
-						// determine which corner this is
-
-						x[2] = (int) ((closeEnough(edgeCorner1.loc.x, bounds.x, 1) || closeEnough(edgeCorner2.loc.x, bounds.x, .5))
-								? bounds.x
-								: bounds.getRight());
-						y[2] = (int) ((closeEnough(edgeCorner1.loc.y, bounds.y, 1) || closeEnough(edgeCorner2.loc.y, bounds.y, .5))
-								? bounds.y
-								: bounds.getBottom());
+						// One of the corners of the graph is the next point. Determine which corner that is.
+						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y : bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;

@@ -537,6 +537,8 @@ public class MapCreator
 		}
 
 		landBackground = null;
+		
+		//graph.drawCorners(map.createGraphics()); // TODO Remove
 
 		if (settings.drawBorder)
 		{
@@ -547,7 +549,7 @@ public class MapCreator
 				background.borderBackground = null;
 			}
 		}
-
+		
 		checkForCancel();
 
 		if (settings.frayedBorder)
@@ -641,7 +643,7 @@ public class MapCreator
 		}
 
 		checkForCancel();
-
+	
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 
