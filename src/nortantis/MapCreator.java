@@ -538,7 +538,8 @@ public class MapCreator
 
 		landBackground = null;
 		
-		//graph.drawCorners(map.createGraphics()); // TODO Remove
+		// Debug code
+		//graph.drawCorners(map.createGraphics());
 
 		if (settings.drawBorder)
 		{
@@ -774,7 +775,7 @@ public class MapCreator
 
 		if (settings.drawRoads)
 		{
-			// TODO put back
+			// TODO put back road drawer stuff
 			// RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph,
 			// iconDrawer);
 			// roadDrawer.markRoads();

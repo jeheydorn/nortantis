@@ -114,6 +114,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem refreshMenuItem;
 	private JMenuItem customImagesMenuItem;
 	private JMenu toolsMenu;
+	private JRadioButtonMenuItem[] displayQualityButtons;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -159,7 +160,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		toolsMenu.setEnabled(enable);
 		
-		viewMenu.setEnabled(enable);
+		for (JRadioButtonMenuItem button : displayQualityButtons)
+		{
+			button.setEnabled(enable);
+		}
+		highlightLakesButton.setEnabled(enable);
+		highlightRiversButton.setEnabled(enable);
+		
 		refreshMenuItem.setEnabled(enable);
 
 		themePanel.enableOrDisableEverything(enable);
@@ -751,12 +758,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		radioButton150Percent.addActionListener(resolutionListener);
 		displayQualityMenu.add(radioButton150Percent);
 		resolutionButtonGroup.add(radioButton150Percent);
+		
+		displayQualityButtons = new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent,
+				radioButton100Percent, radioButton125Percent, radioButton150Percent };
 
 		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
 		{
 			boolean found = false;
-			for (JRadioButtonMenuItem resolutionOption : new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent,
-					radioButton100Percent, radioButton125Percent, radioButton150Percent })
+			for (JRadioButtonMenuItem resolutionOption : displayQualityButtons)
 			{
 				if (UserPreferences.getInstance().editorImageQuality.equals(resolutionOption.getText()))
 				{
@@ -1489,6 +1498,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void setPlaceholderImage(String[] message)
 	{
 		mapEditingPanel.setImage(ImageHelper.createPlaceholderImage(message));
+		
+		// Clear out the map from map creator so that causing the window to re-zoom while the placeholder image 
+		// is displayed doesn't show the previous map. This can happen when the zoom is fit to window, you create
+		// a new map, then resize the window while the new map is drawing for the first time.
+		mapEditingPanel.mapFromMapCreator = null;
+		
 		mapEditingPanel.repaint();
 	}
 

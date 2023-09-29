@@ -1440,10 +1440,10 @@ public class TextDrawer
 			text.line2Area = area2;
 			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
 			// before the text is redrawn.
-			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - textLocation.x), (int) (bounds1.y - textLocation.y), bounds1.width,
+			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - pivot.x), (int) (bounds1.y - pivot.y), bounds1.width,
 					bounds1.height);
 			text.line2Bounds = bounds2 == null ? null
-					: new java.awt.Rectangle((int) (bounds2.x - textLocation.x), (int) (bounds2.y - textLocation.y), bounds2.width,
+					: new java.awt.Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y), bounds2.width,
 							bounds2.height);
 			if (riseOffset != 0)
 			{
@@ -1456,10 +1456,10 @@ public class TextDrawer
 			{
 				{
 					Point textStart = new Point(bounds1.x, bounds1.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, textLocation);
+					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, pivot);
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(g, line1, textStart, text.angle, textLocation);
+						drawStringWithBoldBackground(g, line1, textStart, text.angle, pivot);
 					}
 					else
 					{
@@ -1469,10 +1469,10 @@ public class TextDrawer
 				if (line2 != null)
 				{
 					Point textStart = new Point(bounds2.x, bounds2.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, textLocation);
+					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, pivot);
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(g, line2, textStart, text.angle, textLocation);
+						drawStringWithBoldBackground(g, line2, textStart, text.angle, pivot);
 					}
 					else
 					{
