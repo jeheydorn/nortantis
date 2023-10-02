@@ -384,6 +384,11 @@ public class MapCreator
 		Logger.println("Creating the map");
 
 		double startTime = System.currentTimeMillis();
+		
+		if (!AssetsPath.getInstallPath().equals(settings.customImagesPath) && settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
+		{
+			Logger.println("Using custom images folder: " + settings.customImagesPath);
+		}
 
 		r = new Random(settings.randomSeed);
 		DimensionDouble mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
@@ -672,7 +677,7 @@ public class MapCreator
 		boolean needToAddIcons;
 		if (mapParts == null || mapParts.iconDrawer == null)
 		{
-			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconTypeName);
+			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconTypeName, settings.customImagesPath);
 			if (mapParts != null)
 			{
 				mapParts.iconDrawer = iconDrawer;
@@ -1393,9 +1398,14 @@ public class MapCreator
 		graph.drawRivers(g, sizeMultiplier, edgesToDraw, drawBounds);
 	}
 
-	public static Set<String> getAvailableBorderTypes()
+	public static Set<String> getAvailableBorderTypes(String imagesPath)
 	{
-		File[] directories = new File(Paths.get(AssetsPath.getOverridablePath(), "borders").toString()).listFiles(File::isDirectory);
+		if (imagesPath == null || imagesPath.isEmpty())
+		{
+			imagesPath = AssetsPath.getInstallPath();
+		}
+		
+		File[] directories = new File(Paths.get(imagesPath, "borders").toString()).listFiles(File::isDirectory);
 		if (directories == null || directories.length == 0)
 		{
 			return new TreeSet<String>();

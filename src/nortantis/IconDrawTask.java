@@ -4,6 +4,7 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 import nortantis.graph.geom.Point;
+import nortantis.util.AssetsPath;
 
 /**
  * Stores things needed to draw an icon onto the map.
@@ -56,8 +57,10 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	{
 		if (needsScale)
 		{
-	       	icon = ImageCache.getInstance().getScaledImageByWidth(icon, scaledWidth);
-	      	mask = ImageCache.getInstance().getScaledImageByWidth(mask, scaledWidth);
+			// The path passed to ImageCache.getInstance insn't important so long as other calls to getScaledImageByWidth
+			// use the same path, since getScaledImageByWidth doesn't load images from disk.
+	       	icon = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImageByWidth(icon, scaledWidth);
+	      	mask = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImageByWidth(mask, scaledWidth);
 		}
 	}
 	

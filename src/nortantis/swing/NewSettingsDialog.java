@@ -10,21 +10,20 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.Hashtable;
-import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextField;
 import javax.swing.Timer;
 
 import nortantis.IconType;
@@ -32,6 +31,7 @@ import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.UserPreferences;
 import nortantis.graph.geom.Rectangle;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.ImageHelper;
@@ -49,17 +49,21 @@ public class NewSettingsDialog extends JDialog
 	private JProgressBar progressBar;
 	private MapUpdater updater;
 	private MapEditingPanel mapEditingPanel;
-	private Dimension defaultSize = new Dimension(800, 700);
+	private Dimension defaultSize = new Dimension(900, 700);
+	private int amountToSubtractFromLeftAndRightPanels = 40;
 	private Timer progressBarTimer;
 	public final double cityFrequencySliderScale = 100.0 * 1.0 / SettingsGenerator.maxCityProbabillity;
 	private JSlider cityFrequencySlider;
 	private JComboBox<String> cityIconsTypeComboBox;
 	private JPanel mapEditingPanelContainer;
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
+	MainWindow mainWindow;
+	private JTextField pathDisplay;
 
 	public NewSettingsDialog(MainWindow mainWindow)
 	{
 		super(mainWindow, "Create New Map", Dialog.ModalityType.APPLICATION_MODAL);
+		this.mainWindow = mainWindow;
 
 		createGUI(mainWindow);
 
@@ -67,7 +71,7 @@ public class NewSettingsDialog extends JDialog
 		loadSettingsIntoGUI(settings);
 
 		updater.setEnabled(true);
-		updater.createAndShowMapFull();
+		handleMapChange();
 	}
 
 	private void createGUI(MainWindow mainWindow)
@@ -89,36 +93,11 @@ public class NewSettingsDialog extends JDialog
 		generatorSettingsPanel.add(Box.createHorizontalStrut(20));
 		createRightPanel(generatorSettingsPanel);
 
-		JPanel randomizePanel = new JPanel();
-		randomizePanel.setLayout(new BoxLayout(randomizePanel, BoxLayout.X_AXIS));
-		randomizePanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
-		JButton randomizeThemeButton = new JButton("Randomize Theme");
-		randomizeThemeButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				randomizeTheme();
-			}
-		});
-		randomizePanel.add(randomizeThemeButton);
-		randomizePanel.add(Box.createHorizontalStrut(5));
-
-		JButton randomizeLandButton = new JButton("Randomize Land");
-		randomizeLandButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				randomizeLand();
-			}
-		});
-		randomizePanel.add(randomizeLandButton);
-		organizer.addLeftAlignedComponent(randomizePanel, 0, 0, false);
 
 		createMapEditingPanel();
 		createMapUpdater();
 		organizer.addLeftAlignedComponent(mapEditingPanelContainer, 0, 0, true);
+
 
 		ActionListener listener = new ActionListener()
 		{
@@ -133,6 +112,33 @@ public class NewSettingsDialog extends JDialog
 
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
+
+
+		JButton randomizeThemeButton = new JButton("Randomize Theme");
+		randomizeThemeButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				randomizeTheme();
+			}
+		});
+		bottomPanel.add(randomizeThemeButton);
+		bottomPanel.add(Box.createHorizontalStrut(5));
+
+
+		JButton randomizeLandButton = new JButton("Randomize Land");
+		randomizeLandButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				randomizeLand();
+			}
+		});
+		bottomPanel.add(randomizeLandButton);
+		bottomPanel.add(Box.createHorizontalStrut(10));
+
 
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
@@ -175,8 +181,8 @@ public class NewSettingsDialog extends JDialog
 	private void onCreateMap(MainWindow mainWindow)
 	{
 		mainWindow.updater.cancel();
-		
-		// Disable the updater so that it ignores anything triggered by the window resizing as it closes. 
+
+		// Disable the updater so that it ignores anything triggered by the window resizing as it closes.
 		// I'm not if that's even possible but I think I saw it happen a few times and try to draw a tiny
 		// map.
 		mainWindow.updater.setEnabled(false);
@@ -186,7 +192,7 @@ public class NewSettingsDialog extends JDialog
 			mainWindow.clearOpenSettingsFilePath();
 			MapSettings settings = getSettingsFromGUI();
 			mainWindow.loadSettingsIntoGUI(settings);
-			
+
 			dispose();
 		});
 	}
@@ -270,7 +276,59 @@ public class NewSettingsDialog extends JDialog
 		createMapChangeListener(landColoringMethodComboBox);
 		organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
 
+
+		JButton changeButton = new JButton("Change");
+		pathDisplay = new JTextField();
+		pathDisplay.setText(UserPreferences.getInstance().defaultCustomImagesPath);
+		pathDisplay.setEditable(false);
+		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.",
+				Arrays.asList(pathDisplay, changeButton));
+
+		NewSettingsDialog thisDialog = this;
+		changeButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				CustomImagesDialog dialog = new CustomImagesDialog(mainWindow, settings.customImagesPath, (value) ->
+				{
+					settings.customImagesPath = value;
+					updatePathDisplay();
+					initializeCityTypeOptions();
+
+					updater.dowWhenMapIsNotDrawing(() ->
+					{
+						ImageCache.clear();
+						updater.createAndShowMapFull();
+					});
+				});
+				dialog.setLocationRelativeTo(thisDialog);
+				dialog.setVisible(true);
+			}
+		});
+
+		organizer.addLeftAlignedComponent(
+				Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
+
 		organizer.addVerticalFillerRow();
+	}
+
+	private void initializeCityTypeOptions()
+	{
+		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
+				ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities), settings.cityIconTypeName);
+	}
+
+	private void updatePathDisplay()
+	{
+		if (settings != null && settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
+		{
+			pathDisplay.setText(settings.customImagesPath);
+		}
+		else
+		{
+			pathDisplay.setText("");
+		}
 	}
 
 	private void createRightPanel(JPanel generatorSettingsPanel)
@@ -279,6 +337,7 @@ public class NewSettingsDialog extends JDialog
 
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
+
 
 		cityFrequencySlider = new JSlider();
 		cityFrequencySlider.setPaintLabels(true);
@@ -294,13 +353,16 @@ public class NewSettingsDialog extends JDialog
 
 		cityIconsTypeComboBox = new JComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
-		organizer.addLabelAndComponent("City icon type:",
-				"The set of city images to use.", cityIconsTypeComboBox);
+		organizer.addLabelAndComponent("City icon type:", "The set of city images to use.", cityIconsTypeComboBox);
+
 
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
-		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 140));
+		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 180));
 		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:",
 				"Selected books will be used to generate new names.", booksWidget.getContentPanel());
+
+		organizer.addLeftAlignedComponent(
+				Box.createRigidArea(new Dimension((defaultSize.width / 2) - amountToSubtractFromLeftAndRightPanels, 0)));
 
 		organizer.addVerticalFillerRow();
 	}
@@ -435,8 +497,11 @@ public class NewSettingsDialog extends JDialog
 	private Dimension getMapDrawingAreaSize()
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new Dimension((int)((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale),
-				(int)((mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale));
+		return new Dimension(
+				(int) ((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
+						* mapEditingPanel.osScale),
+				(int) ((mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
+						* mapEditingPanel.osScale));
 
 	}
 
@@ -456,10 +521,11 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
-		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox, ImageCache.getInstance().getIconGroupNames(IconType.cities),
-				settings.cityIconTypeName);
+		initializeCityTypeOptions();
 
 		booksWidget.checkSelectedBooks(settings.books);
+
+		updatePathDisplay();
 	}
 
 	private MapSettings getSettingsFromGUI()
@@ -531,7 +597,6 @@ public class NewSettingsDialog extends JDialog
 	public void handleMapChange()
 	{
 		enableOrDisableProgressBar(true);
-		updater.createAndShowMapFull();
+		mainWindow.updater.dowWhenMapIsNotDrawing(() -> updater.createAndShowMapFull());
 	}
-
 }

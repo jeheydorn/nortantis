@@ -23,7 +23,6 @@ import nortantis.MapSettings;
 import nortantis.NotEnoughNamesException;
 import nortantis.TextDrawer;
 import nortantis.editor.NameType;
-import nortantis.editor.UserPreferences;
 import nortantis.util.Range;
 
 @SuppressWarnings("serial")

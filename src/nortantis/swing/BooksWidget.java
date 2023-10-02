@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -41,6 +40,7 @@ public class BooksWidget
 			public void actionPerformed(ActionEvent e)
 			{
 				checkOrUncheckAllBooks(true);
+				actionToRunWhenSelectionChanges.run();
 			}
 		});
 		
@@ -51,6 +51,7 @@ public class BooksWidget
 			public void actionPerformed(ActionEvent e)
 			{
 				checkOrUncheckAllBooks(false);
+				actionToRunWhenSelectionChanges.run();
 			}
 		});
 		buttonsPanel.add(checkAll);

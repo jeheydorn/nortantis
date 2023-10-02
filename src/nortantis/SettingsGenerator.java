@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
+import nortantis.editor.UserPreferences;
 import nortantis.util.AssetsPath;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
@@ -110,9 +111,11 @@ public class SettingsGenerator
 				
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 		
+		settings.customImagesPath = UserPreferences.getInstance().defaultCustomImagesPath;
+		
 		final double drawBorderProbability = 0.75;
 		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
-		Set<String> borderTypes = MapCreator.getAvailableBorderTypes();
+		Set<String> borderTypes = MapCreator.getAvailableBorderTypes(settings.customImagesPath);
 		if (!borderTypes.isEmpty())
 		{
 			// Random border type.
@@ -148,7 +151,7 @@ public class SettingsGenerator
 
 		settings.cityProbability =  0.25 * maxCityProbabillity;
 		
-		Set<String> cityIconTypes = ImageCache.getInstance().getIconGroupNames(IconType.cities);
+		Set<String> cityIconTypes = ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities);
 		if (cityIconTypes.size() > 0)
 		{
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));

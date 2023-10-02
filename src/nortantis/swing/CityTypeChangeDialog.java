@@ -20,7 +20,7 @@ import nortantis.MapSettings;
 @SuppressWarnings("serial")
 public class CityTypeChangeDialog extends JDialog
 {
-	public CityTypeChangeDialog(MainWindow mainWindow, IconsTool iconsTool, String currentCityIconType)
+	public CityTypeChangeDialog(MainWindow mainWindow, IconsTool iconsTool, String currentCityIconType, String imagesPath)
 	{
 		super(mainWindow, "Change City Type", Dialog.ModalityType.APPLICATION_MODAL);
 		
@@ -34,7 +34,7 @@ public class CityTypeChangeDialog extends JDialog
 				+ " this map?</html>"));
 
 		JComboBox<String> cityIconsSetComboBox = new JComboBox<String>();
-		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance().getIconGroupNames(IconType.cities), 
+		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities), 
 				currentCityIconType);
 		organizer.addLabelAndComponent("City icon type:", "", cityIconsSetComboBox);
 						

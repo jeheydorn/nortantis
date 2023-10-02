@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -116,6 +117,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu toolsMenu;
 	private JRadioButtonMenuItem[] displayQualityButtons;
 	private JMenuItem nameGeneratorMenuItem;
+	protected String customImagesPath;
+	private JMenu fileMenu;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -158,16 +161,17 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		undoButton.setEnabled(enable);
 		redoButton.setEnabled(enable);
 		clearEntireMapButton.setEnabled(enable);
+		customImagesMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
-		
+
 		for (JRadioButtonMenuItem button : displayQualityButtons)
 		{
 			button.setEnabled(enable);
 		}
 		highlightLakesButton.setEnabled(enable);
 		highlightRiversButton.setEnabled(enable);
-		
+
 		refreshMenuItem.setEnabled(enable);
 
 		themePanel.enableOrDisableEverything(enable);
@@ -394,7 +398,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		// Speed up the scroll speed.
 		mapEditingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 	}
-	
+
 	private void createMapUpdater()
 	{
 		final MainWindow mainWindow = this;
@@ -454,7 +458,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					showAsDrawing(false);
 				}
-				
+
 				mapEditingPanel.setHighlightRivers(highlightRiversButton.isSelected());
 				mapEditingPanel.setHighlightLakes(highlightLakesButton.isSelected());
 
@@ -497,7 +501,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 
-		JMenu fileMenu = new JMenu("File");
+		fileMenu = new JMenu("File");
 		menuBar.add(fileMenu);
 
 		final JMenuItem newRandomMapMenuItem = new JMenuItem("New Random Map");
@@ -528,7 +532,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath() : openSettingsFilePath;
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+						: openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setCurrentDirectory(currentFolder);
@@ -554,18 +559,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(
-								mainWindow,
-								FilenameUtils.getName(
-										openSettingsFilePath.toString()
-								) + " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
-										+ MapSettings.fileExtensionWithDot + "' file.",
-								"File Converted", JOptionPane.INFORMATION_MESSAGE
-						);
-						openSettingsFilePath = Paths.get(
-								FilenameUtils.getFullPath(openSettingsFilePath.toString()),
-								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot
-						);
+						JOptionPane.showMessageDialog(mainWindow, FilenameUtils.getName(openSettingsFilePath.toString())
+								+ " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
+								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
+						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
+								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot);
 						forceSaveAs = true;
 					}
 
@@ -631,6 +629,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				handleImagesRefresh();
+				updater.createAndShowMapFull();
 			}
 		});
 
@@ -687,14 +686,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		clearEntireMapButton.setEnabled(false);
 
+		customImagesMenuItem = new JMenuItem("Custom Images Folder");
+		editMenu.add(customImagesMenuItem);
+		customImagesMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleCustomImagesPressed();
+			}
+		});
+
 		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
 
 		displayQualityMenu = new JMenu("Display Quality");
 		viewMenu.add(displayQualityMenu);
 		displayQualityMenu.setToolTipText(
-				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower."
-		);
+				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 
 		highlightLakesButton = new JCheckBoxMenuItem("Highlight Lakes");
 		highlightLakesButton.setToolTipText("Highlight lakes to make them easier to see.");
@@ -759,9 +768,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		radioButton150Percent.addActionListener(resolutionListener);
 		displayQualityMenu.add(radioButton150Percent);
 		resolutionButtonGroup.add(radioButton150Percent);
-		
-		displayQualityButtons = new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent,
-				radioButton100Percent, radioButton125Percent, radioButton150Percent };
+
+		displayQualityButtons = new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent, radioButton100Percent,
+				radioButton125Percent, radioButton150Percent };
 
 		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
 		{
@@ -789,32 +798,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
 		}
 		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
-		
+
 		toolsMenu = new JMenu("Tools");
 		menuBar.add(toolsMenu);
-		
+
 		nameGeneratorMenuItem = new JMenuItem("Name Generator");
 		toolsMenu.add(nameGeneratorMenuItem);
 		nameGeneratorMenuItem.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
 				handleNameGeneratorPressed();
 			}
 		});
-		
-		customImagesMenuItem = new JMenuItem("Custom Images");
-		toolsMenu.add(customImagesMenuItem);
-		customImagesMenuItem.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				handleCustomImagesPressed(fileMenu.getText(), refreshMenuItem.getText());
-			}
-		});
-
 
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
@@ -827,19 +824,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(
-						thisWindow, 
-						"<html>Keyboard shortcuts for navigating the map:"
-						+ "<ul>"
-						+ "<li>Zoom: Ctrl + mouse wheel</li>"
-						+ "<li>Pan: Hold mouse middle button and drag</li>"
-						+ "</ul>"
-						+ "</html>",
-						"Keyboard Shortcuts",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(thisWindow,
+						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Ctrl + mouse wheel</li>"
+								+ "<li>Pan: Hold mouse middle button and drag</li>" + "</ul>" + "</html>",
+						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
-		
+
 		JMenuItem aboutNortantisItem = new JMenuItem("About Nortantis");
 		helpMenu.add(aboutNortantisItem);
 		aboutNortantisItem.addActionListener(new ActionListener()
@@ -854,19 +845,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void handleImagesRefresh()
 	{
-		updater.dowWhenMapIsNotDrawing(() ->
-		{
-			ImageCache.getInstance().clear();
-			// I'm allowing refreshing images before settings are loaded when changing the custom images path before opening maps,
-			// but that means I need to handle lastSettingsLoadedOrSaved being null here.
-			MapSettings settings = lastSettingsLoadedOrSaved == null ? null : getSettingsFromGUI(false);
-			if (settings != null)
-			{
-				updater.createAndShowMapFull();
-			}
-			// Tell Icons tool to refresh image previews
-			toolsPanel.handleImagesRefresh(settings);
-		});
+		ImageCache.clear();
+		MapSettings settings = getSettingsFromGUI(false);
+		// Tell Icons tool to refresh image previews
+		toolsPanel.handleImagesRefresh(settings);
 	}
 
 	private void showAboutNortantisDialog()
@@ -910,10 +892,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (!(new File(absolutePath).exists()))
 		{
-			JOptionPane.showMessageDialog(
-					null, "The map '" + absolutePath + "' cannot be opened because it does not exist.", "Unable to Open Map",
-					JOptionPane.ERROR_MESSAGE
-			);
+			JOptionPane.showMessageDialog(null, "The map '" + absolutePath + "' cannot be opened because it does not exist.",
+					"Unable to Open Map", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
@@ -938,10 +918,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		catch (Exception e)
 		{
 			e.printStackTrace();
-			JOptionPane.showMessageDialog(
-					null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
-					JOptionPane.ERROR_MESSAGE
-			);
+			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
+					JOptionPane.ERROR_MESSAGE);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
 		}
 	}
@@ -986,22 +964,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					// Zoom toward the mouse's position, keeping the point
 					// currently under the mouse the same if possible.
-					scrollTo = new java.awt.Rectangle(
-							(int) (mousePosition.x * scale) - mousePosition.x + visible.x,
-							(int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width, visible.height
-					);
+					scrollTo = new java.awt.Rectangle((int) (mousePosition.x * scale) - mousePosition.x + visible.x,
+							(int) (mousePosition.y * scale) - mousePosition.y + visible.y, visible.width, visible.height);
 				}
 				else
 				{
 					// Zoom toward or away from the current center of the
 					// screen.
 					java.awt.Point currentCentroid = new java.awt.Point(visible.x + (visible.width / 2), visible.y + (visible.height / 2));
-					java.awt.Point targetCentroid = new java.awt.Point(
-							(int) (currentCentroid.x * scale), (int) (currentCentroid.y * scale)
-					);
-					scrollTo = new java.awt.Rectangle(
-							targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2, visible.width, visible.height
-					);
+					java.awt.Point targetCentroid = new java.awt.Point((int) (currentCentroid.x * scale),
+							(int) (currentCentroid.y * scale));
+					scrollTo = new java.awt.Rectangle(targetCentroid.x - visible.width / 2, targetCentroid.y - visible.height / 2,
+							visible.width, visible.height);
 				}
 			}
 
@@ -1089,14 +1063,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				Dimension size = new Dimension(
-						mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
-						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom
-				);
+				Dimension size = new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
-				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(
-						size, mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight()
-				);
+				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
+						mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
@@ -1140,7 +1111,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		updateImageQualityScale(resolutionText);
 
-		ImageCache.getInstance().clear();
+		ImageCache.clear();
 		updater.createAndShowMapFull();
 	}
 
@@ -1222,13 +1193,19 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		dialog.setVisible(true);
 	}
 
-	private void handleCustomImagesPressed(String fileMenuName, String nameOfMenuOptionToRefreshImages)
+	private void handleCustomImagesPressed()
 	{
-		CustomImagesDialog dialog = new CustomImagesDialog(this, fileMenuName, nameOfMenuOptionToRefreshImages);
+		CustomImagesDialog dialog = new CustomImagesDialog(this, customImagesPath, (value) ->
+		{
+			customImagesPath = value;
+			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
+			handleImagesRefresh();
+			updater.createAndShowMapFull();
+		});
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
-	
+
 	private void handleNameGeneratorPressed()
 	{
 		MapSettings settings = getSettingsFromGUI(false);
@@ -1396,6 +1373,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
+		boolean needsImagesRefresh = !Objects.equals(settings.customImagesPath, customImagesPath);
 		hasDrawnCurrentMapAtLeastOnce = false;
 		mapEditingPanel.clearAllSelectionsAndHighlights();
 
@@ -1426,6 +1404,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// the first draw finishes.
 			enableOrDisableFieldsThatRequireMap(false, settings);
 		}
+
+		if (needsImagesRefresh)
+		{
+			handleImagesRefresh();
+		}
 		
 		updater.createAndShowMapFull();
 	}
@@ -1438,6 +1421,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		imageExportPath = settings.imageExportPath;
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
+		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
 		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
 		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
@@ -1452,6 +1436,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	MapSettings getSettingsFromGUI(boolean deepCopyEdits)
 	{
+		if (lastSettingsLoadedOrSaved == null)
+		{
+			// No settings are loaded.
+			return null;
+		}
+		
 		MapSettings settings = lastSettingsLoadedOrSaved.deepCopyExceptEdits();
 		if (deepCopyEdits)
 		{
@@ -1467,6 +1457,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		settings.imageExportPath = imageExportPath;
 		settings.heightmapResolution = heightmapExportResolution;
 		settings.heightmapExportPath = heightmapExportPath;
+		settings.customImagesPath = customImagesPath;
 
 		themePanel.getSettingsFromGUI(settings);
 		toolsPanel.getSettingsFromGUI(settings);
@@ -1499,12 +1490,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private void setPlaceholderImage(String[] message)
 	{
 		mapEditingPanel.setImage(ImageHelper.createPlaceholderImage(message));
-		
-		// Clear out the map from map creator so that causing the window to re-zoom while the placeholder image 
+
+		// Clear out the map from map creator so that causing the window to re-zoom while the placeholder image
 		// is displayed doesn't show the previous map. This can happen when the zoom is fit to window, you create
 		// a new map, then resize the window while the new map is drawing for the first time.
 		mapEditingPanel.mapFromMapCreator = null;
-		
+
 		mapEditingPanel.repaint();
 	}
 
@@ -1547,6 +1538,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public Path getOpenSettingsFilePath()
 	{
 		return openSettingsFilePath;
+	}
+	
+	String getFileMenuName()
+	{
+		return fileMenu.getText();
+	}
+	
+	String getRefreshImagesMenuName()
+	{
+		return refreshMenuItem.getText();
 	}
 
 	/**

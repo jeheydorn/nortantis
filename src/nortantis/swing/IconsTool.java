@@ -262,14 +262,13 @@ public class IconsTool extends EditorTool
 		eraseModeButton.setToolTipText("Erase using the selected brush (Alt+E)");
 		eraseModeButton.addActionListener(modeListener);
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		modeHider = organizer.addLabelAndComponentsHorizontal(
-				"Mode:", "Whether to draw or erase using the selected brush type.", Arrays.asList(drawModeButton, eraseModeButton), 0, 5
-		);
+		modeHider = organizer.addLabelAndComponentsHorizontal("Mode:", "Whether to draw or erase using the selected brush type.",
+				Arrays.asList(drawModeButton, eraseModeButton), 0, 5);
 
-		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes);
-		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes);
-		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes);
-		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes);
+		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes, null);
+		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes, null);
+		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes, null);
+		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes, null);
 		selectDefaultTreesButtion();
 
 		lblCityIconType = new JLabel("<not set>");
@@ -280,16 +279,16 @@ public class IconsTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				CityTypeChangeDialog dialog = new CityTypeChangeDialog(mainWindow, thisTool, lblCityIconType.getText());
+				CityTypeChangeDialog dialog = new CityTypeChangeDialog(mainWindow, thisTool, lblCityIconType.getText(),
+						mainWindow.customImagesPath);
 				dialog.setLocationRelativeTo(toolsPanel);
 				dialog.setVisible(true);
 			}
 		});
-		cityTypeHider = organizer.addLabelAndComponentsVertical(
-				"City icons type:", "", Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton)
-		);
+		cityTypeHider = organizer.addLabelAndComponentsVertical("City icons type:", "",
+				Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
 
-		createOrUpdateRadioButtonsForCities(organizer);
+		createOrUpdateRadioButtonsForCities(organizer, null);
 
 		// River options
 		{
@@ -307,7 +306,9 @@ public class IconsTool extends EditorTool
 					riverWidthDisplay.setText(riverWidthSlider.getValue() + "");
 				}
 			});
-			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:", "River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.", Arrays.asList(riverWidthSlider, riverWidthDisplay));
+			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:",
+					"River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.",
+					Arrays.asList(riverWidthSlider, riverWidthDisplay));
 		}
 
 		densitySlider = new JSlider(1, 50);
@@ -320,19 +321,23 @@ public class IconsTool extends EditorTool
 		brushSizeHider = brushSizeTuple.getSecond();
 
 		onlyUpdateMountainsCheckbox = new JCheckBox("Only update mountains");
-		onlyUpdateMountainsCheckbox.setToolTipText("When checked, mountains will only be drawn over existing mountains, making it easier to change the images used by a group of mountains.");
+		onlyUpdateMountainsCheckbox.setToolTipText(
+				"When checked, mountains will only be drawn over existing mountains, making it easier to change the images used by a group of mountains.");
 		onlyUpdateMountainsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateMountainsCheckbox);
 
 		onlyUpdateHillsCheckbox = new JCheckBox("Only update hills");
-		onlyUpdateHillsCheckbox.setToolTipText("When checked, hills will only be drawn over existing hills, making it easier to change the images used by a group of hills.");
+		onlyUpdateHillsCheckbox.setToolTipText(
+				"When checked, hills will only be drawn over existing hills, making it easier to change the images used by a group of hills.");
 		onlyUpdateHillsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateHillsCheckbox);
 
 		onlyUpdateTreesCheckbox = new JCheckBox("Only update trees");
-		onlyUpdateTreesCheckbox.setToolTipText("When checked, trees will only be drawn over existing trees, making it easier to change the images used by a group of trees.");
+		onlyUpdateTreesCheckbox.setToolTipText(
+				"When checked, trees will only be drawn over existing trees, making it easier to change the images used by a group of trees.");
 		onlyUpdateTreesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateTreesCheckbox);
 
 		onlyUpdateDunesCheckbox = new JCheckBox("Only update dunes");
-		onlyUpdateDunesCheckbox.setToolTipText("When checked, dunes will only be drawn over existing dunes, making it easier to change the images used by a group of dunes.");
+		onlyUpdateDunesCheckbox.setToolTipText(
+				"When checked, dunes will only be drawn over existing dunes, making it easier to change the images used by a group of dunes.");
 		onlyUpdateDunesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateDunesCheckbox);
 
 		mountainsButton.doClick();
@@ -361,10 +366,8 @@ public class IconsTool extends EditorTool
 
 	private void updateTypePanels()
 	{
-		modeHider.setVisible(
-				mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected() || treesButton.isSelected()
-						|| riversButton.isSelected() || citiesButton.isSelected()
-		);
+		modeHider.setVisible(mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected()
+				|| treesButton.isSelected() || riversButton.isSelected() || citiesButton.isSelected());
 
 		mountainTypes.hider.setVisible(mountainsButton.isSelected() && drawModeButton.isSelected());
 		hillTypes.hider.setVisible(hillsButton.isSelected() && drawModeButton.isSelected());
@@ -375,8 +378,7 @@ public class IconsTool extends EditorTool
 		densityHider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
 		riverOptionHider.setVisible(riversButton.isSelected() && drawModeButton.isSelected());
 		brushSizeHider.setVisible(
-				!(riversButton.isSelected() && drawModeButton.isSelected()) && !(citiesButton.isSelected() && drawModeButton.isSelected())
-		);
+				!(riversButton.isSelected() && drawModeButton.isSelected()) && !(citiesButton.isSelected() && drawModeButton.isSelected()));
 
 		onlyUpdateMountainsCheckboxHider.setVisible(mountainsButton.isSelected() && drawModeButton.isSelected());
 		onlyUpdateHillsCheckboxHider.setVisible(hillsButton.isSelected() && drawModeButton.isSelected());
@@ -384,11 +386,12 @@ public class IconsTool extends EditorTool
 		onlyUpdateTreesCheckboxHider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
 	}
 
-	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing)
+	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
+			String customImagesPath)
 	{
 		ButtonGroup group = new ButtonGroup();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
-		for (String groupName : ImageCache.getInstance().getIconGroupNames(iconType))
+		for (String groupName : ImageCache.getInstance(customImagesPath).getIconGroupNames(iconType))
 		{
 			RadioButtonWithImage button = new RadioButtonWithImage(groupName, null);
 			group.add(button.getRadioButton());
@@ -402,10 +405,8 @@ public class IconsTool extends EditorTool
 		if (existing == null)
 		{
 			JPanel buttonsPanel = new JPanel();
-			return new IconTypeButtons(
-					organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", radioButtons, buttonsPanel), radioButtons,
-					buttonsPanel
-			);
+			return new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", radioButtons, buttonsPanel),
+					radioButtons, buttonsPanel);
 		}
 		else
 		{
@@ -417,39 +418,41 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void handleImagesRefresh()
+	public void handleImagesRefresh(String customImagesPath)
 	{
-		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes);
-		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes);
-		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes);
-		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes);
+		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, customImagesPath);
+		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, customImagesPath);
+		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, customImagesPath);
+		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, customImagesPath);
 		selectDefaultTreesButtion();
 
-		createOrUpdateRadioButtonsForCities(null);
+		createOrUpdateRadioButtonsForCities(null, customImagesPath);
 	}
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
 	{
-		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes);
+		String customImagesPath = settings == null ? null : settings.customImagesPath;
+		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, customImagesPath);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, customImagesPath);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, customImagesPath);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, customImagesPath);
 
-		
+
 		updateCityButtonPreviewImages(settings);
 	}
 
 	private void updateCityButtonPreviewImages(MapSettings settings)
 	{
 		final String cityType = lblCityIconType.getText();
-		final List<String> iconNamesWithoutWidthOrExtension = cityButtons.buttons.stream().map((button) -> button.getText()).collect(Collectors.toList());
+		final List<String> iconNamesWithoutWidthOrExtension = cityButtons.buttons.stream().map((button) -> button.getText())
+				.collect(Collectors.toList());
 		SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<>()
 		{
 			@Override
 			protected List<BufferedImage> doInBackground() throws Exception
 			{
 				List<BufferedImage> previewImages = new ArrayList<>();
-				Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance()
+				Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
 						.getIconsWithWidths(IconType.cities, cityType);
 
 				for (String cityIconNameWithoutWidthOrExtension : iconNamesWithoutWidthOrExtension)
@@ -457,8 +460,7 @@ public class IconsTool extends EditorTool
 					if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
 					{
 						throw new IllegalArgumentException(
-								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'"
-						);
+								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
 					}
 					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst();
 					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon));
@@ -480,10 +482,10 @@ public class IconsTool extends EditorTool
 				{
 					throw new RuntimeException(e);
 				}
-				
+
 				if (!cityType.equals(lblCityIconType.getText()))
 				{
-					// The user changed the city type while we were updating the city icons from a previous change. Do nothing. 
+					// The user changed the city type while we were updating the city icons from a previous change. Do nothing.
 					// The next update will set the icons on the buttons.
 					return;
 				}
@@ -498,7 +500,7 @@ public class IconsTool extends EditorTool
 		worker.execute();
 	}
 
-	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons)
+	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customImagesPath)
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
@@ -508,7 +510,7 @@ public class IconsTool extends EditorTool
 				@Override
 				protected BufferedImage doInBackground() throws Exception
 				{
-					return createIconPreviewForGroup(settings, iconType, buttonText);
+					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath);
 				}
 
 				@Override
@@ -532,9 +534,9 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private BufferedImage createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName)
+	private BufferedImage createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		return createIconPreview(settings, ImageCache.getInstance().loadIconGroup(iconType, groupName));
+		return createIconPreview(settings, ImageCache.getInstance(customImagesPath).loadIconGroup(iconType, groupName));
 	}
 
 	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images)
@@ -572,10 +574,8 @@ public class IconsTool extends EditorTool
 		if (showIconPreviewsUsingLandBackground)
 		{
 			Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
-					.createBackgroundImageDisplaysImages(
-							size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand, settings.generateBackground,
-							settings.generateBackgroundFromTexture, settings.backgroundTextureImage
-					);
+					.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
+							settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
 			previewImage = tuple.getThird();
 			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
 		}
@@ -627,14 +627,14 @@ public class IconsTool extends EditorTool
 		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
 	}
 
-	private void createOrUpdateRadioButtonsForCities(GridBagOrganizer organizer)
+	private void createOrUpdateRadioButtonsForCities(GridBagOrganizer organizer, String customImagesPath)
 	{
-		Set<String> cityTypes = ImageCache.getInstance().getIconGroupNames(IconType.cities);
+		Set<String> cityTypes = ImageCache.getInstance(customImagesPath).getIconGroupNames(IconType.cities);
 
 		String cityType = lblCityIconType.getText();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
 		ButtonGroup group = new ButtonGroup();
-		
+
 		if (cityType.equals(cityTypeNotSetPlaceholder))
 		{
 
@@ -645,7 +645,7 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance()
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
 			{
 				RadioButtonWithImage button = new RadioButtonWithImage(fileNameWithoutWidthOrExtension, null);
@@ -665,8 +665,7 @@ public class IconsTool extends EditorTool
 			JPanel buttonsPanel = new JPanel();
 			cityButtons = new IconTypeButtons(
 					organizer.addLabelAndComponentsVerticalWithComponentPanel("Cities:", "", radioButtons, buttonsPanel), radioButtons,
-					buttonsPanel
-			);
+					buttonsPanel);
 		}
 		else
 		{
@@ -802,7 +801,7 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong())); 
+					CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
 					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, newTrees);
 				}
 			}
@@ -829,8 +828,9 @@ public class IconsTool extends EditorTool
 				{
 					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityName);
 					// Only add the city if it will be drawn. That way, we don't set an undo point for a city that won't draw.
-					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the icon
-					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it 
+					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the
+					// icon
+					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it
 					// in place to save creating an extra undo point here, although it might not be necessary.
 					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 					{
@@ -1036,7 +1036,7 @@ public class IconsTool extends EditorTool
 		lblCityIconType.setText((settings.cityIconTypeName == null ? "" : settings.cityIconTypeName));
 		if (isCityTypeChange)
 		{
-			createOrUpdateRadioButtonsForCities(null);
+			createOrUpdateRadioButtonsForCities(null, settings.customImagesPath);
 		}
 		updateTypePanels();
 		if (showIconPreviewsUsingLandBackground && (changeEffectsBackgroundImages || isCityTypeChange))
@@ -1065,7 +1065,7 @@ public class IconsTool extends EditorTool
 		}
 
 		lblCityIconType.setText(cityIconType == null ? cityTypeNotSetPlaceholder : cityIconType);
-		createOrUpdateRadioButtonsForCities(null);
+		createOrUpdateRadioButtonsForCities(null, settings.customImagesPath);
 		updateCityButtonPreviewImages(settings);
 		undoer.setUndoPoint(UpdateType.Full, this);
 		updater.createAndShowMapFull();

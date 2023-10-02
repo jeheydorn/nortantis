@@ -497,7 +497,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			
 			if (setName == null || setName.isEmpty())
 			{
-				Set<String> cityTypes = ImageCache.getInstance().getIconGroupNames(IconType.cities);
+				Set<String> cityTypes = ImageCache.getInstance(AssetsPath.getInstallPath()).getIconGroupNames(IconType.cities);
 				if (cityTypes.size() > 0)
 				{
 					setName = cityTypes.iterator().next();

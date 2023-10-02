@@ -247,7 +247,7 @@ public class ToolsPanel extends JPanel
 		// Cause the Icons tool to update its image radio buttons
 		for (EditorTool tool : tools)
 		{
-			tool.handleImagesRefresh();
+			tool.handleImagesRefresh(settings.customImagesPath);
 		}
 
 		if (settings != null)

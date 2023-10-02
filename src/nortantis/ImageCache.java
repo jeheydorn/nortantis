@@ -9,7 +9,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +19,7 @@ import org.apache.commons.io.FilenameUtils;
 
 import nortantis.util.AssetsPath;
 import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
@@ -32,7 +32,7 @@ import nortantis.util.Tuple3;
  */
 public class ImageCache
 {
-	private static ImageCache instance;
+	private static HashMapF<String, ImageCache> instances = new HashMapF<>();
 
 	/**
 	 * Maps original images, to scaled width, to scaled images.
@@ -62,32 +62,42 @@ public class ImageCache
 	 */
 	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, Map<String, Tuple3<BufferedImage, BufferedImage, Integer>>>> iconsWithWidthsCache;
 
-	private ConcurrentHashMapF<IconType, Set<String>> iconSetsCache;
-
 	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, String[]>> iconGroupFilesNamesCache;
 
 	private ConcurrentHashMapF<IconType, Set<String>> iconGroupNames;
+	
+	private String imagesPath;
 
 	/**
 	 * Singleton
 	 */
-	private ImageCache()
+	private ImageCache(String imagesPath)
 	{
+		this.imagesPath = imagesPath;
 		scaledCache = new ConcurrentHashMapF<>();
 		fileCache = new ConcurrentHashMapF<>();
 		generatedImageCache = new ConcurrentHashMapF<>();
 		iconGroupsAndMasksCache = new ConcurrentHashMapF<>();
 		iconsWithWidthsCache = new ConcurrentHashMapF<>();
-		iconSetsCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
 		iconGroupNames = new ConcurrentHashMapF<>();
 	}
 
-	public synchronized static ImageCache getInstance()
+	/**
+	 * Gets the image cache instance associated with the given imagesPath.
+	 * When imagesPath is null or empty, then the imageCache for the installed
+	 * images is given.
+	 * @param imagesPath
+	 * @return
+	 */
+	public synchronized static ImageCache getInstance(String imagesPath)
 	{
-		if (instance == null)
-			instance = new ImageCache();
-		return instance;
+		if (imagesPath != null && !imagesPath.isEmpty())
+		{
+			return instances.getOrCreate(imagesPath, () -> new ImageCache(imagesPath));
+		}
+		
+		return instances.getOrCreate(AssetsPath.getInstallPath(), () -> new ImageCache(AssetsPath.getInstallPath()));
 	}
 
 	/**
@@ -187,15 +197,15 @@ public class ImageCache
 			for (String fileName : fileNames)
 			{
 				Path path = Paths.get(groupPath, fileName);
-				if (!ImageCache.getInstance().containsImageFile(path))
+				if (!containsImageFile(path))
 				{
 					Logger.println("Loading icon: " + path);
 				}
 				BufferedImage icon;
 				BufferedImage mask;
 
-				icon = ImageCache.getInstance().getImageFromFile(path);
-				mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> IconDrawer.createMask(icon));
+				icon = getImageFromFile(path);
+				mask = getOrCreateImage("mask " + path.toString(), () -> IconDrawer.createMask(icon));
 
 				imagesPerGroup.add(groupName, new Tuple2<>(icon, mask));
 			}
@@ -214,7 +224,7 @@ public class ImageCache
 			Path path = Paths.get(groupPath, fileName);
 			BufferedImage icon;
 
-			icon = ImageCache.getInstance().getImageFromFile(path);
+			icon = getImageFromFile(path);
 
 			result.add(icon);
 		}
@@ -260,15 +270,15 @@ public class ImageCache
 			}
 
 			Path path = Paths.get(getIconGroupPath(iconType, groupName), fileName);
-			if (!ImageCache.getInstance().containsImageFile(path))
+			if (!containsImageFile(path))
 			{
 				Logger.println("Loading icon: " + path);
 			}
 			BufferedImage icon;
 			BufferedImage mask;
 
-			icon = ImageCache.getInstance().getImageFromFile(path);
-			mask = ImageCache.getInstance().getOrCreateImage("mask " + path.toString(), () -> IconDrawer.createMask(icon));
+			icon = getImageFromFile(path);
+			mask = getOrCreateImage("mask " + path.toString(), () -> IconDrawer.createMask(icon));
 
 			int width;
 			try
@@ -311,9 +321,9 @@ public class ImageCache
 		}
 	}
 
-	public static Set<String> loadIconGroupNames(IconType iconType)
+	public Set<String> loadIconGroupNames(IconType iconType)
 	{
-		String path = Paths.get(AssetsPath.getOverridablePath(), "icons", iconType.toString()).toString();
+		String path = Paths.get(imagesPath, "icons", iconType.toString()).toString();
 
 		String[] folderNames = new File(path).list(new FilenameFilter()
 		{
@@ -359,7 +369,7 @@ public class ImageCache
 				.getOrCreate(groupNameToUse, () -> loadIconGroupFileNames(iconType, groupNameToUse));
 	}
 
-	private static String[] loadIconGroupFileNames(IconType iconType, String groupName)
+	private String[] loadIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String path = getIconGroupPath(iconType, groupName);
 
@@ -382,20 +392,13 @@ public class ImageCache
 		return fileNames;
 	}
 
-	private static String getIconGroupPath(IconType iconType, String groupName)
+	private String getIconGroupPath(IconType iconType, String groupName)
 	{
-		return Paths.get(AssetsPath.getOverridablePath(), "icons", iconType.toString(), groupName).toString();
+		return Paths.get(imagesPath, "icons", iconType.toString(), groupName).toString();
 	}
 
-	public void clear()
+	public static void clear()
 	{
-		scaledCache.clear();
-		fileCache.clear();
-		generatedImageCache.clear();
-		iconGroupFilesNamesCache.clear();
-		iconSetsCache.clear();
-		iconsWithWidthsCache.clear();
-		iconGroupsAndMasksCache.clear();
-		iconGroupNames.clear();
+		instances.clear();
 	}
 }

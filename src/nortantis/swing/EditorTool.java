@@ -272,7 +272,7 @@ public abstract class EditorTool
 
 	public abstract void onBeforeLoadingNewMap();
 
-	public void handleImagesRefresh()
+	public void handleImagesRefresh(String customImagesPath)
 	{
 	}
 }

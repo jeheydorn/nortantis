@@ -39,12 +39,18 @@ public class Undoer
 		copyOfSettingsWhenEditorWasOpened = null;		
 	}
 	
+	public void setUndoPoint(UpdateType updateType, EditorTool tool)
+	{
+		setUndoPoint(updateType, tool, null);
+	}
+	
 	/***
 	 * Sets a point to which the user can undo changes. 
 	 * @param updateType The type of update that was last made. 
 	 * @param tool The tool that is setting the undo point.
+	 * @param preRun Code to run in the foreground thread before drawing if this change undone or redone.
 	 */
-	public void setUndoPoint(UpdateType updateType, EditorTool tool)
+	public void setUndoPoint(UpdateType updateType, EditorTool tool, Runnable preRun)
 	{
 		if (!enabled)
 		{
@@ -68,7 +74,7 @@ public class Undoer
 		}
 		
 		redoStack.clear();
-		undoStack.push(new MapChange(currentSettings, updateType, tool));
+		undoStack.push(new MapChange(currentSettings, updateType, tool, preRun));
 		
 		// Limit the size of undoStack to prevent memory errors. Each undo point is about 2 MBs.
 		while(undoStack.size() > maxUndoLevels)
@@ -171,7 +177,7 @@ public class Undoer
 			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
 		
-		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange);
+		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange, changeToRedo.preRun);
 		mainWindow.updater.createAndShowMapFromChange(changeWithPrevSettings);
 		updateUndoRedoEnabled();
 	}

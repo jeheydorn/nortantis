@@ -1,9 +1,5 @@
 package nortantis.util;
 
-import java.io.File;
-
-import nortantis.editor.UserPreferences;
-
 public class AssetsPath
 {
 	/**
@@ -12,9 +8,8 @@ public class AssetsPath
 	private static boolean isInstalled = false;
 	
 	private static String installPath;
-	private static String overridablePath;
 	
-	static
+	static 
 	{
 		String OS = System.getProperty("os.name").toUpperCase();
 		if (OS.contains("WIN"))
@@ -40,37 +35,15 @@ public class AssetsPath
 			// Installers are not supported for Linux
 			installPath = "assets";
 		}
-		
-		String customImagesPath = UserPreferences.getInstance().customImagesPath;
-		if (customImagesPath != null && !customImagesPath.isEmpty())
-		{
-			overridablePath = customImagesPath;
-		}
-		else
-		{
-			overridablePath = installPath;
-		}
-
 	}
 	
-	public static String getInstallPath()
+	public static synchronized String getInstallPath()
 	{
 		return installPath;
 	}
 	
-	public static String getOverridablePath()
-	{
-		return overridablePath;
-	}
-	
-	public static void setInstallPath(String path)
+	public static synchronized void setInstallPath(String path)
 	{
 		installPath = path;
-	}
-
-
-	public static void setOverridablePath(String path)
-	{
-		overridablePath = path;
 	}
 }

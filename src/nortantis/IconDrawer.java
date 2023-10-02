@@ -28,6 +28,7 @@ import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.swing.MapEdits;
+import nortantis.util.AssetsPath;
 import nortantis.util.Coordinate;
 import nortantis.util.Function;
 import nortantis.util.HashMapF;
@@ -70,13 +71,22 @@ public class IconDrawer
 	public Map<Integer, CenterTrees> trees;
 	private double averageCenterWidthBetweenNeighbors;
 	private String cityIconType;
+	private String imagesPath;
 
-	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName)
+	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName, String customImagesPath)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
 		this.cityIconType = cityIconsSetName;
+		if (customImagesPath != null && !customImagesPath.isEmpty())
+		{
+			this.imagesPath = customImagesPath;
+		}
+		else
+		{
+			this.imagesPath = AssetsPath.getInstallPath();
+		}
 
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneWidth = (int) (meanPolygonWidth * 1.5);
@@ -216,13 +226,13 @@ public class IconDrawer
 	{
 		clearIconsForCenters(centersToUpdateIconsFor);
 
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance()
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance()
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.hills);
-		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance().getAllIconGroupsAndMasksForType(IconType.sand)
+		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand)
 				.get("dunes");
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance()
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance(imagesPath)
 				.getIconsWithWidths(IconType.cities, cityIconType);
 
 			for (Center center : centersToUpdateIconsFor)
@@ -327,7 +337,7 @@ public class IconDrawer
 			return true;
 		}
 
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance()
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance(imagesPath)
 				.getIconsWithWidths(IconType.cities, cityIconType);
 		Tuple3<BufferedImage, BufferedImage, Integer> tuple = cityImages.get(cityIcon.iconName);
 		if (tuple == null)
@@ -587,7 +597,7 @@ public class IconDrawer
 	 */
 	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance()
+		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance(imagesPath)
 				.getIconsWithWidths(IconType.cities, cityIconType);
 		if (cityIcons.isEmpty())
 		{
@@ -639,7 +649,7 @@ public class IconDrawer
 	public List<Set<Center>> addMountainsAndHills(List<Set<Center>> mountainGroups, List<Set<Center>> mountainAndHillGroups)
 	{
 		// Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance()
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 		if (mountainImagesById == null || mountainImagesById.isEmpty())
 		{
@@ -649,7 +659,7 @@ public class IconDrawer
 
 		// Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
 		// The hill image file names must use the same ids as the mountain ranges.
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance()
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.hills);
 
 		// Warn if images are missing
@@ -753,7 +763,7 @@ public class IconDrawer
 
 	public void addSandDunes()
 	{
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> sandGroups = ImageCache.getInstance()
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> sandGroups = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.sand);
 		if (sandGroups == null || sandGroups.isEmpty())
 		{
@@ -917,7 +927,7 @@ public class IconDrawer
 	public void drawTreesForCenters(Collection<Center> centersToDraw)
 	{
 		// Load the images and masks.
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = ImageCache.getInstance()
+		ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.trees);
 		if (treesById == null || treesById.isEmpty())
 		{
@@ -947,8 +957,8 @@ public class IconDrawer
 				scaledTreesById.add(
 						groupName,
 						new Tuple2<>(
-								ImageCache.getInstance().getScaledImageByHeight(tuple.getFirst(), scaledHeight),
-								ImageCache.getInstance().getScaledImageByHeight(tuple.getSecond(), scaledHeight)
+								ImageCache.getInstance(imagesPath).getScaledImageByHeight(tuple.getFirst(), scaledHeight),
+								ImageCache.getInstance(imagesPath).getScaledImageByHeight(tuple.getSecond(), scaledHeight)
 						)
 				);
 			}

@@ -22,7 +22,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -1047,7 +1046,7 @@ public class ThemePanel extends JTabbedPane
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		// Borders
-		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(), settings.borderType);
+		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(settings.customImagesPath), settings.borderType);
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
@@ -1169,31 +1168,6 @@ public class ThemePanel extends JTabbedPane
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
-	}
-
-	private void addToTooltip(JComponent component, String message)
-	{
-		String currentToolTop = component.getToolTipText();
-		if (currentToolTop == null)
-		{
-			currentToolTop = "";
-		}
-		if (!currentToolTop.contains(message))
-		{
-			component.setToolTipText(currentToolTop + message);
-		}
-
-	}
-
-	private void removeFromToolTip(JComponent component, String message)
-	{
-
-		String currentToolTop = component.getToolTipText();
-		if (currentToolTop == null)
-		{
-			return;
-		}
-		component.setToolTipText(currentToolTop.replace(message, ""));
 	}
 
 	private boolean areRegionColorsVisible()

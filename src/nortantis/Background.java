@@ -40,10 +40,19 @@ public class Background
 	BufferedImage regionIndexes;
 	private int borderWidthScaled;
 	private String borderType;
+	private String imagesPath;
 	
 
 	public Background(MapSettings settings, DimensionDouble mapBounds)
 	{
+		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
+		{
+			this.imagesPath = settings.customImagesPath;
+		}
+		else
+		{
+			this.imagesPath = AssetsPath.getInstallPath();
+		}
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
 				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
@@ -96,7 +105,7 @@ public class Background
 			BufferedImage texture;
 			try
 			{
-				texture = ImageCache.getInstance().getImageFromFile(Paths.get(settings.backgroundTextureImage));
+				texture = ImageCache.getInstance(imagesPath).getImageFromFile(Paths.get(settings.backgroundTextureImage));
 			}
 			catch (RuntimeException e)
 			{
@@ -326,7 +335,7 @@ public class Background
 		Graphics2D g = result.createGraphics();
 		g.drawImage(map, borderWidthScaled, borderWidthScaled, null);
 				
-		Path allBordersPath = Paths.get(AssetsPath.getOverridablePath(), "borders");
+		Path allBordersPath = Paths.get(imagesPath, "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
 		if (!Files.exists(borderPath))
 		{

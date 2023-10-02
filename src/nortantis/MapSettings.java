@@ -111,6 +111,7 @@ public class MapSettings implements Serializable
 	public String imageExportPath;
 	public String heightmapExportPath;
 	public double heightmapResolution = 1.0;
+	public String customImagesPath;
 	
 	/**
 	 * Default values for new settings
@@ -246,6 +247,7 @@ public class MapSettings implements Serializable
 		root.put("imageExportPath", imageExportPath);
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
+		root.put("customImagesPath", customImagesPath);
 		
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -531,6 +533,11 @@ public class MapSettings implements Serializable
 		if (root.containsKey("heightmapResolution"))
 		{
 			heightmapResolution = (double) root.get("heightmapResolution");	
+		}
+		
+		if (root.containsKey("customImagesPath"))
+		{
+			customImagesPath = (String) root.get("customImagesPath");
 		}
 		
 		edits = new MapEdits();
@@ -821,7 +828,6 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -848,9 +854,10 @@ public class MapSettings implements Serializable
 				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
 				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
-				&& Objects.equals(defaultRoadColor, other.defaultRoadColor) && drawBoldBackground == other.drawBoldBackground
-				&& drawBorder == other.drawBorder && drawIcons == other.drawIcons && drawRegionColors == other.drawRegionColors
-				&& drawRivers == other.drawRivers && drawRoads == other.drawRoads && drawText == other.drawText
+				&& Objects.equals(customImagesPath, other.customImagesPath) && Objects.equals(defaultRoadColor, other.defaultRoadColor)
+				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
+				&& drawIcons == other.drawIcons && drawRegionColors == other.drawRegionColors && drawRivers == other.drawRivers
+				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
 				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
@@ -873,6 +880,5 @@ public class MapSettings implements Serializable
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
 				&& Objects.equals(titleFont, other.titleFont) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
 	
 }

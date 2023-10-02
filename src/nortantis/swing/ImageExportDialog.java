@@ -406,7 +406,7 @@ public class ImageExportDialog extends JDialog
 			public BufferedImage doInBackground() throws Exception
 			{
 				Logger.clear();
-				ImageCache.getInstance().clear();
+				ImageCache.clear();
 
 				BufferedImage result;
 				try
@@ -448,7 +448,7 @@ public class ImageExportDialog extends JDialog
 					ImageHelper.write(result, fileName);
 				}
 				Logger.println("Map written to " + fileName);
-				ImageCache.getInstance().clear();
+				ImageCache.clear();
 				return result;
 			}
 
