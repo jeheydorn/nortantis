@@ -3,6 +3,7 @@ package nortantis.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
@@ -154,6 +155,11 @@ public class MapCreatorTest
 		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
 	}
 	
+	private static String getDiffFilePath(String settingsFileName)
+	{
+		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + " - diff.png").toString();
+	}
+	
 	private void generateAndCompare(String settingsFileName)
 	{
 		BufferedImage expected = ImageHelper.read(getExpectedMapFilePath(settingsFileName));
@@ -173,6 +179,7 @@ public class MapCreatorTest
 		{
 			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
 			ImageHelper.write(actual, getActualMapFilePath(settingsFileName));
+			createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName);
 			fail(comparisonErrorMessage);
 		}
 	}
@@ -203,5 +210,28 @@ public class MapCreatorTest
 			return "Images have differing dimensions.";
 		}
 		return null;
+	}
+	
+	private void createImageDiffIfImagesAreSameSize(BufferedImage image1, BufferedImage image2, String settingsFileName)
+	{
+		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
+		{
+			BufferedImage diff = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
+			for (int x = 0; x < image1.getWidth(); x++)
+			{
+				for (int y = 0; y < image1.getHeight(); y++)
+				{
+					if (image1.getRGB(x, y) != image2.getRGB(x, y))
+					{
+						diff.setRGB(x, y, Color.white.getRGB());
+					}
+					else
+					{
+						diff.setRGB(x, y, Color.black.getRGB());
+					}
+				}
+			}
+			ImageHelper.write(diff, getDiffFilePath(settingsFileName));
+		}
 	}
 }

@@ -253,24 +253,15 @@ public class MapCreator
 		}
 
 		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
-		if (settings.drawRivers)
-		{
-			drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
-		}
+		drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
 
-		if (settings.drawIcons)
-		{
-			mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
-		}
+		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
 
 		// Add the rivers to landBackground so that the text doesn't erase them.
 		// I do this whether or not I draw text because I might draw the text
 		// later.
 		// This is done after icon drawing so that rivers draw behind icons.
-		if (settings.drawRivers)
-		{
-			drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
-		}
+		drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
 
 		// Draw ocean
 		{
@@ -753,12 +744,9 @@ public class MapCreator
 
 		checkForCancel();
 
-		if (settings.drawRivers)
-		{
-			// Add rivers.
-			Logger.println("Adding rivers.");
-			drawRivers(settings, graph, map, sizeMultiplier, null, null);
-		}
+		// Add rivers.
+		Logger.println("Adding rivers.");
+		drawRivers(settings, graph, map, sizeMultiplier, null, null);
 
 		checkForCancel();
 
@@ -789,11 +777,8 @@ public class MapCreator
 
 		checkForCancel();
 
-		if (settings.drawIcons)
-		{
-			Logger.println("Drawing all icons.");
-			iconDrawer.drawAllIcons(map, landBackground, null);
-		}
+		Logger.println("Drawing all icons.");
+		iconDrawer.drawAllIcons(map, landBackground, null);
 
 		checkForCancel();
 
@@ -801,10 +786,7 @@ public class MapCreator
 		// I do this whether or not I draw text because I might draw the text
 		// later.
 		// This is done after icon drawing so that rivers draw behind icons.
-		if (settings.drawRivers)
-		{
-			drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
-		}
+		drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
 
 		checkForCancel();
 

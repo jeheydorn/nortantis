@@ -46,7 +46,16 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.type = type;
 		
    		double aspectRatio = ((double)icon.getWidth())/icon.getHeight();
-   		scaledHeight = (int)(scaledWidth/aspectRatio);
+   		if (needsScale)
+   		{
+   			scaledHeight = (int)(scaledWidth/aspectRatio);
+   		}
+   		else
+   		{
+   			// When the icon doesn't need to be scaled, getting the height directly is more accurate.
+   			scaledHeight = icon.getHeight();
+   		}
+   		
        	yBottom = (int)(centerLoc.y + (scaledHeight/2.0));
        	
        	this.ignoreMaxSize = ignoreMaxSize;

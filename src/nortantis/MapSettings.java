@@ -99,8 +99,6 @@ public class MapSettings implements Serializable
 	public boolean drawBorder;
 	public String borderType;
 	public int borderWidth;
-	public boolean drawIcons = true;
-	public boolean drawRivers = true; // Not saved
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
@@ -242,7 +240,6 @@ public class MapSettings implements Serializable
 		root.put("borderType", borderType);
 		root.put("borderWidth", borderWidth);
 		root.put("frayedBorderSize", frayedBorderSize);
-		root.put("drawIcons", drawIcons);
 		root.put("drawRoads", drawRoads);
 		root.put("imageExportPath", imageExportPath);
 		root.put("heightmapExportPath", heightmapExportPath);
@@ -467,7 +464,6 @@ public class MapSettings implements Serializable
 		hueRange = (int) (long) root.get("hueRange");
 		saturationRange = (int) (long) root.get("saturationRange");
 		brightnessRange = (int) (long) root.get("brightnessRange");
-		drawIcons = (boolean) root.get("drawIcons");
 		drawRoads = (boolean) root.get("drawRoads");
 		
 		if (root.containsKey("cityIconSetName"))
@@ -751,8 +747,6 @@ public class MapSettings implements Serializable
 		borderType = old.borderType;
 		borderWidth = old.borderWidth;
 		frayedBorderSize = old.frayedBorderSize;
-		drawIcons = old.drawIcons;
-		drawRivers = old.drawRivers;
 		drawRoads = old.drawRoads;
 		cityProbability = old.cityProbability;
 		lineStyle = old.lineStyle;
@@ -856,7 +850,7 @@ public class MapSettings implements Serializable
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
 				&& Objects.equals(customImagesPath, other.customImagesPath) && Objects.equals(defaultRoadColor, other.defaultRoadColor)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
-				&& drawIcons == other.drawIcons && drawRegionColors == other.drawRegionColors && drawRivers == other.drawRivers
+				&& drawRegionColors == other.drawRegionColors 
 				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
