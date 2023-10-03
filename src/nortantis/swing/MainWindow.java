@@ -1199,8 +1199,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			customImagesPath = value;
 			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
-			handleImagesRefresh();
-			updater.createAndShowMapFull();
+			updater.createAndShowMapFull(() -> handleImagesRefresh());
 		});
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);

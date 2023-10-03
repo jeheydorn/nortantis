@@ -296,11 +296,7 @@ public class NewSettingsDialog extends JDialog
 					updatePathDisplay();
 					initializeCityTypeOptions();
 
-					updater.dowWhenMapIsNotDrawing(() ->
-					{
-						ImageCache.clear();
-						updater.createAndShowMapFull();
-					});
+					updater.createAndShowMapFull(() -> ImageCache.clear());
 				});
 				dialog.setLocationRelativeTo(thisDialog);
 				dialog.setVisible(true);
@@ -597,6 +593,6 @@ public class NewSettingsDialog extends JDialog
 	public void handleMapChange()
 	{
 		enableOrDisableProgressBar(true);
-		mainWindow.updater.dowWhenMapIsNotDrawing(() -> updater.createAndShowMapFull());
+		updater.createAndShowMapFull();
 	}
 }

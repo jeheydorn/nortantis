@@ -67,19 +67,19 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.Full, null, null, null, null);
 	}
 
+	public void createAndShowMapFull(Runnable preRun)
+	{
+		createAndShowMap(UpdateType.Full, null, null, preRun, null);
+	}
+
 	public void createAndShowMapTextChange()
 	{
 		createAndShowMapTextChange(null);
 	}
 
-	public void createAndShowMapTextChange(Runnable callback)
+	public void createAndShowMapTextChange(Runnable postRun)
 	{
-		List<Runnable> callbacks = new ArrayList<>();
-		if (callback != null)
-		{
-			callbacks.add(callback);
-		}
-		createAndShowMap(UpdateType.Text, null, null, null, callbacks);
+		createAndShowMap(UpdateType.Text, null, null, null, postRun);
 	}
 
 	public void createAndShowMapFontsChange()
@@ -124,16 +124,10 @@ public abstract class MapUpdater
 	 * @param preRun Code to run in the foreground thread before drawing this change.
 	 */
 	public void createAndShowMapFromChange(MapChange change)
-	{
-		List<Runnable> preRuns = new ArrayList<>();
-		if (change.preRun != null)
-		{
-			preRuns.add(change.preRun);
-		}
-		
+	{	
 		if (change.updateType != UpdateType.Incremental)
 		{
-			createAndShowMap(change.updateType, null, null, preRuns, null);
+			createAndShowMap(change.updateType, null, null, change.preRun, null);
 		}
 		else
 		{
@@ -146,7 +140,7 @@ public abstract class MapUpdater
 			{
 				edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
 			}
-			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, preRuns, null);
+			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, change.preRun, null);
 		}
 	}
 
@@ -263,10 +257,27 @@ public abstract class MapUpdater
 		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
 	}
 
+	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, Runnable preRun, Runnable postRun)
+	{
+		List<Runnable> preRuns = new ArrayList<>();
+		if (preRun != null)
+		{
+			preRuns.add(preRun);
+		}
+		
+		List<Runnable> postRuns = new ArrayList<>();
+		if (postRun != null)
+		{
+			postRuns.add(postRun);
+		}
+		
+		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, preRuns, postRuns);
+	}
+	
 	/**
 	 * Redraws the map, then displays it
 	 */
-	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> preRuns, List<Runnable> callbacks)
+	private void innerCreateAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 	{
 		if (!enabled)
 		{
@@ -275,7 +286,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, preRuns, callbacks));
+			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, preRuns, postRuns));
 			return;
 		}
 
@@ -439,9 +450,9 @@ public abstract class MapUpdater
 
 					isMapBeingDrawn = false;
 					
-					if (callbacks != null)
+					if (postRuns != null)
 					{
-						for (Runnable runnable : callbacks)
+						for (Runnable runnable : postRuns)
 						{
 							runnable.run();
 						}
@@ -449,7 +460,7 @@ public abstract class MapUpdater
 
 					if (next != null)
 					{
-						createAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.preRuns, next.callbacks);
+						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.preRuns, next.postRuns);
 					}
 
 					isMapReadyForInteractions = true;
@@ -551,10 +562,10 @@ public abstract class MapUpdater
 		Set<Center> centersChanged;
 		Set<Edge> edgesChanged;
 		UpdateType updateType;
-		List<Runnable> callbacks;
+		List<Runnable> postRuns;
 		List<Runnable> preRuns;
 
-		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> preRuns, List<Runnable> callbacks)
+		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 		{
 			this.updateType = updateType;
 			if (centersChanged != null)
@@ -566,13 +577,13 @@ public abstract class MapUpdater
 				this.edgesChanged = new HashSet<Edge>(edgesChanged);
 			}
 			
-			if (callbacks != null)
+			if (postRuns != null)
 			{
-				this.callbacks = callbacks;				
+				this.postRuns = postRuns;				
 			}
 			else
 			{
-				this.callbacks = new ArrayList<>();
+				this.postRuns = new ArrayList<>();
 			}
 			
 			if (preRuns != null)
@@ -598,7 +609,7 @@ public abstract class MapUpdater
 			}
 			
 			preRuns.addAll(other.preRuns);
-			callbacks.addAll(other.callbacks);
+			postRuns.addAll(other.postRuns);
 
 			if (updateType == UpdateType.Incremental)
 			{
