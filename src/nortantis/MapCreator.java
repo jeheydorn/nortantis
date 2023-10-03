@@ -518,7 +518,8 @@ public class MapCreator
 		landBackground = null;
 
 		// Debug code
-		// graph.drawCorners(map.createGraphics());
+		//graph.drawCorners(map.createGraphics());
+		//graph.drawVoronoi(map.createGraphics());
 
 		if (settings.drawBorder)
 		{

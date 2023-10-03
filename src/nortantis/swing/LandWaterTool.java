@@ -552,7 +552,7 @@ public class LandWaterTool extends EditorTool
 		{		
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 			
-			// Debug code
+			// Debug code 
 //			System.out.println("Highlighted center indexes:");
 //			for (Center center : selected)
 //			{
