@@ -20,9 +20,6 @@ public class UserPreferences
 
 	public String zoomLevel = "";
 	public String editorImageQuality = "";
-	public boolean hideMapChangesWarning;
-	public boolean hideAspectRatioWarning;
-	public boolean hideHeightMapWithEditsWarning;
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
@@ -58,18 +55,6 @@ public class UserPreferences
 				if (props.containsKey("editorImageQuality"))
 				{
 					editorImageQuality = props.getProperty("editorImageQuality");
-				}
-				if (props.containsKey("hideMapChangesWarning"))
-				{
-					hideMapChangesWarning = Boolean.parseBoolean(props.getProperty("hideMapChangesWarning"));
-				}
-				if (props.containsKey("hideAspectRatioWarning"))
-				{
-					hideAspectRatioWarning = Boolean.parseBoolean(props.getProperty("hideAspectRatioWarning"));
-				}
-				if (props.containsKey("hideHeightMapWithEditsWarning"))
-				{
-					hideHeightMapWithEditsWarning = Boolean.parseBoolean(props.getProperty("hideHeightMapWithEditsWarning"));
 				}
 				if (props.containsKey("defaultMapExportAction"))
 				{
@@ -136,9 +121,6 @@ public class UserPreferences
 		Properties props = new Properties();
 		props.setProperty("zoomLevel", zoomLevel);
 		props.setProperty("editorImageQuality", editorImageQuality);
-		props.setProperty("hideMapChangesWarning", hideMapChangesWarning + "");
-		props.setProperty("hideAspectRatioWarning", hideAspectRatioWarning + "");
-		props.setProperty("hideHeightMapWithEditsWarning", hideHeightMapWithEditsWarning + "");
 		props.setProperty(
 				"defaultMapExportAction",
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString()
