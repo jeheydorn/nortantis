@@ -556,7 +556,7 @@ public class WorldGraph extends VoronoiGraph
 		// }
 	}
 
-	public void drawLandAndLandLockedLakesBlack(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
+	public void drawLandAndLandLockedLakesBlackAndOceanWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
 	{
 		if (centersToRender == null)
 		{
@@ -564,11 +564,15 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		Set<Center> landAndLandLockedLakes = findLandAndLandLockedLakes(centersToRender);
-		drawPolygons(g, landAndLandLockedLakes, drawBounds, new Function<Center, Color>()
+		drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>()
 		{
 			public Color apply(Center c)
 			{
-				return Color.black;
+				if (landAndLandLockedLakes.contains(c))
+				{
+					return Color.black;
+				}
+				return Color.white;
 			}
 		});
 	}

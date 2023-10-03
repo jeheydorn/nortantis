@@ -947,6 +947,14 @@ public class IconsTool extends EditorTool
 				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
 			}
 			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
+			
+			// Debug code.
+//			System.out.println("Highlighted edge indexes:");
+//			for (Edge edge : candidates)
+//			{
+//				System.out.println(edge.index);
+//			}
+			
 			for (Edge edge : candidates)
 			{
 				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);

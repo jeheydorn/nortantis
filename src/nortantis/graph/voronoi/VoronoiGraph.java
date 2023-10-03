@@ -60,13 +60,10 @@ public abstract class VoronoiGraph
 	 * @param r
 	 *            Random number generator
 	 * @param scaleMultiplyer
-	 *            Used to scale the graph larger smaller according to the
-	 *            resolution being used.
+	 *            Used to scale the graph larger smaller according to the resolution being used.
 	 * @param pointPrecision
-	 *            Used to determine when points should be considered duplicates.
-	 *            Larger numbers mean less duplicate detection, making tiny
-	 *            polygons more likely. This number will be scaled by
-	 *            scaleMultiplyer.
+	 *            Used to determine when points should be considered duplicates. Larger numbers mean less duplicate detection, making tiny
+	 *            polygons more likely. This number will be scaled by scaleMultiplyer.
 	 */
 	public VoronoiGraph(Random r, double scaleMultiplyer, double pointPrecision)
 	{
@@ -183,7 +180,7 @@ public abstract class VoronoiGraph
 		y[1] = (int) c1.loc.y;
 		x[2] = (int) c2.loc.x;
 		y[2] = (int) c2.loc.y;
-		
+
 		g.fillPolygon(x, y, 3);
 	}
 
@@ -449,7 +446,7 @@ public abstract class VoronoiGraph
 
 	protected void drawUsingTriangles(Graphics2D g, Center c, boolean drawElevation)
 	{
-		// only used if Center c is on the edge of the graph. allows for
+		// Only used if Center c is on the edge of the graph. allows for
 		// completely filling in the outer
 		// polygons. This is a list because if c borders 2 edges, it may have 2
 		// missing triangles.
@@ -462,7 +459,7 @@ public abstract class VoronoiGraph
 
 			if (e.v0 == null)
 			{
-				// outermost voronoi edges aren't stored in the graph
+				// Outermost Voronoi edges aren't stored in the graph
 				continue;
 			}
 
@@ -579,7 +576,8 @@ public abstract class VoronoiGraph
 
 						// One of the corners of the graph is the next point. Determine which corner that is.
 						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
-						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y : bounds.getBottom());
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y
+								: bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
 						y[3] = (int) edgeCorner2.loc.y;
@@ -701,8 +699,7 @@ public abstract class VoronoiGraph
 	 * 
 	 * @param g
 	 * @param colorChooser
-	 *            Decides the color for each polygons. If it returns null, then
-	 *            the polygons will not be drawn.
+	 *            Decides the color for each polygons. If it returns null, then the polygons will not be drawn.
 	 */
 	public void drawPolygons(Graphics2D g, Function<Center, Color> colorChooser)
 	{
@@ -753,14 +750,14 @@ public abstract class VoronoiGraph
 		// Draw noisy edges.
 		for (final Center c : centersToRender)
 		{
-			for (final Center r : c.neighbors)
+			Color color = colorChooser.apply(c);
+			if (color != null)
 			{
-				Edge edge = lookupEdgeFromCenter(c, r);
-
-				Color color = colorChooser.apply(c);
-				if (color != null)
+				g.setColor(color);
+				for (final Center r : c.neighbors)
 				{
-					g.setColor(color);
+					Edge edge = lookupEdgeFromCenter(c, r);
+
 					if (noisyEdges == null || noisyEdges.getNoisyEdge(edge.index) == null)
 					{
 						// This can happen if noisy edges haven't been created
@@ -773,6 +770,7 @@ public abstract class VoronoiGraph
 					}
 				}
 			}
+
 		}
 	}
 
