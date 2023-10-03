@@ -75,9 +75,9 @@ public class SettingsGenerator
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
 		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
-		settings.oceanEffectsLevel = 10 + Math.abs(rand.nextInt(40));
+		settings.oceanEffectsLevel = 15 + Math.abs(rand.nextInt(35));
 		settings.concentricWaveCount = Math.abs((new Random().nextInt() % 2)) + 2; // 2 or 3. 1 Doesn't look good to me, and 4 is a bit overdone.
-		settings.coastShadingLevel = 10 + Math.abs(rand.nextInt(40));
+		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 		
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
