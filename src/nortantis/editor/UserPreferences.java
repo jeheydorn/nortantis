@@ -25,7 +25,7 @@ public class UserPreferences
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
-	public String defaultCustomImagesPath; // TODO decide if I want this
+	public String defaultCustomImagesPath;
 
 	public static UserPreferences instance;
 
