@@ -541,7 +541,7 @@ public class IconsTool extends EditorTool
 
 	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images)
 	{
-		final int maxRowWidth = 154;
+		final int maxRowWidth = 168;
 		final int scaledHeight = 30;
 
 		// Find the size needed for the preview
