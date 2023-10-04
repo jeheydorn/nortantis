@@ -8,6 +8,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -362,6 +363,10 @@ public class MapCreator
 		if (!AssetsPath.getInstallPath().equals(settings.customImagesPath) && settings.customImagesPath != null
 				&& !settings.customImagesPath.isEmpty())
 		{
+			if (!new File(settings.customImagesPath).exists())
+			{
+				throw new RuntimeException("The custom images folder '" + settings.customImagesPath + "' does not exist.");
+			}
 			Logger.println("Using custom images folder: " + settings.customImagesPath);
 		}
 
