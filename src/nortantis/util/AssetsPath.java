@@ -17,8 +17,6 @@ public class AssetsPath
 			if (isInstalled)
 			{
 				installPath = "C:\\Program Files\\Nortantis\\app\\assets";
-				System.out.println("Using assets folder from installation at: " + installPath 
-						+ ". If you are seeing this message while running from source, then change AssetsPath.isInstalled to false.");
 			}
 			else
 			{
@@ -32,9 +30,23 @@ public class AssetsPath
 		}
 		else if (OS.contains("NUX"))
 		{
-			// Installers are not supported for Linux
-			installPath = "assets";
+			if (isInstalled)
+			{
+				installPath = "app/assets";
+			}
+			else
+			{
+				installPath = "assets";
+			}
+	
 		}
+		
+		if (isInstalled)
+		{
+			System.out.println("Using assets folder from installation at: " + installPath 
+					+ ". If you are seeing this message while running from source, then change AssetsPath.isInstalled to false.");
+		}
+
 	}
 	
 	public static synchronized String getInstallPath()

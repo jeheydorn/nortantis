@@ -31,8 +31,8 @@ public class SwingHelper
 {
 	public static final int spaceBetweenRowsOfComponents = 8;
 	public static final int borderWidthBetweenComponents = 4;
-	public static final int sidePanelPreferredWidth = 300;
-	public static final int sidePanelMinimumWidth = 300;
+	public static final int sidePanelPreferredWidth = 320;
+	public static final int sidePanelMinimumWidth = 320;
 	private static final int sliderWidth = 160;
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 20;

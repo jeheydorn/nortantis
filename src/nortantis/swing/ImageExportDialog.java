@@ -68,7 +68,7 @@ public class ImageExportDialog extends JDialog
 		super(mainWindow, type == ImageExportType.Map ? "Export as Image" : "Export Heightmap", Dialog.ModalityType.APPLICATION_MODAL);
 		this.type = type;
 
-		setSize(new Dimension(460, type == ImageExportType.Map ? 293 : 370));
+		setSize(new Dimension(460, type == ImageExportType.Map ? 293 : 380));
 		JPanel contents = new JPanel();
 		contents.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		contents.setLayout(new BorderLayout());
