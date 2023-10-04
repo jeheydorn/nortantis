@@ -32,4 +32,5 @@ temp.nort
 /unit test files/expected maps
 /unit test files/failed maps
 *.msi
+*.deb
 Nortantis.jar

@@ -11,7 +11,6 @@ mkdir "$inputFolder"
 cp -r "../assets" "$inputFolder/assets"
 rm -f "$inputFolder/assets/books/SSA *"
 cp "../Nortantis.jar" "$inputFolder"
-rm -f "Nortantis-*.msi"
 
 jpackage \
 --input "$inputFolder" \
@@ -20,7 +19,7 @@ jpackage \
 --main-class nortantis.swing.MainWindow \
 --type deb \
 --linux-shortcut \
---icon "taskbar icon.ico" \
+--icon "taskbar icon.png" \
 --file-associations file_associations.txt \
 --vendor "Joseph Heydorn" \
 --app-version "1.0" \
@@ -32,4 +31,3 @@ jpackage \
 rm -rf "$inputFolder"
 # rm -f "..\Nortantis.jar"
 
-read -p "Press enter to continue..."

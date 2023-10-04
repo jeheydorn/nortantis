@@ -32,7 +32,7 @@ public class AssetsPath
 		{
 			if (isInstalled)
 			{
-				installPath = "app/assets";
+				installPath = "/opt/nortantis/lib/app/assets";
 			}
 			else
 			{
