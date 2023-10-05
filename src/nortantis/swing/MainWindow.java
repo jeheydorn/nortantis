@@ -845,10 +845,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void handleImagesRefresh()
 	{
+		updater.setEnabled(false);
+		undoer.setEnabled(false);
 		ImageCache.clear();
 		MapSettings settings = getSettingsFromGUI(false);
+		themePanel.handleImagesRefresh(settings);
 		// Tell Icons tool to refresh image previews
 		toolsPanel.handleImagesRefresh(settings);
+		undoer.setEnabled(true);
+		updater.setEnabled(true);
 	}
 
 	private void showAboutNortantisDialog()

@@ -1047,7 +1047,7 @@ public class ThemePanel extends JTabbedPane
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		// Borders
-		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(settings.customImagesPath), settings.borderType);
+		initializeBorderTypeComboBoxItems(settings);
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
@@ -1062,6 +1062,12 @@ public class ThemePanel extends JTabbedPane
 		repaint();
 		
 		return changeEffectsBackgroundImages;
+	}
+	
+	private void initializeBorderTypeComboBoxItems(MapSettings settings)
+	{
+		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(settings.customImagesPath), settings.borderType);
+
 	}
 
 	private boolean doesChangeEffectBackgroundDisplays(MapSettings settings)
@@ -1289,5 +1295,10 @@ public class ThemePanel extends JTabbedPane
 			// Call this to disable any fields that should be disabled.
 			handleEnablingAndDisabling();
 		}
+	}
+	
+	void handleImagesRefresh(MapSettings settings)
+	{
+		initializeBorderTypeComboBoxItems(settings);
 	}
 }
