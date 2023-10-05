@@ -34,7 +34,7 @@ public class NameGeneratorDialog extends JDialog
 	public NameGeneratorDialog(MainWindow mainWindow, MapSettings settings)
 	{
 		super(mainWindow, "Name Generator", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(500, 900));
+		setSize(new Dimension(500, 830));
 
 		JPanel contents = new JPanel();
 		contents.setLayout(new BorderLayout());
@@ -90,6 +90,7 @@ public class NameGeneratorDialog extends JDialog
 				TextDrawer textDrawer = new TextDrawer(settingsToUse, 1.0);
 				NameType type = personNameRadioButton.isSelected() ? NameType.Person : NameType.Place;
 				textBox.setText(generateNamesForType(numberToGenerate, type, beginsWith.getText(), endsWith.getText(), textDrawer));
+				textBox.setCaretPosition(0);
 			}
 		});
 
