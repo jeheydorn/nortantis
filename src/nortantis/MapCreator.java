@@ -268,7 +268,7 @@ public class MapCreator
 
 		// Add effects to ocean along coastlines
 		{
-			BufferedImage oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, centersToDraw, drawBounds);
+			BufferedImage oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, landMask, centersToDraw, drawBounds);
 			if (oceanBlur != null)
 			{
 				mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
@@ -772,7 +772,7 @@ public class MapCreator
 		// I do this whether or not I draw text because I might draw the text
 		// later.
 		// This is done after icon drawing so that rivers draw behind icons.
-		drawRivers(settings, graph, landBackground, sizeMultiplier, null, null);
+		//drawRivers(settings, graph, landBackground, sizeMultiplier, null, null); TODO remove if I don't want this
 
 		checkForCancel();
 
@@ -788,7 +788,6 @@ public class MapCreator
 			landBackground = ImageHelper.maskWithImage(landBackground, background.ocean, landMask);
 
 			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
-			landMask = null;
 
 			if (mapParts == null)
 			{
@@ -799,7 +798,8 @@ public class MapCreator
 		checkForCancel();
 
 		{
-			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, null, null);
+			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask, null, null);
+			landMask = null;
 			if (oceanBlur != null)
 			{
 				Logger.println("Adding effects to ocean along coastlines.");
@@ -914,7 +914,7 @@ public class MapCreator
 	}
 
 	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier,
-			Collection<Center> centersToDraw, Rectangle drawBounds)
+			BufferedImage landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
 		{
@@ -933,7 +933,14 @@ public class MapCreator
 				Graphics2D g = coastlineMask.createGraphics();
 				g.setColor(Color.white);
 
-				graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
+				if (settings.drawOceanEffectsInLakes)
+				{
+					graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
+				}
+				else
+				{
+					graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
+				}
 			}
 
 			if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
@@ -952,7 +959,14 @@ public class MapCreator
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
-				oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+				if (settings.drawOceanEffectsInLakes)
+				{
+					oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+				}
+				else
+				{
+					oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+				}
 			}
 			else
 			{
@@ -996,7 +1010,14 @@ public class MapCreator
 					}
 				}
 
-				oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+				if (settings.drawOceanEffectsInLakes)
+				{
+					oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+				}
+				else
+				{
+					oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+				}
 			}
 		}
 		return oceanEffects;
@@ -1014,6 +1035,13 @@ public class MapCreator
 		graph.drawLandAndLandLockedLakesBlackAndOceanWhite(landAndLakeMask.createGraphics(), centersToDraw, drawBounds);
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
+	
+	private static BufferedImage removeOceanEffectsFromLand(WorldGraph graph, BufferedImage oceanEffects, BufferedImage landMask,
+			Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		return ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
+	}
+	
 
 	private static float calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
 	{

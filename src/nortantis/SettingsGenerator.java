@@ -75,6 +75,7 @@ public class SettingsGenerator
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
 		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
+		settings.drawOceanEffectsInLakes = true;
 		settings.oceanEffectsLevel = 15 + Math.abs(rand.nextInt(35));
 		settings.concentricWaveCount = Math.abs((new Random().nextInt() % 2)) + 2; // 2 or 3. 1 Doesn't look good to me, and 4 is a bit overdone.
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
@@ -156,6 +157,8 @@ public class SettingsGenerator
 		{
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
 		}
+		
+		settings.allowTopsOfIconsToOverlapOcean = rand.nextDouble() > 0.5 ? true : false;
 		
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
 		

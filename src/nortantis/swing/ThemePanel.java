@@ -117,6 +117,8 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox drawGrungeCheckbox;
 	private ActionListener drawGrungeCheckboxActionListener;
 	private JButton grungeColorChooseButton;
+	private JCheckBox allowTopsOfIconsToOverlapOceanCheckbox;
+	private JCheckBox drawOceanEffectsInLakesCheckbox;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -619,6 +621,10 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(oceanEffectsLevelSlider);
 		organizer.addLabelAndComponentsVertical("Ocean effects width:", "How far from coastlines ocean effects should extend.",
 				Arrays.asList(concentricWavesLevelSlider, oceanEffectsLevelSlider));
+		
+		drawOceanEffectsInLakesCheckbox = new JCheckBox("Draw ocean waves/shading in lakes.");
+		createMapChangeListenerForTerrainChange(drawOceanEffectsInLakesCheckbox);
+		organizer.addLeftAlignedComponent(drawOceanEffectsInLakesCheckbox);
 		organizer.addSeperator();
 
 		riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -633,6 +639,10 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
 				Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
+		
+		//organizer.addSeperator();
+		allowTopsOfIconsToOverlapOceanCheckbox = new JCheckBox("Allow the tops of icons to protrude over coastlines");
+		//organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapOceanCheckbox); TODO put back
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
@@ -964,6 +974,7 @@ public class ThemePanel extends JTabbedPane
 		ripplesRadioButton.setSelected(settings.oceanEffect == OceanEffect.Ripples);
 		shadeRadioButton.setSelected(settings.oceanEffect == OceanEffect.Blur);
 		concentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.ConcentricWaves);
+		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(settings.coastShadingColor);
 		coastlineColorDisplay.setBackground(settings.coastlineColor);
@@ -1051,6 +1062,8 @@ public class ThemePanel extends JTabbedPane
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
+		
+		allowTopsOfIconsToOverlapOceanCheckbox.setSelected(settings.allowTopsOfIconsToOverlapOcean);
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -1129,6 +1142,7 @@ public class ThemePanel extends JTabbedPane
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanEffect = ripplesRadioButton.isSelected() ? OceanEffect.Ripples
 				: shadeRadioButton.isSelected() ? OceanEffect.Blur : OceanEffect.ConcentricWaves;
+		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = coastShadingColorDisplay.getBackground();
 		settings.coastlineColor = coastlineColorDisplay.getBackground();
 		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();
@@ -1175,6 +1189,8 @@ public class ThemePanel extends JTabbedPane
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
+		
+		settings.allowTopsOfIconsToOverlapOcean = allowTopsOfIconsToOverlapOceanCheckbox.isSelected();
 	}
 
 	private boolean areRegionColorsVisible()

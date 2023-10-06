@@ -33,6 +33,7 @@ import nortantis.util.Helper;
 
 /**
  * For parsing and storing map settings.
+ * 
  * @author joseph
  *
  */
@@ -45,13 +46,14 @@ public class MapSettings implements Serializable
 	public String version;
 	public long randomSeed;
 	/**
-	 *  A scalar multiplied by the map height and width to get the final resolution.
+	 * A scalar multiplied by the map height and width to get the final resolution.
 	 */
 	public double resolution;
 	public int coastShadingLevel;
 	public int oceanEffectsLevel;
 	public int concentricWaveCount;
 	public OceanEffect oceanEffect;
+	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
 	public Color riverColor;
 	public Color roadColor;
@@ -69,7 +71,8 @@ public class MapSettings implements Serializable
 	/**
 	 * This setting actually means fractal generated as opposed to generated from texture.
 	 */
-	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with generateBackgroundFromTexture.
+	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with
+										// generateBackgroundFromTexture.
 	public boolean generateBackgroundFromTexture;
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
 	public boolean colorizeLand; // For backgrounds generated from a texture.
@@ -104,6 +107,7 @@ public class MapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconTypeName;
+	public boolean allowTopsOfIconsToOverlapOcean;
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
@@ -111,23 +115,25 @@ public class MapSettings implements Serializable
 	public String heightmapExportPath;
 	public double heightmapResolution = 1.0;
 	public String customImagesPath;
-	
+
 	/**
 	 * Default values for new settings
 	 */
 	private final Color defaultRoadColor = Color.black;
 
-	
+
 	public MapSettings()
 	{
 		edits = new MapEdits();
 		roadColor = defaultRoadColor;
 	}
-	
+
 	/**
-	 * Loads map settings file. The file can either be the newer JSON format, or the older *.properties format, which 
-	 * is supported only for converting old files to the new format.
-	 * @param filePath file path and file name
+	 * Loads map settings file. The file can either be the newer JSON format, or the older *.properties format, which is supported only for
+	 * converting old files to the new format.
+	 * 
+	 * @param filePath
+	 *            file path and file name
 	 */
 	public MapSettings(String filePath)
 	{
@@ -142,42 +148,43 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			throw new IllegalArgumentException("The map settings file, '" + filePath 
+			throw new IllegalArgumentException("The map settings file, '" + filePath
 					+ "', is not a supported file type. It must be either either a json file or a properties file.");
 		}
 	}
-	
+
 	public static boolean isOldPropertiesFile(String filePath)
 	{
 		return FilenameUtils.getExtension(filePath).toLowerCase().equals("properties");
 	}
-	
+
 	public void writeToFile(String filePath) throws IOException
 	{
 		String json = toJson();
 		Helper.writeToFile(filePath, json);
 	}
-	
+
 	private String toJson()
 	{
 		return toJson(false);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private String toJson(boolean skipEdits)
 	{
 		JSONObject root = new JSONObject();
-		
-		// Always store the current version number when saving. If the map was loaded from a previous version, 
+
+		// Always store the current version number when saving. If the map was loaded from a previous version,
 		// then it was converted to the current version while loading.
 		root.put("version", currentVersion);
-		
+
 		root.put("randomSeed", randomSeed);
 		root.put("resolution", resolution);
 		root.put("coastShadingLevel", coastShadingLevel);
 		root.put("oceanEffectsLevel", oceanEffectsLevel);
 		root.put("concentricWaveCount", concentricWaveCount);
 		root.put("oceanEffect", oceanEffect.toString());
+		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
 		root.put("riverColor", colorToString(riverColor));
 		root.put("roadColor", colorToString(roadColor));
@@ -207,27 +214,29 @@ public class MapSettings implements Serializable
 		root.put("regionBaseColor", colorToString(regionBaseColor));
 		root.put("generatedWidth", generatedWidth);
 		root.put("generatedHeight", generatedHeight);
-		
+
 		// Region settings
 		root.put("drawRegionColors", drawRegionColors);
 		root.put("regionsRandomSeed", regionsRandomSeed);
 		root.put("hueRange", hueRange);
 		root.put("saturationRange", saturationRange);
 		root.put("brightnessRange", brightnessRange);
-		
-		// Icon sets
+
+		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
+		root.put("allowTopsOfIconsToOverlapOcean", allowTopsOfIconsToOverlapOcean);
 
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
-		
+
+
 		JSONArray booksArray = new JSONArray();
 		for (String book : books)
 		{
 			booksArray.add(book);
 		}
 		root.put("books", booksArray);
-		
+
 		root.put("titleFont", fontToString(titleFont));
 		root.put("regionFont", fontToString(regionFont));
 		root.put("mountainRangeFont", fontToString(mountainRangeFont));
@@ -236,7 +245,7 @@ public class MapSettings implements Serializable
 		root.put("boldBackgroundColor", colorToString(boldBackgroundColor));
 		root.put("drawBoldBackground", drawBoldBackground);
 		root.put("textColor", colorToString(textColor));
-		
+
 		root.put("drawBorder", drawBorder);
 		root.put("borderType", borderType);
 		root.put("borderWidth", borderWidth);
@@ -246,7 +255,7 @@ public class MapSettings implements Serializable
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
 		root.put("customImagesPath", customImagesPath);
-		
+
 		// User edits.
 		if (edits != null && !skipEdits)
 		{
@@ -258,17 +267,17 @@ public class MapSettings implements Serializable
 			editsJson.put("edgeEdits", edgeEditsToJson());
 			editsJson.put("hasIconEdits", edits.hasIconEdits);
 		}
-		
+
 		return root.toJSONString();
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONArray textEditsToJson()
 	{
 		JSONArray list = new JSONArray();
 		for (MapText text : edits.text)
 		{
-			JSONObject mpObj = new JSONObject();	
+			JSONObject mpObj = new JSONObject();
 			mpObj.put("text", text.value);
 			mpObj.put("locationX", text.location.x);
 			mpObj.put("locationY", text.location.y);
@@ -278,15 +287,15 @@ public class MapSettings implements Serializable
 		}
 		return list;
 	}
-	
-	
+
+
 	@SuppressWarnings("unchecked")
 	private JSONArray centerEditsToJson()
 	{
 		JSONArray list = new JSONArray();
 		for (CenterEdit centerEdit : edits.centerEdits)
 		{
-			JSONObject mpObj = new JSONObject();	
+			JSONObject mpObj = new JSONObject();
 			if (centerEdit.isWater)
 			{
 				mpObj.put("isWater", centerEdit.isWater);
@@ -320,28 +329,28 @@ public class MapSettings implements Serializable
 		}
 		return list;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONArray regionEditsToJson()
 	{
 		JSONArray list = new JSONArray();
 		for (RegionEdit regionEdit : edits.regionEdits.values())
 		{
-			JSONObject mpObj = new JSONObject();	
+			JSONObject mpObj = new JSONObject();
 			mpObj.put("color", colorToString(regionEdit.color));
 			mpObj.put("regionId", regionEdit.regionId);
 			list.add(mpObj);
 		}
 		return list;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONArray edgeEditsToJson()
 	{
 		JSONArray list = new JSONArray();
 		for (EdgeEdit eEdit : edits.edgeEdits)
 		{
-			JSONObject mpObj = new JSONObject();	
+			JSONObject mpObj = new JSONObject();
 			if (eEdit.riverLevel > 0)
 			{
 				mpObj.put("riverLevel", eEdit.riverLevel);
@@ -350,8 +359,8 @@ public class MapSettings implements Serializable
 			list.add(mpObj);
 		}
 		return list;
-	}	
-		
+	}
+
 	private String colorToString(Color c)
 	{
 		if (c != null)
@@ -363,12 +372,12 @@ public class MapSettings implements Serializable
 			return "";
 		}
 	}
-	
+
 	private String fontToString(Font font)
 	{
 		return font.getFontName() + "\t" + font.getStyle() + "\t" + font.getSize();
 	}
-	
+
 	private void parseFromJson(String fileContents)
 	{
 		JSONObject root = null;
@@ -376,7 +385,7 @@ public class MapSettings implements Serializable
 		{
 			root = (JSONObject) JSONValue.parseWithException(fileContents);
 		}
-		catch (ParseException e) 
+		catch (ParseException e)
 		{
 			throw new RuntimeException(e);
 		}
@@ -384,7 +393,7 @@ public class MapSettings implements Serializable
 		version = (String) root.get("version");
 		if (isVersionGreatherThanCurrent(version))
 		{
-			throw new RuntimeException("The map cannot be loaded because it was made in a new version of Nortantis. That map's version is " 
+			throw new RuntimeException("The map cannot be loaded because it was made in a new version of Nortantis. That map's version is "
 					+ version + ", but you're Nortantis version is " + currentVersion + ". Try again with a newer version of Nortantis.");
 		}
 		randomSeed = (long) root.get("randomSeed");
@@ -406,9 +415,10 @@ public class MapSettings implements Serializable
 		oceanEffectsColor = parseColor((String) root.get("oceanEffectsColor"));
 		coastlineColor = parseColor((String) root.get("coastlineColor"));
 		oceanEffect = OceanEffect.valueOf((String) root.get("oceanEffect"));
+		drawOceanEffectsInLakes = root.containsKey("drawOceanEffectsInLakes") ? (boolean) root.get("drawOceanEffectsInLakes") : false;
 		centerLandToWaterProbability = (double) root.get("centerLandToWaterProbability");
 		edgeLandToWaterProbability = (double) root.get("edgeLandToWaterProbability");
-		frayedBorder = (boolean) root.get("frayedBorder");	
+		frayedBorder = (boolean) root.get("frayedBorder");
 		if (root.containsKey("frayedBorderColor"))
 		{
 			frayedBorderColor = parseColor((String) root.get("frayedBorderColor"));
@@ -429,8 +439,8 @@ public class MapSettings implements Serializable
 		cityProbability = (double) root.get("cityProbability");
 		lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));
 		pointPrecision = (double) root.get("pointPrecision");
-		
-		
+
+
 		// Background image stuff.
 		generateBackground = (boolean) root.get("generateBackground");
 		generateBackgroundFromTexture = (boolean) root.get("generateBackgroundFromTexture");
@@ -447,8 +457,8 @@ public class MapSettings implements Serializable
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));
 		landColor = parseColor((String) root.get("landColor"));
-		
-		if (root.containsKey("regionBaseColor") && root.get("regionBaseColor") != null && !((String)root.get("regionBaseColor")).isEmpty())
+
+		if (root.containsKey("regionBaseColor") && root.get("regionBaseColor") != null && !((String) root.get("regionBaseColor")).isEmpty())
 		{
 			regionBaseColor = parseColor((String) root.get("regionBaseColor"));
 		}
@@ -456,17 +466,17 @@ public class MapSettings implements Serializable
 		{
 			regionBaseColor = landColor;
 		}
-		
+
 		generatedWidth = (int) (long) root.get("generatedWidth");
 		generatedHeight = (int) (long) root.get("generatedHeight");
-				
+
 		drawRegionColors = (boolean) root.get("drawRegionColors");
 		regionsRandomSeed = (long) root.get("regionsRandomSeed");
 		hueRange = (int) (long) root.get("hueRange");
 		saturationRange = (int) (long) root.get("saturationRange");
 		brightnessRange = (int) (long) root.get("brightnessRange");
 		drawRoads = (boolean) root.get("drawRoads");
-		
+
 		if (root.containsKey("cityIconSetName"))
 		{
 			cityIconTypeName = (String) root.get("cityIconSetName");
@@ -479,18 +489,22 @@ public class MapSettings implements Serializable
 		{
 			cityIconTypeName = "";
 		}
-	
+
+		allowTopsOfIconsToOverlapOcean = root.containsKey("allowTopsOfIconsToOverlapOcean")
+				? (boolean) root.get("allowTopsOfIconsToOverlapOcean")
+				: false;
+
 		drawText = (boolean) root.get("drawText");
 		textRandomSeed = (long) root.get("textRandomSeed");
-		
+
 		JSONArray booksArray = (JSONArray) root.get("books");
-		books = new TreeSet<String>(); 
-		for (Object bookObject: booksArray)
+		books = new TreeSet<String>();
+		for (Object bookObject : booksArray)
 		{
 			String bookName = (String) bookObject;
 			books.add(bookName);
 		}
-		
+
 		titleFont = parseFont((String) root.get("titleFont"));
 		regionFont = parseFont((String) root.get("regionFont"));
 		mountainRangeFont = parseFont((String) root.get("mountainRangeFont"));
@@ -499,9 +513,9 @@ public class MapSettings implements Serializable
 
 		boldBackgroundColor = parseColor((String) root.get("boldBackgroundColor"));
 		drawBoldBackground = (boolean) root.get("drawBoldBackground");
-		
+
 		textColor = parseColor((String) root.get("textColor"));
-		
+
 		drawBorder = (boolean) root.get("drawBorder");
 		if (root.containsKey("borderType"))
 		{
@@ -515,7 +529,7 @@ public class MapSettings implements Serializable
 		{
 			borderWidth = 0;
 		}
-		
+
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
 		if (frayedBorderSize >= 100)
 		{
@@ -523,23 +537,23 @@ public class MapSettings implements Serializable
 			// The +1 is just to make sure we don't try to find the log of 0.
 			frayedBorderSize = (int) (Math.log((((frayedBorderSize - 100) / 2) + 1)) / Math.log(2));
 		}
-		
-		
+
+
 		imageExportPath = (String) root.get("imageExportPath");
 		heightmapExportPath = (String) root.get("heightmapExportPath");
 		if (root.containsKey("heightmapResolution"))
 		{
-			heightmapResolution = (double) root.get("heightmapResolution");	
+			heightmapResolution = (double) root.get("heightmapResolution");
 		}
-		
+
 		if (root.containsKey("customImagesPath"))
 		{
 			customImagesPath = (String) root.get("customImagesPath");
 		}
-		
+
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
-				
+
 		JSONObject editsJson = (JSONObject) root.get("edits");
 		edits.text = parseMapTexts(editsJson);
 		edits.centerEdits = parseCenterEdits(editsJson);
@@ -547,12 +561,12 @@ public class MapSettings implements Serializable
 		edits.edgeEdits = parseEdgeEdits(editsJson);
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
 	}
-	
+
 	private CopyOnWriteArrayList<MapText> parseMapTexts(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
-			return new CopyOnWriteArrayList<>(); 
+			return new CopyOnWriteArrayList<>();
 		}
 
 		JSONArray array = (JSONArray) editsJson.get("textEdits");
@@ -561,23 +575,23 @@ public class MapSettings implements Serializable
 		{
 			JSONObject jsonObj = (JSONObject) obj;
 			String text = (String) jsonObj.get("text");
-			Point location = new Point((Double)jsonObj.get("locationX"), (Double)jsonObj.get("locationY"));
-			double angle = (Double)jsonObj.get("angle");
-			TextType type = Enum.valueOf(TextType.class, ((String)jsonObj.get("type")).replace(" ", "_"));
+			Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
+			double angle = (Double) jsonObj.get("angle");
+			TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
 			MapText mp = new MapText(text, location, angle, type);
 			result.add(mp);
 		}
-		
+
 		return result;
 	}
-	
+
 	public List<CenterEdit> parseCenterEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
 			return new ArrayList<CenterEdit>();
 		}
-		
+
 		JSONArray array = (JSONArray) editsJson.get("centerEdits");
 		List<CenterEdit> result = new ArrayList<>();
 		int index = 0;
@@ -587,40 +601,40 @@ public class MapSettings implements Serializable
 			boolean isWater = jsonObj.containsKey("isWater") ? (boolean) jsonObj.get("isWater") : false;
 			boolean isLake = jsonObj.containsKey("isLake") ? (boolean) jsonObj.get("isLake") : false;
 			Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
-			
+
 			CenterIcon icon = null;
 			{
-				JSONObject iconObj = (JSONObject)jsonObj.get("icon");
+				JSONObject iconObj = (JSONObject) jsonObj.get("icon");
 				if (iconObj != null)
 				{
-					String iconGroupId = (String)iconObj.get("iconGroupId");
-					int iconIndex = (int)(long)iconObj.get("iconIndex");
-					String iconName = (String)iconObj.get("iconName");
-					CenterIconType iconType = CenterIconType.valueOf((String)iconObj.get("iconType")); 
+					String iconGroupId = (String) iconObj.get("iconGroupId");
+					int iconIndex = (int) (long) iconObj.get("iconIndex");
+					String iconName = (String) iconObj.get("iconName");
+					CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
 					icon = new CenterIcon(iconType, iconGroupId, iconIndex);
 					icon.iconName = iconName;
 				}
 			}
-			
+
 			CenterTrees trees = null;
 			{
-				JSONObject treesObj = (JSONObject)jsonObj.get("trees");
+				JSONObject treesObj = (JSONObject) jsonObj.get("trees");
 				if (treesObj != null)
 				{
-					String treeType = (String)treesObj.get("treeType");
-					double density = (Double)treesObj.get("density");
-					long randomSeed = (Long)treesObj.get("randomSeed");
+					String treeType = (String) treesObj.get("treeType");
+					double density = (Double) treesObj.get("density");
+					long randomSeed = (Long) treesObj.get("randomSeed");
 					trees = new CenterTrees(treeType, density, randomSeed);
 				}
 			}
-			
+
 			result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 			index++;
 		}
-		
+
 		return result;
 	}
-	
+
 	public ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
@@ -632,14 +646,14 @@ public class MapSettings implements Serializable
 		for (Object obj : array)
 		{
 			JSONObject jsonObj = (JSONObject) obj;
-			Color color = parseColor((String)jsonObj.get("color"));
-			int regionId = (int)(long)jsonObj.get("regionId");
+			Color color = parseColor((String) jsonObj.get("color"));
+			int regionId = (int) (long) jsonObj.get("regionId");
 			result.put(regionId, new RegionEdit(regionId, color));
 		}
-		
+
 		return result;
 	}
-	
+
 	public List<EdgeEdit> parseEdgeEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
@@ -654,15 +668,15 @@ public class MapSettings implements Serializable
 			int riverLevel = 0;
 			if (jsonObj.containsKey("riverLevel"))
 			{
-				riverLevel = (int)(long)jsonObj.get("riverLevel");
+				riverLevel = (int) (long) jsonObj.get("riverLevel");
 			}
-			int index = (int)(long)jsonObj.get("index");
+			int index = (int) (long) jsonObj.get("index");
 			result.add(new EdgeEdit(index, riverLevel));
 		}
-		
+
 		return result;
 	}
-		
+
 	private static Color parseColor(String str)
 	{
 		if (str == null)
@@ -674,7 +688,8 @@ public class MapSettings implements Serializable
 		}
 		if (parts.length == 4)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
+					Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
 	}
@@ -702,18 +717,20 @@ public class MapSettings implements Serializable
 		}
 		return font;
 	}
-	
-    private static boolean isFontInstalled(String fontFamily) 
-    {
-        String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-        for (String font : fonts) {
-            if (font.equals(fontFamily)) {
-                return true;
-            }
-        }
-        return false;
-    }
-	
+
+	private static boolean isFontInstalled(String fontFamily)
+	{
+		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		for (String font : fonts)
+		{
+			if (font.equals(fontFamily))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private void loadFromOldPropertiesFile(String propertiesFilePath)
 	{
 		OldPropertyBasedMapSettings old = new OldPropertyBasedMapSettings(propertiesFilePath);
@@ -785,20 +802,19 @@ public class MapSettings implements Serializable
 			throw e;
 		}
 	}
-	
+
 	private boolean isVersionGreatherThanCurrent(String version)
 	{
 		return Double.parseDouble(version) > Double.parseDouble(currentVersion);
 	}
-	
+
 	public boolean equalsIgnoringEdits(MapSettings other)
 	{
 		return toJson(true).equals(other.toJson(true));
 	}
-	
+
 	/**
-	 * Creates a deep copy of this.
-	 * Note - This is not thread safe because it temporarily changes the edits pointer in this.
+	 * Creates a deep copy of this. Note - This is not thread safe because it temporarily changes the edits pointer in this.
 	 */
 	public MapSettings deepCopy()
 	{
@@ -808,13 +824,13 @@ public class MapSettings implements Serializable
 		{
 			copy.edits = edits.deepCopy();
 		}
-		
+
 		return copy;
 	}
-	
+
 	/**
-	 * Creates a deep copy of this, except for the edits object, which will be the same pointer in the copy.
-	 * Note - This is not thread safe because it temporarily changes the edits pointer in this.
+	 * Creates a deep copy of this, except for the edits object, which will be the same pointer in the copy. Note - This is not thread safe
+	 * because it temporarily changes the edits pointer in this.
 	 */
 	public MapSettings deepCopyExceptEdits()
 	{
@@ -824,20 +840,17 @@ public class MapSettings implements Serializable
 		edits = editsTemp;
 		return copy;
 	}
-	
+
 	public enum LineStyle
 	{
-		Jagged,
-		Smooth
+		Jagged, Smooth
 	}
 
 	public enum OceanEffect
 	{
-		Blur,
-		Ripples,
-		ConcentricWaves,
+		Blur, Ripples, ConcentricWaves,
 	}
-	
+
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
@@ -857,7 +870,8 @@ public class MapSettings implements Serializable
 			return false;
 		}
 		MapSettings other = (MapSettings) obj;
-		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
+		return allowTopsOfIconsToOverlapOcean == other.allowTopsOfIconsToOverlapOcean && backgroundRandomSeed == other.backgroundRandomSeed
+				&& Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
 				&& brightnessRange == other.brightnessRange
@@ -869,8 +883,7 @@ public class MapSettings implements Serializable
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
 				&& Objects.equals(customImagesPath, other.customImagesPath) && Objects.equals(defaultRoadColor, other.defaultRoadColor)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
-				&& drawRegionColors == other.drawRegionColors 
-				&& drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
 				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
@@ -893,5 +906,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
 				&& Objects.equals(titleFont, other.titleFont) && Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
+
+
+
 }
