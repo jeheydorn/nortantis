@@ -229,7 +229,7 @@ public class MapCreator
 			mapParts.graph.drawLandAndOceanBlackAndWhite(g, centersToDraw, drawBounds);
 		}
 
-		BufferedImage mapSnippet = ImageHelper.maskWithColor(ImageHelper.copySnippet(mapParts.background.land, drawBounds.toAwTRectangle()),
+		BufferedImage mapSnippet = ImageHelper.maskWithColor(ImageHelper.copySnippet(mapParts.background.land, drawBounds.toAwtRectangle()),
 				Color.black, landMask, false);
 
 		mapSnippet = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet, landMask,
@@ -287,7 +287,7 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
-
+		
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 
@@ -302,6 +302,11 @@ public class MapCreator
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet,
 					replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom, 0);
+		}
+		
+		if (settings.drawText)
+		{
+			mapParts.textDrawer.drawTextFromEdits(mapSnippet, landBackground, mapParts.graph, drawBounds);
 		}
 
 		java.awt.Point drawBoundsUpperLeftCornerAdjustedForBorder = new java.awt.Point(
@@ -504,7 +509,7 @@ public class MapCreator
 
 		if (settings.edits.text.size() > 0)
 		{
-			textDrawer.drawTextFromEdits(map, landBackground, graph);
+			textDrawer.drawTextFromEdits(map, landBackground, graph, null);
 		}
 		else
 		{

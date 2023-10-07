@@ -1062,7 +1062,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public boolean shouldShowTextWhenTextIsEnabled()
 	{
-		return false;
+		return true;
 	}
 
 	public void setCityIconsType(MapSettings settings, String cityIconType)

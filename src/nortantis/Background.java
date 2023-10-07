@@ -321,7 +321,7 @@ public class Background
 
 	public BufferedImage createOceanSnippet(Rectangle boundsToCopyFrom)
 	{
-		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toAwTRectangle());
+		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toAwtRectangle());
 	}
 	
 	public BufferedImage addBorder(BufferedImage map)

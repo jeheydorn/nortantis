@@ -649,7 +649,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public boolean shouldShowTextWhenTextIsEnabled()
 	{
-		return false;
+		return true;
 	}
 
 	@Override

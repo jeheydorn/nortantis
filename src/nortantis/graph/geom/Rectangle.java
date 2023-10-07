@@ -156,7 +156,7 @@ public class Rectangle
 		}
 	}
 
-	public java.awt.Rectangle toAwTRectangle()
+	public java.awt.Rectangle toAwtRectangle()
 	{
 		// Round up to the nearest integer
 		// int integerWidth = (double)(int)width == width ? (int)(width) :
@@ -170,6 +170,11 @@ public class Rectangle
 	public java.awt.Point upperLeftCornerAsAwtPoint()
 	{
 		return new java.awt.Point((int) x, (int) y);
+	}
+	
+	public Point upperLeftCorner()
+	{
+		return new Point(x, y);
 	}
 
 	public double getRight()
