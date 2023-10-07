@@ -35,6 +35,7 @@ import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 import nortantis.util.Helper;
@@ -50,16 +51,17 @@ public class TextDrawer
 	private MapSettings settings;
 	private final int mountainRangeMinSize = 50;
 	// y offset added to names of mountain groups smaller than a range.
-	private final double mountainGroupYOffset = 67;
-	// How big a river must be , in terms of edge.river, to be considered for
-	// labeling.
+	private final double mountainGroupYOffset = 45;
+	private final double singleMountainYOffset = 25;
+	// Rivers narrower than this will not be named.
 	private final int riverMinWidth = 3;
 	// Rivers shorter than this will not be named. This must be at least 3.
-	private final int riverMinLength = 3;
+	// Note that this is the number of corners, not the number of edges.
+	private final int riverMinLength = 10;
 	private final int largeRiverWidth = 4;
 	// This is how far away from a river it's name will be drawn.
-	private final double riverNameRiseHeight = -32;
-	private final double cityYNameOffset = 18;
+	private final double riverNameRiseHeight = -24;
+	private final double cityYNameOffset = 4;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double probabilityOfKeepingNameLength1 = 0.0;
 	private final double probabilityOfKeepingNameLength2 = 0.0;
@@ -229,24 +231,24 @@ public class TextDrawer
 		this.landAndOceanBackground = null;
 	}
 
-	public void generateText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground, List<Set<Center>> mountainRanges,
+	public void generateText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground, List<Set<Center>> mountainGroups,
 			List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
 
 		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());
 
-		if (mountainRanges == null)
+		if (mountainGroups == null)
 		{
-			mountainRanges = new ArrayList<>(0);
+			mountainGroups = new ArrayList<>(0);
 		}
 
-		generateText(map, graph, mountainRanges, cityDrawTasks, lakes);
+		generateText(map, graph, mountainGroups, cityDrawTasks, lakes);
 
 		this.landAndOceanBackground = null;
 	}
 
-	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainRanges, List<IconDrawTask> cityDrawTasks,
+	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainGroups, List<IconDrawTask> cityDrawTasks,
 			List<Set<Center>> lakes)
 	{
 		// All text drawn must be done so in order from highest to lowest
@@ -289,23 +291,23 @@ public class TextDrawer
 			drawNameFitIntoCenters(map, g, name, locations, graph, settings.drawBoldBackground, true, TextType.Region);
 		}
 
-		for (Set<Center> mountainRange : mountainRanges)
+		for (Set<Center> mountainGroup : mountainGroups)
 		{
-			if (mountainRange.size() >= mountainRangeMinSize)
+			if (mountainGroup.size() >= mountainRangeMinSize)
 			{
 				g.setFont(mountainRangeFontScaled);
-				Set<Point> locations = extractLocationsFromCenters(mountainRange);
+				Set<Point> locations = extractLocationsFromCenters(mountainGroup);
 				drawNameRotated(map, g, generateNameOfType(TextType.Mountain_range, null, true), locations, true, TextType.Mountain_range);
 			}
 			else
 			{
 				g.setFont(citiesAndOtherMountainsFontScaled);
-				if (mountainRange.size() >= 2)
+				if (mountainGroup.size() >= 2)
 				{
-					if (mountainRange.size() == 2)
+					if (mountainGroup.size() == 2)
 					{
-						Point location = findCentroid(extractLocationsFromCenters(mountainRange));
-						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.TwinPeaks, true),
+						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
+						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true),
 								location, 0.0, TextType.Other_mountains);
 						if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text, false, null))
 						{
@@ -315,16 +317,16 @@ public class TextDrawer
 					else
 					{
 						drawNameRotated(map, g, generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
-								extractLocationsFromCenters(mountainRange), mountainGroupYOffset * settings.resolution, true,
+								extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true,
 								TextType.Other_mountains);
 					}
 				}
 				else
 				{
-					Point location = findCentroid(extractLocationsFromCenters(mountainRange));
+					Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
 					MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0,
 							TextType.Other_mountains);
-					if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text, false, null))
+					if (drawNameRotated(map, g, singleMountainYOffset * settings.resolution, true, text, false, null))
 					{
 						mapTexts.add(text);
 					}
@@ -343,7 +345,7 @@ public class TextDrawer
 		List<River> rivers = findRivers(graph);
 		for (River river : rivers)
 		{
-			if (river.size() >= riverMinLength)
+			if (river.size() >= riverMinLength && river.getWidth() >= riverMinWidth)
 			{
 				RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
@@ -745,8 +747,8 @@ public class TextDrawer
 			return "%s Mountains";
 		case Peak:
 			return "%s Peak";
-		case TwinPeaks:
-			return "%s Twin Peaks";
+		case Peaks:
+			return "%s Peaks";
 		default:
 			throw new RuntimeException("Unknown mountain group type: " + mountainType);
 		}
@@ -774,7 +776,7 @@ public class TextDrawer
 
 	private enum OtherMountainsType
 	{
-		TwinPeaks, Mountains, Peak
+		Peaks, Mountains, Peak
 	}
 
 	private enum RiverType
@@ -953,36 +955,59 @@ public class TextDrawer
 	private List<River> findRivers(WorldGraph graph)
 	{
 		List<River> rivers = new ArrayList<>();
-		Set<Corner> explored = new HashSet<>();
-		for (Edge edge : graph.edges)
+		Set<Corner> riversAlreadyFound = new HashSet<>();
+		for (Corner corner : graph.corners)
 		{
-			if (edge.river >= riverMinWidth && edge.v0 != null && edge.v1 != null && !explored.contains(edge.v0)
-					&& !explored.contains(edge.v1))
+			if (corner.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && !riversAlreadyFound.contains(corner))
 			{
-				River river = followRiver(edge.v0, edge.v1);
+				River river = findRiver(riversAlreadyFound, corner);
 
-				// This count shouldn't be necessary. For some reason
-				// followRiver(...) is returning
-				// rivers which contain many Corners already in explored.
-				int count = 0;
-				for (Corner c : river)
-				{
-					if (explored.contains(c))
-						count++;
-				}
-
-				explored.addAll(river.getCorners());
-
-				if (count < 3)
-					rivers.add(river);
+				riversAlreadyFound.addAll(river.getCorners());
+				rivers.add(river);
 			}
 		}
 
 		return rivers;
 	}
+	
+	private River findRiver(Set<Corner> riversAlreadyFound, Corner start)
+	{
+		// First, follow the river in every direction it flows to find it's mouth (which is the end of the river that is the widest, which should be at the ocean).
+		List<Edge> options = new ArrayList<>();
+		for (Edge e : start.protrudes)
+		{
+			if (e.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && e.v0 != null && e.v1 != null)
+			{
+				options.add(e);
+			}
+		}
+		sortByRiverWidth(options);
+		if (options.size() == 0)
+		{
+			// This shouldn't happen because it means a corner is a river but is not connected to an edge that is a river.
+			assert false;
+			return new River();
+		}
+		else if (options.size() == 1)
+		{
+			// start is the head of a river
+			Corner downStream =  options.get(0).getOtherCorner(start);
+			return followRiver(riversAlreadyFound, start, downStream);
+		}
+		else
+		{
+			// Follow the two directions that make the widest rivers, then combine them into one river.
+			River river1 = followRiver(riversAlreadyFound, start, options.get(0).getOtherCorner(start));
+			River river2 = followRiver(riversAlreadyFound, start, options.get(1).getOtherCorner(start));
+			river1.addAll(river2);
+			return river1;
+		}
+		
+	}
 
 	/**
-	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed.
+	 * Searches along edges to find corners which are connected by a river. If the river forks, only one direction is followed
+	 * (the wider one).
 	 * 
 	 * @param last
 	 *            The search will not go in the direction of this corner.
@@ -990,52 +1015,29 @@ public class TextDrawer
 	 *            The search will go in the direction of this corner.
 	 * @return A set of corners which form a river.
 	 */
-	private River followRiver(Corner last, Corner head)
+	private River followRiver(Set<Corner> riversAlreadyFound, Corner last, Corner head)
 	{
 		assert last != null;
 		assert head != null;
 		assert !head.equals(last);
 
 		River result = new River();
-		result.add(head);
 		result.add(last);
+		result.add(head);
 
+		Edge lastTohead = VoronoiGraph.edgeWithCorners(last, head);
 		Set<Edge> riverEdges = new TreeSet<>();
 		for (Edge e : head.protrudes)
-			if (e.river >= riverMinWidth)
+		{
+			if (e.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && e != lastTohead)
+			{
 				riverEdges.add(e);
+			}
+		}
 
 		if (riverEdges.size() == 0)
 		{
-			throw new IllegalArgumentException("\"last\" should be connected to head by a river edge");
-		}
-		if (riverEdges.size() == 1)
-		{
-			// base case
-			return result;
-		}
-		if (riverEdges.size() == 2)
-		{
-			// Find the other river corner which is not "last".
-			Corner other = null;
-			for (Edge e : riverEdges)
-				if (head.equals(e.v0) && !last.equals(e.v1))
-				{
-					other = e.v1;
-				}
-				else if (head.equals(e.v1) && !last.equals(e.v0))
-				{
-					other = e.v0;
-				}
-
-			if (other == null)
-			{
-				// The only direction this river can go goes to a null corner.
-				// This is a base case.
-				return result;
-			}
-
-			result.addAll(followRiver(head, other));
+			// Base case. We're at the end of the river.
 			return result;
 		}
 		else
@@ -1044,82 +1046,40 @@ public class TextDrawer
 
 			// Sort the river edges by river width.
 			List<Edge> edgeList = new ArrayList<>(riverEdges);
-			Collections.sort(edgeList, new Comparator<Edge>()
+			sortByRiverWidth(edgeList);
+			Edge widest = edgeList.get(0);
+			
+			Corner nextHead = widest.v0 == head ? widest.v1 : widest.v0;
+			
+			if (nextHead == null)
+			{
+				// The river goes to the edge of the map.
+				return result;
+			}
+			
+			if (riversAlreadyFound.contains(nextHead))
+			{
+				// We've run into another river that has already been found.
+				result.add(nextHead);
+				return result;
+			}
+
+			result.addAll(followRiver(riversAlreadyFound, head, nextHead));
+			return result;
+		}
+	}
+	
+	private void sortByRiverWidth(List<Edge> edges)
+	{
+		if (edges.size() > 1)
+		{
+			Collections.sort(edges, new Comparator<Edge>()
 			{
 				public int compare(Edge e0, Edge e1)
 				{
 					return -Integer.compare(e0.river, e1.river);
 				}
 			});
-			Corner nextHead = null;
-
-			// Find which edge contains "last".
-			int indexOfLast = -1;
-			for (int i : new Range(edgeList.size()))
-			{
-				if (last == edgeList.get(i).v0 || last == edgeList.get(i).v1)
-				{
-					indexOfLast = i;
-					break;
-				}
-			}
-			assert indexOfLast != -1;
-
-			// Are there 2 edges which are wider rivers than all others?
-			if (edgeList.get(1).river > edgeList.get(2).river)
-			{
-
-				// If last is one of those 2.
-				if (indexOfLast < 2)
-				{
-					// nextHead = the other larger option.
-					Edge nextHeadEdge;
-					if (indexOfLast == 0)
-					{
-						nextHeadEdge = edgeList.get(1);
-					}
-					else
-					{
-						nextHeadEdge = edgeList.get(0);
-					}
-
-					if (!head.equals(nextHeadEdge.v0))
-					{
-						nextHead = nextHeadEdge.v0;
-						assert nextHead != null;
-					}
-					else if (!head.equals(nextHeadEdge.v1))
-					{
-						nextHead = nextHeadEdge.v1;
-						assert nextHead != null;
-					}
-					else
-					{
-						assert false; // Both corners cannot be the head.
-					}
-
-				}
-				else
-				{
-					// This river is joining a larger river. This is a base case
-					// because the smaller
-					// river should have a different name than the larger one.
-					return result;
-				}
-			}
-			else
-			{
-				// Choose the option with the largest river, avoiding choosing
-				// "last".
-				edgeList.remove(indexOfLast);
-
-				nextHead = head.equals(edgeList.get(0).v0) ? edgeList.get(0).v1 : edgeList.get(0).v0;
-				assert nextHead != null;
-			}
-			// Leave the other options for the global search to hit later.
-
-			result.addAll(followRiver(head, nextHead));
-			return result;
 		}
 	}
 
@@ -1372,10 +1332,18 @@ public class TextDrawer
 			// Find the angle to rotate the text to.
 			double y0 = regression.predict(0);
 			double y1 = regression.predict(1);
-			// Move the intercept to the origin.
-			y1 -= y0;
-			y0 = 0;
-			angle = Math.atan(y1 / 1.0);
+			// The documentation for SimpleRegression says "If this method is invoked before a model can be estimated, Double,NaN is returned."
+			if (Double.isNaN(y0) || Double.isNaN(y1))
+			{
+				angle = Math.PI / 2.0;
+			}
+			else
+			{
+				// Move the intercept to the origin.
+				y1 -= y0;
+				y0 = 0;
+				angle = Math.atan(y1 / 1.0);
+			}
 		}
 		catch (NoDataException e)
 		{

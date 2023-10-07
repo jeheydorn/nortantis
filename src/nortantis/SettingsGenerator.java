@@ -31,7 +31,7 @@ public class SettingsGenerator
 	private static String defaultSettingsFile = Paths.get(AssetsPath.getInstallPath(), "internal/old_paper.properties").toString();
 	public static int minWorldSize = 2000;
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes can result to in a map that is all land or all ocean.
-	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
+	public static int minWorldSizeForRandomSettings = minWorldSize + 8000;
 	public static int maxWorldSize = 30000;
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0/40.0;
@@ -148,7 +148,9 @@ public class SettingsGenerator
 			settings.frayedBorder = true;
 		}
 		settings.frayedBorderBlurLevel = Math.abs(rand.nextInt(150));
-		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(9));
+		// Fray size is stored inverted with respect the the UI.
+		final int maxFraySize = 6;
+		settings.frayedBorderSize = maxFrayedEdgeSizeForUI - Math.abs(rand.nextInt(maxFraySize));
 
 		settings.cityProbability =  0.25 * maxCityProbabillity;
 		

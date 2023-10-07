@@ -169,6 +169,18 @@ public abstract class VoronoiGraph
 		}
 		return null;
 	}
+	
+	public static Edge edgeWithCorners(Corner c1, Corner c2)
+	{
+		for (Edge e : c1.protrudes)
+		{
+			if (e.v0 == c2 || e.v1 == c2)
+			{
+				return e;
+			}
+		}
+		return null;
+	}
 
 	private static void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center)
 	{

@@ -1,5 +1,7 @@
 package nortantis.graph.voronoi;
 
+import java.util.Objects;
+
 import nortantis.graph.geom.Point;
 
 /**
@@ -121,6 +123,15 @@ public class Edge implements Comparable<Edge>
 		
 		return d0.region != null && d1.region != null && d0.region != d1.region;
 
+	}
+	
+	public Corner getOtherCorner(Corner corner)
+	{
+		if (Objects.equals(corner, v0))
+		{
+			return v1;
+		}
+		return v0;
 	}
 	
 	@Override

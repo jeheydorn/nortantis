@@ -56,7 +56,7 @@ public class Point implements Comparable<Point>, Serializable
 	@Override
 	public String toString()
 	{
-		return x + ", " + y;
+		return "(" + x + ", " + y + ")";
 	}
 
 	public double l2()

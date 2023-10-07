@@ -182,10 +182,7 @@ public class IconDrawer
 		}
 	}
 
-	/**
-	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
-	 */
-	public Pair<List<Set<Center>>> findMountainAndHillGroups()
+	public List<Set<Center>> findMountainGroups()
 	{
 		List<Set<Center>> mountainGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
 		{
@@ -195,6 +192,15 @@ public class IconDrawer
 			}
 		});
 
+		return mountainGroups;
+
+	}
+	
+	/**
+	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
+	 */
+	public List<Set<Center>> findMountainAndHillGroups()
+	{
 		List<Set<Center>> mountainAndHillGroups = findCenterGroups(graph, maxGapSizeInMountainClusters, new Function<Center, Boolean>()
 		{
 			public Boolean apply(Center center)
@@ -214,9 +220,10 @@ public class IconDrawer
 			curId++;
 		}
 
-		return new Pair<>(mountainGroups, mountainAndHillGroups);
+		return mountainAndHillGroups;
 
 	}
+
 
 	/**
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
@@ -621,7 +628,7 @@ public class IconDrawer
 						icon, cityIcons.get(cityName).getSecond(), IconType.cities, c.loc, scaledWidth, true, true, cityName
 				);
 				// Updates to the line below will will likely need to also update doesCityFitOnLand.
-				if (!isIconTouchingWater(task))
+				if (!isIconTouchingWater(task) && !isNeighborACity(c))
 				{
 					if (addIconDrawTasks)
 					{
@@ -640,22 +647,22 @@ public class IconDrawer
 
 		return cities;
 	}
+	
+	private boolean isNeighborACity(Center center)
+	{
+		return center.neighbors.stream().anyMatch(c -> c.isCity);
+	}
 
 	/**
 	 * Creates tasks for drawing mountains and hills.
 	 * 
 	 * @return
 	 */
-	public List<Set<Center>> addMountainsAndHills(List<Set<Center>> mountainGroups, List<Set<Center>> mountainAndHillGroups)
+	public void addOrUnmarkMountainsAndHills(List<Set<Center>> mountainAndHillGroups)
 	{
 		// Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
-		if (mountainImagesById == null || mountainImagesById.isEmpty())
-		{
-			Logger.println("No mountain images were found. Mountain images will not be drawn.");
-			return mountainGroups;
-		}
 
 		// Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
 		// The hill image file names must use the same ids as the mountain ranges.
@@ -712,10 +719,17 @@ public class IconDrawer
 								imagesInRange.get(i).getFirst(), imagesInRange.get(i).getSecond(), IconType.mountains, c.loc, scaledSize,
 								true, false
 						);
-
-						// Draw the image such that it is centered in the center of c.
-						iconsToDraw.getOrCreate(c).add(task);
-						centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, fileNameRangeId, i));
+						
+						if (!isIconTouchingWater(task))
+						{
+							// Draw the image such that it is centered in the center of c.
+							iconsToDraw.getOrCreate(c).add(task);
+							centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, fileNameRangeId, i));
+						}
+						else
+						{
+							c.isMountain = false;
+						}
 					}
 				}
 				else if (c.isHill)
@@ -731,20 +745,24 @@ public class IconDrawer
 						// Make sure the image will be at least 1 pixel wide.
 						if (scaledSize >= 1)
 						{
-							iconsToDraw.getOrCreate(c).add(
-									new IconDrawTask(
-											imagesInGroup.get(i).getFirst(), imagesInGroup.get(i).getSecond(), IconType.hills, c.loc,
-											scaledSize, true, false
-									)
+							IconDrawTask task = new IconDrawTask(
+									imagesInGroup.get(i).getFirst(), imagesInGroup.get(i).getSecond(), IconType.hills, c.loc,
+									scaledSize, true, false
 							);
-							centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));
+							if (!isIconTouchingWater(task))
+							{
+								iconsToDraw.getOrCreate(c).add(task);
+								centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));								
+							}
+							else
+							{
+								c.isHill = false;
+							}
 						}
 					}
 				}
 			}
 		}
-
-		return mountainGroups;
 	}
 
 	private int findScaledMountainSize(Center c)

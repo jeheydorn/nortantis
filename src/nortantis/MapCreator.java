@@ -675,21 +675,13 @@ public class MapCreator
 							// had created the icon drawer.
 		}
 
-		List<Set<Center>> mountainGroups = null;
 		List<Set<Center>> mountainAndHillGroups = null;
 		if (needToAddIcons)
 		{
 			iconDrawer.markMountains();
 			iconDrawer.markHills();
 			iconDrawer.markCities(settings.cityProbability);
-			Pair<List<Set<Center>>> pair = iconDrawer.findMountainAndHillGroups();
-			// All mountain ranges and smaller groups of mountains (include
-			// mountains that are alone).
-			mountainGroups = pair.getFirst();
-			// All mountain ranges and smaller groups of mountains extended to
-			// include nearby hills.
-			mountainAndHillGroups = pair.getSecond();
-			pair = null;
+			mountainAndHillGroups = iconDrawer.findMountainAndHillGroups();
 		}
 		else
 		{
@@ -741,11 +733,15 @@ public class MapCreator
 
 		checkForCancel();
 
+		List<Set<Center>> mountainGroups = null;
 		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
-			iconDrawer.addMountainsAndHills(mountainGroups, mountainAndHillGroups);
+			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups);
+			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image couldn't draw
+			// don't later get labels.
+			mountainGroups = iconDrawer.findMountainGroups();
 
 			Logger.println("Adding sand dunes.");
 			iconDrawer.addSandDunes();
