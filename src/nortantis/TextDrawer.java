@@ -349,9 +349,13 @@ public class TextDrawer
 			{
 				RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
-				Set<Point> locations = extractLocationsFromCorners(river.getCorners());
-				drawNameRotated(map, g, generateNameOfType(TextType.River, riverType, true), locations,
-						riverNameRiseHeight * settings.resolution, true, TextType.River);
+				// TODO Remove
+//				Set<Point> locations = extractLocationsFromCorners(river.getCorners());
+//				drawNameRotated(map, g, generateNameOfType(TextType.River, riverType, true), locations,
+//						riverNameRiseHeight * settings.resolution, true, TextType.River);
+				
+				drawGeneratedRiverName(map, g, generateNameOfType(TextType.River, riverType, true), river,
+						riverNameRiseHeight * settings.resolution, TextType.River);
 			}
 
 		}
@@ -948,6 +952,23 @@ public class TextDrawer
 		}
 		return result;
 	}
+	
+	private Set<Point> extractLocationsFromEdges(Collection<Edge> edges)
+	{
+		Set<Point> result = new TreeSet<Point>();
+		for (Edge e : edges)
+		{
+			if (e.v0 != null)
+			{
+				result.add(e.v0.loc);
+			}
+			if (e.v1 != null)
+			{
+				result.add(e.v1.loc);
+			}
+		}
+		return result;
+	}
 
 	/**
 	 * For finding rivers.
@@ -991,7 +1012,7 @@ public class TextDrawer
 		else if (options.size() == 1)
 		{
 			// start is the head of a river
-			Corner downStream =  options.get(0).getOtherCorner(start);
+			Corner downStream = options.get(0).getOtherCorner(start);
 			return followRiver(riversAlreadyFound, start, downStream);
 		}
 		else
@@ -999,8 +1020,9 @@ public class TextDrawer
 			// Follow the two directions that make the widest rivers, then combine them into one river.
 			River river1 = followRiver(riversAlreadyFound, start, options.get(0).getOtherCorner(start));
 			River river2 = followRiver(riversAlreadyFound, start, options.get(1).getOtherCorner(start));
-			river1.addAll(river2);
-			return river1;
+			river2.reverse();
+			river2.addAll(river1);
+			return river2;
 		}
 		
 	}
@@ -1021,12 +1043,11 @@ public class TextDrawer
 		assert head != null;
 		assert !head.equals(last);
 
-		River result = new River();
-		result.add(last);
-		result.add(head);
-
 		Edge lastTohead = VoronoiGraph.edgeWithCorners(last, head);
-		Set<Edge> riverEdges = new TreeSet<>();
+		River result = new River();
+		result.add(lastTohead);
+
+		List<Edge> riverEdges = new ArrayList<>();
 		for (Edge e : head.protrudes)
 		{
 			if (e.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && e != lastTohead)
@@ -1045,9 +1066,8 @@ public class TextDrawer
 			// There are more than 2 river edges connected to head.
 
 			// Sort the river edges by river width.
-			List<Edge> edgeList = new ArrayList<>(riverEdges);
-			sortByRiverWidth(edgeList);
-			Edge widest = edgeList.get(0);
+			sortByRiverWidth(riverEdges);
+			Edge widest = riverEdges.get(0);
 			
 			Corner nextHead = widest.v0 == head ? widest.v1 : widest.v0;
 			
@@ -1060,7 +1080,7 @@ public class TextDrawer
 			if (riversAlreadyFound.contains(nextHead))
 			{
 				// We've run into another river that has already been found.
-				result.add(nextHead);
+				result.add(widest);
 				return result;
 			}
 
@@ -1356,6 +1376,51 @@ public class TextDrawer
 		{
 			mapTexts.add(text);
 		}
+	}
+	
+	public void drawGeneratedRiverName(BufferedImage map, Graphics2D g, String name, River river, double riseOffset,
+			TextType type)
+	{
+		if (name.length() == 0)
+			return;
+
+		List<Edge> segment = river.getSegmentForPlacingText();
+		Set<Point> locations = extractLocationsFromEdges(segment);
+		Point centroid = findCentroid(locations);
+		double angle = calcAverageAngle(segment);
+
+		MapText text = createMapText(name, centroid, angle, type);
+		if (drawNameRotated(map, g, riseOffset, true, text, false, null))
+		{
+			mapTexts.add(text);
+		}
+	}
+	
+	private double calcAverageAngle(List<Edge> edges)
+	{
+		int count = 0;
+		double sum = 0.0;
+		for (Edge e : edges)
+		{
+			double angle = e.calcAngleBetweenCorners();
+			if (Double.isFinite(angle))
+			{
+				sum += angle;
+				count++;
+			}
+		}
+		
+		double angle = sum / count;
+		// No upside-down text.
+		if (angle > Math.PI / 2)
+		{
+			angle -= Math.PI;
+		}
+		else if (angle < -Math.PI / 2)
+		{
+			angle += Math.PI;
+		}
+		return angle;
 	}
 
 	/**

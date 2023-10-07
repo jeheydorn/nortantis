@@ -113,6 +113,40 @@ public class Edge implements Comparable<Edge>
 		
 		return false;
 	}
+	
+	public boolean isRiverTouchingOcean()
+	{
+		if (river <= VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+		{
+			return false;
+		}
+		
+		if (v0 != null && v0.ocean)
+		{
+			return true;
+		}
+		
+		if (v1 != null && v1.ocean)
+		{
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public double calcAngleBetweenCorners()
+	{
+		if (v0 == null || v1 == null)
+		{
+			return Double.NaN;
+		}
+		
+		if (v0.loc.x < v1.loc.x)
+		{
+			return Math.atan2(v1.loc.y - v0.loc.y, v1.loc.x - v0.loc.x);
+		}
+		return Math.atan2(v0.loc.y - v1.loc.y, v0.loc.x - v1.loc.x);
+	}
 
 	public boolean isRegionBoundary()
 	{
