@@ -134,20 +134,6 @@ public class Edge implements Comparable<Edge>
 		return false;
 	}
 	
-	public double calcAngleBetweenCorners()
-	{
-		if (v0 == null || v1 == null)
-		{
-			return Double.NaN;
-		}
-		
-		if (v0.loc.x < v1.loc.x)
-		{
-			return Math.atan2(v1.loc.y - v0.loc.y, v1.loc.x - v0.loc.x);
-		}
-		return Math.atan2(v0.loc.y - v1.loc.y, v0.loc.x - v1.loc.x);
-	}
-
 	public boolean isRegionBoundary()
 	{
 		if (d0 == null || d1 == null)

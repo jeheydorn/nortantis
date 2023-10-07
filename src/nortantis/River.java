@@ -80,7 +80,7 @@ public class River implements Iterable<Edge>
 	
 	public List<Edge> getSegmentForPlacingText()
 	{
-		final int maxEdgesToInclude = 12;
+		final int maxEdgesToInclude = 10;
 		final int maxDistanceFromMouth = 2;
 		
 		if (edges.size() <= maxEdgesToInclude)

@@ -60,8 +60,8 @@ public class TextDrawer
 	private final int riverMinLength = 10;
 	private final int largeRiverWidth = 4;
 	// This is how far away from a river it's name will be drawn.
-	private final double riverNameRiseHeight = -24;
-	private final double cityYNameOffset = 4;
+	private final double riverNameRiseHeight = -21;
+	private final double cityYNameOffset = 7;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double probabilityOfKeepingNameLength1 = 0.0;
 	private final double probabilityOfKeepingNameLength2 = 0.0;
@@ -349,13 +349,9 @@ public class TextDrawer
 			{
 				RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
-				// TODO Remove
-//				Set<Point> locations = extractLocationsFromCorners(river.getCorners());
-//				drawNameRotated(map, g, generateNameOfType(TextType.River, riverType, true), locations,
-//						riverNameRiseHeight * settings.resolution, true, TextType.River);
-				
-				drawGeneratedRiverName(map, g, generateNameOfType(TextType.River, riverType, true), river,
-						riverNameRiseHeight * settings.resolution, TextType.River);
+				Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
+				drawNameRotated(map, g, generateNameOfType(TextType.River, riverType, true), locations,
+						riverNameRiseHeight * settings.resolution, true, TextType.River);
 			}
 
 		}
@@ -1376,51 +1372,6 @@ public class TextDrawer
 		{
 			mapTexts.add(text);
 		}
-	}
-	
-	public void drawGeneratedRiverName(BufferedImage map, Graphics2D g, String name, River river, double riseOffset,
-			TextType type)
-	{
-		if (name.length() == 0)
-			return;
-
-		List<Edge> segment = river.getSegmentForPlacingText();
-		Set<Point> locations = extractLocationsFromEdges(segment);
-		Point centroid = findCentroid(locations);
-		double angle = calcAverageAngle(segment);
-
-		MapText text = createMapText(name, centroid, angle, type);
-		if (drawNameRotated(map, g, riseOffset, true, text, false, null))
-		{
-			mapTexts.add(text);
-		}
-	}
-	
-	private double calcAverageAngle(List<Edge> edges)
-	{
-		int count = 0;
-		double sum = 0.0;
-		for (Edge e : edges)
-		{
-			double angle = e.calcAngleBetweenCorners();
-			if (Double.isFinite(angle))
-			{
-				sum += angle;
-				count++;
-			}
-		}
-		
-		double angle = sum / count;
-		// No upside-down text.
-		if (angle > Math.PI / 2)
-		{
-			angle -= Math.PI;
-		}
-		else if (angle < -Math.PI / 2)
-		{
-			angle += Math.PI;
-		}
-		return angle;
 	}
 
 	/**
