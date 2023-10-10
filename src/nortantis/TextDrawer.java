@@ -57,7 +57,7 @@ public class TextDrawer
 	private final int mountainRangeMinSize = 50;
 	// y offset added to names of mountain groups smaller than a range.
 	private final double mountainGroupYOffset = 45;
-	private final double singleMountainYOffset = 25;
+	private final double singleMountainYOffset = 14;
 	// Rivers narrower than this will not be named.
 	private final int riverMinWidth = 3;
 	// Rivers shorter than this will not be named. This must be at least 3.
@@ -65,7 +65,7 @@ public class TextDrawer
 	private final int riverMinLength = 10;
 	private final int largeRiverWidth = 4;
 	// This is how far away from a river it's name will be drawn.
-	private final double riverNameRiseHeight = -21;
+	private final double riverNameRiseHeight = -10;
 	private final double cityYNameOffset = 7;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double probabilityOfKeepingNameLength1 = 0.0;
@@ -276,8 +276,8 @@ public class TextDrawer
 			Set<Point> cityLoc = new HashSet<>(1);
 			cityLoc.add(city.centerLoc);
 			String cityName = generateNameOfType(TextType.City, findCityTypeFromCityFileName(city.fileName), true);
-			drawNameRotated(map, g, graph, cityName, cityLoc,
-					city.scaledHeight / 2 + (cityYNameOffset + cityMountainFontHeight / 2.0) * settings.resolution, true, TextType.City);
+			double riseOffset = city.scaledHeight / 2 + (cityYNameOffset * settings.resolution);
+			drawNameRotated(map, g, graph, cityName, cityLoc, riseOffset, true, TextType.City);
 		}
 
 		setFontForTextType(g, TextType.Region);
@@ -507,7 +507,7 @@ public class TextDrawer
 			setFontForTextType(g, text.type);
 			if (text.type == TextType.Title)
 			{
-				drawNameSplitIfNeeded(map, g, graph, settings.drawBoldBackground, false, text, drawOffset);
+				drawNameSplitIfNeeded(map, g, graph, 0.0, settings.drawBoldBackground, false, text, drawOffset);
 			}
 			else if (text.type == TextType.City)
 			{
@@ -515,7 +515,7 @@ public class TextDrawer
 			}
 			else if (text.type == TextType.Region)
 			{
-				drawNameSplitIfNeeded(map, g, graph, settings.drawBoldBackground, false, text, drawOffset);
+				drawNameSplitIfNeeded(map, g, graph, 0.0, settings.drawBoldBackground, false, text, drawOffset);
 			}
 			else if (text.type == TextType.Mountain_range)
 			{
@@ -1274,7 +1274,7 @@ public class TextDrawer
 		Point centroid = findCentroid(centerLocations);
 
 		MapText text = createMapText(name, centroid, 0.0, textType);
-		if (drawNameSplitIfNeeded(map, g, graph, boldBackground, enableBoundsChecking, text, null))
+		if (drawNameSplitIfNeeded(map, g, graph, 0.0, boldBackground, enableBoundsChecking, text, null))
 		{
 			mapTexts.add(text);
 			return true;
@@ -1299,7 +1299,7 @@ public class TextDrawer
 						(point1, point2) -> -Double.compare(point1.distanceTo(centroid), point2.distanceTo(centroid)));
 
 				text = createMapText(name, loc, 0.0, textType);
-				if (drawNameSplitIfNeeded(map, g, graph, boldBackground, enableBoundsChecking, text, null))
+				if (drawNameSplitIfNeeded(map, g, graph, 0.0, boldBackground, enableBoundsChecking, text, null))
 				{
 					mapTexts.add(text);
 					return true;
@@ -1317,7 +1317,7 @@ public class TextDrawer
 	 * 
 	 * @return True iff text was drawn.
 	 */
-	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, boolean boldBackground,
+	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean boldBackground,
 			boolean enableBoundsChecking, MapText text, Point drawOffset)
 	{
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
@@ -1329,11 +1329,11 @@ public class TextDrawer
 			String nameLine1 = lines.getFirst();
 			String nameLine2 = lines.getSecond();
 
-			return drawNameRotated(map, g, 0.0, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2, true, drawOffset);
+			return drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2, true, drawOffset);
 		}
 		else
 		{
-			return drawNameRotated(map, g, 0.0, enableBoundsChecking, text, boldBackground, text.value, null, true, drawOffset);
+			return drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null, true, drawOffset);
 		}
 	}
 
@@ -1468,7 +1468,7 @@ public class TextDrawer
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
 			boolean boldBackground, Point drawOffset)
 	{
-		return drawNameSplitIfNeeded(map, g, graph, boldBackground, enableBoundsChecking, text, drawOffset);
+		return drawNameSplitIfNeeded(map, g, graph, riseOffset, boldBackground, enableBoundsChecking, text, drawOffset);
 	}
 
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, double riseOffset, boolean enableBoundsChecking, MapText text,
@@ -1485,11 +1485,37 @@ public class TextDrawer
 		}
 
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
+		
+		FontMetrics metrics = g.getFontMetrics();
+		int fontHeight = getFontHeight(metrics);
+		// Increase the rise offset to account for the font size.
+		double riseOffsetToUse = riseOffset;
+		if (riseOffsetToUse > 0.0)
+		{
+			if (line2 == null)
+			{
+				riseOffsetToUse += fontHeight / 2;
+			}
+			else
+			{
+				riseOffsetToUse += fontHeight;
+			}
+		}
+		else if (riseOffsetToUse < 0.0)
+		{
+			if (line2 == null)
+			{
+				riseOffsetToUse -= fontHeight / 2;
+			}
+			else
+			{
+				riseOffsetToUse -= fontHeight;
+			}
+		}
 
-		Point offset = new Point(riseOffset * Math.sin(text.angle), -riseOffset * Math.cos(text.angle));
+		Point offset = new Point(riseOffsetToUse * Math.sin(text.angle), -riseOffsetToUse * Math.cos(text.angle));
 		Point pivot = new Point(textLocation.x - offset.x - drawOffset.x, textLocation.y - offset.y - drawOffset.y);
 
-		FontMetrics metrics = g.getFontMetrics();
 		java.awt.Rectangle bounds1 = getLine1Bounds(line1, pivot, metrics, line2 != null);
 		// If the above integer conversion resulted in a truncation that resulted in a negative number, then subtract 1. This is
 		// necessary because in Java, positive floating point numbers converted to integers round down, but negative numbers round up.
