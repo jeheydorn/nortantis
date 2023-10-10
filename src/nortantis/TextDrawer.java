@@ -276,7 +276,7 @@ public class TextDrawer
 			Set<Point> cityLoc = new HashSet<>(1);
 			cityLoc.add(city.centerLoc);
 			String cityName = generateNameOfType(TextType.City, findCityTypeFromCityFileName(city.fileName), true);
-			drawNameRotated(map, g, cityName, cityLoc,
+			drawNameRotated(map, g, graph, cityName, cityLoc,
 					city.scaledHeight / 2 + (cityYNameOffset + cityMountainFontHeight / 2.0) * settings.resolution, true, TextType.City);
 		}
 
@@ -302,7 +302,7 @@ public class TextDrawer
 			{
 				setFontForTextType(g, TextType.Mountain_range);
 				Set<Point> locations = extractLocationsFromCenters(mountainGroup);
-				drawNameRotated(map, g, generateNameOfType(TextType.Mountain_range, null, true), locations, true, TextType.Mountain_range);
+				drawNameRotated(map, g, graph, generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true, TextType.Mountain_range);
 			}
 			else
 			{
@@ -314,14 +314,14 @@ public class TextDrawer
 						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
 						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location,
 								0.0, TextType.Other_mountains);
-						if (drawNameRotated(map, g, mountainGroupYOffset * settings.resolution, true, text, false, null))
+						if (drawNameRotated(map, g, graph, mountainGroupYOffset * settings.resolution, true, text, false, null))
 						{
 							mapTexts.add(text);
 						}
 					}
 					else
 					{
-						drawNameRotated(map, g, generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
+						drawNameRotated(map, g, graph, generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
 								extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true,
 								TextType.Other_mountains);
 					}
@@ -331,7 +331,7 @@ public class TextDrawer
 					Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
 					MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0,
 							TextType.Other_mountains);
-					if (drawNameRotated(map, g, singleMountainYOffset * settings.resolution, true, text, false, null))
+					if (drawNameRotated(map, g, graph, singleMountainYOffset * settings.resolution, true, text, false, null))
 					{
 						mapTexts.add(text);
 					}
@@ -344,7 +344,7 @@ public class TextDrawer
 		{
 			String name = generateNameOfType(TextType.Lake, null, true);
 			Set<Point> locations = extractLocationsFromCenters(lake);
-			drawNameRotated(map, g, name, locations, 0.0, true, TextType.Lake);
+			drawNameRotated(map, g, graph, name, locations, 0.0, true, TextType.Lake);
 		}
 
 		List<River> rivers = findRivers(graph);
@@ -355,7 +355,7 @@ public class TextDrawer
 				RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
 				Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
-				drawNameRotated(map, g, generateNameOfType(TextType.River, riverType, true), locations,
+				drawNameRotated(map, g, graph, generateNameOfType(TextType.River, riverType, true), locations,
 						riverNameRiseHeight * settings.resolution, true, TextType.River);
 			}
 
@@ -504,58 +504,34 @@ public class TextDrawer
 
 		doForEachTextInBounds(settings.edits.text, graph, drawBounds, true, ((text, ignored) ->
 		{
-			Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-
 			setFontForTextType(g, text.type);
 			if (text.type == TextType.Title)
 			{
-				Center center = graph.findClosestCenter(textLocation.x, textLocation.y);
-				Set<Center> regionCenters;
-				if (center.isWater)
-				{
-					regionCenters = findAllWaterCenters(graph);
-				}
-				else
-				{
-					regionCenters = center.region.getCenters();
-				}
-				Set<Point> locations = extractLocationsFromCenters(regionCenters);
-				drawNameFitIntoCenters(map, g, locations, graph, settings.drawBoldBackground, false, text, drawOffset);
+				drawNameSplitIfNeeded(map, g, graph, settings.drawBoldBackground, false, text, drawOffset);
 			}
 			else if (text.type == TextType.City)
 			{
-				drawNameRotated(map, g, 0, false, text, false, drawOffset);
+				drawNameRotated(map, g, graph, 0, false, text, false, drawOffset);
 			}
 			else if (text.type == TextType.Region)
 			{
-				Center center = graph.findClosestCenter(textLocation.x, textLocation.y);
-				Set<Center> regionCenters;
-				if (center.isWater)
-				{
-					regionCenters = findAllWaterCenters(graph);
-				}
-				else
-				{
-					regionCenters = center.region.getCenters();
-				}
-				Set<Point> locations = extractLocationsFromCenters(regionCenters);
-				drawNameFitIntoCenters(map, g, locations, graph, settings.drawBoldBackground, false, text, drawOffset);
+				drawNameSplitIfNeeded(map, g, graph, settings.drawBoldBackground, false, text, drawOffset);
 			}
 			else if (text.type == TextType.Mountain_range)
 			{
-				drawNameRotated(map, g, 0, false, text, false, drawOffset);
+				drawNameRotated(map, g, graph, 0, false, text, false, drawOffset);
 			}
 			else if (text.type == TextType.Other_mountains)
 			{
-				drawNameRotated(map, g, 0, false, text, false, drawOffset);
+				drawNameRotated(map, g, graph, 0, false, text, false, drawOffset);
 			}
 			else if (text.type == TextType.River)
 			{
-				drawNameRotated(map, g, 0, false, text, false, drawOffset);
+				drawNameRotated(map, g, graph, 0, false, text, false, drawOffset);
 			}
 			else if (text.type == TextType.Lake)
 			{
-				drawNameRotated(map, g, 0, false, text, false, drawOffset);
+				drawNameRotated(map, g, graph, 0, false, text, false, drawOffset);
 			}
 		}));
 
@@ -1298,7 +1274,7 @@ public class TextDrawer
 		Point centroid = findCentroid(centerLocations);
 
 		MapText text = createMapText(name, centroid, 0.0, textType);
-		if (drawNameFitIntoCenters(map, g, centerLocations, graph, boldBackground, enableBoundsChecking, text, null))
+		if (drawNameSplitIfNeeded(map, g, graph, boldBackground, enableBoundsChecking, text, null))
 		{
 			mapTexts.add(text);
 			return true;
@@ -1323,7 +1299,7 @@ public class TextDrawer
 						(point1, point2) -> -Double.compare(point1.distanceTo(centroid), point2.distanceTo(centroid)));
 
 				text = createMapText(name, loc, 0.0, textType);
-				if (drawNameFitIntoCenters(map, g, centerLocations, graph, boldBackground, enableBoundsChecking, text, null))
+				if (drawNameSplitIfNeeded(map, g, graph, boldBackground, enableBoundsChecking, text, null))
 				{
 					mapTexts.add(text);
 					return true;
@@ -1341,8 +1317,8 @@ public class TextDrawer
 	 * 
 	 * @return True iff text was drawn.
 	 */
-	private boolean drawNameFitIntoCenters(BufferedImage map, Graphics2D g, Set<Point> centerLocations, WorldGraph graph,
-			boolean boldBackground, boolean enableBoundsChecking, MapText text, Point drawOffset)
+	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, boolean boldBackground,
+			boolean enableBoundsChecking, MapText text, Point drawOffset)
 	{
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(text.value, textLocation, text.angle, g, graph))
@@ -1418,12 +1394,6 @@ public class TextDrawer
 		return metrics.getAscent() + metrics.getDescent();
 	}
 
-	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, boolean enableBoundsChecking,
-			TextType type)
-	{
-		drawNameRotated(map, g, name, locations, 0.0, enableBoundsChecking, type);
-	}
-
 	/**
 	 * Draws the given name at the centroid of the given plateCenters. The angle the name is drawn at is the least squares line through the
 	 * plate centers. This does not break text into multiple lines.
@@ -1435,7 +1405,7 @@ public class TextDrawer
 	 *            this location. If there is already a name drawn above the object, I try negating the riseOffset to draw the name below it.
 	 *            Positive y is down.
 	 */
-	public void drawNameRotated(BufferedImage map, Graphics2D g, String name, Set<Point> locations, double riseOffset,
+	public void drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, String name, Set<Point> locations, double riseOffset,
 			boolean enableBoundsChecking, TextType type)
 	{
 		if (name.length() == 0)
@@ -1477,7 +1447,7 @@ public class TextDrawer
 		}
 
 		MapText text = createMapText(name, centroid, angle, type);
-		if (drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, false, null))
+		if (drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, false, null))
 		{
 			mapTexts.add(text);
 		}
@@ -1495,10 +1465,10 @@ public class TextDrawer
 	 * 
 	 * @return true iff the text was drawn.
 	 */
-	public boolean drawNameRotated(BufferedImage map, Graphics2D g, double riseOffset, boolean enableBoundsChecking, MapText text,
+	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
 			boolean boldBackground, Point drawOffset)
 	{
-		return drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null, true, drawOffset);
+		return drawNameSplitIfNeeded(map, g, graph, boldBackground, enableBoundsChecking, text, drawOffset);
 	}
 
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, double riseOffset, boolean enableBoundsChecking, MapText text,
