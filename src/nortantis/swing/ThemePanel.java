@@ -558,7 +558,7 @@ public class ThemePanel extends JTabbedPane
 		coastShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(coastShadingSlider);
 		SwingHelper.setSliderWidthForSidePanel(coastShadingSlider);
-		organizer.addLabelAndComponent("Coast shading width:", "How far in from coastlines to shade land.", coastShadingSlider);
+		organizer.addLabelAndComponent("Coast shading width:", "How far in from coastlines to shade land. Also applies to region boundaries if regions are drawn.", coastShadingSlider);
 
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
 
@@ -642,7 +642,7 @@ public class ThemePanel extends JTabbedPane
 		
 		//organizer.addSeperator();
 		allowTopsOfIconsToOverlapOceanCheckbox = new JCheckBox("Allow the tops of icons to protrude over coastlines");
-		//organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapOceanCheckbox); TODO put back
+		//organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapOceanCheckbox); TODO put back when this feature is ready
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();

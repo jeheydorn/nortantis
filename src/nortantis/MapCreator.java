@@ -1,9 +1,11 @@
 package nortantis;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
@@ -29,6 +31,7 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;
+import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -39,6 +42,7 @@ import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
+import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
 public class MapCreator
@@ -120,7 +124,7 @@ public class MapCreator
 	private Rectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, BufferedImage fullSizedMap,
 			Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
-		// double startTime = System.currentTimeMillis();
+		//Stopwatch updateSW = new Stopwatch("incremental update");
 
 		centersChanged = new HashSet<>(centersChanged);
 
@@ -210,13 +214,17 @@ public class MapCreator
 			}
 		}
 
-		replaceBounds = replaceBounds.floor();
+		// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line to two or vice
+		// versa.
+		Rectangle textChangeBounds = mapParts.textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds, settings);
+		replaceBounds = replaceBounds.add(textChangeBounds).floor();
 
 		// The bounds of the snippet to draw. This is larger than the snippet to
 		// replace because ocean/land effects expand beyond the edges
 		// that draw them, and we need those to be included in the snippet to
 		// replace.
 		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding).floor();
+
 
 		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), centersChanged.iterator().next());
 
@@ -287,7 +295,7 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
-		
+
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 
@@ -303,7 +311,7 @@ public class MapCreator
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet,
 					replaceBounds.upperLeftCornerAsAwtPoint(), boundsInSourceToCopyFrom, 0);
 		}
-		
+
 		if (settings.drawText)
 		{
 			mapParts.textDrawer.drawTextFromEdits(mapSnippet, landBackground, mapParts.graph, drawBounds);
@@ -339,11 +347,21 @@ public class MapCreator
 		// Update the snippet in the main map.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
+		
+		// Debug code
+//		Graphics2D g = fullSizedMap.createGraphics();
+//		int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+//		g.setStroke(new BasicStroke(4));
+//		g.setColor(Color.red);
+//		{
+//			java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+//					replaceBounds.width, replaceBounds.height).toAwtRectangle();
+//			g.drawRect(rect.x, rect.y, rect.width, rect.height);
+//		}
+		
 
-		// Print run time
-		// double elapsedTime = System.currentTimeMillis() - startTime;
-		// Logger.println("Time to do incremental update: " + elapsedTime /
-		// 1000.0);
+		// Print run time TODO comment out
+		//updateSW.printElapsedTime();
 
 		return replaceBounds;
 	}
@@ -528,8 +546,8 @@ public class MapCreator
 		landBackground = null;
 
 		// Debug code
-		//graph.drawCorners(map.createGraphics());
-		//graph.drawVoronoi(map.createGraphics());
+		// graph.drawCorners(map.createGraphics());
+		// graph.drawVoronoi(map.createGraphics());
 
 		if (settings.drawBorder)
 		{
@@ -739,7 +757,8 @@ public class MapCreator
 		{
 			Logger.println("Adding mountains and hills.");
 			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups);
-			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image couldn't draw
+			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
+			// couldn't draw
 			// don't later get labels.
 			mountainGroups = iconDrawer.findMountainGroups();
 
@@ -766,14 +785,6 @@ public class MapCreator
 
 		Logger.println("Drawing all icons.");
 		iconDrawer.drawAllIcons(map, landBackground, null);
-
-		checkForCancel();
-
-		// Add the rivers to landBackground so that the text doesn't erase them.
-		// I do this whether or not I draw text because I might draw the text
-		// later.
-		// This is done after icon drawing so that rivers draw behind icons.
-		//drawRivers(settings, graph, landBackground, sizeMultiplier, null, null); TODO remove if I don't want this
 
 		checkForCancel();
 
@@ -914,8 +925,8 @@ public class MapCreator
 		return mapOrSnippet;
 	}
 
-	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier,
-			BufferedImage landMask, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private static BufferedImage createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier, BufferedImage landMask,
+			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
 		{
@@ -1036,13 +1047,13 @@ public class MapCreator
 		graph.drawLandAndLandLockedLakesBlackAndOceanWhite(landAndLakeMask.createGraphics(), centersToDraw, drawBounds);
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
-	
+
 	private static BufferedImage removeOceanEffectsFromLand(WorldGraph graph, BufferedImage oceanEffects, BufferedImage landMask,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
 	}
-	
+
 
 	private static float calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
 	{

@@ -713,55 +713,40 @@ public class ImageHelper
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
 		Raster mRaster = mask.getRaster();
 		Raster colorIndexesRaster = colorIndexes.getRaster();
-
-		int numTasks = ThreadHelper.getInstance().getThreadCount();
-		List<Runnable> tasks = new ArrayList<>(numTasks);
-		int rowsPerJob = image.getHeight() / numTasks;
-		for (int taskNumber : new Range(numTasks))
-		{
-			tasks.add(() ->
+		for (int y = 0; y < image.getHeight(); y++)
+			for (int x = 0; x < image.getWidth(); x++)
 			{
-				int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-				for (int y = taskNumber * rowsPerJob; y < endY; y++)
+				Color col = new Color(image.getRGB(x, y));
+				Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
+
+				int maskLevel = mRaster.getSample(x, y, 0);
+				if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
 				{
-					for (int x = 0; x < image.getWidth(); x++)
-					{
-						Color col = new Color(image.getRGB(x, y));
-						Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
+					if (invertMask)
+						maskLevel = 255 - maskLevel;
 
-						int maskLevel = mRaster.getSample(x, y, 0);
-						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
-						{
-							if (invertMask)
-								maskLevel = 255 - maskLevel;
-
-							int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-							int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-							int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-							int combined = (r << 16) | (g << 8) | b;
-							result.setRGB(x, y, combined);
-						}
-						else
-						{
-							// TYPE_BYTE_BINARY
-
-							if (invertMask)
-								maskLevel = 255 - maskLevel;
-
-							int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-							int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-							int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-							int combined = (r << 16) | (g << 8) | b;
-							result.setRGB(x, y, combined);
-						}
-					}
+					int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+					int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+					int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+					int combined = (r << 16) | (g << 8) | b;
+					result.setRGB(x, y, combined);
 				}
-			});
-		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+				else
+				{
+					// TYPE_BYTE_BINARY
 
+					if (invertMask)
+						maskLevel = 255 - maskLevel;
+
+					int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+					int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+					int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+					int combined = (r << 16) | (g << 8) | b;
+					result.setRGB(x, y, combined);
+				}
+
+			}
 		return result;
-
 	}
 
 	/**

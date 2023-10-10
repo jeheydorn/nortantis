@@ -124,6 +124,12 @@ public class Rectangle
 		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
 				other.y + other.height);
 	}
+	
+	public Rectangle addCircle(Point loc, Double radius)
+	{
+		Rectangle rect = new Rectangle(loc.x - radius, loc.y - radius, radius * 2, radius * 2);
+		return add(rect);
+	}
 
 	/**
 	 * Returns a new rectangle with the same centroid as this one but with the
@@ -200,7 +206,6 @@ public class Rectangle
 	@Override
 	public String toString()
 	{
-		return "Rectangle [x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]";
+		return "[x=" + x + ", y=" + y + ", width=" + width + ", height=" + height + "]";
 	}
-
 }
