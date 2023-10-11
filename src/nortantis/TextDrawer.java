@@ -381,12 +381,12 @@ public class TextDrawer
 			if (words.contains("farm") || words.contains("homestead") || words.contains("building") || words.contains("house"))
 			{
 				result.add(CityType.Homestead);
-			}			
+			}
 		}
-		
+
 		return result;
 	}
-	
+
 	private CityType sampleCityTypesForCityFileName(String cityFileNameNoExtension)
 	{
 		List<CityType> types = findCityTypeFromCityFileName(cityFileNameNoExtension);
@@ -516,7 +516,7 @@ public class TextDrawer
 			setFontForTextType(g, text.type);
 			if (text.type == TextType.Title)
 			{
-				drawNameSplitIfNeeded(map, g, graph, 0.0, settings.drawBoldBackground, false, text, drawOffset);
+				drawNameSplitIfNeeded(map, g, graph, 0.0, false, text, settings.drawBoldBackground, true, drawOffset);
 			}
 			else if (text.type == TextType.City)
 			{
@@ -524,7 +524,7 @@ public class TextDrawer
 			}
 			else if (text.type == TextType.Region)
 			{
-				drawNameSplitIfNeeded(map, g, graph, 0.0, settings.drawBoldBackground, false, text, drawOffset);
+				drawNameSplitIfNeeded(map, g, graph, 0.0, false, text, settings.drawBoldBackground, true, drawOffset);
 			}
 			else if (text.type == TextType.Mountain_range)
 			{
@@ -1272,7 +1272,7 @@ public class TextDrawer
 		Point centroid = findCentroid(centerLocations);
 
 		MapText text = createMapText(name, centroid, 0.0, textType);
-		if (drawNameSplitIfNeeded(map, g, graph, 0.0, boldBackground, enableBoundsChecking, text, null))
+		if (drawNameSplitIfNeeded(map, g, graph, 0.0, enableBoundsChecking, text, boldBackground, true, null))
 		{
 			mapTexts.add(text);
 			return true;
@@ -1297,7 +1297,7 @@ public class TextDrawer
 						(point1, point2) -> -Double.compare(point1.distanceTo(centroid), point2.distanceTo(centroid)));
 
 				text = createMapText(name, loc, 0.0, textType);
-				if (drawNameSplitIfNeeded(map, g, graph, 0.0, boldBackground, enableBoundsChecking, text, null))
+				if (drawNameSplitIfNeeded(map, g, graph, 0.0, enableBoundsChecking, text, boldBackground, true, null))
 				{
 					mapTexts.add(text);
 					return true;
@@ -1315,8 +1315,8 @@ public class TextDrawer
 	 * 
 	 * @return True iff text was drawn.
 	 */
-	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean boldBackground,
-			boolean enableBoundsChecking, MapText text, Point drawOffset)
+	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset,
+			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocation, g.getFontMetrics(), false);
@@ -1328,13 +1328,13 @@ public class TextDrawer
 			String nameLine1 = lines.getFirst();
 			String nameLine2 = lines.getSecond();
 
-			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2, true,
-					drawOffset);
+			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
+					allowNegatingRizeOffset, drawOffset);
 		}
 		else
 		{
-			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null, true,
-					drawOffset);
+			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
+					allowNegatingRizeOffset, drawOffset);
 		}
 	}
 
@@ -1469,7 +1469,7 @@ public class TextDrawer
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
 			MapText text, boolean boldBackground, Point drawOffset)
 	{
-		return drawNameSplitIfNeeded(map, g, graph, riseOffset, boldBackground, enableBoundsChecking, text, drawOffset);
+		return drawNameSplitIfNeeded(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, true, drawOffset);
 	}
 
 	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
@@ -1563,26 +1563,58 @@ public class TextDrawer
 			Area area1 = new Area(bounds1).createTransformedArea(g.getTransform());
 			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(g.getTransform());
 			// Make sure we don't draw on top of existing text.
-			if (enableBoundsChecking
-					&& ((overlapsExistingTextOrCityOrIsOffMap(area1) || (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2))
-					|| ((text.type == TextType.Lake || text.type == TextType.River || text.type == TextType.Other_mountains)
-							&& (overlapsRegionLakeOrCoastline(bounds1, textLocation, text.angle, graph)
-									|| overlapsRegionLakeOrCoastline(bounds2, textLocation, text.angle, graph))))))
+			if (enableBoundsChecking)
 			{
-				// If there is a riseOffset, try negating it to put the name
-				// below the object instead of above.
-				if (riseOffset != 0.0 && allowNegatingRizeOffset)
+				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1)
+						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2));
+				boolean overlapsRegionLakeOrCoastline = overlapsRegionLakeOrCoastline(bounds1, textLocation, text.angle, graph)
+						|| overlapsRegionLakeOrCoastline(bounds2, textLocation, text.angle, graph);
+				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region
+						|| text.type == TextType.City || text.type == TextType.Mountain_range;
+
+				if (overlapsExistingTextOrCityOrIsOffMap || overlapsRegionLakeOrCoastline)
 				{
-					g.setTransform(orig);
-					return drawNameRotated(map, g, graph, -riseOffset, enableBoundsChecking, text, boldBackground, line1, line2, false,
-							drawOffset);
-				}
-				else
-				{
-					// Give up
-					return false;
+					// If there is a riseOffset, try negating it to put the name
+					// below the object instead of above.
+					if (riseOffset != 0.0 && allowNegatingRizeOffset)
+					{
+						AffineTransform rotatedTransform = g.getTransform();
+						g.setTransform(orig);
+						if (drawNameSplitIfNeeded(map, g, graph, -riseOffset, enableBoundsChecking, text, boldBackground, false,
+								drawOffset))
+						{
+							return true;
+						}
+						else
+						{
+							if (!overlapsExistingTextOrCityOrIsOffMap && isTypeAllowedToCrossBoundaries)
+							{
+								// Allow the text to draw, so set to transform back to the rotated one.
+								g.setTransform(rotatedTransform);
+							}
+							else
+							{
+								// Give up
+								return false;
+							}
+						}
+					}
+					else
+					{
+						// I'm checking allowNegatingRizeOffset below to make sure this isn't the recursive call from above.
+						if (allowNegatingRizeOffset && !overlapsExistingTextOrCityOrIsOffMap && isTypeAllowedToCrossBoundaries)
+						{
+							// Allow the text to draw
+						}
+						else
+						{
+							// Give up
+							return false;
+						}
+					}
 				}
 			}
+
 			text.line1Area = area1;
 			text.line2Area = area2;
 			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
