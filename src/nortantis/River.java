@@ -1,7 +1,6 @@
 package nortantis;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -91,7 +90,6 @@ public class River implements Iterable<Edge>
 		Edge mouth = findMouth();
 		
 		Edge first = edges.get(0);
-		Edge last = edges.get(edges.size() - 1);
 		int distanceFromMouth = Math.min(edges.size() - maxEdgesToInclude, maxDistanceFromMouth);
 		if (first == mouth)
 		{

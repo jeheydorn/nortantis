@@ -20,16 +20,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.apache.commons.math3.exception.NoDataException;
@@ -58,6 +54,7 @@ public class TextDrawer
 	// y offset added to names of mountain groups smaller than a range.
 	private final double mountainGroupYOffset = 45;
 	private final double singleMountainYOffset = 14;
+	private final double twoMountainsYOffset = 22;
 	// Rivers narrower than this will not be named.
 	private final int riverMinWidth = 3;
 	// Rivers shorter than this will not be named. This must be at least 3.
@@ -268,14 +265,11 @@ public class TextDrawer
 		addTitle(map, graph, g);
 
 		setFontForTextType(g, TextType.City);
-		// Get the height of the city/mountain font.
-		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int cityMountainFontHeight = getFontHeight(metrics);
 		for (IconDrawTask city : cityDrawTasks)
 		{
 			Set<Point> cityLoc = new HashSet<>(1);
 			cityLoc.add(city.centerLoc);
-			String cityName = generateNameOfType(TextType.City, findCityTypeFromCityFileName(city.fileName), true);
+			String cityName = generateNameOfType(TextType.City, sampleCityTypesForCityFileName(city.fileName), true);
 			double riseOffset = city.scaledHeight / 2 + (cityYNameOffset * settings.resolution);
 			drawNameRotated(map, g, graph, cityName, cityLoc, riseOffset, true, TextType.City);
 		}
@@ -302,7 +296,8 @@ public class TextDrawer
 			{
 				setFontForTextType(g, TextType.Mountain_range);
 				Set<Point> locations = extractLocationsFromCenters(mountainGroup);
-				drawNameRotated(map, g, graph, generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true, TextType.Mountain_range);
+				drawNameRotated(map, g, graph, generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true,
+						TextType.Mountain_range);
 			}
 			else
 			{
@@ -314,7 +309,7 @@ public class TextDrawer
 						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
 						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location,
 								0.0, TextType.Other_mountains);
-						if (drawNameRotated(map, g, graph, mountainGroupYOffset * settings.resolution, true, text, false, null))
+						if (drawNameRotated(map, g, graph, twoMountainsYOffset * settings.resolution, true, text, false, null))
 						{
 							mapTexts.add(text);
 						}
@@ -364,29 +359,43 @@ public class TextDrawer
 		g.dispose();
 	}
 
-	private CityType findCityTypeFromCityFileName(String cityFileNameNoExtension)
+	public static List<CityType> findCityTypeFromCityFileName(String cityFileNameNoExtension)
 	{
-		String name = cityFileNameNoExtension.toLowerCase();
-		if (name.contains("fort") || name.contains("castle") || name.contains("keep") || name.contains("citadel"))
+		List<CityType> result = new ArrayList<>();
+		Set<String> words = new HashSet<String>(Arrays.asList(cityFileNameNoExtension.toLowerCase().split(" |_")));
+		if (words.contains("fort") || words.contains("castle") || words.contains("keep") || words.contains("citadel")
+				|| words.contains("walled"))
 		{
-			return CityType.Fortification;
-		}
-		else if (name.contains("city") || name.contains("buildings"))
-		{
-			return CityType.City;
-		}
-		else if (name.contains("town") || name.contains("village") || name.contains("houses"))
-		{
-			return CityType.Town;
-		}
-		else if (name.contains("farm") || name.contains("homestead") || name.contains("building") || name.contains("house"))
-		{
-			return CityType.Homestead;
+			result.add(CityType.Fortification);
 		}
 		else
 		{
+			if (words.contains("city") || words.contains("buildings"))
+			{
+				result.add(CityType.City);
+			}
+			if (words.contains("town") || words.contains("village") || words.contains("houses"))
+			{
+				result.add(CityType.Town);
+			}
+			if (words.contains("farm") || words.contains("homestead") || words.contains("building") || words.contains("house"))
+			{
+				result.add(CityType.Homestead);
+			}			
+		}
+		
+		return result;
+	}
+	
+	private CityType sampleCityTypesForCityFileName(String cityFileNameNoExtension)
+	{
+		List<CityType> types = findCityTypeFromCityFileName(cityFileNameNoExtension);
+		if (types.isEmpty())
+		{
 			return ProbabilityHelper.sampleEnumUniform(r, CityType.class);
 		}
+
+		return ProbabilityHelper.sampleUniform(r, types);
 	}
 
 	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, boolean onlyOneCallPerText,
@@ -411,7 +420,6 @@ public class TextDrawer
 			{
 				setFontForTextType(g, text.type);
 				FontMetrics metrics = g.getFontMetrics();
-				int fontHeight = getFontHeight(metrics);
 
 				// This method of detecting which text to draw isn't very precise, as it can have false positives,
 				// but we can't use the Areas in the text object because they get updated during text drawing,
@@ -438,7 +446,7 @@ public class TextDrawer
 
 					java.awt.Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, metrics, true);
 					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
-					
+
 					callIfMapTextIsInBounds(boundsArea, text, line1Bounds, textLocation, action);
 
 					java.awt.Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, metrics);
@@ -449,11 +457,12 @@ public class TextDrawer
 		}
 		g.dispose();
 	}
-	
+
 	private java.awt.Rectangle addBackgroundBlendingPadding(java.awt.Rectangle textBounds)
 	{
 		int padding = getBackgroundBlendingPadding(new Dimension(textBounds.width, textBounds.height));
-		return new java.awt.Rectangle(textBounds.x - padding, textBounds.y - padding, textBounds.width + padding * 2, textBounds.height + padding * 2);
+		return new java.awt.Rectangle(textBounds.x - padding, textBounds.y - padding, textBounds.width + padding * 2,
+				textBounds.height + padding * 2);
 	}
 
 	private void callIfMapTextIsInBounds(Area boundsArea, MapText text, java.awt.Rectangle lineBounds, Point pivot,
@@ -573,12 +582,6 @@ public class TextDrawer
 		{
 			throw new RuntimeException("Unkown text type: " + type);
 		}
-	}
-
-
-	private double calcHypotenuse(double a, double b)
-	{
-		return Math.sqrt(a * a + b * b);
 	}
 
 	/**
@@ -871,11 +874,6 @@ public class TextDrawer
 	private enum TitleType
 	{
 		NameOnly, Decorated
-	}
-
-	private enum CityType
-	{
-		Fortification, City, Town, Homestead,
 	}
 
 	public String generatePlaceName(String format, boolean requireUnique)
@@ -1223,7 +1221,7 @@ public class TextDrawer
 		int kernelSize = (int) ((13.0 / 54.0) * textSize.height);
 		return kernelSize;
 	}
-	
+
 	private int getBackgroundBlendingPadding(Dimension textSize)
 	{
 		return getBackgroundBlendingKernelSize(textSize) / 2;
@@ -1321,7 +1319,8 @@ public class TextDrawer
 			boolean enableBoundsChecking, MapText text, Point drawOffset)
 	{
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(text.value, textLocation, text.angle, g, graph))
+		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocation, g.getFontMetrics(), false);
+		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocation, text.angle, graph))
 		{
 			// The text doesn't fit into centerLocations. Draw it split onto two
 			// lines.
@@ -1329,11 +1328,13 @@ public class TextDrawer
 			String nameLine1 = lines.getFirst();
 			String nameLine2 = lines.getSecond();
 
-			return drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2, true, drawOffset);
+			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2, true,
+					drawOffset);
 		}
 		else
 		{
-			return drawNameRotated(map, g, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null, true, drawOffset);
+			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null, true,
+					drawOffset);
 		}
 	}
 
@@ -1465,14 +1466,14 @@ public class TextDrawer
 	 * 
 	 * @return true iff the text was drawn.
 	 */
-	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
-			boolean boldBackground, Point drawOffset)
+	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
+			MapText text, boolean boldBackground, Point drawOffset)
 	{
 		return drawNameSplitIfNeeded(map, g, graph, riseOffset, boldBackground, enableBoundsChecking, text, drawOffset);
 	}
 
-	public boolean drawNameRotated(BufferedImage map, Graphics2D g, double riseOffset, boolean enableBoundsChecking, MapText text,
-			boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset, Point drawOffset)
+	public boolean drawNameRotated(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
+			MapText text, boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
 		if (line2 != null && line2.equals(""))
 		{
@@ -1485,7 +1486,7 @@ public class TextDrawer
 		}
 
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-		
+
 		FontMetrics metrics = g.getFontMetrics();
 		int fontHeight = getFontHeight(metrics);
 		// Increase the rise offset to account for the font size.
@@ -1563,14 +1564,17 @@ public class TextDrawer
 			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(g.getTransform());
 			// Make sure we don't draw on top of existing text.
 			if (enableBoundsChecking
-					&& (overlapsExistingTextOrCityOrIsOffMap(area1) || (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2))))
+					&& ((overlapsExistingTextOrCityOrIsOffMap(area1) || (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2))
+					|| ((text.type == TextType.Lake || text.type == TextType.River || text.type == TextType.Other_mountains)
+							&& (overlapsRegionLakeOrCoastline(bounds1, textLocation, text.angle, graph)
+									|| overlapsRegionLakeOrCoastline(bounds2, textLocation, text.angle, graph))))))
 			{
 				// If there is a riseOffset, try negating it to put the name
 				// below the object instead of above.
 				if (riseOffset != 0.0 && allowNegatingRizeOffset)
 				{
 					g.setTransform(orig);
-					return drawNameRotated(map, g, -riseOffset, enableBoundsChecking, text, boldBackground, line1, line2, false,
+					return drawNameRotated(map, g, graph, -riseOffset, enableBoundsChecking, text, boldBackground, line1, line2, false,
 							drawOffset);
 				}
 				else
@@ -1653,17 +1657,6 @@ public class TextDrawer
 				size.height);
 	}
 
-	private Set<Center> findAllWaterCenters(final WorldGraph graph)
-	{
-		Set<Center> waterCenters = new HashSet<Center>();
-		for (Center c : graph.centers)
-		{
-			if (c.isWater)
-				waterCenters.add(c);
-		}
-		return waterCenters;
-	}
-
 	public Point findCentroid(Collection<Point> plateCenters)
 	{
 		Point centroid = new Point(0, 0);
@@ -1678,34 +1671,33 @@ public class TextDrawer
 		return centroid;
 	}
 
-	private boolean overlapsRegionLakeOrCoastline(String textValue, Point textLocationScaledByResolution, double angle, Graphics2D g,
-			WorldGraph graph)
+	private boolean overlapsRegionLakeOrCoastline(java.awt.Rectangle textBounds, Point pivot, double angle, WorldGraph graph)
 	{
-		Center middleCenter = graph.findClosestCenter(textLocationScaledByResolution);
-
-		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int width = metrics.stringWidth(textValue);
-		int height = getFontHeight(metrics);
-		final int checkFrequency = 10;
-		for (double x = 0; x < width; x += checkFrequency * settings.resolution)
+		if (textBounds == null)
 		{
-			if (x + checkFrequency * settings.resolution > width)
+			return false;
+		}
+
+		Center middleCenter = graph.findClosestCenter(new Point(textBounds.getCenterX(), textBounds.getCenterY()));
+
+		final int checkFrequency = 10;
+		for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
+		{
+			if (x + checkFrequency * settings.resolution > textBounds.width)
 			{
 				// This is the final iteration. Change x to be at the end of the text box.
-				x = width;
+				x = textBounds.width;
 			}
 
-			for (double y = 0; y < height; y += checkFrequency * settings.resolution)
+			for (double y = 0; y < textBounds.height; y += checkFrequency * settings.resolution)
 			{
-				if (y + checkFrequency * settings.resolution > height)
+				if (y + checkFrequency * settings.resolution > textBounds.height)
 				{
 					// This is the final iteration. Change y to be at the bottom of the text box.
-					y = height;
+					y = textBounds.height;
 				}
 
-				Point point = rotate(
-						new Point(textLocationScaledByResolution.x + x - width / 2, textLocationScaledByResolution.y + y - height / 2),
-						textLocationScaledByResolution, angle);
+				Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
 				Center c = graph.findClosestCenter(point);
 
 				if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings))

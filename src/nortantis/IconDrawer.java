@@ -35,7 +35,6 @@ import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
-import nortantis.util.Pair;
 import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
@@ -154,7 +153,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (!c.isMountain && !c.isHill && !c.isWater)
+			if (!c.isMountain && !c.isHill && !c.isWater && !c.isBorder && !c.neighbors.stream().anyMatch(n -> n.isBorder))
 			{
 				// I'm generating these numbers now instead of waiting to see if they are needed in the if statements below because
 				// there is a problem in the graph such that maps generated at different resolutions can have slight differences in their
@@ -166,11 +165,16 @@ public class IconDrawer
 				double cityByRiverProbability = rand.nextDouble();
 				double cityByCoastProbability = rand.nextDouble();
 				double randomCityProbability = rand.nextDouble();
+				double byMountainCityProbability = rand.nextDouble();
 				if (c.isRiver() && cityByRiverProbability <= cityProbability * 2)
 				{
 					c.isCity = true;
 				}
 				else if (c.isCoast && cityByCoastProbability <= cityProbability * 2)
+				{
+					c.isCity = true;
+				}
+				else if (c.neighbors.stream().anyMatch(n -> n.isMountain) && byMountainCityProbability <= cityProbability * 1.6)
 				{
 					c.isCity = true;
 				}
@@ -195,7 +199,7 @@ public class IconDrawer
 		return mountainGroups;
 
 	}
-	
+
 	/**
 	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
 	 */
@@ -237,104 +241,115 @@ public class IconDrawer
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> hillImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.hills);
-		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand)
-				.get("dunes");
+		List<Tuple2<BufferedImage, BufferedImage>> duneImages = ImageCache.getInstance(imagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
 		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityImages = ImageCache.getInstance(imagesPath)
 				.getIconsWithWidths(IconType.cities, cityIconType);
 
-			for (Center center : centersToUpdateIconsFor)
+		for (Center center : centersToUpdateIconsFor)
+		{
+			CenterEdit cEdit = edits.centerEdits.get(center.index);
+			if (cEdit.icon != null)
 			{
-				CenterEdit cEdit = edits.centerEdits.get(center.index);
-				if (cEdit.icon != null)
+				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null && !mountainImagesById.isEmpty())
 				{
-					if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null && !mountainImagesById.isEmpty())
+					String groupId = cEdit.icon.iconGroupId;
+					if (!mountainImagesById.containsKey(groupId))
 					{
-						String groupId = cEdit.icon.iconGroupId;
-						if (!mountainImagesById.containsKey(groupId))
-						{
-							// Someone removed the icon group. Choose a new group.
-							groupId = chooseNewGroupId(mountainImagesById.keySet(), groupId);
-						}
-						if (mountainImagesById.get(groupId).size() > 0)
-						{
-							int scaledSize = findScaledMountainSize(center);
-							BufferedImage mountainImage = mountainImagesById.get(groupId)
-									.get(cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getFirst();
-							BufferedImage mask = mountainImagesById.get(groupId)
-									.get(cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getSecond();
-							iconsToDraw.getOrCreate(center)
-									.add(new IconDrawTask(mountainImage, mask, IconType.mountains, center.loc, scaledSize, true, false));
-						}
+						// Someone removed the icon group. Choose a new group.
+						groupId = chooseNewGroupId(mountainImagesById.keySet(), groupId);
 					}
-					else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null && !hillImagesById.isEmpty())
+					if (mountainImagesById.get(groupId).size() > 0)
 					{
-						String groupId = cEdit.icon.iconGroupId;
-						if (!hillImagesById.containsKey(groupId))
-						{
-							// Someone removed the icon group. Choose a new group.
-							groupId = chooseNewGroupId(hillImagesById.keySet(), groupId);
-						}
-						if (hillImagesById.get(groupId).size() > 0)
-						{
-							int scaledSize = findScaledHillSize(center);
-							BufferedImage hillImage = hillImagesById.get(groupId)
-									.get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size()).getFirst();
-							BufferedImage mask = hillImagesById.get(groupId).get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size())
-									.getSecond();
-							iconsToDraw.getOrCreate(center)
-									.add(new IconDrawTask(hillImage, mask, IconType.hills, center.loc, scaledSize, true, false));
-						}
-					}
-					else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
-					{
-						BufferedImage duneImage = duneImages.get(cEdit.icon.iconIndex % duneImages.size()).getFirst();
-						BufferedImage mask = duneImages.get(cEdit.icon.iconIndex % duneImages.size()).getSecond();
+						int scaledSize = findScaledMountainSize(center);
+						BufferedImage mountainImage = mountainImagesById.get(groupId)
+								.get(cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getFirst();
+						BufferedImage mask = mountainImagesById.get(groupId)
+								.get(cEdit.icon.iconIndex % mountainImagesById.get(groupId).size()).getSecond();
 						iconsToDraw.getOrCreate(center)
-								.add(new IconDrawTask(duneImage, mask, IconType.sand, center.loc, duneWidth, true, false));
+								.add(new IconDrawTask(mountainImage, mask, IconType.mountains, center.loc, scaledSize, true, false));
 					}
-					else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
+				}
+				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null && !hillImagesById.isEmpty())
+				{
+					String groupId = cEdit.icon.iconGroupId;
+					if (!hillImagesById.containsKey(groupId))
 					{
-						BufferedImage cityImage;
-						BufferedImage mask;
-						String cityIconName = null;
-						if (cityImages.containsKey(cEdit.icon.iconName))
-						{
-							cityIconName = cEdit.icon.iconName;
-						}
-						else if (cityImages.size() > 0)
-						{
-							// Either the city image is missing, or the icon set name changed. Choose a new image in a deterministic but
-							// random way.
-							cityIconName = chooseNewGroupId(cityImages.keySet(), cEdit.icon.iconName);
-							if (cityIconName != null)
-							{
-								// Store the city icon name so that if someone later adds or removes other city icons, it doesn't affect
-								// which one is used for this center.
-								cEdit.icon.iconName = cityIconName;
-							}
-						}
+						// Someone removed the icon group. Choose a new group.
+						groupId = chooseNewGroupId(hillImagesById.keySet(), groupId);
+					}
+					if (hillImagesById.get(groupId).size() > 0)
+					{
+						int scaledSize = findScaledHillSize(center);
+						BufferedImage hillImage = hillImagesById.get(groupId).get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size())
+								.getFirst();
+						BufferedImage mask = hillImagesById.get(groupId).get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size())
+								.getSecond();
+						iconsToDraw.getOrCreate(center)
+								.add(new IconDrawTask(hillImage, mask, IconType.hills, center.loc, scaledSize, true, false));
+					}
+				}
+				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
+				{
+					BufferedImage duneImage = duneImages.get(cEdit.icon.iconIndex % duneImages.size()).getFirst();
+					BufferedImage mask = duneImages.get(cEdit.icon.iconIndex % duneImages.size()).getSecond();
+					iconsToDraw.getOrCreate(center)
+							.add(new IconDrawTask(duneImage, mask, IconType.sand, center.loc, duneWidth, true, false));
+				}
+				else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
+				{
+					BufferedImage cityImage;
+					BufferedImage mask;
+					String cityIconName = null;
+					if (cityImages.containsKey(cEdit.icon.iconName))
+					{
+						cityIconName = cEdit.icon.iconName;
+					}
+					else if (cityImages.size() > 0)
+					{
+						// Either the city image is missing, or the icon set name changed. Choose a new image in a deterministic but
+						// random way.
+						cityIconName = chooseNewCityIconName(cityImages.keySet(), cEdit.icon.iconName);
 						if (cityIconName != null)
 						{
-							cityImage = cityImages.get(cityIconName).getFirst();
-							mask = cityImages.get(cityIconName).getSecond();
-							iconsToDraw.getOrCreate(center).add(
-									new IconDrawTask(
-											cityImage, mask, IconType.cities, center.loc,
-											(int) (cityImages.get(cityIconName).getThird() * cityScale), true, true, cityIconName
-									)
-							);
+							// Store the city icon name so that if someone later adds or removes other city icons, it doesn't affect
+							// which one is used for this center.
+							cEdit.icon.iconName = cityIconName;
 						}
 					}
-
+					if (cityIconName != null)
+					{
+						cityImage = cityImages.get(cityIconName).getFirst();
+						mask = cityImages.get(cityIconName).getSecond();
+						iconsToDraw.getOrCreate(center).add(new IconDrawTask(cityImage, mask, IconType.cities, center.loc,
+								(int) (cityImages.get(cityIconName).getThird() * cityScale), true, true, cityIconName));
+					}
 				}
 
-				if (cEdit.trees != null)
-				{
-					trees.put(cEdit.index, cEdit.trees);
-				}
 			}
 
-			drawTreesForCenters(centersToUpdateIconsFor);
+			if (cEdit.trees != null)
+			{
+				trees.put(cEdit.index, cEdit.trees);
+			}
+		}
+
+		drawTreesForCenters(centersToUpdateIconsFor);
+	}
+
+	public static String chooseNewCityIconName(Set<String> cityNamesToChooseFrom, String oldIconName)
+	{
+		List<CityType> oldTypes = TextDrawer.findCityTypeFromCityFileName(oldIconName);
+		List<String> compatibleCities = cityNamesToChooseFrom.stream()
+				.filter(name -> TextDrawer.findCityTypeFromCityFileName(name).stream().anyMatch(type -> oldTypes.contains(type)))
+				.collect(Collectors.toList());
+		if (compatibleCities.isEmpty())
+		{
+			int index = Math.abs(oldIconName.hashCode() % cityNamesToChooseFrom.size());
+			return new ArrayList<>(cityNamesToChooseFrom).get(index);
+		}
+		int index = Math.abs(oldIconName.hashCode() % compatibleCities.size());
+		return compatibleCities.get(index);
 	}
 
 	public boolean doesCityFitOnLand(Center center, CenterIcon cityIcon)
@@ -357,10 +372,8 @@ public class IconDrawer
 		BufferedImage mask = cityImages.get(cityIcon.iconName).getSecond();
 
 		// Create an icon draw task just for checking if the city fits on land. It won't actually be drawn.
-		IconDrawTask task = new IconDrawTask(
-				cityImage, mask, IconType.cities, center.loc, (int) (cityImages.get(cityIcon.iconName).getThird() * cityScale), true, true,
-				cityIcon.iconName
-		);
+		IconDrawTask task = new IconDrawTask(cityImage, mask, IconType.cities, center.loc,
+				(int) (cityImages.get(cityIcon.iconName).getThird() * cityScale), true, true, cityIcon.iconName);
 		return !isIconTouchingWater(task);
 	}
 
@@ -387,8 +400,8 @@ public class IconDrawer
 
 	private String chooseNewGroupId(Set<String> groupIds, String oldGroupId)
 	{
-		int randomIndex = Math.abs(oldGroupId.hashCode() % groupIds.size());
-		return groupIds.toArray(new String[groupIds.size()])[randomIndex];
+		int index = Math.abs(oldGroupId.hashCode() % groupIds.size());
+		return groupIds.toArray(new String[groupIds.size()])[index];
 	}
 
 	/**
@@ -551,10 +564,8 @@ public class IconDrawer
 			// Updates to the line below will will likely need to also update doesCityFitOnLand.
 			if (!isIconTouchingWater(task))
 			{
-				drawIconWithBackgroundAndMask(
-						mapOrSnippet, task.icon, task.mask, background, ((int) task.centerLoc.x) - xToSubtract,
-						((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize
-				);
+				drawIconWithBackgroundAndMask(mapOrSnippet, task.icon, task.mask, background, ((int) task.centerLoc.x) - xToSubtract,
+						((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
 			}
 			else
 			{
@@ -572,29 +583,29 @@ public class IconDrawer
 	 */
 	public void removeIconEditsThatFailedToDraw(MapEdits edits, WorldGraph graph)
 	{
-			for (CenterEdit cEdit : edits.centerEdits)
+		for (CenterEdit cEdit : edits.centerEdits)
+		{
+			// I only handle center icons, not trees, since I don't want to stop drawing all trees for a center just because
+			// some of them ended up in the ocean.
+
+			if (cEdit.icon == null)
 			{
-				// I only handle center icons, not trees, since I don't want to stop drawing all trees for a center just because
-				// some of them ended up in the ocean.
+				continue;
+			}
 
-				if (cEdit.icon == null)
+			Center center = graph.centers.get(cEdit.index);
+			List<IconDrawTask> tasks = iconsToDraw.get(center);
+			if (tasks != null && tasks.stream().anyMatch(task -> task.type != IconType.trees && task.failedToDraw))
+			{
+				cEdit.icon = null;
+				List<IconDrawTask> tasksToRemove = tasks.stream().filter(task -> task.type != IconType.trees && task.failedToDraw)
+						.collect(Collectors.toList());
+				for (IconDrawTask toRemove : tasksToRemove)
 				{
-					continue;
-				}
-
-				Center center = graph.centers.get(cEdit.index);
-				List<IconDrawTask> tasks = iconsToDraw.get(center);
-				if (tasks != null && tasks.stream().anyMatch(task -> task.type != IconType.trees && task.failedToDraw))
-				{
-					cEdit.icon = null;
-					List<IconDrawTask> tasksToRemove = tasks.stream().filter(task -> task.type != IconType.trees && task.failedToDraw)
-							.collect(Collectors.toList());
-					for (IconDrawTask toRemove : tasksToRemove)
-					{
-						tasks.remove(toRemove);
-					}
+					tasks.remove(toRemove);
 				}
 			}
+		}
 	}
 
 	/**
@@ -624,9 +635,8 @@ public class IconDrawer
 				int scaledWidth = (int) (cityIcons.get(cityName).getThird() * cityScale);
 				BufferedImage icon = cityIcons.get(cityName).getFirst();
 
-				IconDrawTask task = new IconDrawTask(
-						icon, cityIcons.get(cityName).getSecond(), IconType.cities, c.loc, scaledWidth, true, true, cityName
-				);
+				IconDrawTask task = new IconDrawTask(icon, cityIcons.get(cityName).getSecond(), IconType.cities, c.loc, scaledWidth, true,
+						true, cityName);
 				// Updates to the line below will will likely need to also update doesCityFitOnLand.
 				if (!isIconTouchingWater(task) && !isNeighborACity(c))
 				{
@@ -647,7 +657,7 @@ public class IconDrawer
 
 		return cities;
 	}
-	
+
 	private boolean isNeighborACity(Center center)
 	{
 		return center.neighbors.stream().anyMatch(c -> c.isCity);
@@ -681,9 +691,8 @@ public class IconDrawer
 		{
 			if (!hillImagesById.containsKey(mountainGroupId))
 			{
-				Logger.println(
-						"No hill images found for the mountain group \"" + mountainGroupId + "\". That mountain group will not have hills."
-				);
+				Logger.println("No hill images found for the mountain group \"" + mountainGroupId
+						+ "\". That mountain group will not have hills.");
 			}
 		}
 
@@ -715,11 +724,9 @@ public class IconDrawer
 					// Make sure the image will be at least 1 pixel wide.
 					if (scaledSize >= 1)
 					{
-						IconDrawTask task = new IconDrawTask(
-								imagesInRange.get(i).getFirst(), imagesInRange.get(i).getSecond(), IconType.mountains, c.loc, scaledSize,
-								true, false
-						);
-						
+						IconDrawTask task = new IconDrawTask(imagesInRange.get(i).getFirst(), imagesInRange.get(i).getSecond(),
+								IconType.mountains, c.loc, scaledSize, true, false);
+
 						if (!isIconTouchingWater(task))
 						{
 							// Draw the image such that it is centered in the center of c.
@@ -745,14 +752,12 @@ public class IconDrawer
 						// Make sure the image will be at least 1 pixel wide.
 						if (scaledSize >= 1)
 						{
-							IconDrawTask task = new IconDrawTask(
-									imagesInGroup.get(i).getFirst(), imagesInGroup.get(i).getSecond(), IconType.hills, c.loc,
-									scaledSize, true, false
-							);
+							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i).getFirst(), imagesInGroup.get(i).getSecond(),
+									IconType.hills, c.loc, scaledSize, true, false);
 							if (!isIconTouchingWater(task))
 							{
 								iconsToDraw.getOrCreate(c).add(task);
-								centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));								
+								centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));
 							}
 							else
 							{
@@ -826,12 +831,8 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = rand.nextInt(duneImages.size());
-						iconsToDraw.getOrCreate(c).add(
-								new IconDrawTask(
-										duneImages.get(i).getFirst(), duneImages.get(i).getSecond(), IconType.sand, c.loc, duneWidth, true,
-										false
-								)
-						);
+						iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i).getFirst(), duneImages.get(i).getSecond(),
+								IconType.sand, c.loc, duneWidth, true, false));
 						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
 					}
 				}
@@ -972,13 +973,9 @@ public class IconDrawer
 
 			for (Tuple2<BufferedImage, BufferedImage> tuple : imageGroup)
 			{
-				scaledTreesById.add(
-						groupName,
-						new Tuple2<>(
-								ImageCache.getInstance(imagesPath).getScaledImageByHeight(tuple.getFirst(), scaledHeight),
-								ImageCache.getInstance(imagesPath).getScaledImageByHeight(tuple.getSecond(), scaledHeight)
-						)
-				);
+				scaledTreesById.add(groupName,
+						new Tuple2<>(ImageCache.getInstance(imagesPath).getScaledImageByHeight(tuple.getFirst(), scaledHeight),
+								ImageCache.getInstance(imagesPath).getScaledImageByHeight(tuple.getSecond(), scaledHeight)));
 			}
 		}
 
@@ -1126,10 +1123,8 @@ public class IconDrawer
 		{
 			for (int y = 0; y < precision; y++)
 			{
-				Center center = graph.findClosestCenter(
-						imageUpperLeftX + (int) (iconTask.scaledWidth * (x / precision)),
-						(imageUpperLeftY - (int) (iconTask.scaledHeight * (y / precision)))
-				);
+				Center center = graph.findClosestCenter(imageUpperLeftX + (int) (iconTask.scaledWidth * (x / precision)),
+						(imageUpperLeftY - (int) (iconTask.scaledHeight * (y / precision))));
 				if (center.isWater)
 					return true;
 			}

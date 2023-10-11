@@ -70,7 +70,7 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "mountains"
 				+ File.separator + "<mountain type>" + File.separator + "<mountain images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "sand"
-				+ File.separator + "<sand type>" + File.separator + "<sand images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+				+ File.separator + "dunes" + File.separator + "<sand dune images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "trees"
 				+ File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 

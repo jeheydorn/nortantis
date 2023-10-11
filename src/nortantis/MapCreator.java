@@ -1,16 +1,13 @@
 package nortantis;
 
-import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,7 +28,6 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;
-import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -39,10 +35,8 @@ import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
-import nortantis.util.Pair;
 import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
-import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
 public class MapCreator

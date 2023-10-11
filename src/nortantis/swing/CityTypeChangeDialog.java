@@ -26,12 +26,14 @@ public class CityTypeChangeDialog extends JDialog
 		
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		setSize(new Dimension(450, 240));
+		setSize(new Dimension(450, 290));
 		
 		organizer.addLeftAlignedComponent(new JLabel("<html>Maps can use only one city icon type, so changing the city icons type will cause all existing city icons to"
-				+ " be randomly changed to icons in the new type. This is because city icon types are designed to only include"
-				+ " icons which make sense to place together in a generated map. Do you wish to continue changing the city icon type for"
-				+ " this map?</html>"));
+				+ " be changed to icons in the new type. This is because city icon types are designed to only include"
+				+ " icons which make sense to place together in a generated map. If the new city icon type doesn't have an image with the"
+				+ " same name (ignoring the 'width=...' part), then Nortantis will try to choose a new icon similar to the old one based"
+				+ " on the following keywords in the file name: fort, castle, keep, citadel, walled, city, buildings, town, village, houses,"
+				+ " farm, homestead, building, house."));
 
 		JComboBox<String> cityIconsSetComboBox = new JComboBox<String>();
 		SwingHelper.initializeComboBoxItems(cityIconsSetComboBox, ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities), 
@@ -42,7 +44,8 @@ public class CityTypeChangeDialog extends JDialog
 
 		JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
-		JButton acceptButton = new JButton("Change City Icon Type and Randomly Shuffle Cities");
+		JButton acceptButton = new JButton("<html><u>O</u>K</html>");
+		acceptButton.setMnemonic('o');
 		acceptButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -54,7 +57,8 @@ public class CityTypeChangeDialog extends JDialog
 			}
 		});
 		buttonsPanel.add(acceptButton);
-		JButton cancelButton = new JButton("Cancel");
+		JButton cancelButton = new JButton("<html><u>C</u>ancel<html>");
+		cancelButton.setMnemonic('c');
 		cancelButton.addActionListener(new ActionListener()
 		{
 			@Override
