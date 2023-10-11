@@ -26,7 +26,7 @@ public class CityTypeChangeDialog extends JDialog
 		
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));
-		setSize(new Dimension(450, 290));
+		setSize(new Dimension(450, 318));
 		
 		organizer.addLeftAlignedComponent(new JLabel("<html>Maps can use only one city icon type, so changing the city icons type will cause all existing city icons to"
 				+ " be changed to icons in the new type. This is because city icon types are designed to only include"
