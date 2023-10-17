@@ -119,6 +119,7 @@ public class ThemePanel extends JTabbedPane
 	private JButton grungeColorChooseButton;
 	private JCheckBox allowTopsOfIconsToOverlapOceanCheckbox;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
+	private JSlider treeHeightSlider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -640,6 +641,17 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
 				Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
 		
+
+		organizer.addSeperator();
+		treeHeightSlider = new JSlider(1, 15);
+		treeHeightSlider.setMajorTickSpacing(2);
+		treeHeightSlider.setMinorTickSpacing(1);
+		treeHeightSlider.setPaintTicks(true);
+		treeHeightSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
+		createMapChangeListenerForTerrainChange(treeHeightSlider);
+		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
+		
 		//organizer.addSeperator();
 		allowTopsOfIconsToOverlapOceanCheckbox = new JCheckBox("Allow the tops of icons to protrude over coastlines");
 		//organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapOceanCheckbox); TODO put back when this feature is ready
@@ -1063,6 +1075,7 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 		
+		treeHeightSlider.setValue((int)(Math.round((settings.treeHeightScale - 0.1) * 20.0)));
 		allowTopsOfIconsToOverlapOceanCheckbox.setSelected(settings.allowTopsOfIconsToOverlapOcean);
 
 		if (changeEffectsBackgroundImages)
@@ -1190,6 +1203,7 @@ public class ThemePanel extends JTabbedPane
 		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
 		
+		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
 		settings.allowTopsOfIconsToOverlapOcean = allowTopsOfIconsToOverlapOceanCheckbox.isSelected();
 	}
 

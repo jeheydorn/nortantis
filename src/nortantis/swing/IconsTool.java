@@ -312,7 +312,7 @@ public class IconsTool extends EditorTool
 		}
 
 		densitySlider = new JSlider(1, 50);
-		densitySlider.setValue(10);
+		densitySlider.setValue(18);
 		SwingHelper.setSliderWidthForSidePanel(densitySlider);
 		densityHider = organizer.addLabelAndComponent("Density:", "", densitySlider);
 

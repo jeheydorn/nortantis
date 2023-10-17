@@ -622,6 +622,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 
 		refreshMenuItem = new JMenuItem("Refresh Images and Redraw");
+		refreshMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
 		fileMenu.add(refreshMenuItem);
 		refreshMenuItem.addActionListener(new ActionListener()
 		{

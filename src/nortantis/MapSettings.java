@@ -115,6 +115,7 @@ public class MapSettings implements Serializable
 	public String heightmapExportPath;
 	public double heightmapResolution = 1.0;
 	public String customImagesPath;
+	public double treeHeightScale;
 
 	/**
 	 * Default values for new settings
@@ -255,6 +256,8 @@ public class MapSettings implements Serializable
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
 		root.put("customImagesPath", customImagesPath);
+		
+		root.put("treeHeightScale", treeHeightScale);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -549,6 +552,15 @@ public class MapSettings implements Serializable
 		if (root.containsKey("customImagesPath"))
 		{
 			customImagesPath = (String) root.get("customImagesPath");
+		}
+		
+		if (root.containsKey("treeHeightScale"))
+		{
+			treeHeightScale = (double) root.get("treeHeightScale");
+		}
+		else
+		{
+			treeHeightScale = 0.5;
 		}
 
 		edits = new MapEdits();

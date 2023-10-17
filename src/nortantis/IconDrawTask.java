@@ -4,6 +4,7 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 import nortantis.graph.geom.Point;
+import nortantis.graph.geom.Rectangle;
 import nortantis.util.AssetsPath;
 
 /**
@@ -22,6 +23,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	boolean needsScale;
 	boolean ignoreMaxSize;
 	String fileName;
+	Rectangle contentBounds;
 	
 	/**
 	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn. 

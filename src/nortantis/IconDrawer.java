@@ -44,7 +44,6 @@ public class IconDrawer
 {
 	public static final double mountainElevationThreshold = 0.58;
 	public static final double hillElevationThreshold = 0.53;
-	final double treeScale = 4.0 / 8.0;
 	final double meanPolygonWidth;
 	final int duneWidth;
 	final double cityScale;
@@ -88,7 +87,7 @@ public class IconDrawer
 		}
 
 		meanPolygonWidth = findMeanCenterWidth(graph);
-		duneWidth = (int) (meanPolygonWidth * 1.5);
+		duneWidth = (int) (meanPolygonWidth * 1.2);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
 		cityScale = meanPolygonWidth * (1.0 / 11.0);
 		centerIcons = new HashMap<>();
@@ -233,7 +232,8 @@ public class IconDrawer
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
 	 * done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor)
+	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor, 
+			double treeHeightScale)
 	{
 		clearIconsForCenters(centersToUpdateIconsFor);
 
@@ -334,7 +334,7 @@ public class IconDrawer
 			}
 		}
 
-		drawTreesForCenters(centersToUpdateIconsFor);
+		drawTreesForCenters(centersToUpdateIconsFor, treeHeightScale);
 	}
 
 	public static String chooseNewCityIconName(Set<String> cityNamesToChooseFrom, String oldIconName)
@@ -841,10 +841,10 @@ public class IconDrawer
 		}
 	}
 
-	public void addTrees()
+	public void addTrees(double treeHeightScale)
 	{
 		addCenterTrees();
-		drawTreesForCenters(graph.centers);
+		drawTreesForCenters(graph.centers, treeHeightScale);
 	}
 
 	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
@@ -877,11 +877,11 @@ public class IconDrawer
 	static
 	{
 		forestTypes = new ArrayList<>();
-		forestTypes.add(new ForestType(TreeType.Deciduous, Biome.TEMPERATE_RAIN_FOREST, 0.5, 1.0));
-		forestTypes.add(new ForestType(TreeType.Pine, Biome.TAIGA, 1.0, 1.0));
-		forestTypes.add(new ForestType(TreeType.Pine, Biome.SHRUBLAND, 1.0, 1.0));
-		forestTypes.add(new ForestType(TreeType.Pine, Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25));
-		forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 1.0 / 8.0, 0.1));
+		forestTypes.add(new ForestType(TreeType.Deciduous, Biome.TEMPERATE_RAIN_FOREST, 1.0, 1.0));
+		forestTypes.add(new ForestType(TreeType.Pine, Biome.TAIGA, 2.0, 1.0));
+		forestTypes.add(new ForestType(TreeType.Pine, Biome.SHRUBLAND, 2.0, 1.0));
+		forestTypes.add(new ForestType(TreeType.Pine, Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST, 2.0, 0.25));
+		forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 0.25, 0.1));
 	}
 
 	private void addCenterTrees()
@@ -943,7 +943,7 @@ public class IconDrawer
 	/**
 	 * Draws all trees in this.trees.
 	 */
-	public void drawTreesForCenters(Collection<Center> centersToDraw)
+	public void drawTreesForCenters(Collection<Center> centersToDraw, double treeHeightScale)
 	{
 		// Load the images and masks.
 		ListMap<String, Tuple2<BufferedImage, BufferedImage>> treesById = ImageCache.getInstance(imagesPath)
@@ -955,7 +955,7 @@ public class IconDrawer
 		}
 
 		// Make the tree images small. I make them all the same height.
-		int scaledHeight = (int) (averageCenterWidthBetweenNeighbors * treeScale);
+		int scaledHeight = (int) (averageCenterWidthBetweenNeighbors * treeHeightScale);
 		if (scaledHeight == 0)
 		{
 			// Don't draw trees if they would all be size zero.

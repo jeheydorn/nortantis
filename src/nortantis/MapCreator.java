@@ -196,7 +196,7 @@ public class MapCreator
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
-		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersChanged);
+		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersChanged, settings.treeHeightScale);
 
 		// Now that we've updated icons to draw in centersChanged, check if we
 		// need to expand replaceBounds to include those icons.
@@ -697,7 +697,7 @@ public class MapCreator
 		}
 		else
 		{
-			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers, settings.treeHeightScale);
 		}
 
 		checkForCancel();
@@ -760,7 +760,7 @@ public class MapCreator
 			iconDrawer.addSandDunes();
 
 			Logger.println("Adding trees.");
-			iconDrawer.addTrees();
+			iconDrawer.addTrees(settings.treeHeightScale);
 
 			Logger.println("Adding cities.");
 			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
