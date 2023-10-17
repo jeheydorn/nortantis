@@ -165,10 +165,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		nameGeneratorMenuItem.setEnabled(enable);
 
-		for (JRadioButtonMenuItem button : displayQualityButtons)
-		{
-			button.setEnabled(enable);
-		}
 		highlightLakesButton.setEnabled(enable);
 		highlightRiversButton.setEnabled(enable);
 

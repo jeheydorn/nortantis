@@ -138,7 +138,7 @@ public class ToolsPanel extends JPanel
 				"Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels," + " adjust View > Display Quality."
 		);
 
-		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "125%", "150%", "200%" });
+		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{

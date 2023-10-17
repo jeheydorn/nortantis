@@ -118,7 +118,7 @@ public class MapCreator
 	private Rectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, BufferedImage fullSizedMap,
 			Set<Center> centersChanged, Set<Edge> edgesChanged)
 	{
-		//Stopwatch updateSW = new Stopwatch("incremental update");
+		// Stopwatch updateSW = new Stopwatch("incremental update");
 
 		centersChanged = new HashSet<>(centersChanged);
 
@@ -208,9 +208,11 @@ public class MapCreator
 			}
 		}
 
-		// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line to two or vice
+		// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line to
+		// two or vice
 		// versa.
-		Rectangle textChangeBounds = mapParts.textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds, settings);
+		Rectangle textChangeBounds = mapParts.textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph,
+				centersChangedBounds, settings);
 		replaceBounds = replaceBounds.add(textChangeBounds).floor();
 
 		// The bounds of the snippet to draw. This is larger than the snippet to
@@ -252,12 +254,6 @@ public class MapCreator
 		drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
 
 		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
-
-		// Add the rivers to landBackground so that the text doesn't erase them.
-		// I do this whether or not I draw text because I might draw the text
-		// later.
-		// This is done after icon drawing so that rivers draw behind icons.
-		drawRivers(settings, mapParts.graph, landBackground, sizeMultiplier, edgesToDraw, drawBounds);
 
 		// Draw ocean
 		{
@@ -341,21 +337,21 @@ public class MapCreator
 		// Update the snippet in the main map.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
-		
+
 		// Debug code
-//		Graphics2D g = fullSizedMap.createGraphics();
-//		int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-//		g.setStroke(new BasicStroke(4));
-//		g.setColor(Color.red);
-//		{
-//			java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-//					replaceBounds.width, replaceBounds.height).toAwtRectangle();
-//			g.drawRect(rect.x, rect.y, rect.width, rect.height);
-//		}
-		
+		// Graphics2D g = fullSizedMap.createGraphics();
+		// int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+		// g.setStroke(new BasicStroke(4));
+		// g.setColor(Color.red);
+		// {
+		// java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+		// replaceBounds.width, replaceBounds.height).toAwtRectangle();
+		// g.drawRect(rect.x, rect.y, rect.width, rect.height);
+		// }
+
 
 		// Print run time TODO comment out
-		//updateSW.printElapsedTime();
+		// updateSW.printElapsedTime();
 
 		return replaceBounds;
 	}
@@ -496,16 +492,6 @@ public class MapCreator
 			landBackground = mapParts.landBackground;
 			mountainGroups = null;
 			cities = null;
-		}
-
-		checkForCancel();
-
-		// Add region boundaries to landBackground so that they show up when text draws.
-		if (settings.drawRegionColors)
-		{
-			Graphics2D g = landBackground.createGraphics();
-			g.setColor(settings.coastlineColor);
-			graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 		}
 
 		checkForCancel();
@@ -671,7 +657,8 @@ public class MapCreator
 		boolean needToAddIcons;
 		if (mapParts == null || mapParts.iconDrawer == null)
 		{
-			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconTypeName, settings.customImagesPath);
+			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings.cityIconTypeName, settings.customImagesPath,
+					settings.resolution);
 			if (mapParts != null)
 			{
 				mapParts.iconDrawer = iconDrawer;

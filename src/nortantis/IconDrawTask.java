@@ -23,7 +23,6 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	boolean needsScale;
 	boolean ignoreMaxSize;
 	String fileName;
-	Rectangle contentBounds;
 	
 	/**
 	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn. 
