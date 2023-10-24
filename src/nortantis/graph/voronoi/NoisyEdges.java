@@ -305,13 +305,13 @@ public class NoisyEdges
 		}
 		else
 		{
-			if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
-			{
-				return EdgeType.Region;
-			}
 			if (edge.d0.isWater != edge.d1.isWater)
 			{
 				return EdgeType.Coast;
+			}
+			if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
+			{
+				return EdgeType.Region;
 			}
 			if (edge.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && !edge.isOceanOrLakeOrShore())
 			{

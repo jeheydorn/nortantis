@@ -311,10 +311,23 @@ public class IconsTool extends EditorTool
 					Arrays.asList(riverWidthSlider, riverWidthDisplay));
 		}
 
-		densitySlider = new JSlider(1, 50);
-		densitySlider.setValue(18);
-		SwingHelper.setSliderWidthForSidePanel(densitySlider);
-		densityHider = organizer.addLabelAndComponent("Density:", "", densitySlider);
+		{
+			densitySlider = new JSlider(1, 50);
+			final int initialValue = 18;
+			densitySlider.setValue(initialValue);
+			SwingHelper.setSliderWidthForSidePanel(densitySlider);
+			JLabel densityDisplay = new JLabel(initialValue + "");
+			densityDisplay.setPreferredSize(new Dimension(13, densityDisplay.getPreferredSize().height));
+			densitySlider.addChangeListener(new ChangeListener()
+			{
+				@Override
+				public void stateChanged(ChangeEvent e)
+				{
+					densityDisplay.setText(densitySlider.getValue() + "");
+				}
+			});
+			densityHider = organizer.addLabelAndComponentsHorizontal("Density:", "", Arrays.asList(densitySlider, densityDisplay));
+		}
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -514,7 +527,8 @@ public class IconsTool extends EditorTool
 		worker.execute();
 	}
 
-	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons, String customImagesPath)
+	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons,
+			String customImagesPath)
 	{
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
@@ -961,14 +975,14 @@ public class IconsTool extends EditorTool
 				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
 			}
 			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
-			
+
 			// Debug code.
-//			System.out.println("Highlighted edge indexes:");
-//			for (Edge edge : candidates)
-//			{
-//				System.out.println(edge.index);
-//			}
-			
+			// System.out.println("Highlighted edge indexes:");
+			// for (Edge edge : candidates)
+			// {
+			// System.out.println(edge.index);
+			// }
+
 			for (Edge edge : candidates)
 			{
 				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);

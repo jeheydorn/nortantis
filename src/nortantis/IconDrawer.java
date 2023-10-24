@@ -981,6 +981,13 @@ public class IconDrawer
 			}
 		}
 
+		// The purpose of the number below is to make it so that adjusting the height of trees also adjusts the density so that the spacing between trees remains
+		// looking about the same. As for how I calculated this number, the minimum treeHeightScale is 0.1, and each tick on the tree height slider increases by 0.05,
+		// with the highest possible value being 0.85. So I then fitted a curve to (0.1, 6), (0.35, 1), (0.5, 0.5), (0.65, 0.3) and (0.85, 0.15).
+		// The first point is the minimum tree height. The second is the default. The third is the old default. The fourth is the maximum.
+		double densityScale = 71.5152 * (treeHeightScale * treeHeightScale * treeHeightScale * treeHeightScale) - 178.061 * (treeHeightScale * treeHeightScale * treeHeightScale)
+		+ 164.876 * (treeHeightScale * treeHeightScale) - 68.633 * treeHeightScale + 11.3855;
+				
 		for (Center c : centersToDraw)
 		{
 			CenterTrees cTrees = trees.get(c.index);
@@ -988,7 +995,7 @@ public class IconDrawer
 			{
 				if (cTrees.treeType != null && scaledTreesById.containsKey(cTrees.treeType))
 				{
-					drawTreesAtCenterAndCorners(graph, cTrees.density, scaledTreesById.get(cTrees.treeType), c);
+					drawTreesAtCenterAndCorners(graph, cTrees.density * densityScale, scaledTreesById.get(cTrees.treeType), c);
 				}
 			}
 		}

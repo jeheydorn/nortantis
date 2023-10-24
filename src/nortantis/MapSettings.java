@@ -895,7 +895,8 @@ public class MapSettings implements Serializable
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
 				&& Objects.equals(customImagesPath, other.customImagesPath) && Objects.equals(defaultRoadColor, other.defaultRoadColor)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
-				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionColors == other.drawRegionColors
+				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
 				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
@@ -916,9 +917,9 @@ public class MapSettings implements Serializable
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
 				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
 				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
-				&& Objects.equals(titleFont, other.titleFont) && Objects.equals(version, other.version) && worldSize == other.worldSize;
+				&& Objects.equals(titleFont, other.titleFont)
+				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
+				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
-
 
 }

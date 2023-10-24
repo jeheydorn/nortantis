@@ -643,6 +643,7 @@ public class ThemePanel extends JTabbedPane
 		
 
 		organizer.addSeperator();
+		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
 		treeHeightSlider = new JSlider(1, 15);
 		treeHeightSlider.setMajorTickSpacing(2);
 		treeHeightSlider.setMinorTickSpacing(1);
