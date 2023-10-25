@@ -62,7 +62,7 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected JPanel createToolsOptionsPanel()
+	protected JPanel createToolOptionsPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 

@@ -76,16 +76,10 @@ public class IconsTool extends EditorTool
 	private Random rand;
 	private RowHider densityHider;
 	private JRadioButton eraseAllButton;
-	private JRadioButton riversButton;
 	private JRadioButton citiesButton;
-	private RowHider riverOptionHider;
-	private JSlider riverWidthSlider;
-	private Corner riverStart;
 	private RowHider cityTypeHider;
 	private JLabel lblCityIconType;
 	private final String cityTypeNotSetPlaceholder = "<not set>";
-	private JToggleButton drawModeButton;
-	private JToggleButton eraseModeButton;
 	private RowHider modeHider;
 	private JCheckBox onlyUpdateMountainsCheckbox;
 	private RowHider onlyUpdateMountainsCheckboxHider;
@@ -95,6 +89,7 @@ public class IconsTool extends EditorTool
 	private RowHider onlyUpdateTreesCheckboxHider;
 	private JCheckBox onlyUpdateDunesCheckbox;
 	private RowHider onlyUpdateDunesCheckboxHider;
+	private DrawAndEraseModeWidget modeWidget;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -125,7 +120,7 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	protected JPanel createToolsOptionsPanel()
+	protected JPanel createToolOptionsPanel()
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
 
@@ -186,18 +181,6 @@ public class IconsTool extends EditorTool
 				}
 			});
 
-			riversButton = new JRadioButton("Rivers");
-			group.add(riversButton);
-			radioButtons.add(riversButton);
-			riversButton.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent event)
-				{
-					updateTypePanels();
-				}
-			});
-
 			citiesButton = new JRadioButton("Cities");
 			group.add(citiesButton);
 			radioButtons.add(citiesButton);
@@ -224,46 +207,9 @@ public class IconsTool extends EditorTool
 
 			organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
 		}
-
-		ActionListener modeListener = new ActionListener()
-		{
-
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				if (e != null && e.getSource() == eraseModeButton)
-				{
-					drawModeButton.setSelected(false);
-					if (!eraseModeButton.isSelected())
-					{
-						eraseModeButton.setSelected(true);
-					}
-					eraseModeButton.grabFocus();
-				}
-				else
-				{
-					// Draw button
-					eraseModeButton.setSelected(false);
-					if (!drawModeButton.isSelected())
-					{
-						drawModeButton.setSelected(true);
-					}
-					drawModeButton.grabFocus();
-				}
-				updateTypePanels();
-			}
-		};
-		drawModeButton = new JToggleButton("<html><u>D</u>raw</html>");
-		drawModeButton.setToolTipText("Draw using the selected brush (Alt+D)");
-		drawModeButton.setSelected(true);
-		drawModeButton.addActionListener(modeListener);
-		drawModeButton.setMnemonic(KeyEvent.VK_D);
-		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
-		eraseModeButton.setToolTipText("Erase using the selected brush (Alt+E)");
-		eraseModeButton.addActionListener(modeListener);
-		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		modeHider = organizer.addLabelAndComponentsHorizontal("Mode:", "Whether to draw or erase using the selected brush type.",
-				Arrays.asList(drawModeButton, eraseModeButton), 0, 5);
+		
+		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush", () -> updateTypePanels());
+		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
 
 		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes, null);
 		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes, null);
@@ -289,27 +235,6 @@ public class IconsTool extends EditorTool
 				Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
 
 		createOrUpdateRadioButtonsForCities(organizer, null);
-
-		// River options
-		{
-			riverWidthSlider = new JSlider(1, 15);
-			final int initialValue = 1;
-			riverWidthSlider.setValue(initialValue);
-			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
-			JLabel riverWidthDisplay = new JLabel(initialValue + "");
-			riverWidthDisplay.setPreferredSize(new Dimension(13, riverWidthDisplay.getPreferredSize().height));
-			riverWidthSlider.addChangeListener(new ChangeListener()
-			{
-				@Override
-				public void stateChanged(ChangeEvent e)
-				{
-					riverWidthDisplay.setText(riverWidthSlider.getValue() + "");
-				}
-			});
-			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:",
-					"River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.",
-					Arrays.asList(riverWidthSlider, riverWidthDisplay));
-		}
 
 		{
 			densitySlider = new JSlider(1, 50);
@@ -380,23 +305,21 @@ public class IconsTool extends EditorTool
 	private void updateTypePanels()
 	{
 		modeHider.setVisible(mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected()
-				|| treesButton.isSelected() || riversButton.isSelected() || citiesButton.isSelected());
+				|| treesButton.isSelected() || citiesButton.isSelected());
 
-		mountainTypes.hider.setVisible(mountainsButton.isSelected() && drawModeButton.isSelected());
-		hillTypes.hider.setVisible(hillsButton.isSelected() && drawModeButton.isSelected());
-		duneTypes.hider.setVisible(dunesButton.isSelected() && drawModeButton.isSelected());
-		treeTypes.hider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
-		cityButtons.hider.setVisible(citiesButton.isSelected() && drawModeButton.isSelected());
-		cityTypeHider.setVisible(citiesButton.isSelected() && drawModeButton.isSelected());
-		densityHider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
-		riverOptionHider.setVisible(riversButton.isSelected() && drawModeButton.isSelected());
-		brushSizeHider.setVisible(
-				!(riversButton.isSelected() && drawModeButton.isSelected()) && !(citiesButton.isSelected() && drawModeButton.isSelected()));
+		mountainTypes.hider.setVisible(mountainsButton.isSelected() && modeWidget.isDrawMode());
+		hillTypes.hider.setVisible(hillsButton.isSelected() && modeWidget.isDrawMode());
+		duneTypes.hider.setVisible(dunesButton.isSelected() && modeWidget.isDrawMode());
+		treeTypes.hider.setVisible(treesButton.isSelected() && modeWidget.isDrawMode());
+		cityButtons.hider.setVisible(citiesButton.isSelected() && modeWidget.isDrawMode());
+		cityTypeHider.setVisible(citiesButton.isSelected() && modeWidget.isDrawMode());
+		densityHider.setVisible(treesButton.isSelected() && modeWidget.isDrawMode());
+		brushSizeHider.setVisible(!(citiesButton.isSelected() && modeWidget.isDrawMode()));
 
-		onlyUpdateMountainsCheckboxHider.setVisible(mountainsButton.isSelected() && drawModeButton.isSelected());
-		onlyUpdateHillsCheckboxHider.setVisible(hillsButton.isSelected() && drawModeButton.isSelected());
-		onlyUpdateDunesCheckboxHider.setVisible(dunesButton.isSelected() && drawModeButton.isSelected());
-		onlyUpdateTreesCheckboxHider.setVisible(treesButton.isSelected() && drawModeButton.isSelected());
+		onlyUpdateMountainsCheckboxHider.setVisible(mountainsButton.isSelected() && modeWidget.isDrawMode());
+		onlyUpdateHillsCheckboxHider.setVisible(hillsButton.isSelected() && modeWidget.isDrawMode());
+		onlyUpdateDunesCheckboxHider.setVisible(dunesButton.isSelected() && modeWidget.isDrawMode());
+		onlyUpdateTreesCheckboxHider.setVisible(treesButton.isSelected() && modeWidget.isDrawMode());
 	}
 
 	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
@@ -711,31 +634,11 @@ public class IconsTool extends EditorTool
 
 	private void handleMousePressOrDrag(MouseEvent e)
 	{
-		if (riversButton.isSelected())
-		{
-			if (drawModeButton.isSelected())
-			{
-				return;
-			}
-			else
-			{
-				// When deleting rivers with the single-point brush size,
-				// highlight the closest edge instead of a polygon.
-				Set<Edge> possibleRivers = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()));
-				for (Edge edge : possibleRivers)
-				{
-					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-					eEdit.riverLevel = 0;
-				}
-				mapEditingPanel.clearHighlightedEdges();
-			}
-		}
-
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 
 		if (mountainsButton.isSelected())
 		{
-			if (drawModeButton.isSelected())
+			if (modeWidget.isDrawMode())
 			{
 				String rangeId = mountainTypes.getSelectedOption();
 				for (Center center : selected)
@@ -763,7 +666,7 @@ public class IconsTool extends EditorTool
 		}
 		else if (hillsButton.isSelected())
 		{
-			if (drawModeButton.isSelected())
+			if (modeWidget.isDrawMode())
 			{
 				String rangeId = hillTypes.getSelectedOption();
 				for (Center center : selected)
@@ -791,7 +694,7 @@ public class IconsTool extends EditorTool
 		}
 		else if (dunesButton.isSelected())
 		{
-			if (drawModeButton.isSelected())
+			if (modeWidget.isDrawMode())
 			{
 				String rangeId = duneTypes.getSelectedOption();
 				for (Center center : selected)
@@ -819,7 +722,7 @@ public class IconsTool extends EditorTool
 		}
 		else if (treesButton.isSelected())
 		{
-			if (drawModeButton.isSelected())
+			if (modeWidget.isDrawMode())
 			{
 				String treeType = treeTypes.getSelectedOption();
 				for (Center center : selected)
@@ -844,7 +747,7 @@ public class IconsTool extends EditorTool
 		}
 		else if (citiesButton.isSelected())
 		{
-			if (drawModeButton.isSelected())
+			if (modeWidget.isDrawMode())
 			{
 				if (cityButtons.buttons.size() == 0)
 				{
@@ -914,122 +817,41 @@ public class IconsTool extends EditorTool
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
 		handleMousePressOrDrag(e);
-
-		if (riversButton.isSelected() && drawModeButton.isSelected())
-		{
-			riverStart = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-		}
 	}
 
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		if (riversButton.isSelected() && drawModeButton.isSelected())
-		{
-			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-			Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
-			for (Edge edge : river)
-			{
-				int base = (riverWidthSlider.getValue() - 1);
-				int riverLevel = (base * base * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
-				mainWindow.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
-			}
-			riverStart = null;
-			mapEditingPanel.clearHighlightedEdges();
-			mapEditingPanel.repaint();
-
-			if (river.size() > 0)
-			{
-				updater.createAndShowMapIncrementalUsingEdges(river);
-			}
-		}
-
 		undoer.setUndoPoint(UpdateType.Incremental, this);
-	}
-
-	private Set<Edge> filterOutOceanAndCoastEdges(Set<Edge> edges)
-	{
-		return edges.stream().filter(e -> (e.d0 == null || !e.d0.isWater) && (e.d1 == null || !e.d1.isWater)).collect(Collectors.toSet());
 	}
 
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (!(riversButton.isSelected() && drawModeButton.isSelected()))
-		{
-			highlightHoverCentersOrEdgesAndBrush(e);
-			mapEditingPanel.repaint();
-		}
+		highlightHoverCenters(e);
+		mapEditingPanel.repaint();
 	}
 
-	private void highlightHoverCentersOrEdgesAndBrush(MouseEvent e)
+	private void highlightHoverCenters(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		mapEditingPanel.clearHighlightedEdges();
-		mapEditingPanel.hideBrush();
-		if (riversButton.isSelected() && eraseModeButton.isSelected())
-		{
-			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
-			if (brushDiameter > 1)
-			{
-				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
-			}
-			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
-
-			// Debug code.
-			// System.out.println("Highlighted edge indexes:");
-			// for (Edge edge : candidates)
-			// {
-			// System.out.println(edge.index);
-			// }
-
-			for (Edge edge : candidates)
-			{
-				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-				if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
-				{
-					mapEditingPanel.addHighlightedEdge(edge);
-				}
-			}
-		}
-		else
-		{
-			Set<Center> selected = getSelectedCenters(e.getPoint());
-			mapEditingPanel.addHighlightedCenters(selected);
-			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
-		}
+		
+		Set<Center> selected = getSelectedCenters(e.getPoint());
+		mapEditingPanel.addHighlightedCenters(selected);
+		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 	}
 
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		if (riversButton.isSelected() && drawModeButton.isSelected())
-		{
-			if (riverStart != null)
-			{
-				mapEditingPanel.clearHighlightedEdges();
-				Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
-				Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
-				mapEditingPanel.addHighlightedEdges(river);
-				mapEditingPanel.repaint();
-			}
-		}
-		else
-		{
-			highlightHoverCentersOrEdgesAndBrush(e);
-			handleMousePressOrDrag(e);
-		}
+		highlightHoverCenters(e);
+		handleMousePressOrDrag(e);
 	}
 
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		mapEditingPanel.hideBrush();
-		if (riversButton.isSelected() && eraseModeButton.isSelected())
-		{
-			mapEditingPanel.clearHighlightedEdges();
-		}
 		mapEditingPanel.repaint();
 	}
 
@@ -1052,7 +874,7 @@ public class IconsTool extends EditorTool
 
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
 	{
-		if (citiesButton.isSelected() && drawModeButton.isSelected())
+		if (citiesButton.isSelected() && modeWidget.isDrawMode())
 		{
 			// It doesn't make sense to allow drawing cities with a large brush.
 			return getSelectedCenters(pointFromMouse, 1);

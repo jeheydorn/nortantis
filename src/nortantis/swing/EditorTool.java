@@ -37,7 +37,7 @@ public abstract class EditorTool
 		this.mainWindow = parent;
 		this.toolsPanel = toolsPanel;
 		mapEditingPanel = parent.mapEditingPanel;
-		toolOptionsPanel = createToolsOptionsPanel();
+		toolOptionsPanel = createToolOptionsPanel();
 		undoer = parent.undoer;
 		this.updater = mapUpdater;
 	}
@@ -52,7 +52,7 @@ public abstract class EditorTool
 
 	public abstract void onActivate();
 
-	protected abstract JPanel createToolsOptionsPanel();
+	protected abstract JPanel createToolOptionsPanel();
 
 	public JPanel getToolOptionsPanel()
 	{
