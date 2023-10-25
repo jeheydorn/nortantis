@@ -69,7 +69,7 @@ public class SwingHelper
 
 	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title)
 	{
-		showColorPickerWithPreviewPanel(parent, colorDisplay, title, () ->
+		showColorPicker(parent, colorDisplay, title, () ->
 		{
 		});
 	}
@@ -90,29 +90,9 @@ public class SwingHelper
 		return colorChooser;
 	}
 
-	public static void showColorPickerWithPreviewPanel(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
-	{
-		JColorChooser colorChooser = createColorChooserWithOnlyGoodPanels(colorDisplay.getBackground());
-
-		ActionListener okHandler = new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				colorDisplay.setBackground(colorChooser.getColor());
-				okAction.run();
-			}
-
-		};
-
-		Dialog dialog = JColorChooser.createDialog(colorDisplay, title, false, colorChooser, okHandler, null);
-		dialog.setVisible(true);
-	}
-
 	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
 	{
 		final JColorChooser colorChooser = createColorChooserWithOnlyGoodPanels(colorDisplay.getBackground());
-		colorChooser.setPreviewPanel(new JPanel());
 
 		ActionListener okHandler = new ActionListener()
 		{

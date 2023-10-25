@@ -703,7 +703,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPickerWithPreviewPanel(fontsPanel, textColorDisplay, "Text Color", () -> handleFontsChange());
+				SwingHelper.showColorPicker(fontsPanel, textColorDisplay, "Text Color", () -> handleFontsChange());
 			}
 		});
 		organizer.addLabelAndComponentsHorizontal("Text color:", "", Arrays.asList(textColorDisplay, btnChooseTextColor),
@@ -721,7 +721,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPickerWithPreviewPanel(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color",
+				SwingHelper.showColorPicker(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color",
 						() -> handleFontsChange());
 			}
 		});
