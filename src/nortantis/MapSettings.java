@@ -225,7 +225,7 @@ public class MapSettings implements Serializable
 
 		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
-		root.put("allowTopsOfIconsToOverlapOcean", allowTopsOfIconsToOverlapOcean);
+		//root.put("allowTopsOfIconsToOverlapOcean", allowTopsOfIconsToOverlapOcean); TODO put back when I re-enable this feature.
 
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);

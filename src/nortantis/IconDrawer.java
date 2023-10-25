@@ -879,11 +879,11 @@ public class IconDrawer
 	static
 	{
 		forestTypes = new ArrayList<>();
-		forestTypes.add(new ForestType(TreeType.Deciduous, Biome.TEMPERATE_RAIN_FOREST, 1.0, 1.0));
-		forestTypes.add(new ForestType(TreeType.Pine, Biome.TAIGA, 2.0, 1.0));
-		forestTypes.add(new ForestType(TreeType.Pine, Biome.SHRUBLAND, 2.0, 1.0));
-		forestTypes.add(new ForestType(TreeType.Pine, Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST, 2.0, 0.25));
-		forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 0.25, 0.1));
+		forestTypes.add(new ForestType(TreeType.Deciduous, Biome.TEMPERATE_RAIN_FOREST, 0.5, 1.0));
+		forestTypes.add(new ForestType(TreeType.Pine, Biome.TAIGA, 1.0, 1.0));
+		forestTypes.add(new ForestType(TreeType.Pine, Biome.SHRUBLAND, 1.0, 1.0));
+		forestTypes.add(new ForestType(TreeType.Pine, Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25));
+		forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 1.0 / 8.0, 0.1));
 	}
 
 	private void addCenterTrees()
@@ -983,10 +983,10 @@ public class IconDrawer
 
 		// The purpose of the number below is to make it so that adjusting the height of trees also adjusts the density so that the spacing between trees remains
 		// looking about the same. As for how I calculated this number, the minimum treeHeightScale is 0.1, and each tick on the tree height slider increases by 0.05,
-		// with the highest possible value being 0.85. So I then fitted a curve to (0.1, 6), (0.35, 1), (0.5, 0.5), (0.65, 0.3) and (0.85, 0.15).
+		// with the highest possible value being 0.85. So I then fitted a curve to (0.1, 12), (0.35, 2), (0.5, 1.0), (0.65, 0.6) and (0.85, 0.3).
 		// The first point is the minimum tree height. The second is the default. The third is the old default. The fourth is the maximum.
-		double densityScale = 71.5152 * (treeHeightScale * treeHeightScale * treeHeightScale * treeHeightScale) - 178.061 * (treeHeightScale * treeHeightScale * treeHeightScale)
-		+ 164.876 * (treeHeightScale * treeHeightScale) - 68.633 * treeHeightScale + 11.3855;
+		double densityScale = 2.0 * ((71.5152) * (treeHeightScale * treeHeightScale * treeHeightScale * treeHeightScale) - 178.061 * (treeHeightScale * treeHeightScale * treeHeightScale)
+		+ 164.876 * (treeHeightScale * treeHeightScale) - 68.633 * treeHeightScale + 11.3855);
 				
 		for (Center c : centersToDraw)
 		{

@@ -350,7 +350,7 @@ public class MapCreator
 		// }
 
 
-		// Print run time TODO comment out
+		// Print run time
 		// updateSW.printElapsedTime();
 
 		return replaceBounds;
