@@ -63,7 +63,7 @@ public class TextDrawer
 	private final int largeRiverWidth = 4;
 	// This is how far away from a river it's name will be drawn.
 	private final double riverNameRiseHeight = -10;
-	private final double cityYNameOffset = 7;
+	private final double cityYNameOffset = 4;
 	private final double maxWordLengthComparedToAverage = 2.0;
 	private final double probabilityOfKeepingNameLength1 = 0.0;
 	private final double probabilityOfKeepingNameLength2 = 0.0;
@@ -1318,9 +1318,10 @@ public class TextDrawer
 	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset,
 			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
-		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocation, g.getFontMetrics(), false);
-		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocation, text.angle, graph))
+		FontMetrics metrics = g.getFontMetrics();
+		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics, drawOffset);
+		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, metrics, false);
+		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
 		{
 			// The text doesn't fit into centerLocations. Draw it split onto two
 			// lines.
@@ -1488,34 +1489,7 @@ public class TextDrawer
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		FontMetrics metrics = g.getFontMetrics();
-		int fontHeight = getFontHeight(metrics);
-		// Increase the rise offset to account for the font size.
-		double riseOffsetToUse = riseOffset;
-		if (riseOffsetToUse > 0.0)
-		{
-			if (line2 == null)
-			{
-				riseOffsetToUse += fontHeight / 2;
-			}
-			else
-			{
-				riseOffsetToUse += fontHeight;
-			}
-		}
-		else if (riseOffsetToUse < 0.0)
-		{
-			if (line2 == null)
-			{
-				riseOffsetToUse -= fontHeight / 2;
-			}
-			else
-			{
-				riseOffsetToUse -= fontHeight;
-			}
-		}
-
-		Point offset = new Point(riseOffsetToUse * Math.sin(text.angle), -riseOffsetToUse * Math.cos(text.angle));
-		Point pivot = new Point(textLocation.x - offset.x - drawOffset.x, textLocation.y - offset.y - drawOffset.y);
+		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, metrics, drawOffset);
 
 		java.awt.Rectangle bounds1 = getLine1Bounds(line1, pivot, metrics, line2 != null);
 		// If the above integer conversion resulted in a truncation that resulted in a negative number, then subtract 1. This is
@@ -1666,6 +1640,50 @@ public class TextDrawer
 		{
 			g.setTransform(orig);
 		}
+	}
+	
+	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, FontMetrics metrics, Point drawOffset)
+	{
+		if (line2 != null && line2.equals(""))
+		{
+			line2 = null;
+		}
+
+		if (drawOffset == null)
+		{
+			drawOffset = new Point(0, 0);
+		}
+
+		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
+
+		int fontHeight = getFontHeight(metrics);
+		// Increase the rise offset to account for the font size.
+		double riseOffsetToUse = riseOffset;
+		if (riseOffsetToUse > 0.0)
+		{
+			if (line2 == null)
+			{
+				riseOffsetToUse += fontHeight / 2;
+			}
+			else
+			{
+				riseOffsetToUse += fontHeight;
+			}
+		}
+		else if (riseOffsetToUse < 0.0)
+		{
+			if (line2 == null)
+			{
+				riseOffsetToUse -= fontHeight / 2;
+			}
+			else
+			{
+				riseOffsetToUse -= fontHeight;
+			}
+		}
+
+		Point offset = new Point(riseOffsetToUse * Math.sin(text.angle), -riseOffsetToUse * Math.cos(text.angle));
+		return new Point(textLocation.x - offset.x - drawOffset.x, textLocation.y - offset.y - drawOffset.y);
 	}
 
 	private java.awt.Rectangle getLine1Bounds(String line1, Point pivot, FontMetrics metrics, boolean hasLine2)

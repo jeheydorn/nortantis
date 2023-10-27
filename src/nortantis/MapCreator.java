@@ -280,11 +280,6 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
-		{
-			Graphics2D g = landBackground.createGraphics();
-			g.setColor(settings.coastlineColor);
-			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
-		}
 
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
@@ -806,11 +801,6 @@ public class MapCreator
 		// Draw coastlines.
 		{
 			Graphics2D g = map.createGraphics();
-			g.setColor(settings.coastlineColor);
-			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
-		}
-		{
-			Graphics2D g = landBackground.createGraphics();
 			g.setColor(settings.coastlineColor);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
