@@ -94,7 +94,7 @@ public class ImageExportDialog extends JDialog
 		resolutionSlider.setMinorTickSpacing(25);
 		resolutionSlider.setMajorTickSpacing(25);
 		resolutionSlider.setMinimum(25);
-		resolutionSlider.setMaximum(calcMaximumResolution());
+		resolutionSlider.setMaximum(MapCreator.calcMaximumResolution());
 		int labelFrequency = resolutionSlider.getMaximum() < 300 ? 50 : 100;
 		{
 			Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
@@ -478,39 +478,6 @@ public class ImageExportDialog extends JDialog
 			}
 		};
 		worker.execute();
-	}
-
-	private int calcMaximumResolution()
-	{
-		// Reserve some space for the editor.
-		int bytesReservedForEditor = 900 * 1024 * 1024;
-
-		long maxBytes = Runtime.getRuntime().maxMemory() - bytesReservedForEditor;
-		// The required memory is quadratic in the resolution used.
-		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2)
-		// = 148468.
-		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
-
-		// The FFT-based code will create arrays in powers of 2.
-		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
-		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
-		// Average with the original prediction because not all code is
-		// FFT-based.
-		maxResolution = (maxResolution + resolutionAtNextPowerOf2) / 2;
-
-		if (maxResolution > 500)
-		{
-			// This is in case Runtime.maxMemory returns Long's max value, which
-			// it says it will if it fails.
-			return 1000;
-		}
-		if (maxResolution < 100)
-		{
-			return 100;
-		}
-		// The resolution slider uses multiples of 25.
-		maxResolution -= maxResolution % 25;
-		return maxResolution;
 	}
 
 	private String chooseImageFileDestination(Component parent, String filePath)

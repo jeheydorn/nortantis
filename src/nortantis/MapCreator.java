@@ -31,12 +31,14 @@ import nortantis.editor.RegionEdit;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.swing.ImageExportDialog;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
+import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
 public class MapCreator
@@ -368,6 +370,12 @@ public class MapCreator
 
 		double startTime = System.currentTimeMillis();
 
+		// If we're within resolution buffer of our estimated maximum resolution, then be conservative about memory usage.
+		// My tests showed that running frayed edge and grunge calculation inline with other stuff gave a 22% speedup.
+		final double resolutionBuffer = 0.5;
+		boolean isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
+		Logger.println("Using " + (isLowMemoryMode ? "low" : "high") + " memory mode.");
+
 		if (!AssetsPath.getInstallPath().equals(settings.customImagesPath) && settings.customImagesPath != null
 				&& !settings.customImagesPath.isEmpty())
 		{
@@ -419,6 +427,14 @@ public class MapCreator
 
 		checkForCancel();
 
+		Dimension mapDimensions = new Dimension(background.borderBounds);
+		Future<Tuple2<BufferedImage, BufferedImage>> frayedBorderTask = null;
+		long frayedBorderSeed = r.nextLong();
+		if (!isLowMemoryMode)
+		{
+			frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
+		}
+
 		TextDrawer textDrawer = null;
 		if (mapParts == null || mapParts.textDrawer == null)
 		{
@@ -458,7 +474,6 @@ public class MapCreator
 
 		checkForCancel();
 
-
 		List<Set<Center>> lakes = null;
 		if (settings.edits.text.size() == 0)
 		{
@@ -490,6 +505,13 @@ public class MapCreator
 		}
 
 		checkForCancel();
+
+		Future<BufferedImage> grungeTask = null;
+		if (!isLowMemoryMode)
+		{
+			// Run the job now so it can run in parallel with other stuff.
+			grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
+		}
 
 		if (settings.drawText)
 		{
@@ -533,26 +555,132 @@ public class MapCreator
 				background.borderBackground = null;
 			}
 		}
+		background = null;
 
 		checkForCancel();
 
 		if (settings.frayedBorder)
 		{
-			Logger.println("Adding frayed edges.");
-			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
-			BufferedImage frayedBorderBlur;
 			BufferedImage frayedBorderMask;
-			if (mapParts != null && mapParts.frayedBorderBlur != null && mapParts.frayedBorderMask != null)
+			BufferedImage frayedBorderBlur;
+			if (isLowMemoryMode && frayedBorderTask == null)
+			{
+				frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
+			}
+			
+			if (frayedBorderTask != null)
+			{
+				Tuple2<BufferedImage, BufferedImage> tuple;
+				try
+				{
+					tuple = frayedBorderTask.get();
+				}
+				catch (InterruptedException | ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+
+				Logger.println("Adding frayed edges.");
+				frayedBorderMask = tuple.getFirst();
+				frayedBorderBlur = tuple.getSecond();
+			}
+			else if (mapParts != null)
 			{
 				frayedBorderMask = mapParts.frayedBorderMask;
 				frayedBorderBlur = mapParts.frayedBorderBlur;
 			}
 			else
 			{
+				throw new IllegalStateException("Frayed border should have been created.");
+			}
+
+			if (mapParts != null)
+			{
+				mapParts.frayedBorderMask = frayedBorderMask;
+				mapParts.frayedBorderBlur = frayedBorderBlur;
+				mapParts.frayedBorderColor = settings.frayedBorderColor;
+			}
+
+			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+			if (frayedBorderBlur != null)
+			{
+				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
+			}
+		}
+
+		checkForCancel();
+
+		if (settings.drawGrunge && settings.grungeWidth > 0)
+		{
+			Logger.println("Adding grunge.");
+			BufferedImage grunge;
+
+			if (isLowMemoryMode && grungeTask == null)
+			{
+				// Run the job now so it can run in parallel with other stuff.
+				grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
+			}
+
+			if (grungeTask != null)
+			{
+				try
+				{
+					grunge = grungeTask.get();
+				}
+				catch (InterruptedException | ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+			}
+			else if (mapParts != null)
+			{
+				grunge = mapParts.grunge;
+			}
+			else
+			{
+				throw new IllegalStateException("Grunge should have been created.");
+			}
+
+			if (mapParts != null)
+			{
+				mapParts.grunge = grunge;
+			}
+
+			// Add the grunge to the map.
+			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+		}
+
+		checkForCancel();
+
+		double elapsedTime = System.currentTimeMillis() - startTime;
+		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
+
+		Logger.println("Done creating map.");
+
+		return map;
+	}
+
+	private Future<Tuple2<BufferedImage, BufferedImage>> startFrayedBorderCreation(long frayedBorderSeed, MapSettings settings, Dimension mapDimensions,
+			double sizeMultiplier, MapParts mapParts)
+	{
+		// Use the random number generator the same whether or not we draw a frayed border.
+		if (settings.frayedBorder)
+		{
+			if (mapParts != null && mapParts.frayedBorderBlur != null && mapParts.frayedBorderMask != null)
+			{
+				return null;
+			}
+
+			Logger.println("Starting job to create frayed edges.");
+			return ThreadHelper.getInstance().submit(() ->
+			{
+				int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
+				BufferedImage frayedBorderBlur;
+				BufferedImage frayedBorderMask;
 				// The frayedBorderSize is on a logarithmic scale. 0 should be the minimum value, which will give 100 polygons.
 				int polygonCount = (int) (Math.pow(2, settings.frayedBorderSize) * 2 + 100);
-				WorldGraph frayGraph = GraphCreator.createSimpleGraph(background.borderBounds.getWidth(),
-						background.borderBounds.getHeight(), polygonCount, new Random(r.nextLong()), sizeMultiplier, true);
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(mapDimensions.getWidth(), mapDimensions.getHeight(), polygonCount,
+						new Random(frayedBorderSeed), sizeMultiplier, true);
 				frayedBorderMask = new BufferedImage(frayGraph.getWidth(), frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 				frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
 				if (blurLevel > 0)
@@ -564,73 +692,47 @@ public class MapCreator
 				{
 					frayedBorderBlur = null;
 				}
-			}
 
-			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
-			if (blurLevel > 0)
-			{
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
-			}
-
-			if (mapParts != null)
-			{
-				mapParts.frayedBorderBlur = frayedBorderBlur;
-				mapParts.frayedBorderMask = frayedBorderMask;
-				mapParts.frayedBorderColor = settings.frayedBorderColor;
-			}
+				return new Tuple2<BufferedImage, BufferedImage>(frayedBorderMask, frayedBorderBlur);
+			});
 		}
-		else
-		{
-			// Use the random number generator the same whether or not we draw a
-			// frayed border.
-			r.nextLong();
-		}
-		background = null;
+		return null;
+	}
 
-		checkForCancel();
-
+	private Future<BufferedImage> startGrungeCreation(MapSettings settings, MapParts mapParts, Dimension mapDimensions)
+	{
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
-			Logger.println("Adding grunge.");
-			BufferedImage grunge;
-
 			if (mapParts != null && mapParts.grunge != null)
 			{
-				grunge = mapParts.grunge;
+				return null;
 			}
-			else
+
+			Logger.println("Starting job to create grunge.");
+			return ThreadHelper.getInstance().submit(() ->
 			{
+				BufferedImage grunge;
+
 				// 104567 is an arbitrary number added so that the grunge is not
 				// the
 				// same pattern as
 				// the background.
 				final float fractalPower = 1.3f;
-				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower, (int) map.getWidth(),
-						(int) map.getHeight(), 0.75f);
+				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower,
+						(int) mapDimensions.getWidth(), (int) mapDimensions.getHeight(), 0.75f);
 
 				checkForCancel();
 
 				// Whiten the middle of clouds.
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
-			}
 
-			// Add the grunge to the map.
-			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
-
-			if (mapParts != null)
-			{
-				mapParts.grunge = grunge;
-			}
+				return grunge;
+			});
 		}
-
-		checkForCancel();
-
-		double elapsedTime = System.currentTimeMillis() - startTime;
-		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
-
-		Logger.println("Done creating map.");
-
-		return map;
+		else
+		{
+			return null;
+		}
 	}
 
 	private Tuple4<BufferedImage, BufferedImage, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings,
@@ -1467,5 +1569,44 @@ public class MapCreator
 	public boolean isCanceled()
 	{
 		return isCanceled;
+	}
+	
+
+	public static int calcMaximumResolution()
+	{
+		// Reserve some space for the editor.
+		int bytesReservedForEditor = 900 * 1024 * 1024;
+
+		long maxBytes = Runtime.getRuntime().maxMemory() - bytesReservedForEditor;
+		// The required memory is quadratic in the resolution used.
+		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2)
+		// = 148468.
+		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
+
+		// The FFT-based code will create arrays in powers of 2.
+		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
+		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
+		// Average with the original prediction because not all code is
+		// FFT-based.
+		maxResolution = (maxResolution + resolutionAtNextPowerOf2) / 2;
+
+		if (maxResolution > 500)
+		{
+			// This is in case Runtime.maxMemory returns Long's max value, which
+			// it says it will if it fails.
+			return 1000;
+		}
+		if (maxResolution < 100)
+		{
+			return 100;
+		}
+		// The resolution slider uses multiples of 25.
+		maxResolution -= maxResolution % 25;
+		return maxResolution;
+	}
+	
+	private static double calcMaxResolutionScale()
+	{
+		return calcMaximumResolution() / 100.0;
 	}
 }
