@@ -34,7 +34,7 @@ public class NameGeneratorDialog extends JDialog
 	public NameGeneratorDialog(MainWindow mainWindow, MapSettings settings)
 	{
 		super(mainWindow, "Name Generator", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(500, 830));
+		setSize(new Dimension(500, 810));
 
 		JPanel contents = new JPanel();
 		contents.setLayout(new BorderLayout());
