@@ -176,7 +176,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void createGUI()
 	{
-		getContentPane().setPreferredSize(new Dimension(1400, 800));
+		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
 		setIconImage(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString()));

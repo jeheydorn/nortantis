@@ -1456,7 +1456,7 @@ public class TextDrawer
 	}
 
 	/**
-	 * Draws the given name at the given location (centroid), at the given angle. This does not break text into multiple lines.
+	 * Draws the given name at the given location (centroid), at the given angle.
 	 * 
 	 * If settings.drawText = false, then this method will not do the actual text writing, but will still update the MapText text.
 	 * 
