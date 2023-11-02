@@ -19,6 +19,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.time.StopWatch;
+
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
@@ -86,8 +88,8 @@ public class IconDrawer
 		{
 			this.imagesPath = AssetsPath.getInstallPath();
 		}
-		this.resolutionScale = resolutionScale;		
-	
+		this.resolutionScale = resolutionScale;
+
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneWidth = (int) (meanPolygonWidth * 1.2);
 		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
@@ -234,7 +236,7 @@ public class IconDrawer
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
 	 * done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor, 
+	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor,
 			double treeHeightScale)
 	{
 		clearIconsForCenters(centersToUpdateIconsFor);
@@ -536,7 +538,15 @@ public class IconDrawer
 				{
 					if (drawBounds == null || task.overlaps(drawBounds))
 					{
-						tasks.add(task);
+						// Updates to the line below will will likely need to also update doesCityFitOnLand.
+						if (!isIconTouchingWater(task))
+						{
+							tasks.add(task);
+						}
+						else
+						{
+							task.failedToDraw = true;
+						}
 					}
 				}
 			}
@@ -563,16 +573,8 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			// Updates to the line below will will likely need to also update doesCityFitOnLand.
-			if (!isIconTouchingWater(task))
-			{
-				drawIconWithBackgroundAndMask(mapOrSnippet, task.icon, task.mask, background, ((int) task.centerLoc.x) - xToSubtract,
-						((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
-			}
-			else
-			{
-				task.failedToDraw = true;
-			}
+			drawIconWithBackgroundAndMask(mapOrSnippet, task.icon, task.mask, background, ((int) task.centerLoc.x) - xToSubtract,
+					((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
 		}
 	}
 
@@ -981,13 +983,17 @@ public class IconDrawer
 			}
 		}
 
-		// The purpose of the number below is to make it so that adjusting the height of trees also adjusts the density so that the spacing between trees remains
-		// looking about the same. As for how I calculated this number, the minimum treeHeightScale is 0.1, and each tick on the tree height slider increases by 0.05,
-		// with the highest possible value being 0.85. So I then fitted a curve to (0.1, 12), (0.35, 2), (0.5, 1.0), (0.65, 0.6) and (0.85, 0.3).
+		// The purpose of the number below is to make it so that adjusting the height of trees also adjusts the density so that the spacing
+		// between trees remains
+		// looking about the same. As for how I calculated this number, the minimum treeHeightScale is 0.1, and each tick on the tree height
+		// slider increases by 0.05,
+		// with the highest possible value being 0.85. So I then fitted a curve to (0.1, 12), (0.35, 2), (0.5, 1.0), (0.65, 0.6) and (0.85,
+		// 0.3).
 		// The first point is the minimum tree height. The second is the default. The third is the old default. The fourth is the maximum.
-		double densityScale = 2.0 * ((71.5152) * (treeHeightScale * treeHeightScale * treeHeightScale * treeHeightScale) - 178.061 * (treeHeightScale * treeHeightScale * treeHeightScale)
-		+ 164.876 * (treeHeightScale * treeHeightScale) - 68.633 * treeHeightScale + 11.3855);
-				
+		double densityScale = 2.0 * ((71.5152) * (treeHeightScale * treeHeightScale * treeHeightScale * treeHeightScale)
+				- 178.061 * (treeHeightScale * treeHeightScale * treeHeightScale) + 164.876 * (treeHeightScale * treeHeightScale)
+				- 68.633 * treeHeightScale + 11.3855);
+
 		for (Center c : centersToDraw)
 		{
 			CenterTrees cTrees = trees.get(c.index);
@@ -1125,29 +1131,42 @@ public class IconDrawer
 	{
 		if (iconTask.mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
 			throw new IllegalArgumentException("Mask type must be TYPE_BYTE_BINARY for checking whether icons touch water.");
-		
-		int imageUpperLeftX = (int) iconTask.centerLoc.x - iconTask.scaledWidth / 2;
-		int imageUpperLeftY = (int) iconTask.centerLoc.y + iconTask.scaledHeight / 2;
 
-		// Only check precision*precision points.
-		float precision = Math.min(iconTask.scaledWidth, Math.min(iconTask.scaledHeight, 32));
-		if (precision < 1f)
-		{
-			precision = 1f;
-		}
+		final int imageUpperLeftX = (int) iconTask.centerLoc.x - iconTask.scaledWidth / 2;
+		final int imageUpperLeftY = (int) iconTask.centerLoc.y - iconTask.scaledHeight / 2;
+
+		// Determining what points to check needs to be done in a resolution invariant way. Otherwise, generating the map at
+		// a higher or lower resolution could cause icons to appear or disappear if they are very close to water.
+		// Although, due to pixels being discrete, this technique isn't entirely resolution invariant.
+
+		final double stepSize = 2.0 / resolutionScale; // The constant in this number is in number of pixels at 100% resolution.
+		final double widthResolutionInvariant = iconTask.scaledWidth / resolutionScale;
+		final double heightResolutionInvariant = iconTask.scaledHeight / resolutionScale;
+
+
 		Raster mRaster = iconTask.mask.getRaster();
-		for (int x = 0; x < precision; x++)
+		final double xScale = (((double) iconTask.mask.getWidth()) / iconTask.scaledWidth) * resolutionScale;
+		final double yScale = (((double) iconTask.mask.getHeight()) / iconTask.scaledHeight) * resolutionScale;
+		for (double x = 0; x < widthResolutionInvariant; x += stepSize)
 		{
-			for (int y = 0; y < precision; y++)
+			for (double y = 0; y < heightResolutionInvariant; y += stepSize)
 			{
 				// Only check pixels where the mask level is greater than 0 because we don't care if transparent
 				// pixels outside the image's content overlap with water.
-				int xInMask = (int)(iconTask.mask.getWidth() * (x /precision));
-				int yInMask = (int)(iconTask.mask.getHeight() * (y /precision));;
-				if (overlapsOrIsNearMask(mRaster, xInMask, yInMask))
+				int xInMask = (int) (x * xScale);
+				int yInMask = (int) (y * yScale);
+				if (xInMask < 0 || xInMask >= mRaster.getWidth())
 				{
-					Center center = graph.findClosestCenter(imageUpperLeftX + (int) (iconTask.scaledWidth * (x / precision)),
-							(imageUpperLeftY - (int) (iconTask.scaledHeight * (y / precision))));
+					continue;
+				}
+				if (yInMask < 0 || yInMask >= mRaster.getHeight())
+				{
+					continue;
+				}
+				
+				if (mRaster.getSampleDouble(xInMask, yInMask, 0) > 0)
+				{
+					Center center = graph.findClosestCenter(imageUpperLeftX + x * resolutionScale, imageUpperLeftY + y * resolutionScale);
 					if (center.isWater)
 					{
 						return true;
@@ -1156,35 +1175,6 @@ public class IconDrawer
 			}
 		}
 
-		return false;
-	}
-	
-	private boolean overlapsOrIsNearMask(Raster mRaster, int xInMask, int yInMask)
-	{
-		final int bufferSize = (int) (5.0 * resolutionScale);
-		final int increment =  Math.max(1, (int) (5.0 * resolutionScale));
-		
-		for (int bx = -bufferSize; bx <= bufferSize; bx += increment)
-		{
-			if (xInMask + bx < 0 || xInMask + bx >= mRaster.getWidth())
-			{
-				continue;
-			}
-			
-			for (int by = -bufferSize; by <= bufferSize; by += increment)
-			{
-				if (yInMask + by < 0 || yInMask + by >= mRaster.getHeight())
-				{
-					continue;
-				}
-				
-				if (mRaster.getSampleDouble(xInMask + bx, yInMask + by, 0) > 0)
-				{
-					return true;
-				}
-			}
-		}
-		
 		return false;
 	}
 

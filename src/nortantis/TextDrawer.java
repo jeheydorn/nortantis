@@ -1307,38 +1307,6 @@ public class TextDrawer
 		return false;
 	}
 
-	/**
-	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given
-	 * locations, then it will be drawn on 2 lines.
-	 * 
-	 * The actual drawing step is skipped if settings.drawText = false.
-	 * 
-	 * @return True iff text was drawn.
-	 */
-	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset,
-			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
-	{
-		FontMetrics metrics = g.getFontMetrics();
-		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics, drawOffset);
-		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, metrics, false);
-		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
-		{
-			// The text doesn't fit into centerLocations. Draw it split onto two
-			// lines.
-			Pair<String> lines = addLineBreakNearMiddle(text.value);
-			String nameLine1 = lines.getFirst();
-			String nameLine2 = lines.getSecond();
-
-			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
-					allowNegatingRizeOffset, drawOffset);
-		}
-		else
-		{
-			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
-					allowNegatingRizeOffset, drawOffset);
-		}
-	}
-
 	public static Point rotate(Point point, Point pivot, double angle)
 	{
 		double sin = Math.sin(angle);
@@ -1394,6 +1362,38 @@ public class TextDrawer
 	private static int getFontHeight(FontMetrics metrics)
 	{
 		return metrics.getAscent() + metrics.getDescent();
+	}
+	
+	/**
+	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given
+	 * locations, then it will be drawn on 2 lines.
+	 * 
+	 * The actual drawing step is skipped if settings.drawText = false.
+	 * 
+	 * @return True iff text was drawn.
+	 */
+	private boolean drawNameSplitIfNeeded(BufferedImage map, Graphics2D g, WorldGraph graph, double riseOffset,
+			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
+	{
+		FontMetrics metrics = g.getFontMetrics();
+		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics, drawOffset);
+		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, metrics, false);
+		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
+		{
+			// The text doesn't fit into centerLocations. Draw it split onto two
+			// lines.
+			Pair<String> lines = addLineBreakNearMiddle(text.value);
+			String nameLine1 = lines.getFirst();
+			String nameLine2 = lines.getSecond();
+
+			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
+					allowNegatingRizeOffset, drawOffset);
+		}
+		else
+		{
+			return drawNameRotated(map, g, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
+					allowNegatingRizeOffset, drawOffset);
+		}
 	}
 
 	/**
@@ -1486,8 +1486,6 @@ public class TextDrawer
 			drawOffset = new Point(0, 0);
 		}
 
-		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-
 		FontMetrics metrics = g.getFontMetrics();
 		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, metrics, drawOffset);
 
@@ -1541,8 +1539,8 @@ public class TextDrawer
 			{
 				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1)
 						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2));
-				boolean overlapsRegionLakeOrCoastline = overlapsRegionLakeOrCoastline(bounds1, textLocation, text.angle, graph)
-						|| overlapsRegionLakeOrCoastline(bounds2, textLocation, text.angle, graph);
+				boolean overlapsRegionLakeOrCoastline = overlapsRegionLakeOrCoastline(bounds1, pivot, text.angle, graph)
+						|| overlapsRegionLakeOrCoastline(bounds2, pivot, text.angle, graph);
 				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region
 						|| text.type == TextType.City || text.type == TextType.Mountain_range;
 
