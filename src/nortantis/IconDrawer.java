@@ -1163,14 +1163,46 @@ public class IconDrawer
 				{
 					continue;
 				}
-				
-				if (mRaster.getSampleDouble(xInMask, yInMask, 0) > 0)
+
+				// Require trees to be a little further from water because they look bad, in my opinion, when there's a bunch of them
+				// right against the coast.
+				if ((iconTask.type != IconType.trees && mRaster.getSampleDouble(xInMask, yInMask, 0) > 0)
+						|| (iconTask.type == IconType.trees && overlapsOrIsNearMask(mRaster, xInMask, yInMask)))
 				{
 					Center center = graph.findClosestCenter(imageUpperLeftX + x * resolutionScale, imageUpperLeftY + y * resolutionScale);
 					if (center.isWater)
 					{
 						return true;
 					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private boolean overlapsOrIsNearMask(Raster mRaster, int xInMask, int yInMask)
+	{
+		final int bufferSize = (int) (5.0 * resolutionScale);
+		final int increment = Math.max(1, (int) (5.0 * resolutionScale));
+
+		for (int bx = -bufferSize; bx <= bufferSize; bx += increment)
+		{
+			if (xInMask + bx < 0 || xInMask + bx >= mRaster.getWidth())
+			{
+				continue;
+			}
+
+			for (int by = -bufferSize; by <= bufferSize; by += increment)
+			{
+				if (yInMask + by < 0 || yInMask + by >= mRaster.getHeight())
+				{
+					continue;
+				}
+
+				if (mRaster.getSampleDouble(xInMask + bx, yInMask + by, 0) > 0)
+				{
+					return true;
 				}
 			}
 		}
