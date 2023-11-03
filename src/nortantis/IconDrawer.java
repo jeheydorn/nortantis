@@ -1183,7 +1183,9 @@ public class IconDrawer
 
 	private boolean overlapsOrIsNearMask(Raster mRaster, int xInMask, int yInMask)
 	{
+		// This is the number of pixels at 100% resolution of offset icons will have from water.
 		final int bufferSize = (int) (5.0 * resolutionScale);
+		
 		final int increment = Math.max(1, (int) (5.0 * resolutionScale));
 
 		for (int bx = -bufferSize; bx <= bufferSize; bx += increment)

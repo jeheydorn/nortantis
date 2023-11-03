@@ -1376,7 +1376,7 @@ public class TextDrawer
 			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
 		FontMetrics metrics = g.getFontMetrics();
-		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics, drawOffset);
+		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics);
 		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, metrics, false);
 		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
 		{
@@ -1487,7 +1487,8 @@ public class TextDrawer
 		}
 
 		FontMetrics metrics = g.getFontMetrics();
-		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, metrics, drawOffset);
+		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, metrics);
+		Point pivotMinusDrawOffset = pivot.subtract(drawOffset);
 
 		java.awt.Rectangle bounds1 = getLine1Bounds(line1, pivot, metrics, line2 != null);
 		// If the above integer conversion resulted in a truncation that resulted in a negative number, then subtract 1. This is
@@ -1530,7 +1531,7 @@ public class TextDrawer
 		AffineTransform orig = g.getTransform();
 		try
 		{
-			g.rotate(text.angle, pivot.x, pivot.y);
+			g.rotate(text.angle, pivotMinusDrawOffset.x, pivotMinusDrawOffset.y);
 
 			Area area1 = new Area(bounds1).createTransformedArea(g.getTransform());
 			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(g.getTransform());
@@ -1591,10 +1592,10 @@ public class TextDrawer
 			text.line2Area = area2;
 			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
 			// before the text is redrawn.
-			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - pivot.x + drawOffset.x),
-					(int) (bounds1.y - pivot.y + drawOffset.y), bounds1.width, bounds1.height);
+			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - pivot.x),
+					(int) (bounds1.y - pivot.y), bounds1.width, bounds1.height);
 			text.line2Bounds = bounds2 == null ? null
-					: new java.awt.Rectangle((int) (bounds2.x - pivot.x + drawOffset.x), (int) (bounds2.y - pivot.y + drawOffset.y),
+					: new java.awt.Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y),
 							bounds2.width, bounds2.height);
 			if (riseOffset != 0)
 			{
@@ -1606,7 +1607,7 @@ public class TextDrawer
 			if (settings.drawText)
 			{
 				{
-					Point textStart = new Point(bounds1.x, bounds1.y + g.getFontMetrics().getAscent());
+					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + g.getFontMetrics().getAscent());
 					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, pivot);
 					if (boldBackground)
 					{
@@ -1619,7 +1620,7 @@ public class TextDrawer
 				}
 				if (line2 != null)
 				{
-					Point textStart = new Point(bounds2.x, bounds2.y + g.getFontMetrics().getAscent());
+					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + g.getFontMetrics().getAscent());
 					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, pivot);
 					if (boldBackground)
 					{
@@ -1640,16 +1641,11 @@ public class TextDrawer
 		}
 	}
 	
-	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, FontMetrics metrics, Point drawOffset)
+	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, FontMetrics metrics)
 	{
 		if (line2 != null && line2.equals(""))
 		{
 			line2 = null;
-		}
-
-		if (drawOffset == null)
-		{
-			drawOffset = new Point(0, 0);
 		}
 
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
@@ -1681,7 +1677,7 @@ public class TextDrawer
 		}
 
 		Point offset = new Point(riseOffsetToUse * Math.sin(text.angle), -riseOffsetToUse * Math.cos(text.angle));
-		return new Point(textLocation.x - offset.x - drawOffset.x, textLocation.y - offset.y - drawOffset.y);
+		return new Point(textLocation.x - offset.x, textLocation.y - offset.y);
 	}
 
 	private java.awt.Rectangle getLine1Bounds(String line1, Point pivot, FontMetrics metrics, boolean hasLine2)
