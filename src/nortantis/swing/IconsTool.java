@@ -786,25 +786,17 @@ public class IconsTool extends EditorTool
 		{
 			for (Center center : selected)
 			{
-				eraseIconAndTreeEdits(center, mainWindow.edits);
+				eraseIconEdits(center, mainWindow.edits);
 			}
 		}
 
 		handleMapChange(selected);
 	}
 
-	static void eraseIconAndTreeEdits(Center center, MapEdits edits)
+	static void eraseIconEdits(Center center, MapEdits edits)
 	{
 		CenterEdit cEdit = edits.centerEdits.get(center.index);
 		cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, null);
-		for (Edge edge : center.borders)
-		{
-			EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
-			if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
-			{
-				eEdit.riverLevel = 0;
-			}
-		}
 	}
 
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)

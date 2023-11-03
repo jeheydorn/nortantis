@@ -378,7 +378,15 @@ public class LandWaterTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
-				IconsTool.eraseIconAndTreeEdits(center, mainWindow.edits);
+				IconsTool.eraseIconEdits(center, mainWindow.edits);
+				for (Edge edge : center.borders)
+				{
+					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
+					if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+					{
+						eEdit.riverLevel = 0;
+					}
+				}
 				hasChange |= !edit.isWater;
 				hasChange |= edit.isLake != lakeButton.isSelected();
 				edit.setValuesWithLock(true, lakeButton.isSelected(), edit.regionId, edit.icon, edit.trees);

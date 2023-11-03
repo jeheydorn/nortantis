@@ -224,11 +224,12 @@ public class TextDrawer
 		return result;
 	}
 
-	public void drawTextFromEdits(BufferedImage map, BufferedImage landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
+	public synchronized void drawTextFromEdits(BufferedImage map, BufferedImage landAndOceanBackground, WorldGraph graph,
+			Rectangle drawBounds)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
 
-		drawTextFromEdits(map, graph, drawBounds);
+		drawText(map, graph, settings.edits.text, drawBounds);
 
 		this.landAndOceanBackground = null;
 	}
@@ -253,110 +254,125 @@ public class TextDrawer
 	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainGroups, List<IconDrawTask> cityDrawTasks,
 			List<Set<Center>> lakes)
 	{
-		// All text drawn must be done so in order from highest to lowest
-		// priority because if I try to draw
-		// text on top of other text, the latter will not be displayed.
-
-		graphBounds = new Area(new java.awt.Rectangle(0, 0, graph.getWidth(), graph.getHeight()));
-
-		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
-		g.setColor(settings.textColor);
-
-		addTitle(map, graph, g);
-
-		setFontForTextType(g, TextType.City);
-		for (IconDrawTask city : cityDrawTasks)
+		// First, generate text without drawing it. I originally drew text as I generated it, but it led to weird conditions where
+		// the generator placed text, and then the editor moves it slightly when it drew again. To fix this, I draw after generating
+		// so that the code path that draws the text is essentially the same for the generator and the editor.
+		boolean drawTextPrev = settings.drawText;
+		settings.drawText = false;
+		try
 		{
-			Set<Point> cityLoc = new HashSet<>(1);
-			cityLoc.add(city.centerLoc);
-			String cityName = generateNameOfType(TextType.City, sampleCityTypesForCityFileName(city.fileName), true);
-			double riseOffset = city.scaledHeight / 2 + (cityYNameOffset * settings.resolution);
-			drawNameRotated(map, g, graph, cityName, cityLoc, riseOffset, true, TextType.City);
-		}
+			// All text drawn must be done so in order from highest to lowest
+			// priority because if I try to draw
+			// text on top of other text, the latter will not be displayed.
 
-		setFontForTextType(g, TextType.Region);
-		for (Region region : graph.regions.values())
-		{
-			Set<Point> locations = extractLocationsFromCenters(region.getCenters());
-			String name;
-			try
-			{
-				name = generateNameOfType(TextType.Region, null, true);
-			}
-			catch (NotEnoughNamesException ex)
-			{
-				throw new RuntimeException(ex.getMessage());
-			}
-			drawNameFitIntoCenters(map, g, name, locations, graph, settings.drawBoldBackground, true, TextType.Region);
-		}
+			graphBounds = new Area(new java.awt.Rectangle(0, 0, graph.getWidth(), graph.getHeight()));
 
-		for (Set<Center> mountainGroup : mountainGroups)
-		{
-			if (mountainGroup.size() >= mountainRangeMinSize)
+			Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
+			g.setColor(settings.textColor);
+
+			addTitle(map, graph, g);
+
+			setFontForTextType(g, TextType.City);
+			for (IconDrawTask city : cityDrawTasks)
 			{
-				setFontForTextType(g, TextType.Mountain_range);
-				Set<Point> locations = extractLocationsFromCenters(mountainGroup);
-				drawNameRotated(map, g, graph, generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true,
-						TextType.Mountain_range);
+				Set<Point> cityLoc = new HashSet<>(1);
+				cityLoc.add(city.centerLoc);
+				String cityName = generateNameOfType(TextType.City, sampleCityTypesForCityFileName(city.fileName), true);
+				double riseOffset = city.scaledHeight / 2 + (cityYNameOffset * settings.resolution);
+				drawNameRotated(map, g, graph, cityName, cityLoc, riseOffset, true, TextType.City);
 			}
-			else
+
+			setFontForTextType(g, TextType.Region);
+			for (Region region : graph.regions.values())
 			{
-				setFontForTextType(g, TextType.Other_mountains);
-				if (mountainGroup.size() >= 2)
+				Set<Point> locations = extractLocationsFromCenters(region.getCenters());
+				String name;
+				try
 				{
-					if (mountainGroup.size() == 2)
+					name = generateNameOfType(TextType.Region, null, true);
+				}
+				catch (NotEnoughNamesException ex)
+				{
+					throw new RuntimeException(ex.getMessage());
+				}
+				drawNameFitIntoCenters(map, g, name, locations, graph, settings.drawBoldBackground, true, TextType.Region);
+			}
+
+			for (Set<Center> mountainGroup : mountainGroups)
+			{
+				if (mountainGroup.size() >= mountainRangeMinSize)
+				{
+					setFontForTextType(g, TextType.Mountain_range);
+					Set<Point> locations = extractLocationsFromCenters(mountainGroup);
+					drawNameRotated(map, g, graph, generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true,
+							TextType.Mountain_range);
+				}
+				else
+				{
+					setFontForTextType(g, TextType.Other_mountains);
+					if (mountainGroup.size() >= 2)
 					{
-						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
-						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location,
-								0.0, TextType.Other_mountains);
-						if (drawNameRotated(map, g, graph, twoMountainsYOffset * settings.resolution, true, text, false, null))
+						if (mountainGroup.size() == 2)
 						{
-							mapTexts.add(text);
+							Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
+							MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true),
+									location, 0.0, TextType.Other_mountains);
+							if (drawNameRotated(map, g, graph, twoMountainsYOffset * settings.resolution, true, text, false, null))
+							{
+								mapTexts.add(text);
+							}
+						}
+						else
+						{
+							drawNameRotated(map, g, graph, generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
+									extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true,
+									TextType.Other_mountains);
 						}
 					}
 					else
 					{
-						drawNameRotated(map, g, graph, generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
-								extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true,
-								TextType.Other_mountains);
-					}
-				}
-				else
-				{
-					Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
-					MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0,
-							TextType.Other_mountains);
-					if (drawNameRotated(map, g, graph, singleMountainYOffset * settings.resolution, true, text, false, null))
-					{
-						mapTexts.add(text);
+						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
+						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location,
+								0.0, TextType.Other_mountains);
+						if (drawNameRotated(map, g, graph, singleMountainYOffset * settings.resolution, true, text, false, null))
+						{
+							mapTexts.add(text);
+						}
 					}
 				}
 			}
-		}
 
-		setFontForTextType(g, TextType.River);
-		for (Set<Center> lake : lakes)
-		{
-			String name = generateNameOfType(TextType.Lake, null, true);
-			Set<Point> locations = extractLocationsFromCenters(lake);
-			drawNameRotated(map, g, graph, name, locations, 0.0, true, TextType.Lake);
-		}
-
-		List<River> rivers = findRivers(graph);
-		for (River river : rivers)
-		{
-			if (river.size() >= riverMinLength && river.getWidth() >= riverMinWidth)
+			setFontForTextType(g, TextType.River);
+			for (Set<Center> lake : lakes)
 			{
-				RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
-
-				Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
-				drawNameRotated(map, g, graph, generateNameOfType(TextType.River, riverType, true), locations,
-						riverNameRiseHeight * settings.resolution, true, TextType.River);
+				String name = generateNameOfType(TextType.Lake, null, true);
+				Set<Point> locations = extractLocationsFromCenters(lake);
+				drawNameRotated(map, g, graph, name, locations, 0.0, true, TextType.Lake);
 			}
 
-		}
+			List<River> rivers = findRivers(graph);
+			for (River river : rivers)
+			{
+				if (river.size() >= riverMinLength && river.getWidth() >= riverMinWidth)
+				{
+					RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
-		g.dispose();
+					Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
+					drawNameRotated(map, g, graph, generateNameOfType(TextType.River, riverType, true), locations,
+							riverNameRiseHeight * settings.resolution, true, TextType.River);
+				}
+
+			}
+
+			g.dispose();
+		}
+		finally
+		{
+			settings.drawText = drawTextPrev;
+		}
+		
+		// Now actually draw the text (if settings.drawText is true).
+		drawText(map, graph, mapTexts, null);
 	}
 
 	public static List<CityType> findCityTypeFromCityFileName(String cityFileNameNoExtension)
@@ -496,14 +512,7 @@ public class TextDrawer
 		return new Rectangle(rect.x, rect.y, rect.width, rect.height);
 	}
 
-	/**
-	 * Draw text which was (potentially) added or modified by the user.
-	 * 
-	 * @param map
-	 * @param graph
-	 * @param g
-	 */
-	private synchronized void drawTextFromEdits(BufferedImage map, WorldGraph graph, Rectangle drawBounds)
+	private void drawText(BufferedImage map, WorldGraph graph, List<MapText> textToDraw, Rectangle drawBounds)
 	{
 		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
 
@@ -511,7 +520,7 @@ public class TextDrawer
 
 		Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
-		doForEachTextInBounds(settings.edits.text, graph, drawBounds, true, ((text, ignored) ->
+		doForEachTextInBounds(textToDraw, graph, drawBounds, true, ((text, ignored) ->
 		{
 			setFontForTextType(g, text.type);
 			if (text.type == TextType.Title)
@@ -1363,7 +1372,7 @@ public class TextDrawer
 	{
 		return metrics.getAscent() + metrics.getDescent();
 	}
-	
+
 	/**
 	 * Draws the given name at the given location (centroid). If the name cannot be drawn on one line and still fit with the given
 	 * locations, then it will be drawn on 2 lines.
@@ -1378,7 +1387,8 @@ public class TextDrawer
 		FontMetrics metrics = g.getFontMetrics();
 		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics);
 		java.awt.Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, metrics, false);
-		if (text.value.trim().split(" ").length > 1 && overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
+		if (text.value.trim().split(" ").length > 1
+				&& overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
 		{
 			// The text doesn't fit into centerLocations. Draw it split onto two
 			// lines.
@@ -1592,11 +1602,10 @@ public class TextDrawer
 			text.line2Area = area2;
 			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
 			// before the text is redrawn.
-			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - pivot.x),
-					(int) (bounds1.y - pivot.y), bounds1.width, bounds1.height);
+			text.line1Bounds = new java.awt.Rectangle((int) (bounds1.x - pivot.x), (int) (bounds1.y - pivot.y), bounds1.width,
+					bounds1.height);
 			text.line2Bounds = bounds2 == null ? null
-					: new java.awt.Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y),
-							bounds2.width, bounds2.height);
+					: new java.awt.Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y), bounds2.width, bounds2.height);
 			if (riseOffset != 0)
 			{
 				// Update the text location with the offset. This only happens when generating new text, not when making changes in the
@@ -1608,7 +1617,7 @@ public class TextDrawer
 			{
 				{
 					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, pivot);
+					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, pivotMinusDrawOffset);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(g, line1, textStart, text.angle, pivot);
@@ -1621,7 +1630,7 @@ public class TextDrawer
 				if (line2 != null)
 				{
 					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, pivot);
+					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, pivotMinusDrawOffset);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(g, line2, textStart, text.angle, pivot);
@@ -1640,7 +1649,7 @@ public class TextDrawer
 			g.setTransform(orig);
 		}
 	}
-	
+
 	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, FontMetrics metrics)
 	{
 		if (line2 != null && line2.equals(""))
