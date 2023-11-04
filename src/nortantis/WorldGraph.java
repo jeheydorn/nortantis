@@ -659,18 +659,19 @@ public class WorldGraph extends VoronoiGraph
 			explored.add(center);
 
 			Set<Center> potentialLake = breadthFirstSearch((c) ->
+			{
+				if (explored.contains(c))
 				{
-					if (explored.contains(c))
-					{
-						return false;
-					}
-					
-					explored.add(c);
+					return false;
+				}
 
-					return c.isWater;
-				}, center);
-			
-			// The second condition excludes lakes that touch the edge of the map, since it's hard to tell whether those should be ocean or lake,
+				explored.add(c);
+
+				return c.isWater;
+			}, center);
+
+			// The second condition excludes lakes that touch the edge of the map, since it's hard to tell whether those should be ocean or
+			// lake,
 			// And the more conservative choice is to say it's not a lake.
 			if (potentialLake.size() <= maxLakeSize && !potentialLake.stream().anyMatch(c -> c.isBorder))
 			{
@@ -684,7 +685,7 @@ public class WorldGraph extends VoronoiGraph
 
 		return lakes;
 	}
-	
+
 	public int getWidth()
 	{
 		return (int) bounds.width;
@@ -1283,6 +1284,41 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return bounds;
+	}
+
+	public Set<Center> getCentersInBounds(Rectangle bounds)
+	{
+		Set<Center> selected = new HashSet<Center>();
+		
+		if (bounds == null)
+		{
+			return selected;
+		}
+
+		Center center = findClosestCenter(bounds.getCenter());
+		if (center == null)
+		{
+			return selected;
+		}
+		else
+		{
+			selected.add(center);
+		}
+
+		return breadthFirstSearch((c) -> isCenterOverlappingRectangle(c, bounds), center);
+	}
+	
+	private boolean isCenterOverlappingRectangle(Center center, Rectangle rectangle)
+	{
+		for (Corner corner : center.corners)
+		{
+			if (rectangle.inBounds(corner.loc))
+			{
+				return true;
+			}
+		}
+
+		return rectangle.inBounds(center.loc);
 	}
 
 	/**

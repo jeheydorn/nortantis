@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 public class ThreadHelper
 {
@@ -82,6 +83,26 @@ public class ThreadHelper
 		}
 		
 		return results;
+	}
+	
+	public void processRowsInParallel(int numRows, Consumer<Integer> rowConsumer)
+	{
+		int numTasks = getThreadCount();
+		List<Runnable> tasks = new ArrayList<>(numTasks);
+		int rowsPerJob = numRows / numTasks;
+		for (int taskNumber : new Range(numTasks))
+		{
+			tasks.add(() ->
+			{
+				int endY = taskNumber == numTasks - 1 ? numRows : (taskNumber + 1) * rowsPerJob;
+				for (int y = taskNumber * rowsPerJob; y < endY; y++)
+				{
+					rowConsumer.accept(y);
+				}
+			});
+		}
+		
+		ThreadHelper.getInstance().processInParallel(tasks);
 	}
 	
 	public <T> Future<T> submit(Callable<T> job)

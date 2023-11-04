@@ -59,7 +59,7 @@ public class Undoer
 		
 		if (undoStack == null)
 		{
-			// This can happen even when !enabled if a map fails to draw and so reset has been called but initialize has not, 
+			// This can happen even when not enabled if a map fails to draw and so reset has been called but initialize has not, 
 			// because the editor allows user to change settings so they can fix the issue that caused the map to fail to draw.
 			// It will mean that the undo stack will not contain their change, but I'm okay with that.
 			return;

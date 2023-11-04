@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.util.ImageHelper;
+import nortantis.util.ThreadHelper;
 
 public class FractalBGGenerator
 {
@@ -20,7 +21,7 @@ public class FractalBGGenerator
 	 * under "Frequency Synthesis of Landscapes (and clouds)". The results look the same as
 	 * Gimp's plasma clouds.
 	 * @param p The power in the fractal exponent. This controls how smooth the result is.
-	 * @param constrast The contrast of the resulting image. 1 means full. Less than one will
+	 * @param contrast The contrast of the resulting image. 1 means full. Less than one will
 	 * scale the pixel values in the result about the central value.
 	 * @throws IOException 
 	 */
@@ -49,16 +50,19 @@ public class FractalBGGenerator
 			// Do the forward FFT.
 			fft.realForwardFull(data);
 		}
-								
+	
+		final int rowsFinal = rows;
+		final int colsFinal = cols;
 		// Multiply by 1/(f^p) in the frequency domain.
-		for (int r = 0; r < rows; r++)
-			for (int c = 0; c < cols; c++)
+		ThreadHelper.getInstance().processRowsInParallel(rows, (r) -> 
+		{
+			for (int c = 0; c < colsFinal; c++)
 			{
 				float dataR = data[r][c*2];
 				float dataI = data[r][c*2 + 1];
 				
-				float rF = Math.min(r, rows - r);
-				float cF = Math.min(c, cols - c);
+				float rF = Math.min(r, rowsFinal - r);
+				float cF = Math.min(c, colsFinal - c);
 				float f = (float)Math.sqrt(rF * rF + cF * cF);
 				float real;
 				float imaginary;
@@ -76,6 +80,7 @@ public class FractalBGGenerator
 				data[r][c*2] = real;
 				data[r][c*2 + 1] = imaginary;
 			}
+		});
 		
 		//ImageIO.write(ImageHelper.arrayToImage(data), "png", new File("frequencies.png"));
 		

@@ -143,7 +143,6 @@ public abstract class EditorTool
 
 		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
 
-		// Add any polygons within the brush that were too small (< 1 pixel) to be picked up before.
 		return updater.mapParts.graph
 				.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
 	}

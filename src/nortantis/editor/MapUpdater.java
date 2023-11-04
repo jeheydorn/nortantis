@@ -20,6 +20,7 @@ import javax.swing.SwingWorker;
 import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.MapText;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -27,6 +28,7 @@ import nortantis.swing.MapEdits;
 import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
 import nortantis.util.Logger;
+import nortantis.util.Range;
 import nortantis.util.Tuple2;
 
 public abstract class MapUpdater
@@ -46,9 +48,8 @@ public abstract class MapUpdater
 	/**
 	 * 
 	 * @param createEditsIfNotPresentAndUseMapParts
-	 *            When true, drawing the map for the first time will fill in
-	 *            MapSettings.Edits, and a MapParts object will be used. Only
-	 *            set this to false if the map will only do full re-draws.
+	 *            When true, drawing the map for the first time will fill in MapSettings.Edits, and a MapParts object will be used. Only set
+	 *            this to false if the map will only do full re-draws.
 	 */
 	public MapUpdater(boolean createEditsIfNotPresentAndUseMapParts)
 	{
@@ -64,12 +65,12 @@ public abstract class MapUpdater
 	 */
 	public void createAndShowMapFull()
 	{
-		createAndShowMap(UpdateType.Full, null, null, null, null);
+		createAndShowMap(UpdateType.Full, null, null, null, null, null);
 	}
 
 	public void createAndShowMapFull(Runnable preRun)
 	{
-		createAndShowMap(UpdateType.Full, null, null, preRun, null);
+		createAndShowMap(UpdateType.Full, null, null, null, preRun, null);
 	}
 
 	public void createAndShowMapTextChange()
@@ -79,60 +80,71 @@ public abstract class MapUpdater
 
 	public void createAndShowMapTextChange(Runnable postRun)
 	{
-		createAndShowMap(UpdateType.Text, null, null, null, postRun);
+		createAndShowMap(UpdateType.Text, null, null, null, null, postRun);
 	}
 
 	public void createAndShowMapFontsChange()
 	{
-		createAndShowMap(UpdateType.Fonts, null, null, null, null);
+		createAndShowMap(UpdateType.Fonts, null, null, null, null, null);
 	}
 
 	public void createAndShowMapTerrainChange()
 	{
-		createAndShowMap(UpdateType.Terrain, null, null, null, null);
+		createAndShowMap(UpdateType.Terrain, null, null, null, null, null);
 	}
 
 	public void createAndShowMapGrungeOrFrayedEdgeChange()
 	{
-		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null);
+		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null);
+		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null, null);
+		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null, null, null);
 	}
 	
+	public void createAndShowMapIncrementalUsingText(List<MapText> textChanged)
+	{
+		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null);
+	}
+
+	public void createAndShowMapIncrementalUsingText(List<MapText> textChanged, Runnable postRun)
+	{
+		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, postRun);
+	}
+
 	public void reprocessBooks()
 	{
-		createAndShowMap(UpdateType.ReprocessBooks, null, null, null, null);
+		createAndShowMap(UpdateType.ReprocessBooks, null, null, null, null, null);
 	}
 
 	/**
 	 * Redraws the map based on a change that was made.
 	 * 
-	 * For incremental drawing, this compares the edits in the change with the
-	 * current state of the edits from getEdits() to determine what changed.
+	 * For incremental drawing, this compares the edits in the change with the current state of the edits from getEdits() to determine what
+	 * changed.
 	 * 
 	 * @param change
-	 *            The 'before' state. Used to determine what needs to be
-	 *            redrawn.
-	 * @param preRun Code to run in the foreground thread before drawing this change.
+	 *            The 'before' state. Used to determine what needs to be redrawn.
+	 * @param preRun
+	 *            Code to run in the foreground thread before drawing this change.
 	 */
 	public void createAndShowMapFromChange(MapChange change)
-	{	
+	{
 		if (change.updateType != UpdateType.Incremental)
 		{
-			createAndShowMap(change.updateType, null, null, change.preRun, null);
+			createAndShowMap(change.updateType, null, null, null, change.preRun, null);
 		}
 		else
 		{
 			Set<Center> centersChanged = getCentersWithChangesInEdits(change.settings.edits);
 			Set<Edge> edgesChanged = null;
+			List<MapText> textChanged = null;
 			// Currently createAndShowMap doesn't support drawing both center
 			// edits and edge edits at the same time, so there is no
 			// need to find edges changed if centers were changed.
@@ -140,7 +152,12 @@ public abstract class MapUpdater
 			{
 				edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
 			}
-			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, change.preRun, null);
+			if (edgesChanged == null || edgesChanged.size() == 0)
+			{
+				// See if there was a text change.
+				textChanged = getTextWithChangesInEdits(change.settings.edits);
+			}
+			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, textChanged, change.preRun, null);
 		}
 	}
 
@@ -169,9 +186,38 @@ public abstract class MapUpdater
 				.map(eEdit -> mapParts.graph.edges.get(eEdit.index)).collect(Collectors.toSet());
 	}
 
+	private List<MapText> getTextWithChangesInEdits(MapEdits changeEdits)
+	{
+		// Note this algorithm works because I never delete map texts; I only mark them as empty, which causes them to not draw.
+		List<MapText> changed = new ArrayList<>();
+		List<MapText> curTextList = getEdits().text;
+		for (int i : new Range(curTextList.size()))
+		{
+			MapText curText = curTextList.get(i);
+			if (i > changeEdits.text.size() - 1)
+			{
+				changed.add(curText);
+			}
+			else if (!curText.equals(changeEdits.text.get(i)))
+			{
+				changed.add(curText);
+				changed.add(changeEdits.text.get(i));
+			}
+		}
+
+		if (changeEdits.text.size() > curTextList.size())
+		{
+			for (int i : new Range(changeEdits.text.size() - curTextList.size()))
+			{
+				changed.add(changeEdits.text.get(i + curTextList.size()));
+			}
+		}
+
+		return changed;
+	}
+
 	/**
-	 * Clears values from mapParts as needed to trigger those parts to re-redraw
-	 * based on what type of update we're making.
+	 * Clears values from mapParts as needed to trigger those parts to re-redraw based on what type of update we're making.
 	 * 
 	 * @param updateType
 	 */
@@ -214,7 +260,7 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.ReprocessBooks)
 		{
-			
+
 		}
 		else
 		{
@@ -224,12 +270,10 @@ public abstract class MapUpdater
 	}
 
 	/**
-	 * Creates a new set that has the most up-to-date version of the centers in
-	 * the given set. This is necessary because incremental and full redraws can
-	 * run out of order, and as a result, a full redraw might recreate the
-	 * graph, while an incremental change is waiting to run, causing
-	 * centersChanged (passed to createAndShowMap) to hold Center objects no
-	 * longer in the graph, and so they could be out of date.
+	 * Creates a new set that has the most up-to-date version of the centers in the given set. This is necessary because incremental and
+	 * full redraws can run out of order, and as a result, a full redraw might recreate the graph, while an incremental change is waiting to
+	 * run, causing centersChanged (passed to createAndShowMap) to hold Center objects no longer in the graph, and so they could be out of
+	 * date.
 	 */
 	private Set<Center> getCurrentCenters(Set<Center> centers)
 	{
@@ -251,33 +295,36 @@ public abstract class MapUpdater
 		}
 		return edges.stream().map(e -> mapParts.graph.edges.get(e.index)).collect(Collectors.toSet());
 	}
-	
+
 	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
 	{
 		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
 	}
 
-	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, Runnable preRun, Runnable postRun)
+	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
+			Runnable preRun, Runnable postRun)
 	{
 		List<Runnable> preRuns = new ArrayList<>();
 		if (preRun != null)
 		{
 			preRuns.add(preRun);
 		}
-		
+
 		List<Runnable> postRuns = new ArrayList<>();
 		if (postRun != null)
 		{
 			postRuns.add(postRun);
 		}
 		
-		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, preRuns, postRuns);
+		List<MapText> copied = textChanged == null ? null : textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
+		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copied, preRuns, postRuns);
 	}
-	
+
 	/**
 	 * Redraws the map, then displays it
 	 */
-	private void innerCreateAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> preRuns, List<Runnable> postRuns)
+	private void innerCreateAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
+			List<Runnable> preRuns, List<Runnable> postRuns)
 	{
 		if (!enabled)
 		{
@@ -286,7 +333,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, preRuns, postRuns));
+			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, textChanged, preRuns, postRuns));
 			return;
 		}
 
@@ -295,7 +342,7 @@ public abstract class MapUpdater
 		{
 			isMapReadyForInteractions = false;
 		}
-		
+
 		if (updateType != UpdateType.ReprocessBooks)
 		{
 			onBeginDraw();
@@ -307,7 +354,7 @@ public abstract class MapUpdater
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}
-		
+
 		if (preRuns != null)
 		{
 			for (Runnable runnable : preRuns)
@@ -345,6 +392,12 @@ public abstract class MapUpdater
 						{
 							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
 									getCurrentEdges(edgesChanged));
+							return new Tuple2<>(map, replaceBounds);
+						}
+						else if (textChanged != null && textChanged.size() > 0)
+						{
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map,
+									textChanged);
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else
@@ -430,12 +483,12 @@ public abstract class MapUpdater
 						initializeRegionEditsIfEmpty(settings.edits);
 						initializeEdgeEditsIfEmpty(settings.edits);
 					}
-					
+
 					if (mapParts != null)
 					{
 						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(settings.edits, mapParts.graph);
 					}
-					
+
 					MapUpdate next = combineAndGetNextUpdateToDraw();
 
 					if (updateType != UpdateType.ReprocessBooks)
@@ -449,7 +502,7 @@ public abstract class MapUpdater
 					}
 
 					isMapBeingDrawn = false;
-					
+
 					if (postRuns != null)
 					{
 						for (Runnable runnable : postRuns)
@@ -460,7 +513,7 @@ public abstract class MapUpdater
 
 					if (next != null)
 					{
-						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.preRuns, next.postRuns);
+						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.preRuns, next.postRuns);
 					}
 
 					isMapReadyForInteractions = true;
@@ -498,8 +551,7 @@ public abstract class MapUpdater
 	protected abstract BufferedImage getCurrentMapForIncrementalUpdate();
 
 	/**
-	 * Combines the updates in updatesToDraw when it makes sense to do so, they
-	 * can be drawn together.
+	 * Combines the updates in updatesToDraw when it makes sense to do so, they can be drawn together.
 	 * 
 	 * @return The combined update to draw
 	 */
@@ -509,7 +561,7 @@ public abstract class MapUpdater
 		{
 			return null;
 		}
-		
+
 		Optional<MapUpdate> full = updatesToDraw.stream().filter(update -> update.updateType == UpdateType.Full).findFirst();
 		if (full.isPresent())
 		{
@@ -517,7 +569,7 @@ public abstract class MapUpdater
 			updatesToDraw.clear();
 			return full.get();
 		}
-		
+
 		// Combine other types updates until we hit one that isn't
 		// the same type.
 		MapUpdate update = updatesToDraw.poll();
@@ -561,11 +613,13 @@ public abstract class MapUpdater
 	{
 		Set<Center> centersChanged;
 		Set<Edge> edgesChanged;
+		List<MapText> textChanged;
 		UpdateType updateType;
 		List<Runnable> postRuns;
 		List<Runnable> preRuns;
 
-		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<Runnable> preRuns, List<Runnable> postRuns)
+		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged, List<Runnable> preRuns,
+				List<Runnable> postRuns)
 		{
 			this.updateType = updateType;
 			if (centersChanged != null)
@@ -576,16 +630,20 @@ public abstract class MapUpdater
 			{
 				this.edgesChanged = new HashSet<Edge>(edgesChanged);
 			}
-			
+			if (textChanged != null)
+			{
+				this.textChanged = new ArrayList<>(textChanged);
+			}
+
 			if (postRuns != null)
 			{
-				this.postRuns = postRuns;				
+				this.postRuns = postRuns;
 			}
 			else
 			{
 				this.postRuns = new ArrayList<>();
 			}
-			
+
 			if (preRuns != null)
 			{
 				this.preRuns = preRuns;
@@ -607,7 +665,7 @@ public abstract class MapUpdater
 			{
 				throw new IllegalArgumentException();
 			}
-			
+
 			preRuns.addAll(other.preRuns);
 			postRuns.addAll(other.postRuns);
 
@@ -630,7 +688,16 @@ public abstract class MapUpdater
 				{
 					edgesChanged = new HashSet<>(other.edgesChanged);
 				}
-			}
+
+				if (textChanged != null && other.textChanged != null)
+				{
+					textChanged.addAll(other.textChanged);
+				}
+				else if (textChanged == null && other.textChanged != null)
+				{
+					textChanged = new ArrayList<>(other.textChanged);
+				}
+}
 		}
 	}
 

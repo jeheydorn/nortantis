@@ -370,7 +370,7 @@ public class TextDrawer
 		{
 			settings.drawText = drawTextPrev;
 		}
-		
+
 		// Now actually draw the text (if settings.drawText is true).
 		drawText(map, graph, mapTexts, null);
 	}
@@ -474,6 +474,42 @@ public class TextDrawer
 		g.dispose();
 	}
 
+	public Rectangle getTextBoundingBoxFor1Or2LineSplit(MapText text)
+	{
+		if (text.value == null || text.value.trim().length() == 0)
+		{
+			// This text was deleted.
+			return null;
+		}
+		Graphics2D g = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB).createGraphics();
+		setFontForTextType(g, text.type);
+		FontMetrics metrics = g.getFontMetrics();
+		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
+
+		// Get bounds for when the text is on one line.
+		java.awt.Rectangle bounds = getLine1Bounds(text.value, textLocation, metrics, false);
+		bounds = addBackgroundBlendingPadding(bounds);
+		Area area = getRotatedBounds(text, bounds, textLocation);
+
+		// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also add
+		// the bounds when it splits under two lines.
+		if (text.value.trim().contains(" "))
+		{
+			Pair<String> lines = addLineBreakNearMiddle(text.value);
+
+			java.awt.Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, metrics, true);
+			line1Bounds = addBackgroundBlendingPadding(line1Bounds);
+
+			area.add(getRotatedBounds(text, line1Bounds, textLocation));
+
+			java.awt.Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, metrics);
+			line2Bounds = addBackgroundBlendingPadding(line2Bounds);
+			area.add(getRotatedBounds(text, line2Bounds, textLocation));
+		}
+
+		return new Rectangle(area.getBounds());
+	}
+
 	private java.awt.Rectangle addBackgroundBlendingPadding(java.awt.Rectangle textBounds)
 	{
 		int padding = getBackgroundBlendingPadding(new Dimension(textBounds.width, textBounds.height));
@@ -493,6 +529,15 @@ public class TextDrawer
 		{
 			action.accept(text, lineArea);
 		}
+	}
+
+	private Area getRotatedBounds(MapText text, java.awt.Rectangle lineBounds, Point pivot)
+	{
+		AffineTransform transform = new AffineTransform();
+		transform.rotate(text.angle, pivot.x, pivot.y);
+		Area lineArea = new Area(lineBounds);
+		lineArea.transform(transform);
+		return lineArea;
 	}
 
 	public Rectangle expandBoundsToIncludeText(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, MapSettings settings)
@@ -1541,10 +1586,13 @@ public class TextDrawer
 		AffineTransform orig = g.getTransform();
 		try
 		{
+			AffineTransform transform = new AffineTransform(g.getTransform()); 
 			g.rotate(text.angle, pivotMinusDrawOffset.x, pivotMinusDrawOffset.y);
-
-			Area area1 = new Area(bounds1).createTransformedArea(g.getTransform());
-			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(g.getTransform());
+			
+			// Rotate the bounds for the text. Use a new transform rather than g's transform because we need to not include drawOffset when rotating.
+			transform.rotate(text.angle, pivot.x, pivot.y);
+			Area area1 = new Area(bounds1).createTransformedArea(transform);
+			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(transform);
 			// Make sure we don't draw on top of existing text.
 			if (enableBoundsChecking)
 			{
@@ -1617,7 +1665,8 @@ public class TextDrawer
 			{
 				{
 					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1, pivotMinusDrawOffset);
+					drawBackgroundBlendingForText(map, g, textStart, line1Size, text.angle, g.getFontMetrics(), line1,
+							pivotMinusDrawOffset);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(g, line1, textStart, text.angle, pivot);
@@ -1630,7 +1679,8 @@ public class TextDrawer
 				if (line2 != null)
 				{
 					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + g.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2, pivotMinusDrawOffset);
+					drawBackgroundBlendingForText(map, g, textStart, line2Size, text.angle, g.getFontMetrics(), line2,
+							pivotMinusDrawOffset);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(g, line2, textStart, text.angle, pivot);

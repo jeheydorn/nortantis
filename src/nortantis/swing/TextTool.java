@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -148,10 +149,10 @@ public class TextTool extends EditorTool
 
 				if (editButton.isSelected() && lastSelected != null)
 				{
+					MapText before = lastSelected.deepCopy();
 					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
-					updater.createAndShowMapTextChange();
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
-
 			}
 		});
 		textTypeHider = organizer.addLabelAndComponent("Text type:", "", textTypeComboBox);
@@ -172,10 +173,11 @@ public class TextTool extends EditorTool
 			{
 				if (lastSelected != null)
 				{
+					MapText before = lastSelected.deepCopy();
 					lastSelected.angle = 0;
 					undoer.setUndoPoint(UpdateType.Text, thisTool);
 					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
-					updater.createAndShowMapTextChange();
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
 			}
 		});
@@ -258,7 +260,6 @@ public class TextTool extends EditorTool
 	@Override
 	public void onActivate()
 	{
-		updater.createAndShowMapTextChange();
 		editTextField.requestFocus();
 	}
 
@@ -315,7 +316,7 @@ public class TextTool extends EditorTool
 					handleActionChanged();
 					handleSelectingTextToEdit(addedText, true);
 
-					updater.createAndShowMapTextChange();
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
 				}
 			});
 		}
@@ -342,6 +343,7 @@ public class TextTool extends EditorTool
 	{
 		List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation);
 		mapEditingPanel.addProcessingAreasFromTexts(mapTextsSelected);
+		List<MapText> before = mapTextsSelected.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
 		for (MapText text : mapTextsSelected)
 		{
 			text.value = "";
@@ -364,7 +366,7 @@ public class TextTool extends EditorTool
 				}
 			}
 
-			updater.createAndShowMapTextChange(() ->
+			updater.createAndShowMapIncrementalUsingText(before, () ->
 			{
 				mapEditingPanel.removeProcessingAreas(areasToRemove);
 				mapEditingPanel.repaint();
@@ -417,6 +419,7 @@ public class TextTool extends EditorTool
 		{
 			if (isMoving)
 			{
+				MapText before = lastSelected.deepCopy();
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 				nortantis.graph.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
 
@@ -431,11 +434,12 @@ public class TextTool extends EditorTool
 						lastSelected.location.x + translation.x, +lastSelected.location.y + translation.y
 				);
 				undoer.setUndoPoint(UpdateType.Text, this);
-				updater.createAndShowMapTextChange();
+				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				isMoving = false;
 			}
 			else if (isRotating)
 			{
+				MapText before = lastSelected.deepCopy();
 				double centerX = lastSelected.location.x;
 				double centerY = lastSelected.location.y;
 				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
@@ -457,7 +461,7 @@ public class TextTool extends EditorTool
 				}
 				lastSelected.angle = angle;
 				undoer.setUndoPoint(UpdateType.Text, this);
-				updater.createAndShowMapTextChange();
+				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				isRotating = false;
 			}
 		}
@@ -483,13 +487,14 @@ public class TextTool extends EditorTool
 		if (lastSelected != null
 				&& !(editTextField.getText().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)))
 		{
+			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
 			lastSelected.value = editTextField.getText();
 			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
 
 			// Need to re-draw all of the text.
 			undoer.setUndoPoint(UpdateType.Text, this);
-			updater.createAndShowMapTextChange();
+			updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 		}
 
 		if (selectedText == null)
@@ -535,8 +540,6 @@ public class TextTool extends EditorTool
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearTextBox();
 		mapEditingPanel.clearProcessingAreas();
-
-		updater.createAndShowMapTextChange();
 	}
 
 	@Override

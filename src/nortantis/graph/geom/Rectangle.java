@@ -17,6 +17,14 @@ public class Rectangle
 		this.width = width;
 		this.height = height;
 	}
+	
+	public Rectangle(java.awt.Rectangle rect)
+	{
+		this.x = rect.x;
+		this.y = rect.y;
+		this.width = rect.width;
+		this.height = rect.height;
+	}
 
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
 	{
@@ -116,15 +124,14 @@ public class Rectangle
 	}
 
 	/**
-	 * Returns a new rectangle expanded to include both this rectangle and the
-	 * one passed in.
+	 * Returns a new rectangle expanded to include both this rectangle and the one passed in.
 	 */
 	public Rectangle add(Rectangle other)
 	{
 		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
 				other.y + other.height);
 	}
-	
+
 	public Rectangle addCircle(Point loc, Double radius)
 	{
 		Rectangle rect = new Rectangle(loc.x - radius, loc.y - radius, radius * 2, radius * 2);
@@ -132,8 +139,7 @@ public class Rectangle
 	}
 
 	/**
-	 * Returns a new rectangle with the same centroid as this one but with the
-	 * width and height expanded by the given width and height.
+	 * Returns a new rectangle with the same centroid as this one but with the width and height expanded by the given width and height.
 	 */
 	public Rectangle pad(double paddWidth, double paddHeight)
 	{
@@ -177,10 +183,15 @@ public class Rectangle
 	{
 		return new java.awt.Point((int) x, (int) y);
 	}
-	
+
 	public Point upperLeftCorner()
 	{
 		return new Point(x, y);
+	}
+
+	public Point getCenter()
+	{
+		return new Point(x + width / 2.0, y + height / 2.0);
 	}
 
 	public double getRight()

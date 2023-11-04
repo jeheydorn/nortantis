@@ -31,7 +31,6 @@ import nortantis.editor.RegionEdit;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
-import nortantis.swing.ImageExportDialog;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
@@ -79,8 +78,8 @@ public class MapCreator
 	{
 		// I could be a little more efficient by only re-drawing the edges that
 		// changed, but re-drawing the centers too is good enough.
-		Set<Center> centersChagned = getCentersFromEdges(mapParts.graph, edgesChanged);
-		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChagned, edgesChanged);
+		Set<Center> centersChanged = getCentersFromEdges(mapParts.graph, edgesChanged);
+		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, edgesChanged);
 	}
 
 	/**
@@ -100,6 +99,35 @@ public class MapCreator
 			Set<Center> centersChanged)
 	{
 		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, null);
+	}
+	
+	public Rectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap, List<MapText> textChanged)
+	{
+		Stopwatch sw = new Stopwatch("incremental update text");
+		Rectangle bounds = null;
+		for (MapText text : textChanged)
+		{
+			Rectangle changeBounds = mapParts.textDrawer.getTextBoundingBoxFor1Or2LineSplit(text);
+			if (changeBounds == null)
+			{
+				continue;
+			}
+			
+			Set<Center> centersInBounds = mapParts.graph.getCentersInBounds(changeBounds);
+			
+			Rectangle updateBounds = incrementalUpdate(settings, mapParts, fullSizeMap, centersInBounds, null);
+			if (bounds == null)
+			{
+				bounds = updateBounds;
+			}
+			else if (updateBounds != null)
+			{
+				bounds = bounds.add(updateBounds);
+			}
+		}
+		
+		sw.printElapsedTime(); 
+		return bounds;
 	}
 
 	/**
@@ -1373,8 +1401,7 @@ public class MapCreator
 		// keeping only the blur that came off the white lines.
 		blurBox = ImageHelper.copySnippet(blurBox, new java.awt.Rectangle(lineWidth, lineWidth, blurLevel + 1, blurLevel + 1));
 
-		// Multiply the image by blurBox. Also remove the padded edges off of
-		// blurBox.
+		// Multiply the image by blurBox. Also remove the padded edges off of blurBox.
 		assert image.getType() == BufferedImage.TYPE_BYTE_GRAY;
 		WritableRaster imageRaster = image.getRaster();
 		Raster blurBoxRaster = blurBox.getRaster();
