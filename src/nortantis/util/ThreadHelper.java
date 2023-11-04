@@ -85,7 +85,7 @@ public class ThreadHelper
 		return results;
 	}
 	
-	public void processRowsInParallel(int numRows, Consumer<Integer> rowConsumer)
+	public void processRowsInParallel(int startRow, int numRows, Consumer<Integer> rowConsumer)
 	{
 		int numTasks = getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
@@ -94,8 +94,8 @@ public class ThreadHelper
 		{
 			tasks.add(() ->
 			{
-				int endY = taskNumber == numTasks - 1 ? numRows : (taskNumber + 1) * rowsPerJob;
-				for (int y = taskNumber * rowsPerJob; y < endY; y++)
+				int endY = taskNumber == numTasks - 1 ? startRow + numRows : startRow + (taskNumber + 1) * rowsPerJob;
+				for (int y = startRow + taskNumber * rowsPerJob; y < endY; y++)
 				{
 					rowConsumer.accept(y);
 				}

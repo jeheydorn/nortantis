@@ -54,7 +54,7 @@ public class FractalBGGenerator
 		final int rowsFinal = rows;
 		final int colsFinal = cols;
 		// Multiply by 1/(f^p) in the frequency domain.
-		ThreadHelper.getInstance().processRowsInParallel(rows, (r) -> 
+		ThreadHelper.getInstance().processRowsInParallel(0, rows, (r) -> 
 		{
 			for (int c = 0; c < colsFinal; c++)
 			{

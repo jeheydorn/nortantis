@@ -1530,12 +1530,15 @@ public class ImageHelper
 		float[] hsb = new float[3];
 		Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
 
-		for (int y = where.y; y < where.y + where.height; y++)
-			for (int x = where.x; x < where.x + where.width; x++)
+		final java.awt.Rectangle whereFinal = where;
+		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) -> 
+		{
+			for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
 			{
 				float level = raster.getSampleFloat(x, y, 0);
 				result.setRGB(x, y, colorifyPixel(level, hsb, how));
 			}
+		});
 
 		return result;
 	}
@@ -1633,17 +1636,20 @@ public class ImageHelper
 
 		java.awt.Rectangle imageBounds = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
 
-		for (int y = 0; y < colorIndexes.getHeight(); y++)
+		java.awt.Point whereFinal = where;
+		ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) -> 
+		{
 			for (int x = 0; x < colorIndexes.getWidth(); x++)
 			{
-				if (!imageBounds.contains(x + where.x, y + where.y))
+				if (!imageBounds.contains(x + whereFinal.x, y + whereFinal.y))
 				{
 					continue;
 				}
-				float level = raster.getSampleFloat(x + where.x, y + where.y, 0);
+				float level = raster.getSampleFloat(x + whereFinal.x, y + whereFinal.y, 0);
 				int colorKey = colorIndexesRaster.getSample(x, y, 0);
 				result.setRGB(x, y, colorifyPixel(level, hsbMap.get(colorKey), how));
 			}
+		});
 
 		return result;
 	}
