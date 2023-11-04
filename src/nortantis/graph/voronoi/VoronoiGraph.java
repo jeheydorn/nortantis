@@ -101,6 +101,7 @@ public abstract class VoronoiGraph
 		}
 		buildGraph(v);
 		improveCorners();
+		assignBorderToCenters();
 
 		if (createElevationRiversAndBiomes)
 		{
@@ -117,6 +118,22 @@ public abstract class VoronoiGraph
 		}
 		// Joseph note: I moved noisy edge building code to GraphImpl because it
 		// now depends on the political regions.
+	}
+	
+	private void assignBorderToCenters()
+	{
+		for (Center c1 : centers)
+		{
+			for (final Corner corner : c1.corners)
+			{
+				if (corner.border)
+				{
+					c1.isBorder = true;
+					break;
+				}
+			}
+		}
+
 	}
 
 	abstract protected Biome getBiome(Center p);

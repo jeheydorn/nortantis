@@ -85,16 +85,20 @@ public class WorldGraph extends VoronoiGraph
 
 	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
 			double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
-			LineStyle lineStyle, double pointPrecision)
+			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesAndRegions)
 	{
 		super(r, sizeMultiplyer, pointPrecision);
 		this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
 		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
 		TectonicPlate.resetIds();
-		initVoronoiGraph(v, numLloydRelaxations, true);
+		initVoronoiGraph(v, numLloydRelaxations, createElevationBiomesAndRegions);
 		setupColors();
-		createPoliticalRegions();
+		regions = new TreeMap<>();
+		if (createElevationBiomesAndRegions)
+		{
+			createPoliticalRegions();
+		}
 		setupRandomSeeds(r);
 		buildNoisyEdges(lineStyle, false);
 	}
@@ -106,7 +110,6 @@ public class WorldGraph extends VoronoiGraph
 	{
 		super(r, sizeMultiplyer, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, false);
-		assignBorderToCorners();
 		setupColors();
 		setupRandomSeeds(r);
 		buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
@@ -292,8 +295,6 @@ public class WorldGraph extends VoronoiGraph
 				regionList.add(region);
 			}
 		}
-
-		regions = new TreeMap<>();
 
 		// Set the id of each region and add it to the regions map.
 		for (int i : new Range(regionList.size()))
@@ -971,8 +972,6 @@ public class WorldGraph extends VoronoiGraph
 			c1.isWater = c1.elevation < seaLevel;
 		}
 
-		assignBorderToCorners();
-
 		// Copied from super.assignOceanCoastAndLand()
 		// Determine if each corner is coast or water.
 		for (Center c : centers)
@@ -1007,22 +1006,6 @@ public class WorldGraph extends VoronoiGraph
 			numLand += !center.isWater ? 1 : 0;
 		}
 		c.isCoast = numOcean > 0 && numLand > 0;
-	}
-
-	private void assignBorderToCorners()
-	{
-		for (Center c1 : centers)
-		{
-			for (final Corner corner : c1.corners)
-			{
-				if (corner.border)
-				{
-					c1.isBorder = true;
-					break;
-				}
-			}
-		}
-
 	}
 
 	private void assignOceanAndContinentalPlates()

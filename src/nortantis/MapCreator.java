@@ -103,7 +103,6 @@ public class MapCreator
 	
 	public Rectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap, List<MapText> textChanged)
 	{
-		Stopwatch sw = new Stopwatch("incremental update text");
 		Rectangle bounds = null;
 		for (MapText text : textChanged)
 		{
@@ -126,7 +125,6 @@ public class MapCreator
 			}
 		}
 		
-		sw.printElapsedTime(); 
 		return bounds;
 	}
 
@@ -1218,7 +1216,7 @@ public class MapCreator
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), sizeMultiplier, settings.lineStyle,
-				settings.pointPrecision);
+				settings.pointPrecision, settings.edits.isEmpty());
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
