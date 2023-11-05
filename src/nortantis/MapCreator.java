@@ -100,8 +100,9 @@ public class MapCreator
 	{
 		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, null);
 	}
-	
-	public Rectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap, List<MapText> textChanged)
+
+	public Rectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap,
+			List<MapText> textChanged)
 	{
 		Rectangle bounds = null;
 		for (MapText text : textChanged)
@@ -111,9 +112,9 @@ public class MapCreator
 			{
 				continue;
 			}
-			
+
 			Set<Center> centersInBounds = mapParts.graph.getCentersInBounds(changeBounds);
-			
+
 			Rectangle updateBounds = incrementalUpdate(settings, mapParts, fullSizeMap, centersInBounds, null);
 			if (bounds == null)
 			{
@@ -124,7 +125,7 @@ public class MapCreator
 				bounds = bounds.add(updateBounds);
 			}
 		}
-		
+
 		return bounds;
 	}
 
@@ -422,7 +423,8 @@ public class MapCreator
 			if (mapParts == null || mapParts.graph == null)
 			{
 				Logger.println("Creating the graph.");
-				WorldGraph graphCreated = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
+				WorldGraph graphCreated = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier,
+						settings.edits.isEmpty());
 				if (mapParts != null)
 				{
 					mapParts.graph = graphCreated;
@@ -593,7 +595,7 @@ public class MapCreator
 			{
 				frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
 			}
-			
+
 			if (frayedBorderTask != null)
 			{
 				Tuple2<BufferedImage, BufferedImage> tuple;
@@ -686,8 +688,8 @@ public class MapCreator
 		return map;
 	}
 
-	private Future<Tuple2<BufferedImage, BufferedImage>> startFrayedBorderCreation(long frayedBorderSeed, MapSettings settings, Dimension mapDimensions,
-			double sizeMultiplier, MapParts mapParts)
+	private Future<Tuple2<BufferedImage, BufferedImage>> startFrayedBorderCreation(long frayedBorderSeed, MapSettings settings,
+			Dimension mapDimensions, double sizeMultiplier, MapParts mapParts)
 	{
 		// Use the random number generator the same whether or not we draw a frayed border.
 		if (settings.frayedBorder)
@@ -1212,11 +1214,12 @@ public class MapCreator
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 
-	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplier)
+	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplier,
+			boolean createElevationBiomesAndRegions)
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), sizeMultiplier, settings.lineStyle,
-				settings.pointPrecision, settings.edits.isEmpty());
+				settings.pointPrecision, createElevationBiomesAndRegions);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
@@ -1525,7 +1528,7 @@ public class MapCreator
 		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.heightmapResolution,
 				settings.generatedHeight * settings.heightmapResolution);
 		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
-		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier);
+		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 
@@ -1595,7 +1598,7 @@ public class MapCreator
 	{
 		return isCanceled;
 	}
-	
+
 
 	public static int calcMaximumResolution()
 	{
@@ -1629,7 +1632,7 @@ public class MapCreator
 		maxResolution -= maxResolution % 25;
 		return maxResolution;
 	}
-	
+
 	private static double calcMaxResolutionScale()
 	{
 		return calcMaximumResolution() / 100.0;
