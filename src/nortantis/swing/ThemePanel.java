@@ -412,7 +412,7 @@ public class ThemePanel extends JTabbedPane
 		borderWidthSlider.setPaintTicks(true);
 		borderWidthSlider.setPaintLabels(true);
 		borderWidthSlider.setMinorTickSpacing(50);
-		borderWidthSlider.setMaximum(800);
+		borderWidthSlider.setMaximum(600);
 		borderWidthSlider.setMajorTickSpacing(200);
 		createMapChangeListenerForFullRedraw(borderWidthSlider);
 		SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
