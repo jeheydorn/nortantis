@@ -258,6 +258,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		consoleOutputPane = new JScrollPane(panel);
 		consoleOutputPane.setMinimumSize(new Dimension(0, 0));
+		consoleOutputPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
 	}
 
 	private void createMapEditingPanel()

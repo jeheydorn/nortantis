@@ -42,6 +42,7 @@ public class MapSettings implements Serializable
 {
 	public static final String currentVersion = "1.0";
 	public static final double defaultPointPrecision = 2.0;
+	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 
 	public String version;
 	public long randomSeed;
@@ -560,7 +561,7 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			treeHeightScale = 0.5;
+			treeHeightScale = defaultTreeHeightScaleForOldMaps;
 		}
 
 		edits = new MapEdits();
@@ -801,6 +802,7 @@ public class MapSettings implements Serializable
 		cityIconTypeName = old.cityIconSetName;
 		pointPrecision = old.pointPrecision;
 		edits = old.edits;
+		treeHeightScale = defaultTreeHeightScaleForOldMaps;
 
 		// Convert the settings to json and back to an object to pick up any conversions added in the json parse.
 		String json = toJson();

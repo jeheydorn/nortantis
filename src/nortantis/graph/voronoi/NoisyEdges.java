@@ -296,6 +296,7 @@ public class NoisyEdges
 	
 	private EdgeType getEdgeDrawType(Edge edge)
 	{
+		// Changes to this method will likely also need to update MapCreator.applyCenterEdits where it sets needsRebuild.
 		if (isForFrayedBorder)
 		{
 			if (edge.d0.isBorder != edge.d1.isBorder)

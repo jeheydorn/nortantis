@@ -1282,14 +1282,14 @@ public class MapCreator
 			cEdit = cEdit.deepCopyWithLock();
 
 			Center center = graph.centers.get(cEdit.index);
-			boolean needsRebuild = center.isWater != cEdit.isWater;
+			Integer currentRegionId = center.region == null ? null : center.region.id; 
+			boolean needsRebuild = center.isWater != cEdit.isWater || currentRegionId != cEdit.regionId;
 			center.isWater = cEdit.isWater;
 			center.isLake = cEdit.isLake;
 
-			Integer regionId = cEdit.regionId;
-			if (regionId != null)
+			if (cEdit.regionId != null)
 			{
-				Region region = graph.regions.get(regionId);
+				Region region = graph.regions.get(cEdit.regionId);
 				// region can be null if the map is edited while drawing it. If
 				// that happens, then the region color of this center will be
 				// updated the next time the map draws.

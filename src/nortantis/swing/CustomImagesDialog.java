@@ -54,11 +54,11 @@ public class CustomImagesDialog extends JDialog
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		content.add(organizer.panel, BorderLayout.CENTER);
-		organizer.addLeftAlignedComponent(new JLabel("<html>Custom images are an advanced feature. To use them, enter a path to a "
-				+ "folder with your images. If the folder is empty, Nortantis will copy its installed images into it as a "
-				+ "starting point. After that, it "
-				+ "will be up to you to ensure that your custom images folder has the structure Nortantis expects. "
-				+ "That structure is: </html>"), space, space, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel("<html>Using custom images with a map is an advanced feature. To use it, enter a path to a "
+						+ "folder with your images. If the folder is empty, Nortantis will copy its installed images into it as a "
+						+ "starting point. " + "The folder structure Nortantis uses is: </html>"),
+				space, space, false);
 
 		int spaceBetweenPaths = 2;
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "borders" + File.separator
@@ -75,7 +75,8 @@ public class CustomImagesDialog extends JDialog
 				+ File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>The names above in angle brackets are folder and file names"
-				+ " that you can configure. Folder names without angle brackets, however, must be exactly as described above or else Nortantis won't be able to find the image is in those folders. Images must be either PNG or"
+				+ " that you can configure to be whatever name you want. Folder names without angle brackets, however, must be exactly as described above or else Nortantis won't"
+				+ " be able to find the image is in those folders. Images must be either PNG or"
 				+ " JPG format. PNG is recommended because it" + " supports transparency and isn't lossy.</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>Valid border image names are 'upper_left_corner', 'upper_right_corner', "
 				+ "'lower_left_corner', 'lower_right_corner', 'top_edge', 'bottom_edge', 'left_edge', 'right_edge'. At least one corner and"
@@ -83,7 +84,8 @@ public class CustomImagesDialog extends JDialog
 
 		organizer.addLeftAlignedComponent(
 				new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
-						+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'.</html>"),
+						+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'. If you don't want all three of those tree types,"
+						+ " then simply delete the folder or images for the type you don't want to use.</html>"),
 				space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel(
@@ -96,11 +98,12 @@ public class CustomImagesDialog extends JDialog
 						+ " can either close and re-open the program or use " + mainWindow.getFileMenuName() + " -> "
 						+ mainWindow.getRefreshImagesMenuName() + ".</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<html>Using a custom images folder causes Nortantis to use your images rather than its own,"
+				new JLabel("<html>Using a custom images folder causes this map to use your images rather than the images built into Nortantis,"
 						+ " even if you install a new version of Nortantis that might include new images or fixes to existing images."
 						+ " To update your custom"
-						+ " images folder, you can change the path below to a new folder to cause Nortantis to add it's new images to"
-						+ " that folder, then hand-merge the two folders." + "</html>"),
+						+ " images folder, you can create a new map, add a new custom images folder to the new map, grab the "
+						+ " folder of images that creates, and merge it with your custom images folder from this map."
+						+ " </html>"),
 				space, space, false);
 		organizer.addLeftAlignedComponent(
 				new JLabel("<html>To revert back to using Nortantis's installed images, clear out the" + " field below.</html>"), space, 10,
