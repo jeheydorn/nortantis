@@ -73,7 +73,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private boolean forceSaveAs;
 	MapSettings lastSettingsLoadedOrSaved;
 	boolean hasDrawnCurrentMapAtLeastOnce;
-	static final String frameTitleBase = "Nortantis Fantasy Map Generator";
+	static final String frameTitleBase = "Nortantis Fantasy Maps";
 	public MapEdits edits;
 	public JMenuItem clearEditsMenuItem;
 

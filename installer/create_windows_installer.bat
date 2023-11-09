@@ -3,7 +3,7 @@ REM Before running this script, in Eclipse, change AssetsPath.isInstalled to tru
 REM When updating the app version, make sure to also update MapSettings.currentVersion. Although that can be skipped if MapSettings does not change.
 
 set inputFolder=installer_input
-set exeName=Nortantis
+set exeName=Nortantis Fantasy Maps
 
 RMDIR /S /Q installer_input
 MKDIR %inputFolder%
@@ -25,10 +25,12 @@ jpackage ^
 --vendor "Joseph Heydorn" ^
 --app-version "1.0" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
---java-options -Dfile.encoding=UTF-8 ^
---license-file end_user_license_agreement.txt
+--java-options -Dfile.encoding=UTF-8
+
 
 REM Line to create Windows console: --win-console ^
+
+REM line to add license file: --license-file end_user_license_agreement.txt ^
 
 RMDIR /S /Q installer_input
 REM DEL "..\Nortantis.jar"
