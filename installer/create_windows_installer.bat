@@ -3,14 +3,14 @@ REM Before running this script, in Eclipse, change AssetsPath.isInstalled to tru
 REM When updating the app version, make sure to also update MapSettings.currentVersion. Although that can be skipped if MapSettings does not change.
 
 set inputFolder=installer_input
-set exeName=Nortantis Fantasy Maps
+set exeName=Nortantis
 
 RMDIR /S /Q installer_input
 MKDIR %inputFolder%
 Xcopy "../assets" "%inputFolder%/assets" /E /I
 DEL "%inputFolder%\assets\books\SSA *"
 copy ..\Nortantis.jar %inputFolder%
-DEL "Nortantis-*.msi"
+DEL "Nortantis Fantasy Maps-*.msi"
 
 jpackage ^
 --input "%inputFolder%" ^
@@ -25,6 +25,7 @@ jpackage ^
 --vendor "Joseph Heydorn" ^
 --app-version "1.0" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
+--win-console ^
 --java-options -Dfile.encoding=UTF-8
 
 

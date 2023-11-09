@@ -4,7 +4,7 @@
 # When updating the app version, make sure to also update MapSettings.currentVersion. Although that can be skipped if MapSettings does not change.
 
 inputFolder="installer_input"
-exeName="Nortantis Fantasy Maps"
+exeName="Nortantis"
 
 rm -rf "$inputFolder"
 mkdir "$inputFolder"
