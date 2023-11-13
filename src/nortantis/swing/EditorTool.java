@@ -74,6 +74,7 @@ public abstract class EditorTool
 	/**
 	 * Do any processing to the generated map before displaying it, and return the map to display. This is also the earliest time when
 	 * mapParts is initialized.
+	 * 
 	 * @param map
 	 *            The generated map
 	 * 
@@ -118,8 +119,7 @@ public abstract class EditorTool
 		double osScale = mapEditingPanel.osScale;
 		return new nortantis.graph.geom.Point(
 				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
-				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale))
-		);
+				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
 	}
 
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
@@ -143,8 +143,8 @@ public abstract class EditorTool
 
 		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
 
-		return updater.mapParts.graph
-				.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius), center);
+		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius),
+				center);
 	}
 
 	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter)

@@ -17,7 +17,7 @@ public class Rectangle
 		this.width = width;
 		this.height = height;
 	}
-	
+
 	public Rectangle(java.awt.Rectangle rect)
 	{
 		this.x = rect.x;

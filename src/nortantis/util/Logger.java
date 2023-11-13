@@ -35,14 +35,14 @@ public class Logger
 	{
 		println("");
 	}
-	
+
 	public static void printError(String message, Throwable e)
 	{
 		if (e == null)
 		{
 			return;
 		}
-		
+
 		println(message);
 		println(e.getMessage());
 		println(ExceptionUtils.getStackTrace(e));

@@ -12,7 +12,8 @@ public class DrawAndEraseModeWidget
 	private JToggleButton drawModeButton;
 	private JToggleButton eraseModeButton;
 
-	public DrawAndEraseModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut, Runnable changeListener)
+	public DrawAndEraseModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut,
+			Runnable changeListener)
 	{
 		ActionListener modeListener = new ActionListener()
 		{
@@ -53,19 +54,18 @@ public class DrawAndEraseModeWidget
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
 
 	}
-	
+
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
 	{
-		return organizer.addLabelAndComponentsHorizontal("Mode:", labelTooltip,
-				Arrays.asList(drawModeButton, eraseModeButton), 0, 5);
+		return organizer.addLabelAndComponentsHorizontal("Mode:", labelTooltip, Arrays.asList(drawModeButton, eraseModeButton), 0, 5);
 
 	}
-	
+
 	public boolean isDrawMode()
 	{
 		return drawModeButton.isSelected();
 	}
-	
+
 	public boolean isEraseMode()
 	{
 		return eraseModeButton.isSelected();

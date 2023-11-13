@@ -659,9 +659,10 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(treeHeightSlider);
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
-		// organizer.addSeperator();
+		organizer.addSeperator();
 		allowTopsOfIconsToOverlapOceanCheckbox = new JCheckBox("Allow the tops of icons to protrude over coastlines");
-		// organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapOceanCheckbox); TODO put back when this feature is ready
+		createMapChangeListenerForTerrainChange(allowTopsOfIconsToOverlapOceanCheckbox);
+		organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapOceanCheckbox);
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();

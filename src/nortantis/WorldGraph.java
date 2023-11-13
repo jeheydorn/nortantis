@@ -1272,7 +1272,7 @@ public class WorldGraph extends VoronoiGraph
 	public Set<Center> getCentersInBounds(Rectangle bounds)
 	{
 		Set<Center> selected = new HashSet<Center>();
-		
+
 		if (bounds == null)
 		{
 			return selected;
@@ -1290,7 +1290,7 @@ public class WorldGraph extends VoronoiGraph
 
 		return breadthFirstSearch((c) -> isCenterOverlappingRectangle(c, bounds), center);
 	}
-	
+
 	private boolean isCenterOverlappingRectangle(Center center, Rectangle rectangle)
 	{
 		for (Corner corner : center.corners)

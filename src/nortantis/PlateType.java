@@ -1,7 +1,6 @@
 package nortantis;
 
-public enum PlateType 
+public enum PlateType
 {
-	Oceanic, 
-	Continental
+	Oceanic, Continental
 };

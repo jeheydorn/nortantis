@@ -13,6 +13,7 @@ import nortantis.util.Range;
 
 /**
  * Used to generate words using character level n-grams.
+ * 
  * @author joseph
  *
  */
@@ -22,14 +23,15 @@ public class CharacterNGram
 	Random r;
 	ListCounterMap<Character> lcMap;
 	Set<String> namesFromCorpora;
-	
+
 	final char startToken = 0;
-	final char endToken = 4; 
-	
+	final char endToken = 4;
+
 	/**
 	 * 
 	 * @param r
-	 * @param n The size of the n-grams. For bi-grams n=2, for tri-grams n=3, etc.
+	 * @param n
+	 *            The size of the n-grams. For bi-grams n=2, for tri-grams n=3, etc.
 	 */
 	public CharacterNGram(Random r, int n)
 	{
@@ -37,14 +39,14 @@ public class CharacterNGram
 		this.r = r;
 		this.lcMap = new ListCounterMap<>();
 	}
-	
+
 	public void addData(Collection<String> phrases)
 	{
 		for (String phrase : phrases)
 		{
 			for (int i : new Range(phrase.length()))
 			{
-				List<Character> lastChars = new ComparableList<Character>(n-1);
+				List<Character> lastChars = new ComparableList<Character>(n - 1);
 				for (int j = i - n + 1; j < i; j++)
 				{
 					if (j < 0)
@@ -52,11 +54,11 @@ public class CharacterNGram
 					else
 						lastChars.add(phrase.charAt(j));
 				}
-				
+
 				lcMap.increamentCount(lastChars, phrase.charAt(i));
 			}
 			// Add the end token.
-			List<Character> lastChars = new ComparableList<Character>(n-1);
+			List<Character> lastChars = new ComparableList<Character>(n - 1);
 			for (int j = phrase.length() - n + 1; j < phrase.length(); j++)
 			{
 				if (j < 0)
@@ -66,14 +68,15 @@ public class CharacterNGram
 			}
 			lcMap.increamentCount(lastChars, endToken);
 		}
-		
+
 		namesFromCorpora = new HashSet<>(phrases);
 	}
-	
+
 	public String generateNameNotInCorpora(String requiredPrefix) throws NotEnoughNamesException
 	{
 		final int maxRetries = 20;
-		for (@SuppressWarnings("unused") int retry : new Range(maxRetries))
+		for (@SuppressWarnings("unused")
+		int retry : new Range(maxRetries))
 		{
 			String name = generateName(requiredPrefix);
 			if (name.length() < 2)
@@ -86,20 +89,21 @@ public class CharacterNGram
 				return name;
 			}
 		}
-		
+
 		throw new NotEnoughNamesException();
 	}
-	
+
 	private String generateName(String requiredPrefix)
 	{
 		if (lcMap.size() == 0)
 			throw new IllegalStateException("At least one book must be selected to generate text.");
 		List<Character> lastChars = new ComparableList<>();
-		for (@SuppressWarnings("unused") int i : new Range(n - 1))
+		for (@SuppressWarnings("unused")
+		int i : new Range(n - 1))
 		{
 			lastChars.add(startToken);
 		}
-		
+
 		for (char c : requiredPrefix.toLowerCase().toCharArray())
 		{
 			lastChars.remove(0);
@@ -123,22 +127,23 @@ public class CharacterNGram
 				result += next;
 			}
 		}
-		while(next != endToken);
+		while (next != endToken);
 
 		return result;
 	}
-	
+
 	public boolean isEmpty()
 	{
 		return lcMap.size() == 0;
 	}
-	
+
 	public static void main(String[] args)
 	{
 		List<String> strs = Arrays.asList("yellow", "bannana", "yellowish", "corn", "corn and rice", "corn without rice", "yellow corn");
 		CharacterNGram generator = new CharacterNGram(new Random(), 3);
 		generator.addData(strs);
-		for (@SuppressWarnings("unused") int i : new Range(10))
+		for (@SuppressWarnings("unused")
+		int i : new Range(10))
 			System.out.println(generator.generateName(""));
 	}
 }

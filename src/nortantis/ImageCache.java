@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Supplier;
 
 import org.apache.commons.io.FilenameUtils;
 
@@ -25,7 +24,6 @@ import nortantis.util.ListMap;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
-import nortantis.util.Tuple3;
 
 /**
  * Caches icons in memory to avoid recreating or reloading them.
@@ -45,27 +43,19 @@ public class ImageCache
 	private ConcurrentHashMapF<String, BufferedImage> fileCache;
 
 	/**
-	 * Maps string keys to images generated (not loaded directly from files).
-	 */
-	private ConcurrentHashMapF<String, BufferedImage> generatedImageCache;
-
-	/**
 	 * Maps icon type > icon sub-type name > lists of icons of that sub-type.
-	 * The first image in the tuple is the icon. The second image is the mask,
-	 * which is generated based on the image loaded from disk.
 	 */
-	private ConcurrentHashMapF<IconType, ListMap<String, Tuple2<BufferedImage, BufferedImage>>> iconGroupsAndMasksCache;
+	private ConcurrentHashMapF<IconType, ListMap<String, ImageAndMasks>> iconGroupsAndMasksCache;
 
 	/**
-	 * Maps icon type > icon group name > lists of icons,
-	 * masks, and icon widths, of that sub-type.
+	 * Maps icon type > icon group name > lists of icons, masks, and icon widths, of that sub-type.
 	 */
-	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, Map<String, Tuple3<BufferedImage, BufferedImage, Integer>>>> iconsWithWidthsCache;
+	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, Map<String, Tuple2<ImageAndMasks, Integer>>>> iconsWithWidthsCache;
 
 	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, String[]>> iconGroupFilesNamesCache;
 
 	private ConcurrentHashMapF<IconType, Set<String>> iconGroupNames;
-	
+
 	private String imagesPath;
 
 	/**
@@ -76,7 +66,6 @@ public class ImageCache
 		this.imagesPath = imagesPath;
 		scaledCache = new ConcurrentHashMapF<>();
 		fileCache = new ConcurrentHashMapF<>();
-		generatedImageCache = new ConcurrentHashMapF<>();
 		iconGroupsAndMasksCache = new ConcurrentHashMapF<>();
 		iconsWithWidthsCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
@@ -84,9 +73,9 @@ public class ImageCache
 	}
 
 	/**
-	 * Gets the image cache instance associated with the given imagesPath.
-	 * When imagesPath is null or empty, then the imageCache for the installed
-	 * images is given.
+	 * Gets the image cache instance associated with the given imagesPath. When imagesPath is null or empty, then the imageCache for the
+	 * installed images is given.
+	 * 
 	 * @param imagesPath
 	 * @return
 	 */
@@ -96,13 +85,12 @@ public class ImageCache
 		{
 			return instances.getOrCreate(imagesPath, () -> new ImageCache(imagesPath));
 		}
-		
+
 		return instances.getOrCreate(AssetsPath.getInstallPath(), () -> new ImageCache(AssetsPath.getInstallPath()));
 	}
 
 	/**
-	 * Either looks up in the cache, or creates, a version of the given icon
-	 * with the given width.
+	 * Either looks up in the cache, or creates, a version of the given icon with the given width.
 	 * 
 	 * @param icon
 	 *            Original image (not scaled)
@@ -123,8 +111,7 @@ public class ImageCache
 	}
 
 	/**
-	 * Either looks up in the cache, or creates, a version of the given icon
-	 * with the given height.
+	 * Either looks up in the cache, or creates, a version of the given icon with the given height.
 	 * 
 	 * @param icon
 	 *            Original image (not scaled)
@@ -155,34 +142,19 @@ public class ImageCache
 	}
 
 	/**
-	 * Get an image from cache or create it using createFun.
-	 */
-	public BufferedImage getOrCreateImage(String key, Supplier<BufferedImage> createFun)
-	{
-		return generatedImageCache.getOrCreate(key.toString(), createFun);
-	}
-
-	/**
 	 * Loads or retrieves cache for groups if icons of a given type.
 	 * 
-	 * @returns A map of icon type > icon sub-type name > lists of icons of that
-	 *          sub-type. The first image in the tuple is the icon. The second
-	 *          image is the mask, which is generated based on the image loaded
-	 *          from disk.
+	 * @returns A map of icon type > icon sub-type name > lists of icons of that sub-type. The first image in the tuple is the icon. The
+	 *          second image is the mask, which is generated based on the image loaded from disk.
 	 */
-	public ListMap<String, Tuple2<BufferedImage, BufferedImage>> getAllIconGroupsAndMasksForType(IconType iconType)
+	public ListMap<String, ImageAndMasks> getAllIconGroupsAndMasksForType(IconType iconType)
 	{
 		return iconGroupsAndMasksCache.getOrCreate(iconType, () -> loadAllIconGroupsAndMasksForType(iconType));
 	}
 
-	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> loadAllIconGroupsAndMasksForType(IconType iconType)
+	private ListMap<String, ImageAndMasks> loadAllIconGroupsAndMasksForType(IconType iconType)
 	{
-		return loadAllIconGroupsAndMasksForSetAndType(iconType);
-	}
-
-	private ListMap<String, Tuple2<BufferedImage, BufferedImage>> loadAllIconGroupsAndMasksForSetAndType(IconType iconType)
-	{
-		ListMap<String, Tuple2<BufferedImage, BufferedImage>> imagesPerGroup = new ListMap<>();
+		ListMap<String, ImageAndMasks> imagesPerGroup = new ListMap<>();
 
 		Set<String> groupNames = getIconGroupNames(iconType);
 		for (String groupName : groupNames)
@@ -201,13 +173,9 @@ public class ImageCache
 				{
 					Logger.println("Loading icon: " + path);
 				}
-				BufferedImage icon;
-				BufferedImage mask;
+				BufferedImage icon = getImageFromFile(path);
 
-				icon = getImageFromFile(path);
-				mask = getOrCreateImage("mask " + path.toString(), () -> IconDrawer.createMask(icon));
-
-				imagesPerGroup.add(groupName, new Tuple2<>(icon, mask));
+				imagesPerGroup.add(groupName, new ImageAndMasks(icon));
 			}
 		}
 		return imagesPerGroup;
@@ -232,21 +200,19 @@ public class ImageCache
 	}
 
 	/**
-	 * Loads icons which do not have groups, but which do have default widths in
-	 * the file names.
+	 * Loads icons which do not have groups, but which do have default widths in the file names.
 	 * 
-	 * @return A map from icon names (not including width or extension) to a
-	 *         tuple with the icon, mask, and width.
+	 * @return A map from icon names (not including width or extension) to a tuple with the icon, mask, and width.
 	 */
-	public Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> getIconsWithWidths(IconType iconType, String groupName)
+	public Map<String, Tuple2<ImageAndMasks, Integer>> getIconsWithWidths(IconType iconType, String groupName)
 	{
-		return iconsWithWidthsCache.getOrCreate(iconType,() -> new ConcurrentHashMapF<>())
-				.getOrCreate(groupName == null ? "" : groupName, () -> loadIconsWithWidths(iconType, groupName));
+		return iconsWithWidthsCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupName == null ? "" : groupName,
+				() -> loadIconsWithWidths(iconType, groupName));
 	}
 
-	private Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> loadIconsWithWidths(IconType iconType, String groupName)
+	private Map<String, Tuple2<ImageAndMasks, Integer>> loadIconsWithWidths(IconType iconType, String groupName)
 	{
-		Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> imagesAndMasks = new HashMap<>();
+		Map<String, Tuple2<ImageAndMasks, Integer>> imagesAndMasks = new HashMap<>();
 		String[] fileNames = getIconGroupFileNames(iconType, groupName);
 		if (fileNames.length == 0)
 		{
@@ -274,11 +240,7 @@ public class ImageCache
 			{
 				Logger.println("Loading icon: " + path);
 			}
-			BufferedImage icon;
-			BufferedImage mask;
-
-			icon = getImageFromFile(path);
-			mask = getOrCreateImage("mask " + path.toString(), () -> IconDrawer.createMask(icon));
+			BufferedImage icon = getImageFromFile(path);
 
 			int width;
 			try
@@ -292,7 +254,7 @@ public class ImageCache
 						+ ". Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: "
 						+ e.getMessage(), e);
 			}
-			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple3<>(icon, mask, width));
+			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple2<>(new ImageAndMasks(icon), width));
 		}
 
 		return imagesAndMasks;
@@ -350,8 +312,7 @@ public class ImageCache
 	}
 
 	/**
-	 * Gets the names of icon groups, which are folders under the icon type
-	 * folder which contain images files.
+	 * Gets the names of icon groups, which are folders under the icon type folder which contain images files.
 	 * 
 	 * @param iconType
 	 *            Name of a folder under assets/icons
@@ -365,8 +326,8 @@ public class ImageCache
 	private String[] getIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String groupNameToUse = groupName == null ? "" : groupName;
-		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>())
-				.getOrCreate(groupNameToUse, () -> loadIconGroupFileNames(iconType, groupNameToUse));
+		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
+				() -> loadIconGroupFileNames(iconType, groupNameToUse));
 	}
 
 	private String[] loadIconGroupFileNames(IconType iconType, String groupName)

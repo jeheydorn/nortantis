@@ -119,7 +119,7 @@ public abstract class VoronoiGraph
 		// Joseph note: I moved noisy edge building code to GraphImpl because it
 		// now depends on the political regions.
 	}
-	
+
 	private void assignBorderToCenters()
 	{
 		for (Center c1 : centers)
@@ -186,7 +186,7 @@ public abstract class VoronoiGraph
 		}
 		return null;
 	}
-	
+
 	public static Edge edgeWithCorners(Corner c1, Corner c2)
 	{
 		for (Edge e : c1.protrudes)

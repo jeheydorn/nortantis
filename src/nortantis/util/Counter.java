@@ -6,11 +6,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
-public class Counter <T extends Comparable<T>> implements Serializable
+public class Counter<T extends Comparable<T>> implements Serializable
 {
 	Map<T, Integer> counts;
 	int totalCount;
-	
+
 	private static final long serialVersionUID = 1L;
 
 	public Counter()
@@ -18,7 +18,7 @@ public class Counter <T extends Comparable<T>> implements Serializable
 		counts = new TreeMap<>();
 		totalCount = 0;
 	}
-	
+
 	public void incrementCount(T item)
 	{
 		if (!counts.containsKey(item))
@@ -27,21 +27,21 @@ public class Counter <T extends Comparable<T>> implements Serializable
 			counts.put(item, counts.get(item) + 1);
 		totalCount++;
 	}
-	
+
 	public void addCount(T item, int count)
 	{
 		if (!counts.containsKey(item))
 			counts.put(item, count);
 		else
 			counts.put(item, counts.get(item) + count);
-		totalCount += count;		
+		totalCount += count;
 	}
-	
+
 	public double getCount(T item)
 	{
 		return counts.get(item);
 	}
-	
+
 	public T sample(Random r)
 	{
 		double uniformSample = r.nextDouble();
@@ -49,7 +49,7 @@ public class Counter <T extends Comparable<T>> implements Serializable
 
 		double acc = 0;
 		Iterator<Map.Entry<T, Integer>> iter = counts.entrySet().iterator();
-		while(true)
+		while (true)
 		{
 			Map.Entry<T, Integer> entry = iter.next();
 			T item = entry.getKey();
@@ -58,8 +58,8 @@ public class Counter <T extends Comparable<T>> implements Serializable
 			if (acc >= uniformSample)
 				return item;
 		}
-	}	
-	
+	}
+
 	public boolean isEmpty()
 	{
 		return totalCount == 0;

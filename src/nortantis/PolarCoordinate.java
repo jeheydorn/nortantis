@@ -2,21 +2,21 @@ package nortantis;
 
 import nortantis.graph.geom.Point;
 
-public class PolarCoordinate 
+public class PolarCoordinate
 {
 	/**
 	 * In radians.
 	 */
 	public double angle;
-	
+
 	public double radius;
-	
+
 	public PolarCoordinate(double angleInRadians, double radius)
 	{
 		this.angle = angleInRadians;
 		this.radius = radius;
 	}
-	
+
 	public PolarCoordinate(PolarCoordinate velocity)
 	{
 		this.angle = velocity.angle;
@@ -27,7 +27,7 @@ public class PolarCoordinate
 	{
 		return new Point(radius * Math.cos(angle), radius * Math.sin(angle));
 	}
-	
+
 	@Override
 	public String toString()
 	{

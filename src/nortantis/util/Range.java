@@ -6,7 +6,7 @@ public class Range implements Iterable<Integer>, Iterator<Integer>
 {
 	int current;
 	int max;
-	
+
 	public Range(int max)
 	{
 		if (max < 0)
@@ -14,7 +14,7 @@ public class Range implements Iterable<Integer>, Iterator<Integer>
 		current = 0;
 		this.max = max;
 	}
-	
+
 	/**
 	 * Creates an iterator to iterate from min (inclusive) to max (exclusive).
 	 */
@@ -23,7 +23,7 @@ public class Range implements Iterable<Integer>, Iterator<Integer>
 		current = min;
 		this.max = max;
 	}
-	
+
 	@Override
 	public boolean hasNext()
 	{

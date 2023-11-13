@@ -8,13 +8,13 @@ public class RegionEdit implements Serializable
 {
 	public Color color;
 	public int regionId;
-	
-	public RegionEdit( int regionId, Color color)
+
+	public RegionEdit(int regionId, Color color)
 	{
 		this.color = color;
 		this.regionId = regionId;
 	}
-	
+
 	public RegionEdit deepCopy()
 	{
 		return new RegionEdit(regionId, color);
@@ -40,11 +40,12 @@ public class RegionEdit implements Serializable
 		{
 			if (other.color != null)
 				return false;
-		} else if (!color.equals(other.color))
+		}
+		else if (!color.equals(other.color))
 			return false;
 		if (regionId != other.regionId)
 			return false;
 		return true;
 	}
-	
+
 }

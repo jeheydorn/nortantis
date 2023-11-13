@@ -76,7 +76,8 @@ public class NameGeneratorDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (!beginsWith.getText().chars().allMatch(Character::isLetter) || !endsWith.getText().chars().allMatch(Character::isLetter))
+				if (!beginsWith.getText().chars().allMatch(Character::isLetter)
+						|| !endsWith.getText().chars().allMatch(Character::isLetter))
 				{
 					String message = beginsWithLabel.replace(":", "") + " and " + endsWithLabel.replace(":", "")
 							+ " must contain only letters.";

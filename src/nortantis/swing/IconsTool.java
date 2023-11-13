@@ -37,6 +37,7 @@ import javax.swing.event.ChangeListener;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.IconType;
+import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.editor.CenterEdit;
@@ -49,7 +50,6 @@ import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
-import nortantis.util.Tuple3;
 import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
@@ -84,6 +84,7 @@ public class IconsTool extends EditorTool
 	private JCheckBox onlyUpdateDunesCheckbox;
 	private RowHider onlyUpdateDunesCheckboxHider;
 	private DrawAndEraseModeWidget modeWidget;
+	private boolean allowTopsOfIconsToOverlapOcean;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -201,8 +202,9 @@ public class IconsTool extends EditorTool
 
 			organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
 		}
-		
-		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush", () -> updateTypePanels());
+
+		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush",
+				() -> updateTypePanels());
 		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
 
 		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes, null);
@@ -396,7 +398,7 @@ public class IconsTool extends EditorTool
 			protected List<BufferedImage> doInBackground() throws Exception
 			{
 				List<BufferedImage> previewImages = new ArrayList<>();
-				Map<String, Tuple3<BufferedImage, BufferedImage, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
+				Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
 						.getIconsWithWidths(IconType.cities, cityType);
 
 				for (String cityIconNameWithoutWidthOrExtension : iconNamesWithoutWidthOrExtension)
@@ -406,7 +408,7 @@ public class IconsTool extends EditorTool
 						throw new IllegalArgumentException(
 								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
 					}
-					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst();
+					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
 					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon));
 					previewImages.add(preview);
 				}
@@ -757,7 +759,8 @@ public class IconsTool extends EditorTool
 					// icon
 					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it
 					// in place to save creating an extra undo point here, although it might not be necessary.
-					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
+					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName),
+							allowTopsOfIconsToOverlapOcean))
 					{
 						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
@@ -821,7 +824,7 @@ public class IconsTool extends EditorTool
 	private void highlightHoverCenters(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		
+
 		Set<Center> selected = getSelectedCenters(e.getPoint());
 		mapEditingPanel.addHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
@@ -887,6 +890,7 @@ public class IconsTool extends EditorTool
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}
+		allowTopsOfIconsToOverlapOcean = settings.allowTopsOfIconsToOverlapOcean;
 	}
 
 	@Override

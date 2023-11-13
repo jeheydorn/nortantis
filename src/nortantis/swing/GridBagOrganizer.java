@@ -278,8 +278,8 @@ public class GridBagOrganizer
 	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component,
 			boolean allowToExpandVertically, double verticalWeight)
 	{
-		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, rowVerticalInset, rowVerticalInset, allowToExpandVertically,
-				verticalWeight);
+		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, rowVerticalInset, rowVerticalInset,
+				allowToExpandVertically, verticalWeight);
 	}
 
 	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component, int topInset,

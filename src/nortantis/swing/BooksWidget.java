@@ -20,22 +20,22 @@ public class BooksWidget
 	private JPanel booksPanel;
 	private JScrollPane booksScrollPane;
 	private JPanel content;
-	
+
 	public BooksWidget(boolean createScrollPane, Runnable actionToRunWhenSelectionChanges)
 	{
 		booksPanel = createBooksPanel(actionToRunWhenSelectionChanges);
-		
+
 		if (createScrollPane)
 		{
 			booksScrollPane = new JScrollPane(booksPanel);
 			booksScrollPane.getVerticalScrollBar().setUnitIncrement(SwingHelper.sidePanelScrollSpeed);
 		}
-		
+
 		JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 		JButton checkAll = new JButton("Check All");
 		checkAll.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -43,10 +43,10 @@ public class BooksWidget
 				actionToRunWhenSelectionChanges.run();
 			}
 		});
-		
+
 		JButton uncheckAll = new JButton("Uncheck All");
 		uncheckAll.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -57,7 +57,7 @@ public class BooksWidget
 		buttonsPanel.add(checkAll);
 		buttonsPanel.add(uncheckAll);
 
-		
+
 		content = new JPanel();
 		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 		if (createScrollPane)
@@ -66,7 +66,7 @@ public class BooksWidget
 		}
 		else
 		{
-			content.add(booksPanel);	
+			content.add(booksPanel);
 		}
 		content.add(buttonsPanel);
 	}
@@ -93,7 +93,7 @@ public class BooksWidget
 			}
 		}
 	}
-	
+
 	public void checkSelectedBooks(Set<String> selectedBooks)
 	{
 		for (Component component : booksPanel.getComponents())
@@ -105,7 +105,7 @@ public class BooksWidget
 			}
 		}
 	}
-	
+
 	private void checkOrUncheckAllBooks(boolean check)
 	{
 		for (Component component : booksPanel.getComponents())
@@ -115,7 +115,7 @@ public class BooksWidget
 				JCheckBox checkBox = (JCheckBox) component;
 				checkBox.setSelected(check);
 			}
-		}	
+		}
 	}
 
 	public Set<String> getSelectedBooks()
@@ -135,7 +135,7 @@ public class BooksWidget
 
 		return books;
 	}
-	
+
 	public JPanel getContentPanel()
 	{
 		return content;

@@ -8,19 +8,19 @@ public class IconTypeButtons
 {
 	public RowHider hider;
 	public List<RadioButtonWithImage> buttons;
-	
+
 	/**
 	 * Optional. Used for replacing the radio buttons.
 	 */
 	public JPanel buttonsPanel;
-	
+
 	public IconTypeButtons(RowHider hider, List<RadioButtonWithImage> buttons, JPanel buttonsPanel)
 	{
 		this.hider = hider;
 		this.buttons = buttons;
 		this.buttonsPanel = buttonsPanel;
 	}
-	
+
 	public String getSelectedOption()
 	{
 		for (RadioButtonWithImage button : buttons)

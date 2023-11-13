@@ -1,12 +1,12 @@
 package nortantis;
 
 @SuppressWarnings("serial")
-public class NotEnoughNamesException extends RuntimeException 
+public class NotEnoughNamesException extends RuntimeException
 {
 	public NotEnoughNamesException()
 	{
 	}
-	
+
 	@Override
 	public String getMessage()
 	{

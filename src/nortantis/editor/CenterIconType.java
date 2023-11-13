@@ -2,8 +2,5 @@ package nortantis.editor;
 
 public enum CenterIconType
 {
-	Mountain,
-	Hill,
-	Dune,
-	City,
+	Mountain, Hill, Dune, City,
 }

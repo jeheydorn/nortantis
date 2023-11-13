@@ -33,8 +33,9 @@ import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
 
 /**
- * The old version of MapSettings using Java properties files. This exists only for backward compatibility when loading old
- * properties-based map settings file.
+ * The old version of MapSettings using Java properties files. This exists only for backward compatibility when loading old properties-based
+ * map settings file.
+ * 
  * @author joseph
  */
 @SuppressWarnings("serial")
@@ -44,7 +45,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 
 	public long randomSeed;
 	/**
-	 *  A scalar multiplied by the map height and width to get the final resolution.
+	 * A scalar multiplied by the map height and width to get the final resolution.
 	 */
 	public double resolution;
 	public int coastShadingLevel;
@@ -66,9 +67,10 @@ public class OldPropertyBasedMapSettings implements Serializable
 	/**
 	 * This setting actually means fractal generated as opposed to generated from texture.
 	 */
-	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with generateBackgroundFromTexture.
+	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with
+										// generateBackgroundFromTexture.
 	public boolean generateBackgroundFromTexture;
-	public boolean transparentBackground; 
+	public boolean transparentBackground;
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
 	public boolean colorizeLand; // For backgrounds generated from a texture.
 	public String backgroundTextureImage;
@@ -108,37 +110,39 @@ public class OldPropertyBasedMapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconSetName;
-	public double pointPrecision = defaultPointPrecision; // Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings files that have edits.
-	
+	public double pointPrecision = defaultPointPrecision; // Not exposed for editing. Only for backwards compatibility so I can change it
+															// without braking older settings files that have edits.
+
 	/**
 	 * Default values for new settings
 	 */
 	private final Color defaultRoadColor = Color.black;
 
-	
+
 	public OldPropertyBasedMapSettings()
 	{
 		edits = new MapEdits();
 	}
-			
+
 	public OldPropertyBasedMapSettings(String propertiesFilename)
 	{
 		final Properties props = new Properties();
 		try
 		{
 			props.load(new FileInputStream(propertiesFilename));
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			throw new RuntimeException(e);
 		}
 
 		// Load parameters from the properties file.
-		
+
 		randomSeed = getProperty("randomSeed", new Function0<Long>()
 		{
 			public Long apply()
 			{
-				return (long)(Long.parseLong(props.getProperty("randomSeed")));
+				return (long) (Long.parseLong(props.getProperty("randomSeed")));
 			}
 		});
 		resolution = getProperty("resolution", new Function0<Double>()
@@ -159,7 +163,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		{
 			public Integer apply()
 			{
-				return (int)Integer.parseInt(props.getProperty("oceanEffects"));
+				return (int) Integer.parseInt(props.getProperty("oceanEffects"));
 			}
 		});
 		concentricWaveCount = getProperty("concentricWaveCount", new Function0<Integer>()
@@ -168,20 +172,19 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				// I split concentricWaveCount out as a separate property from oceanEffectSize, so older setting files
 				// won't have the former, and so it must be derived from the latter.
-				if (props.getProperty("concentricWaveCount") == null 
-						|| Integer.parseInt(props.getProperty("concentricWaveCount")) < 1)
+				if (props.getProperty("concentricWaveCount") == null || Integer.parseInt(props.getProperty("concentricWaveCount")) < 1)
 				{
 					return Math.max(1, oceanEffectsLevel / 14);
 				}
-				
-				return (int)Integer.parseInt(props.getProperty("concentricWaveCount"));
+
+				return (int) Integer.parseInt(props.getProperty("concentricWaveCount"));
 			}
 		});
 		worldSize = getProperty("worldSize", new Function0<Integer>()
 		{
 			public Integer apply()
 			{
-				return (int)Integer.parseInt(props.getProperty("worldSize"));
+				return (int) Integer.parseInt(props.getProperty("worldSize"));
 			}
 		});
 		riverColor = getProperty("riverColor", new Function0<Color>()
@@ -241,7 +244,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 				}
 				return OceanEffect.valueOf(str);
 			}
-		});		
+		});
 		centerLandToWaterProbability = getProperty("centerLandToWaterProbability", new Function0<Double>()
 		{
 			public Double apply()
@@ -262,7 +265,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				return parseBoolean(props.getProperty("frayedBorder"));
 			}
-		});		
+		});
 		frayedBorderColor = getProperty("frayedBorderColor", new Function0<Color>()
 		{
 			public Color apply()
@@ -274,7 +277,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		{
 			public Integer apply()
 			{
-				return (int)(Integer.parseInt(props.getProperty("frayedBorderBlurLevel")));
+				return (int) (Integer.parseInt(props.getProperty("frayedBorderBlurLevel")));
 			}
 		});
 		grungeWidth = getProperty("grungeWidth", new Function0<Integer>()
@@ -282,7 +285,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			public Integer apply()
 			{
 				String str = props.getProperty("grungeWidth");
-				return str == null ? 0 : (int)(Integer.parseInt(str));
+				return str == null ? 0 : (int) (Integer.parseInt(str));
 			}
 		});
 		cityProbability = getProperty("cityProbability", new Function0<Double>()
@@ -290,10 +293,10 @@ public class OldPropertyBasedMapSettings implements Serializable
 			public Double apply()
 			{
 				String str = props.getProperty("cityProbability");
-				return str == null ? 0.0 : (double)(Double.parseDouble(str));
+				return str == null ? 0.0 : (double) (Double.parseDouble(str));
 			}
 		});
-		lineStyle = getProperty("lineStyle", () -> 
+		lineStyle = getProperty("lineStyle", () ->
 		{
 			String str = props.getProperty("lineStyle");
 			if (str == null || str.equals(""))
@@ -307,11 +310,12 @@ public class OldPropertyBasedMapSettings implements Serializable
 			public Double apply()
 			{
 				String str = props.getProperty("pointPrecision");
-				return (str == null || str == "") ? 10.0 : (double)(Double.parseDouble(str)); // 10.0 was the value used before I made a setting for it.
+				return (str == null || str == "") ? 10.0 : (double) (Double.parseDouble(str)); // 10.0 was the value used before I made a
+																								// setting for it.
 			}
 		});
-		
-		
+
+
 		// Background image stuff.
 		generateBackground = getProperty("generateBackground", new Function0<Boolean>()
 		{
@@ -382,7 +386,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		{
 			public Long apply()
 			{
-				return (long)(Long.parseLong(props.getProperty("backgroundRandomSeed")));
+				return (long) (Long.parseLong(props.getProperty("backgroundRandomSeed")));
 			}
 		});
 		oceanColor = getProperty("oceanColor", new Function0<Color>()
@@ -403,14 +407,14 @@ public class OldPropertyBasedMapSettings implements Serializable
 		{
 			public Integer apply()
 			{
-				return (int)(Integer.parseInt(props.getProperty("generatedWidth")));
+				return (int) (Integer.parseInt(props.getProperty("generatedWidth")));
 			}
 		});
 		generatedHeight = getProperty("generatedHeight", new Function0<Integer>()
 		{
 			public Integer apply()
 			{
-				return (int)(Integer.parseInt(props.getProperty("generatedHeight")));
+				return (int) (Integer.parseInt(props.getProperty("generatedHeight")));
 			}
 		});
 		fractalPower = getProperty("fractalPower", new Function0<Float>()
@@ -440,7 +444,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return result;
 			}
 		});
-		
+
 		drawRegionColors = getProperty("drawRegionColors", () ->
 		{
 			String str = props.getProperty("drawRegionColors");
@@ -449,19 +453,19 @@ public class OldPropertyBasedMapSettings implements Serializable
 		regionsRandomSeed = getProperty("regionsRandomSeed", () ->
 		{
 			String str = props.getProperty("regionsRandomSeed");
-			return str == null ? 0 : (long)Long.parseLong(str);			
+			return str == null ? 0 : (long) Long.parseLong(str);
 		});
-		hueRange = getProperty("hueRange", () -> 
+		hueRange = getProperty("hueRange", () ->
 		{
 			String str = props.getProperty("hueRange");
 			return str == null ? 16 : Integer.parseInt(str); // default value
 		});
-		saturationRange = getProperty("saturationRange", () -> 
+		saturationRange = getProperty("saturationRange", () ->
 		{
 			String str = props.getProperty("saturationRange");
 			return str == null ? 20 : Integer.parseInt(str); // default value
 		});
-		brightnessRange = getProperty("brightnessRange", () -> 
+		brightnessRange = getProperty("brightnessRange", () ->
 		{
 			String str = props.getProperty("brightnessRange");
 			return str == null ? 25 : Integer.parseInt(str); // default value
@@ -474,7 +478,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return str == null ? true : parseBoolean(str);
 			}
 		});
-		drawRoads= getProperty("drawRoads", new Function0<Boolean>()
+		drawRoads = getProperty("drawRoads", new Function0<Boolean>()
 		{
 			public Boolean apply()
 			{
@@ -482,19 +486,19 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return str == null ? true : parseBoolean(str);
 			}
 		});
-		
-		cityIconSetName = getProperty("cityIconSetName", () -> 
+
+		cityIconSetName = getProperty("cityIconSetName", () ->
 		{
 			String setName;
 			try
 			{
 				setName = props.getProperty("cityIconSetName");
 			}
-			catch(Exception ex)
+			catch (Exception ex)
 			{
 				setName = "";
 			}
-			
+
 			if (setName == null || setName.isEmpty())
 			{
 				Set<String> cityTypes = ImageCache.getInstance(AssetsPath.getInstallPath()).getIconGroupNames(IconType.cities);
@@ -509,7 +513,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 			return setName;
 		});
-	
+
 		drawText = getProperty("drawText", new Function0<Boolean>()
 		{
 			public Boolean apply()
@@ -521,7 +525,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		{
 			public Long apply()
 			{
-				return (long)(Long.parseLong(props.getProperty("textRandomSeed")));
+				return (long) (Long.parseLong(props.getProperty("textRandomSeed")));
 			}
 		});
 		books = new TreeSet<>(getProperty("books", new Function0<List<String>>()
@@ -531,14 +535,14 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return Arrays.asList(props.getProperty("books").split("\t"));
 			}
 		}));
-		
+
 		titleFont = getProperty("titleFont", new Function0<Font>()
 		{
 			public Font apply()
 			{
 				return parseFont(props.getProperty("titleFont"));
 			}
-		});	
+		});
 
 		titleFont = getProperty("titleFont", new Function0<Font>()
 		{
@@ -553,7 +557,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				return parseFont(props.getProperty("regionFont"));
 			}
-		});	
+		});
 
 		mountainRangeFont = getProperty("mountainRangeFont", new Function0<Font>()
 		{
@@ -561,21 +565,21 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				return parseFont(props.getProperty("mountainRangeFont"));
 			}
-		});	
+		});
 		otherMountainsFont = getProperty("otherMountainsFont", new Function0<Font>()
 		{
 			public Font apply()
 			{
 				return parseFont(props.getProperty("otherMountainsFont"));
 			}
-		});	
+		});
 		riverFont = getProperty("riverFont", new Function0<Font>()
 		{
 			public Font apply()
 			{
 				return parseFont(props.getProperty("riverFont"));
 			}
-		});	
+		});
 		boldBackgroundColor = getProperty("boldBackgroundColor", new Function0<Color>()
 		{
 			public Color apply()
@@ -590,7 +594,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 				String value = props.getProperty("drawBoldBackground");
 				if (value == null)
 					return true; // default value
-				return  parseBoolean(value);
+				return parseBoolean(value);
 			}
 		});
 		textColor = getProperty("textColor", new Function0<Color>()
@@ -607,7 +611,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 				String value = props.getProperty("drawBorder");
 				if (value == null)
 					return false; // default value
-				return  parseBoolean(value);
+				return parseBoolean(value);
 			}
 		});
 		borderType = getProperty("borderType", new Function0<String>()
@@ -644,13 +648,13 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return Integer.parseInt(value);
 			}
 		});
-		
+
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
-				
+
 		edits.text = getProperty("editedText", new Function0<CopyOnWriteArrayList<MapText>>()
 		{
-	
+
 			@Override
 			public CopyOnWriteArrayList<MapText> apply()
 			{
@@ -663,17 +667,17 @@ public class OldPropertyBasedMapSettings implements Serializable
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					String text = (String) jsonObj.get("text");
-					Point location = new Point((Double)jsonObj.get("locationX"), (Double)jsonObj.get("locationY"));
-					double angle = (Double)jsonObj.get("angle");
-					TextType type = Enum.valueOf(TextType.class, ((String)jsonObj.get("type")).replace(" ", "_"));
+					Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
+					double angle = (Double) jsonObj.get("angle");
+					TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
 					MapText mp = new MapText(text, location, angle, type);
 					result.add(mp);
 				}
-				
+
 				return result;
 			}
 		});
-		
+
 		edits.centerEdits = getProperty("centerEdits", new Function0<List<CenterEdit>>()
 		{
 			public List<CenterEdit> apply()
@@ -695,37 +699,37 @@ public class OldPropertyBasedMapSettings implements Serializable
 						isLake = isLakeObject;
 					}
 					Integer regionId = jsonObj.get("regionId") == null ? null : ((Long) jsonObj.get("regionId")).intValue();
-					
+
 					CenterIcon icon = null;
 					{
-						JSONObject iconObj = (JSONObject)jsonObj.get("icon");
+						JSONObject iconObj = (JSONObject) jsonObj.get("icon");
 						if (iconObj != null)
 						{
-							String iconGroupId = (String)iconObj.get("iconGroupId");
-							int iconIndex = (int)(long)iconObj.get("iconIndex");
-							String iconName = (String)iconObj.get("iconName");
-							CenterIconType iconType = CenterIconType.valueOf((String)iconObj.get("iconType")); 
+							String iconGroupId = (String) iconObj.get("iconGroupId");
+							int iconIndex = (int) (long) iconObj.get("iconIndex");
+							String iconName = (String) iconObj.get("iconName");
+							CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
 							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
 							icon.iconName = iconName;
 						}
 					}
-					
+
 					CenterTrees trees = null;
 					{
-						JSONObject treesObj = (JSONObject)jsonObj.get("trees");
+						JSONObject treesObj = (JSONObject) jsonObj.get("trees");
 						if (treesObj != null)
 						{
-							String treeType = (String)treesObj.get("treeType");
-							double density = (Double)treesObj.get("density");
-							long randomSeed = (Long)treesObj.get("randomSeed");
+							String treeType = (String) treesObj.get("treeType");
+							double density = (Double) treesObj.get("density");
+							long randomSeed = (Long) treesObj.get("randomSeed");
 							trees = new CenterTrees(treeType, density, randomSeed);
 						}
 					}
-					
+
 					result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 					index++;
 				}
-				
+
 				return result;
 			}
 		});
@@ -742,15 +746,15 @@ public class OldPropertyBasedMapSettings implements Serializable
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
-					Color color = parseColor((String)jsonObj.get("color"));
-					int regionId = (int)(long)jsonObj.get("regionId");
+					Color color = parseColor((String) jsonObj.get("color"));
+					int regionId = (int) (long) jsonObj.get("regionId");
 					result.put(regionId, new RegionEdit(regionId, color));
 				}
-				
+
 				return result;
 			}
 		});
-		
+
 		edits.edgeEdits = getProperty("edgeEdits", new Function0<List<EdgeEdit>>()
 		{
 			public List<EdgeEdit> apply()
@@ -763,15 +767,15 @@ public class OldPropertyBasedMapSettings implements Serializable
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
-					int riverLevel = (int)(long)jsonObj.get("riverLevel");
-					int index = (int)(long)jsonObj.get("index");
+					int riverLevel = (int) (long) jsonObj.get("riverLevel");
+					int index = (int) (long) jsonObj.get("index");
 					result.add(new EdgeEdit(index, riverLevel));
 				}
-				
+
 				return result;
 			}
 		});
-		
+
 		edits.hasIconEdits = getProperty("hasIconEdits", new Function0<Boolean>()
 		{
 			public Boolean apply()
@@ -779,20 +783,20 @@ public class OldPropertyBasedMapSettings implements Serializable
 				String value = props.getProperty("hasIconEdits");
 				if (value == null)
 					return false; // default value
-				return  parseBoolean(value);
+				return parseBoolean(value);
 			}
 		});
 	}
-	
+
 	private static boolean parseBoolean(String str)
 	{
 		if (str == null)
 			throw new NullPointerException();
 		if (!(str.equals("true") || str.equals("false")))
 			throw new IllegalArgumentException();
-		return (boolean)Boolean.parseBoolean(str);		
+		return (boolean) Boolean.parseBoolean(str);
 	}
-	
+
 	private static Color parseColor(String str)
 	{
 		if (str == null)
@@ -804,11 +808,12 @@ public class OldPropertyBasedMapSettings implements Serializable
 		}
 		if (parts.length == 4)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
+					Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
 	}
-	
+
 	private static <T> T getProperty(String propName, Function0<T> getter)
 	{
 		try
@@ -817,12 +822,12 @@ public class OldPropertyBasedMapSettings implements Serializable
 		}
 		catch (NullPointerException e)
 		{
-			throw new RuntimeException("Property \"" + propName + "\" is missing or cannot be read.", e);			
+			throw new RuntimeException("Property \"" + propName + "\" is missing or cannot be read.", e);
 		}
-		catch(NumberFormatException e)
+		catch (NumberFormatException e)
 		{
 			if (e.getMessage().equals("null"))
-				throw new RuntimeException("Property \"" + propName + "\" is missing.", e);		
+				throw new RuntimeException("Property \"" + propName + "\" is missing.", e);
 			else
 				throw new RuntimeException("Property \"" + propName + "\" is invalid.", e);
 		}

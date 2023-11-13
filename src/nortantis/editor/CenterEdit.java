@@ -17,10 +17,10 @@ public class CenterEdit implements Serializable
 	public Integer regionId;
 	public CenterIcon icon;
 	public CenterTrees trees;
-	
-	
+
+
 	public final int index;
-	
+
 	public CenterEdit(int index, boolean isWater, boolean isLake, Integer regionId, CenterIcon icon, CenterTrees trees)
 	{
 		this.isWater = isWater;
@@ -30,19 +30,18 @@ public class CenterEdit implements Serializable
 		this.trees = trees;
 		this.isLake = isLake;
 	}
-	
+
 	public CenterEdit deepCopy()
 	{
-		return new CenterEdit(index, isWater, isLake, regionId, 
-				icon == null ? null : icon.deepCopy(), 
+		return new CenterEdit(index, isWater, isLake, regionId, icon == null ? null : icon.deepCopy(),
 				trees == null ? null : trees.deepCopy());
 	}
-	
+
 	public synchronized CenterEdit deepCopyWithLock()
 	{
 		return deepCopy();
 	}
-	
+
 	public synchronized void setValuesWithLock(boolean isWater, boolean isLake, Integer regionId, CenterIcon icon, CenterTrees trees)
 	{
 		this.isWater = isWater;

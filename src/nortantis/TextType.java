@@ -2,16 +2,10 @@ package nortantis;
 
 public enum TextType
 {
-	Title,
-	Region,
-	Mountain_range,
-	Other_mountains,
-	City,
-	Lake,
-	River;
-	
-	public String toString() 
+	Title, Region, Mountain_range, Other_mountains, City, Lake, River;
+
+	public String toString()
 	{
-        return name().replace("_"," ");
-    }
+		return name().replace("_", " ");
+	}
 }

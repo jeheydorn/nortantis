@@ -9,13 +9,13 @@ public class EdgeEdit implements Serializable
 
 	public int riverLevel;
 	public final int index;
-	
+
 	public EdgeEdit(int index, int riverLevel)
 	{
 		this.riverLevel = riverLevel;
 		this.index = index;
 	}
-	
+
 	public EdgeEdit deepCopy()
 	{
 		return new EdgeEdit(index, riverLevel);
