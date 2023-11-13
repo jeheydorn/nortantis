@@ -8,20 +8,20 @@ import java.util.List;
 
 /**
  * Performs histogram equalization on images.
+ * 
  * @author joseph
  *
  */
 
-public class HistogramEqualizer 
-{	
+public class HistogramEqualizer
+{
 	/**
-	 * lookupTable maps grayscale levels to grayscale levels. The index used is the 
-	 * function input to look up.
+	 * lookupTable maps grayscale levels to grayscale levels. The index used is the function input to look up.
 	 */
 	List<int[]> lookupTables;
 	List<int[]> inverses;
 	int imageType;
-	
+
 	public HistogramEqualizer(BufferedImage image)
 	{
 		this.imageType = image.getType();
@@ -46,16 +46,16 @@ public class HistogramEqualizer
 	{
 		int sum = 0;
 		int[] lookupTable = new int[histogram.length];
-		double scale = (lookupTable.length - 1)/(double)imageArea;
+		double scale = (lookupTable.length - 1) / (double) imageArea;
 		for (int r = 0; r < lookupTable.length; r++)
 		{
 			sum += histogram[r];
 			lookupTable[r] = (int) (scale * sum);
 		}
-		
+
 		return lookupTable;
 	}
-	
+
 	public void createInverse()
 	{
 		inverses = new ArrayList<>();
@@ -64,7 +64,7 @@ public class HistogramEqualizer
 			inverses.add(createInverseLookupTable(lookupTable));
 		}
 	}
-	
+
 	private static int[] createInverseLookupTable(int[] lookupTable)
 	{
 		Float[] inverse = new Float[lookupTable.length];
@@ -76,12 +76,13 @@ public class HistogramEqualizer
 			{
 				if (inverse[lookupTable[i]] == null)
 				{
-					inverse[lookupTable[i]] = (float)i;
+					inverse[lookupTable[i]] = (float) i;
 				}
 				else
 				{
 					// Do a running average of all levels that map to the save value in the inverse.
-					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i) / (inverseCounts[lookupTable[i]] + 1);
+					inverse[lookupTable[i]] = (inverse[lookupTable[i]] * inverseCounts[lookupTable[i]] + i)
+							/ (inverseCounts[lookupTable[i]] + 1);
 				}
 				inverseCounts[lookupTable[i]]++;
 			}
@@ -94,7 +95,7 @@ public class HistogramEqualizer
 			{
 				Float higher = findFirstNonNullValueAbove(inverse, pixelValue);
 				Float lower = findFirstNonNullValueBelow(inverse, pixelValue);
-				
+
 				if (higher == null)
 				{
 					// I'm not worried about lower being null because that would mean the original image had no pixel levels.
@@ -110,13 +111,13 @@ public class HistogramEqualizer
 				}
 			}
 		}
-		
+
 		int[] result = new int[inverse.length];
 		for (int i : new Range(result.length))
 		{
 			if (inverse[i] != null)
 			{
-				result[i] = (int)(float)inverse[i];
+				result[i] = (int) (float) inverse[i];
 			}
 			else
 			{
@@ -126,12 +127,12 @@ public class HistogramEqualizer
 		}
 		return result;
 	}
-	
+
 	private static Float findFirstNonNullValueAbove(Float[] inverse, int start)
 	{
 		if (start == inverse.length)
 			return null;
-		
+
 		for (int i = start + 1; i < inverse.length; i++)
 		{
 			if (inverse[i] != null)
@@ -146,7 +147,7 @@ public class HistogramEqualizer
 	{
 		if (start == 0)
 			return null;
-		
+
 		for (int i = start - 1; i >= 0; i--)
 		{
 			if (inverse[i] != null)
@@ -175,17 +176,17 @@ public class HistogramEqualizer
 
 
 	public BufferedImage equalize(BufferedImage inImage)
-	{	
+	{
 		return applyLookupTables(inImage, lookupTables);
 	}
-	
+
 	public BufferedImage inverseEqualize(BufferedImage inImage)
-	{	
+	{
 		return applyLookupTables(inImage, inverses);
 	}
-	
+
 	private BufferedImage applyLookupTables(BufferedImage inImage, List<int[]> lookupTables)
-	{	
+	{
 		int width = inImage.getWidth();
 		int height = inImage.getHeight();
 		BufferedImage outImage = new BufferedImage(width, height, imageType);
@@ -199,7 +200,7 @@ public class HistogramEqualizer
 			{
 				if (lookupTables.size() == 1)
 				{
-					int grayLevel = in.getSample(x, y, 0);			
+					int grayLevel = in.getSample(x, y, 0);
 					out.setSample(x, y, 0, lookupTables.get(0)[grayLevel]);
 				}
 				else
@@ -207,7 +208,7 @@ public class HistogramEqualizer
 					Color inColor;
 					if (ImageHelper.isSupportedGrayscaleType(inImage))
 					{
-						int grayLevel = in.getSample(x, y, 0);	
+						int grayLevel = in.getSample(x, y, 0);
 						inColor = new Color(grayLevel, grayLevel, grayLevel, 255);
 					}
 					else
@@ -226,12 +227,12 @@ public class HistogramEqualizer
 		return outImage;
 
 	}
-	
+
 	private static int[] countPixelLevels(BufferedImage image, int band)
 	{
-		
+
 		WritableRaster raster = image.getRaster();
-					
+
 		// Create the list of pixels to use with the histogram.
 		int bitsPerPixel = image.getColorModel().getComponentSize(0);
 		int[] counts = new int[1 << bitsPerPixel];
@@ -243,10 +244,9 @@ public class HistogramEqualizer
 				counts[pixelValue]++;
 			}
 		}
-		
+
 		return counts;
 	}
 
-	
 
 }

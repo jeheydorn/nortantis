@@ -282,7 +282,7 @@ public class MapCreator
 		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
 		drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
 
-		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds);
+		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds, settings.allowTopsOfIconsToOverlapOcean);
 
 		// Draw ocean
 		{
@@ -435,7 +435,7 @@ public class MapCreator
 			{
 				return mapParts.graph;
 			}
-		});
+		}, false);
 
 		Background background;
 		if (mapParts != null && mapParts.background != null)
@@ -722,7 +722,7 @@ public class MapCreator
 				}
 
 				return new Tuple2<BufferedImage, BufferedImage>(frayedBorderMask, frayedBorderBlur);
-			});
+			}, false);
 		}
 		return null;
 	}
@@ -755,7 +755,7 @@ public class MapCreator
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
 
 				return grunge;
-			});
+			}, false);
 		}
 		else
 		{
@@ -862,7 +862,7 @@ public class MapCreator
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
-			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups);
+			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups, settings.allowTopsOfIconsToOverlapOcean);
 			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
 			// couldn't draw
 			// don't later get labels.
@@ -875,7 +875,7 @@ public class MapCreator
 			iconDrawer.addTrees(settings.treeHeightScale);
 
 			Logger.println("Adding cities.");
-			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
+			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true, settings.allowTopsOfIconsToOverlapOcean);
 		}
 
 		if (settings.drawRoads)
@@ -890,7 +890,7 @@ public class MapCreator
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawAllIcons(map, landBackground, null);
+		iconDrawer.drawAllIcons(map, landBackground, null, settings.allowTopsOfIconsToOverlapOcean);
 
 		checkForCancel();
 
@@ -1282,7 +1282,7 @@ public class MapCreator
 			cEdit = cEdit.deepCopyWithLock();
 
 			Center center = graph.centers.get(cEdit.index);
-			Integer currentRegionId = center.region == null ? null : center.region.id; 
+			Integer currentRegionId = center.region == null ? null : center.region.id;
 			boolean needsRebuild = center.isWater != cEdit.isWater || currentRegionId != cEdit.regionId;
 			center.isWater = cEdit.isWater;
 			center.isLake = cEdit.isLake;

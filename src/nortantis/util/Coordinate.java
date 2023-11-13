@@ -4,7 +4,7 @@ public class Coordinate
 {
 	public int x;
 	public int y;
-	
+
 	public Coordinate(int x, int y)
 	{
 		this.x = x;
@@ -37,6 +37,6 @@ public class Coordinate
 			return false;
 		return true;
 	}
-	
-	
+
+
 }

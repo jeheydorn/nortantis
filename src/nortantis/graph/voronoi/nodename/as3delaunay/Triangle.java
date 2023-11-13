@@ -2,23 +2,27 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.ArrayList;
 
-public final class Triangle {
+public final class Triangle
+{
 
-    private ArrayList<Site> _sites;
+	private ArrayList<Site> _sites;
 
-    public ArrayList<Site> get_sites() {
-        return _sites;
-    }
+	public ArrayList<Site> get_sites()
+	{
+		return _sites;
+	}
 
-    public Triangle(Site a, Site b, Site c) {
-        _sites = new ArrayList<Site>();
-        _sites.add(a);
-        _sites.add(b);
-        _sites.add(c);
-    }
+	public Triangle(Site a, Site b, Site c)
+	{
+		_sites = new ArrayList<Site>();
+		_sites.add(a);
+		_sites.add(b);
+		_sites.add(c);
+	}
 
-    public void dispose() {
-        _sites.clear();
-        _sites = null;
-    }
+	public void dispose()
+	{
+		_sites.clear();
+		_sites = null;
+	}
 }

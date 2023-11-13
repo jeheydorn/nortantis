@@ -21,14 +21,14 @@ public class RadioButtonWithImage extends JPanel
 	public RadioButtonWithImage(String text, BufferedImage image)
 	{
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-		
+
 		radioButton = new JRadioButton(text);
 		JPanel radioButtonPanel = new JPanel();
 		radioButtonPanel.setLayout(new BoxLayout(radioButtonPanel, BoxLayout.X_AXIS));
 		radioButtonPanel.add(radioButton);
 		radioButtonPanel.add(Box.createHorizontalGlue());
 		add(radioButtonPanel);
-		
+
 		imageDisplay = new ImagePanel();
 		JPanel imageDisplayHolder = new JPanel();
 		imageDisplayHolder.setLayout(new BoxLayout(imageDisplayHolder, BoxLayout.X_AXIS));
@@ -36,16 +36,16 @@ public class RadioButtonWithImage extends JPanel
 		imageDisplayHolder.add(imageDisplay);
 		imageDisplayHolder.add(Box.createHorizontalGlue());
 		add(imageDisplayHolder);
-		
-		imageDisplayHolder.addMouseListener(new MouseAdapter() 
+
+		imageDisplayHolder.addMouseListener(new MouseAdapter()
 		{
-		    @Override
-		    public void mousePressed(MouseEvent e) 
-		    {
-		    	radioButton.doClick();
-		    }
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				radioButton.doClick();
+			}
 		});
-		
+
 		setImage(image);
 	}
 

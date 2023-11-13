@@ -10,7 +10,7 @@ public class MapChange
 	public UpdateType updateType;
 	public EditorTool toolThatMadeChange;
 	public Runnable preRun;
-	
+
 	public MapChange(MapSettings settings, UpdateType updateType, EditorTool toolThatMadeChange, Runnable preRun)
 	{
 		this.settings = settings;

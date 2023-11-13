@@ -21,7 +21,7 @@ public class ExampleNameGenerator
 		TextDrawer textDrawer = new TextDrawer(settings, 1.0);
 
 		final int numberToGenerate = 50;
-		
+
 		final String requiredPrefix = "";
 		final String requiredSuffix = "";
 
@@ -32,8 +32,9 @@ public class ExampleNameGenerator
 		System.out.println("Place names: ");
 		generateNamesForType(numberToGenerate, NameType.Place, requiredPrefix, requiredSuffix, textDrawer);
 	}
-	
-	private static void generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix, TextDrawer textDrawer)
+
+	private static void generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix,
+			TextDrawer textDrawer)
 	{
 		final int maxAttempts = 10000;
 
@@ -59,11 +60,12 @@ public class ExampleNameGenerator
 						break;
 					}
 				}
-				
+
 				attemptCount++;
 				if (attemptCount >= maxAttempts)
 				{
-					System.out.println("Unable to generate enough names with the given contraints. Try adding more books or reducing the required suffix.");
+					System.out.println(
+							"Unable to generate enough names with the given contraints. Try adding more books or reducing the required suffix.");
 					return;
 				}
 			}

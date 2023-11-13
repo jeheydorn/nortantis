@@ -12,15 +12,17 @@ import java.util.function.Consumer;
 public class ThreadHelper
 {
 	private static ThreadHelper instance;
-	private ExecutorService exService;
+	private ExecutorService fixedThreadPool;
+	private ExecutorService cachedThreadPool;
 	private int threadCount;
-	
+
 	private ThreadHelper()
 	{
 		threadCount = Runtime.getRuntime().availableProcessors();
-		exService = Executors.newFixedThreadPool(threadCount);
+		fixedThreadPool = Executors.newFixedThreadPool(threadCount);
+		cachedThreadPool = Executors.newCachedThreadPool();
 	}
-	
+
 	public static ThreadHelper getInstance()
 	{
 		if (instance == null)
@@ -29,14 +31,26 @@ public class ThreadHelper
 		}
 		return instance;
 	}
-	
-	
-	public void processInParallel(List<Runnable> jobs)
+
+	/** 
+	 * Processes a list of jobs in parallel using a shared thread pool.
+	 * @param jobs
+	 * @param useFixedThreadPool Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a job that will
+	 * submit more jobs to the fixed thread pool, as that can lead to a deadlock.
+	 */
+	public void processInParallel(List<Runnable> jobs, boolean useFixedThreadPool)
 	{
 		List<Future<?>> futures = new ArrayList<Future<?>>();
 		for (Runnable job : jobs)
 		{
-			futures.add(exService.submit(job));
+			if (useFixedThreadPool)
+			{
+				futures.add(fixedThreadPool.submit(job));
+			}
+			else
+			{
+				futures.add(cachedThreadPool.submit(job));
+			}
 		}
 
 		for (int i : new Range(jobs.size()))
@@ -45,24 +59,41 @@ public class ThreadHelper
 			{
 				futures.get(i).get();
 			}
-			catch(ExecutionException e)
+			catch (ExecutionException e)
 			{
 				throw new RuntimeException(e);
 			}
-			catch(InterruptedException e)
+			catch (InterruptedException e)
 			{
 				throw new RuntimeException(e);
 			}
 		}
 	}
-	
-	public <T> List<T> processInParallelAndGetResult(List<Callable<T>> jobs)
+
+	/**
+	 * Processes a list of jobs in parallel that return results.
+	 * Warning: Never submit a job that will submit more jobs using the methods in this class, as that can lead to a deadlock.
+	 * @param <T> Result type
+	 * @param jobs
+	 * @param useFixedThreadPool Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a job that will
+	 * submit more jobs to the fixed thread pool, as that can lead to a deadlock.
+	 * @return
+	 */
+	public <T> List<T> processInParallelAndGetResult(List<Callable<T>> jobs, boolean useFixedThreadPool)
 	{
 		List<Future<T>> futures = new ArrayList<>();
 		List<T> results = new ArrayList<>();
 		for (Callable<T> job : jobs)
 		{
-			futures.add(exService.submit(job));
+			if (useFixedThreadPool)
+			{
+				futures.add(fixedThreadPool.submit(job));
+			}
+			else
+			{
+				futures.add(cachedThreadPool.submit(job));
+			}
+
 		}
 
 		for (int i : new Range(jobs.size()))
@@ -72,19 +103,26 @@ public class ThreadHelper
 				T result = futures.get(i).get();
 				results.add(result);
 			}
-			catch(ExecutionException e)
+			catch (ExecutionException e)
 			{
 				throw new RuntimeException(e);
 			}
-			catch(InterruptedException e)
+			catch (InterruptedException e)
 			{
 				throw new RuntimeException(e);
 			}
 		}
-		
+
 		return results;
 	}
-	
+
+	/**
+	 * Processes rows of data in parallel.
+	 * Warning: Never submit a job that will submit more jobs using the methods in this class, as that can lead to a deadlock.
+	 * @param startRow
+	 * @param numRows
+	 * @param rowConsumer
+	 */
 	public void processRowsInParallel(int startRow, int numRows, Consumer<Integer> rowConsumer)
 	{
 		int numTasks = getThreadCount();
@@ -101,28 +139,43 @@ public class ThreadHelper
 				}
 			});
 		}
-		
-		ThreadHelper.getInstance().processInParallel(tasks);
+
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 	}
-	
-	public <T> Future<T> submit(Callable<T> job)
+
+	public <T> Future<T> submit(Callable<T> job, boolean useFixedThreadPool)
 	{
-		return exService.submit(job);
+		if (useFixedThreadPool)
+		{
+			return fixedThreadPool.submit(job);
+		}
+		else
+		{
+			return cachedThreadPool.submit(job);
+		}
 	}
-	
-	public Future<?> submit(Runnable job)
+
+	public Future<?> submit(Runnable job, boolean useFixedThreadPool)
 	{
-		return exService.submit(job);
+		if (useFixedThreadPool)
+		{
+			return fixedThreadPool.submit(job);
+		}
+		else
+		{
+			return cachedThreadPool.submit(job);
+		}
 	}
-	
+
 	public int getThreadCount()
 	{
 		return threadCount;
 	}
-	
+
 	@Override
-    protected void finalize()
-    {
-		exService.shutdown();
-    }
+	protected void finalize()
+	{
+		fixedThreadPool.shutdown();
+		cachedThreadPool.shutdown();
+	}
 }

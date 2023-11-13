@@ -15,20 +15,20 @@ public class IntRectangle
 		this.width = width;
 		this.height = height;
 	}
-	
+
 	public boolean contains(int x0, int y0)
 	{
-    	if (x0 < x || x0 > x + width || y0 < y || y0 > y + height) 
-    	{
-            return false;
-    	}
-        return true;
+		if (x0 < x || x0 > x + width || y0 < y || y0 > y + height)
+		{
+			return false;
+		}
+		return true;
 	}
 
-	public boolean contains(Point p) 
-    {
+	public boolean contains(Point p)
+	{
 		return contains(p.x, p.y);
-    }
+	}
 
 	public boolean contains(IntRectangle other)
 	{

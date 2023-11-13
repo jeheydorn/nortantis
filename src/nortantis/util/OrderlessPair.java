@@ -11,13 +11,13 @@ public class OrderlessPair<T> implements Serializable
 {
 	private T f;
 	private T s;
-	
+
 	public OrderlessPair(T f, T l)
 	{
 		this.f = f;
 		this.s = l;
 	}
-	
+
 	public T getFirst()
 	{
 		return f;
@@ -32,27 +32,27 @@ public class OrderlessPair<T> implements Serializable
 	{
 		return s;
 	}
-	
+
 	public void setSecond(T s)
 	{
 		this.s = s;
 	}
-	
-	
+
+
 	@Override
 	public String toString()
 	{
 		return "(" + f.toString() + ", " + s.toString() + ")";
 	}
-	
+
 	@Override
 	public boolean equals(Object other)
 	{
 		if (!(other instanceof OrderlessPair))
 			return false;
-		
+
 		@SuppressWarnings("unchecked")
-		OrderlessPair<T> otherPair = (OrderlessPair<T>)other;
+		OrderlessPair<T> otherPair = (OrderlessPair<T>) other;
 		if (f.equals(otherPair.f) && s.equals(otherPair.s))
 		{
 			return true;
@@ -64,5 +64,5 @@ public class OrderlessPair<T> implements Serializable
 		}
 		return false;
 	}
-	
+
 }

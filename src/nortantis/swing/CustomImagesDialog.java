@@ -82,11 +82,9 @@ public class CustomImagesDialog extends JDialog
 				+ "'lower_left_corner', 'lower_right_corner', 'top_edge', 'bottom_edge', 'left_edge', 'right_edge'. At least one corner and"
 				+ " one edge must be given.</html>"), space, space, false);
 
-		organizer.addLeftAlignedComponent(
-				new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
-						+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'. If you don't want all three of those tree types,"
-						+ " then simply delete the folder or images for the type you don't want to use.</html>"),
-				space, space, false);
+		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
+				+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'. If you don't want all three of those tree types,"
+				+ " then simply delete the folder or images for the type you don't want to use.</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>If you want new maps to add hills around mountains, then for each mountain type, create a hill type with the same name.</html>"),
@@ -97,13 +95,12 @@ public class CustomImagesDialog extends JDialog
 				.addLeftAlignedComponent(new JLabel("<html>After making changes to custom images, to get Nortantis to see those changes you"
 						+ " can either close and re-open the program or use " + mainWindow.getFileMenuName() + " -> "
 						+ mainWindow.getRefreshImagesMenuName() + ".</html>"), space, space, false);
-		organizer.addLeftAlignedComponent(
-				new JLabel("<html>Using a custom images folder causes this map to use your images rather than the images built into Nortantis,"
+		organizer.addLeftAlignedComponent(new JLabel(
+				"<html>Using a custom images folder causes this map to use your images rather than the images built into Nortantis,"
 						+ " even if you install a new version of Nortantis that might include new images or fixes to existing images."
 						+ " To update your custom"
 						+ " images folder, you can create a new map, add a new custom images folder to the new map, grab the "
-						+ " folder of images that creates, and merge it with your custom images folder from this map."
-						+ " </html>"),
+						+ " folder of images that creates, and merge it with your custom images folder from this map." + " </html>"),
 				space, space, false);
 		organizer.addLeftAlignedComponent(
 				new JLabel("<html>To revert back to using Nortantis's installed images, clear out the" + " field below.</html>"), space, 10,

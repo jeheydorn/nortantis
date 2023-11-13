@@ -11,17 +11,18 @@ import java.util.TreeMap;
 
 /**
  * A map from keys to lists of values.
+ * 
  * @author jeheydorn
  *
  * @param <K>
  * @param <V>
  */
-public class ListMap <K, V> implements Serializable
+public class ListMap<K, V> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
-	
+
 	private Map<K, List<V>> map;
-	
+
 	public ListMap()
 	{
 		map = new TreeMap<K, List<V>>();
@@ -31,7 +32,7 @@ public class ListMap <K, V> implements Serializable
 	{
 		map = new TreeMap<K, List<V>>(comparator);
 	}
-	
+
 	public void add(K key, V value)
 	{
 		List<V> valueList = map.get(key);
@@ -42,7 +43,7 @@ public class ListMap <K, V> implements Serializable
 		}
 		valueList.add(value);
 	}
-	
+
 	public void addAll(K key, Collection<V> values)
 	{
 		List<V> valueList = map.get(key);
@@ -53,51 +54,51 @@ public class ListMap <K, V> implements Serializable
 		}
 		valueList.addAll(values);
 	}
-	
+
 	public void put(K key, List<V> values)
 	{
 		map.put(key, values);
 	}
-	
+
 	public List<V> get(K key)
 	{
 		return map.get(key);
 	}
-	
+
 	public Set<Map.Entry<K, List<V>>> entrySet()
 	{
 		return map.entrySet();
 	}
-	
+
 	public Set<K> keySet()
 	{
 		return map.keySet();
 	}
-	
+
 	public boolean isEmpty()
 	{
 		return map.keySet().isEmpty();
 	}
-	
+
 	public int size()
 	{
 		return map.keySet().size();
 	}
-	
+
 	public boolean containsKey(K key)
 	{
 		return map.containsKey(key);
 	}
-	
+
 	public Collection<List<V>> values()
 	{
 		return map.values();
 	}
-	
+
 	@Override
 	public String toString()
 	{
 		return map.toString();
 	}
-	
+
 }

@@ -125,7 +125,7 @@ public class TextTool extends EditorTool
 			}
 		});
 		editTextField.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -191,9 +191,8 @@ public class TextTool extends EditorTool
 		{
 			updater.reprocessBooks();
 		});
-		booksHider = organizer.addLeftAlignedComponentWithStackedLabel(
-				"Books for generating text:", "Selected books will be used to generate new names.", booksWidget.getContentPanel()
-		);
+		booksHider = organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:",
+				"Selected books will be used to generate new names.", booksWidget.getContentPanel());
 
 		editButton.doClick();
 
@@ -305,8 +304,8 @@ public class TextTool extends EditorTool
 			{
 				if (addButton.isSelected())
 				{
-					MapText addedText = updater.mapParts.textDrawer
-							.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(), getPointOnGraph(e.getPoint()));
+					MapText addedText = updater.mapParts.textDrawer.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(),
+							getPointOnGraph(e.getPoint()));
 					mainWindow.edits.text.add(addedText);
 
 					undoer.setUndoPoint(UpdateType.Text, this);
@@ -390,8 +389,7 @@ public class TextTool extends EditorTool
 
 				nortantis.graph.geom.Point location = new nortantis.graph.geom.Point(
 						lastSelected.location.x + (deltaX / mainWindow.displayQualityScale),
-						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale)
-				);
+						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale));
 				mapEditingPanel.setTextBoxToDraw(location, lastSelected.line1Bounds, lastSelected.line2Bounds, lastSelected.angle);
 				mapEditingPanel.repaint();
 			}
@@ -428,11 +426,9 @@ public class TextTool extends EditorTool
 				// the map is generated at 100% resolution.
 				Point translation = new Point(
 						(int) ((graphPointMouseLocation.x - graphPointMousePressedLocation.x) / mainWindow.displayQualityScale),
-						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale)
-				);
-				lastSelected.location = new nortantis.graph.geom.Point(
-						lastSelected.location.x + translation.x, +lastSelected.location.y + translation.y
-				);
+						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
+				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
+						+lastSelected.location.y + translation.y);
 				undoer.setUndoPoint(UpdateType.Text, this);
 				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				isMoving = false;
@@ -446,10 +442,8 @@ public class TextTool extends EditorTool
 				// I'm dividing graphPointMouseLocation by mainWindow.displayQualityScale here because
 				// lastSelected.location is not multiplied by mainWindow.displayQualityScale. This is
 				// because MapTexts are always stored as if the map were generated at 100% resolution.
-				double angle = Math.atan2(
-						(graphPointMouseLocation.y / mainWindow.displayQualityScale) - centerY,
-						(graphPointMouseLocation.x / mainWindow.displayQualityScale) - centerX
-				);
+				double angle = Math.atan2((graphPointMouseLocation.y / mainWindow.displayQualityScale) - centerY,
+						(graphPointMouseLocation.x / mainWindow.displayQualityScale) - centerX);
 				// No upside-down text.
 				if (angle > Math.PI / 2)
 				{
@@ -564,8 +558,8 @@ public class TextTool extends EditorTool
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
-			mapTextsSelected = updater.mapParts.textDrawer
-					.findTextSelectedByBrush(getPointOnGraph(mouseLocation), (brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
+			mapTextsSelected = updater.mapParts.textDrawer.findTextSelectedByBrush(getPointOnGraph(mouseLocation),
+					(brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
 		}
 		else
 		{

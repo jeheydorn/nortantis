@@ -26,8 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class Helper 
-{	
+public class Helper
+{
 	public static <I, R> List<R> map(List<I> items, Function<I, R> fun)
 	{
 		List<R> result = new ArrayList<R>();
@@ -35,25 +35,23 @@ public class Helper
 			result.add(fun.apply(item));
 		return result;
 	}
-	
-	
+
+
 	/**
 	 * Combines 2 lists of the same length by applying the given function to each pair of items in the 2 lists.
 	 */
 	public static <I, R> List<R> combineLists(List<I> l1, List<I> l2, Function2<I, R> fun)
 	{
 		if (l1.size() != l2.size())
-			throw new IllegalArgumentException("Lists must be the same size. List 1 size: " + l1.size() 
-					+ ", list 2 size: " + l2.size());
+			throw new IllegalArgumentException("Lists must be the same size. List 1 size: " + l1.size() + ", list 2 size: " + l2.size());
 		List<R> result = new ArrayList<R>();
 		for (int i = 0; i < l1.size(); i++)
 			result.add(fun.apply(l1.get(i), l2.get(i)));
 		return result;
 	}
-	
+
 	/**
-	 * Applies the given function to each item in the given list and returns only those for which
-	 * the function returned true.
+	 * Applies the given function to each item in the given list and returns only those for which the function returned true.
 	 */
 	public static <T> List<T> filter(List<T> list, Function<T, Boolean> fun)
 	{
@@ -63,36 +61,36 @@ public class Helper
 				result.add(item);
 		return result;
 	}
-	
+
 	public static <K, V extends Comparable<V>> K argmin(Map<K, V> map)
 	{
 		Map.Entry<K, V> minEntry = null;
-		
+
 		for (Map.Entry<K, V> entry : map.entrySet())
 		{
-		    if (minEntry == null || entry.getValue().compareTo(minEntry.getValue()) < 0)
-		    {
-		        minEntry = entry;
-		    }
+			if (minEntry == null || entry.getValue().compareTo(minEntry.getValue()) < 0)
+			{
+				minEntry = entry;
+			}
 		}
 		return minEntry.getKey();
 	}
-	
+
 	public static <K, V extends Comparable<V>> V min(Map<K, V> map)
 	{
 		Map.Entry<K, V> minEntry = null;
-		
+
 		for (Map.Entry<K, V> entry : map.entrySet())
 		{
-		    if (minEntry == null || entry.getValue().compareTo(minEntry.getValue()) < 0)
-		    {
-		        minEntry = entry;
-		    }
+			if (minEntry == null || entry.getValue().compareTo(minEntry.getValue()) < 0)
+			{
+				minEntry = entry;
+			}
 		}
 		return minEntry.getValue();
 	}
 
-	public static String readFile(String path) 
+	public static String readFile(String path)
 	{
 		try
 		{
@@ -112,10 +110,10 @@ public class Helper
 
 		for (Map.Entry<K, V> entry : map.entrySet())
 		{
-		    if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
-		    {
-		        maxEntry = entry;
-		    }
+			if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
+			{
+				maxEntry = entry;
+			}
 		}
 		return maxEntry.getKey();
 	}
@@ -126,38 +124,38 @@ public class Helper
 
 		for (Map.Entry<K, V> entry : map.entrySet())
 		{
-		    if (maxEntry == null || comparator.compare(entry.getValue(), maxEntry.getValue()) > 0)
-		    {
-		        maxEntry = entry;
-		    }
+			if (maxEntry == null || comparator.compare(entry.getValue(), maxEntry.getValue()) > 0)
+			{
+				maxEntry = entry;
+			}
 		}
 		return maxEntry.getKey();
 	}
-	
+
 	public static <K, V> K maxElement(Map<K, V> map, Comparator<V> comparator)
 	{
 		Map.Entry<K, V> maxEntry = null;
 
 		for (Map.Entry<K, V> entry : map.entrySet())
 		{
-		    if (maxEntry == null || comparator.compare(entry.getValue(), maxEntry.getValue()) > 0)
-		    {
-		        maxEntry = entry;
-		    }
+			if (maxEntry == null || comparator.compare(entry.getValue(), maxEntry.getValue()) > 0)
+			{
+				maxEntry = entry;
+			}
 		}
 		return maxEntry.getKey();
 	}
-	
+
 	public static <T> T maxItem(List<T> list, Comparator<T> comparator)
 	{
 		T maxItem = null;
 
 		for (T item : list)
 		{
-		    if (maxItem == null || comparator.compare(item, maxItem) > 0)
-		    {
-		    	maxItem = item;
-		    }
+			if (maxItem == null || comparator.compare(item, maxItem) > 0)
+			{
+				maxItem = item;
+			}
 		}
 		return maxItem;
 	}
@@ -176,7 +174,7 @@ public class Helper
 			out.println(o);
 		}
 	}
-	
+
 	public static String toStringWithSeparator(Collection<?> collection, String separator)
 	{
 		if (collection.isEmpty())
@@ -184,7 +182,7 @@ public class Helper
 
 		StringBuilder b = new StringBuilder();
 		Iterator<?> it = collection.iterator();
-		while(true)
+		while (true)
 		{
 			b.append(it.next());
 			if (it.hasNext())
@@ -198,37 +196,37 @@ public class Helper
 		}
 		return b.toString();
 	}
-	
+
 	public static void writeToFile(String fileName, String contents)
 	{
 		try
-		{	
+		{
 			File file = new File(fileName);
-			
-			if (!file.exists()) 
+
+			if (!file.exists())
 			{
 				file.createNewFile();
 			}
-			
+
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
-			
+
 			bw.write(contents);
-			
+
 			bw.close();
 		}
-		catch(IOException ex)
+		catch (IOException ex)
 		{
 			System.out.println("Helper.writeToFile caught error: " + ex.getMessage());
 		}
 	}
-	
+
 	public static void createFolder(String folderName)
 	{
-		 File folder = new File(folderName); 
-		 folder.mkdir();
+		File folder = new File(folderName);
+		folder.mkdir();
 	}
-	
+
 	/**
 	 * Creates a deep copy of an object using serialization.
 	 */
@@ -239,7 +237,7 @@ public class Helper
 		{
 			return null;
 		}
-		
+
 		byte[] storedObjectArray = serializableToByteArray(toCopy);
 
 		Object toReturn = null;
@@ -248,13 +246,14 @@ public class Helper
 			ObjectInputStream p;
 			p = new ObjectInputStream(new BufferedInputStream(istream));
 			toReturn = p.readObject();
-		} catch (IOException | ClassNotFoundException e)
+		}
+		catch (IOException | ClassNotFoundException e)
 		{
 			throw new RuntimeException(e);
 		}
-		return (T)toReturn;
+		return (T) toReturn;
 	}
-	
+
 	/**
 	 * WARNING: This isn't tested.
 	 */
@@ -264,7 +263,7 @@ public class Helper
 		byte[] array2 = serializableToByteArray(object1);
 		return Arrays.equals(array1, array2); // I think this line doesn't work.
 	}
-	
+
 	private static <T extends Serializable> byte[] serializableToByteArray(T object)
 	{
 		ByteArrayOutputStream ostream = new ByteArrayOutputStream();
@@ -274,7 +273,8 @@ public class Helper
 			{
 				p.writeObject(object);
 				p.flush();
-			} catch (IOException e)
+			}
+			catch (IOException e)
 			{
 				throw new RuntimeException(e);
 			}
@@ -286,12 +286,10 @@ public class Helper
 	public static <T> List<T> iteratorToList(Iterator<T> iter)
 	{
 		ArrayList<T> result = new ArrayList<>();
-		while(iter.hasNext())
+		while (iter.hasNext())
 			result.add(iter.next());
 		return result;
 	}
-	
+
 }
-
-
 

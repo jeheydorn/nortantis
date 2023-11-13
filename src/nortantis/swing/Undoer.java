@@ -19,36 +19,40 @@ public class Undoer
 	{
 		this.mainWindow = mainWindow;
 	}
-	
+
 	public boolean isInitialized()
 	{
 		return copyOfSettingsWhenEditorWasOpened != null;
 	}
-	
+
 	public void initialize(MapSettings settings)
 	{
 		undoStack = new ArrayDeque<>();
 		redoStack = new Stack<>();
 		copyOfSettingsWhenEditorWasOpened = settings.deepCopy();
 	}
-	
+
 	public void reset()
 	{
 		undoStack = null;
 		redoStack = null;
-		copyOfSettingsWhenEditorWasOpened = null;		
+		copyOfSettingsWhenEditorWasOpened = null;
 	}
-	
+
 	public void setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
 		setUndoPoint(updateType, tool, null);
 	}
-	
+
 	/***
-	 * Sets a point to which the user can undo changes. 
-	 * @param updateType The type of update that was last made. 
-	 * @param tool The tool that is setting the undo point.
-	 * @param preRun Code to run in the foreground thread before drawing if this change undone or redone.
+	 * Sets a point to which the user can undo changes.
+	 * 
+	 * @param updateType
+	 *            The type of update that was last made.
+	 * @param tool
+	 *            The tool that is setting the undo point.
+	 * @param preRun
+	 *            Code to run in the foreground thread before drawing if this change undone or redone.
 	 */
 	public void setUndoPoint(UpdateType updateType, EditorTool tool, Runnable preRun)
 	{
@@ -56,15 +60,15 @@ public class Undoer
 		{
 			return;
 		}
-		
+
 		if (undoStack == null)
 		{
-			// This can happen even when not enabled if a map fails to draw and so reset has been called but initialize has not, 
+			// This can happen even when not enabled if a map fails to draw and so reset has been called but initialize has not,
 			// because the editor allows user to change settings so they can fix the issue that caused the map to fail to draw.
 			// It will mean that the undo stack will not contain their change, but I'm okay with that.
 			return;
 		}
-				
+
 		MapSettings prevSettings = undoStack.isEmpty() ? copyOfSettingsWhenEditorWasOpened : undoStack.peek().settings;
 		MapSettings currentSettings = mainWindow.getSettingsFromGUI(true);
 		if (currentSettings.equals(prevSettings))
@@ -72,36 +76,36 @@ public class Undoer
 			// Don't create an undo point if nothing changed.
 			return;
 		}
-		
+
 		redoStack.clear();
 		undoStack.push(new MapChange(currentSettings, updateType, tool, preRun));
-		
+
 		// Limit the size of undoStack to prevent memory errors. Each undo point is about 2 MBs.
-		while(undoStack.size() > maxUndoLevels)
+		while (undoStack.size() > maxUndoLevels)
 		{
 			undoStack.removeLast();
 		}
-		
+
 		updateUndoRedoEnabled();
 	}
-	
+
 	public void undo()
 	{
 		if (!enabled)
 		{
 			return;
 		}
-		
+
 		if (undoStack == null)
 		{
 			return;
 		}
-		
+
 		if (undoStack.size() == 0)
 		{
 			return;
 		}
-		
+
 		MapChange changeToUndo = undoStack.pop();
 		redoStack.push(changeToUndo);
 		MapSettings settings;
@@ -109,7 +113,7 @@ public class Undoer
 		{
 			// This should not happen because the undoer should not be initialized until the edits are created.
 			assert !copyOfSettingsWhenEditorWasOpened.edits.isEmpty();
-			
+
 			settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
 			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
 		}
@@ -118,7 +122,7 @@ public class Undoer
 			settings = undoStack.peek().settings.deepCopy();
 			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
 		}
-		
+
 		if (changeToUndo.toolThatMadeChange != null)
 		{
 			if (mainWindow.toolsPanel.currentTool != changeToUndo.toolThatMadeChange)
@@ -133,23 +137,23 @@ public class Undoer
 			// This happens if you undo a change not associated with any particular tool, such as Clear Entire Map.
 			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
-		
+
 		mainWindow.updater.createAndShowMapFromChange(changeToUndo);
 		updateUndoRedoEnabled();
 	}
-	
+
 	public void redo()
 	{
 		if (!enabled)
 		{
 			return;
 		}
-		
+
 		if (redoStack == null)
 		{
 			return;
 		}
-		
+
 		if (redoStack.size() == 0)
 		{
 			return;
@@ -168,7 +172,7 @@ public class Undoer
 			{
 				mainWindow.toolsPanel.handleToolSelected(changeToRedo.toolThatMadeChange);
 			}
-			
+
 			changeToRedo.toolThatMadeChange.onAfterUndoRedo();
 		}
 		else
@@ -176,14 +180,15 @@ public class Undoer
 			// This happens if you redo a change not associated with any particular tool, such as Clear Entire Map or the Theme panel.
 			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
-		
-		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange, changeToRedo.preRun);
+
+		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange,
+				changeToRedo.preRun);
 		mainWindow.updater.createAndShowMapFromChange(changeWithPrevSettings);
 		updateUndoRedoEnabled();
 	}
-	
+
 	public void updateUndoRedoEnabled()
-	{		
+	{
 		boolean undoEnabled = enabled && undoStack != null && undoStack.size() > 0;
 		mainWindow.undoButton.setEnabled(undoEnabled);
 		boolean redoEnabled = enabled && redoStack != null && redoStack.size() > 0;
@@ -194,7 +199,7 @@ public class Undoer
 	{
 		return enabled;
 	}
-	
+
 	public void setEnabled(boolean enabled)
 	{
 		this.enabled = enabled;

@@ -226,7 +226,7 @@ public class MapSettings implements Serializable
 
 		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
-		//root.put("allowTopsOfIconsToOverlapOcean", allowTopsOfIconsToOverlapOcean); TODO put back when I re-enable this feature.
+		root.put("allowTopsOfIconsToOverlapOcean", allowTopsOfIconsToOverlapOcean);
 
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
@@ -257,7 +257,7 @@ public class MapSettings implements Serializable
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
 		root.put("customImagesPath", customImagesPath);
-		
+
 		root.put("treeHeightScale", treeHeightScale);
 
 		// User edits.
@@ -554,7 +554,7 @@ public class MapSettings implements Serializable
 		{
 			customImagesPath = (String) root.get("customImagesPath");
 		}
-		
+
 		if (root.containsKey("treeHeightScale"))
 		{
 			treeHeightScale = (double) root.get("treeHeightScale");

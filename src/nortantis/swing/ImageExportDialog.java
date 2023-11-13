@@ -148,8 +148,7 @@ public class ImageExportDialog extends JDialog
 				if (curPath == null || curPath.isEmpty())
 				{
 					curPath = mainWindow.getOpenSettingsFilePath() == null
-							? Paths.get(FileSystemView.getFileSystemView().getDefaultDirectory().toPath().toString(),
-									"unnamed").toString()
+							? Paths.get(FileSystemView.getFileSystemView().getDefaultDirectory().toPath().toString(), "unnamed").toString()
 							: mainWindow.getOpenSettingsFilePath().toString();
 					String folder = new File(curPath).getParent();
 					String fileBaseName = FilenameUtils.getBaseName(curPath);
@@ -249,7 +248,7 @@ public class ImageExportDialog extends JDialog
 									JOptionPane.ERROR_MESSAGE);
 							return;
 						}
-						
+
 						Path path = Paths.get(pathField.getText());
 						exportPath = path.toString();
 

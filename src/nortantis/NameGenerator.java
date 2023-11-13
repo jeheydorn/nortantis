@@ -85,7 +85,7 @@ public class NameGenerator
 		}
 		while (((longestWord.length() > (averageWordLength * maxWordLengthComparedToAverage)) || isTooShort(name))
 				&& attemptCount < maxAttemptsToGetCorrectLength);
-		
+
 		// Capitalize first letter of generated names, including for multi-word names.
 		name = capitalizeAllFirstLetters(name);
 		name = capitalizeRomanNumerals(name);
@@ -130,7 +130,7 @@ public class NameGenerator
 				.collect(Collectors.toList());
 		return String.join(" ", piecesList);
 	}
-	
+
 	public boolean isEmpty()
 	{
 		return nGram.isEmpty();

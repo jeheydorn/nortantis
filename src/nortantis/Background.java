@@ -41,7 +41,7 @@ public class Background
 	private int borderWidthScaled;
 	private String borderType;
 	private String imagesPath;
-	
+
 
 	public Background(MapSettings settings, DimensionDouble mapBounds)
 	{
@@ -63,7 +63,7 @@ public class Background
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 		borderType = settings.borderType;
-		
+
 		if (settings.generateBackground)
 		{
 			// Fractal generated background images
@@ -323,18 +323,18 @@ public class Background
 	{
 		return ImageHelper.copySnippet(ocean, boundsToCopyFrom.toAwtRectangle());
 	}
-	
+
 	public BufferedImage addBorder(BufferedImage map)
 	{
 		if (borderWidthScaled == 0)
 		{
 			return map;
 		}
-		
+
 		BufferedImage result = ImageHelper.deepCopy(borderBackground);
 		Graphics2D g = result.createGraphics();
 		g.drawImage(map, borderWidthScaled, borderWidthScaled, null);
-				
+
 		Path allBordersPath = Paths.get(imagesPath, "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
 		if (!Files.exists(borderPath))
@@ -400,8 +400,8 @@ public class Background
 		g.drawImage(upperLeftCorner, 0, 0, null);
 		g.drawImage(upperRightCorner, (int) borderBounds.getWidth() - borderWidthScaled, 0, null);
 		g.drawImage(lowerLeftCorner, 0, (int) borderBounds.getHeight() - borderWidthScaled, null);
-		g.drawImage(lowerRightCorner, (int) borderBounds.getWidth() - borderWidthScaled,
-				(int) borderBounds.getHeight() - borderWidthScaled, null);
+		g.drawImage(lowerRightCorner, (int) borderBounds.getWidth() - borderWidthScaled, (int) borderBounds.getHeight() - borderWidthScaled,
+				null);
 
 		// Edges
 		BufferedImage topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
@@ -510,10 +510,10 @@ public class Background
 		}
 
 		g.dispose();
-		
+
 		return result;
 	}
-	
+
 	public BufferedImage copyMapIntoBorder(BufferedImage mapWithoutBorder, BufferedImage border)
 	{
 		if (borderWidthScaled == 0)
@@ -524,7 +524,7 @@ public class Background
 		Graphics2D g = border.createGraphics();
 		border.getGraphics().drawImage(mapWithoutBorder, borderWidthScaled, borderWidthScaled, null);
 		g.dispose();
-		
+
 		return border;
 	}
 
@@ -671,7 +671,7 @@ public class Background
 
 		return ImageHelper.read(cornerArray[0].getPath());
 	}
-	
+
 	public int getBorderWidthScaledByResolution()
 	{
 		return borderWidthScaled;

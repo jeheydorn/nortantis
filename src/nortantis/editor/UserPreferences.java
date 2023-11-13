@@ -121,14 +121,10 @@ public class UserPreferences
 		Properties props = new Properties();
 		props.setProperty("zoomLevel", zoomLevel);
 		props.setProperty("editorImageQuality", editorImageQuality);
-		props.setProperty(
-				"defaultMapExportAction",
-				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString()
-		);
-		props.setProperty(
-				"defaultHeightmapExportAction",
-				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString()
-		);
+		props.setProperty("defaultMapExportAction",
+				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
+		props.setProperty("defaultHeightmapExportAction",
+				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 

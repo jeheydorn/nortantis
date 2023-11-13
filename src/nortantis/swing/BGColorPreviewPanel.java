@@ -24,7 +24,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 	public BGColorPreviewPanel()
 	{
 	}
-	
+
 	@Override
 	public void stateChanged(ChangeEvent arg0)
 	{
@@ -32,13 +32,13 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 		colorBeingSelected = colorChooser.getColor();
 		colorifyImageIfPresent(colorBeingSelected);
 	}
-	
+
 	public void setColor(Color color)
 	{
 		this.color = color;
 		colorifyImageIfPresent(color);
 	}
-	
+
 	public void finishSelectingColor()
 	{
 		if (colorBeingSelected != null)
@@ -47,31 +47,31 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 			colorifyImageIfPresent(color);
 		}
 	}
-	
+
 	private void colorifyImageIfPresent(Color color)
 	{
 		if (originalBackground != null)
 		{
 			colorifyImage(color);
-	    	repaint();
+			repaint();
 		}
 	}
-	
+
 	public void setColorifyAlgorithm(ImageHelper.ColorifyAlgorithm colorfyAlgorithm)
 	{
 		this.colorifyAlgorithm = colorfyAlgorithm;
 	}
-	
+
 	public Color getColor()
 	{
 		return color;
 	}
-	
+
 	public void setColorChooser(JColorChooser chooser)
 	{
 		this.colorChooser = chooser;
 	}
-	
+
 	@Override
 	public void setImage(BufferedImage image)
 	{
@@ -86,7 +86,7 @@ public class BGColorPreviewPanel extends ImagePanel implements ChangeListener
 			colorifyImage(color);
 		}
 	}
-	
+
 	private void colorifyImage(Color color)
 	{
 		if (colorifyAlgorithm != ImageHelper.ColorifyAlgorithm.none)

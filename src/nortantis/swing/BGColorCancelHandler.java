@@ -17,11 +17,11 @@ public class BGColorCancelHandler implements ActionListener
 		this.orginal = original;
 		this.target = target;
 	}
-	
+
 	@Override
 	public void actionPerformed(ActionEvent arg0)
 	{
 		target.setColor(orginal);
 	}
-	
+
 }

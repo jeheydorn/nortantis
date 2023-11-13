@@ -1586,10 +1586,11 @@ public class TextDrawer
 		AffineTransform orig = g.getTransform();
 		try
 		{
-			AffineTransform transform = new AffineTransform(g.getTransform()); 
+			AffineTransform transform = new AffineTransform(g.getTransform());
 			g.rotate(text.angle, pivotMinusDrawOffset.x, pivotMinusDrawOffset.y);
-			
-			// Rotate the bounds for the text. Use a new transform rather than g's transform because we need to not include drawOffset when rotating.
+
+			// Rotate the bounds for the text. Use a new transform rather than g's transform because we need to not include drawOffset when
+			// rotating.
 			transform.rotate(text.angle, pivot.x, pivot.y);
 			Area area1 = new Area(bounds1).createTransformedArea(transform);
 			Area area2 = line2 == null ? null : new Area(bounds2).createTransformedArea(transform);

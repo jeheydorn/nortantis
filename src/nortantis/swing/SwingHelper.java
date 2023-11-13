@@ -200,8 +200,8 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (isCausedByOutOfMemoryError(ex))
 				{
-					String message =  isExport ? "Out of memory. Try exporting at a lower resolution." :
-						"Out of memory. Try decreasing the Display Quality in the View menu.";
+					String message = isExport ? "Out of memory. Try exporting at a lower resolution."
+							: "Out of memory. Try decreasing the Display Quality in the View menu.";
 					Logger.printError(message, ex);
 					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -218,8 +218,7 @@ public class SwingHelper
 				ex.printStackTrace();
 				String message = "An ExecutionException error occured with no cause: ";
 				Logger.printError(message, ex);
-				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error",
-						JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 		else
@@ -230,7 +229,7 @@ public class SwingHelper
 			JOptionPane.showMessageDialog(parent, message + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
-	
+
 	private static boolean isCausedByOutOfMemoryError(Throwable ex)
 	{
 		if (ex == null)
@@ -245,7 +244,7 @@ public class SwingHelper
 
 		return isCausedByOutOfMemoryError(ex.getCause());
 	}
-	
+
 	public static java.awt.Point transform(java.awt.Point point, AffineTransform transform)
 	{
 		java.awt.Point result = new java.awt.Point();

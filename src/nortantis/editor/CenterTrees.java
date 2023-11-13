@@ -13,14 +13,14 @@ public class CenterTrees implements Serializable
 	public String treeType;
 	public double density;
 	public long randomSeed;
-	
+
 	public CenterTrees(String treeType, double density, long seed)
 	{
 		this.treeType = treeType;
 		this.density = density;
 		this.randomSeed = seed;
 	}
-	
+
 	public CenterTrees deepCopy()
 	{
 		return new CenterTrees(treeType, density, randomSeed);

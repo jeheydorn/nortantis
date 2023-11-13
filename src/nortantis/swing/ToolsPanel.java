@@ -54,10 +54,8 @@ public class ToolsPanel extends JPanel
 		this.updater = updater;
 
 		// Setup tools
-		tools = Arrays.asList(
-				new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater),
-				new TextTool(mainWindow, this, updater)
-		);
+		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater),
+				new TextTool(mainWindow, this, updater));
 		currentTool = tools.get(2);
 
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
@@ -101,8 +99,8 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer = new JScrollPane(currentToolOptionsPanel);
 
 		add(toolsOptionsPanelContainer);
-		toolOptionsPanelBorder = BorderFactory
-				.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), currentTool.getToolbarName() + " Options");
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
+				currentTool.getToolbarName() + " Options");
 		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 
 		JPanel progressAndBottomPanel = new JPanel();
@@ -110,10 +108,8 @@ public class ToolsPanel extends JPanel
 		// Progress bar
 		JPanel progressBarPanel = new JPanel();
 		progressBarPanel.setLayout(new BoxLayout(progressBarPanel, BoxLayout.X_AXIS));
-		progressBarPanel.setBorder(
-				BorderFactory
-						.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0, SwingHelper.borderWidthBetweenComponents)
-		);
+		progressBarPanel.setBorder(BorderFactory.createEmptyBorder(0, SwingHelper.borderWidthBetweenComponents - 2, 0,
+				SwingHelper.borderWidthBetweenComponents));
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
 		progressBar.setString("Drawing...");
@@ -126,17 +122,13 @@ public class ToolsPanel extends JPanel
 		bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
 		bottomPanel.setBorder(
-				BorderFactory.createEmptyBorder(
-						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
-						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents
-				)
-		);
+				BorderFactory.createEmptyBorder(SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
+						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents));
 
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
-		lblZoom.setToolTipText(
-				"Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels," + " adjust View > Display Quality."
-		);
+		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels,"
+				+ " adjust View > Display Quality.");
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -235,7 +227,7 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.repaint();
 		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
-		
+
 		if (!updater.isMapBeingDrawn())
 		{
 			showAsDrawing(false);

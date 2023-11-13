@@ -43,7 +43,8 @@ public class AboutDialog extends JDialog
 		add(content, BorderLayout.CENTER);
 		content.setLayout(new BorderLayout());
 		content.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-		BufferedImage nortantisImage = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "taskbar icon medium size.png").toString());
+		BufferedImage nortantisImage = ImageHelper
+				.read(Paths.get(AssetsPath.getInstallPath(), "internal", "taskbar icon medium size.png").toString());
 		content.add(new ImagePanel(nortantisImage), BorderLayout.WEST);
 
 		JPanel rightPanel = new JPanel();
@@ -51,13 +52,13 @@ public class AboutDialog extends JDialog
 		rightPanel.setPreferredSize(new Dimension(nortantisImage.getWidth(), nortantisImage.getHeight()));
 		JLabel text = new JLabel("<html>" + "Nortantis version " + MapSettings.currentVersion + "." + "" + "<html>");
 		rightPanel.add(text);
-		
+
 		rightPanel.add(new JLabel(" "));
 
 		rightPanel.add(new JLabel("<html>If you have encountered a bug and wish to report it, you may do so at the Nortantis project's"
 				+ " GitHub issue tracker here: </html>"));
 		rightPanel.add(createHyperlink("github.com/jeheydorn/nortantis/issues", "https://github.com/jeheydorn/nortantis/issues"));
-		
+
 		rightPanel.add(new JLabel(" "));
 		rightPanel.add(new JLabel("<html>If you have enjoyed Nortantis and wish to support it, and you like clean, happy, fantasy "
 				+ "romance novels, then please consider purchasing one of my books listed at:</html>"));
@@ -66,14 +67,14 @@ public class AboutDialog extends JDialog
 		rightPanel.add(Box.createVerticalGlue());
 
 		content.add(rightPanel, BorderLayout.EAST);
-		
+
 		JPanel bottomPanel = new JPanel();
 		content.add(bottomPanel, BorderLayout.SOUTH);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 		JButton closeButton = new JButton("<html><u>C</u>lose</html>");
 		closeButton.setMnemonic(KeyEvent.VK_C);
 		closeButton.addActionListener(new ActionListener()
-		{	
+		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -81,7 +82,7 @@ public class AboutDialog extends JDialog
 			}
 		});
 		bottomPanel.add(closeButton);
-		
+
 		pack();
 	}
 

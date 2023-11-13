@@ -13,24 +13,24 @@ public class ExtractedBook
 	public Set<String> personNames;
 	public Set<Tuple2Comp<String, String>> nounAdjectivePairs;
 	public Set<Tuple2Comp<String, String>> nounVerbPairs;
-	
-	public ExtractedBook(Set<String> placeNames, Set<String> personNames,
-			Set<Tuple2Comp<String, String>> nounAdjectivePairs, Set<Tuple2Comp<String, String>> nounVerbPairs)
+
+	public ExtractedBook(Set<String> placeNames, Set<String> personNames, Set<Tuple2Comp<String, String>> nounAdjectivePairs,
+			Set<Tuple2Comp<String, String>> nounVerbPairs)
 	{
 		this.placeNames = placeNames;
 		this.personNames = personNames;
 		this.nounAdjectivePairs = nounAdjectivePairs;
 		this.nounVerbPairs = nounVerbPairs;
 	}
-	
+
 	public ExtractedBook()
 	{
-		placeNames = new HashSet<>(); 
+		placeNames = new HashSet<>();
 		personNames = new HashSet<>();
-		nounAdjectivePairs = new TreeSet<>(); 
+		nounAdjectivePairs = new TreeSet<>();
 		nounVerbPairs = new TreeSet<>();
 	}
-	
+
 	public void addAll(ExtractedBook other)
 	{
 		placeNames.addAll(other.placeNames);

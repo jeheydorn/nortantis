@@ -22,6 +22,7 @@ import nortantis.util.Range;
 
 /**
  * Creates names for rivers and mountains by putting nouns, verbs, and adjectives together.
+ * 
  * @author joseph
  *
  */
@@ -33,21 +34,23 @@ public class NameCompiler
 	// Used to decide whether to return a result from nounAdjectivePairs or nounVerbPairs.
 	private Counter<String> counter;
 	Random r;
+
 	public void setSeed(long seed)
 	{
 		r.setSeed(seed);
 	}
+
 	private Set<String> dict;
 
-	public NameCompiler(Random r, List<Pair<String>> nounAdjectivePairs, 
-			List<Pair<String>> nounVerbPairs)
-	{		
+	public NameCompiler(Random r, List<Pair<String>> nounAdjectivePairs, List<Pair<String>> nounVerbPairs)
+	{
 		// Load the word dictionary.
 		List<String> lines;
 		try
 		{
 			lines = Files.readAllLines(Paths.get(AssetsPath.getInstallPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			throw new RuntimeException("Unable to read word dictionary file.", e);
 		}
@@ -69,16 +72,16 @@ public class NameCompiler
 		this.nounAdjectivePairs = capitalizeFirstLetters(nounAdjectivePairs);
 		this.nounVerbPairs = capitalizeFirstLetters(this.nounVerbPairs);
 		nounAdjectivePairs = null;
-		
-				
+
+
 		this.r = r;
 		counter = new Counter<>();
 		counter.addCount("adjectives", this.nounAdjectivePairs.size());
 		counter.addCount("verbs", this.nounVerbPairs.size());
-				
-		
+
+
 	}
-	
+
 	private List<Pair<String>> convertToPresentTense(List<Pair<String>> verbPairs)
 	{
 		// Convert verbs to present tense.
@@ -91,7 +94,7 @@ public class NameCompiler
 		}
 		return result;
 	}
-	
+
 	private List<Pair<String>> capitalizeFirstLetters(List<Pair<String>> pairs)
 	{
 		List<Pair<String>> result = new ArrayList<>();
@@ -103,7 +106,7 @@ public class NameCompiler
 		}
 		return result;
 	}
-	
+
 	private String capitalizeAllFirstLetter(String str)
 	{
 		char[] chars = str.toCharArray();
@@ -114,9 +117,9 @@ public class NameCompiler
 				chars[i] = Character.toUpperCase(str.charAt(i));
 			}
 		}
-		return  String.valueOf(chars);
+		return String.valueOf(chars);
 	}
-	
+
 	public String compileName()
 	{
 		if (counter.sample(r).equals("adjectives"))
@@ -128,12 +131,12 @@ public class NameCompiler
 			Pair<String> pair = nounAdjectivePairs.get(r.nextInt(nounAdjectivePairs.size()));
 			double d = r.nextDouble();
 			String result;
-			if (d < 1.0/3.0)
+			if (d < 1.0 / 3.0)
 			{
 				// Just return the noun.
 				result = pair.getFirst();
 			}
-			else if (d < 2.0/3.0)
+			else if (d < 2.0 / 3.0)
 			{
 				// Just return the adjective.
 				result = pair.getSecond();
@@ -154,7 +157,7 @@ public class NameCompiler
 			Pair<String> pair = nounVerbPairs.get(r.nextInt(nounVerbPairs.size()));
 			double d = r.nextDouble();
 			String result;
-			if (d < 0.5) 
+			if (d < 0.5)
 			{
 				// Just return the noun.
 				result = pair.getFirst();
@@ -163,42 +166,43 @@ public class NameCompiler
 			{
 				// Return both.
 				result = pair.getSecond() + " " + pair.getFirst();
-			}			
-			
+			}
+
 			return result;
 		}
 	}
-	
+
 	/**
-	 * Use rules from http://www.oxforddictionaries.com/us/words/verb-tenses-adding-ed-and-ing
-	 * and some rules I made to convert a verb to present tense.
+	 * Use rules from http://www.oxforddictionaries.com/us/words/verb-tenses-adding-ed-and-ing and some rules I made to convert a verb to
+	 * present tense.
+	 * 
 	 * @param verb
 	 * @return
 	 */
 	private String convertVerbToPresentTense(String verb)
 	{
 		List<Character> vowels = Arrays.asList('a', 'e', 'i', 'o', 'u');
-		
+
 		if (verb.endsWith("ing"))
 			return verb;
-		
+
 		if (verb.endsWith("ee") || verb.endsWith("ye") || verb.endsWith("oe"))
 		{
 			// Keep silent e.
 			return verb + "ing";
 		}
-		
+
 		if (verb.endsWith("ed"))
 		{
 			return verb.substring(0, verb.length() - 2) + "ing";
 		}
-		
-		
+
+
 		if (verb.endsWith("aid"))
 		{
 			return verb.substring(0, verb.length() - 2) + "ying";
 		}
-		
+
 		if (verb.endsWith("ood"))
 		{
 			return verb.substring(0, verb.length() - 3) + "anding";
@@ -218,7 +222,7 @@ public class NameCompiler
 		{
 			return verb.substring(0, verb.length() - 1) + "ing";
 		}
-		
+
 		if (verb.endsWith("ought"))
 		{
 			if (dict.contains(verb + "ing"))
@@ -229,138 +233,82 @@ public class NameCompiler
 			return verb;
 		}
 
-		if (verb.length() >= 3 && 
-				!vowels.contains(verb.charAt(verb.length() - 1)) && vowels.contains(verb.charAt(verb.length() - 2))
+		if (verb.length() >= 3 && !vowels.contains(verb.charAt(verb.length() - 1)) && vowels.contains(verb.charAt(verb.length() - 2))
 				&& vowels.contains(verb.charAt(verb.length() - 3)))
 		{
 			// 2 vowels vowels by a consonant.
 			return verb + "ing";
 		}
-		
+
 		if (verb.endsWith("c"))
 		{
 			return verb + "king";
 		}
-		
-		if (verb.length() >= 2 &&
-				!vowels.contains(verb.charAt(verb.length() - 1)) && vowels.contains(verb.charAt(verb.length() - 2)))
+
+		if (verb.length() >= 2 && !vowels.contains(verb.charAt(verb.length() - 1)) && vowels.contains(verb.charAt(verb.length() - 2)))
 		{
 			// Use a massive dictionary to determine if I should double the consonant.
 			if (dict.contains(verb + "ing"))
-					return verb + "ing";
+				return verb + "ing";
 			char consonant = verb.charAt(verb.length() - 1);
 			if (dict.contains(verb + consonant + "ing"))
-					return verb + consonant + "ing";
+				return verb + consonant + "ing";
 			// Give up.
 			return verb;
 		}
-		
+
 		if (verb.endsWith("ept"))
 		{
 			return verb.substring(0, verb.length() - 2) + "eping";
 		}
-						
+
 		if (dict.contains(verb + "ing"))
 			return verb + "ing";
 		// Give up.
 		return verb;
 	}
-	
+
 	public boolean isEmpty()
 	{
 		return counter.isEmpty();
 	}
-	
+
 	public static void test()
 	{
-		final NameCompiler compiler = new NameCompiler(new Random(), new ArrayList<Pair<String>>(),
-				new ArrayList<Pair<String>>());
+		final NameCompiler compiler = new NameCompiler(new Random(), new ArrayList<Pair<String>>(), new ArrayList<Pair<String>>());
 		// My examples.
 		{
-			List<String> before = Arrays.asList(
-					"travel",
-					"distil",
-					"equal",
-					"bake",
-					"free",
-					"dye",
-					"tiptoe",
-					"running",
-					"wheel",
-					"picnic",
-					"stood",
-					"forgave",
-					"seen",
-					"set");
+			List<String> before = Arrays.asList("travel", "distil", "equal", "bake", "free", "dye", "tiptoe", "running", "wheel", "picnic",
+					"stood", "forgave", "seen", "set");
 			List<String> after = Helper.map(before, new Function<String, String>()
-					{
-						public String apply(String item)
-						{
-							return compiler.convertVerbToPresentTense(item);
-						}
-					});
-			List<String> expected = Arrays.asList(
-					"travelling", // I'm using a British dictionary apparently.
-					"distilling",
-					"equaling",
-					"baking",
-					"freeing",
-					"dyeing",
-					"tiptoeing",
-					"running",
-					"wheeling",
-					"picnicking",
-					"standing",
-					"forgiving",
-					"seeing",
-					"setting");
+			{
+				public String apply(String item)
+				{
+					return compiler.convertVerbToPresentTense(item);
+				}
+			});
+			List<String> expected = Arrays.asList("travelling", // I'm using a British dictionary apparently.
+					"distilling", "equaling", "baking", "freeing", "dyeing", "tiptoeing", "running", "wheeling", "picnicking", "standing",
+					"forgiving", "seeing", "setting");
 			for (int i : new Range(expected.size()))
 			{
 				assertEquals(expected.get(i), after.get(i));
 			}
 		}
-		
+
 		// Examples from text.
 		{
-			List<String> before = Arrays.asList(
-					"redeem",
-					"stretched",
-					"set",
-					"wept",
-					"appeared",
-					"rid",
-					"plucked",
-					"put",
-					"laid",
-					"stand",
-					"send",
-					"speak",
-					"afflict",
-					"looked",
-					"rest");
+			List<String> before = Arrays.asList("redeem", "stretched", "set", "wept", "appeared", "rid", "plucked", "put", "laid", "stand",
+					"send", "speak", "afflict", "looked", "rest");
 			List<String> after = Helper.map(before, new Function<String, String>()
-					{
-						public String apply(String item)
-						{
-							return compiler.convertVerbToPresentTense(item);
-						}			
-					});
-			List<String> expected = Arrays.asList(
-					"redeeming",
-					"stretching",
-					"setting",
-					"weeping",
-					"appearing",
-					"riding",
-					"plucking",
-					"putting",
-					"laying",
-					"standing",
-					"sending",
-					"speaking",
-					"afflicting",
-					"looking",
-					"resting");
+			{
+				public String apply(String item)
+				{
+					return compiler.convertVerbToPresentTense(item);
+				}
+			});
+			List<String> expected = Arrays.asList("redeeming", "stretching", "setting", "weeping", "appearing", "riding", "plucking",
+					"putting", "laying", "standing", "sending", "speaking", "afflicting", "looking", "resting");
 			for (int i : new Range(expected.size()))
 			{
 				assertEquals(expected.get(i), after.get(i));

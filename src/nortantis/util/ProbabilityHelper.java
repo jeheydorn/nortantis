@@ -18,12 +18,12 @@ public class ProbabilityHelper
 		{
 			throw new IllegalArgumentException("The distribution must have at least one value");
 		}
-		
+
 		if (distribution.size() == 1)
 		{
 			return distribution.get(0).getSecond();
 		}
-		
+
 		double totalWeight = distribution.stream().map(tuple -> tuple.getFirst()).mapToDouble(d -> d).sum();
 		if (totalWeight == 0)
 		{
@@ -39,12 +39,12 @@ public class ProbabilityHelper
 				return tuple.getSecond();
 			}
 		}
-		
+
 		// This shouldn't actually happen.
 		assert false;
 		return distribution.get(distribution.size() - 1).getSecond();
 	}
-	
+
 	/**
 	 * Samples a uniform distribution over the given items
 	 */
@@ -54,12 +54,12 @@ public class ProbabilityHelper
 		{
 			throw new IllegalArgumentException("The distribution must have at least one value");
 		}
-		
+
 		if (items.size() == 1)
 		{
 			return items.get(0);
 		}
-		
+
 		double sample = rand.nextDouble();
 		double itemWeight = 1.0 / items.size();
 		double curWeight = 0;
@@ -71,22 +71,22 @@ public class ProbabilityHelper
 				return item;
 			}
 		}
-		
+
 		// This shouldn't actually happen.
 		assert false;
 		return items.get(0);
 	}
-	
+
 	public static <T extends Enum<T>> T sampleEnumUniform(Random rand, Class<T> enumType)
 	{
 		List<T> items = new ArrayList<>();
-		for (T c : enumType.getEnumConstants()) 
+		for (T c : enumType.getEnumConstants())
 		{
 			items.add(c);
 		}
 		return sampleUniform(rand, items);
 	}
-	
+
 	@SuppressWarnings("rawtypes")
 	public static List<Tuple2<Double, Enum>> createUniformDistributionOverEnumValues(Enum[] values)
 	{
@@ -95,19 +95,18 @@ public class ProbabilityHelper
 		{
 			distribution.add(new Tuple2<>(1.0, value));
 		}
-		
+
 		return distribution;
 	}
-	
+
 	public static void main(String[] args)
 	{
 		Map<String, Integer> counts = new HashMap<>();
-		for (@SuppressWarnings("unused") int i : new Range(10000))
+		for (@SuppressWarnings("unused")
+		int i : new Range(10000))
 		{
-			String value = sampleCategorical(new Random(), Arrays.asList(
-					 new Tuple2<>(0.1, "first"), 
-					 new Tuple2<>(0.5, "second"),
-					 new Tuple2<>(0.4, "third")));
+			String value = sampleCategorical(new Random(),
+					Arrays.asList(new Tuple2<>(0.1, "first"), new Tuple2<>(0.5, "second"), new Tuple2<>(0.4, "third")));
 			if (!counts.containsKey(value))
 			{
 				counts.put(value, 0);

@@ -1411,7 +1411,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			handleImagesRefresh();
 		}
-		
+
 		updater.createAndShowMapFull();
 	}
 
@@ -1443,7 +1443,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			// No settings are loaded.
 			return null;
 		}
-		
+
 		MapSettings settings = lastSettingsLoadedOrSaved.deepCopyExceptEdits();
 		if (deepCopyEdits)
 		{
@@ -1541,12 +1541,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		return openSettingsFilePath;
 	}
-	
+
 	String getFileMenuName()
 	{
 		return fileMenu.getText();
 	}
-	
+
 	String getRefreshImagesMenuName()
 	{
 		return refreshMenuItem.getText();

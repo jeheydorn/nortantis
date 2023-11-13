@@ -107,7 +107,7 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null, null, null);
 	}
-	
+
 	public void createAndShowMapIncrementalUsingText(List<MapText> textChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null);
@@ -315,7 +315,7 @@ public abstract class MapUpdater
 		{
 			postRuns.add(postRun);
 		}
-		
+
 		List<MapText> copied = textChanged == null ? null : textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
 		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copied, preRuns, postRuns);
 	}
@@ -396,8 +396,7 @@ public abstract class MapUpdater
 						}
 						else if (textChanged != null && textChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map,
-									textChanged);
+							Rectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else
@@ -513,7 +512,8 @@ public abstract class MapUpdater
 
 					if (next != null)
 					{
-						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.preRuns, next.postRuns);
+						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.preRuns,
+								next.postRuns);
 					}
 
 					isMapReadyForInteractions = true;
@@ -618,8 +618,8 @@ public abstract class MapUpdater
 		List<Runnable> postRuns;
 		List<Runnable> preRuns;
 
-		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged, List<Runnable> preRuns,
-				List<Runnable> postRuns)
+		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
+				List<Runnable> preRuns, List<Runnable> postRuns)
 		{
 			this.updateType = updateType;
 			if (centersChanged != null)
@@ -697,7 +697,7 @@ public abstract class MapUpdater
 				{
 					textChanged = new ArrayList<>(other.textChanged);
 				}
-}
+			}
 		}
 	}
 

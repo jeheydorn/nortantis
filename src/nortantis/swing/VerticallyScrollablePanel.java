@@ -8,9 +8,8 @@ import javax.swing.Scrollable;
 
 @SuppressWarnings("serial")
 /***
- * A panel which can be shrunk below its preferred width (doing so will not cause a scroll bar to appear, 
- * but will instead shrink the panel), but which cannot be shrunk below its preferred height (doing so will
- * cause a scroll bar to appear).
+ * A panel which can be shrunk below its preferred width (doing so will not cause a scroll bar to appear, but will instead shrink the
+ * panel), but which cannot be shrunk below its preferred height (doing so will cause a scroll bar to appear).
  * 
  */
 public class VerticallyScrollablePanel extends JPanel implements Scrollable

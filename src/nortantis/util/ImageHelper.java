@@ -158,7 +158,7 @@ public class ImageHelper
 
 		return scale(inImage, xSize, ySize, method);
 	}
-	
+
 	public static BufferedImage scale(BufferedImage inImage, int width, int height, Method method)
 	{
 		// This library is described at
@@ -248,11 +248,9 @@ public class ImageHelper
 			int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
 			// The +1's below are because I'm padding the width and height by 1
 			// pixel to account for integer truncation.
-			pixelsToUpdate = new java.awt.Rectangle(
-					upperLeftX, upperLeftY, 
+			pixelsToUpdate = new java.awt.Rectangle(upperLeftX, upperLeftY,
 					Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
-					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY)
-			);
+					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
 
 		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
@@ -291,7 +289,7 @@ public class ImageHelper
 		double v1 = v10 * (1 - dx) + v11 * dx;
 		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
-	
+
 
 	/**
 	 * 
@@ -601,7 +599,7 @@ public class ImageHelper
 
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 	}
@@ -615,8 +613,7 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException(
-					"In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight()
-			);
+					"In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
 
 		return maskWithColorInRegion(image, color, mask, invertMask, new java.awt.Point(0, 0));
 	}
@@ -686,7 +683,7 @@ public class ImageHelper
 				}
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 	}
@@ -758,7 +755,7 @@ public class ImageHelper
 				}
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 
@@ -849,22 +846,19 @@ public class ImageHelper
 
 		if (redChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but red chanel image has width " + redChanel.getWidth() + "."
-			);
+					"Alpha chanel width is " + alphaChanel.getWidth() + " but red chanel image has width " + redChanel.getWidth() + ".");
 		if (redChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (greenChanel.getWidth() != alphaChanel.getWidth())
-			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but green chanel image has width " + greenChanel.getWidth() + "."
-			);
+			throw new IllegalArgumentException("Alpha chanel width is " + alphaChanel.getWidth() + " but green chanel image has width "
+					+ greenChanel.getWidth() + ".");
 		if (greenChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
 		if (blueChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
-					"Alpha chanel width is " + alphaChanel.getWidth() + " but blue chanel image has width " + blueChanel.getWidth() + "."
-			);
+					"Alpha chanel width is " + alphaChanel.getWidth() + " but blue chanel image has width " + blueChanel.getWidth() + ".");
 		if (blueChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
@@ -923,8 +917,7 @@ public class ImageHelper
 
 		if (image1.getWidth() != image2.getWidth())
 			throw new IllegalArgumentException(
-					"Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth()
-			);
+					"Image widths do not match. image1 width: " + image1.getWidth() + ", image 2 width: " + image2.getWidth());
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
@@ -1151,19 +1144,16 @@ public class ImageHelper
 
 		if (setContrast)
 		{
-			setContrast(
-					data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
-					imageWidth
-			);
+			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
+					imageWidth);
 		}
 		else if (scaleLevels)
 		{
 			scaleLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		BufferedImage result = arrayToImage(
-				data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, bufferedImageType
-		);
+		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
+				imageWidth, bufferedImageType);
 		return result;
 	}
 
@@ -1229,9 +1219,8 @@ public class ImageHelper
 				{
 					if (flipXAndYAxis)
 					{
-						data.setRealInput(
-								c + columnPaddingOver2, r + rowPaddingOver2, input[input.length - 1 - r][input[0].length - 1 - c]
-						);
+						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2,
+								input[input.length - 1 - r][input[0].length - 1 - c]);
 					}
 					else
 					{
@@ -1522,8 +1511,7 @@ public class ImageHelper
 
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException(
-					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType())
-			);
+					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType()));
 		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
 		Raster raster = image.getRaster();
 
@@ -1531,7 +1519,7 @@ public class ImageHelper
 		Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
 
 		final java.awt.Rectangle whereFinal = where;
-		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) -> 
+		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
 		{
 			for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
 			{
@@ -1610,8 +1598,7 @@ public class ImageHelper
 	{
 		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException(
-					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType())
-			);
+					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType()));
 		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
 			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
 
@@ -1637,7 +1624,7 @@ public class ImageHelper
 		java.awt.Rectangle imageBounds = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
 
 		java.awt.Point whereFinal = where;
-		ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) -> 
+		ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
 		{
 			for (int x = 0; x < colorIndexes.getWidth(); x++)
 			{
@@ -1711,10 +1698,11 @@ public class ImageHelper
 			BufferedImage image = ImageIO.read(new File(fileName));
 			if (image == null)
 			{
-				throw new RuntimeException("Can't read the file " + fileName + ". This can happen if the file is an unsupported format or is corrupted, "
-						+ "such as if you saved it with a file extension that doesn't match its actual format." );
+				throw new RuntimeException(
+						"Can't read the file " + fileName + ". This can happen if the file is an unsupported format or is corrupted, "
+								+ "such as if you saved it with a file extension that doesn't match its actual format.");
 			}
-			
+
 			return image;
 		}
 		catch (IOException e)
@@ -1922,15 +1910,13 @@ public class ImageHelper
 		if (!isSupportedGrayscaleType(target))
 		{
 			throw new IllegalArgumentException(
-					"Unsupported target image type for subtracting: " + bufferedImageTypeToString(target.getType())
-			);
+					"Unsupported target image type for subtracting: " + bufferedImageTypeToString(target.getType()));
 		}
 
 		if (!isSupportedGrayscaleType(other))
 		{
 			throw new IllegalArgumentException(
-					"Unsupported other image type for subtracting: " + bufferedImageTypeToString(other.getType())
-			);
+					"Unsupported other image type for subtracting: " + bufferedImageTypeToString(other.getType()));
 		}
 
 		WritableRaster out = target.getRaster();
@@ -1951,10 +1937,8 @@ public class ImageHelper
 	public static void copySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source,
 			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
-		java.awt.Rectangle targetBounds = new java.awt.Rectangle(
-				widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2,
-				target.getHeight() - widthOfBorderToNotDrawOn * 2
-		);
+		java.awt.Rectangle targetBounds = new java.awt.Rectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
+				target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
 		{
 			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)
