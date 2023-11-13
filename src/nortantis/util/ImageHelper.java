@@ -601,7 +601,7 @@ public class ImageHelper
 
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 	}
@@ -686,7 +686,7 @@ public class ImageHelper
 				}
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 	}
@@ -758,7 +758,7 @@ public class ImageHelper
 				}
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks);
+		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
 

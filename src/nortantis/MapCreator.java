@@ -435,7 +435,7 @@ public class MapCreator
 			{
 				return mapParts.graph;
 			}
-		});
+		}, false);
 
 		Background background;
 		if (mapParts != null && mapParts.background != null)
@@ -722,7 +722,7 @@ public class MapCreator
 				}
 
 				return new Tuple2<BufferedImage, BufferedImage>(frayedBorderMask, frayedBorderBlur);
-			});
+			}, false);
 		}
 		return null;
 	}
@@ -755,7 +755,7 @@ public class MapCreator
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
 
 				return grunge;
-			});
+			}, false);
 		}
 		else
 		{

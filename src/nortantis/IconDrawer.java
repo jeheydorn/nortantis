@@ -564,7 +564,7 @@ public class IconDrawer
 				}
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(jobs);
+		ThreadHelper.getInstance().processInParallel(jobs, true);
 
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
