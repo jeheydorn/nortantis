@@ -450,7 +450,7 @@ public class IconDrawer
 	 * cannot see other mountains through it.
 	 */
 	private void drawIconWithBackgroundAndMask(BufferedImage mapOrSnippet, ImageAndMasks imageAndMasks, BufferedImage backgroundOrSnippet,
-			int xCenter, int yCenter, boolean ignoreMaxSize, boolean allowTopsOfIconsToOverlapOcean)
+			BufferedImage landTexture, int xCenter, int yCenter, boolean ignoreMaxSize, boolean allowTopsOfIconsToOverlapOcean)
 	{
 		BufferedImage icon = imageAndMasks.image;
 		BufferedImage contentMask = imageAndMasks.getOrCreateContentMask();
@@ -468,10 +468,13 @@ public class IconDrawer
 		{
 			shadingMask = imageAndMasks.getOrCreateShadingMask();
 			if (shadingMask.getWidth() != icon.getWidth())
+			{
 				throw new IllegalArgumentException("The given shading mask's width does not match the icon's width.");
+			}
 			if (shadingMask.getHeight() != icon.getHeight())
+			{
 				throw new IllegalArgumentException("The given shading mask's height does not match the icon's height.");
-
+			}
 		}
 
 		int xLeft = xCenter - icon.getWidth() / 2;
@@ -479,6 +482,7 @@ public class IconDrawer
 
 		Raster maskRaster = contentMask.getRaster();
 		for (int x : new Range(icon.getWidth()))
+		{
 			for (int y : new Range(icon.getHeight()))
 			{
 				Color iconColor = new Color(icon.getRGB(x, y), true);
@@ -510,6 +514,7 @@ public class IconDrawer
 
 				mapOrSnippet.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
 			}
+		}
 	}
 
 	/**
@@ -518,7 +523,7 @@ public class IconDrawer
 	 * I draw all the icons at once this way so that I can sort the icons by the y-coordinate of the base of each icon. This way icons lower
 	 * on the map are drawn in front of those that are higher.
 	 */
-	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, Rectangle drawBounds,
+	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, BufferedImage landTexture, Rectangle drawBounds,
 			boolean allowTopsOfIconsToOverlapOcean)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>();
@@ -584,7 +589,7 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMask(mapOrSnippet, task.imageAndMasks, background, ((int) task.centerLoc.x) - xToSubtract,
+			drawIconWithBackgroundAndMask(mapOrSnippet, task.imageAndMasks, background, landTexture, ((int) task.centerLoc.x) - xToSubtract,
 					((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize, allowTopsOfIconsToOverlapOcean);
 		}
 	}

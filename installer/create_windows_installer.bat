@@ -25,6 +25,7 @@ jpackage ^
 --vendor "Joseph Heydorn" ^
 --app-version "1.0" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
+--license-file end_user_license_agreement.txt ^
 --java-options -Dfile.encoding=UTF-8
 
 
