@@ -262,8 +262,9 @@ public class MapCreator
 			mapParts.graph.drawLandAndOceanBlackAndWhite(g, centersToDraw, drawBounds);
 		}
 
-		BufferedImage mapSnippet = ImageHelper.maskWithColor(ImageHelper.copySnippet(mapParts.background.land, drawBounds.toAwtRectangle()),
-				Color.black, landMask, false);
+		BufferedImage landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toAwtRectangle());
+		BufferedImage mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
+		;
 
 		mapSnippet = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet, landMask,
 				mapParts.background, centersToDraw, drawBounds, false);
@@ -282,7 +283,9 @@ public class MapCreator
 		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
 		drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
 
-		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, drawBounds, settings.allowTopsOfIconsToOverlapOcean);
+		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds,
+				settings.allowTopsOfIconsToOverlapOcean);
+		landTextureSnippet = null;
 
 		// Draw ocean
 		{
@@ -825,11 +828,6 @@ public class MapCreator
 		// Combine land and ocean images.
 		BufferedImage map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
-		if (mapParts == null)
-		{
-			background.land = null;
-		}
-
 		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null, true);
 
 		checkForCancel();
@@ -890,7 +888,12 @@ public class MapCreator
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawAllIcons(map, landBackground, null, settings.allowTopsOfIconsToOverlapOcean);
+		iconDrawer.drawAllIcons(map, landBackground, background.land, null, settings.allowTopsOfIconsToOverlapOcean);
+
+		if (mapParts == null)
+		{
+			background.land = null;
+		}
 
 		checkForCancel();
 
