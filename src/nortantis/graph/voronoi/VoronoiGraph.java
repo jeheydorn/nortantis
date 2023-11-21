@@ -107,7 +107,6 @@ public abstract class VoronoiGraph
 		{
 			assignCornerElevations();
 			assignPolygonElevations();
-			// Joseph note: I changed the order in which this is called.
 			assignOceanCoastAndLand();
 
 			createRivers();
@@ -116,8 +115,6 @@ public abstract class VoronoiGraph
 			assignPolygonMoisture();
 			assignBiomes();
 		}
-		// Joseph note: I moved noisy edge building code to GraphImpl because it
-		// now depends on the political regions.
 	}
 
 	private void assignBorderToCenters()

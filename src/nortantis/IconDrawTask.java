@@ -4,6 +4,7 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 import nortantis.graph.geom.Point;
+import nortantis.graph.geom.Rectangle;
 import nortantis.util.AssetsPath;
 
 /**
@@ -78,7 +79,11 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 				scaledShadingMask = ImageCache.getInstance(AssetsPath.getInstallPath())
 						.getScaledImageByWidth(imageAndMasks.getOrCreateShadingMask(), scaledWidth);
 			}
-			imageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledShadingMask);
+
+			java.awt.Rectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(imageAndMasks.getOrCreateContentMask(),
+					imageAndMasks.getOrCreateContentBounds(), scaledWidth, scaledHeight);
+
+			imageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type);
 		}
 	}
 

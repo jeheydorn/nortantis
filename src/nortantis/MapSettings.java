@@ -40,7 +40,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "1.0";
+	public static final String currentVersion = "1.1";
 	public static final double defaultPointPrecision = 2.0;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 
@@ -108,7 +108,7 @@ public class MapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconTypeName;
-	public boolean allowTopsOfIconsToOverlapOcean;
+	public boolean allowTopsOfIconsToOverlapWater;
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
@@ -226,7 +226,7 @@ public class MapSettings implements Serializable
 
 		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
-		root.put("allowTopsOfIconsToOverlapOcean", allowTopsOfIconsToOverlapOcean);
+		root.put("allowTopsOfIconsToOverlapWater", allowTopsOfIconsToOverlapWater);
 
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
@@ -494,8 +494,8 @@ public class MapSettings implements Serializable
 			cityIconTypeName = "";
 		}
 
-		allowTopsOfIconsToOverlapOcean = root.containsKey("allowTopsOfIconsToOverlapOcean")
-				? (boolean) root.get("allowTopsOfIconsToOverlapOcean")
+		allowTopsOfIconsToOverlapWater = root.containsKey("allowTopsOfIconsToOverlapWater")
+				? (boolean) root.get("allowTopsOfIconsToOverlapWater")
 				: false;
 
 		drawText = (boolean) root.get("drawText");
@@ -884,7 +884,7 @@ public class MapSettings implements Serializable
 			return false;
 		}
 		MapSettings other = (MapSettings) obj;
-		return allowTopsOfIconsToOverlapOcean == other.allowTopsOfIconsToOverlapOcean && backgroundRandomSeed == other.backgroundRandomSeed
+		return allowTopsOfIconsToOverlapWater == other.allowTopsOfIconsToOverlapWater && backgroundRandomSeed == other.backgroundRandomSeed
 				&& Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth

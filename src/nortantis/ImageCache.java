@@ -175,7 +175,7 @@ public class ImageCache
 				}
 				BufferedImage icon = getImageFromFile(path);
 
-				imagesPerGroup.add(groupName, new ImageAndMasks(icon));
+				imagesPerGroup.add(groupName, new ImageAndMasks(icon, iconType));
 			}
 		}
 		return imagesPerGroup;
@@ -254,7 +254,7 @@ public class ImageCache
 						+ ". Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: "
 						+ e.getMessage(), e);
 			}
-			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple2<>(new ImageAndMasks(icon), width));
+			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple2<>(new ImageAndMasks(icon, iconType), width));
 		}
 
 		return imagesAndMasks;

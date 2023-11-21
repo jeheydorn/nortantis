@@ -170,7 +170,7 @@ public class SettingsGenerator
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
 		}
 
-		settings.allowTopsOfIconsToOverlapOcean = rand.nextDouble() > 0.5 ? true : false;
+		settings.allowTopsOfIconsToOverlapWater = true;
 
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
 
