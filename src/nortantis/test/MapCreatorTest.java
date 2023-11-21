@@ -145,6 +145,12 @@ public class MapCreatorTest
 	{
 		generateAndCompare("regressionTest_polygonsOnTopBug.nort");
 	}
+	
+	@Test
+	public void iconsAllowedToDrawOverCoastlines()
+	{
+		generateAndCompare("iconsAllowedToDrawOverCoastlines.nort");
+	}
 
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{

@@ -3,6 +3,7 @@ package nortantis;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
@@ -20,26 +21,29 @@ public class ImageAndMasks
 	/**
 	 * Used to linearly combine pixel values pulled from the background image without other icons vs the the map being drawn so far.
 	 */
-	public BufferedImage contentMask;
-	private int contentHeight;
+	private BufferedImage contentMask;
+	private Rectangle contentBounds;
 
 	/**
 	 * Used to linearly combine pixel values pulled from the land background texture vs the background image without other icons. Used to
 	 * blend coastline shading into icons when icons are allowed to draw over coastlines.
 	 */
 	private BufferedImage shadingMask;
+	private IconType iconType;
 
 
-	public ImageAndMasks(BufferedImage image)
+	public ImageAndMasks(BufferedImage image, IconType iconType)
 	{
 		this.image = image;
+		this.iconType = iconType;
 	}
 
-	public ImageAndMasks(BufferedImage image, BufferedImage contentMask, BufferedImage shadingMask)
+	public ImageAndMasks(BufferedImage image, BufferedImage contentMask, Rectangle contentBounds, BufferedImage shadingMask, IconType iconType)
 	{
-		this(image);
+		this(image, iconType);
 		this.contentMask = contentMask;
 		this.shadingMask = shadingMask;
+		this.contentBounds = contentBounds;
 	}
 
 	public BufferedImage getOrCreateContentMask()
@@ -75,6 +79,7 @@ public class ImageAndMasks
 				Coordinate point = findUppermostOpaquePixel(image, x);
 				if (point != null)
 				{
+					addToContentBounds(point);
 					if (points.isEmpty())
 					{
 						points.add(new Coordinate(x, image.getHeight()));
@@ -99,6 +104,7 @@ public class ImageAndMasks
 			for (int y = 0; y < image.getHeight(); y++)
 			{
 				Coordinate point = findLeftmostOpaquePixel(image, y);
+				addToContentBounds(point);
 				if (point != null)
 				{
 					if (points.isEmpty())
@@ -107,11 +113,6 @@ public class ImageAndMasks
 					}
 					points.add(point);
 				}
-			}
-
-			if (points.size() > 1)
-			{
-				contentHeight = points.get(points.size() - 1).y - points.get(0).y + 1;
 			}
 
 			points.add(new Coordinate(image.getWidth(), points.get(points.size() - 1).y));
@@ -157,7 +158,30 @@ public class ImageAndMasks
 			}
 		}
 	}
-
+	
+	public Rectangle getOrCreateContentBounds()
+	{
+		getOrCreateContentMask();
+		return contentBounds;
+	}
+	
+	private void addToContentBounds(Coordinate point)
+	{
+		if (point == null)
+		{
+			return;
+		}
+		
+		if (contentBounds == null)
+		{
+			contentBounds = new Rectangle(point.x, point.y, 0, 0);
+		}
+		else
+		{
+			contentBounds.add(point.x, point.y);
+		}
+	}
+	
 	public BufferedImage getOrCreateShadingMask()
 	{
 		if (image == null)
@@ -175,6 +199,16 @@ public class ImageAndMasks
 
 	private void createShadingMask()
 	{
+		getOrCreateContentMask();
+		
+		if (iconType == IconType.trees)
+		{
+			// Trees, in my opinion, look better without they feathered shading along the bottom that the shading mask gives.
+			// Use a solid black image.
+			shadingMask = new BufferedImage(contentMask.getWidth(), contentMask.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+			return;
+		}
+		
 		// Draw a line along the bottom of the content of the image.
 		List<Coordinate> points = new ArrayList<>();
 		for (int x = 0; x < contentMask.getWidth(); x++)
@@ -192,6 +226,8 @@ public class ImageAndMasks
 		BufferedImage bottomSilhouette = new BufferedImage(contentMask.getWidth(), contentMask.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
 		Graphics2D g = bottomSilhouette.createGraphics();
 		g.setColor(Color.white);
+		int contentHeight = contentBounds.height;
+		assert contentHeight >= 0;
 		g.setStroke(new BasicStroke(Math.max(1f, contentHeight * 0.01f)));
 		int[] xPoints = new int[points.size()];
 		int[] yPoints = new int[points.size()];
@@ -202,8 +238,8 @@ public class ImageAndMasks
 		}
 		g.drawPolyline(xPoints, yPoints, points.size());
 
-		// Blur the line up to 25% of the height of the content
-		float[][] kernel = ImageHelper.createGaussianKernel(contentHeight / 4);
+		// Blur the line up to a fraction of the height of the content
+		float[][] kernel = ImageHelper.createGaussianKernel(contentHeight / 3);
 		BufferedImage blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
 
 		// Use the content mask to set non-content pixels to zero.
@@ -282,5 +318,17 @@ public class ImageAndMasks
 		}
 
 		return null;
+	}
+	
+
+	public static java.awt.Rectangle calcScaledContentBounds(BufferedImage originalContentMask, java.awt.Rectangle originalContentBounds,
+			int scaledWidth, int scaledHeight)
+	{
+		final double xScale = (((double) scaledWidth / originalContentMask.getWidth()));
+		final double yScale = (((double) scaledHeight / originalContentMask.getHeight()));
+
+		java.awt.Rectangle scaledContentBounds = new nortantis.graph.geom.Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
+				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toAwtRectangle();
+		return scaledContentBounds;
 	}
 }

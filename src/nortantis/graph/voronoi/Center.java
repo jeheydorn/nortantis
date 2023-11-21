@@ -21,6 +21,10 @@ public class Center
 
 	public int index;
 	public Point loc;
+	/**
+	 * Centroid of Voronoi corners.
+	 */
+	private Point centroid;
 	public ArrayList<Corner> corners = new ArrayList<>();
 	public ArrayList<Center> neighbors = new ArrayList<>();
 	public ArrayList<Edge> borders = new ArrayList<>();
@@ -57,6 +61,29 @@ public class Center
 		this.loc = loc;
 	}
 
+	private void calcCentroid()
+	{
+		double xSum = 0;
+		double ySum = 0;
+		for (Corner corner: corners)
+		{
+			xSum += corner.loc.x;
+			ySum += corner.loc.y;
+		}
+		centroid = new Point(xSum / corners.size(), ySum / corners.size());
+	}
+	
+	/**
+	 * Get's the centroid of the Voronoi corners.
+	 */
+	public Point getCentroid()
+	{
+		if (centroid == null)
+		{
+			calcCentroid();
+		}
+		return centroid;
+	}
 
 	public double findWidth()
 	{
@@ -81,6 +108,22 @@ public class Center
 		double width = maxX - minX;
 		assert width > 0;
 		return width;
+	}
+	
+	public Corner findBottom()
+	{
+		double maxY = Double.NEGATIVE_INFINITY;
+		Corner maxCorner = null;
+
+		for (Corner corner : corners)
+		{
+			if (corner.loc.y > maxY)
+			{
+				maxY = corner.loc.y;
+				maxCorner = corner;
+			}
+		}
+		return maxCorner;
 	}
 
 	// This is needed to give the object a deterministic hash code. If I use the object's address as the hash

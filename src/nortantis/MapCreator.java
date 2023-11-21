@@ -267,7 +267,7 @@ public class MapCreator
 		;
 
 		mapSnippet = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet, landMask,
-				mapParts.background, centersToDraw, drawBounds, false);
+				mapParts.background, centersToDraw, drawBounds, false, false);
 
 		// Store the current version of mapSnippet for a background when drawing
 		// icons later.
@@ -282,10 +282,6 @@ public class MapCreator
 
 		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
 		drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
-
-		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds,
-				settings.allowTopsOfIconsToOverlapOcean);
-		landTextureSnippet = null;
 
 		// Draw ocean
 		{
@@ -312,6 +308,11 @@ public class MapCreator
 			g.setColor(settings.coastlineColor);
 			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
+
+		// Draw icons
+		mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds,
+				settings.allowTopsOfIconsToOverlapWater);
+		landTextureSnippet = null;
 
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
@@ -828,7 +829,7 @@ public class MapCreator
 		// Combine land and ocean images.
 		BufferedImage map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
-		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null, true);
+		map = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask, background, null, null, true, false);
 
 		checkForCancel();
 
@@ -860,7 +861,7 @@ public class MapCreator
 		if (needToAddIcons)
 		{
 			Logger.println("Adding mountains and hills.");
-			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups, settings.allowTopsOfIconsToOverlapOcean);
+			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups, settings.allowTopsOfIconsToOverlapWater);
 			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
 			// couldn't draw
 			// don't later get labels.
@@ -873,7 +874,7 @@ public class MapCreator
 			iconDrawer.addTrees(settings.treeHeightScale);
 
 			Logger.println("Adding cities.");
-			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true, settings.allowTopsOfIconsToOverlapOcean);
+			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true, settings.allowTopsOfIconsToOverlapWater);
 		}
 
 		if (settings.drawRoads)
@@ -883,16 +884,6 @@ public class MapCreator
 			// iconDrawer);
 			// roadDrawer.markRoads();
 			// roadDrawer.drawRoads(map, sizeMultiplier);
-		}
-
-		checkForCancel();
-
-		Logger.println("Drawing all icons.");
-		iconDrawer.drawAllIcons(map, landBackground, background.land, null, settings.allowTopsOfIconsToOverlapOcean);
-
-		if (mapParts == null)
-		{
-			background.land = null;
 		}
 
 		checkForCancel();
@@ -920,7 +911,6 @@ public class MapCreator
 
 		{
 			BufferedImage oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask, null, null);
-			landMask = null;
 			if (oceanBlur != null)
 			{
 				Logger.println("Adding effects to ocean along coastlines.");
@@ -943,6 +933,38 @@ public class MapCreator
 			mapParts.mapBeforeAddingText = ImageHelper.deepCopy(map);
 			mapParts.landBackground = landBackground;
 		}
+		
+		checkForCancel();
+		
+		Logger.println("Drawing all icons.");
+		// TODO Decide what this should be. And if I keep it, then I need to implement it for incremental drawing too.
+		final boolean drawRegionBoundaryShadingInLandTexture = false; 
+		BufferedImage landTextureWithRegionBorderShading;
+		if (settings.allowTopsOfIconsToOverlapWater)
+		{
+			if (drawRegionBoundaryShadingInLandTexture)
+			{
+				landTextureWithRegionBorderShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, 
+						background.land, landMask, background, null, null, false, true);
+			}
+			else
+			{
+				landTextureWithRegionBorderShading = background.land;
+			}
+		}
+		else
+		{
+			landTextureWithRegionBorderShading = null;
+		}
+		iconDrawer.drawAllIcons(map, landBackground, landTextureWithRegionBorderShading, null, settings.allowTopsOfIconsToOverlapWater);
+
+		if (mapParts == null)
+		{
+			background.land = null;
+		}
+		landMask = null;
+
+		checkForCancel();
 
 		return new Tuple4<>(map, landBackground, mountainGroups, cities);
 	}
@@ -961,7 +983,7 @@ public class MapCreator
 	 */
 	private BufferedImage darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double sizeMultiplier,
 			BufferedImage mapOrSnippet, BufferedImage landMask, Background background, Collection<Center> centersToDraw,
-			Rectangle drawBounds, boolean addLoggingEntry)
+			Rectangle drawBounds, boolean addLoggingEntry, boolean onlyRegionBorders)
 	{
 		BufferedImage coastShading;
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
@@ -982,6 +1004,7 @@ public class MapCreator
 
 			BufferedImage coastlineAndLakeShoreMask = new BufferedImage(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(),
 					BufferedImage.TYPE_BYTE_BINARY);
+			if (!onlyRegionBorders)
 			{
 				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
 				g.setColor(Color.white);
@@ -1018,6 +1041,11 @@ public class MapCreator
 			}
 			else
 			{
+				if (onlyRegionBorders)
+				{
+					return mapOrSnippet;
+				}
+
 				coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
 
 				// Remove the land blur from the ocean side of the borders.

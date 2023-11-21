@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
@@ -192,7 +193,42 @@ public class WorldGraph extends VoronoiGraph
 
 	public void drawRegionIndexes(Graphics2D g, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawPolygons(g, centersToDraw, drawBounds, c -> c.region == null ? Color.black : new Color(c.region.id, c.region.id, c.region.id));
+		// As we draw, if ocean centers are close to land, use the region index from that land. That way
+		// if the option to allow icons to draw over coastlines is true, then region colors will
+		// draw inside transparent pixels of icons whose content extends over ocean.
+		drawPolygons(g, centersToDraw, drawBounds, (c) ->
+		{
+			if (c.region == null)
+			{
+				// This needs to be far enough that no icon extends this far into the ocean. The farthest I've seen any of my mountains have extend
+				// into the ocean is 3 polygons, but I'm adding a buffer to be safe. Note that increasing this is fairly expensive.
+				final int maxDistanceToSearchForLand = 5;
+				Center closestLand = findClosestLand(c, maxDistanceToSearchForLand);
+				if (closestLand == null)
+				{
+					return Color.black;
+				}
+				else
+				{
+					return new Color(closestLand.region.id, closestLand.region.id, closestLand.region.id);
+				}
+			}
+			else
+			{
+				return new Color(c.region.id, c.region.id, c.region.id);
+			}
+		});
+	}
+
+	private Center findClosestLand(Center center, int maxDistanceInPolygons)
+	{
+		return breadthFirstSearchForGoal((c, distanceFromStart) ->
+		{
+			return distanceFromStart < maxDistanceInPolygons;
+		}, (c) ->
+		{
+			return !c.isWater;
+		}, center);
 	}
 
 	/**
@@ -491,7 +527,7 @@ public class WorldGraph extends VoronoiGraph
 				// Add neighbors to the frontier.
 				for (Center n : c.neighbors)
 				{
-					if (!explored.contains(n) && accept.apply(n))
+					if (!explored.contains(n) && !frontier.contains(n) && accept.apply(n))
 					{
 						nextFrontier.add(n);
 					}
@@ -501,6 +537,45 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return explored;
+	}
+
+	public Center breadthFirstSearchForGoal(BiFunction<Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
+	{
+		if (isGoal.apply(start))
+		{
+			return start;
+		}
+
+		Set<Center> explored = new HashSet<>();
+		explored.add(start);
+		Set<Center> frontier = new HashSet<>();
+		frontier.add(start);
+		int distanceFromStart = 1;
+		while (!frontier.isEmpty())
+		{
+			Set<Center> nextFrontier = new HashSet<>();
+			for (Center c : frontier)
+			{
+				if (isGoal.apply(c))
+				{
+					return c;
+				}
+
+				explored.add(c);
+				// Add neighbors to the frontier.
+				for (Center n : c.neighbors)
+				{
+					if (!explored.contains(n) && !frontier.contains(n) && accept.apply(n, distanceFromStart))
+					{
+						nextFrontier.add(n);
+					}
+				}
+			}
+			frontier = nextFrontier;
+			distanceFromStart++;
+		}
+
+		return null;
 	}
 
 	public void paintElevationUsingTrianges(Graphics2D g)
