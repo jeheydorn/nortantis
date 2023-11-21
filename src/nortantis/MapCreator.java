@@ -1,5 +1,6 @@
 package nortantis;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -367,15 +368,22 @@ public class MapCreator
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
 
 		// Debug code
-		// Graphics2D g = fullSizedMap.createGraphics();
-		// int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-		// g.setStroke(new BasicStroke(4));
-		// g.setColor(Color.red);
-		// {
-		// java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-		// replaceBounds.width, replaceBounds.height).toAwtRectangle();
-		// g.drawRect(rect.x, rect.y, rect.width, rect.height);
-		// }
+//		Graphics2D g = fullSizedMap.createGraphics();
+//		int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+//		g.setStroke(new BasicStroke(2));
+//		g.setColor(Color.red);
+//		{
+//			java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+//					replaceBounds.width, replaceBounds.height).toAwtRectangle();
+//			g.drawRect(rect.x, rect.y, rect.width, rect.height);
+//		}
+//		g.setStroke(new BasicStroke(2));
+//		g.setColor(Color.white);
+//		{
+//			java.awt.Rectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth,
+//					drawBounds.width, drawBounds.height).toAwtRectangle();
+//			g.drawRect(rect.x, rect.y, rect.width, rect.height);
+//		}
 
 
 		// Print run time
@@ -933,18 +941,18 @@ public class MapCreator
 			mapParts.mapBeforeAddingText = ImageHelper.deepCopy(map);
 			mapParts.landBackground = landBackground;
 		}
-		
+
 		checkForCancel();
-		
+
 		Logger.println("Drawing all icons.");
 		// TODO Decide what this should be. And if I keep it, then I need to implement it for incremental drawing too.
-		final boolean drawRegionBoundaryShadingInLandTexture = false; 
+		final boolean drawRegionBoundaryShadingInLandTexture = false;
 		BufferedImage landTextureWithRegionBorderShading;
 		if (settings.allowTopsOfIconsToOverlapWater)
 		{
 			if (drawRegionBoundaryShadingInLandTexture)
 			{
-				landTextureWithRegionBorderShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, 
+				landTextureWithRegionBorderShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier,
 						background.land, landMask, background, null, null, false, true);
 			}
 			else
