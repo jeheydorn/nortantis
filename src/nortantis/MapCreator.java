@@ -370,14 +370,14 @@ public class MapCreator
 		// Debug code
 //		Graphics2D g = fullSizedMap.createGraphics();
 //		int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-//		g.setStroke(new BasicStroke(2));
+//		g.setStroke(new BasicStroke(4));
 //		g.setColor(Color.red);
 //		{
 //			java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
 //					replaceBounds.width, replaceBounds.height).toAwtRectangle();
 //			g.drawRect(rect.x, rect.y, rect.width, rect.height);
 //		}
-//		g.setStroke(new BasicStroke(2));
+//		g.setStroke(new BasicStroke(4));
 //		g.setColor(Color.white);
 //		{
 //			java.awt.Rectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth,
