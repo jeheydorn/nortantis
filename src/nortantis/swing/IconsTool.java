@@ -84,7 +84,6 @@ public class IconsTool extends EditorTool
 	private JCheckBox onlyUpdateDunesCheckbox;
 	private RowHider onlyUpdateDunesCheckboxHider;
 	private DrawAndEraseModeWidget modeWidget;
-	private boolean allowTopsOfIconsToOverlapWater;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -759,8 +758,7 @@ public class IconsTool extends EditorTool
 					// icon
 					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it
 					// in place to save creating an extra undo point here, although it might not be necessary.
-					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName),
-							allowTopsOfIconsToOverlapWater))
+					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 					{
 						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
@@ -890,7 +888,6 @@ public class IconsTool extends EditorTool
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}
-		allowTopsOfIconsToOverlapWater = settings.allowTopsOfIconsToOverlapWater;
 	}
 
 	@Override

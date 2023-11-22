@@ -108,7 +108,6 @@ public class MapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconTypeName;
-	public boolean allowTopsOfIconsToOverlapWater;
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
@@ -226,7 +225,6 @@ public class MapSettings implements Serializable
 
 		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
-		root.put("allowTopsOfIconsToOverlapWater", allowTopsOfIconsToOverlapWater);
 
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
@@ -493,10 +491,6 @@ public class MapSettings implements Serializable
 		{
 			cityIconTypeName = "";
 		}
-
-		allowTopsOfIconsToOverlapWater = root.containsKey("allowTopsOfIconsToOverlapWater")
-				? (boolean) root.get("allowTopsOfIconsToOverlapWater")
-				: false;
 
 		drawText = (boolean) root.get("drawText");
 		textRandomSeed = (long) root.get("textRandomSeed");
@@ -884,7 +878,7 @@ public class MapSettings implements Serializable
 			return false;
 		}
 		MapSettings other = (MapSettings) obj;
-		return allowTopsOfIconsToOverlapWater == other.allowTopsOfIconsToOverlapWater && backgroundRandomSeed == other.backgroundRandomSeed
+		return backgroundRandomSeed == other.backgroundRandomSeed
 				&& Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth

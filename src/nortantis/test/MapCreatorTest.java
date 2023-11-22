@@ -147,9 +147,9 @@ public class MapCreatorTest
 	}
 	
 	@Test
-	public void iconsAllowedToDrawOverCoastlines()
+	public void iconsDrawOverCoastlines()
 	{
-		generateAndCompare("iconsAllowedToDrawOverCoastlines.nort");
+		generateAndCompare("iconsDrawOverCoastlines.nort");
 	}
 
 	private static String getExpectedMapFilePath(String settingsFileName)

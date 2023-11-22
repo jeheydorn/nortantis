@@ -106,8 +106,31 @@ public class Center
 		}
 
 		double width = maxX - minX;
-		assert width > 0;
 		return width;
+	}
+	
+	public double findHight()
+	{
+		double minY = Double.POSITIVE_INFINITY;
+		double maxY = Double.NEGATIVE_INFINITY;
+
+		if (corners.size() < 2)
+			return 0;
+
+		for (Corner corner : corners)
+		{
+			if (corner.loc.y < minY)
+			{
+				minY = corner.loc.y;
+			}
+			if (corner.loc.y > maxY)
+			{
+				maxY = corner.loc.y;
+			}
+		}
+
+		double height = maxY - minY;
+		return height;
 	}
 	
 	public Corner findBottom()
