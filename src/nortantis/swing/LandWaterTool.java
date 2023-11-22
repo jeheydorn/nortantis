@@ -257,7 +257,7 @@ public class LandWaterTool extends EditorTool
 		brushSizeHider = brushSizeTuple.getSecond();
 
 
-		onlyUpdateLandCheckbox = new JCheckBox("Only update land");
+		onlyUpdateLandCheckbox = new JCheckBox("Only update existing land");
 		onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
 		onlyUpdateLandCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateLandCheckbox);
 
