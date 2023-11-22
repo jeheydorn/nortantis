@@ -259,8 +259,8 @@ public class IconDrawer
 						int scaledSize = findScaledMountainSize(center);
 						ImageAndMasks imageAndMasks = mountainImagesById.get(groupId)
 								.get(cEdit.icon.iconIndex % mountainImagesById.get(groupId).size());
-						iconsToDraw.getOrCreate(center).add(
-								createIconDrawTaskAtBottomOfCenter(imageAndMasks, IconType.mountains, center, scaledSize, false));
+						iconsToDraw.getOrCreate(center)
+								.add(createIconDrawTaskAtBottomOfCenter(imageAndMasks, IconType.mountains, center, scaledSize, false));
 					}
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null && !hillImagesById.isEmpty())
@@ -339,7 +339,7 @@ public class IconDrawer
 		return compatibleCities.get(index);
 	}
 
-	public boolean doesCityFitOnLand(Center center, CenterIcon cityIcon, boolean allowTopsOfIconsToOverlapWater)
+	public boolean doesCityFitOnLand(Center center, CenterIcon cityIcon)
 	{
 		if (center == null || cityIcon == null)
 		{
@@ -360,7 +360,7 @@ public class IconDrawer
 		// Create an icon draw task just for checking if the city fits on land. It won't actually be drawn.
 		IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, center.getCentroid(),
 				(int) (cityImages.get(cityIcon.iconName).getSecond() * cityScale), true, cityIcon.iconName);
-		return !isTouchingWater(task, allowTopsOfIconsToOverlapWater);
+		return !isTouchingWater(task);
 	}
 
 	private void clearIconsForCenters(Collection<Center> centers)
@@ -451,7 +451,7 @@ public class IconDrawer
 	 * cannot see other mountains through it.
 	 */
 	private void drawIconWithBackgroundAndMask(BufferedImage mapOrSnippet, ImageAndMasks imageAndMasks, BufferedImage backgroundOrSnippet,
-			BufferedImage landTexture, int xCenter, int yCenter, boolean ignoreMaxSize, boolean allowTopsOfIconsToOverlapWater)
+			BufferedImage landTexture, int xCenter, int yCenter, boolean ignoreMaxSize)
 	{
 		BufferedImage icon = imageAndMasks.image;
 		BufferedImage contentMask = imageAndMasks.getOrCreateContentMask();
@@ -465,24 +465,21 @@ public class IconDrawer
 		if (contentMask.getHeight() != icon.getHeight())
 			throw new IllegalArgumentException("The given content mask's height does not match the icon's height.");
 		BufferedImage shadingMask = null;
-		if (allowTopsOfIconsToOverlapWater)
+		shadingMask = imageAndMasks.getOrCreateShadingMask();
+		if (shadingMask.getWidth() != icon.getWidth())
 		{
-			shadingMask = imageAndMasks.getOrCreateShadingMask();
-			if (shadingMask.getWidth() != icon.getWidth())
-			{
-				throw new IllegalArgumentException("The given shading mask's width does not match the icon's width.");
-			}
-			if (shadingMask.getHeight() != icon.getHeight())
-			{
-				throw new IllegalArgumentException("The given shading mask's height does not match the icon's height.");
-			}
+			throw new IllegalArgumentException("The given shading mask's width does not match the icon's width.");
+		}
+		if (shadingMask.getHeight() != icon.getHeight())
+		{
+			throw new IllegalArgumentException("The given shading mask's height does not match the icon's height.");
 		}
 
 		int xLeft = xCenter - icon.getWidth() / 2;
 		int yBottom = yCenter - icon.getHeight() / 2;
 
 		Raster contentMaskRaster = contentMask.getRaster();
-		Raster shadingMaskRaster = allowTopsOfIconsToOverlapWater ? shadingMask.getRaster() : null;
+		Raster shadingMaskRaster = shadingMask.getRaster();
 		for (int x : new Range(icon.getWidth()))
 		{
 			for (int y : new Range(icon.getHeight()))
@@ -491,7 +488,7 @@ public class IconDrawer
 				double alpha = iconColor.getAlpha() / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
 				double contentMaskLevel = contentMaskRaster.getSampleDouble(x, y, 0);
-				double shadingMaskLevel = allowTopsOfIconsToOverlapWater ? shadingMaskRaster.getSampleDouble(x, y, 0) / 255.0 : 0.0;
+				double shadingMaskLevel = shadingMaskRaster.getSampleDouble(x, y, 0) / 255.0;
 				Color bgColor;
 				Color mapColor;
 				Color landTextureColor;
@@ -502,7 +499,7 @@ public class IconDrawer
 				{
 					bgColor = new Color(backgroundOrSnippet.getRGB(xLoc, yLoc));
 					mapColor = new Color(mapOrSnippet.getRGB(xLoc, yLoc));
-					landTextureColor = allowTopsOfIconsToOverlapWater ? new Color(landTexture.getRGB(xLoc, yLoc)) : null;
+					landTextureColor = new Color(landTexture.getRGB(xLoc, yLoc));
 				}
 				catch (IndexOutOfBoundsException e)
 				{
@@ -510,37 +507,22 @@ public class IconDrawer
 					continue;
 				}
 
-				if (allowTopsOfIconsToOverlapWater)
-				{
-					// Use the shading mask to blend the coastline shading with the land background texture for pixels
-					// with transparency in the icon and non-zero values in the content mask. This way coastline shading
-					// doesn't draw through icons, since that would look weird when the icon extends over the coastline.
-					// It also makes the transparent pixels in the content of the icon draw the land background texture
-					// when the shading mask is white, so that icons extending into the ocean draw the land texture behind
-					// them rather than the ocean texture.
-					int red = (int) (alpha * (iconColor.getRed()) + (1 - alpha) * (contentMaskLevel
-							* ((1 - shadingMaskLevel) * landTextureColor.getRed() + (shadingMaskLevel * bgColor.getRed()))
-							+ (1 - contentMaskLevel) * mapColor.getRed()));
-					int green = (int) (alpha * (iconColor.getGreen()) + (1 - alpha) * (contentMaskLevel
-							* ((1 - shadingMaskLevel) * landTextureColor.getGreen() + (shadingMaskLevel * bgColor.getGreen()))
-							+ (1 - contentMaskLevel) * mapColor.getGreen()));
-					int blue = (int) (alpha * (iconColor.getBlue()) + (1 - alpha) * (contentMaskLevel
-							* ((1 - shadingMaskLevel) * landTextureColor.getBlue() + (shadingMaskLevel * bgColor.getBlue()))
-							+ (1 - contentMaskLevel) * mapColor.getBlue()));
-					mapOrSnippet.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
-				}
-				else
-				{
-					// Icons are not allowed to draw over coastlines or into the ocean, so allow drawing the coastline shading
-					// in the background of the icons.
-					int red = (int) (alpha * (iconColor.getRed())
-							+ (1 - alpha) * (contentMaskLevel * bgColor.getRed() + (1 - contentMaskLevel) * mapColor.getRed()));
-					int green = (int) (alpha * (iconColor.getGreen())
-							+ (1 - alpha) * (contentMaskLevel * bgColor.getGreen() + (1 - contentMaskLevel) * mapColor.getGreen()));
-					int blue = (int) (alpha * (iconColor.getBlue())
-							+ (1 - alpha) * (contentMaskLevel * bgColor.getBlue() + (1 - contentMaskLevel) * mapColor.getBlue()));
-					mapOrSnippet.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
-				}
+				// Use the shading mask to blend the coastline shading with the land background texture for pixels
+				// with transparency in the icon and non-zero values in the content mask. This way coastline shading
+				// doesn't draw through icons, since that would look weird when the icon extends over the coastline.
+				// It also makes the transparent pixels in the content of the icon draw the land background texture
+				// when the shading mask is white, so that icons extending into the ocean draw the land texture behind
+				// them rather than the ocean texture.
+				int red = (int) (alpha * (iconColor.getRed()) + (1 - alpha)
+						* (contentMaskLevel * ((1 - shadingMaskLevel) * landTextureColor.getRed() + (shadingMaskLevel * bgColor.getRed()))
+								+ (1 - contentMaskLevel) * mapColor.getRed()));
+				int green = (int) (alpha * (iconColor.getGreen()) + (1 - alpha) * (contentMaskLevel
+						* ((1 - shadingMaskLevel) * landTextureColor.getGreen() + (shadingMaskLevel * bgColor.getGreen()))
+						+ (1 - contentMaskLevel) * mapColor.getGreen()));
+				int blue = (int) (alpha * (iconColor.getBlue()) + (1 - alpha)
+						* (contentMaskLevel * ((1 - shadingMaskLevel) * landTextureColor.getBlue() + (shadingMaskLevel * bgColor.getBlue()))
+								+ (1 - contentMaskLevel) * mapColor.getBlue()));
+				mapOrSnippet.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
 			}
 		}
 	}
@@ -551,8 +533,7 @@ public class IconDrawer
 	 * I draw all the icons at once this way so that I can sort the icons by the y-coordinate of the base of each icon. This way icons lower
 	 * on the map are drawn in front of those that are higher.
 	 */
-	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, BufferedImage landTexture, Rectangle drawBounds,
-			boolean allowTopsOfIconsToOverlapWater)
+	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, BufferedImage landTexture, Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>();
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
@@ -570,7 +551,7 @@ public class IconDrawer
 						}
 
 						// Updates to the line below will will likely need to also update doesCityFitOnLand.
-						if (!isTouchingWater(task, allowTopsOfIconsToOverlapWater))
+						if (!isTouchingWater(task))
 						{
 							tasks.add(task);
 						}
@@ -589,10 +570,7 @@ public class IconDrawer
 		for (final IconDrawTask task : tasks)
 		{
 			task.unScaledImageAndMasks.getOrCreateContentMask();
-			if (allowTopsOfIconsToOverlapWater)
-			{
-				task.unScaledImageAndMasks.getOrCreateShadingMask();
-			}
+			task.unScaledImageAndMasks.getOrCreateShadingMask();
 		}
 
 		// Scale the icons in parallel.
@@ -605,7 +583,7 @@ public class IconDrawer
 					@Override
 					public void run()
 					{
-						task.scaleIcon(allowTopsOfIconsToOverlapWater);
+						task.scaleIcon();
 					}
 				});
 			}
@@ -618,8 +596,7 @@ public class IconDrawer
 		for (final IconDrawTask task : tasks)
 		{
 			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture,
-					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize,
-					allowTopsOfIconsToOverlapWater);
+					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
 		}
 	}
 
@@ -662,7 +639,7 @@ public class IconDrawer
 	 * 
 	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
 	 */
-	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks, boolean allowTopsOfIconsToOverlapWater)
+	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
 		Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
 				cityIconType);
@@ -686,7 +663,7 @@ public class IconDrawer
 
 				IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, c.getCentroid(), scaledWidth, true, cityName);
 				// Updates to the line below will will likely need to also update doesCityFitOnLand.
-				if (!isTouchingWater(task, allowTopsOfIconsToOverlapWater) && !isNeighborACity(c))
+				if (!isTouchingWater(task) && !isNeighborACity(c))
 				{
 					if (addIconDrawTasks)
 					{
@@ -716,7 +693,7 @@ public class IconDrawer
 	 * 
 	 * @return
 	 */
-	public void addOrUnmarkMountainsAndHills(List<Set<Center>> mountainAndHillGroups, boolean allowTopsOfIconsToOverlapWater)
+	public void addOrUnmarkMountainsAndHills(List<Set<Center>> mountainAndHillGroups)
 	{
 		// Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
@@ -774,7 +751,7 @@ public class IconDrawer
 						IconDrawTask task = createIconDrawTaskAtBottomOfCenter(imagesInRange.get(i), IconType.mountains, c, scaledSize,
 								false);
 
-						if (!isTouchingWater(task, allowTopsOfIconsToOverlapWater))
+						if (!isTouchingWater(task))
 						{
 							// Draw the image such that it is centered in the center of c.
 							iconsToDraw.getOrCreate(c).add(task);
@@ -800,7 +777,7 @@ public class IconDrawer
 						if (scaledSize >= 1)
 						{
 							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.getCentroid(), scaledSize, false);
-							if (!isTouchingWater(task, allowTopsOfIconsToOverlapWater))
+							if (!isTouchingWater(task))
 							{
 								iconsToDraw.getOrCreate(c).add(task);
 								centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));
@@ -832,7 +809,7 @@ public class IconDrawer
 			// The center has no corners. This should not happen.
 			return c.loc;
 		}
-		return new Point(c.getCentroid().x, bottom.loc.y - scaledHeight / 2);
+		return new Point(c.getCentroid().x, bottom.loc.y - (scaledHeight / 2) - (c.findHight() / 4));
 	}
 
 	private int findScaledMountainSize(Center c)
@@ -1066,13 +1043,15 @@ public class IconDrawer
 			{
 				if (cTrees.treeType != null && scaledTreesById.containsKey(cTrees.treeType))
 				{
-					drawTreesAtCenterAndCorners(graph, cTrees.density * densityScale, treesById.get(cTrees.treeType), scaledTreesById.get(cTrees.treeType), c);
+					drawTreesAtCenterAndCorners(graph, cTrees.density * densityScale, treesById.get(cTrees.treeType),
+							scaledTreesById.get(cTrees.treeType), c);
 				}
 			}
 		}
 	}
 
-	private void drawTreesAtCenterAndCorners(WorldGraph graph, double density, List<ImageAndMasks> unscaledImages, List<ImageAndMasks> scaledImages, Center center)
+	private void drawTreesAtCenterAndCorners(WorldGraph graph, double density, List<ImageAndMasks> unscaledImages,
+			List<ImageAndMasks> scaledImages, Center center)
 	{
 		CenterTrees cTrees = trees.get(center.index);
 		Random rand = new Random(cTrees.randomSeed);
@@ -1158,7 +1137,8 @@ public class IconDrawer
 		return cSize;
 	}
 
-	private void drawTrees(WorldGraph graph, List<ImageAndMasks> unscaledImages, List<ImageAndMasks> scaledImages, Point loc, double forestDensity, Center center, Random rand)
+	private void drawTrees(WorldGraph graph, List<ImageAndMasks> unscaledImages, List<ImageAndMasks> scaledImages, Point loc,
+			double forestDensity, Center center, Random rand)
 	{
 		if (scaledImages == null || scaledImages.isEmpty())
 		{
@@ -1185,12 +1165,12 @@ public class IconDrawer
 			x += rand.nextGaussian() * scale;
 			y += rand.nextGaussian() * scale;
 
-			iconsToDraw.getOrCreate(center).add(
-					new IconDrawTask(unscaledImagesAndMasks, scaledImageAndMasks, IconType.trees, new Point(x, y), (int) scaledImageAndMasks.image.getWidth(), false, null));
+			iconsToDraw.getOrCreate(center).add(new IconDrawTask(unscaledImagesAndMasks, scaledImageAndMasks, IconType.trees,
+					new Point(x, y), (int) scaledImageAndMasks.image.getWidth(), false, null));
 		}
 	}
 
-	private boolean isTouchingWater(IconDrawTask iconTask, boolean allowTopsOfIconsToOverlapWater)
+	private boolean isTouchingWater(IconDrawTask iconTask)
 	{
 		if (iconTask.unScaledImageAndMasks.getOrCreateContentMask().getType() != BufferedImage.TYPE_BYTE_BINARY)
 			throw new IllegalArgumentException("Mask type must be TYPE_BYTE_BINARY for checking whether icons touch water.");
@@ -1221,10 +1201,8 @@ public class IconDrawer
 		double xStop = contentBoundsScaledResolutionInvariant.x + contentBoundsScaledResolutionInvariant.width;
 		double yStop = contentBoundsScaledResolutionInvariant.y + contentBoundsScaledResolutionInvariant.height;
 		final double percentOfImageThatCanOverlapWaterWhenAllowed = 0.80;
-		double yStart = allowTopsOfIconsToOverlapWater
-				? contentBoundsScaledResolutionInvariant.y
-						+ contentBoundsScaledResolutionInvariant.height * percentOfImageThatCanOverlapWaterWhenAllowed
-				: contentBoundsScaledResolutionInvariant.y;
+		double yStart = contentBoundsScaledResolutionInvariant.y
+				+ contentBoundsScaledResolutionInvariant.height * percentOfImageThatCanOverlapWaterWhenAllowed;
 		final double stepSize = 2.0 / resolutionScale; // The constant in this number is in number of pixels at 100% resolution.
 
 		Raster mRaster = iconTask.unScaledImageAndMasks.getOrCreateContentMask().getRaster();

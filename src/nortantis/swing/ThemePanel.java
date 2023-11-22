@@ -117,7 +117,6 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox drawGrungeCheckbox;
 	private ActionListener drawGrungeCheckboxActionListener;
 	private JButton grungeColorChooseButton;
-	private JCheckBox allowTopsOfIconsToOverlapWaterCheckbox;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
 	private JSlider treeHeightSlider;
 
@@ -659,13 +658,6 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(treeHeightSlider);
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
-		organizer.addSeperator();
-		allowTopsOfIconsToOverlapWaterCheckbox = new JCheckBox("Allow the tops of icons to protrude over coastlines");
-		allowTopsOfIconsToOverlapWaterCheckbox.setToolTipText(
-				"Allows the tops icons by the ocean to cover coastlines and extend into the ocean. This also changes the way icons handle coastline and region-boundary shading.");
-		createMapChangeListenerForTerrainChange(allowTopsOfIconsToOverlapWaterCheckbox);
-		organizer.addLeftAlignedComponent(allowTopsOfIconsToOverlapWaterCheckbox);
-
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
@@ -1085,7 +1077,6 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
-		allowTopsOfIconsToOverlapWaterCheckbox.setSelected(settings.allowTopsOfIconsToOverlapWater);
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -1214,7 +1205,6 @@ public class ThemePanel extends JTabbedPane
 		settings.borderWidth = borderWidthSlider.getValue();
 
 		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
-		settings.allowTopsOfIconsToOverlapWater = allowTopsOfIconsToOverlapWaterCheckbox.isSelected();
 	}
 
 	private boolean areRegionColorsVisible()

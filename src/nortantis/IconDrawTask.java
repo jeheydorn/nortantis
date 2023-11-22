@@ -68,7 +68,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.fileName = fileName;
 	}
 
-	public void scaleIcon(boolean needsShadingMask)
+	public void scaleIcon()
 	{
 		if (scaledImageAndMasks == null)
 		{
@@ -81,11 +81,8 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 					.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateContentMask(), scaledWidth);
 
 			BufferedImage scaledShadingMask = null;
-			if (needsShadingMask)
-			{
-				scaledShadingMask = ImageCache.getInstance(AssetsPath.getInstallPath())
-						.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateShadingMask(), scaledWidth);
-			}
+			scaledShadingMask = ImageCache.getInstance(AssetsPath.getInstallPath())
+					.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateShadingMask(), scaledWidth);
 
 			java.awt.Rectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),
 					unScaledImageAndMasks.getOrCreateContentBounds(), scaledWidth, scaledHeight);
