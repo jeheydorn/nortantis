@@ -576,7 +576,7 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
-				oceanEffectsLevelSlider.setVisible(!concentricWavesButton.isSelected());
+				oceanEffectsLevelSlider.setVisible(ripplesRadioButton.isSelected() || shadeRadioButton.isSelected());
 				handleTerrainChange();
 			}
 		};
@@ -608,11 +608,10 @@ public class ThemePanel extends JTabbedPane
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
-		concentricWavesLevelSlider.setValue(30);
 		concentricWavesLevelSlider.setPaintTicks(true);
 		concentricWavesLevelSlider.setPaintLabels(true);
 		concentricWavesLevelSlider.setMinorTickSpacing(1);
-		concentricWavesLevelSlider.setMaximum(4);
+		concentricWavesLevelSlider.setMaximum(SettingsGenerator.maxConcentricWaveCountInEditor);
 		concentricWavesLevelSlider.setMajorTickSpacing(1);
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
 		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);

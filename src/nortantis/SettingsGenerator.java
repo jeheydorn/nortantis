@@ -37,6 +37,9 @@ public class SettingsGenerator
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
+	public static final int maxConcentricWaveCountInEditor = 3;
+	public static final int maxConcentricWaveCountToGenerate = 3;
+	public static final int minConcentricWaveCountToGenerate = 2;
 
 	public static MapSettings generate()
 	{
@@ -78,15 +81,14 @@ public class SettingsGenerator
 		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanEffectsLevel = 15 + Math.abs(rand.nextInt(35));
-		settings.concentricWaveCount = Math.abs((new Random().nextInt() % 2)) + 2; // 2 or 3. 1 Doesn't look good to me, and 4 is a bit
-																					// overdone.
+		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
+				Math.min(maxConcentricWaveCountToGenerate, Math.abs((new Random().nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
 
-		settings.oceanColor = settings.oceanEffect == OceanEffect.Ripples ? oceanColor
-				: MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
+		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 
 		double landBlurColorScale = 0.5;
 		settings.coastShadingColor = new Color((int) (settings.landColor.getRed() * landBlurColorScale),

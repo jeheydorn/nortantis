@@ -253,22 +253,22 @@ public class IconsTool extends EditorTool
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
 
-		onlyUpdateMountainsCheckbox = new JCheckBox("Only update mountains");
+		onlyUpdateMountainsCheckbox = new JCheckBox("Only update existing mountains");
 		onlyUpdateMountainsCheckbox.setToolTipText(
 				"When checked, mountains will only be drawn over existing mountains, making it easier to change the images used by a group of mountains.");
 		onlyUpdateMountainsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateMountainsCheckbox);
 
-		onlyUpdateHillsCheckbox = new JCheckBox("Only update hills");
+		onlyUpdateHillsCheckbox = new JCheckBox("Only update existing hills");
 		onlyUpdateHillsCheckbox.setToolTipText(
 				"When checked, hills will only be drawn over existing hills, making it easier to change the images used by a group of hills.");
 		onlyUpdateHillsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateHillsCheckbox);
 
-		onlyUpdateTreesCheckbox = new JCheckBox("Only update trees");
+		onlyUpdateTreesCheckbox = new JCheckBox("Only update existing trees");
 		onlyUpdateTreesCheckbox.setToolTipText(
 				"When checked, trees will only be drawn over existing trees, making it easier to change the images used by a group of trees.");
 		onlyUpdateTreesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateTreesCheckbox);
 
-		onlyUpdateDunesCheckbox = new JCheckBox("Only update dunes");
+		onlyUpdateDunesCheckbox = new JCheckBox("Only update existing dunes");
 		onlyUpdateDunesCheckbox.setToolTipText(
 				"When checked, dunes will only be drawn over existing dunes, making it easier to change the images used by a group of dunes.");
 		onlyUpdateDunesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateDunesCheckbox);

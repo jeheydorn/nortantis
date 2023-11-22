@@ -53,7 +53,7 @@ public class MapCreator
 	// This is a base width for determining how large to draw text and effects.
 	private static final double baseResolution = 1536;
 
-	private static final int concentricWaveWidthBetweenWaves = 12;
+	private static final int concentricWaveWidthBetweenWaves = 10;
 	private static final int concentricWaveLineWidth = 2;
 	private boolean isCanceled;
 
@@ -367,22 +367,22 @@ public class MapCreator
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
 
 		// Debug code
-//		Graphics2D g = fullSizedMap.createGraphics();
-//		int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-//		g.setStroke(new BasicStroke(4));
-//		g.setColor(Color.red);
-//		{
-//			java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-//					replaceBounds.width, replaceBounds.height).toAwtRectangle();
-//			g.drawRect(rect.x, rect.y, rect.width, rect.height);
-//		}
-//		g.setStroke(new BasicStroke(4));
-//		g.setColor(Color.white);
-//		{
-//			java.awt.Rectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth,
-//					drawBounds.width, drawBounds.height).toAwtRectangle();
-//			g.drawRect(rect.x, rect.y, rect.width, rect.height);
-//		}
+		// Graphics2D g = fullSizedMap.createGraphics();
+		// int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+		// g.setStroke(new BasicStroke(4));
+		// g.setColor(Color.red);
+		// {
+		// java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+		// replaceBounds.width, replaceBounds.height).toAwtRectangle();
+		// g.drawRect(rect.x, rect.y, rect.width, rect.height);
+		// }
+		// g.setStroke(new BasicStroke(4));
+		// g.setColor(Color.white);
+		// {
+		// java.awt.Rectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth,
+		// drawBounds.width, drawBounds.height).toAwtRectangle();
+		// g.drawRect(rect.x, rect.y, rect.width, rect.height);
+		// }
 
 
 		// Print run time
@@ -1047,7 +1047,8 @@ public class MapCreator
 		BufferedImage oceanEffects = null;
 		int oceanEffectsLevelScaled = (int) (settings.oceanEffectsLevel * sizeMultiplier);
 		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur) && oceanEffectsLevelScaled > 0)
-				|| (settings.oceanEffect == OceanEffect.ConcentricWaves && settings.concentricWaveCount > 0))
+				|| ((settings.oceanEffect == OceanEffect.ConcentricWaves)
+						&& settings.concentricWaveCount > 0))
 		{
 			double targetStrokeWidth = sizeMultiplier;
 			BufferedImage coastlineMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height,
@@ -1094,43 +1095,76 @@ public class MapCreator
 			else
 			{
 				oceanEffects = new BufferedImage((int) drawBounds.width, (int) drawBounds.height, BufferedImage.TYPE_BYTE_GRAY);
-
-				double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
-				double lineWidth = concentricWaveLineWidth * sizeMultiplier;
-				double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + lineWidth);
-
 				int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 				// This number just needs to be big enough that the waves are sufficiently thick.
 				final float scaleForDarkening = 20f;
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
-				for (int i : new Range(0, settings.concentricWaveCount))
+				if (settings.oceanEffect == OceanEffect.ConcentricWaves)
 				{
+					double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
+					double lineWidth = concentricWaveLineWidth * sizeMultiplier;
+					double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + lineWidth);
+					final double opacityOfLastWave;
+					if (settings.concentricWaveCount == 1)
 					{
-						double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth));
-						if (whiteWidth <= 0)
+						opacityOfLastWave = 1.0;
+					}
+					else if (settings.concentricWaveCount == 2)
+					{
+						opacityOfLastWave = 0.35;
+					}
+					else if (settings.concentricWaveCount == 3)
+					{
+						opacityOfLastWave = 0.22;
+					}
+					else
+					{
+						opacityOfLastWave = 0.2;
+					}
+	
+					for (int i : new Range(0, settings.concentricWaveCount))
+					{
 						{
-							continue;
+							double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth));
+							if (whiteWidth <= 0)
+							{
+								continue;
+							}
+							BufferedImage blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask,
+									ImageHelper.createGaussianKernel((int) whiteWidth), scale, true);
+							
+							double waveOpacity;
+							if (settings.concentricWaveCount == 1)
+							{
+								waveOpacity = 1.0;
+							}
+							else
+							{								
+								double percentDone = ((double)(settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
+								waveOpacity =  (percentDone * opacityOfLastWave + (1.0 - percentDone));
+							}
+							assert waveOpacity <= 1.0;
+							assert waveOpacity >= 0.0;
+							
+							ImageHelper.threshold(blur, 1, (int)(settings.oceanEffectsColor.getAlpha() * waveOpacity));
+							ImageHelper.add(oceanEffects, blur);
 						}
-						BufferedImage blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask,
-								ImageHelper.createGaussianKernel((int) whiteWidth), scale, true);
-
-						ImageHelper.threshold(blur, 1, settings.oceanEffectsColor.getAlpha());
-						ImageHelper.add(oceanEffects, blur);
+	
+						{
+							double blackWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth)) - lineWidth;
+							if (blackWidth <= 0)
+							{
+								continue;
+							}
+							BufferedImage blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask,
+									ImageHelper.createGaussianKernel((int) blackWidth), scale, true);
+							ImageHelper.threshold(blur, 1);
+							ImageHelper.subtract(oceanEffects, blur);
+						}
 					}
 
-					{
-						double blackWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth)) - lineWidth;
-						if (blackWidth <= 0)
-						{
-							continue;
-						}
-						BufferedImage blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask,
-								ImageHelper.createGaussianKernel((int) blackWidth), scale, true);
-						ImageHelper.threshold(blur, 1);
-						ImageHelper.subtract(oceanEffects, blur);
-					}
 				}
 
 				if (settings.drawOceanEffectsInLakes)
