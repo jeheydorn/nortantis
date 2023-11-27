@@ -23,7 +23,7 @@ public class MapParts
 	/**
 	 * Input and output. Needed for text drawing to allow erasing icons near letters.
 	 */
-	public BufferedImage landBackground;
+	public BufferedImage textBackground;
 
 	/**
 	 * Used only as an output during map creation.

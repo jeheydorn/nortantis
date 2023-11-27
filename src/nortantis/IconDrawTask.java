@@ -4,7 +4,6 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
 import nortantis.util.AssetsPath;
 
 /**

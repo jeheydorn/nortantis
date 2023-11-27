@@ -101,6 +101,7 @@ public abstract class VoronoiGraph
 		}
 		buildGraph(v);
 		improveCorners();
+		storeOriginalCornerLocations();
 		assignBorderToCenters();
 
 		if (createElevationRiversAndBiomes)
@@ -114,6 +115,14 @@ public abstract class VoronoiGraph
 			redistributeMoisture(landCorners());
 			assignPolygonMoisture();
 			assignBiomes();
+		}
+	}
+	
+	private void storeOriginalCornerLocations()
+	{
+		for (Corner c : corners)
+		{
+			c.originalLoc = c.loc;
 		}
 	}
 

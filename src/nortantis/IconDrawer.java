@@ -532,8 +532,11 @@ public class IconDrawer
 	 * 
 	 * I draw all the icons at once this way so that I can sort the icons by the y-coordinate of the base of each icon. This way icons lower
 	 * on the map are drawn in front of those that are higher.
+	 * 
+	 * @return The icons that drew.
 	 */
-	public void drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, BufferedImage landTexture, Rectangle drawBounds)
+	public List<IconDrawTask> drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, BufferedImage landTexture,
+			Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>();
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
@@ -597,6 +600,30 @@ public class IconDrawer
 		{
 			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture,
 					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
+		}
+
+		return tasks;
+	}
+
+	/**
+	 * Draws content masks on top of the land mask so that icons that protrude over coastlines don't turn into ocean when text is drawn on
+	 * top of them.
+	 */
+	public void drawContentMasksOntoLandMask(BufferedImage landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
+	{
+		for (final IconDrawTask task : tasks)
+		{
+			if (drawBounds == null || task.overlaps(drawBounds))
+			{
+				int xLoc = (int) task.centerLoc.x - task.scaledWidth / 2;
+				int yLoc = (int) task.centerLoc.y - task.scaledHeight / 2;
+
+				int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
+				int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
+
+				ImageHelper.drawIfPixelValueIsGreaterThanTarget(landMask, task.scaledImageAndMasks.getOrCreateContentMask(),
+						xLoc - xToSubtract, yLoc - yToSubtract);
+			}
 		}
 	}
 
