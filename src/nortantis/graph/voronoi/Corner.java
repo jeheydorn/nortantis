@@ -4,11 +4,6 @@ import java.util.ArrayList;
 
 import nortantis.graph.geom.Point;
 
-/**
- * Corner.java
- *
- * @author Connor
- */
 public class Corner
 {
 
@@ -16,6 +11,7 @@ public class Corner
 	public ArrayList<Corner> adjacent = new ArrayList<>();
 	public ArrayList<Edge> protrudes = new ArrayList<>();
 	public Point loc;
+	public Point originalLoc; // TODO Use these with the coastline smoothing feature.
 	public int index;
 	public boolean border;
 	public double elevation;

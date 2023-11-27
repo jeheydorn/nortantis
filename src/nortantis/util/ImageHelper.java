@@ -546,13 +546,13 @@ public class ImageHelper
 	 * @param region
 	 *            Specifies only a region to create rather than masking the entire images.
 	 */
-	public static BufferedImage maskWithImage(BufferedImage image1, BufferedImage image2, BufferedImage mask, IntRectangle region)
+	public static BufferedImage maskWithImage(BufferedImage image1, BufferedImage image2, BufferedImage mask, java.awt.Point image2OffsetInImage1)
 	{
-		if (region == null)
+		if (image2OffsetInImage1 == null)
 		{
-			region = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
+			image2OffsetInImage1 = new java.awt.Point(0, 0);
 		}
-		final IntRectangle regionFinal = region;
+		final java.awt.Point image2OffsetInImage1Final = image2OffsetInImage1;
 
 		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY && mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
 			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY" + " or TYPE_BYTE_BINARY.");
@@ -565,28 +565,28 @@ public class ImageHelper
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image1 has width " + image1.getWidth() + ".");
 		if (image1.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException();
-		if (!new IntRectangle(0, 0, image1.getWidth(), image2.getHeight()).contains(region))
+		if (!new IntRectangle(0, 0, image2.getWidth(), image2.getHeight()).contains(image2OffsetInImage1))
 		{
-			throw new IllegalArgumentException("Region for masking is not contained within the source images.");
+			throw new IllegalArgumentException("Region for masking is not contained within image2.");
 		}
 
-		BufferedImage result = new BufferedImage((int) region.width, (int) region.height, image1.getType());
+		BufferedImage result = new BufferedImage(image1.getWidth(), image2.getHeight(), image1.getType());
 		Raster mRaster = mask.getRaster();
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
-		int rowsPerJob = region.height / numTasks;
+		int rowsPerJob = image1.getHeight() / numTasks;
 		for (int taskNumber : new Range(numTasks))
 		{
 			tasks.add(() ->
 			{
-				int endY = taskNumber == numTasks - 1 ? regionFinal.height : regionFinal.y + ((taskNumber + 1) * rowsPerJob);
-				for (int y = regionFinal.y + (taskNumber * rowsPerJob); y < endY; y++)
-					for (int x = regionFinal.x; x < regionFinal.width; x++)
+				int endY = taskNumber == numTasks - 1 ? image1.getHeight() : ((taskNumber + 1) * rowsPerJob);
+				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
+					for (int x = 0; x < image1.getWidth(); x++)
 					{
 						Color color1 = new Color(image1.getRGB(x, y));
-						Color color2 = new Color(image2.getRGB(x, y));
-						double maskLevel = ((double) mRaster.getSampleDouble(x + (int) regionFinal.x, y + (int) regionFinal.y, 0));
+						Color color2 = new Color(image2.getRGB(x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
+						double maskLevel = ((double) mRaster.getSampleDouble(x, y, 0));
 						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
 							maskLevel /= 255.0;
 
@@ -1054,6 +1054,44 @@ public class ImageHelper
 			for (int c = 0; c < target[r].length; c++)
 			{
 				target[r][c] *= source[r][c];
+			}
+		}
+	}
+
+	public static void drawIfPixelValueIsGreaterThanTarget(BufferedImage target, BufferedImage toDraw, int xLoc, int yLoc)
+	{
+		if (toDraw.getType() != BufferedImage.TYPE_BYTE_BINARY)
+		{
+			throw new IllegalArgumentException(
+					"Unsupported buffered image type for toDraw. Actual type: " + bufferedImageTypeToString(toDraw));
+		}
+		if (target.getType() != BufferedImage.TYPE_BYTE_BINARY)
+		{
+			throw new IllegalArgumentException(
+					"Unsupported buffered image type for target. Actual type: " + bufferedImageTypeToString(target));
+		}
+
+		WritableRaster targetRaster = target.getRaster();
+		Raster toDrawRaster = toDraw.getRaster();
+		for (int r = 0; r < toDraw.getHeight(); r++)
+		{
+			int targetR = yLoc + r;
+			if (targetR < 0 || targetR >= target.getHeight())
+			{
+				continue;
+			}
+			for (int c = 0; c < toDraw.getWidth(); c++)
+			{
+				int targetC = xLoc + c;
+				if (targetC < 0 || targetC >= target.getWidth())
+				{
+					continue;
+				}
+
+				int toDrawValue = toDrawRaster.getSample(c, r, 0);
+				int targetValue = targetRaster.getSample(targetC, targetR, 0);
+				if (toDrawValue > targetValue)
+				targetRaster.setSample(targetC, targetR, 0, toDrawValue);
 			}
 		}
 	}

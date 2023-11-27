@@ -1,5 +1,7 @@
 package nortantis.graph.geom;
 
+import nortantis.util.IntRectangle;
+
 /**
  * Rectangle.java
  *
@@ -177,6 +179,11 @@ public class Rectangle
 		// (int)height + 1;
 
 		return new java.awt.Rectangle((int) x, (int) y, (int) width, (int) height);
+	}
+	
+	public IntRectangle toIntRectangle()
+	{
+		return new IntRectangle((int) x, (int) y, (int) width, (int) height);
 	}
 
 	public java.awt.Point upperLeftCornerAsAwtPoint()
