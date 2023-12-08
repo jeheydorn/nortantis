@@ -11,11 +11,11 @@ public class Corner
 	public ArrayList<Corner> adjacent = new ArrayList<>();
 	public ArrayList<Edge> protrudes = new ArrayList<>();
 	public Point loc;
-	public Point originalLoc; // TODO Use these with the coastline smoothing feature.
+	public Point originalLoc;
 	public int index;
-	public boolean border;
+	public boolean isBorder;
 	public double elevation;
-	public boolean water, ocean, coast;
+	public boolean isWater, isOcean, isCoast;
 	public int river;
 	public double moisture;
 
@@ -27,7 +27,7 @@ public class Corner
 	{
 		// We need to increment flags for rivers and build lakes where they need
 		// to be by making them water and raising their elevation.
-		if (ocean || coast)
+		if (isOcean || isCoast)
 			return true; // no need to go any further, but rivers coming to me
 							// look good
 

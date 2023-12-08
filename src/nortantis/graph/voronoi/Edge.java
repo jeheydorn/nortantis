@@ -122,12 +122,12 @@ public class Edge implements Comparable<Edge>
 			return false;
 		}
 
-		if (v0 != null && v0.ocean)
+		if (v0 != null && v0.isOcean)
 		{
 			return true;
 		}
 
-		if (v1 != null && v1.ocean)
+		if (v1 != null && v1.isOcean)
 		{
 			return true;
 		}

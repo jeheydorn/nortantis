@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
@@ -30,6 +31,7 @@ import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
@@ -312,7 +314,8 @@ public class MapCreator
 		List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds);
 
 		BufferedImage textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, sizeMultiplier, landMask,
-				iconsThatDrew, landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
+				iconsThatDrew, landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer,
+				centersToDraw, drawBounds);
 
 		java.awt.Rectangle boundsInSourceToCopyFrom = new java.awt.Rectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
@@ -580,8 +583,8 @@ public class MapCreator
 		textBackground = null;
 
 		// Debug code
-		// graph.drawCorners(map.createGraphics());
-		// graph.drawVoronoi(map.createGraphics());
+//		graph.drawCorners(map.createGraphics());
+//		graph.drawVoronoi(map.createGraphics());
 
 		if (settings.drawBorder)
 		{
@@ -1342,6 +1345,8 @@ public class MapCreator
 			centerChanges = edits.centerEdits;
 		}
 
+		Set<Center> needsRebuildNoisyEdges = new HashSet<>();
+
 		for (CenterEdit cEdit : centerChanges)
 		{
 			// Use a copy so that we can't hit a race condition where the editor changes the object while we're reading from it.
@@ -1387,8 +1392,45 @@ public class MapCreator
 
 			if (needsRebuild)
 			{
-				graph.rebuildNoisyEdgesForCenter(center);
+				needsRebuildNoisyEdges.add(center);
 			}
+		}
+
+		if (graph.noisyEdges.getLineStyle() == LineStyle.Smooth)
+		{
+			for (CenterEdit cEdit : centerChanges)
+			{
+				Center center = graph.centers.get(cEdit.index);
+				Set<Center> needsRebuild = graph.smoothCoastlineCorners(center);
+				needsRebuildNoisyEdges.addAll(needsRebuild);
+			}
+		}
+
+		for (Center center : needsRebuildNoisyEdges)
+		{
+			center.updateLocToCentroid();
+		}
+
+		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
+		// Note that in theory I should continue to reapply this loop as a fixed-point algorithm, stopping when it makes a pass were no centers
+		// were malformed. But in practice that doesn't seem to be necessary since it's unlikely that removing the smoothing on one
+		// center will cause a different one to become malformed.
+		for (Center center : needsRebuildNoisyEdges)
+		{
+			if (!center.isWellFormedForDrawing())
+			{
+				for (Corner corner : center.corners)
+				{
+					corner.loc = corner.originalLoc;
+				}
+				center.updateLocToCentroid();
+			}
+		}
+
+		for (Center center : needsRebuildNoisyEdges)
+		{
+			graph.rebuildNoisyEdgesForCenter(center, needsRebuildNoisyEdges);
+
 		}
 	}
 
