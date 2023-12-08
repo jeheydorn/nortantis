@@ -474,7 +474,7 @@ public abstract class VoronoiGraph
 
 		for (Edge e : edgesToDraw)
 		{
-			if (e.river > riversThisSizeOrSmallerWillNotBeDrawn && !e.isOceanOrLakeOrShore())
+			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
 				int width = Math.max(1, (int) (sizeMultiplyer / 2.0 + Math.sqrt(e.river * 0.1)));
 				g.setStroke(new BasicStroke(width));
@@ -666,7 +666,7 @@ public abstract class VoronoiGraph
 	{
 		drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge ->
 		{
-			if (ignoreRiverEdges && edge.river > riversThisSizeOrSmallerWillNotBeDrawn)
+			if (ignoreRiverEdges && edge.isRiver())
 			{
 				// Don't draw region boundaries where there are rivers.
 				return false;

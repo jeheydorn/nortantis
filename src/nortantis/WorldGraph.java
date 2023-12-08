@@ -130,13 +130,21 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	public Set<Center> smoothCoastlineCorners(Center center)
+	public Set<Center> smoothCoastlineAndRegionBoundaryCorners(Center center)
 	{
 		assert center != null;
 		boolean isChanged = false;
 		for (Corner corner : center.corners)
 		{
-			boolean isCornerChanged = updateCornerLocationToSmoothCoastline(corner);
+			boolean isCornerChanged = updateCornerLocationToSmoothEdges(corner, c -> c.isCoast());
+			// Only smooth region boundaries for the corner if it is not a coastline, because otherwise we will clear the smoothing on that
+			// spot on the coastline.
+			if (!isCornerChanged)
+			{
+				// I am intentionally not checking whether drawing region colors is enabled here because I don't want polygons to change
+				// shape because of changing that setting.
+				isCornerChanged = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver());
+			}
 			isChanged |= isCornerChanged;
 		}
 		Set<Center> result = new HashSet<Center>();
@@ -149,32 +157,34 @@ public class WorldGraph extends VoronoiGraph
 		return result;
 	}
 
-	private boolean updateCornerLocationToSmoothCoastline(Corner corner)
+	private boolean updateCornerLocationToSmoothEdges(Corner corner, Function<Edge, Boolean> shouldSmoothEdge)
 	{
-		List<Edge> coastEdges = null;
+		List<Edge> edgesToSmooth = null;
 		for (Edge p : corner.protrudes)
 		{
-			if (p.isCoast())
+			if (shouldSmoothEdge.apply(p))
 			{
-				if (coastEdges == null)
+				if (edgesToSmooth == null)
 				{
-					coastEdges = new ArrayList<Edge>(2);
+					edgesToSmooth = new ArrayList<Edge>(2);
 				}
-				coastEdges.add(p);
+				edgesToSmooth.add(p);
 			}
 		}
 
-		if (coastEdges == null || coastEdges.size() == 0)
+		if (edgesToSmooth == null || edgesToSmooth.size() == 0)
 		{
-			// This corner is not on a coastline. Clear the override to set the corner's location back to how it was first generated.
+			// This corner is not on an edge to it smooth. Clear the override to set the corner's location back to how it was first
+			// generated.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.loc = corner.originalLoc;
 			return isChanged;
 		}
 
-		if (coastEdges.size() == 2)
+		if (edgesToSmooth.size() == 2)
 		{
-			// Don't smooth coastlines on islands made of only one center, because it tends to make the island disappear.
+			// Don't smooth edges on islands made of only one center, because it tends to make the island disappear. Same for single-polygon
+			// oceans or lakes.
 			if (corner.touches.stream().anyMatch(center -> center.isSinglePolygonIsland() || center.isSinglePolygonWater()))
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
@@ -183,8 +193,8 @@ public class WorldGraph extends VoronoiGraph
 			}
 
 			// This is a coastline.
-			Corner otherCorner0 = coastEdges.get(0).v0 == corner ? coastEdges.get(0).v1 : coastEdges.get(0).v0;
-			Corner otherCorner1 = coastEdges.get(1).v0 == corner ? coastEdges.get(1).v1 : coastEdges.get(1).v0;
+			Corner otherCorner0 = edgesToSmooth.get(0).v0 == corner ? edgesToSmooth.get(0).v1 : edgesToSmooth.get(0).v0;
+			Corner otherCorner1 = edgesToSmooth.get(1).v0 == corner ? edgesToSmooth.get(1).v1 : edgesToSmooth.get(1).v0;
 			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2,
 					(otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
 

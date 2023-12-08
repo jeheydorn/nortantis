@@ -672,11 +672,12 @@ public class LandWaterTool extends EditorTool
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 
 			// Debug code
-			 System.out.println("Highlighted center indexes:");
-			 for (Center center : selected)
-			 {
-			 System.out.println(center.index);
-			 }
+			// System.out.println("Highlighted center indexes:");
+			// for (Center center : selected)
+			// {
+			// System.out.println(center.index);
+			// }
+
 
 			mapEditingPanel.addHighlightedCenters(selected);
 			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);

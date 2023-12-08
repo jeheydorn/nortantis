@@ -117,7 +117,7 @@ public class Edge implements Comparable<Edge>
 
 	public boolean isRiverTouchingOcean()
 	{
-		if (river <= VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+		if (!isRiver())
 		{
 			return false;
 		}
@@ -133,6 +133,11 @@ public class Edge implements Comparable<Edge>
 		}
 
 		return false;
+	}
+	
+	public boolean isRiver()
+	{
+		return river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn;
 	}
 
 	public boolean isRegionBoundary()
