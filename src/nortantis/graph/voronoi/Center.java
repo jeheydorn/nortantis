@@ -179,7 +179,7 @@ public class Center
 	{
 		for (Edge edge : borders)
 		{
-			if (edge.river >= VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+			if (edge.isRiver())
 			{
 				return true;
 			}

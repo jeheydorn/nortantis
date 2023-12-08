@@ -1184,7 +1184,7 @@ public class TextDrawer
 		List<Edge> riverEdges = new ArrayList<>();
 		for (Edge e : head.protrudes)
 		{
-			if (e.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && e != lastTohead)
+			if (e.isRiver() && e != lastTohead)
 			{
 				riverEdges.add(e);
 			}

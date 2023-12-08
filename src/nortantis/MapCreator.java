@@ -1401,7 +1401,7 @@ public class MapCreator
 			for (CenterEdit cEdit : centerChanges)
 			{
 				Center center = graph.centers.get(cEdit.index);
-				Set<Center> needsRebuild = graph.smoothCoastlineCorners(center);
+				Set<Center> needsRebuild = graph.smoothCoastlineAndRegionBoundaryCorners(center);
 				needsRebuildNoisyEdges.addAll(needsRebuild);
 			}
 		}
