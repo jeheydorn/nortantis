@@ -277,14 +277,14 @@ public class IconDrawer
 						ImageAndMasks imageAndMasks = hillImagesById.get(groupId)
 								.get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size());
 						iconsToDraw.getOrCreate(center)
-								.add(new IconDrawTask(imageAndMasks, IconType.hills, center.getCentroid(), scaledSize, false));
+								.add(new IconDrawTask(imageAndMasks, IconType.hills, center.loc, scaledSize, false));
 					}
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
 				{
 					ImageAndMasks imageAndMasks = duneImages.get(cEdit.icon.iconIndex % duneImages.size());
 					iconsToDraw.getOrCreate(center)
-							.add(new IconDrawTask(imageAndMasks, IconType.sand, center.getCentroid(), duneWidth, false));
+							.add(new IconDrawTask(imageAndMasks, IconType.sand, center.loc, duneWidth, false));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
 				{
@@ -308,7 +308,7 @@ public class IconDrawer
 					if (cityIconName != null)
 					{
 						ImageAndMasks imageAndMasks = cityImages.get(cityIconName).getFirst();
-						iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.cities, center.getCentroid(),
+						iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
 								(int) (cityImages.get(cityIconName).getSecond() * cityScale), true, cityIconName));
 					}
 				}
@@ -358,7 +358,7 @@ public class IconDrawer
 		ImageAndMasks imageAndMasks = cityImages.get(cityIcon.iconName).getFirst();
 
 		// Create an icon draw task just for checking if the city fits on land. It won't actually be drawn.
-		IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, center.getCentroid(),
+		IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
 				(int) (cityImages.get(cityIcon.iconName).getSecond() * cityScale), true, cityIcon.iconName);
 		return !isTouchingWater(task);
 	}
@@ -688,7 +688,7 @@ public class IconDrawer
 				int scaledWidth = (int) (cityIcons.get(cityName).getSecond() * cityScale);
 				ImageAndMasks imageAndMasks = cityIcons.get(cityName).getFirst();
 
-				IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, c.getCentroid(), scaledWidth, true, cityName);
+				IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, c.loc, scaledWidth, true, cityName);
 				// Updates to the line below will will likely need to also update doesCityFitOnLand.
 				if (!isTouchingWater(task) && !isNeighborACity(c))
 				{
@@ -803,7 +803,7 @@ public class IconDrawer
 						// Make sure the image will be at least 1 pixel wide.
 						if (scaledSize >= 1)
 						{
-							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.getCentroid(), scaledSize, false);
+							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.loc, scaledSize, false);
 							if (!isTouchingWater(task))
 							{
 								iconsToDraw.getOrCreate(c).add(task);
@@ -836,7 +836,7 @@ public class IconDrawer
 			// The center has no corners. This should not happen.
 			return c.loc;
 		}
-		return new Point(c.getCentroid().x, bottom.loc.y - (scaledHeight / 2) - (c.findHight() / 4));
+		return new Point(c.loc.x, bottom.loc.y - (scaledHeight / 2) - (c.findHight() / 4));
 	}
 
 	private int findScaledMountainSize(Center c)
@@ -900,7 +900,7 @@ public class IconDrawer
 
 						int i = rand.nextInt(duneImages.size());
 						iconsToDraw.getOrCreate(c)
-								.add(new IconDrawTask(duneImages.get(i), IconType.sand, c.getCentroid(), duneWidth, false));
+								.add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth, false));
 						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
 					}
 				}
@@ -1082,7 +1082,7 @@ public class IconDrawer
 	{
 		CenterTrees cTrees = trees.get(center.index);
 		Random rand = new Random(cTrees.randomSeed);
-		drawTrees(graph, unscaledImages, scaledImages, center.getCentroid(), density, center, rand);
+		drawTrees(graph, unscaledImages, scaledImages, center.loc, density, center, rand);
 
 		// Draw trees at the neighboring corners too.
 		// Note that corners use their own Random instance because the random seed of that random needs to not depend on the center or else

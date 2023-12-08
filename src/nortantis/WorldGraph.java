@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -101,6 +102,11 @@ public class WorldGraph extends VoronoiGraph
 			createPoliticalRegions();
 		}
 		setupRandomSeeds(r);
+		// Now that the graph is done being created, switch the center locations the Voronoi centroids of each center because I think that
+		// looks better for drawing,
+		// and it works better for smooth coastlines.
+		updateCenterLocationsToCentroids();
+
 		buildNoisyEdges(lineStyle, false);
 	}
 
@@ -114,6 +120,105 @@ public class WorldGraph extends VoronoiGraph
 		setupColors();
 		setupRandomSeeds(r);
 		buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
+	}
+
+	private void updateCenterLocationsToCentroids()
+	{
+		for (Center center : centers)
+		{
+			center.updateLocToCentroid();
+		}
+	}
+
+	public Set<Center> smoothCoastlineCorners(Center center)
+	{
+		assert center != null;
+		boolean isChanged = false;
+		for (Corner corner : center.corners)
+		{
+			boolean isCornerChanged = updateCornerLocationToSmoothCoastline(corner);
+			isChanged |= isCornerChanged;
+		}
+		Set<Center> result = new HashSet<Center>();
+		if (isChanged)
+		{
+			result.add(center);
+			result.addAll(center.neighbors);
+
+		}
+		return result;
+	}
+
+	private boolean updateCornerLocationToSmoothCoastline(Corner corner)
+	{
+		List<Edge> coastEdges = null;
+		for (Edge p : corner.protrudes)
+		{
+			if (p.isCoast())
+			{
+				if (coastEdges == null)
+				{
+					coastEdges = new ArrayList<Edge>(2);
+				}
+				coastEdges.add(p);
+			}
+		}
+
+		if (coastEdges == null || coastEdges.size() == 0)
+		{
+			// This corner is not on a coastline. Clear the override to set the corner's location back to how it was first generated.
+			boolean isChanged = !corner.loc.equals(corner.originalLoc);
+			corner.loc = corner.originalLoc;
+			return isChanged;
+		}
+
+		if (coastEdges.size() == 2)
+		{
+			// Don't smooth coastlines on islands made of only one center, because it tends to make the island disappear.
+			if (corner.touches.stream().anyMatch(center -> center.isSinglePolygonIsland() || center.isSinglePolygonWater()))
+			{
+				boolean isChanged = !corner.loc.equals(corner.originalLoc);
+				corner.loc = corner.originalLoc;
+				return isChanged;
+			}
+
+			// This is a coastline.
+			Corner otherCorner0 = coastEdges.get(0).v0 == corner ? coastEdges.get(0).v1 : coastEdges.get(0).v0;
+			Corner otherCorner1 = coastEdges.get(1).v0 == corner ? coastEdges.get(1).v1 : coastEdges.get(1).v0;
+			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2,
+					(otherCorner0.originalLoc.y + otherCorner1.originalLoc.y) / 2);
+
+			corner.loc = smoothedLoc;
+
+			return true;
+		}
+		else
+		{
+			boolean isChanged = !corner.loc.equals(corner.originalLoc);
+			corner.loc = corner.originalLoc;
+			return isChanged;
+		}
+	}
+
+	private Center findSharedCenter(Edge e1, Edge e2)
+	{
+		if (e1.d0 == e2.d0)
+		{
+			return e1.d0;
+		}
+		else if (e1.d1 == e2.d1)
+		{
+			return e1.d1;
+		}
+		else if (e1.d0 == e2.d1)
+		{
+			return e1.d0;
+		}
+		else if (e1.d1 == e2.d0)
+		{
+			return e1.d1;
+		}
+		return null;
 	}
 
 	private void setupRandomSeeds(Random rand)
@@ -140,13 +245,30 @@ public class WorldGraph extends VoronoiGraph
 
 	public void rebuildNoisyEdgesForCenter(Center center)
 	{
+		rebuildNoisyEdgesForCenter(center, null);
+	}
+
+	/**
+	 * Rebuilds noisy edges for a center.
+	 * 
+	 * @param center
+	 *            The center
+	 * @param centersInLoop
+	 *            For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for
+	 *            neighbors unnecessarily.
+	 */
+	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop)
+	{
 		noisyEdges.buildNoisyEdgesForCenter(center, true);
 
 		if (noisyEdges.getLineStyle() == LineStyle.Smooth)
 		{
 			for (Center n : center.neighbors)
 			{
-				noisyEdges.buildNoisyEdgesForCenter(n, true);
+				if (centersInLoop == null || !centersInLoop.contains(n))
+				{
+					noisyEdges.buildNoisyEdgesForCenter(n, true);
+				}
 			}
 		}
 	}
@@ -200,7 +322,8 @@ public class WorldGraph extends VoronoiGraph
 		{
 			if (c.region == null)
 			{
-				// This needs to be far enough that no icon extends this far into the ocean. The farthest I've seen any of my mountains have extend
+				// This needs to be far enough that no icon extends this far into the ocean. The farthest I've seen any of my mountains have
+				// extend
 				// into the ocean is 3 polygons, but I'm adding a buffer to be safe. Note that increasing this is fairly expensive.
 				final int maxDistanceToSearchForLand = 5;
 				Center closestLand = findClosestLand(c, maxDistanceToSearchForLand);
@@ -1065,13 +1188,13 @@ public class WorldGraph extends VoronoiGraph
 				numOcean += (center.isWater && !center.isLake) ? 1 : 0;
 				numLand += !center.isWater ? 1 : 0;
 			}
-			c.ocean = numOcean == c.touches.size();
-			c.coast = numOcean > 0 && numLand > 0;
-			c.water = (numLand != c.touches.size()) && !c.coast;
+			c.isOcean = numOcean == c.touches.size();
+			c.isCoast = numOcean > 0 && numLand > 0;
+			c.isWater = (numLand != c.touches.size()) && !c.isCoast;
 		}
 	}
 
-	public void updateCoast(Center c)
+	private void updateCoast(Center c)
 	{
 		int numOcean = 0;
 		int numLand = 0;
@@ -1103,7 +1226,7 @@ public class WorldGraph extends VoronoiGraph
 		for (Center c : centers)
 		{
 			for (Corner corner : c.corners)
-				if (corner.border)
+				if (corner.isBorder)
 				{
 					borderPlates.add(c.tectonicPlate);
 					continue;
@@ -1377,59 +1500,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return rectangle.inBounds(center.loc);
-	}
-
-	/**
-	 * Converts a center to an area. This does not include noisy edges because I couldn't figure out how to draw them in order correctly
-	 * around the center.
-	 * 
-	 * @param center
-	 * @return
-	 */
-	public Area centerToArea(Center center)
-	{
-		Polygon p = new Polygon();
-
-		List<Edge> ordered = orderEdgesAroundCenter(center);
-		{
-			for (Edge edge : ordered)
-			{
-				p.addPoint((int) edge.v0.loc.x, (int) edge.v0.loc.y);
-			}
-		}
-
-		return new Area(p);
-	}
-
-	private List<Edge> orderEdgesAroundCenter(Center center)
-	{
-		List<Edge> result = new ArrayList<>(center.borders.size());
-		HashSet<Edge> remaining = new HashSet<>(center.borders);
-
-		Edge start = center.borders.get(0);
-		Edge currentEdge = start;
-		do
-		{
-			result.add(currentEdge);
-			remaining.remove(currentEdge);
-			currentEdge = findConnectedEdge(center, currentEdge, remaining);
-		}
-		while (!remaining.isEmpty() && currentEdge != null);
-
-		return result;
-	}
-
-	private Edge findConnectedEdge(Center center, Edge current, Set<Edge> remaining)
-	{
-		for (Edge edge : remaining)
-		{
-			if ((current.v0 != null && current.v0.protrudes.contains(edge)) || (current.v1 != null && current.v1.protrudes.contains(edge)))
-			{
-				return edge;
-			}
-		}
-
-		return null;
 	}
 
 	/**

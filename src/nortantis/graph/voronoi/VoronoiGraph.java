@@ -45,7 +45,7 @@ public abstract class VoronoiGraph
 	public Rectangle bounds;
 	final protected Random rand;
 	protected Color OCEAN, RIVER, LAKE, BEACH;
-	protected NoisyEdges noisyEdges;
+	public NoisyEdges noisyEdges;
 	/**
 	 * This controls how many rivers there are. Bigger means more.
 	 */
@@ -102,6 +102,7 @@ public abstract class VoronoiGraph
 		buildGraph(v);
 		improveCorners();
 		storeOriginalCornerLocations();
+		storeOriginalCentersLocations();
 		assignBorderToCenters();
 
 		if (createElevationRiversAndBiomes)
@@ -117,7 +118,7 @@ public abstract class VoronoiGraph
 			assignBiomes();
 		}
 	}
-	
+
 	private void storeOriginalCornerLocations()
 	{
 		for (Corner c : corners)
@@ -126,13 +127,22 @@ public abstract class VoronoiGraph
 		}
 	}
 
+	private void storeOriginalCentersLocations()
+	{
+		for (Center c : centers)
+		{
+			c.originalLoc = c.loc;
+		}
+	}
+
+
 	private void assignBorderToCenters()
 	{
 		for (Center c1 : centers)
 		{
 			for (final Corner corner : c1.corners)
 			{
-				if (corner.border)
+				if (corner.isBorder)
 				{
 					c1.isBorder = true;
 					break;
@@ -152,7 +162,7 @@ public abstract class VoronoiGraph
 		Point[] newP = new Point[corners.size()];
 		for (Corner c : corners)
 		{
-			if (c.border)
+			if (c.isBorder)
 			{
 				newP[c.index] = c.loc;
 			}
@@ -422,12 +432,11 @@ public abstract class VoronoiGraph
 	 */
 	public void drawCorners(Graphics2D g)
 	{
-		g.setColor(Color.WHITE);
 		for (Corner c : corners)
 		{
 			g.setColor(Color.PINK);
 
-			g.fillOval((int) (c.loc.x - 2), (int) (c.loc.y - 2), 10, 10);
+			g.fillOval((int) (c.loc.x - 5), (int) (c.loc.y - 5), 10, 10);
 		}
 	}
 
@@ -508,7 +517,7 @@ public abstract class VoronoiGraph
 
 			for (Corner cornerWithOneAdjacent : Arrays.asList(e.v0, e.v1))
 			{
-				if (cornerWithOneAdjacent.border)
+				if (cornerWithOneAdjacent.isBorder)
 				{
 					if (edgeCorners == null)
 					{
@@ -764,7 +773,7 @@ public abstract class VoronoiGraph
 			g.setTransform(orig);
 		}
 	}
-
+	
 	public void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
 	{
 		// First I must draw border polygons without noisy edges because the
@@ -823,17 +832,14 @@ public abstract class VoronoiGraph
 
 	private void dawPieceUsingNoisyEdges(Graphics2D g, Edge edge, Center c)
 	{
-		// Draw path0.
+		List<Point> path = noisyEdges.getNoisyEdge(edge.index);
+		java.awt.Polygon shape = new java.awt.Polygon();
+		shape.addPoint((int) c.loc.x, (int) c.loc.y);
+		for (Point point : path)
 		{
-			List<Point> path = noisyEdges.getNoisyEdge(edge.index);
-			java.awt.Polygon shape = new java.awt.Polygon();
-			shape.addPoint((int) c.loc.x, (int) c.loc.y);
-			for (Point point : path)
-			{
-				shape.addPoint((int) point.x, (int) point.y);
-			}
-			g.fillPolygon(shape);
+			shape.addPoint((int) point.x, (int) point.y);
 		}
+		g.fillPolygon(shape);
 	}
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi
@@ -983,7 +989,7 @@ public abstract class VoronoiGraph
 		{
 			c = new Corner();
 			c.loc = p;
-			c.border = bounds.liesOnAxes(p, scaleMultiplyer);
+			c.isBorder = bounds.liesOnAxes(p, scaleMultiplyer);
 			c.index = corners.size();
 			corners.add(c);
 			pointCornerMap.put(key, c);
@@ -1008,7 +1014,7 @@ public abstract class VoronoiGraph
 		final ArrayList<Corner> list = new ArrayList<>();
 		for (Corner c : corners)
 		{
-			if (!c.ocean && !c.coast)
+			if (!c.isOcean && !c.isCoast)
 			{
 				list.add(c);
 			}
@@ -1050,7 +1056,7 @@ public abstract class VoronoiGraph
 		LinkedList<Corner> queue = new LinkedList<>();
 		for (Corner c : corners)
 		{
-			if ((c.water || c.river > 2) && !c.ocean)
+			if ((c.isWater || c.river > 2) && !c.isOcean)
 			{
 				c.moisture = c.river > 2 ? Math.min(3.0, (0.05 * c.river)) : 1.0;
 				queue.push(c);
@@ -1078,7 +1084,7 @@ public abstract class VoronoiGraph
 		// Salt water
 		for (Corner c : corners)
 		{
-			if (c.ocean || c.coast)
+			if (c.isOcean || c.isCoast)
 			{
 				c.moisture = 1.0;
 			}

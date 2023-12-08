@@ -6,6 +6,7 @@ package nortantis.graph.voronoi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -161,14 +162,20 @@ public class NoisyEdges
 				Point p3 = findPrevOrNextPointOnCurve(edge, edge.v1);
 				// Create enough points that you can't see the lines in the curves.
 				int numPoints = (int) (p1.distanceTo(p2) * 0.25);
-				List<Point> curve = new ArrayList<>();
-				curve.add(edge.v0.loc);
+				List<Point> curve = new LinkedList<>();
 				if (numPoints > 0)
 				{
 					curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3, numPoints));
 				}
-
-				curve.add(edge.v1.loc);
+				if (curve.isEmpty() || !curve.get(0).equals(edge.v0.loc))
+				{
+					curve.add(0, edge.v0.loc);
+				}
+				if (!curve.get(curve.size() - 1).equals(edge.v1.loc))
+				{
+					curve.add(edge.v1.loc);
+				}
+				
 				curves.put(edge.index, curve);
 			}
 		}
