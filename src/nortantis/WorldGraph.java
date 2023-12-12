@@ -57,13 +57,13 @@ public class WorldGraph extends VoronoiGraph
 	public static final float oceanPlateLevel = 0.2f;
 	final double continentalPlateLevel = 0.45;
 	public static final float seaLevel = 0.39f;
-	// This field must be set before creating instance of GraphImpl. This is
-	// necessary because it must be set
-	// before calling VoronoiGraph's constructor, which Java requires to be the
-	// first call in GraphImpl's
-	// constructor.
-	int numIterationsForTectonicPlateCreation;
-	// The probability that a plate not touching the border will be continental.
+	// Higher values will make larger plates, but fewer of them.
+	private final int tectonicPlateIterationMultiplier = 30;
+	
+	// Zero is most random. Higher values make the polygons more uniform shaped. 
+	// This value is scaled by lloydRelaxationsScale passed into constructors.
+	private final int numLloydRelaxations = 1;
+
 	double nonBorderPlateContinentalProbability;
 	// The probability that a plate touching the border will be continental.
 	double borderPlateContinentalProbability;
@@ -84,17 +84,16 @@ public class WorldGraph extends VoronoiGraph
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
 	public Map<Integer, Region> regions;
-
-	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, int numIterationsForTectonicPlateCreation,
+	
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r,
 			double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
 			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesAndRegions)
 	{
 		super(r, sizeMultiplyer, pointPrecision);
-		this.numIterationsForTectonicPlateCreation = numIterationsForTectonicPlateCreation;
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
 		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
 		TectonicPlate.resetIds();
-		initVoronoiGraph(v, numLloydRelaxations, createElevationBiomesAndRegions);
+		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesAndRegions);
 		setupColors();
 		regions = new TreeMap<>();
 		if (createElevationBiomesAndRegions)
@@ -113,10 +112,10 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
 	 */
-	public WorldGraph(Voronoi v, int numLloydRelaxations, Random r, double sizeMultiplyer, double pointPrecision, boolean isForFrayedBorder)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision, boolean isForFrayedBorder)
 	{
-		super(r, sizeMultiplyer, pointPrecision);
-		initVoronoiGraph(v, numLloydRelaxations, false);
+		super(r, resolutionScale, pointPrecision);
+		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
 		setupColors();
 		setupRandomSeeds(r);
 		buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
@@ -285,7 +284,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void buildNoisyEdges(LineStyle lineStyle, boolean isForFrayedBorder)
 	{
-		noisyEdges = new NoisyEdges(scaleMultiplyer, lineStyle, isForFrayedBorder);
+		noisyEdges = new NoisyEdges(resolutionScale, lineStyle, isForFrayedBorder);
 		noisyEdges.buildNoisyEdges(this);
 	}
 
@@ -1280,6 +1279,7 @@ public class WorldGraph extends VoronoiGraph
 			c.updateNeighborsNotInSamePlateCount();
 		}
 
+		int numIterationsForTectonicPlateCreation = tectonicPlateIterationMultiplier * centers.size();
 		for (int curIteration = 0; curIteration < numIterationsForTectonicPlateCreation; curIteration++)
 		{
 			// Sample some centers and choose the one with the least number of

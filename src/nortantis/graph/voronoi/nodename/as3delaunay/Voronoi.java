@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
+import nortantis.Stopwatch;
 import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 
@@ -56,58 +57,60 @@ public final class Voronoi
 		_sitesIndexedByLocation = null;
 	}
 
-	public Voronoi(ArrayList<Point> points, ArrayList<Color> colors, Rectangle plotBounds)
+	public Voronoi(ArrayList<Point> points, Rectangle plotBounds)
 	{
-		init(points, colors, plotBounds);
+		init(points, plotBounds);
 		fortunesAlgorithm();
 	}
 
-	public Voronoi(ArrayList<Point> points, ArrayList<Color> colors)
-	{
-		double maxWidth = 0, maxHeight = 0;
-		for (Point p : points)
-		{
-			maxWidth = Math.max(maxWidth, p.x);
-			maxHeight = Math.max(maxHeight, p.y);
-		}
-		init(points, colors, new Rectangle(0, 0, maxWidth, maxHeight));
-		fortunesAlgorithm();
-	}
-
-	public Voronoi(int numSites, double maxWidth, double maxHeight, Random r, ArrayList<Color> colors)
+	public Voronoi(int numSites, double maxWidth, double maxHeight, Random r, double resolutionScale)
 	{
 		ArrayList<Point> points = new ArrayList<Point>();
+		final double bucketSize = 50 * resolutionScale;
+		BucketedPoints buckets = new BucketedPoints(bucketSize);
+		
+		final double minimumDistanceBetweenCenters = 20 * resolutionScale;
+		assert bucketSize >= minimumDistanceBetweenCenters;
+		
+		Stopwatch sw = new Stopwatch("create points");
 		for (int i = 0; i < numSites; i++)
 		{
-			points.add(new Point(r.nextDouble() * maxWidth, r.nextDouble() * maxHeight));
+			Point point = new Point(r.nextDouble() * maxWidth, r.nextDouble() * maxHeight);
+			//double distance = buckets.getDistanceToClosestPoint(point);
+			//if (distance > minimumDistanceBetweenCenters)
+			{
+				points.add(point);
+				//buckets.add(point);
+			}
 		}
-		init(points, colors, new Rectangle(0, 0, maxWidth, maxHeight));
+		sw.printElapsedTime();
+		init(points, new Rectangle(0, 0, maxWidth, maxHeight));
 		fortunesAlgorithm();
 	}
 
-	private void init(ArrayList<Point> points, ArrayList<Color> colors, Rectangle plotBounds)
+	private void init(ArrayList<Point> points, Rectangle plotBounds)
 	{
 		_sites = new SiteList();
 		_sitesIndexedByLocation = new HashMap<Point, Site>();
-		addSites(points, colors);
+		addSites(points);
 		_plotBounds = plotBounds;
 		_triangles = new ArrayList<Triangle>();
 		_edges = new ArrayList<Edge>();
 	}
-
-	private void addSites(ArrayList<Point> points, ArrayList<Color> colors)
+	
+	private void addSites(ArrayList<Point> points)
 	{
 		int length = points.size();
 		for (int i = 0; i < length; ++i)
 		{
-			addSite(points.get(i), colors != null ? colors.get(i) : null, i);
+			addSite(points.get(i), i);
 		}
 	}
 
-	private void addSite(Point p, Color color, int index)
+	private void addSite(Point p, int index)
 	{
 		double weight = Math.random() * 100;
-		Site site = Site.create(p, index, weight, color);
+		Site site = Site.create(p, index, weight);
 		_sites.push(site);
 		_sitesIndexedByLocation.put(p, site);
 	}
@@ -269,19 +272,6 @@ public final class Voronoi
 		return points;
 	}
 
-	/*
-	 * public ArrayList<LineSegment> spanningTree(String type, keepOutMask:BitmapData = null) { ArrayList<Edge> edges =
-	 * selectNonIntersectingEdges(keepOutMask, _edges); ArrayList<LineSegment> segments = delaunayLinesForEdges(edges); return
-	 * kruskal(segments, type); }
-	 */
-	public ArrayList<ArrayList<Point>> regions()
-	{
-		return _sites.regions(_plotBounds);
-	}
-
-	/*
-	 * public ArrayList<Integer> siteColors(referenceImage:BitmapData = null) { return _sites.siteColors(referenceImage); }
-	 */
 	/**
 	 *
 	 * @param proximityMap

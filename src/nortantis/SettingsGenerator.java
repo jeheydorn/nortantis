@@ -57,6 +57,7 @@ public class SettingsGenerator
 
 		MapSettings settings = new MapSettings(defaultSettingsFile);
 		settings.pointPrecision = MapSettings.defaultPointPrecision;
+		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 
 		setRandomSeeds(settings, rand);
 

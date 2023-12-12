@@ -42,6 +42,7 @@ public class MapSettings implements Serializable
 {
 	public static final String currentVersion = "1.1";
 	public static final double defaultPointPrecision = 2.0;
+	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 
 	public String version;
@@ -111,6 +112,7 @@ public class MapSettings implements Serializable
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
+	public double lloydRelaxationsScale = defaultLloydRelaxationsScale;
 	public String imageExportPath;
 	public String heightmapExportPath;
 	public double heightmapResolution = 1.0;
@@ -202,6 +204,7 @@ public class MapSettings implements Serializable
 		root.put("cityProbability", cityProbability);
 		root.put("lineStyle", lineStyle.toString());
 		root.put("pointPrecision", pointPrecision);
+		root.put("lloydRelaxationsScale", lloydRelaxationsScale);
 
 		// Background image settings.
 		root.put("backgroundRandomSeed", backgroundRandomSeed);
@@ -441,6 +444,14 @@ public class MapSettings implements Serializable
 		cityProbability = (double) root.get("cityProbability");
 		lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));
 		pointPrecision = (double) root.get("pointPrecision");
+		if (root.containsKey("lloydRelaxationsScale"))
+		{
+			lloydRelaxationsScale = (double) root.get("lloydRelaxationsScale");
+		}
+		else
+		{
+			lloydRelaxationsScale = 0.0;
+		}
 
 
 		// Background image stuff.
@@ -795,6 +806,7 @@ public class MapSettings implements Serializable
 		lineStyle = old.lineStyle;
 		cityIconTypeName = old.cityIconSetName;
 		pointPrecision = old.pointPrecision;
+		lloydRelaxationsScale = 0.0;
 		edits = old.edits;
 		treeHeightScale = defaultTreeHeightScaleForOldMaps;
 
