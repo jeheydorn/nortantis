@@ -65,25 +65,12 @@ public final class Voronoi
 
 	public Voronoi(int numSites, double maxWidth, double maxHeight, Random r, double resolutionScale)
 	{
-		ArrayList<Point> points = new ArrayList<Point>();
-		final double bucketSize = 50 * resolutionScale;
-		BucketedPoints buckets = new BucketedPoints(bucketSize);
-		
-		final double minimumDistanceBetweenCenters = 20 * resolutionScale;
-		assert bucketSize >= minimumDistanceBetweenCenters;
-		
-		Stopwatch sw = new Stopwatch("create points");
+		ArrayList<Point> points = new ArrayList<Point>();		
+			
 		for (int i = 0; i < numSites; i++)
 		{
-			Point point = new Point(r.nextDouble() * maxWidth, r.nextDouble() * maxHeight);
-			//double distance = buckets.getDistanceToClosestPoint(point);
-			//if (distance > minimumDistanceBetweenCenters)
-			{
-				points.add(point);
-				//buckets.add(point);
-			}
+			points.add(new Point(r.nextDouble() * maxWidth, r.nextDouble() * maxHeight));
 		}
-		sw.printElapsedTime();
 		init(points, new Rectangle(0, 0, maxWidth, maxHeight));
 		fortunesAlgorithm();
 	}

@@ -27,13 +27,18 @@ public class GraphCreator
 	{
 		// double startTime = System.currentTimeMillis();
 
+		DimensionDouble graphSize = getGraphDimensionsWithStandardWidth(new DimensionDouble(width, height));
 		// make the initial underlying voronoi structure
-		final Voronoi v = new Voronoi(numSites, width, height, r, resolutionScale);
+		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r, resolutionScale);
 
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r,
 				nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
 				createElevationBiomesAndRegions);
+		graph.scale(width, height);
+		graph.buildNoisyEdges(lineStyle, false);
+
+		
 
 		// Debug code to log elapsed time.
 		// double elapsedTime = System.currentTimeMillis() - startTime;
@@ -114,14 +119,34 @@ public class GraphCreator
 		// Zero is most random. Higher values make the polygons more uniform shaped. Value should be between 0 and 1.
 		final double lloydRelaxationsScale = 0.0;
 
+		DimensionDouble graphSize = getGraphDimensionsWithStandardWidth(new DimensionDouble(width, height));
 		// make the initial underlying voronoi structure
-		final Voronoi v = new Voronoi(numSites, width, height, r, resolutionScale);
+		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r, resolutionScale);
 
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision,
 				isForFrayedBorder);
+		graph.scale(width, height);
+		graph.buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
+
 
 		return graph;
+	}
+
+	/**
+	 * Used to convert dimensions for a graph from draw space to a standardized size for graph space when initially creating the graph.
+	 * The reason I'm doing this it's because originally graphs were created at the size of the map we were drawing,
+	 * but this created subtle bugs when the graph generated differently at different resolutions because of truncating
+	 * floating point values, and limitations on floating point precision. My solution is to always generate the graph
+	 * at the same size, no matter they draw resolution, then scale it to the resolution to draw at.
+	 */
+	private static DimensionDouble getGraphDimensionsWithStandardWidth(DimensionDouble drawResolution)
+	{
+		// It doesn't really matter what this value is. I'm using the value that used to be the width of a graph drawn at medium resolution,
+		// since that's most likely to be backwards compatible with older maps.
+		final double standardWidth = 4096; 
+		
+		return new DimensionDouble(standardWidth, drawResolution.height * (standardWidth / drawResolution.width));
 	}
 
 

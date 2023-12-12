@@ -981,17 +981,12 @@ public abstract class VoronoiGraph
 		// so that the graph won't have small changes when drawn at higher
 		// resolutions.
 
-		// This lovely magic number it's here because this function used to use size multiplier, but I converted it to resolution scale,
-		// and this number is what you have to multiply the resolution scale by to get the size multiplier.
-		double scaleToConvertFromResolutionScaleToSizeMultiplier = 8.0 / 3.0; // TODO - pull this value from somewhere
-
 		// As pointPrecision becomes larger, points become less likely to be
 		// merged. I added this because of a bug
 		// where corners on the border of the graph which were needed to draw
 		// the polygons on the border were disappearing,
 		// causing the background color to be shown
-		Point key = new Point((int) ((p.x / (resolutionScale * scaleToConvertFromResolutionScaleToSizeMultiplier)) * pointPrecision),
-				(int) ((p.y / (resolutionScale * scaleToConvertFromResolutionScaleToSizeMultiplier))));
+		Point key = new Point((int) (p.x * pointPrecision), (int) (p.y * pointPrecision));
 		Corner c = pointCornerMap.get(key);
 		if (c == null)
 		{
