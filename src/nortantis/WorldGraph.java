@@ -105,12 +105,10 @@ public class WorldGraph extends VoronoiGraph
 		// looks better for drawing,
 		// and it works better for smooth coastlines.
 		updateCenterLocationsToCentroids();
-
-		buildNoisyEdges(lineStyle, false);
 	}
 
 	/**
-	 * This constructor doens't create tectonic plates or elevation, and always uses jagged lines.
+	 * This constructor doens't create tectonic plates or elevation.
 	 */
 	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision, boolean isForFrayedBorder)
 	{
@@ -118,7 +116,6 @@ public class WorldGraph extends VoronoiGraph
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
 		setupColors();
 		setupRandomSeeds(r);
-		buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
 	}
 
 	private void updateCenterLocationsToCentroids()
@@ -1789,5 +1786,39 @@ public class WorldGraph extends VoronoiGraph
 			}
 			return center == null;
 		}
+	}
+	
+	/**
+	 * Scales the graph and everything in it to the target size.
+	 */
+	public void scale(double targetWidth, double targetHeight)
+	{
+		double widthScale = targetWidth / bounds.width;
+		double heightScale = targetHeight / bounds.height;
+		for (Center center : centers)
+		{
+			center.loc = center.loc.mult(widthScale, heightScale);
+			if (center.originalLoc != null)
+			{
+				center.originalLoc = center.originalLoc.mult(widthScale, heightScale);
+			}
+		}
+		for (Edge edge : edges)
+		{
+			if (edge.midpoint != null)
+			{
+				edge.midpoint = edge.midpoint.mult(widthScale, heightScale);
+			}
+		}
+		for (Corner corner : corners)
+		{
+			corner.loc = corner.loc.mult(widthScale, heightScale);
+			if (corner.originalLoc != null)
+			{
+				corner.originalLoc = corner.originalLoc.mult(widthScale, heightScale);
+			}
+		}
+		
+		bounds = new Rectangle(0, 0, targetWidth, targetHeight);
 	}
 }

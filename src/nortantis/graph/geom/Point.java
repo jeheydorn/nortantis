@@ -52,16 +52,16 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return new Point(x * value, y * value);
 	}
+	
+	public Point mult(double xScale, double yScale)
+	{
+		return new Point(x * xScale, y * yScale);
+	}
 
 	@Override
 	public String toString()
 	{
 		return "(" + x + ", " + y + ")";
-	}
-
-	public double l2()
-	{
-		return x * x + y * y;
 	}
 
 	public double length()
