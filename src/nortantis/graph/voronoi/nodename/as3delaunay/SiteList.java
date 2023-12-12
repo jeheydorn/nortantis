@@ -93,10 +93,6 @@ public final class SiteList implements IDisposable
 		return new Rectangle(xmin, ymin, xmax - xmin, ymax - ymin);
 	}
 
-	/*
-	 * public ArrayList<Color> siteColors(referenceImage:BitmapData = null) { var colors:Vector.<uint> = new Vector.<uint>(); for each (var
-	 * site:Site in _sites) { colors.push(referenceImage ? referenceImage.getPixel(site.x, site.y) : site.color); } return colors; }
-	 */
 	public ArrayList<Point> siteCoords()
 	{
 		ArrayList<Point> coords = new ArrayList<Point>();
@@ -130,15 +126,6 @@ public final class SiteList implements IDisposable
 		return circles;
 	}
 
-	public ArrayList<ArrayList<Point>> regions(Rectangle plotBounds)
-	{
-		ArrayList<ArrayList<Point>> regions = new ArrayList<ArrayList<Point>>();
-		for (Site site : _sites)
-		{
-			regions.add(site.region(plotBounds));
-		}
-		return regions;
-	}
 	/**
 	 *
 	 * @param proximityMap

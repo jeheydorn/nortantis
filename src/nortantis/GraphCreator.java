@@ -21,23 +21,18 @@ import nortantis.util.Logger;
  */
 public class GraphCreator
 {
-	// Zero is most random. Higher values make the polygons more uniform shaped.
-	private static final int numLloydRelaxations = 0;
-	// Higher values will make larger plates, but fewer of them.
-	private static final int tectonicPlateIterationMultiplier = 30;
-
 	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
-			double nonBorderPlateContinentalProbability, Random r, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision,
-			boolean createElevationBiomesAndRegions)
+			double nonBorderPlateContinentalProbability, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
+			boolean createElevationBiomesAndRegions, double lloydRelaxationsScale)
 	{
 		// double startTime = System.currentTimeMillis();
 
 		// make the initial underlying voronoi structure
-		final Voronoi v = new Voronoi(numSites, width, height, r, null);
+		final Voronoi v = new Voronoi(numSites, width, height, r, resolutionScale);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, numSites * tectonicPlateIterationMultiplier,
-				nonBorderPlateContinentalProbability, borderPlateContinentalProbability, sizeMultiplyer, lineStyle, pointPrecision,
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r,
+				nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
 				createElevationBiomesAndRegions);
 
 		// Debug code to log elapsed time.
@@ -113,17 +108,17 @@ public class GraphCreator
 
 	}
 
-	public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double sizeMultiplyer,
+	public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double resolutionScale,
 			boolean isForFrayedBorder)
 	{
-		// Zero is most random. Higher values make the polygons more uniform shaped.
-		final int numLloydRelaxations = 0;
+		// Zero is most random. Higher values make the polygons more uniform shaped. Value should be between 0 and 1.
+		final double lloydRelaxationsScale = 0.0;
 
 		// make the initial underlying voronoi structure
-		final Voronoi v = new Voronoi(numSites, width, height, r, null);
+		final Voronoi v = new Voronoi(numSites, width, height, r, resolutionScale);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, numLloydRelaxations, r, sizeMultiplyer, MapSettings.defaultPointPrecision,
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision,
 				isForFrayedBorder);
 
 		return graph;

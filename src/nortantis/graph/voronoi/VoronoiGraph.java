@@ -50,7 +50,7 @@ public abstract class VoronoiGraph
 	 * This controls how many rivers there are. Bigger means more.
 	 */
 	private double riverDensity = 1.0 / 14.0;
-	protected double scaleMultiplyer;
+	protected double resolutionScale;
 	public static final int riversThisSizeOrSmallerWillNotBeDrawn = 2;
 
 	final static double verySmall = 0.0000001;
@@ -59,45 +59,48 @@ public abstract class VoronoiGraph
 	/**
 	 * @param r
 	 *            Random number generator
-	 * @param scaleMultiplyer
+	 * @param resolutionScale
 	 *            Used to scale the graph larger smaller according to the resolution being used.
 	 * @param pointPrecision
 	 *            Used to determine when points should be considered duplicates. Larger numbers mean less duplicate detection, making tiny
 	 *            polygons more likely. This number will be scaled by scaleMultiplyer.
 	 */
-	public VoronoiGraph(Random r, double scaleMultiplyer, double pointPrecision)
+	public VoronoiGraph(Random r, double resolutionScale, double pointPrecision)
 	{
 		this.rand = r;
 		bumps = r.nextInt(5) + 1;
-		this.scaleMultiplyer = scaleMultiplyer;
+		this.resolutionScale = resolutionScale;
 		startAngle = r.nextDouble() * 2 * Math.PI;
 		dipAngle = r.nextDouble() * 2 * Math.PI;
 		dipWidth = r.nextDouble() * .5 + .2;
 		this.pointPrecision = pointPrecision;
 	}
 
-	public void initVoronoiGraph(Voronoi v, int numLloydRelaxations, boolean createElevationRiversAndBiomes)
+	public void initVoronoiGraph(Voronoi v, int numLloydRelaxations, double lloydRelaxationsScale, boolean createElevationRiversAndBiomes)
 	{
 		bounds = v.get_plotBounds();
-		for (int i = 0; i < numLloydRelaxations; i++)
+		if (lloydRelaxationsScale > 0.0)
 		{
-			ArrayList<Point> points = v.siteCoords();
-			for (Point p : points)
+			for (int i = 0; i < numLloydRelaxations; i++)
 			{
-				ArrayList<Point> region = v.region(p);
-				double x = 0;
-				double y = 0;
-				for (Point c : region)
+				ArrayList<Point> points = v.siteCoords();
+				for (Point p : points)
 				{
-					x += c.x;
-					y += c.y;
+					ArrayList<Point> region = v.region(p);
+					double x = 0;
+					double y = 0;
+					for (Point c : region)
+					{
+						x += c.x * lloydRelaxationsScale;
+						y += c.y * lloydRelaxationsScale;
+					}
+					x /= region.size() * lloydRelaxationsScale;
+					y /= region.size() * lloydRelaxationsScale;
+					p.x = x;
+					p.y = y;
 				}
-				x /= region.size();
-				y /= region.size();
-				p.x = x;
-				p.y = y;
+				v = new Voronoi(points, v.get_plotBounds());
 			}
-			v = new Voronoi(points, null, v.get_plotBounds());
 		}
 		buildGraph(v);
 		improveCorners();
@@ -380,7 +383,7 @@ public abstract class VoronoiGraph
 
 	private boolean closeEnough(double d1, double d2, double diff)
 	{
-		return Math.abs(d1 - d2) <= diff * scaleMultiplyer;
+		return Math.abs(d1 - d2) <= diff * resolutionScale;
 	}
 
 	/**
@@ -773,7 +776,7 @@ public abstract class VoronoiGraph
 			g.setTransform(orig);
 		}
 	}
-	
+
 	public void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
 	{
 		// First I must draw border polygons without noisy edges because the
@@ -978,18 +981,23 @@ public abstract class VoronoiGraph
 		// so that the graph won't have small changes when drawn at higher
 		// resolutions.
 
+		// This lovely magic number it's here because this function used to use size multiplier, but I converted it to resolution scale,
+		// and this number is what you have to multiply the resolution scale by to get the size multiplier.
+		double scaleToConvertFromResolutionScaleToSizeMultiplier = 8.0 / 3.0; // TODO - pull this value from somewhere
+
 		// As pointPrecision becomes larger, points become less likely to be
 		// merged. I added this because of a bug
 		// where corners on the border of the graph which were needed to draw
 		// the polygons on the border were disappearing,
 		// causing the background color to be shown
-		Point key = new Point((int) ((p.x / scaleMultiplyer) * pointPrecision), (int) ((p.y / scaleMultiplyer)) * pointPrecision);
+		Point key = new Point((int) ((p.x / (resolutionScale * scaleToConvertFromResolutionScaleToSizeMultiplier)) * pointPrecision),
+				(int) ((p.y / (resolutionScale * scaleToConvertFromResolutionScaleToSizeMultiplier))));
 		Corner c = pointCornerMap.get(key);
 		if (c == null)
 		{
 			c = new Corner();
 			c.loc = p;
-			c.isBorder = bounds.liesOnAxes(p, scaleMultiplyer);
+			c.isBorder = bounds.liesOnAxes(p, resolutionScale);
 			c.index = corners.size();
 			corners.add(c);
 			pointCornerMap.put(key, c);

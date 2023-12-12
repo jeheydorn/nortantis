@@ -435,7 +435,7 @@ public class MapCreator
 			if (mapParts == null || mapParts.graph == null)
 			{
 				Logger.println("Creating the graph.");
-				WorldGraph graphCreated = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier,
+				WorldGraph graphCreated = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, settings.resolution,
 						settings.edits.isEmpty());
 				if (mapParts != null)
 				{
@@ -720,7 +720,7 @@ public class MapCreator
 				// The frayedBorderSize is on a logarithmic scale. 0 should be the minimum value, which will give 100 polygons.
 				int polygonCount = (int) (Math.pow(2, settings.frayedBorderSize) * 2 + 100);
 				WorldGraph frayGraph = GraphCreator.createSimpleGraph(mapDimensions.getWidth(), mapDimensions.getHeight(), polygonCount,
-						new Random(frayedBorderSeed), sizeMultiplier, true);
+						new Random(frayedBorderSeed), settings.resolution, true);
 				frayedBorderMask = new BufferedImage(frayGraph.getWidth(), frayGraph.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
 				frayGraph.drawBorderWhite(frayedBorderMask.createGraphics());
 				if (blurLevel > 0)
@@ -1283,12 +1283,12 @@ public class MapCreator
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 
-	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double sizeMultiplier,
+	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale,
 			boolean createElevationBiomesAndRegions)
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
-				settings.centerLandToWaterProbability, new Random(r.nextLong()), sizeMultiplier, settings.lineStyle,
-				settings.pointPrecision, createElevationBiomesAndRegions);
+				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
+				settings.pointPrecision, createElevationBiomesAndRegions, settings.lloydRelaxationsScale);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
@@ -1636,7 +1636,7 @@ public class MapCreator
 		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.heightmapResolution,
 				settings.generatedHeight * settings.heightmapResolution);
 		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
-		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, sizeMultiplier, true);
+		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, settings.resolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 
