@@ -29,6 +29,7 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import nortantis.MapSettings.LineStyle;
+import nortantis.editor.CenterEdit;
 import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
@@ -87,7 +88,7 @@ public class WorldGraph extends VoronoiGraph
 	
 	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r,
 			double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
-			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesAndRegions)
+			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesAndRegions, boolean areRegionBoundariesVisible)
 	{
 		super(r, sizeMultiplyer, pointPrecision);
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
@@ -99,6 +100,7 @@ public class WorldGraph extends VoronoiGraph
 		if (createElevationBiomesAndRegions)
 		{
 			createPoliticalRegions();
+			smoothCoastlinesAndRegionBoundariesIfNeeded(centers, lineStyle, areRegionBoundariesVisible);
 		}
 		setupRandomSeeds(r);
 		// Now that the graph is done being created, switch the center locations the Voronoi centroids of each center because I think that
@@ -125,21 +127,66 @@ public class WorldGraph extends VoronoiGraph
 			center.updateLocToCentroid();
 		}
 	}
+	
+	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle, boolean areRegionBoundariesVisible)
+	{
+		Set<Center> changed = new HashSet<Center>();
+		if (lineStyle == LineStyle.SplinesWithSmoothedCoastlines)
+		{
+			for (Center center : centersToUpdate)
+			{
+				Set<Center> needsRebuild = smoothCoastlinesAndOptionallyRegionBoundaries(center, areRegionBoundariesVisible);
+				changed.addAll(needsRebuild);
+			}
+		}
+		else if (lineStyle == LineStyle.Splines && areRegionBoundariesVisible)
+		{
+			for (Center center : centersToUpdate)
+			{
+				Set<Center> needsRebuild = smoothRegionBoundaries(center);
+				changed.addAll(needsRebuild);
+			}
+		}
 
-	public Set<Center> smoothCoastlineAndRegionBoundaryCorners(Center center)
+
+		for (Center center : changed)
+		{
+			center.updateLocToCentroid();
+		}
+
+		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
+		// Note that in theory I should continue to reapply this loop as a fixed-point algorithm, stopping when it makes a pass were no centers
+		// were malformed. But in practice that doesn't seem to be necessary since it's unlikely that removing the smoothing on one
+		// center will cause a different one to become malformed.
+		for (Center center : changed)
+		{
+			if (!center.isWellFormedForDrawing())
+			{
+				for (Corner corner : center.corners)
+				{
+					corner.loc = corner.originalLoc;
+				}
+				center.updateLocToCentroid();
+			}
+		}
+		
+		return changed;
+	}
+
+	private Set<Center> smoothCoastlinesAndOptionallyRegionBoundaries(Center center, boolean smoothRegionBoundaries)
 	{
 		assert center != null;
 		boolean isChanged = false;
 		for (Corner corner : center.corners)
 		{
-			boolean isCornerChanged = updateCornerLocationToSmoothEdges(corner, c -> c.isCoast());
+			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, c -> c.isCoast());
+			boolean isCornerChanged = coastlineResult.isCornerChanged;
 			// Only smooth region boundaries for the corner if it is not a coastline, because otherwise we will clear the smoothing on that
 			// spot on the coastline.
-			if (!isCornerChanged)
+			if (!coastlineResult.isSmoothed && smoothRegionBoundaries)
 			{
-				// I am intentionally not checking whether drawing region colors is enabled here because I don't want polygons to change
-				// shape because of changing that setting.
-				isCornerChanged = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver());
+				SmoothingResult regionResult = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver()); 
+				isCornerChanged |= regionResult.isCornerChanged;
 			}
 			isChanged |= isCornerChanged;
 		}
@@ -152,8 +199,27 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return result;
 	}
+	
+	private Set<Center> smoothRegionBoundaries(Center center)
+	{
+		assert center != null;
+		boolean isChanged = false;
+		for (Corner corner : center.corners)
+		{
+			SmoothingResult result = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver());
+			isChanged |= result.isCornerChanged;
+		}
+		Set<Center> result = new HashSet<Center>();
+		if (isChanged)
+		{
+			result.add(center);
+			result.addAll(center.neighbors);
 
-	private boolean updateCornerLocationToSmoothEdges(Corner corner, Function<Edge, Boolean> shouldSmoothEdge)
+		}
+		return result;
+	}
+
+	private SmoothingResult updateCornerLocationToSmoothEdges(Corner corner, Function<Edge, Boolean> shouldSmoothEdge)
 	{
 		List<Edge> edgesToSmooth = null;
 		for (Edge p : corner.protrudes)
@@ -174,7 +240,7 @@ public class WorldGraph extends VoronoiGraph
 			// generated.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.loc = corner.originalLoc;
-			return isChanged;
+			return new SmoothingResult(isChanged, false);
 		}
 
 		if (edgesToSmooth.size() == 2)
@@ -185,7 +251,7 @@ public class WorldGraph extends VoronoiGraph
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
 				corner.loc = corner.originalLoc;
-				return isChanged;
+				return new SmoothingResult(isChanged, false);
 			}
 
 			// This is a coastline.
@@ -196,35 +262,25 @@ public class WorldGraph extends VoronoiGraph
 
 			corner.loc = smoothedLoc;
 
-			return true;
+			return new SmoothingResult(true, true);
 		}
 		else
 		{
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.loc = corner.originalLoc;
-			return isChanged;
+			return new SmoothingResult(isChanged, false);
 		}
 	}
-
-	private Center findSharedCenter(Edge e1, Edge e2)
+	
+	private class SmoothingResult
 	{
-		if (e1.d0 == e2.d0)
+		boolean isCornerChanged;
+		boolean isSmoothed;
+		public SmoothingResult(boolean isChanged, boolean isSmoothed)
 		{
-			return e1.d0;
+			this.isCornerChanged = isChanged;
+			this.isSmoothed = isSmoothed;
 		}
-		else if (e1.d1 == e2.d1)
-		{
-			return e1.d1;
-		}
-		else if (e1.d0 == e2.d1)
-		{
-			return e1.d0;
-		}
-		else if (e1.d1 == e2.d0)
-		{
-			return e1.d1;
-		}
-		return null;
 	}
 
 	private void setupRandomSeeds(Random rand)
@@ -258,7 +314,7 @@ public class WorldGraph extends VoronoiGraph
 	 * Rebuilds noisy edges for a center.
 	 * 
 	 * @param center
-	 *            The center
+	 *            The center to rebuild noisy edges for.
 	 * @param centersInLoop
 	 *            For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for
 	 *            neighbors unnecessarily.
@@ -267,7 +323,7 @@ public class WorldGraph extends VoronoiGraph
 	{
 		noisyEdges.buildNoisyEdgesForCenter(center, true);
 
-		if (noisyEdges.getLineStyle() == LineStyle.Smooth)
+		if (noisyEdges.getLineStyle() == LineStyle.Splines || noisyEdges.getLineStyle() == LineStyle.SplinesWithSmoothedCoastlines)
 		{
 			for (Center n : center.neighbors)
 			{

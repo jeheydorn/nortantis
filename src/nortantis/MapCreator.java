@@ -177,9 +177,10 @@ public class MapCreator
 		// snippet to replace to include the width of ocean effects, land
 		// effects, and with widest possible line that can be drawn,
 		// whichever is largest.
-		double effectsPadding = Math.ceil(Math.max(settings.oceanEffect == OceanEffect.ConcentricWaves
-				? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
-				: settings.oceanEffectsLevel, settings.coastShadingLevel));
+		double effectsPadding = Math.ceil(
+				Math.max((settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
+						? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
+						: settings.oceanEffectsLevel, settings.coastShadingLevel));
 		// Increase effectsPadding by the width of a coastline, plus one pixel
 		// extra just to be safe.
 		effectsPadding += 2;
@@ -204,7 +205,7 @@ public class MapCreator
 		}
 
 		applyRegionEdits(mapParts.graph, settings.edits);
-		applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged));
+		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are edge edits.
 		{
 			Set<EdgeEdit> edgeEdits;
 			if (edgesChanged != null)
@@ -220,7 +221,10 @@ public class MapCreator
 				edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
 			}
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
-		}
+		}		
+		applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
+				settings.drawRegionColors);
+
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
@@ -583,8 +587,8 @@ public class MapCreator
 		textBackground = null;
 
 		// Debug code
-//		graph.drawCorners(map.createGraphics());
-//		graph.drawVoronoi(map.createGraphics());
+		// graph.drawCorners(map.createGraphics());
+		// graph.drawVoronoi(map.createGraphics());
 
 		if (settings.drawBorder)
 		{
@@ -779,8 +783,9 @@ public class MapCreator
 			MapParts mapParts, WorldGraph graph, Background background, double sizeMultiplier)
 	{
 		applyRegionEdits(graph, settings.edits);
-		applyCenterEdits(graph, settings.edits, null);
+		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are edge edits.
 		applyEdgeEdits(graph, settings.edits, null);
+		applyCenterEdits(graph, settings.edits, null, settings.drawRegionColors);
 
 		checkForCancel();
 
@@ -1073,7 +1078,8 @@ public class MapCreator
 		BufferedImage oceanEffects = null;
 		int oceanEffectsLevelScaled = (int) (settings.oceanEffectsLevel * sizeMultiplier);
 		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur) && oceanEffectsLevelScaled > 0)
-				|| ((settings.oceanEffect == OceanEffect.ConcentricWaves) && settings.concentricWaveCount > 0))
+				|| ((settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
+						&& settings.concentricWaveCount > 0))
 		{
 			double targetStrokeWidth = sizeMultiplier;
 			BufferedImage coastlineMask = new BufferedImage((int) drawBounds.width, (int) drawBounds.height,
@@ -1126,27 +1132,34 @@ public class MapCreator
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
-				if (settings.oceanEffect == OceanEffect.ConcentricWaves)
+				if (settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
 				{
 					double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 					double lineWidth = concentricWaveLineWidth * sizeMultiplier;
 					double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + lineWidth);
 					final double opacityOfLastWave;
-					if (settings.concentricWaveCount == 1)
+					if (settings.oceanEffect == OceanEffect.ConcentricWaves)
 					{
 						opacityOfLastWave = 1.0;
 					}
-					else if (settings.concentricWaveCount == 2)
-					{
-						opacityOfLastWave = 0.35;
-					}
-					else if (settings.concentricWaveCount == 3)
-					{
-						opacityOfLastWave = 0.22;
-					}
 					else
 					{
-						opacityOfLastWave = 0.2;
+						if (settings.concentricWaveCount == 1)
+						{
+							opacityOfLastWave = 1.0;
+						}
+						else if (settings.concentricWaveCount == 2)
+						{
+							opacityOfLastWave = 0.35;
+						}
+						else if (settings.concentricWaveCount == 3)
+						{
+							opacityOfLastWave = 0.22;
+						}
+						else
+						{
+							opacityOfLastWave = 0.2;
+						}
 					}
 
 					for (int i : new Range(0, settings.concentricWaveCount))
@@ -1288,7 +1301,7 @@ public class MapCreator
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
-				settings.pointPrecision, createElevationBiomesAndRegions, settings.lloydRelaxationsScale);
+				settings.pointPrecision, createElevationBiomesAndRegions, settings.lloydRelaxationsScale, settings.drawRegionColors);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
@@ -1327,7 +1340,8 @@ public class MapCreator
 		}
 	}
 
-	private static void applyCenterEdits(WorldGraph graph, MapEdits edits, List<CenterEdit> centerChanges)
+	private static void applyCenterEdits(WorldGraph graph, MapEdits edits, List<CenterEdit> centerChanges,
+			boolean areRegionBoundariesVisible)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
@@ -1345,6 +1359,7 @@ public class MapCreator
 			centerChanges = edits.centerEdits;
 		}
 
+		Set<Center> centersChanged = new HashSet<>();
 		Set<Center> needsRebuildNoisyEdges = new HashSet<>();
 
 		for (CenterEdit cEdit : centerChanges)
@@ -1353,6 +1368,7 @@ public class MapCreator
 			cEdit = cEdit.deepCopyWithLock();
 
 			Center center = graph.centers.get(cEdit.index);
+			centersChanged.add(center);
 			Integer currentRegionId = center.region == null ? null : center.region.id;
 			boolean needsRebuild = center.isWater != cEdit.isWater || currentRegionId != cEdit.regionId;
 			center.isWater = cEdit.isWater;
@@ -1396,36 +1412,8 @@ public class MapCreator
 			}
 		}
 
-		if (graph.noisyEdges.getLineStyle() == LineStyle.Smooth)
-		{
-			for (CenterEdit cEdit : centerChanges)
-			{
-				Center center = graph.centers.get(cEdit.index);
-				Set<Center> needsRebuild = graph.smoothCoastlineAndRegionBoundaryCorners(center);
-				needsRebuildNoisyEdges.addAll(needsRebuild);
-			}
-		}
-
-		for (Center center : needsRebuildNoisyEdges)
-		{
-			center.updateLocToCentroid();
-		}
-
-		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
-		// Note that in theory I should continue to reapply this loop as a fixed-point algorithm, stopping when it makes a pass were no centers
-		// were malformed. But in practice that doesn't seem to be necessary since it's unlikely that removing the smoothing on one
-		// center will cause a different one to become malformed.
-		for (Center center : needsRebuildNoisyEdges)
-		{
-			if (!center.isWellFormedForDrawing())
-			{
-				for (Corner corner : center.corners)
-				{
-					corner.loc = corner.originalLoc;
-				}
-				center.updateLocToCentroid();
-			}
-		}
+		needsRebuildNoisyEdges.addAll(graph.smoothCoastlinesAndRegionBoundariesIfNeeded(centersChanged, graph.noisyEdges.getLineStyle(),
+				areRegionBoundariesVisible));
 
 		for (Center center : needsRebuildNoisyEdges)
 		{

@@ -55,7 +55,7 @@ public class NoisyEdges
 
 	public void buildNoisyEdgesForCenter(Center center, boolean forceRebuild)
 	{
-		if (lineStyle.equals(LineStyle.Smooth))
+		if (lineStyle.equals(LineStyle.Splines) || lineStyle.equals(LineStyle.SplinesWithSmoothedCoastlines))
 		{
 			buildCurvesForCenter(center, forceRebuild);
 		}
@@ -350,7 +350,7 @@ public class NoisyEdges
 
 	public List<Point> getNoisyEdge(int edgeIndex)
 	{
-		if (lineStyle.equals(LineStyle.Smooth))
+		if (lineStyle.equals(LineStyle.Splines) || lineStyle.equals(LineStyle.SplinesWithSmoothedCoastlines))
 		{
 			return curves.get(edgeIndex);
 		}

@@ -303,6 +303,10 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				return LineStyle.Jagged;
 			}
+			if (str.equals("Smooth"))
+			{
+				return LineStyle.Splines;
+			}
 			return LineStyle.valueOf(str);
 		});
 		pointPrecision = getProperty("pointPrecision", new Function0<Double>()

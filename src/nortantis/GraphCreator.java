@@ -23,7 +23,7 @@ public class GraphCreator
 {
 	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
 			double nonBorderPlateContinentalProbability, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
-			boolean createElevationBiomesAndRegions, double lloydRelaxationsScale)
+			boolean createElevationBiomesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible)
 	{
 		// double startTime = System.currentTimeMillis();
 
@@ -34,7 +34,7 @@ public class GraphCreator
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r,
 				nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
-				createElevationBiomesAndRegions);
+				createElevationBiomesAndRegions, areRegionBoundariesVisible);
 		graph.scale(width, height);
 		graph.buildNoisyEdges(lineStyle, false);
 

@@ -408,7 +408,7 @@ public class IconsTool extends EditorTool
 								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
 					}
 					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
-					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon));
+					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon), 45);
 					previewImages.add(preview);
 				}
 
@@ -482,13 +482,12 @@ public class IconsTool extends EditorTool
 
 	private BufferedImage createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		return createIconPreview(settings, ImageCache.getInstance(customImagesPath).loadIconGroup(iconType, groupName));
+		return createIconPreview(settings, ImageCache.getInstance(customImagesPath).loadIconGroup(iconType, groupName), 30);
 	}
 
-	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images)
+	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images, int scaledHeight)
 	{
 		final int maxRowWidth = 168;
-		final int scaledHeight = 30;
 
 		// Find the size needed for the preview
 		int rowCount = 1;

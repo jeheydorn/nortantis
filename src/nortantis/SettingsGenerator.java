@@ -32,7 +32,7 @@ public class SettingsGenerator
 	public static int minWorldSize = 2000;
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
-	public static int minWorldSizeForRandomSettings = minWorldSize + 8000;
+	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
 	public static int maxWorldSize = 30000;
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
@@ -213,13 +213,13 @@ public class SettingsGenerator
 		int noOceanOnEdgeThreshold = 15000;
 		if (settings.worldSize < noOceanOnEdgeThreshold)
 		{
-			settings.edgeLandToWaterProbability = settings.worldSize / (double) noOceanOnEdgeThreshold;
+			settings.centerLandToWaterProbability = settings.worldSize / (double) noOceanOnEdgeThreshold;
 			// Make the edge and center land water probability add up to 1 so there is usually both land and ocean.
-			settings.centerLandToWaterProbability = 1.0 - settings.edgeLandToWaterProbability;
+			settings.edgeLandToWaterProbability = 1.0 - settings.centerLandToWaterProbability;
 		}
 		else
 		{
-			settings.centerLandToWaterProbability = 0.5 + rand.nextDouble() * 0.5;
+			settings.centerLandToWaterProbability = 0.75 + rand.nextDouble() * 0.25;
 			settings.edgeLandToWaterProbability = 0;
 		}
 
