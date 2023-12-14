@@ -1047,7 +1047,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		toolsPanel.zoomComboBox.removeAllItems();
 		for (String level : toolsPanel.zoomLevels)
 		{
-			if (translateZoomLevel(level) >= minZoom)
+			if (translateZoomLevel(level) >= minZoom || level.equals(ToolsPanel.fitToWindowZoomLevel))
 			{
 				toolsPanel.zoomComboBox.addItem(level);
 			}

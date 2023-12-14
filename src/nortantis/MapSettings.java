@@ -442,7 +442,18 @@ public class MapSettings implements Serializable
 			drawGrunge = true;
 		}
 		cityProbability = (double) root.get("cityProbability");
-		lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));
+		
+		String lineStyleString = (String) root.get("lineStyle");
+		// Convert old value.
+		if (lineStyleString.equals("Smooth"))
+		{
+			lineStyle = LineStyle.Splines;
+		}
+		else
+		{
+			lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));	
+		}
+		
 		pointPrecision = (double) root.get("pointPrecision");
 		if (root.containsKey("lloydRelaxationsScale"))
 		{
@@ -863,16 +874,17 @@ public class MapSettings implements Serializable
 
 	public enum LineStyle
 	{
-		Jagged, Smooth
+		Jagged, Splines, SplinesWithSmoothedCoastlines 
 	}
 
 	public enum OceanEffect
 	{
-		Blur, Ripples, ConcentricWaves,
+		Blur, Ripples, ConcentricWaves, FadingConcentricWaves
 	}
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+
 
 	@Override
 	public boolean equals(Object obj)
@@ -890,8 +902,7 @@ public class MapSettings implements Serializable
 			return false;
 		}
 		MapSettings other = (MapSettings) obj;
-		return backgroundRandomSeed == other.backgroundRandomSeed
-				&& Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
+		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
 				&& brightnessRange == other.brightnessRange
@@ -902,6 +913,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
 				&& Objects.equals(customImagesPath, other.customImagesPath) && Objects.equals(defaultRoadColor, other.defaultRoadColor)
+				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
+						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionColors == other.drawRegionColors
 				&& drawRoads == other.drawRoads && drawText == other.drawText
@@ -915,6 +928,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& hueRange == other.hueRange && Objects.equals(imageExportPath, other.imageExportPath)
 				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Objects.equals(oceanColor, other.oceanColor)
 				&& oceanEffect == other.oceanEffect && Objects.equals(oceanEffectsColor, other.oceanEffectsColor)
 				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(otherMountainsFont, other.otherMountainsFont)

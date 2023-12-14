@@ -50,18 +50,20 @@ import nortantis.util.Tuple4;
 @SuppressWarnings("serial")
 public class ThemePanel extends JTabbedPane
 {
-	MainWindow mainWindow;
-	JSlider coastShadingSlider;
-	JSlider oceanEffectsLevelSlider;
-	JSlider concentricWavesLevelSlider;
-	JRadioButton ripplesRadioButton;
-	JRadioButton shadeRadioButton;
-	JPanel coastShadingColorDisplay;
-	JPanel coastlineColorDisplay;
-	JPanel oceanEffectsColorDisplay;
-	JPanel riverColorDisplay;
-	JCheckBox enableTextCheckBox;
-	JPanel grungeColorDisplay;
+	private MainWindow mainWindow;
+	private JSlider coastShadingSlider;
+	private JSlider oceanEffectsLevelSlider;
+	private JSlider concentricWavesLevelSlider;
+	private JRadioButton ripplesRadioButton;
+	private JRadioButton shadeRadioButton;
+	private JRadioButton concentricWavesButton;
+	private JRadioButton fadingConcentricWavesButton;
+	private JPanel coastShadingColorDisplay;
+	private JPanel coastlineColorDisplay;
+	private JPanel oceanEffectsColorDisplay;
+	private JPanel riverColorDisplay;
+	private JCheckBox enableTextCheckBox;
+	private JPanel grungeColorDisplay;
 	private JTextField backgroundSeedTextField;
 	private JRadioButton rdbtnGeneratedFromTexture;
 	private JRadioButton rdbtnFractal;
@@ -86,18 +88,17 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox frayedEdgeCheckbox;
 	private JButton btnChooseCoastShadingColor;
 	private JRadioButton jaggedLinesButton;
-	private JRadioButton smoothLinesButton;
-	private JRadioButton concentricWavesButton;
+	private JRadioButton splinesLinesButton;
+	private JRadioButton splinesWithSmoothedCoastlinesButton;
 	private ActionListener oceanEffectsListener;
-	JLabel titleFontDisplay;
-	JLabel regionFontDisplay;
-	JLabel mountainRangeFontDisplay;
-	JLabel otherMountainsFontDisplay;
-	JLabel riverFontDisplay;
-	JPanel textColorDisplay;
-	JPanel boldBackgroundColorDisplay;
+	private JLabel titleFontDisplay;
+	private JLabel regionFontDisplay;
+	private JLabel mountainRangeFontDisplay;
+	private JLabel otherMountainsFontDisplay;
+	private JLabel riverFontDisplay;
+	private JPanel textColorDisplay;
+	private JPanel boldBackgroundColorDisplay;
 	private JCheckBox drawBoldBackgroundCheckbox;
-	final int widthToSubtractFromTabPanels = 2;
 	private RowHider textureImageHider;
 	private RowHider colorizeOceanCheckboxHider;
 	private RowHider colorizeLandCheckboxHider;
@@ -510,14 +511,17 @@ public class ThemePanel extends JTabbedPane
 
 		jaggedLinesButton = new JRadioButton("Jagged");
 		createMapChangeListenerForFullRedraw(jaggedLinesButton);
-		smoothLinesButton = new JRadioButton("Smooth");
-		createMapChangeListenerForFullRedraw(smoothLinesButton);
+		splinesLinesButton = new JRadioButton("Splines");
+		createMapChangeListenerForFullRedraw(splinesLinesButton);
+		splinesWithSmoothedCoastlinesButton = new JRadioButton("Splines with smoothed coastlines");
+		createMapChangeListenerForFullRedraw(splinesWithSmoothedCoastlinesButton);
 		ButtonGroup lineStyleButtonGroup = new ButtonGroup();
 		lineStyleButtonGroup.add(jaggedLinesButton);
-		lineStyleButtonGroup.add(smoothLinesButton);
+		lineStyleButtonGroup.add(splinesLinesButton);
+		lineStyleButtonGroup.add(splinesWithSmoothedCoastlinesButton);
 		organizer.addLabelAndComponentsVertical("Line style:",
 				"The style of lines to use when drawing coastlines, lakeshores, and region boundaries",
-				Arrays.asList(jaggedLinesButton, smoothLinesButton));
+				Arrays.asList(jaggedLinesButton, splinesLinesButton, splinesWithSmoothedCoastlinesButton));
 		organizer.addSeperator();
 
 		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -575,12 +579,16 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
+				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected() || fadingConcentricWavesButton.isSelected());
 				oceanEffectsLevelSlider.setVisible(ripplesRadioButton.isSelected() || shadeRadioButton.isSelected());
 				handleTerrainChange();
 			}
 		};
 		concentricWavesButton.addActionListener(oceanEffectsListener);
+
+		fadingConcentricWavesButton = new JRadioButton("Fading concentric waves");
+		oceanEffectButtonGroup.add(fadingConcentricWavesButton);
+		fadingConcentricWavesButton.addActionListener(oceanEffectsListener);
 
 		ripplesRadioButton = new JRadioButton("Ripples");
 		oceanEffectButtonGroup.add(ripplesRadioButton);
@@ -590,7 +598,7 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectButtonGroup.add(shadeRadioButton);
 		shadeRadioButton.addActionListener(oceanEffectsListener);
 		organizer.addLabelAndComponentsVertical("Ocean effects type:", "How to draw either waves or shading in the ocean along coastlines",
-				Arrays.asList(concentricWavesButton, ripplesRadioButton, shadeRadioButton));
+				Arrays.asList(concentricWavesButton, fadingConcentricWavesButton, ripplesRadioButton, shadeRadioButton));
 
 		oceanEffectsColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
@@ -986,6 +994,7 @@ public class ThemePanel extends JTabbedPane
 		ripplesRadioButton.setSelected(settings.oceanEffect == OceanEffect.Ripples);
 		shadeRadioButton.setSelected(settings.oceanEffect == OceanEffect.Blur);
 		concentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.ConcentricWaves);
+		fadingConcentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.FadingConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(settings.coastShadingColor);
@@ -1006,9 +1015,13 @@ public class ThemePanel extends JTabbedPane
 		{
 			jaggedLinesButton.setSelected(true);
 		}
-		else if (settings.lineStyle.equals(LineStyle.Smooth))
+		else if (settings.lineStyle.equals(LineStyle.Splines))
 		{
-			smoothLinesButton.setSelected(true);
+			splinesLinesButton.setSelected(true);
+		}
+		else if (settings.lineStyle.equals(LineStyle.SplinesWithSmoothedCoastlines))
+		{
+			splinesWithSmoothedCoastlinesButton.setSelected(true);
 		}
 
 		// Settings for background images.
@@ -1154,7 +1167,8 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanEffectsLevel = oceanEffectsLevelSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanEffect = ripplesRadioButton.isSelected() ? OceanEffect.Ripples
-				: shadeRadioButton.isSelected() ? OceanEffect.Blur : OceanEffect.ConcentricWaves;
+				: shadeRadioButton.isSelected() ? OceanEffect.Blur
+						: concentricWavesButton.isSelected() ? OceanEffect.ConcentricWaves : OceanEffect.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = coastShadingColorDisplay.getBackground();
 		settings.coastlineColor = coastlineColorDisplay.getBackground();
@@ -1170,7 +1184,8 @@ public class ThemePanel extends JTabbedPane
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged : LineStyle.Smooth;
+		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
+				: splinesLinesButton.isSelected() ? LineStyle.Splines : LineStyle.SplinesWithSmoothedCoastlines;
 
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();
