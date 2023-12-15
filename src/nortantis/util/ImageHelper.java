@@ -728,31 +728,33 @@ public class ImageHelper
 					{
 						Color col = new Color(image.getRGB(x, y));
 						Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
-
-						int maskLevel = mRaster.getSample(x, y, 0);
-						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						if (color != null)
 						{
-							if (invertMask)
-								maskLevel = 255 - maskLevel;
-
-							int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-							int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-							int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-							int combined = (r << 16) | (g << 8) | b;
-							result.setRGB(x, y, combined);
-						}
-						else
-						{
-							// TYPE_BYTE_BINARY
-
-							if (invertMask)
-								maskLevel = 255 - maskLevel;
-
-							int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-							int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-							int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-							int combined = (r << 16) | (g << 8) | b;
-							result.setRGB(x, y, combined);
+							int maskLevel = mRaster.getSample(x, y, 0);
+							if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+							{
+								if (invertMask)
+									maskLevel = 255 - maskLevel;
+	
+								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+								int combined = (r << 16) | (g << 8) | b;
+								result.setRGB(x, y, combined);
+							}
+							else
+							{
+								// TYPE_BYTE_BINARY
+	
+								if (invertMask)
+									maskLevel = 255 - maskLevel;
+	
+								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+								int combined = (r << 16) | (g << 8) | b;
+								result.setRGB(x, y, combined);
+							}
 						}
 					}
 				}
@@ -1647,7 +1649,14 @@ public class ImageHelper
 				}
 				float level = raster.getSampleFloat(x + whereFinal.x, y + whereFinal.y, 0);
 				int colorKey = colorIndexesRaster.getSample(x, y, 0);
-				result.setRGB(x, y, colorifyPixel(level, hsbMap.get(colorKey), how));
+				float[] hsb = hsbMap.get(colorKey);
+				// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
+				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there 
+				// is any functional impact to skipping drawing those pixels.
+				if (hsb != null)
+				{
+					result.setRGB(x, y, colorifyPixel(level, hsb, how));
+				}
 			}
 		});
 
