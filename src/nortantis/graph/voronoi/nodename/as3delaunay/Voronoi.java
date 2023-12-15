@@ -63,7 +63,7 @@ public final class Voronoi
 		fortunesAlgorithm();
 	}
 
-	public Voronoi(int numSites, double maxWidth, double maxHeight, Random r, double resolutionScale)
+	public Voronoi(int numSites, double maxWidth, double maxHeight, Random r)
 	{
 		ArrayList<Point> points = new ArrayList<Point>();		
 			

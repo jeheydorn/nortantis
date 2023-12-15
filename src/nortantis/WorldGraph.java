@@ -337,7 +337,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void buildNoisyEdges(LineStyle lineStyle, boolean isForFrayedBorder)
 	{
-		noisyEdges = new NoisyEdges(resolutionScale, lineStyle, isForFrayedBorder);
+		noisyEdges = new NoisyEdges(MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale), lineStyle, isForFrayedBorder);
 		noisyEdges.buildNoisyEdges(this);
 	}
 
