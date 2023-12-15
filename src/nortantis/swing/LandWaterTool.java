@@ -639,6 +639,13 @@ public class LandWaterTool extends EditorTool
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
 			mapEditingPanel.repaint();
+			
+			// Debug code
+//			System.out.println("River edge indexes:");
+//			for (Edge edge : river)
+//			{
+//				System.out.println(edge.index);
+//			}
 
 			if (river.size() > 0)
 			{

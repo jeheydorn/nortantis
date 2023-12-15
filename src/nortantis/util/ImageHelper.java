@@ -1611,11 +1611,6 @@ public class ImageHelper
 										// better than algorithm2.
 	}
 
-	public static BufferedImage colorifyMulti(BufferedImage image, Color[] colors, BufferedImage colorIndexes, ColorifyAlgorithm how)
-	{
-		return colorifyMulti(image, colors, colorIndexes, how);
-	}
-
 	/**
 	 * Like colorify but for multiple colors. Colorifies an image using a an array of colors and a second image which maps those colors to
 	 * pixels. This way you can specify multiple colors for the resulting image.

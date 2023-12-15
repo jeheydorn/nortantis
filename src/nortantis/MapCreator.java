@@ -1315,6 +1315,11 @@ public class MapCreator
 	{
 		return mapWidth / baseResolution;
 	}
+	
+	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
+	{
+		return 8.0 / 3.0 * resoutionScale;
+	}
 
 	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)
 	{
@@ -1388,7 +1393,7 @@ public class MapCreator
 					}
 					region.addAndSetRegion(center);
 					// We don't know which region the center came from, so
-					// remove it from of them except the one it is in.
+					// remove it from all of them except the one it is in.
 					for (Region r : graph.regions.values())
 					{
 						if (r.id != region.id)

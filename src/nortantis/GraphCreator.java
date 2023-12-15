@@ -29,7 +29,7 @@ public class GraphCreator
 
 		DimensionDouble graphSize = getGraphDimensionsWithStandardWidth(new DimensionDouble(width, height));
 		// make the initial underlying voronoi structure
-		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r, resolutionScale);
+		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r,
@@ -121,7 +121,7 @@ public class GraphCreator
 
 		DimensionDouble graphSize = getGraphDimensionsWithStandardWidth(new DimensionDouble(width, height));
 		// make the initial underlying voronoi structure
-		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r, resolutionScale);
+		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision,

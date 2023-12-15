@@ -20,7 +20,7 @@ import nortantis.graph.geom.Point;
 
 public class NoisyEdges
 {
-	final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged vedge; high: jagged dedge
+	final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged v-edge; high: jagged d-edge
 
 	private LineStyle lineStyle;
 	private Map<Integer, List<Point>> paths; // edge index -> List of points in that edge.
