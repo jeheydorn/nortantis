@@ -40,7 +40,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "1.0";
+	public static final String currentVersion = "1.1";
 	public static final double defaultPointPrecision = 2.0;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 
