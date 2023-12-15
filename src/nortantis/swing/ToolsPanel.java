@@ -136,16 +136,9 @@ public class ToolsPanel extends JPanel
 		{
 			zoomComboBox.addItem(level);
 		}
-		if (UserPreferences.getInstance().zoomLevel != "" && zoomLevels.contains(UserPreferences.getInstance().zoomLevel))
-		{
-			zoomComboBox.setSelectedItem(UserPreferences.getInstance().zoomLevel);
-		}
-		else
-		{
-			final String defaultZoomLevel = "50%";
-			zoomComboBox.setSelectedItem(defaultZoomLevel);
-			UserPreferences.getInstance().zoomLevel = defaultZoomLevel;
-		}
+
+		final String defaultZoomLevel = fitToWindowZoomLevel;
+		zoomComboBox.setSelectedItem(defaultZoomLevel);
 
 		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
 		// causes bottomPanel to expand vertically.
@@ -157,7 +150,6 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				UserPreferences.getInstance().zoomLevel = (String) zoomComboBox.getSelectedItem();
 				mainWindow.updateDisplayedMapFromGeneratedMap(true, null);
 			}
 		});

@@ -181,11 +181,11 @@ public class ImageCache
 		return imagesPerGroup;
 	}
 
-	public List<BufferedImage> loadIconGroup(IconType iconType, String groupName)
+	public List<ImageAndMasks> loadIconGroup(IconType iconType, String groupName)
 	{
 		String[] fileNames = getIconGroupFileNames(iconType, groupName);
 		String groupPath = getIconGroupPath(iconType, groupName);
-		List<BufferedImage> result = new ArrayList<>();
+		List<ImageAndMasks> result = new ArrayList<>();
 
 		for (String fileName : fileNames)
 		{
@@ -193,8 +193,9 @@ public class ImageCache
 			BufferedImage icon;
 
 			icon = getImageFromFile(path);
+			
 
-			result.add(icon);
+			result.add(new ImageAndMasks(icon, iconType));
 		}
 		return result;
 	}
@@ -224,14 +225,14 @@ public class ImageCache
 			String[] parts = FilenameUtils.getBaseName(fileName).split("width=");
 			if (parts.length < 2)
 			{
-				throw new RuntimeException("The icon " + fileName + " of type " + iconType
+				throw new RuntimeException("The image '" + fileName + "' of type " + iconType
 						+ " must have its default width stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png.");
 			}
 
 			String fileNameBaseWithoutWidth = getFileNameBaseWithoutWidth(fileName);
 			if (imagesAndMasks.containsKey(fileNameBaseWithoutWidth))
 			{
-				throw new RuntimeException("There are multiple icons for " + iconType + " named '" + fileNameBaseWithoutWidth
+				throw new RuntimeException("There are multiple images for " + iconType + " named '" + fileNameBaseWithoutWidth
 						+ "' whose file names only differ by their width." + " Rename one of them.");
 			}
 
@@ -250,8 +251,8 @@ public class ImageCache
 			}
 			catch (RuntimeException e)
 			{
-				throw new RuntimeException("Unable to load icon " + path.toString()
-						+ ". Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: "
+				throw new RuntimeException("Unable to load image '" + path.toString()
+						+ "'. Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: "
 						+ e.getMessage(), e);
 			}
 			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple2<>(new ImageAndMasks(icon, iconType), width));

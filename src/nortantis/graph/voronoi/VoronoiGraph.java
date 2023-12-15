@@ -25,6 +25,7 @@ import java.util.function.Function;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
+import nortantis.MapCreator;
 import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.nodename.as3delaunay.LineSegment;
@@ -986,13 +987,22 @@ public abstract class VoronoiGraph
 		// where corners on the border of the graph which were needed to draw
 		// the polygons on the border were disappearing,
 		// causing the background color to be shown
-		Point key = new Point((int) (p.x * pointPrecision), (int) (p.y * pointPrecision));
+
+		// This magic number exists because I originally designed point precision to be based on
+		// 'Size multiplier', which is an old number used to determined at what scale to draw things.
+		// Now graphs are created at a constant size, so that isn't be necessary for new maps,
+		// but is still necessary for backwards compatibility with older maps.
+		// I don't know why 0.5 seems to work, but it fixes one of my unit tests.
+		final double scaleForBackwardsCompatibility = MapCreator.calcSizeMultipilerFromResolutionScale(0.5);
+		
+		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
+				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
 		Corner c = pointCornerMap.get(key);
 		if (c == null)
 		{
 			c = new Corner();
 			c.loc = p;
-			c.isBorder = bounds.liesOnAxes(p, resolutionScale);
+			c.isBorder = bounds.liesOnAxes(p, 1.0);
 			c.index = corners.size();
 			corners.add(c);
 			pointCornerMap.put(key, c);

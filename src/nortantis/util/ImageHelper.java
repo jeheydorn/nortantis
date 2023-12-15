@@ -2085,4 +2085,9 @@ public class ImageHelper
 		}
 		return newImage;
 	}
+	
+	public static BufferedImage crop(BufferedImage inImage, java.awt.Rectangle bounds)
+	{
+		return inImage.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height);
+	}
 }

@@ -18,7 +18,6 @@ public class UserPreferences
 {
 	private final String userPrefsFileName = "user preferences";
 
-	public String zoomLevel = "";
 	public String editorImageQuality = "";
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
@@ -48,10 +47,6 @@ public class UserPreferences
 			{
 				props.load(new FileInputStream(filePath.toString()));
 
-				if (props.containsKey("zoomLevel"))
-				{
-					zoomLevel = props.getProperty("zoomLevel");
-				}
 				if (props.containsKey("editorImageQuality"))
 				{
 					editorImageQuality = props.getProperty("editorImageQuality");
@@ -119,7 +114,6 @@ public class UserPreferences
 	public void save()
 	{
 		Properties props = new Properties();
-		props.setProperty("zoomLevel", zoomLevel);
 		props.setProperty("editorImageQuality", editorImageQuality);
 		props.setProperty("defaultMapExportAction",
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());

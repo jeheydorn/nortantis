@@ -1318,7 +1318,7 @@ public class MapCreator
 	
 	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
 	{
-		return 8.0 / 3.0 * resoutionScale;
+		return (8.0 / 3.0) * resoutionScale;
 	}
 
 	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)

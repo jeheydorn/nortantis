@@ -469,7 +469,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearSelectedCenters();
-				setPlaceholderImage(new String[] { "Map failed to draw due to an error." });
+				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
+						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
 				// In theory, enabling fields now could lead to the undoer not working quite right since edits might not have been created.
 				// But leaving fields disabled makes the user unable to fix the error.

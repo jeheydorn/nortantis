@@ -233,7 +233,7 @@ public class IconsTool extends EditorTool
 
 		{
 			densitySlider = new JSlider(1, 50);
-			final int initialValue = 18;
+			final int initialValue = 7;
 			densitySlider.setValue(initialValue);
 			SwingHelper.setSliderWidthForSidePanel(densitySlider);
 			JLabel densityDisplay = new JLabel(initialValue + "");
@@ -408,7 +408,7 @@ public class IconsTool extends EditorTool
 								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
 					}
 					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
-					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon), 45);
+					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon), 50);
 					previewImages.add(preview);
 				}
 
@@ -482,20 +482,27 @@ public class IconsTool extends EditorTool
 
 	private BufferedImage createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		return createIconPreview(settings, ImageCache.getInstance(customImagesPath).loadIconGroup(iconType, groupName), 30);
+		List<BufferedImage> croppedImages = new ArrayList<>();
+		for (ImageAndMasks imageAndMasks : ImageCache.getInstance(customImagesPath).loadIconGroup(iconType, groupName))
+		{
+			croppedImages.add(imageAndMasks.cropToContent());
+		}
+		return createIconPreview(settings, croppedImages, 30);
 	}
 
 	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images, int scaledHeight)
 	{
 		final int maxRowWidth = 168;
+		final int horizontalPaddingBetweenImages = 2;
 
 		// Find the size needed for the preview
 		int rowCount = 1;
 		int largestRowWidth = 0;
 		{
 			int rowWidth = 0;
-			for (BufferedImage image : images)
+			for (int i : new Range(images.size()))
 			{
+				BufferedImage image = images.get(i);
 				int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
 				if (rowWidth + scaledWidth > maxRowWidth)
 				{
@@ -505,6 +512,10 @@ public class IconsTool extends EditorTool
 				else
 				{
 					rowWidth += scaledWidth;
+					if (i < images.size() - 1)
+					{
+						rowWidth += horizontalPaddingBetweenImages;
+					}
 				}
 
 				largestRowWidth = Math.max(largestRowWidth, rowWidth);
@@ -513,7 +524,10 @@ public class IconsTool extends EditorTool
 
 		// Create the background image for the preview
 		final int padding = 9;
-		Dimension size = new Dimension(largestRowWidth + (padding * 2), (rowCount * scaledHeight) + (padding * 2));
+		final int fadeWidth = padding - 2;
+		// Multiply the width padding by 2.2 instead of 2 to compensate for the image library I'm using not always scaling to the size I
+		// give.
+		Dimension size = new Dimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
 
 		BufferedImage previewImage;
 		if (showIconPreviewsUsingLandBackground)
@@ -529,7 +543,7 @@ public class IconsTool extends EditorTool
 			previewImage = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
 		}
 
-		previewImage = fadeEdges(previewImage, padding - 2);
+		previewImage = fadeEdges(previewImage, fadeWidth);
 
 		Graphics2D g = previewImage.createGraphics();
 
@@ -541,9 +555,11 @@ public class IconsTool extends EditorTool
 
 		int x = padding;
 		int y = padding;
-		for (BufferedImage image : images)
+		for (int i : new Range (images.size()))
 		{
-			BufferedImage scaled = ImageHelper.scaleByHeight(image, scaledHeight, Method.ULTRA_QUALITY);
+			BufferedImage image = images.get(i);
+			int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
+			BufferedImage scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
 			if (x - padding + scaled.getWidth() > maxRowWidth)
 			{
 				x = padding;
@@ -553,6 +569,10 @@ public class IconsTool extends EditorTool
 			g.drawImage(scaled, x, y, null);
 
 			x += scaled.getWidth();
+			if (i < images.size() - 1)
+			{
+				x += horizontalPaddingBetweenImages;
+			}
 		}
 
 		return previewImage;

@@ -159,6 +159,13 @@ public class ImageAndMasks
 		}
 	}
 	
+	
+	public BufferedImage cropToContent()
+	{
+		getOrCreateContentBounds();
+		return ImageHelper.crop(image, contentBounds);
+	}
+	
 	public Rectangle getOrCreateContentBounds()
 	{
 		getOrCreateContentMask();

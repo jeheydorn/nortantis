@@ -155,7 +155,7 @@ public class LandWaterTool extends EditorTool
 		lakeButton = new JRadioButton("Lake");
 		group.add(lakeButton);
 		radioButtons.add(lakeButton);
-		lakeButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines.");
+		lakeButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines, and they don't do coastline smoothing when enabled.");
 		lakeButton.addActionListener(brushActionListener);
 
 		riversButton = new JRadioButton("Rivers");
