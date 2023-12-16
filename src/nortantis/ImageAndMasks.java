@@ -23,7 +23,7 @@ public class ImageAndMasks
 	 */
 	private BufferedImage contentMask;
 	private Rectangle contentBounds;
-	private int[] contentYStarts;
+	private Integer[] contentYStarts;
 
 	/**
 	 * Used to linearly combine pixel values pulled from the land background texture vs the background image without other icons. Used to
@@ -173,7 +173,12 @@ public class ImageAndMasks
 		return contentBounds;
 	}
 	
-	public int getContentYStart(int x)
+	/**
+	 * Finds the lower-most y pixel value for the given x for which the content mask is not black.
+	 * @param x
+	 * @return A y value, or null if the content mask is black for all y values of the given x.
+	 */
+	public Integer getContentYStart(int x)
 	{
 		if (contentYStarts == null)
 		{
@@ -186,16 +191,16 @@ public class ImageAndMasks
 	private void createContentYStarts()
 	{
 		getOrCreateContentMask();
-		contentYStarts = new int[image.getWidth()];
+		contentYStarts = new Integer[image.getWidth()];
 		for (int x : new Range(image.getWidth()))
 		{
 			if (x < contentBounds.x)
 			{
-				contentYStarts[x] = contentBounds.height - 1;
+				contentYStarts[x] = null;
 			}
 			else if (x > contentBounds.x + contentBounds.width)
 			{
-				contentYStarts[x] = contentBounds.height - 1;
+				contentYStarts[x] = null;
 			}
 			else
 			{
@@ -207,7 +212,7 @@ public class ImageAndMasks
 				}
 				else
 				{
-					contentYStarts[x] = contentBounds.height - 1;
+					contentYStarts[x] = null;
 				}
 			}
 		}

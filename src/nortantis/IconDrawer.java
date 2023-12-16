@@ -1226,34 +1226,20 @@ public class IconDrawer
 		final double xScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth()) / iconTask.scaledWidth;
 		final double yScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight()) / iconTask.scaledHeight;
 
-		Raster mRaster = iconTask.unScaledImageAndMasks.getOrCreateContentMask().getRaster();
 		for (double x = scaledContentBounds.x; x <  scaledContentBounds.x + scaledContentBounds.width; x += stepSize)
 		{
 			int xInMask = (int) (x * xScaleToMaskSpace);
-			if (xInMask < 0 || xInMask >= mRaster.getWidth())
+			Integer yInMask = iconTask.unScaledImageAndMasks.getContentYStart(xInMask);
+			if (yInMask == null)
 			{
 				continue;
 			}
-
-			int yInMask = iconTask.unScaledImageAndMasks.getContentYStart(xInMask);
-			// Only check pixels where the mask level is greater than 0 because we don't care if transparent
-			// pixels outside the image's content overlap with water.
-			if (yInMask < 0 || yInMask >= mRaster.getHeight())
-			{
-				continue;
-			}
+			int y = (int)(yInMask * (1.0 / yScaleToMaskSpace)); 
 			
-			int yInScaledIconSpace = (int)(yInMask * (1.0 / yScaleToMaskSpace)); 
-
-			// Require trees to be a little further from water because they look bad, in my opinion, when there's a bunch of them
-			// right against the coast.
-			if (mRaster.getSampleDouble(xInMask, yInMask, 0) > 0)
+			Center center = graph.findClosestCenter(imageUpperLeftX + x, imageUpperLeftY + y);
+			if (center.isWater)
 			{
-				Center center = graph.findClosestCenter(imageUpperLeftX + x * resolutionScale, imageUpperLeftY + yInScaledIconSpace);
-				if (center.isWater)
-				{
-					return true;
-				}
+				return true;
 			}
 		}
 
