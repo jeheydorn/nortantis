@@ -191,7 +191,7 @@ public class LandWaterTool extends EditorTool
 
 		// River options
 		{
-			modeWidget = new DrawAndEraseModeWidget("Draw rivers", "Erase rivers", () -> brushActionListener.actionPerformed(null));
+			modeWidget = new DrawAndEraseModeWidget("Draw rivers", "Erase rivers", "", false, () -> brushActionListener.actionPerformed(null));
 			modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase rivers");
 
 			riverWidthSlider = new JSlider(1, 15);

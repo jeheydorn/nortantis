@@ -75,14 +75,6 @@ public class IconsTool extends EditorTool
 	private JLabel lblCityIconType;
 	private final String cityTypeNotSetPlaceholder = "<not set>";
 	private RowHider modeHider;
-	private JCheckBox onlyUpdateMountainsCheckbox;
-	private RowHider onlyUpdateMountainsCheckboxHider;
-	private JCheckBox onlyUpdateHillsCheckbox;
-	private RowHider onlyUpdateHillsCheckboxHider;
-	private JCheckBox onlyUpdateTreesCheckbox;
-	private RowHider onlyUpdateTreesCheckboxHider;
-	private JCheckBox onlyUpdateDunesCheckbox;
-	private RowHider onlyUpdateDunesCheckboxHider;
 	private DrawAndEraseModeWidget modeWidget;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
@@ -203,14 +195,40 @@ public class IconsTool extends EditorTool
 		}
 
 		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush",
-				() -> updateTypePanels());
+				"Use the selected brush to replace existing icons of the same type", true, () -> updateTypePanels());
 		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
+		
+
+		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
+		brushSizeComboBox = brushSizeTuple.getFirst();
+		brushSizeHider = brushSizeTuple.getSecond();
+
+
+		{
+			densitySlider = new JSlider(1, 50);
+			final int initialValue = 7;
+			densitySlider.setValue(initialValue);
+			SwingHelper.setSliderWidthForSidePanel(densitySlider);
+			JLabel densityDisplay = new JLabel(initialValue + "");
+			densityDisplay.setPreferredSize(new Dimension(13, densityDisplay.getPreferredSize().height));
+			densitySlider.addChangeListener(new ChangeListener()
+			{
+				@Override
+				public void stateChanged(ChangeEvent e)
+				{
+					densityDisplay.setText(densitySlider.getValue() + "");
+				}
+			});
+			densityHider = organizer.addLabelAndComponentsHorizontal("Density:", "", Arrays.asList(densitySlider, densityDisplay));
+		}
+
 
 		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes, null);
 		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes, null);
 		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes, null);
 		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes, null);
 		selectDefaultTreesButtion();
+
 
 		lblCityIconType = new JLabel("<not set>");
 		JButton changeButton = new JButton("Change");
@@ -231,47 +249,6 @@ public class IconsTool extends EditorTool
 
 		createOrUpdateRadioButtonsForCities(organizer, null);
 
-		{
-			densitySlider = new JSlider(1, 50);
-			final int initialValue = 7;
-			densitySlider.setValue(initialValue);
-			SwingHelper.setSliderWidthForSidePanel(densitySlider);
-			JLabel densityDisplay = new JLabel(initialValue + "");
-			densityDisplay.setPreferredSize(new Dimension(13, densityDisplay.getPreferredSize().height));
-			densitySlider.addChangeListener(new ChangeListener()
-			{
-				@Override
-				public void stateChanged(ChangeEvent e)
-				{
-					densityDisplay.setText(densitySlider.getValue() + "");
-				}
-			});
-			densityHider = organizer.addLabelAndComponentsHorizontal("Density:", "", Arrays.asList(densitySlider, densityDisplay));
-		}
-
-		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
-		brushSizeComboBox = brushSizeTuple.getFirst();
-		brushSizeHider = brushSizeTuple.getSecond();
-
-		onlyUpdateMountainsCheckbox = new JCheckBox("Only update existing mountains");
-		onlyUpdateMountainsCheckbox.setToolTipText(
-				"When checked, mountains will only be drawn over existing mountains, making it easier to change the images used by a group of mountains.");
-		onlyUpdateMountainsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateMountainsCheckbox);
-
-		onlyUpdateHillsCheckbox = new JCheckBox("Only update existing hills");
-		onlyUpdateHillsCheckbox.setToolTipText(
-				"When checked, hills will only be drawn over existing hills, making it easier to change the images used by a group of hills.");
-		onlyUpdateHillsCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateHillsCheckbox);
-
-		onlyUpdateTreesCheckbox = new JCheckBox("Only update existing trees");
-		onlyUpdateTreesCheckbox.setToolTipText(
-				"When checked, trees will only be drawn over existing trees, making it easier to change the images used by a group of trees.");
-		onlyUpdateTreesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateTreesCheckbox);
-
-		onlyUpdateDunesCheckbox = new JCheckBox("Only update existing dunes");
-		onlyUpdateDunesCheckbox.setToolTipText(
-				"When checked, dunes will only be drawn over existing dunes, making it easier to change the images used by a group of dunes.");
-		onlyUpdateDunesCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateDunesCheckbox);
 
 		mountainsButton.doClick();
 
@@ -302,19 +279,14 @@ public class IconsTool extends EditorTool
 		modeHider.setVisible(mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected()
 				|| treesButton.isSelected() || citiesButton.isSelected());
 
-		mountainTypes.hider.setVisible(mountainsButton.isSelected() && modeWidget.isDrawMode());
-		hillTypes.hider.setVisible(hillsButton.isSelected() && modeWidget.isDrawMode());
-		duneTypes.hider.setVisible(dunesButton.isSelected() && modeWidget.isDrawMode());
-		treeTypes.hider.setVisible(treesButton.isSelected() && modeWidget.isDrawMode());
-		cityButtons.hider.setVisible(citiesButton.isSelected() && modeWidget.isDrawMode());
-		cityTypeHider.setVisible(citiesButton.isSelected() && modeWidget.isDrawMode());
-		densityHider.setVisible(treesButton.isSelected() && modeWidget.isDrawMode());
-		brushSizeHider.setVisible(!(citiesButton.isSelected() && modeWidget.isDrawMode()));
-
-		onlyUpdateMountainsCheckboxHider.setVisible(mountainsButton.isSelected() && modeWidget.isDrawMode());
-		onlyUpdateHillsCheckboxHider.setVisible(hillsButton.isSelected() && modeWidget.isDrawMode());
-		onlyUpdateDunesCheckboxHider.setVisible(dunesButton.isSelected() && modeWidget.isDrawMode());
-		onlyUpdateTreesCheckboxHider.setVisible(treesButton.isSelected() && modeWidget.isDrawMode());
+		mountainTypes.hider.setVisible(mountainsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		hillTypes.hider.setVisible(hillsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		duneTypes.hider.setVisible(dunesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		treeTypes.hider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		cityTypeHider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		brushSizeHider.setVisible(!(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode())));
 	}
 
 	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
@@ -555,7 +527,7 @@ public class IconsTool extends EditorTool
 
 		int x = padding;
 		int y = padding;
-		for (int i : new Range (images.size()))
+		for (int i : new Range(images.size()))
 		{
 			BufferedImage image = images.get(i);
 			int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
@@ -652,13 +624,13 @@ public class IconsTool extends EditorTool
 
 		if (mountainsButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
+			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 			{
 				String rangeId = mountainTypes.getSelectedOption();
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (onlyUpdateMountainsCheckbox.isSelected() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Mountain))
+					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Mountain))
 					{
 						continue;
 					}
@@ -680,13 +652,13 @@ public class IconsTool extends EditorTool
 		}
 		else if (hillsButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
+			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 			{
 				String rangeId = hillTypes.getSelectedOption();
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (onlyUpdateHillsCheckbox.isSelected() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Hill))
+					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Hill))
 					{
 						continue;
 					}
@@ -708,13 +680,13 @@ public class IconsTool extends EditorTool
 		}
 		else if (dunesButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
+			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 			{
 				String rangeId = duneTypes.getSelectedOption();
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (onlyUpdateDunesCheckbox.isSelected() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Dune))
+					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Dune))
 					{
 						continue;
 					}
@@ -736,13 +708,13 @@ public class IconsTool extends EditorTool
 		}
 		else if (treesButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
+			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 			{
 				String treeType = treeTypes.getSelectedOption();
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (onlyUpdateTreesCheckbox.isSelected() && cEdit.trees == null)
+					if (modeWidget.isReplaceMode() && cEdit.trees == null)
 					{
 						continue;
 					}
@@ -761,7 +733,7 @@ public class IconsTool extends EditorTool
 		}
 		else if (citiesButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
+			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 			{
 				if (cityButtons.buttons.size() == 0)
 				{
@@ -771,6 +743,12 @@ public class IconsTool extends EditorTool
 				String cityName = cityButtons.getSelectedOption();
 				for (Center center : selected)
 				{
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.City))
+					{
+						continue;
+					}
+					
 					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityName);
 					// Only add the city if it will be drawn. That way, we don't set an undo point for a city that won't draw.
 					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the
@@ -779,7 +757,6 @@ public class IconsTool extends EditorTool
 					// in place to save creating an extra undo point here, although it might not be necessary.
 					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
 					{
-						CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
 					}
 				}
@@ -880,7 +857,7 @@ public class IconsTool extends EditorTool
 
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
 	{
-		if (citiesButton.isSelected() && modeWidget.isDrawMode())
+		if (citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()))
 		{
 			// It doesn't make sense to allow drawing cities with a large brush.
 			return getSelectedCenters(pointFromMouse, 1);
