@@ -276,15 +276,13 @@ public class IconDrawer
 						int scaledSize = findScaledHillSize(center);
 						ImageAndMasks imageAndMasks = hillImagesById.get(groupId)
 								.get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size());
-						iconsToDraw.getOrCreate(center)
-								.add(new IconDrawTask(imageAndMasks, IconType.hills, center.loc, scaledSize, false));
+						iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.hills, center.loc, scaledSize, false));
 					}
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
 				{
 					ImageAndMasks imageAndMasks = duneImages.get(cEdit.icon.iconIndex % duneImages.size());
-					iconsToDraw.getOrCreate(center)
-							.add(new IconDrawTask(imageAndMasks, IconType.sand, center.loc, duneWidth, false));
+					iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.sand, center.loc, duneWidth, false));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
 				{
@@ -360,7 +358,7 @@ public class IconDrawer
 		// Create an icon draw task just for checking if the city fits on land. It won't actually be drawn.
 		IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
 				(int) (cityImages.get(cityIcon.iconName).getSecond() * cityScale), true, cityIcon.iconName);
-		return !isTouchingWater(task);
+		return !isContentBottomTouchingWater(task);
 	}
 
 	private void clearIconsForCenters(Collection<Center> centers)
@@ -554,7 +552,7 @@ public class IconDrawer
 						}
 
 						// Updates to the line below will will likely need to also update doesCityFitOnLand.
-						if (!isTouchingWater(task))
+						if (!isContentBottomTouchingWater(task))
 						{
 							tasks.add(task);
 						}
@@ -690,7 +688,7 @@ public class IconDrawer
 
 				IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, c.loc, scaledWidth, true, cityName);
 				// Updates to the line below will will likely need to also update doesCityFitOnLand.
-				if (!isTouchingWater(task) && !isNeighborACity(c))
+				if (!isContentBottomTouchingWater(task) && !isNeighborACity(c))
 				{
 					if (addIconDrawTasks)
 					{
@@ -778,7 +776,7 @@ public class IconDrawer
 						IconDrawTask task = createIconDrawTaskAtBottomOfCenter(imagesInRange.get(i), IconType.mountains, c, scaledSize,
 								false);
 
-						if (!isTouchingWater(task))
+						if (!isContentBottomTouchingWater(task))
 						{
 							// Draw the image such that it is centered in the center of c.
 							iconsToDraw.getOrCreate(c).add(task);
@@ -804,7 +802,7 @@ public class IconDrawer
 						if (scaledSize >= 1)
 						{
 							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.loc, scaledSize, false);
-							if (!isTouchingWater(task))
+							if (!isContentBottomTouchingWater(task))
 							{
 								iconsToDraw.getOrCreate(c).add(task);
 								centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));
@@ -899,8 +897,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = rand.nextInt(duneImages.size());
-						iconsToDraw.getOrCreate(c)
-								.add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth, false));
+						iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth, false));
 						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
 					}
 				}
@@ -1197,7 +1194,7 @@ public class IconDrawer
 		}
 	}
 
-	private boolean isTouchingWater(IconDrawTask iconTask)
+	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)
 	{
 		if (iconTask.unScaledImageAndMasks.getOrCreateContentMask().getType() != BufferedImage.TYPE_BYTE_BINARY)
 			throw new IllegalArgumentException("Mask type must be TYPE_BYTE_BINARY for checking whether icons touch water.");
@@ -1205,15 +1202,7 @@ public class IconDrawer
 		final int imageUpperLeftX = (int) iconTask.centerLoc.x - iconTask.scaledWidth / 2;
 		final int imageUpperLeftY = (int) iconTask.centerLoc.y - iconTask.scaledHeight / 2;
 
-		final double xScale = (((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth()) / iconTask.scaledWidth)
-				* resolutionScale;
-		final double yScale = (((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight()) / iconTask.scaledHeight)
-				* resolutionScale;
-
-		// Determining what points to check needs to be done in a resolution invariant way. Otherwise, generating the map at
-		// a higher or lower resolution could cause icons to appear or disappear if they are very close to water.
-		// Although, due to pixels being discrete, this technique isn't entirely resolution invariant.
-		Rectangle contentBoundsScaledResolutionInvariant;
+		Rectangle scaledContentBounds;
 		{
 			java.awt.Rectangle contentBounds = iconTask.unScaledImageAndMasks.getOrCreateContentBounds();
 			if (contentBounds == null)
@@ -1221,74 +1210,47 @@ public class IconDrawer
 				// The icon is fully transparent.
 				return false;
 			}
-			contentBoundsScaledResolutionInvariant = new Rectangle(contentBounds.x * (1.0 / xScale), contentBounds.y * (1.0 / yScale),
-					contentBounds.width * (1.0 / xScale), contentBounds.height * (1.0 / yScale));
-		}
+			
+			final double xScaleToScaledIconSpace = iconTask.scaledWidth / (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth();
+			final double yScaleToScaledIconSpace = iconTask.scaledHeight / (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight();
 
-		double xStop = contentBoundsScaledResolutionInvariant.x + contentBoundsScaledResolutionInvariant.width;
-		double yStop = contentBoundsScaledResolutionInvariant.y + contentBoundsScaledResolutionInvariant.height;
-		final double percentOfImageThatCanOverlapWaterWhenAllowed = 0.80;
-		double yStart = contentBoundsScaledResolutionInvariant.y
-				+ contentBoundsScaledResolutionInvariant.height * percentOfImageThatCanOverlapWaterWhenAllowed;
-		final double stepSize = 2.0 / resolutionScale; // The constant in this number is in number of pixels at 100% resolution.
+			scaledContentBounds = new Rectangle(contentBounds.x * xScaleToScaledIconSpace, contentBounds.y * yScaleToScaledIconSpace,
+					contentBounds.width * xScaleToScaledIconSpace, contentBounds.height * yScaleToScaledIconSpace);
+		}
+		
+		// The constant in this number is in number of pixels at 100% resolution. I include the resolution here
+		// so that the loop below will make the same number of steps (approximately) no matter the resolution.
+		// This is to reduce the chances that icons will appear or disappear when you draw the map at a different resolution.
+		final double stepSize = 2.0 * resolutionScale; 
+
+		final double xScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth()) / iconTask.scaledWidth;
+		final double yScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight()) / iconTask.scaledHeight;
 
 		Raster mRaster = iconTask.unScaledImageAndMasks.getOrCreateContentMask().getRaster();
-		for (double x = contentBoundsScaledResolutionInvariant.x; x < xStop; x += stepSize)
+		for (double x = scaledContentBounds.x; x <  scaledContentBounds.x + scaledContentBounds.width; x += stepSize)
 		{
-			for (double y = yStart; y < yStop; y += stepSize)
-			{
-				// Only check pixels where the mask level is greater than 0 because we don't care if transparent
-				// pixels outside the image's content overlap with water.
-				int xInMask = (int) (x * xScale);
-				int yInMask = (int) (y * yScale);
-				if (xInMask < 0 || xInMask >= mRaster.getWidth())
-				{
-					continue;
-				}
-				if (yInMask < 0 || yInMask >= mRaster.getHeight())
-				{
-					continue;
-				}
-
-				// Require trees to be a little further from water because they look bad, in my opinion, when there's a bunch of them
-				// right against the coast.
-				if ((iconTask.type != IconType.trees && mRaster.getSampleDouble(xInMask, yInMask, 0) > 0)
-						|| (iconTask.type == IconType.trees && overlapsOrIsNearMask(mRaster, xInMask, yInMask)))
-				{
-					Center center = graph.findClosestCenter(imageUpperLeftX + x * resolutionScale, imageUpperLeftY + y * resolutionScale);
-					if (center.isWater)
-					{
-						return true;
-					}
-				}
-			}
-		}
-
-		return false;
-	}
-
-	private boolean overlapsOrIsNearMask(Raster mRaster, int xInMask, int yInMask)
-	{
-		// This is the number of pixels at 100% resolution of offset icons will have from water.
-		final int bufferSize = (int) (5.0 * resolutionScale);
-
-		final int increment = Math.max(1, (int) (5.0 * resolutionScale));
-
-		for (int bx = -bufferSize; bx <= bufferSize; bx += increment)
-		{
-			if (xInMask + bx < 0 || xInMask + bx >= mRaster.getWidth())
+			int xInMask = (int) (x * xScaleToMaskSpace);
+			if (xInMask < 0 || xInMask >= mRaster.getWidth())
 			{
 				continue;
 			}
 
-			for (int by = -bufferSize; by <= bufferSize; by += increment)
+			int yInMask = iconTask.unScaledImageAndMasks.getContentYStart(xInMask);
+			// Only check pixels where the mask level is greater than 0 because we don't care if transparent
+			// pixels outside the image's content overlap with water.
+			if (yInMask < 0 || yInMask >= mRaster.getHeight())
 			{
-				if (yInMask + by < 0 || yInMask + by >= mRaster.getHeight())
-				{
-					continue;
-				}
+				continue;
+			}
+			
+			int yInScaledIconSpace = (int)(yInMask * (1.0 / yScaleToMaskSpace)); 
 
-				if (mRaster.getSampleDouble(xInMask + bx, yInMask + by, 0) > 0)
+			// Require trees to be a little further from water because they look bad, in my opinion, when there's a bunch of them
+			// right against the coast.
+			if (mRaster.getSampleDouble(xInMask, yInMask, 0) > 0)
+			{
+				Center center = graph.findClosestCenter(imageUpperLeftX + x * resolutionScale, imageUpperLeftY + yInScaledIconSpace);
+				if (center.isWater)
 				{
 					return true;
 				}

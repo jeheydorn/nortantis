@@ -23,6 +23,7 @@ public class ImageAndMasks
 	 */
 	private BufferedImage contentMask;
 	private Rectangle contentBounds;
+	private int[] contentYStarts;
 
 	/**
 	 * Used to linearly combine pixel values pulled from the land background texture vs the background image without other icons. Used to
@@ -170,6 +171,46 @@ public class ImageAndMasks
 	{
 		getOrCreateContentMask();
 		return contentBounds;
+	}
+	
+	public int getContentYStart(int x)
+	{
+		if (contentYStarts == null)
+		{
+			createContentYStarts();
+		}
+		
+		return contentYStarts[x];
+	}
+	
+	private void createContentYStarts()
+	{
+		getOrCreateContentMask();
+		contentYStarts = new int[image.getWidth()];
+		for (int x : new Range(image.getWidth()))
+		{
+			if (x < contentBounds.x)
+			{
+				contentYStarts[x] = contentBounds.height - 1;
+			}
+			else if (x > contentBounds.x + contentBounds.width)
+			{
+				contentYStarts[x] = contentBounds.height - 1;
+			}
+			else
+			{
+				Coordinate point = findLowermostOpaquePixelOnMask(contentMask, x);
+				if (point != null)
+				{
+					assert point.x == x;
+					contentYStarts[x] = point.y;
+				}
+				else
+				{
+					contentYStarts[x] = contentBounds.height - 1;
+				}
+			}
+		}
 	}
 	
 	private void addToContentBounds(Coordinate point)
