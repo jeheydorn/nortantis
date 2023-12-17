@@ -304,11 +304,8 @@ public class ImageHelper
 			return new float[][] { { 1f } };
 		}
 
-		// I want the edge of the kernel to be 3 standard deviations away from
-		// the middle. I also divide by 2 to get half of the size (the length
-		// from center to edge).
-		double sd = size / (2.0 * 3.0);
-		NormalDistribution dist = new NormalDistribution(0, sd);
+		
+		NormalDistribution dist = new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
 		int resultSize = (size * 2);
 
 		float[][] kernel = new float[resultSize][resultSize];
@@ -326,6 +323,30 @@ public class ImageHelper
 		}
 		normalize(kernel);
 		return kernel;
+	}
+	
+	public static float getGuassianMode(int kernelSize)
+	{
+		if (kernelSize == 0)
+		{
+			return 0f;
+		}
+		
+		NormalDistribution dist = new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(kernelSize));
+		return (float) dist.density(0.0);
+	}
+	
+	private static double getStandardDeviationSizeForGaussianKernel(int kernelSize)
+	{
+		if (kernelSize == 0)
+		{
+			return 0f;
+		}
+		
+		// I want the edge of the kernel to be 3 standard deviations away from
+		// the middle. I also divide by 2 to get half of the size (the length
+		// from center to edge).
+		return kernelSize / (2.0 * 3.0);
 	}
 
 	public static float[][] createFractalKernel(int size, double p)

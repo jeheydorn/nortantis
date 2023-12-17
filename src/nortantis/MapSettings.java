@@ -163,6 +163,7 @@ public class MapSettings implements Serializable
 
 	public void writeToFile(String filePath) throws IOException
 	{
+		version = currentVersion;
 		String json = toJson();
 		Helper.writeToFile(filePath, json);
 	}
@@ -177,10 +178,7 @@ public class MapSettings implements Serializable
 	{
 		JSONObject root = new JSONObject();
 
-		// Always store the current version number when saving. If the map was loaded from a previous version,
-		// then it was converted to the current version while loading.
-		root.put("version", currentVersion);
-
+		root.put("version", version);
 		root.put("randomSeed", randomSeed);
 		root.put("resolution", resolution);
 		root.put("coastShadingLevel", coastShadingLevel);
@@ -442,7 +440,7 @@ public class MapSettings implements Serializable
 			drawGrunge = true;
 		}
 		cityProbability = (double) root.get("cityProbability");
-		
+
 		String lineStyleString = (String) root.get("lineStyle");
 		// Convert old value.
 		if (lineStyleString.equals("Smooth"))
@@ -451,9 +449,9 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));	
+			lineStyle = LineStyle.valueOf((String) root.get("lineStyle"));
 		}
-		
+
 		pointPrecision = (double) root.get("pointPrecision");
 		if (root.containsKey("lloydRelaxationsScale"))
 		{
@@ -589,6 +587,37 @@ public class MapSettings implements Serializable
 		edits.regionEdits = parseRegionEdits(editsJson);
 		edits.edgeEdits = parseEdgeEdits(editsJson);
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
+		
+		runConversionForShadingAlphaChange();
+	}
+
+	/**
+	 * Convert old map settings to compensate for a change I introduced to the level at which shading is darkened. 
+	 */
+	private void runConversionForShadingAlphaChange()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.0"))
+		{
+			return;
+		}
+
+		if (coastShadingColor.getAlpha() == 255)
+		{
+			coastShadingColor = new Color(coastlineColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
+					SettingsGenerator.defaultCoastShadingAlpha);
+		}
+		
+		if (oceanEffect == OceanEffect.Blur && oceanEffectsColor.getAlpha() == 255)
+		{
+			oceanEffectsColor = new Color(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+					SettingsGenerator.defaultOceanShadingAlpha);
+		}
+		
+		if (oceanEffect == OceanEffect.Ripples && oceanEffectsColor.getAlpha() == 255)
+		{
+			oceanEffectsColor = new Color(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+					SettingsGenerator.defaultOceanRipplesAlpha);
+		}
 	}
 
 	private CopyOnWriteArrayList<MapText> parseMapTexts(JSONObject editsJson)
@@ -763,6 +792,7 @@ public class MapSettings implements Serializable
 	private void loadFromOldPropertiesFile(String propertiesFilePath)
 	{
 		OldPropertyBasedMapSettings old = new OldPropertyBasedMapSettings(propertiesFilePath);
+		version = "0.0";
 		randomSeed = old.randomSeed;
 		resolution = old.resolution;
 		oceanEffectsLevel = old.oceanEffectsLevel;
@@ -836,7 +866,30 @@ public class MapSettings implements Serializable
 
 	private boolean isVersionGreatherThanCurrent(String version)
 	{
-		return Double.parseDouble(version) > Double.parseDouble(currentVersion);
+		return isVersionGreaterThan(version, currentVersion);
+	}
+	
+	private boolean isVersionGreaterThan(String version1, String version2)
+	{
+		if (version1 == null || version1.equals(""))
+		{
+			return false;
+		}
+		if (version2 == null || version2.equals(""))
+		{
+			return true;
+		}
+		return Double.parseDouble(version1) > Double.parseDouble(version2);
+	}
+	
+	private boolean isVersionGreaterThanOrEqualTo(String version1, String version2)
+	{
+		if (Objects.equals(version1, version2))
+		{
+			return true;
+		}
+		
+		return isVersionGreaterThan(version1, version2);
 	}
 
 	public boolean equalsIgnoringEdits(MapSettings other)
@@ -874,7 +927,7 @@ public class MapSettings implements Serializable
 
 	public enum LineStyle
 	{
-		Jagged, Splines, SplinesWithSmoothedCoastlines 
+		Jagged, Splines, SplinesWithSmoothedCoastlines
 	}
 
 	public enum OceanEffect

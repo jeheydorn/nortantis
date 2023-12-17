@@ -40,6 +40,9 @@ public class SettingsGenerator
 	public static final int maxConcentricWaveCountInEditor = 3;
 	public static final int maxConcentricWaveCountToGenerate = 3;
 	public static final int minConcentricWaveCountToGenerate = 2;
+	public static final int defaultCoastShadingAlpha = 102;
+	public static final int defaultOceanShadingAlpha = 102;
+	public static final int defaultOceanRipplesAlpha = 204;
 
 	public static MapSettings generate()
 	{
@@ -93,17 +96,16 @@ public class SettingsGenerator
 
 		double landBlurColorScale = 0.5;
 		settings.coastShadingColor = new Color((int) (settings.landColor.getRed() * landBlurColorScale),
-				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale));
-		if (settings.oceanEffect == OceanEffect.Ripples)
+				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
+				defaultCoastShadingAlpha);
+
+		if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
 		{
-			settings.oceanEffectsColor = Color.black;
-		}
-		else if (settings.oceanEffect == OceanEffect.Blur)
-		{
+			final int oceanEffectsAlpha = settings.oceanEffect == OceanEffect.Ripples ? defaultOceanRipplesAlpha : settings.oceanEffect == OceanEffect.Blur ? defaultOceanShadingAlpha : 0;
 			double oceanEffectsColorScale = 0.3;
 			settings.oceanEffectsColor = new Color((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale));
+					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), oceanEffectsAlpha);
 		}
 		else
 		{
@@ -254,7 +256,7 @@ public class SettingsGenerator
 
 		return settings;
 	}
-
+	
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
 		long seed = Math.abs(rand.nextInt());

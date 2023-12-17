@@ -41,6 +41,7 @@ public class ToolsPanel extends JPanel
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
 	static final String fitToWindowZoomLevel = "Fit to Window";
+	private final String defaultZoomLevel = fitToWindowZoomLevel;
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
 	MapUpdater updater;
@@ -137,7 +138,6 @@ public class ToolsPanel extends JPanel
 			zoomComboBox.addItem(level);
 		}
 
-		final String defaultZoomLevel = fitToWindowZoomLevel;
 		zoomComboBox.setSelectedItem(defaultZoomLevel);
 
 		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
@@ -244,6 +244,11 @@ public class ToolsPanel extends JPanel
 	public String getZoomString()
 	{
 		return (String) zoomComboBox.getSelectedItem();
+	}
+	
+	public void resetZoomToDefault()
+	{
+		zoomComboBox.setSelectedItem(defaultZoomLevel);
 	}
 
 	public void showAsDrawing(boolean isDrawing)

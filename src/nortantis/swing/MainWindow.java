@@ -1412,7 +1412,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			handleImagesRefresh();
 		}
-
+		
+		toolsPanel.resetZoomToDefault();
 		updater.createAndShowMapFull();
 	}
 

@@ -44,7 +44,7 @@ import nortantis.util.Tuple4;
 
 public class MapCreator
 {
-	private final double regionBlurColorScale = 0.7;
+	private final double regionBlurColorScale = 0.55;
 	/**
 	 * Controls how dark coastlines can get, for both the land and water. Higher values are lighter.
 	 */
@@ -205,7 +205,8 @@ public class MapCreator
 		}
 
 		applyRegionEdits(mapParts.graph, settings.edits);
-		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are edge edits.
+		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
+		// edge edits.
 		{
 			Set<EdgeEdit> edgeEdits;
 			if (edgesChanged != null)
@@ -221,7 +222,7 @@ public class MapCreator
 				edgeEdits.addAll(getEdgeEditsForCenters(settings.edits, centersChanged));
 			}
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
-		}		
+		}
 		applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
 				settings.drawRegionColors);
 
@@ -783,7 +784,8 @@ public class MapCreator
 			MapParts mapParts, WorldGraph graph, Background background, double sizeMultiplier)
 	{
 		applyRegionEdits(graph, settings.edits);
-		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are edge edits.
+		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
+		// edge edits.
 		applyEdgeEdits(graph, settings.edits, null);
 		applyCenterEdits(graph, settings.edits, null, settings.drawRegionColors);
 
@@ -1003,8 +1005,6 @@ public class MapCreator
 		final float scaleForDarkening = coastlineShadingScale;
 		int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 		double targetStrokeWidth = sizeMultiplier;
-		float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-				* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
 		if (blurLevel > 0)
 		{
@@ -1012,6 +1012,10 @@ public class MapCreator
 			{
 				Logger.println("Darkening land near shores.");
 			}
+			
+			float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+					* getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
+					* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
@@ -1076,8 +1080,8 @@ public class MapCreator
 		}
 
 		BufferedImage oceanEffects = null;
-		int oceanEffectsLevelScaled = (int) (settings.oceanEffectsLevel * sizeMultiplier);
-		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur) && oceanEffectsLevelScaled > 0)
+		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
+				&& (int) (settings.oceanEffectsLevel * sizeMultiplier) > 0)
 				|| ((settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
 						&& settings.concentricWaveCount > 0))
 		{
@@ -1103,7 +1107,8 @@ public class MapCreator
 				float[][] kernel;
 				if (settings.oceanEffect == OceanEffect.Ripples)
 				{
-					kernel = ImageHelper.createPositiveSincKernel(oceanEffectsLevelScaled, 1.0 / sizeMultiplier);
+					kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanEffectsLevel * sizeMultiplier),
+							1.0 / sizeMultiplier);
 				}
 				else
 				{
@@ -1112,6 +1117,7 @@ public class MapCreator
 				int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+						* getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanEffectsLevel, sizeMultiplier)
 						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				if (settings.drawOceanEffectsInLakes)
@@ -1217,6 +1223,13 @@ public class MapCreator
 		}
 		return oceanEffects;
 	}
+	
+	private static float getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
+	{
+		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int)(15 * sizeMultiplier);
+		return ImageHelper.getGuassianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider)
+				/ ImageHelper.getGuassianMode((int) (kernelSize * sizeMultiplier));
+	}
 
 	private static BufferedImage removeOceanEffectsFromLandAndLandLockedLakes(WorldGraph graph, BufferedImage oceanEffects,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
@@ -1315,7 +1328,7 @@ public class MapCreator
 	{
 		return mapWidth / baseResolution;
 	}
-	
+
 	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
 	{
 		return (8.0 / 3.0) * resoutionScale;
