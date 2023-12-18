@@ -60,6 +60,7 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton fadingConcentricWavesButton;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
+	private JSlider coastlineShadingTransparencySlider;
 	private JPanel oceanEffectsColorDisplay;
 	private JPanel riverColorDisplay;
 	private JCheckBox enableTextCheckBox;

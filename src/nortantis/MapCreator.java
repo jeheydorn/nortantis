@@ -19,11 +19,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
@@ -31,7 +29,6 @@ import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
-import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
@@ -504,18 +501,7 @@ public class MapCreator
 		checkForCancel();
 
 		WorldGraph graph;
-		try
-		{
-			graph = task.get();
-		}
-		catch (InterruptedException e)
-		{
-			throw new RuntimeException(e);
-		}
-		catch (ExecutionException e)
-		{
-			throw new RuntimeException(e);
-		}
+		graph = ThreadHelper.getInstance().getResult(task);
 
 		checkForCancel();
 
@@ -616,14 +602,7 @@ public class MapCreator
 			if (frayedBorderTask != null)
 			{
 				Tuple2<BufferedImage, BufferedImage> tuple;
-				try
-				{
-					tuple = frayedBorderTask.get();
-				}
-				catch (InterruptedException | ExecutionException e)
-				{
-					throw new RuntimeException(e);
-				}
+				tuple = ThreadHelper.getInstance().getResult(frayedBorderTask);
 
 				Logger.println("Adding frayed edges.");
 				frayedBorderMask = tuple.getFirst();
@@ -666,16 +645,10 @@ public class MapCreator
 				grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
 			}
 
+			
 			if (grungeTask != null)
 			{
-				try
-				{
-					grunge = grungeTask.get();
-				}
-				catch (InterruptedException | ExecutionException e)
-				{
-					throw new RuntimeException(e);
-				}
+				grunge = ThreadHelper.getInstance().getResult(grungeTask);
 			}
 			else if (mapParts != null)
 			{

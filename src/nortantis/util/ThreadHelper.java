@@ -9,6 +9,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
+import nortantis.CancelledException;
+
 public class ThreadHelper
 {
 	private static ThreadHelper instance;
@@ -32,11 +34,13 @@ public class ThreadHelper
 		return instance;
 	}
 
-	/** 
+	/**
 	 * Processes a list of jobs in parallel using a shared thread pool.
+	 * 
 	 * @param jobs
-	 * @param useFixedThreadPool Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a job that will
-	 * submit more jobs to the fixed thread pool, as that can lead to a deadlock.
+	 * @param useFixedThreadPool
+	 *            Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a
+	 *            job that will submit more jobs to the fixed thread pool, as that can lead to a deadlock.
 	 */
 	public void processInParallel(List<Runnable> jobs, boolean useFixedThreadPool)
 	{
@@ -71,12 +75,15 @@ public class ThreadHelper
 	}
 
 	/**
-	 * Processes a list of jobs in parallel that return results.
-	 * Warning: Never submit a job that will submit more jobs using the methods in this class, as that can lead to a deadlock.
-	 * @param <T> Result type
+	 * Processes a list of jobs in parallel that return results. Warning: Never submit a job that will submit more jobs using the methods in
+	 * this class, as that can lead to a deadlock.
+	 * 
+	 * @param <T>
+	 *            Result type
 	 * @param jobs
-	 * @param useFixedThreadPool Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a job that will
-	 * submit more jobs to the fixed thread pool, as that can lead to a deadlock.
+	 * @param useFixedThreadPool
+	 *            Whether to use the thread pool with a limited number of threads vs the one that grows as needed. Warning: Never submit a
+	 *            job that will submit more jobs to the fixed thread pool, as that can lead to a deadlock.
 	 * @return
 	 */
 	public <T> List<T> processInParallelAndGetResult(List<Callable<T>> jobs, boolean useFixedThreadPool)
@@ -117,8 +124,9 @@ public class ThreadHelper
 	}
 
 	/**
-	 * Processes rows of data in parallel.
-	 * Warning: Never submit a job that will submit more jobs using the methods in this class, as that can lead to a deadlock.
+	 * Processes rows of data in parallel. Warning: Never submit a job that will submit more jobs using the methods in this class, as that
+	 * can lead to a deadlock.
+	 * 
 	 * @param startRow
 	 * @param numRows
 	 * @param rowConsumer
@@ -164,6 +172,30 @@ public class ThreadHelper
 		else
 		{
 			return cachedThreadPool.submit(job);
+		}
+	}
+
+	public <T> T getResult(Future<T> task)
+	{
+		if (task == null)
+		{
+			return null;
+		}
+		try
+		{
+			return task.get();
+		}
+		catch (InterruptedException e)
+		{
+			throw new RuntimeException(e);
+		}
+		catch (ExecutionException e)
+		{
+			if (e.getCause() != null && e.getCause() instanceof RuntimeException)
+			{
+				throw (RuntimeException) e.getCause();
+			}
+			throw new RuntimeException(e);
 		}
 	}
 

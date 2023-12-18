@@ -603,7 +603,7 @@ public class MapSettings implements Serializable
 
 		if (coastShadingColor.getAlpha() == 255)
 		{
-			coastShadingColor = new Color(coastlineColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
+			coastShadingColor = new Color(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
 					SettingsGenerator.defaultCoastShadingAlpha);
 		}
 		

@@ -151,6 +151,12 @@ public class MapCreatorTest
 	{
 		generateAndCompare("iconsDrawOverCoastlines.nort");
 	}
+	
+	@Test
+	public void clearedMapRegionEdit0Removed()
+	{
+		generateAndCompare("clearedMapRegionEdit0Removed.nort");
+	}
 
 	private static String getExpectedMapFilePath(String settingsFileName)
 	{

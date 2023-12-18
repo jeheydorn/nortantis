@@ -1002,7 +1002,7 @@ public abstract class VoronoiGraph
 		{
 			c = new Corner();
 			c.loc = p;
-			c.isBorder = bounds.liesOnAxes(p, 1.0);
+			c.isBorder = bounds.liesOnAxes(p, scaleForBackwardsCompatibility);
 			c.index = corners.size();
 			corners.add(c);
 			pointCornerMap.put(key, c);
