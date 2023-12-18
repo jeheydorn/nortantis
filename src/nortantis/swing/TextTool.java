@@ -304,8 +304,8 @@ public class TextTool extends EditorTool
 			{
 				if (addButton.isSelected())
 				{
-					MapText addedText = updater.mapParts.textDrawer.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(),
-							getPointOnGraph(e.getPoint()));
+					MapText addedText = updater.mapParts.nameCreator.createUserAddedText((TextType) textTypeComboBox.getSelectedItem(),
+							getPointOnGraph(e.getPoint()), mainWindow.displayQualityScale);
 					mainWindow.edits.text.add(addedText);
 
 					undoer.setUndoPoint(UpdateType.Text, this);
@@ -332,7 +332,7 @@ public class TextTool extends EditorTool
 			}
 			else
 			{
-				MapText selectedText = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(e.getPoint()));
+				MapText selectedText = mainWindow.edits.findTextPicked(getPointOnGraph(e.getPoint()));
 				handleSelectingTextToEdit(selectedText, true);
 			}
 		}
@@ -558,13 +558,13 @@ public class TextTool extends EditorTool
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
-			mapTextsSelected = updater.mapParts.textDrawer.findTextSelectedByBrush(getPointOnGraph(mouseLocation),
+			mapTextsSelected = mainWindow.edits.findTextSelectedByBrush(getPointOnGraph(mouseLocation),
 					(brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
 		}
 		else
 		{
 			mapEditingPanel.hideBrush();
-			MapText selected = updater.mapParts.textDrawer.findTextPicked(getPointOnGraph(mouseLocation));
+			MapText selected = mainWindow.edits.findTextPicked(getPointOnGraph(mouseLocation));
 			if (selected != null)
 			{
 				mapTextsSelected = Collections.singletonList(selected);

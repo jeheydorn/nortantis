@@ -101,10 +101,13 @@ public class MapCreator
 	public Rectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, BufferedImage fullSizeMap,
 			List<MapText> textChanged)
 	{
+		TextDrawer textDrawer = new TextDrawer(settings);
+		textDrawer.setMapTexts(settings.edits.text);
+
 		Rectangle bounds = null;
 		for (MapText text : textChanged)
 		{
-			Rectangle changeBounds = mapParts.textDrawer.getTextBoundingBoxFor1Or2LineSplit(text);
+			Rectangle changeBounds = textDrawer.getTextBoundingBoxFor1Or2LineSplit(text);
 			if (changeBounds == null)
 			{
 				continue;
@@ -238,11 +241,14 @@ public class MapCreator
 			}
 		}
 
+		TextDrawer textDrawer = new TextDrawer(settings);
+		textDrawer.setMapTexts(settings.edits.text);
+
 		// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line to
 		// two or vice
 		// versa.
-		Rectangle textChangeBounds = mapParts.textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph,
-				centersChangedBounds, settings);
+		Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
+				settings);
 		replaceBounds = replaceBounds.add(textChangeBounds).floor();
 
 		// The bounds of the snippet to draw. This is larger than the snippet to
@@ -335,7 +341,7 @@ public class MapCreator
 
 		if (settings.drawText)
 		{
-			mapParts.textDrawer.drawTextFromEdits(mapSnippet, textBackground, mapParts.graph, drawBounds);
+			textDrawer.drawTextFromEdits(mapSnippet, textBackground, mapParts.graph, drawBounds);
 		}
 
 		java.awt.Point drawBoundsUpperLeftCornerAdjustedForBorder = new java.awt.Point(
@@ -477,29 +483,6 @@ public class MapCreator
 			frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
 		}
 
-		TextDrawer textDrawer = null;
-		if (mapParts == null || mapParts.textDrawer == null)
-		{
-			// Create the TextDrawer regardless off settings.drawText because
-			// the editor might be generating the map without text
-			// now, but want to show the text later, so in that case we would
-			// want to generate the texts using the TextDrawer but
-			// not show them.
-			textDrawer = new TextDrawer(settings, sizeMultiplier);
-
-			if (mapParts != null)
-			{
-				mapParts.textDrawer = textDrawer;
-			}
-		}
-		else
-		{
-			textDrawer = mapParts.textDrawer;
-			textDrawer.setSettingsAndMapTexts(settings);
-		}
-
-		checkForCancel();
-
 		WorldGraph graph;
 		graph = ThreadHelper.getInstance().getResult(task);
 
@@ -553,14 +536,38 @@ public class MapCreator
 			Logger.println("Creating text but not drawing it.");
 		}
 
+		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
+		NameCreator nameCreator = null;
+		if (mapParts == null || mapParts.nameCreator == null)
+		{
+			nameCreator = new NameCreator(settings);
+
+			if (mapParts != null)
+			{
+				mapParts.nameCreator = nameCreator;
+			}
+		}
+		else
+		{
+			nameCreator = mapParts.nameCreator;
+		}
+
+		TextDrawer textDrawer = new TextDrawer(settings);
+		if (settings.edits != null)
+		{
+			textDrawer.setMapTexts(settings.edits.text);
+		}
+
 		if (settings.edits.text.size() > 0)
 		{
 			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
 		}
 		else
 		{
-			// Call generateText below regardless of settings.drawText to create
-			// the MapText objects even when text is not shown.
+			// Generate text regardless off settings.drawText because
+			// the editor might be generating the map without text
+			// now, but want to show the text later, so in that case we would
+			// want to generate the text but not show it.
 
 			// Note that mountainGroups and cities should always be
 			// populated at this point if the map has mountains or cities
@@ -568,7 +575,7 @@ public class MapCreator
 			// uses mapParts.mapBeforeAddingText instead will only be hit
 			// if the map has already been drawn in the editor, and so text
 			// will be drawn from edits instead of taking this code path.
-			textDrawer.generateText(graph, map, textBackground, mountainGroups, cities, lakes);
+			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, lakes);
 		}
 
 		textBackground = null;
@@ -645,7 +652,7 @@ public class MapCreator
 				grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
 			}
 
-			
+
 			if (grungeTask != null)
 			{
 				grunge = ThreadHelper.getInstance().getResult(grungeTask);
@@ -985,7 +992,7 @@ public class MapCreator
 			{
 				Logger.println("Darkening land near shores.");
 			}
-			
+
 			float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 					* getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
 					* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
@@ -1196,10 +1203,10 @@ public class MapCreator
 		}
 		return oceanEffects;
 	}
-	
+
 	private static float getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
 	{
-		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int)(15 * sizeMultiplier);
+		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int) (15 * sizeMultiplier);
 		return ImageHelper.getGuassianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider)
 				/ ImageHelper.getGuassianMode((int) (kernelSize * sizeMultiplier));
 	}

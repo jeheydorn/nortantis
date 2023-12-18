@@ -1,5 +1,7 @@
 package nortantis.swing;
 
+import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
+import nortantis.TextDrawer;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterTrees;
@@ -127,6 +130,51 @@ public class MapEdits implements Serializable
 			CenterTrees trees = entry.getValue();
 			centerEdits.get(index).trees = trees;
 		}
+	}
+	
+	/**
+	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
+	 */
+	public MapText findTextPicked(nortantis.graph.geom.Point point)
+	{
+		java.awt.Point awtPoint = point.toAwtPoint();
+		for (MapText mp : text)
+		{
+			if (mp.value.length() > 0)
+			{
+				if (mp.line1Area != null)
+				{
+					if (mp.line1Area.contains(awtPoint))
+						return mp;
+				}
+
+				if (mp.line2Area != null)
+				{
+					if (mp.line2Area.contains(awtPoint))
+						return mp;
+				}
+			}
+		}
+		return null;
+	}
+
+	public List<MapText> findTextSelectedByBrush(nortantis.graph.geom.Point point, double brushDiameter)
+	{
+		Area brush = new Area(
+				new Ellipse2D.Double(point.x - brushDiameter / 2.0, point.y - brushDiameter / 2.0, brushDiameter, brushDiameter));
+		List<MapText> result = new ArrayList<>();
+
+		for (MapText mp : text)
+		{
+			if (mp.value.length() > 0)
+			{
+				if (TextDrawer.doAreasIntersect(brush, mp.line1Area) || TextDrawer.doAreasIntersect(brush, mp.line2Area))
+				{
+					result.add(mp);
+				}
+			}
+		}
+		return result;
 	}
 
 	public MapEdits deepCopy()

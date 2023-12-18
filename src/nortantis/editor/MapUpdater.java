@@ -21,6 +21,7 @@ import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.NameCreator;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -245,7 +246,7 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.Fonts)
 		{
-			mapParts.textDrawer = null;
+			
 		}
 		else if (updateType == UpdateType.Terrain)
 		{
@@ -407,9 +408,9 @@ public abstract class MapUpdater
 					}
 					else if (updateType == UpdateType.ReprocessBooks)
 					{
-						if (mapParts != null && mapParts.textDrawer != null)
+						if (mapParts != null)
 						{
-							mapParts.textDrawer.processBooks(settings.books);
+							mapParts.nameCreator = new NameCreator(settings);
 						}
 						return new Tuple2<>(null, null);
 					}

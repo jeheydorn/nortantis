@@ -21,9 +21,9 @@ import javax.swing.JTextField;
 
 import nortantis.MapSettings;
 import nortantis.NotEnoughNamesException;
-import nortantis.TextDrawer;
 import nortantis.editor.NameType;
 import nortantis.util.Range;
+import nortantis.NameCreator;
 
 @SuppressWarnings("serial")
 public class NameGeneratorDialog extends JDialog
@@ -88,9 +88,9 @@ public class NameGeneratorDialog extends JDialog
 				MapSettings settingsToUse = settings.deepCopy();
 				settingsToUse.books = booksWidget.getSelectedBooks();
 				settingsToUse.textRandomSeed = System.currentTimeMillis();
-				TextDrawer textDrawer = new TextDrawer(settingsToUse, 1.0);
+				NameCreator nameCreator = new NameCreator(settingsToUse);
 				NameType type = personNameRadioButton.isSelected() ? NameType.Person : NameType.Place;
-				textBox.setText(generateNamesForType(numberToGenerate, type, beginsWith.getText(), endsWith.getText(), textDrawer));
+				textBox.setText(generateNamesForType(numberToGenerate, type, beginsWith.getText(), endsWith.getText(), nameCreator));
 				textBox.setCaretPosition(0);
 			}
 		});
@@ -119,7 +119,7 @@ public class NameGeneratorDialog extends JDialog
 	}
 
 	private String generateNamesForType(int numberToGenerate, NameType type, String requiredPrefix, String requiredSuffix,
-			TextDrawer textDrawer)
+			NameCreator nameCreator)
 	{
 		final int maxAttempts = 100000;
 		String names = "";
@@ -135,11 +135,11 @@ public class NameGeneratorDialog extends JDialog
 				{
 					if (type == NameType.Person)
 					{
-						name = textDrawer.generatePersonName("%s", true, requiredPrefix);
+						name = nameCreator.generatePersonName("%s", true, requiredPrefix);
 					}
 					else
 					{
-						name = textDrawer.generatePlaceName("%s", true, requiredPrefix);
+						name = nameCreator.generatePlaceName("%s", true, requiredPrefix);
 					}
 					if (requiredSuffix == null || requiredSuffix.equals("") || name.toLowerCase().endsWith(requiredSuffix.toLowerCase()))
 					{

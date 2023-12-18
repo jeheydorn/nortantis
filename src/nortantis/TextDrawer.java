@@ -64,26 +64,18 @@ public class TextDrawer
 	// This is how far away from a river it's name will be drawn.
 	private final double riverNameRiseHeight = -10;
 	private final double cityYNameOffset = 4;
-	private final double maxWordLengthComparedToAverage = 2.0;
-	private final double probabilityOfKeepingNameLength1 = 0.0;
-	private final double probabilityOfKeepingNameLength2 = 0.0;
-	private final double probabilityOfKeepingNameLength3 = 0.3;
 	private final double thresholdForPuttingTitleOnLand = 0.3;
 
 	private BufferedImage landAndOceanBackground;
 	private CopyOnWriteArrayList<MapText> mapTexts;
 	private List<Area> cityAreas;
-	private Random r;
-	private NameGenerator placeNameGenerator;
-	private NameGenerator personNameGenerator;
-	private NameCompiler nameCompiler;
 	private Area graphBounds;
 	private Font titleFontScaled;
 	private Font regionFontScaled;
 	private Font mountainRangeFontScaled;
 	private Font citiesAndOtherMountainsFontScaled;
 	private Font riverFontScaled;
-	private Set<String> namesGenerated;
+	private Random r;
 
 	/**
 	 * 
@@ -92,9 +84,10 @@ public class TextDrawer
 	 * @param sizeMultiplyer
 	 *            The font size of text drawn will be multiplied by this value. This allows the map to be scaled larger or smaller.
 	 */
-	public TextDrawer(MapSettings settings, double sizeMultiplyer)
+	public TextDrawer(MapSettings settings)
 	{
 		this.settings = settings;
+		this.r = new Random(settings.textRandomSeed);
 
 		if (settings.edits != null && settings.edits.text != null && settings.edits.text.size() > 0)
 		{
@@ -123,106 +116,20 @@ public class TextDrawer
 			mapTexts = new CopyOnWriteArrayList<>();
 		}
 
-		// I create a new Random instead of passing one in so that small
-		// differences in the way
-		// the random number generator is used previous to the TextDrawer do not
-		// change the text.
-		this.r = new Random(settings.textRandomSeed);
-		this.namesGenerated = new HashSet<>();
-
-		processBooks(settings.books);
-
+		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
 		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
-				(int) (settings.titleFont.getSize() * sizeMultiplyer));
+				(int) (settings.titleFont.getSize() * sizeMultiplier));
 		regionFontScaled = settings.regionFont.deriveFont(settings.regionFont.getStyle(),
-				(int) (settings.regionFont.getSize() * sizeMultiplyer));
+				(int) (settings.regionFont.getSize() * sizeMultiplier));
 		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
-				(int) (settings.mountainRangeFont.getSize() * sizeMultiplyer));
+				(int) (settings.mountainRangeFont.getSize() * sizeMultiplier));
 		citiesAndOtherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
-				(int) (settings.otherMountainsFont.getSize() * sizeMultiplyer));
+				(int) (settings.otherMountainsFont.getSize() * sizeMultiplier));
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
-				(int) (settings.riverFont.getSize() * sizeMultiplyer));
+				(int) (settings.riverFont.getSize() * sizeMultiplier));
 
 	}
 
-	public void processBooks(Set<String> books)
-	{
-		List<String> placeNames = new ArrayList<>();
-		List<String> personNames = new ArrayList<>();
-		List<Pair<String>> nounAdjectivePairs = new ArrayList<>();
-		List<Pair<String>> nounVerbPairs = new ArrayList<>();
-		for (String book : books)
-		{
-			placeNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_place_names.txt"));
-			personNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_person_names.txt"));
-			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_verb_pairs.txt"));
-		}
-
-		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
-				probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
-		personNameGenerator = new NameGenerator(r, personNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
-				probabilityOfKeepingNameLength2, probabilityOfKeepingNameLength3);
-
-		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
-	}
-
-	private List<Pair<String>> readStringPairs(String filename)
-	{
-		List<Pair<String>> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
-		{
-			int lineNum = 0;
-			for (String line; (line = br.readLine()) != null;)
-			{
-				lineNum++;
-
-				// Remove white space lines.
-				if (!line.trim().isEmpty())
-				{
-					String[] parts = line.split("\t");
-					if (parts.length != 2)
-					{
-						Logger.println("Warning: No string pair found in " + filename + " at line " + lineNum + ".");
-						continue;
-					}
-					result.add(new Pair<>(parts[0], parts[1]));
-				}
-			}
-		}
-		catch (FileNotFoundException e)
-		{
-			throw new RuntimeException(e);
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
-
-		return result;
-	}
-
-	private List<String> readNameList(String filename)
-	{
-		List<String> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
-		{
-			for (String line; (line = br.readLine()) != null;)
-			{
-				// Remove white space lines.
-				if (!line.trim().isEmpty())
-				{
-					result.add(line);
-				}
-			}
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Unable to read names from the file " + filename, e);
-		}
-
-		return result;
-	}
 
 	public synchronized void drawTextFromEdits(BufferedImage map, BufferedImage landAndOceanBackground, WorldGraph graph,
 			Rectangle drawBounds)
@@ -234,8 +141,8 @@ public class TextDrawer
 		this.landAndOceanBackground = null;
 	}
 
-	public void generateText(WorldGraph graph, BufferedImage map, BufferedImage landAndOceanBackground, List<Set<Center>> mountainGroups,
-			List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes)
+	public void generateText(WorldGraph graph, BufferedImage map, NameCreator nameCreator, BufferedImage landAndOceanBackground,
+			List<Set<Center>> mountainGroups, List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
 
@@ -246,13 +153,13 @@ public class TextDrawer
 			mountainGroups = new ArrayList<>(0);
 		}
 
-		generateText(map, graph, mountainGroups, cityDrawTasks, lakes);
+		generateText(map, graph, nameCreator, mountainGroups, cityDrawTasks, lakes);
 
 		this.landAndOceanBackground = null;
 	}
 
-	private void generateText(BufferedImage map, WorldGraph graph, List<Set<Center>> mountainGroups, List<IconDrawTask> cityDrawTasks,
-			List<Set<Center>> lakes)
+	private void generateText(BufferedImage map, WorldGraph graph, NameCreator nameCreator, List<Set<Center>> mountainGroups,
+			List<IconDrawTask> cityDrawTasks, List<Set<Center>> lakes)
 	{
 		// First, generate text without drawing it. I originally drew text as I generated it, but it led to weird conditions where
 		// the generator placed text, and then the editor moves it slightly when it drew again. To fix this, I draw after generating
@@ -270,14 +177,15 @@ public class TextDrawer
 			Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
 			g.setColor(settings.textColor);
 
-			addTitle(map, graph, g);
+			addTitle(map, graph, nameCreator, g);
 
 			setFontForTextType(g, TextType.City);
 			for (IconDrawTask city : cityDrawTasks)
 			{
 				Set<Point> cityLoc = new HashSet<>(1);
 				cityLoc.add(city.centerLoc);
-				String cityName = generateNameOfType(TextType.City, sampleCityTypesForCityFileName(city.fileName), true);
+				String cityName = nameCreator.generateNameOfType(TextType.City, nameCreator.sampleCityTypesForCityFileName(city.fileName),
+						true);
 				double riseOffset = city.scaledHeight / 2 + (cityYNameOffset * settings.resolution);
 				drawNameRotated(map, g, graph, cityName, cityLoc, riseOffset, true, TextType.City);
 			}
@@ -289,7 +197,7 @@ public class TextDrawer
 				String name;
 				try
 				{
-					name = generateNameOfType(TextType.Region, null, true);
+					name = nameCreator.generateNameOfType(TextType.Region, null, true);
 				}
 				catch (NotEnoughNamesException ex)
 				{
@@ -304,8 +212,8 @@ public class TextDrawer
 				{
 					setFontForTextType(g, TextType.Mountain_range);
 					Set<Point> locations = extractLocationsFromCenters(mountainGroup);
-					drawNameRotated(map, g, graph, generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0, true,
-							TextType.Mountain_range);
+					drawNameRotated(map, g, graph, nameCreator.generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0,
+							true, TextType.Mountain_range);
 				}
 				else
 				{
@@ -315,8 +223,9 @@ public class TextDrawer
 						if (mountainGroup.size() == 2)
 						{
 							Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
-							MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true),
-									location, 0.0, TextType.Other_mountains);
+							MapText text = createMapText(
+									nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location, 0.0,
+									TextType.Other_mountains);
 							if (drawNameRotated(map, g, graph, twoMountainsYOffset * settings.resolution, true, text, false, null))
 							{
 								mapTexts.add(text);
@@ -324,7 +233,8 @@ public class TextDrawer
 						}
 						else
 						{
-							drawNameRotated(map, g, graph, generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
+							drawNameRotated(map, g, graph,
+									nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
 									extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true,
 									TextType.Other_mountains);
 						}
@@ -332,8 +242,9 @@ public class TextDrawer
 					else
 					{
 						Point location = findCentroid(extractLocationsFromCenters(mountainGroup));
-						MapText text = createMapText(generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location,
-								0.0, TextType.Other_mountains);
+						MapText text = createMapText(
+								nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0,
+								TextType.Other_mountains);
 						if (drawNameRotated(map, g, graph, singleMountainYOffset * settings.resolution, true, text, false, null))
 						{
 							mapTexts.add(text);
@@ -345,7 +256,7 @@ public class TextDrawer
 			setFontForTextType(g, TextType.River);
 			for (Set<Center> lake : lakes)
 			{
-				String name = generateNameOfType(TextType.Lake, null, true);
+				String name = nameCreator.generateNameOfType(TextType.Lake, null, true);
 				Set<Point> locations = extractLocationsFromCenters(lake);
 				drawNameRotated(map, g, graph, name, locations, 0.0, true, TextType.Lake);
 			}
@@ -358,7 +269,7 @@ public class TextDrawer
 					RiverType riverType = river.getWidth() >= largeRiverWidth ? RiverType.Large : RiverType.Small;
 
 					Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
-					drawNameRotated(map, g, graph, generateNameOfType(TextType.River, riverType, true), locations,
+					drawNameRotated(map, g, graph, nameCreator.generateNameOfType(TextType.River, riverType, true), locations,
 							riverNameRiseHeight * settings.resolution, true, TextType.River);
 				}
 
@@ -373,45 +284,6 @@ public class TextDrawer
 
 		// Now actually draw the text (if settings.drawText is true).
 		drawText(map, graph, mapTexts, null);
-	}
-
-	public static List<CityType> findCityTypeFromCityFileName(String cityFileNameNoExtension)
-	{
-		List<CityType> result = new ArrayList<>();
-		Set<String> words = new HashSet<String>(Arrays.asList(cityFileNameNoExtension.toLowerCase().split(" |_")));
-		if (words.contains("fort") || words.contains("castle") || words.contains("keep") || words.contains("citadel")
-				|| words.contains("walled"))
-		{
-			result.add(CityType.Fortification);
-		}
-		else
-		{
-			if (words.contains("city") || words.contains("buildings"))
-			{
-				result.add(CityType.City);
-			}
-			if (words.contains("town") || words.contains("village") || words.contains("houses"))
-			{
-				result.add(CityType.Town);
-			}
-			if (words.contains("farm") || words.contains("homestead") || words.contains("building") || words.contains("house"))
-			{
-				result.add(CityType.Homestead);
-			}
-		}
-
-		return result;
-	}
-
-	private CityType sampleCityTypesForCityFileName(String cityFileNameNoExtension)
-	{
-		List<CityType> types = findCityTypeFromCityFileName(cityFileNameNoExtension);
-		if (types.isEmpty())
-		{
-			return ProbabilityHelper.sampleEnumUniform(r, CityType.class);
-		}
-
-		return ProbabilityHelper.sampleUniform(r, types);
 	}
 
 	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, boolean onlyOneCallPerText,
@@ -638,360 +510,7 @@ public class TextDrawer
 		}
 	}
 
-	/**
-	 * Generates a name of the specified type. This is for when the user adds new text to the map. It is not used when the map text is first
-	 * generated.
-	 * 
-	 */
-	public String generateNameOfTypeForTextEditor(TextType type)
-	{
-		nameCompiler.setSeed(System.currentTimeMillis());
-		r.setSeed(System.currentTimeMillis());
-
-		Object subType = null;
-
-		if (type.equals(TextType.Title))
-		{
-			subType = ProbabilityHelper.sampleCategorical(r, ProbabilityHelper.createUniformDistributionOverEnumValues(TitleType.values()));
-		}
-		else if (type.equals(TextType.Other_mountains))
-		{
-			subType = ProbabilityHelper.sampleCategorical(r,
-					ProbabilityHelper.createUniformDistributionOverEnumValues(OtherMountainsType.values()));
-		}
-		else if (type.equals(TextType.River))
-		{
-			subType = ProbabilityHelper.sampleCategorical(r, ProbabilityHelper.createUniformDistributionOverEnumValues(RiverType.values()));
-		}
-		else if (type.equals(TextType.City))
-		{
-			// In the editor you add city icons in a different tool than city
-			// text, so we have no way of knowing what icon, if any, this city
-			// name is for.
-			subType = ProbabilityHelper.sampleEnumUniform(r, CityType.class);
-		}
-
-		try
-		{
-			return generateNameOfType(type, subType, false);
-		}
-		catch (Exception e)
-		{
-			// This can happen if the selected books don't have enough names.
-			return "name";
-		}
-	}
-
-	/**
-	 * Generate a name of a specified type.
-	 * 
-	 * @param type
-	 *            The type of name
-	 * @param subType
-	 *            A sub-type specific to the type specified. null means default type.
-	 * @param requireUnique
-	 *            Whether generated names must be never seen in the extracted book names nor previously generated. If unique name generating
-	 *            fails, an exception will be thrown.
-	 */
-	private String generateNameOfType(TextType type, Object subType, boolean requireUnique)
-	{
-		if (type.equals(TextType.Title))
-		{
-			TitleType titleType = subType == null ? TitleType.Decorated : (TitleType) subType;
-
-			double probabilityOfPersonName = 0.3;
-			switch (titleType)
-			{
-			case Decorated:
-				if (r.nextDouble() < probabilityOfPersonName)
-				{
-					return generatePersonName("The Land of %s", requireUnique);
-				}
-				else
-				{
-					return generatePlaceName("The Land of %s", requireUnique);
-				}
-			case NameOnly:
-				return generatePlaceName("%s", requireUnique);
-			default:
-				throw new IllegalArgumentException("Unknown title type: " + titleType);
-			}
-		}
-		if (type.equals(TextType.Region))
-		{
-			double probabilityOfPersonName = 0.2;
-			if (r.nextDouble() < probabilityOfPersonName)
-			{
-				String format = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.2, "Kingdom of %s"), new Tuple2<>(0.04, "Empire of %s")));
-				return generatePersonName(format, requireUnique);
-			}
-			else
-			{
-				String format = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.1, "Kingdom of %s"), new Tuple2<>(0.02, "Empire of %s"), new Tuple2<>(0.85, "%s")));
-				return generatePlaceName(format, requireUnique);
-			}
-		}
-		else if (type.equals(TextType.Mountain_range))
-		{
-			double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.7;
-			if (r.nextDouble() < probabilityOfCompiledName)
-			{
-				return compileName("%s Range", requireUnique);
-			}
-			else
-			{
-				return generatePlaceName("%s Range", requireUnique);
-			}
-		}
-		else if (type.equals(TextType.Other_mountains))
-		{
-			OtherMountainsType mountainType = subType == null ? OtherMountainsType.Mountains : (OtherMountainsType) subType;
-			String format = getOtherMountainNameFormat(mountainType);
-			double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
-			if (r.nextDouble() < probabilityOfCompiledName)
-			{
-				return compileName(format, requireUnique);
-			}
-			else
-			{
-				double probabilityOfPersonName = 0.4;
-				if (r.nextDouble() < probabilityOfPersonName)
-				{
-					// Person name
-					// Make the name possessive.
-					format = format.replace("%s", "%s's");
-					return generatePersonName(format, requireUnique);
-				}
-				else
-				{
-					return generatePlaceName(format, requireUnique);
-				}
-			}
-		}
-		else if (type.equals(TextType.City))
-		{
-			CityType cityType = (CityType) subType;
-			String structureName;
-			if (cityType.equals(CityType.Fortification))
-			{
-				structureName = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.2, "Castle"), new Tuple2<>(0.2, "Fort"),
-						new Tuple2<>(0.2, "Fortress"), new Tuple2<>(0.2, "Keep"), new Tuple2<>(0.2, "Citadel")));
-			}
-			else if (cityType.equals(CityType.City))
-			{
-				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.75, "City"), new Tuple2<>(0.25, "Town")));
-			}
-			else if (cityType.equals(CityType.Town))
-			{
-				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.2, "City"), new Tuple2<>(0.4, "Village"), new Tuple2<>(0.4, "Town")));
-			}
-			else if (cityType.equals(CityType.Homestead))
-			{
-				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.5, "Farm"), new Tuple2<>(0.5, "Village")));
-			}
-			else
-			{
-				throw new RuntimeException("Unknown city type: " + cityType);
-			}
-
-			double probabilityOfPersonName = 0.5;
-			if (r.nextDouble() < probabilityOfPersonName)
-			{
-				String format = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.1, structureName + " of %s"), new Tuple2<>(0.04, "%s's " + structureName),
-								new Tuple2<>(0.04, structureName + " of %s"), new Tuple2<>(0.04, structureName + " of %s"),
-								new Tuple2<>(0.04, "%s's " + structureName), new Tuple2<>(0.04, "%s's " + structureName)));
-				return generatePersonName(format, requireUnique);
-			}
-			else
-			{
-				String format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.2, structureName + " of %s"),
-						new Tuple2<>(0.2, "%s " + structureName), new Tuple2<>(0.02, "%s " + structureName), new Tuple2<>(0.3, "%s")));
-				return generatePlaceName(format, requireUnique);
-			}
-		}
-		else if (type.equals(TextType.River))
-		{
-			RiverType riverType = subType == null ? RiverType.Large : (RiverType) subType;
-			String format = getRiverNameFormat(riverType);
-			double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
-			if (r.nextDouble() < probabilityOfCompiledName)
-			{
-				return compileName(format, requireUnique);
-			}
-			else
-			{
-				double probabilityOfPersonName = 0.4;
-				if (r.nextDouble() < probabilityOfPersonName)
-				{
-					// Person name
-					// Make the name possessive.
-					format = format.replace("%s", "%s's");
-					return generatePersonName(format, requireUnique);
-				}
-				else
-				{
-					return generatePlaceName(format, requireUnique);
-				}
-			}
-		}
-		else if (type.equals(TextType.Lake))
-		{
-			final String nameBeforeLakeFormat = "%s Lake";
-			String format = ProbabilityHelper.sampleCategorical(r,
-					Arrays.asList(new Tuple2<>(0.6, nameBeforeLakeFormat), new Tuple2<>(0.4, "Lake %s")));
-
-			if (format.equals(nameBeforeLakeFormat))
-			{
-				double probabilityOfCompiledName = nameCompiler.isEmpty() ? 0.0 : 0.5;
-				if (r.nextDouble() < probabilityOfCompiledName)
-				{
-					return compileName(format, requireUnique);
-				}
-				else
-				{
-					double probabilityOfPersonName = 0.5;
-					if (r.nextDouble() < probabilityOfPersonName)
-					{
-						// Person name
-						// Make the name possessive.
-						format = format.replace("%s", "%s's");
-						return generatePersonName(format, requireUnique);
-					}
-					else
-					{
-						return generatePlaceName(format, requireUnique);
-					}
-				}
-			}
-			else
-			{
-				return generatePlaceName(format, requireUnique);
-			}
-		}
-		else
-		{
-			throw new UnsupportedOperationException("Unknown text type: " + type);
-		}
-	}
-
-	private String getOtherMountainNameFormat(OtherMountainsType mountainType)
-	{
-		switch (mountainType)
-		{
-		case Mountains:
-			return "%s Mountains";
-		case Peak:
-			return "%s Peak";
-		case Peaks:
-			return "%s Peaks";
-		default:
-			throw new RuntimeException("Unknown mountain group type: " + mountainType);
-		}
-
-	}
-
-	private String getRiverNameFormat(RiverType riverType)
-	{
-		String format;
-		switch (riverType)
-		{
-		case Large:
-			format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Wash"), new Tuple2<>(0.8, "%s River")));
-			break;
-		case Small:
-			format = ProbabilityHelper.sampleCategorical(r, Arrays.asList(new Tuple2<>(0.1, "%s Bayou"), new Tuple2<>(0.2, "%s Creek"),
-					new Tuple2<>(0.2, "%s Brook"), new Tuple2<>(0.5, "%s Stream")));
-			break;
-		default:
-			throw new RuntimeException("Unknown river type: " + riverType);
-		}
-
-		return format;
-	}
-
-	private enum OtherMountainsType
-	{
-		Peaks, Mountains, Peak
-	}
-
-	private enum RiverType
-	{
-		Small, Large
-	}
-
-	private enum TitleType
-	{
-		NameOnly, Decorated
-	}
-
-	public String generatePlaceName(String format, boolean requireUnique)
-	{
-		return generatePlaceName(format, requireUnique, "");
-	}
-
-	public String generatePlaceName(String format, boolean requireUnique, String requiredPrefix)
-	{
-		if (placeNameGenerator.isEmpty() && !personNameGenerator.isEmpty())
-		{
-			// Switch to person names
-			return generatePersonName(format, requireUnique, requiredPrefix);
-		}
-		Function0<String> nameCreator = () -> placeNameGenerator.generateName(requiredPrefix);
-		return innerCreateUniqueName(format, requireUnique, nameCreator);
-	}
-
-	public String generatePersonName(String format, boolean requireUnique)
-	{
-		return generatePersonName(format, requireUnique, "");
-	}
-
-	public String generatePersonName(String format, boolean requireUnique, String requiredPrefix)
-	{
-		if (personNameGenerator.isEmpty() && !placeNameGenerator.isEmpty())
-		{
-			// Switch to place names
-			return generatePlaceName(format, requireUnique, requiredPrefix);
-		}
-		Function0<String> nameCreator = () -> personNameGenerator.generateName(requiredPrefix);
-		return innerCreateUniqueName(format, requireUnique, nameCreator);
-	}
-
-	private String compileName(String format, boolean requireUnique)
-	{
-		Function0<String> nameCreator = () -> nameCompiler.compileName();
-		return innerCreateUniqueName(format, requireUnique, nameCreator);
-	}
-
-	private String innerCreateUniqueName(String format, boolean requireUnique, Function0<String> nameCreator)
-	{
-		final int maxRetries = 20;
-
-		if (!requireUnique)
-		{
-			return String.format(format, nameCreator.apply());
-		}
-
-		for (@SuppressWarnings("unused")
-		int retry : new Range(maxRetries))
-		{
-			String name = String.format(format, nameCreator.apply());
-			if (!namesGenerated.contains(name))
-			{
-				namesGenerated.add(name);
-				return name;
-			}
-		}
-		throw new NotEnoughNamesException();
-
-	}
-
-	private void addTitle(BufferedImage map, WorldGraph graph, Graphics2D g)
+	private void addTitle(BufferedImage map, WorldGraph graph, NameCreator nameCreator, Graphics2D g)
 	{
 		setFontForTextType(g, TextType.Title);
 
@@ -1023,7 +542,7 @@ public class TextDrawer
 		{
 			try
 			{
-				if (drawNameFitIntoCenters(map, g, generateNameOfType(TextType.Title, TitleType.Decorated, true),
+				if (drawNameFitIntoCenters(map, g, nameCreator.generateNameOfType(TextType.Title, TitleType.Decorated, true),
 						extractLocationsFromCenters(plateAndWidth.getFirst().centers), graph, settings.drawBoldBackground, true,
 						TextType.Title))
 				{
@@ -1031,7 +550,7 @@ public class TextDrawer
 				}
 
 				// The title didn't fit. Try drawing it with just a name.
-				if (drawNameFitIntoCenters(map, g, generateNameOfType(TextType.Title, TitleType.NameOnly, true),
+				if (drawNameFitIntoCenters(map, g, nameCreator.generateNameOfType(TextType.Title, TitleType.NameOnly, true),
 						extractLocationsFromCenters(plateAndWidth.getFirst().centers), graph, settings.drawBoldBackground, true,
 						TextType.Title))
 				{
@@ -1883,84 +1402,21 @@ public class TextDrawer
 		return !copy.isEmpty();
 	}
 
-	/**
-	 * Creates a new MapText, taking settings.resolution into account.
-	 */
 	private MapText createMapText(String text, Point location, double angle, TextType type)
 	{
 		// Divide by settings.resolution so that the location does not depend on
 		// the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / settings.resolution, location.y / settings.resolution), angle, type);
+		return createMapText(text, location, angle, type, settings.resolution);
 	}
-
+	
 	/**
-	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
+	 * Creates a new MapText, taking settings.resolution into account.
 	 */
-	public MapText findTextPicked(nortantis.graph.geom.Point point)
+	public static MapText createMapText(String text, Point location, double angle, TextType type, double resolution)
 	{
-		java.awt.Point awtPoint = point.toAwtPoint();
-		for (MapText mp : mapTexts)
-		{
-			if (mp.value.length() > 0)
-			{
-				if (mp.line1Area != null)
-				{
-					if (mp.line1Area.contains(awtPoint))
-						return mp;
-				}
-
-				if (mp.line2Area != null)
-				{
-					if (mp.line2Area.contains(awtPoint))
-						return mp;
-				}
-			}
-		}
-		return null;
-	}
-
-	public List<MapText> findTextSelectedByBrush(nortantis.graph.geom.Point point, double brushDiameter)
-	{
-		Area brush = new Area(
-				new Ellipse2D.Double(point.x - brushDiameter / 2.0, point.y - brushDiameter / 2.0, brushDiameter, brushDiameter));
-		List<MapText> result = new ArrayList<>();
-
-		for (MapText mp : mapTexts)
-		{
-			if (mp.value.length() > 0)
-			{
-				if (doAreasIntersect(brush, mp.line1Area) || doAreasIntersect(brush, mp.line2Area))
-				{
-					result.add(mp);
-				}
-			}
-		}
-		return result;
-	}
-
-	public void setSettingsAndMapTexts(MapSettings mapSettings)
-	{
-		this.settings = mapSettings;
-		if (mapSettings != null && mapSettings.edits != null && mapSettings.edits.text != null)
-		{
-			// Make sure the pointer to mapSettings.edits.text matches between
-			// the one in this TextDrawer. They can be different because
-			// undo/redo deep copy the map texts.
-			mapTexts = mapSettings.edits.text;
-		}
-	}
-
-	/**
-	 * Adds text that the user is manually creating.
-	 */
-	public MapText createUserAddedText(TextType type, Point location)
-	{
-		String name = generateNameOfTypeForTextEditor(type);
-		// Getting the id must be done after calling generateNameOfType because
-		// said method increments textCounter
-		// before generating the name.
-		MapText mapText = createMapText(name, location, 0.0, type);
-		return mapText;
+		// Divide by settings.resolution so that the location does not depend on
+		// the resolution we're drawing at.
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

@@ -324,9 +324,9 @@ public class IconDrawer
 
 	public static String chooseNewCityIconName(Set<String> cityNamesToChooseFrom, String oldIconName)
 	{
-		List<CityType> oldTypes = TextDrawer.findCityTypeFromCityFileName(oldIconName);
+		List<CityType> oldTypes = NameCreator.findCityTypeFromCityFileName(oldIconName);
 		List<String> compatibleCities = cityNamesToChooseFrom.stream()
-				.filter(name -> TextDrawer.findCityTypeFromCityFileName(name).stream().anyMatch(type -> oldTypes.contains(type)))
+				.filter(name -> NameCreator.findCityTypeFromCityFileName(name).stream().anyMatch(type -> oldTypes.contains(type)))
 				.collect(Collectors.toList());
 		if (compatibleCities.isEmpty())
 		{

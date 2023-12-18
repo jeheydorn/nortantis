@@ -5,6 +5,7 @@ import java.awt.image.BufferedImage;
 
 import nortantis.Background;
 import nortantis.IconDrawer;
+import nortantis.NameCreator;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 
@@ -28,7 +29,7 @@ public class MapParts
 	/**
 	 * Used only as an output during map creation.
 	 */
-	public TextDrawer textDrawer;
+	public NameCreator nameCreator;
 
 	/*
 	 * Input and output.
