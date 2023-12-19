@@ -203,23 +203,13 @@ public class IconsTool extends EditorTool
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
 
-
 		{
 			densitySlider = new JSlider(1, 50);
 			final int initialValue = 7;
 			densitySlider.setValue(initialValue);
 			SwingHelper.setSliderWidthForSidePanel(densitySlider);
-			JLabel densityDisplay = new JLabel(initialValue + "");
-			densityDisplay.setPreferredSize(new Dimension(13, densityDisplay.getPreferredSize().height));
-			densitySlider.addChangeListener(new ChangeListener()
-			{
-				@Override
-				public void stateChanged(ChangeEvent e)
-				{
-					densityDisplay.setText(densitySlider.getValue() + "");
-				}
-			});
-			densityHider = organizer.addLabelAndComponentsHorizontal("Density:", "", Arrays.asList(densitySlider, densityDisplay));
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(densitySlider);
+			densityHider = sliderWithDisplay.addToOrganizer(organizer, "Density:", "");
 		}
 
 

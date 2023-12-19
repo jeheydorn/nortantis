@@ -60,7 +60,8 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton fadingConcentricWavesButton;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
-	private JSlider coastlineShadingTransparencySlider;
+	private JSlider coastShadingTransparencySlider;
+	private RowHider coastShadingTransparencyHider;
 	private JPanel oceanEffectsColorDisplay;
 	private JPanel riverColorDisplay;
 	private JCheckBox enableTextCheckBox;
@@ -545,7 +546,11 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () -> handleTerrainChange());
+				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () -> 
+				{
+					updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
+					handleTerrainChange();
+				});
 			}
 		});
 		String coastShadingColorLabelText = "Coast shading color:";
@@ -557,6 +562,21 @@ public class ThemePanel extends JTabbedPane
 				+ "'.<html>";
 		coastShadingColorDisabledMessageHider = organizer.addLabelAndComponent(coastShadingColorLabelText, "", new JLabel(message));
 		coastShadingColorDisabledMessageHider.setVisible(false);
+
+
+		{
+			coastShadingTransparencySlider = new JSlider(0, 100);
+			final int initialValue = 0;
+			coastShadingTransparencySlider.setValue(initialValue);
+			SwingHelper.setSliderWidthForSidePanel(coastShadingTransparencySlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastShadingTransparencySlider, () ->
+			{
+				updateCoastShadingColorDisplayFromCoastShadingTransparencySlider();
+				handleTerrainChange();
+			});
+			coastShadingTransparencyHider = sliderWithDisplay.addToOrganizer(organizer, "Coast shading transparency:",
+					"Transparency of shading of land near coastlines");
+		}
 
 
 		coastShadingSlider = new JSlider();
@@ -668,6 +688,18 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
+	}
+	
+	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
+	{
+		Color background = coastShadingColorDisplay.getBackground();
+		int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
+		coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
+	}
+	
+	private void updateCoastShadingTransparencySliderFromCoastShadingColorDisplay()
+	{
+		coastShadingTransparencySlider.setValue((int)(((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
 	}
 
 	private Component createFontsPanel(MainWindow mainWindow)
@@ -975,6 +1007,7 @@ public class ThemePanel extends JTabbedPane
 
 		coastShadingColorHider.setVisible(!colorRegions);
 		coastShadingColorDisabledMessageHider.setVisible(colorRegions);
+		coastShadingTransparencyHider.setVisible(colorRegions);
 
 		landColorHider.setVisible(!colorRegions);
 	}
@@ -999,6 +1032,7 @@ public class ThemePanel extends JTabbedPane
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(settings.coastShadingColor);
+		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
 		coastlineColorDisplay.setBackground(settings.coastlineColor);
 		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
 		riverColorDisplay.setBackground(settings.riverColor);
