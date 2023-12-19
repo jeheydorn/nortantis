@@ -1080,8 +1080,7 @@ public abstract class VoronoiGraph
 		// 'Size multiplier', which is an old number used to determined at what scale to draw things.
 		// Now graphs are created at a constant size, so that isn't be necessary for new maps,
 		// but is still necessary for backwards compatibility with older maps.
-		// I don't know why 0.5 seems to work, but it fixes one of my unit tests.
-		final double scaleForBackwardsCompatibility = MapCreator.calcSizeMultipilerFromResolutionScale(0.5);
+		final double scaleForBackwardsCompatibility = MapCreator.calcSizeMultipilerFromResolutionScale(1.0);
 
 		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
 				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
