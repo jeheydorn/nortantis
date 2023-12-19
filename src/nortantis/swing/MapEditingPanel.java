@@ -452,7 +452,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private void drawRivers(Graphics g)
 	{
 		g.setColor(waterHighlightColor);
-		graph.drawRivers((Graphics2D) g, MapCreator.calcSizeMultiplier(graph.getWidth()), null, null);
+		graph.drawRivers((Graphics2D) g, null, null);
 	}
 
 	public void setZoom(double zoom)

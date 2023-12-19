@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.TreeMap;
 
@@ -175,7 +176,7 @@ public class NoisyEdges
 				{
 					curve.add(edge.v1.loc);
 				}
-				
+
 				curves.put(edge.index, curve);
 			}
 		}
@@ -226,7 +227,7 @@ public class NoisyEdges
 	 *            Edge to follow from
 	 * @return Edge to follow, or null if there is none.
 	 */
-	private Edge findEdgeToFollow(Corner corner, Edge edge)
+	public Edge findEdgeToFollow(Corner corner, Edge edge)
 	{
 		EdgeType type = getEdgeDrawType(edge);
 
@@ -255,13 +256,15 @@ public class NoisyEdges
 		}
 		else if (type.equals(EdgeType.River))
 		{
-			for (Edge other : corner.protrudes)
+			// Follow the largest river other than the one we came from. That way small rivers branch off of large ones, instead of the other
+			// way round.
+			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> edge != other && getEdgeDrawType(other) == EdgeType.River)
+					.max((e1, e2) -> Integer.compare(e1.river, e2.river));
+			if (optional.isPresent())
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeType.River)
-				{
-					return other;
-				}
+				return optional.get();
 			}
+
 			return null;
 		}
 		else if (type.equals(EdgeType.FrayedBorder))
@@ -325,13 +328,13 @@ public class NoisyEdges
 			{
 				return EdgeType.Coast;
 			}
+			if (edge.isRiver() && !edge.isOceanOrLakeOrShore())
+			{
+				return EdgeType.River;
+			}
 			if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
 			{
 				return EdgeType.Region;
-			}
-			if (edge.river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn && !edge.isOceanOrLakeOrShore())
-			{
-				return EdgeType.River;
 			}
 		}
 

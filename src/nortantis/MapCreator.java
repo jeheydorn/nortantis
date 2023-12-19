@@ -292,7 +292,7 @@ public class MapCreator
 		}
 
 		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
-		drawRivers(settings, mapParts.graph, mapSnippet, sizeMultiplier, edgesToDraw, drawBounds);
+		drawRivers(settings, mapParts.graph, mapSnippet, edgesToDraw, drawBounds);
 
 		// Draw ocean
 		BufferedImage oceanTextureSnippet;
@@ -852,7 +852,7 @@ public class MapCreator
 
 		// Add rivers.
 		Logger.println("Adding rivers.");
-		drawRivers(settings, graph, map, sizeMultiplier, null, null);
+		drawRivers(settings, graph, map, null, null);
 
 		checkForCancel();
 
@@ -1592,13 +1592,12 @@ public class MapCreator
 			}
 	}
 
-	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, double sizeMultiplier,
+	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map,
 			Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
 		Graphics2D g = map.createGraphics();
 		g.setColor(settings.riverColor);
-		// Draw rivers thin.
-		graph.drawRivers(g, sizeMultiplier, edgesToDraw, drawBounds);
+		graph.drawRivers(g, edgesToDraw, drawBounds);
 	}
 
 	public static Set<String> getAvailableBorderTypes(String imagesPath)

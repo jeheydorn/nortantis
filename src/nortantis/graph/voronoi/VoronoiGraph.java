@@ -462,7 +462,7 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Graphics2D g, double sizeMultiplyer, Collection<Edge> edgesToDraw, Rectangle drawBounds)
+	public void drawRivers(Graphics2D g, Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
 		if (edgesToDraw == null)
 		{
@@ -480,9 +480,23 @@ public abstract class VoronoiGraph
 		{
 			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
-				int width = Math.max(1, (int) (sizeMultiplyer / 2.0 + Math.sqrt(e.river * 0.1)));
-				g.setStroke(new BasicStroke(width));
-				drawPath(g, noisyEdges.getNoisyEdge(e.index));
+				float currentWidth = calcRiverStrokeWidth(e);
+				
+				Edge fromEdge = null;
+				if (e.v0 != null)
+				{
+					fromEdge = noisyEdges.findEdgeToFollow(e.v0, e);
+				}
+				float fromWidth = (fromEdge == null || !fromEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(fromEdge);
+
+				Edge toEdge = null;
+				if (e.v1 != null)
+				{
+					toEdge = noisyEdges.findEdgeToFollow(e.v1, e);
+				}
+				float toWidth = (toEdge == null || !toEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(toEdge);
+				
+				drawPathWithSmoothLineTransitions(g, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
 			}
 		}
 
@@ -491,7 +505,12 @@ public abstract class VoronoiGraph
 			g.setTransform(orig);
 		}
 	}
-
+	
+	private float calcRiverStrokeWidth(Edge e)
+	{
+		return Math.max(1, (int) (resolutionScale * Math.sqrt(e.river * 0.5)));
+	}
+	
 	protected void drawUsingTriangles(Graphics2D g, Center c, boolean drawElevation)
 	{
 		// Only used if Center c is on the edge of the graph. allows for
@@ -647,6 +666,72 @@ public abstract class VoronoiGraph
 
 	}
 
+	private void drawPathWithSmoothLineTransitions(Graphics2D g, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
+			float nextEdgeWidth)
+	{
+		if (path.size() < 2)
+		{
+			return;
+		}
+
+		float widthAtStart = (previousEdgeWidth + currentEdgeWidth) / 2f;
+		float widthAtEnd = (nextEdgeWidth + currentEdgeWidth) / 2f;
+		float previousWidth = widthAtStart;
+		List<Point> pathSoFar = new ArrayList<Point>();
+		pathSoFar.add(path.get(0));
+		
+		float pathLength = getPathLength(path);
+		float lengthSoFar = 0;
+		
+		for (int i = 1; i < path.size(); i++)
+		{
+			float width;
+			float distanceRatio = lengthSoFar / pathLength;
+			if (distanceRatio < 0.5f)
+			{
+				float ratio = distanceRatio * 2f;
+				width = (1f - ratio) * widthAtStart + ratio * currentEdgeWidth;
+			}
+			else
+			{
+				float ratio = distanceRatio - 0.5f;
+				width = (1f - ratio) * currentEdgeWidth + ratio * widthAtEnd;
+			}
+			
+			pathSoFar.add(path.get(i));
+			if (width != previousWidth)
+			{
+				g.setStroke(new BasicStroke(width));
+				drawPolyline(g, pathSoFar);
+				pathSoFar.add(path.get(i));
+			}			
+			
+			lengthSoFar += (float) path.get(i - 1).distanceTo(path.get(i));
+		}
+		
+		if (pathSoFar.size() > 1)
+		{
+			g.setStroke(new BasicStroke(widthAtEnd));
+			drawPolyline(g, pathSoFar);
+		}
+	}
+	
+	private float getPathLength(List<Point> path)
+	{
+		if (path.size() < 2)
+		{
+			return 0;
+		}
+		
+		float length = 0;
+		for (int i = 1; i < path.size(); i++)
+		{
+			length += (float) path.get(i-1).distanceTo(path.get(i));
+		}
+		
+		return length;
+	}
+
 	private void drawPath(Graphics2D g, List<Point> path)
 	{
 		for (int i = 1; i < path.size(); i++)
@@ -729,17 +814,20 @@ public abstract class VoronoiGraph
 			return;
 		}
 
+		List<Point> path = noisyEdges.getNoisyEdge(edge.index);
+		drawPolyline(g, path);
+	}
+	
+	private void drawPolyline(Graphics2D g, List<Point> line)
+	{
+		int[] xPoints = new int[line.size()];
+		int[] yPoints = new int[line.size()];
+		for (int i : new Range(line.size()))
 		{
-			List<Point> path = noisyEdges.getNoisyEdge(edge.index);
-			int[] xPoints = new int[path.size()];
-			int[] yPoints = new int[path.size()];
-			for (int i : new Range(path.size()))
-			{
-				xPoints[i] = (int) path.get(i).x;
-				yPoints[i] = (int) path.get(i).y;
-			}
-			g.drawPolyline(xPoints, yPoints, xPoints.length);
+			xPoints[i] = (int) line.get(i).x;
+			yPoints[i] = (int) line.get(i).y;
 		}
+		g.drawPolyline(xPoints, yPoints, xPoints.length);
 	}
 
 	/**
@@ -994,7 +1082,7 @@ public abstract class VoronoiGraph
 		// but is still necessary for backwards compatibility with older maps.
 		// I don't know why 0.5 seems to work, but it fixes one of my unit tests.
 		final double scaleForBackwardsCompatibility = MapCreator.calcSizeMultipilerFromResolutionScale(0.5);
-		
+
 		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
 				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);
 		Corner c = pointCornerMap.get(key);
