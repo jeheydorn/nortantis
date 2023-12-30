@@ -148,12 +148,6 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 
-
-		for (Center center : changed)
-		{
-			center.updateLocToCentroid();
-		}
-
 		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
 		// Note that in theory I should continue to reapply this loop as a fixed-point algorithm, stopping when it makes a pass were no centers
 		// were malformed. But in practice that doesn't seem to be necessary since it's unlikely that removing the smoothing on one
@@ -166,7 +160,6 @@ public class WorldGraph extends VoronoiGraph
 				{
 					corner.loc = corner.originalLoc;
 				}
-				center.updateLocToCentroid();
 			}
 		}
 		

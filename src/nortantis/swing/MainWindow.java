@@ -1389,30 +1389,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		setPlaceholderImage(new String[] { "Drawing map..." });
 
 		undoer.reset();
-		if (settings.edits != null && !settings.edits.isEmpty())
-		{
-			undoer.initialize(settings);
-			enableOrDisableFieldsThatRequireMap(true, settings);
-		}
-		else
-		{
-			// Disable almost all fields and don't re enable them until the map
-			// has drawn at least once.
-			// This is necessary because the undoer needs to be initialized with
-			// a version of the settings that has edits
-			// before it can start setting undo points, and if the map doesn't
-			// already have edits,
-			// such as if it's a new map or loaded from a file that didn't have
-			// edits, then the edits will be created when
-			// the first draw finishes.
-			enableOrDisableFieldsThatRequireMap(false, settings);
-		}
 
 		if (needsImagesRefresh)
 		{
 			handleImagesRefresh();
 		}
-		
+
+		// Note - this call needs to come after everything that calls into loadSettingsAndEditsIntoThemeAndToolsPanels because the text tool
+		// might enable fields when when loading settings, which will cause fields to be enabled before the map is ready.
+		enableOrDisableFieldsThatRequireMap(false, settings);
+
 		toolsPanel.resetZoomToDefault();
 		updater.createAndShowMapFull();
 	}
