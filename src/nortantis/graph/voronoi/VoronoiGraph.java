@@ -742,18 +742,18 @@ public abstract class VoronoiGraph
 
 	public void drawCoastline(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
+		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
 	}
 
 	public void drawCoastlineWithLakeShores(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
+		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
 	}
 
 	public void drawRegionBorders(Graphics2D g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
 			Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(g, Math.max(1, (int) strokeWidth), centersToDraw, drawBounds, edge ->
+		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge ->
 		{
 			if (ignoreRiverEdges && edge.isRiver())
 			{
@@ -765,7 +765,7 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	private void drawSpecifiedEdges(Graphics2D g, int strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
+	private void drawSpecifiedEdges(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
 			Function<Edge, Boolean> shouldDraw)
 	{
 		if (centersToDraw == null)
@@ -782,7 +782,7 @@ public abstract class VoronoiGraph
 
 		Set<Edge> drawn = new HashSet<>();
 
-		g.setStroke(new BasicStroke(strokeWidth));
+		g.setStroke(new BasicStroke((float) strokeWidth));
 
 		for (final Center p : centersToDraw)
 		{

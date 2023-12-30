@@ -313,7 +313,7 @@ public class MapCreator
 
 		// Draw coastlines.
 		{
-			Graphics2D g = mapSnippet.createGraphics();
+			Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(mapSnippet);
 			g.setColor(settings.coastlineColor);
 			mapParts.graph.drawCoastlineWithLakeShores(g, sizeMultiplier, centersToDraw, drawBounds);
 		}
@@ -912,7 +912,7 @@ public class MapCreator
 
 		// Draw coastlines.
 		{
-			Graphics2D g = map.createGraphics();
+			Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
 			g.setColor(settings.coastlineColor);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
@@ -994,8 +994,8 @@ public class MapCreator
 			}
 
 			float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-					* getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
-					* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+					* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
+					* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
@@ -1004,7 +1004,7 @@ public class MapCreator
 
 				BufferedImage coastlineAndLakeShoreMask = new BufferedImage(mapOrSnippet.getWidth(), mapOrSnippet.getHeight(),
 						BufferedImage.TYPE_BYTE_BINARY);
-				Graphics2D g = coastlineAndLakeShoreMask.createGraphics();
+				Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(coastlineAndLakeShoreMask);
 				g.setColor(Color.white);
 				graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
 
@@ -1097,8 +1097,8 @@ public class MapCreator
 				int maxPixelValue = ImageHelper.getMaxPixelValue(BufferedImage.TYPE_BYTE_GRAY);
 				final float scaleForDarkening = coastlineShadingScale;
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-						* getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanEffectsLevel, sizeMultiplier)
-						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanEffectsLevel, sizeMultiplier)
+						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
@@ -1116,7 +1116,7 @@ public class MapCreator
 				// This number just needs to be big enough that the waves are sufficiently thick.
 				final float scaleForDarkening = 20f;
 				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-						* calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
 				if (settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
 				{
@@ -1204,7 +1204,7 @@ public class MapCreator
 		return oceanEffects;
 	}
 
-	private static float getScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
+	private static float calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(int kernelSize, double sizeMultiplier)
 	{
 		int lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider = (int) (15 * sizeMultiplier);
 		return ImageHelper.getGuassianMode(lightnessBasedOnKernelSizesBeforeIAddedFixToMakeShadingNotGetLighterWhenItGotWider)
@@ -1231,7 +1231,7 @@ public class MapCreator
 	}
 
 
-	private static float calcMultiplyertoCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
+	private static float calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
 	{
 		if (targetStrokeWidth >= 1f)
 		{
@@ -1595,7 +1595,7 @@ public class MapCreator
 	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map,
 			Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
-		Graphics2D g = map.createGraphics();
+		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
 		g.setColor(settings.riverColor);
 		graph.drawRivers(g, edgesToDraw, drawBounds);
 	}
