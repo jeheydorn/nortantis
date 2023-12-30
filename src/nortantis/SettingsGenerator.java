@@ -40,8 +40,8 @@ public class SettingsGenerator
 	public static final int maxConcentricWaveCountInEditor = 3;
 	public static final int maxConcentricWaveCountToGenerate = 3;
 	public static final int minConcentricWaveCountToGenerate = 2;
-	public static final int defaultCoastShadingAlpha = 102;
-	public static final int defaultOceanShadingAlpha = 102;
+	public static final int defaultCoastShadingAlpha = 87;
+	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
 
 	public static MapSettings generate()

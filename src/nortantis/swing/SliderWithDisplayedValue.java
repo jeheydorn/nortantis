@@ -32,7 +32,10 @@ public class SliderWithDisplayedValue
 			public void stateChanged(ChangeEvent e)
 			{
 				valueDisplay.setText(slider.getValue() + "");
-				changeListener.run();
+				if (!slider.getValueIsAdjusting())
+				{
+					changeListener.run();
+				}	
 			}
 		});
 	}
