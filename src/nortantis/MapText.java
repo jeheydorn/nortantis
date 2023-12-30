@@ -40,7 +40,7 @@ public class MapText implements Serializable
 	public Point location;
 
 	/**
-	 * Holds the bounds of the text before rotation. This is not saved. Rather, it is populated by the editor when a map is first drawn.
+	 * Holds the bounds of the text before rotation. This is not saved. Rather, it is populated by the generator when a map is first drawn.
 	 * 
 	 * Unlike the location, the bounds does vary with the resolution.
 	 */
