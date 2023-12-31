@@ -148,7 +148,7 @@ public class UserPreferences
 		}
 		else if (OS.contains("NUX"))
 		{
-			return Paths.get(System.getProperty("user.home"), "Nortantis");
+			return Paths.get(System.getProperty("user.home"), ".Nortantis");
 		}
 		return Paths.get(System.getProperty("user.dir"));
 	}

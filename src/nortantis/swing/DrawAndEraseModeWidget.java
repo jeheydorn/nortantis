@@ -75,7 +75,7 @@ public class DrawAndEraseModeWidget
 		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
 		replaceModeButton.addActionListener(modeListener);
 		replaceModeButton.setMnemonic(KeyEvent.VK_R);
-		replaceModeButton.setPreferredSize(new Dimension(50, replaceModeButton.getPreferredSize().height));
+		replaceModeButton.setPreferredSize(new Dimension(65, replaceModeButton.getPreferredSize().height));
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
