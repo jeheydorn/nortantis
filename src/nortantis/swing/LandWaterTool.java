@@ -198,19 +198,9 @@ public class LandWaterTool extends EditorTool
 			final int initialValue = 1;
 			riverWidthSlider.setValue(initialValue);
 			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
-			JLabel riverWidthDisplay = new JLabel(initialValue + "");
-			riverWidthDisplay.setPreferredSize(new Dimension(13, riverWidthDisplay.getPreferredSize().height));
-			riverWidthSlider.addChangeListener(new ChangeListener()
-			{
-				@Override
-				public void stateChanged(ChangeEvent e)
-				{
-					riverWidthDisplay.setText(riverWidthSlider.getValue() + "");
-				}
-			});
-			riverOptionHider = organizer.addLabelAndComponentsHorizontal("Width:",
-					"River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.",
-					Arrays.asList(riverWidthSlider, riverWidthDisplay));
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(riverWidthSlider);
+			riverOptionHider = sliderWithDisplay.addToOrganizer(organizer, "Width:",
+					"River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.");
 		}
 
 		// Color chooser
