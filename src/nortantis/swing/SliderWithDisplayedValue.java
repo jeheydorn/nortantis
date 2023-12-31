@@ -25,7 +25,7 @@ public class SliderWithDisplayedValue
 		this.changeListener = changeListener;
 		
 		valueDisplay = new JLabel(slider.getValue() + "");
-		valueDisplay.setPreferredSize(new Dimension(20, valueDisplay.getPreferredSize().height));
+		valueDisplay.setPreferredSize(new Dimension(24, valueDisplay.getPreferredSize().height));
 		slider.addChangeListener(new ChangeListener()
 		{
 			@Override
