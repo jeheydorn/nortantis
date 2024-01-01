@@ -37,7 +37,7 @@ public class SettingsGenerator
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
-	public static final int maxConcentricWaveCountInEditor = 3;
+	public static final int maxConcentricWaveCountInEditor = 5;
 	public static final int maxConcentricWaveCountToGenerate = 3;
 	public static final int minConcentricWaveCountToGenerate = 2;
 	public static final int defaultCoastShadingAlpha = 87;
