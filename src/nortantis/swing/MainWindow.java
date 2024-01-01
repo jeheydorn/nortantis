@@ -119,6 +119,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem nameGeneratorMenuItem;
 	protected String customImagesPath;
 	private JMenu fileMenu;
+	private JMenuItem newMapWithSameThemeMenuItem;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -153,6 +154,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
 	{
+		newMapWithSameThemeMenuItem.setEnabled(enable);
 		saveMenuItem.setEnabled(enable);
 		saveAsMenItem.setEnabled(enable);
 		exportMapAsImageMenuItem.setEnabled(enable);
@@ -241,9 +243,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	}
 
-	private void launchNewSettingsDialog()
+	private void launchNewSettingsDialog(boolean useExistingTheme)
 	{
-		NewSettingsDialog dialog = new NewSettingsDialog(this);
+		MapSettings settingsToKeepThemeFrom = null;
+		if (useExistingTheme)
+		{
+			settingsToKeepThemeFrom = getSettingsFromGUI(false);
+			settingsToKeepThemeFrom.edits = new MapEdits();
+		}
+		NewSettingsDialog dialog = new NewSettingsDialog(this, settingsToKeepThemeFrom);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
@@ -513,7 +521,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				boolean cancelPressed = checkForUnsavedChanges();
 				if (!cancelPressed)
 				{
-					launchNewSettingsDialog();
+					launchNewSettingsDialog(false);
+				}
+			}
+		});
+
+		newMapWithSameThemeMenuItem = new JMenuItem("New Map With Same Theme");
+		fileMenu.add(newMapWithSameThemeMenuItem);
+		newMapWithSameThemeMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent arg0)
+			{
+				boolean cancelPressed = checkForUnsavedChanges();
+				if (!cancelPressed)
+				{
+					launchNewSettingsDialog(true);
 				}
 			}
 		});

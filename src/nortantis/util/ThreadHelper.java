@@ -9,8 +9,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
-import nortantis.CancelledException;
-
 public class ThreadHelper
 {
 	private static ThreadHelper instance;

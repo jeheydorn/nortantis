@@ -732,14 +732,6 @@ public abstract class VoronoiGraph
 		return length;
 	}
 
-	private void drawPath(Graphics2D g, List<Point> path)
-	{
-		for (int i = 1; i < path.size(); i++)
-		{
-			g.drawLine((int) path.get(i - 1).x, (int) path.get(i - 1).y, (int) path.get(i).x, (int) path.get(i).y);
-		}
-	}
-
 	public void drawCoastline(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());

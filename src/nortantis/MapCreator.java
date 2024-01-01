@@ -1620,7 +1620,6 @@ public class MapCreator
 		r = new Random(settings.randomSeed);
 		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.heightmapResolution,
 				settings.generatedHeight * settings.heightmapResolution);
-		double sizeMultiplier = calcSizeMultiplier(mapBounds.getWidth());
 		WorldGraph graph = createGraph(settings, mapBounds.getWidth(), mapBounds.getHeight(), r, settings.resolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}

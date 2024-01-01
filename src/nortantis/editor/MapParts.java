@@ -6,7 +6,6 @@ import java.awt.image.BufferedImage;
 import nortantis.Background;
 import nortantis.IconDrawer;
 import nortantis.NameCreator;
-import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 
 /**

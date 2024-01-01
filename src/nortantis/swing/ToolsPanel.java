@@ -24,7 +24,6 @@ import javax.swing.border.TitledBorder;
 
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
-import nortantis.editor.UserPreferences;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.Logger;
 

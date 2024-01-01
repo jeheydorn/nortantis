@@ -12,9 +12,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import nortantis.OtherMountainsType;
-import nortantis.RiverType;
-import nortantis.TitleType;
 import nortantis.graph.geom.Point;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;

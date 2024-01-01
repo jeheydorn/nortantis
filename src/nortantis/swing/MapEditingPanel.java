@@ -16,7 +16,6 @@ import java.util.Set;
 
 import org.imgscalr.Scalr.Method;
 
-import nortantis.MapCreator;
 import nortantis.MapText;
 import nortantis.WorldGraph;
 import nortantis.graph.geom.Point;

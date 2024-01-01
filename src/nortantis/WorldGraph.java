@@ -2,8 +2,6 @@ package nortantis;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Polygon;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,14 +20,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.editor.CenterEdit;
 import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 import nortantis.graph.voronoi.Center;

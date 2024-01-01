@@ -1,11 +1,9 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import nortantis.Stopwatch;
 import nortantis.graph.geom.Point;
 import nortantis.graph.geom.Rectangle;
 

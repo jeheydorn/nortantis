@@ -20,10 +20,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import nortantis.MapSettings;
+import nortantis.NameCreator;
 import nortantis.NotEnoughNamesException;
 import nortantis.editor.NameType;
 import nortantis.util.Range;
-import nortantis.NameCreator;
 
 @SuppressWarnings("serial")
 public class NameGeneratorDialog extends JDialog

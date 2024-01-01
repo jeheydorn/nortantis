@@ -60,14 +60,22 @@ public class NewSettingsDialog extends JDialog
 	MainWindow mainWindow;
 	private JTextField pathDisplay;
 
-	public NewSettingsDialog(MainWindow mainWindow)
+	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
 		super(mainWindow, "Create New Map", Dialog.ModalityType.APPLICATION_MODAL);
 		this.mainWindow = mainWindow;
 
 		createGUI(mainWindow);
 
-		settings = SettingsGenerator.generate();
+		if (settingsToKeepThemeFrom == null)
+		{
+			settings = SettingsGenerator.generate();
+		}
+		else
+		{
+			settings = settingsToKeepThemeFrom.deepCopy();
+			randomizeLand();
+		}
 		loadSettingsIntoGUI(settings);
 
 		updater.setEnabled(true);
