@@ -1,5 +1,6 @@
 package nortantis;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -375,23 +376,25 @@ public class MapCreator
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
 
-		// Debug code
-		// Graphics2D g = fullSizedMap.createGraphics();
-		// int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-		// g.setStroke(new BasicStroke(4));
-		// g.setColor(Color.red);
-		// {
-		// java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-		// replaceBounds.width, replaceBounds.height).toAwtRectangle();
-		// g.drawRect(rect.x, rect.y, rect.width, rect.height);
-		// }
-		// g.setStroke(new BasicStroke(4));
-		// g.setColor(Color.white);
-		// {
-		// java.awt.Rectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth,
-		// drawBounds.width, drawBounds.height).toAwtRectangle();
-		// g.drawRect(rect.x, rect.y, rect.width, rect.height);
-		// }
+		if (DebugFlags.showIncrementalUpdateBounds())
+		{
+			Graphics2D g = fullSizedMap.createGraphics();
+			int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+			g.setStroke(new BasicStroke(4));
+			g.setColor(Color.red);
+			{
+				java.awt.Rectangle rect = new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+						replaceBounds.width, replaceBounds.height).toAwtRectangle();
+				g.drawRect(rect.x, rect.y, rect.width, rect.height);
+			}
+			g.setStroke(new BasicStroke(4));
+			g.setColor(Color.white);
+			{
+				java.awt.Rectangle rect = new Rectangle(drawBounds.x + scaledBorderWidth, drawBounds.y + scaledBorderWidth,
+						drawBounds.width, drawBounds.height).toAwtRectangle();
+				g.drawRect(rect.x, rect.y, rect.width, rect.height);
+			}
+		}
 
 
 		// Print run time
@@ -1592,8 +1595,8 @@ public class MapCreator
 			}
 	}
 
-	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map,
-			Collection<Edge> edgesToDraw, Rectangle drawBounds)
+	public static void drawRivers(MapSettings settings, WorldGraph graph, BufferedImage map, Collection<Edge> edgesToDraw,
+			Rectangle drawBounds)
 	{
 		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(map);
 		g.setColor(settings.riverColor);

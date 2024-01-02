@@ -25,11 +25,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -50,6 +53,7 @@ import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
+import nortantis.DebugFlags;
 import nortantis.DimensionDouble;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -243,14 +247,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	}
 
-	private void launchNewSettingsDialog(boolean useExistingTheme)
+	private void launchNewSettingsDialog(MapSettings settingsToKeepThemeFrom)
 	{
-		MapSettings settingsToKeepThemeFrom = null;
-		if (useExistingTheme)
-		{
-			settingsToKeepThemeFrom = getSettingsFromGUI(false);
-			settingsToKeepThemeFrom.edits = new MapEdits();
-		}
 		NewSettingsDialog dialog = new NewSettingsDialog(this, settingsToKeepThemeFrom);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
@@ -521,7 +519,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				boolean cancelPressed = checkForUnsavedChanges();
 				if (!cancelPressed)
 				{
-					launchNewSettingsDialog(false);
+					launchNewSettingsDialog(null);
 				}
 			}
 		});
@@ -536,7 +534,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				boolean cancelPressed = checkForUnsavedChanges();
 				if (!cancelPressed)
 				{
-					launchNewSettingsDialog(true);
+					MapSettings settingsToKeepThemeFrom = getSettingsFromGUI(false);
+					settingsToKeepThemeFrom.edits = new MapEdits();
+
+					if (settingsToKeepThemeFrom.drawRegionColors
+							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
+					{
+						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage("Region Colors",
+								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the "
+										+ LandWaterTool.toolbarName + " tool"
+										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
+										+ " by hand rather than generate them, the region colors in your new map may look substantially different"
+										+ " than those in your current map.",
+								new Dimension(400, 115));
+					}
+
+					launchNewSettingsDialog(settingsToKeepThemeFrom);
 				}
 			}
 		});
@@ -1418,9 +1431,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			handleImagesRefresh();
 		}
 
-		// Note - this call needs to come after everything that calls into loadSettingsAndEditsIntoThemeAndToolsPanels because the text tool
-		// might enable fields when when loading settings, which will cause fields to be enabled before the map is ready.
-		enableOrDisableFieldsThatRequireMap(false, settings);
+		if (DebugFlags.enableUIBeforeMapsWithEditsLoad() && settings.edits != null && !settings.edits.isEmpty())
+		{
+			undoer.initialize(settings);
+			enableOrDisableFieldsThatRequireMap(true, settings);
+		}
+		else
+		{
+			// Note - this call needs to come after everything that calls into loadSettingsAndEditsIntoThemeAndToolsPanels because the text
+			// tool
+			// might enable fields when when loading settings, which will cause fields to be enabled before the map is ready.
+			enableOrDisableFieldsThatRequireMap(false, settings);
+		}
 
 		toolsPanel.resetZoomToDefault();
 		updater.createAndShowMapFull();

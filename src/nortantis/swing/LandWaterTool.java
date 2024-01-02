@@ -27,6 +27,7 @@ import javax.swing.JSlider;
 import javax.swing.JToggleButton;
 import javax.swing.border.EtchedBorder;
 
+import nortantis.DebugFlags;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.Region;
@@ -76,6 +77,8 @@ public class LandWaterTool extends EditorTool
 	private JPanel baseColorPanel;
 	private ActionListener brushActionListener;
 	private DrawAndEraseModeWidget modeWidget;
+	static String toolbarName = "Land and Water";
+	static String colorGeneratorSettingsName = "Color Generator Settings";
 
 	public LandWaterTool(MainWindow mainWindow, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -85,7 +88,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		return "Land and Water";
+		return toolbarName;
 	}
 
 	@Override
@@ -268,7 +271,7 @@ public class LandWaterTool extends EditorTool
 	private JPanel createColorGeneratorOptionsPanel(JPanel toolOptionsPanel)
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
-		organizer.panel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), "Color Generator Settings"));
+		organizer.panel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), colorGeneratorSettingsName));
 
 
 		baseColorPanel = SwingHelper.createColorPickerPreviewPanel();
@@ -626,12 +629,14 @@ public class LandWaterTool extends EditorTool
 			mapEditingPanel.clearHighlightedEdges();
 			mapEditingPanel.repaint();
 			
-			// Debug code
-//			System.out.println("River edge indexes:");
-//			for (Edge edge : river)
-//			{
-//				System.out.println(edge.index);
-//			}
+			if (DebugFlags.printRiverEdgeIndexes())
+			{
+				System.out.println("River edge indexes:");
+				for (Edge edge : river)
+				{
+					System.out.println(edge.index);
+				}
+			}
 
 			if (river.size() > 0)
 			{
@@ -664,13 +669,14 @@ public class LandWaterTool extends EditorTool
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 
-			// Debug code
-			// System.out.println("Highlighted center indexes:");
-			// for (Center center : selected)
-			// {
-			// System.out.println(center.index);
-			// }
-
+			if (DebugFlags.printCenterIndexes())
+			{
+				 System.out.println("Highlighted center indexes:");
+				 for (Center center : selected)
+				 {
+				 System.out.println(center.index);
+				 }	
+			}
 
 			mapEditingPanel.addHighlightedCenters(selected);
 			mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);

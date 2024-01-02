@@ -25,6 +25,7 @@ public class UserPreferences
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
 	public String defaultCustomImagesPath;
+	public boolean hideNewMapWithSameThemeRegionColorsMessage;
 
 	public static UserPreferences instance;
 
@@ -87,6 +88,11 @@ public class UserPreferences
 				{
 					defaultCustomImagesPath = props.getProperty("defaultCustomImagesPath");
 				}
+				if (props.containsKey("showNewMapWithSameThemeRegionColorsMessage"))
+				{
+					String value = props.getProperty("showNewMapWithSameThemeRegionColorsMessage");
+					hideNewMapWithSameThemeRegionColorsMessage = Boolean.parseBoolean(value);
+				}
 			}
 		}
 		catch (IOException e)
@@ -121,6 +127,7 @@ public class UserPreferences
 				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
+		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
 
 		try
 		{

@@ -12,9 +12,13 @@ import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractButton;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -25,6 +29,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
+import nortantis.editor.UserPreferences;
 import nortantis.util.Logger;
 
 public class SwingHelper
@@ -250,5 +255,33 @@ public class SwingHelper
 		java.awt.Point result = new java.awt.Point();
 		transform.transform(point, result);
 		return result;
+	}
+	
+	/**
+	 * Shows a message with the option to hide it in the future.
+	 * @return True if the message should be hidden in the future. False if not.
+	 */
+	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize)
+	{
+		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
+		Object[] options = { "OK" };
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+		JLabel label = new JLabel("<html>" + message + "</html>");
+		panel.add(label);
+		panel.add(Box.createVerticalStrut(5));
+		panel.add(Box.createVerticalGlue());
+		panel.add(checkBox);
+		panel.setPreferredSize(popupSize);
+		int result = JOptionPane.showOptionDialog(null, panel, title, JOptionPane.YES_NO_OPTION,
+				JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+		if (result == JOptionPane.YES_OPTION)
+		{
+			if (checkBox.isSelected())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 }
