@@ -546,7 +546,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
 										+ " by hand rather than generate them, the region colors in your new map may look substantially different"
 										+ " than those in your current map.",
-								new Dimension(400, 115));
+								new Dimension(400, 133));
 					}
 
 					launchNewSettingsDialog(settingsToKeepThemeFrom);
