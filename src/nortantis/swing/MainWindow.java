@@ -544,9 +544,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the "
 										+ LandWaterTool.toolbarName + " tool"
 										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
-										+ " by hand rather than generate them, the region colors in your new map may look substantially different"
+										+ " by hand rather than generating them, the region colors in your new map may look substantially different"
 										+ " than those in your current map.",
-								new Dimension(400, 133));
+								new Dimension(400, 133), mainWindow);
 					}
 
 					launchNewSettingsDialog(settingsToKeepThemeFrom);
