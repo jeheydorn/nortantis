@@ -209,6 +209,7 @@ public class MapEdits implements Serializable
 		}
 
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
+		copy.hasCreatedTextBounds = hasCreatedTextBounds;
 
 		return copy;
 	}
