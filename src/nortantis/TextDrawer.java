@@ -460,6 +460,12 @@ public class TextDrawer
 		}));
 
 		g.dispose();
+		
+		// Only mark this flag if we drew all text, not just an incremental update.
+		if (drawBounds == null || drawBounds.equals(graph.bounds))
+		{
+			settings.edits.hasCreatedTextBounds = true;
+		}
 	}
 
 
@@ -1268,7 +1274,34 @@ public class TextDrawer
 		return new java.awt.Rectangle((int) (pivot.x - size.width / 2), (int) (pivot.y - (size.height / 2) + fontHeight / 2), size.width,
 				size.height);
 	}
+	
+	/**
+	 * Sets the bounds and areas of any texts for which those are null. This is needed because the editor allows making changes when a map is
+	 * loaded from a file before it draws the first time. Text bounds and areas aren't set until the text is drawn the first time, and
+	 * changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function must
+	 * be called each draw to make sure null bounds and areas don't get perpetuated from those undo points.
+	 */
+	public void updateTextBoundsIfNeeded(WorldGraph graph)
+	{
+		if (settings.edits.hasCreatedTextBounds)
+		{
+			return;
+		}
+		
+		boolean originalDrawText = settings.drawText;
+		try
+		{
+			settings.drawText = false;
+			BufferedImage fakeMapThatNothingShouldDrawOn = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+			drawText(fakeMapThatNothingShouldDrawOn, graph, settings.edits.text, null);
+		}
+		finally
+		{
+			settings.drawText = originalDrawText;
+		}
+	}
 
+	
 	public Point findCentroid(Collection<Point> plateCenters)
 	{
 		Point centroid = new Point(0, 0);

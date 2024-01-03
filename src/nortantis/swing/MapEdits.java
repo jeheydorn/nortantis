@@ -50,6 +50,11 @@ public class MapEdits implements Serializable
 	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
 	 */
 	public boolean bakeGeneratedTextAsEdits;
+	
+	/**
+	 * Not stored. A flag to ensure text bounds and areas are always present after drawing.
+	 */
+	public boolean hasCreatedTextBounds;
 
 	public MapEdits()
 	{

@@ -3,13 +3,7 @@ package nortantis;
 import nortantis.util.AssetsPath;
 
 public class DebugFlags
-{
-	/**
-	 * Makes testing I layout changes a lot faster because you don't have to wait for a map to load if they have already been loaded and
-	 * saved before, but enabling this can cause issues with the undoer, so tests with undo/redo should be done with this flag disabled.
-	 */
-	private static boolean enableUIBeforeMapsWithEditsLoad = true;
-	
+{	
 	/**
 	 * Causes the replacement draw bounds for incremental updates to be drawn onto the map.
 	 */
@@ -26,12 +20,6 @@ public class DebugFlags
 	 * This is useful when you're debugging a need to find the index of a center for setting a conditional breakpoint.
 	 */
 	private static boolean printCenterIndexes = false;
-	
-
-	public static boolean enableUIBeforeMapsWithEditsLoad()
-	{
-		return !AssetsPath.isInstalled && enableUIBeforeMapsWithEditsLoad;
-	}
 	
 	public static boolean showIncrementalUpdateBounds()
 	{

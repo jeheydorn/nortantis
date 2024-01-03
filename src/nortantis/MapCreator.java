@@ -344,6 +344,7 @@ public class MapCreator
 		{
 			textDrawer.drawTextFromEdits(mapSnippet, textBackground, mapParts.graph, drawBounds);
 		}
+		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
 		java.awt.Point drawBoundsUpperLeftCornerAdjustedForBorder = new java.awt.Point(
 				drawBounds.upperLeftCornerAsAwtPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
