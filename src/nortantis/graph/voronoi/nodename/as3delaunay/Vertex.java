@@ -1,14 +1,11 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.Stack;
-
 import nortantis.graph.geom.Point;
 
 final class Vertex extends Object implements ICoord
 {
 
 	final public static Vertex VERTEX_AT_INFINITY = new Vertex(Double.NaN, Double.NaN);
-	final private static Stack<Vertex> _pool = new Stack<Vertex>();
 
 	private static Vertex create(double x, double y)
 	{
@@ -16,11 +13,6 @@ final class Vertex extends Object implements ICoord
 		if (Double.isNaN(x) || Double.isNaN(y))
 		{
 			return VERTEX_AT_INFINITY;
-		}
-		if (_pool.size() > 0)
-		{
-
-			return _pool.pop().init(x, y);
 		}
 		else
 		{
@@ -58,7 +50,6 @@ final class Vertex extends Object implements ICoord
 	public void dispose()
 	{
 		_coord = null;
-		_pool.push(this);
 	}
 
 	public void setIndex()
