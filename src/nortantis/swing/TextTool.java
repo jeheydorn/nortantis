@@ -165,7 +165,6 @@ public class TextTool extends EditorTool
 
 		JButton clearRotationButton = new JButton("Rotate to Horizontal");
 		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
-		TextTool thisTool = this;
 		clearRotationButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -175,7 +174,7 @@ public class TextTool extends EditorTool
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.angle = 0;
-					undoer.setUndoPoint(UpdateType.Text, thisTool);
+					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
 					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}

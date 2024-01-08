@@ -70,7 +70,6 @@ public class NameGeneratorDialog extends JDialog
 		generatePanel.add(generateButton);
 		generateButton.setMnemonic(KeyEvent.VK_G);
 		organizer.addLeftAlignedComponent(generatePanel, 0, 0, false);
-		final NameGeneratorDialog thisDialog = this;
 		generateButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -81,7 +80,7 @@ public class NameGeneratorDialog extends JDialog
 				{
 					String message = beginsWithLabel.replace(":", "") + " and " + endsWithLabel.replace(":", "")
 							+ " must contain only letters.";
-					JOptionPane.showMessageDialog(thisDialog, message, "Error", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(NameGeneratorDialog.this, message, "Error", JOptionPane.ERROR_MESSAGE);
 					return;
 				}
 

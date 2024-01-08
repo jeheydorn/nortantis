@@ -292,7 +292,6 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.",
 				Arrays.asList(pathDisplay, changeButton));
 
-		NewSettingsDialog thisDialog = this;
 		changeButton.addActionListener(new ActionListener()
 		{
 			@Override
@@ -306,7 +305,7 @@ public class NewSettingsDialog extends JDialog
 
 					updater.createAndShowMapFull(() -> ImageCache.clear());
 				});
-				dialog.setLocationRelativeTo(thisDialog);
+				dialog.setLocationRelativeTo(NewSettingsDialog.this);
 				dialog.setVisible(true);
 			}
 		});
@@ -437,7 +436,6 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapUpdater()
 	{
-		final NewSettingsDialog thisDialog = this;
 		updater = new MapUpdater(false)
 		{
 
@@ -449,7 +447,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			protected MapSettings getSettingsFromGUI()
 			{
-				MapSettings settings = thisDialog.getSettingsFromGUI();
+				MapSettings settings = NewSettingsDialog.this.getSettingsFromGUI();
 
 				// This is only the maximum size because I'm passing in
 				// maxDimensions to MapCreator.create.
@@ -469,8 +467,8 @@ public class NewSettingsDialog extends JDialog
 					enableOrDisableProgressBar(false);
 				}
 
-				thisDialog.revalidate();
-				thisDialog.repaint();
+				NewSettingsDialog.this.revalidate();
+				NewSettingsDialog.this.repaint();
 			}
 
 			@Override

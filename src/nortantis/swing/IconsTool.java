@@ -219,13 +219,12 @@ public class IconsTool extends EditorTool
 
 		lblCityIconType = new JLabel("<not set>");
 		JButton changeButton = new JButton("Change");
-		IconsTool thisTool = this;
 		changeButton.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				CityTypeChangeDialog dialog = new CityTypeChangeDialog(mainWindow, thisTool, lblCityIconType.getText(),
+				CityTypeChangeDialog dialog = new CityTypeChangeDialog(mainWindow, IconsTool.this, lblCityIconType.getText(),
 						mainWindow.customImagesPath);
 				dialog.setLocationRelativeTo(toolsPanel);
 				dialog.setVisible(true);

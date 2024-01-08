@@ -269,7 +269,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void createMapEditingPanel()
 	{
-		final MainWindow mainWindow = this;
 		mapEditingPanel = new MapEditingPanel(null);
 
 		mapEditingPanel.addMouseListener(new MouseAdapter()
@@ -373,7 +372,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (e.isControlDown())
 				{
-					mainWindow.handleMouseWheelChangingZoom(e);
+					MainWindow.this.handleMouseWheelChangingZoom(e);
 				}
 				else
 				{
@@ -404,7 +403,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void createMapUpdater()
 	{
-		final MainWindow mainWindow = this;
 		updater = new MapUpdater(true)
 		{
 
@@ -417,7 +415,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected MapSettings getSettingsFromGUI()
 			{
-				MapSettings settings = mainWindow.getSettingsFromGUI(false);
+				MapSettings settings = MainWindow.this.getSettingsFromGUI(false);
 				settings.resolution = displayQualityScale;
 				if (settings.drawText)
 				{
@@ -443,8 +441,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// than when the editor frame is first created because
 					// the first time the map is drawn is when the edits are
 					// created.
-					undoer.initialize(mainWindow.getSettingsFromGUI(true));
-					enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false));
+					undoer.initialize(MainWindow.this.getSettingsFromGUI(true));
+					enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
 				}
 
 				if (!hasDrawnCurrentMapAtLeastOnce)
@@ -480,7 +478,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				// In theory, enabling fields now could lead to the undoer not working quite right since edits might not have been created.
 				// But leaving fields disabled makes the user unable to fix the error.
-				enableOrDisableFieldsThatRequireMap(true, mainWindow.getSettingsFromGUI(false));
+				enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
 			}
 
 			@Override
@@ -500,8 +498,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void createMenuBar()
 	{
-		final MainWindow mainWindow = this;
-
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 
@@ -546,7 +542,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
 										+ " by hand rather than generating them, the region colors in your new map may look substantially different"
 										+ " than those in your current map.",
-								new Dimension(400, 133), mainWindow);
+								new Dimension(400, 133), MainWindow.this);
 					}
 
 					launchNewSettingsDialog(settingsToKeepThemeFrom);
@@ -586,14 +582,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 								|| f.getName().toLowerCase().endsWith(MapSettings.fileExtensionWithDot);
 					}
 				});
-				int status = fileChooser.showOpenDialog(mainWindow);
+				int status = fileChooser.showOpenDialog(MainWindow.this);
 				if (status == JFileChooser.APPROVE_OPTION)
 				{
 					openMap(fileChooser.getSelectedFile().getAbsolutePath());
 
 					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
-						JOptionPane.showMessageDialog(mainWindow, FilenameUtils.getName(openSettingsFilePath.toString())
+						JOptionPane.showMessageDialog(MainWindow.this, FilenameUtils.getName(openSettingsFilePath.toString())
 								+ " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
 								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
@@ -618,7 +614,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				saveSettings(mainWindow);
+				saveSettings(MainWindow.this);
 			}
 		});
 
@@ -629,7 +625,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent arg0)
 			{
-				saveSettingsAs(mainWindow);
+				saveSettingsAs(MainWindow.this);
 			}
 		});
 
@@ -851,7 +847,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
 
-		final MainWindow thisWindow = this;
 		JMenuItem keyboardShortcutsItem = new JMenuItem("Keyboard Shortcuts");
 		helpMenu.add(keyboardShortcutsItem);
 		keyboardShortcutsItem.addActionListener(new ActionListener()
@@ -859,7 +854,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(thisWindow,
+				JOptionPane.showMessageDialog(MainWindow.this,
 						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Ctrl + mouse wheel</li>"
 								+ "<li>Pan: Hold mouse middle button and drag</li>" + "</ul>" + "</html>",
 						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
