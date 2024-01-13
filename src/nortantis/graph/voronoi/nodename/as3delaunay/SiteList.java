@@ -2,8 +2,8 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.ArrayList;
 
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 public final class SiteList implements IDisposable
 {

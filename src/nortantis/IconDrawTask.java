@@ -3,7 +3,7 @@ package nortantis;
 import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 import nortantis.util.AssetsPath;
 
 /**
@@ -96,13 +96,13 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 				scaledWidth, scaledHeight));
 	}
 
-	public nortantis.graph.geom.Rectangle createBounds()
+	public nortantis.geom.Rectangle createBounds()
 	{
-		return new nortantis.graph.geom.Rectangle(centerLoc.x - scaledWidth / 2.0, centerLoc.y - scaledHeight / 2.0, scaledWidth,
+		return new nortantis.geom.Rectangle(centerLoc.x - scaledWidth / 2.0, centerLoc.y - scaledHeight / 2.0, scaledWidth,
 				scaledHeight);
 	}
 
-	public boolean overlaps(nortantis.graph.geom.Rectangle bounds)
+	public boolean overlaps(nortantis.geom.Rectangle bounds)
 	{
 		return createBounds().overlaps(bounds);
 	}

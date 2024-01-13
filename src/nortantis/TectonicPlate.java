@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 
 public class TectonicPlate

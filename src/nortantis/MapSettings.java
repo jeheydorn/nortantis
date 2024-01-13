@@ -26,7 +26,7 @@ import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;

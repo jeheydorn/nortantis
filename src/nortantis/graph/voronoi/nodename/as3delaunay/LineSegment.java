@@ -1,6 +1,6 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 public final class LineSegment extends Object
 {

@@ -1,6 +1,4 @@
-package nortantis.graph.geom;
-
-import nortantis.util.IntRectangle;
+package nortantis.geom;
 
 /**
  * Rectangle.java

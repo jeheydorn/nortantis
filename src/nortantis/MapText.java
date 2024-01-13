@@ -5,7 +5,7 @@ import java.awt.geom.Area;
 import java.io.Serializable;
 import java.util.Objects;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 /**
  * Stores a piece of text (and data about it) drawn onto a map.

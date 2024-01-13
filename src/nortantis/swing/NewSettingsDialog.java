@@ -32,7 +32,7 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Rectangle;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;

@@ -26,8 +26,8 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
 import nortantis.MapCreator;
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.nodename.as3delaunay.LineSegment;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.util.Range;

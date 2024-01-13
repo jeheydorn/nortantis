@@ -13,8 +13,8 @@ import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 import nortantis.TreeType;
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 /**
  * Center.java

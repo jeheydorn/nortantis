@@ -380,7 +380,7 @@ public class ImageAndMasks
 		final double xScale = (((double) scaledWidth / originalContentMask.getWidth()));
 		final double yScale = (((double) scaledHeight / originalContentMask.getHeight()));
 
-		java.awt.Rectangle scaledContentBounds = new nortantis.graph.geom.Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
+		java.awt.Rectangle scaledContentBounds = new nortantis.geom.Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
 				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toAwtRectangle();
 		return scaledContentBounds;
 	}

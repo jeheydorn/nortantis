@@ -18,7 +18,7 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.MapText;
 import nortantis.WorldGraph;
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.AssetsPath;
@@ -92,9 +92,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedEdges.clear();
 	}
 
-	public void setTextBoxToDraw(nortantis.graph.geom.Point location, Rectangle line1Bounds, Rectangle line2Bounds, double angle)
+	public void setTextBoxToDraw(nortantis.geom.Point location, Rectangle line1Bounds, Rectangle line2Bounds, double angle)
 	{
-		this.textBoxLocation = location == null ? null : new nortantis.graph.geom.Point(location);
+		this.textBoxLocation = location == null ? null : new nortantis.geom.Point(location);
 		this.textBoxBoundsLine1 = line1Bounds == null ? null : new Rectangle(line1Bounds);
 		this.textBoxBoundsLine2 = line2Bounds == null ? null : new Rectangle(line2Bounds);
 		this.textBoxAngle = angle;
@@ -102,7 +102,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setTextBoxToDraw(MapText text)
 	{
-		this.textBoxLocation = text.location == null ? null : new nortantis.graph.geom.Point(text.location);
+		this.textBoxLocation = text.location == null ? null : new nortantis.geom.Point(text.location);
 		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : new Rectangle(text.line1Bounds);
 		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : new Rectangle(text.line2Bounds);
 		this.textBoxAngle = text.angle;

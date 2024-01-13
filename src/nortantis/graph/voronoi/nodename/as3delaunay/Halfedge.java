@@ -2,7 +2,7 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.Stack;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 public final class Halfedge
 {

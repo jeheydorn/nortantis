@@ -3,8 +3,8 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 import java.util.HashMap;
 import java.util.Stack;
 
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 /**
  * The line segment connecting the two Sites is part of the Delaunay triangulation; the line segment connecting the two Vertices is part of

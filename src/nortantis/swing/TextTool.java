@@ -380,13 +380,13 @@ public class TextTool extends EditorTool
 			if (isMoving)
 			{
 				// The user is dragging a text box.
-				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				nortantis.graph.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
 
 				int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
-				nortantis.graph.geom.Point location = new nortantis.graph.geom.Point(
+				nortantis.geom.Point location = new nortantis.geom.Point(
 						lastSelected.location.x + (deltaX / mainWindow.displayQualityScale),
 						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale));
 				mapEditingPanel.setTextBoxToDraw(location, lastSelected.line1Bounds, lastSelected.line2Bounds, lastSelected.angle);
@@ -394,7 +394,7 @@ public class TextTool extends EditorTool
 			}
 			else if (isRotating)
 			{
-				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 
 				double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
 				double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
@@ -417,8 +417,8 @@ public class TextTool extends EditorTool
 			if (isMoving)
 			{
 				MapText before = lastSelected.deepCopy();
-				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				nortantis.graph.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
 
 				// The user dragged and dropped text.
 				// Divide the translation by mainWindow.displayQualityScale because MapText locations are stored as if
@@ -426,7 +426,7 @@ public class TextTool extends EditorTool
 				Point translation = new Point(
 						(int) ((graphPointMouseLocation.x - graphPointMousePressedLocation.x) / mainWindow.displayQualityScale),
 						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
-				lastSelected.location = new nortantis.graph.geom.Point(lastSelected.location.x + translation.x,
+				lastSelected.location = new nortantis.geom.Point(lastSelected.location.x + translation.x,
 						+lastSelected.location.y + translation.y);
 				undoer.setUndoPoint(UpdateType.Text, this);
 				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
@@ -437,7 +437,7 @@ public class TextTool extends EditorTool
 				MapText before = lastSelected.deepCopy();
 				double centerX = lastSelected.location.x;
 				double centerY = lastSelected.location.y;
-				nortantis.graph.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 				// I'm dividing graphPointMouseLocation by mainWindow.displayQualityScale here because
 				// lastSelected.location is not multiplied by mainWindow.displayQualityScale. This is
 				// because MapTexts are always stored as if the map were generated at 100% resolution.

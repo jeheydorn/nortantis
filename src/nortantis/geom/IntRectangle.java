@@ -1,4 +1,4 @@
-package nortantis.util;
+package nortantis.geom;
 
 import java.awt.Point;
 

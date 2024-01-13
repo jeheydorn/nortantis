@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 
 /**

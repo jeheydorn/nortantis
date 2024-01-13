@@ -1,4 +1,4 @@
-package nortantis.graph.geom;
+package nortantis.geom;
 
 import java.io.Serializable;
 

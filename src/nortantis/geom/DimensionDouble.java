@@ -1,4 +1,4 @@
-package nortantis;
+package nortantis.geom;
 
 public class DimensionDouble implements Comparable<DimensionDouble>
 {

@@ -2,11 +2,9 @@ package nortantis.util;
 
 import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -37,10 +35,15 @@ import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
-import nortantis.DimensionDouble;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
-import nortantis.graph.geom.Point;
+import nortantis.geom.DimensionDouble;
+import nortantis.geom.IntDimension;
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
+import nortantis.util.platform.Image;
+import nortantis.util.platform.ImageType;
+import nortantis.util.platform.Painter;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
@@ -55,19 +58,19 @@ public class ImageHelper
 		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination();
 	}
 
-	public static DimensionDouble fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
+	public static DimensionDouble fitDimensionsWithinBoundingBox(IntDimension maxDimensions, double originalWidth, double originalHeight)
 	{
 		double width = originalWidth;
 		double height = originalHeight;
-		if (originalWidth > maxDimensions.getWidth())
+		if (originalWidth > maxDimensions.width)
 		{
-			width = maxDimensions.getWidth();
+			width = maxDimensions.width;
 			height = height * (width / originalWidth);
 		}
-		if (height > maxDimensions.getHeight())
+		if (height > maxDimensions.height)
 		{
 			double prevHeight = height;
-			height = maxDimensions.getHeight();
+			height = maxDimensions.height;
 			width = width * (height / prevHeight);
 		}
 		return new DimensionDouble(width, height);
@@ -230,7 +233,7 @@ public class ImageHelper
 	 * @param boundsInSource
 	 *            The area in the source image that will be scaled and placed into the target image.
 	 */
-	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.graph.geom.Rectangle boundsInSource)
+	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.geom.Rectangle boundsInSource)
 	{
 		boolean sourceHasAlpha = source.getType() == BufferedImage.TYPE_INT_ARGB;
 		boolean targetHasAlpha = target.getType() == BufferedImage.TYPE_INT_ARGB;
@@ -617,7 +620,6 @@ public class ImageHelper
 						int combined = (r << 16) | (g << 8) | b;
 						result.setRGB(x, y, combined);
 					}
-
 			});
 		}
 		ThreadHelper.getInstance().processInParallel(tasks, true);
@@ -1038,7 +1040,7 @@ public class ImageHelper
 	 *            The Image to be converted
 	 * @return The converted BufferedImage
 	 */
-	public static BufferedImage convertToBufferedImageOfType(Image img, int bufferedImageType)
+	public static BufferedImage convertToBufferedImageOfType(java.awt.Image img, int bufferedImageType)
 	{
 		if (img instanceof BufferedImage && ((BufferedImage) img).getType() == bufferedImageType)
 		{
@@ -1709,69 +1711,16 @@ public class ImageHelper
 		return new Color(Color.HSBtoRGB(hue / 360f, saturation / 255f, brightness / 255f));
 	}
 
-	public static void write(BufferedImage image, String fileName)
+	// TODO remove this method once all references are removed
+	public static void write(Image image, String fileName)
 	{
-		try
-		{
-			String extension = FilenameUtils.getExtension(fileName).toLowerCase();
-			if (extension.equals("jpg") || extension.equals("jpeg"))
-			{
-				if (image.getType() == BufferedImage.TYPE_INT_ARGB)
-				{
-					// JPEG does not support transparency. Trying to write an
-					// image with transparent pixels causes
-					// it to silently not be created.
-					image = convertARGBtoRGB(image);
-				}
-
-				Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
-
-				if (!writers.hasNext())
-					throw new IllegalStateException("No writers found for jpg format.");
-
-				ImageWriter writer = (ImageWriter) writers.next();
-				OutputStream os = new FileOutputStream(new File(fileName));
-				ImageOutputStream ios = ImageIO.createImageOutputStream(os);
-				writer.setOutput(ios);
-
-				ImageWriteParam param = writer.getDefaultWriteParam();
-
-				param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-				final float quality = 0.95f;
-				param.setCompressionQuality(quality);
-
-				writer.write(null, new IIOImage(ImageHelper.convertARGBtoRGB(image), null, null), param);
-
-			}
-			else
-			{
-				ImageIO.write(image, FilenameUtils.getExtension(fileName), new File(fileName));
-			}
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
+		image.write(fileName);
 	}
 
-	public static BufferedImage read(String fileName)
+	// TODO remove this method once all references are removed
+	public static Image read(String fileName)
 	{
-		try
-		{
-			BufferedImage image = ImageIO.read(new File(fileName));
-			if (image == null)
-			{
-				throw new RuntimeException(
-						"Can't read the file " + fileName + ". This can happen if the file is an unsupported format or is corrupted, "
-								+ "such as if you saved it with a file extension that doesn't match its actual format.");
-			}
-
-			return image;
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Can't read the file " + fileName);
-		}
+		return Image.read(fileName);
 	}
 
 	/***
@@ -2081,12 +2030,12 @@ public class ImageHelper
 		return g;
 	}
 
-	public static BufferedImage convertARGBtoRGB(BufferedImage image)
+	public static Image convertARGBtoRGB(Image image)
 	{
-		BufferedImage newImage = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = newImage.createGraphics();
-		g.drawImage(image, 0, 0, null);
-		g.dispose();
+		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
+		Painter p = newImage.createPainter();
+		p.drawImage(image, 0, 0);
+		p.dispose();
 		for (int i = 0; i < newImage.getWidth(); i++)
 		{
 			for (int j = 0; j < newImage.getHeight(); j++)

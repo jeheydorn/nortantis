@@ -12,6 +12,11 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
+import nortantis.util.platform.ColorFactory;
+import nortantis.util.platform.Image;
+import nortantis.util.platform.ImageFactory;
+import nortantis.util.platform.awt.AwtColorFactory;
+import nortantis.util.platform.awt.AwtImageFactory;
 
 public class BackgroundGenerator
 {
@@ -237,17 +242,20 @@ public class BackgroundGenerator
 
 	public static void main(String[] args) throws IOException
 	{
-		long startTime = System.currentTimeMillis();
+		ImageFactory.setInstance(new AwtImageFactory());
+		ColorFactory.setInstance(new AwtColorFactory());
+		
+		Stopwatch sw = new Stopwatch();
 
-		BufferedImage image = ImageHelper.read("C:\\Users\\jehey\\Dropbox\\Joseph\\map waves.png");
+		Image image = Image.read("C:\\Program Files\\Nortantis\\app\\assets\\example textures\\wavy paper.png");
 		if (image == null)
 		{
 			out.print("Unable to load image.");
 		}
-		BufferedImage result = generateUsingWhiteNoiseConvolution(new Random(), image, 1024, 1024, false);
+		Image result = generateUsingWhiteNoiseConvolution(new Random(), image, 3072, 3072, false);
 		ImageHelper.openImageInSystemDefaultEditor(result, "result");
 
-		out.println("Total time (in seconds): " + (System.currentTimeMillis() - startTime) / 1000.0);
+		sw.printElapsedTime();
 		System.out.println("Done.");
 		System.exit(0);
 	}

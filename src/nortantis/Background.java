@@ -13,7 +13,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.DimensionDouble;
+import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;

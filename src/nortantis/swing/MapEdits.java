@@ -140,7 +140,7 @@ public class MapEdits implements Serializable
 	/**
 	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
 	 */
-	public MapText findTextPicked(nortantis.graph.geom.Point point)
+	public MapText findTextPicked(nortantis.geom.Point point)
 	{
 		java.awt.Point awtPoint = point.toAwtPoint();
 		for (MapText mp : text)
@@ -163,7 +163,7 @@ public class MapEdits implements Serializable
 		return null;
 	}
 
-	public List<MapText> findTextSelectedByBrush(nortantis.graph.geom.Point point, double brushDiameter)
+	public List<MapText> findTextSelectedByBrush(nortantis.geom.Point point, double brushDiameter)
 	{
 		Area brush = new Area(
 				new Ellipse2D.Double(point.x - brushDiameter / 2.0, point.y - brushDiameter / 2.0, brushDiameter, brushDiameter));
