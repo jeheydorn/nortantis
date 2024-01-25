@@ -1,10 +1,11 @@
 package nortantis.util;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.List;
+
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 
 /**
  * Performs histogram equalization on images.
@@ -20,13 +21,13 @@ public class HistogramEqualizer
 	 */
 	List<int[]> lookupTables;
 	List<int[]> inverses;
-	int imageType;
+	ImageType imageType;
 
-	public HistogramEqualizer(BufferedImage image)
+	public HistogramEqualizer(Image image)
 	{
 		this.imageType = image.getType();
 		lookupTables = new ArrayList<>();
-		if (ImageHelper.isSupportedGrayscaleType(image))
+		if (image.isGrayscaleOrBinary())
 		{
 			int[] histogram = countPixelLevels(image, 0);
 			lookupTables.add(createLookupTable(histogram, image.getWidth() * image.getHeight()));
@@ -175,24 +176,21 @@ public class HistogramEqualizer
 	}
 
 
-	public BufferedImage equalize(BufferedImage inImage)
+	public Image equalize(Image inImage)
 	{
 		return applyLookupTables(inImage, lookupTables);
 	}
 
-	public BufferedImage inverseEqualize(BufferedImage inImage)
+	public Image inverseEqualize(Image inImage)
 	{
 		return applyLookupTables(inImage, inverses);
 	}
 
-	private BufferedImage applyLookupTables(BufferedImage inImage, List<int[]> lookupTables)
+	private Image applyLookupTables(Image inImage, List<int[]> lookupTables)
 	{
 		int width = inImage.getWidth();
 		int height = inImage.getHeight();
-		BufferedImage outImage = new BufferedImage(width, height, imageType);
-
-		WritableRaster in = inImage.getRaster();
-		WritableRaster out = outImage.getRaster();
+		Image outImage = Image.create(width, height, imageType);
 
 		for (int y = 0; y < height; y++)
 		{
@@ -200,25 +198,25 @@ public class HistogramEqualizer
 			{
 				if (lookupTables.size() == 1)
 				{
-					int grayLevel = in.getSample(x, y, 0);
-					out.setSample(x, y, 0, lookupTables.get(0)[grayLevel]);
+					int grayLevel = inImage.getPixelLevel(x, y);
+					outImage.setPixelLevel(x, y, lookupTables.get(0)[grayLevel]);
 				}
 				else
 				{
 					Color inColor;
-					if (ImageHelper.isSupportedGrayscaleType(inImage))
+					if (inImage.isGrayscaleOrBinary())
 					{
-						int grayLevel = in.getSample(x, y, 0);
-						inColor = new Color(grayLevel, grayLevel, grayLevel, 255);
+						int grayLevel = inImage.getPixelLevel(x, y);
+						inColor = Color.create(grayLevel, grayLevel, grayLevel, 255);
 					}
 					else
 					{
-						inColor = new Color(inImage.getRGB(x, y));
+						inColor = Color.create(inImage.getRGB(x, y));
 					}
 					int r = lookupTables.get(0)[inColor.getRed()];
 					int g = lookupTables.get(1)[inColor.getGreen()];
 					int b = lookupTables.get(2)[inColor.getBlue()];
-					Color outColor = new Color(r, g, b, 255);
+					Color outColor = Color.create(r, g, b, 255);
 					outImage.setRGB(x, y, outColor.getRGB());
 				}
 			}
@@ -228,19 +226,16 @@ public class HistogramEqualizer
 
 	}
 
-	private static int[] countPixelLevels(BufferedImage image, int band)
+	private static int[] countPixelLevels(Image image, int band)
 	{
 
-		WritableRaster raster = image.getRaster();
-
 		// Create the list of pixels to use with the histogram.
-		int bitsPerPixel = image.getColorModel().getComponentSize(0);
-		int[] counts = new int[1 << bitsPerPixel];
+		int[] counts = new int[image.getMaxPixelLevel()];
 		for (int r = 0; r < image.getHeight(); r++)
 		{
 			for (int c = 0; c < image.getWidth(); c++)
 			{
-				int pixelValue = raster.getSample(c, r, band);
+				int pixelValue = getBandColor(image, c, r, band);
 				counts[pixelValue]++;
 			}
 		}
@@ -248,5 +243,29 @@ public class HistogramEqualizer
 		return counts;
 	}
 
+	// TODO consider replacing this method with a pass through to get color levels by band. If I don't do that come on then rename Color.getPixelLevel to getGrayLevel.
+	private static int getBandColor(Image image, int x, int y, int band)
+	{
+		if (image.isGrayscaleOrBinary())
+		{
+			assert band == 0;
+			return image.getPixelLevel(x, y);
+		}
+		
+		if (band == 0)
+		{
+			return image.getPixelColor(x, y).getRed();
+		}
+		if (band == 1)
+		{
+			return image.getPixelColor(x, y).getGreen();
+		}
+		if (band == 2)
+		{
+			return image.getPixelColor(x, y).getBlue();
+		}
+		
+		throw new IllegalArgumentException("Unexpected color band value: " + band);
+	}
 
 }

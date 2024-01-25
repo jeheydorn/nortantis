@@ -64,14 +64,11 @@ import nortantis.geom.DimensionDouble;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.awt.AwtPlatform;
 import nortantis.util.AssetsPath;
 import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
-import nortantis.util.platform.ColorFactory;
-import nortantis.util.platform.ImageFactory;
-import nortantis.util.platform.awt.AwtColorFactory;
-import nortantis.util.platform.awt.AwtImageFactory;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -1600,8 +1597,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			e.printStackTrace();
 		}
 		
-		ImageFactory.setInstance(new AwtImageFactory());
-		ColorFactory.setInstance(new AwtColorFactory());
+		AwtPlatform.createFactories();
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()

@@ -10,13 +10,14 @@ import java.util.Random;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.platform.ColorFactory;
+import nortantis.platform.Image;
+import nortantis.platform.ImageFactory;
+import nortantis.platform.awt.AwtColorFactory;
+import nortantis.platform.awt.AwtImageFactory;
+import nortantis.platform.awt.AwtPlatform;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
-import nortantis.util.platform.ColorFactory;
-import nortantis.util.platform.Image;
-import nortantis.util.platform.ImageFactory;
-import nortantis.util.platform.awt.AwtColorFactory;
-import nortantis.util.platform.awt.AwtImageFactory;
 
 public class BackgroundGenerator
 {
@@ -242,8 +243,7 @@ public class BackgroundGenerator
 
 	public static void main(String[] args) throws IOException
 	{
-		ImageFactory.setInstance(new AwtImageFactory());
-		ColorFactory.setInstance(new AwtColorFactory());
+		AwtPlatform.createFactories();
 		
 		Stopwatch sw = new Stopwatch();
 

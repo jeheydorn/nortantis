@@ -1,15 +1,6 @@
 package nortantis.util;
 
-import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -41,9 +32,12 @@ import nortantis.geom.DimensionDouble;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
-import nortantis.util.platform.Image;
-import nortantis.util.platform.ImageType;
-import nortantis.util.platform.Painter;
+import nortantis.platform.Color;
+import nortantis.platform.DrawQuality;
+import nortantis.platform.Font;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
@@ -77,77 +71,35 @@ public class ImageHelper
 	}
 
 	/**
-	 * Converts a BufferedImage to type BufferedImage.TYPE_BYTE_GRAY.
+	 * Converts a Image to type ImageType.Grayscale.
 	 * 
 	 * @param img
 	 * @return
 	 */
-	public static BufferedImage convertToGrayscale(BufferedImage img)
+	public static Image convertToGrayscale(Image img)
 	{
-		return convertImageToType(img, BufferedImage.TYPE_BYTE_GRAY);
+		return convertImageToType(img, ImageType.Grayscale8Bit);
 	}
 
 	/**
-	 * Converts a BufferedImage to type BufferedImage.TYPE_BYTE_GRAY.
+	 * Converts a Image to type ImageType.Grayscale.
 	 * 
 	 * @param img
 	 * @return
 	 */
-	public static BufferedImage convertImageToType(BufferedImage img, int bufferedImageType)
+	public static Image convertImageToType(Image img, ImageType type)
 	{
-		BufferedImage result = new BufferedImage(img.getWidth(), img.getHeight(), bufferedImageType);
-		Graphics g = result.getGraphics();
-		g.drawImage(img, 0, 0, null);
-		g.dispose();
+		Image result = Image.create(img.getWidth(), img.getHeight(), type);
+		Painter p = result.createPainter();
+		p.drawImage(img, 0, 0);
+		p.dispose();
 		return result;
-	}
-
-	public static boolean isSupportedGrayscaleType(BufferedImage image)
-	{
-		return image.getType() == BufferedImage.TYPE_BYTE_BINARY || image.getType() == BufferedImage.TYPE_BYTE_GRAY
-				|| image.getType() == BufferedImage.TYPE_USHORT_GRAY;
-	}
-
-	public static String bufferedImageTypeToString(int type)
-	{
-		if (type == BufferedImage.TYPE_3BYTE_BGR)
-			return "TYPE_3BYTE_BGR";
-		if (type == BufferedImage.TYPE_4BYTE_ABGR)
-			return "TYPE_4BYTE_ABGR";
-		if (type == BufferedImage.TYPE_4BYTE_ABGR_PRE)
-			return "TYPE_4BYTE_ABGR_PRE";
-		if (type == BufferedImage.TYPE_BYTE_BINARY)
-			return "TYPE_BYTE_BINARY";
-		if (type == BufferedImage.TYPE_BYTE_GRAY)
-			return "TYPE_BYTE_GRAY";
-		if (type == BufferedImage.TYPE_BYTE_INDEXED)
-			return "TYPE_BYTE_INDEXED";
-		if (type == BufferedImage.TYPE_INT_RGB)
-			return "TYPE_INT_RGB";
-		if (type == BufferedImage.TYPE_INT_ARGB)
-			return "TYPE_INT_ARGB";
-		if (type == BufferedImage.TYPE_INT_ARGB_PRE)
-			return "TYPE_INT_ARGB_PRE";
-		if (type == BufferedImage.TYPE_INT_BGR)
-			return "TYPE_INT_BGR";
-		if (type == BufferedImage.TYPE_USHORT_555_RGB)
-			return "TYPE_USHORT_555_RGB";
-		if (type == BufferedImage.TYPE_USHORT_565_RGB)
-			return "TYPE_USHORT_565_RGB";
-		if (type == BufferedImage.TYPE_USHORT_GRAY)
-			return "TYPE_USHORT_GRAY";
-		return "unknown";
-	}
-
-	public static String bufferedImageTypeToString(BufferedImage image)
-	{
-		return bufferedImageTypeToString(image.getType());
 	}
 
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */
-	public static BufferedImage scaleByWidth(BufferedImage inImage, int xSize)
+	public static Image scaleByWidth(Image inImage, int xSize)
 	{
 		return scaleByWidth(inImage, xSize, Method.QUALITY);
 	}
@@ -155,28 +107,18 @@ public class ImageHelper
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */
-	public static BufferedImage scaleByWidth(BufferedImage inImage, int xSize, Method method)
+	public static Image scaleByWidth(Image inImage, int xSize, Method method)
 	{
 		int ySize = getHeightWhenScaledByWidth(inImage, xSize);
-
 		return scale(inImage, xSize, ySize, method);
 	}
 
-	public static BufferedImage scale(BufferedImage inImage, int width, int height, Method method)
+	public static Image scale(Image inImage, int width, int height, Method method)
 	{
-		// This library is described at
-		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
-		BufferedImage scaled = Scalr.resize(inImage, method, width, height);
-
-		if (isSupportedGrayscaleType(inImage) && !isSupportedGrayscaleType(scaled))
-		{
-			scaled = convertImageToType(scaled, inImage.getType());
-		}
-
-		return scaled;
+		return inImage.scale(method, width, height);
 	}
 
-	public static int getHeightWhenScaledByWidth(BufferedImage inImage, int xSize)
+	public static int getHeightWhenScaledByWidth(Image inImage, int xSize)
 	{
 		double aspectRatio = ((double) inImage.getHeight()) / inImage.getWidth();
 		int ySize = (int) (xSize * aspectRatio);
@@ -184,35 +126,8 @@ public class ImageHelper
 			ySize = 1;
 		return ySize;
 	}
-
-	/**
-	 * Scales the given image, preserving aspect ratio.
-	 */
-	public static BufferedImage scaleByHeight(BufferedImage inImage, int ySize)
-	{
-		return scaleByHeight(inImage, ySize, Method.QUALITY);
-	}
-
-	/**
-	 * Scales the given image, preserving aspect ratio.
-	 */
-	public static BufferedImage scaleByHeight(BufferedImage inImage, int ySize, Method method)
-	{
-		int xSize = getWidthWhenScaledByHeight(inImage, ySize);
-
-		// This library is described at
-		// http://stackoverflow.com/questions/1087236/java-2d-image-resize-ignoring-bicubic-bilinear-interpolation-rendering-hints-os
-		BufferedImage scaled = Scalr.resize(inImage, method, xSize, ySize);
-
-		if (isSupportedGrayscaleType(inImage) && !isSupportedGrayscaleType(scaled))
-		{
-			scaled = convertImageToType(scaled, inImage.getType());
-		}
-
-		return scaled;
-	}
-
-	public static int getWidthWhenScaledByHeight(BufferedImage inImage, int ySize)
+	
+	public static int getWidthWhenScaledByHeight(Image inImage, int ySize)
 	{
 		double aspectRatioInverse = ((double) inImage.getWidth()) / inImage.getHeight();
 		int xSize = (int) (aspectRatioInverse * ySize);
@@ -220,6 +135,24 @@ public class ImageHelper
 			xSize = 1;
 		return xSize;
 	}
+
+	/**
+	 * Scales the given image, preserving aspect ratio.
+	 */
+	public static Image scaleByHeight(Image inImage, int ySize)
+	{
+		return scaleByHeight(inImage, ySize, Method.QUALITY);
+	}
+
+	/**
+	 * Scales the given image, preserving aspect ratio.
+	 */
+	public static Image scaleByHeight(Image inImage, int ySize, Method method)
+	{
+		int xSize = getWidthWhenScaledByHeight(inImage, ySize);
+		return inImage.scale(method, xSize, ySize);
+	}
+
 
 	/**
 	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic
@@ -233,10 +166,10 @@ public class ImageHelper
 	 * @param boundsInSource
 	 *            The area in the source image that will be scaled and placed into the target image.
 	 */
-	public static void scaleInto(BufferedImage source, BufferedImage target, nortantis.geom.Rectangle boundsInSource)
+	public static void scaleInto(Image source, Image target, nortantis.geom.Rectangle boundsInSource)
 	{
-		boolean sourceHasAlpha = source.getType() == BufferedImage.TYPE_INT_ARGB;
-		boolean targetHasAlpha = target.getType() == BufferedImage.TYPE_INT_ARGB;
+		boolean sourceHasAlpha = source.hasAlpha();
+		boolean targetHasAlpha = target.hasAlpha();
 
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
 
@@ -266,21 +199,21 @@ public class ImageHelper
 				int y2 = Math.min(y1 + 1, source.getHeight() - 1);
 				double dx = x / scale - x1;
 				double dy = y / scale - y1;
-				Color c00 = new Color(source.getRGB(x1, y1), sourceHasAlpha);
-				Color c01 = new Color(source.getRGB(x2, y1), sourceHasAlpha);
-				Color c10 = new Color(source.getRGB(x1, y2), sourceHasAlpha);
-				Color c11 = new Color(source.getRGB(x2, y2), sourceHasAlpha);
+				Color c00 = Color.create(source.getRGB(x1, y1), sourceHasAlpha);
+				Color c01 = Color.create(source.getRGB(x2, y1), sourceHasAlpha);
+				Color c10 = Color.create(source.getRGB(x1, y2), sourceHasAlpha);
+				Color c11 = Color.create(source.getRGB(x2, y2), sourceHasAlpha);
 				int r0 = interpolate(c00.getRed(), c01.getRed(), c10.getRed(), c11.getRed(), dx, dy);
 				int g0 = interpolate(c00.getGreen(), c01.getGreen(), c10.getGreen(), c11.getGreen(), dx, dy);
 				int b0 = interpolate(c00.getBlue(), c01.getBlue(), c10.getBlue(), c11.getBlue(), dx, dy);
 				if (targetHasAlpha)
 				{
 					int a0 = interpolate(c00.getAlpha(), c01.getAlpha(), c10.getAlpha(), c11.getAlpha(), dx, dy);
-					target.setRGB(x, y, new Color(r0, g0, b0, a0).getRGB());
+					target.setRGB(x, y, Color.create(r0, g0, b0, a0).getRGB());
 				}
 				else
 				{
-					target.setRGB(x, y, new Color(r0, g0, b0).getRGB());
+					target.setRGB(x, y, Color.create(r0, g0, b0).getRGB());
 				}
 			}
 		}
@@ -406,54 +339,33 @@ public class ImageHelper
 	/**
 	 * Maximizes the contrast of the given grayscale image. The image must be a supported grayscale type.
 	 */
-	public static void maximizeContrastGrayscale(BufferedImage image)
+	public static void maximizeContrastGrayscale(Image image)
 	{
-		if (!isSupportedGrayscaleType(image))
-			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + bufferedImageTypeToString(image));
+		if (!image.isGrayscaleOrBinary())
+		{
+			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + image.getType());
+		}
 
-		int maxPixelValue = getMaxPixelValue(image);
+		int maxPixelValue = image.getMaxPixelLevel();
 
-		Raster in = image.getRaster();
 		double min = maxPixelValue;
 		double max = 0;
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = in.getSample(x, y, 0);
+				double value = image.getPixelLevel(x, y);
 				if (value < min)
 					min = value;
 				if (value > max)
 					max = value;
 			}
-		WritableRaster out = image.getRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = in.getSample(x, y, 0);
+				double value = image.getPixelLevel(x, y);
 				int newValue = (int) (((value - min) / (max - min)) * maxPixelValue);
-				out.setSample(x, y, 0, newValue);
+				image.setPixelLevel(x, y, newValue);
 			}
-	}
-
-	public static int getMaxPixelValue(BufferedImage image)
-	{
-		if (image.getType() == BufferedImage.TYPE_BYTE_BINARY)
-		{
-			return 1;
-		}
-		return (1 << image.getColorModel().getPixelSize()) - 1;
-	}
-
-	public static int getMaxPixelValue(int bufferedImageType)
-	{
-		if (bufferedImageType == BufferedImage.TYPE_USHORT_GRAY)
-		{
-			return 65535;
-		}
-		else
-		{
-			return 255;
-		}
 	}
 
 	/*
@@ -520,18 +432,17 @@ public class ImageHelper
 	/**
 	 * Multiplies each pixel by the given scale. The image must be a supported grayscale type
 	 */
-	public static void scaleGrayLevels(BufferedImage image, float scale)
+	public static void scaleGrayLevels(Image image, float scale)
 	{
-		if (!isSupportedGrayscaleType(image))
-			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + bufferedImageTypeToString(image));
+		if (!image.isGrayscaleOrBinary())
+			throw new IllegalArgumentException("Image type must a supported grayscale type, but was " + image.getType());
 
-		WritableRaster out = image.getRaster();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = out.getSample(x, y, 0);
+				double value = image.getPixelLevel(x, y);
 				int newValue = (int) (value * scale);
-				out.setSample(x, y, 0, newValue);
+				image.setPixelLevel(x, y, newValue);
 			}
 	}
 
@@ -558,19 +469,19 @@ public class ImageHelper
 		}
 	}
 
-	public static BufferedImage maskWithImage(BufferedImage image1, BufferedImage image2, BufferedImage mask)
+	public static Image maskWithImage(Image image1, Image image2, Image mask)
 	{
 		return maskWithImage(image1, image2, mask, null);
 	}
 
 	/**
 	 * Each pixel in the resulting image is a linear combination of that pixel from image1 and from image2 using the gray levels in the
-	 * given mask. The mask must be BufferedImage.TYPE_BYTE_GRAY.
+	 * given mask. The mask must be ImageType.Grayscale.
 	 * 
 	 * @param region
 	 *            Specifies only a region to create rather than masking the entire images.
 	 */
-	public static BufferedImage maskWithImage(BufferedImage image1, BufferedImage image2, BufferedImage mask, java.awt.Point image2OffsetInImage1)
+	public static Image maskWithImage(Image image1, Image image2, Image mask, java.awt.Point image2OffsetInImage1)
 	{
 		if (image2OffsetInImage1 == null)
 		{
@@ -578,8 +489,8 @@ public class ImageHelper
 		}
 		final java.awt.Point image2OffsetInImage1Final = image2OffsetInImage1;
 
-		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY && mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
-			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY" + " or TYPE_BYTE_BINARY.");
+		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale" + " or TYPE_BYTE_BINARY.");
 
 		if (image1.getWidth() != image2.getWidth())
 			throw new IllegalArgumentException();
@@ -594,8 +505,7 @@ public class ImageHelper
 			throw new IllegalArgumentException("Region for masking is not contained within image2.");
 		}
 
-		BufferedImage result = new BufferedImage(image1.getWidth(), image2.getHeight(), image1.getType());
-		Raster mRaster = mask.getRaster();
+		Image result = Image.create(image1.getWidth(), image2.getHeight(), image1.getType());
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
@@ -608,11 +518,13 @@ public class ImageHelper
 				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
 					for (int x = 0; x < image1.getWidth(); x++)
 					{
-						Color color1 = new Color(image1.getRGB(x, y));
-						Color color2 = new Color(image2.getRGB(x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
-						double maskLevel = ((double) mRaster.getSampleDouble(x, y, 0));
-						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
-							maskLevel /= 255.0;
+						Color color1 = Color.create(image1.getRGB(x, y));
+						Color color2 = Color.create(image2.getRGB(x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
+						float maskLevel = mask.getNormalizedPixelLevel(x, y);
+						if (mask.getType() == ImageType.Grayscale8Bit)
+						{
+							maskLevel /= 255f;
+						}
 
 						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
 						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
@@ -630,7 +542,7 @@ public class ImageHelper
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
 	 */
-	public static BufferedImage maskWithColor(BufferedImage image, Color color, BufferedImage mask, boolean invertMask)
+	public static Image maskWithColor(Image image, Color color, Image mask, boolean invertMask)
 	{
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
@@ -644,15 +556,13 @@ public class ImageHelper
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
 	 */
-	public static BufferedImage maskWithColorInRegion(BufferedImage image, Color color, BufferedImage mask, boolean invertMask,
+	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask,
 			java.awt.Point imageOffsetInMask)
 	{
-		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY && mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
-			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY.");
+		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
-		Raster mRaster = mask.getRaster();
-		Raster alphaRaster = image.getAlphaRaster();
+		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 
 		// Process rows in parallel to speed things up a little. In my tests, doing so was 41% faster
 		// (when only counting time in this method).
@@ -675,10 +585,10 @@ public class ImageHelper
 							continue;
 						}
 
-						Color col = new Color(image.getRGB(x, y));
+						Color col = Color.create(image.getRGB(x, y));
 
-						int maskLevel = mRaster.getSample(xInMask, yInMask, 0);
-						if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+						int maskLevel = mask.getPixelLevel(xInMask, yInMask);
+						if (mask.getType() == ImageType.Grayscale8Bit)
 						{
 							if (invertMask)
 								maskLevel = 255 - maskLevel;
@@ -686,7 +596,7 @@ public class ImageHelper
 							int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
 							int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
 							int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-							Color combined = new Color(r, g, b, alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+							Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
 							result.setRGB(x, y, combined.getRGB());
 						}
 						else
@@ -699,7 +609,7 @@ public class ImageHelper
 							int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
 							int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
 							int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-							Color combined = new Color(r, g, b, alphaRaster == null ? 0 : alphaRaster.getSample(x, y, 0));
+							Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
 							result.setRGB(x, y, combined.getRGB());
 						}
 					}
@@ -717,22 +627,20 @@ public class ImageHelper
 	 * @param colorIndexes
 	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
-	public static BufferedImage maskWithMultipleColors(BufferedImage image, Map<Integer, Color> colors, BufferedImage colorIndexes,
-			BufferedImage mask, boolean invertMask)
+	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes,
+			Image mask, boolean invertMask)
 	{
-		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY && mask.getType() != BufferedImage.TYPE_BYTE_BINARY)
-			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY or BufferedImage.TYPE_BYTE_BINARY.");
-		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
+		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
+		if (colorIndexes.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("colorIndexes type must be ImageType.Grayscale.");
 
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
 			throw new IllegalArgumentException();
 
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
-		Raster mRaster = mask.getRaster();
-		Raster colorIndexesRaster = colorIndexes.getRaster();
+		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
@@ -746,12 +654,12 @@ public class ImageHelper
 				{
 					for (int x = 0; x < image.getWidth(); x++)
 					{
-						Color col = new Color(image.getRGB(x, y));
-						Color color = colors.get(colorIndexesRaster.getSample(x, y, 0));
+						Color col = Color.create(image.getRGB(x, y));
+						Color color = colors.get(colorIndexes.getPixelLevel(x, y));
 						if (color != null)
 						{
-							int maskLevel = mRaster.getSample(x, y, 0);
-							if (mask.getType() == BufferedImage.TYPE_BYTE_GRAY)
+							int maskLevel = mask.getPixelLevel(x, y);
+							if (mask.getType() == ImageType.Grayscale8Bit)
 							{
 								if (invertMask)
 									maskLevel = 255 - maskLevel;
@@ -787,16 +695,16 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
+	 * Creates a new Image in which the values of the given alphaMask to be the alpha channel in image.
 	 * 
 	 * @param image
 	 * @param alphaMask
-	 *            Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the same dimension as image.
+	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
 	 *            If true, the alpha values from alphaMask will be inverted.
 	 * @return
 	 */
-	public static BufferedImage setAlphaFromMask(BufferedImage image, BufferedImage alphaMask, boolean invertMask)
+	public static Image setAlphaFromMask(Image image, Image alphaMask, boolean invertMask)
 	{
 		if (image.getWidth() != alphaMask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + alphaMask.getWidth() + " but image has width " + image.getWidth() + ".");
@@ -807,25 +715,24 @@ public class ImageHelper
 	}
 
 	/**
-	 * Creates a new BufferedImage in which the values of the given alphaMask to be the alpha channel in image.
+	 * Creates a new Image in which the values of the given alphaMask to be the alpha channel in image.
 	 * 
 	 * @param image
 	 * @param alphaMask
-	 *            Must be type BufferedImage.TYPE_BYTE_GRAY. It must also be the same dimension as image.
+	 *            Must be type ImageType.Grayscale. It must also be the same dimension as image.
 	 * @param invertMask
 	 *            If true, the alpha values from alphaMask will be inverted.
 	 * @param imageOffsetInMask
 	 *            Used if the image is smaller than the mask, so only a piece of the mask should be used.
 	 * @return A new image
 	 */
-	public static BufferedImage setAlphaFromMaskInRegion(BufferedImage image, BufferedImage alphaMask, boolean invertMask,
+	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask,
 			java.awt.Point imageOffsetInMask)
 	{
-		if (alphaMask.getType() != BufferedImage.TYPE_BYTE_GRAY && alphaMask.getType() != BufferedImage.TYPE_BYTE_BINARY)
-			throw new IllegalArgumentException("mask type must be BufferedImage.TYPE_BYTE_GRAY or TYPE_BYTE_BINARY");
+		if (alphaMask.getType() != ImageType.Grayscale8Bit && alphaMask.getType() != ImageType.Binary)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or TYPE_BYTE_BINARY");
 
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Raster mRaster = alphaMask.getRaster();
+		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
@@ -836,9 +743,9 @@ public class ImageHelper
 					continue;
 				}
 
-				Color col = new Color(image.getRGB(x, y));
-				int maskLevel = mRaster.getSample(xInMask, yInMask, 0);
-				if (alphaMask.getType() == BufferedImage.TYPE_BYTE_BINARY)
+				Color col = Color.create(image.getRGB(x, y));
+				int maskLevel = alphaMask.getPixelLevel(xInMask, yInMask);
+				if (alphaMask.getType() == ImageType.Binary)
 				{
 					if (maskLevel == 1)
 						maskLevel = 255;
@@ -854,20 +761,20 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage createColoredImageFromGrayScaleImages(BufferedImage redChanel, BufferedImage greenChanel,
-			BufferedImage blueChanel, BufferedImage alphaChanel)
+	public static Image createColoredImageFromGrayScaleImages(Image redChanel, Image greenChanel,
+			Image blueChanel, Image alphaChanel)
 	{
-		if (redChanel.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Red chanel image type must be type BufferedImage.TYPE_BYTE_GRAY.");
+		if (redChanel.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("Red chanel image type must be type ImageType.Grayscale.");
 
-		if (greenChanel.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Green chanel image type must be type BufferedImage.TYPE_BYTE_GRAY");
+		if (greenChanel.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("Green chanel image type must be type ImageType.Grayscale");
 
-		if (blueChanel.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Blue chanel image type must be type BufferedImage.TYPE_BYTE_GRAY");
+		if (blueChanel.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("Blue chanel image type must be type ImageType.Grayscale");
 
-		if (alphaChanel.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Alpha chanel image type must be type BufferedImage.TYPE_BYTE_GRAY.");
+		if (alphaChanel.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("Alpha chanel image type must be type ImageType.Grayscale.");
 
 		if (redChanel.getWidth() != alphaChanel.getWidth())
 			throw new IllegalArgumentException(
@@ -887,32 +794,31 @@ public class ImageHelper
 		if (blueChanel.getHeight() != alphaChanel.getHeight())
 			throw new IllegalArgumentException();
 
-		BufferedImage result = new BufferedImage(redChanel.getWidth(), redChanel.getHeight(), BufferedImage.TYPE_INT_ARGB);
-		Raster alphaRaster = alphaChanel.getRaster();
+		Image result = Image.create(redChanel.getWidth(), redChanel.getHeight(), ImageType.ARGB);
 		for (int y = 0; y < redChanel.getHeight(); y++)
 			for (int x = 0; x < redChanel.getWidth(); x++)
 			{
-				int red = new Color(redChanel.getRGB(x, y)).getRed();
-				int green = new Color(greenChanel.getRGB(x, y)).getGreen();
-				int blue = new Color(blueChanel.getRGB(x, y)).getBlue();
+				int red = Color.create(redChanel.getRGB(x, y)).getRed();
+				int green = Color.create(greenChanel.getRGB(x, y)).getGreen();
+				int blue = Color.create(blueChanel.getRGB(x, y)).getBlue();
 
-				int maskLevel = alphaRaster.getSample(x, y, 0);
+				int maskLevel = alphaChanel.getPixelLevel(x, y);
 
 				int mc = (maskLevel << 24) | 0x00ffffff;
-				int newColor = new Color(red, green, blue).getRGB() & mc;
+				int newColor = Color.create(red, green, blue).getRGB() & mc;
 
 				result.setRGB(x, y, newColor);
 			}
 		return result;
 	}
 
-	public static BufferedImage createBlackImage(int width, int height)
+	public static Image createBlackImage(int width, int height)
 	{
-		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		Graphics2D g = result.createGraphics();
-		g.setColor(Color.black);
-		g.drawRect(0, 0, result.getWidth(), result.getHeight());
-		g.dispose();
+		Image result = Image.create(width, height, ImageType.RGB);
+		Painter p = result.createPainter();
+		p.setColor(Color.black);
+		p.drawRect(0, 0, result.getWidth(), result.getHeight());
+		p.dispose();
 		return result;
 	}
 
@@ -934,11 +840,11 @@ public class ImageHelper
 	 * @param angle
 	 *            Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
-	public static void combineImagesWithMaskInRegion(BufferedImage image1, BufferedImage image2, BufferedImage mask, int xLoc, int yLoc,
+	public static void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc,
 			double angle, Point pivot)
 	{
-		if (mask.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("Expected mask to be type BufferedImage.TYPE_BYTE_GRAY.");
+		if (mask.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("Expected mask to be type ImageType.Grayscale.");
 
 		if (image1.getWidth() != image2.getWidth())
 			throw new IllegalArgumentException(
@@ -946,31 +852,29 @@ public class ImageHelper
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
-		BufferedImage region = extractRotatedRegion(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
+		Image region = extractRotatedRegion(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
-		Raster maskRaster = mask.getRaster();
 		for (int y = 0; y < region.getHeight(); y++)
 			for (int x = 0; x < region.getWidth(); x++)
 			{
-				int grayLevel = maskRaster.getSample(x, y, 0);
-				Color r = new Color(region.getRGB(x, y), true);
+				int grayLevel = mask.getPixelLevel(x, y);
+				Color r = Color.create(region.getRGB(x, y), true);
 
 				// Don't clobber the alpha level from the region.
 				int alphaLevel = Math.min(r.getAlpha(), grayLevel);
 
 				// Only change the alpha channel of the region.
-				region.setRGB(x, y, new Color(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
+				region.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
 			}
 
-		Graphics2D g1 = image1.createGraphics();
-		g1.rotate(angle, pivot.x, pivot.y);
-		g1.drawImage(region, xLoc, yLoc, null);
-
+		Painter p = image1.createPainter();
+		p.rotate(angle, pivot);
+		p.drawImage(region, xLoc, yLoc);
 	}
 
-	public static int getAlphaLevel(BufferedImage image, int x, int y)
+	public static int getAlphaLevel(Image image, int x, int y)
 	{
-		return new Color(image.getRGB(x, y), true).getAlpha();
+		return Color.create(image.getRGB(x, y), true).getAlpha();
 	}
 
 	/**
@@ -979,14 +883,14 @@ public class ImageHelper
 	 * 
 	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */
-	public static BufferedImage extractRotatedRegion(BufferedImage image, int xLoc, int yLoc, int width, int height, double angle,
+	public static Image extractRotatedRegion(Image image, int xLoc, int yLoc, int width, int height, double angle,
 			Point pivot)
 	{
-		BufferedImage result = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D gResult = result.createGraphics();
-		gResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
-		gResult.translate(-xLoc, -yLoc);
-		gResult.drawImage(image, 0, 0, null);
+		Image result = Image.create(width, height, ImageType.ARGB);
+		Painter pResult = result.createPainter();
+		pResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
+		pResult.translate(-xLoc, -yLoc);
+		pResult.drawImage(image, 0, 0);
 
 		return result;
 	}
@@ -997,12 +901,12 @@ public class ImageHelper
 	 * 
 	 * It is important the the result is a copy even if the desired region is exactly the input.
 	 */
-	public static BufferedImage extractRegion(BufferedImage image, int xLoc, int yLoc, int width, int height)
+	public static Image extractRegion(Image image, int xLoc, int yLoc, int width, int height)
 	{
-		BufferedImage result = new BufferedImage(width, height, image.getType());
-		Graphics2D gResult = result.createGraphics();
-		gResult.translate(-xLoc, -yLoc);
-		gResult.drawImage(image, 0, 0, null);
+		Image result = Image.create(width, height, image.getType());
+		Painter pResult = result.createPainter();
+		pResult.translate(-xLoc, -yLoc);
+		pResult.drawImage(image, 0, 0);
 
 		return result;
 	}
@@ -1010,9 +914,9 @@ public class ImageHelper
 	/**
 	 * Creates a rotated version of the input image 90 degrees either clockwise or counter-clockwise. =
 	 */
-	public static BufferedImage rotate90Degrees(BufferedImage image, boolean isClockwise)
+	public static Image rotate90Degrees(Image image, boolean isClockwise)
 	{
-		BufferedImage result = new BufferedImage(image.getHeight(), image.getWidth(), image.getType());
+		Image result = Image.create(image.getHeight(), image.getWidth(), image.getType());
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
@@ -1031,40 +935,10 @@ public class ImageHelper
 		return result;
 	}
 
-	/**
-	 * From http://stackoverflow.com/questions/13605248/java-converting-image-to- bufferedimage
-	 * 
-	 * Converts a given Image into a BufferedImage of the specified type.
-	 * 
-	 * @param img
-	 *            The Image to be converted
-	 * @return The converted BufferedImage
-	 */
-	public static BufferedImage convertToBufferedImageOfType(java.awt.Image img, int bufferedImageType)
+	// TODO Replace calls to this method with direct calls.
+	public static Image deepCopy(Image bi)
 	{
-		if (img instanceof BufferedImage && ((BufferedImage) img).getType() == bufferedImageType)
-		{
-			return (BufferedImage) img;
-		}
-
-		// Create a buffered image with transparency
-		BufferedImage bImage = new BufferedImage(img.getWidth(null), img.getHeight(null), bufferedImageType);
-
-		// Draw the image on to the buffered image
-		Graphics2D bGr = bImage.createGraphics();
-		bGr.drawImage(img, 0, 0, null);
-		bGr.dispose();
-
-		// Return the buffered image
-		return bImage;
-	}
-
-	public static BufferedImage deepCopy(BufferedImage bi)
-	{
-		ColorModel cm = bi.getColorModel();
-		boolean isAlphaPremultiplied = cm.isAlphaPremultiplied();
-		WritableRaster raster = bi.copyData(null);
-		return new BufferedImage(cm, raster, isAlphaPremultiplied, null);
+		return bi.deepCopy();
 	}
 
 	public static void multiplyArrays(float[][] target, float[][] source)
@@ -1081,21 +955,19 @@ public class ImageHelper
 		}
 	}
 
-	public static void drawIfPixelValueIsGreaterThanTarget(BufferedImage target, BufferedImage toDraw, int xLoc, int yLoc)
+	public static void drawIfPixelValueIsGreaterThanTarget(Image target, Image toDraw, int xLoc, int yLoc)
 	{
-		if (toDraw.getType() != BufferedImage.TYPE_BYTE_BINARY)
+		if (toDraw.getType() != ImageType.Binary)
 		{
 			throw new IllegalArgumentException(
-					"Unsupported buffered image type for toDraw. Actual type: " + bufferedImageTypeToString(toDraw));
+					"Unsupported buffered image type for toDraw. Actual type: " + toDraw.getType());
 		}
-		if (target.getType() != BufferedImage.TYPE_BYTE_BINARY)
+		if (target.getType() != ImageType.Binary)
 		{
 			throw new IllegalArgumentException(
-					"Unsupported buffered image type for target. Actual type: " + bufferedImageTypeToString(target));
+					"Unsupported buffered image type for target. Actual type: " + target.getType());
 		}
 
-		WritableRaster targetRaster = target.getRaster();
-		Raster toDrawRaster = toDraw.getRaster();
 		for (int r = 0; r < toDraw.getHeight(); r++)
 		{
 			int targetR = yLoc + r;
@@ -1111,10 +983,12 @@ public class ImageHelper
 					continue;
 				}
 
-				int toDrawValue = toDrawRaster.getSample(c, r, 0);
-				int targetValue = targetRaster.getSample(targetC, targetR, 0);
+				int toDrawValue = toDraw.getPixelLevel(c, r);
+				int targetValue = target.getPixelLevel(targetC, targetR);
 				if (toDrawValue > targetValue)
-				targetRaster.setSample(targetC, targetR, 0, toDrawValue);
+				{
+					target.setPixelLevel(targetC, targetR, toDrawValue);
+				}
 			}
 		}
 	}
@@ -1129,19 +1003,19 @@ public class ImageHelper
 	 * @param maximizeContrast
 	 *            Iff true, the contrast of the convolved image will be maximized while it is still in floating point representation. In the
 	 *            result the pixel values will range from 0 to 255 for 8 bit pixels, or 65535 for 16 bit. This is better than maximizing the
-	 *            contrast of the result because the result is a BufferedImage, which has less precise values than floats.
+	 *            contrast of the result because the result is a Image, which has less precise values than floats.
 	 * @param paddImageToAvoidWrapping
 	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscale(BufferedImage img, float[][] kernel, boolean maximizeContrast,
+	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast,
 			boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
-		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
 	}
@@ -1160,18 +1034,18 @@ public class ImageHelper
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static BufferedImage convolveGrayscaleThenScale(BufferedImage img, float[][] kernel, float scale,
+	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale,
 			boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
-		int resultType = img.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY : BufferedImage.TYPE_BYTE_GRAY;
+		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
-	private static ComplexArray convolveGrayscale(BufferedImage img, float[][] kernel, boolean paddImageToAvoidWrapping)
+	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)
 	{
 		int colsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel[0].length / 2 : 0;
 		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
@@ -1196,7 +1070,7 @@ public class ImageHelper
 		return data;
 	}
 
-	private static BufferedImage realToImage(ComplexArray data, int bufferedImageType, int imageWidth, int imageHeight, boolean setContrast,
+	private static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast,
 			float contrastMin, float contrastMax, boolean scaleLevels, float scale)
 	{
 		moveRealToLeftSide(data.getArrayJTransformsFormat());
@@ -1215,8 +1089,8 @@ public class ImageHelper
 			scaleLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		BufferedImage result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
-				imageWidth, bufferedImageType);
+		Image result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
+				imageWidth, type);
 		return result;
 	}
 
@@ -1226,7 +1100,7 @@ public class ImageHelper
 		fft.complexInverse(data.getArrayJTransformsFormat(), true);
 	}
 
-	public static ComplexArray forwardFFT(BufferedImage img, int rows, int cols)
+	public static ComplexArray forwardFFT(Image img, int rows, int cols)
 	{
 		ComplexArray data = new ComplexArray(cols, rows);
 
@@ -1236,14 +1110,13 @@ public class ImageHelper
 		int imgColPaddingOver2 = imgColPadding / 2;
 		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
 
-		boolean isGrayscale = isSupportedGrayscaleType(img);
-		float maxPixelValue = getMaxPixelValue(img);
+		boolean isGrayscale = img.isGrayscaleOrBinary();
+		float maxPixelValue = img.getMaxPixelLevel();
 
-		Raster raster = img.getRaster();
 		for (int r = 0; r < img.getHeight(); r++)
 			for (int c = 0; c < img.getWidth(); c++)
 			{
-				float grayLevel = raster.getSample(c, r, 0);
+				float grayLevel = img.getPixelLevel(c, r);
 				if (isGrayscale)
 					grayLevel /= maxPixelValue;
 				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
@@ -1353,46 +1226,43 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage arrayToImage(float[][] array, int rowStart, int rows, int colStart, int cols, int bufferedImageType)
+	public static Image arrayToImage(float[][] array, int rowStart, int rows, int colStart, int cols, ImageType imageType)
 	{
-		BufferedImage image = new BufferedImage(cols, rows, bufferedImageType);
-		WritableRaster raster = image.getRaster();
-		int maxPixelValue = getMaxPixelValue(bufferedImageType);
+		Image image = Image.create(cols, rows, imageType);
+		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				float value = Math.min(maxPixelValue, array[r][c] * maxPixelValue);
-				raster.setSample(c - colStart, r - rowStart, 0, value);
+				int value = Math.min(maxPixelValue, (int)(array[r][c] * maxPixelValue));
+				image.setPixelLevel(c - colStart, r - rowStart, value); 
 			}
 		}
 		return image;
 	}
 
-	public static BufferedImage arrayToImage(float[][] array, int bufferedImageType)
+	public static Image arrayToImage(float[][] array, ImageType imageType)
 	{
-		BufferedImage image = new BufferedImage(array[0].length, array.length, bufferedImageType);
-		WritableRaster raster = image.getRaster();
-		int maxPixelValue = getMaxPixelValue(bufferedImageType);
+		Image image = Image.create(array[0].length, array.length, imageType);
+		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				raster.setSample(x, y, 0, array[y][x] * maxPixelValue);
+				image.setPixelLevel(x, y, (int)(array[y][x] * maxPixelValue));
 			}
 		}
 		return image;
 	}
 
-	public static float[][] imageToArray(BufferedImage img)
+	public static float[][] imageToArray(Image img)
 	{
 		float[][] result = new float[img.getWidth()][img.getHeight()];
-		Raster raster = img.getRaster();
 		for (int r = 0; r < img.getWidth(); r++)
 		{
 			for (int c = 0; c < img.getHeight(); c++)
 			{
-				result[r][c] = raster.getSample(r, c, 0);
+				result[r][c] = img.getPixelLevel(r, c);
 			}
 		}
 		return result;
@@ -1473,12 +1343,12 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage tile(BufferedImage image, int targetRows, int targetCols)
+	public static Image tile(Image image, int targetRows, int targetCols)
 	{
 		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0), image.getType());
 	}
 
-	public static BufferedImage tileNTimes(BufferedImage image, int n)
+	public static Image tileNTimes(Image image, int n)
 	{
 		return tile(image, image.getWidth() * n, image.getHeight() * n);
 	}
@@ -1506,9 +1376,9 @@ public class ImageHelper
 	 * @param source
 	 *            The source of histogram information.
 	 * @param resultType
-	 *            BufferedImage type of the result.
+	 *            Image type of the result.
 	 */
-	public static BufferedImage matchHistogram(BufferedImage target, BufferedImage source, int resultType)
+	public static Image matchHistogram(Image target, Image source, ImageType resultType)
 	{
 		HistogramEqualizer targetEqualizer = new HistogramEqualizer(target);
 		HistogramEqualizer sourceEqualizer = new HistogramEqualizer(source);
@@ -1517,16 +1387,16 @@ public class ImageHelper
 		sourceEqualizer.createInverse();
 
 		// Equalize the target.
-		BufferedImage targetEqualized = targetEqualizer.equalize(target);
+		Image targetEqualized = targetEqualizer.equalize(target);
 
 		// Apply the inverse map to the equalized target.
-		BufferedImage outImage = sourceEqualizer.inverseEqualize(targetEqualized);
+		Image outImage = sourceEqualizer.inverseEqualize(targetEqualized);
 
 		return outImage;
 
 	}
 
-	public static BufferedImage matchHistogram(BufferedImage target, BufferedImage source)
+	public static Image matchHistogram(Image target, Image source)
 	{
 		return matchHistogram(target, source, target.getType());
 	}
@@ -1542,7 +1412,7 @@ public class ImageHelper
 	 *            Algorithm to use when determining pixel colors
 	 * @return
 	 */
-	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how)
+	public static Image colorify(Image image, Color color, ColorifyAlgorithm how)
 	{
 		return colorify(image, color, how, null);
 	}
@@ -1560,7 +1430,7 @@ public class ImageHelper
 	 *            Allows colorifying only a snippet of image. Null means colorify the whole image.
 	 * @return
 	 */
-	public static BufferedImage colorify(BufferedImage image, Color color, ColorifyAlgorithm how, java.awt.Rectangle where)
+	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, java.awt.Rectangle where)
 	{
 		if (how == ColorifyAlgorithm.none)
 		{
@@ -1572,21 +1442,20 @@ public class ImageHelper
 			where = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
 		}
 
-		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException(
-					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType()));
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Raster raster = image.getRaster();
+					"The image must by type ImageType.Grayscale, but was type " + image.getType());
+		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
 
 		float[] hsb = new float[3];
-		Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
+		java.awt.Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
 
 		final java.awt.Rectangle whereFinal = where;
 		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
 		{
 			for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
 			{
-				float level = raster.getSampleFloat(x, y, 0);
+				float level = image.getNormalizedPixelLevel(x, y);
 				result.setRGB(x, y, colorifyPixel(level, hsb, how));
 			}
 		});
@@ -1600,7 +1469,7 @@ public class ImageHelper
 		{
 			float I = hsb[2] * 255f;
 			float overlay = ((I / 255f) * (I + ((2 * pixelLevel) / 255f) * (255f - I))) / 255f;
-			return Color.HSBtoRGB(hsb[0], hsb[1], overlay);
+			return Color.createFromHSB(hsb[0], hsb[1], overlay).getRGB();
 		}
 		else if (how == ColorifyAlgorithm.algorithm3)
 		{
@@ -1615,11 +1484,11 @@ public class ImageHelper
 				float range = (1f - hsb[2]) * 2;
 				resultLevel = range * pixelLevel + (1f - range);
 			}
-			return Color.HSBtoRGB(hsb[0], hsb[1], resultLevel);
+			return Color.createFromHSB(hsb[0], hsb[1], resultLevel).getRGB();
 		}
 		else if (how == ColorifyAlgorithm.none)
 		{
-			return Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]);
+			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
 		}
 		else
 		{
@@ -1651,31 +1520,28 @@ public class ImageHelper
 	 *            and this point is the upper left corner in image where the result should be extracted from, using the width and height of
 	 *            colorIndexes.
 	 */
-	public static BufferedImage colorifyMulti(BufferedImage image, Map<Integer, Color> colorMap, BufferedImage colorIndexes,
+	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes,
 			ColorifyAlgorithm how, java.awt.Point where)
 	{
-		if (image.getType() != BufferedImage.TYPE_BYTE_GRAY)
+		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException(
-					"The image must by type BufferedImage.TYPE_BYTE_GRAY, but was type " + bufferedImageTypeToString(image.getType()));
-		if (colorIndexes.getType() != BufferedImage.TYPE_BYTE_GRAY)
-			throw new IllegalArgumentException("colorIndexes type must be BufferedImage.TYPE_BYTE_GRAY.");
+					"The image must by type ImageType.Grayscale, but was type " + image.getType());
+		if (colorIndexes.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("colorIndexes type must be ImageType.Grayscale.");
 
 		if (where == null)
 		{
 			where = new java.awt.Point(0, 0);
 		}
 
-		BufferedImage result = new BufferedImage(colorIndexes.getWidth(), colorIndexes.getHeight(), BufferedImage.TYPE_INT_RGB);
-		Raster raster = image.getRaster();
-		Raster colorIndexesRaster = colorIndexes.getRaster();
+		Image result = Image.create(colorIndexes.getWidth(), colorIndexes.getHeight(), ImageType.RGB);
 
 		Map<Integer, float[]> hsbMap = new HashMap<>();
 
 		for (int regionId : colorMap.keySet())
 		{
 			Color color = colorMap.get(regionId);
-			float[] hsb = new float[3];
-			Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
+			float[] hsb = color.getHSB(color);
 			hsbMap.put(regionId, hsb);
 		}
 
@@ -1690,8 +1556,8 @@ public class ImageHelper
 				{
 					continue;
 				}
-				float level = raster.getSampleFloat(x + whereFinal.x, y + whereFinal.y, 0);
-				int colorKey = colorIndexesRaster.getSample(x, y, 0);
+				float level = image.getNormalizedPixelLevel(x + whereFinal.x, y + whereFinal.y);
+				int colorKey = colorIndexes.getPixelLevel(x, y);
 				float[] hsb = hsbMap.get(colorKey);
 				// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
 				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there 
@@ -1706,9 +1572,10 @@ public class ImageHelper
 		return result;
 	}
 
+	// TODO remove pass-through method with direct calls
 	public static Color colorFromHSB(float hue, float saturation, float brightness)
 	{
-		return new Color(Color.HSBtoRGB(hue / 360f, saturation / 255f, brightness / 255f));
+		return Color.createFromHSB(hue, saturation, brightness);
 	}
 
 	// TODO remove this method once all references are removed
@@ -1728,14 +1595,14 @@ public class ImageHelper
 	 * 
 	 * @return The file name, in the system's temp folder.
 	 */
-	public static String openImageInSystemDefaultEditor(BufferedImage map, String filenameWithoutExtension) throws IOException
+	public static String openImageInSystemDefaultEditor(Image map, String filenameWithoutExtension) throws IOException
 	{
 		// Save the map to a file.
 		String format = "png";
 		File tempFile = File.createTempFile(filenameWithoutExtension, "." + format);
-		ImageIO.write(map, format, tempFile);
+		map.write(tempFile.getAbsolutePath());
 
-		openImageInSystemDefaultEditor(tempFile.getPath());
+		openImageInSystemDefaultEditor(tempFile.getAbsolutePath());
 		return tempFile.getAbsolutePath();
 	}
 
@@ -1768,22 +1635,21 @@ public class ImageHelper
 		return Math.min(255, Math.max(0, value));
 	}
 
-	public static float calcMeanOfGrayscaleImage(BufferedImage image)
+	public static float calcMeanOfGrayscaleImage(Image image)
 	{
-		Raster raster = image.getRaster();
 		long sum = 0;
 		for (int r = 0; r < image.getHeight(); r++)
 		{
 			for (int c = 0; c < image.getWidth(); c++)
 			{
-				sum += raster.getSample(c, r, 0);
+				sum += image.getPixelLevel(c, r);
 			}
 		}
 
 		return sum / ((float) (image.getHeight() * image.getWidth()));
 	}
 
-	public static float[] calcMeanOfEachColor(BufferedImage image)
+	public static float[] calcMeanOfEachColor(Image image)
 	{
 		float[] result = new float[3];
 		for (int channel : new Range(3))
@@ -1793,7 +1659,7 @@ public class ImageHelper
 			{
 				for (int c = 0; c < image.getWidth(); c++)
 				{
-					Color color = new Color(image.getRGB(c, r));
+					Color color = Color.create(image.getRGB(c, r));
 					int level;
 					if (channel == 0)
 					{
@@ -1817,9 +1683,9 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage flipOnXAxis(BufferedImage image)
+	public static Image flipOnXAxis(Image image)
 	{
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
@@ -1831,9 +1697,9 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage flipOnYAxis(BufferedImage image)
+	public static Image flipOnYAxis(Image image)
 	{
-		BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
+		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
@@ -1845,7 +1711,7 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage blur(BufferedImage image, int blurLevel, boolean paddImageToAvoidWrapping)
+	public static Image blur(Image image, int blurLevel, boolean paddImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
@@ -1854,9 +1720,9 @@ public class ImageHelper
 		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, paddImageToAvoidWrapping);
 	}
 
-	public static void threshold(BufferedImage image, int threshold)
+	public static void threshold(Image image, int threshold)
 	{
-		int maxPixelValue = getMaxPixelValue(image);
+		int maxPixelValue = image.getMaxPixelLevel();
 		threshold(image, threshold, maxPixelValue);
 	}
 
@@ -1870,75 +1736,70 @@ public class ImageHelper
 	 * @param highValue
 	 *            Value pixels will be set to if thresholded high.
 	 */
-	public static void threshold(BufferedImage image, int threshold, int highValue)
+	public static void threshold(Image image, int threshold, int highValue)
 	{
-		if (!isSupportedGrayscaleType(image))
+		if (image.isGrayscaleOrBinary())
 		{
-			throw new IllegalArgumentException("Unsupported image type for thresholding: " + bufferedImageTypeToString(image.getType()));
+			throw new IllegalArgumentException("Unsupported image type for thresholding: " + image.getType());
 		}
 
-		int maxPixelValue = getMaxPixelValue(image);
-		WritableRaster out = image.getRaster();
+		int maxPixelValue = image.getMaxPixelLevel();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = (int) out.getSample(x, y, 0);
+				double value = (int) image.getPixelLevel(x, y);
 				if (value * maxPixelValue >= threshold)
 				{
-					out.setSample(x, y, 0, highValue);
+					image.setPixelLevel(x, y, highValue); 
 				}
 				else
 				{
-					out.setSample(x, y, 0, 0);
+					image.setPixelLevel(x, y, 0);
 				}
 			}
 	}
 
-	public static void add(BufferedImage target, BufferedImage other)
+	public static void add(Image target, Image other)
 	{
-		if (!isSupportedGrayscaleType(target))
+		if (!target.isGrayscaleOrBinary())
 		{
-			throw new IllegalArgumentException("Unsupported target image type for target: " + bufferedImageTypeToString(target.getType()));
+			throw new IllegalArgumentException("Unsupported target image type for target: " + target.getType());
 		}
-		if (!isSupportedGrayscaleType(other))
+		if (!other.isGrayscaleOrBinary())
 		{
-			throw new IllegalArgumentException("Unsupported other image type for target: " + bufferedImageTypeToString(other.getType()));
+			throw new IllegalArgumentException("Unsupported other image type for target: " + other.getType());
 		}
 
-		int maxPixelValue = getMaxPixelValue(target);
-		WritableRaster out = target.getRaster();
-		Raster otherRaster = other.getRaster();
+		int maxPixelValue = target.getMaxPixelLevel();
 		for (int y = 0; y < target.getHeight(); y++)
 			for (int x = 0; x < target.getWidth(); x++)
 			{
-				double value = (int) out.getSample(x, y, 0);
-				double otherValue = (int) otherRaster.getSample(x, y, 0);
-				out.setSample(x, y, 0, Math.min(maxPixelValue, value + otherValue));
+				double value = (int) target.getPixelLevel(x, y);
+				double otherValue = (int) other.getPixelLevel(x, y);
+				target.setPixelLevel(x, y, (int) Math.min(maxPixelValue, value + otherValue));
 			}
 	}
 
-	public static void subtract(BufferedImage target, BufferedImage other)
+	public static void subtract(Image target, Image other)
 	{
-		if (!isSupportedGrayscaleType(target))
+		if (!target.isGrayscaleOrBinary())
 		{
 			throw new IllegalArgumentException(
-					"Unsupported target image type for subtracting: " + bufferedImageTypeToString(target.getType()));
+					"Unsupported target image type for subtracting: " + target.getType());
 		}
 
-		if (!isSupportedGrayscaleType(other))
+		if (!other.isGrayscaleOrBinary())
 		{
 			throw new IllegalArgumentException(
-					"Unsupported other image type for subtracting: " + bufferedImageTypeToString(other.getType()));
+					"Unsupported other image type for subtracting: " + other.getType());
 		}
 
-		WritableRaster out = target.getRaster();
-		Raster otherRaster = other.getRaster();
 		for (int y = 0; y < target.getHeight(); y++)
 			for (int x = 0; x < target.getWidth(); x++)
 			{
-				double value = (int) out.getSample(x, y, 0);
-				double otherValue = (int) otherRaster.getSample(x, y, 0);
-				out.setSample(x, y, 0, Math.max(0, value - otherValue));
+				double value = (int) target.getPixelLevel(x, y);
+				double otherValue = (int) other.getPixelLevel(x, y);
+				target.setPixelLevel(x, y, (int) Math.max(0, value - otherValue));
 			}
 	}
 
@@ -1946,7 +1807,7 @@ public class ImageHelper
 	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
-	public static void copySnippetFromSourceAndPasteIntoTarget(BufferedImage target, BufferedImage source,
+	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source,
 			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
 		java.awt.Rectangle targetBounds = new java.awt.Rectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
@@ -1968,10 +1829,10 @@ public class ImageHelper
 		}
 	}
 
-	public static BufferedImage copySnippet(BufferedImage source, java.awt.Rectangle boundsInSourceToCopyFrom)
+	public static Image copySnippet(Image source, java.awt.Rectangle boundsInSourceToCopyFrom)
 	{
 		java.awt.Rectangle sourceBounds = new java.awt.Rectangle(0, 0, source.getWidth(), source.getHeight());
-		BufferedImage result = new BufferedImage(boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height, source.getType());
+		Image result = Image.create(boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height, source.getType());
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
 		{
 			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)
@@ -1991,43 +1852,34 @@ public class ImageHelper
 		return result;
 	}
 
-	public static BufferedImage createPlaceholderImage(String[] message)
+	public static Image createPlaceholderImage(String[] message)
 	{
 		if (message.length == 0)
 		{
-			return new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+			return Image.create(1, 1, ImageType.ARGB);
 		}
 
-		Font font = MapSettings.parseFont("URW Chancery L\t0\t" + 30);
+		Font font = Font.create("URW Chancery L", 0, 30);
 		int fontHeight = TextDrawer.getFontHeight(font);
 
-		Dimension textBounds = TextDrawer.getTextDimensions(message[0], font);
+		IntDimension textBounds = TextDrawer.getTextDimensions(message[0], font);
 		for (int i : new Range(1, message.length))
 		{
-			Dimension lineBounds = TextDrawer.getTextDimensions(message[i], font);
-			textBounds = new Dimension(Math.max(textBounds.width, lineBounds.width), textBounds.height + lineBounds.height);
+			IntDimension lineBounds = TextDrawer.getTextDimensions(message[i], font);
+			textBounds = new IntDimension(Math.max(textBounds.width, lineBounds.width), textBounds.height + lineBounds.height);
 		}
 
-		BufferedImage placeHolder = new BufferedImage((textBounds.width + 15), (textBounds.height + 20), BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g = ImageHelper.createGraphicsWithRenderingHints(placeHolder);
-		g.setFont(font);
-		g.setColor(new Color(168, 168, 168));
+		Image placeHolder = Image.create((textBounds.width + 15), (textBounds.height + 20), ImageType.ARGB);
+		Painter p = placeHolder.createPainter(DrawQuality.High);
+		p.setFont(font);
+		p.setColor(Color.create(168, 168, 168));
 
 		for (int i : new Range(message.length))
 		{
-			g.drawString(message[i], 14, fontHeight + (i * fontHeight));
+			p.drawString(message[i], 14, fontHeight + (i * fontHeight));
 		}
 
 		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
-	}
-
-	public static Graphics2D createGraphicsWithRenderingHints(BufferedImage image)
-	{
-		Graphics2D g = image.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-		return g;
 	}
 
 	public static Image convertARGBtoRGB(Image image)
@@ -2056,8 +1908,9 @@ public class ImageHelper
 		return newImage;
 	}
 	
-	public static BufferedImage crop(BufferedImage inImage, java.awt.Rectangle bounds)
+	// TODO replace pass-through method with direct calls
+	public static Image crop(Image inImage, IntRectangle bounds)
 	{
-		return inImage.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height);
+		return inImage.crop(bounds);
 	}
 }
