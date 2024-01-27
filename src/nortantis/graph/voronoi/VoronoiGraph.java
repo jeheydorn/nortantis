@@ -2,12 +2,6 @@ package nortantis.graph.voronoi;
 
 import static org.junit.Assert.assertEquals;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.GradientPaint;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,10 +20,16 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
 import nortantis.MapCreator;
+import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.nodename.as3delaunay.LineSegment;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
+import nortantis.platform.Transform;
 import nortantis.util.Range;
 
 /**
@@ -219,7 +219,7 @@ public abstract class VoronoiGraph
 		return null;
 	}
 
-	private static void drawTriangle(Graphics2D g, Corner c1, Corner c2, Center center)
+	private static void drawTriangle(Painter p, Corner c1, Corner c2, Center center)
 	{
 		int[] x = new int[3];
 		int[] y = new int[3];
@@ -230,10 +230,10 @@ public abstract class VoronoiGraph
 		x[2] = (int) c2.loc.x;
 		y[2] = (int) c2.loc.y;
 
-		g.fillPolygon(x, y, 3);
+		p.fillPolygon(x, y);
 	}
 
-	private static void drawTriangleElevation(Graphics2D g, Corner c1, Corner c2, Center center)
+	private static void drawTriangleElevation(Painter p, Corner c1, Corner c2, Center center)
 	{
 		Vector3D v1 = new Vector3D(c1.loc.x, c1.loc.y, c1.elevation);
 		Vector3D v2 = new Vector3D(c2.loc.x, c2.loc.y, c2.elevation);
@@ -244,7 +244,7 @@ public abstract class VoronoiGraph
 
 		Vector3D highestPoint = findHighestZ(v1, v2, v3);
 		int highestPointGrayLevel = (int) (highestPoint.getZ() * 255);
-		Color highestPointColor = new Color(highestPointGrayLevel, highestPointGrayLevel, highestPointGrayLevel);
+		Color highestPointColor = Color.create(highestPointGrayLevel, highestPointGrayLevel, highestPointGrayLevel);
 
 		// Gradient of x and y with respect to z.
 		Vector3D G = new Vector3D(-N.getX() / N.getZ(), -N.getY() / N.getZ(), 0);
@@ -254,16 +254,16 @@ public abstract class VoronoiGraph
 		{
 			// The triangle is either flat or vertical.
 			int grayLevel = (int) (255 * center.elevation);
-			g.setColor(new Color(grayLevel, grayLevel, grayLevel));
-			drawTriangle(g, c1, c2, center);
+			p.setColor(Color.create(grayLevel, grayLevel, grayLevel));
+			drawTriangle(p, c1, c2, center);
 			return;
 		}
 
 		Vector3D zIntercept = findZIntersectionWithXYPlain(highestPoint, G);
 
-		g.setPaint(new GradientPaint((float) highestPoint.getX(), (float) highestPoint.getY(), highestPointColor, (float) zIntercept.getX(),
-				(float) zIntercept.getY(), Color.black, false));
-		drawTriangle(g, c1, c2, center);
+		p.setGradient((float) highestPoint.getX(), (float) highestPoint.getY(), highestPointColor, (float) zIntercept.getX(),
+				(float) zIntercept.getY(), Color.black);
+		drawTriangle(p, c1, c2, center);
 	}
 
 	private static Vector3D findZIntersectionWithXYPlain(Vector3D point, Vector3D gradient)
@@ -314,7 +314,7 @@ public abstract class VoronoiGraph
 
 	private static void drawTriangleElevationWithXAndYGradientTest()
 	{
-		BufferedImage image = new BufferedImage(101, 101, BufferedImage.TYPE_INT_RGB);
+		Image image = Image.create(101, 101, ImageType.RGB);
 		Corner corner1 = new Corner();
 		corner1.loc = new Point(0, 0);
 		corner1.elevation = 0.0;
@@ -323,16 +323,16 @@ public abstract class VoronoiGraph
 		corner2.loc = new Point(100, 0);
 		Center center = new Center(new Point(100, 100));
 		center.elevation = 1.0;
-		Graphics2D g = image.createGraphics();
-		drawTriangleElevation(g, corner1, corner2, center);
-		assertEquals(0, new Color(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals(125, new Color(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals(251, new Color(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
+		Painter p = image.createPainter();
+		drawTriangleElevation(p, corner1, corner2, center);
+		assertEquals(0, Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
+		assertEquals(125, Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
+		assertEquals(251, Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
 	}
 
 	private static void drawTriangleElevationZeroXGradientTest()
 	{
-		BufferedImage image = new BufferedImage(101, 101, BufferedImage.TYPE_INT_RGB);
+		Image image = Image.create(101, 101, ImageType.RGB);
 		Corner corner1 = new Corner();
 		corner1.loc = new Point(0, 0);
 		corner1.elevation = 0.5;
@@ -341,16 +341,16 @@ public abstract class VoronoiGraph
 		corner2.loc = new Point(50, 0);
 		Center center = new Center(new Point(50, 100));
 		center.elevation = 1.0;
-		Graphics2D g = image.createGraphics();
-		drawTriangleElevation(g, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), new Color(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), new Color(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 253), new Color(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
+		Painter p = image.createPainter();
+		drawTriangleElevation(p, corner1, corner2, center);
+		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
+		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x - 1, (int) corner2.loc.y)).getBlue());
+		assertEquals((int) (center.elevation * 253), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 2)).getBlue());
 	}
 
 	private static void drawTriangleElevationZeroYGradientTest()
 	{
-		BufferedImage image = new BufferedImage(101, 101, BufferedImage.TYPE_INT_RGB);
+		Image image = Image.create(101, 101, ImageType.RGB);
 		Corner corner1 = new Corner();
 		corner1.loc = new Point(0, 0);
 		corner1.elevation = 0.0;
@@ -359,11 +359,11 @@ public abstract class VoronoiGraph
 		corner2.loc = new Point(0, 100);
 		Center center = new Center(new Point(50, 100));
 		center.elevation = 1.0;
-		Graphics2D g = image.createGraphics();
-		drawTriangleElevation(g, corner1, corner2, center);
-		assertEquals((int) (corner1.elevation * 255), new Color(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
-		assertEquals((int) (corner2.elevation * 255), new Color(image.getRGB((int) corner2.loc.x, (int) corner2.loc.y)).getBlue());
-		assertEquals((int) (center.elevation * 249), new Color(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 1)).getBlue());
+		Painter p = image.createPainter();
+		drawTriangleElevation(p, corner1, corner2, center);
+		assertEquals((int) (corner1.elevation * 255), Color.create(image.getRGB((int) corner1.loc.x, (int) corner1.loc.y)).getBlue());
+		assertEquals((int) (corner2.elevation * 255), Color.create(image.getRGB((int) corner2.loc.x, (int) corner2.loc.y)).getBlue());
+		assertEquals((int) (center.elevation * 249), Color.create(image.getRGB((int) center.loc.x - 1, (int) center.loc.y - 1)).getBlue());
 	}
 
 	/**
@@ -390,15 +390,15 @@ public abstract class VoronoiGraph
 	/**
 	 * Draw tectonic plates. For debugging
 	 */
-	public void drawPlates(Graphics2D g)
+	public void drawPlates(Painter p)
 	{
 		for (Edge e : edges)
 		{
 			if (e.d0.tectonicPlate != e.d1.tectonicPlate && e.v0 != null && e.v1 != null)
 			{
-				g.setStroke(new BasicStroke(1));
-				g.setColor(Color.GREEN);
-				g.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
+				p.setBasicStroke(1);
+				p.setColor(Color.green);
+				p.drawLine((int) e.v0.loc.x, (int) e.v0.loc.y, (int) e.v1.loc.x, (int) e.v1.loc.y);
 			}
 		}
 	}
@@ -406,9 +406,9 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawVoronoi(Graphics2D g)
+	public void drawVoronoi(Painter g)
 	{
-		g.setColor(Color.WHITE);
+		g.setColor(Color.white);
 		for (Corner c : corners)
 		{
 			for (Corner adjacent : c.adjacent)
@@ -421,12 +421,12 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawDelaunay(Graphics2D g)
+	public void drawDelaunay(Painter g)
 	{
 		for (Edge e : edges)
 		{
-			g.setStroke(new BasicStroke(1));
-			g.setColor(Color.YELLOW);
+			g.setBasicStroke(1);
+			g.setColor(Color.yellow);
 			g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
 		}
 	}
@@ -434,27 +434,27 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawCorners(Graphics2D g)
+	public void drawCorners(Painter g)
 	{
 		for (Corner c : corners)
 		{
-			g.setColor(Color.PINK);
+			g.setColor(Color.pink);
 
 			g.fillOval((int) (c.loc.x - 5), (int) (c.loc.y - 5), 10, 10);
 		}
 	}
 
-	public void drawElevation(Graphics2D g)
+	public void drawElevation(Painter g)
 	{
 		for (Center c : centers)
 		{
 			float grayLevel = (float) (float) c.elevation;
-			g.setColor(new Color(grayLevel, grayLevel, grayLevel));
+			g.setColor(Color.create(grayLevel, grayLevel, grayLevel));
 			drawUsingTriangles(g, c, true);
 		}
 	}
 
-	public void drawBiomes(Graphics2D g)
+	public void drawBiomes(Painter g)
 	{
 		drawPolygons(g, (center) ->
 		{
@@ -462,14 +462,14 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Graphics2D g, Collection<Edge> edgesToDraw, Rectangle drawBounds)
+	public void drawRivers(Painter g, Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
 		if (edgesToDraw == null)
 		{
 			edgesToDraw = edges;
 		}
 
-		AffineTransform orig = null;
+		Transform orig = null;
 		if (drawBounds != null)
 		{
 			orig = g.getTransform();
@@ -511,7 +511,7 @@ public abstract class VoronoiGraph
 		return Math.max(1, (int) (resolutionScale * Math.sqrt(e.river * 0.5)));
 	}
 	
-	protected void drawUsingTriangles(Graphics2D g, Center c, boolean drawElevation)
+	protected void drawUsingTriangles(Painter g, Center c, boolean drawElevation)
 	{
 		// Only used if Center c is on the edge of the graph. allows for
 		// completely filling in the outer
@@ -655,9 +655,9 @@ public abstract class VoronoiGraph
 							// and call drawElevationOfTriangle on each, but for
 							// now I'm just doing this.
 							float grayLevel = (float) (float) c.elevation;
-							g.setColor(new Color(grayLevel, grayLevel, grayLevel));
+							g.setColor(Color.create(grayLevel, grayLevel, grayLevel));
 						}
-						g.fillPolygon(x, y, 4);
+						g.fillPolygon(x, y);
 						c.area += 0; // TODOO: area of polygon given vertices
 					}
 				}
@@ -666,7 +666,7 @@ public abstract class VoronoiGraph
 
 	}
 
-	private void drawPathWithSmoothLineTransitions(Graphics2D g, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
+	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
 			float nextEdgeWidth)
 	{
 		if (path.size() < 2)
@@ -701,8 +701,8 @@ public abstract class VoronoiGraph
 			pathSoFar.add(path.get(i));
 			if (width != previousWidth)
 			{
-				g.setStroke(new BasicStroke(width));
-				drawPolyline(g, pathSoFar);
+				p.setBasicStroke(width);
+				drawPolyline(p, pathSoFar);
 				pathSoFar.add(path.get(i));
 			}			
 			
@@ -711,8 +711,8 @@ public abstract class VoronoiGraph
 		
 		if (pathSoFar.size() > 1)
 		{
-			g.setStroke(new BasicStroke(widthAtEnd));
-			drawPolyline(g, pathSoFar);
+			p.setBasicStroke(widthAtEnd);
+			drawPolyline(p, pathSoFar);
 		}
 	}
 	
@@ -732,17 +732,17 @@ public abstract class VoronoiGraph
 		return length;
 	}
 
-	public void drawCoastline(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
+		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
 	}
 
-	public void drawCoastlineWithLakeShores(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public void drawCoastlineWithLakeShores(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
+		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
 	}
 
-	public void drawRegionBorders(Graphics2D g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
+	public void drawRegionBorders(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
 			Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge ->
@@ -757,7 +757,7 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	private void drawSpecifiedEdges(Graphics2D g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
+	private void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
 			Function<Edge, Boolean> shouldDraw)
 	{
 		if (centersToDraw == null)
@@ -765,7 +765,7 @@ public abstract class VoronoiGraph
 			centersToDraw = centers;
 		}
 
-		AffineTransform orig = null;
+		Transform orig = null;
 		if (drawBounds != null)
 		{
 			orig = g.getTransform();
@@ -774,7 +774,7 @@ public abstract class VoronoiGraph
 
 		Set<Edge> drawn = new HashSet<>();
 
-		g.setStroke(new BasicStroke((float) strokeWidth));
+		g.setBasicStroke((float) strokeWidth);
 
 		for (final Center p : centersToDraw)
 		{
@@ -797,7 +797,7 @@ public abstract class VoronoiGraph
 		}
 	}
 
-	public void drawEdge(Graphics2D g, Edge edge)
+	public void drawEdge(Painter p, Edge edge)
 	{
 		if (noisyEdges.getNoisyEdge(edge.index) == null)
 		{
@@ -807,10 +807,10 @@ public abstract class VoronoiGraph
 		}
 
 		List<Point> path = noisyEdges.getNoisyEdge(edge.index);
-		drawPolyline(g, path);
+		drawPolyline(p, path);
 	}
 	
-	private void drawPolyline(Graphics2D g, List<Point> line)
+	private void drawPolyline(Painter p, List<Point> line)
 	{
 		int[] xPoints = new int[line.size()];
 		int[] yPoints = new int[line.size()];
@@ -819,46 +819,46 @@ public abstract class VoronoiGraph
 			xPoints[i] = (int) line.get(i).x;
 			yPoints[i] = (int) line.get(i).y;
 		}
-		g.drawPolyline(xPoints, yPoints, xPoints.length);
+		p.drawPolyline(xPoints, yPoints);
 	}
 
 	/**
 	 * Render the interior of polygons including noisy edges.
 	 * 
-	 * @param g
+	 * @param p
 	 * @param colorChooser
 	 *            Decides the color for each polygons. If it returns null, then the polygons will not be drawn.
 	 */
-	public void drawPolygons(Graphics2D g, Function<Center, Color> colorChooser)
+	public void drawPolygons(Painter p, Function<Center, Color> colorChooser)
 	{
-		drawPolygons(g, centers, colorChooser);
+		drawPolygons(p, centers, colorChooser);
 	}
 
-	public void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds, Function<Center, Color> colorChooser)
+	public void drawPolygons(Painter p, Collection<Center> centersToRender, Rectangle drawBounds, Function<Center, Color> colorChooser)
 	{
-		AffineTransform orig = null;
+		Transform orig = null;
 		if (drawBounds != null)
 		{
-			orig = g.getTransform();
-			g.translate(-drawBounds.x, -drawBounds.y);
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
 		if (centersToRender == null)
 		{
-			drawPolygons(g, colorChooser);
+			drawPolygons(p, colorChooser);
 		}
 		else
 		{
-			drawPolygons(g, centersToRender, colorChooser);
+			drawPolygons(p, centersToRender, colorChooser);
 		}
 
 		if (drawBounds != null)
 		{
-			g.setTransform(orig);
+			p.setTransform(orig);
 		}
 	}
 
-	public void drawPolygons(Graphics2D g, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
+	public void drawPolygons(Painter p, Collection<Center> centersToRender, Function<Center, Color> colorChooser)
 	{
 		// First I must draw border polygons without noisy edges because the
 		// noisy edges don't exist on the borders.
@@ -869,8 +869,8 @@ public abstract class VoronoiGraph
 				Color color = colorChooser.apply(c);
 				if (color != null)
 				{
-					g.setColor(color);
-					drawUsingTriangles(g, c, false);
+					p.setColor(color);
+					drawUsingTriangles(p, c, false);
 				}
 			}
 		}
@@ -881,7 +881,7 @@ public abstract class VoronoiGraph
 			Color color = colorChooser.apply(c);
 			if (color != null)
 			{
-				g.setColor(color);
+				p.setColor(color);
 				for (final Center r : c.neighbors)
 				{
 					Edge edge = lookupEdgeFromCenter(c, r);
@@ -890,11 +890,11 @@ public abstract class VoronoiGraph
 					{
 						// This can happen if noisy edges haven't been created
 						// yet or if the polygon is on the border.
-						drawPieceWithoutNoisyEdges(g, edge, c);
+						drawPieceWithoutNoisyEdges(p, edge, c);
 					}
 					else
 					{
-						dawPieceUsingNoisyEdges(g, edge, c);
+						dawPieceUsingNoisyEdges(p, edge, c);
 					}
 				}
 			}
@@ -902,28 +902,28 @@ public abstract class VoronoiGraph
 		}
 	}
 
-	private void drawPieceWithoutNoisyEdges(Graphics2D g, Edge edge, Center c)
+	private void drawPieceWithoutNoisyEdges(Painter p, Edge edge, Center c)
 	{
-		java.awt.Polygon shape = new java.awt.Polygon();
-		shape.addPoint((int) c.loc.x, (int) c.loc.y);
+		List<IntPoint> vertices = new ArrayList<>();
+		vertices.add(new IntPoint((int) c.loc.x, (int) c.loc.y));
 		if (edge.v0 != null)
-			shape.addPoint((int) edge.v0.loc.x, (int) edge.v0.loc.y);
+			vertices.add(new IntPoint((int) edge.v0.loc.x, (int) edge.v0.loc.y));
 		if (edge.v1 != null)
-			shape.addPoint((int) edge.v1.loc.x, (int) edge.v1.loc.y);
-		g.fill(shape);
+			vertices.add(new IntPoint((int) edge.v1.loc.x, (int) edge.v1.loc.y));
+		p.fillPolygon(vertices);
 		return;
 	}
 
-	private void dawPieceUsingNoisyEdges(Graphics2D g, Edge edge, Center c)
+	private void dawPieceUsingNoisyEdges(Painter p, Edge edge, Center c)
 	{
 		List<Point> path = noisyEdges.getNoisyEdge(edge.index);
-		java.awt.Polygon shape = new java.awt.Polygon();
-		shape.addPoint((int) c.loc.x, (int) c.loc.y);
+		List<IntPoint> vertices = new ArrayList<>();
+		vertices.add(new IntPoint((int) c.loc.x, (int) c.loc.y));
 		for (Point point : path)
 		{
-			shape.addPoint((int) point.x, (int) point.y);
+			vertices.add(new IntPoint((int) point.x, (int) point.y));
 		}
-		g.fillPolygon(shape);
+		p.fillPolygon(vertices);
 	}
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi

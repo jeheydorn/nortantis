@@ -60,10 +60,12 @@ import nortantis.MapText;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.geom.DimensionDouble;
+import nortantis.geom.Dimension;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.platform.awt.AwtPlatform;
 import nortantis.util.AssetsPath;
 import nortantis.util.ILoggerTarget;
@@ -1102,7 +1104,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				Dimension size = new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
-				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
+				Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
 						mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
@@ -1597,7 +1599,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			e.printStackTrace();
 		}
 		
-		AwtPlatform.createFactories();
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()

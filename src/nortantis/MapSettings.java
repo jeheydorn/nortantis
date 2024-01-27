@@ -1,7 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.io.Serializable;
@@ -27,6 +25,8 @@ import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
@@ -603,19 +603,19 @@ public class MapSettings implements Serializable
 
 		if (coastShadingColor.getAlpha() == 255)
 		{
-			coastShadingColor = new Color(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
+			coastShadingColor = Color.create(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
 					SettingsGenerator.defaultCoastShadingAlpha);
 		}
 		
 		if (oceanEffect == OceanEffect.Blur && oceanEffectsColor.getAlpha() == 255)
 		{
-			oceanEffectsColor = new Color(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
 					SettingsGenerator.defaultOceanShadingAlpha);
 		}
 		
 		if (oceanEffect == OceanEffect.Ripples && oceanEffectsColor.getAlpha() == 255)
 		{
-			oceanEffectsColor = new Color(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
 					SettingsGenerator.defaultOceanRipplesAlpha);
 		}
 	}
@@ -742,11 +742,11 @@ public class MapSettings implements Serializable
 		String[] parts = str.split(",");
 		if (parts.length == 3)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		}
 		if (parts.length == 4)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
 					Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
@@ -759,18 +759,18 @@ public class MapSettings implements Serializable
 		{
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
 		}
-		Font font = new Font(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		Font font = Font.create(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		if (!isFontInstalled(font.getName()))
 		{
 			if (isFontInstalled("Gabriola"))
 			{
 				// Windows has this font
-				font = new Font("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+				font = Font.create("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 			}
 			else if (isFontInstalled("Z003"))
 			{
 				// Ubuntu has this font
-				font = new Font("Z003", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+				font = Font.create("Z003", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 			}
 		}
 		return font;

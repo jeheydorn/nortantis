@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import nortantis.geom.DimensionDouble;
+import nortantis.geom.Dimension;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.util.AssetsPath;
@@ -29,7 +29,7 @@ public class Background
 	BufferedImage landBeforeRegionColoring;
 	BufferedImage land;
 	BufferedImage ocean;
-	DimensionDouble mapBounds;
+	Dimension mapBounds;
 	Dimension borderBounds;
 	int borderWidth;
 	BufferedImage borderBackground;
@@ -44,7 +44,7 @@ public class Background
 	private String imagesPath;
 
 
-	public Background(MapSettings settings, DimensionDouble mapBounds)
+	public Background(MapSettings settings, Dimension mapBounds)
 	{
 		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
@@ -228,9 +228,9 @@ public class Background
 		}
 	}
 
-	static DimensionDouble calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
+	static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
-		DimensionDouble mapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
+		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.resolution,
 				settings.generatedHeight * settings.resolution);
 		if (maxDimensions != null)
 		{
@@ -239,15 +239,15 @@ public class Background
 			{
 				borderWidth = (int) (settings.borderWidth * settings.resolution);
 			}
-			DimensionDouble mapBoundsPlusBorder = new DimensionDouble(mapBounds.getWidth() + borderWidth * 2,
+			Dimension mapBoundsPlusBorder = new Dimension(mapBounds.getWidth() + borderWidth * 2,
 					mapBounds.getHeight() + borderWidth * 2);
 
-			DimensionDouble newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
+			Dimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.getWidth(),
 					mapBoundsPlusBorder.getHeight());
 			// Change the resolution to match the new bounds.
 			settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
 
-			DimensionDouble scaledMapBounds = new DimensionDouble(settings.generatedWidth * settings.resolution,
+			Dimension scaledMapBounds = new Dimension(settings.generatedWidth * settings.resolution,
 					settings.generatedHeight * settings.resolution);
 			mapBounds = scaledMapBounds;
 		}

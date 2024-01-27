@@ -9,7 +9,7 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.geom.DimensionDouble;
+import nortantis.geom.Dimension;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
@@ -28,7 +28,7 @@ public class GraphCreator
 	{
 		// double startTime = System.currentTimeMillis();
 
-		DimensionDouble graphSize = getGraphDimensionsWithStandardWidth(new DimensionDouble(width, height));
+		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
@@ -120,7 +120,7 @@ public class GraphCreator
 		// Zero is most random. Higher values make the polygons more uniform shaped. Value should be between 0 and 1.
 		final double lloydRelaxationsScale = 0.0;
 
-		DimensionDouble graphSize = getGraphDimensionsWithStandardWidth(new DimensionDouble(width, height));
+		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
@@ -141,13 +141,13 @@ public class GraphCreator
 	 * floating point values, and limitations on floating point precision. My solution is to always generate the graph
 	 * at the same size, no matter they draw resolution, then scale it to the resolution to draw at.
 	 */
-	private static DimensionDouble getGraphDimensionsWithStandardWidth(DimensionDouble drawResolution)
+	private static Dimension getGraphDimensionsWithStandardWidth(Dimension drawResolution)
 	{
 		// It doesn't really matter what this value is. I'm using the value that used to be the width of a graph drawn at medium resolution,
 		// since that's most likely to be backwards compatible with older maps.
 		final double standardWidth = 4096; 
 		
-		return new DimensionDouble(standardWidth, drawResolution.height * (standardWidth / drawResolution.width));
+		return new Dimension(standardWidth, drawResolution.height * (standardWidth / drawResolution.width));
 	}
 
 

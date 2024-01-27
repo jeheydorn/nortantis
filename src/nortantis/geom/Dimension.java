@@ -1,10 +1,10 @@
 package nortantis.geom;
 
-public class DimensionDouble implements Comparable<DimensionDouble>
+public class Dimension implements Comparable<Dimension>
 {
 	public double width, height;
 
-	public DimensionDouble(double width, double height)
+	public Dimension(double width, double height)
 	{
 		this.width = width;
 		this.height = height;
@@ -28,7 +28,7 @@ public class DimensionDouble implements Comparable<DimensionDouble>
 
 
 	@Override
-	public int compareTo(DimensionDouble other)
+	public int compareTo(Dimension other)
 	{
 		int c1 = Double.compare(width, other.width);
 		if (c1 < 0)

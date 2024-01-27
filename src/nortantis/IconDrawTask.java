@@ -4,6 +4,8 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
 import nortantis.util.AssetsPath;
 
 /**
@@ -90,9 +92,9 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		}
 	}
 
-	public Area createArea()
+	public RotatedRectangle createArea()
 	{
-		return new Area(new java.awt.Rectangle((int) (centerLoc.x - scaledWidth / 2.0), (int) (centerLoc.y - scaledHeight / 2.0),
+		return new RotatedRectangle(new Rectangle(centerLoc.x - scaledWidth / 2.0, centerLoc.y - scaledHeight / 2.0,
 				scaledWidth, scaledHeight));
 	}
 

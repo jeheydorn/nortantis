@@ -20,10 +20,7 @@ public class Rectangle
 
 	public Rectangle(java.awt.Rectangle rect)
 	{
-		this.x = rect.x;
-		this.y = rect.y;
-		this.width = rect.width;
-		this.height = rect.height;
+		this(rect.x, rect.y, rect.width, rect.height);
 	}
 
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
@@ -31,6 +28,32 @@ public class Rectangle
 		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance)
 				|| GenUtils.closeEnough(p.x, getRight(), closeEnoughDistance)
 				|| GenUtils.closeEnough(p.y, getBottom(), closeEnoughDistance);
+	}
+
+	public boolean contains(Rectangle other)
+	{
+		// Check if the left edge of the other rectangle is to the right of the left edge of this rectangle
+		if (other.getLeft() < this.getLeft())
+		{
+			return false;
+		}
+		// Check if the right edge of the other rectangle is to the left of the right edge of this rectangle
+		if (other.getRight() > this.getRight())
+		{
+			return false;
+		}
+		// Check if the top edge of the other rectangle is below the top edge of this rectangle
+		if (other.getTop() < this.getTop())
+		{
+			return false;
+		}
+		// Check if the bottom edge of the other rectangle is above the bottom edge of this rectangle
+		if (other.getBottom() > this.getBottom())
+		{
+			return false;
+		}
+		// If none of the conditions are met, return true
+		return true;
 	}
 
 	public boolean inBounds(Point p)
@@ -150,6 +173,11 @@ public class Rectangle
 	{
 		return new Rectangle((int) x, (int) y, (int) width, (int) height);
 	}
+	
+	public Rectangle translate(double xTranslation, double yTranslation)
+	{
+		return new Rectangle(x + xTranslation, y + yTranslation, width, height);
+	}
 
 	public Rectangle findIntersection(Rectangle r2)
 	{
@@ -178,7 +206,7 @@ public class Rectangle
 
 		return new java.awt.Rectangle((int) x, (int) y, (int) width, (int) height);
 	}
-	
+
 	public IntRectangle toIntRectangle()
 	{
 		return new IntRectangle((int) x, (int) y, (int) width, (int) height);

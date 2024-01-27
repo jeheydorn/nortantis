@@ -1,7 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -28,6 +26,8 @@ import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
@@ -808,11 +808,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 		String[] parts = str.split(",");
 		if (parts.length == 3)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		}
 		if (parts.length == 4)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
 					Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
@@ -846,11 +846,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 		String[] parts = str.split("\t");
 		if (parts.length != 3)
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
-		Font font = new Font(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		Font font = Font.create(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		if (parts[0].startsWith("URW Chancery") && font.getFamily().equals("Dialog"))
 		{
 			// Windows doesn't have URW Chancery, so change it to another font.
-			return new Font("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Font.create("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		}
 		else
 		{

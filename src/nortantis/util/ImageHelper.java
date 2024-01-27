@@ -28,7 +28,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
-import nortantis.geom.DimensionDouble;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
@@ -52,7 +52,7 @@ public class ImageHelper
 		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination();
 	}
 
-	public static DimensionDouble fitDimensionsWithinBoundingBox(IntDimension maxDimensions, double originalWidth, double originalHeight)
+	public static Dimension fitDimensionsWithinBoundingBox(IntDimension maxDimensions, double originalWidth, double originalHeight)
 	{
 		double width = originalWidth;
 		double height = originalHeight;
@@ -67,7 +67,7 @@ public class ImageHelper
 			height = maxDimensions.height;
 			width = width * (height / prevHeight);
 		}
-		return new DimensionDouble(width, height);
+		return new Dimension(width, height);
 	}
 
 	/**

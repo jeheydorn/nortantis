@@ -1,8 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,6 +31,8 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.NoisyEdges;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.platform.Color;
+import nortantis.platform.Painter;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 
@@ -290,7 +289,7 @@ public class WorldGraph extends VoronoiGraph
 		OCEAN = Biome.OCEAN.color;
 		LAKE = Biome.LAKE.color;
 		BEACH = Biome.BEACH.color;
-		RIVER = new Color(0x225588);
+		RIVER = Color.create(22, 55, 88);
 
 	}
 
@@ -364,12 +363,12 @@ public class WorldGraph extends VoronoiGraph
 				+ centers.stream().filter(c -> c.region == null).count() == centers.size();
 	}
 
-	public void drawRegionIndexes(Graphics2D g, Set<Center> centersToDraw, Rectangle drawBounds)
+	public void drawRegionIndexes(Painter p, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
 		// As we draw, if ocean centers are close to land, use the region index from that land. That way
 		// if the option to allow icons to draw over coastlines is true, then region colors will
 		// draw inside transparent pixels of icons whose content extends over ocean.
-		drawPolygons(g, centersToDraw, drawBounds, (c) ->
+		drawPolygons(p, centersToDraw, drawBounds, (c) ->
 		{
 			if (c.region == null)
 			{
@@ -589,8 +588,8 @@ public class WorldGraph extends VoronoiGraph
 		if (centerLookupTable == null)
 		{
 			centerLookupTable = new BufferedImage((int) bounds.width, (int) bounds.height, BufferedImage.TYPE_3BYTE_BGR);
-			Graphics2D g = centerLookupTable.createGraphics();
-			drawPolygons(g, new Function<Center, Color>()
+			Painter p = centerLookupTable.createGraphics();
+			drawPolygons(p, new Function<Center, Color>()
 			{
 				public Color apply(Center c)
 				{
@@ -626,8 +625,8 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 
-			Graphics2D g = centerLookupTable.createGraphics();
-			drawPolygons(g, centersWithNeighbors, new Function<Center, Color>()
+			Painter p = centerLookupTable.createGraphics();
+			drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
 			{
 				public Color apply(Center c)
 				{
@@ -752,9 +751,9 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 
-	public void paintElevationUsingTrianges(Graphics2D g)
+	public void paintElevationUsingTrianges(Painter p)
 	{
-		super.drawElevation(g);
+		super.drawElevation(p);
 
 		// Draw plate velocities.
 		// g.setColor(Color.yellow);
@@ -771,14 +770,14 @@ public class WorldGraph extends VoronoiGraph
 		// }
 	}
 
-	public void drawBorderWhite(Graphics2D g)
+	public void drawBorderWhite(Painter p)
 	{
-		drawPolygons(g, c -> c.isBorder ? Color.white : Color.black);
+		drawPolygons(p, c -> c.isBorder ? Color.white : Color.black);
 	}
 
-	public void drawLandAndOceanBlackAndWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
+	public void drawLandAndOceanBlackAndWhite(Painter p, Collection<Center> centersToRender, Rectangle drawBounds)
 	{
-		drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>()
+		drawPolygons(p, centersToRender, drawBounds, new Function<Center, Color>()
 		{
 			public Color apply(Center c)
 			{
@@ -806,7 +805,7 @@ public class WorldGraph extends VoronoiGraph
 		// }
 	}
 
-	public void drawLandAndLandLockedLakesBlackAndOceanWhite(Graphics2D g, Collection<Center> centersToRender, Rectangle drawBounds)
+	public void drawLandAndLandLockedLakesBlackAndOceanWhite(Painter p, Collection<Center> centersToRender, Rectangle drawBounds)
 	{
 		if (centersToRender == null)
 		{
@@ -814,7 +813,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		Set<Center> landAndLandLockedLakes = findLandAndLandLockedLakes(centersToRender);
-		drawPolygons(g, centersToRender, drawBounds, new Function<Center, Color>()
+		drawPolygons(p, centersToRender, drawBounds, new Function<Center, Color>()
 		{
 			public Color apply(Center c)
 			{

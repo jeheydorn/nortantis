@@ -1,11 +1,11 @@
 package nortantis;
 
-import java.awt.Rectangle;
-import java.awt.geom.Area;
 import java.io.Serializable;
 import java.util.Objects;
 
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
 
 /**
  * Stores a piece of text (and data about it) drawn onto a map.
@@ -20,8 +20,8 @@ public class MapText implements Serializable
 	/**
 	 * The (possibly rotated) bounding boxes of the text.
 	 */
-	public transient Area line1Area;
-	public transient Area line2Area;
+	public RotatedRectangle line1Area;
+	public RotatedRectangle line2Area;
 
 	public TextType type;
 
@@ -47,7 +47,7 @@ public class MapText implements Serializable
 	public Rectangle line1Bounds;
 	public Rectangle line2Bounds;
 
-	public MapText(String text, Point location, double angle, TextType type, Area line1Area, Area line2Area, Rectangle line1Bounds,
+	public MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Area, RotatedRectangle line2Area, Rectangle line1Bounds,
 			Rectangle line2Bounds)
 	{
 		this.value = text;
@@ -80,13 +80,13 @@ public class MapText implements Serializable
 	public MapText deepCopy()
 	{
 		String value = this.value;
-		Area line1Area = this.line1Area == null ? null : new Area(this.line1Area);
-		Area line2Area = this.line2Area == null ? null : new Area(this.line2Area);
+		RotatedRectangle line1Area = this.line1Area;
+		RotatedRectangle line2Area = this.line2Area;
 		TextType type = this.type;
 		double angle = this.angle;
 		Point location = new Point(this.location.x, this.location.y);
-		Rectangle line1Bounds = this.line1Bounds == null ? null : new Rectangle(this.line1Bounds);
-		Rectangle line2Bounds = this.line2Bounds == null ? null : new Rectangle(this.line2Bounds);
+		Rectangle line1Bounds = this.line1Bounds;
+		Rectangle line2Bounds = this.line2Bounds;
 
 		return new MapText(value, location, angle, type, line1Area, line2Area, line1Bounds, line2Bounds);
 	}
