@@ -1,8 +1,10 @@
 package nortantis.geom;
 
+import java.util.Objects;
+
 public class Dimension implements Comparable<Dimension>
 {
-	public double width, height;
+	public final double width, height;
 
 	public Dimension(double width, double height)
 	{
@@ -10,14 +12,9 @@ public class Dimension implements Comparable<Dimension>
 		this.height = height;
 	}
 
-	public double getWidth()
+	public IntDimension toIntDimension()
 	{
-		return width;
-	}
-
-	public double getHeight()
-	{
-		return height;
+		return new IntDimension((int)width, (int)height);
 	}
 
 	@Override
@@ -43,6 +40,32 @@ public class Dimension implements Comparable<Dimension>
 			return 1;
 
 		return 0;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(height, width);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		Dimension other = (Dimension) obj;
+		return Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height)
+				&& Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width);
 	}
 
 }

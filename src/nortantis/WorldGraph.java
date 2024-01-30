@@ -32,6 +32,8 @@ import nortantis.graph.voronoi.NoisyEdges;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.util.Helper;
 import nortantis.util.Range;
@@ -383,12 +385,12 @@ public class WorldGraph extends VoronoiGraph
 				}
 				else
 				{
-					return new Color(closestLand.region.id, closestLand.region.id, closestLand.region.id);
+					return Color.create(closestLand.region.id, closestLand.region.id, closestLand.region.id);
 				}
 			}
 			else
 			{
-				return new Color(c.region.id, c.region.id, c.region.id);
+				return Color.create(c.region.id, c.region.id, c.region.id);
 			}
 		});
 	}
@@ -562,7 +564,7 @@ public class WorldGraph extends VoronoiGraph
 			Color color;
 			try
 			{
-				color = new Color(centerLookupTable.getRGB((int) point.x, (int) point.y));
+				color = Color.create(centerLookupTable.getRGB((int) point.x, (int) point.y));
 			}
 			catch (IndexOutOfBoundsException e)
 			{
@@ -581,14 +583,15 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 
-	private BufferedImage centerLookupTable;
+	private Image centerLookupTable;
 
 	public void buildCenterLookupTableIfNeeded()
 	{
 		if (centerLookupTable == null)
 		{
-			centerLookupTable = new BufferedImage((int) bounds.width, (int) bounds.height, BufferedImage.TYPE_3BYTE_BGR);
-			Painter p = centerLookupTable.createGraphics();
+			// TODO Convert centerLookupTable to ImageType.Grayscale16Bit to save some memory.
+			centerLookupTable = Image.create((int) bounds.width, (int) bounds.height, ImageType.ARGB);
+			Painter p = centerLookupTable.createPainter();
 			drawPolygons(p, new Function<Center, Color>()
 			{
 				public Color apply(Center c)
@@ -625,7 +628,7 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 
-			Painter p = centerLookupTable.createGraphics();
+			Painter p = centerLookupTable.createPainter();
 			drawPolygons(p, centersWithNeighbors, new Function<Center, Color>()
 			{
 				public Color apply(Center c)
@@ -638,7 +641,7 @@ public class WorldGraph extends VoronoiGraph
 
 	private Color convertCenterIdToColor(Center c)
 	{
-		return new Color(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
+		return Color.create(c.index & 0xff, (c.index & 0xff00) >> 8, (c.index & 0xff0000) >> 16);
 	}
 
 	/**

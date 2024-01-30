@@ -2,29 +2,25 @@ package nortantis;
 
 import static java.lang.System.out;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
 import java.io.IOException;
 import java.util.Random;
 
 import org.imgscalr.Scalr.Method;
 
-import nortantis.platform.ColorFactory;
+import nortantis.platform.Color;
 import nortantis.platform.Image;
-import nortantis.platform.ImageFactory;
-import nortantis.platform.awt.AwtColorFactory;
-import nortantis.platform.awt.AwtImageFactory;
-import nortantis.platform.awt.AwtPlatform;
+import nortantis.platform.ImageType;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 
 public class BackgroundGenerator
 {
 	/**
-	 * See generateUsingWhiteNoiseConvolution(Random, BufferedImage, int, int, boolean)
+	 * See generateUsingWhiteNoiseConvolution(Random, Image, int, int, boolean)
 	 */
-	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols)
+	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols)
 	{
 		return generateUsingWhiteNoiseConvolution(rand, texture, targetRows, targetCols, true);
 	}
@@ -40,7 +36,7 @@ public class BackgroundGenerator
 	 * 
 	 * @param rand
 	 * @param texture
-	 *            If this is a color image (not type BufferedImage.TYPE_INT_RGB), then I generate a color result by processing each channel
+	 *            If this is a color image (not type Image.TYPE_INT_RGB), then I generate a color result by processing each channel
 	 *            separately similar to what Bruno Galerne do, except I use histogram matching to get the color levels right.
 	 * @param targetRows
 	 *            Number of rows in the result.
@@ -50,7 +46,7 @@ public class BackgroundGenerator
 	 *            If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
 	 * @return A randomly generated texture.
 	 */
-	public static BufferedImage generateUsingWhiteNoiseConvolution(Random rand, BufferedImage texture, int targetRows, int targetCols,
+	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols,
 			boolean allowScalingTextureLarger)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
@@ -66,16 +62,15 @@ public class BackgroundGenerator
 
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();
-		Raster raster = texture.getRaster();
 		float varianceScaler = (float) Math.sqrt(((float) (rows * cols)) / textureArea);
 		int alphaRows = (int) (alpha * texture.getHeight());
 		int alphaCols = (int) (alpha * texture.getWidth());
 
 		int numberOfColorChannels;
-		BufferedImage allChannels;
-		float maxPixelValue = (float) ImageHelper.getMaxPixelValue(texture);
+		Image allChannels;
+		float maxPixelValue = (float) texture.getMaxPixelLevel();
 		float[] means;
-		if (ImageHelper.isSupportedGrayscaleType(texture))
+		if (texture.isGrayscaleOrBinary())
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
@@ -84,13 +79,13 @@ public class BackgroundGenerator
 		else
 		{
 			numberOfColorChannels = 3;
-			allChannels = new BufferedImage(cols, rows, BufferedImage.TYPE_INT_RGB);
+			allChannels = Image.create(cols, rows, ImageType.RGB);
 			means = ImageHelper.calcMeanOfEachColor(texture);
 		}
 
-		int randomImageType = texture.getType() == BufferedImage.TYPE_USHORT_GRAY ? BufferedImage.TYPE_USHORT_GRAY
-				: BufferedImage.TYPE_BYTE_GRAY;
-		BufferedImage randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), randomImageType);
+		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit
+				: ImageType.Grayscale8Bit;
+		Image randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), randomImageType);
 
 
 		for (int channel : new Range(numberOfColorChannels))
@@ -105,14 +100,14 @@ public class BackgroundGenerator
 					if (textureR >= 0 && textureR < texture.getHeight() && textureC >= 0 && textureC < texture.getWidth())
 					{
 						float level;
-						if (ImageHelper.isSupportedGrayscaleType(texture))
+						if (texture.isGrayscaleOrBinary())
 						{
-							level = raster.getSample(textureC, textureR, 0) / maxPixelValue;
+							level = texture.getNormalizedPixelLevel(textureC, textureR);
 						}
 						else
 						{
 							// Color image
-							Color color = new Color(texture.getRGB(textureC, textureR));
+							Color color = Color.create(texture.getRGB(textureC, textureR));
 							if (channel == 0)
 							{
 								level = color.getRed();
@@ -139,7 +134,7 @@ public class BackgroundGenerator
 				}
 			}
 
-			BufferedImage grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
+			Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
 			kernel = null;
 
 			if (numberOfColorChannels == 1)
@@ -149,18 +144,17 @@ public class BackgroundGenerator
 			else
 			{
 				// Copy grayImage to a color channel in allChanels.
-				Raster gRaster = grayImage.getRaster();
 				for (int y = 0; y < allChannels.getHeight(); y++)
 					for (int x = 0; x < allChannels.getWidth(); x++)
 					{
-						Color color = new Color(allChannels.getRGB(x, y));
+						Color color = Color.create(allChannels.getRGB(x, y));
 
-						int level = gRaster.getSample(x, y, 0);
+						int level = grayImage.getPixelLevel(x, y);
 
 						int r = (channel == 0) ? level : color.getRed();
 						int g = (channel == 1) ? level : color.getGreen();
 						int b = (channel == 2) ? level : color.getBlue();
-						Color combined = new Color(r, g, b);
+						Color combined = Color.create(r, g, b);
 						allChannels.setRGB(x, y, combined.getRGB());
 					}
 			}
@@ -170,7 +164,7 @@ public class BackgroundGenerator
 
 		// If the texture is small, scale it with interpolation to create a better histogram for histogram matching.
 		// This reduces frequency of bright white spots on the resulting image.
-		BufferedImage colorsForHistogramMatching;
+		Image colorsForHistogramMatching;
 		if (texture.getWidth() < targetCols || texture.getHeight() < targetRows)
 		{
 			colorsForHistogramMatching = ImageHelper.scale(texture, Math.max(texture.getWidth(), targetCols),
@@ -181,7 +175,7 @@ public class BackgroundGenerator
 			colorsForHistogramMatching = texture;
 		}
 
-		BufferedImage result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
+		Image result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
 		result = ImageHelper.extractRegion(result, 0, 0, targetCols, targetRows);
 
 		return result;
@@ -210,7 +204,7 @@ public class BackgroundGenerator
 		return ((float) Math.exp(-1 / (1 - (x * x)))) / 0.367879f;
 	}
 
-	private static BufferedImage cropTextureSmallerIfNeeded(BufferedImage texture, int rows, int cols)
+	private static Image cropTextureSmallerIfNeeded(Image texture, int rows, int cols)
 	{
 		if (texture.getWidth() < cols || texture.getHeight() < rows)
 		{
@@ -221,7 +215,7 @@ public class BackgroundGenerator
 		return ImageHelper.extractRegion(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
 	}
 
-	private static BufferedImage scaleTextureLargerIfNeeded(BufferedImage texture, int rows, int cols)
+	private static Image scaleTextureLargerIfNeeded(Image texture, int rows, int cols)
 	{
 		int scaleThreshold = 5;
 		if (((float) texture.getWidth()) / cols < ((float) texture.getHeight()) / rows)
@@ -243,7 +237,8 @@ public class BackgroundGenerator
 
 	public static void main(String[] args) throws IOException
 	{
-		AwtPlatform.createFactories();
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
 		
 		Stopwatch sw = new Stopwatch();
 

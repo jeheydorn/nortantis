@@ -1,8 +1,10 @@
 package nortantis.platform.awt;
 
+import java.util.Objects;
+
 import nortantis.platform.Color;
 
-class AwtColor extends Color
+public class AwtColor extends Color
 {
 	java.awt.Color color;
 	
@@ -62,10 +64,35 @@ class AwtColor extends Color
 	}
 
 	@Override
-	public float[] getHSB(Color color)
+	public float[] getHSB()
 	{
 		float[] hsb = new float[3];
 		java.awt.Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
 		return hsb;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(color);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		AwtColor other = (AwtColor) obj;
+		return Objects.equals(color, other.color);
 	}
 }

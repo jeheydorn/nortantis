@@ -1,11 +1,10 @@
 package nortantis;
 
-import java.awt.geom.Area;
-import java.awt.image.BufferedImage;
-
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
+import nortantis.platform.Image;
 import nortantis.util.AssetsPath;
 
 /**
@@ -73,19 +72,19 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	{
 		if (scaledImageAndMasks == null)
 		{
-			BufferedImage scaledImage = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImageByWidth(unScaledImageAndMasks.image,
+			Image scaledImage = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImageByWidth(unScaledImageAndMasks.image,
 					scaledWidth);
 			// The path passed to ImageCache.getInstance insn't important so long as other calls to getScaledImageByWidth
 			// use the same path, since getScaledImageByWidth doesn't load images from disk.
 
-			BufferedImage scaledContentMask = ImageCache.getInstance(AssetsPath.getInstallPath())
+			Image scaledContentMask = ImageCache.getInstance(AssetsPath.getInstallPath())
 					.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateContentMask(), scaledWidth);
 
-			BufferedImage scaledShadingMask = null;
+			Image scaledShadingMask = null;
 			scaledShadingMask = ImageCache.getInstance(AssetsPath.getInstallPath())
 					.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateShadingMask(), scaledWidth);
 
-			java.awt.Rectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),
+			IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),
 					unScaledImageAndMasks.getOrCreateContentBounds(), scaledWidth, scaledHeight);
 
 			scaledImageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type);

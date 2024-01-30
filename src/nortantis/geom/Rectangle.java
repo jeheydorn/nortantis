@@ -196,25 +196,9 @@ public class Rectangle
 		}
 	}
 
-	public java.awt.Rectangle toAwtRectangle()
-	{
-		// Round up to the nearest integer
-		// int integerWidth = (double)(int)width == width ? (int)(width) :
-		// (int)width + 1;
-		// int integerHeight = (double)(int)height == height ? (int)(height) :
-		// (int)height + 1;
-
-		return new java.awt.Rectangle((int) x, (int) y, (int) width, (int) height);
-	}
-
 	public IntRectangle toIntRectangle()
 	{
 		return new IntRectangle((int) x, (int) y, (int) width, (int) height);
-	}
-
-	public java.awt.Point upperLeftCornerAsAwtPoint()
-	{
-		return new java.awt.Point((int) x, (int) y);
 	}
 
 	public Point upperLeftCorner()

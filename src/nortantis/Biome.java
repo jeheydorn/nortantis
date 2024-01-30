@@ -1,6 +1,6 @@
 package nortantis;
 
-import java.awt.Color;
+import nortantis.platform.Color;
 
 public enum Biome
 {
@@ -29,6 +29,6 @@ public enum Biome
 
 	Biome(int color)
 	{
-		this.color = new Color(color);
+		this.color = Color.create(color);
 	}
 }

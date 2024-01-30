@@ -1,7 +1,5 @@
 package nortantis.swing;
 
-import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,12 +12,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
-import nortantis.TextDrawer;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.util.Range;
@@ -140,22 +138,21 @@ public class MapEdits implements Serializable
 	/**
 	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
 	 */
-	public MapText findTextPicked(nortantis.geom.Point point)
+	public MapText findTextPicked(Point point)
 	{
-		java.awt.Point awtPoint = point.toAwtPoint();
 		for (MapText mp : text)
 		{
 			if (mp.value.length() > 0)
 			{
 				if (mp.line1Area != null)
 				{
-					if (mp.line1Area.contains(awtPoint))
+					if (mp.line1Area.contains(point))
 						return mp;
 				}
 
 				if (mp.line2Area != null)
 				{
-					if (mp.line2Area.contains(awtPoint))
+					if (mp.line2Area.contains(point))
 						return mp;
 				}
 			}
@@ -163,17 +160,16 @@ public class MapEdits implements Serializable
 		return null;
 	}
 
-	public List<MapText> findTextSelectedByBrush(nortantis.geom.Point point, double brushDiameter)
+	public List<MapText> findTextSelectedByBrush(Point point, double brushDiameter)
 	{
-		Area brush = new Area(
-				new Ellipse2D.Double(point.x - brushDiameter / 2.0, point.y - brushDiameter / 2.0, brushDiameter, brushDiameter));
 		List<MapText> result = new ArrayList<>();
 
 		for (MapText mp : text)
 		{
 			if (mp.value.length() > 0)
 			{
-				if (TextDrawer.doAreasIntersect(brush, mp.line1Area) || TextDrawer.doAreasIntersect(brush, mp.line2Area))
+				if (mp.line1Area != null && mp.line1Area.overlapsCircle(point, brushDiameter)
+						|| mp.line2Area != null && mp.line2Area.overlapsCircle(point, brushDiameter))
 				{
 					result.add(mp);
 				}

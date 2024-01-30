@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -45,6 +44,7 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.ExportAction;
 import nortantis.editor.UserPreferences;
+import nortantis.platform.Image;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -399,15 +399,15 @@ public class ImageExportDialog extends JDialog
 		}
 		final MapSettings settings = mainWindow.getSettingsFromGUI(false).deepCopy();
 
-		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
+		SwingWorker<Image, Void> worker = new SwingWorker<Image, Void>()
 		{
 			@Override
-			public BufferedImage doInBackground() throws Exception
+			public Image doInBackground() throws Exception
 			{
 				Logger.clear();
 				ImageCache.clear();
 
-				BufferedImage result;
+				Image result;
 				try
 				{
 					if (type == ImageExportType.Map)

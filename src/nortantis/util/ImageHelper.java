@@ -2,34 +2,22 @@ package nortantis.util;
 
 import java.awt.Desktop;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageOutputStream;
-
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.analysis.function.Sinc;
 import org.apache.commons.math3.distribution.NormalDistribution;
-import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
-import nortantis.MapSettings;
 import nortantis.TextDrawer;
-import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
+import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
@@ -52,22 +40,22 @@ public class ImageHelper
 		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination();
 	}
 
-	public static Dimension fitDimensionsWithinBoundingBox(IntDimension maxDimensions, double originalWidth, double originalHeight)
+	public static IntDimension fitDimensionsWithinBoundingBox(IntDimension maxDimensions, int originalWidth, int originalHeight)
 	{
-		double width = originalWidth;
-		double height = originalHeight;
+		int width = originalWidth;
+		int height = originalHeight;
 		if (originalWidth > maxDimensions.width)
 		{
 			width = maxDimensions.width;
-			height = height * (width / originalWidth);
+			height = (int)(height * (width / originalWidth));
 		}
 		if (height > maxDimensions.height)
 		{
 			double prevHeight = height;
 			height = maxDimensions.height;
-			width = width * (height / prevHeight);
+			width = (int)(width * (height / prevHeight));
 		}
-		return new Dimension(width, height);
+		return new IntDimension(width, height);
 	}
 
 	/**
@@ -173,10 +161,10 @@ public class ImageHelper
 
 		double scale = ((double) target.getWidth()) / ((double) source.getWidth());
 
-		java.awt.Rectangle pixelsToUpdate;
+		IntRectangle pixelsToUpdate;
 		if (boundsInSource == null)
 		{
-			pixelsToUpdate = new java.awt.Rectangle(0, 0, target.getWidth(), target.getHeight());
+			pixelsToUpdate = new IntRectangle(0, 0, target.getWidth(), target.getHeight());
 		}
 		else
 		{
@@ -184,7 +172,7 @@ public class ImageHelper
 			int upperLeftY = Math.max(0, (int) (boundsInSource.y * scale));
 			// The +1's below are because I'm padding the width and height by 1
 			// pixel to account for integer truncation.
-			pixelsToUpdate = new java.awt.Rectangle(upperLeftX, upperLeftY,
+			pixelsToUpdate = new IntRectangle(upperLeftX, upperLeftY,
 					Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
 					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
@@ -481,13 +469,13 @@ public class ImageHelper
 	 * @param region
 	 *            Specifies only a region to create rather than masking the entire images.
 	 */
-	public static Image maskWithImage(Image image1, Image image2, Image mask, java.awt.Point image2OffsetInImage1)
+	public static Image maskWithImage(Image image1, Image image2, Image mask, IntPoint image2OffsetInImage1)
 	{
 		if (image2OffsetInImage1 == null)
 		{
-			image2OffsetInImage1 = new java.awt.Point(0, 0);
+			image2OffsetInImage1 = new IntPoint(0, 0);
 		}
-		final java.awt.Point image2OffsetInImage1Final = image2OffsetInImage1;
+		final IntPoint image2OffsetInImage1Final = image2OffsetInImage1;
 
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale" + " or TYPE_BYTE_BINARY.");
@@ -550,14 +538,14 @@ public class ImageHelper
 			throw new IllegalArgumentException(
 					"In maskWithColor, image height was " + image.getHeight() + " but mask height was " + mask.getHeight());
 
-		return maskWithColorInRegion(image, color, mask, invertMask, new java.awt.Point(0, 0));
+		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 	}
 
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
 	 */
 	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask,
-			java.awt.Point imageOffsetInMask)
+			IntPoint imageOffsetInMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
@@ -711,7 +699,7 @@ public class ImageHelper
 		if (image.getHeight() != alphaMask.getHeight())
 			throw new IllegalArgumentException();
 
-		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new java.awt.Point(0, 0));
+		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
 	}
 
 	/**
@@ -727,7 +715,7 @@ public class ImageHelper
 	 * @return A new image
 	 */
 	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask,
-			java.awt.Point imageOffsetInMask)
+			IntPoint imageOffsetInMask)
 	{
 		if (alphaMask.getType() != ImageType.Grayscale8Bit && alphaMask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or TYPE_BYTE_BINARY");
@@ -1430,7 +1418,7 @@ public class ImageHelper
 	 *            Allows colorifying only a snippet of image. Null means colorify the whole image.
 	 * @return
 	 */
-	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, java.awt.Rectangle where)
+	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, IntRectangle where)
 	{
 		if (how == ColorifyAlgorithm.none)
 		{
@@ -1439,7 +1427,7 @@ public class ImageHelper
 
 		if (where == null)
 		{
-			where = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
+			where = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
 		}
 
 		if (image.getType() != ImageType.Grayscale8Bit)
@@ -1450,7 +1438,7 @@ public class ImageHelper
 		float[] hsb = new float[3];
 		java.awt.Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
 
-		final java.awt.Rectangle whereFinal = where;
+		final IntRectangle whereFinal = where;
 		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
 		{
 			for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
@@ -1521,7 +1509,7 @@ public class ImageHelper
 	 *            colorIndexes.
 	 */
 	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes,
-			ColorifyAlgorithm how, java.awt.Point where)
+			ColorifyAlgorithm how, IntPoint where)
 	{
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException(
@@ -1531,7 +1519,7 @@ public class ImageHelper
 
 		if (where == null)
 		{
-			where = new java.awt.Point(0, 0);
+			where = new IntPoint(0, 0);
 		}
 
 		Image result = Image.create(colorIndexes.getWidth(), colorIndexes.getHeight(), ImageType.RGB);
@@ -1541,13 +1529,13 @@ public class ImageHelper
 		for (int regionId : colorMap.keySet())
 		{
 			Color color = colorMap.get(regionId);
-			float[] hsb = color.getHSB(color);
+			float[] hsb = color.getHSB();
 			hsbMap.put(regionId, hsb);
 		}
 
-		java.awt.Rectangle imageBounds = new java.awt.Rectangle(0, 0, image.getWidth(), image.getHeight());
+		IntRectangle imageBounds = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
 
-		java.awt.Point whereFinal = where;
+		IntPoint whereFinal = where;
 		ThreadHelper.getInstance().processRowsInParallel(0, colorIndexes.getHeight(), (y) ->
 		{
 			for (int x = 0; x < colorIndexes.getWidth(); x++)
@@ -1808,9 +1796,9 @@ public class ImageHelper
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
 	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source,
-			java.awt.Point upperLeftCornerToPasteIntoInTarget, java.awt.Rectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
+			IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
-		java.awt.Rectangle targetBounds = new java.awt.Rectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
+		IntRectangle targetBounds = new IntRectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
 				target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
 		{
@@ -1829,9 +1817,9 @@ public class ImageHelper
 		}
 	}
 
-	public static Image copySnippet(Image source, java.awt.Rectangle boundsInSourceToCopyFrom)
+	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
-		java.awt.Rectangle sourceBounds = new java.awt.Rectangle(0, 0, source.getWidth(), source.getHeight());
+		IntRectangle sourceBounds = new IntRectangle(0, 0, source.getWidth(), source.getHeight());
 		Image result = Image.create(boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height, source.getType());
 		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
 		{
@@ -1862,10 +1850,10 @@ public class ImageHelper
 		Font font = Font.create("URW Chancery L", 0, 30);
 		int fontHeight = TextDrawer.getFontHeight(font);
 
-		IntDimension textBounds = TextDrawer.getTextDimensions(message[0], font);
+		IntDimension textBounds = TextDrawer.getTextDimensions(message[0], font).toIntDimension();
 		for (int i : new Range(1, message.length))
 		{
-			IntDimension lineBounds = TextDrawer.getTextDimensions(message[i], font);
+			IntDimension lineBounds = TextDrawer.getTextDimensions(message[i], font).toIntDimension();
 			textBounds = new IntDimension(Math.max(textBounds.width, lineBounds.width), textBounds.height + lineBounds.height);
 		}
 

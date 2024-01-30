@@ -32,7 +32,10 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
+import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
+import nortantis.platform.Image;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
@@ -426,7 +429,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = ImageHelper.createPlaceholderImage(new String[] { "Drawing..." });
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();
@@ -457,10 +460,10 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
 					Rectangle incrementalChangeArea)
 			{
-				mapEditingPanel.setImage(map);
+				mapEditingPanel.setImage(AwtFactory.unwrap(map));
 
 				if (!anotherDrawIsQueued)
 				{
@@ -486,9 +489,9 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected BufferedImage getCurrentMapForIncrementalUpdate()
+			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return mapEditingPanel.mapFromMapCreator;
+				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
 			}
 
 		};
@@ -496,10 +499,10 @@ public class NewSettingsDialog extends JDialog
 		updater.setEnabled(false);
 	}
 
-	private Dimension getMapDrawingAreaSize()
+	private IntDimension getMapDrawingAreaSize()
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new Dimension(
+		return new IntDimension(
 				(int) ((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
 						* mapEditingPanel.osScale),
 				(int) ((mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)

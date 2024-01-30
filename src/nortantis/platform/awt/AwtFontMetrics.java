@@ -1,5 +1,7 @@
 package nortantis.platform.awt;
 
+import java.util.Objects;
+
 import nortantis.platform.FontMetrics;
 
 public class AwtFontMetrics extends FontMetrics
@@ -27,5 +29,30 @@ public class AwtFontMetrics extends FontMetrics
 	public int stringWidth(String string)
 	{
 		return metrics.stringWidth(string);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(metrics);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		AwtFontMetrics other = (AwtFontMetrics) obj;
+		return Objects.equals(metrics, other.metrics);
 	}
 }

@@ -1,5 +1,7 @@
 package nortantis.platform.awt;
 
+import java.util.Objects;
+
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 
@@ -79,5 +81,30 @@ public class AwtFont extends Font
 			return FontStyle.Italic;
 		}
 		return FontStyle.None;
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(font);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		AwtFont other = (AwtFont) obj;
+		return Objects.equals(font, other.font);
 	}
 }

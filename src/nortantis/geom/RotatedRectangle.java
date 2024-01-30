@@ -1,5 +1,7 @@
 package nortantis.geom;
 
+import java.util.Objects;
+
 public class RotatedRectangle
 {
 	final public double x, y, width, height, angle, pivotX, pivotY;
@@ -39,6 +41,11 @@ public class RotatedRectangle
 	{
 		this(rect.x, rect.y, rect.width, rect.height, 0, rect.x + rect.width/2f, rect.y + rect.height/2f);
 	}
+	
+	public boolean contains(Point point)
+	{
+		return contains(point.x, point.y);
+	}
 
 	public boolean contains(double xLoc, double yLoc)
 	{
@@ -47,6 +54,19 @@ public class RotatedRectangle
 	    double xLocRotated = (xLoc - pivotX) * cos - (yLoc - pivotY) * sin + pivotX;
 	    double yLocRotated = (xLoc - pivotX) * sin + (yLoc - pivotY) * cos + pivotY;
 	    return xLocRotated >= x && xLocRotated <= x + width && yLocRotated >= y && yLocRotated <= y + height;
+	}
+	
+	public boolean overlapsCircle(Point circleCenter, double radius)
+	{
+	    double cos = Math.cos(-angle);
+	    double sin = Math.sin(-angle);
+	    double xLocRotated = (circleCenter.x - pivotX) * cos - (circleCenter.y - pivotY) * sin + pivotX;
+	    double yLocRotated = (circleCenter.x - pivotX) * sin + (circleCenter.y - pivotY) * cos + pivotY;
+	    double dx = xLocRotated - (x + width / 2);
+	    double dy = yLocRotated - (y + height / 2);
+	    double distance = Math.sqrt(dx * dx + dy * dy);
+	    double diagonal = Math.sqrt(width * width + height * height);
+	    return distance <= radius + diagonal / 2;
 	}
 
 	public boolean overlaps(RotatedRectangle rect)
@@ -139,6 +159,37 @@ public class RotatedRectangle
 	    // Create a new Rectangle object with the minimum x and y values as the upper-left corner
 	    // and the difference between the maximum and minimum x and y values as the width and height, respectively.
 	    return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(angle, height, pivotX, pivotY, width, x, y);
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		RotatedRectangle other = (RotatedRectangle) obj;
+		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle)
+				&& Double.doubleToLongBits(height) == Double.doubleToLongBits(other.height)
+				&& Double.doubleToLongBits(pivotX) == Double.doubleToLongBits(other.pivotX)
+				&& Double.doubleToLongBits(pivotY) == Double.doubleToLongBits(other.pivotY)
+				&& Double.doubleToLongBits(width) == Double.doubleToLongBits(other.width)
+				&& Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
+				&& Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
 	}
 
 

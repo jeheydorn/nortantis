@@ -29,7 +29,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
-import nortantis.editor.UserPreferences;
 import nortantis.util.Logger;
 
 public class SwingHelper

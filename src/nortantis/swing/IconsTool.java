@@ -1,12 +1,8 @@
 package nortantis.swing;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +38,13 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.IntDimension;
 import nortantis.graph.voronoi.Center;
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
@@ -349,12 +351,12 @@ public class IconsTool extends EditorTool
 		final String cityType = lblCityIconType.getText();
 		final List<String> iconNamesWithoutWidthOrExtension = cityButtons.buttons.stream().map((button) -> button.getText())
 				.collect(Collectors.toList());
-		SwingWorker<List<BufferedImage>, Void> worker = new SwingWorker<>()
+		SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
 		{
 			@Override
-			protected List<BufferedImage> doInBackground() throws Exception
+			protected List<Image> doInBackground() throws Exception
 			{
-				List<BufferedImage> previewImages = new ArrayList<>();
+				List<Image> previewImages = new ArrayList<>();
 				Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
 						.getIconsWithWidths(IconType.cities, cityType);
 
@@ -365,8 +367,8 @@ public class IconsTool extends EditorTool
 						throw new IllegalArgumentException(
 								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
 					}
-					BufferedImage icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
-					BufferedImage preview = createIconPreview(settings, Collections.singletonList(icon), 50);
+					Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
+					Image preview = createIconPreview(settings, Collections.singletonList(icon), 50);
 					previewImages.add(preview);
 				}
 
@@ -376,7 +378,7 @@ public class IconsTool extends EditorTool
 			@Override
 			public void done()
 			{
-				List<BufferedImage> previewImages;
+				List<Image> previewImages;
 				try
 				{
 					previewImages = get();
@@ -395,7 +397,7 @@ public class IconsTool extends EditorTool
 
 				for (int i : new Range(previewImages.size()))
 				{
-					cityButtons.buttons.get(i).setImage(previewImages.get(i));
+					cityButtons.buttons.get(i).setImage(AwtFactory.unwrap(previewImages.get(i)));
 				}
 			}
 		};
@@ -409,10 +411,10 @@ public class IconsTool extends EditorTool
 		for (RadioButtonWithImage button : buttons.buttons)
 		{
 			final String buttonText = button.getText();
-			SwingWorker<BufferedImage, Void> worker = new SwingWorker<>()
+			SwingWorker<Image, Void> worker = new SwingWorker<>()
 			{
 				@Override
-				protected BufferedImage doInBackground() throws Exception
+				protected Image doInBackground() throws Exception
 				{
 					return createIconPreviewForGroup(settings, iconType, buttonText, customImagesPath);
 				}
@@ -420,7 +422,7 @@ public class IconsTool extends EditorTool
 				@Override
 				public void done()
 				{
-					BufferedImage previewImage;
+					Image previewImage;
 					try
 					{
 						previewImage = get();
@@ -430,7 +432,7 @@ public class IconsTool extends EditorTool
 						throw new RuntimeException(e);
 					}
 
-					button.setImage(previewImage);
+					button.setImage(AwtFactory.unwrap(previewImage));
 				}
 			};
 
@@ -438,9 +440,9 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private BufferedImage createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
+	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		List<BufferedImage> croppedImages = new ArrayList<>();
+		List<Image> croppedImages = new ArrayList<>();
 		for (ImageAndMasks imageAndMasks : ImageCache.getInstance(customImagesPath).loadIconGroup(iconType, groupName))
 		{
 			croppedImages.add(imageAndMasks.cropToContent());
@@ -448,7 +450,7 @@ public class IconsTool extends EditorTool
 		return createIconPreview(settings, croppedImages, 30);
 	}
 
-	private BufferedImage createIconPreview(MapSettings settings, List<BufferedImage> images, int scaledHeight)
+	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight)
 	{
 		final int maxRowWidth = 168;
 		final int horizontalPaddingBetweenImages = 2;
@@ -460,7 +462,7 @@ public class IconsTool extends EditorTool
 			int rowWidth = 0;
 			for (int i : new Range(images.size()))
 			{
-				BufferedImage image = images.get(i);
+				Image image = images.get(i);
 				int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
 				if (rowWidth + scaledWidth > maxRowWidth)
 				{
@@ -485,12 +487,12 @@ public class IconsTool extends EditorTool
 		final int fadeWidth = padding - 2;
 		// Multiply the width padding by 2.2 instead of 2 to compensate for the image library I'm using not always scaling to the size I
 		// give.
-		Dimension size = new Dimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
+		IntDimension size = new IntDimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
 
-		BufferedImage previewImage;
+		Image previewImage;
 		if (showIconPreviewsUsingLandBackground)
 		{
-			Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
+			Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
 					.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
 							settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
 			previewImage = tuple.getThird();
@@ -498,33 +500,33 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			previewImage = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+			previewImage = Image.create(size.width, size.height, ImageType.ARGB);
 		}
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
 
-		Graphics2D g = previewImage.createGraphics();
+		Painter p = previewImage.createPainter();
 
 		if (!showIconPreviewsUsingLandBackground)
 		{
-			g.setColor(new Color(152, 152, 152));
-			g.fillRect(0, 0, size.width, size.height);
+			p.setColor(Color.create(152, 152, 152));
+			p.fillRect(0, 0, size.width, size.height);
 		}
 
 		int x = padding;
 		int y = padding;
 		for (int i : new Range(images.size()))
 		{
-			BufferedImage image = images.get(i);
+			Image image = images.get(i);
 			int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
-			BufferedImage scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
+			Image scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
 			if (x - padding + scaled.getWidth() > maxRowWidth)
 			{
 				x = padding;
 				y += scaledHeight;
 			}
 
-			g.drawImage(scaled, x, y, null);
+			p.drawImage(scaled, x, y);
 
 			x += scaled.getWidth();
 			if (i < images.size() - 1)
@@ -536,16 +538,16 @@ public class IconsTool extends EditorTool
 		return previewImage;
 	}
 
-	private BufferedImage fadeEdges(BufferedImage image, int fadeWidth)
+	private Image fadeEdges(Image image, int fadeWidth)
 	{
-		BufferedImage box = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-		Graphics2D g = box.createGraphics();
-		g.setColor(Color.white);
-		g.fillRect(fadeWidth, fadeWidth, image.getWidth() - fadeWidth * 2, image.getHeight() - fadeWidth * 2);
-		g.dispose();
+		Image box = Image.create(image.getWidth(), image.getHeight(), ImageType.Grayscale8Bit);
+		Painter p = box.createPainter();
+		p.setColor(Color.white);
+		p.fillRect(fadeWidth, fadeWidth, image.getWidth() - fadeWidth * 2, image.getHeight() - fadeWidth * 2);
+		p.dispose();
 
 		// Use convolution to make a hazy background for the text.
-		BufferedImage hazyBox = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(fadeWidth), true, false);
+		Image hazyBox = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(fadeWidth), true, false);
 
 		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
 	}

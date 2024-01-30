@@ -8,40 +8,40 @@ import nortantis.geom.Point;
 public abstract class Painter
 {
 	public abstract void drawImage(Image image, int x, int y);
-	
+
 	public abstract void setColor(Color color);
-	
+
 	public abstract void drawRect(int x, int y, int width, int height);
-	
+
 	public abstract void dispose();
-	
+
 	public void rotate(double angle, Point pivot)
 	{
 		rotate(angle, pivot.x, pivot.y);
 	}
-	
+
 	public abstract void rotate(double angle, double pivotX, double pivotY);
-	
+
 	public abstract void translate(double x, double y);
-	
+
 	public abstract void setFont(Font font);
-	
+
 	public abstract void drawString(String string, int x, int y);
-	
+
 	public abstract FontMetrics getFontMetrics();
-	
+
 	public abstract FontMetrics getFontMetrics(Font font);
-	
+
 	public abstract void setTransform(Transform transform);
-	
+
 	public abstract Transform getTransform();
-	
+
 	public abstract Font getFont();
-	
+
 	public abstract Color getColor();
-	
+
 	public abstract void fillPolygon(int[] xPoints, int[] yPoints);
-	
+
 	public void fillPolygon(List<IntPoint> vertices)
 	{
 		int[] xPoints = new int[vertices.size()];
@@ -53,17 +53,21 @@ public abstract class Painter
 		}
 		fillPolygon(xPoints, yPoints);
 	}
-	
+
 	public abstract void drawPolygon(int[] xPoints, int[] yPoints);
 
 	public abstract void drawPolyline(int[] xPoints, int[] yPoints);
-	
+
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
-	
+
 	public abstract void setBasicStroke(float width);
 	
+	public abstract void setDashedStroke(float width);
+
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
-	
+
 	public abstract void fillOval(int x, int y, int width, int height);
-	
+
+	public abstract void fillRect(int x, int y, int width, int height);
+
 }

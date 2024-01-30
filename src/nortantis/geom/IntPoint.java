@@ -1,6 +1,5 @@
 package nortantis.geom;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 

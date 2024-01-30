@@ -7,7 +7,6 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.geom.Area;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +30,7 @@ import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.RotatedRectangle;
 import nortantis.util.AssetsPath;
 import nortantis.util.JComboBoxFixed;
 import nortantis.util.Tuple2;
@@ -350,7 +350,7 @@ public class TextTool extends EditorTool
 		mapEditingPanel.repaint();
 		if (mapTextsSelected.size() > 0)
 		{
-			Set<Area> areasToRemove = new HashSet<>();
+			Set<RotatedRectangle> areasToRemove = new HashSet<>();
 			for (MapText text : mapTextsSelected)
 			{
 				if (text.line1Area != null)

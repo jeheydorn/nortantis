@@ -16,7 +16,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.util.ImageHelper;
 
-public class AwtImage extends Image
+class AwtImage extends Image
 {
 	public BufferedImage image;
 	WritableRaster raster;
@@ -87,6 +87,10 @@ public class AwtImage extends Image
 		{
 			return ImageType.ARGB;
 		}
+		if (bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR)
+		{
+			return ImageType.ARGB;
+		}
 		if (bufferedImageType == BufferedImage.TYPE_INT_RGB)
 		{
 			return ImageType.RGB;
@@ -105,7 +109,7 @@ public class AwtImage extends Image
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unrecognized buffered image type: " + bufferedImageType);
+			throw new IllegalArgumentException("Unrecognized buffered image type: " + bufferedImageTypeToString(bufferedImageType));
 		}
 	}
 
@@ -181,11 +185,6 @@ public class AwtImage extends Image
 		}
 
 		return new AwtPainter(image.createGraphics());
-	}
-
-	private static String bufferedImageTypeToString(BufferedImage image)
-	{
-		return bufferedImageTypeToString(image.getType());
 	}
 
 	private static String bufferedImageTypeToString(int type)

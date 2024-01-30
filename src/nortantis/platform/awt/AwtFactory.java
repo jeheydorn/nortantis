@@ -16,10 +16,14 @@ import javax.imageio.stream.ImageOutputStream;
 
 import org.apache.commons.io.FilenameUtils;
 
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.Transform;
 import nortantis.util.ImageHelper;
@@ -90,7 +94,7 @@ public class AwtFactory extends PlatformFactory
 			}
 			else
 			{
-				ImageIO.write(((AwtImage)image).image, FilenameUtils.getExtension(filePath), new File(filePath));
+				ImageIO.write(((AwtImage) image).image, FilenameUtils.getExtension(filePath), new File(filePath));
 			}
 		}
 		catch (IOException e)
@@ -116,7 +120,7 @@ public class AwtFactory extends PlatformFactory
 	{
 		return new AwtColor(red, green, blue);
 	}
-	
+
 
 	@Override
 	public Color createColor(float red, float green, float blue)
@@ -142,4 +146,57 @@ public class AwtFactory extends PlatformFactory
 		return new AwtTransform(new AffineTransform());
 	}
 
+	public static BufferedImage unwrap(Image image)
+	{
+		return ((AwtImage) image).image;
+	}
+
+	public static Image wrap(BufferedImage image)
+	{
+		return new AwtImage(image);
+	}
+
+	public static Color wrap(java.awt.Color color)
+	{
+		return new AwtColor(color);
+	}
+
+	public static java.awt.Color unwrap(Color color)
+	{
+		return ((AwtColor) color).color;
+	}
+
+	public static Font wrap(java.awt.Font font)
+	{
+		return new AwtFont(font);
+	}
+
+	public static java.awt.Font unwrap(Font font)
+	{
+		return ((AwtFont) font).font;
+	}
+
+	public static java.awt.Rectangle toAwtRectangle(Rectangle rect)
+	{
+		return new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height);
+	}
+
+	public static java.awt.Rectangle toAwtRectangle(IntRectangle rect)
+	{
+		return new java.awt.Rectangle(rect.x, rect.y, rect.width, rect.height);
+	}
+
+	public static java.awt.geom.Area toAwtArea(RotatedRectangle rect)
+	{
+		AffineTransform transform = new AffineTransform();
+		transform.rotate(rect.angle, rect.pivotX, rect.pivotY);
+		java.awt.Shape rotatedRect = transform
+				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
+		return new java.awt.geom.Area(rotatedRect);
+	}
+	
+	public static Painter wrap(java.awt.Graphics2D g)
+	{
+		return new AwtPainter(g);
+	}
 }

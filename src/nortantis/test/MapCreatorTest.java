@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Paths;
 
@@ -15,6 +14,8 @@ import org.junit.Test;
 
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -43,7 +44,7 @@ public class MapCreatorTest
 				MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
 				MapCreator mapCreator = new MapCreator();
 				Logger.println("Creating map '" + expectedMapFilePath + "'");
-				BufferedImage map = mapCreator.createMap(settings, null, null);
+				Image map = mapCreator.createMap(settings, null, null);
 				ImageHelper.write(map, expectedMapFilePath);
 			}
 
@@ -175,12 +176,12 @@ public class MapCreatorTest
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		BufferedImage expected = ImageHelper.read(getExpectedMapFilePath(settingsFileName));
+		Image expected = ImageHelper.read(getExpectedMapFilePath(settingsFileName));
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
-		BufferedImage actual;
+		Image actual;
 		actual = mapCreator.createMap(settings, null, null);
 
 		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
@@ -203,7 +204,7 @@ public class MapCreatorTest
 		assertEquals(settings, copy);
 	}
 
-	private String checkIfImagesEqual(BufferedImage image1, BufferedImage image2)
+	private String checkIfImagesEqual(Image image1, Image image2)
 	{
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
@@ -225,11 +226,11 @@ public class MapCreatorTest
 		return null;
 	}
 
-	private void createImageDiffIfImagesAreSameSize(BufferedImage image1, BufferedImage image2, String settingsFileName)
+	private void createImageDiffIfImagesAreSameSize(Image image1, Image image2, String settingsFileName)
 	{
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
-			BufferedImage diff = new BufferedImage(image1.getWidth(), image1.getHeight(), BufferedImage.TYPE_INT_RGB);
+			Image diff = Image.create(image1.getWidth(), image1.getHeight(), ImageType.RGB);
 			for (int x = 0; x < image1.getWidth(); x++)
 			{
 				for (int y = 0; y < image1.getHeight(); y++)

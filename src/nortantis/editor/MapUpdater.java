@@ -1,7 +1,5 @@
 package nortantis.editor;
 
-import java.awt.Dimension;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -22,9 +20,12 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.NameCreator;
+import nortantis.geom.IntDimension;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Image;
 import nortantis.swing.MapEdits;
 import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
@@ -39,7 +40,7 @@ public abstract class MapUpdater
 	private ReentrantLock interactionsLock;
 	public MapParts mapParts;
 	private boolean createEditsIfNotPresentAndUseMapParts;
-	private Dimension maxMapSize;
+	private IntDimension maxMapSize;
 	private boolean enabled;
 	private boolean isMapReadyForInteractions;
 	private Queue<Runnable> tasksToRunWhenMapReady;
@@ -364,10 +365,10 @@ public abstract class MapUpdater
 			}
 		}
 
-		SwingWorker<Tuple2<BufferedImage, Rectangle>, Void> worker = new SwingWorker<Tuple2<BufferedImage, Rectangle>, Void>()
+		SwingWorker<Tuple2<Image, IntRectangle>, Void> worker = new SwingWorker<Tuple2<Image, IntRectangle>, Void>()
 		{
 			@Override
-			public Tuple2<BufferedImage, Rectangle> doInBackground() throws IOException, CancelledException
+			public Tuple2<Image, IntRectangle> doInBackground() throws IOException, CancelledException
 			{
 				if (!isUpdateTypeThatAllowsInteractions(updateType))
 				{
@@ -381,23 +382,23 @@ public abstract class MapUpdater
 
 					if (updateType == UpdateType.Incremental)
 					{
-						BufferedImage map = getCurrentMapForIncrementalUpdate();
+						Image map = getCurrentMapForIncrementalUpdate();
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map,
+							IntRectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map,
 									getCurrentCenters(centersChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (edgesChanged != null && edgesChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
+							IntRectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
 									getCurrentEdges(edgesChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (textChanged != null && textChanged.size() > 0)
 						{
-							Rectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
+							IntRectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else
@@ -426,7 +427,7 @@ public abstract class MapUpdater
 							mapParts = new MapParts();
 						}
 
-						BufferedImage map;
+						Image map;
 						try
 						{
 							currentNonIncrementalMapCreator = new MapCreator();
@@ -455,11 +456,11 @@ public abstract class MapUpdater
 			@Override
 			public void done()
 			{
-				BufferedImage map = null;
-				Rectangle replaceBounds = null;
+				Image map = null;
+				IntRectangle replaceBounds = null;
 				try
 				{
-					Tuple2<BufferedImage, Rectangle> tuple = get();
+					Tuple2<Image, IntRectangle> tuple = get();
 					if (tuple != null)
 					{
 						map = tuple.getFirst();
@@ -542,14 +543,14 @@ public abstract class MapUpdater
 
 	protected abstract MapSettings getSettingsFromGUI();
 
-	protected abstract void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
 			Rectangle incrementalChangeArea);
 
 	protected abstract void onFailedToDraw();
 
 	protected abstract MapEdits getEdits();
 
-	protected abstract BufferedImage getCurrentMapForIncrementalUpdate();
+	protected abstract Image getCurrentMapForIncrementalUpdate();
 
 	/**
 	 * Combines the updates in updatesToDraw when it makes sense to do so, they can be drawn together.
@@ -605,7 +606,7 @@ public abstract class MapUpdater
 		}
 	}
 
-	public void setMaxMapSize(Dimension dimension)
+	public void setMaxMapSize(IntDimension dimension)
 	{
 		maxMapSize = dimension;
 	}

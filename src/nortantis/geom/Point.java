@@ -57,6 +57,11 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return new Point(x * xScale, y * yScale);
 	}
+	
+	public IntPoint toIntPoint()
+	{
+		return new IntPoint((int)x, (int)y);
+	}
 
 	@Override
 	public String toString()

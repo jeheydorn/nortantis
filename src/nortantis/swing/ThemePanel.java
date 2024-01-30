@@ -9,7 +9,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Random;
@@ -43,6 +42,10 @@ import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.geom.IntDimension;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
@@ -839,13 +842,13 @@ public class ThemePanel extends JTabbedPane
 
 	private void updateBackgroundImageDisplays()
 	{
-		Dimension size = new Dimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
+		IntDimension size = new IntDimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
 
-		SwingWorker<Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm>, Void> worker = new SwingWorker<Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm>, Void>()
+		SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void> worker = new SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void>()
 		{
 
 			@Override
-			protected Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> doInBackground()
+			protected Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> doInBackground()
 					throws Exception
 			{
 				long seed = parseBackgroundSeed();
@@ -857,7 +860,7 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void done()
 			{
-				Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple;
+				Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple;
 				try
 				{
 					tuple = get();
@@ -867,17 +870,17 @@ public class ThemePanel extends JTabbedPane
 					throw new RuntimeException(e);
 				}
 
-				BufferedImage oceanBackground = tuple.getFirst();
+				Image oceanBackground = tuple.getFirst();
 				ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm = tuple.getSecond();
-				BufferedImage landBackground = tuple.getThird();
+				Image landBackground = tuple.getThird();
 				ImageHelper.ColorifyAlgorithm landColorifyAlgorithm = tuple.getFourth();
 
 				oceanDisplayPanel.setColorifyAlgorithm(oceanColorifyAlgorithm);
-				oceanDisplayPanel.setImage(oceanBackground);
+				oceanDisplayPanel.setImage(AwtFactory.unwrap(oceanBackground));
 				oceanDisplayPanel.repaint();
 
 				landDisplayPanel.setColorifyAlgorithm(landColorifyAlgorithm);
-				landDisplayPanel.setImage(landBackground);
+				landDisplayPanel.setImage(AwtFactory.unwrap(landBackground));
 				landDisplayPanel.repaint();
 			}
 		};
@@ -885,14 +888,14 @@ public class ThemePanel extends JTabbedPane
 		worker.execute();
 	}
 
-	static Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
-			Dimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
+	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
+			IntDimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
 			String textureImageFileName)
 	{
 
-		BufferedImage oceanBackground;
+		Image oceanBackground;
 		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
-		BufferedImage landBackground;
+		Image landBackground;
 		ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
 
 		if (isFractal)
@@ -904,7 +907,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		else if (isFromTexture)
 		{
-			BufferedImage texture;
+			Image texture;
 			try
 			{
 				texture = ImageHelper.read(textureImageFileName);
@@ -959,7 +962,7 @@ public class ThemePanel extends JTabbedPane
 			{
 				oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-				oceanBackground = landBackground = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+				oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.ARGB);
 			}
 		}
 		else
@@ -1031,18 +1034,18 @@ public class ThemePanel extends JTabbedPane
 		fadingConcentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.FadingConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
-		coastShadingColorDisplay.setBackground(settings.coastShadingColor);
+		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
 		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
-		coastlineColorDisplay.setBackground(settings.coastlineColor);
-		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
-		riverColorDisplay.setBackground(settings.riverColor);
+		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
+		oceanEffectsColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanEffectsColor));
+		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));
 		frayedEdgeCheckbox.setSelected(settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or
 		// disabled.
 		frayedEdgeCheckboxActionListener.actionPerformed(null);
 		drawGrungeCheckbox.setSelected(settings.drawGrunge);
 		drawGrungeCheckboxActionListener.actionPerformed(null);
-		grungeColorDisplay.setBackground(settings.frayedBorderColor);
+		grungeColorDisplay.setBackground(AwtFactory.unwrap(settings.frayedBorderColor));
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
@@ -1084,8 +1087,8 @@ public class ThemePanel extends JTabbedPane
 			backgroundSeedTextField.setText(String.valueOf(settings.backgroundRandomSeed));
 		}
 
-		oceanDisplayPanel.setColor(settings.oceanColor);
-		landDisplayPanel.setColor(settings.landColor);
+		oceanDisplayPanel.setColor(AwtFactory.unwrap(settings.oceanColor));
+		landDisplayPanel.setColor(AwtFactory.unwrap(settings.landColor));
 
 		if (settings.drawRegionColors)
 		{
@@ -1102,18 +1105,18 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setSelected(settings.drawText);
 		enableTextCheckboxActionListener.actionPerformed(null);
 
-		titleFontDisplay.setFont(settings.titleFont);
+		titleFontDisplay.setFont(AwtFactory.unwrap(settings.titleFont));
 		titleFontDisplay.setText(settings.titleFont.getName());
-		regionFontDisplay.setFont(settings.regionFont);
+		regionFontDisplay.setFont(AwtFactory.unwrap(settings.regionFont));
 		regionFontDisplay.setText(settings.regionFont.getName());
-		mountainRangeFontDisplay.setFont(settings.mountainRangeFont);
+		mountainRangeFontDisplay.setFont(AwtFactory.unwrap(settings.mountainRangeFont));
 		mountainRangeFontDisplay.setText(settings.mountainRangeFont.getName());
-		otherMountainsFontDisplay.setFont(settings.otherMountainsFont);
+		otherMountainsFontDisplay.setFont(AwtFactory.unwrap(settings.otherMountainsFont));
 		otherMountainsFontDisplay.setText(settings.otherMountainsFont.getName());
-		riverFontDisplay.setFont(settings.riverFont);
+		riverFontDisplay.setFont(AwtFactory.unwrap(settings.riverFont));
 		riverFontDisplay.setText(settings.riverFont.getName());
-		textColorDisplay.setBackground(settings.textColor);
-		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
+		textColorDisplay.setBackground(AwtFactory.unwrap(settings.textColor));
+		boldBackgroundColorDisplay.setBackground(AwtFactory.unwrap(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
@@ -1176,7 +1179,7 @@ public class ThemePanel extends JTabbedPane
 			return true;
 		}
 
-		if (!landDisplayPanel.getColor().equals(settings.landColor))
+		if (!landDisplayPanel.getColor().equals(AwtFactory.unwrap(settings.landColor)))
 		{
 			return true;
 		}
@@ -1205,13 +1208,13 @@ public class ThemePanel extends JTabbedPane
 				: shadeRadioButton.isSelected() ? OceanEffect.Blur
 						: concentricWavesButton.isSelected() ? OceanEffect.ConcentricWaves : OceanEffect.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
-		settings.coastShadingColor = coastShadingColorDisplay.getBackground();
-		settings.coastlineColor = coastlineColorDisplay.getBackground();
-		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();
-		settings.riverColor = riverColorDisplay.getBackground();
+		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
+		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());
+		settings.oceanEffectsColor = AwtFactory.wrap(oceanEffectsColorDisplay.getBackground());
+		settings.riverColor = AwtFactory.wrap(riverColorDisplay.getBackground());
 		settings.drawText = enableTextCheckBox.isSelected();
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
-		settings.frayedBorderColor = grungeColorDisplay.getBackground();
+		settings.frayedBorderColor = AwtFactory.wrap(grungeColorDisplay.getBackground());
 		settings.frayedBorderBlurLevel = frayedEdgeShadingSlider.getValue();
 		// Make increasing frayed edge values cause the number of polygons to
 		// decrease so that the fray gets large with
@@ -1236,17 +1239,17 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.backgroundRandomSeed = 0;
 		}
-		settings.oceanColor = oceanDisplayPanel.getColor();
+		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
-		settings.landColor = landDisplayPanel.getColor();
+		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
-		settings.titleFont = titleFontDisplay.getFont();
-		settings.regionFont = regionFontDisplay.getFont();
-		settings.mountainRangeFont = mountainRangeFontDisplay.getFont();
-		settings.otherMountainsFont = otherMountainsFontDisplay.getFont();
-		settings.riverFont = riverFontDisplay.getFont();
-		settings.textColor = textColorDisplay.getBackground();
-		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
+		settings.titleFont = AwtFactory.wrap(titleFontDisplay.getFont());
+		settings.regionFont = AwtFactory.wrap(regionFontDisplay.getFont());
+		settings.mountainRangeFont = AwtFactory.wrap(mountainRangeFontDisplay.getFont());
+		settings.otherMountainsFont = AwtFactory.wrap(otherMountainsFontDisplay.getFont());
+		settings.riverFont = AwtFactory.wrap(riverFontDisplay.getFont());
+		settings.textColor = AwtFactory.wrap(textColorDisplay.getBackground());
+		settings.boldBackgroundColor = AwtFactory.wrap(boldBackgroundColorDisplay.getBackground());
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
 
 		settings.drawBorder = drawBorderCheckbox.isSelected();

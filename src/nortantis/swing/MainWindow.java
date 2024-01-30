@@ -18,21 +18,17 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -53,20 +49,19 @@ import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
-import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.geom.Dimension;
+import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.platform.awt.AwtPlatform;
 import nortantis.util.AssetsPath;
 import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
@@ -188,7 +183,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString()));
+		setIconImage(AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString())));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()
@@ -431,10 +426,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
 					Rectangle incrementalChangeArea)
 			{
-				mapEditingPanel.mapFromMapCreator = map;
+				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 
@@ -491,9 +486,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected BufferedImage getCurrentMapForIncrementalUpdate()
+			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return mapEditingPanel.mapFromMapCreator;
+				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
 			}
 
 		};
@@ -1031,7 +1026,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
+				mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 			}
 			else
 			{
@@ -1043,7 +1038,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// The reason is that the incremental case will update pieces of the image created below.
 					// I don't use ImageHelper.scaleInto for the full image case because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
+					mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 				}
 				else
 				{
@@ -1051,7 +1046,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// ImageHelper.scaleByWidth called above returns the input image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
-						ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, mapEditingPanel.getImage(), incrementalChangeArea);
+						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
@@ -1101,12 +1096,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				Dimension size = new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+				IntDimension size = new IntDimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
-				Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
+				IntDimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
 						mapEditingPanel.mapFromMapCreator.getHeight());
-				return (fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
+				return (((double)fitted.width) / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
 			{
@@ -1522,7 +1517,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(ImageHelper.createPlaceholderImage(message));
+		mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.createPlaceholderImage(message)));
 
 		// Clear out the map from map creator so that causing the window to re-zoom while the placeholder image
 		// is displayed doesn't show the previous map. This can happen when the zoom is fit to window, you create

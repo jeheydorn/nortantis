@@ -1,16 +1,15 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.nio.file.Paths;
 import java.util.Random;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.geom.Dimension;
+import nortantis.geom.IntDimension;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -22,24 +21,23 @@ import nortantis.util.Logger;
  */
 public class GraphCreator
 {
-	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
+	public static WorldGraph createGraph(int width, int height, int numSites, double borderPlateContinentalProbability,
 			double nonBorderPlateContinentalProbability, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
 			boolean createElevationBiomesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible)
 	{
 		// double startTime = System.currentTimeMillis();
 
-		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
+		IntDimension graphSize = getGraphDimensionsWithStandardWidth(new IntDimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
 		// assemble the voronoi structure into a usable graph object representing a map
-		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r,
-				nonBorderPlateContinentalProbability, borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision,
-				createElevationBiomesAndRegions, areRegionBoundariesVisible);
+		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, nonBorderPlateContinentalProbability,
+				borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision, createElevationBiomesAndRegions,
+				areRegionBoundariesVisible);
 		graph.scale(width, height);
 		graph.buildNoisyEdges(lineStyle, false);
 
-		
 
 		// Debug code to log elapsed time.
 		// double elapsedTime = System.currentTimeMillis() - startTime;
@@ -49,29 +47,29 @@ public class GraphCreator
 		return graph;
 	}
 
-	public static BufferedImage createHeightMap(WorldGraph graph, Random rand)
+	public static Image createHeightMap(WorldGraph graph, Random rand)
 	{
 		double startTime = System.currentTimeMillis();
 
 		// Draw elevation map with tectonic plate boundaries.
-		BufferedImage heightMap = new BufferedImage(graph.getWidth(), graph.getHeight(), BufferedImage.TYPE_USHORT_GRAY);
-		Graphics2D g = heightMap.createGraphics();
-		g.setColor(Color.BLACK);
-		g.fillRect(0, 0, graph.getWidth(), graph.getHeight());
-		graph.paintElevationUsingTrianges(g);
+		Image heightMap = Image.create(graph.getWidth(), graph.getHeight(), ImageType.Grayscale16Bit);
+		Painter p = heightMap.createPainter();
+		p.setColor(Color.black);
+		p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
+		graph.paintElevationUsingTrianges(p);
 
 		heightMap = ImageHelper.blur(heightMap, (int) IconDrawer.findMeanCenterWidth(graph) / 2, false);
 
 		// Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
-		BufferedImage mountains = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/mountain texture.png").toString());
-		if (mountains.getType() != BufferedImage.TYPE_USHORT_GRAY)
+		Image mountains = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/mountain texture.png").toString());
+		if (mountains.getType() != ImageType.Grayscale16Bit)
 		{
-			mountains = ImageHelper.convertImageToType(mountains, BufferedImage.TYPE_USHORT_GRAY);
+			mountains = ImageHelper.convertImageToType(mountains, ImageType.Grayscale16Bit);
 		}
 		mountains = ImageHelper.scaleByWidth(mountains,
 				(int) (mountains.getWidth() * MapCreator.calcSizeMultiplier(graph.getWidth()) * 0.25f));
-		BufferedImage mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(),
-				graph.getWidth(), false);
+		Image mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(),
+				false);
 		// ImageHelper.write(mountainTexture, "mountainTexture.png");
 		subtractTextureFromHeightMapUsingSeaLevel(heightMap, mountainTexture);
 		mountainTexture = null;
@@ -82,16 +80,14 @@ public class GraphCreator
 		return heightMap;
 	}
 
-	private static void subtractTextureFromHeightMapUsingSeaLevel(BufferedImage image, BufferedImage texture)
+	private static void subtractTextureFromHeightMapUsingSeaLevel(Image image, Image texture)
 	{
-		Raster textureRaster = texture.getRaster();
-		WritableRaster out = image.getRaster();
-		float maxPixelValue = (float) ImageHelper.getMaxPixelValue(image);
+		float maxPixelValue = (float) image.getMaxPixelLevel();
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				float elevation = out.getSample(x, y, 0);
+				float elevation = image.getPixelLevel(x, y);
 				float scale;
 				if (elevation > WorldGraph.seaLevel * maxPixelValue)
 				{
@@ -102,25 +98,25 @@ public class GraphCreator
 					scale = 0f;
 				}
 
-				float tValue = maxPixelValue - textureRaster.getSample(x, y, 0);
+				float tValue = maxPixelValue - texture.getPixelLevel(x, y);
 				int newValue = (int) ((elevation - scale * (tValue)));
 				if (newValue < 0)
 				{
 					newValue = 0;
 				}
-				out.setSample(x, y, 0, newValue);
+				image.setPixelLevel(x, y, newValue);
 			}
 		}
 
 	}
 
-	public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double resolutionScale,
+	public static WorldGraph createSimpleGraph(int width, int height, int numSites, Random r, double resolutionScale,
 			boolean isForFrayedBorder)
 	{
 		// Zero is most random. Higher values make the polygons more uniform shaped. Value should be between 0 and 1.
 		final double lloydRelaxationsScale = 0.0;
 
-		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
+		IntDimension graphSize = getGraphDimensionsWithStandardWidth(new IntDimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
@@ -135,19 +131,19 @@ public class GraphCreator
 	}
 
 	/**
-	 * Used to convert dimensions for a graph from draw space to a standardized size for graph space when initially creating the graph.
-	 * The reason I'm doing this it's because originally graphs were created at the size of the map we were drawing,
-	 * but this created subtle bugs when the graph generated differently at different resolutions because of truncating
-	 * floating point values, and limitations on floating point precision. My solution is to always generate the graph
-	 * at the same size, no matter they draw resolution, then scale it to the resolution to draw at.
+	 * Used to convert dimensions for a graph from draw space to a standardized size for graph space when initially creating the graph. The
+	 * reason I'm doing this it's because originally graphs were created at the size of the map we were drawing, but this created subtle
+	 * bugs when the graph generated differently at different resolutions because of truncating floating point values, and limitations on
+	 * floating point precision. My solution is to always generate the graph at the same size, no matter they draw resolution, then scale it
+	 * to the resolution to draw at.
 	 */
-	private static Dimension getGraphDimensionsWithStandardWidth(Dimension drawResolution)
+	private static IntDimension getGraphDimensionsWithStandardWidth(IntDimension drawResolution)
 	{
 		// It doesn't really matter what this value is. I'm using the value that used to be the width of a graph drawn at medium resolution,
 		// since that's most likely to be backwards compatible with older maps.
-		final double standardWidth = 4096; 
-		
-		return new Dimension(standardWidth, drawResolution.height * (standardWidth / drawResolution.width));
+		final int standardWidth = 4096;
+
+		return new IntDimension(standardWidth, (int)(drawResolution.height * (standardWidth / drawResolution.width)));
 	}
 
 

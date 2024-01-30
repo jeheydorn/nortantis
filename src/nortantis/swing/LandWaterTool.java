@@ -39,6 +39,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.Tuple2;
 
@@ -234,8 +235,8 @@ public class LandWaterTool extends EditorTool
 			public void actionPerformed(ActionEvent e)
 			{
 				cancelSelectColorFromMap();
-				Color newColor = MapCreator.generateColorFromBaseColor(new Random(), baseColorPanel.getBackground(), hueSlider.getValue(),
-						saturationSlider.getValue(), brightnessSlider.getValue());
+				Color newColor = AwtFactory.unwrap(MapCreator.generateColorFromBaseColor(new Random(), AwtFactory.wrap(baseColorPanel.getBackground()), hueSlider.getValue(),
+						saturationSlider.getValue(), brightnessSlider.getValue()));
 				colorDisplay.setBackground(newColor);
 			}
 		});
@@ -448,7 +449,7 @@ public class LandWaterTool extends EditorTool
 					if (region != null)
 					{
 						RegionEdit edit = mainWindow.edits.regionEdits.get(region.id);
-						edit.color = colorDisplay.getBackground();
+						edit.color = AwtFactory.wrap(colorDisplay.getBackground());
 						Set<Center> regionCenters = region.getCenters();
 						handleMapChange(regionCenters);
 					}
@@ -532,7 +533,7 @@ public class LandWaterTool extends EditorTool
 		{
 			if (center != null && center.region != null)
 			{
-				colorDisplay.setBackground(center.region.backgroundColor);
+				colorDisplay.setBackground(AwtFactory.unwrap(center.region.backgroundColor));
 				selectColorFromMapButton.setSelected(false);
 			}
 		}
@@ -559,7 +560,7 @@ public class LandWaterTool extends EditorTool
 		for (Center neighbor : center.neighbors)
 		{
 			CenterEdit neighborEdit = mainWindow.edits.centerEdits.get(neighbor.index);
-			if (neighborEdit.regionId != null && mainWindow.edits.regionEdits.get(neighborEdit.regionId).color.equals(color))
+			if (neighborEdit.regionId != null && AwtFactory.unwrap(mainWindow.edits.regionEdits.get(neighborEdit.regionId).color).equals(color))
 			{
 				return neighborEdit.regionId;
 			}
@@ -567,7 +568,7 @@ public class LandWaterTool extends EditorTool
 
 		// Find the closest region of that color.
 		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.stream()
-				.filter(cEdit1 -> cEdit1.regionId != null && mainWindow.edits.regionEdits.get(cEdit1.regionId).color.equals(color))
+				.filter(cEdit1 -> cEdit1.regionId != null && AwtFactory.unwrap(mainWindow.edits.regionEdits.get(cEdit1.regionId).color).equals(color))
 				.min((cEdit1, cEdit2) -> Double.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc),
 						updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
 		if (opt.isPresent())
@@ -589,7 +590,7 @@ public class LandWaterTool extends EditorTool
 
 			int newRegionId = largestRegionId + 1;
 
-			RegionEdit regionEdit = new RegionEdit(newRegionId, color);
+			RegionEdit regionEdit = new RegionEdit(newRegionId, AwtFactory.wrap(color));
 			mainWindow.edits.regionEdits.put(newRegionId, regionEdit);
 
 			return newRegionId;
@@ -782,14 +783,14 @@ public class LandWaterTool extends EditorTool
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
 		if (!isUndoRedoOrAutomaticChange)
 		{
-			baseColorPanel.setBackground(settings.regionBaseColor);
+			baseColorPanel.setBackground(AwtFactory.unwrap(settings.regionBaseColor));
 			hueSlider.setValue(settings.hueRange);
 			saturationSlider.setValue(settings.saturationRange);
 			brightnessSlider.setValue(settings.brightnessRange);
 
 			// I'm setting this color here because I only want it to change when you create new settings or load settings from a file,
 			// not on undo/redo or in response to the Theme panel changing.
-			colorDisplay.setBackground(settings.regionBaseColor);
+			colorDisplay.setBackground(AwtFactory.unwrap(settings.regionBaseColor));
 		}
 
 		showOrHideRegionColoringOptions();
@@ -798,7 +799,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		settings.regionBaseColor = baseColorPanel.getBackground();
+		settings.regionBaseColor = AwtFactory.wrap(baseColorPanel.getBackground());
 		settings.hueRange = hueSlider.getValue();
 		settings.saturationRange = saturationSlider.getValue();
 		settings.brightnessRange = brightnessSlider.getValue();

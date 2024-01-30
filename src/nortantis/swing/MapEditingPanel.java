@@ -19,8 +19,10 @@ import org.imgscalr.Scalr.Method;
 import nortantis.MapText;
 import nortantis.WorldGraph;
 import nortantis.geom.Point;
+import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 
@@ -53,7 +55,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Area moveToolArea;
 	private Rectangle textBoxBoundsLine2;
 	private Set<Area> highlightedAreas;
-	private Set<Area> processingAreas;
+	private Set<RotatedRectangle> processingAreas;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -92,19 +94,19 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedEdges.clear();
 	}
 
-	public void setTextBoxToDraw(nortantis.geom.Point location, Rectangle line1Bounds, Rectangle line2Bounds, double angle)
+	public void setTextBoxToDraw(nortantis.geom.Point location, nortantis.geom.Rectangle line1Bounds, nortantis.geom.Rectangle line2Bounds, double angle)
 	{
 		this.textBoxLocation = location == null ? null : new nortantis.geom.Point(location);
-		this.textBoxBoundsLine1 = line1Bounds == null ? null : new Rectangle(line1Bounds);
-		this.textBoxBoundsLine2 = line2Bounds == null ? null : new Rectangle(line2Bounds);
+		this.textBoxBoundsLine1 = line1Bounds == null ? null : AwtFactory.toAwtRectangle(line1Bounds);
+		this.textBoxBoundsLine2 = line2Bounds == null ? null : AwtFactory.toAwtRectangle(line2Bounds);
 		this.textBoxAngle = angle;
 	}
 
 	public void setTextBoxToDraw(MapText text)
 	{
 		this.textBoxLocation = text.location == null ? null : new nortantis.geom.Point(text.location);
-		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : new Rectangle(text.line1Bounds);
-		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : new Rectangle(text.line2Bounds);
+		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : AwtFactory.toAwtRectangle(text.line1Bounds);
+		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : AwtFactory.toAwtRectangle(text.line2Bounds);
 		this.textBoxAngle = text.angle;
 	}
 
@@ -123,12 +125,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (text.line1Area != null)
 			{
-				areas.add(text.line1Area);
+				areas.add(AwtFactory.toAwtArea(text.line1Area));
 			}
 
 			if (text.line2Area != null)
 			{
-				areas.add(text.line2Area);
+				areas.add(AwtFactory.toAwtArea(text.line2Area));
 			}
 		}
 		this.highlightedAreas = areas;
@@ -141,7 +143,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void addProcessingAreasFromTexts(List<MapText> texts)
 	{
-		Set<Area> areas = new HashSet<>();
+		Set<RotatedRectangle> areas = new HashSet<>();
 		for (MapText text : texts)
 		{
 			if (text.line1Area != null)
@@ -164,14 +166,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 	}
 
-	public void removeProcessingAreas(Set<Area> areasToRemove)
+	public void removeProcessingAreas(Set<RotatedRectangle> areasToRemove)
 	{
 		if (processingAreas == null)
 		{
 			return;
 		}
 
-		for (Area area : areasToRemove)
+		for (RotatedRectangle area : areasToRemove)
 		{
 			processingAreas.remove(area);
 		}
@@ -392,8 +394,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		if (processingAreas != null)
 		{
 			g.setColor(processingColor);
-			for (Area area : processingAreas)
+			for (RotatedRectangle rect : processingAreas)
 			{
+				Area area = AwtFactory.toAwtArea(rect);
 				((Graphics2D) g).draw(area);
 			}
 		}
@@ -414,7 +417,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 						continue;
 					}
 				}
-				graph.drawEdge(((Graphics2D) g), e);
+				graph.drawEdge(AwtFactory.wrap((Graphics2D) g), e);
 			}
 		}
 	}
@@ -423,7 +426,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		for (Edge e : edges)
 		{
-			graph.drawEdge(((Graphics2D) g), e);
+			graph.drawEdge(AwtFactory.wrap((Graphics2D) g), e);
 		}
 
 	}
@@ -442,7 +445,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 						// c is not on the edge of the group
 						continue;
 					}
-					graph.drawEdge(((Graphics2D) g), e);
+					graph.drawEdge(AwtFactory.wrap((Graphics2D) g), e);
 				}
 			}
 		}
@@ -451,7 +454,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private void drawRivers(Graphics g)
 	{
 		g.setColor(waterHighlightColor);
-		graph.drawRivers((Graphics2D) g, null, null);
+		graph.drawRivers(AwtFactory.wrap((Graphics2D) g), null, null);
 	}
 
 	public void setZoom(double zoom)
@@ -466,11 +469,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Determines the size at which the rotation and move tool icons appear.
 		final double iconScale = 0.2;
 
-		BufferedImage rotateIcon = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString());
-		rotateTextIconScaled = ImageHelper.scaleByWidth(rotateIcon, (int) (rotateIcon.getWidth() * resolution * iconScale),
-				Method.ULTRA_QUALITY);
-		BufferedImage moveIcon = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString());
-		moveTextIconScaled = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY);
+		BufferedImage rotateIcon = AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString()));
+		rotateTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon), (int) (rotateIcon.getWidth() * resolution * iconScale),
+				Method.ULTRA_QUALITY));
+		BufferedImage moveIcon = AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString()));
+		moveTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(moveIcon), (int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
 	}
 
 	public void setBorderWidth(int borderWidth)

@@ -1,7 +1,5 @@
 package nortantis;
 
-import java.awt.Dimension;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.nio.file.Path;
@@ -16,6 +14,8 @@ import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
 
+import nortantis.geom.Dimension;
+import nortantis.platform.Image;
 import nortantis.util.AssetsPath;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.HashMapF;
@@ -35,12 +35,12 @@ public class ImageCache
 	/**
 	 * Maps original images, to scaled width, to scaled images.
 	 */
-	private ConcurrentHashMapF<BufferedImage, ConcurrentHashMapF<Dimension, BufferedImage>> scaledCache;
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Dimension, Image>> scaledCache;
 
 	/**
 	 * Maps file path (or any string key) to images.
 	 */
-	private ConcurrentHashMapF<String, BufferedImage> fileCache;
+	private ConcurrentHashMapF<String, Image> fileCache;
 
 	/**
 	 * Maps icon type > icon sub-type name > lists of icons of that sub-type.
@@ -98,7 +98,7 @@ public class ImageCache
 	 *            The desired width
 	 * @return A scaled image
 	 */
-	public BufferedImage getScaledImageByWidth(BufferedImage icon, int width)
+	public Image getScaledImageByWidth(Image icon, int width)
 	{
 		Dimension dimension = new Dimension(width, ImageHelper.getHeightWhenScaledByWidth(icon, width));
 		// There is a small chance the 2 different threads might both add the
@@ -119,7 +119,7 @@ public class ImageCache
 	 *            The desired width
 	 * @return A scaled image
 	 */
-	public BufferedImage getScaledImageByHeight(BufferedImage icon, int height)
+	public Image getScaledImageByHeight(Image icon, int height)
 	{
 		Dimension dimension = new Dimension(ImageHelper.getWidthWhenScaledByHeight(icon, height), height);
 		// There is a small chance the 2 different threads might both add the
@@ -131,7 +131,7 @@ public class ImageCache
 				() -> ImageHelper.scaleByHeight(icon, height));
 	}
 
-	public BufferedImage getImageFromFile(Path path)
+	public Image getImageFromFile(Path path)
 	{
 		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.read(path.toString()));
 	}
@@ -173,7 +173,7 @@ public class ImageCache
 				{
 					Logger.println("Loading icon: " + path);
 				}
-				BufferedImage icon = getImageFromFile(path);
+				Image icon = getImageFromFile(path);
 
 				imagesPerGroup.add(groupName, new ImageAndMasks(icon, iconType));
 			}
@@ -190,7 +190,7 @@ public class ImageCache
 		for (String fileName : fileNames)
 		{
 			Path path = Paths.get(groupPath, fileName);
-			BufferedImage icon;
+			Image icon;
 
 			icon = getImageFromFile(path);
 			
@@ -241,7 +241,7 @@ public class ImageCache
 			{
 				Logger.println("Loading icon: " + path);
 			}
-			BufferedImage icon = getImageFromFile(path);
+			Image icon = getImageFromFile(path);
 
 			int width;
 			try

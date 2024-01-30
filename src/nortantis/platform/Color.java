@@ -1,7 +1,5 @@
 package nortantis.platform;
 
-import java.awt.Color;
-
 public abstract class Color
 {
 	public abstract int getRGB();
@@ -62,7 +60,7 @@ public abstract class Color
 	 * 		result[3] = value
 	 * 
 	 */
-	public abstract float[] getHSB(Color color);
+	public abstract float[] getHSB();
 	
 	/**
 	 * Creates a new color object from the given hue, saturation, and brightness.

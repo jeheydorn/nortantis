@@ -1,8 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,10 +18,14 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function;
@@ -448,11 +449,11 @@ public class IconDrawer
 	 * instead of the background. This is necessary so that when I draw an icon that is transparent (such as a hand drawn mountain), I
 	 * cannot see other mountains through it.
 	 */
-	private void drawIconWithBackgroundAndMask(BufferedImage mapOrSnippet, ImageAndMasks imageAndMasks, BufferedImage backgroundOrSnippet,
-			BufferedImage landTexture, int xCenter, int yCenter, boolean ignoreMaxSize)
+	private void drawIconWithBackgroundAndMask(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
+			Image landTexture, int xCenter, int yCenter, boolean ignoreMaxSize)
 	{
-		BufferedImage icon = imageAndMasks.image;
-		BufferedImage contentMask = imageAndMasks.getOrCreateContentMask();
+		Image icon = imageAndMasks.image;
+		Image contentMask = imageAndMasks.getOrCreateContentMask();
 
 		if (mapOrSnippet.getWidth() != backgroundOrSnippet.getWidth())
 			throw new IllegalArgumentException();
@@ -462,7 +463,7 @@ public class IconDrawer
 			throw new IllegalArgumentException("The given content mask's width does not match the icon's width.");
 		if (contentMask.getHeight() != icon.getHeight())
 			throw new IllegalArgumentException("The given content mask's height does not match the icon's height.");
-		BufferedImage shadingMask = null;
+		Image shadingMask = null;
 		shadingMask = imageAndMasks.getOrCreateShadingMask();
 		if (shadingMask.getWidth() != icon.getWidth())
 		{
@@ -476,17 +477,15 @@ public class IconDrawer
 		int xLeft = xCenter - icon.getWidth() / 2;
 		int yBottom = yCenter - icon.getHeight() / 2;
 
-		Raster contentMaskRaster = contentMask.getRaster();
-		Raster shadingMaskRaster = shadingMask.getRaster();
 		for (int x : new Range(icon.getWidth()))
 		{
 			for (int y : new Range(icon.getHeight()))
 			{
-				Color iconColor = new Color(icon.getRGB(x, y), true);
+				Color iconColor = Color.create(icon.getRGB(x, y), true);
 				double alpha = iconColor.getAlpha() / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
-				double contentMaskLevel = contentMaskRaster.getSampleDouble(x, y, 0);
-				double shadingMaskLevel = shadingMaskRaster.getSampleDouble(x, y, 0) / 255.0;
+				float contentMaskLevel = contentMask.getNormalizedPixelLevel(x, y);
+				float shadingMaskLevel = shadingMask.getNormalizedPixelLevel(x, y);
 				Color bgColor;
 				Color mapColor;
 				Color landTextureColor;
@@ -495,9 +494,9 @@ public class IconDrawer
 				int yLoc = yBottom + y;
 				try
 				{
-					bgColor = new Color(backgroundOrSnippet.getRGB(xLoc, yLoc));
-					mapColor = new Color(mapOrSnippet.getRGB(xLoc, yLoc));
-					landTextureColor = new Color(landTexture.getRGB(xLoc, yLoc));
+					bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc));
+					landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc));
 				}
 				catch (IndexOutOfBoundsException e)
 				{
@@ -520,7 +519,7 @@ public class IconDrawer
 				int blue = (int) (alpha * (iconColor.getBlue()) + (1 - alpha)
 						* (contentMaskLevel * ((1 - shadingMaskLevel) * landTextureColor.getBlue() + (shadingMaskLevel * bgColor.getBlue()))
 								+ (1 - contentMaskLevel) * mapColor.getBlue()));
-				mapOrSnippet.setRGB(xLoc, yLoc, new Color(red, green, blue).getRGB());
+				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue).getRGB());
 			}
 		}
 	}
@@ -533,8 +532,7 @@ public class IconDrawer
 	 * 
 	 * @return The icons that drew.
 	 */
-	public List<IconDrawTask> drawAllIcons(BufferedImage mapOrSnippet, BufferedImage background, BufferedImage landTexture,
-			Rectangle drawBounds)
+	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>();
 		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
@@ -607,7 +605,7 @@ public class IconDrawer
 	 * Draws content masks on top of the land mask so that icons that protrude over coastlines don't turn into ocean when text is drawn on
 	 * top of them.
 	 */
-	public void drawContentMasksOntoLandMask(BufferedImage landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
+	public void drawContentMasksOntoLandMask(Image landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
 		for (final IconDrawTask task : tasks)
 		{
@@ -825,7 +823,7 @@ public class IconDrawer
 		return new IconDrawTask(imageAndMasks, type, drawAt, scaledWidth, ignoreMaxSize);
 	}
 
-	private Point getImageCenterToDrawImageAtBottomOfCenter(BufferedImage image, int scaledWidth, Center c)
+	private Point getImageCenterToDrawImageAtBottomOfCenter(Image image, int scaledWidth, Center c)
 	{
 		int scaledHeight = ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth);
 		Corner bottom = c.findBottom();
@@ -1037,11 +1035,11 @@ public class IconDrawer
 
 			for (ImageAndMasks imageAndMasks : imageGroup)
 			{
-				BufferedImage scaledIcon = ImageCache.getInstance(imagesPath).getScaledImageByHeight(imageAndMasks.image, scaledHeight);
-				BufferedImage scaledContentMask = ImageCache.getInstance(imagesPath)
-						.getScaledImageByHeight(imageAndMasks.getOrCreateContentMask(), scaledHeight);
+				Image scaledIcon = ImageCache.getInstance(imagesPath).getScaledImageByHeight(imageAndMasks.image, scaledHeight);
+				Image scaledContentMask = ImageCache.getInstance(imagesPath).getScaledImageByHeight(imageAndMasks.getOrCreateContentMask(),
+						scaledHeight);
 				int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(scaledContentMask, scaledHeight);
-				java.awt.Rectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(imageAndMasks.getOrCreateContentMask(),
+				IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(imageAndMasks.getOrCreateContentMask(),
 						imageAndMasks.getOrCreateContentBounds(), scaledWidth, scaledHeight);
 
 				ImageAndMasks scaled = new ImageAndMasks(scaledIcon, scaledContentMask, scaledContentBounds, null, IconType.trees);
@@ -1196,7 +1194,7 @@ public class IconDrawer
 
 	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)
 	{
-		if (iconTask.unScaledImageAndMasks.getOrCreateContentMask().getType() != BufferedImage.TYPE_BYTE_BINARY)
+		if (iconTask.unScaledImageAndMasks.getOrCreateContentMask().getType() != ImageType.Binary)
 			throw new IllegalArgumentException("Mask type must be TYPE_BYTE_BINARY for checking whether icons touch water.");
 
 		final int imageUpperLeftX = (int) iconTask.centerLoc.x - iconTask.scaledWidth / 2;
@@ -1204,29 +1202,33 @@ public class IconDrawer
 
 		Rectangle scaledContentBounds;
 		{
-			java.awt.Rectangle contentBounds = iconTask.unScaledImageAndMasks.getOrCreateContentBounds();
+			IntRectangle contentBounds = iconTask.unScaledImageAndMasks.getOrCreateContentBounds();
 			if (contentBounds == null)
 			{
 				// The icon is fully transparent.
 				return false;
 			}
-			
-			final double xScaleToScaledIconSpace = iconTask.scaledWidth / (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth();
-			final double yScaleToScaledIconSpace = iconTask.scaledHeight / (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight();
+
+			final double xScaleToScaledIconSpace = iconTask.scaledWidth
+					/ (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth();
+			final double yScaleToScaledIconSpace = iconTask.scaledHeight
+					/ (double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight();
 
 			scaledContentBounds = new Rectangle(contentBounds.x * xScaleToScaledIconSpace, contentBounds.y * yScaleToScaledIconSpace,
 					contentBounds.width * xScaleToScaledIconSpace, contentBounds.height * yScaleToScaledIconSpace);
 		}
-		
+
 		// The constant in this number is in number of pixels at 100% resolution. I include the resolution here
 		// so that the loop below will make the same number of steps (approximately) no matter the resolution.
 		// This is to reduce the chances that icons will appear or disappear when you draw the map at a different resolution.
-		final double stepSize = 2.0 * resolutionScale; 
+		final double stepSize = 2.0 * resolutionScale;
 
-		final double xScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth()) / iconTask.scaledWidth;
-		final double yScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight()) / iconTask.scaledHeight;
+		final double xScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth())
+				/ iconTask.scaledWidth;
+		final double yScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getHeight())
+				/ iconTask.scaledHeight;
 
-		for (double x = scaledContentBounds.x; x <  scaledContentBounds.x + scaledContentBounds.width; x += stepSize)
+		for (double x = scaledContentBounds.x; x < scaledContentBounds.x + scaledContentBounds.width; x += stepSize)
 		{
 			int xInMask = (int) (x * xScaleToMaskSpace);
 			Integer yInMask = iconTask.unScaledImageAndMasks.getContentYStart(xInMask);
@@ -1234,8 +1236,8 @@ public class IconDrawer
 			{
 				continue;
 			}
-			int y = (int)(yInMask * (1.0 / yScaleToMaskSpace)); 
-			
+			int y = (int) (yInMask * (1.0 / yScaleToMaskSpace));
+
 			Center center = graph.findClosestCenter(imageUpperLeftX + x, imageUpperLeftY + y);
 			if (center.isWater)
 			{

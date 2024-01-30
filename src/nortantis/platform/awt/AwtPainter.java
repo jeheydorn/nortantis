@@ -2,6 +2,7 @@ package nortantis.platform.awt;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
+import java.awt.Stroke;
 
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -143,5 +144,18 @@ class AwtPainter extends Painter
 	public void drawPolyline(int[] xPoints, int[] yPoints)
 	{
 		g.drawPolyline(xPoints, yPoints, xPoints.length);
+	}
+
+	@Override
+	public void fillRect(int x, int y, int width, int height)
+	{
+		g.fillRect(x, y, width, height);
+	}
+
+	@Override
+	public void setDashedStroke(float width)
+	{
+		Stroke dashed = new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1f, new float[] { 9 }, 0);
+		g.setStroke(dashed);
 	}
 }
