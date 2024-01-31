@@ -9,6 +9,8 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
 import nortantis.util.ThreadHelper;
 
@@ -101,12 +103,15 @@ public class FractalBGGenerator
 	public static void main(String[] args) throws IOException
 	{
 		long startTime = System.currentTimeMillis();
+		
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
 
 		Image background = generate(new Random(), 1.3f, 4096, 4096, 0.75f);
 
 		out.println("Time to generate (in seconds): " + (System.currentTimeMillis() - startTime) / 1000.0);
 
-		ImageHelper.write(background, "cloud.png");
+		ImageHelper.openImageInSystemDefaultEditor(background, "cloud");
 		System.out.println("Done.");
 		System.exit(0);
 	}

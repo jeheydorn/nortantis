@@ -87,7 +87,7 @@ public class GraphCreator
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				float elevation = image.getPixelLevel(x, y);
+				float elevation = image.getGrayLevel(x, y);
 				float scale;
 				if (elevation > WorldGraph.seaLevel * maxPixelValue)
 				{
@@ -98,13 +98,13 @@ public class GraphCreator
 					scale = 0f;
 				}
 
-				float tValue = maxPixelValue - texture.getPixelLevel(x, y);
+				float tValue = maxPixelValue - texture.getGrayLevel(x, y);
 				int newValue = (int) ((elevation - scale * (tValue)));
 				if (newValue < 0)
 				{
 					newValue = 0;
 				}
-				image.setPixelLevel(x, y, newValue);
+				image.setGrayLevel(x, y, newValue);
 			}
 		}
 

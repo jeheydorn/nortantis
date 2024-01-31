@@ -28,6 +28,7 @@ import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
@@ -846,11 +847,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 		String[] parts = str.split("\t");
 		if (parts.length != 3)
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
-		Font font = Font.create(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		Font font = Font.create(parts[0], FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 		if (parts[0].startsWith("URW Chancery") && font.getFamily().equals("Dialog"))
 		{
 			// Windows doesn't have URW Chancery, so change it to another font.
-			return Font.create("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Font.create("Gabriola", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 		}
 		else
 		{

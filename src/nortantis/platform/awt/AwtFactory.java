@@ -21,6 +21,7 @@ import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
@@ -104,9 +105,9 @@ public class AwtFactory extends PlatformFactory
 	}
 
 	@Override
-	public Font createFont(String name, int style, int size)
+	public Font createFont(String name, FontStyle style, int size)
 	{
-		return new AwtFont(new java.awt.Font(name, style, size));
+		return new AwtFont(new java.awt.Font(name, style.value, size));
 	}
 
 	@Override
@@ -137,7 +138,7 @@ public class AwtFactory extends PlatformFactory
 	@Override
 	public Color createColorFromHSB(float hue, float saturation, float brightness)
 	{
-		return Color.create(java.awt.Color.HSBtoRGB(hue / 360f, saturation / 255f, brightness / 255f));
+		return Color.create(java.awt.Color.HSBtoRGB(hue, saturation, brightness));
 	}
 
 	@Override

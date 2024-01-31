@@ -198,15 +198,15 @@ public class HistogramEqualizer
 			{
 				if (lookupTables.size() == 1)
 				{
-					int grayLevel = inImage.getPixelLevel(x, y);
-					outImage.setPixelLevel(x, y, lookupTables.get(0)[grayLevel]);
+					int grayLevel = inImage.getGrayLevel(x, y);
+					outImage.setGrayLevel(x, y, lookupTables.get(0)[grayLevel]);
 				}
 				else
 				{
 					Color inColor;
 					if (inImage.isGrayscaleOrBinary())
 					{
-						int grayLevel = inImage.getPixelLevel(x, y);
+						int grayLevel = inImage.getGrayLevel(x, y);
 						inColor = Color.create(grayLevel, grayLevel, grayLevel, 255);
 					}
 					else
@@ -230,42 +230,17 @@ public class HistogramEqualizer
 	{
 
 		// Create the list of pixels to use with the histogram.
-		int[] counts = new int[image.getMaxPixelLevel()];
-		for (int r = 0; r < image.getHeight(); r++)
+		int[] counts = new int[image.getMaxPixelLevel()+1];
+		for (int y = 0; y < image.getHeight(); y++)
 		{
-			for (int c = 0; c < image.getWidth(); c++)
+			for (int x = 0; x < image.getWidth(); x++)
 			{
-				int pixelValue = getBandColor(image, c, r, band);
+				int pixelValue = image.getBandLevel(x, y, band);
 				counts[pixelValue]++;
 			}
 		}
 
 		return counts;
-	}
-
-	// TODO consider replacing this method with a pass through to get color levels by band. If I don't do that come on then rename Color.getPixelLevel to getGrayLevel.
-	private static int getBandColor(Image image, int x, int y, int band)
-	{
-		if (image.isGrayscaleOrBinary())
-		{
-			assert band == 0;
-			return image.getPixelLevel(x, y);
-		}
-		
-		if (band == 0)
-		{
-			return image.getPixelColor(x, y).getRed();
-		}
-		if (band == 1)
-		{
-			return image.getPixelColor(x, y).getGreen();
-		}
-		if (band == 2)
-		{
-			return image.getPixelColor(x, y).getBlue();
-		}
-		
-		throw new IllegalArgumentException("Unexpected color band value: " + band);
 	}
 
 }

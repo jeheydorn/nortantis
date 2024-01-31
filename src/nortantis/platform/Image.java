@@ -13,9 +13,22 @@ public abstract class Image
 	{
 		this.type = type;
 		maxPixelLevelAsFloat = getMaxPixelLevel();
-	}	
-	public abstract int getPixelLevel(int x, int y);
+	}
 	
+	public final int getGrayLevel(int x, int y)
+	{
+		return getBandLevel(x, y, 0);
+	}
+	
+	public abstract int getBandLevel(int x, int y, int band);
+	
+	public void setGrayLevel(int x, int y, int level)
+	{
+		setBandLevel(x, y, 0, level);
+	}
+	
+	public abstract void setBandLevel(int x, int y, int band, int level);
+
 	public abstract int getAlphaLevel(int x, int y);
 
 	public abstract void setPixelColor(int x, int y, Color color);
@@ -25,12 +38,10 @@ public abstract class Image
 	public abstract void setRGB(int x, int y, int rgb);
 
 	public abstract Color getPixelColor(int x, int y);
-
-	public abstract void setPixelLevel(int x, int y, int level);
 	
 	public float getNormalizedPixelLevel(int x, int y)
 	{
-		return getPixelLevel(x, y) / maxPixelLevelAsFloat;
+		return getGrayLevel(x, y) / maxPixelLevelAsFloat;
 	}
 	
 	public abstract int getWidth();

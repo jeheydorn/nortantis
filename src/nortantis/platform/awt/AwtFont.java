@@ -1,11 +1,13 @@
 package nortantis.platform.awt;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 
-public class AwtFont extends Font
+@SuppressWarnings("serial")
+public class AwtFont extends Font implements Serializable
 {
 	public java.awt.Font font;
 	
@@ -34,7 +36,7 @@ public class AwtFont extends Font
 		{
 			return java.awt.Font.BOLD | java.awt.Font.ITALIC;
 		}
-		if (style == FontStyle.None)
+		if (style == FontStyle.Plain)
 		{
 			return 0;
 		}
@@ -80,7 +82,7 @@ public class AwtFont extends Font
 		{
 			return FontStyle.Italic;
 		}
-		return FontStyle.None;
+		return FontStyle.Plain;
 	}
 
 	@Override

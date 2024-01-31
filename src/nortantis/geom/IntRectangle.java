@@ -15,7 +15,7 @@ public class IntRectangle
 
 	public boolean contains(int x0, int y0)
 	{
-		if (x0 < x || x0 > x + width || y0 < y || y0 > y + height)
+		if (x0 < x || x0 >= x + width || y0 < y || y0 >= y + height)
 		{
 			return false;
 		}

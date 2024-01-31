@@ -20,7 +20,7 @@ public abstract class PlatformFactory
 	
 	public abstract void writeImage(Image image, String filePath);
 	
-	public abstract Font createFont(String name, int style, int size);
+	public abstract Font createFont(String name, FontStyle style, int size);
 	
 	public abstract Color createColor(int rgb, boolean hasAlpha);
 	

@@ -147,9 +147,9 @@ public class ImageAndMasks
 		{
 			for (int y = 0; y < contentMask.getHeight(); y++)
 			{
-				if (topSilhouette.getPixelLevel(x, y) > 0 && leftSilhouette.getPixelLevel(x, y) > 0 && rightSilhouette.getPixelLevel(x, y) > 0)
+				if (topSilhouette.getGrayLevel(x, y) > 0 && leftSilhouette.getGrayLevel(x, y) > 0 && rightSilhouette.getGrayLevel(x, y) > 0)
 				{
-					contentMask.setPixelLevel(x, y, 255);
+					contentMask.setGrayLevel(x, y, 255);
 				}
 			}
 		}
@@ -226,7 +226,7 @@ public class ImageAndMasks
 		}
 		else
 		{
-			contentBounds.add(point.x, point.y);
+			contentBounds = contentBounds.add(point.x, point.y);
 		}
 	}
 	
@@ -316,7 +316,7 @@ public class ImageAndMasks
 
 		for (int y = contentMask.getHeight() - 1; y >= 0; y--)
 		{
-			if (contentMask.getPixelLevel(x, y) > 0)
+			if (contentMask.getGrayLevel(x, y) > 0)
 			{
 				return new Coordinate(x, y);
 			}

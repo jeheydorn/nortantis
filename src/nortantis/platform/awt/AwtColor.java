@@ -1,10 +1,12 @@
 package nortantis.platform.awt;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import nortantis.platform.Color;
 
-public class AwtColor extends Color
+@SuppressWarnings("serial")
+public class AwtColor extends Color implements Serializable
 {
 	java.awt.Color color;
 	
@@ -94,5 +96,11 @@ public class AwtColor extends Color
 		}
 		AwtColor other = (AwtColor) obj;
 		return Objects.equals(color, other.color);
+	}
+
+	@Override
+	public String toString()
+	{
+		return "AwtColor [color=" + color + "]";
 	}
 }

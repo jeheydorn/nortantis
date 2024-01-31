@@ -26,10 +26,6 @@ class AwtImage extends Image
 	{
 		super(type);
 		image = new BufferedImage(width, height, toBufferedImageType(type));
-		if (isGrayscaleOrBinary())
-		{
-			raster = image.getRaster();
-		}
 		createRastersIfNeeded();
 	}
 
@@ -42,10 +38,7 @@ class AwtImage extends Image
 
 	private void createRastersIfNeeded()
 	{
-		if (isGrayscaleOrBinary())
-		{
-			raster = image.getRaster();
-		}
+		raster = image.getRaster();
 		
 		if (hasAlpha())
 		{
@@ -95,6 +88,10 @@ class AwtImage extends Image
 		{
 			return ImageType.RGB;
 		}
+		if (bufferedImageType == BufferedImage.TYPE_3BYTE_BGR)
+		{
+			return ImageType.RGB;
+		}
 		if (bufferedImageType == BufferedImage.TYPE_BYTE_GRAY)
 		{
 			return ImageType.Grayscale8Bit;
@@ -128,15 +125,20 @@ class AwtImage extends Image
 	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
-		image.setRGB(x, y, y);
+		image.setRGB(x, y, rgb);
 	}
 
 	@Override
-	public void setPixelLevel(int x, int y, int level)
+	public int getBandLevel(int x, int y, int band)
 	{
-		raster.setSample(x, y, 0, level);
+		return raster.getSample(x, y, band);
 	}
-	
+
+	@Override
+	public void setBandLevel(int x, int y, int band, int level)
+	{
+		raster.setSample(x, y, band, level);
+	}
 
 	@Override
 	public int getAlphaLevel(int x, int y)
@@ -153,12 +155,6 @@ class AwtImage extends Image
 	public Color getPixelColor(int x, int y)
 	{
 		return new AwtColor(image.getRGB(x, y), hasAlpha());
-	}
-
-	@Override
-	public int getPixelLevel(int x, int y)
-	{
-		return raster.getSample(x, y, 0);
 	}
 
 	@Override
@@ -184,7 +180,7 @@ class AwtImage extends Image
 			g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 		}
 
-		return new AwtPainter(image.createGraphics());
+		return new AwtPainter(g);
 	}
 
 	private static String bufferedImageTypeToString(int type)

@@ -15,6 +15,7 @@ import org.imgscalr.Scalr.Method;
 import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
+import nortantis.MapSettings;
 import nortantis.TextDrawer;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
@@ -23,6 +24,7 @@ import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
@@ -47,13 +49,13 @@ public class ImageHelper
 		if (originalWidth > maxDimensions.width)
 		{
 			width = maxDimensions.width;
-			height = (int)(height * (width / originalWidth));
+			height = (int)(height * (((double)width) / originalWidth));
 		}
 		if (height > maxDimensions.height)
 		{
 			double prevHeight = height;
 			height = maxDimensions.height;
-			width = (int)(width * (height / prevHeight));
+			width = (int)(width * (((double)height) / prevHeight));
 		}
 		return new IntDimension(width, height);
 	}
@@ -341,7 +343,7 @@ public class ImageHelper
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = image.getPixelLevel(x, y);
+				double value = image.getGrayLevel(x, y);
 				if (value < min)
 					min = value;
 				if (value > max)
@@ -350,9 +352,9 @@ public class ImageHelper
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = image.getPixelLevel(x, y);
+				double value = image.getGrayLevel(x, y);
 				int newValue = (int) (((value - min) / (max - min)) * maxPixelValue);
-				image.setPixelLevel(x, y, newValue);
+				image.setGrayLevel(x, y, newValue);
 			}
 	}
 
@@ -428,9 +430,9 @@ public class ImageHelper
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = image.getPixelLevel(x, y);
+				double value = image.getGrayLevel(x, y);
 				int newValue = (int) (value * scale);
-				image.setPixelLevel(x, y, newValue);
+				image.setGrayLevel(x, y, newValue);
 			}
 	}
 
@@ -575,7 +577,7 @@ public class ImageHelper
 
 						Color col = Color.create(image.getRGB(x, y));
 
-						int maskLevel = mask.getPixelLevel(xInMask, yInMask);
+						int maskLevel = mask.getGrayLevel(xInMask, yInMask);
 						if (mask.getType() == ImageType.Grayscale8Bit)
 						{
 							if (invertMask)
@@ -643,10 +645,10 @@ public class ImageHelper
 					for (int x = 0; x < image.getWidth(); x++)
 					{
 						Color col = Color.create(image.getRGB(x, y));
-						Color color = colors.get(colorIndexes.getPixelLevel(x, y));
+						Color color = colors.get(colorIndexes.getGrayLevel(x, y));
 						if (color != null)
 						{
-							int maskLevel = mask.getPixelLevel(x, y);
+							int maskLevel = mask.getGrayLevel(x, y);
 							if (mask.getType() == ImageType.Grayscale8Bit)
 							{
 								if (invertMask)
@@ -732,7 +734,7 @@ public class ImageHelper
 				}
 
 				Color col = Color.create(image.getRGB(x, y));
-				int maskLevel = alphaMask.getPixelLevel(xInMask, yInMask);
+				int maskLevel = alphaMask.getGrayLevel(xInMask, yInMask);
 				if (alphaMask.getType() == ImageType.Binary)
 				{
 					if (maskLevel == 1)
@@ -790,7 +792,7 @@ public class ImageHelper
 				int green = Color.create(greenChanel.getRGB(x, y)).getGreen();
 				int blue = Color.create(blueChanel.getRGB(x, y)).getBlue();
 
-				int maskLevel = alphaChanel.getPixelLevel(x, y);
+				int maskLevel = alphaChanel.getGrayLevel(x, y);
 
 				int mc = (maskLevel << 24) | 0x00ffffff;
 				int newColor = Color.create(red, green, blue).getRGB() & mc;
@@ -845,7 +847,7 @@ public class ImageHelper
 		for (int y = 0; y < region.getHeight(); y++)
 			for (int x = 0; x < region.getWidth(); x++)
 			{
-				int grayLevel = mask.getPixelLevel(x, y);
+				int grayLevel = mask.getGrayLevel(x, y);
 				Color r = Color.create(region.getRGB(x, y), true);
 
 				// Don't clobber the alpha level from the region.
@@ -971,11 +973,11 @@ public class ImageHelper
 					continue;
 				}
 
-				int toDrawValue = toDraw.getPixelLevel(c, r);
-				int targetValue = target.getPixelLevel(targetC, targetR);
+				int toDrawValue = toDraw.getGrayLevel(c, r);
+				int targetValue = target.getGrayLevel(targetC, targetR);
 				if (toDrawValue > targetValue)
 				{
-					target.setPixelLevel(targetC, targetR, toDrawValue);
+					target.setGrayLevel(targetC, targetR, toDrawValue);
 				}
 			}
 		}
@@ -1104,7 +1106,7 @@ public class ImageHelper
 		for (int r = 0; r < img.getHeight(); r++)
 			for (int c = 0; c < img.getWidth(); c++)
 			{
-				float grayLevel = img.getPixelLevel(c, r);
+				float grayLevel = img.getGrayLevel(c, r);
 				if (isGrayscale)
 					grayLevel /= maxPixelValue;
 				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
@@ -1223,7 +1225,7 @@ public class ImageHelper
 			for (int c = colStart; c < colStart + cols; c++)
 			{
 				int value = Math.min(maxPixelValue, (int)(array[r][c] * maxPixelValue));
-				image.setPixelLevel(c - colStart, r - rowStart, value); 
+				image.setGrayLevel(c - colStart, r - rowStart, value); 
 			}
 		}
 		return image;
@@ -1237,7 +1239,7 @@ public class ImageHelper
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				image.setPixelLevel(x, y, (int)(array[y][x] * maxPixelValue));
+				image.setGrayLevel(x, y, (int)(array[y][x] * maxPixelValue));
 			}
 		}
 		return image;
@@ -1250,7 +1252,7 @@ public class ImageHelper
 		{
 			for (int c = 0; c < img.getHeight(); c++)
 			{
-				result[r][c] = img.getPixelLevel(r, c);
+				result[r][c] = img.getGrayLevel(r, c);
 			}
 		}
 		return result;
@@ -1435,9 +1437,7 @@ public class ImageHelper
 					"The image must by type ImageType.Grayscale, but was type " + image.getType());
 		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
 
-		float[] hsb = new float[3];
-		java.awt.Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), hsb);
-
+		float[] hsb = color.getHSB();
 		final IntRectangle whereFinal = where;
 		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
 		{
@@ -1451,26 +1451,25 @@ public class ImageHelper
 		return result;
 	}
 
-	private static int colorifyPixel(float pixelLevel, float[] hsb, ColorifyAlgorithm how)
+	private static int colorifyPixel(float pixelLevelNormalized, float[] hsb, ColorifyAlgorithm how)
 	{
 		if (how == ColorifyAlgorithm.algorithm2)
 		{
 			float I = hsb[2] * 255f;
-			float overlay = ((I / 255f) * (I + ((2 * pixelLevel) / 255f) * (255f - I))) / 255f;
+			float overlay = ((I / 255f) * (I + (2 * pixelLevelNormalized) * (255f - I))) / 255f;
 			return Color.createFromHSB(hsb[0], hsb[1], overlay).getRGB();
 		}
 		else if (how == ColorifyAlgorithm.algorithm3)
 		{
 			float resultLevel;
-			pixelLevel /= 255f;
 			if (hsb[2] < 0.5f)
 			{
-				resultLevel = pixelLevel * (hsb[2] * 2f);
+				resultLevel = pixelLevelNormalized * (hsb[2] * 2f);
 			}
 			else
 			{
 				float range = (1f - hsb[2]) * 2;
-				resultLevel = range * pixelLevel + (1f - range);
+				resultLevel = range * pixelLevelNormalized + (1f - range);
 			}
 			return Color.createFromHSB(hsb[0], hsb[1], resultLevel).getRGB();
 		}
@@ -1545,7 +1544,7 @@ public class ImageHelper
 					continue;
 				}
 				float level = image.getNormalizedPixelLevel(x + whereFinal.x, y + whereFinal.y);
-				int colorKey = colorIndexes.getPixelLevel(x, y);
+				int colorKey = colorIndexes.getGrayLevel(x, y);
 				float[] hsb = hsbMap.get(colorKey);
 				// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
 				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there 
@@ -1558,12 +1557,6 @@ public class ImageHelper
 		});
 
 		return result;
-	}
-
-	// TODO remove pass-through method with direct calls
-	public static Color colorFromHSB(float hue, float saturation, float brightness)
-	{
-		return Color.createFromHSB(hue, saturation, brightness);
 	}
 
 	// TODO remove this method once all references are removed
@@ -1630,7 +1623,7 @@ public class ImageHelper
 		{
 			for (int c = 0; c < image.getWidth(); c++)
 			{
-				sum += image.getPixelLevel(c, r);
+				sum += image.getGrayLevel(c, r);
 			}
 		}
 
@@ -1726,7 +1719,7 @@ public class ImageHelper
 	 */
 	public static void threshold(Image image, int threshold, int highValue)
 	{
-		if (image.isGrayscaleOrBinary())
+		if (!image.isGrayscaleOrBinary())
 		{
 			throw new IllegalArgumentException("Unsupported image type for thresholding: " + image.getType());
 		}
@@ -1735,14 +1728,14 @@ public class ImageHelper
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = (int) image.getPixelLevel(x, y);
+				double value = (int) image.getGrayLevel(x, y);
 				if (value * maxPixelValue >= threshold)
 				{
-					image.setPixelLevel(x, y, highValue); 
+					image.setGrayLevel(x, y, highValue); 
 				}
 				else
 				{
-					image.setPixelLevel(x, y, 0);
+					image.setGrayLevel(x, y, 0);
 				}
 			}
 	}
@@ -1762,9 +1755,9 @@ public class ImageHelper
 		for (int y = 0; y < target.getHeight(); y++)
 			for (int x = 0; x < target.getWidth(); x++)
 			{
-				double value = (int) target.getPixelLevel(x, y);
-				double otherValue = (int) other.getPixelLevel(x, y);
-				target.setPixelLevel(x, y, (int) Math.min(maxPixelValue, value + otherValue));
+				double value = (int) target.getGrayLevel(x, y);
+				double otherValue = (int) other.getGrayLevel(x, y);
+				target.setGrayLevel(x, y, (int) Math.min(maxPixelValue, value + otherValue));
 			}
 	}
 
@@ -1785,9 +1778,9 @@ public class ImageHelper
 		for (int y = 0; y < target.getHeight(); y++)
 			for (int x = 0; x < target.getWidth(); x++)
 			{
-				double value = (int) target.getPixelLevel(x, y);
-				double otherValue = (int) other.getPixelLevel(x, y);
-				target.setPixelLevel(x, y, (int) Math.max(0, value - otherValue));
+				double value = (int) target.getGrayLevel(x, y);
+				double otherValue = (int) other.getGrayLevel(x, y);
+				target.setGrayLevel(x, y, (int) Math.max(0, value - otherValue));
 			}
 	}
 
@@ -1847,7 +1840,7 @@ public class ImageHelper
 			return Image.create(1, 1, ImageType.ARGB);
 		}
 
-		Font font = Font.create("URW Chancery L", 0, 30);
+		Font font = MapSettings.parseFont("URW Chancery L\t0\t30");
 		int fontHeight = TextDrawer.getFontHeight(font);
 
 		IntDimension textBounds = TextDrawer.getTextDimensions(message[0], font).toIntDimension();

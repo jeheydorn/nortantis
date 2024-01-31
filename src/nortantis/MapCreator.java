@@ -1280,7 +1280,7 @@ public class MapCreator
 		float hue = (float) (landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
 		float saturation = ImageHelper.bound((int) (landHsb[1] * 255 + (rand.nextDouble() - 0.5) * saturationRange));
 		float brightness = ImageHelper.bound((int) (landHsb[2] * 255 + (rand.nextDouble() - 0.5) * brightnessRange));
-		return ImageHelper.colorFromHSB(hue, saturation, brightness);
+		return Color.createFromHSB(hue / 360f, saturation / 255f, brightness / 255f);
 	}
 
 	public static Color generateColorFromBaseColor(Random rand, Color base, float hueRange, float saturationRange, float brightnessRange)
@@ -1582,11 +1582,11 @@ public class MapCreator
 					blurBoxY2 = y2;
 				}
 
-				float blurBoxLevel = Math.max(blurBox.getPixelLevel(blurBoxX1, blurBoxY1), Math.max(
-						blurBox.getPixelLevel(blurBoxX2, blurBoxY1),
-						Math.max(blurBox.getPixelLevel(blurBoxX1, blurBoxY2), blurBox.getPixelLevel(blurBoxX2, blurBoxY2))));
+				float blurBoxLevel = Math.max(blurBox.getGrayLevel(blurBoxX1, blurBoxY1), Math.max(
+						blurBox.getGrayLevel(blurBoxX2, blurBoxY1),
+						Math.max(blurBox.getGrayLevel(blurBoxX1, blurBoxY2), blurBox.getGrayLevel(blurBoxX2, blurBoxY2))));
 
-				image.setPixelLevel(x, y, (int)(imageLevel * blurBoxLevel));
+				image.setGrayLevel(x, y, (int)(imageLevel * blurBoxLevel));
 			}
 	}
 

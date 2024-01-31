@@ -107,19 +107,7 @@ public class BackgroundGenerator
 						else
 						{
 							// Color image
-							Color color = Color.create(texture.getRGB(textureC, textureR));
-							if (channel == 0)
-							{
-								level = color.getRed();
-							}
-							else if (channel == 1)
-							{
-								level = color.getGreen();
-							}
-							else
-							{
-								level = color.getBlue();
-							}
+							level = texture.getBandLevel(textureC, textureR, channel);
 						}
 
 						float ar = calcSmoothParamether(textureR, alphaRows, alpha, texture.getHeight());
@@ -145,18 +133,13 @@ public class BackgroundGenerator
 			{
 				// Copy grayImage to a color channel in allChanels.
 				for (int y = 0; y < allChannels.getHeight(); y++)
+				{
 					for (int x = 0; x < allChannels.getWidth(); x++)
 					{
-						Color color = Color.create(allChannels.getRGB(x, y));
-
-						int level = grayImage.getPixelLevel(x, y);
-
-						int r = (channel == 0) ? level : color.getRed();
-						int g = (channel == 1) ? level : color.getGreen();
-						int b = (channel == 2) ? level : color.getBlue();
-						Color combined = Color.create(r, g, b);
-						allChannels.setRGB(x, y, combined.getRGB());
+						int level = grayImage.getGrayLevel(x, y);
+						allChannels.setBandLevel(x, y, channel, level);
 					}
+				}
 			}
 		}
 

@@ -2,7 +2,7 @@ package nortantis.platform;
 
 public abstract class Font
 {
-	public static Font create(String name, int style, int size)
+	public static Font create(String name, FontStyle style, int size)
 	{
 		return PlatformFactory.getInstance().createFont(name, style, size);
 	}

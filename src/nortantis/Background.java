@@ -247,7 +247,7 @@ public class Background
 			IntDimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width,
 					mapBoundsPlusBorder.height);
 			// Change the resolution to match the new bounds.
-			settings.resolution *= newBounds.width / mapBoundsPlusBorder.width;
+			settings.resolution *= ((double)newBounds.width) / mapBoundsPlusBorder.width;
 
 			IntDimension scaledMapBounds = new Dimension(settings.generatedWidth * settings.resolution,
 					settings.generatedHeight * settings.resolution).toIntDimension();

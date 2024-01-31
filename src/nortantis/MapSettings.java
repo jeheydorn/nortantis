@@ -27,6 +27,7 @@ import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
@@ -378,7 +379,7 @@ public class MapSettings implements Serializable
 
 	private String fontToString(Font font)
 	{
-		return font.getFontName() + "\t" + font.getStyle() + "\t" + font.getSize();
+		return font.getFontName() + "\t" + font.getStyle().value + "\t" + font.getSize();
 	}
 
 	private void parseFromJson(String fileContents)
@@ -759,18 +760,18 @@ public class MapSettings implements Serializable
 		{
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
 		}
-		Font font = Font.create(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		Font font = Font.create(parts[0], FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 		if (!isFontInstalled(font.getName()))
 		{
 			if (isFontInstalled("Gabriola"))
 			{
 				// Windows has this font
-				font = Font.create("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+				font = Font.create("Gabriola", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}
 			else if (isFontInstalled("Z003"))
 			{
 				// Ubuntu has this font
-				font = Font.create("Z003", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+				font = Font.create("Z003", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}
 		}
 		return font;
