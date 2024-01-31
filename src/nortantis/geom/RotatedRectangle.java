@@ -60,13 +60,35 @@ public class RotatedRectangle
 	{
 	    double cos = Math.cos(-angle);
 	    double sin = Math.sin(-angle);
+	    // Rotate circleCenter to match this rectangle
 	    double xLocRotated = (circleCenter.x - pivotX) * cos - (circleCenter.y - pivotY) * sin + pivotX;
 	    double yLocRotated = (circleCenter.x - pivotX) * sin + (circleCenter.y - pivotY) * cos + pivotY;
-	    double dx = xLocRotated - (x + width / 2);
-	    double dy = yLocRotated - (y + height / 2);
-	    double distance = Math.sqrt(dx * dx + dy * dy);
-	    double diagonal = Math.sqrt(width * width + height * height);
-	    return distance <= radius + diagonal / 2;
+	    // Find the distance between the rotated circle center and the center of this rectangle
+	    double dx = Math.abs((x + width / 2) - xLocRotated);
+	    double dy = Math.abs((y + height / 2) - yLocRotated);
+
+	    if (dx > (width/2 + radius)) 
+	    { 
+	    	return false; 
+	    }
+	    if (dy > (height/2 + radius)) 
+	    { 
+	    	return false; 
+	    }
+
+	    if (dx <= (width/2)) 
+	    { 
+	    	return true; 
+	    } 
+	    if (dy <= (height/2)) 
+	    { 
+	    	return true; 
+	    }
+	    
+	    double cornerDistanceSquared = (dx - width/2)* (dx - width/2) +
+                (dy - height/2) * (dy - height/2);
+
+	    return (cornerDistanceSquared <= (radius * radius));	
 	}
 
 	public boolean overlaps(RotatedRectangle rect)

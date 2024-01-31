@@ -141,9 +141,9 @@ public class GraphCreator
 	{
 		// It doesn't really matter what this value is. I'm using the value that used to be the width of a graph drawn at medium resolution,
 		// since that's most likely to be backwards compatible with older maps.
-		final int standardWidth = 4096;
+		final double standardWidth = 4096;
 
-		return new IntDimension(standardWidth, (int)(drawResolution.height * (standardWidth / drawResolution.width)));
+		return new IntDimension((int)standardWidth, (int)(drawResolution.height * (standardWidth / drawResolution.width)));
 	}
 
 

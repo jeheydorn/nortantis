@@ -168,8 +168,8 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Area != null && mp.line1Area.overlapsCircle(point, brushDiameter)
-						|| mp.line2Area != null && mp.line2Area.overlapsCircle(point, brushDiameter))
+				if (mp.line1Area != null && mp.line1Area.overlapsCircle(point, brushDiameter / 2.0)
+						|| mp.line2Area != null && mp.line2Area.overlapsCircle(point, brushDiameter / 2.0))
 				{
 					result.add(mp);
 				}

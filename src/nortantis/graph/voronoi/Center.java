@@ -212,7 +212,7 @@ public class Center
 	{
 		for (Corner corner : corners)
 		{
-			if (bounds.inBounds(corner.loc))
+			if (bounds.contains(corner.loc))
 			{
 				return true;
 			}

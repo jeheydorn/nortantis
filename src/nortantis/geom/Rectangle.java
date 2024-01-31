@@ -56,12 +56,12 @@ public class Rectangle
 		return true;
 	}
 
-	public boolean inBounds(Point p)
+	public boolean contains(Point p)
 	{
-		return inBounds(p.x, p.y);
+		return contains(p.x, p.y);
 	}
 
-	public boolean inBounds(double x0, double y0)
+	public boolean contains(double x0, double y0)
 	{
 		if (x0 < x || x0 > getRight() || y0 < y || y0 > getBottom())
 		{
@@ -72,42 +72,42 @@ public class Rectangle
 
 	public boolean overlaps(Rectangle other)
 	{
-		if (inBounds(other.x, other.y))
+		if (contains(other.x, other.y))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x, y))
+		if (other.contains(x, y))
 		{
 			return true;
 		}
 
-		if (inBounds(other.x + other.width, other.y))
+		if (contains(other.x + other.width, other.y))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x + width, y))
+		if (other.contains(x + width, y))
 		{
 			return true;
 		}
 
-		if (inBounds(other.x, other.y + other.height))
+		if (contains(other.x, other.y + other.height))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x, y + height))
+		if (other.contains(x, y + height))
 		{
 			return true;
 		}
 
-		if (inBounds(other.x + other.width, other.y + other.height))
+		if (contains(other.x + other.width, other.y + other.height))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x + width, y + height))
+		if (other.contains(x + width, y + height))
 		{
 			return true;
 		}

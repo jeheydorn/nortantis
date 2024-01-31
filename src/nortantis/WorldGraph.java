@@ -1547,13 +1547,13 @@ public class WorldGraph extends VoronoiGraph
 	{
 		for (Corner corner : center.corners)
 		{
-			if (rectangle.inBounds(corner.loc))
+			if (rectangle.contains(corner.loc))
 			{
 				return true;
 			}
 		}
 
-		return rectangle.inBounds(center.loc);
+		return rectangle.contains(center.loc);
 	}
 
 	/**
