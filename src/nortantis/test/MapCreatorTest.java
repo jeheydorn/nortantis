@@ -16,6 +16,8 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -26,6 +28,9 @@ public class MapCreatorTest
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception
 	{
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
+				
 		// Create the expected images if they don't already exist.
 		// Note that this means that if you haven't already created the images, you run these tests before making changes that will need to
 		// be tested.
