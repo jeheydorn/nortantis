@@ -1094,7 +1094,6 @@ public class TextDrawer
 
 			// Rotate the bounds for the text. Use rotated rectangles rather than p's transform because we need to not include drawOffset when
 			// rotating.
-			// TODO The areas below use to include any transform on p before the rotation above. Make sure this still works.
 			RotatedRectangle area1 = new RotatedRectangle(bounds1, text.angle, pivot);
 			RotatedRectangle area2 = line2 == null ? null : new RotatedRectangle(bounds2, text.angle, pivot);
 			// Make sure we don't draw on top of existing text.

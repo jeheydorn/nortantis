@@ -284,7 +284,7 @@ public class Center
 		{
 			result.add(currentEdge);
 			remaining.remove(currentEdge);
-			// TODO Switch back to simplified version when done debugging
+
 			Edge next = findConnectedEdge(currentEdge, remaining);
 			if (next == null)
 			{

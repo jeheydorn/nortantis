@@ -654,7 +654,7 @@ public abstract class VoronoiGraph
 							// I really should break the polygon into triangles
 							// and call drawElevationOfTriangle on each, but for
 							// now I'm just doing this.
-							float grayLevel = (float) (float) c.elevation;
+							float grayLevel = (float) c.elevation;
 							g.setColor(Color.create(grayLevel, grayLevel, grayLevel));
 						}
 						g.fillPolygon(x, y);

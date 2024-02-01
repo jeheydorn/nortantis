@@ -17,6 +17,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
@@ -42,22 +43,22 @@ public class ImageHelper
 		ConcurrencyUtils.shutdownThreadPoolAndAwaitTermination();
 	}
 
-	public static IntDimension fitDimensionsWithinBoundingBox(IntDimension maxDimensions, int originalWidth, int originalHeight)
+	public static Dimension fitDimensionsWithinBoundingBox(Dimension maxDimensions, double originalWidth, double originalHeight)
 	{
-		int width = originalWidth;
-		int height = originalHeight;
+		double width = originalWidth;
+		double height = originalHeight;
 		if (originalWidth > maxDimensions.width)
 		{
 			width = maxDimensions.width;
-			height = (int)(height * (((double)width) / originalWidth));
+			height = height * (width / originalWidth);
 		}
 		if (height > maxDimensions.height)
 		{
 			double prevHeight = height;
 			height = maxDimensions.height;
-			width = (int)(width * (((double)height) / prevHeight));
+			width = width * (height / prevHeight);
 		}
-		return new IntDimension(width, height);
+		return new Dimension(width, height);
 	}
 
 	/**
@@ -925,12 +926,6 @@ public class ImageHelper
 		return result;
 	}
 
-	// TODO Replace calls to this method with direct calls.
-	public static Image deepCopy(Image bi)
-	{
-		return bi.deepCopy();
-	}
-
 	public static void multiplyArrays(float[][] target, float[][] source)
 	{
 		assert target.length == source.length;
@@ -1559,13 +1554,11 @@ public class ImageHelper
 		return result;
 	}
 
-	// TODO remove this method once all references are removed
 	public static void write(Image image, String fileName)
 	{
 		image.write(fileName);
 	}
 
-	// TODO remove this method once all references are removed
 	public static Image read(String fileName)
 	{
 		return Image.read(fileName);
@@ -1887,11 +1880,5 @@ public class ImageHelper
 			}
 		}
 		return newImage;
-	}
-	
-	// TODO replace pass-through method with direct calls
-	public static Image crop(Image inImage, IntRectangle bounds)
-	{
-		return inImage.crop(bounds);
 	}
 }

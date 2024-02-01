@@ -20,6 +20,7 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.NameCreator;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -40,7 +41,7 @@ public abstract class MapUpdater
 	private ReentrantLock interactionsLock;
 	public MapParts mapParts;
 	private boolean createEditsIfNotPresentAndUseMapParts;
-	private IntDimension maxMapSize;
+	private Dimension maxMapSize;
 	private boolean enabled;
 	private boolean isMapReadyForInteractions;
 	private Queue<Runnable> tasksToRunWhenMapReady;
@@ -606,7 +607,7 @@ public abstract class MapUpdater
 		}
 	}
 
-	public void setMaxMapSize(IntDimension dimension)
+	public void setMaxMapSize(Dimension dimension)
 	{
 		maxMapSize = dimension;
 	}

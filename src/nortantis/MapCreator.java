@@ -284,7 +284,7 @@ public class MapCreator
 		}
 
 		// Store the current version of mapSnippet for a background when drawing icons later.
-		Image landBackground = ImageHelper.deepCopy(mapSnippet);
+		Image landBackground = mapSnippet.deepCopy();
 
 		if (settings.drawRegionColors)
 		{
@@ -416,7 +416,7 @@ public class MapCreator
 	 *            If not null, then parts of the map created while generating will be stored in it.
 	 * @return The map
 	 */
-	public Image createMap(final MapSettings settings, IntDimension maxDimensions, MapParts mapParts) throws CancelledException
+	public Image createMap(final MapSettings settings, Dimension maxDimensions, MapParts mapParts) throws CancelledException
 	{
 		Logger.println("Creating the map");
 
@@ -439,7 +439,7 @@ public class MapCreator
 		}
 
 		r = new Random(settings.randomSeed);
-		IntDimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
+		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 		double sizeMultiplier = calcSizeMultiplier(mapBounds.width);
 
 		// Kick of a job to create the graph while the background is being created.
@@ -480,7 +480,7 @@ public class MapCreator
 
 		checkForCancel();
 
-		IntDimension mapDimensions = background.borderBounds;
+		Dimension mapDimensions = background.borderBounds;
 		Future<Tuple2<Image, Image>> frayedBorderTask = null;
 		long frayedBorderSeed = r.nextLong();
 		if (!isLowMemoryMode)
@@ -517,7 +517,7 @@ public class MapCreator
 		}
 		else
 		{
-			map = ImageHelper.deepCopy(mapParts.mapBeforeAddingText);
+			map = mapParts.mapBeforeAddingText.deepCopy();
 			textBackground = mapParts.textBackground;
 			mountainGroups = null;
 			cities = null;
@@ -691,7 +691,7 @@ public class MapCreator
 	}
 
 	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(long frayedBorderSeed, MapSettings settings,
-			IntDimension mapDimensions, double sizeMultiplier, MapParts mapParts)
+			Dimension mapDimensions, double sizeMultiplier, MapParts mapParts)
 	{
 		// Use the random number generator the same whether or not we draw a frayed border.
 		if (settings.frayedBorder)
@@ -729,7 +729,7 @@ public class MapCreator
 		return null;
 	}
 
-	private Future<Image> startGrungeCreation(MapSettings settings, MapParts mapParts, IntDimension mapDimensions)
+	private Future<Image> startGrungeCreation(MapSettings settings, MapParts mapParts, Dimension mapDimensions)
 	{
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
@@ -749,7 +749,7 @@ public class MapCreator
 				// the background.
 				final float fractalPower = 1.3f;
 				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower,
-						mapDimensions.width, mapDimensions.height, 0.75f);
+						((int)mapDimensions.width), ((int)mapDimensions.height), 0.75f);
 
 				checkForCancel();
 
@@ -840,7 +840,7 @@ public class MapCreator
 		checkForCancel();
 
 		// Store the current version of the map for a background when drawing icons later.
-		Image landBackground = ImageHelper.deepCopy(map);
+		Image landBackground = map.deepCopy();
 
 		checkForCancel();
 
@@ -934,7 +934,7 @@ public class MapCreator
 
 		if (mapParts != null)
 		{
-			mapParts.mapBeforeAddingText = ImageHelper.deepCopy(map);
+			mapParts.mapBeforeAddingText = map.deepCopy();
 			mapParts.textBackground = textBackground;
 		}
 
@@ -1289,7 +1289,7 @@ public class MapCreator
 		return generateRegionColor(rand, hsb, hueRange, saturationRange, brightnessRange);
 	}
 
-	private static WorldGraph createGraph(MapSettings settings, int width, int height, Random r, double resolutionScale,
+	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale,
 			boolean createElevationBiomesAndRegions)
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,

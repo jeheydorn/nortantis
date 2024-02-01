@@ -31,6 +31,4 @@ public abstract class PlatformFactory
 	public abstract Color createColor(int red, int green, int blue, int alpha);
 	
 	public abstract Color createColorFromHSB(float hue, float saturation, float brightness);
-	
-	public abstract Transform createEmptyTransform(); // TODO remove this and the things it uses if I don't end up needing it.
 }

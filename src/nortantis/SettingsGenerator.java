@@ -33,7 +33,7 @@ public class SettingsGenerator
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
-	public static int maxWorldSize = 30000;
+	public static int maxWorldSize = 30000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;

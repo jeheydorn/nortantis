@@ -499,14 +499,14 @@ public class NewSettingsDialog extends JDialog
 		updater.setEnabled(false);
 	}
 
-	private IntDimension getMapDrawingAreaSize()
+	private nortantis.geom.Dimension getMapDrawingAreaSize()
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new IntDimension(
-				(int) ((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
-						* mapEditingPanel.osScale),
-				(int) ((mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
-						* mapEditingPanel.osScale));
+		return new nortantis.geom.Dimension(
+				(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
+						* mapEditingPanel.osScale,
+				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
+						* mapEditingPanel.osScale);
 
 	}
 

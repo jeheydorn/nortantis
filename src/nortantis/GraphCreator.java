@@ -4,6 +4,7 @@ import java.nio.file.Paths;
 import java.util.Random;
 
 import nortantis.MapSettings.LineStyle;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.Color;
@@ -21,13 +22,13 @@ import nortantis.util.Logger;
  */
 public class GraphCreator
 {
-	public static WorldGraph createGraph(int width, int height, int numSites, double borderPlateContinentalProbability,
+	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
 			double nonBorderPlateContinentalProbability, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
 			boolean createElevationBiomesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible)
 	{
 		// double startTime = System.currentTimeMillis();
 
-		IntDimension graphSize = getGraphDimensionsWithStandardWidth(new IntDimension(width, height));
+		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
@@ -110,13 +111,13 @@ public class GraphCreator
 
 	}
 
-	public static WorldGraph createSimpleGraph(int width, int height, int numSites, Random r, double resolutionScale,
+	public static WorldGraph createSimpleGraph(double width, double height, int numSites, Random r, double resolutionScale,
 			boolean isForFrayedBorder)
 	{
 		// Zero is most random. Higher values make the polygons more uniform shaped. Value should be between 0 and 1.
 		final double lloydRelaxationsScale = 0.0;
 
-		IntDimension graphSize = getGraphDimensionsWithStandardWidth(new IntDimension(width, height));
+		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
 
@@ -137,13 +138,13 @@ public class GraphCreator
 	 * floating point precision. My solution is to always generate the graph at the same size, no matter they draw resolution, then scale it
 	 * to the resolution to draw at.
 	 */
-	private static IntDimension getGraphDimensionsWithStandardWidth(IntDimension drawResolution)
+	private static Dimension getGraphDimensionsWithStandardWidth(Dimension drawResolution)
 	{
 		// It doesn't really matter what this value is. I'm using the value that used to be the width of a graph drawn at medium resolution,
 		// since that's most likely to be backwards compatible with older maps.
 		final double standardWidth = 4096;
 
-		return new IntDimension((int)standardWidth, (int)(drawResolution.height * (standardWidth / drawResolution.width)));
+		return new Dimension(standardWidth, drawResolution.height * (standardWidth / drawResolution.width));
 	}
 
 

@@ -10,7 +10,6 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -32,8 +31,8 @@ public class Background
 	Image landBeforeRegionColoring;
 	Image land;
 	Image ocean;
-	IntDimension mapBounds;
-	IntDimension borderBounds;
+	Dimension mapBounds;
+	Dimension borderBounds;
 	int borderWidth;
 	Image borderBackground;
 	private boolean backgroundFromFilesNotGenerated;
@@ -47,7 +46,7 @@ public class Background
 	private String imagesPath;
 
 
-	public Background(MapSettings settings, IntDimension mapBounds)
+	public Background(MapSettings settings, Dimension mapBounds)
 	{
 		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
@@ -74,7 +73,7 @@ public class Background
 
 			final float fractalPower = 1.3f;
 			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
-					mapBounds.width + borderWidthScaled * 2, mapBounds.height + borderWidthScaled * 2, 0.75f);
+					((int)mapBounds.width) + borderWidthScaled * 2, ((int)mapBounds.height) + borderWidthScaled * 2, 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 			borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
@@ -120,13 +119,13 @@ public class Background
 			if (settings.colorizeOcean)
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						ImageHelper.convertToGrayscale(texture), mapBounds.height + borderWidthScaled * 2,
-						mapBounds.width + borderWidthScaled * 2);
+						ImageHelper.convertToGrayscale(texture), ((int)mapBounds.height) + borderWidthScaled * 2,
+						((int)mapBounds.width) + borderWidthScaled * 2);
 				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
 						ImageHelper.ColorifyAlgorithm.algorithm3);
 				if (settings.drawBorder)
 				{
-					ocean = ImageHelper.deepCopy(removeBorderPadding(borderBackground));
+					ocean = removeBorderPadding(borderBackground);
 				}
 				else
 				{
@@ -137,7 +136,7 @@ public class Background
 			else
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						texture, mapBounds.height + borderWidthScaled * 2, mapBounds.width + borderWidthScaled * 2);
+						texture, ((int)mapBounds.height) + borderWidthScaled * 2, ((int)mapBounds.width) + borderWidthScaled * 2);
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
@@ -187,7 +186,7 @@ public class Background
 
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
-							mapBounds.height + borderWidthScaled * 2, mapBounds.width + borderWidthScaled * 2);
+							((int)mapBounds.height) + borderWidthScaled * 2, ((int)mapBounds.width) + borderWidthScaled * 2);
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -204,8 +203,8 @@ public class Background
 				else
 				{
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), texture, mapBounds.height + borderWidthScaled * 2,
-							mapBounds.width + borderWidthScaled * 2);
+							new Random(settings.backgroundRandomSeed), texture, ((int)mapBounds.height) + borderWidthScaled * 2,
+							((int)mapBounds.width) + borderWidthScaled * 2);
 					land = removeBorderPadding(landGeneratedBackground);
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 				}
@@ -223,18 +222,17 @@ public class Background
 
 		if (borderBackground != null)
 		{
-			borderBounds = new IntDimension(borderBackground.getWidth(), borderBackground.getHeight());
+			borderBounds = new Dimension(borderBackground.getWidth(), borderBackground.getHeight());
 		}
 		else
 		{
-			borderBounds = new IntDimension(mapBounds.width, mapBounds.height);
+			borderBounds = new Dimension(mapBounds.width, mapBounds.height);
 		}
 	}
 
-	static IntDimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, IntDimension maxDimensions)
+	static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
-		IntDimension mapBounds = new IntDimension((int) (settings.generatedWidth * settings.resolution),
-				(int) (settings.generatedHeight * settings.resolution));
+		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.resolution, settings.generatedHeight * settings.resolution);
 		if (maxDimensions != null)
 		{
 			int borderWidth = 0;
@@ -242,15 +240,15 @@ public class Background
 			{
 				borderWidth = (int) (settings.borderWidth * settings.resolution);
 			}
-			IntDimension mapBoundsPlusBorder = new IntDimension(mapBounds.width + borderWidth * 2, mapBounds.height + borderWidth * 2);
+			Dimension mapBoundsPlusBorder = new Dimension(mapBounds.width + borderWidth * 2, mapBounds.height + borderWidth * 2);
 
-			IntDimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width,
+			Dimension newBounds = ImageHelper.fitDimensionsWithinBoundingBox(maxDimensions, mapBoundsPlusBorder.width,
 					mapBoundsPlusBorder.height);
 			// Change the resolution to match the new bounds.
-			settings.resolution *= ((double)newBounds.width) / mapBoundsPlusBorder.width;
+			settings.resolution *= ((double) newBounds.width) / mapBoundsPlusBorder.width;
 
-			IntDimension scaledMapBounds = new Dimension(settings.generatedWidth * settings.resolution,
-					settings.generatedHeight * settings.resolution).toIntDimension();
+			Dimension scaledMapBounds = new Dimension(settings.generatedWidth * settings.resolution,
+					settings.generatedHeight * settings.resolution);
 			mapBounds = scaledMapBounds;
 		}
 		return mapBounds;
@@ -334,7 +332,7 @@ public class Background
 			return map;
 		}
 
-		Image result = ImageHelper.deepCopy(borderBackground);
+		Image result = borderBackground.deepCopy();
 		Painter p = result.createPainter();
 		p.drawImage(map, borderWidthScaled, borderWidthScaled);
 
@@ -401,10 +399,9 @@ public class Background
 		}
 
 		p.drawImage(upperLeftCorner, 0, 0);
-		p.drawImage(upperRightCorner, borderBounds.width - borderWidthScaled, 0);
-		p.drawImage(lowerLeftCorner, 0, borderBounds.height - borderWidthScaled);
-		p.drawImage(lowerRightCorner, borderBounds.width - borderWidthScaled,
-				borderBounds.height - borderWidthScaled);
+		p.drawImage(upperRightCorner, ((int)borderBounds.width) - borderWidthScaled, 0);
+		p.drawImage(lowerLeftCorner, 0, ((int)borderBounds.height) - borderWidthScaled);
+		p.drawImage(lowerRightCorner, ((int)borderBounds.width) - borderWidthScaled, ((int)borderBounds.height) - borderWidthScaled);
 
 		// Edges
 		Image topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);

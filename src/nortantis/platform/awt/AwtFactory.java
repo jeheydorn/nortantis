@@ -141,12 +141,6 @@ public class AwtFactory extends PlatformFactory
 		return Color.create(java.awt.Color.HSBtoRGB(hue, saturation, brightness));
 	}
 
-	@Override
-	public Transform createEmptyTransform()
-	{
-		return new AwtTransform(new AffineTransform());
-	}
-
 	public static BufferedImage unwrap(Image image)
 	{
 		return ((AwtImage) image).image;
