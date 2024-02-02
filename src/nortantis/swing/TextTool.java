@@ -32,7 +32,6 @@ import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
 import nortantis.util.AssetsPath;
-import nortantis.util.JComboBoxFixed;
 import nortantis.util.Tuple2;
 
 public class TextTool extends EditorTool

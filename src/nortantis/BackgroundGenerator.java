@@ -7,7 +7,6 @@ import java.util.Random;
 
 import org.imgscalr.Scalr.Method;
 
-import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;

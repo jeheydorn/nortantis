@@ -26,4 +26,9 @@ public abstract class Font
 		return style == FontStyle.Italic || style == FontStyle.BoldItalic;
 	}
 	public abstract int getSize();
+	
+	public static boolean isInstalled(String fontFamily)
+	{
+		return PlatformFactory.getInstance().isFontInstalled(fontFamily);
+	}
 }

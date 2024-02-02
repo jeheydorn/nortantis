@@ -25,7 +25,6 @@ import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
-import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;

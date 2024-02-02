@@ -3,7 +3,6 @@ package nortantis.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import java.awt.Color;
 import java.io.File;
 import java.nio.file.Paths;
 
@@ -14,6 +13,7 @@ import org.junit.Test;
 
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;

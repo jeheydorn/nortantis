@@ -55,7 +55,6 @@ import nortantis.MapText;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;

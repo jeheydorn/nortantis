@@ -32,7 +32,6 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.geom.IntDimension;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;

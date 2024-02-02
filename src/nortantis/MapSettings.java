@@ -1,6 +1,5 @@
 package nortantis;
 
-import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
@@ -761,33 +760,20 @@ public class MapSettings implements Serializable
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
 		}
 		Font font = Font.create(parts[0], FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
-		if (!isFontInstalled(font.getName()))
+		if (!Font.isInstalled(font.getName()))
 		{
-			if (isFontInstalled("Gabriola"))
+			if (Font.isInstalled("Gabriola"))
 			{
 				// Windows has this font
 				font = Font.create("Gabriola", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}
-			else if (isFontInstalled("Z003"))
+			else if (Font.isInstalled("Z003"))
 			{
 				// Ubuntu has this font
 				font = Font.create("Z003", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}
 		}
 		return font;
-	}
-
-	private static boolean isFontInstalled(String fontFamily)
-	{
-		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-		for (String font : fonts)
-		{
-			if (font.equals(fontFamily))
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private void loadFromOldPropertiesFile(String propertiesFilePath)

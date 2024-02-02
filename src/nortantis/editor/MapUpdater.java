@@ -13,22 +13,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import javax.swing.SwingWorker;
-
 import nortantis.CancelledException;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.NameCreator;
 import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
+import nortantis.platform.PlatformFactory;
 import nortantis.swing.MapEdits;
-import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
 import nortantis.util.Logger;
 import nortantis.util.Range;
@@ -248,7 +246,7 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.Fonts)
 		{
-			
+
 		}
 		else if (updateType == UpdateType.Terrain)
 		{
@@ -366,7 +364,7 @@ public abstract class MapUpdater
 			}
 		}
 
-		SwingWorker<Tuple2<Image, IntRectangle>, Void> worker = new SwingWorker<Tuple2<Image, IntRectangle>, Void>()
+		PlatformFactory.getInstance().doInBackgroundThread(new BackgroundTask<Tuple2<Image, IntRectangle>>()
 		{
 			@Override
 			public Tuple2<Image, IntRectangle> doInBackground() throws IOException, CancelledException
@@ -455,26 +453,14 @@ public abstract class MapUpdater
 			}
 
 			@Override
-			public void done()
+			public void done(Tuple2<Image, IntRectangle> tuple)
 			{
 				Image map = null;
 				IntRectangle replaceBounds = null;
-				try
+				if (tuple != null)
 				{
-					Tuple2<Image, IntRectangle> tuple = get();
-					if (tuple != null)
-					{
-						map = tuple.getFirst();
-						replaceBounds = tuple.getSecond();
-					}
-				}
-				catch (InterruptedException ex)
-				{
-					throw new RuntimeException(ex);
-				}
-				catch (Exception ex)
-				{
-					SwingHelper.handleBackgroundThreadException(ex, null, false);
+					map = tuple.getFirst();
+					replaceBounds = tuple.getSecond();
 				}
 
 				if (map != null)
@@ -536,8 +522,7 @@ public abstract class MapUpdater
 				}
 			}
 
-		};
-		worker.execute();
+		});
 	}
 
 	protected abstract void onBeginDraw();

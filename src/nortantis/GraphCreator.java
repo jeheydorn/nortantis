@@ -5,7 +5,6 @@ import java.util.Random;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
 import nortantis.platform.Color;
 import nortantis.platform.Image;

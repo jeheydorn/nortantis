@@ -20,6 +20,8 @@ public abstract class PlatformFactory
 	
 	public abstract void writeImage(Image image, String filePath);
 	
+	public abstract boolean isFontInstalled(String fontFamily);
+
 	public abstract Font createFont(String name, FontStyle style, int size);
 	
 	public abstract Color createColor(int rgb, boolean hasAlpha);
@@ -31,4 +33,8 @@ public abstract class PlatformFactory
 	public abstract Color createColor(int red, int green, int blue, int alpha);
 	
 	public abstract Color createColorFromHSB(float hue, float saturation, float brightness);
+	
+	public abstract <T> void doInBackgroundThread(BackgroundTask<T> task);
+	
+	public abstract void doInMainUIThread(Runnable toRun);
 }

@@ -18,11 +18,6 @@ public class Rectangle
 		this.height = height;
 	}
 
-	public Rectangle(java.awt.Rectangle rect)
-	{
-		this(rect.x, rect.y, rect.width, rect.height);
-	}
-
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
 	{
 		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance)
