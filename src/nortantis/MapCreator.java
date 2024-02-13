@@ -1175,7 +1175,6 @@ public class MapCreator
 							assert waveOpacity >= 0.0;
 							
 							ImageHelper.addThresholded(blur, 1,(int) (settings.oceanEffectsColor.getAlpha() * waveOpacity), oceanEffects);
-
 						}
 
 						{
