@@ -250,7 +250,7 @@ public class ImageHelper
 		return kernel;
 	}
 
-	public static NormalDistribution createDistributionForSize(int size)
+	private static NormalDistribution createDistributionForSize(int size)
 	{
 		return new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
 	}
@@ -353,17 +353,15 @@ public class ImageHelper
 				if (value > max)
 					max = value;
 			}
-		final double minFinal = min;
-		final double maxFinal = max;
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, image.getHeight(), (y) ->
+		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				double value = image.getGrayLevel(x, y);
-				int newValue = (int) (((value - minFinal) / (maxFinal - minFinal)) * maxPixelValue);
+				int newValue = (int) (((value - min) / (max - min)) * maxPixelValue);
 				image.setGrayLevel(x, y, newValue);
 			}
-		});
+		}
 	}
 
 	/*
@@ -392,21 +390,20 @@ public class ImageHelper
 
 		float range = max - min;
 		float targetRange = targetMax - targetMin;
-		final float minFinal = min;
-
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(rowStart, rows, (r) ->
+		
+		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
 				float value = array[r][c];
-				array[r][c] = (((value - minFinal) / (range))) * (targetRange) + targetMin;
+				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
 			}
-		});
+		}
 	}
 
 	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
 	{
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(rowStart, rows, (r) ->
+		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
@@ -425,7 +422,7 @@ public class ImageHelper
 
 				array[r][c] = value;
 			}
-		});
+		}
 	}
 
 	/**
@@ -1096,7 +1093,7 @@ public class ImageHelper
 		boolean isGrayscale = img.isGrayscaleOrBinary();
 		float maxPixelValue = img.getMaxPixelLevel();
 
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, img.getHeight(), (r) ->
+		for (int r = 0; r < img.getHeight(); r++)
 		{
 			for (int c = 0; c < img.getWidth(); c++)
 			{
@@ -1105,7 +1102,7 @@ public class ImageHelper
 					grayLevel /= maxPixelValue;
 				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
 			}
-		});
+		}
 
 		// Do the forward FFT.
 		fft.realForwardFull(data.getArrayJTransformsFormat());
@@ -1135,7 +1132,7 @@ public class ImageHelper
 		int rowPaddingOver2 = rowPadding / 2;
 		int colPadding = cols - input[0].length;
 		int columnPaddingOver2 = colPadding / 2;
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, input.length, (r) -> 
+		for (int r = 0; r < input.length; r++) 
 		{
 			for (int c = 0; c < input[0].length; c++)
 			{
@@ -1148,7 +1145,7 @@ public class ImageHelper
 					data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[r][c]);
 				}
 			}
-		});
+		}
 
 		// Do the forward FFT.
 		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
@@ -1183,13 +1180,13 @@ public class ImageHelper
 
 	public static void moveRealToLeftSide(float[][] data)
 	{
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, data.length, (r) ->
+		for (int r = 0; r < data.length; r++)
 		{
 			for (int c = 0; c < data[0].length / 2; c++)
 			{
 				data[r][c] = data[r][c * 2];
 			}
-		});
+		}
 	}
 
 	public static float[][] getRealPart(float[][] data)
@@ -1218,14 +1215,14 @@ public class ImageHelper
 	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(rowStart, rows, (r) ->
+		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
 				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
 				image.setGrayLevel(c - colStart, r - rowStart, value);
 			}
-		});
+		}
 		return image;
 	}
 
@@ -1233,26 +1230,26 @@ public class ImageHelper
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, image.getHeight(), (y) ->
+		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				image.setGrayLevel(x, y, (int) (array[y][x] * maxPixelValue));
 			}
-		});
+		}
 		return image;
 	}
 
 	public static float[][] imageToArray(Image img)
 	{
 		float[][] result = new float[img.getWidth()][img.getHeight()];
-		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, img.getWidth(), (r) ->
+		for (int r = 0; r < img.getWidth(); r++)
 		{
 			for (int c = 0; c < img.getHeight(); c++)
 			{
 				result[r][c] = img.getGrayLevel(r, c);
 			}
-		});
+		}
 		return result;
 	}
 

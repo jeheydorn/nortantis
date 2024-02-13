@@ -14,7 +14,7 @@ public class ThreadHelper
 	private static ThreadHelper instance;
 	private ExecutorService fixedThreadPool;
 	private ExecutorService cachedThreadPool;
-	private int threadCount;
+	private final int threadCount;
 
 	private ThreadHelper()
 	{
@@ -119,22 +119,6 @@ public class ThreadHelper
 		}
 
 		return results;
-	}
-	
-	public void processRowsInParallelIfLarge(int startRow, int numRows, Consumer<Integer> rowConsumer)
-	{
-		final int largeEnoughForParallel = 500;
-		if (numRows < largeEnoughForParallel)
-		{
-			for (int r = startRow; r < startRow + numRows; r++)
-			{
-				rowConsumer.accept(r);
-			}
-		}
-		else
-		{
-			processRowsInParallel(startRow, numRows, rowConsumer);
-		}
 	}
 
 	/**
