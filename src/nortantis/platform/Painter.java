@@ -65,6 +65,8 @@ public abstract class Painter
 	public abstract void setDashedStroke(float width);
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
+	
+	public abstract void drawOval(int x, int y, int width, int height);
 
 	public abstract void fillOval(int x, int y, int width, int height);
 

@@ -116,7 +116,7 @@ public class ImageHelper
 			ySize = 1;
 		return ySize;
 	}
-	
+
 	public static int getWidthWhenScaledByHeight(Image inImage, int ySize)
 	{
 		double aspectRatioInverse = ((double) inImage.getWidth()) / inImage.getHeight();
@@ -216,7 +216,6 @@ public class ImageHelper
 		return (int) ((v0 * (1 - dy) + v1 * dy) + 0.5);
 	}
 
-
 	/**
 	 * 
 	 * @param size
@@ -230,15 +229,15 @@ public class ImageHelper
 			return new float[][] { { 1f } };
 		}
 
-		
-		NormalDistribution dist = new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
+
+		NormalDistribution dist = createDistributionForSize(size);
 		int resultSize = (size * 2);
 
 		float[][] kernel = new float[resultSize][resultSize];
-		for (int x : new Range(resultSize))
+		for (int x = 0; x < resultSize; x++)
 		{
 			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - (x));
-			for (int y : new Range(resultSize))
+			for (int y = 0; y < resultSize; y++)
 			{
 				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - (y));
 				// Find the distance from the center (0,0).
@@ -250,25 +249,30 @@ public class ImageHelper
 		normalize(kernel);
 		return kernel;
 	}
-	
+
+	public static NormalDistribution createDistributionForSize(int size)
+	{
+		return new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(size));
+	}
+
 	public static float getGuassianMode(int kernelSize)
 	{
 		if (kernelSize == 0)
 		{
 			return 0f;
 		}
-		
+
 		NormalDistribution dist = new NormalDistribution(0, getStandardDeviationSizeForGaussianKernel(kernelSize));
 		return (float) dist.density(0.0);
 	}
-	
+
 	private static double getStandardDeviationSizeForGaussianKernel(int kernelSize)
 	{
 		if (kernelSize == 0)
 		{
 			return 0f;
 		}
-		
+
 		// I want the edge of the kernel to be 3 standard deviations away from
 		// the middle. I also divide by 2 to get half of the size (the length
 		// from center to edge).
@@ -349,13 +353,17 @@ public class ImageHelper
 				if (value > max)
 					max = value;
 			}
-		for (int y = 0; y < image.getHeight(); y++)
+		final double minFinal = min;
+		final double maxFinal = max;
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, image.getHeight(), (y) ->
+		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
 				double value = image.getGrayLevel(x, y);
-				int newValue = (int) (((value - min) / (max - min)) * maxPixelValue);
+				int newValue = (int) (((value - minFinal) / (maxFinal - minFinal)) * maxPixelValue);
 				image.setGrayLevel(x, y, newValue);
 			}
+		});
 	}
 
 	/*
@@ -384,20 +392,21 @@ public class ImageHelper
 
 		float range = max - min;
 		float targetRange = targetMax - targetMin;
+		final float minFinal = min;
 
-		for (int r = rowStart; r < rowStart + rows; r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(rowStart, rows, (r) ->
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
 				float value = array[r][c];
-				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
+				array[r][c] = (((value - minFinal) / (range))) * (targetRange) + targetMin;
 			}
-		}
+		});
 	}
 
 	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
 	{
-		for (int r = rowStart; r < rowStart + rows; r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(rowStart, rows, (r) ->
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
@@ -416,7 +425,7 @@ public class ImageHelper
 
 				array[r][c] = value;
 			}
-		}
+		});
 	}
 
 	/**
@@ -452,7 +461,7 @@ public class ImageHelper
 
 		for (int r : new Range(kernel.length))
 		{
-			for (int c : new Range(kernel[0].length))
+			for (int c = 0; c < kernel[0].length; c++)
 			{
 				kernel[r][c] /= sum;
 			}
@@ -546,8 +555,7 @@ public class ImageHelper
 	/**
 	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
 	 */
-	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask,
-			IntPoint imageOffsetInMask)
+	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
@@ -617,8 +625,7 @@ public class ImageHelper
 	 * @param colorIndexes
 	 *            Each pixel stores a gray level which (converted to an int) is an index into colors.
 	 */
-	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes,
-			Image mask, boolean invertMask)
+	public static Image maskWithMultipleColors(Image image, Map<Integer, Color> colors, Image colorIndexes, Image mask, boolean invertMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
@@ -653,7 +660,7 @@ public class ImageHelper
 							{
 								if (invertMask)
 									maskLevel = 255 - maskLevel;
-	
+
 								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
 								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
 								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
@@ -663,10 +670,10 @@ public class ImageHelper
 							else
 							{
 								// TYPE_BYTE_BINARY
-	
+
 								if (invertMask)
 									maskLevel = 255 - maskLevel;
-	
+
 								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
 								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
 								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
@@ -716,8 +723,7 @@ public class ImageHelper
 	 *            Used if the image is smaller than the mask, so only a piece of the mask should be used.
 	 * @return A new image
 	 */
-	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask,
-			IntPoint imageOffsetInMask)
+	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (alphaMask.getType() != ImageType.Grayscale8Bit && alphaMask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or TYPE_BYTE_BINARY");
@@ -751,8 +757,7 @@ public class ImageHelper
 		return result;
 	}
 
-	public static Image createColoredImageFromGrayScaleImages(Image redChanel, Image greenChanel,
-			Image blueChanel, Image alphaChanel)
+	public static Image createColoredImageFromGrayScaleImages(Image redChanel, Image greenChanel, Image blueChanel, Image alphaChanel)
 	{
 		if (redChanel.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("Red chanel image type must be type ImageType.Grayscale.");
@@ -830,8 +835,7 @@ public class ImageHelper
 	 * @param angle
 	 *            Angle at which to rotate the mask before drawing into image 1. It will be rotated about the center of the mask.
 	 */
-	public static void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc,
-			double angle, Point pivot)
+	public static void combineImagesWithMaskInRegion(Image image1, Image image2, Image mask, int xLoc, int yLoc, double angle, Point pivot)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("Expected mask to be type ImageType.Grayscale.");
@@ -873,8 +877,7 @@ public class ImageHelper
 	 * 
 	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */
-	public static Image extractRotatedRegion(Image image, int xLoc, int yLoc, int width, int height, double angle,
-			Point pivot)
+	public static Image extractRotatedRegion(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
 	{
 		Image result = Image.create(width, height, ImageType.ARGB);
 		Painter pResult = result.createPainter();
@@ -943,13 +946,11 @@ public class ImageHelper
 	{
 		if (toDraw.getType() != ImageType.Binary)
 		{
-			throw new IllegalArgumentException(
-					"Unsupported buffered image type for toDraw. Actual type: " + toDraw.getType());
+			throw new IllegalArgumentException("Unsupported buffered image type for toDraw. Actual type: " + toDraw.getType());
 		}
 		if (target.getType() != ImageType.Binary)
 		{
-			throw new IllegalArgumentException(
-					"Unsupported buffered image type for target. Actual type: " + target.getType());
+			throw new IllegalArgumentException("Unsupported buffered image type for target. Actual type: " + target.getType());
 		}
 
 		for (int r = 0; r < toDraw.getHeight(); r++)
@@ -993,8 +994,7 @@ public class ImageHelper
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast,
-			boolean paddImageToAvoidWrapping)
+	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1018,8 +1018,7 @@ public class ImageHelper
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale,
-			boolean paddImageToAvoidWrapping)
+	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
@@ -1073,8 +1072,8 @@ public class ImageHelper
 			scaleLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		Image result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
-				imageWidth, type);
+		Image result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth,
+				type);
 		return result;
 	}
 
@@ -1097,7 +1096,8 @@ public class ImageHelper
 		boolean isGrayscale = img.isGrayscaleOrBinary();
 		float maxPixelValue = img.getMaxPixelLevel();
 
-		for (int r = 0; r < img.getHeight(); r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, img.getHeight(), (r) ->
+		{
 			for (int c = 0; c < img.getWidth(); c++)
 			{
 				float grayLevel = img.getGrayLevel(c, r);
@@ -1105,6 +1105,7 @@ public class ImageHelper
 					grayLevel /= maxPixelValue;
 				data.setRealInput(c + imgColPaddingOver2, r + imgRowPaddingOver2, grayLevel);
 			}
+		});
 
 		// Do the forward FFT.
 		fft.realForwardFull(data.getArrayJTransformsFormat());
@@ -1129,29 +1130,30 @@ public class ImageHelper
 	{
 		// Convert the kernel to the format required by JTransforms.
 		ComplexArray data = new ComplexArray(cols, rows);
-		{
-			int rowPadding = rows - input.length;
-			int rowPaddingOver2 = rowPadding / 2;
-			int colPadding = cols - input[0].length;
-			int columnPaddingOver2 = colPadding / 2;
-			for (int r = 0; r < input.length; r++)
-				for (int c = 0; c < input[0].length; c++)
-				{
-					if (flipXAndYAxis)
-					{
-						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2,
-								input[input.length - 1 - r][input[0].length - 1 - c]);
-					}
-					else
-					{
-						data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[r][c]);
-					}
-				}
 
-			// Do the forward FFT.
-			FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
-			fft.realForwardFull(data.getArrayJTransformsFormat());
-		}
+		int rowPadding = rows - input.length;
+		int rowPaddingOver2 = rowPadding / 2;
+		int colPadding = cols - input[0].length;
+		int columnPaddingOver2 = colPadding / 2;
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, input.length, (r) -> 
+		{
+			for (int c = 0; c < input[0].length; c++)
+			{
+				if (flipXAndYAxis)
+				{
+					data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[input.length - 1 - r][input[0].length - 1 - c]);
+				}
+				else
+				{
+					data.setRealInput(c + columnPaddingOver2, r + rowPaddingOver2, input[r][c]);
+				}
+			}
+		});
+
+		// Do the forward FFT.
+		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
+		fft.realForwardFull(data.getArrayJTransformsFormat());
+
 		return data;
 	}
 
@@ -1181,11 +1183,13 @@ public class ImageHelper
 
 	public static void moveRealToLeftSide(float[][] data)
 	{
-		for (int r = 0; r < data.length; r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, data.length, (r) ->
+		{
 			for (int c = 0; c < data[0].length / 2; c++)
 			{
 				data[r][c] = data[r][c * 2];
 			}
+		});
 	}
 
 	public static float[][] getRealPart(float[][] data)
@@ -1214,14 +1218,14 @@ public class ImageHelper
 	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		for (int r = rowStart; r < rowStart + rows; r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(rowStart, rows, (r) ->
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				int value = Math.min(maxPixelValue, (int)(array[r][c] * maxPixelValue));
-				image.setGrayLevel(c - colStart, r - rowStart, value); 
+				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
+				image.setGrayLevel(c - colStart, r - rowStart, value);
 			}
-		}
+		});
 		return image;
 	}
 
@@ -1229,50 +1233,26 @@ public class ImageHelper
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		for (int y = 0; y < image.getHeight(); y++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, image.getHeight(), (y) ->
 		{
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				image.setGrayLevel(x, y, (int)(array[y][x] * maxPixelValue));
+				image.setGrayLevel(x, y, (int) (array[y][x] * maxPixelValue));
 			}
-		}
+		});
 		return image;
 	}
 
 	public static float[][] imageToArray(Image img)
 	{
 		float[][] result = new float[img.getWidth()][img.getHeight()];
-		for (int r = 0; r < img.getWidth(); r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, img.getWidth(), (r) ->
 		{
 			for (int c = 0; c < img.getHeight(); c++)
 			{
 				result[r][c] = img.getGrayLevel(r, c);
 			}
-		}
-		return result;
-	}
-
-	public static double[][] convertToDoubleArray(float[][] array)
-	{
-		double[][] result = new double[array.length][array[0].length];
-		for (int i : new Range(array.length))
-			for (int j : new Range(array[0].length))
-			{
-				result[i][j] = array[i][j];
-			}
-		return result;
-	}
-
-	public static float[][] getLefHalf(float[][] array)
-	{
-		float[][] result = new float[array.length][array[0].length / 2];
-		for (int r = 0; r < result.length; r++)
-		{
-			for (int c = 0; c < result[0].length; c++)
-			{
-				result[r][c] = array[r][c];
-			}
-		}
+		});
 		return result;
 	}
 
@@ -1427,8 +1407,7 @@ public class ImageHelper
 		}
 
 		if (image.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException(
-					"The image must by type ImageType.Grayscale, but was type " + image.getType());
+			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
 		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
 
 		float[] hsb = color.getHSB();
@@ -1501,12 +1480,10 @@ public class ImageHelper
 	 *            and this point is the upper left corner in image where the result should be extracted from, using the width and height of
 	 *            colorIndexes.
 	 */
-	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes,
-			ColorifyAlgorithm how, IntPoint where)
+	public static Image colorifyMulti(Image image, Map<Integer, Color> colorMap, Image colorIndexes, ColorifyAlgorithm how, IntPoint where)
 	{
 		if (image.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException(
-					"The image must by type ImageType.Grayscale, but was type " + image.getType());
+			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
 		if (colorIndexes.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("colorIndexes type must be ImageType.Grayscale.");
 
@@ -1541,7 +1518,7 @@ public class ImageHelper
 				int colorKey = colorIndexes.getGrayLevel(x, y);
 				float[] hsb = hsbMap.get(colorKey);
 				// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
-				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there 
+				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there
 				// is any functional impact to skipping drawing those pixels.
 				if (hsb != null)
 				{
@@ -1693,6 +1670,90 @@ public class ImageHelper
 		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, paddImageToAvoidWrapping);
 	}
 
+	/**
+	 * Changes all pixels in target to fillValue where pixels in source are between lowThreshold and highThreshold inclusive.
+	 */
+	public static void fillInTarget(Image target, Image source, int lowThreshold, int highThreshold, int fillValue)
+	{
+		if (!target.getSize().equals(source.getSize()))
+		{
+			throw new IllegalArgumentException(
+					"Source and target must be the same size. Source size: " + source.getSize() + ", target size: " + target.getSize());
+		}
+
+		for (int y = 0; y < source.getHeight(); y++)
+			for (int x = 0; x < source.getWidth(); x++)
+			{
+				int value = source.getGrayLevel(x, y);
+				if (value >= lowThreshold && value <= highThreshold)
+				{
+					target.setGrayLevel(x, y, fillValue);
+				}
+			}
+	}
+
+	/**
+	 * Thresholds values from toThreshold and then subtracts those values from from toSubtractFrom. threshold is not modified.
+	 */
+	public static void subtractThresholded(Image toThreshold, int threshold, int highValue, Image toSubtractFrom)
+	{
+		if (!toThreshold.isGrayscaleOrBinary())
+		{
+			throw new IllegalArgumentException("Unsupported image type for thresholding: " + toThreshold.getType());
+		}
+
+		if (!toSubtractFrom.isGrayscaleOrBinary())
+		{
+			throw new IllegalArgumentException("Unsupported target image type for subtracting from: " + toSubtractFrom.getType());
+		}
+
+		if (!toThreshold.getSize().equals(toSubtractFrom.getSize()))
+		{
+			throw new IllegalArgumentException("Images for thresholding and subtracting must be the same size. First size: "
+					+ toThreshold.getSize() + ", second size: " + toSubtractFrom.getSize());
+		}
+
+		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
+		{
+			for (int x = 0; x < toThreshold.getWidth(); x++)
+			{
+				int thresholdedValue = toThreshold.getGrayLevel(x, y) >= threshold ? highValue : 0;
+				toSubtractFrom.setGrayLevel(x, y, Math.max(0, toSubtractFrom.getGrayLevel(x, y) - thresholdedValue));
+			}
+		});
+	}
+
+	/**
+	 * Thresholds values from toThreshold and then subtracts those values from from toSubtractFrom. threshold is not modified.
+	 */
+	public static void addThresholded(Image toThreshold, int threshold, int highValue, Image toAddTo)
+	{
+		if (!toThreshold.isGrayscaleOrBinary())
+		{
+			throw new IllegalArgumentException("Unsupported image type for thresholding: " + toThreshold.getType());
+		}
+
+		if (!toAddTo.isGrayscaleOrBinary())
+		{
+			throw new IllegalArgumentException("Unsupported target image type for adding to: " + toAddTo.getType());
+		}
+
+		if (!toThreshold.getSize().equals(toAddTo.getSize()))
+		{
+			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: "
+					+ toThreshold.getSize() + ", second size: " + toAddTo.getSize());
+		}
+
+		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
+		{
+			for (int x = 0; x < toThreshold.getWidth(); x++)
+			{
+				int thresholdedValue = toThreshold.getGrayLevel(x, y) >= threshold ? highValue : 0;
+				toAddTo.setGrayLevel(x, y, Math.max(0, toAddTo.getGrayLevel(x, y) + thresholdedValue));
+			}
+		});
+	}
+
 	public static void threshold(Image image, int threshold)
 	{
 		int maxPixelValue = image.getMaxPixelLevel();
@@ -1716,14 +1777,13 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported image type for thresholding: " + image.getType());
 		}
 
-		int maxPixelValue = image.getMaxPixelLevel();
 		for (int y = 0; y < image.getHeight(); y++)
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				double value = (int) image.getGrayLevel(x, y);
-				if (value * maxPixelValue >= threshold)
+				int value = image.getGrayLevel(x, y);
+				if (value >= threshold)
 				{
-					image.setGrayLevel(x, y, highValue); 
+					image.setGrayLevel(x, y, highValue);
 				}
 				else
 				{
@@ -1753,26 +1813,32 @@ public class ImageHelper
 			}
 	}
 
+	/**
+	 * Subtracts other from target and stores the result in target.
+	 * 
+	 * @param target
+	 *            Image to subtract from.
+	 * @param other
+	 *            Values to subtract.
+	 */
 	public static void subtract(Image target, Image other)
 	{
 		if (!target.isGrayscaleOrBinary())
 		{
-			throw new IllegalArgumentException(
-					"Unsupported target image type for subtracting: " + target.getType());
+			throw new IllegalArgumentException("Unsupported target image type for subtracting: " + target.getType());
 		}
 
 		if (!other.isGrayscaleOrBinary())
 		{
-			throw new IllegalArgumentException(
-					"Unsupported other image type for subtracting: " + other.getType());
+			throw new IllegalArgumentException("Unsupported other image type for subtracting: " + other.getType());
 		}
 
 		for (int y = 0; y < target.getHeight(); y++)
 			for (int x = 0; x < target.getWidth(); x++)
 			{
-				double value = (int) target.getGrayLevel(x, y);
-				double otherValue = (int) other.getGrayLevel(x, y);
-				target.setGrayLevel(x, y, (int) Math.max(0, value - otherValue));
+				int value = target.getGrayLevel(x, y);
+				int otherValue = other.getGrayLevel(x, y);
+				target.setGrayLevel(x, y, Math.max(0, value - otherValue));
 			}
 	}
 
@@ -1780,8 +1846,8 @@ public class ImageHelper
 	 * Extracts the snippet in source defined by boundsInSourceToCopyFrom and pastes that snippet into target at the location defined by
 	 * upperLeftCornerToPasteIntoInTarget.
 	 */
-	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source,
-			IntPoint upperLeftCornerToPasteIntoInTarget, IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
+	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget,
+			IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
 		IntRectangle targetBounds = new IntRectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
 				target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);

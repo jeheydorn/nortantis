@@ -120,6 +120,22 @@ public class ThreadHelper
 
 		return results;
 	}
+	
+	public void processRowsInParallelIfLarge(int startRow, int numRows, Consumer<Integer> rowConsumer)
+	{
+		final int largeEnoughForParallel = 500;
+		if (numRows < largeEnoughForParallel)
+		{
+			for (int r = startRow; r < startRow + numRows; r++)
+			{
+				rowConsumer.accept(r);
+			}
+		}
+		else
+		{
+			processRowsInParallel(startRow, numRows, rowConsumer);
+		}
+	}
 
 	/**
 	 * Processes rows of data in parallel. Warning: Never submit a job that will submit more jobs using the methods in this class, as that

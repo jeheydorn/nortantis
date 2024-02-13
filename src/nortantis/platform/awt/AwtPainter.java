@@ -158,4 +158,10 @@ class AwtPainter extends Painter
 		Stroke dashed = new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1f, new float[] { 9 }, 0);
 		g.setStroke(dashed);
 	}
+
+	@Override
+	public void drawOval(int x, int y, int width, int height)
+	{
+		g.drawOval(x, y, width, height);
+	}
 }

@@ -1,5 +1,7 @@
 package nortantis;
 
+import nortantis.util.ThreadHelper;
+
 /**
  * Stores a 2D array of complex numbers in JTransform's format.
  * 
@@ -29,7 +31,8 @@ public class ComplexArray
 
 		int rows = array.length;
 		int cols = array[0].length / 2;
-		for (int r = 0; r < rows; r++)
+		ThreadHelper.getInstance().processRowsInParallelIfLarge(0, rows, (r) -> 
+		{
 			for (int c = 0; c < cols; c++)
 			{
 				float dataR = array[r][c * 2];
@@ -42,6 +45,7 @@ public class ComplexArray
 				float imaginary = dataI * kernelR + dataR * kernelI;
 				array[r][c * 2 + 1] = imaginary;
 			}
+		});
 	}
 
 	/**

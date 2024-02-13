@@ -2,6 +2,7 @@ package nortantis.platform;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 
 public abstract class Image
@@ -47,6 +48,11 @@ public abstract class Image
 	public abstract int getWidth();
 	
 	public abstract int getHeight();
+	
+	public IntDimension getSize()
+	{
+		return new IntDimension(getWidth(), getHeight());
+	}
 	
 	public ImageType getType()
 	{
