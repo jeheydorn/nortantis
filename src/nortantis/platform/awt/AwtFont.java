@@ -50,7 +50,7 @@ public class AwtFont extends Font implements Serializable
 	}
 
 	@Override
-	public int getSize()
+	public float getSize()
 	{
 		return font.getSize();
 	}

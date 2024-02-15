@@ -111,15 +111,15 @@ public class TextDrawer
 
 		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScale(settings.resolution);
 		titleFontScaled = settings.titleFont.deriveFont(settings.titleFont.getStyle(),
-				(int) (settings.titleFont.getSize() * sizeMultiplier));
+				(float) (settings.titleFont.getSize() * sizeMultiplier));
 		regionFontScaled = settings.regionFont.deriveFont(settings.regionFont.getStyle(),
-				(int) (settings.regionFont.getSize() * sizeMultiplier));
+				(float) (settings.regionFont.getSize() * sizeMultiplier));
 		mountainRangeFontScaled = settings.mountainRangeFont.deriveFont(settings.mountainRangeFont.getStyle(),
-				(int) (settings.mountainRangeFont.getSize() * sizeMultiplier));
+				(float) (settings.mountainRangeFont.getSize() * sizeMultiplier));
 		citiesAndOtherMountainsFontScaled = settings.otherMountainsFont.deriveFont(settings.otherMountainsFont.getStyle(),
-				(int) (settings.otherMountainsFont.getSize() * sizeMultiplier));
+				(float) (settings.otherMountainsFont.getSize() * sizeMultiplier));
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
-				(int) (settings.riverFont.getSize() * sizeMultiplier));
+				(float) (settings.riverFont.getSize() * sizeMultiplier));
 
 	}
 
@@ -796,7 +796,7 @@ public class TextDrawer
 		Font original = p.getFont();
 		Color originalColor = p.getColor();
 		FontStyle style = original.isItalic() ? FontStyle.BoldItalic : FontStyle.Bold;
-		Font background = p.getFont().deriveFont(style, (int) (p.getFont().getSize()));
+		Font background = p.getFont().deriveFont(style, p.getFont().getSize());
 		FontMetrics metrics = p.getFontMetrics(original);
 
 		Point curLocNotRotated = new Point(textStart);

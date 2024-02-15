@@ -22,7 +22,7 @@ public abstract class PlatformFactory
 	
 	public abstract boolean isFontInstalled(String fontFamily);
 
-	public abstract Font createFont(String name, FontStyle style, int size);
+	public abstract Font createFont(String name, FontStyle style, float size);
 	
 	public abstract Color createColor(int rgb, boolean hasAlpha);
 	
@@ -32,6 +32,13 @@ public abstract class PlatformFactory
 
 	public abstract Color createColor(int red, int green, int blue, int alpha);
 	
+	/**
+	 * Creates a Color from hue, saturation, and brightness.
+	 * @param hue  In the range [0...1].
+	 * @param saturation  In the range [0...1]
+	 * @param brightness  In the range [0...1]
+	 * @return a Color
+	 */
 	public abstract Color createColorFromHSB(float hue, float saturation, float brightness);
 	
 	public abstract <T> void doInBackgroundThread(BackgroundTask<T> task);

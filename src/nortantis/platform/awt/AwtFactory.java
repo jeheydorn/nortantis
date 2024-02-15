@@ -110,9 +110,9 @@ public class AwtFactory extends PlatformFactory
 	}
 
 	@Override
-	public Font createFont(String name, FontStyle style, int size)
+	public Font createFont(String name, FontStyle style, float size)
 	{
-		return new AwtFont(new java.awt.Font(name, style.value, size));
+		return new AwtFont(new java.awt.Font(name, style.value, (int)size));
 	}
 
 	@Override

@@ -2,7 +2,7 @@ package nortantis.platform;
 
 public abstract class Font
 {
-	public static Font create(String name, FontStyle style, int size)
+	public static Font create(String name, FontStyle style, float size)
 	{
 		return PlatformFactory.getInstance().createFont(name, style, size);
 	}
@@ -25,7 +25,7 @@ public abstract class Font
 		FontStyle style = getStyle();
 		return style == FontStyle.Italic || style == FontStyle.BoldItalic;
 	}
-	public abstract int getSize();
+	public abstract float getSize();
 	
 	public static boolean isInstalled(String fontFamily)
 	{

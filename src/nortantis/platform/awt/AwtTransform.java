@@ -21,12 +21,6 @@ public class AwtTransform extends Transform
 	}
 
 	@Override
-	public void rotate(double angle, double x, double y)
-	{
-		transform.rotate(angle, x, y);
-	}
-
-	@Override
 	public int hashCode()
 	{
 		return Objects.hash(transform);
