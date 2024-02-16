@@ -28,10 +28,6 @@ public abstract class Painter
 
 	public abstract void drawString(String string, int x, int y);
 
-	public abstract FontMetrics getFontMetrics();
-
-	public abstract FontMetrics getFontMetrics(Font font);
-
 	public abstract void setTransform(Transform transform);
 
 	public abstract Transform getTransform();
@@ -71,5 +67,10 @@ public abstract class Painter
 	public abstract void fillOval(int x, int y, int width, int height);
 
 	public abstract void fillRect(int x, int y, int width, int height);
-
+	
+	public abstract int stringWidth(String string);
+	
+	public abstract int getFontAscent();
+	
+	public abstract int getFontDescent();
 }

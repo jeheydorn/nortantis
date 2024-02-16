@@ -6,7 +6,6 @@ import java.awt.Stroke;
 
 import nortantis.platform.Color;
 import nortantis.platform.Font;
-import nortantis.platform.FontMetrics;
 import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.platform.Transform;
@@ -66,18 +65,6 @@ class AwtPainter extends Painter
 	public void drawString(String string, int x, int y)
 	{
 		g.drawString(string, x, y);
-	}
-
-	@Override
-	public FontMetrics getFontMetrics()
-	{
-		return new AwtFontMetrics(g.getFontMetrics());
-	}
-	
-	@Override
-	public FontMetrics getFontMetrics(Font font)
-	{
-		return new AwtFontMetrics(g.getFontMetrics(((AwtFont)font).font));
 	}
 
 	@Override
@@ -163,5 +150,23 @@ class AwtPainter extends Painter
 	public void drawOval(int x, int y, int width, int height)
 	{
 		g.drawOval(x, y, width, height);
+	}
+
+	@Override
+	public int stringWidth(String string)
+	{
+		return g.getFontMetrics().stringWidth(string);
+	}
+
+	@Override
+	public int getFontAscent()
+	{
+		return g.getFontMetrics().getAscent();
+	}
+
+	@Override
+	public int getFontDescent()
+	{
+		return g.getFontMetrics().getDescent();
 	}
 }

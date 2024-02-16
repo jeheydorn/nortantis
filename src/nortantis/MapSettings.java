@@ -378,7 +378,7 @@ public class MapSettings implements Serializable
 
 	private String fontToString(Font font)
 	{
-		return font.getFontName() + "\t" + font.getStyle().value + "\t" + font.getSize();
+		return font.getFontName() + "\t" + font.getStyle().value + "\t" + (int) font.getSize();
 	}
 
 	private void parseFromJson(String fileContents)

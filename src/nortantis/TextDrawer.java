@@ -28,7 +28,6 @@ import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
-import nortantis.platform.FontMetrics;
 import nortantis.platform.FontStyle;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -299,7 +298,6 @@ public class TextDrawer
 			else
 			{
 				setFontForTextType(p, text.type);
-				FontMetrics metrics = p.getFontMetrics();
 
 				// This method of detecting which text to draw isn't very precise, as it can have false positives,
 				// but we can't use the Areas in the text object because they get updated during text drawing,
@@ -309,7 +307,7 @@ public class TextDrawer
 
 				// Check when the text is on one line.
 				{
-					Rectangle line1Bounds = getLine1Bounds(text.value, textLocation, metrics, false);
+					Rectangle line1Bounds = getLine1Bounds(text.value, textLocation, p, false);
 					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
 					callIfMapTextIsInBounds(bounds, text, line1Bounds, textLocation, action);
 					if (onlyOneCallPerText)
@@ -324,12 +322,12 @@ public class TextDrawer
 				{
 					Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-					Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, metrics, true);
+					Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
 					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
 
 					callIfMapTextIsInBounds(bounds, text, line1Bounds, textLocation, action);
 
-					Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, metrics);
+					Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, p);
 					line2Bounds = addBackgroundBlendingPadding(line2Bounds);
 					callIfMapTextIsInBounds(bounds, text, line2Bounds, textLocation, action);
 				}
@@ -347,11 +345,10 @@ public class TextDrawer
 		}
 		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
 		setFontForTextType(p, text.type);
-		FontMetrics metrics = p.getFontMetrics();
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		// Get bounds for when the text is on one line.
-		Rectangle bounds = getLine1Bounds(text.value, textLocation, metrics, false);
+		Rectangle bounds = getLine1Bounds(text.value, textLocation, p, false);
 		bounds = addBackgroundBlendingPadding(bounds);
 		Rectangle boundingBox = new RotatedRectangle(bounds, text.angle, textLocation).getBounds();
 
@@ -361,12 +358,12 @@ public class TextDrawer
 		{
 			Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-			Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, metrics, true);
+			Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
 			line1Bounds = addBackgroundBlendingPadding(line1Bounds);
 
 			boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
 
-			Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, metrics);
+			Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, p);
 			line2Bounds = addBackgroundBlendingPadding(line2Bounds);
 			boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
 		}
@@ -746,7 +743,7 @@ public class TextDrawer
 	 * drawn on top of mountains or trees.
 	 */
 	private void drawBackgroundBlendingForText(Image map, Painter p, Point textStart, Dimension textSize, double angle,
-			FontMetrics metrics, String text, Point pivot)
+			String text, Point pivot)
 	{
 		int kernelSize = getBackgroundBlendingKernelSize(textSize);
 		if (kernelSize == 0)
@@ -760,7 +757,7 @@ public class TextDrawer
 		Painter bP = textBG.createPainter(DrawQuality.High);
 		bP.setFont(p.getFont());
 		bP.setColor(Color.white);
-		bP.drawString(text, padding, padding + metrics.getAscent());
+		bP.drawString(text, padding, padding + p.getFontAscent());
 
 		// Use convolution to make a hazy background for the text.
 		Image haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize), true, false);
@@ -769,7 +766,7 @@ public class TextDrawer
 		haze = ImageHelper.convolveGrayscale(haze, ImageHelper.createGaussianKernel(kernelSize), true, false);
 
 		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) Math.round(textStart.x)) - padding,
-				(int) Math.round(textStart.y) - metrics.getAscent() - padding, angle, pivot);
+				(int) Math.round(textStart.y) - p.getFontAscent() - padding, angle, pivot);
 	}
 
 	private int getBackgroundBlendingKernelSize(Dimension textSize)
@@ -797,7 +794,6 @@ public class TextDrawer
 		Color originalColor = p.getColor();
 		FontStyle style = original.isItalic() ? FontStyle.BoldItalic : FontStyle.Bold;
 		Font background = p.getFont().deriveFont(style, p.getFont().getSize());
-		FontMetrics metrics = p.getFontMetrics(original);
 
 		Point curLocNotRotated = new Point(textStart);
 		for (int i : new Range(name.length()))
@@ -810,7 +806,7 @@ public class TextDrawer
 			p.setColor(originalColor);
 			p.drawString("" + name.charAt(i), (int) curLocNotRotated.x, (int) curLocNotRotated.y);
 
-			int charWidth = metrics.stringWidth("" + name.charAt(i));
+			int charWidth = p.stringWidth("" + name.charAt(i));
 			curLocNotRotated = new Point(curLocNotRotated.x + charWidth, curLocNotRotated.y);
 		}
 	}
@@ -895,31 +891,27 @@ public class TextDrawer
 		return new Pair<>(nameLine1, nameLine2);
 	}
 
+	private static Dimension getTextDimensions(String text, Painter painter)
+	{
+		return new Dimension(painter.stringWidth(text), painter.getFontAscent() + painter.getFontDescent());
+	}
+	
 	public static Dimension getTextDimensions(String text, Font font)
 	{
-		FontMetrics metrics = getFontMetrics(font);
-		return getTextDimensions(text, metrics);
-	}
-
-	private static Dimension getTextDimensions(String text, FontMetrics metrics)
-	{
-		return new Dimension(metrics.stringWidth(text), metrics.getAscent() + metrics.getDescent());
-	}
-
-	private static FontMetrics getFontMetrics(Font font)
-	{
-		return Image.create(1, 1, ImageType.ARGB).createPainter().getFontMetrics(font);
+		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
+		p.setFont(font);
+		return getTextDimensions(text, p);
 	}
 
 	public static int getFontHeight(Font font)
 	{
-		FontMetrics metrics = getFontMetrics(font);
-		return metrics.getAscent() + metrics.getDescent();
+		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
+		return getFontHeight(p);
 	}
 
-	private static int getFontHeight(FontMetrics metrics)
+	private static int getFontHeight(Painter painter)
 	{
-		return metrics.getAscent() + metrics.getDescent();
+		return painter.getFontAscent() + painter.getFontDescent();
 	}
 
 	/**
@@ -933,9 +925,8 @@ public class TextDrawer
 	private boolean drawNameSplitIfNeeded(Image map, Painter p, WorldGraph graph, double riseOffset,
 			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
-		FontMetrics metrics = p.getFontMetrics();
-		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, metrics);
-		Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, metrics, false);
+		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
+		Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
 		if (text.value.trim().split(" ").length > 1
 				&& overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
 		{
@@ -1045,11 +1036,10 @@ public class TextDrawer
 			drawOffset = new Point(0, 0);
 		}
 
-		FontMetrics metrics = p.getFontMetrics();
-		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, metrics);
+		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, p);
 		Point pivotMinusDrawOffset = pivot.subtract(drawOffset);
 
-		Rectangle bounds1 = getLine1Bounds(line1, pivot, metrics, line2 != null);
+		Rectangle bounds1 = getLine1Bounds(line1, pivot, p, line2 != null);
 		// If the above integer conversion resulted in a truncation that resulted in a negative number, then subtract 1. This is
 		// necessary because in Java, positive floating point numbers converted to integers round down, but negative numbers round up.
 		if (bounds1.x < 0 && (pivot.x - (int) pivot.x != 0.0))
@@ -1060,7 +1050,7 @@ public class TextDrawer
 		{
 			bounds1 = bounds1.translate(0, -1);
 		}
-		Rectangle bounds2 = getLine2Bounds(line2, pivot, metrics);
+		Rectangle bounds2 = getLine2Bounds(line2, pivot, p);
 		if (bounds2 != null)
 		{
 			if (bounds2.x < 0 && (pivot.x - (int) pivot.x != 0.0))
@@ -1167,8 +1157,8 @@ public class TextDrawer
 			if (settings.drawText)
 			{
 				{
-					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + p.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, p, textStart, line1Size, text.angle, p.getFontMetrics(), line1,
+					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + p.getFontAscent());
+					drawBackgroundBlendingForText(map, p, textStart, line1Size, text.angle, line1,
 							pivotMinusDrawOffset);
 					if (boldBackground)
 					{
@@ -1181,8 +1171,8 @@ public class TextDrawer
 				}
 				if (line2 != null)
 				{
-					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + p.getFontMetrics().getAscent());
-					drawBackgroundBlendingForText(map, p, textStart, line2Size, text.angle, p.getFontMetrics(), line2,
+					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + p.getFontAscent());
+					drawBackgroundBlendingForText(map, p, textStart, line2Size, text.angle, line2,
 							pivotMinusDrawOffset);
 					if (boldBackground)
 					{
@@ -1203,7 +1193,7 @@ public class TextDrawer
 		}
 	}
 
-	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, FontMetrics metrics)
+	private Point getTextLocationWithRiseOffset(MapText text, String line1, String line2, double riseOffset, Painter p)
 	{
 		if (line2 != null && line2.equals(""))
 		{
@@ -1212,7 +1202,7 @@ public class TextDrawer
 
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
-		int fontHeight = getFontHeight(metrics);
+		int fontHeight = getFontHeight(p);
 		// Increase the rise offset to account for the font size.
 		double riseOffsetToUse = riseOffset;
 		if (riseOffsetToUse > 0.0)
@@ -1242,23 +1232,23 @@ public class TextDrawer
 		return new Point(textLocation.x - offset.x, textLocation.y - offset.y);
 	}
 
-	private Rectangle getLine1Bounds(String line1, Point pivot, FontMetrics metrics, boolean hasLine2)
+	private Rectangle getLine1Bounds(String line1, Point pivot, Painter p, boolean hasLine2)
 	{
-		int fontHeight = getFontHeight(metrics);
-		Dimension size = getTextDimensions(line1, metrics);
+		int fontHeight = getFontHeight(p);
+		Dimension size = getTextDimensions(line1, p);
 		return new Rectangle((int) (pivot.x - size.width / 2), (int) (pivot.y - size.height / 2) - (hasLine2 ? fontHeight / 2 : 0),
 				size.width, size.height);
 	}
 
-	private Rectangle getLine2Bounds(String line2, Point pivot, FontMetrics metrics)
+	private Rectangle getLine2Bounds(String line2, Point pivot, Painter p)
 	{
 		if (line2 == null)
 		{
 			return null;
 		}
 
-		int fontHeight = getFontHeight(metrics);
-		Dimension size = getTextDimensions(line2, metrics);
+		int fontHeight = getFontHeight(p);
+		Dimension size = getTextDimensions(line2, p);
 		return new Rectangle((int) (pivot.x - size.width / 2), (int) (pivot.y - (size.height / 2) + fontHeight / 2), size.width,
 				size.height);
 	}

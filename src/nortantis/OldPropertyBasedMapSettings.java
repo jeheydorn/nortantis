@@ -548,14 +548,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return parseFont(props.getProperty("titleFont"));
 			}
 		});
-
-		titleFont = getProperty("titleFont", new Function0<Font>()
-		{
-			public Font apply()
-			{
-				return parseFont(props.getProperty("titleFont"));
-			}
-		});
 		regionFont = getProperty("regionFont", new Function0<Font>()
 		{
 			public Font apply()
