@@ -37,6 +37,12 @@ public abstract class Image
 	public abstract int getRGB(int x, int y);
 	
 	public abstract void setRGB(int x, int y, int rgb);
+	
+	public abstract void setRGB(int x, int y, int red, int green, int blue);
+	
+	public abstract void setRGB(int x, int y, int red, int green, int blue, int alpha);
+	
+	public abstract void setAlpha(int x, int y, int alpha);
 
 	public abstract Color getPixelColor(int x, int y);
 	

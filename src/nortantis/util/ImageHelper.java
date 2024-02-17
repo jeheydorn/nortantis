@@ -525,8 +525,7 @@ public class ImageHelper
 						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
 						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
 						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-						int combined = (r << 16) | (g << 8) | b;
-						result.setRGB(x, y, combined);
+						result.setRGB(x, y, r, g, b);
 					}
 			});
 		}
@@ -661,8 +660,7 @@ public class ImageHelper
 								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
 								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
 								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								int combined = (r << 16) | (g << 8) | b;
-								result.setRGB(x, y, combined);
+								result.setRGB(x, y, r, g, b);
 							}
 							else
 							{
@@ -674,8 +672,7 @@ public class ImageHelper
 								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
 								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
 								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-								int combined = (r << 16) | (g << 8) | b;
-								result.setRGB(x, y, combined);
+								result.setRGB(x, y, r, g, b);
 							}
 						}
 					}
@@ -736,20 +733,20 @@ public class ImageHelper
 					continue;
 				}
 
-				Color col = Color.create(image.getRGB(x, y));
 				int maskLevel = alphaMask.getGrayLevel(xInMask, yInMask);
 				if (alphaMask.getType() == ImageType.Binary)
 				{
 					if (maskLevel == 1)
+					{
 						maskLevel = 255;
+					}
 				}
 				if (invertMask)
+				{
 					maskLevel = 255 - maskLevel;
+				}
 
-				int mc = (maskLevel << 24) | 0x00ffffff;
-				int newColor = col.getRGB() & mc;
-
-				result.setRGB(x, y, newColor);
+				result.setAlpha(x, y, maskLevel);
 			}
 		return result;
 	}
@@ -796,10 +793,7 @@ public class ImageHelper
 
 				int maskLevel = alphaChanel.getGrayLevel(x, y);
 
-				int mc = (maskLevel << 24) | 0x00ffffff;
-				int newColor = Color.create(red, green, blue).getRGB() & mc;
-
-				result.setRGB(x, y, newColor);
+				result.setRGB(x, y, red, green, blue, maskLevel);
 			}
 		return result;
 	}
@@ -1916,31 +1910,5 @@ public class ImageHelper
 		}
 
 		return ImageHelper.scaleByWidth(placeHolder, placeHolder.getWidth(), Method.QUALITY);
-	}
-
-	public static Image convertARGBtoRGB(Image image)
-	{
-		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
-		Painter p = newImage.createPainter();
-		p.drawImage(image, 0, 0);
-		p.dispose();
-		for (int i = 0; i < newImage.getWidth(); i++)
-		{
-			for (int j = 0; j < newImage.getHeight(); j++)
-			{
-				int argb = newImage.getRGB(i, j);
-				int alpha = (argb >> 24) & 0xff;
-				int rgb = argb & 0x00ffffff;
-				if (alpha != 0)
-				{
-					newImage.setRGB(i, j, rgb);
-				}
-				else
-				{
-					newImage.setRGB(i, j, 0x000000);
-				}
-			}
-		}
-		return newImage;
 	}
 }

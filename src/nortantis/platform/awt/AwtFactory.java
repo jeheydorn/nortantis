@@ -77,7 +77,7 @@ public class AwtFactory extends PlatformFactory
 					// JPEG does not support transparency. Trying to write an
 					// image with transparent pixels causes
 					// it to silently not be created.
-					image = ImageHelper.convertARGBtoRGB(image);
+					image = convertARGBToRGB(image);
 				}
 
 				Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName("jpg");
@@ -96,7 +96,7 @@ public class AwtFactory extends PlatformFactory
 				final float quality = 0.95f;
 				param.setCompressionQuality(quality);
 
-				writer.write(null, new IIOImage(((AwtImage) ImageHelper.convertARGBtoRGB(image)).image, null, null), param);
+				writer.write(null, new IIOImage(((AwtImage) convertARGBToRGB(image)).image, null, null), param);
 			}
 			else
 			{
@@ -107,6 +107,32 @@ public class AwtFactory extends PlatformFactory
 		{
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public static Image convertARGBToRGB(Image image)
+	{
+		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
+		Painter p = newImage.createPainter();
+		p.drawImage(image, 0, 0);
+		p.dispose();
+		for (int i = 0; i < newImage.getWidth(); i++)
+		{
+			for (int j = 0; j < newImage.getHeight(); j++)
+			{
+				int argb = newImage.getRGB(i, j);
+				int alpha = (argb >> 24) & 0xff;
+				int rgb = argb & 0x00ffffff;
+				if (alpha != 0)
+				{
+					newImage.setRGB(i, j, rgb);
+				}
+				else
+				{
+					newImage.setRGB(i, j, 0x000000);
+				}
+			}
+		}
+		return newImage;
 	}
 
 	@Override

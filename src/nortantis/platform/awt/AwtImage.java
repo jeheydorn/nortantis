@@ -243,4 +243,24 @@ class AwtImage extends Image
 	{
 		return new AwtImage(image.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height));
 	}
+
+	@Override
+	public void setRGB(int x, int y, int red, int green, int blue)
+	{
+		setRGB(x, y, (red << 16) | (green << 8) | blue);
+	}
+
+	@Override
+	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
+	{
+		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
+	}
+
+	@Override
+	public void setAlpha(int x, int y, int alpha)
+	{
+		int newColor = image.getRGB(x, y) | (alpha << 24);
+		setRGB(x, y, newColor);
+	}
+
 }
