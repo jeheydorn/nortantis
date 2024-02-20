@@ -38,7 +38,7 @@ public class Undoer
 		redoStack = null;
 		copyOfSettingsWhenEditorWasOpened = null;
 	}
-
+	
 	public void setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
 		setUndoPoint(updateType, tool, null);

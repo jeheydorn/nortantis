@@ -147,8 +147,8 @@ public class MapCreator
 	 */
 	private IntRectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Set<Center> centersChanged,
 			Set<Edge> edgesChanged)
-	{
-		// Stopwatch updateSW = new Stopwatch("incremental update");
+	{	
+		//Stopwatch updateSW = new Stopwatch("incremental update");
 
 		centersChanged = new HashSet<>(centersChanged);
 
@@ -231,7 +231,26 @@ public class MapCreator
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
-		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersChanged, settings.treeHeightScale);
+		{
+			// The reason I'm using centersInBounds below instead of centersChanged is a bit complicated, but I'll try to explain it. 
+			// Imagine this case:
+		    //  1) In the land water tool, you click the mouse down to make a polygon ocean.
+		    //  2) When the mouse clicks down, the tool changes the polygon to ocean and kicks off a background job to redraw the map.
+		    //  3) The mouse clicks up, causing the land water tool to set an undo point.
+		    //  4) The background job to redraw the map finishes, which causes a city next to the polygon to disappear because it now
+		    //     overlaps ocean in a way to is disallowed.
+		    //  5) Now you undo that change. The city image fails to come back. Refreshing the entire map will cause it to reappear.
+		    //     The reason this is happening is because the undue point was set before the drawing code removed the image, so the 
+		    //     edits both before and after the undue pointing still have the city image. Thus the polygon with that city, which was changed,
+		    //     would not be included in centersChanged. But since MapParts.iconDrawer does have the change, the city image won't draw.
+		    //  
+			// My somewhat hacky solution is to expand the icons to update and redraw to those in the current version of replace bounds.
+			// This is unfortunately not guaranteed to work and has a small performance hit, but it's the best solution I've thought of.
+			
+			Rectangle bounds = replaceBounds;
+			Set<Center> centersInBounds = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(bounds), centersChanged.iterator().next());
+			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersInBounds, settings.treeHeightScale);
+		}
 
 		// Now that we've updated icons to draw in centersChanged, check if we
 		// need to expand replaceBounds to include those icons.
@@ -400,7 +419,7 @@ public class MapCreator
 
 
 		// Print run time
-		// updateSW.printElapsedTime();
+		//updateSW.printElapsedTime();
 
 		return replaceBounds.toIntRectangle();
 	}
