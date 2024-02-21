@@ -1890,7 +1890,6 @@ public class ImageHelper
 		}
 
 		Font font = MapSettings.parseFont("URW Chancery L\t0\t30");
-		int fontHeight = TextDrawer.getFontHeight(font);
 
 		IntDimension textBounds = TextDrawer.getTextDimensions(message[0], font).toIntDimension();
 		for (int i : new Range(1, message.length))
@@ -1904,6 +1903,7 @@ public class ImageHelper
 		p.setFont(font);
 		p.setColor(Color.create(168, 168, 168));
 
+		int fontHeight = TextDrawer.getFontHeight(p);
 		for (int i : new Range(message.length))
 		{
 			p.drawString(message[i], 14, fontHeight + (i * fontHeight));

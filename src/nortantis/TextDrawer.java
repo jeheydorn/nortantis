@@ -903,13 +903,7 @@ public class TextDrawer
 		return getTextDimensions(text, p);
 	}
 
-	public static int getFontHeight(Font font)
-	{
-		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
-		return getFontHeight(p);
-	}
-
-	private static int getFontHeight(Painter painter)
+	public static int getFontHeight(Painter painter)
 	{
 		return painter.getFontAscent() + painter.getFontDescent();
 	}
