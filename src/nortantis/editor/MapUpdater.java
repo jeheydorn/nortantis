@@ -149,16 +149,11 @@ public abstract class MapUpdater
 		else
 		{
 			Set<Center> centersChanged = getCentersWithChangesInEdits(change.settings.edits);
-			Set<Edge> edgesChanged = null;
+			Set<Edge> edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
 			List<MapText> textChanged = null;
-			// Currently createAndShowMap doesn't support drawing both center
-			// edits and edge edits at the same time, so there is no
-			// need to find edges changed if centers were changed.
-			if (centersChanged.size() == 0)
-			{
-				edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
-			}
-			if (edgesChanged == null || edgesChanged.size() == 0)
+			// createAndShowMap currently does not support an incremental update for both text and centers or edges,
+			// so only check for changed text if other changes are empty.
+			if (edgesChanged.size() == 0 && centersChanged.size() == 0)
 			{
 				// See if there was a text change.
 				textChanged = getTextWithChangesInEdits(change.settings.edits);
@@ -388,16 +383,10 @@ public abstract class MapUpdater
 					{
 						Image map = getCurrentMapForIncrementalUpdate();
 						// Incremental update
-						if (centersChanged != null && centersChanged.size() > 0)
+						if (centersChanged != null && centersChanged.size() > 0 || edgesChanged != null && edgesChanged.size() > 0)
 						{
-							IntRectangle replaceBounds = new MapCreator().incrementalUpdateCenters(settings, mapParts, map,
-									getCurrentCenters(centersChanged));
-							return new Tuple2<>(map, replaceBounds);
-						}
-						else if (edgesChanged != null && edgesChanged.size() > 0)
-						{
-							IntRectangle replaceBounds = new MapCreator().incrementalUpdateEdges(settings, mapParts, map,
-									getCurrentEdges(edgesChanged));
+							IntRectangle replaceBounds = new MapCreator().incrementalUpdate(settings, mapParts, map,
+									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
 							return new Tuple2<>(map, replaceBounds);
 						}
 						else if (textChanged != null && textChanged.size() > 0)

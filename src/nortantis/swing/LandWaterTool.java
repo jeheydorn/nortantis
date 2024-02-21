@@ -51,7 +51,7 @@ public class LandWaterTool extends EditorTool
 
 	private JRadioButton landButton;
 	private JRadioButton oceanButton;
-	private JRadioButton lakeButton;
+	private JRadioButton lakesButton;
 	private JRadioButton riversButton;
 	private RowHider riverOptionHider;
 	private JSlider riverWidthSlider;
@@ -143,7 +143,7 @@ public class LandWaterTool extends EditorTool
 
 				if (brushSizeComboBox != null)
 				{
-					brushSizeHider.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakeButton.isSelected()
+					brushSizeHider.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakesButton.isSelected()
 							|| landButton.isSelected() || (riversButton.isSelected() && modeWidget.isEraseMode()));
 				}
 
@@ -152,11 +152,11 @@ public class LandWaterTool extends EditorTool
 		};
 		oceanButton.addActionListener(brushActionListener);
 
-		lakeButton = new JRadioButton("Lake");
-		group.add(lakeButton);
-		radioButtons.add(lakeButton);
-		lakeButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines, and they don't do coastline smoothing when enabled.");
-		lakeButton.addActionListener(brushActionListener);
+		lakesButton = new JRadioButton("Lakes");
+		group.add(lakesButton);
+		radioButtons.add(lakesButton);
+		lakesButton.setToolTipText("Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines, and they don't do coastline smoothing when enabled.");
+		lakesButton.addActionListener(brushActionListener);
 
 		riversButton = new JRadioButton("Rivers");
 		group.add(riversButton);
@@ -361,7 +361,7 @@ public class LandWaterTool extends EditorTool
 
 		highlightHoverCentersOrEdgesAndBrush(e);
 
-		if (oceanButton.isSelected() || lakeButton.isSelected())
+		if (oceanButton.isSelected() || lakesButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
 			boolean hasChange = false;
@@ -378,8 +378,8 @@ public class LandWaterTool extends EditorTool
 					}
 				}
 				hasChange |= !edit.isWater;
-				hasChange |= edit.isLake != lakeButton.isSelected();
-				edit.setValuesWithLock(true, lakeButton.isSelected(), edit.regionId, edit.icon, edit.trees);
+				hasChange |= edit.isLake != lakesButton.isSelected();
+				edit.setValuesWithLock(true, lakesButton.isSelected(), edit.regionId, edit.icon, edit.trees);
 			}
 			if (hasChange)
 			{
@@ -665,7 +665,7 @@ public class LandWaterTool extends EditorTool
 		mapEditingPanel.clearHighlightedEdges();
 		mapEditingPanel.hideBrush();
 
-		if (oceanButton.isSelected() || lakeButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected()
+		if (oceanButton.isSelected() || lakesButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected()
 				|| landButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());

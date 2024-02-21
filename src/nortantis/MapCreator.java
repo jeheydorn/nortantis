@@ -63,44 +63,6 @@ public class MapCreator
 	{
 	}
 
-	/**
-	 * Updates a piece of a map, given a list of edges that changed. Also updates things in mapParts.
-	 * 
-	 * @param settings
-	 *            Map settings for drawing
-	 * @param mapParts
-	 *            Assumed to be populated by createMap the last time the map was generated at full size
-	 * @param map
-	 *            The full sized map to update
-	 * @param edgesChanged
-	 *            Edits that changed
-	 */
-	public IntRectangle incrementalUpdateEdges(final MapSettings settings, MapParts mapParts, Image fullSizeMap, Set<Edge> edgesChanged)
-	{
-		// I could be a little more efficient by only re-drawing the edges that
-		// changed, but re-drawing the centers too is good enough.
-		Set<Center> centersChanged = getCentersFromEdges(mapParts.graph, edgesChanged);
-		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, edgesChanged);
-	}
-
-	/**
-	 * Updates a piece of a map, given a list of centers that changed. Also updates things in mapParts.
-	 * 
-	 * @param settings
-	 *            Map settings for drawing
-	 * @param mapParts
-	 *            Assumed to be populated by createMap the last time the map was generated at full size
-	 * @param map
-	 *            The full sized map to update
-	 * @param centerChanges
-	 *            Edits for centers that need to be re-drawn
-	 */
-	public IntRectangle incrementalUpdateCenters(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
-			Set<Center> centersChanged)
-	{
-		return incrementalUpdate(settings, mapParts, fullSizeMap, centersChanged, null);
-	}
-
 	public IntRectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, Image fullSizeMap, List<MapText> textChanged)
 	{
 		TextDrawer textDrawer = new TextDrawer(settings);
@@ -145,12 +107,20 @@ public class MapCreator
 	 * @param edgeChanges
 	 *            If edges changed, this is the list of edge edits that changed
 	 */
-	private IntRectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Set<Center> centersChanged,
+	public IntRectangle incrementalUpdate(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Set<Center> centersChanged,
 			Set<Edge> edgesChanged)
-	{	
-		//Stopwatch updateSW = new Stopwatch("incremental update");
+	{
+		// Stopwatch updateSW = new Stopwatch("incremental update");
 
-		centersChanged = new HashSet<>(centersChanged);
+		if (centersChanged == null)
+		{
+			centersChanged = new HashSet<>();
+		}
+		else
+		{
+			centersChanged = new HashSet<>(centersChanged);
+		}
+
 
 		// If any of the centers changed are are touching a lake, add the lake too since adding the change could have
 		// changed whether the lake is land-locked, which will change how it's drawn.
@@ -232,18 +202,18 @@ public class MapCreator
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
 		{
-			// The reason I'm using centersInBounds below instead of centersChanged is a bit complicated, but I'll try to explain it. 
+			// The reason I'm using centersInBounds below instead of centersChanged is a bit complicated, but I'll try to explain it.
 			// Imagine this case:
-		    //  1) In the land water tool, you click the mouse down to make a polygon ocean.
-		    //  2) When the mouse clicks down, the tool changes the polygon to ocean and kicks off a background job to redraw the map.
-		    //  3) The mouse clicks up, causing the land water tool to set an undo point.
-		    //  4) The background job to redraw the map finishes, which causes a city next to the polygon to disappear because it now
-		    //     overlaps ocean in a way to is disallowed.
-		    //  5) Now you undo that change. The city image fails to come back. Refreshing the entire map will cause it to reappear.
-		    //     The reason this is happening is because the undue point was set before the drawing code removed the image, so the 
-		    //     edits both before and after the undue pointing still have the city image. Thus the polygon with that city, which was changed,
-		    //     would not be included in centersChanged. But since MapParts.iconDrawer does have the change, the city image won't draw.
-		    //  
+			// 1) In the land water tool, you click the mouse down to make a polygon ocean.
+			// 2) When the mouse clicks down, the tool changes the polygon to ocean and kicks off a background job to redraw the map.
+			// 3) The mouse clicks up, causing the land water tool to set an undo point.
+			// 4) The background job to redraw the map finishes, which causes a city next to the polygon to disappear because it now
+			// overlaps ocean in a way to is disallowed.
+			// 5) Now you undo that change. The city image fails to come back. Refreshing the entire map will cause it to reappear.
+			// The reason this is happening is because the undue point was set before the drawing code removed the image, so the
+			// edits both before and after the undue pointing still have the city image. Thus the polygon with that city, which was changed,
+			// would not be included in centersChanged. But since MapParts.iconDrawer does have the change, the city image won't draw.
+			//
 			//
 			// My somewhat hacky solution is to expand the icons to update and redraw to those in the current version of replace bounds.
 			// This is unfortunately not guaranteed to work and has a small performance hit, but it's the best solution I've thought of.
@@ -422,7 +392,7 @@ public class MapCreator
 
 
 		// Print run time
-		//updateSW.printElapsedTime();
+		// updateSW.printElapsedTime();
 
 		return replaceBounds.toIntRectangle();
 	}
@@ -1195,8 +1165,8 @@ public class MapCreator
 							}
 							assert waveOpacity <= 1.0;
 							assert waveOpacity >= 0.0;
-							
-							ImageHelper.addThresholded(blur, 1,(int) (settings.oceanEffectsColor.getAlpha() * waveOpacity), oceanEffects);
+
+							ImageHelper.addThresholded(blur, 1, (int) (settings.oceanEffectsColor.getAlpha() * waveOpacity), oceanEffects);
 						}
 
 						{
