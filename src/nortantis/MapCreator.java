@@ -244,9 +244,12 @@ public class MapCreator
 		    //     edits both before and after the undue pointing still have the city image. Thus the polygon with that city, which was changed,
 		    //     would not be included in centersChanged. But since MapParts.iconDrawer does have the change, the city image won't draw.
 		    //  
+			//
 			// My somewhat hacky solution is to expand the icons to update and redraw to those in the current version of replace bounds.
 			// This is unfortunately not guaranteed to work and has a small performance hit, but it's the best solution I've thought of.
-			
+			//
+			// I made a fix in Undoer.undo to always use the latest settings, which makes the above scenario very unlikely, but it can still
+			// happen if you really mash the undo button while drawing ocean, so I'm leaving this hack here for now.
 			Rectangle bounds = replaceBounds;
 			Set<Center> centersInBounds = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(bounds), centersChanged.iterator().next());
 			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersInBounds, settings.treeHeightScale);

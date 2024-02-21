@@ -103,6 +103,11 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null);
 	}
+	
+	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged, Runnable postRun)
+	{
+		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, postRun);
+	}
 
 	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
 	{
@@ -527,7 +532,7 @@ public abstract class MapUpdater
 
 	protected abstract void onBeginDraw();
 
-	protected abstract MapSettings getSettingsFromGUI();
+	public abstract MapSettings getSettingsFromGUI();
 
 	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
 			Rectangle incrementalChangeArea);

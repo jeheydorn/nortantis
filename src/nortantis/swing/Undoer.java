@@ -107,6 +107,11 @@ public class Undoer
 		}
 
 		MapChange changeToUndo = undoStack.pop();
+		
+		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any 
+		// changes made after the latest undo point.
+		changeToUndo.settings = mainWindow.updater.getSettingsFromGUI().deepCopy();
+		
 		redoStack.push(changeToUndo);
 		MapSettings settings;
 		if (undoStack.isEmpty())

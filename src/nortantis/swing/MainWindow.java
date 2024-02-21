@@ -410,7 +410,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected MapSettings getSettingsFromGUI()
+			public MapSettings getSettingsFromGUI()
 			{
 				MapSettings settings = MainWindow.this.getSettingsFromGUI(false);
 				settings.resolution = displayQualityScale;

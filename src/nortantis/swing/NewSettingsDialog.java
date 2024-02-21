@@ -447,7 +447,7 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected MapSettings getSettingsFromGUI()
+			public MapSettings getSettingsFromGUI()
 			{
 				MapSettings settings = NewSettingsDialog.this.getSettingsFromGUI();
 
