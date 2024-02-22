@@ -16,6 +16,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
@@ -746,7 +747,8 @@ public class ImageHelper
 					maskLevel = 255 - maskLevel;
 				}
 
-				result.setAlpha(x, y, maskLevel);
+				Color originalColor = image.getPixelColor(x, y);
+				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), maskLevel));
 			}
 		return result;
 	}
