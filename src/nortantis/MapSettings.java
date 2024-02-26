@@ -108,7 +108,10 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
-	public String cityIconTypeName;
+	
+	// No longer an editable field. Maintained for backwards compatibility when loading older maps.
+	public String cityIconTypeName; // TODO make private
+	
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;

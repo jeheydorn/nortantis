@@ -27,10 +27,10 @@ public class CenterIcon implements Serializable
 		this.iconIndex = iconIndex;
 	}
 
-	public CenterIcon(CenterIconType iconType, String iconName)
+	public CenterIcon(CenterIconType iconType, /*String cityTypeName,*/ String iconName) // TODO put back
 	{
 		this.iconType = iconType;
-		this.iconGroupId = "";
+		this.iconGroupId = "";//cityTypeName; TODO put back
 		this.iconIndex = -1;
 		this.iconName = iconName;
 	}

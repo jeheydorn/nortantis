@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -25,7 +26,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
+import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
+import javax.swing.border.LineBorder;
 
 import org.imgscalr.Scalr.Method;
 
@@ -53,7 +57,6 @@ import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
 {
-	private final boolean showIconPreviewsUsingLandBackground = true;
 	private JRadioButton mountainsButton;
 	private JRadioButton treesButton;
 	private JComboBox<ImageIcon> brushSizeComboBox;
@@ -64,15 +67,12 @@ public class IconsTool extends EditorTool
 	private IconTypeButtons hillTypes;
 	private IconTypeButtons duneTypes;
 	private IconTypeButtons treeTypes;
-	private IconTypeButtons cityButtons;
+	private CityButtons cityButtons;
 	private JSlider densitySlider;
 	private Random rand;
 	private RowHider densityHider;
 	private JRadioButton eraseAllButton;
 	private JRadioButton citiesButton;
-	private RowHider cityTypeHider;
-	private JLabel lblCityIconType;
-	private final String cityTypeNotSetPlaceholder = "<not set>";
 	private RowHider modeHider;
 	private DrawAndEraseModeWidget modeWidget;
 
@@ -196,7 +196,7 @@ public class IconsTool extends EditorTool
 		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush",
 				"Use the selected brush to replace existing icons of the same type", true, () -> updateTypePanels());
 		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
-		
+
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -218,35 +218,13 @@ public class IconsTool extends EditorTool
 		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes, null);
 		selectDefaultTreesButtion();
 
-
-		lblCityIconType = new JLabel("<not set>");
-		JButton changeButton = new JButton("Change");
-		changeButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				CityTypeChangeDialog dialog = new CityTypeChangeDialog(mainWindow, IconsTool.this, lblCityIconType.getText(),
-						mainWindow.customImagesPath);
-				dialog.setLocationRelativeTo(toolsPanel);
-				dialog.setVisible(true);
-			}
-		});
-		cityTypeHider = organizer.addLabelAndComponentsVertical("City icons type:", "",
-				Arrays.asList(lblCityIconType, Box.createVerticalStrut(4), changeButton));
-
-		createOrUpdateRadioButtonsForCities(organizer, null);
+		createOrUpdateButtonsForCities(organizer, null);
 
 
 		mountainsButton.doClick();
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
-
-		if (!showIconPreviewsUsingLandBackground)
-		{
-			updateIconTypeButtonPreviewImages(null);
-		}
 
 		return toolOptionsPanel;
 	}
@@ -272,7 +250,6 @@ public class IconsTool extends EditorTool
 		duneTypes.hider.setVisible(dunesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		treeTypes.hider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
-		cityTypeHider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		brushSizeHider.setVisible(!(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode())));
 	}
@@ -331,7 +308,7 @@ public class IconsTool extends EditorTool
 		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, customImagesPath);
 		selectDefaultTreesButtion();
 
-		createOrUpdateRadioButtonsForCities(null, customImagesPath);
+		createOrUpdateButtonsForCities(null, customImagesPath);
 	}
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
@@ -348,61 +325,59 @@ public class IconsTool extends EditorTool
 
 	private void updateCityButtonPreviewImages(MapSettings settings)
 	{
-		final String cityType = lblCityIconType.getText();
-		final List<String> iconNamesWithoutWidthOrExtension = cityButtons.buttons.stream().map((button) -> button.getText())
-				.collect(Collectors.toList());
-		SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
-		{
-			@Override
-			protected List<Image> doInBackground() throws Exception
+		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
+		{	
+			final List<Tuple2<String, JToggleButton>> namesAndButtons = cityButtons.getIconNamesAndButtons(cityType);
+			
+			
+			SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
 			{
-				List<Image> previewImages = new ArrayList<>();
-				Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
-						.getIconsWithWidths(IconType.cities, cityType);
-
-				for (String cityIconNameWithoutWidthOrExtension : iconNamesWithoutWidthOrExtension)
+				@Override
+				protected List<Image> doInBackground() throws Exception
 				{
-					if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+					List<Image> previewImages = new ArrayList<>();
+					Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
+							.getIconsWithWidths(IconType.cities, cityType);
+
+					for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
 					{
-						throw new IllegalArgumentException(
-								"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+						String cityIconNameWithoutWidthOrExtension = nameAndButton.getFirst();
+						if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+						{
+							throw new IllegalArgumentException(
+									"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+						}
+						Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
+						Image preview = createIconPreview(settings, Collections.singletonList(icon), 50);
+						previewImages.add(preview);
 					}
-					Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
-					Image preview = createIconPreview(settings, Collections.singletonList(icon), 50);
-					previewImages.add(preview);
+
+					return previewImages;
 				}
 
-				return previewImages;
-			}
-
-			@Override
-			public void done()
-			{
-				List<Image> previewImages;
-				try
+				@Override
+				public void done()
 				{
-					previewImages = get();
-				}
-				catch (InterruptedException | ExecutionException e)
-				{
-					throw new RuntimeException(e);
-				}
+					List<Image> previewImages;
+					try
+					{
+						previewImages = get();
+					}
+					catch (InterruptedException | ExecutionException e)
+					{
+						throw new RuntimeException(e);
+					}
 
-				if (!cityType.equals(lblCityIconType.getText()))
-				{
-					// The user changed the city type while we were updating the city icons from a previous change. Do nothing.
-					// The next update will set the icons on the buttons.
-					return;
+					for (int i : new Range(previewImages.size()))
+					{
+						// TODO Create pressed icons as well and set those.
+						cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond().setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+					}
 				}
+			};
 
-				for (int i : new Range(previewImages.size()))
-				{
-					cityButtons.buttons.get(i).setImage(AwtFactory.unwrap(previewImages.get(i)));
-				}
-			}
-		};
-
-		worker.execute();
+			worker.execute();
+		}
 	}
 
 	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons,
@@ -490,28 +465,16 @@ public class IconsTool extends EditorTool
 		IntDimension size = new IntDimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
 
 		Image previewImage;
-		if (showIconPreviewsUsingLandBackground)
-		{
-			Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
+
+		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
 					.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
 							settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
 			previewImage = tuple.getThird();
 			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
-		}
-		else
-		{
-			previewImage = Image.create(size.width, size.height, ImageType.ARGB);
-		}
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
 
 		Painter p = previewImage.createPainter();
-
-		if (!showIconPreviewsUsingLandBackground)
-		{
-			p.setColor(Color.create(152, 152, 152));
-			p.fillRect(0, 0, size.width, size.height);
-		}
 
 		int x = padding;
 		int y = padding;
@@ -552,53 +515,59 @@ public class IconsTool extends EditorTool
 		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
 	}
 
-	private void createOrUpdateRadioButtonsForCities(GridBagOrganizer organizer, String customImagesPath)
+	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String customImagesPath)
 	{
-		Set<String> cityTypes = ImageCache.getInstance(customImagesPath).getIconGroupNames(IconType.cities);
-
-		String cityType = lblCityIconType.getText();
-		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
-		ButtonGroup group = new ButtonGroup();
-
-		if (cityType.equals(cityTypeNotSetPlaceholder))
-		{
-
-		}
-		else if (!cityTypes.contains(cityType))
-		{
-			// The city type selected for this map does not exist in the icons/cities folder.
-		}
-		else
-		{
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
-			{
-				RadioButtonWithImage button = new RadioButtonWithImage(fileNameWithoutWidthOrExtension, null);
-				group.add(button.getRadioButton());
-				radioButtons.add(button);
-			}
-
-			if (radioButtons.size() > 0)
-			{
-				radioButtons.get(0).getRadioButton().setSelected(true);
-			}
-		}
-
+		boolean isNew;
 		if (cityButtons == null)
 		{
 			// This is the first time to create the city buttons.
-			JPanel buttonsPanel = new JPanel();
-			cityButtons = new IconTypeButtons(
-					organizer.addLabelAndComponentsVerticalWithComponentPanel("Cities:", "", radioButtons, buttonsPanel), radioButtons,
-					buttonsPanel);
+			cityButtons = new CityButtons();
+			JPanel typesPanel = new JPanel();
+			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
+			cityButtons.typesPanel = typesPanel;
+			isNew = true;
 		}
 		else
 		{
-			// The city buttons have been created before, so update them.
-			cityButtons.buttons = radioButtons;
-			GridBagOrganizer.updateComponentsPanelVertical(radioButtons, cityButtons.buttonsPanel);
+			cityButtons.typesPanel.removeAll();
+			isNew = false;
 		}
+		
+		List<JPanel> typePanels = new ArrayList<>();
 
+		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
+		{
+			JPanel typePanel = new JPanel();
+			typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
+					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
+			{
+				JToggleButton toggleButton = new JToggleButton();
+				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
+				cityButtons.addButton(cityType, fileNameWithoutWidthOrExtension, toggleButton);
+				typePanel.add(toggleButton);
+			}
+
+			// If at least one button was added
+			if (cityButtons.getCityTypes().contains(cityType))
+			{
+				typePanels.add(typePanel);
+			}
+		}
+		
+		if (typePanels.size() > 0)
+		{
+			if (isNew)
+			{
+				cityButtons.hider = organizer.addLabelAndComponentsVerticalWithComponentPanel("Cities:", "", typePanels, cityButtons.typesPanel);
+			}
+			else
+			{
+				GridBagOrganizer.updateComponentsPanelVertical(typePanels, cityButtons.typesPanel);
+			}
+			
+			cityButtons.getIconNamesAndButtons(cityButtons.getCityTypes().iterator().next()).get(0).getSecond().setSelected(true);
+		}
 	}
 
 	@Override
@@ -723,12 +692,15 @@ public class IconsTool extends EditorTool
 		{
 			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 			{
-				if (cityButtons.buttons.size() == 0)
+				Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
+				if (selectedCity == null)
 				{
 					return;
 				}
-
-				String cityName = cityButtons.getSelectedOption();
+				
+				// TODO
+				String cityType = selectedCity.getFirst();
+				String cityName = selectedCity.getSecond();
 				for (Center center : selected)
 				{
 					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
@@ -736,7 +708,7 @@ public class IconsTool extends EditorTool
 					{
 						continue;
 					}
-					
+
 					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityName);
 					// Only add the city if it will be drawn. That way, we don't set an undo point for a city that won't draw.
 					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the
@@ -861,14 +833,8 @@ public class IconsTool extends EditorTool
 	@Override
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
 	{
-		boolean isCityTypeChange = !(settings.cityIconTypeName == null ? "" : settings.cityIconTypeName).equals(lblCityIconType.getText());
-		lblCityIconType.setText((settings.cityIconTypeName == null ? "" : settings.cityIconTypeName));
-		if (isCityTypeChange)
-		{
-			createOrUpdateRadioButtonsForCities(null, settings.customImagesPath);
-		}
 		updateTypePanels();
-		if (showIconPreviewsUsingLandBackground && (changeEffectsBackgroundImages || isCityTypeChange))
+		if (changeEffectsBackgroundImages)
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}
@@ -877,27 +843,12 @@ public class IconsTool extends EditorTool
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
-		settings.cityIconTypeName = lblCityIconType.getText();
 	}
 
 	@Override
 	public boolean shouldShowTextWhenTextIsEnabled()
 	{
 		return true;
-	}
-
-	public void setCityIconsType(MapSettings settings, String cityIconType)
-	{
-		if (cityIconType.equals(lblCityIconType.getText()))
-		{
-			return;
-		}
-
-		lblCityIconType.setText(cityIconType == null ? cityTypeNotSetPlaceholder : cityIconType);
-		createOrUpdateRadioButtonsForCities(null, settings.customImagesPath);
-		updateCityButtonPreviewImages(settings);
-		undoer.setUndoPoint(UpdateType.Full, this);
-		updater.createAndShowMapFull();
 	}
 
 	@Override
