@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -323,63 +324,6 @@ public class IconsTool extends EditorTool
 		updateCityButtonPreviewImages(settings);
 	}
 
-	private void updateCityButtonPreviewImages(MapSettings settings)
-	{
-		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
-		{	
-			final List<Tuple2<String, JToggleButton>> namesAndButtons = cityButtons.getIconNamesAndButtons(cityType);
-			
-			
-			SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
-			{
-				@Override
-				protected List<Image> doInBackground() throws Exception
-				{
-					List<Image> previewImages = new ArrayList<>();
-					Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
-							.getIconsWithWidths(IconType.cities, cityType);
-
-					for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
-					{
-						String cityIconNameWithoutWidthOrExtension = nameAndButton.getFirst();
-						if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
-						{
-							throw new IllegalArgumentException(
-									"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
-						}
-						Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
-						Image preview = createIconPreview(settings, Collections.singletonList(icon), 50);
-						previewImages.add(preview);
-					}
-
-					return previewImages;
-				}
-
-				@Override
-				public void done()
-				{
-					List<Image> previewImages;
-					try
-					{
-						previewImages = get();
-					}
-					catch (InterruptedException | ExecutionException e)
-					{
-						throw new RuntimeException(e);
-					}
-
-					for (int i : new Range(previewImages.size()))
-					{
-						// TODO Create pressed icons as well and set those.
-						cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond().setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
-					}
-				}
-			};
-
-			worker.execute();
-		}
-	}
-
 	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons,
 			String customImagesPath)
 	{
@@ -414,6 +358,130 @@ public class IconsTool extends EditorTool
 			worker.execute();
 		}
 	}
+	
+	private void updateCityButtonPreviewImages(MapSettings settings)
+	{
+		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
+		{	
+			final List<Tuple2<String, JToggleButton>> namesAndButtons = cityButtons.getIconNamesAndButtons(cityType);
+			
+			
+			SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
+			{
+				@Override
+				protected List<Image> doInBackground() throws Exception
+				{
+					List<Image> previewImages = new ArrayList<>();
+					Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
+							.getIconsWithWidths(IconType.cities, cityType);
+
+					for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
+					{
+						String cityIconNameWithoutWidthOrExtension = nameAndButton.getFirst();
+						if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+						{
+							throw new IllegalArgumentException(
+									"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+						}
+						Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
+						Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0);
+						previewImages.add(preview);
+					}
+
+					return previewImages;
+				}
+
+				@Override
+				public void done()
+				{
+					List<Image> previewImages;
+					try
+					{
+						previewImages = get();
+					}
+					catch (InterruptedException | ExecutionException e)
+					{
+						throw new RuntimeException(e);
+					}
+
+					for (int i : new Range(previewImages.size()))
+					{
+						// TODO Add another image for selected.
+						cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond().setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+					}
+				}
+			};
+
+			worker.execute();
+		}
+	}
+	
+	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String customImagesPath)
+	{
+		boolean isNew;
+		Tuple2<String, String> selectedCity = null;
+		if (cityButtons == null)
+		{
+			// This is the first time to create the city buttons.
+			cityButtons = new CityButtons();
+			JPanel typesPanel = new JPanel();
+			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
+			cityButtons.typesPanel = typesPanel;
+			isNew = true;
+		}
+		else
+		{
+			selectedCity = cityButtons.getSelectedCity();
+			cityButtons.typesPanel.removeAll();
+			isNew = false;
+		}
+		
+		boolean hasAtLeastOneCityImage = false;
+		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
+		{
+			JPanel typePanel = new JPanel();
+			typePanel.setLayout(new WrapLayout());
+			//typePanel.setPreferredSize(new java.awt.Dimension(toolsPanel.getPreferredSize().width, 500));
+			typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
+					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
+			{
+				JToggleButton toggleButton = new JToggleButton();
+				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
+				
+				cityButtons.addButton(cityType, fileNameWithoutWidthOrExtension, toggleButton);
+				typePanel.add(toggleButton);
+				hasAtLeastOneCityImage = true;
+			}
+
+			// If at least one button was added
+			if (cityButtons.getCityTypes().contains(cityType))
+			{
+				cityButtons.typesPanel.add(typePanel);
+			}
+		}
+		
+		if (isNew)
+		{
+			cityButtons.hider = organizer.addLeftAlignedComponentWithStackedLabel("Cities:", "", cityButtons.typesPanel);
+		}
+		
+		if (hasAtLeastOneCityImage)
+		{
+			if (selectedCity != null)
+			{
+				boolean found = cityButtons.selectButtonIfPresent(selectedCity.getFirst(), selectedCity.getSecond());
+				if (!found)
+				{
+					cityButtons.selectFirstButton();;
+				}
+			}
+			else
+			{
+				cityButtons.selectFirstButton();
+			}
+		}
+	}
 
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
@@ -422,10 +490,10 @@ public class IconsTool extends EditorTool
 		{
 			croppedImages.add(imageAndMasks.cropToContent());
 		}
-		return createIconPreview(settings, croppedImages, 30);
+		return createIconPreview(settings, croppedImages, 30, 9);
 	}
 
-	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight)
+	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight, int padding)
 	{
 		final int maxRowWidth = 168;
 		final int horizontalPaddingBetweenImages = 2;
@@ -458,8 +526,7 @@ public class IconsTool extends EditorTool
 		}
 
 		// Create the background image for the preview
-		final int padding = 9;
-		final int fadeWidth = padding - 2;
+		final int fadeWidth = Math.max(padding - 2, 0);
 		// Multiply the width padding by 2.2 instead of 2 to compensate for the image library I'm using not always scaling to the size I
 		// give.
 		IntDimension size = new IntDimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
@@ -513,61 +580,6 @@ public class IconsTool extends EditorTool
 		Image hazyBox = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(fadeWidth), true, false);
 
 		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
-	}
-
-	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String customImagesPath)
-	{
-		boolean isNew;
-		if (cityButtons == null)
-		{
-			// This is the first time to create the city buttons.
-			cityButtons = new CityButtons();
-			JPanel typesPanel = new JPanel();
-			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
-			cityButtons.typesPanel = typesPanel;
-			isNew = true;
-		}
-		else
-		{
-			cityButtons.typesPanel.removeAll();
-			isNew = false;
-		}
-		
-		List<JPanel> typePanels = new ArrayList<>();
-
-		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
-		{
-			JPanel typePanel = new JPanel();
-			typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
-			{
-				JToggleButton toggleButton = new JToggleButton();
-				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
-				cityButtons.addButton(cityType, fileNameWithoutWidthOrExtension, toggleButton);
-				typePanel.add(toggleButton);
-			}
-
-			// If at least one button was added
-			if (cityButtons.getCityTypes().contains(cityType))
-			{
-				typePanels.add(typePanel);
-			}
-		}
-		
-		if (typePanels.size() > 0)
-		{
-			if (isNew)
-			{
-				cityButtons.hider = organizer.addLabelAndComponentsVerticalWithComponentPanel("Cities:", "", typePanels, cityButtons.typesPanel);
-			}
-			else
-			{
-				GridBagOrganizer.updateComponentsPanelVertical(typePanels, cityButtons.typesPanel);
-			}
-			
-			cityButtons.getIconNamesAndButtons(cityButtons.getCityTypes().iterator().next()).get(0).getSecond().setSelected(true);
-		}
 	}
 
 	@Override
