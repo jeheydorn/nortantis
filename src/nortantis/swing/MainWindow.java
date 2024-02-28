@@ -1410,7 +1410,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
-		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
+		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, needsImagesRefresh);
 
 		updateFrameTitle();
 
@@ -1440,7 +1440,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.createAndShowMapFull();
 	}
 
-	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
+	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
@@ -1451,7 +1451,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
 		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImagesRefresh);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
@@ -1534,7 +1534,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Allow editor tools to update based on changes in the themes
 			// panel.
-			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages);
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages, false);
 		}
 	}
 

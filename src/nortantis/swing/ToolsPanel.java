@@ -170,11 +170,11 @@ public class ToolsPanel extends JPanel
 		progressBarTimer.setInitialDelay(500);
 	}
 
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImageRefresh)
 	{
 		for (EditorTool tool : tools)
 		{
-			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
+			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImageRefresh);
 		}
 	}
 
@@ -229,13 +229,7 @@ public class ToolsPanel extends JPanel
 		// Cause the Icons tool to update its image radio buttons
 		for (EditorTool tool : tools)
 		{
-			tool.handleImagesRefresh(settings.customImagesPath);
-		}
-
-		if (settings != null)
-		{
-			// Trigger re-creation of image previews in the Icons tool
-			loadSettingsIntoGUI(settings, false, true);
+			tool.handleImagesRefresh(settings);
 		}
 	}
 

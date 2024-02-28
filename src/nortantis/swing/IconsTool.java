@@ -34,6 +34,8 @@ import javax.swing.border.LineBorder;
 
 import org.imgscalr.Scalr.Method;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -301,15 +303,19 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void handleImagesRefresh(String customImagesPath)
+	public void handleImagesRefresh(MapSettings settings)
 	{
+		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, customImagesPath);
 		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, customImagesPath);
 		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, customImagesPath);
 		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, customImagesPath);
 		selectDefaultTreesButtion();
 
-		createOrUpdateButtonsForCities(null, customImagesPath);
+		createOrUpdateButtonsForCities(null, settings.customImagesPath);
+
+		// Trigger re-creation of image previews
+		loadSettingsIntoGUI(settings, false, true, false);
 	}
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
@@ -358,14 +364,13 @@ public class IconsTool extends EditorTool
 			worker.execute();
 		}
 	}
-	
+
 	private void updateCityButtonPreviewImages(MapSettings settings)
 	{
-		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
-		{	
+		for (String cityType : ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities))
+		{
 			final List<Tuple2<String, JToggleButton>> namesAndButtons = cityButtons.getIconNamesAndButtons(cityType);
-			
-			
+
 			SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
 			{
 				@Override
@@ -406,8 +411,8 @@ public class IconsTool extends EditorTool
 
 					for (int i : new Range(previewImages.size()))
 					{
-						// TODO Add another image for selected.
-						cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond().setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+						cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond()
+								.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
 					}
 				}
 			};
@@ -415,7 +420,7 @@ public class IconsTool extends EditorTool
 			worker.execute();
 		}
 	}
-	
+
 	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String customImagesPath)
 	{
 		boolean isNew;
@@ -432,23 +437,38 @@ public class IconsTool extends EditorTool
 		else
 		{
 			selectedCity = cityButtons.getSelectedCity();
-			cityButtons.typesPanel.removeAll();
+			cityButtons.clearButtons();
 			isNew = false;
 		}
-		
+
 		boolean hasAtLeastOneCityImage = false;
-		for (String cityType : ImageCache.getInstance(mainWindow.customImagesPath).getIconGroupNames(IconType.cities))
+		for (String cityType : ImageCache.getInstance(customImagesPath).getIconGroupNames(IconType.cities))
 		{
 			JPanel typePanel = new JPanel();
 			typePanel.setLayout(new WrapLayout());
-			//typePanel.setPreferredSize(new java.awt.Dimension(toolsPanel.getPreferredSize().width, 500));
+			// typePanel.setPreferredSize(new java.awt.Dimension(toolsPanel.getPreferredSize().width, 500));
 			typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
 			{
 				JToggleButton toggleButton = new JToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
-				
+				toggleButton.addActionListener(new ActionListener()
+				{
+
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						if (!toggleButton.isSelected())
+						{
+							toggleButton.setSelected(true);
+						}
+						cityButtons.unselectAllButtonsExcept(toggleButton);
+						CityButtons.updateToggleButtonBorder(toggleButton);
+					}
+				});
+				CityButtons.updateToggleButtonBorder(toggleButton);
+
 				cityButtons.addButton(cityType, fileNameWithoutWidthOrExtension, toggleButton);
 				typePanel.add(toggleButton);
 				hasAtLeastOneCityImage = true;
@@ -460,12 +480,12 @@ public class IconsTool extends EditorTool
 				cityButtons.typesPanel.add(typePanel);
 			}
 		}
-		
+
 		if (isNew)
 		{
 			cityButtons.hider = organizer.addLeftAlignedComponentWithStackedLabel("Cities:", "", cityButtons.typesPanel);
 		}
-		
+
 		if (hasAtLeastOneCityImage)
 		{
 			if (selectedCity != null)
@@ -473,7 +493,7 @@ public class IconsTool extends EditorTool
 				boolean found = cityButtons.selectButtonIfPresent(selectedCity.getFirst(), selectedCity.getSecond());
 				if (!found)
 				{
-					cityButtons.selectFirstButton();;
+					cityButtons.selectFirstButton();
 				}
 			}
 			else
@@ -534,10 +554,10 @@ public class IconsTool extends EditorTool
 		Image previewImage;
 
 		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
-					.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
-							settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
-			previewImage = tuple.getThird();
-			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
+				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
+						settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
+		previewImage = tuple.getThird();
+		previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
 
@@ -709,7 +729,7 @@ public class IconsTool extends EditorTool
 				{
 					return;
 				}
-				
+
 				// TODO
 				String cityType = selectedCity.getFirst();
 				String cityName = selectedCity.getSecond();
@@ -843,10 +863,13 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
+			boolean willDoImagesRefresh)
 	{
 		updateTypePanels();
-		if (changeEffectsBackgroundImages)
+		// Skip updating icon previews now if there will be an images refresh in a moment, because that will handle it, and because the
+		// ImageCache hasn't been cleared yet.
+		if (changeEffectsBackgroundImages && !willDoImagesRefresh)
 		{
 			updateIconTypeButtonPreviewImages(settings);
 		}

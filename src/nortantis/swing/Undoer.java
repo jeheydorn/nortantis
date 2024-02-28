@@ -120,12 +120,12 @@ public class Undoer
 			assert !copyOfSettingsWhenEditorWasOpened.edits.isEmpty();
 
 			settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
-			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
+			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
 		}
 		else
 		{
 			settings = undoStack.peek().settings.deepCopy();
-			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
+			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
 		}
 
 		if (changeToUndo.toolThatMadeChange != null)
@@ -168,7 +168,7 @@ public class Undoer
 		MapChange changeToRedo = redoStack.pop();
 		undoStack.push(changeToRedo);
 		MapSettings newSettings = changeToRedo.settings.deepCopy();
-		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true);
+		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true, false);
 
 		if (changeToRedo.toolThatMadeChange != null)
 		{

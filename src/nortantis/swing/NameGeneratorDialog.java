@@ -110,7 +110,7 @@ public class NameGeneratorDialog extends JDialog
 			public void actionPerformed(ActionEvent e)
 			{
 				settings.books = booksWidget.getSelectedBooks();
-				mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
+				mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, false);
 				dispose();
 			}
 		});

@@ -257,7 +257,7 @@ public abstract class EditorTool
 	}
 
 	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange,
-			boolean changeEffectsBackgroundImages);
+			boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
 
 	public abstract boolean shouldShowTextWhenTextIsEnabled();
 
@@ -271,7 +271,7 @@ public abstract class EditorTool
 
 	public abstract void onBeforeLoadingNewMap();
 
-	public void handleImagesRefresh(String customImagesPath)
+	public void handleImagesRefresh(MapSettings settings)
 	{
 	}
 }
