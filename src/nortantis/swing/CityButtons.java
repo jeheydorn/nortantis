@@ -20,15 +20,18 @@ public class CityButtons
 	public RowHider hider;
 	private Map<String, List<Tuple2<String, JToggleButton>>> buttons;
 	public JPanel typesPanel;
+	private Map<String, CollapsiblePanel> panels;
 
 	public CityButtons()
 	{
 		this.buttons = new TreeMap<>();
+		panels = new TreeMap<>();
 	}
 	
 	public void clearButtons()
 	{
 		this.buttons = new TreeMap<>();
+		panels = new TreeMap<>();
 		typesPanel.removeAll();
 	}
 
@@ -145,5 +148,10 @@ public class CityButtons
 				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 			}
 		}	
+	}
+	
+	public void addCollapsiblePanel(String cityType, CollapsiblePanel panel)
+	{
+		panels.put(cityType, panel);
 	}
 }

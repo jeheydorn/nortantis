@@ -8,9 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
 import nortantis.util.Logger;
 
@@ -26,6 +29,7 @@ public class UserPreferences
 	private final int maxRecentMaps = 15;
 	public String defaultCustomImagesPath;
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
+	public Set<String> collapsedPanels = new TreeSet<>();
 
 	public static UserPreferences instance;
 
@@ -93,6 +97,13 @@ public class UserPreferences
 					String value = props.getProperty("showNewMapWithSameThemeRegionColorsMessage");
 					hideNewMapWithSameThemeRegionColorsMessage = Boolean.parseBoolean(value);
 				}
+				
+				if (props.containsKey("collapsedPanels"))
+				{
+					String[] panelNames = props.getProperty("collapsedPanels").split("\t");
+					collapsedPanels = new TreeSet<>();
+					collapsedPanels.addAll(Arrays.asList(panelNames));
+				}
 			}
 		}
 		catch (IOException e)
@@ -128,6 +139,7 @@ public class UserPreferences
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
+		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
 
 		try
 		{

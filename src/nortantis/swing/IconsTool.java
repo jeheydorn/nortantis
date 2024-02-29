@@ -45,6 +45,7 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
@@ -446,8 +447,8 @@ public class IconsTool extends EditorTool
 		{
 			JPanel typePanel = new JPanel();
 			typePanel.setLayout(new WrapLayout());
-			// typePanel.setPreferredSize(new java.awt.Dimension(toolsPanel.getPreferredSize().width, 500));
-			typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
+			//typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
+			typePanel.setBorder(new LineBorder(UIManager.getColor("controlShadow"), 1));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
 			{
@@ -477,7 +478,8 @@ public class IconsTool extends EditorTool
 			// If at least one button was added
 			if (cityButtons.getCityTypes().contains(cityType))
 			{
-				cityButtons.typesPanel.add(typePanel);
+				CollapsiblePanel panel = new CollapsiblePanel("cityType", cityType, typePanel);
+				cityButtons.typesPanel.add(panel);
 			}
 		}
 
@@ -502,7 +504,7 @@ public class IconsTool extends EditorTool
 			}
 		}
 	}
-
+	
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
 		List<Image> croppedImages = new ArrayList<>();
