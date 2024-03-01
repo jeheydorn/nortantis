@@ -13,6 +13,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import nortantis.editor.UserPreferences;
+import nortantis.platform.awt.AwtFactory;
 
 @SuppressWarnings("serial")
 public class CollapsiblePanel extends JPanel
@@ -50,7 +51,14 @@ public class CollapsiblePanel extends JPanel
 			}
 		});
 		toggleButton.setBorder(BorderFactory.createEmptyBorder());
-		toggleButton.setFont(new Font("Arial", Font.PLAIN, 14));
+		if (AwtFactory.getInstance().isFontInstalled("Arial"))
+		{
+			toggleButton.setFont(new Font("Arial", Font.PLAIN, 14));
+		}
+		else if (AwtFactory.getInstance().isFontInstalled("Helvetica"))
+		{
+			toggleButton.setFont(new Font("Helvetica", Font.PLAIN, 14));
+		}
 		updateCollapsed();
 
 		JPanel northPanel = new JPanel();
