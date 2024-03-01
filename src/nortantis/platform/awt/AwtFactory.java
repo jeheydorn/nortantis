@@ -32,7 +32,6 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.PlatformFactory;
 import nortantis.swing.SwingHelper;
-import nortantis.util.ImageHelper;
 
 public class AwtFactory extends PlatformFactory
 {

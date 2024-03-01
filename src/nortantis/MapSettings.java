@@ -40,7 +40,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.1";
+	public static final String currentVersion = "2.2";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -109,8 +109,11 @@ public class MapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	
-	// No longer an editable field. Maintained for backwards compatibility when loading older maps.
-	public String cityIconTypeName; // TODO make private
+	/**
+	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for
+	 * telling new maps which city images to use. But the editor now allows selecting city images of any type.
+	 */
+	public String cityIconTypeName;
 	
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
@@ -592,6 +595,28 @@ public class MapSettings implements Serializable
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
 		
 		runConversionForShadingAlphaChange();
+		runConversionForAllowingMultipleCityTypesInOneMap();
+	}
+	
+	private void runConversionForAllowingMultipleCityTypesInOneMap()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.2"))
+		{
+			return;
+		}
+		
+		if (edits == null || edits.centerEdits == null)
+		{
+			return;
+		}
+		
+		for (CenterEdit cEdit : edits.centerEdits)
+		{
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
+			{
+				cEdit.icon.iconGroupId = cityIconTypeName;
+			}
+		}
 	}
 
 	/**

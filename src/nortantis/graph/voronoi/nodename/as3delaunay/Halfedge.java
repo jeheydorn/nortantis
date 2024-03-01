@@ -1,34 +1,17 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
-import java.util.Stack;
-
 import nortantis.geom.Point;
 
 public final class Halfedge
 {
-
-	private static Stack<Halfedge> _pool = new Stack<Halfedge>();
-
 	public static Halfedge create(Edge edge, LR lr)
 	{
-		if (_pool.size() > 0)
-		{
-			return _pool.pop().init(edge, lr);
-		}
-		else
-		{
-			return new Halfedge(edge, lr);
-		}
+		return new Halfedge(edge, lr);
 	}
 
 	public static Halfedge createDummy()
 	{
 		return create(null, null);
-	}
-
-	public static void clearPool()
-	{
-		_pool.clear();
 	}
 
 	public Halfedge edgeListLeftNeighbor, edgeListRightNeighbor;
@@ -57,35 +40,6 @@ public final class Halfedge
 	public String toString()
 	{
 		return "Halfedge (leftRight: " + leftRight + "; vertex: " + vertex + ")";
-	}
-
-	public void dispose()
-	{
-		if (edgeListLeftNeighbor != null || edgeListRightNeighbor != null)
-		{
-			// still in EdgeList
-			return;
-		}
-		if (nextInPriorityQueue != null)
-		{
-			// still in PriorityQueue
-			return;
-		}
-		edge = null;
-		leftRight = null;
-		vertex = null;
-		_pool.push(this);
-	}
-
-	public void reallyDispose()
-	{
-		edgeListLeftNeighbor = null;
-		edgeListRightNeighbor = null;
-		nextInPriorityQueue = null;
-		edge = null;
-		leftRight = null;
-		vertex = null;
-		_pool.push(this);
 	}
 
 	public boolean isLeftOf(Point p)

@@ -1,12 +1,10 @@
 package nortantis.swing;
 
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -16,14 +14,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
@@ -34,8 +29,6 @@ import javax.swing.border.LineBorder;
 
 import org.imgscalr.Scalr.Method;
 
-import com.formdev.flatlaf.FlatDarkLaf;
-
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -45,7 +38,6 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.MapUpdater;
-import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
@@ -732,7 +724,6 @@ public class IconsTool extends EditorTool
 					return;
 				}
 
-				// TODO
 				String cityType = selectedCity.getFirst();
 				String cityName = selectedCity.getSecond();
 				for (Center center : selected)
@@ -743,13 +734,13 @@ public class IconsTool extends EditorTool
 						continue;
 					}
 
-					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityName);
+					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
 					// Only add the city if it will be drawn. That way, we don't set an undo point for a city that won't draw.
 					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the
 					// icon
 					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it
 					// in place to save creating an extra undo point here, although it might not be necessary.
-					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityName)))
+					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityType, cityName)))
 					{
 						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
 					}

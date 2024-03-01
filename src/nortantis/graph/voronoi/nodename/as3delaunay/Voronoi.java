@@ -12,7 +12,6 @@ public final class Voronoi
 
 	private SiteList _sites;
 	private HashMap<Point, Site> _sitesIndexedByLocation;
-	private ArrayList<Triangle> _triangles;
 	private ArrayList<Edge> _edges;
 	// TODOO generalize this so it doesn't have to be a rectangle;
 	// then we can make the fractal voronois-within-voronois
@@ -21,38 +20,6 @@ public final class Voronoi
 	public Rectangle get_plotBounds()
 	{
 		return _plotBounds;
-	}
-
-	public void dispose()
-	{
-		int i, n;
-		if (_sites != null)
-		{
-			_sites.dispose();
-			_sites = null;
-		}
-		if (_triangles != null)
-		{
-			n = _triangles.size();
-			for (i = 0; i < n; ++i)
-			{
-				_triangles.get(i).dispose();
-			}
-			_triangles.clear();
-			_triangles = null;
-		}
-		if (_edges != null)
-		{
-			n = _edges.size();
-			for (i = 0; i < n; ++i)
-			{
-				_edges.get(i).dispose();
-			}
-			_edges.clear();
-			_edges = null;
-		}
-		_plotBounds = null;
-		_sitesIndexedByLocation = null;
 	}
 
 	public Voronoi(ArrayList<Point> points, Rectangle plotBounds)
@@ -79,7 +46,6 @@ public final class Voronoi
 		_sitesIndexedByLocation = new HashMap<Point, Site>();
 		addSites(points);
 		_plotBounds = plotBounds;
-		_triangles = new ArrayList<Triangle>();
 		_edges = new ArrayList<Edge>();
 	}
 	
@@ -297,6 +263,7 @@ public final class Voronoi
 
 		Site bottomMostSite = _sites.next();
 		newSite = _sites.next();
+		int edgeIndex = 0;
 
 		for (;;)
 		{
@@ -320,7 +287,7 @@ public final class Voronoi
 				// trace("new Site is in region of existing site: " + bottomSite);
 
 				// Step 9:
-				edge = Edge.createBisectingEdge(bottomSite, newSite);
+				edge = Edge.createBisectingEdge(bottomSite, newSite, edgeIndex++);
 				// trace("new edge: " + edge);
 				_edges.add(edge);
 
@@ -386,7 +353,7 @@ public final class Voronoi
 					topSite = tempSite;
 					leftRight = LR.RIGHT;
 				}
-				edge = Edge.createBisectingEdge(bottomSite, topSite);
+				edge = Edge.createBisectingEdge(bottomSite, topSite, edgeIndex);
 				_edges.add(edge);
 				bisector = Halfedge.create(edge, leftRight);
 				halfEdges.add(bisector);
@@ -418,10 +385,6 @@ public final class Voronoi
 		heap.dispose();
 		edgeList.dispose();
 
-		for (Halfedge halfEdge : halfEdges)
-		{
-			halfEdge.reallyDispose();
-		}
 		halfEdges.clear();
 
 		// we need the vertices to clip the edges
@@ -435,8 +398,6 @@ public final class Voronoi
 			v0.dispose();
 		}
 		vertices.clear();
-
-		Halfedge.clearPool();
 	}
 
 	Site leftRegion(Halfedge he, Site bottomMostSite)

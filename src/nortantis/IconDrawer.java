@@ -65,16 +65,16 @@ public class IconDrawer
 	public Map<Integer, CenterIcon> centerIcons;
 	public Map<Integer, CenterTrees> trees;
 	private double averageCenterWidthBetweenNeighbors;
-	private String cityIconType;
+	private String cityIconTypeForNewMaps;
 	private String imagesPath;
 	private double resolutionScale;
 
-	public IconDrawer(WorldGraph graph, Random rand, String cityIconsSetName, String customImagesPath, double resolutionScale)
+	public IconDrawer(WorldGraph graph, Random rand, String cityIconTypeForNewMaps, String customImagesPath, double resolutionScale)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
-		this.cityIconType = cityIconsSetName;
+		this.cityIconTypeForNewMaps = cityIconTypeForNewMaps;
 		if (customImagesPath != null && !customImagesPath.isEmpty())
 		{
 			this.imagesPath = customImagesPath;
@@ -239,8 +239,6 @@ public class IconDrawer
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.hills);
 		List<ImageAndMasks> duneImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
-		Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
-				cityIconType);
 
 		for (Center center : centersToUpdateIconsFor)
 		{
@@ -285,8 +283,14 @@ public class IconDrawer
 					ImageAndMasks imageAndMasks = duneImages.get(cEdit.icon.iconIndex % duneImages.size());
 					iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.sand, center.loc, duneWidth, false));
 				}
-				else if (cEdit.icon.iconType == CenterIconType.City && cityImages != null && !cityImages.isEmpty())
+				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
+					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, cEdit.icon.iconGroupId);
+					if (cityImages == null || cityImages.isEmpty())
+					{
+						continue;
+					}
+					
 					String cityIconName = null;
 					if (cityImages.containsKey(cEdit.icon.iconName))
 					{
@@ -346,7 +350,7 @@ public class IconDrawer
 		}
 
 		Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
-				cityIconType);
+				cityIcon.iconGroupId);
 		Tuple2<ImageAndMasks, Integer> tuple = cityImages.get(cityIcon.iconName);
 		if (tuple == null)
 		{
@@ -665,7 +669,7 @@ public class IconDrawer
 	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
 	{
 		Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
-				cityIconType);
+				cityIconTypeForNewMaps);
 		if (cityIcons.isEmpty())
 		{
 			Logger.println("Cities will not be drawn because there are no city icons.");
@@ -691,7 +695,7 @@ public class IconDrawer
 					if (addIconDrawTasks)
 					{
 						iconsToDraw.getOrCreate(c).add(task);
-						centerIcons.put(c.index, new CenterIcon(CenterIconType.City, cityName));
+						centerIcons.put(c.index, new CenterIcon(CenterIconType.City, cityIconTypeForNewMaps, cityName));
 					}
 
 					cities.add(task);

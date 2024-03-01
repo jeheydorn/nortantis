@@ -15,8 +15,6 @@ import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import org.apache.commons.math3.distribution.NormalDistribution;
-
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
@@ -435,7 +433,7 @@ public class MapCreator
 		double sizeMultiplier = calcSizeMultiplier(mapBounds.width);
 
 		// Kick of a job to create the graph while the background is being created.
-		Future<WorldGraph> task = ThreadHelper.getInstance().submit(() ->
+		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
 		{
 			if (mapParts == null || mapParts.graph == null)
 			{
@@ -472,6 +470,14 @@ public class MapCreator
 
 		checkForCancel();
 
+		WorldGraph graph;
+		graph = ThreadHelper.getInstance().getResult(graphTask);
+
+		checkForCancel();
+
+		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found 
+		// where VoronoiGraph was not thread safe. I think I've fixed those, but I'm still avoiding creating graphs in 
+		// parallel to be safe.
 		Dimension mapDimensions = background.borderBounds;
 		Future<Tuple2<Image, Image>> frayedBorderTask = null;
 		long frayedBorderSeed = r.nextLong();
@@ -479,11 +485,6 @@ public class MapCreator
 		{
 			frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
 		}
-
-		WorldGraph graph;
-		graph = ThreadHelper.getInstance().getResult(task);
-
-		checkForCancel();
 
 		List<Set<Center>> lakes = null;
 		if (settings.edits.text.size() == 0)

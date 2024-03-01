@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 
-public final class SiteList implements IDisposable
+public final class SiteList
 {
 
 	private ArrayList<Site> _sites;
@@ -16,20 +16,6 @@ public final class SiteList implements IDisposable
 	{
 		_sites = new ArrayList<Site>();
 		_sorted = false;
-	}
-
-	@Override
-	public void dispose()
-	{
-		if (_sites != null)
-		{
-			for (Site site : _sites)
-			{
-				site.dispose();
-			}
-			_sites.clear();
-			_sites = null;
-		}
 	}
 
 	public int push(Site site)
