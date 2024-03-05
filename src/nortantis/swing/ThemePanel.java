@@ -125,6 +125,11 @@ public class ThemePanel extends JTabbedPane
 	private JButton grungeColorChooseButton;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
 	private JSlider treeHeightSlider;
+	private JSlider mountainScaleSlider;
+	private JSlider hillScaleSlider;
+	private JSlider duneScaleSlider;
+	private JSlider cityScaleSlider;
+
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -680,7 +685,7 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addSeperator();
 		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
-		treeHeightSlider = new JSlider(1, 15);
+		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		treeHeightSlider.setMajorTickSpacing(2);
 		treeHeightSlider.setMinorTickSpacing(1);
 		treeHeightSlider.setPaintTicks(true);
@@ -689,6 +694,43 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(treeHeightSlider);
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
+		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		mountainScaleSlider.setMajorTickSpacing(2);
+		mountainScaleSlider.setMinorTickSpacing(1);
+		mountainScaleSlider.setPaintTicks(true);
+		mountainScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(mountainScaleSlider);
+		createMapChangeListenerForTerrainChange(mountainScaleSlider);
+		organizer.addLabelAndComponent("Mountain size:", "Changes the size of all mountains on the map", mountainScaleSlider);
+
+		hillScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		hillScaleSlider.setMajorTickSpacing(2);
+		hillScaleSlider.setMinorTickSpacing(1);
+		hillScaleSlider.setPaintTicks(true);
+		hillScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(hillScaleSlider);
+		createMapChangeListenerForTerrainChange(hillScaleSlider);
+		organizer.addLabelAndComponent("Hill size:", "Changes the size of all hills on the map", hillScaleSlider);
+
+		duneScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		duneScaleSlider.setMajorTickSpacing(2);
+		duneScaleSlider.setMinorTickSpacing(1);
+		duneScaleSlider.setPaintTicks(true);
+		duneScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(duneScaleSlider);
+		createMapChangeListenerForTerrainChange(duneScaleSlider);
+		organizer.addLabelAndComponent("Dune size:", "Changes the size of all sand dunes on the map", duneScaleSlider);
+
+		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		cityScaleSlider.setMajorTickSpacing(2);
+		cityScaleSlider.setMinorTickSpacing(1);
+		cityScaleSlider.setPaintTicks(true);
+		cityScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(cityScaleSlider);
+		createMapChangeListenerForTerrainChange(cityScaleSlider);
+		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
+
+		
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
@@ -1127,6 +1169,10 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
+		mountainScaleSlider.setValue(getSliderValueForScale(settings.mountainScale));
+		hillScaleSlider.setValue(getSliderValueForScale(settings.hillScale));
+		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
+		cityScaleSlider.setValue(getSliderValueForScale(settings.cityScale));
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -1139,6 +1185,45 @@ public class ThemePanel extends JTabbedPane
 
 		return changeEffectsBackgroundImages;
 	}
+	
+	private final double scaleMax = 3.0;
+	private final double scaleMin = 0.5;
+	private final double sliderValueFor1Scale = 5;
+	private final int minScaleSliderValue = 1;
+	private final int maxScaleSliderValue = 15;
+	
+	private int getSliderValueForScale(double scale)
+	{
+		if (scale <= 1.0)
+		{
+			double slope = (sliderValueFor1Scale - minScaleSliderValue) / (1.0 - scaleMin);
+			double yIntercept = sliderValueFor1Scale - slope; 
+			return (int) Math.round(scale * slope + yIntercept);
+		}
+		else
+		{
+			double slope = (maxScaleSliderValue - sliderValueFor1Scale) / (scaleMax - 1.0);
+			double yIntercept = sliderValueFor1Scale - slope * (1.0);
+			return (int) Math.round(scale * slope + yIntercept);
+		}
+	}
+	
+	private double getScaleForSliderValue(int sliderValue)
+	{
+		if (sliderValue <= sliderValueFor1Scale)
+		{
+			double slope = (sliderValueFor1Scale - minScaleSliderValue) / (1.0 - scaleMin);
+			double yIntercept = sliderValueFor1Scale - slope; 
+			return (sliderValue - yIntercept) / slope;
+		}
+		else
+		{
+			double slope = (maxScaleSliderValue - sliderValueFor1Scale) / (scaleMax - 1.0);
+			double yIntercept = sliderValueFor1Scale - slope * (1.0); 
+			return (sliderValue - yIntercept) / slope;			
+		}
+	}
+	
 
 	private void initializeBorderTypeComboBoxItems(MapSettings settings)
 	{
@@ -1257,6 +1342,10 @@ public class ThemePanel extends JTabbedPane
 		settings.borderWidth = borderWidthSlider.getValue();
 
 		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
+		settings.mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
+		settings.hillScale = getScaleForSliderValue(hillScaleSlider.getValue());
+		settings.duneScale = getScaleForSliderValue(duneScaleSlider.getValue());
+		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
 	}
 
 	private boolean areRegionColorsVisible()

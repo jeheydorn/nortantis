@@ -251,6 +251,7 @@ public abstract class MapUpdater
 		else if (updateType == UpdateType.Terrain)
 		{
 			mapParts.mapBeforeAddingText = null;
+			mapParts.iconDrawer = null;
 		}
 		else if (updateType == UpdateType.GrungeAndFray)
 		{

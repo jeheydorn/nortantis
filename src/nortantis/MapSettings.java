@@ -124,6 +124,10 @@ public class MapSettings implements Serializable
 	public double heightmapResolution = 1.0;
 	public String customImagesPath;
 	public double treeHeightScale;
+	public double mountainScale;
+	public double hillScale;
+	public double duneScale;
+	public double cityScale;
 
 	/**
 	 * Default values for new settings
@@ -264,6 +268,10 @@ public class MapSettings implements Serializable
 		root.put("customImagesPath", customImagesPath);
 
 		root.put("treeHeightScale", treeHeightScale);
+		root.put("mountainScale", mountainScale);
+		root.put("hillScale", hillScale);
+		root.put("duneScale", duneScale);
+		root.put("cityScale", cityScale);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -582,6 +590,42 @@ public class MapSettings implements Serializable
 		else
 		{
 			treeHeightScale = defaultTreeHeightScaleForOldMaps;
+		}
+		
+		if (root.containsKey("mountainScale"))
+		{
+			mountainScale = (double) root.get("mountainScale");
+		}
+		else
+		{
+			mountainScale = 1.0;
+		}
+		
+		if (root.containsKey("hillScale"))
+		{
+			hillScale = (double) root.get("hillScale");
+		}
+		else
+		{
+			hillScale = 1.0;
+		}
+		
+		if (root.containsKey("duneScale"))
+		{
+			duneScale = (double) root.get("duneScale");
+		}
+		else
+		{
+			duneScale = 1.0;
+		}
+		
+		if (root.containsKey("cityScale"))
+		{
+			cityScale = (double) root.get("cityScale");
+		}
+		else
+		{
+			cityScale = 1.0;
 		}
 
 		edits = new MapEdits();
@@ -953,7 +997,6 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -977,6 +1020,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
+				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale)
 				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
 				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
@@ -986,6 +1030,7 @@ public class MapSettings implements Serializable
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionColors == other.drawRegionColors
 				&& drawRoads == other.drawRoads && drawText == other.drawText
+				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
 				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
@@ -994,12 +1039,15 @@ public class MapSettings implements Serializable
 				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
-				&& hueRange == other.hueRange && Objects.equals(imageExportPath, other.imageExportPath)
-				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
+				&& Objects.equals(imageExportPath, other.imageExportPath) && Objects.equals(landColor, other.landColor)
+				&& lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
-				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Objects.equals(oceanColor, other.oceanColor)
-				&& oceanEffect == other.oceanEffect && Objects.equals(oceanEffectsColor, other.oceanEffectsColor)
-				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
+				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
+				&& Objects.equals(oceanColor, other.oceanColor) && oceanEffect == other.oceanEffect
+				&& Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
+				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
 				&& Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
@@ -1011,5 +1059,6 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+	
 
 }

@@ -21,7 +21,6 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	int scaledWidth;
 	int scaledHeight;
 	int yBottom;
-	boolean ignoreMaxSize;
 	/**
 	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn.
 	 */
@@ -64,7 +63,6 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 		yBottom = (int) (centerLoc.y + (scaledHeight / 2.0));
 
-		this.ignoreMaxSize = ignoreMaxSize;
 		this.fileName = fileName;
 	}
 

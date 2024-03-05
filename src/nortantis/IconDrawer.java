@@ -44,18 +44,13 @@ public class IconDrawer
 	final double meanPolygonWidth;
 	final int duneWidth;
 	final double cityScale;
-	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be drawn on it.
-	final double maxMeansToDraw = 5.0;
-	double maxSizeToDrawIcon;
 	// Max gap (in polygons) between mountains for considering them a single group. Warning:
 	// there tend to be long polygons along edges, so if this value is much more than 2,
 	// mountains near the ocean may be connected despite long distances between them..
 	private final int maxGapSizeInMountainClusters = 2;
 	private final int maxGapBetweenBiomeGroups = 2;
-	// Mountain images are scaled by this.
-	private final double mountainScale = 1.0;
-	// Hill images are scaled by this.
-	private final double hillScale = 0.5;
+	private final double mountainScale;
+	private final double hillScale;
 	private HashMapF<Center, List<IconDrawTask>> iconsToDraw;
 	WorldGraph graph;
 	Random rand;
@@ -69,26 +64,27 @@ public class IconDrawer
 	private String imagesPath;
 	private double resolutionScale;
 
-	public IconDrawer(WorldGraph graph, Random rand, String cityIconTypeForNewMaps, String customImagesPath, double resolutionScale)
+	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
 		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
-		this.cityIconTypeForNewMaps = cityIconTypeForNewMaps;
-		if (customImagesPath != null && !customImagesPath.isEmpty())
+		this.cityIconTypeForNewMaps = settings.cityIconTypeName;
+		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
-			this.imagesPath = customImagesPath;
+			this.imagesPath = settings.customImagesPath;
 		}
 		else
 		{
 			this.imagesPath = AssetsPath.getInstallPath();
 		}
-		this.resolutionScale = resolutionScale;
+		this.resolutionScale = settings.resolution;
 
 		meanPolygonWidth = findMeanCenterWidth(graph);
-		duneWidth = (int) (meanPolygonWidth * 1.2);
-		maxSizeToDrawIcon = meanPolygonWidth * maxMeansToDraw;
-		cityScale = meanPolygonWidth * (1.0 / 11.0);
+		duneWidth = (int) (meanPolygonWidth * 1.2 * settings.duneScale);
+		mountainScale = settings.mountainScale;
+		hillScale = settings.hillScale * 0.5;
+		cityScale = meanPolygonWidth * (1.0 / 11.0) * settings.cityScale;
 		centerIcons = new HashMap<>();
 		trees = new HashMap<>();
 
@@ -127,7 +123,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation > mountainElevationThreshold && !c.isBorder && c.findWidth() < maxSizeToDrawIcon)
+			if (c.elevation > mountainElevationThreshold && !c.isBorder)
 			{
 				c.isMountain = true;
 			}
@@ -138,7 +134,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold && c.findWidth() < maxSizeToDrawIcon)
+			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold)
 
 			{
 				c.isHill = true;
@@ -454,7 +450,7 @@ public class IconDrawer
 	 * cannot see other mountains through it.
 	 */
 	private void drawIconWithBackgroundAndMask(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
-			Image landTexture, int xCenter, int yCenter, boolean ignoreMaxSize)
+			Image landTexture, int xCenter, int yCenter)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
@@ -547,12 +543,6 @@ public class IconDrawer
 				{
 					if (drawBounds == null || task.overlaps(drawBounds))
 					{
-						if (!task.ignoreMaxSize && task.scaledWidth > maxSizeToDrawIcon)
-						{
-							task.failedToDraw = true;
-							continue;
-						}
-
 						// Updates to the line below will will likely need to also update doesCityFitOnLand.
 						if (!isContentBottomTouchingWater(task))
 						{
@@ -599,7 +589,7 @@ public class IconDrawer
 		for (final IconDrawTask task : tasks)
 		{
 			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture,
-					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, task.ignoreMaxSize);
+					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract);
 		}
 
 		return tasks;

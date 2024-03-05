@@ -39,7 +39,7 @@ public class SwingHelper
 	public static final int sidePanelMinimumWidth = sidePanelPreferredWidth;
 	private static final int sliderWidth = 160;
 	public static final int colorPickerLeftPadding = 2;
-	public static final int sidePanelScrollSpeed = 20;
+	public static final int sidePanelScrollSpeed = 30;
 
 	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem)
 	{
