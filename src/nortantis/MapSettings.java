@@ -40,7 +40,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.2";
+	public static final String currentVersion = "2.3";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -124,10 +124,10 @@ public class MapSettings implements Serializable
 	public double heightmapResolution = 1.0;
 	public String customImagesPath;
 	public double treeHeightScale;
-	public double mountainScale;
-	public double hillScale;
-	public double duneScale;
-	public double cityScale;
+	public double mountainScale = 1.0;
+	public double hillScale = 1.0;
+	public double duneScale = 1.0;
+	public double cityScale = 1.0;
 
 	/**
 	 * Default values for new settings
@@ -596,36 +596,20 @@ public class MapSettings implements Serializable
 		{
 			mountainScale = (double) root.get("mountainScale");
 		}
-		else
-		{
-			mountainScale = 1.0;
-		}
 		
 		if (root.containsKey("hillScale"))
 		{
 			hillScale = (double) root.get("hillScale");
-		}
-		else
-		{
-			hillScale = 1.0;
 		}
 		
 		if (root.containsKey("duneScale"))
 		{
 			duneScale = (double) root.get("duneScale");
 		}
-		else
-		{
-			duneScale = 1.0;
-		}
 		
 		if (root.containsKey("cityScale"))
 		{
 			cityScale = (double) root.get("cityScale");
-		}
-		else
-		{
-			cityScale = 1.0;
 		}
 
 		edits = new MapEdits();

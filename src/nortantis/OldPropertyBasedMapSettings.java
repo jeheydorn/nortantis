@@ -119,12 +119,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 	 */
 	private final Color defaultRoadColor = Color.black;
 
-
-	public OldPropertyBasedMapSettings()
-	{
-		edits = new MapEdits();
-	}
-
 	public OldPropertyBasedMapSettings(String propertiesFilename)
 	{
 		final Properties props = new Properties();

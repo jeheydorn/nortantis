@@ -49,6 +49,9 @@ public class IconDrawer
 	// mountains near the ocean may be connected despite long distances between them..
 	private final int maxGapSizeInMountainClusters = 2;
 	private final int maxGapBetweenBiomeGroups = 2;
+	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be added to it when creating a new map.
+	final double maxMeansToDrawGeneratedMountainOrHill = 5.0;
+	final double maxSizeToDrawGeneratedMountainOrHill;
 	private final double mountainScale;
 	private final double hillScale;
 	private HashMapF<Center, List<IconDrawTask>> iconsToDraw;
@@ -85,6 +88,7 @@ public class IconDrawer
 		mountainScale = settings.mountainScale;
 		hillScale = settings.hillScale * 0.5;
 		cityScale = meanPolygonWidth * (1.0 / 11.0) * settings.cityScale;
+		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
 		centerIcons = new HashMap<>();
 		trees = new HashMap<>();
 
@@ -123,7 +127,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation > mountainElevationThreshold && !c.isBorder)
+			if (c.elevation > mountainElevationThreshold && !c.isBorder && c.findWidth() < maxSizeToDrawGeneratedMountainOrHill)
 			{
 				c.isMountain = true;
 			}
@@ -134,7 +138,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold)
+			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold && c.findWidth() < maxSizeToDrawGeneratedMountainOrHill)
 
 			{
 				c.isHill = true;
