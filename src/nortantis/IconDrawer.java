@@ -1263,13 +1263,14 @@ public class IconDrawer
 		Rectangle bounds = null;
 		for (IconDrawTask iconTask : iconsToDraw.get(center))
 		{
+			Rectangle iconBounds = iconTask.createBounds();
 			if (bounds == null)
 			{
-				bounds = iconTask.createBounds();
+				bounds = iconBounds;
 			}
 			else
 			{
-				bounds.add(iconTask.createBounds());
+				bounds.add(iconBounds);
 			}
 		}
 

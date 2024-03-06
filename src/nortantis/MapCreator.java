@@ -237,8 +237,7 @@ public class MapCreator
 		textDrawer.setMapTexts(settings.edits.text);
 
 		// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line to
-		// two or vice
-		// versa.
+		// two or vice versa.
 		Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
 				settings);
 		replaceBounds = replaceBounds.add(textChangeBounds).floor();
@@ -475,8 +474,8 @@ public class MapCreator
 
 		checkForCancel();
 
-		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found 
-		// where VoronoiGraph was not thread safe. I think I've fixed those, but I'm still avoiding creating graphs in 
+		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found
+		// where VoronoiGraph was not thread safe. I think I've fixed those, but I'm still avoiding creating graphs in
 		// parallel to be safe.
 		Dimension mapDimensions = background.borderBounds;
 		Future<Tuple2<Image, Image>> frayedBorderTask = null;
