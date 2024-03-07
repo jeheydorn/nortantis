@@ -223,7 +223,8 @@ public class MapCreator
 			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersInBounds, settings.treeHeightScale);
 		}
 
-		// Now that we've updated icons to draw in centersChanged, check if we
+
+		// Now that we've updated icons to draw in centersInBounds, check if we
 		// need to expand replaceBounds to include those icons.
 		{
 			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsForCenters(centersChanged);

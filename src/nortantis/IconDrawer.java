@@ -312,7 +312,7 @@ public class IconDrawer
 					{
 						ImageAndMasks imageAndMasks = cityImages.get(cityIconName).getFirst();
 						iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
-								(int) (cityImages.get(cityIconName).getSecond() * cityScale), true, cityIconName));
+								(int) (cityImages.get(cityIconName).getSecond() * cityScale), cityIconName));
 					}
 				}
 
@@ -362,7 +362,7 @@ public class IconDrawer
 
 		// Create an icon draw task just for checking if the city fits on land. It won't actually be drawn.
 		IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
-				(int) (cityImages.get(cityIcon.iconName).getSecond() * cityScale), true, cityIcon.iconName);
+				(int) (cityImages.get(cityIcon.iconName).getSecond() * cityScale), cityIcon.iconName);
 		return !isContentBottomTouchingWater(task);
 	}
 
@@ -682,7 +682,7 @@ public class IconDrawer
 				int scaledWidth = (int) (cityIcons.get(cityName).getSecond() * cityScale);
 				ImageAndMasks imageAndMasks = cityIcons.get(cityName).getFirst();
 
-				IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, c.loc, scaledWidth, true, cityName);
+				IconDrawTask task = new IconDrawTask(imageAndMasks, IconType.cities, c.loc, scaledWidth, cityName);
 				// Updates to the line below will will likely need to also update doesCityFitOnLand.
 				if (!isContentBottomTouchingWater(task) && !isNeighborACity(c))
 				{
@@ -1186,7 +1186,7 @@ public class IconDrawer
 			y += rand.nextGaussian() * scale;
 
 			iconsToDraw.getOrCreate(center).add(new IconDrawTask(unscaledImagesAndMasks, scaledImageAndMasks, IconType.trees,
-					new Point(x, y), (int) scaledImageAndMasks.image.getWidth(), false, null));
+					new Point(x, y), (int) scaledImageAndMasks.image.getWidth(), null));
 		}
 	}
 
@@ -1270,7 +1270,7 @@ public class IconDrawer
 			}
 			else
 			{
-				bounds.add(iconBounds);
+				bounds = bounds.add(iconBounds);
 			}
 		}
 
@@ -1298,7 +1298,7 @@ public class IconDrawer
 				Rectangle b = getBoundingBoxOfIconsForCenter(center);
 				if (b != null)
 				{
-					bounds.add(b);
+					bounds = bounds.add(b);
 				}
 			}
 		}

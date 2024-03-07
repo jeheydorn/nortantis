@@ -1,7 +1,6 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.HashMap;
-import java.util.Stack;
 
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
