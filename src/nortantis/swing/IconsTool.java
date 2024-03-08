@@ -364,53 +364,56 @@ public class IconsTool extends EditorTool
 		{
 			final List<Tuple2<String, JToggleButton>> namesAndButtons = cityButtons.getIconNamesAndButtons(cityType);
 
-			SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
+			if (namesAndButtons != null)
 			{
-				@Override
-				protected List<Image> doInBackground() throws Exception
+				SwingWorker<List<Image>, Void> worker = new SwingWorker<>()
 				{
-					List<Image> previewImages = new ArrayList<>();
-					Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
-							.getIconsWithWidths(IconType.cities, cityType);
-
-					for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
+					@Override
+					protected List<Image> doInBackground() throws Exception
 					{
-						String cityIconNameWithoutWidthOrExtension = nameAndButton.getFirst();
-						if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+						List<Image> previewImages = new ArrayList<>();
+						Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
+								.getIconsWithWidths(IconType.cities, cityType);
+
+						for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
 						{
-							throw new IllegalArgumentException(
-									"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+							String cityIconNameWithoutWidthOrExtension = nameAndButton.getFirst();
+							if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+							{
+								throw new IllegalArgumentException(
+										"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+							}
+							Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
+							Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0);
+							previewImages.add(preview);
 						}
-						Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
-						Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0);
-						previewImages.add(preview);
+
+						return previewImages;
 					}
 
-					return previewImages;
-				}
-
-				@Override
-				public void done()
-				{
-					List<Image> previewImages;
-					try
+					@Override
+					public void done()
 					{
-						previewImages = get();
-					}
-					catch (InterruptedException | ExecutionException e)
-					{
-						throw new RuntimeException(e);
-					}
+						List<Image> previewImages;
+						try
+						{
+							previewImages = get();
+						}
+						catch (InterruptedException | ExecutionException e)
+						{
+							throw new RuntimeException(e);
+						}
 
-					for (int i : new Range(previewImages.size()))
-					{
-						cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond()
-								.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+						for (int i : new Range(previewImages.size()))
+						{
+							cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond()
+									.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+						}
 					}
-				}
-			};
+				};
 
-			worker.execute();
+				worker.execute();
+			}
 		}
 	}
 
@@ -439,7 +442,7 @@ public class IconsTool extends EditorTool
 		{
 			JPanel typePanel = new JPanel();
 			typePanel.setLayout(new WrapLayout());
-			//typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
+			// typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
 			typePanel.setBorder(new LineBorder(UIManager.getColor("controlShadow"), 1));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
@@ -496,7 +499,7 @@ public class IconsTool extends EditorTool
 			}
 		}
 	}
-	
+
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
 		List<Image> croppedImages = new ArrayList<>();

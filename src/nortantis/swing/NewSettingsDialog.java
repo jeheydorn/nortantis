@@ -12,6 +12,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -460,7 +461,7 @@ public class NewSettingsDialog extends JDialog
 
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					Rectangle incrementalChangeArea)
+					Rectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.setImage(AwtFactory.unwrap(map));
 

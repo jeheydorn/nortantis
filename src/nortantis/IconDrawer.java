@@ -49,7 +49,8 @@ public class IconDrawer
 	// mountains near the ocean may be connected despite long distances between them..
 	private final int maxGapSizeInMountainClusters = 2;
 	private final int maxGapBetweenBiomeGroups = 2;
-	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be added to it when creating a new map.
+	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be added to it when creating a new
+	// map.
 	final double maxMeansToDrawGeneratedMountainOrHill = 5.0;
 	final double maxSizeToDrawGeneratedMountainOrHill;
 	private final double mountainScale;
@@ -138,7 +139,8 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold && c.findWidth() < maxSizeToDrawGeneratedMountainOrHill)
+			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold
+					&& c.findWidth() < maxSizeToDrawGeneratedMountainOrHill)
 
 			{
 				c.isHill = true;
@@ -231,7 +233,7 @@ public class IconDrawer
 	 * done later.
 	 */
 	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor,
-			double treeHeightScale)
+			double treeHeightScale, MapCreator warningLogger)
 	{
 		clearIconsForCenters(centersToUpdateIconsFor);
 
@@ -245,13 +247,24 @@ public class IconDrawer
 			CenterEdit cEdit = edits.centerEdits.get(center.index);
 			if (cEdit.icon != null)
 			{
-				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null && !mountainImagesById.isEmpty())
+				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null)
 				{
 					String groupId = cEdit.icon.iconGroupId;
 					if (!mountainImagesById.containsKey(groupId))
 					{
 						// Someone removed the icon group. Choose a new group.
 						groupId = chooseNewGroupId(mountainImagesById.keySet(), groupId);
+						if (groupId == null)
+						{
+							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
+									+ " image group '" + cEdit.icon.iconGroupId + "'. There are no "
+									+ cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
+							cEdit.icon = null;
+							continue;
+						}
+						warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
+								+ " image group '" + cEdit.icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
+						cEdit.icon.iconGroupId = groupId;
 					}
 					if (mountainImagesById.get(groupId).size() > 0)
 					{
@@ -262,13 +275,24 @@ public class IconDrawer
 								.add(createIconDrawTaskAtBottomOfCenter(imageAndMasks, IconType.mountains, center, scaledSize, false));
 					}
 				}
-				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null && !hillImagesById.isEmpty())
+				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null)
 				{
 					String groupId = cEdit.icon.iconGroupId;
 					if (!hillImagesById.containsKey(groupId))
 					{
 						// Someone removed the icon group. Choose a new group.
 						groupId = chooseNewGroupId(hillImagesById.keySet(), groupId);
+						if (groupId == null)
+						{
+							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
+									+ " image group '" + cEdit.icon.iconGroupId + "'. There are no "
+									+ cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
+							cEdit.icon = null;
+							continue;
+						}
+						warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
+								+ " image group '" + cEdit.icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
+						cEdit.icon.iconGroupId = groupId;
 					}
 					if (hillImagesById.get(groupId).size() > 0)
 					{
@@ -285,12 +309,32 @@ public class IconDrawer
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
-					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, cEdit.icon.iconGroupId);
+					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
+							.getIconsWithWidths(IconType.cities, cEdit.icon.iconGroupId);
+					boolean changedGroup = false;
 					if (cityImages == null || cityImages.isEmpty())
 					{
-						continue;
+						String newGroupId = chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities),
+								cEdit.icon.iconGroupId);
+						if (newGroupId == null)
+						{
+							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
+									+ " image group '" + cEdit.icon.iconGroupId + "'. There are no "
+									+ cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
+							cEdit.icon = null;
+							continue;
+						}
+						cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, newGroupId);
+						if (cityImages == null || cityImages.isEmpty())
+						{
+							// This shouldn't happens since the new group id shouldn't have been an option if it were empty or null.
+							continue;
+						}
+						warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
+								+ " image group '" + cEdit.icon.iconGroupId + "'. The group '" + newGroupId + "' will be used instead.");
+						cEdit.icon.iconGroupId = newGroupId;
 					}
-					
+
 					String cityIconName = null;
 					if (cityImages.containsKey(cEdit.icon.iconName))
 					{
@@ -303,6 +347,8 @@ public class IconDrawer
 						cityIconName = chooseNewCityIconName(cityImages.keySet(), cEdit.icon.iconName);
 						if (cityIconName != null)
 						{
+							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase() + " icon '"
+									+ cEdit.icon.iconName.trim() + "'. The icon '" + cityIconName.trim() + "' will be used instead.");
 							// Store the city icon name so that if someone later adds or removes other city icons, it doesn't affect
 							// which one is used for this center.
 							cEdit.icon.iconName = cityIconName;
@@ -389,6 +435,10 @@ public class IconDrawer
 
 	private String chooseNewGroupId(Set<String> groupIds, String oldGroupId)
 	{
+		if (groupIds.isEmpty())
+		{
+			return null;
+		}
 		int index = Math.abs(oldGroupId.hashCode() % groupIds.size());
 		return groupIds.toArray(new String[groupIds.size()])[index];
 	}

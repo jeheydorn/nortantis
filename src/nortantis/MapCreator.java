@@ -56,9 +56,11 @@ public class MapCreator
 	private static final int concentricWaveWidthBetweenWaves = 10;
 	private static final int concentricWaveLineWidth = 2;
 	private boolean isCanceled;
+	private List<String> warningMessages;
 
 	public MapCreator()
 	{
+		warningMessages = new ArrayList<>();
 	}
 
 	public IntRectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, Image fullSizeMap, List<MapText> textChanged)
@@ -220,7 +222,7 @@ public class MapCreator
 			// happen if you really mash the undo button while drawing ocean, so I'm leaving this hack here for now.
 			Rectangle bounds = replaceBounds;
 			Set<Center> centersInBounds = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(bounds), centersChanged.iterator().next());
-			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersInBounds, settings.treeHeightScale);
+			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersInBounds, settings.treeHeightScale, this);
 		}
 
 
@@ -805,7 +807,7 @@ public class MapCreator
 		}
 		else
 		{
-			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers, settings.treeHeightScale);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers, settings.treeHeightScale, this);
 		}
 
 		checkForCancel();
@@ -1712,5 +1714,19 @@ public class MapCreator
 	private static double calcMaxResolutionScale()
 	{
 		return calcMaximumResolution() / 100.0;
+	}
+	
+	public void addWarningMessage(String message)
+	{
+		if (!warningMessages.contains(message))
+		{
+			Logger.println("Warning: " + message);
+			warningMessages.add(message);			
+		}
+	}
+	
+	public List<String> getWarningMessages()
+	{
+		return warningMessages;
 	}
 }

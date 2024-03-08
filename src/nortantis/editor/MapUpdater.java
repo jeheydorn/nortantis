@@ -30,7 +30,6 @@ import nortantis.swing.MapEdits;
 import nortantis.swing.UpdateType;
 import nortantis.util.Logger;
 import nortantis.util.Range;
-import nortantis.util.Tuple2;
 
 public abstract class MapUpdater
 {
@@ -365,10 +364,10 @@ public abstract class MapUpdater
 			}
 		}
 
-		PlatformFactory.getInstance().doInBackgroundThread(new BackgroundTask<Tuple2<Image, IntRectangle>>()
+		PlatformFactory.getInstance().doInBackgroundThread(new BackgroundTask<UpdateResult>()
 		{
 			@Override
-			public Tuple2<Image, IntRectangle> doInBackground() throws IOException, CancelledException
+			public UpdateResult doInBackground() throws IOException, CancelledException
 			{
 				if (!isUpdateTypeThatAllowsInteractions(updateType))
 				{
@@ -388,17 +387,17 @@ public abstract class MapUpdater
 						{
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdate(settings, mapParts, map,
 									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
-							return new Tuple2<>(map, replaceBounds);
+							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
 						else if (textChanged != null && textChanged.size() > 0)
 						{
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
-							return new Tuple2<>(map, replaceBounds);
+							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
 						else
 						{
 							// Nothing to do.
-							return new Tuple2<>(map, null);
+							return new UpdateResult(map, null, new ArrayList<>());
 						}
 					}
 					else if (updateType == UpdateType.ReprocessBooks)
@@ -407,7 +406,7 @@ public abstract class MapUpdater
 						{
 							mapParts.nameCreator = new NameCreator(settings);
 						}
-						return new Tuple2<>(null, null);
+						return new UpdateResult(null, null, new ArrayList<>());
 					}
 					else
 					{
@@ -430,11 +429,11 @@ public abstract class MapUpdater
 						catch (CancelledException e)
 						{
 							Logger.println("Map creation cancelled.");
-							return new Tuple2<>(null, null);
+							return new UpdateResult(null, null, new ArrayList<>());
 						}
 
 						System.gc();
-						return new Tuple2<>(map, null);
+						return new UpdateResult(map, null, currentNonIncrementalMapCreator.getWarningMessages());
 					}
 				}
 				finally
@@ -448,14 +447,16 @@ public abstract class MapUpdater
 			}
 
 			@Override
-			public void done(Tuple2<Image, IntRectangle> tuple)
+			public void done(UpdateResult result)
 			{
 				Image map = null;
 				IntRectangle replaceBounds = null;
-				if (tuple != null)
+				List<String> warningMessages = null;
+				if (result != null)
 				{
-					map = tuple.getFirst();
-					replaceBounds = tuple.getSecond();
+					map = result.map;
+					replaceBounds = result.replaceBounds;
+					warningMessages = result.warningMessages;
 				}
 
 				if (map != null)
@@ -481,7 +482,7 @@ public abstract class MapUpdater
 						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
 								replaceBounds == null ? null
 										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-												replaceBounds.width, replaceBounds.height));
+												replaceBounds.width, replaceBounds.height), warningMessages);
 					}
 
 					isMapBeingDrawn = false;
@@ -519,13 +520,27 @@ public abstract class MapUpdater
 
 		});
 	}
+	
+	private class UpdateResult
+	{
+		public Image map;
+		public IntRectangle replaceBounds;
+		public List<String> warningMessages;
+
+		public UpdateResult(Image map, IntRectangle replaceBounds, List<String> warningMessages)
+		{
+			this.map = map;
+			this.replaceBounds = replaceBounds;
+			this.warningMessages = warningMessages;
+		}
+	}
 
 	protected abstract void onBeginDraw();
 
 	public abstract MapSettings getSettingsFromGUI();
 
 	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-			Rectangle incrementalChangeArea);
+			Rectangle incrementalChangeArea, List<String> warningMessages);
 
 	protected abstract void onFailedToDraw();
 

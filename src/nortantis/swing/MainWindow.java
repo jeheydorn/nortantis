@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 
 import javax.swing.BoxLayout;
@@ -161,8 +162,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
 
-		undoButton.setEnabled(enable);
-		redoButton.setEnabled(enable);
+		if (!enable || undoer == null)
+		{
+			undoButton.setEnabled(false);
+			redoButton.setEnabled(false);
+		}
+		else
+		{
+			undoer.updateUndoRedoEnabled();
+		}
 		clearEntireMapButton.setEnabled(enable);
 		customImagesMenuItem.setEnabled(enable);
 
@@ -426,7 +434,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			@Override
 			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					Rectangle incrementalChangeArea)
+					Rectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
@@ -463,6 +471,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
 				mapEditingPanel.repaint();
+
+				if (warningMessages != null && warningMessages.size() > 0)
+				{
+					JOptionPane.showMessageDialog(MainWindow.this, "<html>" + String.join("<br>", warningMessages) + "</html>",
+							"Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+				}
 			}
 
 			@Override
@@ -533,7 +547,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					if (settingsToKeepThemeFrom.drawRegionColors
 							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
-						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage("Region Colors",
+						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(
+								"Region Colors",
 								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the "
 										+ LandWaterTool.toolbarName + " tool"
 										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
@@ -1025,7 +1040,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+				mapEditingPanel.setImage(AwtFactory
+						.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 			}
 			else
 			{
@@ -1037,7 +1053,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// The reason is that the incremental case will update pieces of the image created below.
 					// I don't use ImageHelper.scaleInto for the full image case because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
+					mapEditingPanel.setImage(AwtFactory
+							.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 				}
 				else
 				{
@@ -1045,7 +1062,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// ImageHelper.scaleByWidth called above returns the input image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
-						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
+						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator),
+								AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
@@ -1095,11 +1113,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				nortantis.geom.Dimension size = new nortantis.geom.Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+				nortantis.geom.Dimension size = new nortantis.geom.Dimension(
+						mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
-				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
-						mapEditingPanel.mapFromMapCreator.getHeight());
+				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size,
+						mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
 				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
@@ -1592,7 +1611,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			System.out.println("Error while setting look and feel: " + e.getMessage());
 			e.printStackTrace();
 		}
-		
+
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
