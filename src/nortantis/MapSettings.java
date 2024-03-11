@@ -40,7 +40,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.3";
+	public static final String currentVersion = "2.4";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -108,13 +108,13 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
-	
+
 	/**
-	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for
-	 * telling new maps which city images to use. But the editor now allows selecting city images of any type.
+	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
+	 * images to use. But the editor now allows selecting city images of any type.
 	 */
 	public String cityIconTypeName;
-	
+
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
@@ -591,22 +591,22 @@ public class MapSettings implements Serializable
 		{
 			treeHeightScale = defaultTreeHeightScaleForOldMaps;
 		}
-		
+
 		if (root.containsKey("mountainScale"))
 		{
 			mountainScale = (double) root.get("mountainScale");
 		}
-		
+
 		if (root.containsKey("hillScale"))
 		{
 			hillScale = (double) root.get("hillScale");
 		}
-		
+
 		if (root.containsKey("duneScale"))
 		{
 			duneScale = (double) root.get("duneScale");
 		}
-		
+
 		if (root.containsKey("cityScale"))
 		{
 			cityScale = (double) root.get("cityScale");
@@ -621,23 +621,50 @@ public class MapSettings implements Serializable
 		edits.regionEdits = parseRegionEdits(editsJson);
 		edits.edgeEdits = parseEdgeEdits(editsJson);
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
-		
+
 		runConversionForShadingAlphaChange();
 		runConversionForAllowingMultipleCityTypesInOneMap();
+		runConversionToFixDunesGroupId();
 	}
-	
+
+	/**
+	 * Previous versions incorrectly used the group id "sand" for the "dunes" group, which didn't matter because previously I didn't allow
+	 * multiple groups of sand dune images and the value was ignored. But now I do allow multiple sand dune image groups, so this fixes
+	 * that.
+	 */
+	private void runConversionToFixDunesGroupId()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.4"))
+		{
+			return;
+		}
+
+		if (edits == null || edits.centerEdits == null)
+		{
+			return;
+		}
+
+		for (CenterEdit cEdit : edits.centerEdits)
+		{
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
+			{
+				cEdit.icon.iconGroupId = "dunes";
+			}
+		}
+	}
+
 	private void runConversionForAllowingMultipleCityTypesInOneMap()
 	{
 		if (isVersionGreaterThanOrEqualTo(version, "2.2"))
 		{
 			return;
 		}
-		
+
 		if (edits == null || edits.centerEdits == null)
 		{
 			return;
 		}
-		
+
 		for (CenterEdit cEdit : edits.centerEdits)
 		{
 			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
@@ -648,7 +675,7 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Convert old map settings to compensate for a change I introduced to the level at which shading is darkened. 
+	 * Convert old map settings to compensate for a change I introduced to the level at which shading is darkened.
 	 */
 	private void runConversionForShadingAlphaChange()
 	{
@@ -662,13 +689,13 @@ public class MapSettings implements Serializable
 			coastShadingColor = Color.create(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
 					SettingsGenerator.defaultCoastShadingAlpha);
 		}
-		
+
 		if (oceanEffect == OceanEffect.Blur && oceanEffectsColor.getAlpha() == 255)
 		{
 			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
 					SettingsGenerator.defaultOceanShadingAlpha);
 		}
-		
+
 		if (oceanEffect == OceanEffect.Ripples && oceanEffectsColor.getAlpha() == 255)
 		{
 			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
@@ -911,7 +938,7 @@ public class MapSettings implements Serializable
 	{
 		return isVersionGreaterThan(version, currentVersion);
 	}
-	
+
 	private boolean isVersionGreaterThan(String version1, String version2)
 	{
 		if (version1 == null || version1.equals(""))
@@ -924,14 +951,14 @@ public class MapSettings implements Serializable
 		}
 		return Double.parseDouble(version1) > Double.parseDouble(version2);
 	}
-	
+
 	private boolean isVersionGreaterThanOrEqualTo(String version1, String version2)
 	{
 		if (Objects.equals(version1, version2))
 		{
 			return true;
 		}
-		
+
 		return isVersionGreaterThan(version1, version2);
 	}
 
@@ -1043,6 +1070,6 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
+
 
 }

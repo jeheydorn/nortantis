@@ -12,6 +12,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import nortantis.editor.CenterEdit;
@@ -33,6 +34,7 @@ import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
+import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
@@ -240,7 +242,7 @@ public class IconDrawer
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.hills);
-		List<ImageAndMasks> duneImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand).get("dunes");
+		ListMap<String, ImageAndMasks> duneImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand);
 
 		for (Center center : centersToUpdateIconsFor)
 		{
@@ -249,69 +251,20 @@ public class IconDrawer
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null)
 				{
-					String groupId = cEdit.icon.iconGroupId;
-					if (!mountainImagesById.containsKey(groupId))
-					{
-						// Someone removed the icon group. Choose a new group.
-						groupId = chooseNewGroupId(mountainImagesById.keySet(), groupId);
-						if (groupId == null)
-						{
-							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
-									+ " image group '" + cEdit.icon.iconGroupId + "'. There are no "
-									+ cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
-							cEdit.icon = null;
-							continue;
-						}
-						warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
-								+ " image group '" + cEdit.icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
-						cEdit.icon.iconGroupId = groupId;
-					}
-					if (mountainImagesById.get(groupId).size() > 0)
-					{
-						int scaledSize = findScaledMountainSize(center);
-						ImageAndMasks imageAndMasks = mountainImagesById.get(groupId)
-								.get(cEdit.icon.iconIndex % mountainImagesById.get(groupId).size());
-						iconsToDraw.getOrCreate(center)
-								.add(createIconDrawTaskAtBottomOfCenter(imageAndMasks, IconType.mountains, center, scaledSize, false));
-					}
+					addIconForShuffledIcons(center, cEdit, mountainImagesById, warningLogger, () -> findScaledMountainSize(center));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null)
 				{
-					String groupId = cEdit.icon.iconGroupId;
-					if (!hillImagesById.containsKey(groupId))
-					{
-						// Someone removed the icon group. Choose a new group.
-						groupId = chooseNewGroupId(hillImagesById.keySet(), groupId);
-						if (groupId == null)
-						{
-							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
-									+ " image group '" + cEdit.icon.iconGroupId + "'. There are no "
-									+ cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
-							cEdit.icon = null;
-							continue;
-						}
-						warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
-								+ " image group '" + cEdit.icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
-						cEdit.icon.iconGroupId = groupId;
-					}
-					if (hillImagesById.get(groupId).size() > 0)
-					{
-						int scaledSize = findScaledHillSize(center);
-						ImageAndMasks imageAndMasks = hillImagesById.get(groupId)
-								.get(cEdit.icon.iconIndex % hillImagesById.get(groupId).size());
-						iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.hills, center.loc, scaledSize, false));
-					}
+					addIconForShuffledIcons(center, cEdit, hillImagesById, warningLogger, () -> findScaledHillSize(center));
 				}
-				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && duneImages != null && !duneImages.isEmpty())
+				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && cEdit.icon.iconGroupId != null)
 				{
-					ImageAndMasks imageAndMasks = duneImages.get(cEdit.icon.iconIndex % duneImages.size());
-					iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.sand, center.loc, duneWidth, false));
+					addIconForShuffledIcons(center, cEdit, duneImages, warningLogger, () -> duneWidth);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
 					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
 							.getIconsWithWidths(IconType.cities, cEdit.icon.iconGroupId);
-					boolean changedGroup = false;
 					if (cityImages == null || cityImages.isEmpty())
 					{
 						String newGroupId = chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities),
@@ -371,6 +324,58 @@ public class IconDrawer
 		}
 
 		drawTreesForCenters(centersToUpdateIconsFor, treeHeightScale);
+	}
+
+	private void addIconForShuffledIcons(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
+			MapCreator warningLogger, Supplier<Integer> getDrawWidth)
+	{
+		String groupId = cEdit.icon.iconGroupId;
+		if (!iconsByGroup.containsKey(groupId))
+		{
+			// Someone removed the icon group. Choose a new group.
+			groupId = chooseNewGroupId(iconsByGroup.keySet(), groupId);
+			if (groupId == null)
+			{
+				warningLogger.addWarningMessage(
+						"Unable to find the " + cEdit.icon.iconType.toString().toLowerCase() + " image group '" + cEdit.icon.iconGroupId
+								+ "'. There are no " + cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
+				cEdit.icon = null;
+				return;
+			}
+			warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase() + " image group '"
+					+ cEdit.icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
+			cEdit.icon.iconGroupId = groupId;
+		}
+		if (iconsByGroup.get(groupId).size() > 0)
+		{
+			int scaledSize = getDrawWidth.get();
+			ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(cEdit.icon.iconIndex % iconsByGroup.get(groupId).size());
+			iconsToDraw.getOrCreate(center).add(createIconDrawTaskAtBottomOfCenter(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center, scaledSize, false));
+		}
+	}
+	
+	private IconType centerIconTypeToIconType(CenterIconType type)
+	{
+		if (type == CenterIconType.City)
+		{
+			return IconType.cities;
+		}
+		if (type == CenterIconType.Dune)
+		{
+			return IconType.sand;
+		}
+		if (type == CenterIconType.Hill)
+		{
+			return IconType.hills;
+		}
+		if (type == CenterIconType.Mountain)
+		{
+			return IconType.mountains;
+		}
+		else
+		{
+			throw new IllegalArgumentException("Unable to convert CenterIconType '" + type + "' to an IconType.");
+		}
 	}
 
 	public static String chooseNewCityIconName(Set<String> cityNamesToChooseFrom, String oldIconName)
@@ -906,12 +911,14 @@ public class IconDrawer
 			return;
 		}
 
+		String groupId = ProbabilityHelper.sampleUniform(rand, sandGroups.keySet());
+
 		// Load the sand dune images.
-		List<ImageAndMasks> duneImages = sandGroups.get("dunes");
+		List<ImageAndMasks> duneImages = sandGroups.get(groupId);
 
 		if (duneImages == null || duneImages.isEmpty())
 		{
-			Logger.println("Sand dunes will not be drawn because no sand dune images were found.");
+			Logger.println("Sand dunes will not be drawn because no sand dune images were found in the group '" + groupId + "'.");
 			return;
 		}
 
@@ -944,10 +951,9 @@ public class IconDrawer
 
 						int i = rand.nextInt(duneImages.size());
 						iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth, false));
-						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, "sand", i));
+						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, groupId, i));
 					}
 				}
-
 			}
 		}
 	}

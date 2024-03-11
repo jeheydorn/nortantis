@@ -2,6 +2,7 @@ package nortantis.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class ProbabilityHelper
 	/**
 	 * Samples a uniform distribution over the given items
 	 */
-	public static <T> T sampleUniform(Random rand, List<T> items)
+	public static <T> T sampleUniform(Random rand, Collection<T> items)
 	{
 		if (items.size() == 0)
 		{
@@ -57,7 +58,7 @@ public class ProbabilityHelper
 
 		if (items.size() == 1)
 		{
-			return items.get(0);
+			return items.iterator().next();
 		}
 
 		double sample = rand.nextDouble();
@@ -74,7 +75,7 @@ public class ProbabilityHelper
 
 		// This shouldn't actually happen.
 		assert false;
-		return items.get(0);
+		return items.iterator().next();
 	}
 
 	public static <T extends Enum<T>> T sampleEnumUniform(Random rand, Class<T> enumType)
