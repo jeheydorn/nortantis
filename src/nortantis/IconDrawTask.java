@@ -29,8 +29,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	String fileName;
 
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, int scaledWidth,
-			boolean ignoreMaxSize)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, int scaledWidth)
 	{
 		this(unScaledImageAndMasks, null, type, centerLoc, scaledWidth, null);
 	}

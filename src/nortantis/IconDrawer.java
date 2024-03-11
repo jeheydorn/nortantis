@@ -251,15 +251,15 @@ public class IconDrawer
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null)
 				{
-					addIconForShuffledIcons(center, cEdit, mountainImagesById, warningLogger, () -> findScaledMountainSize(center));
+					addIconForShuffledIcons(center, cEdit, mountainImagesById, warningLogger, () -> findScaledMountainSize(center), true);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null)
 				{
-					addIconForShuffledIcons(center, cEdit, hillImagesById, warningLogger, () -> findScaledHillSize(center));
+					addIconForShuffledIcons(center, cEdit, hillImagesById, warningLogger, () -> findScaledHillSize(center), false);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && cEdit.icon.iconGroupId != null)
 				{
-					addIconForShuffledIcons(center, cEdit, duneImages, warningLogger, () -> duneWidth);
+					addIconForShuffledIcons(center, cEdit, duneImages, warningLogger, () -> duneWidth, false);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
@@ -327,7 +327,7 @@ public class IconDrawer
 	}
 
 	private void addIconForShuffledIcons(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
-			MapCreator warningLogger, Supplier<Integer> getDrawWidth)
+			MapCreator warningLogger, Supplier<Integer> getDrawWidth, boolean placeNearBottom)
 	{
 		String groupId = cEdit.icon.iconGroupId;
 		if (!iconsByGroup.containsKey(groupId))
@@ -350,7 +350,14 @@ public class IconDrawer
 		{
 			int scaledSize = getDrawWidth.get();
 			ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(cEdit.icon.iconIndex % iconsByGroup.get(groupId).size());
-			iconsToDraw.getOrCreate(center).add(createIconDrawTaskAtBottomOfCenter(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center, scaledSize, false));
+			if (placeNearBottom)
+			{
+				iconsToDraw.getOrCreate(center).add(createIconDrawTaskNearBottomOfCenter(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center, scaledSize));
+			}
+			else
+			{
+				iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center.loc, scaledSize));
+			}
 		}
 	}
 	
@@ -824,8 +831,7 @@ public class IconDrawer
 					// Make sure the image will be at least 1 pixel wide.
 					if (scaledSize >= 1)
 					{
-						IconDrawTask task = createIconDrawTaskAtBottomOfCenter(imagesInRange.get(i), IconType.mountains, c, scaledSize,
-								false);
+						IconDrawTask task = createIconDrawTaskNearBottomOfCenter(imagesInRange.get(i), IconType.mountains, c, scaledSize);
 
 						if (!isContentBottomTouchingWater(task))
 						{
@@ -852,7 +858,7 @@ public class IconDrawer
 						// Make sure the image will be at least 1 pixel wide.
 						if (scaledSize >= 1)
 						{
-							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.loc, scaledSize, false);
+							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.loc, scaledSize);
 							if (!isContentBottomTouchingWater(task))
 							{
 								iconsToDraw.getOrCreate(c).add(task);
@@ -869,14 +875,13 @@ public class IconDrawer
 		}
 	}
 
-	private IconDrawTask createIconDrawTaskAtBottomOfCenter(ImageAndMasks imageAndMasks, IconType type, Center c, int scaledWidth,
-			boolean ignoreMaxSize)
+	private IconDrawTask createIconDrawTaskNearBottomOfCenter(ImageAndMasks imageAndMasks, IconType type, Center c, int scaledWidth)
 	{
-		Point drawAt = getImageCenterToDrawImageAtBottomOfCenter(imageAndMasks.image, scaledWidth, c);
-		return new IconDrawTask(imageAndMasks, type, drawAt, scaledWidth, ignoreMaxSize);
+		Point drawAt = getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth, c);
+		return new IconDrawTask(imageAndMasks, type, drawAt, scaledWidth);
 	}
 
-	private Point getImageCenterToDrawImageAtBottomOfCenter(Image image, int scaledWidth, Center c)
+	private Point getImageCenterToDrawImageNearBottomOfCenter(Image image, int scaledWidth, Center c)
 	{
 		int scaledHeight = ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth);
 		Corner bottom = c.findBottom();
@@ -950,7 +955,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = rand.nextInt(duneImages.size());
-						iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth, false));
+						iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth));
 						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, groupId, i));
 					}
 				}
