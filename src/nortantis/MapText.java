@@ -38,6 +38,11 @@ public class MapText implements Serializable
 	 * (within the limits of floating point precision).
 	 */
 	public Point location;
+	
+	/**
+	 * Allows the user to override whether the text can be split into two lines.
+	 */
+	public LineBreak lineBreak;
 
 	/**
 	 * Holds the bounds of the text before rotation. This is not saved. Rather, it is populated by the generator when a map is first drawn.
@@ -48,7 +53,7 @@ public class MapText implements Serializable
 	public Rectangle line2Bounds;
 
 	public MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Area, RotatedRectangle line2Area, Rectangle line1Bounds,
-			Rectangle line2Bounds)
+			Rectangle line2Bounds, LineBreak lineBreak)
 	{
 		this.value = text;
 		this.line1Area = line1Area;
@@ -58,17 +63,12 @@ public class MapText implements Serializable
 		this.type = type;
 		this.line1Bounds = line1Bounds;
 		this.line2Bounds = line2Bounds;
+		this.lineBreak = lineBreak;
 	}
 
-	public MapText(String text, Point location, double angle, TextType type)
+	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak)
 	{
-		this(text, location, angle, type, null, null, null, null);
-	}
-
-	@Override
-	public String toString()
-	{
-		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location=" + location + "]";
+		this(text, location, angle, type, null, null, null, null, lineBreak);
 	}
 
 	@Override
@@ -87,8 +87,9 @@ public class MapText implements Serializable
 		Point location = new Point(this.location.x, this.location.y);
 		Rectangle line1Bounds = this.line1Bounds;
 		Rectangle line2Bounds = this.line2Bounds;
+		LineBreak lineBreak = this.lineBreak;
 
-		return new MapText(value, location, angle, type, line1Area, line2Area, line1Bounds, line2Bounds);
+		return new MapText(value, location, angle, type, line1Area, line2Area, line1Bounds, line2Bounds, lineBreak);
 	}
 
 	@Override
@@ -102,7 +103,14 @@ public class MapText implements Serializable
 			return false;
 		MapText other = (MapText) obj;
 		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Objects.equals(location, other.location)
-				&& type == other.type && Objects.equals(value, other.value);
+				&& type == other.type && Objects.equals(value, other.value) && lineBreak == other.lineBreak;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location=" + location + ", lineBreak=" + lineBreak
+				+ "]";
 	}
 
 }

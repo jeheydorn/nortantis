@@ -318,7 +318,7 @@ public class TextDrawer
 
 				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also check
 				// the bounds when it splits under two lines.
-				if (text.value.trim().contains(" "))
+				if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
 				{
 					Pair<String> lines = addLineBreakNearMiddle(text.value);
 
@@ -354,7 +354,7 @@ public class TextDrawer
 
 		// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also add
 		// the bounds when it splits under two lines.
-		if (text.value.trim().contains(" "))
+		if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
 		{
 			Pair<String> lines = addLineBreakNearMiddle(text.value);
 
@@ -919,13 +919,36 @@ public class TextDrawer
 	private boolean drawNameSplitIfNeeded(Image map, Painter p, WorldGraph graph, double riseOffset,
 			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
-		Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
-		Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
-		if (text.value.trim().split(" ").length > 1
-				&& overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
+		boolean hasMultipleWords = text.value.trim().split(" ").length > 1;
+		if (text.lineBreak == LineBreak.Auto)
+		{		
+			Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
+			Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
+			if (hasMultipleWords
+					&& overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
+			{
+				// The text doesn't fit into centerLocations. Draw it split onto two
+				// lines.
+				Pair<String> lines = addLineBreakNearMiddle(text.value);
+				String nameLine1 = lines.getFirst();
+				String nameLine2 = lines.getSecond();
+	
+				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
+						allowNegatingRizeOffset, drawOffset);
+			}
+			else
+			{
+				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
+						allowNegatingRizeOffset, drawOffset);
+			}
+		}
+		else if (text.lineBreak == LineBreak.One_line || !hasMultipleWords)
 		{
-			// The text doesn't fit into centerLocations. Draw it split onto two
-			// lines.
+			return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
+					allowNegatingRizeOffset, drawOffset);
+		}
+		else if (text.lineBreak == LineBreak.Two_lines)
+		{
 			Pair<String> lines = addLineBreakNearMiddle(text.value);
 			String nameLine1 = lines.getFirst();
 			String nameLine2 = lines.getSecond();
@@ -935,8 +958,7 @@ public class TextDrawer
 		}
 		else
 		{
-			return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
-					allowNegatingRizeOffset, drawOffset);
+			throw new IllegalArgumentException("Unrecognized text line break value for text '" + text.value + "'. Line break value: " + text.lineBreak);
 		}
 	}
 
@@ -1408,7 +1430,7 @@ public class TextDrawer
 	{
 		// Divide by settings.resolution so that the location does not depend on
 		// the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type);
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

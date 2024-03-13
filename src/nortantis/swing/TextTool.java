@@ -26,6 +26,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+import nortantis.LineBreak;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.TextType;
@@ -55,6 +56,8 @@ public class TextTool extends EditorTool
 	private JComboBox<ImageIcon> brushSizeComboBox;
 	private RowHider brushSizeHider;
 	private RowHider clearRotationButtonHider;
+	private JComboBoxFixed<LineBreak> lineBreakComboBox;
+	private RowHider lineBreakHider;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -180,6 +183,29 @@ public class TextTool extends EditorTool
 			}
 		});
 		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
+		
+		
+		lineBreakComboBox = new JComboBoxFixed<>();
+		lineBreakHider = organizer.addLabelAndComponent("Number of lines:", "", lineBreakComboBox);
+		for (LineBreak type : LineBreak.values())
+		{
+			lineBreakComboBox.addItem(type);
+		}
+		lineBreakComboBox.addActionListener(new ActionListener()
+		{
+			
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (editButton.isSelected() && lastSelected != null)
+				{
+					MapText before = lastSelected.deepCopy();
+					lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+				}
+			}
+		});
+		
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -216,11 +242,13 @@ public class TextTool extends EditorTool
 		if (addButton.isSelected())
 		{
 			textTypeComboBox.setSelectedItem(textTypeForAdds);
+			lineBreakComboBox.setSelectedItem(LineBreak.Auto);
 		}
 
 		textTypeHider.setVisible(addButton.isSelected());
 		booksHider.setVisible(addButton.isSelected());
 		editTextFieldHider.setVisible(false);
+		lineBreakHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
 		if (editButton.isSelected() && lastSelected != null)
 		{
@@ -477,12 +505,14 @@ public class TextTool extends EditorTool
 	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
 		if (lastSelected != null
-				&& !(editTextField.getText().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)))
+				&& !(editTextField.getText().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
+						&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())))
 		{
 			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
 			lastSelected.value = editTextField.getText();
 			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
+			lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
 
 			// Need to re-draw all of the text.
 			undoer.setUndoPoint(UpdateType.Text, this);
@@ -496,6 +526,7 @@ public class TextTool extends EditorTool
 			editTextFieldHider.setVisible(false);
 			clearRotationButtonHider.setVisible(false);
 			textTypeHider.setVisible(false);
+			lineBreakHider.setVisible(false);
 		}
 		else
 		{
@@ -513,6 +544,8 @@ public class TextTool extends EditorTool
 
 			textTypeComboBox.setSelectedItem(selectedText.type);
 			textTypeHider.setVisible(true);
+			lineBreakComboBox.setSelectedItem(selectedText.lineBreak);
+			lineBreakHider.setVisible(true);
 		}
 		mapEditingPanel.repaint();
 

@@ -300,6 +300,7 @@ public class MapSettings implements Serializable
 			mpObj.put("locationY", text.location.y);
 			mpObj.put("angle", text.angle);
 			mpObj.put("type", text.type.toString());
+			mpObj.put("lineBreak", text.lineBreak.toString());
 			list.add(mpObj);
 		}
 		return list;
@@ -719,7 +720,8 @@ public class MapSettings implements Serializable
 			Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 			double angle = (Double) jsonObj.get("angle");
 			TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-			MapText mp = new MapText(text, location, angle, type);
+			LineBreak lineBreak = jsonObj.containsKey("lineBreak") ?  Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_")) : LineBreak.Auto;
+			MapText mp = new MapText(text, location, angle, type, lineBreak);
 			result.add(mp);
 		}
 
