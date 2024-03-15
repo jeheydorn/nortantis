@@ -553,11 +553,9 @@ public class MapCreator
 		}
 
 		TextDrawer textDrawer = new TextDrawer(settings);
-		if (settings.edits != null)
-		{
-			textDrawer.setMapTexts(settings.edits.text);
-		}
 
+		textDrawer.setMapTexts(settings.edits.text);
+		
 		if (settings.edits.text.size() > 0)
 		{
 			textDrawer.drawTextFromEdits(map, textBackground, graph, null);

@@ -19,6 +19,7 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
+import nortantis.editor.FreeIcon;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -57,7 +58,8 @@ public class IconDrawer
 	final double maxSizeToDrawGeneratedMountainOrHill;
 	private final double mountainScale;
 	private final double hillScale;
-	private HashMapF<Center, List<IconDrawTask>> iconsToDraw;
+	private HashMapF<Center, List<IconDrawTask>> anchoredIconsToDraw;
+	private List<IconDrawTask> freeIconsToDraw;
 	WorldGraph graph;
 	Random rand;
 	/**
@@ -72,7 +74,7 @@ public class IconDrawer
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
-		iconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
+		anchoredIconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
 		this.cityIconTypeForNewMaps = settings.cityIconTypeName;
@@ -249,69 +251,32 @@ public class IconDrawer
 			CenterEdit cEdit = edits.centerEdits.get(center.index);
 			if (cEdit.icon != null)
 			{
-				if (cEdit.icon.iconType == CenterIconType.Mountain && cEdit.icon.iconGroupId != null)
+				if (cEdit.icon.iconType == CenterIconType.Mountain)
 				{
-					addIconForShuffledIcons(center, cEdit, mountainImagesById, warningLogger, () -> findScaledMountainSize(center), true);
+					addShuffledAnchoredIcon(center, cEdit, mountainImagesById, warningLogger, () -> findScaledMountainSize(center), true);
 				}
-				else if (cEdit.icon.iconType == CenterIconType.Hill && cEdit.icon.iconGroupId != null)
+				else if (cEdit.icon.iconType == CenterIconType.Hill)
 				{
-					addIconForShuffledIcons(center, cEdit, hillImagesById, warningLogger, () -> findScaledHillSize(center), false);
+					addShuffledAnchoredIcon(center, cEdit, hillImagesById, warningLogger, () -> findScaledHillSize(center), false);
 				}
-				else if (cEdit.icon.iconType == CenterIconType.Dune && duneWidth > 0 && cEdit.icon.iconGroupId != null)
+				else if (cEdit.icon.iconType == CenterIconType.Dune)
 				{
-					addIconForShuffledIcons(center, cEdit, duneImages, warningLogger, () -> duneWidth, false);
+					addShuffledAnchoredIcon(center, cEdit, duneImages, warningLogger, () -> duneWidth, false);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
-					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
-							.getIconsWithWidths(IconType.cities, cEdit.icon.iconGroupId);
-					if (cityImages == null || cityImages.isEmpty())
+					Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconName, warningLogger);
+					if (groupAndName != null)
 					{
-						String newGroupId = chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities),
-								cEdit.icon.iconGroupId);
-						if (newGroupId == null)
-						{
-							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
-									+ " image group '" + cEdit.icon.iconGroupId + "'. There are no "
-									+ cEdit.icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
-							cEdit.icon = null;
-							continue;
-						}
-						cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, newGroupId);
-						if (cityImages == null || cityImages.isEmpty())
-						{
-							// This shouldn't happens since the new group id shouldn't have been an option if it were empty or null.
-							continue;
-						}
-						warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase()
-								+ " image group '" + cEdit.icon.iconGroupId + "'. The group '" + newGroupId + "' will be used instead.");
-						cEdit.icon.iconGroupId = newGroupId;
-					}
-
-					String cityIconName = null;
-					if (cityImages.containsKey(cEdit.icon.iconName))
-					{
-						cityIconName = cEdit.icon.iconName;
-					}
-					else if (cityImages.size() > 0)
-					{
-						// Either the city image is missing, or the icon set name changed. Choose a new image in a deterministic but
-						// random way.
-						cityIconName = chooseNewCityIconName(cityImages.keySet(), cEdit.icon.iconName);
-						if (cityIconName != null)
-						{
-							warningLogger.addWarningMessage("Unable to find the " + cEdit.icon.iconType.toString().toLowerCase() + " icon '"
-									+ cEdit.icon.iconName.trim() + "'. The icon '" + cityIconName.trim() + "' will be used instead.");
-							// Store the city icon name so that if someone later adds or removes other city icons, it doesn't affect
-							// which one is used for this center.
-							cEdit.icon.iconName = cityIconName;
-						}
-					}
-					if (cityIconName != null)
-					{
-						ImageAndMasks imageAndMasks = cityImages.get(cityIconName).getFirst();
-						iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
-								(int) (cityImages.get(cityIconName).getSecond() * cityScale), cityIconName));
+						// TODO Lock the center edit before changing it.
+						cEdit.icon.iconGroupId = groupAndName.getFirst();
+						cEdit.icon.iconName = groupAndName.getSecond();
+						
+						Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
+								.getIconsWithWidths(IconType.cities, cEdit.icon.iconGroupId);
+						ImageAndMasks imageAndMasks = cityImages.get(cEdit.icon.iconName).getFirst();
+						anchoredIconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, IconType.cities, center.loc,
+								(int) (cityImages.get(cEdit.icon.iconName).getSecond() * cityScale), cEdit.icon.iconName));
 					}
 				}
 
@@ -322,11 +287,91 @@ public class IconDrawer
 				trees.put(cEdit.index, cEdit.trees);
 			}
 		}
-
+		
 		drawTreesForCenters(centersToUpdateIconsFor, treeHeightScale);
+		
+		for (FreeIcon icon : edits.freeIcons)
+		{
+			if (icon.iconType == IconType.mountains)
+			{
+				addShuffledFreeIcon(icon, mountainImagesById, warningLogger);
+			}
+			else if (icon.iconType == IconType.hills)
+			{
+				addShuffledFreeIcon(icon, hillImagesById, warningLogger);
+			}
+			else if (icon.iconType == IconType.sand)
+			{
+				addShuffledFreeIcon(icon, duneImages, warningLogger);
+			}
+			else if (icon.iconType == IconType.cities)
+			{
+				Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(icon.iconGroupId, icon.iconName, warningLogger);
+				if (groupAndName != null)
+				{
+					// TODO Lock the free icon before changing it.
+					icon.iconGroupId = groupAndName.getFirst();
+					icon.iconName = groupAndName.getSecond();
+					
+					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
+							.getIconsWithWidths(IconType.cities, icon.iconGroupId);
+					ImageAndMasks imageAndMasks = cityImages.get(icon.iconName).getFirst();
+					freeIconsToDraw.add(new IconDrawTask(imageAndMasks, IconType.cities, icon.loc,
+							(int) (cityImages.get(icon.iconName).getSecond() * cityScale), icon.iconName));
+				}
+			}
+			else if (icon.iconType == IconType.trees)
+			{
+				ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees);
+				addShuffledFreeIcon(icon, treesById, warningLogger);
+			}
+			
+		}
+	}
+	
+	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, MapCreator warningLogger)
+	{
+		Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
+				.getIconsWithWidths(IconType.cities, groupId);
+		if (cityImages == null || cityImages.isEmpty())
+		{
+			String newGroupId = chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities),
+					groupId);
+			if (newGroupId == null)
+			{
+				warningLogger.addWarningMessage("Unable to find the city"
+						+ " image group '" + groupId + "'. There are no city icons, so none will be drawn.");
+				// TODO Remove the icon from the edits
+				return null;
+			}
+			cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, newGroupId);
+			if (cityImages == null || cityImages.isEmpty())
+			{
+				// This shouldn't happens since the new group id shouldn't have been an option if it were empty or null.
+				return null;
+			}
+			warningLogger.addWarningMessage("Unable to find the city"
+					+ " image group '" + groupId + "'. The group '" + newGroupId + "' will be used instead.");
+			groupId = newGroupId;
+		}
+
+		String oldName = name;
+		if (!cityImages.containsKey(name) && cityImages.size() > 0)
+		{
+			// Either the city image is missing, or the icon set name changed. Choose a new image in a deterministic but
+			// random way.
+			name = chooseNewCityIconName(cityImages.keySet(), name);
+			if (name != null)
+			{
+				warningLogger.addWarningMessage("Unable to find the city icon '"
+						+ oldName.trim() + "'. The icon '" + name.trim() + "' will be used instead.");
+			}
+		}
+		
+		return new Tuple2<String, String>(groupId, name);
 	}
 
-	private void addIconForShuffledIcons(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
+	private void addShuffledAnchoredIcon(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
 			MapCreator warningLogger, Supplier<Integer> getDrawWidth, boolean placeNearBottom)
 	{
 		String groupId = cEdit.icon.iconGroupId;
@@ -346,20 +391,54 @@ public class IconDrawer
 					+ cEdit.icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
 			cEdit.icon.iconGroupId = groupId;
 		}
+		
 		if (iconsByGroup.get(groupId).size() > 0)
 		{
-			int scaledSize = getDrawWidth.get();
+			int scaledWidth = getDrawWidth.get();
+			if (scaledWidth <= 0)
+			{
+				return;
+			}
 			ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(cEdit.icon.iconIndex % iconsByGroup.get(groupId).size());
 			if (placeNearBottom)
 			{
-				iconsToDraw.getOrCreate(center).add(createIconDrawTaskNearBottomOfCenter(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center, scaledSize));
+				anchoredIconsToDraw.getOrCreate(center).add(createIconDrawTaskNearBottomOfCenter(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center, scaledWidth));
 			}
 			else
 			{
-				iconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center.loc, scaledSize));
+				anchoredIconsToDraw.getOrCreate(center).add(new IconDrawTask(imageAndMasks, centerIconTypeToIconType(cEdit.icon.iconType), center.loc, scaledWidth));
 			}
 		}
 	}
+	
+	private void addShuffledFreeIcon(FreeIcon icon, ListMap<String, ImageAndMasks> iconsByGroup,
+			MapCreator warningLogger)
+	{
+		String groupId = icon.iconGroupId;
+		if (!iconsByGroup.containsKey(groupId))
+		{
+			// Someone removed the icon group. Choose a new group.
+			groupId = chooseNewGroupId(iconsByGroup.keySet(), groupId);
+			if (groupId == null)
+			{
+				warningLogger.addWarningMessage(
+						"Unable to find the " + icon.iconType.toString().toLowerCase() + " image group '" + icon.iconGroupId
+								+ "'. There are no " + icon.iconType.toString().toLowerCase() + " icons, so none will be drawn.");
+				// TODO Lock down the edits and remove this free icon.
+			}
+			warningLogger.addWarningMessage("Unable to find the " + icon.iconType.toString().toLowerCase() + " image group '"
+					+ icon.iconGroupId + "'. The group '" + groupId + "' will be used instead.");
+			icon.iconGroupId = groupId;
+		}
+		
+		if (iconsByGroup.get(groupId).size() > 0)
+		{
+			int scaledWidth = icon.size.width;
+			ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(icon.iconIndex % iconsByGroup.get(groupId).size());
+			freeIconsToDraw.add(new IconDrawTask(imageAndMasks, icon.iconType, icon.loc, scaledWidth));
+		}
+	}
+	
 	
 	private IconType centerIconTypeToIconType(CenterIconType type)
 	{
@@ -428,9 +507,9 @@ public class IconDrawer
 	{
 		for (Center center : centers)
 		{
-			if (iconsToDraw.containsKey(center))
+			if (anchoredIconsToDraw.containsKey(center))
 			{
-				iconsToDraw.get(center).clear();
+				anchoredIconsToDraw.get(center).clear();
 			}
 
 			if (trees.containsKey(center.index))
@@ -601,7 +680,7 @@ public class IconDrawer
 	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>();
-		for (Map.Entry<Center, List<IconDrawTask>> entry : iconsToDraw.entrySet())
+		for (Map.Entry<Center, List<IconDrawTask>> entry : anchoredIconsToDraw.entrySet())
 		{
 			if (!entry.getKey().isWater)
 			{
@@ -703,7 +782,7 @@ public class IconDrawer
 			}
 
 			Center center = graph.centers.get(cEdit.index);
-			List<IconDrawTask> tasks = iconsToDraw.get(center);
+			List<IconDrawTask> tasks = anchoredIconsToDraw.get(center);
 			if (tasks != null && tasks.stream().anyMatch(task -> task.type != IconType.trees && task.failedToDraw))
 			{
 				cEdit.icon = null;
@@ -750,7 +829,7 @@ public class IconDrawer
 				{
 					if (addIconDrawTasks)
 					{
-						iconsToDraw.getOrCreate(c).add(task);
+						anchoredIconsToDraw.getOrCreate(c).add(task);
 						centerIcons.put(c.index, new CenterIcon(CenterIconType.City, cityIconTypeForNewMaps, cityName));
 					}
 
@@ -836,7 +915,7 @@ public class IconDrawer
 						if (!isContentBottomTouchingWater(task))
 						{
 							// Draw the image such that it is centered in the center of c.
-							iconsToDraw.getOrCreate(c).add(task);
+							anchoredIconsToDraw.getOrCreate(c).add(task);
 							centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, fileNameRangeId, i));
 						}
 						else
@@ -861,7 +940,7 @@ public class IconDrawer
 							IconDrawTask task = new IconDrawTask(imagesInGroup.get(i), IconType.hills, c.loc, scaledSize);
 							if (!isContentBottomTouchingWater(task))
 							{
-								iconsToDraw.getOrCreate(c).add(task);
+								anchoredIconsToDraw.getOrCreate(c).add(task);
 								centerIcons.put(c.index, new CenterIcon(CenterIconType.Hill, fileNameRangeId, i));
 							}
 							else
@@ -955,7 +1034,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = rand.nextInt(duneImages.size());
-						iconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth));
+						anchoredIconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth));
 						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, groupId, i));
 					}
 				}
@@ -1246,7 +1325,7 @@ public class IconDrawer
 			x += rand.nextGaussian() * scale;
 			y += rand.nextGaussian() * scale;
 
-			iconsToDraw.getOrCreate(center).add(new IconDrawTask(unscaledImagesAndMasks, scaledImageAndMasks, IconType.trees,
+			anchoredIconsToDraw.getOrCreate(center).add(new IconDrawTask(unscaledImagesAndMasks, scaledImageAndMasks, IconType.trees,
 					new Point(x, y), (int) scaledImageAndMasks.image.getWidth(), null));
 		}
 	}
@@ -1316,13 +1395,13 @@ public class IconDrawer
 	 */
 	private Rectangle getBoundingBoxOfIconsForCenter(Center center)
 	{
-		if (iconsToDraw.get(center) == null)
+		if (anchoredIconsToDraw.get(center) == null)
 		{
 			return null;
 		}
 
 		Rectangle bounds = null;
-		for (IconDrawTask iconTask : iconsToDraw.get(center))
+		for (IconDrawTask iconTask : anchoredIconsToDraw.get(center))
 		{
 			Rectangle iconBounds = iconTask.createBounds();
 			if (bounds == null)
