@@ -27,6 +27,10 @@ public class FreeIcon
 	 * If this icon is attached to a Center, then this is the Center's index.
 	 */
 	public Integer centerIndex;
+	/**
+	 * For icons that add multiple per center (currently only trees), this is the density of the icons.
+	 */
+	public double density;
 
 	public FreeIcon(Point loc, IconType iconType, String iconGroupId, int iconIndex)
 	{
@@ -47,6 +51,7 @@ public class FreeIcon
 		FreeIcon copy = new FreeIcon(new Point(loc), iconType, iconGroupId, iconIndex);
 		copy.iconName = iconName;
 		copy.centerIndex = centerIndex;
+		copy.density = density;
 		
 		return copy;
 	}
@@ -67,9 +72,13 @@ public class FreeIcon
 			return false;
 		}
 		FreeIcon other = (FreeIcon) obj;
-		return centerIndex == other.centerIndex && Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex
-				&& Objects.equals(iconName, other.iconName) && iconType == other.iconType && Objects.equals(loc, other.loc);
+		return Objects.equals(centerIndex, other.centerIndex) && Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density)
+				&& Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex
+				&& Objects.equals(iconName, other.iconName) && iconType == other.iconType && Objects.equals(loc, other.loc)
+				&& Objects.equals(size, other.size);
 	}
+
+	
 
 	
 }
