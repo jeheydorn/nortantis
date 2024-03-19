@@ -1,5 +1,6 @@
 package nortantis;
 
+import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -18,8 +19,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	public ImageAndMasks unScaledImageAndMasks;
 	public ImageAndMasks scaledImageAndMasks;
 	Point centerLoc;
-	int scaledWidth;
-	int scaledHeight;
+	IntDimension scaledSize;
 	int yBottom;
 	/**
 	 * A flag to tell which icons could not be drawn because they don't fit in the space they are supposed to be drawn.
@@ -29,58 +29,47 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	String fileName;
 
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, int scaledWidth)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledWidth, null);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null);
 	}
 	
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, int scaledWidth, String fileName)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledWidth, fileName);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName);
 	}
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks,  ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc, int scaledWidth, String fileName)
+	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
 		this.centerLoc = centerLoc;
-		this.scaledWidth = scaledWidth;
+		this.scaledSize = scaledSize;
 		this.type = type;
 
-		double aspectRatio = ((double) unScaledImageAndMasks.image.getWidth()) / unScaledImageAndMasks.image.getHeight();
-		if (scaledImageAndMasks == null)
-		{
-			scaledHeight = (int) (scaledWidth / aspectRatio);
-		}
-		else
-		{
-			// When the icon doesn't need to be scaled, getting the height directly is more accurate.
-			scaledHeight = scaledImageAndMasks.image.getHeight();
-		}
-
-		yBottom = (int) (centerLoc.y + (scaledHeight / 2.0));
+		yBottom = (int) (centerLoc.y + (scaledSize.height / 2.0));
 
 		this.fileName = fileName;
 	}
-
+	
 	public void scaleIcon()
 	{
 		if (scaledImageAndMasks == null)
 		{
-			Image scaledImage = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImageByWidth(unScaledImageAndMasks.image,
-					scaledWidth);
+			Image scaledImage = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImage(unScaledImageAndMasks.image,
+					scaledSize);
 			// The path passed to ImageCache.getInstance insn't important so long as other calls to getScaledImageByWidth
 			// use the same path, since getScaledImageByWidth doesn't load images from disk.
 
 			Image scaledContentMask = ImageCache.getInstance(AssetsPath.getInstallPath())
-					.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateContentMask(), scaledWidth);
+					.getScaledImage(unScaledImageAndMasks.getOrCreateContentMask(), scaledSize);
 
 			Image scaledShadingMask = null;
 			scaledShadingMask = ImageCache.getInstance(AssetsPath.getInstallPath())
-					.getScaledImageByWidth(unScaledImageAndMasks.getOrCreateShadingMask(), scaledWidth);
+					.getScaledImage(unScaledImageAndMasks.getOrCreateShadingMask(), scaledSize);
 
 			IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),
-					unScaledImageAndMasks.getOrCreateContentBounds(), scaledWidth, scaledHeight);
+					unScaledImageAndMasks.getOrCreateContentBounds(), scaledSize.width, scaledSize.height);
 
 			scaledImageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type);
 		}
@@ -88,14 +77,14 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 	public RotatedRectangle createArea()
 	{
-		return new RotatedRectangle(new Rectangle(centerLoc.x - scaledWidth / 2.0, centerLoc.y - scaledHeight / 2.0,
-				scaledWidth, scaledHeight));
+		return new RotatedRectangle(new Rectangle(centerLoc.x - scaledSize.width / 2.0, centerLoc.y - scaledSize.height / 2.0,
+				scaledSize.width, scaledSize.height));
 	}
 
 	public nortantis.geom.Rectangle createBounds()
 	{
-		return new nortantis.geom.Rectangle(centerLoc.x - scaledWidth / 2.0, centerLoc.y - scaledHeight / 2.0, scaledWidth,
-				scaledHeight);
+		return new nortantis.geom.Rectangle(centerLoc.x - scaledSize.width / 2.0, centerLoc.y - scaledSize.height / 2.0, scaledSize.width,
+				scaledSize.height);
 	}
 
 	public boolean overlaps(nortantis.geom.Rectangle bounds)

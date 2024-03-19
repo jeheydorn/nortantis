@@ -125,7 +125,7 @@ public class ImageHelper
 			xSize = 1;
 		return xSize;
 	}
-
+	
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */

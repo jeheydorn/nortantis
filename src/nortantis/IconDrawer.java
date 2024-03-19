@@ -20,6 +20,8 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
+import nortantis.geom.Dimension;
+import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -58,8 +60,8 @@ public class IconDrawer
 	final double maxSizeToDrawGeneratedMountainOrHill;
 	private final double mountainScale;
 	private final double hillScale;
-	private HashMapF<Center, List<IconDrawTask>> anchoredIconsToDraw;
-	private List<IconDrawTask> freeIconsToDraw;
+	private double treeHeightScale;
+	private List<IconDrawTask> iconsToDraw;
 	FreeIconCollection freeIcons;
 	WorldGraph graph;
 	Random rand;
@@ -70,7 +72,6 @@ public class IconDrawer
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
-		anchoredIconsToDraw = new HashMapF<>(() -> new ArrayList<>(1));
 		this.graph = graph;
 		this.rand = rand;
 		this.cityIconTypeForNewMaps = settings.cityIconTypeName;
@@ -85,13 +86,12 @@ public class IconDrawer
 		this.resolutionScale = settings.resolution;
 
 		meanPolygonWidth = findMeanCenterWidth(graph);
-		duneWidth = (int) (meanPolygonWidth * 1.2 * settings.duneScale);
+		duneWidth = (int) (meanPolygonWidth * 1.2 * settings.duneScale); // TODO Change to duneScale and only include scale from settings. Make a function to determine base width like I did for mountains
 		mountainScale = settings.mountainScale;
-		hillScale = settings.hillScale * 0.5;
-		cityScale = meanPolygonWidth * (1.0 / 11.0) * settings.cityScale;
+		hillScale = settings.hillScale;
+		cityScale = meanPolygonWidth * (1.0 / 11.0) * settings.cityScale; // TODO Only include scale from settings. Make a function to determine base width like I did for mountains
+		treeHeightScale = settings.treeHeightScale;
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
-		centerIcons = new HashMap<>();
-		trees = new HashMap<>();
 
 		averageCenterWidthBetweenNeighbors = findMeanCenterWidthBetweenNeighbors();
 	}
@@ -228,7 +228,7 @@ public class IconDrawer
 	}
 
 	// TODO Call this once I've rewritten the code for adding new icons.
-	private void convertToFreeIconsIfNeeded(MapEdits edits, double sizeMultiplyer, double treeHeightScale, MapCreator warningLogger)
+	private void convertToFreeIconsIfNeeded(MapEdits edits, double resolutionScale, MapCreator warningLogger)
 	{
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
@@ -242,26 +242,36 @@ public class IconDrawer
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain)
 				{
-					convertShuffledAnchoredIcon(center, cEdit, mountainImagesById, warningLogger, () -> findScaledMountainSize(center),
-							true);
+					convertShuffledAnchoredIcon(center, cEdit, mountainImagesById, warningLogger, () -> findMountainBaseSize(center),
+							true, resolutionScale);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill)
 				{
-					convertShuffledAnchoredIcon(center, cEdit, hillImagesById, warningLogger, () -> findScaledHillSize(center), false);
+					convertShuffledAnchoredIcon(center, cEdit, hillImagesById, warningLogger, () -> findHillBaseSize(center), false, resolutionScale);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune)
 				{
-					convertShuffledAnchoredIcon(center, cEdit, duneImages, warningLogger, () -> duneWidth, false);
+					convertShuffledAnchoredIcon(center, cEdit, duneImages, warningLogger, () -> duneWidth, false, resolutionScale);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
 					Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconName,
 							warningLogger);
+					
 					if (groupAndName != null)
 					{
 						String groupId = groupAndName.getFirst();
 						String name = groupAndName.getSecond();
-						FreeIcon icon = new FreeIcon(center.loc, centerIconTypeToIconType(cEdit.icon.iconType), groupId, name);
+						
+						Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
+								groupId);
+						
+						int scaledWidth = (int) (cityIcons.get(name).getSecond() * cityScale);
+						ImageAndMasks imageAndMasks = cityIcons.get(name).getFirst();
+						
+						Dimension size = getDimensionsWhenScaledByWidth(imageAndMasks.image.getSize(), scaledWidth);
+
+						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, size, centerIconTypeToIconType(cEdit.icon.iconType), groupId, name);
 						icon.centerIndex = cEdit.index;
 						freeIcons.add(icon);
 					}
@@ -270,11 +280,26 @@ public class IconDrawer
 			}
 		}
 
-		convertTreesToFreeIcons(graph.centers, edits, treeHeightScale);
+		convertTreesToFreeIcons(graph.centers, edits);
+	}
+	
+	public static Dimension getDimensionsWhenScaledByWidth(IntDimension originalDimensions, double scaledWidth)
+	{
+		double aspectRatio = ((double) originalDimensions.height) / originalDimensions.width;
+		double ySize = scaledWidth * aspectRatio;
+		return new Dimension(scaledWidth, ySize);
 	}
 
+	public static Dimension getDimensionsWhenScaledByHeight(IntDimension originalDimensions, double scaledHeight)
+	{
+		double aspectRatioInverse = ((double) originalDimensions.width) / originalDimensions.height;
+		int xSize = (int) (aspectRatioInverse * scaledHeight);
+		return new Dimension(xSize, scaledHeight);
+	}
+
+
 	private void convertShuffledAnchoredIcon(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
-			MapCreator warningLogger, Supplier<Integer> getDrawWidth, boolean placeNearBottom)
+			MapCreator warningLogger, Supplier<Integer> getDrawWidth, boolean placeNearBottom, double resolutionScale)
 	{
 		if (cEdit.icon == null)
 		{
@@ -289,17 +314,19 @@ public class IconDrawer
 		}
 		
 		int scaledWidth = getDrawWidth.get();
+		Dimension size;
+		ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(cEdit.icon.iconIndex % iconsByGroup.get(groupId).size());
+		size = getDimensionsWhenScaledByWidth(imageAndMasks.image.getSize(), scaledWidth);
 		Point loc;
 		if (placeNearBottom)
 		{
-			ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(cEdit.icon.iconIndex % iconsByGroup.get(groupId).size());
 			loc = getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth, center);
 		}
 		else
 		{
 			loc = center.loc;
 		}
-		FreeIcon icon = new FreeIcon(loc, centerIconTypeToIconType(cEdit.icon.iconType), groupId, cEdit.icon.iconIndex);
+		FreeIcon icon = new FreeIcon(resolutionScale, loc, size, centerIconTypeToIconType(cEdit.icon.iconType), groupId, cEdit.icon.iconIndex);
 		icon.centerIndex = cEdit.index;
 		freeIcons.add(icon);
 		cEdit.icon = null;
@@ -309,44 +336,42 @@ public class IconDrawer
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
 	 * done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, double sizeMultiplyer, Collection<Center> centersToUpdateIconsFor,
+	public void addOrUpdateIconsFromEdits(MapEdits edits, double resolutionScale, Collection<Center> centersToUpdateIconsFor,
 			double treeHeightScale, MapCreator warningLogger)
 	{
 		for (FreeIcon icon : edits.freeIcons)
 		{
-			if (icon.iconType == IconType.mountains)
+			if (icon.type == IconType.mountains)
 			{
-				addShuffledFreeIcon(icon, mountainImagesById, warningLogger);
+				addShuffledFreeIcon(icon, warningLogger);
 			}
-			else if (icon.iconType == IconType.hills)
+			else if (icon.type == IconType.hills)
 			{
-				addShuffledFreeIcon(icon, hillImagesById, warningLogger);
+				addShuffledFreeIcon(icon, warningLogger);
 			}
-			else if (icon.iconType == IconType.sand)
+			else if (icon.type == IconType.sand)
 			{
-				addShuffledFreeIcon(icon, duneImages, warningLogger);
+				addShuffledFreeIcon(icon, warningLogger);
 			}
-			else if (icon.iconType == IconType.cities)
+			else if (icon.type == IconType.cities)
 			{
-				Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(icon.iconGroupId, icon.iconName, warningLogger);
+				Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(icon.groupId, icon.iconName, warningLogger);
 				if (groupAndName != null)
 				{
 					// TODO Lock the free icon before changing it.
-					icon.iconGroupId = groupAndName.getFirst();
+					icon.groupId = groupAndName.getFirst();
 					icon.iconName = groupAndName.getSecond();
 
 					Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath)
-							.getIconsWithWidths(IconType.cities, icon.iconGroupId);
+							.getIconsWithWidths(IconType.cities, icon.groupId);
 					ImageAndMasks imageAndMasks = cityImages.get(icon.iconName).getFirst();
-					freeIconsToDraw.add(new IconDrawTask(imageAndMasks, IconType.cities, icon.loc,
+					iconsToDraw.add(new IconDrawTask(imageAndMasks, IconType.cities, icon.getLocationScaled(resolutionScale),
 							(int) (cityImages.get(icon.iconName).getSecond() * cityScale), icon.iconName));
 				}
 			}
-			else if (icon.iconType == IconType.trees)
+			else if (icon.type == IconType.trees)
 			{
-				ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath)
-						.getAllIconGroupsAndMasksForType(IconType.trees);
-				addShuffledFreeIcon(icon, treesById, warningLogger);
+				addShuffledFreeIcon(icon, warningLogger);
 			}
 		}
 	}
@@ -392,16 +417,19 @@ public class IconDrawer
 		return new Tuple2<String, String>(groupId, name);
 	}
 
-	private void addShuffledFreeIcon(FreeIcon icon, ListMap<String, ImageAndMasks> iconsByGroup, MapCreator warningLogger)
+	private void addShuffledFreeIcon(FreeIcon icon, MapCreator warningLogger)
 	{
-		String groupId = icon.iconGroupId;
-		groupId = changeGroupIdIfNeeded(groupId, icon.iconType.toString(), iconsByGroup, warningLogger);
+		 ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(imagesPath)
+					.getAllIconGroupsAndMasksForType(icon.type);
+
+		String groupId = icon.groupId;
+		groupId = changeGroupIdIfNeeded(groupId, icon.type.toString(), iconsByGroup, warningLogger);
 
 		if (iconsByGroup.get(groupId).size() > 0)
 		{
 			int scaledWidth = icon.size.width;
 			ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(icon.iconIndex % iconsByGroup.get(groupId).size());
-			freeIconsToDraw.add(new IconDrawTask(imageAndMasks, icon.iconType, icon.loc, scaledWidth));
+			iconsToDraw.add(new IconDrawTask(imageAndMasks, icon.type, icon.loc, scaledWidth));
 		}
 	}
 
@@ -766,7 +794,7 @@ public class IconDrawer
 	 * 
 	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
 	 */
-	public List<IconDrawTask> addOrUnmarkCities(double sizeMultiplyer, boolean addIconDrawTasks)
+	public List<IconDrawTask> addOrUnmarkCities(boolean addIconDrawTasks)
 	{
 		Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
 				cityIconTypeForNewMaps);
@@ -870,34 +898,35 @@ public class IconDrawer
 					// is drawn at.
 					int i = rand.nextInt(imagesInRange.size());
 
-					int scaledSize = findScaledMountainSize(c);
+					double baseWidth = findMountainBaseSize(c);
 
 					// Make sure the image will be at least 1 pixel wide.
-					if (scaledSize >= 1)
-					{
-						IconDrawTask task = createIconDrawTaskNearBottomOfCenter(imagesInRange.get(i), IconType.mountains, c, scaledSize);
+					
+					Point loc = getImageCenterToDrawImageNearBottomOfCenter(imagesInRange.get(i).image, baseWidth, c);
+					Dimension size = getDimensionsWhenScaledByWidth(imagesInRange.get(i).image.getSize(), baseWidth);
+					FreeIcon icon = new FreeIcon(resolutionScale, loc, size, IconType.mountains, fileNameRangeId, i);
+					
+					IconDrawTask task = icon.toIconDrawTask(imagesPath, resolutionScale, mountainScale);
 
-						if (!isContentBottomTouchingWater(task))
-						{
-							// Draw the image such that it is centered in the center of c.
-							anchoredIconsToDraw.getOrCreate(c).add(task);
-							centerIcons.put(c.index, new CenterIcon(CenterIconType.Mountain, fileNameRangeId, i));
-						}
-						else
-						{
-							c.isMountain = false;
-						}
+					if (!isContentBottomTouchingWater(task))
+					{
+						freeIcons.add(icon);
+					}
+					else
+					{
+						c.isMountain = false;
 					}
 				}
 				else if (c.isHill)
 				{
+					// TODO Do what I did with mountains to hills too
 					List<ImageAndMasks> imagesInGroup = hillImagesById.get(fileNameRangeId);
 
 					if (imagesInGroup != null && !imagesInGroup.isEmpty())
 					{
 						int i = rand.nextInt(imagesInGroup.size());
 
-						int scaledSize = findScaledHillSize(c);
+						int scaledSize = findHillBaseSize(c);
 
 						// Make sure the image will be at least 1 pixel wide.
 						if (scaledSize >= 1)
@@ -919,15 +948,9 @@ public class IconDrawer
 		}
 	}
 
-	private IconDrawTask createIconDrawTaskNearBottomOfCenter(ImageAndMasks imageAndMasks, IconType type, Center c, int scaledWidth)
+	private Point getImageCenterToDrawImageNearBottomOfCenter(Image image, double scaledWidth, Center c)
 	{
-		Point drawAt = getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth, c);
-		return new IconDrawTask(imageAndMasks, type, drawAt, scaledWidth);
-	}
-
-	private Point getImageCenterToDrawImageNearBottomOfCenter(Image image, int scaledWidth, Center c)
-	{
-		int scaledHeight = ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth);
+		double scaledHeight = getDimensionsWhenScaledByWidth(image.getSize(), scaledWidth).height;
 		Corner bottom = c.findBottom();
 		if (bottom == null)
 		{
@@ -937,18 +960,16 @@ public class IconDrawer
 		return new Point(c.loc.x, bottom.loc.y - (scaledHeight / 2) - (c.findHight() / 4));
 	}
 
-	private int findScaledMountainSize(Center c)
+	private double findMountainBaseSize(Center c)
 	{
 		// Find the center's size along the x axis.
-		double cSize = findCenterWidthBetweenNeighbors(c);
-		return (int) (cSize * mountainScale);
+		return findCenterWidthBetweenNeighbors(c);
 	}
 
-	private int findScaledHillSize(Center c)
+	private double findHillBaseSize(Center c)
 	{
-		// Find the center's size along the x axis.
-		double cSize = findCenterWidthBetweenNeighbors(c);
-		return (int) (cSize * hillScale);
+		// Find the center's size along the x axis and reduce it to make hills smaller than mountains.
+		return findCenterWidthBetweenNeighbors(c) * 0.5;
 	}
 
 	public void addSandDunes()
@@ -1000,17 +1021,16 @@ public class IconDrawer
 
 						int i = rand.nextInt(duneImages.size());
 						anchoredIconsToDraw.getOrCreate(c).add(new IconDrawTask(duneImages.get(i), IconType.sand, c.loc, duneWidth));
-						centerIcons.put(c.index, new CenterIcon(CenterIconType.Dune, groupId, i));
+						freeIcons.add(new FreeIcon(c.loc, IconType.sand, groupId, c.index));
 					}
 				}
 			}
 		}
 	}
 
-	public void addTrees(double treeHeightScale)
+	public void addTrees()
 	{
 		addCenterTrees();
-		convertTreesToFreeIcons(graph.centers, treeHeightScale);
 	}
 
 	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
@@ -1109,7 +1129,7 @@ public class IconDrawer
 	/**
 	 * Draws all trees in this.trees.
 	 */
-	public void convertTreesToFreeIcons(Collection<Center> centersToConvert, MapEdits edits, double treeHeightScale)
+	public void convertTreesToFreeIcons(Collection<Center> centersToConvert, MapEdits edits)
 	{
 		// Load the images and masks.
 		ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees);
@@ -1137,7 +1157,7 @@ public class IconDrawer
 			{
 				if (cTrees.treeType != null && treesById.containsKey(cTrees.treeType))
 				{
-					drawTreesAtCenterAndCorners(graph, cTrees.density * densityScale, treesById.get(cTrees.treeType), c, treeHeightScale);
+					drawTreesAtCenterAndCorners(graph, cTrees.density * densityScale, treesById.get(cTrees.treeType), c);
 				}
 			}
 			edits.centerEdits.get(c.index).trees = null;
@@ -1145,11 +1165,11 @@ public class IconDrawer
 	}
 
 	private void drawTreesAtCenterAndCorners(WorldGraph graph, double density, List<ImageAndMasks> unscaledImages,
-			Center center, double treeHeightScale)
+			Center center)
 	{
 		CenterTrees cTrees = trees.get(center.index);
 		Random rand = new Random(cTrees.randomSeed);
-		drawTrees(graph, unscaledImages, scaledImages, center.loc, density, center, rand, treeHeightScale);
+		drawTrees(graph, unscaledImages, center.loc, density, center, rand);
 
 		// Draw trees at the neighboring corners too.
 		// Note that corners use their own Random instance because the random seed of that random needs to not depend on the center or else
@@ -1158,7 +1178,7 @@ public class IconDrawer
 		{
 			if (shouldCenterDrawTreesForCorner(center, corner))
 			{
-				drawTrees(graph, unscaledImages, scaledImages, corner.loc, density, center, rand, treeHeightScale);
+				drawTrees(graph, unscaledImages, scaledImages, corner.loc, density, center, rand);
 			}
 		}
 	}
@@ -1231,14 +1251,9 @@ public class IconDrawer
 		return cSize;
 	}
 
-	private void drawTrees(WorldGraph graph, List<ImageAndMasks> unscaledImages, List<ImageAndMasks> scaledImages, Point loc,
+	private void drawTrees(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc,
 			double forestDensity, Center center, Random rand)
-	{
-		if (scaledImages == null || scaledImages.isEmpty())
-		{
-			return;
-		}
-		
+	{	
 		// Make the tree images small. I make them all the same height.
 		int scaledHeight = (int) (averageCenterWidthBetweenNeighbors * treeHeightScale);
 

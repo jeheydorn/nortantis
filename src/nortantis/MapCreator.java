@@ -269,7 +269,7 @@ public class MapCreator
 
 		Image coastShading;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, sizeMultiplier, mapSnippet,
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, mapSnippet,
 					landMask, mapParts.background, null, centersToDraw, drawBounds, false);
 			mapSnippet = tuple.getFirst();
 			coastShading = tuple.getSecond();
@@ -315,7 +315,7 @@ public class MapCreator
 		// Draw icons
 		List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds);
 
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, sizeMultiplier, landMask, iconsThatDrew,
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew,
 				landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw,
 				drawBounds);
 
@@ -759,7 +759,7 @@ public class MapCreator
 	}
 
 	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts,
-			WorldGraph graph, Background background, double sizeMultiplier)
+			WorldGraph graph, Background background, double resolutionScaled)
 	{
 		applyRegionEdits(graph, settings.edits);
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
@@ -805,7 +805,7 @@ public class MapCreator
 		}
 		else
 		{
-			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, graph.centers, settings.treeHeightScale, this);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, resolutionScaled, graph.centers, settings.treeHeightScale, this);
 		}
 
 		checkForCancel();
@@ -823,7 +823,7 @@ public class MapCreator
 
 		Image coastShading;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, map, landMask,
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, resolutionScaled, map, landMask,
 					background, null, null, null, true);
 			map = tuple.getFirst();
 			coastShading = tuple.getSecond();
@@ -841,6 +841,7 @@ public class MapCreator
 			{
 				Painter g = map.createPainter();
 				g.setColor(settings.coastlineColor);
+				double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
@@ -868,10 +869,10 @@ public class MapCreator
 			iconDrawer.addSandDunes();
 
 			Logger.println("Adding trees.");
-			iconDrawer.addTrees(settings.treeHeightScale);
+			iconDrawer.addTrees();
 
 			Logger.println("Adding cities.");
-			cities = iconDrawer.addOrUnmarkCities(sizeMultiplier, true);
+			cities = iconDrawer.addOrUnmarkCities(true);
 		}
 
 		if (settings.drawRoads)
@@ -898,7 +899,7 @@ public class MapCreator
 
 		checkForCancel();
 
-		Image oceanBlur = createOceanEffects(settings, graph, sizeMultiplier, landMask, null, null);
+		Image oceanBlur = createOceanEffects(settings, graph, settings.resolution, landMask, null, null);
 		if (oceanBlur != null)
 		{
 			Logger.println("Adding effects to ocean along coastlines.");
@@ -911,6 +912,7 @@ public class MapCreator
 		{
 			Painter g = map.createPainter(DrawQuality.High);
 			g.setColor(settings.coastlineColor);
+			double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
 
@@ -921,7 +923,7 @@ public class MapCreator
 		landBackground = null;
 
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, sizeMultiplier, landMask, iconsThatDrew,
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsThatDrew,
 				background.land, background.ocean, background, oceanBlur, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
@@ -941,14 +943,14 @@ public class MapCreator
 		return new Tuple4<>(map, textBackground, mountainGroups, cities);
 	}
 
-	private Image updateLandMaskAndCreateTextBackground(MapSettings settings, WorldGraph graph, double sizeMultiplier, Image landMask,
+	private Image updateLandMaskAndCreateTextBackground(MapSettings settings, WorldGraph graph, Image landMask,
 			List<IconDrawTask> iconsThatDrew, Image landTexture, Image oceanTexture, Background background, Image oceanBlur,
 			Image coastShading, IconDrawer iconDrawer, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		iconDrawer.drawContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
 		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
-		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, sizeMultiplier, textBackground, landMask, background,
+		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask, background,
 				coastShading, centersToDraw, drawBounds, false).getFirst();
 		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanBlur != null)
@@ -972,10 +974,11 @@ public class MapCreator
 	 * Otherwise, it returns mapOrSnippet in the first piece of the tuple unchanged. The second piece is the coast shading mask, which can
 	 * be re-used for performance.
 	 */
-	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double sizeMultiplier,
+	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled,
 			Image mapOrSnippet, Image landMask, Background background, Image coastShading, Collection<Center> centersToDraw,
 			Rectangle drawBounds, boolean addLoggingEntry)
 	{
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
 
 		final float scaleForDarkening = coastlineShadingScale;
@@ -1046,13 +1049,14 @@ public class MapCreator
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private static Image createOceanEffects(MapSettings settings, WorldGraph graph, double sizeMultiplier, Image landMask,
+	private static Image createOceanEffects(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
 		{
 			drawBounds = graph.bounds;
 		}
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
 
 		Image oceanEffects = null;
 		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)

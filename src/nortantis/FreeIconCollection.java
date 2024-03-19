@@ -43,6 +43,6 @@ public class FreeIconCollection
 	
 	public boolean hasTreesForCenter(int centerIndex)
 	{
-		return anchoredIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>()).stream().anyMatch((icon) -> icon.iconType == IconType.trees);
+		return anchoredIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>()).stream().anyMatch((icon) -> icon.type == IconType.trees);
 	}
 }

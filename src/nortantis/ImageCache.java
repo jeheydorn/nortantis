@@ -13,8 +13,9 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
+import org.imgscalr.Scalr.Method;
 
-import nortantis.geom.Dimension;
+import nortantis.geom.IntDimension;
 import nortantis.platform.Image;
 import nortantis.util.AssetsPath;
 import nortantis.util.ConcurrentHashMapF;
@@ -35,7 +36,7 @@ public class ImageCache
 	/**
 	 * Maps original images, to scaled width, to scaled images.
 	 */
-	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Dimension, Image>> scaledCache;
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
 	 * Maps file path (or any string key) to images.
@@ -98,37 +99,15 @@ public class ImageCache
 	 *            The desired width
 	 * @return A scaled image
 	 */
-	public Image getScaledImageByWidth(Image icon, int width)
+	public Image getScaledImage(Image icon, IntDimension size)
 	{
-		Dimension dimension = new Dimension(width, ImageHelper.getHeightWhenScaledByWidth(icon, width));
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
 		// but if that did happen it would only results in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(dimension,
-				() -> ImageHelper.scaleByWidth(icon, width));
-	}
-
-	/**
-	 * Either looks up in the cache, or creates, a version of the given icon with the given height.
-	 * 
-	 * @param icon
-	 *            Original image (not scaled)
-	 * @param width
-	 *            The desired width
-	 * @return A scaled image
-	 */
-	public Image getScaledImageByHeight(Image icon, int height)
-	{
-		Dimension dimension = new Dimension(ImageHelper.getWidthWhenScaledByHeight(icon, height), height);
-		// There is a small chance the 2 different threads might both add the
-		// same image at the same time,
-		// but if that did happen it would only results in a little bit of
-		// duplicated work, not a functional
-		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(dimension,
-				() -> ImageHelper.scaleByHeight(icon, height));
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size,
+				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
 	}
 
 	public Image getImageFromFile(Path path)

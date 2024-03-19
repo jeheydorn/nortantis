@@ -22,6 +22,11 @@ public class Dimension implements Comparable<Dimension>
 	{
 		return width + ", " + height;
 	}
+	
+	public Dimension mult(double scale)
+	{
+		return new Dimension(width * scale, height * scale);
+	}
 
 
 	@Override
