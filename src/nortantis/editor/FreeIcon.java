@@ -1,20 +1,28 @@
 package nortantis.editor;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+
+import org.apache.commons.lang3.NotImplementedException;
 
 import nortantis.IconDrawTask;
+import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
+import nortantis.WarningLogger;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
+import nortantis.platform.Image;
+import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
 
 public class FreeIcon
 {
-	public IconType type;
+	public final IconType type;
 	public String groupId;
 	/**
 	 * When moduloed by the number of icons in a group, this gives an index into the set of icons.
@@ -30,9 +38,9 @@ public class FreeIcon
 	 */
 	public Point locationResolutionInvariant;
 	/**
-	 * Resolution invariant size, meaning this is the size of the icon at 100% resolution, before integer truncation.
+	 * A factor in determining icon size
 	 */
-	public Dimension sizeResolutionInvariant;
+	public double scale;
 	/**
 	 * If this icon is attached to a Center, then this is the Center's index.
 	 */
@@ -42,24 +50,31 @@ public class FreeIcon
 	 */
 	public double density;
 
-	public FreeIcon(double resolutionScale, Point loc, Dimension size, IconType iconType, String iconGroupId, int iconIndex)
+	/**
+	 * @param scale Scale before applying resolutionScale or icon-type level scaling.
+	 */
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String iconGroupId, int iconIndex)
 	{
+		this(type);
 		double resolutionInverse = (1.0 / resolutionScale);
 		this.locationResolutionInvariant = loc.mult(resolutionInverse);
-		this.sizeResolutionInvariant = size.mult(resolutionInverse);
-		this.type = iconType;
+		this.scale = scale;
 		this.groupId = iconGroupId;
 		this.iconIndex = iconIndex;
 	}
 
-	public FreeIcon(double resolutionScale, Point loc, Dimension size, IconType iconType, String iconGroupId, String iconName)
+	/**
+	 * @param scale Scale before applying resolutionScale or icon-type level scaling.
+	 */
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String iconGroupId, String iconName)
 	{
-		this(resolutionScale, loc, size, iconType, iconGroupId, -1);
+		this(resolutionScale, loc, scale, type, iconGroupId, -1);
 		this.iconName = iconName;
 	}
 
-	private FreeIcon()
+	private FreeIcon(IconType type)
 	{
+		this.type = type;
 	}
 
 	/**
@@ -67,40 +82,68 @@ public class FreeIcon
 	 * 
 	 * @return
 	 */
-	public Point getLocationScaled(double resolutionScale)
+	public Point getScaledLocation(double resolutionScale)
 	{
 		return locationResolutionInvariant.mult(resolutionScale);
 	}
 
-	public IntDimension getSizeScaled(double resolutionScale, double additionalSizeScale)
+	public IconDrawTask toIconDrawTask(String imagesPath, double resolutionScale, double typeLevelScale, double baseWidthOrHeight)
 	{
-		return new IntDimension((int) Math.round(sizeResolutionInvariant.width * resolutionScale * additionalSizeScale),
-				(int) Math.round(sizeResolutionInvariant.height * resolutionScale * additionalSizeScale));
+		if (isScaledByWidthRatherThanHeight())
+		{
+			return toIconDrawTaskUsingWidth(imagesPath, resolutionScale, typeLevelScale, baseWidthOrHeight);
+		}
+		else
+		{
+			return toIconDrawTaskUsingHeight(imagesPath, resolutionScale, typeLevelScale, baseWidthOrHeight);
+		}
+	}
+	
+	private boolean isScaledByWidthRatherThanHeight()
+	{
+		return type != IconType.trees;
 	}
 
-	public IconDrawTask toIconDrawTask(String imagesPath, double resolutionScale, double additionalSizeScale)
+	private IconDrawTask toIconDrawTaskUsingHeight(String imagesPath, double resolutionScale, double typeLevelScale, double baseHeight)
+	{
+		if (iconName != null && !iconName.isEmpty())
+		{
+			throw new NotImplementedException("Named icon drawing by height is not implemented since it's only used for trees.");
+		}
+		else
+		{
+			ImageAndMasks imageAndMasks = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId)
+					.get(iconIndex);
+			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseHeight).toIntDimension();
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
+		}
+	}
+	
+	private IconDrawTask toIconDrawTaskUsingWidth(String imagesPath, double resolutionScale, double typeLevelScale, double baseWidth)
 	{
 		if (iconName != null && !iconName.isEmpty())
 		{
 			Map<String, Tuple2<ImageAndMasks, Integer>> iconsWithWidths = ImageCache.getInstance(imagesPath)
 					.getIconsWithWidths(IconType.cities, groupId);
 			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName).getFirst();
-			return new IconDrawTask(imageAndMasks, type, getLocationScaled(resolutionScale), getSizeScaled(resolutionScale, additionalSizeScale), iconName);
+			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseWidth).toIntDimension();
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName);
 		}
 		else
 		{
 			ImageAndMasks imageAndMasks = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId)
 					.get(iconIndex);
-			return new IconDrawTask(imageAndMasks, type, getLocationScaled(resolutionScale), getSizeScaled(resolutionScale, additionalSizeScale));
+			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseWidth).toIntDimension();
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
 	}
 
+
 	public FreeIcon deepCopy()
 	{
-		FreeIcon copy = new FreeIcon();
-		copy.type = type;
+		FreeIcon copy = new FreeIcon(type);
 		copy.locationResolutionInvariant = locationResolutionInvariant;
-		copy.sizeResolutionInvariant = sizeResolutionInvariant;
+		copy.scale = scale;
 		copy.iconIndex = iconIndex;
 		copy.groupId = groupId;
 		copy.iconName = iconName;
@@ -109,7 +152,7 @@ public class FreeIcon
 
 		return copy;
 	}
-
+	
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -129,8 +172,8 @@ public class FreeIcon
 		return Objects.equals(centerIndex, other.centerIndex) && Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density)
 				&& Objects.equals(groupId, other.groupId) && iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
 				&& Objects.equals(locationResolutionInvariant, other.locationResolutionInvariant)
-				&& Objects.equals(sizeResolutionInvariant, other.sizeResolutionInvariant) && type == other.type;
+				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
 
-
+	
 }

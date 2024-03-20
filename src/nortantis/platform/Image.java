@@ -55,7 +55,7 @@ public abstract class Image
 	
 	public abstract int getHeight();
 	
-	public IntDimension getSize()
+	public IntDimension size()
 	{
 		return new IntDimension(getWidth(), getHeight());
 	}

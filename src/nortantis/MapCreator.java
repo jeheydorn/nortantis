@@ -41,7 +41,7 @@ import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
-public class MapCreator
+public class MapCreator implements WarningLogger
 {
 	private final double regionBlurColorScale = 0.55;
 	/**
@@ -222,7 +222,7 @@ public class MapCreator
 			// happen if you really mash the undo button while drawing ocean, so I'm leaving this hack here for now.
 			Rectangle bounds = replaceBounds;
 			Set<Center> centersInBounds = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(bounds), centersChanged.iterator().next());
-			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, sizeMultiplier, centersInBounds, settings.treeHeightScale, this);
+			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersInBounds, settings.treeHeightScale, this);
 		}
 
 
@@ -759,7 +759,7 @@ public class MapCreator
 	}
 
 	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts,
-			WorldGraph graph, Background background, double resolutionScaled)
+			WorldGraph graph, Background background, double resolutionScale)
 	{
 		applyRegionEdits(graph, settings.edits);
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
@@ -805,7 +805,7 @@ public class MapCreator
 		}
 		else
 		{
-			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, resolutionScaled, graph.centers, settings.treeHeightScale, this);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, settings.treeHeightScale, this);
 		}
 
 		checkForCancel();
@@ -823,7 +823,7 @@ public class MapCreator
 
 		Image coastShading;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, resolutionScaled, map, landMask,
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, resolutionScale, map, landMask,
 					background, null, null, null, true);
 			map = tuple.getFirst();
 			coastShading = tuple.getSecond();
@@ -841,7 +841,7 @@ public class MapCreator
 			{
 				Painter g = map.createPainter();
 				g.setColor(settings.coastlineColor);
-				double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+				double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScale);
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
@@ -872,7 +872,7 @@ public class MapCreator
 			iconDrawer.addTrees();
 
 			Logger.println("Adding cities.");
-			cities = iconDrawer.addOrUnmarkCities(true);
+			cities = iconDrawer.addOrUnmarkCities();
 		}
 
 		if (settings.drawRoads)
@@ -912,7 +912,7 @@ public class MapCreator
 		{
 			Painter g = map.createPainter(DrawQuality.High);
 			g.setColor(settings.coastlineColor);
-			double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+			double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScale);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
 

@@ -1667,10 +1667,10 @@ public class ImageHelper
 	 */
 	public static void fillInTarget(Image target, Image source, int lowThreshold, int highThreshold, int fillValue)
 	{
-		if (!target.getSize().equals(source.getSize()))
+		if (!target.size().equals(source.size()))
 		{
 			throw new IllegalArgumentException(
-					"Source and target must be the same size. Source size: " + source.getSize() + ", target size: " + target.getSize());
+					"Source and target must be the same size. Source size: " + source.size() + ", target size: " + target.size());
 		}
 
 		for (int y = 0; y < source.getHeight(); y++)
@@ -1699,10 +1699,10 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported target image type for subtracting from: " + toSubtractFrom.getType());
 		}
 
-		if (!toThreshold.getSize().equals(toSubtractFrom.getSize()))
+		if (!toThreshold.size().equals(toSubtractFrom.size()))
 		{
 			throw new IllegalArgumentException("Images for thresholding and subtracting must be the same size. First size: "
-					+ toThreshold.getSize() + ", second size: " + toSubtractFrom.getSize());
+					+ toThreshold.size() + ", second size: " + toSubtractFrom.size());
 		}
 
 		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
@@ -1730,10 +1730,10 @@ public class ImageHelper
 			throw new IllegalArgumentException("Unsupported target image type for adding to: " + toAddTo.getType());
 		}
 
-		if (!toThreshold.getSize().equals(toAddTo.getSize()))
+		if (!toThreshold.size().equals(toAddTo.size()))
 		{
 			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: "
-					+ toThreshold.getSize() + ", second size: " + toAddTo.getSize());
+					+ toThreshold.size() + ", second size: " + toAddTo.size());
 		}
 
 		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->
