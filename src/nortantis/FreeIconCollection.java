@@ -15,20 +15,29 @@ public class FreeIconCollection
 	/**
 	 * Maps from Center index to lists of icons that are anchored to that Center.
 	 */
-	HashMapF<Integer, List<FreeIcon>> anchoredIcons;
-	List<FreeIcon> nonAnchoredIcons;
+	private HashMapF<Integer, FreeIcon> anchoredNonTreeIcons;
+	private HashMapF<Integer, List<FreeIcon>> anchoredTreeIcons;
+	private List<FreeIcon> nonAnchoredIcons;
 	
 	FreeIconCollection()
 	{
-		anchoredIcons = new HashMapF<>();
+		anchoredNonTreeIcons = new HashMapF<>();
+		anchoredTreeIcons = new HashMapF<>();
 		nonAnchoredIcons = new ArrayList<>();
 	}
 	
-	public void add(FreeIcon icon)
+	public void addOrReplace(FreeIcon icon)
 	{
 		if (icon.centerIndex != null)
 		{
-			anchoredIcons.getOrCreate(icon.centerIndex, () -> new ArrayList<FreeIcon>()).add(icon);
+			if (icon.type == IconType.trees)
+			{
+				anchoredTreeIcons.getOrCreate(icon.centerIndex, () -> new ArrayList<FreeIcon>()).add(icon);
+			}
+			else
+			{
+				anchoredNonTreeIcons.put(icon.centerIndex, icon);
+			}
 		}
 		else
 		{
@@ -36,13 +45,21 @@ public class FreeIconCollection
 		}
 	}
 	
-	public List<FreeIcon> getForCenter(int centerIndex)
+	public FreeIcon getNonTree(int centerIndex)
 	{
-		return anchoredIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>());
+		return anchoredNonTreeIcons.get(centerIndex);
 	}
 	
-	public boolean hasTreesForCenter(int centerIndex)
+	public void clearTrees(int centerIndex)
 	{
-		return anchoredIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>()).stream().anyMatch((icon) -> icon.type == IconType.trees);
+		if (anchoredTreeIcons.containsKey(centerIndex))
+		{
+			anchoredTreeIcons.get(centerIndex).clear();
+		}
+	}
+	
+	public boolean hasTrees(int centerIndex)
+	{
+		return !anchoredTreeIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>()).isEmpty();
 	}
 }
