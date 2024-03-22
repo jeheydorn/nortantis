@@ -51,7 +51,8 @@ public class FreeIcon
 	public double density;
 
 	/**
-	 * @param scale Scale before applying resolutionScale or icon-type level scaling.
+	 * @param scale
+	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String iconGroupId, int iconIndex)
 	{
@@ -64,7 +65,8 @@ public class FreeIcon
 	}
 
 	/**
-	 * @param scale Scale before applying resolutionScale or icon-type level scaling.
+	 * @param scale
+	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String iconGroupId, String iconName)
 	{
@@ -87,6 +89,20 @@ public class FreeIcon
 		return locationResolutionInvariant.mult(resolutionScale);
 	}
 
+	/**
+	 * Converts a free icon to an icon draw task.
+	 * 
+	 * @param imagesPath
+	 *            Either no or empty, or a custom images folder
+	 * @param resolutionScale
+	 *            MapSettings.resolution that we're currently drawing at.
+	 * @param typeLevelScale
+	 *            The scaling from the sliders that scale all icons of a type.
+	 * @param baseWidthOrHeight
+	 *            The width or height (which is used depends on the type of icon) of the icon before type-level scaling. Should already be
+	 *            adjusted for resolution..
+	 * @return a new IconDrawTask.
+	 */
 	public IconDrawTask toIconDrawTask(String imagesPath, double resolutionScale, double typeLevelScale, double baseWidthOrHeight)
 	{
 		if (isScaledByWidthRatherThanHeight())
@@ -98,7 +114,7 @@ public class FreeIcon
 			return toIconDrawTaskUsingHeight(imagesPath, resolutionScale, typeLevelScale, baseWidthOrHeight);
 		}
 	}
-	
+
 	private boolean isScaledByWidthRatherThanHeight()
 	{
 		return type != IconType.trees;
@@ -114,11 +130,13 @@ public class FreeIcon
 		{
 			ImageAndMasks imageAndMasks = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId)
 					.get(iconIndex);
-			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseHeight).toIntDimension();
+			IntDimension drawSize = IconDrawer
+					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseHeight)
+					.toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
 	}
-	
+
 	private IconDrawTask toIconDrawTaskUsingWidth(String imagesPath, double resolutionScale, double typeLevelScale, double baseWidth)
 	{
 		if (iconName != null && !iconName.isEmpty())
@@ -126,14 +144,16 @@ public class FreeIcon
 			Map<String, Tuple2<ImageAndMasks, Integer>> iconsWithWidths = ImageCache.getInstance(imagesPath)
 					.getIconsWithWidths(IconType.cities, groupId);
 			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName).getFirst();
-			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseWidth).toIntDimension();
+			IntDimension drawSize = IconDrawer
+					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName);
 		}
 		else
 		{
 			ImageAndMasks imageAndMasks = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId)
 					.get(iconIndex);
-			IntDimension drawSize = IconDrawer.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseWidth).toIntDimension();
+			IntDimension drawSize = IconDrawer
+					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
 	}
@@ -152,7 +172,7 @@ public class FreeIcon
 
 		return copy;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -175,5 +195,5 @@ public class FreeIcon
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
 
-	
+
 }

@@ -468,11 +468,6 @@ public abstract class MapUpdater
 						initializeEdgeEditsIfEmpty(settings.edits);
 					}
 
-					if (mapParts != null)
-					{
-						mapParts.iconDrawer.removeIconEditsThatFailedToDraw(settings.edits, mapParts.graph);
-					}
-
 					MapUpdate next = combineAndGetNextUpdateToDraw();
 
 					if (updateType != UpdateType.ReprocessBooks)

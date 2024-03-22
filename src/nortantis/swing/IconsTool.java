@@ -738,15 +738,7 @@ public class IconsTool extends EditorTool
 					}
 
 					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
-					// Only add the city if it will be drawn. That way, we don't set an undo point for a city that won't draw.
-					// Note that other icons types can have this problem, but IconDrawer.removeIconEditsThatFailedToDraw will remove the
-					// icon
-					// from the edits after the draw. I originally added this fix for cities before creating that method, but I'm leaving it
-					// in place to save creating an extra undo point here, although it might not be necessary.
-					if (updater.mapParts.iconDrawer.doesCityFitOnLand(center, new CenterIcon(CenterIconType.City, cityType, cityName)))
-					{
-						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
-					}
+					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
 				}
 			}
 			else
