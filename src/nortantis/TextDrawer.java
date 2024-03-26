@@ -178,7 +178,7 @@ public class TextDrawer
 				cityLoc.add(city.centerLoc);
 				String cityName = nameCreator.generateNameOfType(TextType.City, nameCreator.sampleCityTypesForCityFileName(city.fileName),
 						true);
-				double riseOffset = city.scaledHeight / 2 + (cityYNameOffset * settings.resolution);
+				double riseOffset = city.scaledSize.height / 2 + (cityYNameOffset * settings.resolution);
 				drawNameRotated(map, p, graph, cityName, cityLoc, riseOffset, true, TextType.City);
 			}
 

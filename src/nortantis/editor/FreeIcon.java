@@ -74,7 +74,7 @@ public class FreeIcon
 		this.iconName = iconName;
 	}
 
-	private FreeIcon(IconType type)
+	public FreeIcon(IconType type)
 	{
 		this.type = type;
 	}
@@ -174,6 +174,12 @@ public class FreeIcon
 	}
 
 	@Override
+	public int hashCode()
+	{
+		return Objects.hash(centerIndex, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
+	}
+
+	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
@@ -194,6 +200,8 @@ public class FreeIcon
 				&& Objects.equals(locationResolutionInvariant, other.locationResolutionInvariant)
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
+
+	
 
 
 }

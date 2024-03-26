@@ -1,6 +1,7 @@
 package nortantis;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import nortantis.graph.voronoi.Center;
@@ -10,7 +11,7 @@ import nortantis.editor.FreeIcon;
 /**
  * Allows fast lookup of FreeIcons.
  */
-public class FreeIconCollection
+public class FreeIconCollection implements Iterable<FreeIcon>
 {
 	/**
 	 * Maps from Center index to lists of icons that are anchored to that Center.
@@ -61,5 +62,101 @@ public class FreeIconCollection
 	public boolean hasTrees(int centerIndex)
 	{
 		return !anchoredTreeIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>()).isEmpty();
+	}
+	
+	@Override
+	public Iterator<FreeIcon> iterator()
+	{
+		return new Iterator<FreeIcon>()
+		{
+			Iterator<FreeIcon> anchoredNonTreeIconsIterator = anchoredNonTreeIcons.values().iterator();
+			Iterator<List<FreeIcon>> anchoredTreeIconsIterator = anchoredTreeIcons.values().iterator();
+			Iterator<FreeIcon> treesIterator = anchoredTreeIconsIterator.hasNext() ? anchoredTreeIconsIterator.next().iterator() : null;
+			Iterator<FreeIcon> nonAnchoredIconsIterator = nonAnchoredIcons.iterator();
+			
+			@Override
+			public FreeIcon next()
+			{
+				if (anchoredNonTreeIconsIterator.hasNext())
+				{
+					return anchoredNonTreeIconsIterator.next();
+				}
+				
+				if (treesIterator != null)
+				{
+					if (treesIterator.hasNext())
+					{
+						return treesIterator.next();
+					}
+					
+					while (treesIterator != null && !treesIterator.hasNext())
+					{
+						if (anchoredTreeIconsIterator.hasNext())
+						{
+							treesIterator = anchoredTreeIconsIterator.next().iterator();
+						}
+						else
+						{
+							treesIterator = null;
+						}
+					}
+					
+					if (treesIterator != null && treesIterator.hasNext())
+					{
+						return treesIterator.next();
+					}
+					
+				}
+				
+				if (nonAnchoredIconsIterator.hasNext())
+				{
+					return nonAnchoredIconsIterator.next();
+				}
+				
+				return null;
+			}
+			
+			@Override
+			public boolean hasNext()
+			{
+				if (anchoredNonTreeIconsIterator.hasNext())
+				{
+					return true;
+				}
+				
+				if (treesIterator != null)
+				{
+					if (treesIterator.hasNext())
+					{
+						return true;
+					}
+					
+					while (treesIterator != null && !treesIterator.hasNext())
+					{
+						if (anchoredTreeIconsIterator.hasNext())
+						{
+							treesIterator = anchoredTreeIconsIterator.next().iterator();
+						}
+						else
+						{
+							treesIterator = null;
+						}
+					}
+					
+					if (treesIterator != null && treesIterator.hasNext())
+					{
+						return true;
+					}
+					
+				}
+				
+				if (nonAnchoredIconsIterator.hasNext())
+				{
+					return true;
+				}
+				
+				return false;
+			}
+		};
 	}
 }

@@ -69,6 +69,19 @@ public class Point implements Comparable<Point>, Serializable
 		return "(" + x + ", " + y + ")";
 	}
 
+	public String toJson()
+	{
+		return "(" + x + ", " + y + ")";
+	}
+	
+	public static Point fromJSonValue(String value)
+	{
+		String[] pieces = value.replace("(", "").replace(")", "").split(",");
+		double x = Double.parseDouble(pieces[0]);
+		double y = Double.parseDouble(pieces[1]);
+		return new Point(x, y);
+	}
+	
 	public double length()
 	{
 		return Math.sqrt(x * x + y * y);

@@ -22,6 +22,7 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
@@ -279,7 +280,8 @@ public class MapSettings implements Serializable
 			JSONObject editsJson = new JSONObject();
 			root.put("edits", editsJson);
 			editsJson.put("textEdits", textEditsToJson());
-			editsJson.put("centerEdits", centerEditsToJson());
+			// TODO Store free icons
+			editsJson.put("iconEdits", iconsToJson());
 			editsJson.put("regionEdits", regionEditsToJson());
 			editsJson.put("edgeEdits", edgeEditsToJson());
 			editsJson.put("hasIconEdits", edits.hasIconEdits);
@@ -308,42 +310,21 @@ public class MapSettings implements Serializable
 
 
 	@SuppressWarnings("unchecked")
-	private JSONArray centerEditsToJson()
+	private JSONArray iconsToJson()
 	{
 		JSONArray list = new JSONArray();
-		for (CenterEdit centerEdit : edits.centerEdits)
+		for (FreeIcon icon : edits.freeIcons)
 		{
-			JSONObject mpObj = new JSONObject();
-			if (centerEdit.isWater)
-			{
-				mpObj.put("isWater", centerEdit.isWater);
-			}
-			if (centerEdit.isLake)
-			{
-				mpObj.put("isLake", centerEdit.isLake);
-			}
-			if (centerEdit.regionId != null)
-			{
-				mpObj.put("regionId", centerEdit.regionId);
-			}
-			if (centerEdit.icon != null)
-			{
-				JSONObject iconObj = new JSONObject();
-				iconObj.put("iconGroupId", centerEdit.icon.iconGroupId);
-				iconObj.put("iconIndex", centerEdit.icon.iconIndex);
-				iconObj.put("iconName", centerEdit.icon.iconName);
-				iconObj.put("iconType", centerEdit.icon.iconType.toString());
-				mpObj.put("icon", iconObj);
-			}
-			if (centerEdit.trees != null)
-			{
-				JSONObject treesObj = new JSONObject();
-				treesObj.put("treeType", centerEdit.trees.treeType);
-				treesObj.put("density", centerEdit.trees.density);
-				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
-				mpObj.put("trees", treesObj);
-			}
-			list.add(mpObj);
+			JSONObject iconObj = new JSONObject();
+			iconObj.put("iconGroupId", icon.groupId);
+			iconObj.put("iconIndex", icon.iconIndex);
+			iconObj.put("iconName", icon.iconName);
+			iconObj.put("iconType", icon.type.toString());
+			iconObj.put("locationResolutionInvariant", icon.locationResolutionInvariant.toJson());
+			iconObj.put("scale", icon.scale);
+			iconObj.put("centerIndex", icon.centerIndex);
+			iconObj.put("density", icon.density);
+			list.add(iconObj);
 		}
 		return list;
 	}
@@ -618,6 +599,7 @@ public class MapSettings implements Serializable
 
 		JSONObject editsJson = (JSONObject) root.get("edits");
 		edits.text = parseMapTexts(editsJson);
+		edits.freeIcons = parseIconEdits(editsJson);
 		edits.centerEdits = parseCenterEdits(editsJson);
 		edits.regionEdits = parseRegionEdits(editsJson);
 		edits.edgeEdits = parseEdgeEdits(editsJson);
@@ -720,7 +702,9 @@ public class MapSettings implements Serializable
 			Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 			double angle = (Double) jsonObj.get("angle");
 			TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-			LineBreak lineBreak = jsonObj.containsKey("lineBreak") ?  Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_")) : LineBreak.Auto;
+			LineBreak lineBreak = jsonObj.containsKey("lineBreak")
+					? Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_"))
+					: LineBreak.Auto;
 			MapText mp = new MapText(text, location, angle, type, lineBreak);
 			result.add(mp);
 		}
@@ -728,7 +712,7 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	public List<CenterEdit> parseCenterEdits(JSONObject editsJson)
+	private List<CenterEdit> parseCenterEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
@@ -777,6 +761,35 @@ public class MapSettings implements Serializable
 
 		return result;
 	}
+
+	private List<FreeIcon> parseIconEdits(JSONObject editsJson)
+	{
+		if (editsJson == null)
+		{
+			return new ArrayList<>();
+		}
+
+		JSONArray array = (JSONArray) editsJson.get("iconEdits");
+		List<FreeIcon> result = new ArrayList<>();
+		for (Object obj : array)
+		{
+			JSONObject iconObj = (JSONObject) obj;
+			IconType type = IconType.valueOf((String) iconObj.get("type"));
+			FreeIcon icon = new FreeIcon(type);
+			icon.groupId = (String) iconObj.get("groupId");
+			icon.iconIndex = (int) (long) iconObj.get("iconIndex");
+			icon.iconName = (String) iconObj.get("iconName");
+			icon.locationResolutionInvariant = Point.fromJSonValue((String) iconObj.get("locationResolutionInvariant"));
+			icon.scale = (double) iconObj.get("scale");
+			icon.centerIndex = (int) (long) iconObj.get("centerIndex");
+			icon.density = (double) iconObj.get("density");
+
+			result.add(icon);
+		}
+
+		return result;
+	}
+
 
 	public ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
