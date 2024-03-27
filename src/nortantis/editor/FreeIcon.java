@@ -174,12 +174,6 @@ public class FreeIcon
 	}
 
 	@Override
-	public int hashCode()
-	{
-		return Objects.hash(centerIndex, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
-	}
-
-	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
