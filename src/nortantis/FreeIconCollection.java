@@ -51,6 +51,28 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return anchoredNonTreeIcons.get(centerIndex);
 	}
 	
+	public boolean hasAnchoredIcons(int centerIndex)
+	{
+		if (anchoredNonTreeIcons.get(centerIndex) != null)
+		{
+			return true;
+		}
+		
+		return hasTrees(centerIndex);
+	}
+	
+	public List<FreeIcon> getAnchoredIcons(int centerIndex)
+	{
+		// TODO If this doesn't perform well, convert it to an iterator.
+		
+		List<FreeIcon> result = new ArrayList<FreeIcon>(getTrees(centerIndex));
+		if (getNonTree(centerIndex) != null)
+		{
+			result.add(getNonTree(centerIndex));
+		}
+		return result;
+	}
+	
 	public void clearTrees(int centerIndex)
 	{
 		if (anchoredTreeIcons.containsKey(centerIndex))
@@ -61,7 +83,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	
 	public boolean hasTrees(int centerIndex)
 	{
-		return !anchoredTreeIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>()).isEmpty();
+		return !getTrees(centerIndex).isEmpty();
+	}
+	
+	private List<FreeIcon> getTrees(int centerIndex)
+	{
+		return anchoredTreeIcons.getOrCreate(centerIndex, () -> new ArrayList<FreeIcon>());
 	}
 	
 	@Override

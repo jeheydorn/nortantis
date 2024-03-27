@@ -138,6 +138,11 @@ public class TextDrawer
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
 
+		if (cityDrawTasks == null)
+		{
+			cityDrawTasks = new ArrayList<>();
+		}
+
 		cityAreas = cityDrawTasks.stream().map(drawTask -> drawTask.createArea()).collect(Collectors.toList());
 
 		if (mountainGroups == null)

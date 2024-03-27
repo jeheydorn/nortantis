@@ -1356,7 +1356,7 @@ public class IconDrawer
 		return isContentBottomTouchingWater(toIconDrawTask(icon));
 	}
 
-	private IconDrawTask toIconDrawTask(FreeIcon icon)
+	public IconDrawTask toIconDrawTask(FreeIcon icon)
 	{
 		double widthFromFileName = 0;
 		if (icon.type == IconType.cities)
@@ -1433,17 +1433,18 @@ public class IconDrawer
 	 *            Center to get icons bounds for.
 	 * @return A rectangle if center had icons drawn. Null otherwise.
 	 */
-	private Rectangle getBoundingBoxOfIconsForCenter(Center center)
+	private Rectangle getBoundingBoxOfIconsAnchoredToCenter(Center center)
 	{
-		if (anchoredIconsToDraw.get(center) == null)
+		if (!freeIcons.hasAnchoredIcons(center.index))
 		{
 			return null;
 		}
 
 		Rectangle bounds = null;
-		for (IconDrawTask iconTask : anchoredIconsToDraw.get(center))
+		for (FreeIcon icon : freeIcons.getAnchoredIcons(center.index))
 		{
-			Rectangle iconBounds = iconTask.createBounds();
+			IconDrawTask task = toIconDrawTask(icon);
+			Rectangle iconBounds = task.createBounds();
 			if (bounds == null)
 			{
 				bounds = iconBounds;
@@ -1464,18 +1465,18 @@ public class IconDrawer
 	 *            A collection of centers to get icons bounds for.
 	 * @return A rectangle if any of the centers had icons drawn. Null otherwise.
 	 */
-	public Rectangle getBoundingBoxOfIconsForCenters(Collection<Center> centers)
+	public Rectangle getBoundingBoxOfIconsAnchoredToCenters(Collection<Center> centers)
 	{
 		Rectangle bounds = null;
 		for (Center center : centers)
 		{
 			if (bounds == null)
 			{
-				bounds = getBoundingBoxOfIconsForCenter(center);
+				bounds = getBoundingBoxOfIconsAnchoredToCenter(center);
 			}
 			else
 			{
-				Rectangle b = getBoundingBoxOfIconsForCenter(center);
+				Rectangle b = getBoundingBoxOfIconsAnchoredToCenter(center);
 				if (b != null)
 				{
 					bounds = bounds.add(b);

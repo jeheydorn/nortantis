@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Dimension;
@@ -68,16 +69,58 @@ public class MapCreator implements WarningLogger
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
 
-		IntRectangle bounds = null;
+		List<Rectangle> changeBounds = new ArrayList<>();
 		for (MapText text : textChanged)
 		{
-			Rectangle changeBounds = textDrawer.getTextBoundingBoxFor1Or2LineSplit(text);
-			if (changeBounds == null)
+			Rectangle change = textDrawer.getTextBoundingBoxFor1Or2LineSplit(text);
+			if (change == null)
+			{
+				continue;
+			}
+			changeBounds.add(change);
+		}
+
+		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds);
+	}
+
+	// TODO Call this from IconTool
+	public IntRectangle incrementalUpdateIcons(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
+			List<FreeIcon> iconsChanged)
+	{
+		IconDrawer iconDrawer = new IconDrawer(mapParts.graph, new Random(0), settings);
+
+		List<Rectangle> changeBounds = new ArrayList<>();
+		for (FreeIcon icon : iconsChanged)
+		{
+			IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+			Rectangle change = task.createBounds();
+			if (change == null)
+			{
+				continue;
+			}
+			changeBounds.add(change);
+		}
+
+		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds);
+	}
+
+	private IntRectangle incrementalUpdateMultipleBounds(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
+			List<Rectangle> changeBounds)
+	{
+		TextDrawer textDrawer = new TextDrawer(settings);
+		textDrawer.setMapTexts(settings.edits.text);
+
+		IntRectangle bounds = null;
+		for (Rectangle change : changeBounds)
+		{
+			if (change == null)
 			{
 				continue;
 			}
 
-			Set<Center> centersInBounds = mapParts.graph.getCentersInBounds(changeBounds);
+			// TODO If replacing icons is too slow, I could change incrementalUpdate to take the bounds to draw rather than pull in the
+			// centers touching those bounds. If I do, make sure text background blur still works too.
+			Set<Center> centersInBounds = mapParts.graph.getCentersInBounds(change);
 
 			IntRectangle updateBounds = incrementalUpdate(settings, mapParts, fullSizeMap, centersInBounds, null);
 			if (bounds == null)
@@ -169,7 +212,7 @@ public class MapCreator implements WarningLogger
 		// Expand snippetToReplaceBounds to include all icons the centers in
 		// centersChanged drew the last time they were drawn.
 		{
-			Rectangle iconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsForCenters(centersChanged);
+			Rectangle iconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsAnchoredToCenters(centersChanged);
 			if (iconBounds != null)
 			{
 				replaceBounds = replaceBounds.add(iconBounds);
@@ -229,7 +272,7 @@ public class MapCreator implements WarningLogger
 		// Now that we've updated icons to draw in centersInBounds, check if we
 		// need to expand replaceBounds to include those icons.
 		{
-			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsForCenters(centersChanged);
+			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsAnchoredToCenters(centersChanged);
 			if (updatedIconBounds != null)
 			{
 				replaceBounds = replaceBounds.add(updatedIconBounds);
@@ -315,9 +358,8 @@ public class MapCreator implements WarningLogger
 		// Draw icons
 		List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds);
 
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew,
-				landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw,
-				drawBounds);
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
+				oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
 
 		IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
@@ -555,7 +597,7 @@ public class MapCreator implements WarningLogger
 		TextDrawer textDrawer = new TextDrawer(settings);
 
 		textDrawer.setMapTexts(settings.edits.text);
-		
+
 		if (settings.edits.text.size() > 0)
 		{
 			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
@@ -566,13 +608,6 @@ public class MapCreator implements WarningLogger
 			// the editor might be generating the map without text
 			// now, but want to show the text later, so in that case we would
 			// want to generate the text but not show it.
-
-			// Note that mountainGroups and cities should always be
-			// populated at this point if the map has mountains or cities
-			// because the code path above that skips drawing terrain and
-			// uses mapParts.mapBeforeAddingText instead will only be hit
-			// if the map has already been drawn in the editor, and so text
-			// will be drawn from edits instead of taking this code path.
 			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, lakes);
 		}
 
@@ -923,8 +958,8 @@ public class MapCreator implements WarningLogger
 		landBackground = null;
 
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsThatDrew,
-				background.land, background.ocean, background, oceanBlur, coastShading, iconDrawer, null, null);
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsThatDrew, background.land,
+				background.ocean, background, oceanBlur, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
 		{
@@ -950,8 +985,8 @@ public class MapCreator implements WarningLogger
 		iconDrawer.drawContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
 		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
-		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask, background,
-				coastShading, centersToDraw, drawBounds, false).getFirst();
+		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,
+				background, coastShading, centersToDraw, drawBounds, false).getFirst();
 		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanBlur != null)
 		{
@@ -1717,16 +1752,16 @@ public class MapCreator implements WarningLogger
 	{
 		return calcMaximumResolution() / 100.0;
 	}
-	
+
 	public void addWarningMessage(String message)
 	{
 		if (!warningMessages.contains(message))
 		{
 			Logger.println("Warning: " + message);
-			warningMessages.add(message);			
+			warningMessages.add(message);
 		}
 	}
-	
+
 	public List<String> getWarningMessages()
 	{
 		return warningMessages;
