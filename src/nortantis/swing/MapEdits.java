@@ -3,21 +3,18 @@ package nortantis.swing;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import nortantis.FreeIconCollection;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
 import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
-import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
-import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
@@ -45,7 +42,7 @@ public class MapEdits implements Serializable
 	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
-	public List<FreeIcon> freeIcons;
+	public FreeIconCollection freeIcons;
 
 	/**
 	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
@@ -63,7 +60,7 @@ public class MapEdits implements Serializable
 		centerEdits = new ArrayList<>();
 		regionEdits = new ConcurrentHashMap<>();
 		edgeEdits = new ArrayList<>();
-		freeIcons = new ArrayList<>();
+		freeIcons = new FreeIconCollection();
 	}
 
 	public boolean isEmpty()

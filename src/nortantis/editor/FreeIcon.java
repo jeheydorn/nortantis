@@ -1,9 +1,7 @@
 package nortantis.editor;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import org.apache.commons.lang3.NotImplementedException;
 
@@ -12,12 +10,8 @@ import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
-import nortantis.WarningLogger;
-import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
-import nortantis.platform.Image;
-import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
 
 public class FreeIcon

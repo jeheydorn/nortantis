@@ -17,7 +17,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import nortantis.editor.CenterEdit;
-import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
@@ -34,7 +33,6 @@ import nortantis.platform.ImageType;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function;
-import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
@@ -88,13 +86,16 @@ public class IconDrawer
 		}
 		this.resolutionScale = settings.resolution;
 
+		this.freeIcons = new FreeIconCollection();
+		settings.edits.freeIcons = freeIcons;
+
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneScale = settings.duneScale;
 
 		mountainScale = settings.mountainScale;
 		hillScale = settings.hillScale;
-		cityScale = meanPolygonWidth * (1.0 / 11.0) * settings.cityScale; // TODO Only include scale from settings. Make a function to
-																			// determine base width like I did for mountains
+		cityScale = settings.cityScale; 
+										
 		treeHeightScale = settings.treeHeightScale;
 		treeDensityScale = calcTreeDensityScale();
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
@@ -360,30 +361,28 @@ public class IconDrawer
 	{
 		convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
 
-		List<Integer> toRemove = new ArrayList<>();
-		for (int i : new Range(edits.freeIcons.size()))
+		Set<FreeIcon> toRemove = new HashSet<>();
+		for (FreeIcon icon : edits.freeIcons)
 		{
-			FreeIcon icon = edits.freeIcons.get(i);
-
 			if (icon.type == IconType.mountains)
 			{
 				if (!updateGroupIdAndAddShuffledFreeIcon(icon, mountainScale, warningLogger))
 				{
-					toRemove.add(i);
+					toRemove.add(icon);
 				}
 			}
 			else if (icon.type == IconType.hills)
 			{
 				if (!updateGroupIdAndAddShuffledFreeIcon(icon, hillScale, warningLogger))
 				{
-					toRemove.add(i);
+					toRemove.add(icon);
 				}
 			}
 			else if (icon.type == IconType.sand)
 			{
 				if (!updateGroupIdAndAddShuffledFreeIcon(icon, duneScale, warningLogger))
 				{
-					toRemove.add(i);
+					toRemove.add(icon);
 				}
 			}
 			else if (icon.type == IconType.cities)
@@ -402,27 +401,24 @@ public class IconDrawer
 					}
 					else
 					{
-						toRemove.add(i);
+						toRemove.add(icon);
 					}
+				}
+				else
+				{
+					toRemove.add(icon);
 				}
 			}
 			else if (icon.type == IconType.trees)
 			{
 				if (!updateGroupIdAndAddShuffledFreeIcon(icon, treeHeightScale, warningLogger))
 				{
-					toRemove.add(i);
+					toRemove.add(icon);
 				}
 			}
 		}
 
-		if (toRemove.size() > 0)
-		{
-			// TODO Lock edits.freeIcons
-			for (int i = toRemove.size() - 1; i >= 0; i--)
-			{
-				edits.freeIcons.remove(i);
-			}
-		}
+		edits.freeIcons.removeAll(toRemove);
 	}
 
 	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, WarningLogger warningLogger)
@@ -436,7 +432,6 @@ public class IconDrawer
 			{
 				warningLogger.addWarningMessage(
 						"Unable to find the city" + " image group '" + groupId + "'. There are no city icons, so none will be drawn.");
-				// TODO Remove the icon from the edits
 				return null;
 			}
 			cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, newGroupId);
@@ -508,7 +503,7 @@ public class IconDrawer
 		}
 		else if (type == IconType.cities)
 		{
-			return cityWidthFromFileName * resolutionScale;
+			return meanPolygonWidth * (1.0 / 11.0) * cityWidthFromFileName;
 		}
 		else if (type == IconType.trees)
 		{

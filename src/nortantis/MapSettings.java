@@ -280,7 +280,6 @@ public class MapSettings implements Serializable
 			JSONObject editsJson = new JSONObject();
 			root.put("edits", editsJson);
 			editsJson.put("textEdits", textEditsToJson());
-			// TODO Store free icons
 			editsJson.put("iconEdits", iconsToJson());
 			editsJson.put("regionEdits", regionEditsToJson());
 			editsJson.put("edgeEdits", edgeEditsToJson());
@@ -762,15 +761,20 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private List<FreeIcon> parseIconEdits(JSONObject editsJson)
+	private FreeIconCollection parseIconEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
-			return new ArrayList<>();
+			return new FreeIconCollection();
 		}
 
 		JSONArray array = (JSONArray) editsJson.get("iconEdits");
-		List<FreeIcon> result = new ArrayList<>();
+		FreeIconCollection result = new FreeIconCollection();
+		if (array == null)
+		{
+			return result;
+		}
+		
 		for (Object obj : array)
 		{
 			JSONObject iconObj = (JSONObject) obj;
@@ -784,7 +788,7 @@ public class MapSettings implements Serializable
 			icon.centerIndex = (int) (long) iconObj.get("centerIndex");
 			icon.density = (double) iconObj.get("density");
 
-			result.add(icon);
+			result.addOrReplace(icon);
 		}
 
 		return result;
