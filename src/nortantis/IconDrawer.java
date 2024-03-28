@@ -88,6 +88,7 @@ public class IconDrawer
 
 		this.freeIcons = new FreeIconCollection();
 		settings.edits.freeIcons = freeIcons;
+		iconsToDraw = new ArrayList<>();
 
 		meanPolygonWidth = findMeanCenterWidth(graph);
 		duneScale = settings.duneScale;
@@ -921,12 +922,12 @@ public class IconDrawer
 					// I'm deliberately putting this line before checking center size so that the
 					// random number generator is used the same no matter what resolution the map
 					// is drawn at.
-					int i = rand.nextInt(imagesInRange.size());
+					int i = rand.nextInt();
 
 					double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
 					double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
 
-					Point loc = getImageCenterToDrawImageNearBottomOfCenter(imagesInRange.get(i).image,
+					Point loc = getImageCenterToDrawImageNearBottomOfCenter(imagesInRange.get(i % imagesInRange.size()).image,
 							widthBeforeTypeLevelScaling * mountainScale, c);
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i);
 
@@ -950,7 +951,7 @@ public class IconDrawer
 						// I'm deliberately putting this line before checking center size so that the
 						// random number generator is used the same no matter what resolution the map
 						// is drawn at.
-						int i = rand.nextInt(imagesInGroup.size());
+						int i = rand.nextInt();
 
 						double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
 						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
@@ -1039,7 +1040,7 @@ public class IconDrawer
 					{
 						c.isSandDunes = true;
 
-						int i = rand.nextInt(duneImages.size());
+						int i = rand.nextInt();
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, groupId, i);
 						if (!isContentBottomTouchingWater(icon))
 						{
@@ -1327,7 +1328,7 @@ public class IconDrawer
 
 		for (int i = 0; i < numTrees; i++)
 		{
-			int index = rand.nextInt(unscaledImages.size());
+			int index = rand.nextInt();
 
 			// Draw the image such that it is centered in the center of c.
 			int x = (int) (loc.x);

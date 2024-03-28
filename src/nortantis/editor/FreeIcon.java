@@ -1,5 +1,6 @@
 package nortantis.editor;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -122,8 +123,8 @@ public class FreeIcon
 		}
 		else
 		{
-			ImageAndMasks imageAndMasks = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId)
-					.get(iconIndex);
+			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
+			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseHeight)
 					.toIntDimension();
@@ -144,8 +145,8 @@ public class FreeIcon
 		}
 		else
 		{
-			ImageAndMasks imageAndMasks = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId)
-					.get(iconIndex);
+			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
+			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);

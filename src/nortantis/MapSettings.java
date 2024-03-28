@@ -720,6 +720,10 @@ public class MapSettings implements Serializable
 
 		JSONArray array = (JSONArray) editsJson.get("centerEdits");
 		List<CenterEdit> result = new ArrayList<>();
+		if (array == null)
+		{
+			return result;
+		}
 		int index = 0;
 		for (Object obj : array)
 		{
