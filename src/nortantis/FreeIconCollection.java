@@ -91,8 +91,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 
 	public List<FreeIcon> getAnchoredIcons(int centerIndex)
 	{
-		// TODO If this doesn't perform well, convert it to an iterator.
-
 		List<FreeIcon> result = new ArrayList<FreeIcon>(getTrees(centerIndex));
 		if (getNonTree(centerIndex) != null)
 		{
@@ -134,7 +132,15 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 
 			if (icon.type == IconType.trees)
 			{
-				anchoredTreeIcons.get(icon.centerIndex).remove(icon);
+				if (anchoredTreeIcons.containsKey(icon.centerIndex))
+				{
+					List<FreeIcon> trees = anchoredTreeIcons.get(icon.centerIndex);
+					trees.remove(icon);
+					if (trees.isEmpty())
+					{
+						anchoredTreeIcons.remove(icon.centerIndex);
+					}
+				}
 			}
 			else
 			{
@@ -237,5 +243,15 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 				return false;
 			}
 		};
+	}
+
+	public FreeIconCollection deepCopy()
+	{
+		FreeIconCollection copy = new FreeIconCollection();
+		for (FreeIcon icon : this)
+		{
+			copy.addOrReplace(icon.deepCopy());
+		}
+		return copy;
 	}
 }

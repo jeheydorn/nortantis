@@ -166,6 +166,8 @@ public class MapEdits implements Serializable
 		{
 			copy.edgeEdits.add(eEdit.deepCopy());
 		}
+		
+		copy.freeIcons = freeIcons.deepCopy();
 
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		copy.hasCreatedTextBounds = hasCreatedTextBounds;

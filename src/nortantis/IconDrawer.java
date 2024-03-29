@@ -86,8 +86,16 @@ public class IconDrawer
 		}
 		this.resolutionScale = settings.resolution;
 
-		this.freeIcons = new FreeIconCollection();
-		settings.edits.freeIcons = freeIcons;
+		if (settings.edits.isEmpty())
+		{
+			this.freeIcons = new FreeIconCollection();
+			settings.edits.freeIcons = freeIcons;
+		}
+		else
+		{
+			freeIcons = settings.edits.freeIcons;
+		}
+		
 		iconsToDraw = new ArrayList<>();
 
 		meanPolygonWidth = findMeanCenterWidth(graph);
@@ -357,13 +365,19 @@ public class IconDrawer
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
 	 * done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor, double treeHeightScale,
+	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor,
 			WarningLogger warningLogger)
 	{
 		convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-
+		createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+	}
+	
+	private void createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger)
+	{
+		iconsToDraw.clear();
+		
 		Set<FreeIcon> toRemove = new HashSet<>();
-		for (FreeIcon icon : edits.freeIcons)
+		for (FreeIcon icon : freeIcons)
 		{
 			if (icon.type == IconType.mountains)
 			{
@@ -419,7 +433,7 @@ public class IconDrawer
 			}
 		}
 
-		edits.freeIcons.removeAll(toRemove);
+		freeIcons.removeAll(toRemove);
 	}
 
 	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, WarningLogger warningLogger)
@@ -823,6 +837,37 @@ public class IconDrawer
 		}
 	}
 
+	private boolean isNeighborACity(Center center)
+	{
+		return center.neighbors.stream().anyMatch(c -> c.isCity);
+	}
+	
+	public Tuple2<List<Set<Center>>, List<IconDrawTask>> addIcons(List<Set<Center>> mountainAndHillGroups, WarningLogger warningLogger)
+	{
+		List<IconDrawTask> cities;
+		
+		Logger.println("Adding mountains and hills.");
+		List<Set<Center>> mountainGroups;;
+		addOrUnmarkMountainsAndHills(mountainAndHillGroups);
+		// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
+		// couldn't draw
+		// don't later get labels.
+		mountainGroups = findMountainGroups();
+
+		Logger.println("Adding sand dunes.");
+		addSandDunes();
+
+		Logger.println("Adding trees.");
+		addTrees();
+
+		Logger.println("Adding cities.");
+		cities = addOrUnmarkCities();
+		
+		createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+		
+		return new Tuple2<>(mountainGroups, cities);
+	}
+	
 	/**
 	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed where it cannot be drawn, this will un-mark it as a city.
 	 * 
@@ -864,10 +909,6 @@ public class IconDrawer
 		return cities;
 	}
 
-	private boolean isNeighborACity(Center center)
-	{
-		return center.neighbors.stream().anyMatch(c -> c.isCity);
-	}
 
 	/**
 	 * Creates tasks for drawing mountains and hills.
@@ -922,7 +963,7 @@ public class IconDrawer
 					// I'm deliberately putting this line before checking center size so that the
 					// random number generator is used the same no matter what resolution the map
 					// is drawn at.
-					int i = rand.nextInt();
+					int i = Math.abs(rand.nextInt());
 
 					double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
 					double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
@@ -951,7 +992,7 @@ public class IconDrawer
 						// I'm deliberately putting this line before checking center size so that the
 						// random number generator is used the same no matter what resolution the map
 						// is drawn at.
-						int i = rand.nextInt();
+						int i = Math.abs(rand.nextInt());
 
 						double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
 						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
@@ -1040,7 +1081,7 @@ public class IconDrawer
 					{
 						c.isSandDunes = true;
 
-						int i = rand.nextInt();
+						int i = Math.abs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, groupId, i);
 						if (!isContentBottomTouchingWater(icon))
 						{
@@ -1328,7 +1369,7 @@ public class IconDrawer
 
 		for (int i = 0; i < numTrees; i++)
 		{
-			int index = rand.nextInt();
+			int index = Math.abs(rand.nextInt());
 
 			// Draw the image such that it is centered in the center of c.
 			int x = (int) (loc.x);
@@ -1412,8 +1453,8 @@ public class IconDrawer
 			}
 			int y = (int) (yInMask * (1.0 / yScaleToMaskSpace));
 
-			Center center = graph.findClosestCenter(imageUpperLeftX + x, imageUpperLeftY + y);
-			if (center.isWater)
+			Center center = graph.findClosestCenter(new Point(imageUpperLeftX + x, imageUpperLeftY + y), true);
+			if (center != null && center.isWater)
 			{
 				return true;
 			}

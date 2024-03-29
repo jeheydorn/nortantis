@@ -185,7 +185,7 @@ public class MapCreator implements WarningLogger
 			return null;
 		}
 
-		double sizeMultiplier = calcSizeMultiplier(mapParts.background.mapBounds.width);
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 
 		// To handle edge/effects changes outside centersChangedBounds box
 		// caused by centers in centersChanged, pad the bounds of the
@@ -265,7 +265,7 @@ public class MapCreator implements WarningLogger
 			// happen if you really mash the undo button while drawing ocean, so I'm leaving this hack here for now.
 			Rectangle bounds = replaceBounds;
 			Set<Center> centersInBounds = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(bounds), centersChanged.iterator().next());
-			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersInBounds, settings.treeHeightScale, this);
+			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersInBounds, this);
 		}
 
 
@@ -341,7 +341,7 @@ public class MapCreator implements WarningLogger
 		// Add effects to ocean along coastlines
 		Image oceanBlur;
 		{
-			oceanBlur = createOceanEffects(settings, mapParts.graph, sizeMultiplier, landMask, centersToDraw, drawBounds);
+			oceanBlur = createOceanEffects(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
 			if (oceanBlur != null)
 			{
 				mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
@@ -474,7 +474,7 @@ public class MapCreator implements WarningLogger
 
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
-		double sizeMultiplier = calcSizeMultiplier(mapBounds.width);
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 
 		// Kick of a job to create the graph while the background is being created.
 		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
@@ -542,8 +542,7 @@ public class MapCreator implements WarningLogger
 		List<IconDrawTask> cities;
 		if (mapParts == null || mapParts.mapBeforeAddingText == null || settings.edits.text.size() == 0)
 		{
-			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background,
-					sizeMultiplier);
+			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background);
 
 			checkForCancel();
 
@@ -794,7 +793,7 @@ public class MapCreator implements WarningLogger
 	}
 
 	private Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> drawTerrainAndIcons(MapSettings settings, MapParts mapParts,
-			WorldGraph graph, Background background, double resolutionScale)
+			WorldGraph graph, Background background)
 	{
 		applyRegionEdits(graph, settings.edits);
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
@@ -840,7 +839,7 @@ public class MapCreator implements WarningLogger
 		}
 		else
 		{
-			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, settings.treeHeightScale, this);
+			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, this);
 		}
 
 		checkForCancel();
@@ -858,7 +857,7 @@ public class MapCreator implements WarningLogger
 
 		Image coastShading;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, resolutionScale, map, landMask,
+			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
 					background, null, null, null, true);
 			map = tuple.getFirst();
 			coastShading = tuple.getSecond();
@@ -876,7 +875,7 @@ public class MapCreator implements WarningLogger
 			{
 				Painter g = map.createPainter();
 				g.setColor(settings.coastlineColor);
-				double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScale);
+				double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
 			}
 		}
@@ -893,21 +892,7 @@ public class MapCreator implements WarningLogger
 		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
 		{
-			Logger.println("Adding mountains and hills.");
-			iconDrawer.addOrUnmarkMountainsAndHills(mountainAndHillGroups);
-			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
-			// couldn't draw
-			// don't later get labels.
-			mountainGroups = iconDrawer.findMountainGroups();
-
-			Logger.println("Adding sand dunes.");
-			iconDrawer.addSandDunes();
-
-			Logger.println("Adding trees.");
-			iconDrawer.addTrees();
-
-			Logger.println("Adding cities.");
-			cities = iconDrawer.addOrUnmarkCities();
+			iconDrawer.addIcons(mountainAndHillGroups, this);
 		}
 
 		if (settings.drawRoads)
@@ -947,7 +932,7 @@ public class MapCreator implements WarningLogger
 		{
 			Painter g = map.createPainter(DrawQuality.High);
 			g.setColor(settings.coastlineColor);
-			double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScale);
+			double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
 
@@ -1329,12 +1314,13 @@ public class MapCreator implements WarningLogger
 
 		return graph;
 	}
+	
 
 	public static double calcSizeMultiplier(double mapWidth)
 	{
 		return mapWidth / baseResolution;
 	}
-
+	
 	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
 	{
 		return (8.0 / 3.0) * resoutionScale;

@@ -153,7 +153,6 @@ public class FreeIcon
 		}
 	}
 
-
 	public FreeIcon deepCopy()
 	{
 		FreeIcon copy = new FreeIcon(type);

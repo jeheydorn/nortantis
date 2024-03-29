@@ -541,11 +541,6 @@ public class WorldGraph extends VoronoiGraph
 		return optional.get();
 	}
 
-	public TectonicPlate getTectonicPlateAt(double x, double y)
-	{
-		return findClosestCenter(new Point(x, y)).tectonicPlate;
-	}
-
 	public Center findClosestCenter(double x, double y)
 	{
 		return findClosestCenter(new Point(x, y));
