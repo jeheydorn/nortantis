@@ -1,11 +1,13 @@
 package nortantis.swing;
 
+import java.awt.MouseInfo;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -37,8 +39,12 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntDimension;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
@@ -98,6 +104,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
+		mapEditingPanel.hideBrush();
 	}
 
 	@Override
@@ -190,7 +197,7 @@ public class IconsTool extends EditorTool
 		}
 
 		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush",
-				"Use the selected brush to replace existing icons of the same type", true, () -> updateTypePanels());
+				"Use the selected brush to replace existing icons of the same type", true, () -> handleModeChanged());
 		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
 
 
@@ -234,6 +241,26 @@ public class IconsTool extends EditorTool
 		{
 			treeTypes.buttons.get(1).getRadioButton().setSelected(true);
 		}
+	}
+	
+	private void handleModeChanged()
+	{
+		updateTypePanels();
+	}
+	
+	private void showOrHideBrush(MouseEvent e)
+	{
+		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		if (modeWidget.isDrawMode() || brushDiameter <= 1)
+		{
+			mapEditingPanel.hideBrush();
+		}
+		else
+		{
+			java.awt.Point mouseLocation = e.getPoint();
+			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
+		}
+
 	}
 
 	private void updateTypePanels()
@@ -791,23 +818,49 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		highlightHoverCenters(e);
+		if (modeWidget.isDrawMode())
+		{
+			highlightHoverCenters(e);
+		}
+		else
+		{
+			highlightHoverIconsAndShowBrush(e);
+		}
 		mapEditingPanel.repaint();
 	}
 
 	private void highlightHoverCenters(MouseEvent e)
 	{
+		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearHighlightedCenters();
 
 		Set<Center> selected = getSelectedCenters(e.getPoint());
 		mapEditingPanel.addHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 	}
+	
+	private void highlightHoverIconsAndShowBrush(MouseEvent e)
+	{
+		mapEditingPanel.clearHighlightedAreas();
+		mapEditingPanel.clearHighlightedCenters();
+		
+		showOrHideBrush(e);
+		
+		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons);
+	}
 
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		highlightHoverCenters(e);
+		if (modeWidget.isDrawMode())
+		{
+			highlightHoverCenters(e);
+		}
+		else
+		{
+			highlightHoverIconsAndShowBrush(e);
+		}
 		handleMousePressOrDrag(e);
 	}
 
@@ -815,6 +868,8 @@ public class IconsTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
+		mapEditingPanel.clearHighlightedAreas();
+		mapEditingPanel.hideBrush();
 		mapEditingPanel.repaint();
 	}
 
@@ -843,6 +898,82 @@ public class IconsTool extends EditorTool
 			return getSelectedCenters(pointFromMouse, 1);
 		}
 		return getSelectedCenters(pointFromMouse, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+	}
+	
+	protected List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
+	{
+		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		List<FreeIcon> selected = new ArrayList<>();
+		Point graphPoint = getPointOnGraph(pointFromMouse);
+
+		if (brushDiameter <= 1)
+		{
+			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			{
+				if (isSelectedType(icon))
+				{
+					Rectangle rect = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds();
+					if (rect.contains(graphPoint))
+					{
+						selected.add(icon);
+					}
+				}
+			}			
+		}
+		else
+		{
+			int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
+			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			{
+				if (isSelectedType(icon))
+				{
+					// TODO If this is too slow, use Rectangle instead of RotatedRectangle.
+					RotatedRectangle rect = new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds());
+					if (rect.overlapsCircle(graphPoint, brushRadius))
+					{
+						selected.add(icon);
+					}
+				}
+			}
+		
+		}
+		return selected;
+	}
+	
+	private boolean isSelectedType(FreeIcon icon)
+	{
+		if (mountainsButton.isSelected() && icon.type == IconType.mountains)
+		{
+			return true;
+		}
+
+		if (hillsButton.isSelected() && icon.type == IconType.hills)
+		{
+			return true;
+		}
+		
+		if (dunesButton.isSelected() && icon.type == IconType.sand)
+		{
+			return true;
+		}
+
+		
+		if (treesButton.isSelected() && icon.type == IconType.trees)
+		{
+			return true;
+		}
+
+		if (citiesButton.isSelected() && icon.type == IconType.cities)
+		{
+			return true;
+		}
+
+		if (eraseAllButton.isSelected())
+		{
+			return true;
+		}
+		
+		return false;
 	}
 
 	private void handleMapChange(Set<Center> centers)

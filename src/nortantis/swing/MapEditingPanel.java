@@ -16,8 +16,10 @@ import java.util.Set;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.WorldGraph;
+import nortantis.editor.FreeIcon;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
@@ -120,20 +122,29 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setHighlightedAreasFromTexts(List<MapText> texts)
 	{
-		Set<Area> areas = new HashSet<>();
+		highlightedAreas = new HashSet<>();
 		for (MapText text : texts)
 		{
 			if (text.line1Area != null)
 			{
-				areas.add(AwtFactory.toAwtArea(text.line1Area));
+				highlightedAreas.add(AwtFactory.toAwtArea(text.line1Area));
 			}
 
 			if (text.line2Area != null)
 			{
-				areas.add(AwtFactory.toAwtArea(text.line2Area));
+				highlightedAreas.add(AwtFactory.toAwtArea(text.line2Area));
 			}
 		}
-		this.highlightedAreas = areas;
+	}
+	
+	public void setHighlightedAreasFromIcons(IconDrawer iconDrawer, List<FreeIcon> icons)
+	{
+		highlightedAreas = new HashSet<>();
+		for (FreeIcon icon :icons)
+		{
+			nortantis.geom.Rectangle bounds = iconDrawer.toIconDrawTask(icon).createBounds();
+			highlightedAreas.add(AwtFactory.toAwtArea(bounds));
+		}
 	}
 
 	public void clearHighlightedAreas()

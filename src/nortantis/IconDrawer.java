@@ -893,6 +893,7 @@ public class IconDrawer
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
 				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, cityIconTypeForNewMaps, cityName);
+				icon.centerIndex = c.index;
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -971,6 +972,7 @@ public class IconDrawer
 					Point loc = getImageCenterToDrawImageNearBottomOfCenter(imagesInRange.get(i % imagesInRange.size()).image,
 							widthBeforeTypeLevelScaling * mountainScale, c);
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i);
+					icon.centerIndex = c.index;
 
 					IconDrawTask task = toIconDrawTask(icon);
 
@@ -998,6 +1000,7 @@ public class IconDrawer
 						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, fileNameRangeId, i);
+						icon.centerIndex = c.index;
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1083,6 +1086,7 @@ public class IconDrawer
 
 						int i = Math.abs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, groupId, i);
+						icon.centerIndex = c.index;
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -1380,6 +1384,7 @@ public class IconDrawer
 			y += rand.nextGaussian() * scale;
 
 			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, groupId, index);
+			icon.centerIndex = center.index;
 
 			if (!isContentBottomTouchingWater(icon))
 			{

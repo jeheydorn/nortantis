@@ -219,6 +219,14 @@ public class AwtFactory extends PlatformFactory
 				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
+
+	public static java.awt.geom.Area toAwtArea(Rectangle rect)
+	{
+		AffineTransform transform = new AffineTransform();
+		java.awt.Shape rotatedRect = transform
+				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
+		return new java.awt.geom.Area(rotatedRect);
+	}
 	
 	public static Painter wrap(java.awt.Graphics2D g)
 	{

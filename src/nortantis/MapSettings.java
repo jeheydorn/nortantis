@@ -280,6 +280,7 @@ public class MapSettings implements Serializable
 			JSONObject editsJson = new JSONObject();
 			root.put("edits", editsJson);
 			editsJson.put("textEdits", textEditsToJson());
+			editsJson.put("centerEdits", centerEditsToJson());
 			editsJson.put("iconEdits", iconsToJson());
 			editsJson.put("regionEdits", regionEditsToJson());
 			editsJson.put("edgeEdits", edgeEditsToJson());
@@ -307,6 +308,29 @@ public class MapSettings implements Serializable
 		return list;
 	}
 
+	@SuppressWarnings("unchecked")
+	private JSONArray centerEditsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (CenterEdit centerEdit : edits.centerEdits)
+		{
+			JSONObject mpObj = new JSONObject();
+			if (centerEdit.isWater)
+			{
+				mpObj.put("isWater", centerEdit.isWater);
+			}
+			if (centerEdit.isLake)
+			{
+				mpObj.put("isLake", centerEdit.isLake);
+			}
+			if (centerEdit.regionId != null)
+			{
+				mpObj.put("regionId", centerEdit.regionId);
+			}
+			list.add(mpObj);
+		}
+		return list;
+	}
 
 	@SuppressWarnings("unchecked")
 	private JSONArray iconsToJson()
@@ -315,10 +339,10 @@ public class MapSettings implements Serializable
 		for (FreeIcon icon : edits.freeIcons)
 		{
 			JSONObject iconObj = new JSONObject();
-			iconObj.put("iconGroupId", icon.groupId);
+			iconObj.put("groupId", icon.groupId);
 			iconObj.put("iconIndex", icon.iconIndex);
 			iconObj.put("iconName", icon.iconName);
-			iconObj.put("iconType", icon.type.toString());
+			iconObj.put("type", icon.type.toString());
 			iconObj.put("locationResolutionInvariant", icon.locationResolutionInvariant.toJson());
 			iconObj.put("scale", icon.scale);
 			iconObj.put("centerIndex", icon.centerIndex);
@@ -789,7 +813,10 @@ public class MapSettings implements Serializable
 			icon.iconName = (String) iconObj.get("iconName");
 			icon.locationResolutionInvariant = Point.fromJSonValue((String) iconObj.get("locationResolutionInvariant"));
 			icon.scale = (double) iconObj.get("scale");
-			icon.centerIndex = (int) (long) iconObj.get("centerIndex");
+			if (iconObj.containsKey("centerIndex") && iconObj.get("centerIndex") != null)
+			{
+				icon.centerIndex = (int) (long) iconObj.get("centerIndex");
+			}
 			icon.density = (double) iconObj.get("density");
 
 			result.addOrReplace(icon);
