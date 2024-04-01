@@ -176,6 +176,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 			processingAreas.addAll(areas);
 		}
 	}
+	
+	public void addProcessingAreas(Set<RotatedRectangle> areas)
+	{
+		if (processingAreas == null)
+		{
+			processingAreas = areas;
+		}
+		else
+		{
+			processingAreas.addAll(areas);
+		}
+	}
 
 	public void removeProcessingAreas(Set<RotatedRectangle> areasToRemove)
 	{

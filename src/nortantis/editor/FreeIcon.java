@@ -40,9 +40,11 @@ public class FreeIcon
 	 * If this icon is attached to a Center, then this is the Center's index.
 	 */
 	public Integer centerIndex;
+	
 	/**
 	 * For icons that add multiple per center (currently only trees), this is the density of the icons.
 	 */
+	// TODO Remove this field if I don't use it.
 	public double density;
 
 	/**
@@ -168,6 +170,12 @@ public class FreeIcon
 	}
 
 	@Override
+	public int hashCode()
+	{
+		return Objects.hash(centerIndex, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
+	}
+
+	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
@@ -188,8 +196,5 @@ public class FreeIcon
 				&& Objects.equals(locationResolutionInvariant, other.locationResolutionInvariant)
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
-
-	
-
 
 }

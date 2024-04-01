@@ -1121,5 +1121,4 @@ public class MapSettings implements Serializable
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 
-
 }

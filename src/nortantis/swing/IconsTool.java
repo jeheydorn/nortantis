@@ -104,7 +104,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		mapEditingPanel.hideBrush();
+		mapEditingPanel.clearAllSelectionsAndHighlights();
 	}
 
 	@Override
@@ -242,12 +242,12 @@ public class IconsTool extends EditorTool
 			treeTypes.buttons.get(1).getRadioButton().setSelected(true);
 		}
 	}
-	
+
 	private void handleModeChanged()
 	{
 		updateTypePanels();
 	}
-	
+
 	private void showOrHideBrush(MouseEvent e)
 	{
 		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
@@ -273,7 +273,7 @@ public class IconsTool extends EditorTool
 		duneTypes.hider.setVisible(dunesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		treeTypes.hider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
-		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
 		brushSizeHider.setVisible(!(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode())));
 	}
 
@@ -633,168 +633,202 @@ public class IconsTool extends EditorTool
 
 	private void handleMousePressOrDrag(MouseEvent e)
 	{
+		if (eraseAllButton.isSelected())
+		{
+			handleEraseIcons(e);
+		}
+		else if (modeWidget.isDrawMode())
+		{
+			handleDrawIcons(e);
+		}
+		else if (modeWidget.isReplaceMode())
+		{
+			handleReplaceIcons(e);
+		}
+		else if (modeWidget.isEraseMode())
+		{
+			handleEraseIcons(e);
+		}
+	}
+
+	private void handleDrawIcons(MouseEvent e)
+	{
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 
 		if (mountainsButton.isSelected())
 		{
-			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+			String rangeId = mountainTypes.getSelectedOption();
+			for (Center center : selected)
 			{
-				String rangeId = mountainTypes.getSelectedOption();
-				for (Center center : selected)
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Mountain))
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Mountain))
-					{
-						continue;
-					}
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
-					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
+					continue;
 				}
-			}
-			else
-			{
-				for (Center center : selected)
-				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Mountain)
-					{
-						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
-					}
-				}
+				CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
+				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 			}
 		}
 		else if (hillsButton.isSelected())
 		{
-			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+			String rangeId = hillTypes.getSelectedOption();
+			for (Center center : selected)
 			{
-				String rangeId = hillTypes.getSelectedOption();
-				for (Center center : selected)
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Hill))
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Hill))
-					{
-						continue;
-					}
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
-					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
+					continue;
 				}
-			}
-			else
-			{
-				for (Center center : selected)
-				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Hill)
-					{
-						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
-					}
-				}
+				CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
+				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 			}
 		}
 		else if (dunesButton.isSelected())
 		{
-			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+			String rangeId = duneTypes.getSelectedOption();
+			for (Center center : selected)
 			{
-				String rangeId = duneTypes.getSelectedOption();
-				for (Center center : selected)
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Dune))
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Dune))
-					{
-						continue;
-					}
-					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
-					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
+					continue;
 				}
-			}
-			else
-			{
-				for (Center center : selected)
-				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
-					{
-						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
-					}
-				}
+				CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
+				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 			}
 		}
 		else if (treesButton.isSelected())
 		{
-			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+			String treeType = treeTypes.getSelectedOption();
+			for (Center center : selected)
 			{
-				String treeType = treeTypes.getSelectedOption();
-				for (Center center : selected)
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+				if (modeWidget.isReplaceMode() && cEdit.trees == null)
 				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (modeWidget.isReplaceMode() && cEdit.trees == null)
-					{
-						continue;
-					}
-					CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
-					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, newTrees);
+					continue;
 				}
-			}
-			else
-			{
-				for (Center center : selected)
-				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, null);
-				}
+				CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
+				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, newTrees);
 			}
 		}
 		else if (citiesButton.isSelected())
 		{
-			if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+			Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
+			if (selectedCity == null)
+			{
+				return;
+			}
+
+			String cityType = selectedCity.getFirst();
+			String cityName = selectedCity.getSecond();
+			for (Center center : selected)
+			{
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.City))
+				{
+					continue;
+				}
+
+				CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
+				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
+			}
+		}
+
+		updater.createAndShowMapIncrementalUsingCenters(selected);
+	}
+
+	private void handleReplaceIcons(MouseEvent e)
+	{
+		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+		if (icons.isEmpty())
+		{
+			return;
+		}
+
+		Set<RotatedRectangle> areasBefore = getIconBounds(icons);
+		mapEditingPanel.addProcessingAreas(areasBefore);
+		List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
+
+		for (FreeIcon icon : icons)
+		{
+			// TODO Lock
+
+			iconsBeforeAndAfter.add(icon.deepCopy());
+			
+			if (mountainsButton.isSelected())
+			{
+				icon.groupId = mountainTypes.getSelectedOption();
+				icon.iconIndex = Math.abs(rand.nextInt());
+			}
+			else if (hillsButton.isSelected())
+			{
+				icon.groupId = hillTypes.getSelectedOption();
+				icon.iconIndex = Math.abs(rand.nextInt());
+			}
+			else if (dunesButton.isSelected())
+			{
+				icon.groupId = duneTypes.getSelectedOption();
+				icon.iconIndex = Math.abs(rand.nextInt());
+
+			}
+			else if (treesButton.isSelected())
+			{
+				icon.groupId = treeTypes.getSelectedOption();
+				icon.iconIndex = Math.abs(rand.nextInt());
+			}
+			else if (citiesButton.isSelected())
 			{
 				Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
 				if (selectedCity == null)
 				{
-					return;
+					continue;
 				}
 
 				String cityType = selectedCity.getFirst();
 				String cityName = selectedCity.getSecond();
-				for (Center center : selected)
-				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.City))
-					{
-						continue;
-					}
 
-					CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
-					cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
-				}
+				icon.groupId = cityType;
+				icon.iconName = cityName;
 			}
-			else
-			{
-				for (Center center : selected)
-				{
-					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-					if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
-					{
-						cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, cEdit.trees);
-					}
-				}
-			}
+			
+			iconsBeforeAndAfter.add(icon.deepCopy());
 		}
-		else if (eraseAllButton.isSelected())
+
+		updater.createAndShowMapIncrementalUsingIcons(iconsBeforeAndAfter, () ->
 		{
-			for (Center center : selected)
-			{
-				eraseIconEdits(center, mainWindow.edits);
-			}
+			mapEditingPanel.removeProcessingAreas(areasBefore);
+			mapEditingPanel.repaint();
+		});
+	}
+	
+	private void handleEraseIcons(MouseEvent e)
+	{
+		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+		if (icons.isEmpty())
+		{
+			return;
 		}
 
-		handleMapChange(selected);
+		Set<RotatedRectangle> areasBefore = getIconBounds(icons);
+		mapEditingPanel.addProcessingAreas(areasBefore);
+
+		mainWindow.edits.freeIcons.removeAll(icons);
+
+		updater.createAndShowMapIncrementalUsingIcons(icons, () ->
+		{
+			mapEditingPanel.removeProcessingAreas(areasBefore);
+			mapEditingPanel.repaint();
+		});
 	}
 
-	static void eraseIconEdits(Center center, MapEdits edits)
+	private Set<RotatedRectangle> getIconBounds(List<FreeIcon> icons)
 	{
-		CenterEdit cEdit = edits.centerEdits.get(center.index);
-		cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, null, null);
+		Set<RotatedRectangle> bounds = new HashSet<>();
+		for (FreeIcon icon : icons)
+		{
+			bounds.add(new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds()));
+		}
+		return bounds;
 	}
 
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
@@ -838,14 +872,14 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.addHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 	}
-	
+
 	private void highlightHoverIconsAndShowBrush(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearHighlightedCenters();
-		
+
 		showOrHideBrush(e);
-		
+
 		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
 		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons);
 	}
@@ -899,7 +933,7 @@ public class IconsTool extends EditorTool
 		}
 		return getSelectedCenters(pointFromMouse, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
 	}
-	
+
 	protected List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
 	{
 		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
@@ -918,7 +952,7 @@ public class IconsTool extends EditorTool
 						selected.add(icon);
 					}
 				}
-			}			
+			}
 		}
 		else
 		{
@@ -935,11 +969,11 @@ public class IconsTool extends EditorTool
 					}
 				}
 			}
-		
+
 		}
 		return selected;
 	}
-	
+
 	private boolean isSelectedType(FreeIcon icon)
 	{
 		if (mountainsButton.isSelected() && icon.type == IconType.mountains)
@@ -951,13 +985,13 @@ public class IconsTool extends EditorTool
 		{
 			return true;
 		}
-		
+
 		if (dunesButton.isSelected() && icon.type == IconType.sand)
 		{
 			return true;
 		}
 
-		
+
 		if (treesButton.isSelected() && icon.type == IconType.trees)
 		{
 			return true;
@@ -972,13 +1006,8 @@ public class IconsTool extends EditorTool
 		{
 			return true;
 		}
-		
-		return false;
-	}
 
-	private void handleMapChange(Set<Center> centers)
-	{
-		updater.createAndShowMapIncrementalUsingCenters(centers);
+		return false;
 	}
 
 	@Override

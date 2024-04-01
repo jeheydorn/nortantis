@@ -368,7 +368,6 @@ public class LandWaterTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
-				IconsTool.eraseIconEdits(center, mainWindow.edits);
 				for (Edge edge : center.borders)
 				{
 					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);

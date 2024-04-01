@@ -1,10 +1,13 @@
 package nortantis;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import nortantis.editor.FreeIcon;
@@ -28,14 +31,14 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		anchoredTreeIcons = new HashMapF<>();
 		nonAnchoredIcons = new ArrayList<>();
 	}
-	
+
 	public boolean isEmpty()
 	{
 		if (!nonAnchoredIcons.isEmpty())
 		{
 			return false;
 		}
-		
+
 		for (Entry<Integer, FreeIcon> entry : anchoredNonTreeIcons.entrySet())
 		{
 			if (entry.getValue() != null)
@@ -43,7 +46,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 				return false;
 			}
 		}
-		
+
 		for (Entry<Integer, List<FreeIcon>> entry : anchoredTreeIcons.entrySet())
 		{
 			if (entry.getValue() != null && entry.getValue().size() > 0)
@@ -51,7 +54,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 				return false;
 			}
 		}
-	
+
 		return true;
 	}
 
@@ -121,7 +124,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return anchoredTreeIcons.get(centerIndex);
 	}
 
-	public void removeAll(Set<FreeIcon> toRemove)
+	public void removeAll(Collection<FreeIcon> toRemove)
 	{
 		for (FreeIcon icon : toRemove)
 		{
@@ -245,6 +248,39 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		};
 	}
 
+	public List<FreeIcon> diff(FreeIconCollection other)
+	{
+		// TODO Performance test this
+		
+		Set<FreeIcon> thisSet = new HashSet<>();
+		iterator().forEachRemaining(thisSet::add);
+
+		if (other == null)
+		{
+			return new ArrayList<>(thisSet);
+		}
+	
+		Set<FreeIcon> otherSet = new HashSet<>();
+		other.iterator().forEachRemaining(otherSet::add);
+
+		return new ArrayList<>(getElementsNotInIntersection(thisSet, otherSet));
+	}
+
+	private <T> Set<T> getElementsNotInIntersection(Set<T> set1, Set<T> set2)
+	{
+		Set<T> result = new HashSet<>(set1);
+		// Union of both sets
+		result.addAll(set2);
+
+		Set<T> intersection = new HashSet<>(set1);
+		// Intersection of both sets
+		intersection.retainAll(set2);
+		
+		// Remove elements in the intersection
+		result.removeAll(intersection);
+		return result;
+	}
+
 	public FreeIconCollection deepCopy()
 	{
 		FreeIconCollection copy = new FreeIconCollection();
@@ -254,4 +290,26 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 		return copy;
 	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		FreeIconCollection other = (FreeIconCollection) obj;
+		return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
+				&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons) && Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
+	}
+	
+	
 }

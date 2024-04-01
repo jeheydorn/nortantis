@@ -179,13 +179,22 @@ public class MapEdits implements Serializable
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
+		{
 			return true;
+		}
 		if (obj == null)
+		{
 			return false;
+		}
 		if (getClass() != obj.getClass())
+		{
 			return false;
+		}
 		MapEdits other = (MapEdits) obj;
-		return Objects.equals(centerEdits, other.centerEdits) && Objects.equals(edgeEdits, other.edgeEdits)
-				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
+		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits)
+				&& Objects.equals(edgeEdits, other.edgeEdits) && Objects.equals(freeIcons, other.freeIcons)
+				&& hasCreatedTextBounds == other.hasCreatedTextBounds && hasIconEdits == other.hasIconEdits
+				&& Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
 	}
+
 }
