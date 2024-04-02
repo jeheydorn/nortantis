@@ -250,7 +250,7 @@ public class IconsTool extends EditorTool
 
 	private void showOrHideBrush(MouseEvent e)
 	{
-		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		int brushDiameter = getBrushDiameter();
 		if (modeWidget.isDrawMode() || brushDiameter <= 1)
 		{
 			mapEditingPanel.hideBrush();
@@ -259,6 +259,7 @@ public class IconsTool extends EditorTool
 		{
 			java.awt.Point mouseLocation = e.getPoint();
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
+			mapEditingPanel.repaint();
 		}
 
 	}
@@ -274,7 +275,7 @@ public class IconsTool extends EditorTool
 		treeTypes.hider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
-		brushSizeHider.setVisible(!(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode())));
+		brushSizeHider.setVisible(!(citiesButton.isSelected() && modeWidget.isDrawMode()));
 	}
 
 	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
@@ -633,6 +634,7 @@ public class IconsTool extends EditorTool
 
 	private void handleMousePressOrDrag(MouseEvent e)
 	{
+		showOrHideBrush(e);
 		if (eraseAllButton.isSelected())
 		{
 			handleEraseIcons(e);
@@ -661,10 +663,6 @@ public class IconsTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Mountain))
-				{
-					continue;
-				}
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
 				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 			}
@@ -675,10 +673,6 @@ public class IconsTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Hill))
-				{
-					continue;
-				}
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
 				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 			}
@@ -689,10 +683,6 @@ public class IconsTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.Dune))
-				{
-					continue;
-				}
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
 				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
 			}
@@ -703,10 +693,6 @@ public class IconsTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				if (modeWidget.isReplaceMode() && cEdit.trees == null)
-				{
-					continue;
-				}
 				CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
 				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, newTrees);
 			}
@@ -724,11 +710,6 @@ public class IconsTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				if (modeWidget.isReplaceMode() && (cEdit.icon == null || cEdit.icon.iconType != CenterIconType.City))
-				{
-					continue;
-				}
-
 				CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
 				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
 			}
@@ -745,8 +726,6 @@ public class IconsTool extends EditorTool
 			return;
 		}
 
-		Set<RotatedRectangle> areasBefore = getIconBounds(icons);
-		mapEditingPanel.addProcessingAreas(areasBefore);
 		List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
 
 		for (FreeIcon icon : icons)
@@ -794,11 +773,7 @@ public class IconsTool extends EditorTool
 			iconsBeforeAndAfter.add(icon.deepCopy());
 		}
 
-		updater.createAndShowMapIncrementalUsingIcons(iconsBeforeAndAfter, () ->
-		{
-			mapEditingPanel.removeProcessingAreas(areasBefore);
-			mapEditingPanel.repaint();
-		});
+		updater.createAndShowMapIncrementalUsingIcons(iconsBeforeAndAfter);
 	}
 	
 	private void handleEraseIcons(MouseEvent e)
@@ -809,26 +784,8 @@ public class IconsTool extends EditorTool
 			return;
 		}
 
-		Set<RotatedRectangle> areasBefore = getIconBounds(icons);
-		mapEditingPanel.addProcessingAreas(areasBefore);
-
 		mainWindow.edits.freeIcons.removeAll(icons);
-
-		updater.createAndShowMapIncrementalUsingIcons(icons, () ->
-		{
-			mapEditingPanel.removeProcessingAreas(areasBefore);
-			mapEditingPanel.repaint();
-		});
-	}
-
-	private Set<RotatedRectangle> getIconBounds(List<FreeIcon> icons)
-	{
-		Set<RotatedRectangle> bounds = new HashSet<>();
-		for (FreeIcon icon : icons)
-		{
-			bounds.add(new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds()));
-		}
-		return bounds;
+		updater.createAndShowMapIncrementalUsingIcons(icons);
 	}
 
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
@@ -926,17 +883,12 @@ public class IconsTool extends EditorTool
 
 	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
 	{
-		if (citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()))
-		{
-			// It doesn't make sense to allow drawing cities with a large brush.
-			return getSelectedCenters(pointFromMouse, 1);
-		}
-		return getSelectedCenters(pointFromMouse, brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+		return getSelectedCenters(pointFromMouse, getBrushDiameter());
 	}
 
 	protected List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
 	{
-		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		int brushDiameter = getBrushDiameter();
 		List<FreeIcon> selected = new ArrayList<>();
 		Point graphPoint = getPointOnGraph(pointFromMouse);
 
@@ -972,6 +924,16 @@ public class IconsTool extends EditorTool
 
 		}
 		return selected;
+	}
+	
+	private int getBrushDiameter()
+	{
+		if (brushSizeHider.isVisible())
+		{
+			return brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		}
+		
+		return brushSizes.get(0);
 	}
 
 	private boolean isSelectedType(FreeIcon icon)

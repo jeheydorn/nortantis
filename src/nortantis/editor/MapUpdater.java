@@ -123,9 +123,9 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null, postRun);
 	}
 
-	public void createAndShowMapIncrementalUsingIcons(List<FreeIcon> iconsChanged, Runnable postRun)
+	public void createAndShowMapIncrementalUsingIcons(List<FreeIcon> iconsChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, postRun);
+		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, null);
 	}
 
 	public void reprocessBooks()

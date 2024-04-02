@@ -672,7 +672,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				handleImagesRefresh();
-				updater.createAndShowMapFull();
+				updater.createAndShowMapFull(() -> mapEditingPanel.clearAllSelectionsAndHighlights());
 			}
 		});
 

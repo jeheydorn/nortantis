@@ -65,6 +65,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedCenters = new HashSet<>();
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
+		highlightedAreas = new HashSet<>();
+		processingAreas = new HashSet<>();
 		zoom = 1.0;
 		resolution = 1.0;
 	}
@@ -122,7 +124,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setHighlightedAreasFromTexts(List<MapText> texts)
 	{
-		highlightedAreas = new HashSet<>();
+		highlightedAreas.clear();
 		for (MapText text : texts)
 		{
 			if (text.line1Area != null)
@@ -139,7 +141,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	
 	public void setHighlightedAreasFromIcons(IconDrawer iconDrawer, List<FreeIcon> icons)
 	{
-		highlightedAreas = new HashSet<>();
+		highlightedAreas.clear();
 		for (FreeIcon icon :icons)
 		{
 			nortantis.geom.Rectangle bounds = iconDrawer.toIconDrawTask(icon).createBounds();
@@ -149,53 +151,32 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void clearHighlightedAreas()
 	{
-		this.highlightedAreas = null;
+		highlightedAreas.clear();
 	}
 
 	public void addProcessingAreasFromTexts(List<MapText> texts)
 	{
-		Set<RotatedRectangle> areas = new HashSet<>();
 		for (MapText text : texts)
 		{
 			if (text.line1Area != null)
 			{
-				areas.add(text.line1Area);
+				processingAreas.add(text.line1Area);
 			}
 
 			if (text.line2Area != null)
 			{
-				areas.add(text.line2Area);
+				processingAreas.add(text.line2Area);
 			}
-		}
-		if (processingAreas == null)
-		{
-			processingAreas = areas;
-		}
-		else
-		{
-			processingAreas.addAll(areas);
 		}
 	}
 	
 	public void addProcessingAreas(Set<RotatedRectangle> areas)
 	{
-		if (processingAreas == null)
-		{
-			processingAreas = areas;
-		}
-		else
-		{
-			processingAreas.addAll(areas);
-		}
+		processingAreas.addAll(areas);
 	}
 
 	public void removeProcessingAreas(Set<RotatedRectangle> areasToRemove)
 	{
-		if (processingAreas == null)
-		{
-			return;
-		}
-
 		for (RotatedRectangle area : areasToRemove)
 		{
 			processingAreas.remove(area);
@@ -204,7 +185,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void clearProcessingAreas()
 	{
-		this.processingAreas = null;
+		processingAreas.clear();
 	}
 
 	public void addHighlightedCenter(Center c)
@@ -405,7 +386,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawAreas(Graphics g)
 	{
-		if (highlightedAreas != null)
+		if (!highlightedAreas.isEmpty())
 		{
 			g.setColor(highlightColor);
 			for (Area area : highlightedAreas)
@@ -414,7 +395,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 
-		if (processingAreas != null)
+		if (!processingAreas.isEmpty())
 		{
 			g.setColor(processingColor);
 			for (RotatedRectangle rect : processingAreas)
@@ -515,5 +496,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearProcessingAreas();
 		highlightRivers = false;
 		highlightLakes = false;
+		repaint();
 	}
 }

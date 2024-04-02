@@ -89,7 +89,7 @@ public class MapCreator implements WarningLogger
 	{
 		IconDrawer iconDrawer = new IconDrawer(mapParts.graph, new Random(0), settings);
 
-		List<Rectangle> changeBounds = new ArrayList<>();
+		Rectangle changeBounds = null;
 		for (FreeIcon icon : iconsChanged)
 		{
 			IconDrawTask task = iconDrawer.toIconDrawTask(icon);
@@ -98,10 +98,22 @@ public class MapCreator implements WarningLogger
 			{
 				continue;
 			}
-			changeBounds.add(change);
+			if (changeBounds == null)
+			{
+				changeBounds = change;
+			}
+			else
+			{
+				changeBounds.add(change);
+			}
 		}
 
-		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds);
+		if (changeBounds == null)
+		{
+			return null;
+		}
+		
+		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, Arrays.asList(changeBounds));
 	}
 
 	private IntRectangle incrementalUpdateMultipleBounds(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
