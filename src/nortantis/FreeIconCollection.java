@@ -32,7 +32,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		nonAnchoredIcons = new ArrayList<>();
 	}
 
-	public boolean isEmpty()
+	public synchronized boolean isEmpty()
 	{
 		if (!nonAnchoredIcons.isEmpty())
 		{
@@ -58,7 +58,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return true;
 	}
 
-	public void addOrReplace(FreeIcon icon)
+	public synchronized void addOrReplace(FreeIcon icon)
 	{
 		if (icon.centerIndex != null)
 		{
@@ -77,12 +77,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 	}
 
-	public FreeIcon getNonTree(int centerIndex)
+	public synchronized FreeIcon getNonTree(int centerIndex)
 	{
 		return anchoredNonTreeIcons.get(centerIndex);
 	}
 
-	public boolean hasAnchoredIcons(int centerIndex)
+	public synchronized boolean hasAnchoredIcons(int centerIndex)
 	{
 		if (anchoredNonTreeIcons.get(centerIndex) != null)
 		{
@@ -92,7 +92,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return hasTrees(centerIndex);
 	}
 
-	public List<FreeIcon> getAnchoredIcons(int centerIndex)
+	public synchronized List<FreeIcon> getAnchoredIcons(int centerIndex)
 	{
 		List<FreeIcon> result = new ArrayList<FreeIcon>(getTrees(centerIndex));
 		if (getNonTree(centerIndex) != null)
@@ -102,7 +102,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return result;
 	}
 
-	public void clearTrees(int centerIndex)
+	public synchronized void clearTrees(int centerIndex)
 	{
 		if (anchoredTreeIcons.containsKey(centerIndex))
 		{
@@ -110,12 +110,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 	}
 
-	public boolean hasTrees(int centerIndex)
+	public synchronized boolean hasTrees(int centerIndex)
 	{
 		return !getTrees(centerIndex).isEmpty();
 	}
 
-	private List<FreeIcon> getTrees(int centerIndex)
+	private synchronized List<FreeIcon> getTrees(int centerIndex)
 	{
 		if (!anchoredTreeIcons.containsKey(centerIndex))
 		{
@@ -124,7 +124,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return anchoredTreeIcons.get(centerIndex);
 	}
 
-	public void removeAll(Collection<FreeIcon> toRemove)
+	public synchronized void removeAll(Collection<FreeIcon> toRemove)
 	{
 		for (FreeIcon icon : toRemove)
 		{
@@ -248,25 +248,41 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		};
 	}
 
-	public List<FreeIcon> diff(FreeIconCollection other)
+	public synchronized void doWithLock(Runnable task)
 	{
+		task.run();
+	}
+
+	public synchronized List<FreeIcon> diff(FreeIconCollection other)
+	{
+		if (other == null)
+		{
+			Set<FreeIcon> thisSet = new HashSet<>();
+			iterator().forEachRemaining(thisSet::add);
+			return new ArrayList<>(thisSet);
+		}
+
 		// TODO Performance test this
-		
+
+		List<FreeIcon> result = new ArrayList<>();
+
 		Set<FreeIcon> thisSet = new HashSet<>();
 		iterator().forEachRemaining(thisSet::add);
 
-		if (other == null)
-		{
-			return new ArrayList<>(thisSet);
-		}
-	
 		Set<FreeIcon> otherSet = new HashSet<>();
-		other.iterator().forEachRemaining(otherSet::add);
+		// This creates a holden weight, which could cause a deadlock if another thread has 'other' locked and is trying to lock 'this'.
+		// I don't think a deadlock can happen though because this method is the only method that does this, and it is only called by the UI
+		// thread.
+		other.doWithLock(() ->
+		{
+			other.iterator().forEachRemaining(otherSet::add);
+			result.addAll(getElementsNotInIntersection(thisSet, otherSet));
+		});
 
-		return new ArrayList<>(getElementsNotInIntersection(thisSet, otherSet));
+		return result;
 	}
 
-	private <T> Set<T> getElementsNotInIntersection(Set<T> set1, Set<T> set2)
+	private static <T> Set<T> getElementsNotInIntersection(Set<T> set1, Set<T> set2)
 	{
 		Set<T> result = new HashSet<>(set1);
 		// Union of both sets
@@ -275,13 +291,13 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		Set<T> intersection = new HashSet<>(set1);
 		// Intersection of both sets
 		intersection.retainAll(set2);
-		
+
 		// Remove elements in the intersection
 		result.removeAll(intersection);
 		return result;
 	}
 
-	public FreeIconCollection deepCopy()
+	public synchronized FreeIconCollection deepCopy()
 	{
 		FreeIconCollection copy = new FreeIconCollection();
 		for (FreeIcon icon : this)
@@ -310,6 +326,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
 				&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons) && Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
 	}
-	
-	
+
+
 }

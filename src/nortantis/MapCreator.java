@@ -83,7 +83,6 @@ public class MapCreator implements WarningLogger
 		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds);
 	}
 
-	// TODO Call this from IconTool
 	public IntRectangle incrementalUpdateIcons(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
 			List<FreeIcon> iconsChanged)
 	{

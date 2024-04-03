@@ -291,12 +291,10 @@ public class IconDrawer
 							freeIcons.addOrReplace(icon);
 						}
 
-						// TODO lock
 						cEdit.icon = null;
 					}
 					else
 					{
-						// TODO lock
 						cEdit.icon = null;
 					}
 				}
@@ -357,7 +355,6 @@ public class IconDrawer
 			freeIcons.addOrReplace(icon);
 		}
 
-		// TODO lock
 		cEdit.icon = null;
 	}
 
@@ -368,8 +365,11 @@ public class IconDrawer
 	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor,
 			WarningLogger warningLogger)
 	{
-		convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-		createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+		freeIcons.doWithLock(() -> 
+		{
+			convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
+			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);			
+		});
 	}
 	
 	private void createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger)
@@ -405,7 +405,6 @@ public class IconDrawer
 				Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(icon.groupId, icon.iconName, warningLogger);
 				if (groupAndName != null)
 				{
-					// TODO Lock the free icon before changing it.
 					icon.groupId = groupAndName.getFirst();
 					icon.iconName = groupAndName.getSecond();
 
@@ -482,7 +481,6 @@ public class IconDrawer
 		String newGroupId = changeGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
 		if (!icon.groupId.equals(newGroupId) && newGroupId != null)
 		{
-			// TODO Lock
 			icon.groupId = changeGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
 		}
 
@@ -564,7 +562,6 @@ public class IconDrawer
 			{
 				warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
 						+ "'. There are no " + iconTypeNameForWarnings.toString().toLowerCase() + " icons, so none will be drawn.");
-				// TODO Lock down the edits and remove this free icon.
 			}
 			warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
 					+ "'. The group '" + newGroupId + "' will be used instead.");
@@ -844,28 +841,35 @@ public class IconDrawer
 	
 	public Tuple2<List<Set<Center>>, List<IconDrawTask>> addIcons(List<Set<Center>> mountainAndHillGroups, WarningLogger warningLogger)
 	{
-		List<IconDrawTask> cities;
+		Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
 		
-		Logger.println("Adding mountains and hills.");
-		List<Set<Center>> mountainGroups;;
-		addOrUnmarkMountainsAndHills(mountainAndHillGroups);
-		// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
-		// couldn't draw
-		// don't later get labels.
-		mountainGroups = findMountainGroups();
+		freeIcons.doWithLock(() -> 
+		{
+			List<IconDrawTask> cities;
+			
+			Logger.println("Adding mountains and hills.");
+			List<Set<Center>> mountainGroups;;
+			addOrUnmarkMountainsAndHills(mountainAndHillGroups);
+			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
+			// couldn't draw
+			// don't later get labels.
+			mountainGroups = findMountainGroups();
+			result.setFirst(mountainGroups);
 
-		Logger.println("Adding sand dunes.");
-		addSandDunes();
+			Logger.println("Adding sand dunes.");
+			addSandDunes();
 
-		Logger.println("Adding trees.");
-		addTrees();
+			Logger.println("Adding trees.");
+			addTrees();
 
-		Logger.println("Adding cities.");
-		cities = addOrUnmarkCities();
+			Logger.println("Adding cities.");
+			cities = addOrUnmarkCities();
+			result.setSecond(cities);
+			
+			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+		});
 		
-		createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
-		
-		return new Tuple2<>(mountainGroups, cities);
+		return result;
 	}
 	
 	/**
@@ -1202,7 +1206,6 @@ public class IconDrawer
 			return;
 		}
 
-		// TODO Lock while building and using this.
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
 		for (Center center : centersToConvert)
 		{
@@ -1216,7 +1219,6 @@ public class IconDrawer
 
 		for (Center center : centersToConvert)
 		{
-			// TODO lock
 			edits.centerEdits.get(center.index).trees = null;
 		}
 	}
@@ -1245,7 +1247,6 @@ public class IconDrawer
 
 				if (!cTrees.treeType.equals(groupId))
 				{
-					// TODO lock
 					cTrees.treeType = groupId;
 				}
 

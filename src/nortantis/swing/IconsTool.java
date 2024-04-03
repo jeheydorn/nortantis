@@ -54,6 +54,7 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
+import nortantis.util.Tuple1;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
@@ -720,72 +721,88 @@ public class IconsTool extends EditorTool
 
 	private void handleReplaceIcons(MouseEvent e)
 	{
-		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-		if (icons.isEmpty())
+		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
+		
+		mainWindow.edits.freeIcons.doWithLock(() -> 
 		{
-			return;
-		}
-
-		List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
-
-		for (FreeIcon icon : icons)
-		{
-			// TODO Lock
-
-			iconsBeforeAndAfter.add(icon.deepCopy());
-			
-			if (mountainsButton.isSelected())
+			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+			if (icons.isEmpty())
 			{
-				icon.groupId = mountainTypes.getSelectedOption();
-				icon.iconIndex = Math.abs(rand.nextInt());
+				return;
 			}
-			else if (hillsButton.isSelected())
-			{
-				icon.groupId = hillTypes.getSelectedOption();
-				icon.iconIndex = Math.abs(rand.nextInt());
-			}
-			else if (dunesButton.isSelected())
-			{
-				icon.groupId = duneTypes.getSelectedOption();
-				icon.iconIndex = Math.abs(rand.nextInt());
 
-			}
-			else if (treesButton.isSelected())
+			List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
+			tuple.set(iconsBeforeAndAfter);
+
+			for (FreeIcon icon : icons)
 			{
-				icon.groupId = treeTypes.getSelectedOption();
-				icon.iconIndex = Math.abs(rand.nextInt());
-			}
-			else if (citiesButton.isSelected())
-			{
-				Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
-				if (selectedCity == null)
+				iconsBeforeAndAfter.add(icon.deepCopy());
+				
+				if (mountainsButton.isSelected())
 				{
-					continue;
+					icon.groupId = mountainTypes.getSelectedOption();
+					icon.iconIndex = Math.abs(rand.nextInt());
 				}
+				else if (hillsButton.isSelected())
+				{
+					icon.groupId = hillTypes.getSelectedOption();
+					icon.iconIndex = Math.abs(rand.nextInt());
+				}
+				else if (dunesButton.isSelected())
+				{
+					icon.groupId = duneTypes.getSelectedOption();
+					icon.iconIndex = Math.abs(rand.nextInt());
 
-				String cityType = selectedCity.getFirst();
-				String cityName = selectedCity.getSecond();
+				}
+				else if (treesButton.isSelected())
+				{
+					icon.groupId = treeTypes.getSelectedOption();
+					icon.iconIndex = Math.abs(rand.nextInt());
+				}
+				else if (citiesButton.isSelected())
+				{
+					Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
+					if (selectedCity == null)
+					{
+						continue;
+					}
 
-				icon.groupId = cityType;
-				icon.iconName = cityName;
+					String cityType = selectedCity.getFirst();
+					String cityName = selectedCity.getSecond();
+
+					icon.groupId = cityType;
+					icon.iconName = cityName;
+				}
+				
+				iconsBeforeAndAfter.add(icon.deepCopy());
 			}
-			
-			iconsBeforeAndAfter.add(icon.deepCopy());
+		});
+		
+		if (tuple.get() != null && !tuple.get().isEmpty())
+		{
+			updater.createAndShowMapIncrementalUsingIcons(tuple.get());
 		}
-
-		updater.createAndShowMapIncrementalUsingIcons(iconsBeforeAndAfter);
 	}
 	
 	private void handleEraseIcons(MouseEvent e)
 	{
-		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-		if (icons.isEmpty())
+		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
+		mainWindow.edits.freeIcons.doWithLock(() -> 
 		{
-			return;
-		}
+			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+			tuple.set(icons);
+			if (icons.isEmpty())
+			{
+				return;
+			}
 
-		mainWindow.edits.freeIcons.removeAll(icons);
-		updater.createAndShowMapIncrementalUsingIcons(icons);
+			mainWindow.edits.freeIcons.removeAll(icons);
+		});
+
+		if (tuple.get() != null && !tuple.get().isEmpty())
+		{
+			updater.createAndShowMapIncrementalUsingIcons(tuple.get());			
+		}
 	}
 
 	private Set<Center> getSelectedLandCenters(java.awt.Point point)
@@ -837,8 +854,13 @@ public class IconsTool extends EditorTool
 
 		showOrHideBrush(e);
 
-		List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons);
+		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
+		mainWindow.edits.freeIcons.doWithLock(() -> 
+		{
+			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+			tuple.set(icons);
+		});
+		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, tuple.get());
 	}
 
 	@Override
