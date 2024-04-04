@@ -14,10 +14,12 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import nortantis.CancelledException;
+import nortantis.DebugFlags;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.NameCreator;
+import nortantis.Stopwatch;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -404,18 +406,33 @@ public abstract class MapUpdater
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0 || edgesChanged != null && edgesChanged.size() > 0)
 						{
-							IntRectangle replaceBounds = new MapCreator().incrementalUpdate(settings, mapParts, map,
+							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
+							IntRectangle replaceBounds = new MapCreator().incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
+							if (DebugFlags.printIncrementalUpdateTimes())
+							{
+								incrementalUpdateTimer.printElapsedTime();
+							}
 							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
 						else if (textChanged != null && textChanged.size() > 0)
 						{
+							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
+							if (DebugFlags.printIncrementalUpdateTimes())
+							{
+								incrementalUpdateTimer.printElapsedTime();
+							}
 							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
 						else if (iconsChanged != null && iconsChanged.size() > 0)
 						{
+							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
+							if (DebugFlags.printIncrementalUpdateTimes())
+							{
+								incrementalUpdateTimer.printElapsedTime();
+							}
 							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
 						else

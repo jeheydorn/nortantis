@@ -37,6 +37,7 @@ import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Pair;
 import nortantis.util.Range;
+import nortantis.util.Tuple1;
 import nortantis.util.Tuple2;
 
 public class TextDrawer
@@ -401,13 +402,13 @@ public class TextDrawer
 			return bounds;
 		}
 
-		Rectangle[] wrapperToMakeCompilerHappy = new Rectangle[] { bounds };
+		Tuple1<Rectangle> wrapperToMakeCompilerHappy = new Tuple1<>(bounds);
 
 		doForEachTextInBounds(mapTexts, graph, bounds, false, (text, area) ->
 		{
-			wrapperToMakeCompilerHappy[0] = wrapperToMakeCompilerHappy[0].add(area.getBounds());
+			wrapperToMakeCompilerHappy.set(wrapperToMakeCompilerHappy.get().add(area.getBounds()));
 		});
-		return wrapperToMakeCompilerHappy[0];
+		return wrapperToMakeCompilerHappy.get();
 	}
 
 	private void drawText(Image map, WorldGraph graph, List<MapText> textToDraw, Rectangle drawBounds)

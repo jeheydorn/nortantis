@@ -37,6 +37,14 @@ public class IntRectangle
 		return contains(other.x, other.y) && contains(other.x + other.width, other.y + other.height);
 	}
 	
+	/**
+	 * Returns a new IntRectangle with the same centroid as this one (if the paddings are even numbers) but with the width and height expanded by the given width and height.
+	 */
+	public IntRectangle pad(int paddWidth, int paddHeight)
+	{
+		return new IntRectangle(x - paddWidth / 2, y - paddHeight / 2, width + paddWidth, height + paddHeight);
+	}
+	
 	public IntRectangle add(IntPoint point)
 	{
 		return add(point.x, point.y);
