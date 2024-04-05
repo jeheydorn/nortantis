@@ -87,12 +87,10 @@ public class MapCreator implements WarningLogger
 	public IntRectangle incrementalUpdateIcons(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
 			List<FreeIcon> iconsChanged)
 	{
-		IconDrawer iconDrawer = new IconDrawer(mapParts.graph, new Random(0), settings);
-
 		Rectangle changeBounds = null;
 		for (FreeIcon icon : iconsChanged)
 		{
-			IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+			IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(icon);
 			Rectangle change = task.createBounds();
 			if (change == null)
 			{

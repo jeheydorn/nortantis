@@ -406,7 +406,7 @@ public abstract class MapUpdater
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0 || edgesChanged != null && edgesChanged.size() > 0)
 						{
-							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
+							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
 							if (DebugFlags.printIncrementalUpdateTimes())
@@ -417,7 +417,7 @@ public abstract class MapUpdater
 						}
 						else if (textChanged != null && textChanged.size() > 0)
 						{
-							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
+							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for text");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -619,7 +619,7 @@ public abstract class MapUpdater
 	{
 		if (edits.centerEdits.isEmpty())
 		{
-			edits.initializeCenterEdits(mapParts.graph.centers, mapParts.iconDrawer);
+			edits.initializeCenterEdits(mapParts.graph.centers);
 		}
 	}
 

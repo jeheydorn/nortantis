@@ -68,7 +68,7 @@ public class MapEdits implements Serializable
 		return text.isEmpty() && centerEdits.isEmpty() && freeIcons.isEmpty();
 	}
 
-	public void initializeCenterEdits(List<Center> centers, IconDrawer iconDrawer)
+	public void initializeCenterEdits(List<Center> centers)
 	{
 		centerEdits = new ArrayList<>(centers.size());
 		for (int index : new Range(centers.size()))

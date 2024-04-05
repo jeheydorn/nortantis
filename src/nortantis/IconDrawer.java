@@ -365,6 +365,12 @@ public class IconDrawer
 	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor,
 			WarningLogger warningLogger)
 	{
+		// This lock is to make sure nobody else is using this.freeIcons from within this IconDrawer when we change the pointer.
+		freeIcons.doWithLock(() ->
+		{
+			freeIcons = edits.freeIcons;
+		});
+		
 		freeIcons.doWithLock(() -> 
 		{
 			convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
@@ -547,7 +553,7 @@ public class IconDrawer
 		{
 			return treeHeightScale;
 		}
-		throw new IllegalArgumentException("Unrecognized icon type ffor gettling type-level scale: " + type);
+		throw new IllegalArgumentException("Unrecognized icon type for gettling type-level scale: " + type);
 	}
 
 
