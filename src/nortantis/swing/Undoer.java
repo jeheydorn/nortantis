@@ -117,7 +117,7 @@ public class Undoer
 		if (undoStack.isEmpty())
 		{
 			// This should not happen because the undoer should not be initialized until the edits are created.
-			assert !copyOfSettingsWhenEditorWasOpened.edits.isEmpty();
+			assert copyOfSettingsWhenEditorWasOpened.edits.isInitialized();
 
 			settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
 			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);

@@ -62,10 +62,10 @@ public class MapEdits implements Serializable
 		edgeEdits = new ArrayList<>();
 		freeIcons = new FreeIconCollection();
 	}
-
-	public boolean isEmpty()
+	
+	public boolean isInitialized()
 	{
-		return text.isEmpty() && centerEdits.isEmpty() && freeIcons.isEmpty();
+		return !centerEdits.isEmpty();
 	}
 
 	public void initializeCenterEdits(List<Center> centers)

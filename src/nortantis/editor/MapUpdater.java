@@ -372,7 +372,7 @@ public abstract class MapUpdater
 
 		final MapSettings settings = getSettingsFromGUI();
 
-		if (createEditsIfNotPresentAndUseMapParts && settings.edits.isEmpty())
+		if (createEditsIfNotPresentAndUseMapParts && !settings.edits.isInitialized())
 		{
 			settings.edits.bakeGeneratedTextAsEdits = true;
 		}

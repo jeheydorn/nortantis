@@ -1442,7 +1442,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			handleImagesRefresh();
 		}
 
-		if (settings.edits != null && !settings.edits.isEmpty())
+		if (settings.edits != null && settings.edits.isInitialized())
 		{
 			undoer.initialize(settings);
 			enableOrDisableFieldsThatRequireMap(true, settings);

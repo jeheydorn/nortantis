@@ -505,7 +505,7 @@ public class MapCreator implements WarningLogger
 			{
 				Logger.println("Creating the graph.");
 				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution,
-						settings.edits.isEmpty());
+						!settings.edits.isInitialized());
 				if (mapParts != null)
 				{
 					mapParts.graph = graphCreated;

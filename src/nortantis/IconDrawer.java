@@ -86,7 +86,7 @@ public class IconDrawer
 		}
 		this.resolutionScale = settings.resolution;
 
-		if (settings.edits.isEmpty())
+		if (!settings.edits.isInitialized())
 		{
 			this.freeIcons = new FreeIconCollection();
 			settings.edits.freeIcons = freeIcons;
@@ -98,7 +98,7 @@ public class IconDrawer
 		
 		iconsToDraw = new ArrayList<>();
 
-		meanPolygonWidth = findMeanCenterWidth(graph);
+		meanPolygonWidth = graph.getMeanCenterWidth();
 		duneScale = settings.duneScale;
 
 		mountainScale = settings.mountainScale;
@@ -109,36 +109,9 @@ public class IconDrawer
 		treeDensityScale = calcTreeDensityScale();
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
 
-		averageCenterWidthBetweenNeighbors = findMeanCenterWidthBetweenNeighbors();
+		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidth();
 	}
 
-	public static double findMeanCenterWidth(WorldGraph graph)
-	{
-		double widthSum = 0;
-		int count = 0;
-		for (Center center : graph.centers)
-		{
-			double width = center.findWidth();
-
-			if (width > 0)
-			{
-				count++;
-				widthSum += width;
-			}
-		}
-
-		return widthSum / count;
-	}
-
-	private double findMeanCenterWidthBetweenNeighbors()
-	{
-		double sum = 0;
-		for (Center c : graph.centers)
-		{
-			sum += findCenterWidthBetweenNeighbors(c);
-		}
-		return sum / graph.centers.size();
-	}
 
 	public void markMountains()
 	{
@@ -1043,7 +1016,7 @@ public class IconDrawer
 	private double findNewMountainWidthBeforeTypeLevelScaling(Center c)
 	{
 		// Find the center's size along the x axis.
-		return findCenterWidthBetweenNeighbors(c);
+		return graph.findCenterWidthBetweenNeighbors(c);
 	}
 
 	private double findNewHillWidthBeforeTypeLevelScaling(Center c)
@@ -1347,26 +1320,6 @@ public class IconDrawer
 			this.biomeFrequency = biomeFrequency;
 		}
 	};
-
-	private double findCenterWidthBetweenNeighbors(Center c)
-	{
-		Center eastMostNeighbor = Collections.max(c.neighbors, new Comparator<Center>()
-		{
-			public int compare(Center c1, Center c2)
-			{
-				return Double.compare(c1.loc.x, c2.loc.x);
-			}
-		});
-		Center westMostNeighbor = Collections.min(c.neighbors, new Comparator<Center>()
-		{
-			public int compare(Center c1, Center c2)
-			{
-				return Double.compare(c1.loc.x, c2.loc.x);
-			}
-		});
-		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
-		return cSize;
-	}
 
 	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
 			Random rand, String groupId)

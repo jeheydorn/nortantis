@@ -78,6 +78,8 @@ public class WorldGraph extends VoronoiGraph
 	// Prevents small maps from containing only one tectonic plate.
 	final int minNinthtoLastPlateSize = 100;
 	public boolean isForFrayedBorder;
+	private Double meanCenterWidth;
+	private Double meanCenterWidthBetweenNeighbors;
 
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
@@ -104,6 +106,8 @@ public class WorldGraph extends VoronoiGraph
 		// looks better for drawing,
 		// and it works better for smooth coastlines.
 		updateCenterLocationsToCentroids();
+		meanCenterWidth = findMeanCenterWidth();
+		meanCenterWidthBetweenNeighbors = findMeanCenterWidthBetweenNeighbors();
 	}
 
 	/**
@@ -116,7 +120,55 @@ public class WorldGraph extends VoronoiGraph
 		setupColors();
 		setupRandomSeeds(r);
 	}
+	
+	private double findMeanCenterWidth()
+	{
+		double widthSum = 0;
+		int count = 0;
+		for (Center center : centers)
+		{
+			double width = center.findWidth();
 
+			if (width > 0)
+			{
+				count++;
+				widthSum += width;
+			}
+		}
+
+		return widthSum / count;
+	}
+
+	private double findMeanCenterWidthBetweenNeighbors()
+	{
+		double sum = 0;
+		for (Center c : centers)
+		{
+			sum += findCenterWidthBetweenNeighbors(c);
+		}
+		return sum / centers.size();
+	}
+
+	public double findCenterWidthBetweenNeighbors(Center c)
+	{
+		Center eastMostNeighbor = Collections.max(c.neighbors, new Comparator<Center>()
+		{
+			public int compare(Center c1, Center c2)
+			{
+				return Double.compare(c1.loc.x, c2.loc.x);
+			}
+		});
+		Center westMostNeighbor = Collections.min(c.neighbors, new Comparator<Center>()
+		{
+			public int compare(Center c1, Center c2)
+			{
+				return Double.compare(c1.loc.x, c2.loc.x);
+			}
+		});
+		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
+		return cSize;
+	}
+	
 	private void updateCenterLocationsToCentroids()
 	{
 		for (Center center : centers)
@@ -1861,5 +1913,15 @@ public class WorldGraph extends VoronoiGraph
 		}
 		
 		bounds = new Rectangle(0, 0, targetWidth, targetHeight);
+	}
+	
+	public double getMeanCenterWidth()
+	{
+		return meanCenterWidth;
+	}
+
+	public double getMeanCenterWidthBetweenNeighbors()
+	{
+		return meanCenterWidthBetweenNeighbors;
 	}
 }

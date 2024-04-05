@@ -484,7 +484,6 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			protected MapEdits getEdits()
 			{
-				assert settings.edits.isEmpty();
 				return settings.edits;
 			}
 
