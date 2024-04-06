@@ -338,11 +338,7 @@ public class IconDrawer
 	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor,
 			WarningLogger warningLogger)
 	{
-		// This lock is to make sure nobody else is using this.freeIcons from within this IconDrawer when we change the pointer.
-		freeIcons.doWithLock(() ->
-		{
-			freeIcons = edits.freeIcons;
-		});
+		assert freeIcons == edits.freeIcons;
 		
 		freeIcons.doWithLock(() -> 
 		{

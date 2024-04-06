@@ -262,8 +262,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			return new ArrayList<>(thisSet);
 		}
 
-		// TODO Performance test this
-
 		List<FreeIcon> result = new ArrayList<>();
 
 		Set<FreeIcon> thisSet = new HashSet<>();
@@ -278,7 +276,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			other.iterator().forEachRemaining(otherSet::add);
 			result.addAll(getElementsNotInIntersection(thisSet, otherSet));
 		});
-
+		
 		return result;
 	}
 

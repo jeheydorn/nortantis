@@ -58,7 +58,7 @@ public class GraphCreator
 		p.fillRect(0, 0, graph.getWidth(), graph.getHeight());
 		graph.paintElevationUsingTrianges(p);
 
-		heightMap = ImageHelper.blur(heightMap, (int) IconDrawer.findMeanCenterWidth(graph) / 2, false);
+		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false);
 
 		// Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
 		Image mountains = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/mountain texture.png").toString());

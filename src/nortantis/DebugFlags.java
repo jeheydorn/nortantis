@@ -26,6 +26,8 @@ public class DebugFlags
 	 */
 	private static boolean printCenterIndexes = false;
 	
+	private static int[] indexesOfCentersToHighlight = new int[] {};
+	
 	
 	public static boolean showIncrementalUpdateBounds()
 	{
@@ -45,6 +47,15 @@ public class DebugFlags
 	public static boolean printCenterIndexes()
 	{
 		return !AssetsPath.isInstalled && printCenterIndexes;
+	}
+	
+	public static int[] getIndexesOfCentersToHighlight()
+	{
+		if (AssetsPath.isInstalled)
+		{
+			return new int[] {};
+		}
+		return indexesOfCentersToHighlight;
 	}
 	
 }

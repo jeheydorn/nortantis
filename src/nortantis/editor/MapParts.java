@@ -35,7 +35,7 @@ public class MapParts
 	public Background background;
 
 	/**
-	 * Input and output.
+	 * Output.
 	 */
 	public IconDrawer iconDrawer;
 

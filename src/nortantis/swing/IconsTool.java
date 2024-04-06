@@ -250,7 +250,7 @@ public class IconsTool extends EditorTool
 	private void showOrHideBrush(MouseEvent e)
 	{
 		int brushDiameter = getBrushDiameter();
-		if (modeWidget.isDrawMode() || brushDiameter <= 1)
+		if ((!eraseAllButton.isSelected() && modeWidget.isDrawMode()) || brushDiameter <= 1)
 		{
 			mapEditingPanel.hideBrush();
 		}
@@ -824,7 +824,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (modeWidget.isDrawMode())
+		if (!eraseAllButton.isSelected() && modeWidget.isDrawMode())
 		{
 			highlightHoverCenters(e);
 		}
@@ -933,7 +933,6 @@ public class IconsTool extends EditorTool
 			{
 				if (isSelectedType(icon))
 				{
-					// TODO If this is too slow, use Rectangle instead of RotatedRectangle.
 					RotatedRectangle rect = new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds());
 					if (rect.overlapsCircle(graphPoint, brushRadius))
 					{

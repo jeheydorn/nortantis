@@ -197,4 +197,12 @@ public class FreeIcon
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
 
+	@Override
+	public String toString()
+	{
+		return "FreeIcon [type=" + type + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName=" + iconName
+				+ ", locationResolutionInvariant=" + locationResolutionInvariant + ", scale=" + scale + ", centerIndex=" + centerIndex
+				+ ", density=" + density + "]";
+	}
+
 }

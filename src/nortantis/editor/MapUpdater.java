@@ -156,20 +156,8 @@ public abstract class MapUpdater
 		{
 			Set<Center> centersChanged = getCentersWithChangesInEdits(change.settings.edits);
 			Set<Edge> edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
-			List<MapText> textChanged = null;
-			List<FreeIcon> iconsChanged = null;
-			// createAndShowMap currently does not support an incremental update for both text and centers or edges,
-			// so only check for changed text if other changes are empty.
-			if (edgesChanged.size() == 0 && centersChanged.size() == 0)
-			{
-				// See if there was a text change.
-				textChanged = getTextWithChangesInEdits(change.settings.edits);
-				if (textChanged == null || textChanged.isEmpty())
-				{
-					// See if there were icon changes.
-					iconsChanged = getIconsWithChangesInEdits(change.settings.edits);
-				}
-			}
+			List<MapText> textChanged = getTextWithChangesInEdits(change.settings.edits);
+			List<FreeIcon> iconsChanged = getIconsWithChangesInEdits(change.settings.edits);
 			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, textChanged, iconsChanged, change.preRun, null);
 		}
 	}
@@ -228,7 +216,7 @@ public abstract class MapUpdater
 
 		return changed;
 	}
-	
+
 	private List<FreeIcon> getIconsWithChangesInEdits(MapEdits changeEdits)
 	{
 		return getEdits().freeIcons.diff(changeEdits.freeIcons);
@@ -403,43 +391,46 @@ public abstract class MapUpdater
 					if (updateType == UpdateType.Incremental)
 					{
 						Image map = getCurrentMapForIncrementalUpdate();
+						IntRectangle combinedReplaceBounds = null;
 						// Incremental update
 						if (centersChanged != null && centersChanged.size() > 0 || edgesChanged != null && edgesChanged.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
+							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
+									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
 								incrementalUpdateTimer.printElapsedTime();
 							}
-							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
-						else if (textChanged != null && textChanged.size() > 0)
+
+						if (textChanged != null && textChanged.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for text");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
+							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
+									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
 								incrementalUpdateTimer.printElapsedTime();
 							}
-							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
-						else if (iconsChanged != null && iconsChanged.size() > 0)
+
+						if (iconsChanged != null && iconsChanged.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
 							IntRectangle replaceBounds = new MapCreator().incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
+							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
+									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
 								incrementalUpdateTimer.printElapsedTime();
 							}
-							return new UpdateResult(map, replaceBounds, new ArrayList<>());
 						}
-						else
-						{
-							// Nothing to do.
-							return new UpdateResult(map, null, new ArrayList<>());
-						}
+
+						return new UpdateResult(map, combinedReplaceBounds, new ArrayList<>());
 					}
 					else if (updateType == UpdateType.ReprocessBooks)
 					{
@@ -534,8 +525,8 @@ public abstract class MapUpdater
 
 					if (next != null)
 					{
-						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.iconsChanged, next.preRuns,
-								next.postRuns);
+						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.iconsChanged,
+								next.preRuns, next.postRuns);
 					}
 
 					isMapReadyForInteractions = true;
@@ -737,7 +728,7 @@ public abstract class MapUpdater
 				{
 					textChanged = new ArrayList<>(other.textChanged);
 				}
-				
+
 				if (iconsChanged != null && other.iconsChanged != null)
 				{
 					iconsChanged.addAll(other.iconsChanged);

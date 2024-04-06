@@ -280,6 +280,7 @@ public class MapCreator implements WarningLogger
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds,
 			double effectsPadding, TextDrawer textDrawer, Set<Center> centersToConvertIconsFor)
 	{
+		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersToConvertIconsFor, this);
 
 		// The bounds of the snippet to draw. This is larger than the snippet to
@@ -426,7 +427,6 @@ public class MapCreator implements WarningLogger
 				p.drawRect(rect.x, rect.y, rect.width, rect.height);
 			}
 		}
-
 
 		// Print run time
 		// updateSW.printElapsedTime();
@@ -634,6 +634,17 @@ public class MapCreator implements WarningLogger
 
 		textBackground = null;
 
+		if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
+		{
+			Painter p = map.createPainter();
+			Set<Center> toRender = new HashSet<>();
+			for (Integer index : DebugFlags.getIndexesOfCentersToHighlight())
+			{
+				toRender.add(graph.centers.get(index));
+			}
+			graph.drawPolygons(p, toRender, (c) -> Color.green);
+		}
+
 		// Debug code
 		// graph.drawCorners(map.createPainter());
 		// graph.drawVoronoi(map.createPainter());
@@ -730,7 +741,7 @@ public class MapCreator implements WarningLogger
 		}
 
 		checkForCancel();
-
+		
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 
@@ -833,23 +844,12 @@ public class MapCreator implements WarningLogger
 
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
-		if (mapParts == null || mapParts.iconDrawer == null)
+		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
+		if (mapParts != null)
 		{
-			iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
-			if (mapParts != null)
-			{
-				mapParts.iconDrawer = iconDrawer;
-			}
-
-			needToAddIcons = !settings.edits.hasIconEdits;
+			mapParts.iconDrawer = iconDrawer;
 		}
-		else
-		{
-			iconDrawer = mapParts.iconDrawer;
-			needToAddIcons = !settings.edits.hasIconEdits;
-			r.nextLong(); // Use the random number generator the same as if I
-							// had created the icon drawer.
-		}
+		needToAddIcons = !settings.edits.hasIconEdits;
 
 		List<Set<Center>> mountainAndHillGroups = null;
 		if (needToAddIcons)
