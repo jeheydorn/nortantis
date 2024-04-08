@@ -95,6 +95,11 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.Terrain, null, null, null, null, null, null);
 	}
 
+	public void createAndShowMapTerrainChange(Runnable preRun)
+	{
+		createAndShowMap(UpdateType.Terrain, null, null, null, null, preRun, null);
+	}
+
 	public void createAndShowMapGrungeOrFrayedEdgeChange()
 	{
 		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null, null, null);

@@ -50,6 +50,7 @@ import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
+import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
@@ -1294,16 +1295,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		final MapSettings currentSettings = getSettingsFromGUI(false);
 
-		// Debug code
-		// try
-		// {
-		// currentSettings.writeToFile("currentSettings.json");
-		// lastSettingsLoadedOrSaved.writeToFile("lastSettingsLoadedOrSaved.json");
-		// }
-		// catch (IOException e)
-		// {
-		// e.printStackTrace();
-		// }
+		if (DebugFlags.shouldWriteBeforeAndAfterJsonWhenSavePromptShows())
+		{
+			try
+			{
+				currentSettings.writeToFile("currentSettings.json");
+				lastSettingsLoadedOrSaved.writeToFile("lastSettingsLoadedOrSaved.json");
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
 
 		if (hasDrawnCurrentMapAtLeastOnce)
 		{

@@ -11,6 +11,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
@@ -42,6 +43,8 @@ import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.editor.CenterTrees;
+import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -554,7 +557,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () -> 
+				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () ->
 				{
 					updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
 					handleTerrainChange();
@@ -691,7 +694,10 @@ public class ThemePanel extends JTabbedPane
 		treeHeightSlider.setPaintTicks(true);
 		treeHeightSlider.setPaintLabels(true);
 		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
-		createMapChangeListenerForTerrainChange(treeHeightSlider);
+		SwingHelper.addListener(treeHeightSlider, () ->
+		{
+			handleTerrainChange(() -> triggerRebuildAllAnchoredTrees());
+		});
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -730,21 +736,43 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(cityScaleSlider);
 		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
 
-		
+
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
 	
+	private void triggerRebuildAllAnchoredTrees()
+	{
+		Random rand = new Random();
+		for (int centerIndex : mainWindow.edits.freeIcons.iterateTreeAnchors())
+		{
+			List<FreeIcon> trees = mainWindow.edits.freeIcons.getTrees(centerIndex);
+			if (trees == null || trees.isEmpty())
+			{
+				continue;
+			}
+			
+			String treeType = trees.get(0).groupId;
+			assert treeType != null && !treeType.isEmpty();
+			
+			double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
+			assert density > 0;
+			
+			CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
+			mainWindow.edits.centerEdits.get(centerIndex).setTreesWithLock(cTrees);
+		}
+	}
+
 	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
 	{
 		Color background = coastShadingColorDisplay.getBackground();
 		int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
 		coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
 	}
-	
+
 	private void updateCoastShadingTransparencySliderFromCoastShadingColorDisplay()
 	{
-		coastShadingTransparencySlider.setValue((int)(((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
+		coastShadingTransparencySlider.setValue((int) (((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
 	}
 
 	private Component createFontsPanel(MainWindow mainWindow)
@@ -890,8 +918,7 @@ public class ThemePanel extends JTabbedPane
 		{
 
 			@Override
-			protected Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> doInBackground()
-					throws Exception
+			protected Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> doInBackground() throws Exception
 			{
 				long seed = parseBackgroundSeed();
 				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(),
@@ -1185,19 +1212,19 @@ public class ThemePanel extends JTabbedPane
 
 		return changeEffectsBackgroundImages;
 	}
-	
+
 	private final double scaleMax = 3.0;
 	private final double scaleMin = 0.5;
 	private final double sliderValueFor1Scale = 5;
 	private final int minScaleSliderValue = 1;
 	private final int maxScaleSliderValue = 15;
-	
+
 	private int getSliderValueForScale(double scale)
 	{
 		if (scale <= 1.0)
 		{
 			double slope = (sliderValueFor1Scale - minScaleSliderValue) / (1.0 - scaleMin);
-			double yIntercept = sliderValueFor1Scale - slope; 
+			double yIntercept = sliderValueFor1Scale - slope;
 			return (int) Math.round(scale * slope + yIntercept);
 		}
 		else
@@ -1207,23 +1234,23 @@ public class ThemePanel extends JTabbedPane
 			return (int) Math.round(scale * slope + yIntercept);
 		}
 	}
-	
+
 	private double getScaleForSliderValue(int sliderValue)
 	{
 		if (sliderValue <= sliderValueFor1Scale)
 		{
 			double slope = (sliderValueFor1Scale - minScaleSliderValue) / (1.0 - scaleMin);
-			double yIntercept = sliderValueFor1Scale - slope; 
+			double yIntercept = sliderValueFor1Scale - slope;
 			return (sliderValue - yIntercept) / slope;
 		}
 		else
 		{
 			double slope = (maxScaleSliderValue - sliderValueFor1Scale) / (scaleMax - 1.0);
-			double yIntercept = sliderValueFor1Scale - slope * (1.0); 
-			return (sliderValue - yIntercept) / slope;			
+			double yIntercept = sliderValueFor1Scale - slope * (1.0);
+			return (sliderValue - yIntercept) / slope;
 		}
 	}
-	
+
 
 	private void initializeBorderTypeComboBoxItems(MapSettings settings)
 	{
@@ -1383,9 +1410,14 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleTerrainChange()
 	{
+		handleTerrainChange(null);
+	}
+	
+	private void handleTerrainChange(Runnable preRun)
+	{
 		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.Terrain, null);
-		mainWindow.updater.createAndShowMapTerrainChange();
+		mainWindow.updater.createAndShowMapTerrainChange(preRun);
 	}
 
 	private void handleFontsChange()

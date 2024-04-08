@@ -115,13 +115,18 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return !getTrees(centerIndex).isEmpty();
 	}
 
-	private synchronized List<FreeIcon> getTrees(int centerIndex)
+	public synchronized List<FreeIcon> getTrees(int centerIndex)
 	{
 		if (!anchoredTreeIcons.containsKey(centerIndex))
 		{
 			return Collections.emptyList();
 		}
 		return anchoredTreeIcons.get(centerIndex);
+	}
+	
+	public synchronized Iterable<Integer> iterateTreeAnchors()
+	{
+		return anchoredTreeIcons.keySet();
 	}
 
 	public synchronized void removeAll(Collection<FreeIcon> toRemove)

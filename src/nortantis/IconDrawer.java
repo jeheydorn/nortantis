@@ -95,7 +95,7 @@ public class IconDrawer
 		{
 			freeIcons = settings.edits.freeIcons;
 		}
-		
+
 		iconsToDraw = new ArrayList<>();
 
 		meanPolygonWidth = graph.getMeanCenterWidth();
@@ -103,8 +103,8 @@ public class IconDrawer
 
 		mountainScale = settings.mountainScale;
 		hillScale = settings.hillScale;
-		cityScale = settings.cityScale; 
-										
+		cityScale = settings.cityScale;
+
 		treeHeightScale = settings.treeHeightScale;
 		treeDensityScale = calcTreeDensityScale();
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
@@ -335,22 +335,21 @@ public class IconDrawer
 	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
 	 * done later.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor,
-			WarningLogger warningLogger)
+	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor, WarningLogger warningLogger)
 	{
 		assert freeIcons == edits.freeIcons;
-		
-		freeIcons.doWithLock(() -> 
+
+		freeIcons.doWithLock(() ->
 		{
 			convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);			
+			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
 		});
 	}
-	
+
 	private void createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger)
 	{
 		iconsToDraw.clear();
-		
+
 		Set<FreeIcon> toRemove = new HashSet<>();
 		for (FreeIcon icon : freeIcons)
 		{
@@ -813,17 +812,18 @@ public class IconDrawer
 	{
 		return center.neighbors.stream().anyMatch(c -> c.isCity);
 	}
-	
+
 	public Tuple2<List<Set<Center>>, List<IconDrawTask>> addIcons(List<Set<Center>> mountainAndHillGroups, WarningLogger warningLogger)
 	{
 		Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
-		
-		freeIcons.doWithLock(() -> 
+
+		freeIcons.doWithLock(() ->
 		{
 			List<IconDrawTask> cities;
-			
+
 			Logger.println("Adding mountains and hills.");
-			List<Set<Center>> mountainGroups;;
+			List<Set<Center>> mountainGroups;
+			;
 			addOrUnmarkMountainsAndHills(mountainAndHillGroups);
 			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
 			// couldn't draw
@@ -840,13 +840,13 @@ public class IconDrawer
 			Logger.println("Adding cities.");
 			cities = addOrUnmarkCities();
 			result.setSecond(cities);
-			
+
 			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
 		});
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed where it cannot be drawn, this will un-mark it as a city.
 	 * 
@@ -1194,7 +1194,12 @@ public class IconDrawer
 
 		for (Center center : centersToConvert)
 		{
-			edits.centerEdits.get(center.index).trees = null;
+			// Only clear the CenterTrees if trees were added from the center. That way changing the tree height slider doesn't cause trees
+			// to permanently disappear for a center.
+			if (freeIcons.hasTrees(center.index))
+			{
+				edits.centerEdits.get(center.index).trees = null;
+			}
 		}
 	}
 
@@ -1341,6 +1346,7 @@ public class IconDrawer
 
 			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, groupId, index);
 			icon.centerIndex = center.index;
+			icon.density = forestDensity;
 
 			if (!isContentBottomTouchingWater(icon))
 			{

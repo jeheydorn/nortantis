@@ -50,6 +50,11 @@ public class CenterEdit implements Serializable
 		this.trees = trees;
 		this.isLake = isLake;
 	}
+	
+	public synchronized void setTreesWithLock(CenterTrees trees)
+	{
+		this.trees = trees;
+	}
 
 	@Override
 	public int hashCode()
