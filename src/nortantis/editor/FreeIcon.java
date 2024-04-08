@@ -128,7 +128,7 @@ public class FreeIcon
 			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), resolutionScale * typeLevelScale * scale * baseHeight)
+					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), typeLevelScale * scale * baseHeight)
 					.toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}

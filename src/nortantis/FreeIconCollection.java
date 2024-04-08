@@ -268,7 +268,11 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		iterator().forEachRemaining(thisSet::add);
 
 		Set<FreeIcon> otherSet = new HashSet<>();
-		// This creates a holden weight, which could cause a deadlock if another thread has 'other' locked and is trying to lock 'this'.
+		// TODO See if I can remove this deadlock situation. Perhaps copy the icons out of the collections while holding only one lock at a time,
+		// but then I need to make FreeIcon threadsafe. I might need to make it immutable anyway because currently the UI thread can change a 
+		// FreeIcon while the background thread reads it.
+		
+		// This creates a hold and wait, which could cause a deadlock if another thread has 'other' locked and is trying to lock 'this'.
 		// I don't think a deadlock can happen though because this method is the only method that does this, and it is only called by the UI
 		// thread.
 		other.doWithLock(() ->
@@ -305,6 +309,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return copy;
 	}
 
+	// TODO This is not thread safe, which can be a problem if the main UI thread calls this while the background thread is changing something.
 	@Override
 	public boolean equals(Object obj)
 	{

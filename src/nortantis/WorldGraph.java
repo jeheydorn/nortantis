@@ -106,8 +106,6 @@ public class WorldGraph extends VoronoiGraph
 		// looks better for drawing,
 		// and it works better for smooth coastlines.
 		updateCenterLocationsToCentroids();
-		meanCenterWidth = findMeanCenterWidth();
-		meanCenterWidthBetweenNeighbors = findMeanCenterWidthBetweenNeighbors();
 	}
 
 	/**
@@ -119,54 +117,6 @@ public class WorldGraph extends VoronoiGraph
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
 		setupColors();
 		setupRandomSeeds(r);
-	}
-	
-	private double findMeanCenterWidth()
-	{
-		double widthSum = 0;
-		int count = 0;
-		for (Center center : centers)
-		{
-			double width = center.findWidth();
-
-			if (width > 0)
-			{
-				count++;
-				widthSum += width;
-			}
-		}
-
-		return widthSum / count;
-	}
-
-	private double findMeanCenterWidthBetweenNeighbors()
-	{
-		double sum = 0;
-		for (Center c : centers)
-		{
-			sum += findCenterWidthBetweenNeighbors(c);
-		}
-		return sum / centers.size();
-	}
-
-	public double findCenterWidthBetweenNeighbors(Center c)
-	{
-		Center eastMostNeighbor = Collections.max(c.neighbors, new Comparator<Center>()
-		{
-			public int compare(Center c1, Center c2)
-			{
-				return Double.compare(c1.loc.x, c2.loc.x);
-			}
-		});
-		Center westMostNeighbor = Collections.min(c.neighbors, new Comparator<Center>()
-		{
-			public int compare(Center c1, Center c2)
-			{
-				return Double.compare(c1.loc.x, c2.loc.x);
-			}
-		});
-		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
-		return cSize;
 	}
 	
 	private void updateCenterLocationsToCentroids()
@@ -1913,15 +1863,75 @@ public class WorldGraph extends VoronoiGraph
 		}
 		
 		bounds = new Rectangle(0, 0, targetWidth, targetHeight);
+		meanCenterWidth = null;
+		getMeanCenterWidth();
+		meanCenterWidthBetweenNeighbors = null;
+		getMeanCenterWidthBetweenNeighbors();
 	}
 	
 	public double getMeanCenterWidth()
 	{
+		if (meanCenterWidth == null)
+		{
+			meanCenterWidth = findMeanCenterWidth();
+		}
 		return meanCenterWidth;
 	}
 
 	public double getMeanCenterWidthBetweenNeighbors()
 	{
+		if (meanCenterWidthBetweenNeighbors == null)
+		{
+			meanCenterWidthBetweenNeighbors = findMeanCenterWidthBetweenNeighbors();
+		}
 		return meanCenterWidthBetweenNeighbors;
+	}
+	
+	private double findMeanCenterWidth()
+	{
+		double widthSum = 0;
+		int count = 0;
+		for (Center center : centers)
+		{
+			double width = center.findWidth();
+
+			if (width > 0)
+			{
+				count++;
+				widthSum += width;
+			}
+		}
+
+		return widthSum / count;
+	}
+
+	private double findMeanCenterWidthBetweenNeighbors()
+	{
+		double sum = 0;
+		for (Center c : centers)
+		{
+			sum += findCenterWidthBetweenNeighbors(c);
+		}
+		return sum / centers.size();
+	}
+
+	public double findCenterWidthBetweenNeighbors(Center c)
+	{
+		Center eastMostNeighbor = Collections.max(c.neighbors, new Comparator<Center>()
+		{
+			public int compare(Center c1, Center c2)
+			{
+				return Double.compare(c1.loc.x, c2.loc.x);
+			}
+		});
+		Center westMostNeighbor = Collections.min(c.neighbors, new Comparator<Center>()
+		{
+			public int compare(Center c1, Center c2)
+			{
+				return Double.compare(c1.loc.x, c2.loc.x);
+			}
+		});
+		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
+		return cSize;
 	}
 }
