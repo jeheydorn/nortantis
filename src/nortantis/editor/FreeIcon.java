@@ -130,7 +130,7 @@ public class FreeIcon
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), typeLevelScale * scale * baseHeight)
 					.toIntDimension();
-			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
+			  return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
 	}
 

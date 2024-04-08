@@ -109,7 +109,7 @@ public class IconDrawer
 		treeDensityScale = calcTreeDensityScale();
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
 
-		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidth();
+		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
 	}
 
 
