@@ -720,8 +720,8 @@ public class IconsTool extends EditorTool
 	private void handleReplaceIcons(MouseEvent e)
 	{
 		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
-		
-		mainWindow.edits.freeIcons.doWithLock(() -> 
+
+		mainWindow.edits.freeIcons.doWithLock(() ->
 		{
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
 			if (icons.isEmpty())
@@ -735,7 +735,7 @@ public class IconsTool extends EditorTool
 			for (FreeIcon icon : icons)
 			{
 				iconsBeforeAndAfter.add(icon.deepCopy());
-				
+
 				if (mountainsButton.isSelected())
 				{
 					icon.groupId = mountainTypes.getSelectedOption();
@@ -771,35 +771,34 @@ public class IconsTool extends EditorTool
 					icon.groupId = cityType;
 					icon.iconName = cityName;
 				}
-				
+
 				iconsBeforeAndAfter.add(icon.deepCopy());
 			}
 		});
-		
+
 		if (tuple.get() != null && !tuple.get().isEmpty())
 		{
 			updater.createAndShowMapIncrementalUsingIcons(tuple.get());
 		}
 	}
-	
+
 	private void handleEraseIcons(MouseEvent e)
 	{
-		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
-		mainWindow.edits.freeIcons.doWithLock(() -> 
+		List<FreeIcon> icons = mainWindow.edits.freeIcons.doWithLockAndReturnResult(() ->
 		{
-			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			tuple.set(icons);
-			if (icons.isEmpty())
+			List<FreeIcon> iconsInner = getSelectedIcons(e.getPoint());
+			if (iconsInner.isEmpty())
 			{
-				return;
+				return iconsInner;
 			}
 
-			mainWindow.edits.freeIcons.removeAll(icons);
+			mainWindow.edits.freeIcons.removeAll(iconsInner);
+			return iconsInner;
 		});
 
-		if (tuple.get() != null && !tuple.get().isEmpty())
+		if (icons != null && !icons.isEmpty())
 		{
-			updater.createAndShowMapIncrementalUsingIcons(tuple.get());			
+			updater.createAndShowMapIncrementalUsingIcons(icons);
 		}
 	}
 
@@ -852,13 +851,11 @@ public class IconsTool extends EditorTool
 
 		showOrHideBrush(e);
 
-		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
-		mainWindow.edits.freeIcons.doWithLock(() -> 
+		List<FreeIcon> icons = mainWindow.edits.freeIcons.doWithLockAndReturnResult(() ->
 		{
-			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			tuple.set(icons);
+			return getSelectedIcons(e.getPoint());
 		});
-		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, tuple.get());
+		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons);
 	}
 
 	@Override
@@ -944,14 +941,14 @@ public class IconsTool extends EditorTool
 		}
 		return selected;
 	}
-	
+
 	private int getBrushDiameter()
 	{
 		if (brushSizeHider.isVisible())
 		{
 			return brushSizes.get(brushSizeComboBox.getSelectedIndex());
 		}
-		
+
 		return brushSizes.get(0);
 	}
 

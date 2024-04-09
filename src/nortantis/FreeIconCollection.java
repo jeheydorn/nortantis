@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import nortantis.editor.FreeIcon;
 import nortantis.util.HashMapF;
@@ -123,7 +126,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 		return anchoredTreeIcons.get(centerIndex);
 	}
-	
+
 	public synchronized Iterable<Integer> iterateTreeAnchors()
 	{
 		return anchoredTreeIcons.keySet();
@@ -258,35 +261,54 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		task.run();
 	}
 
-	public synchronized List<FreeIcon> diff(FreeIconCollection other)
+	public synchronized <T> T doWithLockAndReturnResult(Supplier<T> task)
+	{
+		return task.get();
+	}
+
+	public List<FreeIcon> diff(FreeIconCollection other)
 	{
 		if (other == null)
 		{
-			Set<FreeIcon> thisSet = new HashSet<>();
-			iterator().forEachRemaining(thisSet::add);
-			return new ArrayList<>(thisSet);
+			return new ArrayList<>(asSet());
 		}
-
-		List<FreeIcon> result = new ArrayList<>();
-
-		Set<FreeIcon> thisSet = new HashSet<>();
-		iterator().forEachRemaining(thisSet::add);
-
-		Set<FreeIcon> otherSet = new HashSet<>();
-		// TODO See if I can remove this deadlock situation. Perhaps copy the icons out of the collections while holding only one lock at a time,
-		// but then I need to make FreeIcon threadsafe. I might need to make it immutable anyway because currently the UI thread can change a 
-		// FreeIcon while the background thread reads it.
 		
-		// This creates a hold and wait, which could cause a deadlock if another thread has 'other' locked and is trying to lock 'this'.
-		// I don't think a deadlock can happen though because this method is the only method that does this, and it is only called by the UI
-		// thread.
-		other.doWithLock(() ->
+		Stopwatch sw = new Stopwatch("diff");
+
+		Set<FreeIcon> diff;
+		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
+		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and wait.
+		if (this.hashCode() > other.hashCode())
 		{
-			other.iterator().forEachRemaining(otherSet::add);
-			result.addAll(getElementsNotInIntersection(thisSet, otherSet));
-		});
+			diff = innerDiff(other);
+		}
+		else
+		{
+			diff = other.innerDiff(this);
+		}
+		sw.printElapsedTime();
 		
-		return result;
+		return new ArrayList<>(diff);
+	}
+	
+	private synchronized Set<FreeIcon> innerDiff(FreeIconCollection other)
+	{
+		Set<FreeIcon> thisSet = asSet();
+		return other.doWithLockAndReturnResult(() -> 
+		{
+			Set<FreeIcon> otherSet = other.asSet();
+			return getElementsNotInIntersection(thisSet, otherSet);
+		});
+	}
+
+	private synchronized Set<FreeIcon> asSet()
+	{
+		Set<FreeIcon> thisSet = new HashSet<>();
+		for (FreeIcon icon : this)
+		{
+			thisSet.add(icon);
+		}
+		return thisSet;
 	}
 
 	private static <T> Set<T> getElementsNotInIntersection(Set<T> set1, Set<T> set2)
@@ -314,7 +336,8 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return copy;
 	}
 
-	// TODO This is not thread safe, which can be a problem if the main UI thread calls this while the background thread is changing something.
+	// TODO This is not thread safe, which can be a problem if the main UI thread calls this while the background thread is changing
+	// something.
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -331,8 +354,25 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			return false;
 		}
 		FreeIconCollection other = (FreeIconCollection) obj;
-		return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
-				&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons) && Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
+
+		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
+		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and wait.
+		if (this.hashCode() > other.hashCode())
+		{
+			return innerEquals(other);
+		}
+		return other.innerEquals(this);
+	}
+
+	private synchronized boolean innerEquals(FreeIconCollection other)
+	{
+		return other.doWithLockAndReturnResult(() ->
+		{
+			return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
+					&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons)
+					&& Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
+		});
+
 	}
 
 

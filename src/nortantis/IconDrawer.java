@@ -815,10 +815,9 @@ public class IconDrawer
 
 	public Tuple2<List<Set<Center>>, List<IconDrawTask>> addIcons(List<Set<Center>> mountainAndHillGroups, WarningLogger warningLogger)
 	{
-		Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
-
-		freeIcons.doWithLock(() ->
+		return freeIcons.doWithLockAndReturnResult(() ->
 		{
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);;
 			List<IconDrawTask> cities;
 
 			Logger.println("Adding mountains and hills.");
@@ -842,9 +841,8 @@ public class IconDrawer
 			result.setSecond(cities);
 
 			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+			return result;
 		});
-
-		return result;
 	}
 
 	/**

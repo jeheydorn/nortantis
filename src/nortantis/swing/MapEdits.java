@@ -13,6 +13,7 @@ import nortantis.FreeIconCollection;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
+import nortantis.Stopwatch;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
@@ -143,7 +144,7 @@ public class MapEdits implements Serializable
 
 	public MapEdits deepCopy()
 	{
-		// MapEdits copy = Helper.deepCopy(this);
+		Stopwatch sw = new Stopwatch("deep copy map edits");
 		MapEdits copy = new MapEdits();
 		for (MapText mText : text)
 		{
@@ -152,7 +153,7 @@ public class MapEdits implements Serializable
 
 		for (CenterEdit cEdit : centerEdits)
 		{
-			copy.centerEdits.add(cEdit.deepCopy());
+			copy.centerEdits.add(cEdit.deepCopyWithLock());
 		}
 
 		for (Map.Entry<Integer, RegionEdit> entry : regionEdits.entrySet())
@@ -172,6 +173,7 @@ public class MapEdits implements Serializable
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		copy.hasCreatedTextBounds = hasCreatedTextBounds;
 
+		sw.printElapsedTime();
 		return copy;
 	}
 

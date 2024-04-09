@@ -1210,6 +1210,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			for (Center center : updater.mapParts.graph.centers)
 			{
+				// TODO lock the center edit.
+				
 				// Change land to ocean
 				edits.centerEdits.get(center.index).isWater = true;
 				edits.centerEdits.get(center.index).isLake = false;
