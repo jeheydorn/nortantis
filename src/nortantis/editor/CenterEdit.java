@@ -31,15 +31,10 @@ public class CenterEdit implements Serializable
 		this.isLake = isLake;
 	}
 
-	public CenterEdit deepCopy()
+	public synchronized CenterEdit deepCopyWithLock()
 	{
 		return new CenterEdit(index, isWater, isLake, regionId, icon == null ? null : icon.deepCopy(),
 				trees == null ? null : trees.deepCopy());
-	}
-
-	public synchronized CenterEdit deepCopyWithLock()
-	{
-		return deepCopy();
 	}
 
 	public synchronized void setValuesWithLock(boolean isWater, boolean isLake, Integer regionId, CenterIcon icon, CenterTrees trees)

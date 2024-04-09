@@ -144,7 +144,6 @@ public class MapEdits implements Serializable
 
 	public MapEdits deepCopy()
 	{
-		Stopwatch sw = new Stopwatch("deep copy map edits");
 		MapEdits copy = new MapEdits();
 		for (MapText mText : text)
 		{
@@ -173,7 +172,6 @@ public class MapEdits implements Serializable
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		copy.hasCreatedTextBounds = hasCreatedTextBounds;
 
-		sw.printElapsedTime();
 		return copy;
 	}
 

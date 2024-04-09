@@ -226,6 +226,7 @@ public class IconDrawer
 		for (Center center : centersToConvert)
 		{
 			CenterEdit cEdit = edits.centerEdits.get(center.index);
+			// TODO reads and writes to cEdit.icon are not thread safe.
 			if (cEdit.icon != null)
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain)
@@ -296,6 +297,8 @@ public class IconDrawer
 	private void convertWidthBasedShuffledAnchoredIcon(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
 			WarningLogger warningLogger, Supplier<Double> getDrawWidthBeforeTypeLevelScale, boolean placeNearBottom)
 	{
+		// TODO reads and writes to cEdit.icon are not thread safe.
+
 		if (cEdit.icon == null)
 		{
 			return;
@@ -1182,6 +1185,7 @@ public class IconDrawer
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
 		for (Center center : centersToConvert)
 		{
+			// TODO references to trees is not thread safe.
 			if (edits.centerEdits.get(center.index).trees != null)
 			{
 				treesByCenter.put(center.index, edits.centerEdits.get(center.index).trees);
@@ -1196,6 +1200,7 @@ public class IconDrawer
 			// to permanently disappear for a center.
 			if (freeIcons.hasTrees(center.index))
 			{
+				// TODO references to trees is not thread safe.
 				edits.centerEdits.get(center.index).trees = null;
 			}
 		}

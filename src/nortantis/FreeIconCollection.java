@@ -272,12 +272,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			return new ArrayList<>(asSet());
 		}
-		
-		Stopwatch sw = new Stopwatch("diff");
+
 
 		Set<FreeIcon> diff;
 		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
-		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and wait.
+		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and
+		// wait.
 		if (this.hashCode() > other.hashCode())
 		{
 			diff = innerDiff(other);
@@ -286,15 +286,14 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			diff = other.innerDiff(this);
 		}
-		sw.printElapsedTime();
-		
+
 		return new ArrayList<>(diff);
 	}
-	
+
 	private synchronized Set<FreeIcon> innerDiff(FreeIconCollection other)
 	{
 		Set<FreeIcon> thisSet = asSet();
-		return other.doWithLockAndReturnResult(() -> 
+		return other.doWithLockAndReturnResult(() ->
 		{
 			Set<FreeIcon> otherSet = other.asSet();
 			return getElementsNotInIntersection(thisSet, otherSet);
@@ -356,7 +355,8 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		FreeIconCollection other = (FreeIconCollection) obj;
 
 		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
-		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and wait.
+		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and
+		// wait.
 		if (this.hashCode() > other.hashCode())
 		{
 			return innerEquals(other);
