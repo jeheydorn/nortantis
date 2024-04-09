@@ -740,7 +740,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
-	
+
 	private void triggerRebuildAllAnchoredTrees()
 	{
 		Random rand = new Random();
@@ -751,23 +751,28 @@ public class ThemePanel extends JTabbedPane
 			{
 				continue;
 			}
-			
+
 			String treeType = trees.get(0).groupId;
 			assert treeType != null && !treeType.isEmpty();
-			
+
 			double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
 			assert density > 0;
-			
+
 			CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
 			mainWindow.edits.centerEdits.get(centerIndex).setTreesWithLock(cTrees);
 		}
 	}
 
+	private boolean disableCoastShadingColorDisplayHandler = false;
+
 	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
 	{
-		Color background = coastShadingColorDisplay.getBackground();
-		int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
-		coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
+		if (!disableCoastShadingColorDisplayHandler)
+		{
+			Color background = coastShadingColorDisplay.getBackground();
+			int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
+			coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
+		}
 	}
 
 	private void updateCoastShadingTransparencySliderFromCoastShadingColorDisplay()
@@ -1104,7 +1109,14 @@ public class ThemePanel extends JTabbedPane
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
+		
+		// Temporarily disable events on coastShadingColorDisplay while initially setting the value for coastShadingTransparencySlider so that
+		// the action listener on coastShadingTransparencySlider doesn't fire and then update coastShadingColorDisplay, because doing so can 
+		// cause changes in the settings due to integer truncation of the alpha value.
+		disableCoastShadingColorDisplayHandler = true;
 		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
+		disableCoastShadingColorDisplayHandler = false;
+		
 		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
 		oceanEffectsColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanEffectsColor));
 		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));
@@ -1412,7 +1424,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		handleTerrainChange(null);
 	}
-	
+
 	private void handleTerrainChange(Runnable preRun)
 	{
 		mainWindow.handleThemeChange(false);
