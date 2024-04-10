@@ -3,7 +3,6 @@ package nortantis;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -226,22 +225,21 @@ public class IconDrawer
 		for (Center center : centersToConvert)
 		{
 			CenterEdit cEdit = edits.centerEdits.get(center.index);
-			// TODO reads and writes to cEdit.icon are not thread safe.
 			if (cEdit.icon != null)
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain)
 				{
-					convertWidthBasedShuffledAnchoredIcon(center, cEdit, mountainImagesById, warningLogger,
+					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger,
 							() -> findNewMountainWidthBeforeTypeLevelScaling(center), true);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill)
 				{
-					convertWidthBasedShuffledAnchoredIcon(center, cEdit, hillImagesById, warningLogger,
+					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger,
 							() -> findNewHillWidthBeforeTypeLevelScaling(center), false);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune)
 				{
-					convertWidthBasedShuffledAnchoredIcon(center, cEdit, duneImages, warningLogger,
+					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger,
 							() -> getBaseWidthOrHeight(IconType.sand, 0), false);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
@@ -265,11 +263,11 @@ public class IconDrawer
 							freeIcons.addOrReplace(icon);
 						}
 
-						cEdit.icon = null;
+						edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
 					}
 					else
 					{
-						cEdit.icon = null;
+						edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
 					}
 				}
 
@@ -294,20 +292,18 @@ public class IconDrawer
 	}
 
 
-	private void convertWidthBasedShuffledAnchoredIcon(Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
+	private void convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
 			WarningLogger warningLogger, Supplier<Double> getDrawWidthBeforeTypeLevelScale, boolean placeNearBottom)
 	{
-		// TODO reads and writes to cEdit.icon are not thread safe.
-
 		if (cEdit.icon == null)
 		{
 			return;
 		}
 
-		final String groupId = changeGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString(), iconsByGroup, warningLogger);
+		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString(), iconsByGroup, warningLogger);
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
-			cEdit.icon = null;
+			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
 			return;
 		}
 
@@ -331,7 +327,7 @@ public class IconDrawer
 			freeIcons.addOrReplace(icon);
 		}
 
-		cEdit.icon = null;
+		edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
 	}
 
 	/**
@@ -455,10 +451,10 @@ public class IconDrawer
 	private boolean updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger)
 	{
 		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(icon.type);
-		String newGroupId = changeGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
+		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
 		if (!icon.groupId.equals(newGroupId) && newGroupId != null)
 		{
-			icon.groupId = changeGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
+			icon.groupId = getNewGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
 		}
 
 		if (iconsByGroup.get(icon.groupId).size() > 0)
@@ -528,7 +524,7 @@ public class IconDrawer
 	}
 
 
-	private String changeGroupIdIfNeeded(final String groupId, String iconTypeNameForWarnings, ListMap<String, ImageAndMasks> iconsByGroup,
+	private String getNewGroupIdIfNeeded(final String groupId, String iconTypeNameForWarnings, ListMap<String, ImageAndMasks> iconsByGroup,
 			WarningLogger warningLogger)
 	{
 		if (!iconsByGroup.containsKey(groupId))
@@ -1185,7 +1181,6 @@ public class IconDrawer
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
 		for (Center center : centersToConvert)
 		{
-			// TODO references to trees is not thread safe.
 			if (edits.centerEdits.get(center.index).trees != null)
 			{
 				treesByCenter.put(center.index, edits.centerEdits.get(center.index).trees);
@@ -1200,8 +1195,7 @@ public class IconDrawer
 			// to permanently disappear for a center.
 			if (freeIcons.hasTrees(center.index))
 			{
-				// TODO references to trees is not thread safe.
-				edits.centerEdits.get(center.index).trees = null;
+				edits.centerEdits.put(center.index, edits.centerEdits.get(center.index).copyWithTrees(null));
 			}
 		}
 	}
@@ -1221,20 +1215,16 @@ public class IconDrawer
 			CenterTrees cTrees = entry.getValue();
 			if (cTrees != null)
 			{
-				final String groupId = changeGroupIdIfNeeded(cTrees.treeType, cTrees.treeType.toString(), treesById, warningLogger);
+				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, cTrees.treeType.toString(), treesById, warningLogger);
 				if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)
 				{
 					// Skip since there are no tree images to use.
 					continue;
 				}
 
-				if (!cTrees.treeType.equals(groupId))
-				{
-					cTrees.treeType = groupId;
-				}
-
+				CenterTrees toUse = cTrees.copyWithTreeType(groupId);
 				Center c = graph.centers.get(entry.getKey());
-				drawTreesAtCenterAndCorners(graph, c, cTrees, treesByCenter.keySet());
+				drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet());
 			}
 		}
 	}

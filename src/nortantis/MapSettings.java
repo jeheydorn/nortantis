@@ -312,7 +312,7 @@ public class MapSettings implements Serializable
 	private JSONArray centerEditsToJson()
 	{
 		JSONArray list = new JSONArray();
-		for (CenterEdit centerEdit : edits.centerEdits)
+		for (CenterEdit centerEdit : edits.centerEdits.values())
 		{
 			JSONObject mpObj = new JSONObject();
 			if (centerEdit.isWater)
@@ -650,11 +650,11 @@ public class MapSettings implements Serializable
 			return;
 		}
 
-		for (CenterEdit cEdit : edits.centerEdits)
+		for (CenterEdit cEdit : edits.centerEdits.values())
 		{
 			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
 			{
-				cEdit.icon.iconGroupId = "dunes";
+				edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(cEdit.icon.copyWithIconGroupId("dunes")));
 			}
 		}
 	}
@@ -671,11 +671,11 @@ public class MapSettings implements Serializable
 			return;
 		}
 
-		for (CenterEdit cEdit : edits.centerEdits)
+		for (CenterEdit cEdit : edits.centerEdits.values())
 		{
 			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
 			{
-				cEdit.icon.iconGroupId = cityIconTypeName;
+				edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(cEdit.icon.copyWithIconGroupId(cityIconTypeName)));
 			}
 		}
 	}
@@ -735,15 +735,15 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private List<CenterEdit> parseCenterEdits(JSONObject editsJson)
+	private ConcurrentHashMap<Integer, CenterEdit> parseCenterEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
-			return new ArrayList<CenterEdit>();
+			return new ConcurrentHashMap<>();
 		}
 
 		JSONArray array = (JSONArray) editsJson.get("centerEdits");
-		List<CenterEdit> result = new ArrayList<>();
+		ConcurrentHashMap<Integer, CenterEdit> result = new ConcurrentHashMap<>();
 		if (array == null)
 		{
 			return result;
@@ -763,10 +763,16 @@ public class MapSettings implements Serializable
 				{
 					String iconGroupId = (String) iconObj.get("iconGroupId");
 					int iconIndex = (int) (long) iconObj.get("iconIndex");
-					String iconName = (String) iconObj.get("iconName");
 					CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
-					icon = new CenterIcon(iconType, iconGroupId, iconIndex);
-					icon.iconName = iconName;
+					String iconName = (String) iconObj.get("iconName");
+					if (iconName != null && !iconName.isEmpty())
+					{
+						icon = new CenterIcon(iconType, iconGroupId, iconName);
+					}
+					else
+					{
+						icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+					}
 				}
 			}
 
@@ -782,7 +788,7 @@ public class MapSettings implements Serializable
 				}
 			}
 
-			result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
+			result.put(index, new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 			index++;
 		}
 

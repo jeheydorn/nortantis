@@ -10,10 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import nortantis.FreeIconCollection;
-import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.Region;
-import nortantis.Stopwatch;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
@@ -39,7 +37,7 @@ public class MapEdits implements Serializable
 	 * Text the user has edited, added, moved, or rotated. The key is the text id.
 	 */
 	public CopyOnWriteArrayList<MapText> text;
-	public List<CenterEdit> centerEdits;
+	public ConcurrentHashMap<Integer, CenterEdit> centerEdits;
 	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
@@ -58,7 +56,7 @@ public class MapEdits implements Serializable
 	public MapEdits()
 	{
 		text = new CopyOnWriteArrayList<>();
-		centerEdits = new ArrayList<>();
+		centerEdits = new ConcurrentHashMap<>();
 		regionEdits = new ConcurrentHashMap<>();
 		edgeEdits = new ArrayList<>();
 		freeIcons = new FreeIconCollection();
@@ -71,11 +69,11 @@ public class MapEdits implements Serializable
 
 	public void initializeCenterEdits(List<Center> centers)
 	{
-		centerEdits = new ArrayList<>(centers.size());
+		centerEdits = new ConcurrentHashMap<>(centers.size());
 		for (int index : new Range(centers.size()))
 		{
 			Center c = centers.get(index);
-			centerEdits.add(new CenterEdit(index, c.isWater, c.isLake, c.region != null ? c.region.id : null, null, null));
+			centerEdits.put(index, new CenterEdit(index, c.isWater, c.isLake, c.region != null ? c.region.id : null, null, null));
 		}
 
 		hasIconEdits = true;
@@ -150,10 +148,7 @@ public class MapEdits implements Serializable
 			copy.text.add(mText.deepCopy());
 		}
 
-		for (CenterEdit cEdit : centerEdits)
-		{
-			copy.centerEdits.add(cEdit.deepCopyWithLock());
-		}
+		copy.centerEdits = new ConcurrentHashMap<Integer, CenterEdit>(centerEdits);
 
 		for (Map.Entry<Integer, RegionEdit> entry : regionEdits.entrySet())
 		{

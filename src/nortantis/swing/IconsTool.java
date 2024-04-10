@@ -663,7 +663,7 @@ public class IconsTool extends EditorTool
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
-				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
+				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 			}
 		}
 		else if (hillsButton.isSelected())
@@ -673,7 +673,7 @@ public class IconsTool extends EditorTool
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
-				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
+				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 			}
 		}
 		else if (dunesButton.isSelected())
@@ -683,7 +683,7 @@ public class IconsTool extends EditorTool
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
-				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, newIcon, cEdit.trees);
+				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 			}
 		}
 		else if (treesButton.isSelected())
@@ -693,7 +693,7 @@ public class IconsTool extends EditorTool
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 				CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
-				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cEdit.icon, newTrees);
+				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
 			}
 		}
 		else if (citiesButton.isSelected())
@@ -710,7 +710,7 @@ public class IconsTool extends EditorTool
 			{
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
 				CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
-				cEdit.setValuesWithLock(cEdit.isWater, cEdit.isLake, cEdit.regionId, cityIcon, cEdit.trees);
+				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(cityIcon));
 			}
 		}
 

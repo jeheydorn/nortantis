@@ -54,6 +54,7 @@ import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
@@ -1210,23 +1211,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			for (Center center : updater.mapParts.graph.centers)
 			{
-				// TODO lock the center edit.
-				
-				// Change land to ocean
-				edits.centerEdits.get(center.index).isWater = true;
-				edits.centerEdits.get(center.index).isLake = false;
-
-				// Erase icons
-				edits.centerEdits.get(center.index).trees = null;
-				edits.centerEdits.get(center.index).icon = null;
-
-				// Erase rivers
-				for (Edge edge : center.borders)
-				{
-					EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
-					eEdit.riverLevel = 0;
-				}
+				// Change land to ocean and erase icons
+				CenterEdit newValues = new CenterEdit(center.index, false, false, null, null, null);
+				edits.centerEdits.put(center.index, newValues);				
 			}
+			
+			// Erase rivers
+			for (Edge edge : updater.mapParts.graph.edges)
+			{
+				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
+				eEdit.riverLevel = 0;
+			}
+			
+			// Erase free icons
+			edits.freeIcons.clear();
 
 			undoer.setUndoPoint(UpdateType.Full, null);
 			updater.createAndShowMapTerrainChange();

@@ -43,6 +43,7 @@ import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
@@ -759,7 +760,8 @@ public class ThemePanel extends JTabbedPane
 			assert density > 0;
 
 			CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
-			mainWindow.edits.centerEdits.get(centerIndex).setTreesWithLock(cTrees);
+			CenterEdit cEdit = mainWindow.edits.centerEdits.get(centerIndex);
+			mainWindow.edits.centerEdits.put(centerIndex, cEdit.copyWithTrees(cTrees));
 		}
 	}
 

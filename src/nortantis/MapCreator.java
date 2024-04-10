@@ -1372,7 +1372,7 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private static void applyCenterEdits(WorldGraph graph, MapEdits edits, List<CenterEdit> centerChanges,
+	private static void applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerChanges,
 			boolean areRegionBoundariesVisible)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
@@ -1388,7 +1388,7 @@ public class MapCreator implements WarningLogger
 
 		if (centerChanges == null)
 		{
-			centerChanges = edits.centerEdits;
+			centerChanges = edits.centerEdits.values();
 		}
 
 		Set<Center> centersChanged = new HashSet<>();
@@ -1396,9 +1396,6 @@ public class MapCreator implements WarningLogger
 
 		for (CenterEdit cEdit : centerChanges)
 		{
-			// Use a copy so that we can't hit a race condition where the editor changes the object while we're reading from it.
-			cEdit = cEdit.deepCopyWithLock();
-
 			Center center = graph.centers.get(cEdit.index);
 			centersChanged.add(center);
 			Integer currentRegionId = center.region == null ? null : center.region.id;

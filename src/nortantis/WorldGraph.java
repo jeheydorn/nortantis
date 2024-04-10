@@ -381,7 +381,7 @@ public class WorldGraph extends VoronoiGraph
 				// into the ocean is 3 polygons, but I'm adding a buffer to be safe. Note that increasing this is fairly expensive.
 				final int maxDistanceToSearchForLand = 5;
 				Center closestLand = findClosestLand(c, maxDistanceToSearchForLand);
-				if (closestLand == null)
+				if (closestLand == null || closestLand.region == null)
 				{
 					return Color.black;
 				}

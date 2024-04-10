@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import nortantis.editor.FreeIcon;
@@ -334,9 +332,14 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 		return copy;
 	}
+	
+	public synchronized void clear()
+	{
+		anchoredNonTreeIcons.clear();
+		anchoredTreeIcons.clear();
+		nonAnchoredIcons.clear();
+	}
 
-	// TODO This is not thread safe, which can be a problem if the main UI thread calls this while the background thread is changing
-	// something.
 	@Override
 	public boolean equals(Object obj)
 	{

@@ -169,7 +169,7 @@ public abstract class MapUpdater
 
 	private Set<Center> getCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		Set<Center> changedCenters = getEdits().centerEdits.stream()
+		Set<Center> changedCenters = getEdits().centerEdits.values().stream()
 				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
 				.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
 
@@ -177,7 +177,7 @@ public abstract class MapUpdater
 				.filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
 		for (RegionEdit rEdit : regionChanges)
 		{
-			Set<Center> regionCenterEdits = changeEdits.centerEdits.stream()
+			Set<Center> regionCenterEdits = changeEdits.centerEdits.values().stream()
 					.filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId)
 					.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
 			changedCenters.addAll(regionCenterEdits);

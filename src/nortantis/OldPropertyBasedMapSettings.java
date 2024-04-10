@@ -669,15 +669,15 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 		});
 
-		edits.centerEdits = getProperty("centerEdits", new Function0<List<CenterEdit>>()
+		edits.centerEdits = getProperty("centerEdits", new Function0<ConcurrentHashMap<Integer, CenterEdit>>()
 		{
-			public List<CenterEdit> apply()
+			public ConcurrentHashMap<Integer, CenterEdit> apply()
 			{
 				String str = props.getProperty("centerEdits");
 				if (str == null || str.isEmpty())
-					return new ArrayList<>();
+					return new ConcurrentHashMap<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				List<CenterEdit> result = new ArrayList<>();
+				ConcurrentHashMap<Integer, CenterEdit> result = new ConcurrentHashMap<>();
 				int index = 0;
 				for (Object obj : array)
 				{
@@ -701,7 +701,14 @@ public class OldPropertyBasedMapSettings implements Serializable
 							String iconName = (String) iconObj.get("iconName");
 							CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
 							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
-							icon.iconName = iconName;
+							if (iconName != null && !iconName.isEmpty())
+							{
+								icon = new CenterIcon(iconType, iconGroupId, iconName);
+							}
+							else
+							{
+								icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+							}
 						}
 					}
 
@@ -717,7 +724,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 						}
 					}
 
-					result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
+					result.put(index, new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 					index++;
 				}
 

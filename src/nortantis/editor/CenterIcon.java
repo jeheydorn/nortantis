@@ -1,52 +1,44 @@
 package nortantis.editor;
 
-import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * Stores which icon, if any, to draw for a center.
  */
-@SuppressWarnings("serial")
-public class CenterIcon implements Serializable
+public class CenterIcon
 {
-	public CenterIconType iconType;
-	public String iconGroupId;
+	public final CenterIconType iconType;
+	public final String iconGroupId;
 	/**
 	 * When moduloed by the number of icons in a group, this gives an index into the set of icons.
 	 */
-	public int iconIndex;
+	public final int iconIndex;
 	/**
 	 * An alternative to using iconIndex.
 	 */
-	public String iconName;
+	public final String iconName;
 
 	public CenterIcon(CenterIconType iconType, String iconGroupId, int iconIndex)
 	{
-		this.iconType = iconType;
-		this.iconGroupId = iconGroupId;
-		this.iconIndex = iconIndex;
+		this(iconType, iconGroupId, iconIndex, null);
 	}
 
 	public CenterIcon(CenterIconType iconType, String iconGroupId, String iconName)
 	{
+		this(iconType, iconGroupId, -1, iconName);
+	}
+
+	private CenterIcon(CenterIconType iconType, String iconGroupId, int iconIndex, String iconName)
+	{
 		this.iconType = iconType;
 		this.iconGroupId = iconGroupId;
-		this.iconIndex = -1;
+		this.iconIndex = iconIndex;
 		this.iconName = iconName;
 	}
-
-	private CenterIcon()
+	
+	public CenterIcon copyWithIconGroupId(String iconGroupId)
 	{
-	}
-
-	public CenterIcon deepCopy()
-	{
-		CenterIcon copy = new CenterIcon();
-		copy.iconType = iconType;
-		copy.iconGroupId = iconGroupId;
-		copy.iconIndex = iconIndex;
-		copy.iconName = iconName;
-		return copy;
+		return new CenterIcon(iconType, iconGroupId, iconIndex, iconName);
 	}
 
 	@Override

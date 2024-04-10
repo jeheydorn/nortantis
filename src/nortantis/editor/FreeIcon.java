@@ -44,7 +44,6 @@ public class FreeIcon
 	/**
 	 * For icons that add multiple per center (currently only trees), this is the density of the icons.
 	 */
-	// TODO Remove this field if I don't use it.
 	public double density;
 
 	/**
