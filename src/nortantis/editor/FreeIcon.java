@@ -18,61 +18,87 @@ import nortantis.util.Tuple2;
 public class FreeIcon
 {
 	public final IconType type;
-	public String groupId;
+	public final String groupId;
 	/**
 	 * When moduloed by the number of icons in a group, this gives an index into the set of icons.
 	 */
-	public int iconIndex;
+	public final int iconIndex;
 	/**
 	 * An alternative to using iconIndex.
 	 */
-	public String iconName;
+	public final String iconName;
 	/**
 	 * Where the center of the icon will be drawn on the map. This is resolution invariant, meaning it is the location at 100% resolution,
 	 * before integer truncation.
 	 */
-	public Point locationResolutionInvariant;
+	public final Point locationResolutionInvariant;
 	/**
 	 * A factor in determining icon size
 	 */
-	public double scale;
+	public final double scale;
 	/**
 	 * If this icon is attached to a Center, then this is the Center's index.
 	 */
-	public Integer centerIndex;
+	public final Integer centerIndex;
 	
 	/**
 	 * For icons that add multiple per center (currently only trees), this is the density of the icons.
 	 */
-	public double density;
+	public final double density;
 
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String groupId, int iconIndex)
+	{
+		this(loc.mult((1.0 / resolutionScale)), scale, type, groupId, iconIndex, null, null, 0.0);
+	}
+
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String groupId, int iconIndex, Integer centerIndex)
+	{
+		this(loc.mult((1.0 / resolutionScale)), scale, type, groupId, iconIndex, null, centerIndex, 0.0);
+	}
+	
 	/**
 	 * @param scale
 	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String iconGroupId, int iconIndex)
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String groupId, int iconIndex, Integer centerIndex, double density)
 	{
-		this(type);
-		double resolutionInverse = (1.0 / resolutionScale);
-		this.locationResolutionInvariant = loc.mult(resolutionInverse);
-		this.scale = scale;
-		this.groupId = iconGroupId;
-		this.iconIndex = iconIndex;
+		this(loc.mult((1.0 / resolutionScale)), scale, type, groupId, iconIndex, null, centerIndex, density);
 	}
-
+	
 	/**
 	 * @param scale
 	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String iconGroupId, String iconName)
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String groupId, String iconName, Integer centerIndex)
 	{
-		this(resolutionScale, loc, scale, type, iconGroupId, -1);
-		this.iconName = iconName;
+		this(loc.mult((1.0 / resolutionScale)), scale, type, groupId, -1, iconName, centerIndex, 0.0);
 	}
-
-	public FreeIcon(IconType type)
+	
+	public FreeIcon(Point locationResolutionInvariant, double scale, IconType type, String groupId, int iconIndex, String iconName, Integer centerIndex, double density)
 	{
 		this.type = type;
+		this.locationResolutionInvariant = locationResolutionInvariant;
+		this.scale = scale;
+		this.groupId = groupId;
+		this.iconIndex = iconIndex;
+		this.iconName = iconName;
+		this.density = density;
+		this.centerIndex = centerIndex;
+	}
+
+	public FreeIcon copyWith(String groupId)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density);
+	}
+
+	public FreeIcon copyWith(String groupId, String iconName)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density);
+	}
+
+	public FreeIcon copyWith(String groupId, int iconIndex)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density);
 	}
 
 	/**
@@ -152,20 +178,6 @@ public class FreeIcon
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
-	}
-
-	public FreeIcon deepCopy()
-	{
-		FreeIcon copy = new FreeIcon(type);
-		copy.locationResolutionInvariant = locationResolutionInvariant;
-		copy.scale = scale;
-		copy.iconIndex = iconIndex;
-		copy.groupId = groupId;
-		copy.iconName = iconName;
-		copy.centerIndex = centerIndex;
-		copy.density = density;
-
-		return copy;
 	}
 
 	@Override

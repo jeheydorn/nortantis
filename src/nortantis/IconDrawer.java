@@ -253,10 +253,7 @@ public class IconDrawer
 						String name = groupAndName.getSecond();
 
 						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, centerIconTypeToIconType(cEdit.icon.iconType),
-								groupId, name);
-
-						icon.centerIndex = cEdit.index;
-
+								groupId, name, cEdit.index);
 
 						if (!isContentBottomTouchingWater(icon))
 						{
@@ -320,8 +317,7 @@ public class IconDrawer
 			loc = center.loc;
 		}
 		double scale = scaledWidth / getBaseWidthOrHeight(type, 0);
-		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, groupId, cEdit.icon.iconIndex);
-		icon.centerIndex = cEdit.index;
+		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, groupId, cEdit.icon.iconIndex, cEdit.index);
 		if (!isContentBottomTouchingWater(icon))
 		{
 			freeIcons.addOrReplace(icon);
@@ -349,63 +345,48 @@ public class IconDrawer
 	{
 		iconsToDraw.clear();
 
-		Set<FreeIcon> toRemove = new HashSet<>();
 		for (FreeIcon icon : freeIcons)
 		{
 			if (icon.type == IconType.mountains)
 			{
-				if (!updateGroupIdAndAddShuffledFreeIcon(icon, mountainScale, warningLogger))
-				{
-					toRemove.add(icon);
-				}
+				updateGroupIdAndAddShuffledFreeIcon(icon, mountainScale, warningLogger);
 			}
 			else if (icon.type == IconType.hills)
 			{
-				if (!updateGroupIdAndAddShuffledFreeIcon(icon, hillScale, warningLogger))
-				{
-					toRemove.add(icon);
-				}
+				updateGroupIdAndAddShuffledFreeIcon(icon, hillScale, warningLogger);
 			}
 			else if (icon.type == IconType.sand)
 			{
-				if (!updateGroupIdAndAddShuffledFreeIcon(icon, duneScale, warningLogger))
-				{
-					toRemove.add(icon);
-				}
+				updateGroupIdAndAddShuffledFreeIcon(icon, duneScale, warningLogger);
 			}
 			else if (icon.type == IconType.cities)
 			{
 				Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(icon.groupId, icon.iconName, warningLogger);
 				if (groupAndName != null)
 				{
-					icon.groupId = groupAndName.getFirst();
-					icon.iconName = groupAndName.getSecond();
+					FreeIcon updated = icon.copyWith(groupAndName.getFirst(), groupAndName.getSecond());
 
-					IconDrawTask task = toIconDrawTask(icon);
+					IconDrawTask task = toIconDrawTask(updated);
 					if (!isContentBottomTouchingWater(task))
 					{
-						iconsToDraw.add(toIconDrawTask(icon));
+						freeIcons.replace(icon, updated);
+						iconsToDraw.add(toIconDrawTask(updated));
 					}
 					else
 					{
-						toRemove.add(icon);
+						freeIcons.remove(icon);
 					}
 				}
 				else
 				{
-					toRemove.add(icon);
+					freeIcons.remove(icon);
 				}
 			}
 			else if (icon.type == IconType.trees)
 			{
-				if (!updateGroupIdAndAddShuffledFreeIcon(icon, treeHeightScale, warningLogger))
-				{
-					toRemove.add(icon);
-				}
+				updateGroupIdAndAddShuffledFreeIcon(icon, treeHeightScale, warningLogger);
 			}
 		}
-
-		freeIcons.removeAll(toRemove);
 	}
 
 	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, WarningLogger warningLogger)
@@ -448,13 +429,15 @@ public class IconDrawer
 		return new Tuple2<String, String>(groupId, name);
 	}
 
-	private boolean updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger)
+	private void updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger)
 	{
 		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(icon.type);
 		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
 		if (!icon.groupId.equals(newGroupId) && newGroupId != null)
 		{
-			icon.groupId = getNewGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
+			FreeIcon updated = icon.copyWith(newGroupId);
+			freeIcons.replace(icon, updated);
+			icon = updated;
 		}
 
 		if (iconsByGroup.get(icon.groupId).size() > 0)
@@ -463,14 +446,16 @@ public class IconDrawer
 			if (!isContentBottomTouchingWater(task))
 			{
 				iconsToDraw.add(task);
-				return true;
 			}
 			else
 			{
-				return false;
+				freeIcons.remove(icon);
 			}
 		}
-		return false;
+		else
+		{
+			freeIcons.remove(icon);
+		}
 	}
 
 	private double getBaseWidthOrHeight(IconType type, double cityWidthFromFileName)
@@ -868,8 +853,7 @@ public class IconDrawer
 			if (c.isCity)
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, cityIconTypeForNewMaps, cityName);
-				icon.centerIndex = c.index;
+				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, cityIconTypeForNewMaps, cityName, c.index);
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -947,8 +931,7 @@ public class IconDrawer
 
 					Point loc = getImageCenterToDrawImageNearBottomOfCenter(imagesInRange.get(i % imagesInRange.size()).image,
 							widthBeforeTypeLevelScaling * mountainScale, c);
-					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i);
-					icon.centerIndex = c.index;
+					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i, c.index);
 
 					IconDrawTask task = toIconDrawTask(icon);
 
@@ -975,8 +958,7 @@ public class IconDrawer
 						double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
 						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
 
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, fileNameRangeId, i);
-						icon.centerIndex = c.index;
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, fileNameRangeId, i, c.index);
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1061,8 +1043,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = Math.abs(rand.nextInt());
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, groupId, i);
-						icon.centerIndex = c.index;
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, groupId, i, c.index);
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -1337,9 +1318,7 @@ public class IconDrawer
 			x += rand.nextGaussian() * scale;
 			y += rand.nextGaussian() * scale;
 
-			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, groupId, index);
-			icon.centerIndex = center.index;
-			icon.density = forestDensity;
+			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, groupId, index, center.index, forestDensity);
 
 			if (!isContentBottomTouchingWater(icon))
 			{

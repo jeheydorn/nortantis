@@ -330,9 +330,7 @@ public abstract class MapUpdater
 
 		List<MapText> copiedText = textChanged == null ? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
-		List<FreeIcon> coppiedIcons = iconsChanged == null ? null
-				: iconsChanged.stream().map(icon -> icon.deepCopy()).collect(Collectors.toList());
-		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copiedText, coppiedIcons, preRuns, postRuns);
+		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copiedText, iconsChanged, preRuns, postRuns);
 	}
 
 	/**

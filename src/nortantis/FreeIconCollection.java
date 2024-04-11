@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 import nortantis.editor.FreeIcon;
-import nortantis.util.HashMapF;
+import nortantis.util.ConcurrentHashMapF;
 
 /**
  * Allows fast lookup of FreeIcons.
@@ -22,15 +23,24 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	/**
 	 * Maps from Center index to lists of icons that are anchored to that Center.
 	 */
-	private HashMapF<Integer, FreeIcon> anchoredNonTreeIcons;
-	private HashMapF<Integer, List<FreeIcon>> anchoredTreeIcons;
-	private List<FreeIcon> nonAnchoredIcons;
+	private ConcurrentHashMapF<Integer, FreeIcon> anchoredNonTreeIcons;
+	private ConcurrentHashMapF<Integer, List<FreeIcon>> anchoredTreeIcons;
+	private CopyOnWriteArrayList<FreeIcon> nonAnchoredIcons;
 
 	public FreeIconCollection()
 	{
-		anchoredNonTreeIcons = new HashMapF<>();
-		anchoredTreeIcons = new HashMapF<>();
-		nonAnchoredIcons = new ArrayList<>();
+		anchoredNonTreeIcons = new ConcurrentHashMapF<>();
+		anchoredTreeIcons = new ConcurrentHashMapF<>();
+		nonAnchoredIcons = new CopyOnWriteArrayList<>();
+	}
+	
+	public FreeIconCollection(FreeIconCollection other)
+	{
+		this();
+		for (FreeIcon icon : other)
+		{
+			addOrReplace(icon);
+		}
 	}
 
 	public synchronized boolean isEmpty()
@@ -76,6 +86,19 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			nonAnchoredIcons.add(icon);
 		}
+	}
+	
+	public synchronized void replace(FreeIcon before, FreeIcon after)
+	{
+		if ((before.type != IconType.trees && after.type != IconType.trees) && (before.centerIndex != null && before.centerIndex == after.centerIndex))
+		{
+			anchoredNonTreeIcons.put(after.centerIndex, after);
+		}
+		else
+		{
+			remove(before);
+			addOrReplace(after);
+		}		
 	}
 
 	public synchronized FreeIcon getNonTree(int centerIndex)
@@ -134,11 +157,18 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	{
 		for (FreeIcon icon : toRemove)
 		{
-			if (icon.centerIndex == null)
-			{
-				nonAnchoredIcons.remove(icon);
-			}
-
+			remove(icon);
+		}
+	}
+	
+	public synchronized void remove(FreeIcon icon)
+	{
+		if (icon.centerIndex == null)
+		{
+			nonAnchoredIcons.remove(icon);
+		}
+		else
+		{
 			if (icon.type == IconType.trees)
 			{
 				if (anchoredTreeIcons.containsKey(icon.centerIndex))
@@ -321,16 +351,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		// Remove elements in the intersection
 		result.removeAll(intersection);
 		return result;
-	}
-
-	public synchronized FreeIconCollection deepCopy()
-	{
-		FreeIconCollection copy = new FreeIconCollection();
-		for (FreeIcon icon : this)
-		{
-			copy.addOrReplace(icon.deepCopy());
-		}
-		return copy;
 	}
 	
 	public synchronized void clear()

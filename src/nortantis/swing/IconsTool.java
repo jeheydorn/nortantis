@@ -732,30 +732,26 @@ public class IconsTool extends EditorTool
 			List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
 			tuple.set(iconsBeforeAndAfter);
 
-			for (FreeIcon icon : icons)
+			for (FreeIcon before : icons)
 			{
-				iconsBeforeAndAfter.add(icon.deepCopy());
+				iconsBeforeAndAfter.add(before);
 
+				FreeIcon after;
 				if (mountainsButton.isSelected())
 				{
-					icon.groupId = mountainTypes.getSelectedOption();
-					icon.iconIndex = Math.abs(rand.nextInt());
+					after = before.copyWith(mountainTypes.getSelectedOption(), Math.abs(rand.nextInt()));
 				}
 				else if (hillsButton.isSelected())
 				{
-					icon.groupId = hillTypes.getSelectedOption();
-					icon.iconIndex = Math.abs(rand.nextInt());
+					after = before.copyWith(hillTypes.getSelectedOption(), Math.abs(rand.nextInt()));
 				}
 				else if (dunesButton.isSelected())
 				{
-					icon.groupId = duneTypes.getSelectedOption();
-					icon.iconIndex = Math.abs(rand.nextInt());
-
+					after = before.copyWith(duneTypes.getSelectedOption(), Math.abs(rand.nextInt()));
 				}
 				else if (treesButton.isSelected())
 				{
-					icon.groupId = treeTypes.getSelectedOption();
-					icon.iconIndex = Math.abs(rand.nextInt());
+					after = before.copyWith(treeTypes.getSelectedOption(), Math.abs(rand.nextInt()));
 				}
 				else if (citiesButton.isSelected())
 				{
@@ -767,12 +763,16 @@ public class IconsTool extends EditorTool
 
 					String cityType = selectedCity.getFirst();
 					String cityName = selectedCity.getSecond();
-
-					icon.groupId = cityType;
-					icon.iconName = cityName;
+					after = before.copyWith(cityType, cityName);
+				}
+				else
+				{
+					assert false;
+					continue;
 				}
 
-				iconsBeforeAndAfter.add(icon.deepCopy());
+				mainWindow.edits.freeIcons.replace(before, after);
+				iconsBeforeAndAfter.add(after);
 			}
 		});
 

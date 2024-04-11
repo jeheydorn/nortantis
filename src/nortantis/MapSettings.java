@@ -813,19 +813,20 @@ public class MapSettings implements Serializable
 		{
 			JSONObject iconObj = (JSONObject) obj;
 			IconType type = IconType.valueOf((String) iconObj.get("type"));
-			FreeIcon icon = new FreeIcon(type);
-			icon.groupId = (String) iconObj.get("groupId");
-			icon.iconIndex = (int) (long) iconObj.get("iconIndex");
-			icon.iconName = (String) iconObj.get("iconName");
-			icon.locationResolutionInvariant = Point.fromJSonValue((String) iconObj.get("locationResolutionInvariant"));
-			icon.scale = (double) iconObj.get("scale");
+
+			String groupId = (String) iconObj.get("groupId");
+			int iconIndex = (int) (long) iconObj.get("iconIndex");
+			String iconName = (String) iconObj.get("iconName");
+			Point locationResolutionInvariant = Point.fromJSonValue((String) iconObj.get("locationResolutionInvariant"));
+			double scale = (double) iconObj.get("scale");
+			Integer centerIndex = null;
 			if (iconObj.containsKey("centerIndex") && iconObj.get("centerIndex") != null)
 			{
-				icon.centerIndex = (int) (long) iconObj.get("centerIndex");
+				centerIndex = (int) (long) iconObj.get("centerIndex");
 			}
-			icon.density = (double) iconObj.get("density");
+			double density = (double) iconObj.get("density");
 
-			result.addOrReplace(icon);
+			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density));
 		}
 
 		return result;
