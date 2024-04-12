@@ -59,6 +59,8 @@ public class MapCreator implements WarningLogger
 	private static final int concentricWaveLineWidth = 2;
 	private boolean isCanceled;
 	private List<String> warningMessages;
+	
+	public boolean keepTreesThatDidNotDraw = false;
 
 	public MapCreator()
 	{
@@ -280,7 +282,7 @@ public class MapCreator implements WarningLogger
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds,
 			double effectsPadding, TextDrawer textDrawer, Set<Center> centersToConvertIconsFor)
 	{
-		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
+		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings, keepTreesThatDidNotDraw);
 		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersToConvertIconsFor, this);
 
 		// The bounds of the snippet to draw. This is larger than the snippet to
@@ -844,7 +846,7 @@ public class MapCreator implements WarningLogger
 
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
-		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
+		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings, keepTreesThatDidNotDraw);
 		if (mapParts != null)
 		{
 			mapParts.iconDrawer = iconDrawer;

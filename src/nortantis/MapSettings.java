@@ -109,13 +109,11 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
-
 	/**
 	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
 	 * images to use. But the editor now allows selecting city images of any type.
 	 */
 	public String cityIconTypeName;
-
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
 	public double pointPrecision = defaultPointPrecision;
@@ -129,7 +127,6 @@ public class MapSettings implements Serializable
 	public double hillScale = 1.0;
 	public double duneScale = 1.0;
 	public double cityScale = 1.0;
-
 	/**
 	 * Default values for new settings
 	 */

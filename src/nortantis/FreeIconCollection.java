@@ -24,7 +24,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	 * Maps from Center index to lists of icons that are anchored to that Center.
 	 */
 	private ConcurrentHashMapF<Integer, FreeIcon> anchoredNonTreeIcons;
-	private ConcurrentHashMapF<Integer, List<FreeIcon>> anchoredTreeIcons;
+	private ConcurrentHashMapF<Integer, CopyOnWriteArrayList<FreeIcon>> anchoredTreeIcons;
 	private CopyOnWriteArrayList<FreeIcon> nonAnchoredIcons;
 
 	public FreeIconCollection()
@@ -58,7 +58,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			}
 		}
 
-		for (Entry<Integer, List<FreeIcon>> entry : anchoredTreeIcons.entrySet())
+		for (Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : anchoredTreeIcons.entrySet())
 		{
 			if (entry.getValue() != null && entry.getValue().size() > 0)
 			{
@@ -75,7 +75,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			if (icon.type == IconType.trees)
 			{
-				anchoredTreeIcons.getOrCreate(icon.centerIndex, () -> new ArrayList<FreeIcon>()).add(icon);
+				anchoredTreeIcons.getOrCreate(icon.centerIndex, () -> new CopyOnWriteArrayList<FreeIcon>()).add(icon);
 			}
 			else
 			{
@@ -194,7 +194,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return new Iterator<FreeIcon>()
 		{
 			Iterator<FreeIcon> anchoredNonTreeIconsIterator = anchoredNonTreeIcons.values().iterator();
-			Iterator<List<FreeIcon>> anchoredTreeIconsIterator = anchoredTreeIcons.values().iterator();
+			Iterator<CopyOnWriteArrayList<FreeIcon>> anchoredTreeIconsIterator = anchoredTreeIcons.values().iterator();
 			Iterator<FreeIcon> treesIterator = anchoredTreeIconsIterator.hasNext() ? anchoredTreeIconsIterator.next().iterator() : null;
 			Iterator<FreeIcon> nonAnchoredIconsIterator = nonAnchoredIcons.iterator();
 

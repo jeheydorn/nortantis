@@ -69,8 +69,9 @@ public class IconDrawer
 	private String cityIconTypeForNewMaps;
 	private String imagesPath;
 	private double resolutionScale;
+	private boolean keepTreesThatDidNotDraw;
 
-	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
+	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings, boolean keepTreesThatDidNotDraw)
 	{
 		this.graph = graph;
 		this.rand = rand;
@@ -109,6 +110,7 @@ public class IconDrawer
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
 
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
+		this.keepTreesThatDidNotDraw = keepTreesThatDidNotDraw;
 	}
 
 
@@ -1172,9 +1174,7 @@ public class IconDrawer
 
 		for (Center center : centersToConvert)
 		{
-			// Only clear the CenterTrees if trees were added from the center. That way changing the tree height slider doesn't cause trees
-			// to permanently disappear for a center.
-			if (freeIcons.hasTrees(center.index))
+			if (edits.centerEdits.get(center.index).trees != null && (!keepTreesThatDidNotDraw || edits.freeIcons.hasTrees(center.index)))
 			{
 				edits.centerEdits.put(center.index, edits.centerEdits.get(center.index).copyWithTrees(null));
 			}

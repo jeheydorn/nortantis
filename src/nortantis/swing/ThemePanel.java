@@ -697,7 +697,8 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
 		SwingHelper.addListener(treeHeightSlider, () ->
 		{
-			handleTerrainChange(() -> triggerRebuildAllAnchoredTrees());
+			triggerRebuildAllAnchoredTrees();
+			handleTerrainChange(true, () -> {});
 		});
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
@@ -1424,14 +1425,14 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleTerrainChange()
 	{
-		handleTerrainChange(null);
+		handleTerrainChange(false, null);
 	}
 
-	private void handleTerrainChange(Runnable preRun)
+	private void handleTerrainChange(boolean keepTreesThatDidNotDraw, Runnable preRun)
 	{
 		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.Terrain, null);
-		mainWindow.updater.createAndShowMapTerrainChange(preRun);
+		mainWindow.updater.createAndShowMapTerrainChange(keepTreesThatDidNotDraw, preRun);
 	}
 
 	private void handleFontsChange()
