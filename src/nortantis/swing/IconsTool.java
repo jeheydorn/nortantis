@@ -725,7 +725,7 @@ public class IconsTool extends EditorTool
 	{
 		if (treesButton.isSelected())
 		{
-			eraseTreesThatFailedToDrawDueToLowDensity(e);
+			replaceTreesThatFailedToDrawDueToLowDensity(e);
 		}
 
 		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
@@ -797,7 +797,7 @@ public class IconsTool extends EditorTool
 		{
 			eraseTreesThatFailedToDrawDueToLowDensity(e);
 		}
-		
+
 		List<FreeIcon> icons = mainWindow.edits.freeIcons.doWithLockAndReturnResult(() ->
 		{
 			List<FreeIcon> iconsInner = getSelectedIcons(e.getPoint());
@@ -815,13 +815,27 @@ public class IconsTool extends EditorTool
 			updater.createAndShowMapIncrementalUsingIcons(icons);
 		}
 	}
-	
+
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
 	{
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 		for (Center center : selected)
 		{
 			mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(null));
+		}
+	}
+
+	private void replaceTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
+	{
+		Set<Center> selected = getSelectedLandCenters(e.getPoint());
+		for (Center center : selected)
+		{
+			CenterTrees currentTrees = mainWindow.edits.centerEdits.get(center.index).trees;
+			if (currentTrees != null)
+			{
+				CenterTrees newTrees = currentTrees.copyWithTreeType(treeTypes.getSelectedOption());
+				mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(newTrees));
+			}
 		}
 	}
 

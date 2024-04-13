@@ -59,6 +59,11 @@ public class Counter<T extends Comparable<T>> implements Serializable
 				return item;
 		}
 	}
+	
+	public T argmax()
+	{
+		return Helper.argmax(counts);
+	}
 
 	public boolean isEmpty()
 	{

@@ -334,6 +334,7 @@ public class MapSettings implements Serializable
 				treesObj.put("treeType", centerEdit.trees.treeType);
 				treesObj.put("density", centerEdit.trees.density);
 				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
+				treesObj.put("isDormant", centerEdit.trees.isDormant);
 				mpObj.put("trees", treesObj);
 			}
 			list.add(mpObj);
@@ -793,7 +794,8 @@ public class MapSettings implements Serializable
 					String treeType = (String) treesObj.get("treeType");
 					double density = (Double) treesObj.get("density");
 					long randomSeed = (Long) treesObj.get("randomSeed");
-					trees = new CenterTrees(treeType, density, randomSeed);
+					boolean isDormant = treesObj.containsKey("isDormant") ? (Boolean) treesObj.get("isDormant") : false;
+					trees = new CenterTrees(treeType, density, randomSeed, isDormant);
 				}
 			}
 

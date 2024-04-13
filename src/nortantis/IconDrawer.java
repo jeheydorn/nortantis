@@ -1171,7 +1171,8 @@ public class IconDrawer
 			}
 		}
 
-		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>();
+		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>(); // TODO remove
+		
 		convertTreesToFreeIcons(treesByCenter, warningLogger, outTreesThatFailedToDrawDueToLowDensity);
 
 		for (int index: treesByCenter.keySet())
@@ -1182,13 +1183,9 @@ public class IconDrawer
 				{
 					edits.centerEdits.put(index, edits.centerEdits.get(index).copyWithTrees(null));
 				}
-				else if (outTreesThatFailedToDrawDueToLowDensity.containsKey(index))
-				{
-					// Keep it
-				}
 				else
 				{
-					edits.centerEdits.put(index, edits.centerEdits.get(index).copyWithTrees(null));					
+					edits.centerEdits.put(index, edits.centerEdits.get(index).copyWithTrees( edits.centerEdits.get(index).trees.copyWithIsDormant(true)));				
 				}
 			}
 		}
@@ -1214,7 +1211,7 @@ public class IconDrawer
 		for (Entry<Integer, CenterTrees> entry : treesByCenter.entrySet())
 		{
 			CenterTrees cTrees = entry.getValue();
-			if (cTrees != null)
+			if (cTrees != null && !cTrees.isDormant)
 			{
 				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, cTrees.treeType.toString(), treesById, warningLogger);
 				if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)

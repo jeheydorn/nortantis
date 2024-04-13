@@ -11,6 +11,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -44,13 +45,16 @@ import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.WorldGraph;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
+import nortantis.graph.voronoi.Center;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.util.Counter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
@@ -130,6 +134,7 @@ public class ThemePanel extends JTabbedPane
 	private JButton grungeColorChooseButton;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
 	private JSlider treeHeightSlider;
+	private boolean enableTreeHeightSliderActionListener;
 	private JSlider mountainScaleSlider;
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
@@ -698,11 +703,15 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
 		SwingHelper.addListener(treeHeightSlider, () ->
 		{
-			triggerRebuildAllAnchoredTrees();
-			handleTerrainChange(false, () ->
+			if (enableTreeHeightSliderActionListener)
 			{
-			}); // TODO consider removing first parameter.
+				triggerRebuildAllAnchoredTrees();
+				handleTerrainChange(false, () ->
+				{
+				}); // TODO consider removing first parameter.
+			}
 		});
+		enableTreeHeightSliderActionListener = true;
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -748,39 +757,83 @@ public class ThemePanel extends JTabbedPane
 
 	private void triggerRebuildAllAnchoredTrees()
 	{
-		Random rand = new Random();
-		// Reassign the random seeds to all CenterTrees that still exist because they failed to create any trees in their previous attempt to draw.
-		// Doing this causes those center trees to possibly show up. Without it, they would gradually disappear as you changed the tree height slider,
-		// especially on the higher ends of the tree height values.
-		for (Map.Entry<Integer, CenterEdit> entry : mainWindow.edits.centerEdits.entrySet())
+		mainWindow.edits.freeIcons.doWithLock(() -> 
 		{
-			CenterTrees cTrees = entry.getValue().trees;
-			if (cTrees != null)
+			Random rand = new Random();
+			// Reassign the random seeds to all CenterTrees that still exist because they failed to create any trees in their previous attempt
+			// to draw. Doing this causes those center trees to possibly show up. Without it, they would gradually disappear as you changed the
+			// tree height slider, especially on the higher ends of the tree height values.
+			// Also mark CenterTrees as not dormant so they will try to draw again.
+			// Also remove CenterTrees that are not close to any trees that are visible so that they don't randomly pop up when you change the
+			// tree height slider.
+			for (Map.Entry<Integer, CenterEdit> entry : mainWindow.edits.centerEdits.entrySet())
 			{
-				mainWindow.edits.centerEdits.put(entry.getKey(),
-						entry.getValue().copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong())));
+				CenterTrees cTrees = entry.getValue().trees;
+				if (cTrees != null)
+				{
+					if (mainWindow.edits.freeIcons.hasTrees(entry.getKey()))
+					{
+						// Visible trees override invisible ones.
+						mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
+					}
+					else
+					{
+						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
+						{
+							mainWindow.edits.centerEdits.put(entry.getKey(),
+									entry.getValue().copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong(), false)));
+						}
+						else
+						{
+							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
+						}	
+					}				
+				}
 			}
-		}
 
-		for (int centerIndex : mainWindow.edits.freeIcons.iterateTreeAnchors())
+			for (int centerIndex : mainWindow.edits.freeIcons.iterateTreeAnchors())
+			{
+				List<FreeIcon> trees = mainWindow.edits.freeIcons.getTrees(centerIndex);
+				if (trees == null || trees.isEmpty())
+				{
+					continue;
+				}
+
+				String treeType = getMostCommonTreeType(trees);
+				assert treeType != null;
+
+				double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
+
+				assert density > 0;
+
+				CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(centerIndex);
+				mainWindow.edits.centerEdits.put(centerIndex, cEdit.copyWithTrees(cTrees));
+			}
+		});
+	}
+	
+	private String getMostCommonTreeType(List<FreeIcon> trees)
+	{
+		Counter<String> counter = new Counter<>();
+		trees.stream().forEach(tree -> counter.incrementCount(tree.groupId));
+		return counter.argmax();
+	}
+
+	private boolean hasVisibleTreeWithinDistance(int centerStartIndex, String treeType, int maxSearchDistance)
+	{
+		MapEdits edits = mainWindow.edits;
+		WorldGraph graph = mainWindow.updater.mapParts.graph;
+		Center start = graph.centers.get(centerStartIndex);
+		Center found = graph.breadthFirstSearchForGoal((c, distanceFromStart) ->
 		{
-			List<FreeIcon> trees = mainWindow.edits.freeIcons.getTrees(centerIndex);
-			if (trees == null || trees.isEmpty())
-			{
-				continue;
-			}
+			return distanceFromStart < maxSearchDistance;
+		}, (c) ->
+		{
+			return edits.freeIcons.hasTrees(c.index);
+		}, start);
 
-			String treeType = trees.get(0).groupId;
-			assert treeType != null && !treeType.isEmpty();
-
-			double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
-
-			assert density > 0;
-
-			CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
-			CenterEdit cEdit = mainWindow.edits.centerEdits.get(centerIndex);
-			mainWindow.edits.centerEdits.put(centerIndex, cEdit.copyWithTrees(cTrees));
-		}
+		return found != null;
 	}
 
 	private boolean disableCoastShadingColorDisplayHandler = false;
@@ -1228,7 +1281,9 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
+		enableTreeHeightSliderActionListener = false;
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
+		enableTreeHeightSliderActionListener = true;
 		mountainScaleSlider.setValue(getSliderValueForScale(settings.mountainScale));
 		hillScaleSlider.setValue(getSliderValueForScale(settings.hillScale));
 		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
