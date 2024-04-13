@@ -1108,7 +1108,8 @@ public class IconDrawer
 			}
 		}
 
-		convertTreesToFreeIcons(treesByCenter, new LoggerWarningLogger());
+		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>();
+		convertTreesToFreeIcons(treesByCenter, new LoggerWarningLogger(), outTreesThatFailedToDrawDueToLowDensity);
 	}
 
 	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
@@ -1170,18 +1171,37 @@ public class IconDrawer
 			}
 		}
 
-		convertTreesToFreeIcons(treesByCenter, warningLogger);
+		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>();
+		convertTreesToFreeIcons(treesByCenter, warningLogger, outTreesThatFailedToDrawDueToLowDensity);
 
-		for (Center center : centersToConvert)
+		for (int index: treesByCenter.keySet())
 		{
-			if (edits.centerEdits.get(center.index).trees != null && (!keepTreesThatDidNotDraw || edits.freeIcons.hasTrees(center.index)))
+			if (edits.centerEdits.get(index).trees != null)
 			{
-				edits.centerEdits.put(center.index, edits.centerEdits.get(center.index).copyWithTrees(null));
+				if (edits.freeIcons.hasTrees(index))
+				{
+					edits.centerEdits.put(index, edits.centerEdits.get(index).copyWithTrees(null));
+				}
+				else if (outTreesThatFailedToDrawDueToLowDensity.containsKey(index))
+				{
+					// Keep it
+				}
+				else
+				{
+					edits.centerEdits.put(index, edits.centerEdits.get(index).copyWithTrees(null));					
+				}
 			}
 		}
 	}
+	
+	private Set<Center> addNeighbors(Collection<Center> selection)
+	{
+		Set<Center> result = new HashSet<Center>(selection);
+		selection.stream().forEach(c -> result.addAll(c.neighbors));
+		return result;
+	}
 
-	private void convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
+	private void convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger, Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity)
 	{
 		// Load the images and masks.
 		ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees);
@@ -1205,7 +1225,7 @@ public class IconDrawer
 
 				CenterTrees toUse = cTrees.copyWithTreeType(groupId);
 				Center c = graph.centers.get(entry.getKey());
-				drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet());
+				drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet(), outTreesThatFailedToDrawDueToLowDensity);
 			}
 		}
 	}
@@ -1226,14 +1246,14 @@ public class IconDrawer
 	}
 
 	private void drawTreesAtCenterAndCorners(WorldGraph graph, Center center, CenterTrees cTrees,
-			Set<Integer> additionalCentersThatWillHaveTrees)
+			Set<Integer> additionalCentersThatWillHaveTrees, Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity)
 	{
 		freeIcons.clearTrees(center.index);
 
 		List<ImageAndMasks> unscaledImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees)
 				.get(cTrees.treeType);
 		Random rand = new Random(cTrees.randomSeed);
-		addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.treeType);
+		boolean didAddATree = addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.treeType);
 
 		// Draw trees at the neighboring corners too.
 		// Note that corners use their own Random instance because the random seed of that random needs to not depend on the center or else
@@ -1242,8 +1262,13 @@ public class IconDrawer
 		{
 			if (shouldCenterDrawTreesForCorner(center, corner, additionalCentersThatWillHaveTrees))
 			{
-				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
+				didAddATree |= addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
 			}
+		}
+		
+		if (!didAddATree)
+		{			
+			outTreesThatFailedToDrawDueToLowDensity.put(center.index, cTrees);
 		}
 	}
 
@@ -1296,7 +1321,7 @@ public class IconDrawer
 		}
 	};
 
-	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
+	private boolean addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
 			Random rand, String groupId)
 	{
 		// Convert the forestDensity into an integer number of trees to draw such that the expected
@@ -1305,6 +1330,11 @@ public class IconDrawer
 		double fraction = density - (int) density;
 		int extra = rand.nextDouble() < fraction ? 1 : 0;
 		int numTrees = ((int) density) + extra;
+		
+		if (numTrees == 0)
+		{
+			return false;
+		}
 
 		for (int i = 0; i < numTrees; i++)
 		{
@@ -1325,6 +1355,8 @@ public class IconDrawer
 				freeIcons.addOrReplace(icon);
 			}
 		}
+		
+		return true;
 	}
 
 	private boolean isContentBottomTouchingWater(FreeIcon icon)

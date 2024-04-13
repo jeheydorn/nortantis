@@ -324,6 +324,18 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("regionId", centerEdit.regionId);
 			}
+			// I'm storing center trees, even though they're mostly only used for adding new trees using editing brushes, because
+			// CenterTrees that failed to draw any trees due to their density being too low should be retried when the tree height slider
+			// changes, because that changes the density. Without retrying those CenterTrees, trees would slowly disappear off the map as he
+			// changed the tree height slighter.
+			if (centerEdit.trees != null)
+			{
+				JSONObject treesObj = new JSONObject();
+				treesObj.put("treeType", centerEdit.trees.treeType);
+				treesObj.put("density", centerEdit.trees.density);
+				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
+				mpObj.put("trees", treesObj);
+			}
 			list.add(mpObj);
 		}
 		return list;
@@ -805,7 +817,7 @@ public class MapSettings implements Serializable
 		{
 			return result;
 		}
-		
+
 		for (Object obj : array)
 		{
 			JSONObject iconObj = (JSONObject) obj;

@@ -381,8 +381,10 @@ public class LandWaterTool extends EditorTool
 				}
 				hasChange |= !edit.isWater;
 				hasChange |= edit.isLake != lakesButton.isSelected();
+				// Note that I'm nulling out trees in the assignment below because any trees that failed to draw previously should be
+				// cleared out when the Center becomes water.
 				mainWindow.edits.centerEdits.put(edit.index,
-						new CenterEdit(edit.index, true, lakesButton.isSelected(), edit.regionId, edit.icon, edit.trees));
+						new CenterEdit(edit.index, true, lakesButton.isSelected(), edit.regionId, edit.icon, null));
 			}
 			if (hasChange)
 			{

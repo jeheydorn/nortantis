@@ -12,6 +12,7 @@ import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
@@ -698,7 +699,9 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.addListener(treeHeightSlider, () ->
 		{
 			triggerRebuildAllAnchoredTrees();
-			handleTerrainChange(true, () -> {});
+			handleTerrainChange(false, () ->
+			{
+			}); // TODO consider removing first parameter.
 		});
 		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
 
@@ -746,6 +749,19 @@ public class ThemePanel extends JTabbedPane
 	private void triggerRebuildAllAnchoredTrees()
 	{
 		Random rand = new Random();
+		// Reassign the random seeds to all CenterTrees that still exist because they failed to create any trees in their previous attempt to draw.
+		// Doing this causes those center trees to possibly show up. Without it, they would gradually disappear as you changed the tree height slider,
+		// especially on the higher ends of the tree height values.
+		for (Map.Entry<Integer, CenterEdit> entry : mainWindow.edits.centerEdits.entrySet())
+		{
+			CenterTrees cTrees = entry.getValue().trees;
+			if (cTrees != null)
+			{
+				mainWindow.edits.centerEdits.put(entry.getKey(),
+						entry.getValue().copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong())));
+			}
+		}
+
 		for (int centerIndex : mainWindow.edits.freeIcons.iterateTreeAnchors())
 		{
 			List<FreeIcon> trees = mainWindow.edits.freeIcons.getTrees(centerIndex);
@@ -758,6 +774,7 @@ public class ThemePanel extends JTabbedPane
 			assert treeType != null && !treeType.isEmpty();
 
 			double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
+
 			assert density > 0;
 
 			CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
@@ -1112,14 +1129,15 @@ public class ThemePanel extends JTabbedPane
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
-		
-		// Temporarily disable events on coastShadingColorDisplay while initially setting the value for coastShadingTransparencySlider so that
-		// the action listener on coastShadingTransparencySlider doesn't fire and then update coastShadingColorDisplay, because doing so can 
+
+		// Temporarily disable events on coastShadingColorDisplay while initially setting the value for coastShadingTransparencySlider so
+		// that
+		// the action listener on coastShadingTransparencySlider doesn't fire and then update coastShadingColorDisplay, because doing so can
 		// cause changes in the settings due to integer truncation of the alpha value.
 		disableCoastShadingColorDisplayHandler = true;
 		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
 		disableCoastShadingColorDisplayHandler = false;
-		
+
 		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
 		oceanEffectsColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanEffectsColor));
 		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));

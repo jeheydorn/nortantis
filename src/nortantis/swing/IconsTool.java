@@ -213,7 +213,6 @@ public class IconsTool extends EditorTool
 			densityHider = sliderWithDisplay.addToOrganizer(organizer, "Density:", "");
 		}
 
-
 		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes, null);
 		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes, null);
 		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes, null);
@@ -654,6 +653,11 @@ public class IconsTool extends EditorTool
 
 	private void handleDrawIcons(MouseEvent e)
 	{
+		if (treesButton.isSelected())
+		{
+			eraseTreesThatFailedToDrawDueToLowDensity(e);
+		}
+
 		Set<Center> selected = getSelectedLandCenters(e.getPoint());
 
 		if (mountainsButton.isSelected())
@@ -719,6 +723,11 @@ public class IconsTool extends EditorTool
 
 	private void handleReplaceIcons(MouseEvent e)
 	{
+		if (treesButton.isSelected())
+		{
+			eraseTreesThatFailedToDrawDueToLowDensity(e);
+		}
+
 		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
 
 		mainWindow.edits.freeIcons.doWithLock(() ->
@@ -784,6 +793,11 @@ public class IconsTool extends EditorTool
 
 	private void handleEraseIcons(MouseEvent e)
 	{
+		if (eraseAllButton.isSelected() || treesButton.isSelected())
+		{
+			eraseTreesThatFailedToDrawDueToLowDensity(e);
+		}
+		
 		List<FreeIcon> icons = mainWindow.edits.freeIcons.doWithLockAndReturnResult(() ->
 		{
 			List<FreeIcon> iconsInner = getSelectedIcons(e.getPoint());
@@ -799,6 +813,15 @@ public class IconsTool extends EditorTool
 		if (icons != null && !icons.isEmpty())
 		{
 			updater.createAndShowMapIncrementalUsingIcons(icons);
+		}
+	}
+	
+	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
+	{
+		Set<Center> selected = getSelectedLandCenters(e.getPoint());
+		for (Center center : selected)
+		{
+			mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(null));
 		}
 	}
 
