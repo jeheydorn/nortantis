@@ -34,7 +34,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		anchoredTreeIcons = new ConcurrentHashMapF<>();
 		nonAnchoredIcons = new CopyOnWriteArrayList<>();
 	}
-	
+
 	public FreeIconCollection(FreeIconCollection other)
 	{
 		this();
@@ -88,10 +88,11 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			nonAnchoredIcons.add(icon);
 		}
 	}
-	
+
 	public synchronized void replace(FreeIcon before, FreeIcon after)
 	{
-		if ((before.type != IconType.trees && after.type != IconType.trees) && (before.centerIndex != null && before.centerIndex == after.centerIndex))
+		if ((before.type != IconType.trees && after.type != IconType.trees)
+				&& (before.centerIndex != null && before.centerIndex == after.centerIndex))
 		{
 			anchoredNonTreeIcons.put(after.centerIndex, after);
 		}
@@ -99,7 +100,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			remove(before);
 			addOrReplace(after);
-		}		
+		}
 	}
 
 	public synchronized FreeIcon getNonTree(int centerIndex)
@@ -161,7 +162,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			remove(icon);
 		}
 	}
-	
+
 	public synchronized void remove(FreeIcon icon)
 	{
 		if (icon.centerIndex == null)
@@ -353,7 +354,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		result.removeAll(intersection);
 		return result;
 	}
-	
+
 	public synchronized void clear()
 	{
 		anchoredNonTreeIcons.clear();
@@ -377,77 +378,17 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			return false;
 		}
 		FreeIconCollection other = (FreeIconCollection) obj;
-		Stopwatch sw = new Stopwatch("equals");
-		
-		boolean result = this.innerEquals(other);
-		//boolean result = new FreeIconCollection(this).innerEquals(new FreeIconCollection(other));
-		
-		sw.printElapsedTime();
-		return result;
+
+		// I'm creating shallow copies of this collection and other so that the comparison doesn't catch differences that aren't related to
+		// the icons themselves, like a missing key in a map versus a key that maps to an empty list. In theory I could do the comparison
+		// faster if I wrote my own code that traverses the maps and lists, but when I tried, it was slower.
+		return new FreeIconCollection(this).innerEquals(new FreeIconCollection(other));
 	}
 
 	private boolean innerEquals(FreeIconCollection other)
 	{
-			return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
-					&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons)
-					&& Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
+		return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
+				&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons) && Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
 	}
-	
-//	private boolean innerEquals(FreeIconCollection other)
-//	{
-//		if (!anchoredNonTreeIcons.equals(other.anchoredNonTreeIcons))
-//		{
-//			return false;
-//		}
-//		
-//		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : anchoredTreeIcons.entrySet())
-//		{
-//			CopyOnWriteArrayList<FreeIcon> otherTreeList = other.anchoredTreeIcons.containsKey(entry.getKey()) ? other.anchoredTreeIcons.get(entry.getKey()) : null;
-//			
-//			if (!areListContentsEqualIgnoringCase(entry.getValue(), otherTreeList))
-//			{
-//				return false;
-//			}
-//		}
-//
-//		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> otherEntry : other.anchoredTreeIcons.entrySet())
-//		{
-//			if (anchoredTreeIcons.containsKey(otherEntry.getKey()))
-//			{
-//				// Already checked in last loop.
-//				continue;
-//			}
-//			
-//			if (otherEntry.getValue() != null && !otherEntry.getValue().isEmpty())
-//			{
-//				return false;
-//			}
-//		}
-//		
-//		return areListContentsEqualIgnoringCase(nonAnchoredIcons, other.nonAnchoredIcons);
-//	}
-//	
-//	private boolean areListContentsEqualIgnoringCase(List<FreeIcon> list1, List<FreeIcon> list2)
-//	{
-//		if (list1 == null || list1.isEmpty())
-//		{
-//			return list2 == null || list2.isEmpty();
-//		}
-//
-//		if (list2 == null || list2.isEmpty())
-//		{
-//			return list1 == null || list1.isEmpty();
-//		}
-//
-//		if (list1.size() != list2.size())
-//		{
-//			return false;
-//		}
-//		
-//		Set<FreeIcon> set1 = new HashSet<>(list1);
-//		Set<FreeIcon> set2 = new HashSet<>(list2);
-//		return set1.equals(set2); 
-//	}
-
 
 }
