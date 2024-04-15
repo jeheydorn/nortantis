@@ -37,11 +37,13 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 
 	public FreeIconCollection(FreeIconCollection other)
 	{
-		this();
-		for (FreeIcon icon : other)
+		anchoredNonTreeIcons = new ConcurrentHashMapF<>(other.anchoredNonTreeIcons);
+		anchoredTreeIcons = new ConcurrentHashMapF<>();
+		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : other.anchoredTreeIcons.entrySet())
 		{
-			addOrReplace(icon);
+			anchoredTreeIcons.put(entry.getKey(), new CopyOnWriteArrayList<FreeIcon>(entry.getValue()));
 		}
+		nonAnchoredIcons = new CopyOnWriteArrayList<FreeIcon>(other.nonAnchoredIcons);
 	}
 
 	public synchronized boolean isEmpty()
@@ -379,14 +381,13 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 		FreeIconCollection other = (FreeIconCollection) obj;
 
-		// I'm creating shallow copies of this collection and other so that the comparison doesn't catch differences that aren't related to
-		// the icons themselves, like a missing key in a map versus a key that maps to an empty list. In theory I could do the comparison
-		// faster if I wrote my own code that traverses the maps and lists, but when I tried, it was slower.
-		return new FreeIconCollection(this).innerEquals(new FreeIconCollection(other));
+		return innerEquals(other);
 	}
 
 	private boolean innerEquals(FreeIconCollection other)
 	{
+		// Note - this method considers lists different if they have the same elements in different orders. If that's an issue, I'll need a
+		// different solution.
 		return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
 				&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons) && Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
 	}
