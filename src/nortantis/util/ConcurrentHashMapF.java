@@ -19,6 +19,11 @@ public class ConcurrentHashMapF<K, V> extends ConcurrentHashMap<K, V>
 		super();
 	}
 
+	public ConcurrentHashMapF(ConcurrentHashMapF<K, V> other)
+	{
+		super(other);
+	}
+
 	/**
 	 * If the given key is mapped to a value in this map, then that value is returned. If not, then create() is called to make a new value,
 	 * then that value is mapped to key and returned.

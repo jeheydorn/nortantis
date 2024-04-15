@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
@@ -376,27 +377,77 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			return false;
 		}
 		FreeIconCollection other = (FreeIconCollection) obj;
-
-		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
-		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and
-		// wait.
-		if (this.hashCode() > other.hashCode())
-		{
-			return innerEquals(other);
-		}
-		return other.innerEquals(this);
+		Stopwatch sw = new Stopwatch("equals");
+		
+		boolean result = this.innerEquals(other);
+		//boolean result = new FreeIconCollection(this).innerEquals(new FreeIconCollection(other));
+		
+		sw.printElapsedTime();
+		return result;
 	}
 
-	private synchronized boolean innerEquals(FreeIconCollection other)
+	private boolean innerEquals(FreeIconCollection other)
 	{
-		return other.doWithLockAndReturnResult(() ->
-		{
 			return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
 					&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons)
 					&& Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
-		});
-
 	}
+	
+//	private boolean innerEquals(FreeIconCollection other)
+//	{
+//		if (!anchoredNonTreeIcons.equals(other.anchoredNonTreeIcons))
+//		{
+//			return false;
+//		}
+//		
+//		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : anchoredTreeIcons.entrySet())
+//		{
+//			CopyOnWriteArrayList<FreeIcon> otherTreeList = other.anchoredTreeIcons.containsKey(entry.getKey()) ? other.anchoredTreeIcons.get(entry.getKey()) : null;
+//			
+//			if (!areListContentsEqualIgnoringCase(entry.getValue(), otherTreeList))
+//			{
+//				return false;
+//			}
+//		}
+//
+//		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> otherEntry : other.anchoredTreeIcons.entrySet())
+//		{
+//			if (anchoredTreeIcons.containsKey(otherEntry.getKey()))
+//			{
+//				// Already checked in last loop.
+//				continue;
+//			}
+//			
+//			if (otherEntry.getValue() != null && !otherEntry.getValue().isEmpty())
+//			{
+//				return false;
+//			}
+//		}
+//		
+//		return areListContentsEqualIgnoringCase(nonAnchoredIcons, other.nonAnchoredIcons);
+//	}
+//	
+//	private boolean areListContentsEqualIgnoringCase(List<FreeIcon> list1, List<FreeIcon> list2)
+//	{
+//		if (list1 == null || list1.isEmpty())
+//		{
+//			return list2 == null || list2.isEmpty();
+//		}
+//
+//		if (list2 == null || list2.isEmpty())
+//		{
+//			return list1 == null || list1.isEmpty();
+//		}
+//
+//		if (list1.size() != list2.size())
+//		{
+//			return false;
+//		}
+//		
+//		Set<FreeIcon> set1 = new HashSet<>(list1);
+//		Set<FreeIcon> set2 = new HashSet<>(list2);
+//		return set1.equals(set2); 
+//	}
 
 
 }
