@@ -69,9 +69,8 @@ public class IconDrawer
 	private String cityIconTypeForNewMaps;
 	private String imagesPath;
 	private double resolutionScale;
-	private boolean keepTreesThatDidNotDraw;
 
-	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings, boolean keepTreesThatDidNotDraw)
+	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
 		this.graph = graph;
 		this.rand = rand;
@@ -110,7 +109,6 @@ public class IconDrawer
 		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
 
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
-		this.keepTreesThatDidNotDraw = keepTreesThatDidNotDraw;
 	}
 
 
@@ -291,8 +289,9 @@ public class IconDrawer
 	}
 
 
-	private void convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit, ListMap<String, ImageAndMasks> iconsByGroup,
-			WarningLogger warningLogger, Supplier<Double> getDrawWidthBeforeTypeLevelScale, boolean placeNearBottom)
+	private void convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
+			ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger, Supplier<Double> getDrawWidthBeforeTypeLevelScale,
+			boolean placeNearBottom)
 	{
 		if (cEdit.icon == null)
 		{
@@ -347,19 +346,28 @@ public class IconDrawer
 	{
 		iconsToDraw.clear();
 
+		// In theory it should be safe to just remove free icons as I iterate over the collection, but I'm leary of it because there are
+		// multiple underlying iterators involved in looping over the collection, so I'm doing it afterward.
+		List<FreeIcon> toRemove = new ArrayList<>();
+
 		for (FreeIcon icon : freeIcons)
 		{
+			if (icon == null)
+			{
+				continue;
+			}
+
 			if (icon.type == IconType.mountains)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, mountainScale, warningLogger);
+				updateGroupIdAndAddShuffledFreeIcon(icon, mountainScale, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.hills)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, hillScale, warningLogger);
+				updateGroupIdAndAddShuffledFreeIcon(icon, hillScale, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.sand)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, duneScale, warningLogger);
+				updateGroupIdAndAddShuffledFreeIcon(icon, duneScale, warningLogger, toRemove);
 			}
 			else if (icon.type == IconType.cities)
 			{
@@ -376,19 +384,21 @@ public class IconDrawer
 					}
 					else
 					{
-						freeIcons.remove(icon);
+						toRemove.add(icon);
 					}
 				}
 				else
 				{
-					freeIcons.remove(icon);
+					toRemove.add(icon);
 				}
 			}
 			else if (icon.type == IconType.trees)
 			{
-				updateGroupIdAndAddShuffledFreeIcon(icon, treeHeightScale, warningLogger);
+				updateGroupIdAndAddShuffledFreeIcon(icon, treeHeightScale, warningLogger, toRemove);
 			}
 		}
+
+		freeIcons.removeAll(toRemove);
 	}
 
 	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, WarningLogger warningLogger)
@@ -431,7 +441,8 @@ public class IconDrawer
 		return new Tuple2<String, String>(groupId, name);
 	}
 
-	private void updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger)
+	private void updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger,
+			List<FreeIcon> toRemove)
 	{
 		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(icon.type);
 		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
@@ -451,12 +462,12 @@ public class IconDrawer
 			}
 			else
 			{
-				freeIcons.remove(icon);
+				toRemove.add(icon);
 			}
 		}
 		else
 		{
-			freeIcons.remove(icon);
+			toRemove.add(icon);
 		}
 	}
 
@@ -803,7 +814,8 @@ public class IconDrawer
 	{
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
-			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);;
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
+			;
 			List<IconDrawTask> cities;
 
 			Logger.println("Adding mountains and hills.");
@@ -1109,7 +1121,7 @@ public class IconDrawer
 		}
 
 		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>();
-		convertTreesToFreeIcons(treesByCenter, new LoggerWarningLogger(), outTreesThatFailedToDrawDueToLowDensity);
+		convertTreesToFreeIcons(treesByCenter, new LoggerWarningLogger());
 	}
 
 	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
@@ -1171,11 +1183,9 @@ public class IconDrawer
 			}
 		}
 
-		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>(); // TODO remove
-		
-		convertTreesToFreeIcons(treesByCenter, warningLogger, outTreesThatFailedToDrawDueToLowDensity);
+		convertTreesToFreeIcons(treesByCenter, warningLogger);
 
-		for (int index: treesByCenter.keySet())
+		for (int index : treesByCenter.keySet())
 		{
 			if (edits.centerEdits.get(index).trees != null)
 			{
@@ -1185,12 +1195,13 @@ public class IconDrawer
 				}
 				else
 				{
-					edits.centerEdits.put(index, edits.centerEdits.get(index).copyWithTrees( edits.centerEdits.get(index).trees.copyWithIsDormant(true)));				
+					edits.centerEdits.put(index,
+							edits.centerEdits.get(index).copyWithTrees(edits.centerEdits.get(index).trees.copyWithIsDormant(true)));
 				}
 			}
 		}
 	}
-	
+
 	private Set<Center> addNeighbors(Collection<Center> selection)
 	{
 		Set<Center> result = new HashSet<Center>(selection);
@@ -1198,7 +1209,7 @@ public class IconDrawer
 		return result;
 	}
 
-	private void convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger, Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity)
+	private void convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
 	{
 		// Load the images and masks.
 		ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees);
@@ -1222,7 +1233,7 @@ public class IconDrawer
 
 				CenterTrees toUse = cTrees.copyWithTreeType(groupId);
 				Center c = graph.centers.get(entry.getKey());
-				drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet(), outTreesThatFailedToDrawDueToLowDensity);
+				drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet());
 			}
 		}
 	}
@@ -1243,14 +1254,14 @@ public class IconDrawer
 	}
 
 	private void drawTreesAtCenterAndCorners(WorldGraph graph, Center center, CenterTrees cTrees,
-			Set<Integer> additionalCentersThatWillHaveTrees, Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity)
+			Set<Integer> additionalCentersThatWillHaveTrees)
 	{
 		freeIcons.clearTrees(center.index);
 
 		List<ImageAndMasks> unscaledImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees)
 				.get(cTrees.treeType);
 		Random rand = new Random(cTrees.randomSeed);
-		boolean didAddATree = addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.treeType);
+		addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.treeType);
 
 		// Draw trees at the neighboring corners too.
 		// Note that corners use their own Random instance because the random seed of that random needs to not depend on the center or else
@@ -1259,13 +1270,8 @@ public class IconDrawer
 		{
 			if (shouldCenterDrawTreesForCorner(center, corner, additionalCentersThatWillHaveTrees))
 			{
-				didAddATree |= addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
+				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
 			}
-		}
-		
-		if (!didAddATree)
-		{			
-			outTreesThatFailedToDrawDueToLowDensity.put(center.index, cTrees);
 		}
 	}
 
@@ -1318,8 +1324,8 @@ public class IconDrawer
 		}
 	};
 
-	private boolean addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
-			Random rand, String groupId)
+	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity,
+			Center center, Random rand, String groupId)
 	{
 		// Convert the forestDensity into an integer number of trees to draw such that the expected
 		// value is forestDensity.
@@ -1327,11 +1333,6 @@ public class IconDrawer
 		double fraction = density - (int) density;
 		int extra = rand.nextDouble() < fraction ? 1 : 0;
 		int numTrees = ((int) density) + extra;
-		
-		if (numTrees == 0)
-		{
-			return false;
-		}
 
 		for (int i = 0; i < numTrees; i++)
 		{
@@ -1345,15 +1346,14 @@ public class IconDrawer
 			x += rand.nextGaussian() * scale;
 			y += rand.nextGaussian() * scale;
 
-			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, groupId, index, center.index, forestDensity);
+			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, groupId, index, center.index,
+					forestDensity);
 
 			if (!isContentBottomTouchingWater(icon))
 			{
 				freeIcons.addOrReplace(icon);
 			}
 		}
-		
-		return true;
 	}
 
 	private boolean isContentBottomTouchingWater(FreeIcon icon)
@@ -1448,6 +1448,11 @@ public class IconDrawer
 		Rectangle bounds = null;
 		for (FreeIcon icon : freeIcons.getAnchoredIcons(center.index))
 		{
+			if (icon == null)
+			{
+				continue;
+			}
+
 			IconDrawTask task = toIconDrawTask(icon);
 			Rectangle iconBounds = task.createBounds();
 			if (bounds == null)

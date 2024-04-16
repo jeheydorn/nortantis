@@ -1212,7 +1212,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			for (Center center : updater.mapParts.graph.centers)
 			{
 				// Change land to ocean and erase icons
-				CenterEdit newValues = new CenterEdit(center.index, false, false, null, null, null);
+				CenterEdit newValues = new CenterEdit(center.index, true, false, null, null, null);
 				edits.centerEdits.put(center.index, newValues);				
 			}
 			

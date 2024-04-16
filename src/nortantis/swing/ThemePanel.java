@@ -706,13 +706,11 @@ public class ThemePanel extends JTabbedPane
 			if (enableTreeHeightSliderActionListener)
 			{
 				triggerRebuildAllAnchoredTrees();
-				handleTerrainChange(false, () ->
-				{
-				}); // TODO consider removing first parameter.
+				handleTerrainChange();
 			}
 		});
 		enableTreeHeightSliderActionListener = true;
-		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
+		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
 
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		mountainScaleSlider.setMajorTickSpacing(2);
@@ -1498,14 +1496,9 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleTerrainChange()
 	{
-		handleTerrainChange(false, null);
-	}
-
-	private void handleTerrainChange(boolean keepTreesThatDidNotDraw, Runnable preRun)
-	{
 		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.Terrain, null);
-		mainWindow.updater.createAndShowMapTerrainChange(keepTreesThatDidNotDraw, preRun);
+		mainWindow.updater.createAndShowMapTerrainChange();
 	}
 
 	private void handleFontsChange()

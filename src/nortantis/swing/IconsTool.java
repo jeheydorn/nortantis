@@ -727,19 +727,17 @@ public class IconsTool extends EditorTool
 		{
 			replaceTreesThatFailedToDrawDueToLowDensity(e);
 		}
+		List<FreeIcon> iconsSelectedAfter = new ArrayList<>();
 
-		Tuple1<List<FreeIcon>> tuple = new Tuple1<>();
-
-		mainWindow.edits.freeIcons.doWithLock(() ->
+		List<FreeIcon> iconsBeforeAndAfterOuter = mainWindow.edits.freeIcons.doWithLockAndReturnResult(() ->
 		{
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
 			if (icons.isEmpty())
 			{
-				return;
+				return icons;
 			}
 
 			List<FreeIcon> iconsBeforeAndAfter = new ArrayList<>();
-			tuple.set(iconsBeforeAndAfter);
 
 			for (FreeIcon before : icons)
 			{
@@ -782,12 +780,21 @@ public class IconsTool extends EditorTool
 
 				mainWindow.edits.freeIcons.replace(before, after);
 				iconsBeforeAndAfter.add(after);
+				if (isSelected(e.getPoint(), after))
+				{			
+					iconsSelectedAfter.add(after);
+				}
 			}
+
+			return iconsBeforeAndAfter;
 		});
 
-		if (tuple.get() != null && !tuple.get().isEmpty())
+		
+		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, iconsSelectedAfter);
+
+		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
 		{
-			updater.createAndShowMapIncrementalUsingIcons(tuple.get());
+			updater.createAndShowMapIncrementalUsingIcons(iconsBeforeAndAfterOuter);
 		}
 	}
 
@@ -809,6 +816,8 @@ public class IconsTool extends EditorTool
 			mainWindow.edits.freeIcons.removeAll(iconsInner);
 			return iconsInner;
 		});
+		
+		mapEditingPanel.clearHighlightedAreas();
 
 		if (icons != null && !icons.isEmpty())
 		{
@@ -942,41 +951,44 @@ public class IconsTool extends EditorTool
 
 	protected List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
 	{
-		int brushDiameter = getBrushDiameter();
 		List<FreeIcon> selected = new ArrayList<>();
+		for (FreeIcon icon : mainWindow.edits.freeIcons)
+		{
+			if (isSelected(pointFromMouse, icon))
+			{
+				selected.add(icon);
+			}
+		}
+		
+		return selected;
+	}
+
+	private boolean isSelected(java.awt.Point pointFromMouse, FreeIcon icon)
+	{
+		int brushDiameter = getBrushDiameter();
 		Point graphPoint = getPointOnGraph(pointFromMouse);
 
 		if (brushDiameter <= 1)
 		{
-			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			if (!isSelectedType(icon))
 			{
-				if (isSelectedType(icon))
-				{
-					Rectangle rect = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds();
-					if (rect.contains(graphPoint))
-					{
-						selected.add(icon);
-					}
-				}
+				return false;
 			}
+
+			Rectangle rect = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds();
+			return rect.contains(graphPoint);
+
 		}
 		else
 		{
 			int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
-			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			if (!isSelectedType(icon))
 			{
-				if (isSelectedType(icon))
-				{
-					RotatedRectangle rect = new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds());
-					if (rect.overlapsCircle(graphPoint, brushRadius))
-					{
-						selected.add(icon);
-					}
-				}
+				return false;
 			}
-
+			RotatedRectangle rect = new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds());
+			return rect.overlapsCircle(graphPoint, brushRadius);
 		}
-		return selected;
 	}
 
 	private int getBrushDiameter()

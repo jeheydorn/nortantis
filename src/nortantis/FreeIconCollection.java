@@ -337,6 +337,11 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		Set<FreeIcon> thisSet = new HashSet<>();
 		for (FreeIcon icon : this)
 		{
+			if (icon == null)
+			{
+				continue;
+			}
+
 			thisSet.add(icon);
 		}
 		return thisSet;
