@@ -323,6 +323,10 @@ public class IconDrawer
 		{
 			freeIcons.addOrReplace(icon);
 		}
+		else if (freeIcons.getNonTree(center.index) != null)
+		{
+			freeIcons.remove(freeIcons.getNonTree(center.index));
+		}
 
 		edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
 	}

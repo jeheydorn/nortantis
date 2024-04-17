@@ -227,8 +227,8 @@ public class MapCreator implements WarningLogger
 			}
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
-		applyCenterEdits(mapParts.graph, settings.edits, getCenterEditsForCenters(settings.edits, centersChanged),
-				settings.drawRegionColors);
+		boolean changeAffectsLandOrRegionShape = applyCenterEdits(mapParts.graph, settings.edits,
+				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionColors);
 
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
@@ -268,11 +268,17 @@ public class MapCreator implements WarningLogger
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
 
-		// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line to
-		// two or vice versa.
-		Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
-				settings);
-		replaceBounds = replaceBounds.add(textChangeBounds).floor();
+		if (changeAffectsLandOrRegionShape)
+		{
+			// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
+			// to
+			// two or vice versa.
+			Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
+					settings);
+			replaceBounds = replaceBounds.add(textChangeBounds);
+		}
+		
+		replaceBounds = replaceBounds.floor();
 
 		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, centersInReplaceBounds);
 	}
@@ -741,7 +747,7 @@ public class MapCreator implements WarningLogger
 		}
 
 		checkForCancel();
-		
+
 		double elapsedTime = System.currentTimeMillis() - startTime;
 		Logger.println("Total time to generate map (in seconds): " + elapsedTime / 1000.0);
 
@@ -1372,12 +1378,12 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private static void applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerChanges,
+	private static boolean applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerChanges,
 			boolean areRegionBoundariesVisible)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
-			return;
+			return false;
 		}
 
 		if (edits.centerEdits.size() != graph.centers.size())
@@ -1449,6 +1455,8 @@ public class MapCreator implements WarningLogger
 			graph.rebuildNoisyEdgesForCenter(center, needsRebuildNoisyEdges);
 
 		}
+
+		return !needsRebuildNoisyEdges.isEmpty();
 	}
 
 	private static void applyEdgeEdits(WorldGraph graph, MapEdits edits, Collection<EdgeEdit> edgeChanges)

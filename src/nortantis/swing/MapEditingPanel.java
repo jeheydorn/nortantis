@@ -68,7 +68,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedAreas = new HashSet<>();
 		processingAreas = new HashSet<>();
 		zoom = 1.0;
-		resolution = 1.0;
+		resolution = 0.0;
 	}
 
 	public void showBrush(java.awt.Point location, int brushDiameter)
@@ -98,7 +98,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedEdges.clear();
 	}
 
-	public void setTextBoxToDraw(nortantis.geom.Point location, nortantis.geom.Rectangle line1Bounds, nortantis.geom.Rectangle line2Bounds, double angle)
+	public void setTextBoxToDraw(nortantis.geom.Point location, nortantis.geom.Rectangle line1Bounds, nortantis.geom.Rectangle line2Bounds,
+			double angle)
 	{
 		this.textBoxLocation = location == null ? null : new nortantis.geom.Point(location);
 		this.textBoxBoundsLine1 = line1Bounds == null ? null : AwtFactory.toAwtRectangle(line1Bounds);
@@ -138,11 +139,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 	}
-	
+
 	public void setHighlightedAreasFromIcons(IconDrawer iconDrawer, List<FreeIcon> icons)
 	{
 		highlightedAreas.clear();
-		for (FreeIcon icon :icons)
+		for (FreeIcon icon : icons)
 		{
 			nortantis.geom.Rectangle bounds = iconDrawer.toIconDrawTask(icon).createBounds();
 			highlightedAreas.add(AwtFactory.toAwtArea(bounds));
@@ -169,7 +170,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 	}
-	
+
 	public void addProcessingAreas(Set<RotatedRectangle> areas)
 	{
 		processingAreas.addAll(areas);
@@ -468,16 +469,22 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setResolution(double resolution)
 	{
-		this.resolution = resolution;
+		if (this.resolution == 0.0 || this.resolution != resolution)
+		{
+			this.resolution = resolution;
 
-		// Determines the size at which the rotation and move tool icons appear.
-		final double iconScale = 0.2;
+			// Determines the size at which the rotation and move tool icons appear.
+			final double iconScale = 0.2;
 
-		BufferedImage rotateIcon = AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString()));
-		rotateTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon), (int) (rotateIcon.getWidth() * resolution * iconScale),
-				Method.ULTRA_QUALITY));
-		BufferedImage moveIcon = AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString()));
-		moveTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(moveIcon), (int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
+			BufferedImage rotateIcon = AwtFactory
+					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString()));
+			rotateTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
+					(int) (rotateIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
+			BufferedImage moveIcon = AwtFactory
+					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString()));
+			moveTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(moveIcon),
+					(int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
+		}
 	}
 
 	public void setBorderWidth(int borderWidth)

@@ -284,8 +284,7 @@ public class TextDrawer
 		drawText(map, graph, mapTexts, null);
 	}
 
-	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, boolean onlyOneCallPerText,
-			BiConsumer<MapText, RotatedRectangle> action)
+	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, BiConsumer<MapText, RotatedRectangle> action)
 	{
 		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
 
@@ -310,33 +309,31 @@ public class TextDrawer
 				// so they aren't useful for telling whether the text will appear in 'bounds'.
 
 				Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-
-				// Check when the text is on one line.
-				{
-					Rectangle line1Bounds = getLine1Bounds(text.value, textLocation, p, false);
-					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
-					callIfMapTextIsInBounds(bounds, text, line1Bounds, textLocation, action);
-					if (onlyOneCallPerText)
-					{
-						continue;
-					}
-				}
-
-				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also check
-				// the bounds when it splits under two lines.
+				
+				Rectangle singleLineBounds = getLine1Bounds(text.value, textLocation, p, false);
+				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds);
+				
+				Rectangle textBoundsAllLines;
+				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
+				// the bounds for both cases if it's possible the text could be split.
 				if ((text.lineBreak == LineBreak.Auto || text.lineBreak == LineBreak.Two_lines) && text.value.trim().contains(" "))
 				{
 					Pair<String> lines = addLineBreakNearMiddle(text.value);
 
 					Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
 					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
-
-					callIfMapTextIsInBounds(bounds, text, line1Bounds, textLocation, action);
-
+					
 					Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, p);
 					line2Bounds = addBackgroundBlendingPadding(line2Bounds);
-					callIfMapTextIsInBounds(bounds, text, line2Bounds, textLocation, action);
+					
+					textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
+				}			
+				else
+				{
+					textBoundsAllLines = singleLineBounds;
 				}
+				
+				callIfMapTextIsInBounds(bounds, text, textBoundsAllLines, textLocation, action);
 			}
 		}
 		p.dispose();
@@ -404,7 +401,7 @@ public class TextDrawer
 
 		Tuple1<Rectangle> wrapperToMakeCompilerHappy = new Tuple1<>(bounds);
 
-		doForEachTextInBounds(mapTexts, graph, bounds, false, (text, area) ->
+		doForEachTextInBounds(mapTexts, graph, bounds, (text, area) ->
 		{
 			wrapperToMakeCompilerHappy.set(wrapperToMakeCompilerHappy.get().add(area.getBounds()));
 		});
@@ -419,7 +416,7 @@ public class TextDrawer
 
 		Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
-		doForEachTextInBounds(textToDraw, graph, drawBounds, true, ((text, ignored) ->
+		doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, ignored) ->
 		{
 			setFontForTextType(p, text.type);
 			if (text.type == TextType.Title)
@@ -931,7 +928,7 @@ public class TextDrawer
 			Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
 			Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
 			if (hasMultipleWords
-					&& overlapsRegionLakeOrCoastline(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, graph))
+					&& overlapsBoundaryThatShouldCauseLineSplit(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, text.type, graph))
 			{
 				// The text doesn't fit into centerLocations. Draw it split onto two
 				// lines.
@@ -1113,8 +1110,8 @@ public class TextDrawer
 			{
 				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1)
 						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2));
-				boolean overlapsRegionLakeOrCoastline = overlapsRegionLakeOrCoastline(bounds1, pivot, text.angle, graph)
-						|| overlapsRegionLakeOrCoastline(bounds2, pivot, text.angle, graph);
+				boolean overlapsRegionLakeOrCoastline = overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type, graph)
+						|| overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type, graph);
 				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region
 						|| text.type == TextType.City || text.type == TextType.Mountain_range;
 
@@ -1316,7 +1313,7 @@ public class TextDrawer
 		return centroid;
 	}
 
-	private boolean overlapsRegionLakeOrCoastline(Rectangle textBounds, Point pivot, double angle, WorldGraph graph)
+	private boolean overlapsBoundaryThatShouldCauseLineSplit(Rectangle textBounds, Point pivot, double angle, TextType type, WorldGraph graph)
 	{
 		if (textBounds == null)
 		{
@@ -1345,7 +1342,7 @@ public class TextDrawer
 				Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
 				Center c = graph.findClosestCenter(point);
 
-				if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings))
+				if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
 				{
 					return true;
 				}
@@ -1355,7 +1352,7 @@ public class TextDrawer
 		return false;
 	}
 
-	private boolean doCentersHaveBoundaryBetweenThem(Center c1, Center c2, MapSettings settings)
+	private boolean doCentersHaveBoundaryBetweenThem(Center c1, Center c2, MapSettings settings, TextType type)
 	{
 		if (c1.isWater && c2.isWater)
 		{
@@ -1368,7 +1365,7 @@ public class TextDrawer
 			return true;
 		}
 
-		if (!settings.drawRegionColors)
+		if (!settings.drawRegionColors || (type != TextType.Region))
 		{
 			return false;
 		}
