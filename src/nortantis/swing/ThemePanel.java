@@ -40,6 +40,11 @@ import org.apache.commons.io.FilenameUtils;
 
 import nortantis.BackgroundGenerator;
 import nortantis.FractalBGGenerator;
+import nortantis.FreeIconCollection;
+import nortantis.IconDrawer;
+import nortantis.IconType;
+import nortantis.ImageAndMasks;
+import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
@@ -50,12 +55,14 @@ import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Counter;
 import nortantis.util.ImageHelper;
+import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
@@ -135,6 +142,7 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
 	private JSlider treeHeightSlider;
 	private boolean enableTreeHeightSliderActionListener;
+	private boolean enableMountainScaleSliderActionListener;
 	private JSlider mountainScaleSlider;
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
@@ -710,7 +718,8 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		enableTreeHeightSliderActionListener = true;
-		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
+		organizer.addLabelAndComponent("Tree height:",
+				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
 
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		mountainScaleSlider.setMajorTickSpacing(2);
@@ -718,7 +727,18 @@ public class ThemePanel extends JTabbedPane
 		mountainScaleSlider.setPaintTicks(true);
 		mountainScaleSlider.setPaintLabels(true);
 		SwingHelper.setSliderWidthForSidePanel(mountainScaleSlider);
-		createMapChangeListenerForTerrainChange(mountainScaleSlider);
+		SwingHelper.addListener(mountainScaleSlider, () ->
+		{
+			if (enableMountainScaleSliderActionListener)
+			{
+				mainWindow.updater.dowWhenMapIsNotDrawing(() -> 
+				{
+					repositionAnchoredMountains();
+					handleTerrainChange();
+				});
+			}
+		});
+		enableMountainScaleSliderActionListener = true;
 		organizer.addLabelAndComponent("Mountain size:", "Changes the size of all mountains on the map", mountainScaleSlider);
 
 		hillScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -755,14 +775,17 @@ public class ThemePanel extends JTabbedPane
 
 	private void triggerRebuildAllAnchoredTrees()
 	{
-		mainWindow.edits.freeIcons.doWithLock(() -> 
+		mainWindow.edits.freeIcons.doWithLock(() ->
 		{
 			Random rand = new Random();
-			// Reassign the random seeds to all CenterTrees that still exist because they failed to create any trees in their previous attempt
-			// to draw. Doing this causes those center trees to possibly show up. Without it, they would gradually disappear as you changed the
+			// Reassign the random seeds to all CenterTrees that still exist because they failed to create any trees in their previous
+			// attempt
+			// to draw. Doing this causes those center trees to possibly show up. Without it, they would gradually disappear as you changed
+			// the
 			// tree height slider, especially on the higher ends of the tree height values.
 			// Also mark CenterTrees as not dormant so they will try to draw again.
-			// Also remove CenterTrees that are not close to any trees that are visible so that they don't randomly pop up when you change the
+			// Also remove CenterTrees that are not close to any trees that are visible so that they don't randomly pop up when you change
+			// the
 			// tree height slider.
 			for (Map.Entry<Integer, CenterEdit> entry : mainWindow.edits.centerEdits.entrySet())
 			{
@@ -778,14 +801,14 @@ public class ThemePanel extends JTabbedPane
 					{
 						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
 						{
-							mainWindow.edits.centerEdits.put(entry.getKey(),
-									entry.getValue().copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong(), false)));
+							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue()
+									.copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong(), false)));
 						}
 						else
 						{
 							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
-						}	
-					}				
+						}
+					}
 				}
 			}
 
@@ -810,7 +833,49 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 	}
-	
+
+	/**
+	 * Recalculates where mountains attached to Centers should be positioned so that changing the mountain scale slider keeps the base of
+	 * mountains in approximately the same location.
+	 * 
+	 * I didn't bother doing this with dunes or hills because they tend to be short anyway, and so I've anchored them to the centroid of
+	 * centers rather the the bottom.
+	 */
+	private void repositionAnchoredMountains()
+	{
+		FreeIconCollection freeIcons = mainWindow.edits.freeIcons;
+		double resolution = mainWindow.displayQualityScale;
+		IconDrawer iconDrawer = mainWindow.updater.mapParts.iconDrawer;
+		WorldGraph graph = mainWindow.updater.mapParts.graph;
+		double mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
+		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(mainWindow.customImagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.mountains);
+		freeIcons.doWithLock(() ->
+		{
+			for (FreeIcon icon : freeIcons.iterateAnchoredNonTreeIcons())
+			{
+				if (icon.type == IconType.mountains)
+				{
+					if (!iconsByGroup.containsKey(icon.groupId))
+					{
+						// I don't think this should happen
+						assert false;
+						continue;
+					}
+					if (iconsByGroup.get(icon.groupId).isEmpty())
+					{
+						// I don't think this should happen
+						assert false;
+						continue;
+					}
+					Point loc = iconDrawer.getAnchoredMountainDrawPoint(graph.centers.get(icon.centerIndex), icon.groupId, icon.type,
+							icon.iconIndex, mountainScale, iconsByGroup);
+					freeIcons.addOrReplace(icon.copyWithLocation(resolution, loc));
+				}
+			}
+		});
+	}
+
 	private String getMostCommonTreeType(List<FreeIcon> trees)
 	{
 		Counter<String> counter = new Counter<>();
@@ -1282,7 +1347,11 @@ public class ThemePanel extends JTabbedPane
 		enableTreeHeightSliderActionListener = false;
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
 		enableTreeHeightSliderActionListener = true;
+
+		enableMountainScaleSliderActionListener = false;
 		mountainScaleSlider.setValue(getSliderValueForScale(settings.mountainScale));
+		enableMountainScaleSliderActionListener = true;
+
 		hillScaleSlider.setValue(getSliderValueForScale(settings.hillScale));
 		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
 		cityScaleSlider.setValue(getSliderValueForScale(settings.cityScale));

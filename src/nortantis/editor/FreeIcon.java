@@ -100,6 +100,11 @@ public class FreeIcon
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density);
 	}
+	
+	public FreeIcon copyWithLocation(double resolutionScale, Point loc)
+	{
+		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, groupId, iconIndex, iconName, centerIndex, density);
+	}
 
 	/**
 	 * Gets the point in the center of the icon, scaled to the resolution of the map.

@@ -12,8 +12,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.NotImplementedException;
 
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIconType;
@@ -229,18 +230,15 @@ public class IconDrawer
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain)
 				{
-					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger,
-							() -> findNewMountainWidthBeforeTypeLevelScaling(center), true);
+					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill)
 				{
-					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger,
-							() -> findNewHillWidthBeforeTypeLevelScaling(center), false);
+					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune)
 				{
-					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger,
-							() -> getBaseWidthOrHeight(IconType.sand, 0), false);
+					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger);
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
@@ -274,6 +272,26 @@ public class IconDrawer
 		convertTreesFromEditsToFreeIcons(centersToConvert, edits, warningLogger);
 	}
 
+	private double getShuffledIconWidthBeforeTypeLevelScaling(Center center, IconType type)
+	{
+		if (type == IconType.mountains)
+		{
+			return findNewMountainWidthBeforeTypeLevelScaling(center);
+		}
+		else if (type == IconType.hills)
+		{
+			return findNewHillWidthBeforeTypeLevelScaling(center);
+		}
+		else if (type == IconType.sand)
+		{
+			return getBaseWidthOrHeight(IconType.sand, 0);
+		}
+		else
+		{
+			throw new NotImplementedException("Unrecognized CenterIconType: " + type);
+		}
+	}
+
 	public static Dimension getDimensionsWhenScaledByWidth(IntDimension originalDimensions, double scaledWidth)
 	{
 		double aspectRatio = ((double) originalDimensions.height) / originalDimensions.width;
@@ -290,15 +308,14 @@ public class IconDrawer
 
 
 	private void convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
-			ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger, Supplier<Double> getDrawWidthBeforeTypeLevelScale,
-			boolean placeNearBottom)
+			ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger)
 	{
 		if (cEdit.icon == null)
 		{
 			return;
 		}
 
-		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString(), iconsByGroup, warningLogger);
+		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString().toLowerCase(), iconsByGroup, warningLogger);
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
 			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -306,17 +323,16 @@ public class IconDrawer
 		}
 
 		IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
-		double scaledWidth = getDrawWidthBeforeTypeLevelScale.get();
-		ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(cEdit.icon.iconIndex % iconsByGroup.get(groupId).size());
 		Point loc;
-		if (placeNearBottom)
+		if (type == IconType.mountains)
 		{
-			loc = getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth * getTypeLevelScale(type), center);
+			loc = getAnchoredMountainDrawPoint(center, groupId, type, cEdit.icon.iconIndex, mountainScale, iconsByGroup);
 		}
 		else
 		{
 			loc = center.loc;
 		}
+		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, type);
 		double scale = scaledWidth / getBaseWidthOrHeight(type, 0);
 		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, groupId, cEdit.icon.iconIndex, cEdit.index);
 		if (!isContentBottomTouchingWater(icon))
@@ -329,6 +345,14 @@ public class IconDrawer
 		}
 
 		edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
+	}
+
+	public Point getAnchoredMountainDrawPoint(Center center, String groupId, IconType type, int iconIndex, double mountainScale,
+			ListMap<String, ImageAndMasks> iconsByGroup)
+	{
+		ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(iconIndex % iconsByGroup.get(groupId).size());
+		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, type);
+		return getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth * mountainScale, center);
 	}
 
 	/**
@@ -415,7 +439,7 @@ public class IconDrawer
 			if (newGroupId == null)
 			{
 				warningLogger.addWarningMessage(
-						"Unable to find the city" + " image group '" + groupId + "'. There are no city icons, so none will be drawn.");
+						"Unable to find the city image group '" + groupId + "'. There are no city icons, so none will be drawn.");
 				return null;
 			}
 			cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, newGroupId);
@@ -425,7 +449,7 @@ public class IconDrawer
 				return null;
 			}
 			warningLogger.addWarningMessage(
-					"Unable to find the city" + " image group '" + groupId + "'. The group '" + newGroupId + "' will be used instead.");
+					"Unable to find the city image group '" + groupId + "'. The group '" + newGroupId + "' will be used instead.");
 			groupId = newGroupId;
 		}
 
@@ -937,8 +961,6 @@ public class IconDrawer
 
 				if (c.isMountain)
 				{
-					List<ImageAndMasks> imagesInRange = mountainImagesById.get(fileNameRangeId);
-
 					// I'm deliberately putting this line before checking center size so that the
 					// random number generator is used the same no matter what resolution the map
 					// is drawn at.
@@ -946,9 +968,8 @@ public class IconDrawer
 
 					double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
 					double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
-
-					Point loc = getImageCenterToDrawImageNearBottomOfCenter(imagesInRange.get(i % imagesInRange.size()).image,
-							widthBeforeTypeLevelScaling * mountainScale, c);
+					Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, IconType.mountains, i, mountainScale, mountainImagesById);
+					
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i, c.index);
 
 					IconDrawTask task = toIconDrawTask(icon);
@@ -1124,7 +1145,6 @@ public class IconDrawer
 			}
 		}
 
-		Map<Integer, CenterTrees> outTreesThatFailedToDrawDueToLowDensity = new HashMap<>();
 		convertTreesToFreeIcons(treesByCenter, new LoggerWarningLogger());
 	}
 
@@ -1206,13 +1226,6 @@ public class IconDrawer
 		}
 	}
 
-	private Set<Center> addNeighbors(Collection<Center> selection)
-	{
-		Set<Center> result = new HashSet<Center>(selection);
-		selection.stream().forEach(c -> result.addAll(c.neighbors));
-		return result;
-	}
-
 	private void convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
 	{
 		// Load the images and masks.
@@ -1228,7 +1241,7 @@ public class IconDrawer
 			CenterTrees cTrees = entry.getValue();
 			if (cTrees != null && !cTrees.isDormant)
 			{
-				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, cTrees.treeType.toString(), treesById, warningLogger);
+				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, "tree", treesById, warningLogger);
 				if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)
 				{
 					// Skip since there are no tree images to use.
@@ -1328,8 +1341,8 @@ public class IconDrawer
 		}
 	};
 
-	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity,
-			Center center, Random rand, String groupId)
+	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
+			Random rand, String groupId)
 	{
 		// Convert the forestDensity into an integer number of trees to draw such that the expected
 		// value is forestDensity.

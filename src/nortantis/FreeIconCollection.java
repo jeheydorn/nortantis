@@ -156,6 +156,11 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	{
 		return anchoredTreeIcons.keySet();
 	}
+	
+	public synchronized Iterable<FreeIcon> iterateAnchoredNonTreeIcons()
+	{
+		return anchoredNonTreeIcons.values();
+	}
 
 	public synchronized void removeAll(Collection<FreeIcon> toRemove)
 	{
