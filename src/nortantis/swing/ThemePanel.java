@@ -731,9 +731,9 @@ public class ThemePanel extends JTabbedPane
 		{
 			if (enableMountainScaleSliderActionListener)
 			{
-				mainWindow.updater.dowWhenMapIsNotDrawing(() -> 
+				mainWindow.updater.dowWhenMapIsNotDrawing(() ->
 				{
-					repositionAnchoredMountains();
+					repositionMountainsForNewScale();
 					handleTerrainChange();
 				});
 			}
@@ -841,7 +841,7 @@ public class ThemePanel extends JTabbedPane
 	 * I didn't bother doing this with dunes or hills because they tend to be short anyway, and so I've anchored them to the centroid of
 	 * centers rather the the bottom.
 	 */
-	private void repositionAnchoredMountains()
+	private void repositionMountainsForNewScale()
 	{
 		FreeIconCollection freeIcons = mainWindow.edits.freeIcons;
 		double resolution = mainWindow.displayQualityScale;
@@ -873,6 +873,9 @@ public class ThemePanel extends JTabbedPane
 					freeIcons.addOrReplace(icon.copyWithLocation(resolution, loc));
 				}
 			}
+
+			// TODO Do the same for non-anchored mountains. I should be able to calculate the new location using the icons scale, since
+			// unanchoring a mountain should take the part of the scale coming from the center's size and apply it to the icon's scale.
 		});
 	}
 
