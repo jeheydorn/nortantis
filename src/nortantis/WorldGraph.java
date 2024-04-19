@@ -57,8 +57,8 @@ public class WorldGraph extends VoronoiGraph
 	public static final float seaLevel = 0.39f;
 	// Higher values will make larger plates, but fewer of them.
 	private final int tectonicPlateIterationMultiplier = 30;
-	
-	// Zero is most random. Higher values make the polygons more uniform shaped. 
+
+	// Zero is most random. Higher values make the polygons more uniform shaped.
 	// This value is scaled by lloydRelaxationsScale passed into constructors.
 	private final int numLloydRelaxations = 1;
 
@@ -80,45 +80,49 @@ public class WorldGraph extends VoronoiGraph
 	public boolean isForFrayedBorder;
 	private Double meanCenterWidth;
 	private Double meanCenterWidthBetweenNeighbors;
+	private List<Set<Center>> lakes;
 
 	// Maps plate ids to plates.
 	Set<TectonicPlate> plates;
 	public Map<Integer, Region> regions;
-	
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r,
-			double nonBorderPlateContinentalProbability, double borderPlateContinentalProbability, double sizeMultiplyer,
-			LineStyle lineStyle, double pointPrecision, boolean createElevationBiomesAndRegions, boolean areRegionBoundariesVisible)
+
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double nonBorderPlateContinentalProbability,
+			double borderPlateContinentalProbability, double sizeMultiplyer, LineStyle lineStyle, double pointPrecision,
+			boolean createElevationBiomesLakesAndRegions, boolean areRegionBoundariesVisible)
 	{
 		super(r, sizeMultiplyer, pointPrecision);
 		this.nonBorderPlateContinentalProbability = nonBorderPlateContinentalProbability;
 		this.borderPlateContinentalProbability = borderPlateContinentalProbability;
 		TectonicPlate.resetIds();
-		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesAndRegions);
+		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesLakesAndRegions);
 		setupColors();
 		regions = new TreeMap<>();
-		if (createElevationBiomesAndRegions)
+		
+		// Switch the center locations the Voronoi centroids of each center because I think that
+		// looks better for drawing, and it works better for smooth coastlines.
+		updateCenterLocationsToCentroids();
+
+		if (createElevationBiomesLakesAndRegions)
 		{
 			createPoliticalRegions();
+			markLakes();
 			smoothCoastlinesAndRegionBoundariesIfNeeded(centers, lineStyle, areRegionBoundariesVisible);
 		}
 		setupRandomSeeds(r);
-		// Now that the graph is done being created, switch the center locations the Voronoi centroids of each center because I think that
-		// looks better for drawing,
-		// and it works better for smooth coastlines.
-		updateCenterLocationsToCentroids();
 	}
 
 	/**
 	 * This constructor doens't create tectonic plates or elevation.
 	 */
-	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision, boolean isForFrayedBorder)
+	public WorldGraph(Voronoi v, double lloydRelaxationsScale, Random r, double resolutionScale, double pointPrecision,
+			boolean isForFrayedBorder)
 	{
 		super(r, resolutionScale, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
 		setupColors();
 		setupRandomSeeds(r);
 	}
-	
+
 	private void updateCenterLocationsToCentroids()
 	{
 		for (Center center : centers)
@@ -126,8 +130,9 @@ public class WorldGraph extends VoronoiGraph
 			center.updateLocToCentroid();
 		}
 	}
-	
-	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle, boolean areRegionBoundariesVisible)
+
+	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle,
+			boolean areRegionBoundariesVisible)
 	{
 		Set<Center> changed = new HashSet<Center>();
 		if (lineStyle == LineStyle.SplinesWithSmoothedCoastlines)
@@ -137,6 +142,10 @@ public class WorldGraph extends VoronoiGraph
 				Set<Center> needsRebuild = smoothCoastlinesAndOptionallyRegionBoundaries(center, areRegionBoundariesVisible);
 				changed.addAll(needsRebuild);
 			}
+			for (Center center : changed)
+			{
+				center.updateLocToCentroid();
+			}			
 		}
 		else if (lineStyle == LineStyle.Splines && areRegionBoundariesVisible)
 		{
@@ -145,23 +154,51 @@ public class WorldGraph extends VoronoiGraph
 				Set<Center> needsRebuild = smoothRegionBoundaries(center);
 				changed.addAll(needsRebuild);
 			}
+			for (Center center : changed)
+			{
+				center.updateLocToCentroid();
+			}			
 		}
 
 		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
-		// Note that in theory I should continue to reapply this loop as a fixed-point algorithm, stopping when it makes a pass were no centers
-		// were malformed. But in practice that doesn't seem to be necessary since it's unlikely that removing the smoothing on one
-		// center will cause a different one to become malformed.
-		for (Center center : changed)
+		// I reapply this loop as a fixed-point algorithm, stopping when either it makes a pass were no
+		// centers were malformed, or the last pass made no progress.
+		// I also check a maximum number of loops to make sure this algorithm doesn't take a really long time for some really strange map,
+		// although in practice that doesn't seem to happen.
+		Set<Center> loopOver = new HashSet<>(changed);
+		Set<Center> next = new HashSet<>();
+		int size;
+		int loopCount = 0;
+		do
 		{
-			if (!center.isWellFormedForDrawing())
+			for (Center center : loopOver)
 			{
-				for (Corner corner : center.corners)
+				if (!center.isWellFormedForDrawing())
 				{
-					corner.loc = corner.originalLoc;
+					next.add(center);
+					changed.add(center);
+					for (Corner corner : center.corners)
+					{
+						corner.loc = corner.originalLoc;
+
+						next.addAll(corner.touches);
+						changed.addAll(corner.touches);
+					}
 				}
 			}
+			
+			for (Center center : next)
+			{
+				center.updateLocToCentroid();
+			}
+
+			size = loopOver.size();
+			loopOver = next;
+			next = new HashSet<>();
+			loopCount++;
 		}
-		
+		while (size > loopOver.size() && loopOver.size() > 0 && loopCount <= 10);
+
 		return changed;
 	}
 
@@ -171,13 +208,13 @@ public class WorldGraph extends VoronoiGraph
 		boolean isChanged = false;
 		for (Corner corner : center.corners)
 		{
-			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, c -> c.isCoast());
+			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, e -> e.isCoast());
 			boolean isCornerChanged = coastlineResult.isCornerChanged;
 			// Only smooth region boundaries for the corner if it is not a coastline, because otherwise we will clear the smoothing on that
 			// spot on the coastline.
 			if (!coastlineResult.isSmoothed && smoothRegionBoundaries)
 			{
-				SmoothingResult regionResult = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver()); 
+				SmoothingResult regionResult = updateCornerLocationToSmoothEdges(corner, e -> e.isRegionBoundary() && !e.isRiver());
 				isCornerChanged |= regionResult.isCornerChanged;
 			}
 			isChanged |= isCornerChanged;
@@ -191,7 +228,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return result;
 	}
-	
+
 	private Set<Center> smoothRegionBoundaries(Center center)
 	{
 		assert center != null;
@@ -263,11 +300,12 @@ public class WorldGraph extends VoronoiGraph
 			return new SmoothingResult(isChanged, false);
 		}
 	}
-	
+
 	private class SmoothingResult
 	{
 		boolean isCornerChanged;
 		boolean isSmoothed;
+
 		public SmoothingResult(boolean isChanged, boolean isSmoothed)
 		{
 			this.isCornerChanged = isChanged;
@@ -885,13 +923,13 @@ public class WorldGraph extends VoronoiGraph
 		return result;
 	}
 
-	public List<Set<Center>> markLakes()
+	private void markLakes()
 	{
 		// This threshold allows me to distinguish between lakes and oceans.
 		final int maxLakeSize = 120;
 
 		Set<Center> explored = new HashSet<>();
-		List<Set<Center>> lakes = new ArrayList<>();
+		lakes = new ArrayList<>();
 		for (Center center : centers)
 		{
 			if (!center.isWater)
@@ -930,7 +968,10 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 		}
+	}
 
+	public List<Set<Center>> getGeneratedLakes()
+	{
 		return lakes;
 	}
 
@@ -1219,11 +1260,9 @@ public class WorldGraph extends VoronoiGraph
 			c1.isWater = c1.elevation < seaLevel;
 		}
 
-		// Copied from super.assignOceanCoastAndLand()
-		// Determine if each corner is coast or water.
 		for (Center c : centers)
 		{
-			updateCoast(c);
+			c.updateCoast();
 		}
 
 		// Copied from super.assignOceanCoastAndLand()
@@ -1242,19 +1281,7 @@ public class WorldGraph extends VoronoiGraph
 			c.isWater = (numLand != c.touches.size()) && !c.isCoast;
 		}
 	}
-
-	private void updateCoast(Center c)
-	{
-		int numOcean = 0;
-		int numLand = 0;
-		for (Center center : c.neighbors)
-		{
-			numOcean += center.isWater ? 1 : 0;
-			numLand += !center.isWater ? 1 : 0;
-		}
-		c.isCoast = numOcean > 0 && numLand > 0;
-	}
-
+	
 	private void assignOceanAndContinentalPlates()
 	{
 		for (TectonicPlate plate : plates)
@@ -1830,7 +1857,7 @@ public class WorldGraph extends VoronoiGraph
 			return center == null;
 		}
 	}
-	
+
 	/**
 	 * Scales the graph and everything in it to the target size.
 	 */
@@ -1861,14 +1888,14 @@ public class WorldGraph extends VoronoiGraph
 				corner.originalLoc = corner.originalLoc.mult(widthScale, heightScale);
 			}
 		}
-		
+
 		bounds = new Rectangle(0, 0, targetWidth, targetHeight);
 		meanCenterWidth = null;
 		getMeanCenterWidth();
 		meanCenterWidthBetweenNeighbors = null;
 		getMeanCenterWidthBetweenNeighbors();
 	}
-	
+
 	public double getMeanCenterWidth()
 	{
 		if (meanCenterWidth == null)
@@ -1886,7 +1913,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		return meanCenterWidthBetweenNeighbors;
 	}
-	
+
 	private double findMeanCenterWidth()
 	{
 		double widthSum = 0;

@@ -405,5 +405,16 @@ public class Center
 		return false;
 	}
 
+	public void updateCoast()
+	{
+		int numOcean = 0;
+		int numLand = 0;
+		for (Center center : neighbors)
+		{
+			numOcean += center.isWater ? 1 : 0;
+			numLand += !center.isWater ? 1 : 0;
+		}
+		isCoast = numOcean > 0 && numLand > 0;
+	}
 
 }

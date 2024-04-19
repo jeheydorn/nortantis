@@ -558,12 +558,6 @@ public class MapCreator implements WarningLogger
 			frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
 		}
 
-		List<Set<Center>> lakes = null;
-		if (settings.edits.text.size() == 0)
-		{
-			lakes = graph.markLakes();
-		}
-
 		Image map;
 		Image textBackground;
 		List<Set<Center>> mountainGroups;
@@ -635,7 +629,7 @@ public class MapCreator implements WarningLogger
 			// the editor might be generating the map without text
 			// now, but want to show the text later, so in that case we would
 			// want to generate the text but not show it.
-			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, lakes);
+			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes());
 		}
 
 		textBackground = null;
@@ -1329,11 +1323,11 @@ public class MapCreator implements WarningLogger
 	}
 
 	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale,
-			boolean createElevationBiomesAndRegions)
+			boolean createElevationBiomesLakesAndRegions)
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
-				settings.pointPrecision, createElevationBiomesAndRegions, settings.lloydRelaxationsScale, settings.drawRegionColors);
+				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale, settings.drawRegionColors);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
@@ -1396,7 +1390,7 @@ public class MapCreator implements WarningLogger
 		{
 			centerChanges = edits.centerEdits.values();
 		}
-
+		
 		Set<Center> centersChanged = new HashSet<>();
 		Set<Center> needsRebuildNoisyEdges = new HashSet<>();
 
@@ -1445,6 +1439,12 @@ public class MapCreator implements WarningLogger
 			{
 				needsRebuildNoisyEdges.add(center);
 			}
+		}
+
+		// TODO Remove this loop if it doesn't turn out to be useful for anything.
+		for (Center center : centersChanged)
+		{
+			center.updateCoast();
 		}
 
 		needsRebuildNoisyEdges.addAll(graph.smoothCoastlinesAndRegionBoundariesIfNeeded(centersChanged, graph.noisyEdges.getLineStyle(),

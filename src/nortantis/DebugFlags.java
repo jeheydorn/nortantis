@@ -24,7 +24,7 @@ public class DebugFlags
 	 * Causes the indexes of centers to be printed when hovering over them in the Land and Water tool.
 	 * This is useful when you're debugging a need to find the index of a center for setting a conditional breakpoint.
 	 */
-	private static boolean printCenterIndexes = false;
+	private static boolean printCenterIndexes = true;
 	
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 	
