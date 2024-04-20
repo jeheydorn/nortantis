@@ -108,7 +108,6 @@ public class WorldGraph extends VoronoiGraph
 			markLakes();
 			smoothCoastlinesAndRegionBoundariesIfNeeded(centers, lineStyle, areRegionBoundariesVisible);
 		}
-		setupRandomSeeds(r);
 	}
 
 	/**
@@ -120,7 +119,6 @@ public class WorldGraph extends VoronoiGraph
 		super(r, resolutionScale, pointPrecision);
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, false);
 		setupColors();
-		setupRandomSeeds(r);
 	}
 
 	private void updateCenterLocationsToCentroids()
@@ -157,7 +155,7 @@ public class WorldGraph extends VoronoiGraph
 			for (Center center : changed)
 			{
 				center.updateLocToCentroid();
-			}			
+			}
 		}
 
 		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
@@ -310,19 +308,6 @@ public class WorldGraph extends VoronoiGraph
 		{
 			this.isCornerChanged = isChanged;
 			this.isSmoothed = isSmoothed;
-		}
-	}
-
-	private void setupRandomSeeds(Random rand)
-	{
-		for (Center c : centers)
-		{
-			c.treeSeed = rand.nextLong();
-		}
-
-		for (Edge e : edges)
-		{
-			e.noisyEdgesSeed = rand.nextLong();
 		}
 	}
 

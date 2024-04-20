@@ -108,6 +108,7 @@ public abstract class VoronoiGraph
 		storeOriginalCornerLocations();
 		storeOriginalCentersLocations();
 		assignBorderToCenters();
+		setupRandomSeeds(rand);
 
 		if (createElevationRiversAndBiomes)
 		{
@@ -120,6 +121,19 @@ public abstract class VoronoiGraph
 			redistributeMoisture(landCorners());
 			assignPolygonMoisture();
 			assignBiomes();
+		}
+	}
+	
+	private void setupRandomSeeds(Random rand)
+	{
+		for (Center c : centers)
+		{
+			c.treeSeed = rand.nextLong();
+		}
+
+		for (Edge e : edges)
+		{
+			e.noisyEdgesSeed = rand.nextLong();;
 		}
 	}
 

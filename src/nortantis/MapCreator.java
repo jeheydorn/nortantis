@@ -1441,12 +1441,6 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		// TODO Remove this loop if it doesn't turn out to be useful for anything.
-		for (Center center : centersChanged)
-		{
-			center.updateCoast();
-		}
-
 		needsRebuildNoisyEdges.addAll(graph.smoothCoastlinesAndRegionBoundariesIfNeeded(centersChanged, graph.noisyEdges.getLineStyle(),
 				areRegionBoundariesVisible));
 

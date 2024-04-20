@@ -1,26 +1,35 @@
 package nortantis.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import junit.framework.Assert;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
+import nortantis.SettingsGenerator;
+import nortantis.editor.MapUpdater;
+import nortantis.geom.Rectangle;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.MapEdits;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
+import nortantis.util.Tuple1;
 
 public class MapCreatorTest
 {
@@ -30,7 +39,7 @@ public class MapCreatorTest
 	{
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
-				
+
 		// Create the expected images if they don't already exist.
 		// Note that this means that if you haven't already created the images, you run these tests before making changes that will need to
 		// be tested.
@@ -54,6 +63,109 @@ public class MapCreatorTest
 			}
 
 		}
+	}
+
+	/**
+	 * Tests that a map which is drawn with no edits matches the same map drawn the second time with newly created edits. This simulates the
+	 * case where you create a new map in the editor and it draws for the first time, then you do something to trigger it to do a full
+	 * redraw.
+	 */
+	@Test
+	public void drawWithoutEditsMatchesWithEdits()
+	{
+		MapSettings settings = SettingsGenerator.generate(new Random(123456789));
+		settings.resolution = 0.5;
+		Tuple1<Image> mapTuple = new Tuple1<>();
+		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
+		MapUpdater updater = new MapUpdater(true)
+		{
+
+			@Override
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+					Rectangle incrementalChangeArea, List<String> warningMessages)
+			{
+				mapTuple.set(map);
+				doneTuple.set(true);
+			}
+
+			@Override
+			protected void onFailedToDraw()
+			{
+				fail("Updater failed to draw.");
+			}
+
+			@Override
+			protected void onBeginDraw()
+			{
+			}
+
+			@Override
+			public MapSettings getSettingsFromGUI()
+			{
+				return settings;
+			}
+
+			@Override
+			protected MapEdits getEdits()
+			{
+				return settings.edits;
+			}
+
+			@Override
+			protected Image getCurrentMapForIncrementalUpdate()
+			{
+				throw new UnsupportedOperationException();
+			}
+		};
+
+		updater.setEnabled(true);
+
+		assertTrue(!settings.edits.isInitialized());
+		Image drawnWithoutEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
+	
+		assertTrue(settings.edits.isInitialized());
+		Image drawnWithEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
+
+		String comparisonErrorMessage = checkIfImagesEqual(drawnWithoutEdits, drawnWithEdits);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			drawnWithoutEdits.write(Paths.get("unit test files", "failed maps", "noOceanOrCoastEffects_NoEdits.png").toString());
+			drawnWithEdits.write(Paths.get("unit test files", "failed maps", "noOceanOrCoastEffects_WithEdits.png").toString());
+			createImageDiffIfImagesAreSameSize(drawnWithoutEdits, drawnWithEdits, "noOceanOrCoastEffects");
+			fail(comparisonErrorMessage);
+		}
+	}
+	
+	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
+	{
+		doneTuple.set(false);
+		mapTuple.set(null);
+		updater.createAndShowMapFull();
+		updater.dowWhenMapIsNotDrawing(() ->
+		{
+			doneTuple.set(true);
+		});
+
+		while (!doneTuple.get())
+		{
+			try
+			{
+				Thread.sleep(100);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+				break;
+			}
+		}
+		return mapTuple.get();
+	}
+
+	@Test
+	public void allTypesOfEdits()
+	{
+		generateAndCompare("allTypesOfEdits.nort");
 	}
 
 	@Test
@@ -84,12 +196,6 @@ public class MapCreatorTest
 	public void noText_WithCities_GoldenRatio_withEdits()
 	{
 		generateAndCompare("noText_WithCities_GoldenRatio_withEdits.nort");
-	}
-
-	@Test
-	public void allTypesOfEdits()
-	{
-		generateAndCompare("allTypesOfEdits.nort");
 	}
 
 	@Test
@@ -151,13 +257,13 @@ public class MapCreatorTest
 	{
 		generateAndCompare("regressionTest_polygonsOnTopBug.nort");
 	}
-	
+
 	@Test
 	public void iconsDrawOverCoastlines()
 	{
 		generateAndCompare("iconsDrawOverCoastlines.nort");
 	}
-	
+
 	@Test
 	public void clearedMapRegionEdit0Removed()
 	{

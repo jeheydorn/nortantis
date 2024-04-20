@@ -43,15 +43,20 @@ public class SettingsGenerator
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
-
+	
 	public static MapSettings generate()
+	{
+		Random rand = new Random();
+		return generate(rand);
+	}
+
+	public static MapSettings generate(Random rand)
 	{
 		if (!Files.exists(Paths.get(defaultSettingsFile)))
 		{
 			throw new IllegalArgumentException("The default settings files " + defaultSettingsFile + " does not exist");
 		}
-
-		Random rand = new Random();
+		
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
