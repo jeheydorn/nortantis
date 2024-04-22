@@ -315,7 +315,8 @@ public class IconDrawer
 			return;
 		}
 
-		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString().toLowerCase(), iconsByGroup, warningLogger);
+		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString().toLowerCase(), iconsByGroup,
+				warningLogger);
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
 			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -481,7 +482,8 @@ public class IconDrawer
 			icon = updated;
 		}
 
-		if (iconsByGroup.get(icon.groupId).size() > 0)
+		if (icon.groupId != null && !icon.groupId.isEmpty() && iconsByGroup.get(icon.groupId) != null
+				&& iconsByGroup.get(icon.groupId).size() > 0)
 		{
 			IconDrawTask task = toIconDrawTask(icon);
 			if (!isContentBottomTouchingWater(task))
@@ -562,8 +564,11 @@ public class IconDrawer
 				warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
 						+ "'. There are no " + iconTypeNameForWarnings.toString().toLowerCase() + " icons, so none will be drawn.");
 			}
-			warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
-					+ "'. The group '" + newGroupId + "' will be used instead.");
+			else
+			{
+				warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
+						+ "'. The group '" + newGroupId + "' will be used instead.");
+			}
 			return newGroupId;
 		}
 
@@ -969,7 +974,7 @@ public class IconDrawer
 					double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
 					double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
 					Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, IconType.mountains, i, mountainScale, mountainImagesById);
-					
+
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i, c.index);
 
 					IconDrawTask task = toIconDrawTask(icon);

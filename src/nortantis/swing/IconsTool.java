@@ -52,7 +52,6 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
-import nortantis.util.Tuple1;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
@@ -217,7 +216,7 @@ public class IconsTool extends EditorTool
 		hillTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.hills, hillTypes, null);
 		duneTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.sand, duneTypes, null);
 		treeTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.trees, treeTypes, null);
-		selectDefaultTreesButtion();
+		selectDefaultTreesButtion(treeTypes);
 
 		createOrUpdateButtonsForCities(organizer, null);
 
@@ -233,11 +232,11 @@ public class IconsTool extends EditorTool
 	/**
 	 * Prevents cacti from being the default tree brush
 	 */
-	private void selectDefaultTreesButtion()
+	private void selectDefaultTreesButtion(IconTypeButtons typeButtons)
 	{
-		if (treeTypes.buttons.size() > 1 && treeTypes.buttons.get(0).getText().equals("cacti"))
+		if (typeButtons.buttons.size() > 1 && typeButtons.buttons.get(0).getText().equals("cacti"))
 		{
-			treeTypes.buttons.get(1).getRadioButton().setSelected(true);
+			typeButtons.buttons.get(1).getRadioButton().setSelected(true);
 		}
 	}
 
@@ -279,6 +278,8 @@ public class IconsTool extends EditorTool
 	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
 			String customImagesPath)
 	{
+		String prevSelection = existing != null ? existing.getSelectedOption() : null;
+
 		ButtonGroup group = new ButtonGroup();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
 		List<String> groupNames = new ArrayList<>(ImageCache.getInstance(customImagesPath).getIconGroupNames(iconType));
@@ -301,24 +302,37 @@ public class IconsTool extends EditorTool
 			group.add(button.getRadioButton());
 			radioButtons.add(button);
 		}
-		if (radioButtons.size() > 0)
-		{
-			radioButtons.get(0).getRadioButton().setSelected(true);
-		}
 
+		IconTypeButtons result;
 		if (existing == null)
 		{
 			JPanel buttonsPanel = new JPanel();
-			return new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", radioButtons, buttonsPanel),
+			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", radioButtons, buttonsPanel),
 					radioButtons, buttonsPanel);
 		}
 		else
 		{
+			result = existing;
 			existing.buttons = radioButtons;
 			GridBagOrganizer.updateComponentsPanelVertical(radioButtons, existing.buttonsPanel);
-			return existing;
 		}
 
+		if (prevSelection == null || !result.selectButtonIfPresent(prevSelection))
+		{
+			if (radioButtons.size() > 0)
+			{
+				if (iconType == IconType.trees)
+				{
+					selectDefaultTreesButtion(result);
+				}
+				else
+				{
+					radioButtons.get(0).getRadioButton().setSelected(true);
+				}
+			}
+		}
+
+		return result;
 	}
 
 	@Override
@@ -329,7 +343,6 @@ public class IconsTool extends EditorTool
 		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, customImagesPath);
 		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, customImagesPath);
 		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, customImagesPath);
-		selectDefaultTreesButtion();
 
 		createOrUpdateButtonsForCities(null, settings.customImagesPath);
 
@@ -781,7 +794,7 @@ public class IconsTool extends EditorTool
 				mainWindow.edits.freeIcons.replace(before, after);
 				iconsBeforeAndAfter.add(after);
 				if (isSelected(e.getPoint(), after))
-				{			
+				{
 					iconsSelectedAfter.add(after);
 				}
 			}
@@ -789,7 +802,7 @@ public class IconsTool extends EditorTool
 			return iconsBeforeAndAfter;
 		});
 
-		
+
 		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, iconsSelectedAfter);
 
 		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
@@ -816,7 +829,7 @@ public class IconsTool extends EditorTool
 			mainWindow.edits.freeIcons.removeAll(iconsInner);
 			return iconsInner;
 		});
-		
+
 		mapEditingPanel.clearHighlightedAreas();
 
 		if (icons != null && !icons.isEmpty())
@@ -959,7 +972,7 @@ public class IconsTool extends EditorTool
 				selected.add(icon);
 			}
 		}
-		
+
 		return selected;
 	}
 

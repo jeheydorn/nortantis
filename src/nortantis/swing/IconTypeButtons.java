@@ -3,6 +3,9 @@ package nortantis.swing;
 import java.util.List;
 
 import javax.swing.JPanel;
+import javax.swing.JToggleButton;
+
+import nortantis.util.Tuple2;
 
 public class IconTypeButtons
 {
@@ -31,5 +34,19 @@ public class IconTypeButtons
 			}
 		}
 		return null;
+	}
+	
+	public boolean selectButtonIfPresent(String buttonText)
+	{		
+		for (RadioButtonWithImage buttonWithImage : buttons)
+		{
+			if (buttonWithImage.getText().equals(buttonText))
+			{
+				buttonWithImage.getRadioButton().doClick();
+				return true;
+			}
+		}
+		
+		return false;
 	}
 }
