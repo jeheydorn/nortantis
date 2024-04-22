@@ -51,9 +51,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Point textBoxLocation;
 	private Rectangle textBoxBoundsLine1;
 	private double textBoxAngle;
-	private BufferedImage rotateTextIconScaled;
+	private BufferedImage rotateIconScaled;
 	private Area rotateToolArea;
-	private BufferedImage moveTextIconScaled;
+	private BufferedImage moveIconScaled;
+	private BufferedImage scaleIconScaled;
 	private Area moveToolArea;
 	private Rectangle textBoxBoundsLine2;
 	private Set<Area> highlightedAreas;
@@ -329,24 +330,24 @@ public class MapEditingPanel extends UnscaledImagePanel
 			int y;
 			if (textBoxBoundsLine2 == null)
 			{
-				y = (int) (textBoxBoundsLine1.y + centerY) + (textBoxBoundsLine1.height / 2) - (rotateTextIconScaled.getHeight() / 2);
+				y = (int) (textBoxBoundsLine1.y + centerY) + (textBoxBoundsLine1.height / 2) - (rotateIconScaled.getHeight() / 2);
 			}
 			else
 			{
-				y = (int) (centerY - (rotateTextIconScaled.getHeight() / 2.0));
+				y = (int) (centerY - (rotateIconScaled.getHeight() / 2.0));
 			}
-			g2.drawImage(rotateTextIconScaled, x, y, null);
-			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateTextIconScaled.getWidth(), rotateTextIconScaled.getHeight()));
+			g2.drawImage(rotateIconScaled, x, y, null);
+			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateIconScaled.getWidth(), rotateIconScaled.getHeight()));
 			rotateToolArea.transform(g2.getTransform());
 		}
 
 		// Place the image for the move tool.
 		{
 			int x = (int) (textBoxBoundsLine1.x + centerX) + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
-					- (int) (Math.round(moveTextIconScaled.getWidth() / 2.0));
-			int y = (int) (textBoxBoundsLine1.y + centerY) - (moveTextIconScaled.getHeight()) - padding;
-			g2.drawImage(moveTextIconScaled, x, y, null);
-			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveTextIconScaled.getWidth(), moveTextIconScaled.getHeight()));
+					- (int) (Math.round(moveIconScaled.getWidth() / 2.0));
+			int y = (int) (textBoxBoundsLine1.y + centerY) - (moveIconScaled.getHeight()) - padding;
+			g2.drawImage(moveIconScaled, x, y, null);
+			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaled.getWidth(), moveIconScaled.getHeight()));
 			moveToolArea.transform(g2.getTransform());
 		}
 
@@ -478,12 +479,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			BufferedImage rotateIcon = AwtFactory
 					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString()));
-			rotateTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
+			rotateIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
 					(int) (rotateIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
 			BufferedImage moveIcon = AwtFactory
 					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString()));
-			moveTextIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(moveIcon),
+			moveIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(moveIcon),
 					(int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
+			BufferedImage scaleIcon = AwtFactory
+					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "scale.png").toString()));
+			scaleIconScaled =  AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
+					(int) (scaleIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
 		}
 	}
 
