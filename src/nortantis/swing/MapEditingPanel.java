@@ -20,6 +20,7 @@ import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.WorldGraph;
 import nortantis.editor.FreeIcon;
+import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
@@ -51,8 +52,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Point textBoxLocation;
 	private Rectangle textBoxBoundsLine1;
 	private double textBoxAngle;
+	private nortantis.geom.Rectangle iconToEditBounds;
 	private BufferedImage rotateIconScaled;
 	private Area rotateToolArea;
+	private Area scaleToolArea;
 	private BufferedImage moveIconScaled;
 	private BufferedImage scaleIconScaled;
 	private Area moveToolArea;
@@ -122,6 +125,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxBoundsLine1 = null;
 		this.textBoxBoundsLine2 = null;
 		this.textBoxAngle = 0.0;
+	}
+	
+	public void setIconToEdit(IconDrawer iconDrawer, FreeIcon icon)
+	{
+		iconToEditBounds = iconDrawer.toIconDrawTask(icon).createBounds();
+	}
+	
+	public void clearIconToEdit()
+	{
+		iconToEditBounds = null;
 	}
 
 	public void setHighlightedAreasFromTexts(List<MapText> texts)
@@ -270,6 +283,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			drawTextBox(((Graphics2D) g));
 		}
+		
+		if (iconToEditBounds != null)
+		{
+			drawIconEditBox(((Graphics2D) g));
+		}
 
 		drawAreas(g);
 
@@ -293,11 +311,44 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawCenterOutlines(g, selectedCenters);
 		}
 	}
-
-	private void drawTextBox(Graphics2D g)
+	
+	private void drawIconEditBox(Graphics2D g)
 	{
-		Graphics2D g2 = ((Graphics2D) g);
 		g.setColor(highlightColor);
+		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds);
+
+		double centerX = editBounds.x;
+		double centerY = editBounds.y;
+
+		int padding = (int) (9 * resolution);
+		g.drawRect((int) (editBounds.x + centerX), (int) (editBounds.y + centerY), editBounds.width,
+				editBounds.height);
+		
+
+		// Place the image for the scale tool.
+		{
+			int x = (int) (editBounds.x + centerX) + editBounds.width + padding;
+			int y = (int) (editBounds.y + centerY) + editBounds.height - (scaleIconScaled.getHeight() / 2);
+
+			g.drawImage(scaleIconScaled, x, y, null);
+			scaleToolArea = new Area(new Ellipse2D.Double(x, y, scaleIconScaled.getWidth(), scaleIconScaled.getHeight()));
+			scaleToolArea.transform(g.getTransform());
+		}
+
+		// Place the image for the move tool.
+		{
+			int x = (int) (editBounds.x + centerX) + (int) (Math.round(editBounds.width / 2.0))
+					- (int) (Math.round(moveIconScaled.getWidth() / 2.0));
+			int y = (int) (editBounds.y + centerY) - (moveIconScaled.getHeight()) - padding;
+			g.drawImage(moveIconScaled, x, y, null);
+			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaled.getWidth(), moveIconScaled.getHeight()));
+			moveToolArea.transform(g.getTransform());
+		}
+	}
+
+	private void drawTextBox(Graphics2D g2)
+	{
+		g2.setColor(highlightColor);
 		AffineTransform originalTransformCopy = g2.getTransform();
 
 		double centerX = textBoxLocation.x * resolution;
@@ -354,7 +405,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setTransform(originalTransformCopy);
 	}
 
-	public boolean isInTextRotateTool(java.awt.Point point)
+	public boolean isInRotateTool(java.awt.Point point)
 	{
 		if (rotateToolArea == null)
 		{
@@ -366,7 +417,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return rotateToolArea.contains(tPoint);
 	}
 
-	public boolean isInTextMoveTool(java.awt.Point point)
+	public boolean isInMoveTool(java.awt.Point point)
 	{
 		if (moveToolArea == null)
 		{
@@ -377,6 +428,19 @@ public class MapEditingPanel extends UnscaledImagePanel
 		transformWithOsScaling.transform(point, tPoint);
 		return moveToolArea.contains(tPoint);
 	}
+	
+	public boolean isInScaleTool(java.awt.Point point)
+	{
+		if (scaleToolArea == null)
+		{
+			return false;
+		}
+
+		java.awt.Point tPoint = new java.awt.Point();
+		transformWithOsScaling.transform(point, tPoint);
+		return scaleToolArea.contains(tPoint);
+	}
+
 
 	private void drawBrush(Graphics2D g)
 	{
@@ -500,6 +564,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearAllSelectionsAndHighlights()
 	{
 		clearTextBox();
+		clearIconToEdit();
 		clearSelectedCenters();
 		clearHighlightedCenters();
 		clearHighlightedEdges();

@@ -347,11 +347,11 @@ public class TextTool extends EditorTool
 		}
 		else if (editButton.isSelected())
 		{
-			if (lastSelected != null && mapEditingPanel.isInTextRotateTool(e.getPoint()))
+			if (lastSelected != null && mapEditingPanel.isInRotateTool(e.getPoint()))
 			{
 				isRotating = true;
 			}
-			else if (lastSelected != null && mapEditingPanel.isInTextMoveTool(e.getPoint()))
+			else if (lastSelected != null && mapEditingPanel.isInMoveTool(e.getPoint()))
 			{
 				isMoving = true;
 				mousePressedLocation = e.getPoint();

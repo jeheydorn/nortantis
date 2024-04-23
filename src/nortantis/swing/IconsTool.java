@@ -195,7 +195,7 @@ public class IconsTool extends EditorTool
 		}
 
 		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush",
-				"Use the selected brush to replace existing icons of the same type", true, () -> handleModeChanged());
+				true, "Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons", () -> handleModeChanged());
 		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
 
 
@@ -248,7 +248,7 @@ public class IconsTool extends EditorTool
 	private void showOrHideBrush(MouseEvent e)
 	{
 		int brushDiameter = getBrushDiameter();
-		if ((!eraseAllButton.isSelected() && modeWidget.isDrawMode()) || brushDiameter <= 1)
+		if (modeWidget.isDrawMode() || modeWidget.isEditMode() || brushDiameter <= 1)
 		{
 			mapEditingPanel.hideBrush();
 		}
@@ -272,7 +272,7 @@ public class IconsTool extends EditorTool
 		treeTypes.hider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
-		brushSizeHider.setVisible(!(citiesButton.isSelected() && modeWidget.isDrawMode()));
+		brushSizeHider.setVisible((modeWidget.isDrawMode() && !citiesButton.isSelected()) || modeWidget.isReplaceMode()|| modeWidget.isEraseMode());
 	}
 
 	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
@@ -662,6 +662,11 @@ public class IconsTool extends EditorTool
 		{
 			handleEraseIcons(e);
 		}
+		else if (modeWidget.isEditMode())
+		{
+			// TODO Press and drag need to be handled separately.
+			handleEditIcons(e);
+		}
 	}
 
 	private void handleDrawIcons(MouseEvent e)
@@ -837,6 +842,19 @@ public class IconsTool extends EditorTool
 			updater.createAndShowMapIncrementalUsingIcons(icons);
 		}
 	}
+	
+	private void handleEditIcons(MouseEvent e)
+	{
+		FreeIcon selected = getLowestSelectedIcon(e.getPoint());
+		if (selected != null)
+		{
+			mapEditingPanel.setIconToEdit(updater.mapParts.iconDrawer, selected);
+		}
+		else
+		{
+			mapEditingPanel.clearIconToEdit();
+		}
+	}
 
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
 	{
@@ -1002,6 +1020,29 @@ public class IconsTool extends EditorTool
 			RotatedRectangle rect = new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds());
 			return rect.overlapsCircle(graphPoint, brushRadius);
 		}
+	}
+	
+	protected FreeIcon getLowestSelectedIcon(java.awt.Point pointFromMouse)
+	{
+		List<FreeIcon> underMouse = getSelectedIcons(pointFromMouse);
+		if (underMouse.isEmpty())
+		{
+			return null;
+		}
+		
+		FreeIcon lowest = null;
+		double lowestBottom = Double.POSITIVE_INFINITY;
+		
+		for (FreeIcon icon : underMouse)
+		{
+			double bottom = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds().getBottom();
+			if (lowest == null || bottom < lowestBottom)
+			{
+				lowest = icon;
+				lowestBottom = bottom;
+			}
+		}
+		return lowest;
 	}
 
 	private int getBrushDiameter()
