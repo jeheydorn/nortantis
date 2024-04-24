@@ -126,13 +126,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxBoundsLine2 = null;
 		this.textBoxAngle = 0.0;
 	}
-	
-	public void setIconToEdit(IconDrawer iconDrawer, FreeIcon icon)
+
+	public void showIconEditToolsAt(IconDrawer iconDrawer, FreeIcon icon)
 	{
 		iconToEditBounds = iconDrawer.toIconDrawTask(icon).createBounds();
 	}
-	
-	public void clearIconToEdit()
+
+	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle)
+	{
+		iconToEditBounds = rectangle;
+	}
+
+	public void clearIconEditTools()
 	{
 		iconToEditBounds = null;
 	}
@@ -283,7 +288,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			drawTextBox(((Graphics2D) g));
 		}
-		
+
 		if (iconToEditBounds != null)
 		{
 			drawIconEditBox(((Graphics2D) g));
@@ -311,24 +316,20 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawCenterOutlines(g, selectedCenters);
 		}
 	}
-	
+
 	private void drawIconEditBox(Graphics2D g)
 	{
 		g.setColor(highlightColor);
 		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds);
 
-		double centerX = editBounds.x;
-		double centerY = editBounds.y;
-
 		int padding = (int) (9 * resolution);
-		g.drawRect((int) (editBounds.x + centerX), (int) (editBounds.y + centerY), editBounds.width,
-				editBounds.height);
-		
+		g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
+
 
 		// Place the image for the scale tool.
 		{
-			int x = (int) (editBounds.x + centerX) + editBounds.width + padding;
-			int y = (int) (editBounds.y + centerY) + editBounds.height - (scaleIconScaled.getHeight() / 2);
+			int x = editBounds.x + editBounds.width + padding;
+			int y = editBounds.y - (scaleIconScaled.getHeight());
 
 			g.drawImage(scaleIconScaled, x, y, null);
 			scaleToolArea = new Area(new Ellipse2D.Double(x, y, scaleIconScaled.getWidth(), scaleIconScaled.getHeight()));
@@ -337,9 +338,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			int x = (int) (editBounds.x + centerX) + (int) (Math.round(editBounds.width / 2.0))
+			int x = editBounds.x + (int) (Math.round(editBounds.width / 2.0))
 					- (int) (Math.round(moveIconScaled.getWidth() / 2.0));
-			int y = (int) (editBounds.y + centerY) - (moveIconScaled.getHeight()) - padding;
+			int y = editBounds.y - (moveIconScaled.getHeight()) - padding;
 			g.drawImage(moveIconScaled, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaled.getWidth(), moveIconScaled.getHeight()));
 			moveToolArea.transform(g.getTransform());
@@ -428,7 +429,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		transformWithOsScaling.transform(point, tPoint);
 		return moveToolArea.contains(tPoint);
 	}
-	
+
 	public boolean isInScaleTool(java.awt.Point point)
 	{
 		if (scaleToolArea == null)
@@ -551,7 +552,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 					(int) (moveIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
 			BufferedImage scaleIcon = AwtFactory
 					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "scale.png").toString()));
-			scaleIconScaled =  AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
+			scaleIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
 					(int) (scaleIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
 		}
 	}
@@ -564,7 +565,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearAllSelectionsAndHighlights()
 	{
 		clearTextBox();
-		clearIconToEdit();
+		clearIconEditTools();
 		clearSelectedCenters();
 		clearHighlightedCenters();
 		clearHighlightedEdges();
