@@ -140,6 +140,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearIconEditTools()
 	{
 		iconToEditBounds = null;
+		scaleToolArea = null;
+		moveToolArea = null;
 	}
 
 	public void setHighlightedAreasFromTexts(List<MapText> texts)

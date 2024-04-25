@@ -100,7 +100,12 @@ public class FreeIcon
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density);
 	}
-	
+
+	public FreeIcon copyWithScale(double scale)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density);
+	}
+
 	public FreeIcon copyWithLocation(double resolutionScale, Point loc)
 	{
 		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, groupId, iconIndex, iconName, centerIndex, density);

@@ -874,7 +874,7 @@ public class IconsTool extends EditorTool
 				isScaling = false;
 				editStart = null;
 			}
-			
+
 			if (!isMoving && !isScaling)
 			{
 				iconToEdit = getLowestSelectedIcon(e.getPoint());
@@ -895,38 +895,84 @@ public class IconsTool extends EditorTool
 		{
 			if (iconToEdit != null && (isMoving || isScaling))
 			{
-				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
 
-				double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-				double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-				
-				nortantis.geom.Rectangle rect = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
-				
 				if (isMoving)
 				{
-					rect = rect.translate(deltaX, deltaY);
+					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+					imageBounds = imageBounds.translate(deltaX, deltaY);
 				}
 				else if (isScaling)
 				{
-					double scale;
-					if (deltaX < deltaY)
-					{
-						scale = (graphPointMouseLocation.x - rect.getCenter().x) / (graphPointMousePressedLocation.x - rect.getCenter().x);
-					}
-					else
-					{
-						scale = (graphPointMouseLocation.y - rect.getCenter().y) / (graphPointMousePressedLocation.y - rect.getCenter().y);
-					}
-					
-					rect = rect.scaleAboutCenter(scale);
+					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
+					imageBounds = imageBounds.scaleAboutCenter(scale);
 				}
-				
-				mapEditingPanel.showIconEditToolsAt(rect);
+
+				mapEditingPanel.showIconEditToolsAt(imageBounds);
 				mapEditingPanel.repaint();
 			}
 		}
 
+	}
+
+	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation, Rectangle imageBounds)
+	{
+		double scale = graphPointMouseLocation.distanceTo(imageBounds.getCenter())
+				/ graphPointMousePressedLocation.distanceTo(imageBounds.getCenter());
+
+		final double minSize = 5;
+		double minSideLength = Math.min(imageBounds.width, imageBounds.height);
+		double minScale = minSize / minSideLength;
+		return Math.max(scale, minScale);
+	}
+
+	private void handleFinishEditingIconIfNeeded(MouseEvent e)
+	{
+		if (iconToEdit != null && (isMoving || isScaling))
+		{
+			Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+			Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+
+			Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+
+			FreeIcon updated = null;
+			if (isMoving)
+			{
+				double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+				double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+				Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
+				FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
+						new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY));
+				updated = updatedIcon;
+				mainWindow.edits.freeIcons.doWithLock(() ->
+				{
+					mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+				});
+			}
+			else if (isScaling)
+			{
+				double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
+				FreeIcon updatedIcon = iconToEdit.copyWithScale(scale);
+				updated = updatedIcon;
+				mainWindow.edits.freeIcons.doWithLock(() ->
+				{
+					mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+				});
+			}
+
+			if (updated != null)
+			{
+				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(iconToEdit, updated));
+				iconToEdit = updated;
+				mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, updated);
+				isMoving = false;
+				isScaling = false;
+			}
+
+		}
 	}
 
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
@@ -967,6 +1013,10 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
+		if (modeWidget.isEditMode())
+		{
+			handleFinishEditingIconIfNeeded(e);
+		}
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 	}
 
@@ -1118,12 +1168,12 @@ public class IconsTool extends EditorTool
 		}
 
 		FreeIcon lowest = null;
-		double lowestBottom = Double.POSITIVE_INFINITY;
+		double lowestBottom = Double.NEGATIVE_INFINITY;
 
 		for (FreeIcon icon : underMouse)
 		{
 			double bottom = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds().getBottom();
-			if (lowest == null || bottom < lowestBottom)
+			if (lowest == null || bottom > lowestBottom)
 			{
 				lowest = icon;
 				lowestBottom = bottom;
