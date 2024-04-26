@@ -1378,7 +1378,7 @@ public class IconDrawer
 		}
 	}
 
-	private boolean isContentBottomTouchingWater(FreeIcon icon)
+	public boolean isContentBottomTouchingWater(FreeIcon icon)
 	{
 		return isContentBottomTouchingWater(toIconDrawTask(icon));
 	}

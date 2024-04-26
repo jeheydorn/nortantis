@@ -751,6 +751,30 @@ public class ImageHelper
 			}
 		return result;
 	}
+	
+	public static Image copyAlphaTo(Image target, Image alphaSource)
+	{
+		if (alphaSource.getType() != ImageType.ARGB)
+		{
+			throw new IllegalArgumentException("alphaSource is not a supported type");
+		}
+		
+		if (!target.size().equals(alphaSource.size()))
+		{
+			throw new IllegalArgumentException("target and alphaSource are different sizes.");
+		}
+
+		Image result = Image.create(target.getWidth(), target.getHeight(), ImageType.ARGB);
+		for (int y = 0; y < target.getHeight(); y++)
+			for (int x = 0; x < target.getWidth(); x++)
+			{
+
+				int alphaLevel = alphaSource.getAlphaLevel(x, y);
+				Color originalColor = target.getPixelColor(x, y);
+				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
+			}
+		return result;
+	}
 
 	public static Image createColoredImageFromGrayScaleImages(Image redChanel, Image greenChanel, Image blueChanel, Image alphaChanel)
 	{

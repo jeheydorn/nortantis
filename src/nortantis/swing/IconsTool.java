@@ -30,6 +30,7 @@ import javax.swing.border.LineBorder;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.IconDrawTask;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -898,20 +899,32 @@ public class IconsTool extends EditorTool
 				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
 				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+				FreeIcon updated = null;
 
 				if (isMoving)
 				{
 					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 					imageBounds = imageBounds.translate(deltaX, deltaY);
+					
+					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
+					updated = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
+							new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY));
+					
 				}
 				else if (isScaling)
 				{
 					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
 					imageBounds = imageBounds.scaleAboutCenter(scale);
+					
+					updated = iconToEdit.copyWithScale(iconToEdit.scale * scale);
 				}
 
-				mapEditingPanel.showIconEditToolsAt(imageBounds);
+				if (updated != null)
+				{
+					boolean isValidPosition = !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
+					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition);
+				}
 				mapEditingPanel.repaint();
 			}
 		}
@@ -955,7 +968,7 @@ public class IconsTool extends EditorTool
 			else if (isScaling)
 			{
 				double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
-				FreeIcon updatedIcon = iconToEdit.copyWithScale(scale);
+				FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * scale);
 				updated = updatedIcon;
 				mainWindow.edits.freeIcons.doWithLock(() ->
 				{
@@ -967,7 +980,15 @@ public class IconsTool extends EditorTool
 			{
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(iconToEdit, updated));
 				iconToEdit = updated;
-				mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, updated);
+				boolean isValidPosition = !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
+				if (isValidPosition)
+				{
+					mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, updated);
+				}
+				else
+				{
+					mapEditingPanel.clearIconEditTools();
+				}
 				isMoving = false;
 				isScaling = false;
 			}
