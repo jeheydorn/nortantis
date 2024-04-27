@@ -77,7 +77,7 @@ public class LandWaterTool extends EditorTool
 	private RowHider colorGeneratorSettingsHider;
 	private JPanel baseColorPanel;
 	private ActionListener brushActionListener;
-	private DrawAndEraseModeWidget modeWidget;
+	private DrawModeWidget modeWidget;
 	static String toolbarName = "Land and Water";
 	static String colorGeneratorSettingsName = "Color Generator Settings";
 
@@ -192,7 +192,7 @@ public class LandWaterTool extends EditorTool
 
 		// River options
 		{
-			modeWidget = new DrawAndEraseModeWidget("Draw rivers", "Erase rivers", false, "", false, "",
+			modeWidget = new DrawModeWidget("Draw rivers", "Erase rivers", false, "", false, "",
 					() -> brushActionListener.actionPerformed(null));
 			modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase rivers");
 

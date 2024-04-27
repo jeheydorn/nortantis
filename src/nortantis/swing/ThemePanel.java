@@ -141,8 +141,7 @@ public class ThemePanel extends JTabbedPane
 	private JButton grungeColorChooseButton;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
 	private JSlider treeHeightSlider;
-	private boolean enableTreeHeightSliderActionListener;
-	private boolean enableMountainScaleSliderActionListener;
+	private boolean enableSizeSliderListeners;
 	private JSlider mountainScaleSlider;
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
@@ -711,13 +710,14 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
 		SwingHelper.addListener(treeHeightSlider, () ->
 		{
-			if (enableTreeHeightSliderActionListener)
+			if (enableSizeSliderListeners)
 			{
+				unselectAnyIconBeingEdited();
 				triggerRebuildAllAnchoredTrees();
 				handleTerrainChange();
 			}
 		});
-		enableTreeHeightSliderActionListener = true;
+		enableSizeSliderListeners = true;
 		organizer.addLabelAndComponent("Tree height:",
 				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
 
@@ -729,8 +729,9 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(mountainScaleSlider);
 		SwingHelper.addListener(mountainScaleSlider, () ->
 		{
-			if (enableMountainScaleSliderActionListener)
+			if (enableSizeSliderListeners)
 			{
+				unselectAnyIconBeingEdited();
 				mainWindow.updater.dowWhenMapIsNotDrawing(() ->
 				{
 					repositionMountainsForNewScale();
@@ -738,7 +739,7 @@ public class ThemePanel extends JTabbedPane
 				});
 			}
 		});
-		enableMountainScaleSliderActionListener = true;
+		enableSizeSliderListeners = true;
 		organizer.addLabelAndComponent("Mountain size:", "Changes the size of all mountains on the map", mountainScaleSlider);
 
 		hillScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -747,7 +748,14 @@ public class ThemePanel extends JTabbedPane
 		hillScaleSlider.setPaintTicks(true);
 		hillScaleSlider.setPaintLabels(true);
 		SwingHelper.setSliderWidthForSidePanel(hillScaleSlider);
-		createMapChangeListenerForTerrainChange(hillScaleSlider);
+		SwingHelper.addListener(hillScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				handleTerrainChange();
+			}
+		});
 		organizer.addLabelAndComponent("Hill size:", "Changes the size of all hills on the map", hillScaleSlider);
 
 		duneScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -756,7 +764,14 @@ public class ThemePanel extends JTabbedPane
 		duneScaleSlider.setPaintTicks(true);
 		duneScaleSlider.setPaintLabels(true);
 		SwingHelper.setSliderWidthForSidePanel(duneScaleSlider);
-		createMapChangeListenerForTerrainChange(duneScaleSlider);
+		SwingHelper.addListener(duneScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				handleTerrainChange();
+			}
+		});
 		organizer.addLabelAndComponent("Dune size:", "Changes the size of all sand dunes on the map", duneScaleSlider);
 
 		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -765,12 +780,27 @@ public class ThemePanel extends JTabbedPane
 		cityScaleSlider.setPaintTicks(true);
 		cityScaleSlider.setPaintLabels(true);
 		SwingHelper.setSliderWidthForSidePanel(cityScaleSlider);
-		createMapChangeListenerForTerrainChange(cityScaleSlider);
+		SwingHelper.addListener(cityScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				handleTerrainChange();
+			}
+		});
 		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
 
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
+	}
+	
+	private void unselectAnyIconBeingEdited()
+	{
+		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null && mainWindow.toolsPanel.currentTool instanceof IconsTool)
+		{
+			((IconsTool)mainWindow.toolsPanel.currentTool).unselectAnyIconBeingEdited();
+		}
 	}
 
 	private void triggerRebuildAllAnchoredTrees()
@@ -1347,17 +1377,13 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
-		enableTreeHeightSliderActionListener = false;
+		enableSizeSliderListeners = false;
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
-		enableTreeHeightSliderActionListener = true;
-
-		enableMountainScaleSliderActionListener = false;
 		mountainScaleSlider.setValue(getSliderValueForScale(settings.mountainScale));
-		enableMountainScaleSliderActionListener = true;
-
 		hillScaleSlider.setValue(getSliderValueForScale(settings.hillScale));
 		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
 		cityScaleSlider.setValue(getSliderValueForScale(settings.cityScale));
+		enableSizeSliderListeners = true;
 
 		if (changeEffectsBackgroundImages)
 		{

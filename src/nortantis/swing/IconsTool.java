@@ -30,7 +30,6 @@ import javax.swing.border.LineBorder;
 
 import org.imgscalr.Scalr.Method;
 
-import nortantis.IconDrawTask;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -73,10 +72,9 @@ public class IconsTool extends EditorTool
 	private JSlider densitySlider;
 	private Random rand;
 	private RowHider densityHider;
-	private JRadioButton eraseAllButton;
+	private JRadioButton allButton;
 	private JRadioButton citiesButton;
-	private RowHider modeHider;
-	private DrawAndEraseModeWidget modeWidget;
+	private DrawModeWidget modeWidget;
 	private FreeIcon iconToEdit;
 	private java.awt.Point editStart;
 	private boolean isMoving;
@@ -185,10 +183,10 @@ public class IconsTool extends EditorTool
 				}
 			});
 
-			eraseAllButton = new JRadioButton("Erase All");
-			group.add(eraseAllButton);
-			radioButtons.add(eraseAllButton);
-			eraseAllButton.addActionListener(new ActionListener()
+			allButton = new JRadioButton("All");
+			group.add(allButton);
+			radioButtons.add(allButton);
+			allButton.addActionListener(new ActionListener()
 			{
 				@Override
 				public void actionPerformed(ActionEvent event)
@@ -197,13 +195,13 @@ public class IconsTool extends EditorTool
 				}
 			});
 
-			organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
+			organizer.addLabelAndComponentsVertical("Type:", "The type of icon to add/edit.", radioButtons);
 		}
 
-		modeWidget = new DrawAndEraseModeWidget("Draw using the selected brush", "Erase using the selected brush", true,
+		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true,
 				"Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons",
 				() -> handleModeChanged());
-		modeHider = modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
+		modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
 
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
@@ -272,8 +270,7 @@ public class IconsTool extends EditorTool
 
 	private void updateTypePanels()
 	{
-		modeHider.setVisible(mountainsButton.isSelected() || hillsButton.isSelected() || dunesButton.isSelected()
-				|| treesButton.isSelected() || citiesButton.isSelected());
+		modeWidget.showOrHideOptions(!allButton.isSelected(), true, !allButton.isSelected(), true);
 
 		mountainTypes.hider.setVisible(mountainsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		hillTypes.hider.setVisible(hillsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
@@ -283,6 +280,8 @@ public class IconsTool extends EditorTool
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
 		brushSizeHider.setVisible(
 				(modeWidget.isDrawMode() && !citiesButton.isSelected()) || modeWidget.isReplaceMode() || modeWidget.isEraseMode());
+		toolsPanel.revalidate();
+		toolsPanel.repaint();
 	}
 
 	private IconTypeButtons createOrUpdateRadioButtonsForIconType(GridBagOrganizer organizer, IconType iconType, IconTypeButtons existing,
@@ -656,11 +655,7 @@ public class IconsTool extends EditorTool
 	private void handleMousePressOrDrag(MouseEvent e, boolean isPress)
 	{
 		showOrHideBrush(e);
-		if (eraseAllButton.isSelected())
-		{
-			handleEraseIcons(e);
-		}
-		else if (modeWidget.isDrawMode())
+		if (modeWidget.isDrawMode())
 		{
 			handleDrawIcons(e);
 		}
@@ -827,7 +822,7 @@ public class IconsTool extends EditorTool
 
 	private void handleEraseIcons(MouseEvent e)
 	{
-		if (eraseAllButton.isSelected() || treesButton.isSelected())
+		if (allButton.isSelected() || treesButton.isSelected())
 		{
 			eraseTreesThatFailedToDrawDueToLowDensity(e);
 		}
@@ -906,17 +901,17 @@ public class IconsTool extends EditorTool
 					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 					imageBounds = imageBounds.translate(deltaX, deltaY);
-					
+
 					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
 					updated = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
 							new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY));
-					
+
 				}
 				else if (isScaling)
 				{
 					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
 					imageBounds = imageBounds.scaleAboutCenter(scale);
-					
+
 					updated = iconToEdit.copyWithScale(iconToEdit.scale * scale);
 				}
 
@@ -925,9 +920,9 @@ public class IconsTool extends EditorTool
 					boolean isValidPosition = !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
 					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition);
 				}
-				mapEditingPanel.repaint();
 			}
 		}
+		mapEditingPanel.repaint();
 
 	}
 
@@ -958,7 +953,7 @@ public class IconsTool extends EditorTool
 				double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 				Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
 				FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
-						new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY));
+						new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
 				updated = updatedIcon;
 				mainWindow.edits.freeIcons.doWithLock(() ->
 				{
@@ -978,6 +973,7 @@ public class IconsTool extends EditorTool
 
 			if (updated != null)
 			{
+				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(iconToEdit, updated));
 				iconToEdit = updated;
 				boolean isValidPosition = !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
@@ -992,7 +988,19 @@ public class IconsTool extends EditorTool
 				isMoving = false;
 				isScaling = false;
 			}
+			mapEditingPanel.repaint();
+		}
+	}
 
+	public void unselectAnyIconBeingEdited()
+	{
+		if (modeWidget.isEditMode() && iconToEdit != null)
+		{
+			iconToEdit = null;
+			isMoving = false;
+			isScaling = false;
+			mapEditingPanel.clearIconEditTools();
+			mapEditingPanel.repaint();
 		}
 	}
 
@@ -1038,13 +1046,16 @@ public class IconsTool extends EditorTool
 		{
 			handleFinishEditingIconIfNeeded(e);
 		}
-		undoer.setUndoPoint(UpdateType.Incremental, this);
+		else
+		{
+			undoer.setUndoPoint(UpdateType.Incremental, this);
+		}
 	}
 
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (!eraseAllButton.isSelected() && modeWidget.isDrawMode())
+		if (modeWidget.isDrawMode())
 		{
 			highlightHoverCenters(e);
 		}
@@ -1127,6 +1138,7 @@ public class IconsTool extends EditorTool
 	protected void onAfterUndoRedo()
 	{
 		mapEditingPanel.clearHighlightedCenters();
+		unselectAnyIconBeingEdited();
 		mapEditingPanel.repaint();
 	}
 
@@ -1136,6 +1148,25 @@ public class IconsTool extends EditorTool
 	}
 
 	protected List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
+	{
+		int brushDiameter = getBrushDiameter();
+
+		if (brushDiameter <= 1)
+		{
+			FreeIcon selected = getLowestSelectedIcon(pointFromMouse);
+			if (selected != null)
+			{
+				return Arrays.asList(selected);
+			}
+			return Collections.emptyList();
+		}
+		else
+		{
+			return getMultipleSelectedIcons(pointFromMouse);
+		}
+	}
+
+	private List<FreeIcon> getMultipleSelectedIcons(java.awt.Point pointFromMouse)
 	{
 		List<FreeIcon> selected = new ArrayList<>();
 		mainWindow.edits.freeIcons.doWithLock(() ->
@@ -1182,7 +1213,7 @@ public class IconsTool extends EditorTool
 
 	protected FreeIcon getLowestSelectedIcon(java.awt.Point pointFromMouse)
 	{
-		List<FreeIcon> underMouse = getSelectedIcons(pointFromMouse);
+		List<FreeIcon> underMouse = getMultipleSelectedIcons(pointFromMouse);
 		if (underMouse.isEmpty())
 		{
 			return null;
@@ -1241,7 +1272,7 @@ public class IconsTool extends EditorTool
 			return true;
 		}
 
-		if (eraseAllButton.isSelected())
+		if (allButton.isSelected())
 		{
 			return true;
 		}

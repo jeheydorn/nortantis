@@ -9,12 +9,14 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 
-public class DrawAndEraseModeWidget
+public class DrawModeWidget
 {
 	private JToggleButton drawModeButton;
 	private JToggleButton eraseModeButton;
@@ -22,8 +24,9 @@ public class DrawAndEraseModeWidget
 	private JToggleButton editModeButton;
 	private boolean includeReplaceButton;
 	private boolean includeEditModeButton;
+	private JPanel container;
 
-	public DrawAndEraseModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut,
+	public DrawModeWidget(String drawTooltipWithoutKeyboardShortcut, String eraseTooltipWithoutKeyboardShortcut,
 			boolean includeReplaceButton, String replaceTooltipWithoutKeyboardShortcut, boolean includeEditModeButton,
 			String editTooltipWithoutKeyboardShortcut, Runnable changeListener)
 	{
@@ -89,13 +92,13 @@ public class DrawAndEraseModeWidget
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
 		drawModeButton.setMnemonic(KeyEvent.VK_D);
-		drawModeButton.setPreferredSize(new Dimension(50, drawModeButton.getPreferredSize().height));
+		drawModeButton.setPreferredSize(new Dimension(51, drawModeButton.getPreferredSize().height));
 
 		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
 		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
 		eraseModeButton.addActionListener(modeListener);
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		eraseModeButton.setPreferredSize(new Dimension(50, eraseModeButton.getPreferredSize().height));
+		eraseModeButton.setPreferredSize(new Dimension(51, eraseModeButton.getPreferredSize().height));
 
 		replaceModeButton = new JToggleButton("<html><u>R</u>eplace</html>");
 		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
@@ -103,31 +106,64 @@ public class DrawAndEraseModeWidget
 		replaceModeButton.setMnemonic(KeyEvent.VK_R);
 		replaceModeButton.setPreferredSize(new Dimension(65, replaceModeButton.getPreferredSize().height));
 
-		editModeButton = new JToggleButton("<html>Ed<u>i</u>t</html>");
-		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (Alt+I)");
+		editModeButton = new JToggleButton("<html>Edi<u>t</u></html>");
+		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (Alt+T)");
 		editModeButton.addActionListener(modeListener);
-		editModeButton.setMnemonic(KeyEvent.VK_I);
-		editModeButton.setPreferredSize(new Dimension(65, editModeButton.getPreferredSize().height));
+		editModeButton.setMnemonic(KeyEvent.VK_T);
+		editModeButton.setPreferredSize(new Dimension(51, editModeButton.getPreferredSize().height));
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
 	{
-		JPanel holder = new JPanel();
-		holder.setLayout(new WrapLayout(WrapLayout.LEFT));
+		container = new JPanel();
+		container.setLayout(new WrapLayout(WrapLayout.LEFT));
 		// Remove the horizontal and vertical gaps from the border around the elements.
-		holder.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
-		holder.add(drawModeButton);
-		holder.add(eraseModeButton);
-		if (includeReplaceButton)
+		container.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
+		addOptionsToContainer(true, true, includeReplaceButton, includeEditModeButton);
+
+		return organizer.addLabelAndComponent("Mode:", labelTooltip, container);
+	}
+
+	private void addOptionsToContainer(boolean showDrawMode, boolean showEraseMode, boolean showReplaceMode, boolean showEditMode)
+	{
+		List<JToggleButton> visibleButtons = new ArrayList<>();
+
+		if (showDrawMode)
 		{
-			holder.add(replaceModeButton);
+			visibleButtons.add(drawModeButton);
 		}
-		if (includeEditModeButton)
+		if (showEraseMode)
 		{
-			holder.add(editModeButton);
+			visibleButtons.add(eraseModeButton);
+		}
+		if (showReplaceMode)
+		{
+			visibleButtons.add(replaceModeButton);
+		}
+		if (showEditMode)
+		{
+			visibleButtons.add(editModeButton);
 		}
 
-		return organizer.addLabelAndComponent("Mode:", labelTooltip, holder);
+		for (JToggleButton button : visibleButtons)
+		{
+			container.add(button);
+		}
+
+		if (visibleButtons.size() > 0)
+		{
+			Optional<JToggleButton> optional = visibleButtons.stream().filter((button) -> button.isSelected()).findFirst();
+			if (!optional.isPresent())
+			{
+				visibleButtons.get(0).doClick();
+			}
+		}
+	}
+
+	public void showOrHideOptions(boolean showDrawMode, boolean showEraseMode, boolean showReplaceMode, boolean showEditMode)
+	{
+		container.removeAll();
+		addOptionsToContainer(showDrawMode, showEraseMode, showReplaceMode, showEditMode);
 	}
 
 	public boolean isDrawMode()

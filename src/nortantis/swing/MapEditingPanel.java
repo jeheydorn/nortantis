@@ -21,6 +21,7 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.IconDrawer;
 import nortantis.MapText;
+import nortantis.Stopwatch;
 import nortantis.WorldGraph;
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntRectangle;
@@ -376,7 +377,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 				g.setRenderingHints(hints);
 			}
 		}
-
 
 		// Place the image for the scale tool.
 		{
