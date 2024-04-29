@@ -120,6 +120,7 @@ public class MapCreator implements WarningLogger
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
 		double effectsPadding = calcEffectsPadding(settings);
+		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 
 		final int paddingToAccountForIntegerTruncation = 4;
 		IntRectangle bounds = null;
@@ -130,8 +131,8 @@ public class MapCreator implements WarningLogger
 				continue;
 			}
 			Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
-			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer,
-					Collections.emptySet());
+			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), this);
+			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer);
 			if (bounds == null)
 			{
 				bounds = updateBounds;
@@ -198,15 +199,6 @@ public class MapCreator implements WarningLogger
 
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
-		// Expand snippetToReplaceBounds to include all icons the centers in
-		// centersChanged drew the last time they were drawn.
-		{
-			Rectangle iconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsAnchoredToCenters(centersChanged);
-			if (iconBounds != null)
-			{
-				replaceBounds = replaceBounds.add(iconBounds);
-			}
-		}
 
 		applyRegionEdits(mapParts.graph, settings.edits);
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
@@ -233,38 +225,6 @@ public class MapCreator implements WarningLogger
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
-		// The reason I'm using centersInBounds below instead of centersChanged is a bit complicated, but I'll try to explain it.
-		// Imagine this case:
-		// 1) In the land water tool, you click the mouse down to make a polygon ocean.
-		// 2) When the mouse clicks down, the tool changes the polygon to ocean and kicks off a background job to redraw the map.
-		// 3) The mouse clicks up, causing the land water tool to set an undo point.
-		// 4) The background job to redraw the map finishes, which causes a city next to the polygon to disappear because it now
-		// overlaps ocean in a way to is disallowed.
-		// 5) Now you undo that change. The city image fails to come back. Refreshing the entire map will cause it to reappear.
-		// The reason this is happening is because the undo point was set before the drawing code removed the image, so the
-		// edits both before and after the undo point still have the city image. Thus the polygon with that city, which was changed,
-		// would not be included in centersChanged. But since MapParts.iconDrawer does have the change, the city image won't draw.
-		//
-		//
-		// My somewhat hacky solution is to expand the icons to update and redraw to those in the current version of replace bounds.
-		// This is unfortunately not guaranteed to work and has a small performance hit, but it's the best solution I've thought of.
-		//
-		// I made a fix in Undoer.undo to always use the latest settings, which makes the above scenario very unlikely, but it can still
-		// happen if you really mash the undo button while drawing ocean, so I'm leaving this hack here for now.
-		final Rectangle replaceBoundsFinal = replaceBounds;
-		Set<Center> centersInReplaceBounds = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(replaceBoundsFinal),
-				centersChanged.iterator().next());
-
-		// Now that we've updated icons to draw in centersInBounds, check if we
-		// need to expand replaceBounds to include those icons.
-		{
-			Rectangle updatedIconBounds = mapParts.iconDrawer.getBoundingBoxOfIconsAnchoredToCenters(centersChanged);
-			if (updatedIconBounds != null)
-			{
-				replaceBounds = replaceBounds.add(updatedIconBounds);
-			}
-		}
-
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
 
@@ -278,17 +238,19 @@ public class MapCreator implements WarningLogger
 			replaceBounds = replaceBounds.add(textChangeBounds);
 		}
 		
+		
+		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
+		Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, this);
+		replaceBounds = Rectangle.add(replaceBounds, iconChangeBounds);
+		
 		replaceBounds = replaceBounds.floor();
 
-		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, centersInReplaceBounds);
+		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer);
 	}
 
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds,
-			double effectsPadding, TextDrawer textDrawer, Set<Center> centersToConvertIconsFor)
+			double effectsPadding, TextDrawer textDrawer)
 	{
-		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
-		mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersToConvertIconsFor, this);
-
 		// The bounds of the snippet to draw. This is larger than the snippet to
 		// replace because ocean/land effects expand beyond the edges
 		// that draw them, and we need those to be included in the snippet to

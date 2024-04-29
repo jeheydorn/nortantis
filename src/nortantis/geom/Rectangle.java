@@ -109,6 +109,22 @@ public class Rectangle
 
 		return false;
 	}
+	
+	public static Rectangle add(Rectangle r1, Rectangle r2)
+	{
+		if (r1 == null)
+		{
+			return r2;
+		}
+		else if (r2 == null)
+		{
+			return r1;
+		}
+		else
+		{
+			return r1.add(r2);
+		}
+	}
 
 	public Rectangle add(Point point)
 	{

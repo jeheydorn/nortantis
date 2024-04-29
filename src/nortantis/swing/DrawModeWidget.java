@@ -1,19 +1,15 @@
 package nortantis.swing;
 
-import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JToggleButton;
 
 public class DrawModeWidget

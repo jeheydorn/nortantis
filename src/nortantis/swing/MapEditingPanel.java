@@ -21,10 +21,8 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.IconDrawer;
 import nortantis.MapText;
-import nortantis.Stopwatch;
 import nortantis.WorldGraph;
 import nortantis.editor.FreeIcon;
-import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;

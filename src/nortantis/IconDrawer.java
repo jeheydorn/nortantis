@@ -216,12 +216,18 @@ public class IconDrawer
 
 	}
 
-	private void convertToFreeIconsIfNeeded(Collection<Center> centersToConvert, MapEdits edits, WarningLogger warningLogger)
+	private Rectangle convertToFreeIconsIfNeeded(Collection<Center> centersToConvert, MapEdits edits, WarningLogger warningLogger)
 	{
+		if (centersToConvert.isEmpty())
+		{
+			return null;
+		}
+
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.hills);
 		ListMap<String, ImageAndMasks> duneImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand);
+		Rectangle changeBounds = null;
 
 		for (Center center : centersToConvert)
 		{
@@ -230,15 +236,18 @@ public class IconDrawer
 			{
 				if (cEdit.icon.iconType == CenterIconType.Mountain)
 				{
-					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger);
+					changeBounds = Rectangle.add(changeBounds,
+							convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, mountainImagesById, warningLogger));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Hill)
 				{
-					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger);
+					changeBounds = Rectangle.add(changeBounds,
+							convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, hillImagesById, warningLogger));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.Dune)
 				{
-					convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger);
+					changeBounds = Rectangle.add(changeBounds,
+							convertWidthBasedShuffledAnchoredIcon(edits, center, cEdit, duneImages, warningLogger));
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
@@ -252,10 +261,13 @@ public class IconDrawer
 
 						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, centerIconTypeToIconType(cEdit.icon.iconType),
 								groupId, name, cEdit.index);
-
-						if (!isContentBottomTouchingWater(icon))
+						IconDrawTask drawTask = toIconDrawTask(icon);
+						
+						if (!isContentBottomTouchingWater(drawTask))
 						{
+							changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 							freeIcons.addOrReplace(icon);
+							changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
 						}
 
 						edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -269,7 +281,8 @@ public class IconDrawer
 			}
 		}
 
-		convertTreesFromEditsToFreeIcons(centersToConvert, edits, warningLogger);
+		changeBounds = Rectangle.add(changeBounds, convertTreesFromEditsToFreeIcons(centersToConvert, edits, warningLogger));
+		return changeBounds;
 	}
 
 	private double getShuffledIconWidthBeforeTypeLevelScaling(Center center, IconType type)
@@ -307,12 +320,12 @@ public class IconDrawer
 	}
 
 
-	private void convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
+	private Rectangle convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
 			ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger)
 	{
 		if (cEdit.icon == null)
 		{
-			return;
+			return null;
 		}
 
 		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString().toLowerCase(), iconsByGroup,
@@ -320,7 +333,8 @@ public class IconDrawer
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
 			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
-			return;
+			// There is no change bounds to return because this icon was never drawn.
+			return null;
 		}
 
 		IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
@@ -336,16 +350,56 @@ public class IconDrawer
 		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, type);
 		double scale = scaledWidth / getBaseWidthOrHeight(type, 0);
 		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, groupId, cEdit.icon.iconIndex, cEdit.index);
-		if (!isContentBottomTouchingWater(icon))
+		Rectangle changeBounds = null;
+		IconDrawTask drawTask = toIconDrawTask(icon);
+		if (!isContentBottomTouchingWater(drawTask))
 		{
+			changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 			freeIcons.addOrReplace(icon);
+			changeBounds = Rectangle.add(changeBounds, drawTask.createBounds()); 
 		}
 		else if (freeIcons.getNonTree(center.index) != null)
 		{
+			changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 			freeIcons.remove(freeIcons.getNonTree(center.index));
 		}
 
 		edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
+
+		return changeBounds;
+	}
+
+	private Rectangle getAnchoredNonTreeIconBoundsAt(int centerIndex)
+	{
+		Rectangle changeBounds = null;
+		FreeIcon icon = freeIcons.getNonTree(centerIndex);
+		if (icon != null)
+		{
+			changeBounds = Rectangle.add(changeBounds, toIconDrawTask(icon).createBounds());
+		}
+		return changeBounds;
+	}
+
+	private Rectangle getAnchoredTreeIconBoundsAt(int centerIndex)
+	{
+		Rectangle changeBounds = null;
+		List<FreeIcon> icons = freeIcons.getTrees(centerIndex);
+		for (FreeIcon tree : icons)
+		{
+			changeBounds = Rectangle.add(changeBounds, toIconDrawTask(tree).createBounds());
+		}
+		return changeBounds;
+	}
+	
+	private Rectangle getAnchoredIconBoundsAt(int centerIndex)
+	{
+		Rectangle changeBounds = null;
+		List<FreeIcon> icons = freeIcons.getAnchoredIcons(centerIndex);
+		for (FreeIcon icon : icons)
+		{
+			changeBounds = Rectangle.add(changeBounds, toIconDrawTask(icon).createBounds());
+		}
+		return changeBounds;
 	}
 
 	public Point getAnchoredMountainDrawPoint(Center center, String groupId, IconType type, int iconIndex, double mountainScale,
@@ -357,28 +411,38 @@ public class IconDrawer
 	}
 
 	/**
-	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. The actual drawing of the icons is
-	 * done later.
+	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. Also handles Replacing the image
+	 * for icons whose image does not exist, and removing icons that should not be drawn because their bottom would touch water. The actual
+	 * drawing of the icons is done later.
+	 * 
+	 * @return The bounds of icons that changed, if any.
 	 */
-	public void addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor, WarningLogger warningLogger)
+	public Rectangle addOrUpdateIconsFromEdits(MapEdits edits, Collection<Center> centersToUpdateIconsFor, WarningLogger warningLogger)
 	{
 		assert freeIcons == edits.freeIcons;
 
-		freeIcons.doWithLock(() ->
+		return freeIcons.doWithLockAndReturnResult(() ->
 		{
-			convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
-			createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+			Rectangle conversionBoundsOfIconsChanged = convertToFreeIconsIfNeeded(centersToUpdateIconsFor, edits, warningLogger);
+			Rectangle removedOrReplacedChangeBounds = createDrawTasksForFreeIconsAndRemovedFailedIcons(warningLogger);
+			return Rectangle.add(conversionBoundsOfIconsChanged, removedOrReplacedChangeBounds);
 		});
 	}
 
-	private void createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger)
+	private Rectangle createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger)
 	{
+		// Check the performance of this method since it re-creates all icon draw tasks for each incremental update, although I might not
+		// have a better option.
+
 		iconsToDraw.clear();
 
 		// In theory it should be safe to just remove free icons as I iterate over the collection, but I'm leary of it because there are
 		// multiple underlying iterators involved in looping over the collection, so I'm doing it afterward.
 		List<FreeIcon> toRemove = new ArrayList<>();
 
+		// Note: There's no need to update removeBounds in this loop for cases that replace an icon because removeBounds it is only needed
+		// for incremental draws, and code for changing an icon because the previous icon did not exist will only be triggered during an
+		// image refresh or an initial full draw, which are both full draws.
 		for (FreeIcon icon : freeIcons)
 		{
 			if (icon == null)
@@ -427,7 +491,14 @@ public class IconDrawer
 			}
 		}
 
+		Rectangle removeBounds = null;
+		for (FreeIcon icon : toRemove)
+		{
+			removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
+		}
 		freeIcons.removeAll(toRemove);
+		
+		return removeBounds;
 	}
 
 	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, WarningLogger warningLogger)
@@ -1196,11 +1267,11 @@ public class IconDrawer
 	}
 
 
-	private void convertTreesFromEditsToFreeIcons(Collection<Center> centersToConvert, MapEdits edits, WarningLogger warningLogger)
+	private Rectangle convertTreesFromEditsToFreeIcons(Collection<Center> centersToConvert, MapEdits edits, WarningLogger warningLogger)
 	{
 		if (edits.centerEdits.isEmpty())
 		{
-			return;
+			return null;
 		}
 
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
@@ -1212,7 +1283,7 @@ public class IconDrawer
 			}
 		}
 
-		convertTreesToFreeIcons(treesByCenter, warningLogger);
+		Rectangle changeBounds = convertTreesToFreeIcons(treesByCenter, warningLogger);
 
 		for (int index : treesByCenter.keySet())
 		{
@@ -1229,17 +1300,21 @@ public class IconDrawer
 				}
 			}
 		}
+
+		return changeBounds;
 	}
 
-	private void convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
+	private Rectangle convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
 	{
 		// Load the images and masks.
 		ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees);
 		if (treesById == null || treesById.isEmpty())
 		{
 			Logger.println("Trees will not be drawn because no tree images were found.");
-			return;
+			return null;
 		}
+
+		Rectangle changeBounds = null;
 
 		for (Entry<Integer, CenterTrees> entry : treesByCenter.entrySet())
 		{
@@ -1255,9 +1330,10 @@ public class IconDrawer
 
 				CenterTrees toUse = cTrees.copyWithTreeType(groupId);
 				Center c = graph.centers.get(entry.getKey());
-				drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet());
+				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet()));
 			}
 		}
+		return changeBounds;
 	}
 
 	private double calcTreeDensityScale()
@@ -1275,9 +1351,10 @@ public class IconDrawer
 
 	}
 
-	private void drawTreesAtCenterAndCorners(WorldGraph graph, Center center, CenterTrees cTrees,
+	private Rectangle drawTreesAtCenterAndCorners(WorldGraph graph, Center center, CenterTrees cTrees,
 			Set<Integer> additionalCentersThatWillHaveTrees)
 	{
+		Rectangle changeBounds = getAnchoredTreeIconBoundsAt(center.index);
 		freeIcons.clearTrees(center.index);
 
 		List<ImageAndMasks> unscaledImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees)
@@ -1295,6 +1372,9 @@ public class IconDrawer
 				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
 			}
 		}
+		
+		changeBounds = Rectangle.add(changeBounds, getAnchoredTreeIconBoundsAt(center.index));
+		return changeBounds;
 	}
 
 	/**
@@ -1451,70 +1531,5 @@ public class IconDrawer
 		}
 
 		return false;
-	}
-
-	/**
-	 * Creates a bounding box that includes all icons drawn for a center the last time icons were drawn for it.
-	 * 
-	 * @param center
-	 *            Center to get icons bounds for.
-	 * @return A rectangle if center had icons drawn. Null otherwise.
-	 */
-	private Rectangle getBoundingBoxOfIconsAnchoredToCenter(Center center)
-	{
-		if (!freeIcons.hasAnchoredIcons(center.index))
-		{
-			return null;
-		}
-
-		Rectangle bounds = null;
-		for (FreeIcon icon : freeIcons.getAnchoredIcons(center.index))
-		{
-			if (icon == null)
-			{
-				continue;
-			}
-
-			IconDrawTask task = toIconDrawTask(icon);
-			Rectangle iconBounds = task.createBounds();
-			if (bounds == null)
-			{
-				bounds = iconBounds;
-			}
-			else
-			{
-				bounds = bounds.add(iconBounds);
-			}
-		}
-
-		return bounds;
-	}
-
-	/**
-	 * Creates a bounding box that includes all icons drawn for a collection of centers from the last time icons were drawn.
-	 * 
-	 * @param centers
-	 *            A collection of centers to get icons bounds for.
-	 * @return A rectangle if any of the centers had icons drawn. Null otherwise.
-	 */
-	public Rectangle getBoundingBoxOfIconsAnchoredToCenters(Collection<Center> centers)
-	{
-		Rectangle bounds = null;
-		for (Center center : centers)
-		{
-			if (bounds == null)
-			{
-				bounds = getBoundingBoxOfIconsAnchoredToCenter(center);
-			}
-			else
-			{
-				Rectangle b = getBoundingBoxOfIconsAnchoredToCenter(center);
-				if (b != null)
-				{
-					bounds = bounds.add(b);
-				}
-			}
-		}
-		return bounds;
 	}
 }
