@@ -109,7 +109,7 @@ public class Center
 		return width;
 	}
 
-	public double findHight()
+	public double findHeight()
 	{
 		double minY = Double.POSITIVE_INFINITY;
 		double maxY = Double.NEGATIVE_INFINITY;

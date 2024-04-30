@@ -77,6 +77,9 @@ public class NewSettingsDialog extends JDialog
 		else
 		{
 			settings = settingsToKeepThemeFrom.deepCopy();
+			// Clear out export paths so that creating a new map was the same theme doesn't overwrite exported files from the previous map.
+			settings.imageExportPath = null;
+			settings.heightmapExportPath = null;
 			randomizeLand();
 		}
 		loadSettingsIntoGUI(settings);

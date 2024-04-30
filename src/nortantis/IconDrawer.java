@@ -262,7 +262,7 @@ public class IconDrawer
 						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, centerIconTypeToIconType(cEdit.icon.iconType),
 								groupId, name, cEdit.index);
 						IconDrawTask drawTask = toIconDrawTask(icon);
-						
+
 						if (!isContentBottomTouchingWater(drawTask))
 						{
 							changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
@@ -341,7 +341,7 @@ public class IconDrawer
 		Point loc;
 		if (type == IconType.mountains)
 		{
-			loc = getAnchoredMountainDrawPoint(center, groupId, type, cEdit.icon.iconIndex, mountainScale, iconsByGroup);
+			loc = getAnchoredMountainDrawPoint(center, groupId, cEdit.icon.iconIndex, mountainScale, iconsByGroup);
 		}
 		else
 		{
@@ -356,7 +356,7 @@ public class IconDrawer
 		{
 			changeBounds = Rectangle.add(changeBounds, getAnchoredNonTreeIconBoundsAt(center.index));
 			freeIcons.addOrReplace(icon);
-			changeBounds = Rectangle.add(changeBounds, drawTask.createBounds()); 
+			changeBounds = Rectangle.add(changeBounds, drawTask.createBounds());
 		}
 		else if (freeIcons.getNonTree(center.index) != null)
 		{
@@ -390,24 +390,39 @@ public class IconDrawer
 		}
 		return changeBounds;
 	}
-	
-	private Rectangle getAnchoredIconBoundsAt(int centerIndex)
-	{
-		Rectangle changeBounds = null;
-		List<FreeIcon> icons = freeIcons.getAnchoredIcons(centerIndex);
-		for (FreeIcon icon : icons)
-		{
-			changeBounds = Rectangle.add(changeBounds, toIconDrawTask(icon).createBounds());
-		}
-		return changeBounds;
-	}
 
-	public Point getAnchoredMountainDrawPoint(Center center, String groupId, IconType type, int iconIndex, double mountainScale,
+	public Point getAnchoredMountainDrawPoint(Center center, String groupId, int iconIndex, double mountainScale,
 			ListMap<String, ImageAndMasks> iconsByGroup)
 	{
 		ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(iconIndex % iconsByGroup.get(groupId).size());
-		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, type);
+		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, IconType.mountains);
 		return getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth * mountainScale, center);
+	}
+
+	private Point getImageCenterToDrawImageNearBottomOfCenter(Image image, double scaledWidth, Center c)
+	{
+		double scaledHeight = getDimensionsWhenScaledByWidth(image.size(), scaledWidth).height;
+		Corner bottom = c.findBottom();
+		if (bottom == null)
+		{
+			// The center has no corners. This should not happen.
+			return c.loc;
+		}
+		return new Point(c.loc.x,
+				bottom.loc.y - (scaledHeight / 2) - getOffsetFromCenterBottomToPutBottomOfMountainImageAt(c.findHeight()));
+	}
+
+	private double getOffsetFromCenterBottomToPutBottomOfMountainImageAt(double centerHeight)
+	{
+		return centerHeight / 4.0;
+	}
+
+	public double getUnanchoredMountainYChangeFromMountainScaleChange(FreeIcon icon, double newMountainScale)
+	{
+		double prevScaledHeight = toIconDrawTask(icon).createBounds().height;
+		double newScaledHeight = toIconDrawTask(icon, newMountainScale).createBounds().height;
+		double offsetFromBottom = getOffsetFromCenterBottomToPutBottomOfMountainImageAt(meanPolygonWidth);
+		return (prevScaledHeight/2.0 - offsetFromBottom) - (newScaledHeight/2.0 - offsetFromBottom);
 	}
 
 	/**
@@ -497,7 +512,7 @@ public class IconDrawer
 			removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
 		}
 		freeIcons.removeAll(toRemove);
-		
+
 		return removeBounds;
 	}
 
@@ -1044,7 +1059,7 @@ public class IconDrawer
 
 					double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
 					double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
-					Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, IconType.mountains, i, mountainScale, mountainImagesById);
+					Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i, c.index);
 
@@ -1089,18 +1104,6 @@ public class IconDrawer
 				}
 			}
 		}
-	}
-
-	private Point getImageCenterToDrawImageNearBottomOfCenter(Image image, double scaledWidth, Center c)
-	{
-		double scaledHeight = getDimensionsWhenScaledByWidth(image.size(), scaledWidth).height;
-		Corner bottom = c.findBottom();
-		if (bottom == null)
-		{
-			// The center has no corners. This should not happen.
-			return c.loc;
-		}
-		return new Point(c.loc.x, bottom.loc.y - (scaledHeight / 2) - (c.findHight() / 4));
 	}
 
 	private double findNewMountainWidthBeforeTypeLevelScaling(Center c)
@@ -1372,7 +1375,7 @@ public class IconDrawer
 				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
 			}
 		}
-		
+
 		changeBounds = Rectangle.add(changeBounds, getAnchoredTreeIconBoundsAt(center.index));
 		return changeBounds;
 	}
@@ -1465,6 +1468,11 @@ public class IconDrawer
 
 	public IconDrawTask toIconDrawTask(FreeIcon icon)
 	{
+		return toIconDrawTask(icon, getTypeLevelScale(icon.type));
+	}
+
+	private IconDrawTask toIconDrawTask(FreeIcon icon, double typeLevelScale)
+	{
 		double widthFromFileName = 0;
 		if (icon.type == IconType.cities)
 		{
@@ -1473,9 +1481,9 @@ public class IconDrawer
 			widthFromFileName = cityImages.get(icon.iconName).getSecond();
 		}
 
-		return icon.toIconDrawTask(imagesPath, resolutionScale, getTypeLevelScale(icon.type),
-				getBaseWidthOrHeight(icon.type, widthFromFileName));
+		return icon.toIconDrawTask(imagesPath, resolutionScale, typeLevelScale, getBaseWidthOrHeight(icon.type, widthFromFileName));
 	}
+
 
 	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)
 	{

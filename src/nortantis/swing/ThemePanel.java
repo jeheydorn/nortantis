@@ -897,14 +897,24 @@ public class ThemePanel extends JTabbedPane
 						assert false;
 						continue;
 					}
-					Point loc = iconDrawer.getAnchoredMountainDrawPoint(graph.centers.get(icon.centerIndex), icon.groupId, icon.type,
-							icon.iconIndex, mountainScale, iconsByGroup);
+					Point loc = iconDrawer.getAnchoredMountainDrawPoint(graph.centers.get(icon.centerIndex), icon.groupId, icon.iconIndex,
+							mountainScale, iconsByGroup);
 					freeIcons.addOrReplace(icon.copyWithLocation(resolution, loc));
 				}
 			}
 
-			// TODO Do the same for non-anchored mountains. I should be able to calculate the new location using the icons scale, since
-			// unanchoring a mountain should take the part of the scale coming from the center's size and apply it to the icon's scale.
+			// Do something similar for non-anchored mountains. In this case, we don't have the center the mountain was originally drawn on,
+			// so we use the average center height to calculate approximately what the why offset of the image would have been.
+			for (FreeIcon icon : freeIcons.iterateNonAnchoredIcons())
+			{
+				if (icon.type == IconType.mountains)
+				{
+					double yChange = mainWindow.updater.mapParts.iconDrawer.getUnanchoredMountainYChangeFromMountainScaleChange(icon, mountainScale);
+					Point scaledLocation = icon.getScaledLocation(resolution);
+					FreeIcon updated = icon.copyWithLocation(resolution, new Point(scaledLocation.x, scaledLocation.y + yChange));
+					freeIcons.replace(icon, updated);
+				}
+			}
 		});
 	}
 
