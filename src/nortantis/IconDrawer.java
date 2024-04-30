@@ -419,10 +419,13 @@ public class IconDrawer
 
 	public double getUnanchoredMountainYChangeFromMountainScaleChange(FreeIcon icon, double newMountainScale)
 	{
-		double prevScaledHeight = toIconDrawTask(icon).createBounds().height;
-		double newScaledHeight = toIconDrawTask(icon, newMountainScale).createBounds().height;
+		Image image =  toIconDrawTask(icon).unScaledImageAndMasks.image;
+		// I'm excluding icon level scaling in this calculation because icon level scaling is done about the icon's center even for mountains,
+		// so it doesn't affect the Y offset for mountains.
+		double prevScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidthOrHeight(IconType.mountains, 0) * mountainScale).height;
+		double newScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidthOrHeight(IconType.mountains, 0) * newMountainScale).height;
 		double offsetFromBottom = getOffsetFromCenterBottomToPutBottomOfMountainImageAt(meanPolygonWidth);
-		return (prevScaledHeight/2.0 - offsetFromBottom) - (newScaledHeight/2.0 - offsetFromBottom);
+		return (prevScaledHeightWithoutIconScale/2.0 - offsetFromBottom) - (newScaledHeightWithoutIconScale/2.0 - offsetFromBottom);
 	}
 
 	/**
