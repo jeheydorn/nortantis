@@ -26,6 +26,8 @@ public class DebugFlags
 	 */
 	private static boolean printCenterIndexes = false;
 	
+	private static boolean printIconBeingEdited = true;
+	
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 	
 	private static int[] indexesOfCentersToHighlight = new int[] {};
@@ -63,6 +65,11 @@ public class DebugFlags
 	public static boolean shouldWriteBeforeAndAfterJsonWhenSavePromptShows()
 	{
 		return !AssetsPath.isInstalled && writeBeforeAndAfterJsonWhenSavePromptShows;
+	}
+	
+	public static boolean printIconBeingEdited()
+	{
+		return !AssetsPath.isInstalled && printIconBeingEdited;
 	}
 	
 }

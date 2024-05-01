@@ -30,6 +30,7 @@ import javax.swing.border.LineBorder;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.DebugFlags;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -877,6 +878,10 @@ public class IconsTool extends EditorTool
 				if (iconToEdit != null)
 				{
 					mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, iconToEdit);
+					if (DebugFlags.printIconBeingEdited())
+					{
+						System.out.println("Selected icon for editing: " + iconToEdit);
+					}
 				}
 				else
 				{

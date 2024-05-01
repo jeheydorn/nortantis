@@ -54,7 +54,7 @@ public class IconDrawer
 	private final int maxGapBetweenBiomeGroups = 2;
 	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be added to it when creating a new
 	// map.
-	final double maxMeansToDrawGeneratedMountainOrHill = 5.0;
+	final double maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill = 5.0;
 	final double maxSizeToDrawGeneratedMountainOrHill;
 	private final double mountainScale;
 	private final double hillScale;
@@ -107,9 +107,9 @@ public class IconDrawer
 
 		treeHeightScale = settings.treeHeightScale;
 		treeDensityScale = calcTreeDensityScale();
-		maxSizeToDrawGeneratedMountainOrHill = meanPolygonWidth * maxMeansToDrawGeneratedMountainOrHill;
 
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
+		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors * maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
 	}
 
 
@@ -117,7 +117,7 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation > mountainElevationThreshold && !c.isBorder && c.findWidth() < maxSizeToDrawGeneratedMountainOrHill)
+			if (c.elevation > mountainElevationThreshold && !c.isBorder && graph.findCenterWidthBetweenNeighbors(c) < maxSizeToDrawGeneratedMountainOrHill)
 			{
 				c.isMountain = true;
 			}
@@ -129,7 +129,7 @@ public class IconDrawer
 		for (Center c : graph.centers)
 		{
 			if (c.elevation < mountainElevationThreshold && c.elevation > hillElevationThreshold
-					&& c.findWidth() < maxSizeToDrawGeneratedMountainOrHill)
+					&& graph.findCenterWidthBetweenNeighbors(c) < maxSizeToDrawGeneratedMountainOrHill)
 
 			{
 				c.isHill = true;
