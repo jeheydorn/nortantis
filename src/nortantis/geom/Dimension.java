@@ -17,6 +17,11 @@ public class Dimension implements Comparable<Dimension>
 		return new IntDimension((int)width, (int)height);
 	}
 
+	public IntDimension roundToIntDimension()
+	{
+		return new IntDimension((int)Math.round(width), (int)Math.round(height));
+	}
+
 	@Override
 	public String toString()
 	{

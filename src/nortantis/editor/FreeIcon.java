@@ -168,8 +168,8 @@ public class FreeIcon
 			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), typeLevelScale * scale * baseHeight)
-					.toIntDimension();
+					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseHeight))
+					.roundToIntDimension();
 			  return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
 	}
@@ -182,7 +182,7 @@ public class FreeIcon
 					.getIconsWithWidths(IconType.cities, groupId);
 			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName).getFirst();
 			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).toIntDimension();
+					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth)).toIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName);
 		}
 		else
@@ -190,7 +190,7 @@ public class FreeIcon
 			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).toIntDimension();
+					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).roundToIntDimension();
 			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
 		}
 	}

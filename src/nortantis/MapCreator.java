@@ -581,7 +581,7 @@ public class MapCreator implements WarningLogger
 
 		textDrawer.setMapTexts(settings.edits.text);
 
-		if (settings.edits.text.size() > 0)
+		if (settings.edits.isInitialized())
 		{
 			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
 		}
