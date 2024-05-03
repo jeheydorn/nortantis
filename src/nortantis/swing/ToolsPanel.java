@@ -23,7 +23,9 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
 import nortantis.MapSettings;
+import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.UserPreferences;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
@@ -35,7 +37,7 @@ public class ToolsPanel extends JPanel
 	private JPanel currentToolOptionsPanel;
 	JComboBox<String> zoomComboBox;
 	List<String> zoomLevels;
-	JComboBox<String> displayQualityComboBox;
+	JComboBox<DisplayQuality> displayQualityComboBox;
 	List<String> displayQualityLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
@@ -128,7 +130,7 @@ public class ToolsPanel extends JPanel
 
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
-		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels,"
+		lblZoom.setToolTipText("Zoom the map in or out (mouse wheel). To view more details at higher zoom levels,"
 				+ " adjust the 'Display quality'.");
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
@@ -161,15 +163,16 @@ public class ToolsPanel extends JPanel
 		bottomPanel.add(lblDisplayQuality);
 		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 
-		// TODO Make display quality an enum.
-		final String defaultDisplayQuality = "Low";
-		displayQualityLevels = Arrays.asList(new String[] { "Very Low", defaultDisplayQuality, "Medium", "High", "Ultra"});
 		displayQualityComboBox = new JComboBoxFixed<>();
-		for (String level : displayQualityLevels)
+		for (DisplayQuality quality : DisplayQuality.values())
 		{
-			displayQualityComboBox.addItem(level);
+			displayQualityComboBox.addItem(quality);
 		}
-		displayQualityComboBox.setSelectedItem(defaultDisplayQuality);
+		
+		// Default display quality
+		displayQualityComboBox.setSelectedItem(UserPreferences.getInstance().editorImageQuality);
+		
+		mainWindow.updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
 		
 		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
 		// causes bottomPanel to expand vertically.
@@ -181,7 +184,9 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				// TODO
+				DisplayQuality quality = (DisplayQuality) displayQualityComboBox.getSelectedItem();
+				UserPreferences.getInstance().editorImageQuality = quality;
+				mainWindow.handleImageQualityChange(quality);
 			}
 		});
 

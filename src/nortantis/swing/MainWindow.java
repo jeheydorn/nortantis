@@ -56,6 +56,7 @@ import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.editor.CenterEdit;
+import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
@@ -92,12 +93,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public Undoer undoer;
 	double zoom;
 	double displayQualityScale;
-	private JMenu displayQualityMenu;
-	private JRadioButtonMenuItem radioButton50Percent;
-	private JRadioButtonMenuItem radioButton75Percent;
-	private JRadioButtonMenuItem radioButton100Percent;
-	private JRadioButtonMenuItem radioButton125Percent;
-	private JRadioButtonMenuItem radioButton150Percent;
 	ThemePanel themePanel;
 	ToolsPanel toolsPanel;
 	MapUpdater updater;
@@ -120,7 +115,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem refreshMenuItem;
 	private JMenuItem customImagesMenuItem;
 	private JMenu toolsMenu;
-	private JRadioButtonMenuItem[] displayQualityButtons;
 	private JMenuItem nameGeneratorMenuItem;
 	protected String customImagesPath;
 	private JMenu fileMenu;
@@ -293,13 +287,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (SwingUtilities.isLeftMouseButton(e))
-				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
-				}
-				else if (SwingUtilities.isMiddleMouseButton(e))
+				if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					mouseLocationForMiddleButtonDrag = e.getPoint();
+				}
+				else if (SwingUtilities.isLeftMouseButton(e))
+				{
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 				}
 			}
 
@@ -325,11 +319,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (SwingUtilities.isLeftMouseButton(e))
-				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
-				}
-				else if (SwingUtilities.isMiddleMouseButton(e))
+				if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					if (mouseLocationForMiddleButtonDrag != null)
 					{
@@ -339,7 +329,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 								.setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
 						mapEditingScrollPane.getHorizontalScrollBar()
 								.setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
-					}
+					}					
+				}
+				else if (SwingUtilities.isLeftMouseButton(e))
+				{
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
 				}
 			}
 		});
@@ -378,14 +372,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e)
 			{
-				if (e.isControlDown())
-				{
-					MainWindow.this.handleMouseWheelChangingZoom(e);
-				}
-				else
-				{
-					e.getComponent().getParent().dispatchEvent(e);
-				}
+				MainWindow.this.handleMouseWheelChangingZoom(e);
 			}
 
 		});
@@ -746,11 +733,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
 
-		displayQualityMenu = new JMenu("Display Quality");
-		viewMenu.add(displayQualityMenu);
-		displayQualityMenu.setToolTipText(
-				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
-
 		highlightLakesButton = new JCheckBoxMenuItem("Highlight Lakes");
 		highlightLakesButton.setToolTipText("Highlight lakes to make them easier to see.");
 		highlightLakesButton.addActionListener(new ActionListener()
@@ -777,74 +759,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		viewMenu.add(highlightRiversButton);
 
-		ActionListener resolutionListener = new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				String text = ((JRadioButtonMenuItem) e.getSource()).getText();
-				UserPreferences.getInstance().editorImageQuality = text;
-				handleImageQualityChange(text);
-			}
-		};
-
-		ButtonGroup resolutionButtonGroup = new ButtonGroup();
-
-		radioButton50Percent = new JRadioButtonMenuItem("Very Low");
-		radioButton50Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton50Percent);
-		resolutionButtonGroup.add(radioButton50Percent);
-
-		radioButton75Percent = new JRadioButtonMenuItem("Low");
-		radioButton75Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton75Percent);
-		resolutionButtonGroup.add(radioButton75Percent);
-
-		radioButton100Percent = new JRadioButtonMenuItem("Medium");
-		radioButton100Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton100Percent);
-		resolutionButtonGroup.add(radioButton100Percent);
-
-		radioButton125Percent = new JRadioButtonMenuItem("High");
-		radioButton125Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton125Percent);
-		resolutionButtonGroup.add(radioButton125Percent);
-
-		radioButton150Percent = new JRadioButtonMenuItem("Very High");
-		radioButton150Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton150Percent);
-		resolutionButtonGroup.add(radioButton150Percent);
-
-		displayQualityButtons = new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent, radioButton100Percent,
-				radioButton125Percent, radioButton150Percent };
-
-		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
-		{
-			boolean found = false;
-			for (JRadioButtonMenuItem resolutionOption : displayQualityButtons)
-			{
-				if (UserPreferences.getInstance().editorImageQuality.equals(resolutionOption.getText()))
-				{
-					resolutionOption.setSelected(true);
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				// Shouldn't happen. This means the user preferences have a bad
-				// value.
-				radioButton100Percent.setSelected(true);
-				UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
-			}
-		}
-		else
-		{
-			radioButton100Percent.setSelected(true);
-			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
-		}
-		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
-
 		toolsMenu = new JMenu("Tools");
 		menuBar.add(toolsMenu);
 
@@ -870,8 +784,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				JOptionPane.showMessageDialog(MainWindow.this,
-						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Ctrl + mouse wheel</li>"
-								+ "<li>Pan: Hold mouse middle button and drag</li>" + "</ul>" + "</html>",
+						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Mouse wheel</li>"
+								+ "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>" + "</html>",
 						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
@@ -1161,33 +1075,33 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	/**
 	 * Handles when zoom level changes in the display.
 	 */
-	public void handleImageQualityChange(String resolutionText)
+	public void handleImageQualityChange(DisplayQuality quality)
 	{
-		updateImageQualityScale(resolutionText);
+		updateImageQualityScale(quality);
 
 		ImageCache.clear();
 		updater.createAndShowMapFull();
 	}
 
-	private void updateImageQualityScale(String imageQualityText)
+	public void updateImageQualityScale(DisplayQuality quality)
 	{
-		if (imageQualityText.equals(radioButton50Percent.getText()))
+		if (quality == DisplayQuality.Very_Low)
 		{
 			displayQualityScale = 0.50;
 		}
-		else if (imageQualityText.equals(radioButton75Percent.getText()))
+		else if (quality == DisplayQuality.Low)
 		{
 			displayQualityScale = 0.75;
 		}
-		else if (imageQualityText.equals(radioButton100Percent.getText()))
+		else if (quality == DisplayQuality.Medium)
 		{
 			displayQualityScale = 1.0;
 		}
-		else if (imageQualityText.equals(radioButton125Percent.getText()))
+		else if (quality == DisplayQuality.High)
 		{
 			displayQualityScale = 1.25;
 		}
-		else if (imageQualityText.equals(radioButton150Percent.getText()))
+		else if (quality == DisplayQuality.Ultra)
 		{
 			displayQualityScale = 1.5;
 		}
@@ -1214,16 +1128,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				// Change land to ocean and erase icons
 				CenterEdit newValues = new CenterEdit(center.index, true, false, null, null, null);
-				edits.centerEdits.put(center.index, newValues);				
+				edits.centerEdits.put(center.index, newValues);
 			}
-			
+
 			// Erase rivers
 			for (Edge edge : updater.mapParts.graph.edges)
 			{
 				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
 				eEdit.riverLevel = 0;
 			}
-			
+
 			// Erase free icons
 			edits.freeIcons.clear();
 
@@ -1599,17 +1513,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		return refreshMenuItem.getText();
 	}
-	
-	public static void setUIFont (javax.swing.plaf.FontUIResource f)
+
+	/**
+	 * Sets the default font of all UI elements.
+	 * Copied from https://stackoverflow.com/questions/7434845/setting-the-default-font-of-swing-program.
+	 */
+	private static void setUIFont(javax.swing.plaf.FontUIResource f)
 	{
-	    java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
-	    while (keys.hasMoreElements()) {
-	      Object key = keys.nextElement();
-	      Object value = UIManager.get (key);
-	      if (value instanceof javax.swing.plaf.FontUIResource)
-	        UIManager.put (key, f);
-	      }
-	    } 
+		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
+		while (keys.hasMoreElements())
+		{
+			Object key = keys.nextElement();
+			Object value = UIManager.get(key);
+			if (value instanceof javax.swing.plaf.FontUIResource)
+				UIManager.put(key, f);
+		}
+	}
 
 	/**
 	 * Launch the application.
@@ -1623,8 +1542,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			UIManager.setLookAndFeel(new FlatDarkLaf());
-			
-			
+
+
 			if (AssetsPath.isLinux())
 			{
 				String fontFamily = "FreeSans";

@@ -21,7 +21,7 @@ public class UserPreferences
 {
 	private final String userPrefsFileName = "user preferences";
 
-	public String editorImageQuality = "";
+	public DisplayQuality editorImageQuality = DisplayQuality.Low;
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
@@ -54,7 +54,8 @@ public class UserPreferences
 
 				if (props.containsKey("editorImageQuality"))
 				{
-					editorImageQuality = props.getProperty("editorImageQuality");
+					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra") .replace(" ", "_");
+					editorImageQuality = DisplayQuality.valueOf(quality);
 				}
 				if (props.containsKey("defaultMapExportAction"))
 				{
@@ -131,7 +132,7 @@ public class UserPreferences
 	public void save()
 	{
 		Properties props = new Properties();
-		props.setProperty("editorImageQuality", editorImageQuality);
+		props.setProperty("editorImageQuality", editorImageQuality.toString());
 		props.setProperty("defaultMapExportAction",
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
 		props.setProperty("defaultHeightmapExportAction",
