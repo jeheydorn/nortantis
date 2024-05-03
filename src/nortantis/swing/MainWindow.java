@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -1598,16 +1599,40 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		return refreshMenuItem.getText();
 	}
+	
+	public static void setUIFont (javax.swing.plaf.FontUIResource f)
+	{
+	    java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
+	    while (keys.hasMoreElements()) {
+	      Object key = keys.nextElement();
+	      Object value = UIManager.get (key);
+	      if (value instanceof javax.swing.plaf.FontUIResource)
+	        UIManager.put (key, f);
+	      }
+	    } 
 
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args)
 	{
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
+
 		try
 		{
 			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			UIManager.setLookAndFeel(new FlatDarkLaf());
+			
+			
+			if (AssetsPath.isLinux())
+			{
+				String fontFamily = "FreeSans";
+				if (nortantis.platform.Font.isInstalled(fontFamily))
+				{
+					setUIFont(new javax.swing.plaf.FontUIResource(fontFamily, Font.PLAIN, 12));
+				}
+			}
 		}
 		catch (Exception e)
 		{
@@ -1615,8 +1640,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			e.printStackTrace();
 		}
 
-		// Tell drawing code to use AWT.
-		PlatformFactory.setInstance(new AwtFactory());
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
