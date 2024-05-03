@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 
@@ -282,5 +283,21 @@ public class SwingHelper
 			}
 		}
 		return false;
+	}
+	
+	public static JPanel stackLabelAndComponent(JLabel label, Component component)
+	{
+		JPanel stackPanel = new JPanel();
+		stackPanel.setLayout(new BoxLayout(stackPanel, BoxLayout.Y_AXIS));
+		JPanel labelPanel = new JPanel();
+		labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
+		labelPanel.add(Box.createRigidArea(new Dimension(1, 2)));
+		labelPanel.add(label);
+		labelPanel.add(Box.createHorizontalGlue());
+		stackPanel.add(labelPanel);
+		stackPanel.add(Box.createRigidArea(new Dimension(5, 2)));
+		stackPanel.add(component);
+		
+		return stackPanel;
 	}
 }

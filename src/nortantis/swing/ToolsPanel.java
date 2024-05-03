@@ -42,7 +42,7 @@ public class ToolsPanel extends JPanel
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
-	static final String fitToWindowZoomLevel = "Fit Window";
+	static final String fitToWindowZoomLevel = "Fit to Window";
 	private final String defaultZoomLevel = fitToWindowZoomLevel;
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
@@ -128,8 +128,7 @@ public class ToolsPanel extends JPanel
 				BorderFactory.createEmptyBorder(SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
 						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents));
 
-		JLabel lblZoom = new JLabel("Zoom:");
-		bottomPanel.add(lblZoom);
+		JLabel lblZoom = new JLabel("Zoom");
 		lblZoom.setToolTipText("Zoom the map in or out (mouse wheel). To view more details at higher zoom levels,"
 				+ " adjust the 'Display quality'.");
 
@@ -140,12 +139,6 @@ public class ToolsPanel extends JPanel
 			zoomComboBox.addItem(level);
 		}
 		zoomComboBox.setSelectedItem(defaultZoomLevel);
-		
-		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
-		// causes bottomPanel to expand vertically.
-		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
-
-		bottomPanel.add(zoomComboBox);
 		zoomComboBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -155,12 +148,14 @@ public class ToolsPanel extends JPanel
 			}
 		});
 		
+		bottomPanel.add(SwingHelper.stackLabelAndComponent(lblZoom, zoomComboBox));
 		
-		bottomPanel.add(Box.createHorizontalGlue());
-		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
+		
+		
+		//bottomPanel.add(Box.createHorizontalGlue());
+		bottomPanel.add(Box.createRigidArea(new Dimension(12, 4)));
 
-		JLabel lblDisplayQuality = new JLabel("Display quality:");
-		bottomPanel.add(lblDisplayQuality);
+		JLabel lblDisplayQuality = new JLabel("Display Quality");
 		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 
 		displayQualityComboBox = new JComboBoxFixed<>();
@@ -174,10 +169,6 @@ public class ToolsPanel extends JPanel
 		
 		mainWindow.updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
 		
-		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
-		// causes bottomPanel to expand vertically.
-		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
-
 		bottomPanel.add(displayQualityComboBox);
 		displayQualityComboBox.addActionListener(new ActionListener()
 		{
@@ -190,6 +181,7 @@ public class ToolsPanel extends JPanel
 			}
 		});
 
+		bottomPanel.add(SwingHelper.stackLabelAndComponent(lblDisplayQuality, displayQualityComboBox));
 
 		
 
