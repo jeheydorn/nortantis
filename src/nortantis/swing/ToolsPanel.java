@@ -35,10 +35,12 @@ public class ToolsPanel extends JPanel
 	private JPanel currentToolOptionsPanel;
 	JComboBox<String> zoomComboBox;
 	List<String> zoomLevels;
+	JComboBox<String> displayQualityComboBox;
+	List<String> displayQualityLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
-	static final String fitToWindowZoomLevel = "Fit to Window";
+	static final String fitToWindowZoomLevel = "Fit Window";
 	private final String defaultZoomLevel = fitToWindowZoomLevel;
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
@@ -127,7 +129,7 @@ public class ToolsPanel extends JPanel
 		JLabel lblZoom = new JLabel("Zoom:");
 		bottomPanel.add(lblZoom);
 		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels,"
-				+ " adjust View > Display Quality.");
+				+ " adjust the 'Display quality'.");
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -135,9 +137,8 @@ public class ToolsPanel extends JPanel
 		{
 			zoomComboBox.addItem(level);
 		}
-
 		zoomComboBox.setSelectedItem(defaultZoomLevel);
-
+		
 		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
 		// causes bottomPanel to expand vertically.
 		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
@@ -151,8 +152,42 @@ public class ToolsPanel extends JPanel
 				mainWindow.updateDisplayedMapFromGeneratedMap(true, null);
 			}
 		});
-
+		
+		
 		bottomPanel.add(Box.createHorizontalGlue());
+		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
+
+		JLabel lblDisplayQuality = new JLabel("Display quality:");
+		bottomPanel.add(lblDisplayQuality);
+		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+
+		// TODO Make display quality an enum.
+		final String defaultDisplayQuality = "Low";
+		displayQualityLevels = Arrays.asList(new String[] { "Very Low", defaultDisplayQuality, "Medium", "High", "Ultra"});
+		displayQualityComboBox = new JComboBoxFixed<>();
+		for (String level : displayQualityLevels)
+		{
+			displayQualityComboBox.addItem(level);
+		}
+		displayQualityComboBox.setSelectedItem(defaultDisplayQuality);
+		
+		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
+		// causes bottomPanel to expand vertically.
+		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
+
+		bottomPanel.add(displayQualityComboBox);
+		displayQualityComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				// TODO
+			}
+		});
+
+
+		
+
 
 		progressAndBottomPanel.add(bottomPanel);
 		add(progressAndBottomPanel);
