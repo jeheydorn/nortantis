@@ -1515,22 +1515,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	/**
-	 * Sets the default font of all UI elements.
-	 * Copied from https://stackoverflow.com/questions/7434845/setting-the-default-font-of-swing-program.
-	 */
-	private static void setUIFont(javax.swing.plaf.FontUIResource f)
-	{
-		java.util.Enumeration<Object> keys = UIManager.getDefaults().keys();
-		while (keys.hasMoreElements())
-		{
-			Object key = keys.nextElement();
-			Object value = UIManager.get(key);
-			if (value instanceof javax.swing.plaf.FontUIResource)
-				UIManager.put(key, f);
-		}
-	}
-
-	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args)
@@ -1542,16 +1526,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			UIManager.setLookAndFeel(new FlatDarkLaf());
-
-
-			if (AssetsPath.isLinux())
-			{
-				String fontFamily = "FreeSans";
-				if (nortantis.platform.Font.isInstalled(fontFamily))
-				{
-					setUIFont(new javax.swing.plaf.FontUIResource(fontFamily, Font.PLAIN, 12));
-				}
-			}
 		}
 		catch (Exception e)
 		{
