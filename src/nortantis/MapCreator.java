@@ -81,7 +81,7 @@ public class MapCreator implements WarningLogger
 			changeBounds.add(change);
 		}
 
-		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds);
+		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, changeBounds, true);
 	}
 
 	public IntRectangle incrementalUpdateIcons(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
@@ -111,11 +111,11 @@ public class MapCreator implements WarningLogger
 			return null;
 		}
 
-		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, Arrays.asList(changeBounds));
+		return incrementalUpdateMultipleBounds(settings, mapParts, fullSizeMap, Arrays.asList(changeBounds), false);
 	}
 
 	private IntRectangle incrementalUpdateMultipleBounds(final MapSettings settings, MapParts mapParts, Image fullSizeMap,
-			List<Rectangle> changeBounds)
+			List<Rectangle> changeBounds, boolean onlyTextChanged)
 	{
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
@@ -132,7 +132,7 @@ public class MapCreator implements WarningLogger
 			}
 			Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
 			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), this);
-			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer);
+			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer, onlyTextChanged);
 			if (bounds == null)
 			{
 				bounds = updateBounds;
@@ -245,98 +245,109 @@ public class MapCreator implements WarningLogger
 
 		replaceBounds = replaceBounds.floor();
 
-		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer);
+		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, false);
 	}
 
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds,
-			double effectsPadding, TextDrawer textDrawer)
+			double effectsPadding, TextDrawer textDrawer, boolean onlyTextChanged)
 	{
 		// The bounds of the snippet to draw. This is larger than the snippet to
 		// replace because ocean/land effects expand beyond the edges
 		// that draw them, and we need those to be included in the snippet to
 		// replace.
 		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding).floor();
-
-		Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
-		Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
-
-		mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
-
-		// Draw mask for land vs ocean.
-		Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
-		{
-			Painter p = landMask.createPainter();
-			mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
-		}
-
-		Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
-		Image mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
-
-
-		Image coastShading;
-		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution, mapSnippet,
-					landMask, mapParts.background, null, centersToDraw, drawBounds, false);
-			mapSnippet = tuple.getFirst();
-			coastShading = tuple.getSecond();
-		}
-
-		// Store the current version of mapSnippet for a background when drawing icons later.
-		Image landBackground = mapSnippet.deepCopy();
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
-
-		if (settings.drawRegionColors)
-		{
-			Painter g = mapSnippet.createPainter();
-			g.setColor(settings.coastlineColor);
-			mapParts.graph.drawRegionBorders(g, sizeMultiplier, true, centersToDraw, drawBounds);
-		}
-
-		Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
-		drawRivers(settings, mapParts.graph, mapSnippet, edgesToDraw, drawBounds);
-
-		// Draw ocean
-		Image oceanTextureSnippet;
-		{
-			oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
-			mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
-		}
-
-		// Add effects to ocean along coastlines
-		Image oceanBlur;
-		{
-			oceanBlur = createOceanEffects(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
-			if (oceanBlur != null)
-			{
-				mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
-			}
-		}
-
-		// Draw coastlines.
-		{
-			Painter p = mapSnippet.createPainter(DrawQuality.High);
-			p.setColor(settings.coastlineColor);
-			mapParts.graph.drawCoastlineWithLakeShores(p, sizeMultiplier, centersToDraw, drawBounds);
-		}
-
-		// Draw icons
-		List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds);
-
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
-				oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
-
+		
 		IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
+		Image mapSnippet;
+		Image textBackground;
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 
-		// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
-		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,
-				replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
-
-		// If present, also update the cached version of the map before adding text so that the Fonts tab can draw the map faster.
-		if (mapParts.mapBeforeAddingText != null)
+		if (!onlyTextChanged)
 		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet,
+			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
+			Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
+
+			mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
+
+			// Draw mask for land vs ocean.
+			Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
+			{
+				Painter p = landMask.createPainter();
+				mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
+			}
+
+			Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
+			mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
+
+
+			Image coastShading;
+			{
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
+						mapSnippet, landMask, mapParts.background, null, centersToDraw, drawBounds, false);
+				mapSnippet = tuple.getFirst();
+				coastShading = tuple.getSecond();
+			}
+
+			// Store the current version of mapSnippet for a background when drawing icons later.
+			Image landBackground = mapSnippet.deepCopy();
+
+			if (settings.drawRegionColors)
+			{
+				Painter g = mapSnippet.createPainter();
+				g.setColor(settings.coastlineColor);
+				mapParts.graph.drawRegionBorders(g, sizeMultiplier, true, centersToDraw, drawBounds);
+			}
+
+			Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
+			drawRivers(settings, mapParts.graph, mapSnippet, edgesToDraw, drawBounds);
+
+			// Draw ocean
+			Image oceanTextureSnippet;
+			{
+				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
+				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
+			}
+
+			// Add effects to ocean along coastlines
+			Image oceanBlur;
+			{
+				oceanBlur = createOceanEffects(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
+				if (oceanBlur != null)
+				{
+					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
+				}
+			}
+
+			// Draw coastlines.
+			{
+				Painter p = mapSnippet.createPainter(DrawQuality.High);
+				p.setColor(settings.coastlineColor);
+				mapParts.graph.drawCoastlineWithLakeShores(p, sizeMultiplier, centersToDraw, drawBounds);
+			}
+
+			// Draw icons
+			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds);
+
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew,
+					landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer,
+					centersToDraw, drawBounds);
+
+			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,
 					replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+
+			// If present, also update the cached version of the map before adding text so that the Fonts tab can draw the map faster.
+			if (mapParts.mapBeforeAddingText != null)
+			{
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingText, mapSnippet,
+						replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+			}
+		}
+		else
+		{
+			mapSnippet = ImageHelper.copySnippet(mapParts.mapBeforeAddingText, drawBounds.toIntRectangle());
+			textBackground =  ImageHelper.copySnippet(mapParts.textBackground, drawBounds.toIntRectangle());
 		}
 
 		if (settings.drawText)
@@ -1170,11 +1181,12 @@ public class MapCreator implements WarningLogger
 					continue;
 				}
 				float[][] kernel = ImageHelper.createGaussianKernel((int) whiteWidth);
-				// Use 16-bit grayscale for the blur because the thresholding for determining where the waves are needs that extra decision. TODO See if this is true.
+				// Use 16-bit grayscale for the blur because the thresholding for determining where the waves are needs that extra decision.
+				// TODO See if this is true.
 				Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, ImageType.Grayscale16Bit);
 
-				double highThresholdInKernel = getKernelValueToThreholdWavesForWidth(kernel, scale, targetStrokeWidth,
-						waveWidth, blur.getMaxPixelLevel());
+				double highThresholdInKernel = getKernelValueToThreholdWavesForWidth(kernel, scale, targetStrokeWidth, waveWidth,
+						blur.getMaxPixelLevel());
 
 
 				int higherThreshold = (int) (Math.round(highThresholdInKernel));
@@ -1236,12 +1248,12 @@ public class MapCreator implements WarningLogger
 			}
 
 		}
-		
+
 		if (xPast1 == xStop)
 		{
 			return xPast1;
 		}
-		
+
 		double xAt1;
 		if (xPast1 > 0)
 		{
@@ -1254,10 +1266,10 @@ public class MapCreator implements WarningLogger
 		{
 			xAt1 = xPast1;
 		}
-		
+
 		return linearCombo(kernel, xAt1 + waveWidth, y) * scaleToGetToPixelValueAfterConvolution;
 	}
-	
+
 	private double linearCombo(float[][] kernel, double x, int y)
 	{
 		int x1 = (int) x;
