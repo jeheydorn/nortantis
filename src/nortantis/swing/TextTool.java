@@ -505,12 +505,12 @@ public class TextTool extends EditorTool
 	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
 		if (lastSelected != null
-				&& !(editTextField.getText().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
+				&& !(editTextField.getText().trim().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
 						&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())))
 		{
 			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
-			lastSelected.value = editTextField.getText();
+			lastSelected.value = editTextField.getText().trim();
 			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
 			lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
 

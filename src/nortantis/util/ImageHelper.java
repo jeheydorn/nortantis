@@ -1035,12 +1035,29 @@ public class ImageHelper
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
-	{
-		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
-
+	{	
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-
+		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
+	}
+		
+	/**
+	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
+	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
+	 * 
+	 * @param img
+	 *            Image to convolve
+	 * @param kernel
+	 * @param scale
+	 *            Amount to multiply levels by.
+	 * @param paddImageToAvoidWrapping
+	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
+	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
+	 * @return The convolved image.
+	 */
+	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
+	{
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
@@ -1687,7 +1704,8 @@ public class ImageHelper
 	}
 
 	/**
-	 * Changes all pixels in target to fillValue where pixels in source are between lowThreshold and highThreshold inclusive.
+	 * Changes all pixels in target to fillValue where pixels in source are between lowThreshold inclusive and highThreshold exclusive.
+	 * TODO decide if highThreshold should be inclusive or exclusive.
 	 */
 	public static void fillInTarget(Image target, Image source, int lowThreshold, int highThreshold, int fillValue)
 	{
@@ -1701,7 +1719,7 @@ public class ImageHelper
 			for (int x = 0; x < source.getWidth(); x++)
 			{
 				int value = source.getGrayLevel(x, y);
-				if (value >= lowThreshold && value <= highThreshold)
+				if (value >= lowThreshold && value < highThreshold)
 				{
 					target.setGrayLevel(x, y, fillValue);
 				}

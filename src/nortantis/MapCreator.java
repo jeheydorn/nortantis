@@ -55,8 +55,8 @@ public class MapCreator implements WarningLogger
 	// This is a base width for determining how large to draw text and effects.
 	private static final double baseResolution = 1536;
 
-	private static final int concentricWaveWidthBetweenWaves = 10;
-	private static final int concentricWaveLineWidth = 2;
+	private static final double concentricWaveWidthBetweenWaves = 7;
+	private static final double concentricWaveLineWidth = 1.1;
 	private boolean isCanceled;
 	private List<String> warningMessages;
 
@@ -237,12 +237,12 @@ public class MapCreator implements WarningLogger
 					settings);
 			replaceBounds = replaceBounds.add(textChangeBounds);
 		}
-		
-		
+
+
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 		Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, this);
 		replaceBounds = Rectangle.add(replaceBounds, iconChangeBounds);
-		
+
 		replaceBounds = replaceBounds.floor();
 
 		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer);
@@ -1053,7 +1053,7 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private static Image createOceanEffects(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
+	private Image createOceanEffects(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
@@ -1113,93 +1113,260 @@ public class MapCreator implements WarningLogger
 			}
 			else
 			{
-				oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
-				int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
-				// This number just needs to be big enough that the waves are sufficiently thick.
-				final float scaleForDarkening = 20f;
-				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+				oceanEffects = createConcentricWavesMaskOld(settings, graph, resolutionScaled, landMask, centersToDraw, drawBounds,
+						coastlineMask);
+			}
+		}
+		return oceanEffects;
+	}
 
-				if (settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
+	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
+			Collection<Center> centersToDraw, Rectangle drawBounds, Image coastlineMask)
+	{
+		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
+		int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
+		// This number just needs to be big enough that the waves are sufficiently thick.
+		final float scaleForDarkening = 20f;
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+		double targetStrokeWidth = sizeMultiplier;
+		float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+				* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+
+		if (settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
+		{
+			double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
+			double waveWidth = concentricWaveLineWidth * sizeMultiplier;
+			double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + waveWidth);
+			final double opacityOfLastWave;
+			if (settings.oceanEffect == OceanEffect.ConcentricWaves)
+			{
+				opacityOfLastWave = 1.0;
+			}
+			else
+			{
+				if (settings.concentricWaveCount == 1)
 				{
-					double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
-					double lineWidth = concentricWaveLineWidth * sizeMultiplier;
-					double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + lineWidth);
-					final double opacityOfLastWave;
-					if (settings.oceanEffect == OceanEffect.ConcentricWaves)
-					{
-						opacityOfLastWave = 1.0;
-					}
-					else
-					{
-						if (settings.concentricWaveCount == 1)
-						{
-							opacityOfLastWave = 1.0;
-						}
-						else if (settings.concentricWaveCount == 2)
-						{
-							opacityOfLastWave = 0.35;
-						}
-						else if (settings.concentricWaveCount == 3)
-						{
-							opacityOfLastWave = 0.22;
-						}
-						else
-						{
-							opacityOfLastWave = 0.2;
-						}
-					}
-
-					for (int i : new Range(0, settings.concentricWaveCount))
-					{
-						{
-							double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth));
-							if (whiteWidth <= 0)
-							{
-								continue;
-							}
-							Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask,
-									ImageHelper.createGaussianKernel((int) whiteWidth), scale, true);
-
-							double waveOpacity;
-							if (settings.concentricWaveCount == 1)
-							{
-								waveOpacity = 1.0;
-							}
-							else
-							{
-								double percentDone = ((double) (settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
-								waveOpacity = (percentDone * opacityOfLastWave + (1.0 - percentDone));
-							}
-							assert waveOpacity <= 1.0;
-							assert waveOpacity >= 0.0;
-
-							ImageHelper.addThresholded(blur, 1, (int) (settings.oceanEffectsColor.getAlpha() * waveOpacity), oceanEffects);
-						}
-
-						{
-							double blackWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth)) - lineWidth;
-							if (blackWidth <= 0)
-							{
-								continue;
-							}
-							Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask,
-									ImageHelper.createGaussianKernel((int) blackWidth), scale, true);
-							ImageHelper.subtractThresholded(blur, 1, oceanEffects.getMaxPixelLevel(), oceanEffects);
-						}
-					}
+					opacityOfLastWave = 1.0;
 				}
-
-				if (settings.drawOceanEffectsInLakes)
+				else if (settings.concentricWaveCount == 2)
 				{
-					oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+					opacityOfLastWave = 0.35;
+				}
+				else if (settings.concentricWaveCount == 3)
+				{
+					opacityOfLastWave = 0.22;
 				}
 				else
 				{
-					oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+					opacityOfLastWave = 0.2;
+				}
+			}
+
+			for (int i : new Range(0, settings.concentricWaveCount))
+			{
+				double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + waveWidth));
+				if (whiteWidth <= 0)
+				{
+					continue;
+				}
+				float[][] kernel = ImageHelper.createGaussianKernel((int) whiteWidth);
+				// Use 16-bit grayscale for the blur because the thresholding for determining where the waves are needs that extra decision. TODO See if this is true.
+				Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, ImageType.Grayscale16Bit);
+
+				double highThresholdInKernel = getKernelValueToThreholdWavesForWidth(kernel, scale, targetStrokeWidth,
+						waveWidth, blur.getMaxPixelLevel());
+
+
+				int higherThreshold = (int) (Math.round(highThresholdInKernel));
+				if (higherThreshold > blur.getMaxPixelLevel())
+				{
+					// TODO See if this happens.
+					higherThreshold = blur.getMaxPixelLevel();
+				}
+
+				double waveOpacity;
+				if (settings.concentricWaveCount == 1)
+				{
+					waveOpacity = 1.0;
+				}
+				else
+				{
+					double percentDone = ((double) (settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
+					waveOpacity = (percentDone * opacityOfLastWave + (1.0 - percentDone));
+				}
+				assert waveOpacity <= 1.0;
+				assert waveOpacity >= 0.0;
+
+				ImageHelper.fillInTarget(oceanEffects, blur, 1, higherThreshold,
+						(int) (settings.oceanEffectsColor.getAlpha() * waveOpacity));
+			}
+		}
+
+		if (settings.drawOceanEffectsInLakes)
+		{
+			oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+		}
+		else
+		{
+			oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+		}
+
+		return oceanEffects;
+	}
+
+	private double getKernelValueToThreholdWavesForWidth(float[][] kernel, double scale, double targetStrokeWidth, double waveWidth,
+			int maxPixelLevel)
+	{
+		int y = kernel.length / 2;
+		if (kernel[y].length <= 2)
+		{
+			return 0;
+		}
+		// If the kernel's width is odd, then the last loop check should include the center.
+		int xStop = kernel[y].length % 2 == 1 ? kernel[y].length / 2 + 1 : kernel[y].length / 2;
+		int xPast1 = xStop;
+		final float scaleToGetToPixelValueAfterConvolution = (float) (scale * targetStrokeWidth * maxPixelLevel);
+
+		for (int x = 0; x < xStop; x++)
+		{
+			if (kernel[y][x] * scaleToGetToPixelValueAfterConvolution >= 1)
+			{
+				xPast1 = x;
+				break;
+			}
+
+		}
+		
+		if (xPast1 == xStop)
+		{
+			return xPast1;
+		}
+		
+		double xAt1;
+		if (xPast1 > 0)
+		{
+			int x1 = xPast1 - 1;
+			double y1 = kernel[y][x1] * scaleToGetToPixelValueAfterConvolution;
+			double y2 = kernel[y][xPast1] * scaleToGetToPixelValueAfterConvolution;
+			xAt1 = x1 + (1.0 - y1) / (y2 - y1);
+		}
+		else
+		{
+			xAt1 = xPast1;
+		}
+		
+		return linearCombo(kernel, xAt1 + waveWidth, y) * scaleToGetToPixelValueAfterConvolution;
+	}
+	
+	private double linearCombo(float[][] kernel, double x, int y)
+	{
+		int x1 = (int) x;
+		if (x1 > kernel[y].length - 1)
+		{
+			// TODO check that this doesn't actually happen
+			return kernel[y][kernel[y].length - 1];
+		}
+		int x2 = x1 + 1;
+		if (x2 > kernel[y].length - 1)
+		{
+			// TODO check that this doesn't actually happen
+			return kernel[y][kernel[y].length - 1];
+		}
+		double c = x - x1;
+		return (1.0 - c) * kernel[y][x1] + c * kernel[y][x2];
+	}
+
+	private Image createConcentricWavesMaskOld(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
+			Collection<Center> centersToDraw, Rectangle drawBounds, Image coastlineMask)
+	{
+		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
+		int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
+		// This number just needs to be big enough that the waves are sufficiently thick.
+		final float scaleForDarkening = 20f;
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+		double targetStrokeWidth = sizeMultiplier;
+		float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+				* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+
+		if (settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
+		{
+			double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
+			double lineWidth = concentricWaveLineWidth * sizeMultiplier;
+			double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + lineWidth);
+			final double opacityOfLastWave;
+			if (settings.oceanEffect == OceanEffect.ConcentricWaves)
+			{
+				opacityOfLastWave = 1.0;
+			}
+			else
+			{
+				if (settings.concentricWaveCount == 1)
+				{
+					opacityOfLastWave = 1.0;
+				}
+				else if (settings.concentricWaveCount == 2)
+				{
+					opacityOfLastWave = 0.35;
+				}
+				else if (settings.concentricWaveCount == 3)
+				{
+					opacityOfLastWave = 0.22;
+				}
+				else
+				{
+					opacityOfLastWave = 0.2;
+				}
+			}
+
+			for (int i : new Range(0, settings.concentricWaveCount))
+			{
+				{
+					double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth));
+					if (whiteWidth <= 0)
+					{
+						continue;
+					}
+					Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, ImageHelper.createGaussianKernel((int) whiteWidth),
+							scale, true);
+
+					double waveOpacity;
+					if (settings.concentricWaveCount == 1)
+					{
+						waveOpacity = 1.0;
+					}
+					else
+					{
+						double percentDone = ((double) (settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
+						waveOpacity = (percentDone * opacityOfLastWave + (1.0 - percentDone));
+					}
+					assert waveOpacity <= 1.0;
+					assert waveOpacity >= 0.0;
+
+					ImageHelper.addThresholded(blur, 1, (int) (settings.oceanEffectsColor.getAlpha() * waveOpacity), oceanEffects);
+				}
+
+				{
+					double blackWidth = largestLineWidth - (i * (widthBetweenWaves + lineWidth)) - lineWidth;
+					if (blackWidth <= 0)
+					{
+						continue;
+					}
+					Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, ImageHelper.createGaussianKernel((int) blackWidth),
+							scale, true);
+					ImageHelper.subtractThresholded(blur, 1, oceanEffects.getMaxPixelLevel(), oceanEffects);
 				}
 			}
 		}
+
+		if (settings.drawOceanEffectsInLakes)
+		{
+			oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+		}
+		else
+		{
+			oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+		}
+
 		return oceanEffects;
 	}
 
@@ -1352,7 +1519,7 @@ public class MapCreator implements WarningLogger
 		{
 			centerChanges = edits.centerEdits.values();
 		}
-		
+
 		Set<Center> centersChanged = new HashSet<>();
 		Set<Center> needsRebuildNoisyEdges = new HashSet<>();
 
