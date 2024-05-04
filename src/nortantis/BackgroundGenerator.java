@@ -158,7 +158,7 @@ public class BackgroundGenerator
 		}
 
 		Image result = ImageHelper.matchHistogram(allChannels, colorsForHistogramMatching);
-		result = ImageHelper.extractRegion(result, 0, 0, targetCols, targetRows);
+		result = ImageHelper.copySnippet(result, 0, 0, targetCols, targetRows);
 
 		return result;
 	}
@@ -194,7 +194,7 @@ public class BackgroundGenerator
 		}
 
 		// The texture is wider and taller than we need it to be. Return a piece cropped out of the middle.
-		return ImageHelper.extractRegion(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
+		return ImageHelper.copySnippet(texture, (texture.getWidth() - cols) / 2, (texture.getHeight() - rows) / 2, cols, rows);
 	}
 
 	private static Image scaleTextureLargerIfNeeded(Image texture, int rows, int cols)

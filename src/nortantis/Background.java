@@ -42,6 +42,7 @@ public class Background
 	// index of the region it is in.
 	Image regionIndexes;
 	private int borderWidthScaled;
+	private int cornerInsetScaled;
 	private String borderType;
 	private String imagesPath;
 
@@ -65,6 +66,7 @@ public class Background
 		this.mapBounds = mapBounds;
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+		cornerInsetScaled = settings.drawBorder ? (int) (settings.cornerInset * settings.resolution) : 0;
 		borderType = settings.borderType;
 
 		if (settings.generateBackground)
@@ -256,7 +258,7 @@ public class Background
 
 	public Image removeBorderPadding(Image image)
 	{
-		return ImageHelper.extractRegion(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2),
+		return ImageHelper.copySnippet(image, borderWidthScaled, borderWidthScaled, (int) (image.getWidth() - borderWidthScaled * 2),
 				(int) (image.getHeight() - borderWidthScaled * 2));
 	}
 
@@ -343,27 +345,29 @@ public class Background
 			throw new RuntimeException(
 					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
 		}
+		
+		int cornerWidth = borderWidthScaled + cornerInsetScaled;
 
 		// Corners
 		Image upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
 		if (upperLeftCorner != null)
 		{
-			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, borderWidthScaled);
+			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, cornerWidth);
 		}
 		Image upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
 		if (upperRightCorner != null)
 		{
-			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, borderWidthScaled);
+			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, cornerWidth);
 		}
 		Image lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
 		if (lowerLeftCorner != null)
 		{
-			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, borderWidthScaled);
+			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, cornerWidth);
 		}
 		Image lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
 		if (lowerRightCorner != null)
 		{
-			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, borderWidthScaled);
+			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, cornerWidth);
 		}
 
 		if (upperLeftCorner == null)
@@ -399,9 +403,9 @@ public class Background
 		}
 
 		p.drawImage(upperLeftCorner, 0, 0);
-		p.drawImage(upperRightCorner, ((int)borderBounds.width) - borderWidthScaled, 0);
-		p.drawImage(lowerLeftCorner, 0, ((int)borderBounds.height) - borderWidthScaled);
-		p.drawImage(lowerRightCorner, ((int)borderBounds.width) - borderWidthScaled, ((int)borderBounds.height) - borderWidthScaled);
+		p.drawImage(upperRightCorner, ((int)borderBounds.width) - cornerWidth, 0);
+		p.drawImage(lowerLeftCorner, 0, ((int)borderBounds.height) - cornerWidth);
+		p.drawImage(lowerRightCorner, ((int)borderBounds.width) - cornerWidth, ((int)borderBounds.height) - cornerWidth);
 
 		// Edges
 		Image topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
@@ -465,9 +469,9 @@ public class Background
 			Image edge = i == 0 ? topEdge : bottomEdge;
 			final int y = i == 0 ? 0 : map.getHeight() + borderWidthScaled;
 
-			int end = map.getWidth() + borderWidthScaled;
+			int end = ((int) borderBounds.width) - cornerWidth;
 			int increment = edge.getWidth();
-			for (int x = borderWidthScaled; x < end; x += increment)
+			for (int x = cornerWidth; x < end; x += increment)
 			{
 				int distanceRemaining = end - x;
 				if (distanceRemaining >= increment)
@@ -478,7 +482,7 @@ public class Background
 				{
 					// The image is too long/tall to draw in the remaining
 					// space.
-					Image partToDraw = ImageHelper.extractRegion(edge, 0, 0, distanceRemaining, borderWidthScaled);
+					Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, distanceRemaining, borderWidthScaled);
 					p.drawImage(partToDraw, x, y);
 				}
 			}
@@ -490,9 +494,9 @@ public class Background
 			Image edge = i == 0 ? leftEdge : rightEdge;
 			final int x = i == 0 ? 0 : map.getWidth() + borderWidthScaled;
 
-			int end = map.getHeight() + borderWidthScaled;
+			int end = ((int) borderBounds.height) - cornerWidth;
 			int increment = edge.getHeight();
-			for (int y = borderWidthScaled; y < end; y += increment)
+			for (int y = cornerWidth; y < end; y += increment)
 			{
 				int distanceRemaining = end - y;
 				if (distanceRemaining >= increment)
@@ -503,7 +507,7 @@ public class Background
 				{
 					// The image is too long/tall to draw in the remaining
 					// space.
-					Image partToDraw = ImageHelper.extractRegion(edge, 0, 0, borderWidthScaled, distanceRemaining);
+					Image partToDraw = ImageHelper.copySnippet(edge, 0, 0, borderWidthScaled, distanceRemaining);
 					p.drawImage(partToDraw, x, y);
 				}
 			}

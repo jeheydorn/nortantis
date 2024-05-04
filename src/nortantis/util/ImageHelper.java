@@ -862,7 +862,7 @@ public class ImageHelper
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
-		Image region = extractRotatedRegion(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
+		Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
 		for (int y = 0; y < region.getHeight(); y++)
 			for (int x = 0; x < region.getWidth(); x++)
@@ -893,7 +893,7 @@ public class ImageHelper
 	 * 
 	 * Warning: This adds an alpha channel, so the output image may not be the same type as the input image.
 	 */
-	public static Image extractRotatedRegion(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
+	public static Image copySnippetRotated(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
 	{
 		Image result = Image.create(width, height, ImageType.ARGB);
 		Painter pResult = result.createPainter();
@@ -910,7 +910,7 @@ public class ImageHelper
 	 * 
 	 * It is important the the result is a copy even if the desired region is exactly the input.
 	 */
-	public static Image extractRegion(Image image, int xLoc, int yLoc, int width, int height)
+	public static Image copySnippet(Image image, int xLoc, int yLoc, int width, int height)
 	{
 		Image result = Image.create(width, height, image.getType());
 		Painter pResult = result.createPainter();
@@ -918,6 +918,12 @@ public class ImageHelper
 		pResult.drawImage(image, 0, 0);
 
 		return result;
+	}
+	
+
+	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
+	{
+		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
 	}
 
 	/**
@@ -1900,29 +1906,6 @@ public class ImageHelper
 				target.setRGB(targetX, targetY, value);
 			}
 		}
-	}
-
-	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
-	{
-		IntRectangle sourceBounds = new IntRectangle(0, 0, source.getWidth(), source.getHeight());
-		Image result = Image.create(boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height, source.getType());
-		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
-		{
-			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)
-			{
-				int sourceX = x + boundsInSourceToCopyFrom.x;
-				int sourceY = y + boundsInSourceToCopyFrom.y;
-				if (!sourceBounds.contains(sourceX, sourceY))
-				{
-					continue;
-				}
-
-				int value = source.getRGB(sourceX, sourceY);
-				result.setRGB(x, y, value);
-			}
-		}
-
-		return result;
 	}
 
 	public static Image createPlaceholderImage(String[] message)

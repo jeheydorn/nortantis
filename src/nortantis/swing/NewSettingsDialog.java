@@ -418,6 +418,7 @@ public class NewSettingsDialog extends JDialog
 		settings.drawBorder = randomSettings.drawBorder;
 		settings.borderType = randomSettings.borderType;
 		settings.borderWidth = randomSettings.borderWidth;
+		settings.cornerInset = randomSettings.cornerInset;
 		settings.lineStyle = randomSettings.lineStyle;
 
 		handleMapChange();
