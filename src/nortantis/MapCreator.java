@@ -359,6 +359,8 @@ public class MapCreator implements WarningLogger
 		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
 				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
 				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+		
+		mapParts.background.drawInsetCornersIfBoundsTouchesThem(mapSnippet, drawBounds);
 
 		// Add frayed border
 		if (settings.frayedBorder)

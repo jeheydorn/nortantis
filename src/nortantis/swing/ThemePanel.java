@@ -102,7 +102,6 @@ public class ThemePanel extends JTabbedPane
 	private ItemListener colorizeCheckboxListener;
 	private JComboBox<String> borderTypeComboBox;
 	private JSlider borderWidthSlider;
-	private JSlider cornerInsetSlider;
 	private JCheckBox drawBorderCheckbox;
 	private JSlider frayedEdgeSizeSlider;
 	private JSlider frayedEdgeShadingSlider;
@@ -444,24 +443,7 @@ public class ThemePanel extends JTabbedPane
 			borderWidthSlider.setMajorTickSpacing(200);
 			createMapChangeListenerForFullRedraw(borderWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
-			new SliderWithDisplayedValue(borderWidthSlider).addToOrganizer(organizer, "Border width:",
-					"Width of the border in pixels, scaled according to the resolution the map is drawn at.");
-		}
-
-		{
-			cornerInsetSlider = new JSlider();
-			cornerInsetSlider.setToolTipText("");
-			cornerInsetSlider.setValue(0);
-			cornerInsetSlider.setSnapToTicks(false);
-			cornerInsetSlider.setPaintTicks(true);
-			cornerInsetSlider.setPaintLabels(true);
-			cornerInsetSlider.setMinorTickSpacing(50);
-			cornerInsetSlider.setMaximum(600);
-			cornerInsetSlider.setMajorTickSpacing(200);
-			createMapChangeListenerForFullRedraw(cornerInsetSlider);
-			SwingHelper.setSliderWidthForSidePanel(cornerInsetSlider);
-			new SliderWithDisplayedValue(cornerInsetSlider).addToOrganizer(organizer, "Corner inset:",
-					"Number of pixels to inset the corners into the map, scaled according to the resolution the map is drawn at.");
+			organizer.addLabelAndComponent("Border width:","Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
 		}
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
 
@@ -1406,7 +1388,6 @@ public class ThemePanel extends JTabbedPane
 		// Borders
 		initializeBorderTypeComboBoxItems(settings);
 		borderWidthSlider.setValue(settings.borderWidth);
-		cornerInsetSlider.setValue(settings.cornerInset);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
@@ -1584,7 +1565,6 @@ public class ThemePanel extends JTabbedPane
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
-		settings.cornerInset = cornerInsetSlider.getValue();
 
 		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
 		settings.mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
@@ -1674,7 +1654,6 @@ public class ThemePanel extends JTabbedPane
 	private void handleEnablingAndDisabling()
 	{
 		borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
-		cornerInsetSlider.setEnabled(drawBorderCheckbox.isSelected());
 		borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
 
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());

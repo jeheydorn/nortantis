@@ -12,6 +12,7 @@ import java.util.Set;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;
@@ -33,7 +34,6 @@ public class Background
 	Image ocean;
 	Dimension mapBounds;
 	Dimension borderBounds;
-	int borderWidth;
 	Image borderBackground;
 	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
@@ -42,9 +42,14 @@ public class Background
 	// index of the region it is in.
 	Image regionIndexes;
 	private int borderWidthScaled;
-	private int cornerInsetScaled;
 	private String borderType;
 	private String imagesPath;
+	private Image upperLeftCorner;
+	private Image upperRightCorner;
+	private Image lowerLeftCorner;
+	private Image lowerRightCorner;
+	private int cornerWidth;
+	private boolean hasInsetCorners;
 
 
 	public Background(MapSettings settings, Dimension mapBounds)
@@ -66,7 +71,6 @@ public class Background
 		this.mapBounds = mapBounds;
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-		cornerInsetScaled = settings.drawBorder ? (int) (settings.cornerInset * settings.resolution) : 0;
 		borderType = settings.borderType;
 
 		if (settings.generateBackground)
@@ -75,7 +79,7 @@ public class Background
 
 			final float fractalPower = 1.3f;
 			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
-					((int)mapBounds.width) + borderWidthScaled * 2, ((int)mapBounds.height) + borderWidthScaled * 2, 0.75f);
+					((int) mapBounds.width) + borderWidthScaled * 2, ((int) mapBounds.height) + borderWidthScaled * 2, 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 			borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
@@ -121,8 +125,8 @@ public class Background
 			if (settings.colorizeOcean)
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						ImageHelper.convertToGrayscale(texture), ((int)mapBounds.height) + borderWidthScaled * 2,
-						((int)mapBounds.width) + borderWidthScaled * 2);
+						ImageHelper.convertToGrayscale(texture), ((int) mapBounds.height) + borderWidthScaled * 2,
+						((int) mapBounds.width) + borderWidthScaled * 2);
 				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
 						ImageHelper.ColorifyAlgorithm.algorithm3);
 				if (settings.drawBorder)
@@ -138,7 +142,7 @@ public class Background
 			else
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						texture, ((int)mapBounds.height) + borderWidthScaled * 2, ((int)mapBounds.width) + borderWidthScaled * 2);
+						texture, ((int) mapBounds.height) + borderWidthScaled * 2, ((int) mapBounds.width) + borderWidthScaled * 2);
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
@@ -188,7 +192,7 @@ public class Background
 
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
-							((int)mapBounds.height) + borderWidthScaled * 2, ((int)mapBounds.width) + borderWidthScaled * 2);
+							((int) mapBounds.height) + borderWidthScaled * 2, ((int) mapBounds.width) + borderWidthScaled * 2);
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -205,8 +209,8 @@ public class Background
 				else
 				{
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
-							new Random(settings.backgroundRandomSeed), texture, ((int)mapBounds.height) + borderWidthScaled * 2,
-							((int)mapBounds.width) + borderWidthScaled * 2);
+							new Random(settings.backgroundRandomSeed), texture, ((int) mapBounds.height) + borderWidthScaled * 2,
+							((int) mapBounds.width) + borderWidthScaled * 2);
 					land = removeBorderPadding(landGeneratedBackground);
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 				}
@@ -345,26 +349,120 @@ public class Background
 			throw new RuntimeException(
 					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
 		}
-		
-		int cornerWidth = borderWidthScaled + cornerInsetScaled;
+
+		int edgeOriginalWidth = 0;
+		// Edges
+		Image topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
+		if (topEdge != null)
+		{
+			edgeOriginalWidth = topEdge.getHeight();
+			topEdge = ImageHelper.scaleByHeight(topEdge, borderWidthScaled);
+		}
+		Image bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
+		if (bottomEdge != null)
+		{
+			edgeOriginalWidth = topEdge.getHeight();
+			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
+		}
+		Image leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
+		if (leftEdge != null)
+		{
+			edgeOriginalWidth = topEdge.getWidth();
+			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
+		}
+		Image rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
+		if (rightEdge != null)
+		{
+			edgeOriginalWidth = topEdge.getWidth();
+			rightEdge = ImageHelper.scaleByHeight(rightEdge, borderWidthScaled);
+		}
+
+
+		if (topEdge == null)
+		{
+			if (rightEdge != null)
+			{
+				topEdge = createEdgeFromEdge(rightEdge, EdgeType.Right, EdgeType.Top);
+			}
+			else if (leftEdge != null)
+			{
+				topEdge = createEdgeFromEdge(leftEdge, EdgeType.Left, EdgeType.Top);
+			}
+			else if (bottomEdge != null)
+			{
+				topEdge = createEdgeFromEdge(bottomEdge, EdgeType.Bottom, EdgeType.Top);
+			}
+			else
+			{
+				throw new RuntimeException("Couldn't find any edge images in " + borderPath);
+			}
+		}
+		if (rightEdge == null)
+		{
+			rightEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Right);
+		}
+		if (leftEdge == null)
+		{
+			leftEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Left);
+		}
+		if (bottomEdge == null)
+		{
+			bottomEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Bottom);
+		}
+
+		int cornerOriginalWidth = 0;
 
 		// Corners
-		Image upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
+		upperLeftCorner = loadImageWithStringInFileName(borderPath, "upper_left_corner.", false);
+		if (upperLeftCorner != null)
+		{
+			cornerOriginalWidth = upperLeftCorner.getWidth();
+		}
+		upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
+		if (upperRightCorner != null)
+		{
+			cornerOriginalWidth = upperRightCorner.getWidth();
+		}
+		lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
+		if (lowerLeftCorner != null)
+		{
+			cornerOriginalWidth = lowerLeftCorner.getWidth();
+		}
+		lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
+		if (lowerRightCorner != null)
+		{
+			cornerOriginalWidth = lowerRightCorner.getWidth();
+		}
+
+		if (edgeOriginalWidth == 0 || cornerOriginalWidth == 0)
+		{
+			throw new RuntimeException("The border cannot be drawn. Either edge or corner images are missing.");
+		}
+
+		if (cornerOriginalWidth <= edgeOriginalWidth)
+		{
+			hasInsetCorners = false;
+			cornerWidth = borderWidthScaled;
+		}
+		else
+		{
+			hasInsetCorners = true;
+			cornerWidth = (int) (borderWidthScaled * (((double) cornerOriginalWidth) / ((double) edgeOriginalWidth)));
+		}
+
+
 		if (upperLeftCorner != null)
 		{
 			upperLeftCorner = ImageHelper.scaleByWidth(upperLeftCorner, cornerWidth);
 		}
-		Image upperRightCorner = loadImageWithStringInFileName(borderPath, "upper_right_corner.", false);
 		if (upperRightCorner != null)
 		{
 			upperRightCorner = ImageHelper.scaleByWidth(upperRightCorner, cornerWidth);
 		}
-		Image lowerLeftCorner = loadImageWithStringInFileName(borderPath, "lower_left_corner.", false);
 		if (lowerLeftCorner != null)
 		{
 			lowerLeftCorner = ImageHelper.scaleByWidth(lowerLeftCorner, cornerWidth);
 		}
-		Image lowerRightCorner = loadImageWithStringInFileName(borderPath, "lower_right_corner.", false);
 		if (lowerRightCorner != null)
 		{
 			lowerRightCorner = ImageHelper.scaleByWidth(lowerRightCorner, cornerWidth);
@@ -402,64 +500,10 @@ public class Background
 			lowerRightCorner = createCornerFromCornerByFlipping(upperLeftCorner, CornerType.upperLeft, CornerType.lowerRight);
 		}
 
-		p.drawImage(upperLeftCorner, 0, 0);
-		p.drawImage(upperRightCorner, ((int)borderBounds.width) - cornerWidth, 0);
-		p.drawImage(lowerLeftCorner, 0, ((int)borderBounds.height) - cornerWidth);
-		p.drawImage(lowerRightCorner, ((int)borderBounds.width) - cornerWidth, ((int)borderBounds.height) - cornerWidth);
-
-		// Edges
-		Image topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
-		if (topEdge != null)
-		{
-			topEdge = ImageHelper.scaleByHeight(topEdge, borderWidthScaled);
-		}
-		Image bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
-		if (bottomEdge != null)
-		{
-			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
-		}
-		Image leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
-		if (leftEdge != null)
-		{
-			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
-		}
-		Image rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
-		if (rightEdge != null)
-		{
-			rightEdge = ImageHelper.scaleByHeight(rightEdge, borderWidthScaled);
-		}
-
-		if (topEdge == null)
-		{
-			if (rightEdge != null)
-			{
-				topEdge = createEdgeFromEdge(rightEdge, EdgeType.Right, EdgeType.Top);
-			}
-			else if (leftEdge != null)
-			{
-				topEdge = createEdgeFromEdge(leftEdge, EdgeType.Left, EdgeType.Top);
-			}
-			else if (bottomEdge != null)
-			{
-				topEdge = createEdgeFromEdge(bottomEdge, EdgeType.Bottom, EdgeType.Top);
-			}
-			else
-			{
-				throw new RuntimeException("Couldn't find any edge images in " + borderPath);
-			}
-		}
-		if (rightEdge == null)
-		{
-			rightEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Right);
-		}
-		if (leftEdge == null)
-		{
-			leftEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Left);
-		}
-		if (bottomEdge == null)
-		{
-			bottomEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Bottom);
-		}
+		drawUpperLeftCorner(result, new IntPoint(0, 0));
+		drawUpperRightCorner(result, new IntPoint(0, 0));
+		drawLowerLeftCorner(result, new IntPoint(0, 0));
+		drawLowerRightCorner(result, new IntPoint(0, 0));
 
 		// Draw the edges
 
@@ -516,6 +560,97 @@ public class Background
 		p.dispose();
 
 		return result;
+	}
+
+	private void drawUpperLeftCorner(Image target, IntPoint drawOffset)
+	{
+		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
+		if (hasInsetCorners)
+		{
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
+					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
+		}
+		Painter p = target.createPainter();
+		p.translate(-drawOffset.x, -drawOffset.y);
+		p.drawImage(upperLeftCorner, 0, 0);
+	}
+
+	private void drawUpperRightCorner(Image target, IntPoint drawOffset)
+	{
+		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
+		if (hasInsetCorners)
+		{
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
+					new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset), new IntRectangle(
+							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()),
+					0);
+		}
+		Painter p = target.createPainter();
+		p.translate(-drawOffset.x, -drawOffset.y);
+		p.drawImage(upperRightCorner, ((int) borderBounds.width) - cornerWidth, 0);
+	}
+
+	private void drawLowerLeftCorner(Image target, IntPoint drawOffset)
+	{
+		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
+		if (hasInsetCorners)
+		{
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
+					new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
+					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()),
+					0);
+
+		}
+		Painter p = target.createPainter();
+		p.translate(-drawOffset.x, -drawOffset.y);
+		p.drawImage(lowerLeftCorner, 0, ((int) borderBounds.height) - cornerWidth);
+	}
+
+	private void drawLowerRightCorner(Image target, IntPoint drawOffset)
+	{
+		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
+		if (hasInsetCorners)
+		{
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
+					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
+					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth,
+							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()),
+					0);
+
+		}
+		Painter p = target.createPainter();
+		p.translate(-drawOffset.x, -drawOffset.y);
+		p.drawImage(lowerRightCorner, ((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth);
+	}
+
+	public void drawInsetCornersIfBoundsTouchesThem(Image target, Rectangle drawBoundsBeforeBorder)
+	{
+		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderWidthScaled,
+				drawBoundsBeforeBorder.toIntRectangle().y + borderWidthScaled);
+		Rectangle bounds = drawBoundsBeforeBorder.translate(borderWidthScaled, borderWidthScaled);
+		Rectangle upperLeftCornerBounds = new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()).toRectangle();
+		if (upperLeftCornerBounds.overlaps(bounds))
+		{
+			drawUpperLeftCorner(target, drawOffset);
+		}
+		Rectangle upperRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(),
+				upperRightCorner.getHeight()).toRectangle();
+		if (upperRightCornerBounds.overlaps(bounds))
+		{
+			drawUpperRightCorner(target, drawOffset);
+		}
+		Rectangle lowerLeftCornerBounds = new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(),
+				lowerLeftCorner.getHeight()).toRectangle();
+		if (lowerLeftCornerBounds.overlaps(bounds))
+		{
+			drawLowerLeftCorner(target, drawOffset);
+		}
+		Rectangle lowerRightCornerBounds = new IntRectangle(((int) borderBounds.width) - cornerWidth,
+				((int) borderBounds.height) - cornerWidth, lowerRightCorner.getWidth(), lowerRightCorner.getHeight()).toRectangle();
+		if (lowerRightCornerBounds.overlaps(bounds))
+		{
+			drawLowerRightCorner(target, drawOffset);
+		}
 	}
 
 	public Image copyMapIntoBorder(Image mapWithoutBorder, Image border)
