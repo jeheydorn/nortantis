@@ -116,6 +116,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	protected String customImagesPath;
 	private JMenu fileMenu;
 	private JMenuItem newMapWithSameThemeMenuItem;
+	private JMenuItem searchTextMenuItem;
+	private TextSearchDialog textSearchDialog;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -169,6 +171,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		customImagesMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
+		searchTextMenuItem.setEnabled(enable);
 
 		highlightLakesButton.setEnabled(enable);
 		highlightRiversButton.setEnabled(enable);
@@ -769,6 +772,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				handleNameGeneratorPressed();
 			}
 		});
+		
+		searchTextMenuItem = new JMenuItem("Search Text");
+		searchTextMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
+		toolsMenu.add(searchTextMenuItem);
+		searchTextMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleSearchTextPressed();
+			}
+		});
 
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
@@ -1061,6 +1076,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		clearEntireMapButton.setEnabled(!isDrawing);
 		toolsPanel.showAsDrawing(isDrawing);
+		if (textSearchDialog != null)
+		{
+			textSearchDialog.setSearchButtonsEnabled(!isDrawing);
+		}
 	}
 
 	private double parsePercentage(String zoomStr)
@@ -1175,6 +1194,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		NameGeneratorDialog dialog = new NameGeneratorDialog(this, settings);
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
+	}
+	
+	private void handleSearchTextPressed()
+	{
+		if (textSearchDialog == null || !(textSearchDialog.isVisible()))
+		{
+			textSearchDialog = new TextSearchDialog(this);
+			textSearchDialog.setLocationRelativeTo(this);
+			textSearchDialog.setVisible(true);
+			textSearchDialog.setSearchButtonsEnabled(!updater.isMapBeingDrawn());
+		}
+		else
+		{
+			textSearchDialog.searchField.requestFocus();
+		}
 	}
 
 	public boolean checkForUnsavedChanges()

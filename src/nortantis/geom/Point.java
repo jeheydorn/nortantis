@@ -95,16 +95,16 @@ public class Point implements Comparable<Point>, Serializable
 	@Override
 	public int compareTo(Point other)
 	{
-		int c1 = Double.compare(x, other.x);
-		if (c1 < 0)
-			return -1;
-		if (c1 > 0)
-			return 1;
-
 		int c2 = Double.compare(y, other.y);
 		if (c2 < 0)
 			return -1;
 		if (c2 > 0)
+			return 1;
+
+		int c1 = Double.compare(x, other.x);
+		if (c1 < 0)
+			return -1;
+		if (c1 > 0)
 			return 1;
 
 		return 0;

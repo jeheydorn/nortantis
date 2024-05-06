@@ -502,7 +502,7 @@ public class TextTool extends EditorTool
 	{
 	}
 
-	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
+	public void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
 		if (lastSelected != null
 				&& !(editTextField.getText().trim().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
@@ -550,6 +550,15 @@ public class TextTool extends EditorTool
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;
+	}
+	
+	public MapText getTextBeingEdited()
+	{
+		if (editButton.isSelected() && lastSelected != null)
+		{
+			return lastSelected;
+		}
+		return null;
 	}
 
 	@Override

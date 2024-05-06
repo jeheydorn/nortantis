@@ -225,6 +225,20 @@ public class ToolsPanel extends JPanel
 			tool.getSettingsFromGUI(settings);
 		}
 	}
+	
+	public TextTool getTextTool()
+	{
+		for (EditorTool tool : tools)
+		{
+			if (tool instanceof TextTool)
+			{
+				return (TextTool) tool;
+			}
+		}
+		
+		assert false;
+		return null;
+	}
 
 	public void handleToolSelected(EditorTool selectedTool)
 	{
