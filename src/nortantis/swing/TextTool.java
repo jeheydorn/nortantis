@@ -337,9 +337,7 @@ public class TextTool extends EditorTool
 					undoer.setUndoPoint(UpdateType.Text, this);
 
 					lastSelected = addedText;
-					editButton.setSelected(true);
-					handleActionChanged();
-					handleSelectingTextToEdit(addedText, true);
+					changeToEditModeAndSelectText(addedText, true);
 
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
 				}
@@ -501,8 +499,15 @@ public class TextTool extends EditorTool
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
 	}
+	
+	public void changeToEditModeAndSelectText(MapText selectedText, boolean grabFocus)
+	{
+		editButton.setSelected(true);
+		handleActionChanged();
+		handleSelectingTextToEdit(selectedText, grabFocus);
+	}
 
-	public void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
+	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
 		if (lastSelected != null
 				&& !(editTextField.getText().trim().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)

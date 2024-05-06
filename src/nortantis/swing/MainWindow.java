@@ -329,7 +329,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 								.setValue(mapEditingScrollPane.getVerticalScrollBar().getValue() + deltaY);
 						mapEditingScrollPane.getHorizontalScrollBar()
 								.setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
-					}					
+					}
 				}
 				else if (SwingUtilities.isLeftMouseButton(e))
 				{
@@ -772,7 +772,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				handleNameGeneratorPressed();
 			}
 		});
-		
+
 		searchTextMenuItem = new JMenuItem("Search Text");
 		searchTextMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
 		toolsMenu.add(searchTextMenuItem);
@@ -1078,7 +1078,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		toolsPanel.showAsDrawing(isDrawing);
 		if (textSearchDialog != null)
 		{
-			textSearchDialog.setSearchButtonsEnabled(!isDrawing);
+			textSearchDialog.setAllowSearches(!isDrawing);
 		}
 	}
 
@@ -1195,15 +1195,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		dialog.setLocationRelativeTo(this);
 		dialog.setVisible(true);
 	}
-	
+
 	private void handleSearchTextPressed()
 	{
 		if (textSearchDialog == null || !(textSearchDialog.isVisible()))
 		{
 			textSearchDialog = new TextSearchDialog(this);
-			textSearchDialog.setLocationRelativeTo(this);
+			textSearchDialog.setAllowSearches((!updater.isMapBeingDrawn()));
+
+			java.awt.Point parentLocation = getLocation();
+			Dimension parentSize = getSize();
+			Dimension dialogSize = textSearchDialog.getSize();
+
+			textSearchDialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
+					parentLocation.y + parentSize.height - dialogSize.height - 18);
+
 			textSearchDialog.setVisible(true);
-			textSearchDialog.setSearchButtonsEnabled(!updater.isMapBeingDrawn());
 		}
 		else
 		{

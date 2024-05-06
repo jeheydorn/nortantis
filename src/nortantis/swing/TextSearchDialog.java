@@ -11,6 +11,7 @@ import java.awt.event.KeyListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -24,13 +25,17 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import nortantis.MapText;
+import nortantis.geom.Rectangle;
+import nortantis.platform.awt.AwtFactory;
 
+@SuppressWarnings("serial")
 public class TextSearchDialog extends JDialog
 {
 	public JTextField searchField;
 	private MainWindow mainWindow;
 	private JButton searchForward;
 	private JButton searchBackward;
+	private JLabel notFoundLabel;
 
 	// TODO Null out MainWindow.textSearchDialog when closing.
 
@@ -38,6 +43,7 @@ public class TextSearchDialog extends JDialog
 	{
 		super(mainWindow, "Search Text", Dialog.ModalityType.MODELESS);
 		setSize(450, 70);
+		setResizable(false);
 
 		this.mainWindow = mainWindow;
 
@@ -47,7 +53,7 @@ public class TextSearchDialog extends JDialog
 		final int padding = 4;
 		container.setBorder(BorderFactory.createEmptyBorder(padding, padding, padding, padding));
 
-		JLabel notFoundLabel = new JLabel("Not found");
+		notFoundLabel = new JLabel("Not found");
 		notFoundLabel.setForeground(new Color(255, 120, 120));
 		notFoundLabel.setVisible(false);
 
@@ -58,20 +64,20 @@ public class TextSearchDialog extends JDialog
 		{
 			public void changedUpdate(DocumentEvent e)
 			{
-				notFoundLabel.setVisible(false);
+				onSearchFieldChanged();
 			}
 
 			public void removeUpdate(DocumentEvent e)
 			{
-				notFoundLabel.setVisible(false);
+				onSearchFieldChanged();
 			}
 
 			public void insertUpdate(DocumentEvent e)
 			{
-				notFoundLabel.setVisible(false);
+				onSearchFieldChanged();
 			}
 		});
-		
+
 		container.add(notFoundLabel);
 		container.add(Box.createRigidArea(new Dimension(padding, 1)));
 
@@ -87,31 +93,7 @@ public class TextSearchDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if (searchField.getText().isEmpty())
-				{
-					notFoundLabel.setVisible(false);
-					return;
-				}
-				
-				MapText lastSelected = mainWindow.toolsPanel.currentTool instanceof TextTool
-						? ((TextTool) mainWindow.toolsPanel.currentTool).getTextBeingEdited()
-						: null;
-				MapText searchResult = findNext(lastSelected, searchField.getText());
-				if (searchResult == null)
-				{
-					notFoundLabel.setVisible(true);
-				}
-				else
-				{
-					notFoundLabel.setVisible(false);
-					TextTool textTool = mainWindow.toolsPanel.getTextTool();
-					if (mainWindow.toolsPanel.currentTool != textTool)
-					{
-						mainWindow.toolsPanel.handleToolSelected(textTool);	
-					}
-					textTool.handleSelectingTextToEdit(searchResult, false);
-					
-				}
+				search(true);
 			}
 		});
 
@@ -119,11 +101,67 @@ public class TextSearchDialog extends JDialog
 		searchBackward.setToolTipText("Search backward");
 		searchBackward.setFont(new java.awt.Font(searchBackward.getFont().getName(), searchBackward.getFont().getStyle(), fontSize));
 		container.add(searchBackward);
+		searchBackward.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				search(false);
+			}
+		});
 	}
 
-	private MapText findNext(MapText start, String query)
+	private void onSearchFieldChanged()
 	{
-		List<MapText> sorted = new ArrayList<>(mainWindow.edits.text);
+		notFoundLabel.setVisible(false);
+		setSearchButtonsEnabled(!searchField.getText().isEmpty());
+	}
+
+	private void search(boolean isForward)
+	{
+		if (searchField.getText().isEmpty())
+		{
+			notFoundLabel.setVisible(false);
+			return;
+		}
+
+		TextTool textTool = mainWindow.toolsPanel.getTextTool();
+		MapText lastSelected = textTool.getTextBeingEdited();
+		MapText searchResult = findNext(lastSelected, searchField.getText(), isForward);
+		if (searchResult == null)
+		{
+			notFoundLabel.setVisible(true);
+		}
+		else
+		{
+			notFoundLabel.setVisible(false);
+			if (mainWindow.toolsPanel.currentTool != textTool)
+			{
+				mainWindow.toolsPanel.handleToolSelected(textTool);
+			}
+			textTool.changeToEditModeAndSelectText(searchResult, false);
+
+			if (searchResult.line1Area != null)
+			{
+				// Scroll to make the selected text visible
+				
+				// TODO Pad the rectangle to push the scroll to area more into the middle so it won't by default end up under the search box.
+				
+				Rectangle scrollTo = searchResult.line1Area.getBounds();
+				if (searchResult.line2Area != null)
+				{
+					scrollTo = scrollTo.add(searchResult.line2Area.getBounds());
+				}
+				mainWindow.mapEditingPanel.scrollRectToVisible(AwtFactory.toAwtRectangle(scrollTo));
+				
+			}
+		}
+	}
+
+	private MapText findNext(MapText start, String query, boolean isForward)
+	{
+		List<MapText> sorted = new ArrayList<>(
+				mainWindow.edits.text.stream().filter(t -> t.value != null && !t.value.isEmpty()).collect(Collectors.toList()));
 		sorted.sort((text1, text2) ->
 		{
 			if (text1.location == null && text2.location == null)
@@ -141,24 +179,53 @@ public class TextSearchDialog extends JDialog
 			return text1.location.compareTo(text2.location);
 		});
 
-		int startIndex = start == null ? 0 : sorted.indexOf(start) + 1;
-		if (startIndex > sorted.size() - 1)
+		int i = start == null ? (isForward ? sorted.size() - 1 : 0) : sorted.indexOf(start);
+		int count = 0;
+		while (count < sorted.size())
 		{
-			startIndex = 0;
-		}
-		for (int i = startIndex; i < sorted.size(); i++)
-		{
+			if (isForward)
+			{
+				i++;
+				if (i >= sorted.size())
+				{
+					i = 0;
+				}
+			}
+			else
+			{
+				i--;
+				if (i < 0)
+				{
+					i = sorted.size() - 1;
+				}
+			}
+
 			if (sorted.get(i).value.toLowerCase().contains(query.toLowerCase()))
 			{
 				return sorted.get(i);
 			}
+
+			count++;
+		}
+
+		if (start != null && start.value.toLowerCase().contains(query.toLowerCase()))
+		{
+			return start;
 		}
 		return null;
 	}
-	
-	public void setSearchButtonsEnabled(boolean enable)
+
+	boolean allowSearches = true;
+
+	public void setAllowSearches(boolean allow)
 	{
-		searchForward.setEnabled(enable);
-		searchBackward.setEnabled(enable);
+		this.allowSearches = allow;
+		setSearchButtonsEnabled(allow);
+	}
+
+	private void setSearchButtonsEnabled(boolean enable)
+	{
+		searchForward.setEnabled(enable && allowSearches);
+		searchBackward.setEnabled(enable && allowSearches);
 	}
 }

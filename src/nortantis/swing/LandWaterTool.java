@@ -771,6 +771,12 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
+		if (selectedRegion != null)
+		{
+			selectedRegion = null;
+			mapEditingPanel.clearSelectedCenters();
+		}
+		
 		mapEditingPanel.setHighlightLakes(false);
 	}
 
