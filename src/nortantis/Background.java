@@ -625,6 +625,11 @@ public class Background
 
 	public void drawInsetCornersIfBoundsTouchesThem(Image target, Rectangle drawBoundsBeforeBorder)
 	{
+		if (borderWidthScaled == 0)
+		{
+			return;
+		}
+		
 		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderWidthScaled,
 				drawBoundsBeforeBorder.toIntRectangle().y + borderWidthScaled);
 		Rectangle bounds = drawBoundsBeforeBorder.translate(borderWidthScaled, borderWidthScaled);

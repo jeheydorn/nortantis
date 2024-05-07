@@ -626,6 +626,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		this.borderWidth = borderWidth;
 	}
+	
+	public int getBorderWidth()
+	{
+		return borderWidth;
+	}
 
 	public void clearAllSelectionsAndHighlights()
 	{

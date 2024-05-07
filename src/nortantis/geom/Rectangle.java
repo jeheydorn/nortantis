@@ -207,6 +207,11 @@ public class Rectangle
         // Create and return the scaled rectangle
         return new Rectangle(newX, newY, newWidth, newHeight);
 	}
+	
+	public Rectangle scaleAboutOrigin(double scale)
+	{
+		return new Rectangle(x * scale, y * scale, width * scale, height * scale);
+	}
 
 	public Rectangle findIntersection(Rectangle r2)
 	{
