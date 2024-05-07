@@ -80,7 +80,7 @@ public class CustomImagesDialog extends JDialog
 				+ " JPG format. PNG is recommended because it" + " supports transparency and isn't lossy.</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>Valid border image names are 'upper_left_corner', 'upper_right_corner', "
 				+ "'lower_left_corner', 'lower_right_corner', 'top_edge', 'bottom_edge', 'left_edge', 'right_edge'. At least one corner and"
-				+ " one edge must be given.</html>"), space, space, false);
+				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
 				+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'. If you don't want all three of those tree types,"

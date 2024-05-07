@@ -26,7 +26,7 @@ public class DebugFlags
 	 */
 	private static boolean printCenterIndexes = false;
 	
-	private static boolean printIconBeingEdited = true;
+	private static boolean printIconBeingEdited = false;
 	
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 	

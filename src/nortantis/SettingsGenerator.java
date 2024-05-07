@@ -146,6 +146,10 @@ public class SettingsGenerator
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
 			}
+			else if (settings.borderType.equals("dashes with inset corners"))
+			{
+				settings.borderWidth = Math.abs(rand.nextInt(75)) + 50;
+			}
 			else
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(200)) + 100;

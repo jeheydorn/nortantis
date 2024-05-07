@@ -361,20 +361,20 @@ public class Background
 		Image bottomEdge = loadImageWithStringInFileName(borderPath, "bottom_edge.", false);
 		if (bottomEdge != null)
 		{
-			edgeOriginalWidth = topEdge.getHeight();
+			edgeOriginalWidth = bottomEdge.getHeight();
 			bottomEdge = ImageHelper.scaleByHeight(bottomEdge, borderWidthScaled);
 		}
 		Image leftEdge = loadImageWithStringInFileName(borderPath, "left_edge.", false);
 		if (leftEdge != null)
 		{
-			edgeOriginalWidth = topEdge.getWidth();
+			edgeOriginalWidth = leftEdge.getWidth();
 			leftEdge = ImageHelper.scaleByWidth(leftEdge, borderWidthScaled);
 		}
 		Image rightEdge = loadImageWithStringInFileName(borderPath, "right_edge.", false);
 		if (rightEdge != null)
 		{
-			edgeOriginalWidth = topEdge.getWidth();
-			rightEdge = ImageHelper.scaleByHeight(rightEdge, borderWidthScaled);
+			edgeOriginalWidth = rightEdge.getWidth();
+			rightEdge = ImageHelper.scaleByWidth(rightEdge, borderWidthScaled);
 		}
 
 
