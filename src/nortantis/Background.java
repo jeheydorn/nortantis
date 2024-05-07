@@ -12,7 +12,6 @@ import java.util.Set;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
-import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.Color;

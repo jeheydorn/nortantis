@@ -512,7 +512,11 @@ public class IconDrawer
 		Rectangle removeBounds = null;
 		for (FreeIcon icon : toRemove)
 		{
-			removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
+			IconDrawTask task = toIconDrawTask(icon);
+			if (task != null)
+			{
+				removeBounds = Rectangle.add(removeBounds, toIconDrawTask(icon).createBounds());
+			}
 		}
 		freeIcons.removeAll(toRemove);
 
@@ -536,6 +540,7 @@ public class IconDrawer
 			if (cityImages == null || cityImages.isEmpty())
 			{
 				// This shouldn't happens since the new group id shouldn't have been an option if it were empty or null.
+				assert false;
 				return null;
 			}
 			warningLogger.addWarningMessage(
@@ -1481,6 +1486,10 @@ public class IconDrawer
 		{
 			Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
 					icon.groupId);
+			if (cityImages == null || cityImages.isEmpty() || !cityImages.containsKey(icon.iconName) || cityImages.get(icon.iconName) == null)
+			{
+				return null;
+			}
 			widthFromFileName = cityImages.get(icon.iconName).getSecond();
 		}
 

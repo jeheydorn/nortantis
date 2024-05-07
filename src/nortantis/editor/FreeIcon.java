@@ -166,6 +166,10 @@ public class FreeIcon
 		else
 		{
 			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
+			if (groupImages == null || groupImages.isEmpty())
+			{
+				return null;
+			}
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseHeight))
@@ -180,6 +184,14 @@ public class FreeIcon
 		{
 			Map<String, Tuple2<ImageAndMasks, Integer>> iconsWithWidths = ImageCache.getInstance(imagesPath)
 					.getIconsWithWidths(IconType.cities, groupId);
+			if (iconsWithWidths == null || iconsWithWidths.isEmpty())
+			{
+				return null;
+			}
+			if (!iconsWithWidths.containsKey(iconName) || iconsWithWidths.get(iconName) == null)
+			{
+				return null;
+			}
 			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName).getFirst();
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth)).toIntDimension();
@@ -188,6 +200,10 @@ public class FreeIcon
 		else
 		{
 			List<ImageAndMasks> groupImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(type).get(groupId);
+			if (groupImages == null || groupImages.isEmpty())
+			{
+				return null;
+			}
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).roundToIntDimension();

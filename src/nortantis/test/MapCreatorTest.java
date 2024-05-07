@@ -72,7 +72,7 @@ public class MapCreatorTest
 	@Test
 	public void drawWithoutEditsMatchesWithEdits()
 	{
-		MapSettings settings = SettingsGenerator.generate(new Random(123456789));
+		MapSettings settings = SettingsGenerator.generate(new Random(1));
 		settings.resolution = 0.5;
 		Tuple1<Image> mapTuple = new Tuple1<>();
 		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
@@ -129,8 +129,8 @@ public class MapCreatorTest
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			drawnWithoutEdits.write(Paths.get("unit test files", "failed maps", "noOceanOrCoastEffects_NoEdits.png").toString());
-			drawnWithEdits.write(Paths.get("unit test files", "failed maps", "noOceanOrCoastEffects_WithEdits.png").toString());
+			drawnWithoutEdits.write(Paths.get("unit test files", "failed maps", "compareWithAndWithoutEdits_NoEdits.png").toString());
+			drawnWithEdits.write(Paths.get("unit test files", "failed maps", "compareWithAndWithoutEdits_WithEdits.png").toString());
 			createImageDiffIfImagesAreSameSize(drawnWithoutEdits, drawnWithEdits, "noOceanOrCoastEffects");
 			fail(comparisonErrorMessage);
 		}

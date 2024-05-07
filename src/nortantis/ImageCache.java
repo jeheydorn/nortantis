@@ -2,6 +2,8 @@ package nortantis;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -273,7 +275,7 @@ public class ImageCache
 			public boolean accept(File dir, String name)
 			{
 				File file = new File(dir, name);
-				return file.isDirectory();
+				return file.isDirectory() && isDirectoryNotEmpty(file.getAbsolutePath());
 			}
 		});
 
@@ -289,6 +291,19 @@ public class ImageCache
 			result.add(folderName);
 		}
 		return result;
+	}
+	
+	private boolean isDirectoryNotEmpty(String directory)
+	{
+		try
+		{
+			return Files.list(Paths.get(directory)).findAny().isPresent();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	/**

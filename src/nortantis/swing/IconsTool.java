@@ -964,7 +964,7 @@ public class IconsTool extends EditorTool
 					mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
 				});
 
-				if (!mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
+				if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
 				{
 					// The user moved the last tree out of that polygon. Remove the invisible CenterTree so that if someone resizes all
 					// trees later, trees don't appear out of nowhere on this Center.
