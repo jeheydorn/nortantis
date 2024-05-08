@@ -105,6 +105,8 @@ public class Undoer
 		{
 			return;
 		}
+		
+		mainWindow.toolsPanel.currentTool.onBeforeUndoRedo();
 
 		MapChange changeToUndo = undoStack.pop();
 		

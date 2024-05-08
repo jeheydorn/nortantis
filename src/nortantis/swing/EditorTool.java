@@ -50,8 +50,6 @@ public abstract class EditorTool
 
 	public abstract void onSwitchingAway();
 
-	public abstract void onActivate();
-
 	protected abstract JPanel createToolOptionsPanel();
 
 	public JPanel getToolOptionsPanel()
@@ -111,6 +109,8 @@ public abstract class EditorTool
 	}
 
 	protected abstract void onAfterUndoRedo();
+	
+	protected abstract void onBeforeUndoRedo();
 
 	public nortantis.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
 	{

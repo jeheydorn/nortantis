@@ -3,6 +3,7 @@ package nortantis;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -174,7 +175,7 @@ public class ImageCache
 			Image icon;
 
 			icon = getImageFromFile(path);
-			
+
 
 			result.add(new ImageAndMasks(icon, iconType));
 		}
@@ -275,7 +276,7 @@ public class ImageCache
 			public boolean accept(File dir, String name)
 			{
 				File file = new File(dir, name);
-				return file.isDirectory() && isDirectoryNotEmpty(file.getAbsolutePath());
+				return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
 			}
 		});
 
@@ -292,17 +293,17 @@ public class ImageCache
 		}
 		return result;
 	}
-	
-	private boolean isDirectoryNotEmpty(String directory)
+
+	private static boolean isDirectoryEmpty(final String directory)
 	{
-		try
+		try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
 		{
-			return Files.list(Paths.get(directory)).findAny().isPresent();
+			return !dirStream.iterator().hasNext();
 		}
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			return false;
+			return true;
 		}
 	}
 

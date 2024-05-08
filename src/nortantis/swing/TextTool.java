@@ -183,8 +183,8 @@ public class TextTool extends EditorTool
 			}
 		});
 		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
-		
-		
+
+
 		lineBreakComboBox = new JComboBoxFixed<>();
 		lineBreakHider = organizer.addLabelAndComponent("Number of lines:", "", lineBreakComboBox);
 		for (LineBreak type : LineBreak.values())
@@ -193,7 +193,7 @@ public class TextTool extends EditorTool
 		}
 		lineBreakComboBox.addActionListener(new ActionListener()
 		{
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
@@ -201,11 +201,12 @@ public class TextTool extends EditorTool
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
+					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
 			}
 		});
-		
+
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -280,12 +281,6 @@ public class TextTool extends EditorTool
 	public String getImageIconFilePath()
 	{
 		return Paths.get(AssetsPath.getInstallPath(), "internal/Text tool.png").toString();
-	}
-
-	@Override
-	public void onActivate()
-	{
-		editTextField.requestFocus();
 	}
 
 	@Override
@@ -499,7 +494,7 @@ public class TextTool extends EditorTool
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
 	}
-	
+
 	public void changeToEditModeAndSelectText(MapText selectedText, boolean grabFocus)
 	{
 		editButton.setSelected(true);
@@ -509,9 +504,9 @@ public class TextTool extends EditorTool
 
 	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
-		if (lastSelected != null
-				&& !(editTextField.getText().trim().equals(lastSelected.value) && textTypeComboBox.getSelectedItem().equals(lastSelected.type)
-						&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())))
+		if (lastSelected != null && !(editTextField.getText().trim().equals(lastSelected.value)
+				&& textTypeComboBox.getSelectedItem().equals(lastSelected.type)
+				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())))
 		{
 			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
@@ -556,7 +551,7 @@ public class TextTool extends EditorTool
 
 		lastSelected = selectedText;
 	}
-	
+
 	public MapText getTextBeingEdited()
 	{
 		if (editButton.isSelected() && lastSelected != null)
@@ -569,16 +564,35 @@ public class TextTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		// Keep any text edits being done.
+		// Keep any text edits being done and clear the selected text.
 		if (editButton.isSelected())
 		{
-			handleSelectingTextToEdit(lastSelected, false);
+			handleSelectingTextToEdit(null, false);
 		}
 
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearTextBox();
 		mapEditingPanel.clearProcessingAreas();
+		mapEditingPanel.repaint();
+	}
+	
+
+	@Override
+	protected void onBeforeUndoRedo()
+	{
+		// Create an undo point for any current changes.
+		handleSelectingTextToEdit(lastSelected, false);
+	}
+	
+	@Override
+	protected void onAfterUndoRedo()
+	{
+		lastSelected = null;
+		handleSelectingTextToEdit(null, false);
+		editTextField.setText("");
+
+		lastSelected = null;
 	}
 
 	@Override
@@ -629,18 +643,8 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onAfterUndoRedo()
-	{
-		mapEditingPanel.clearTextBox();
-		mapEditingPanel.repaint();
-		lastSelected = null;
-		editTextField.setText("");
-
-		lastSelected = null;
-	}
-
-	@Override
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
+			boolean willDoImagesRefresh)
 	{
 		// I'm excluding this when isUndoRedoOrAutomaticChange=false because I don't think undue redo should change the book selection,
 		// since changing the book selection doesn't change the map.

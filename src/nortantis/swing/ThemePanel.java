@@ -734,11 +734,8 @@ public class ThemePanel extends JTabbedPane
 			if (enableSizeSliderListeners)
 			{
 				unselectAnyIconBeingEdited();
-				mainWindow.updater.dowWhenMapIsNotDrawing(() ->
-				{
-					repositionMountainsForNewScale();
-					handleTerrainChange();
-				});
+				repositionMountainsForNewScale();
+				handleTerrainChange();
 			}
 		});
 		enableSizeSliderListeners = true;

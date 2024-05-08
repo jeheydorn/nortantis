@@ -109,7 +109,8 @@ public class IconDrawer
 		treeDensityScale = calcTreeDensityScale();
 
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
-		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors * maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
+		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors
+				* maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
 	}
 
 
@@ -117,7 +118,8 @@ public class IconDrawer
 	{
 		for (Center c : graph.centers)
 		{
-			if (c.elevation > mountainElevationThreshold && !c.isBorder && graph.findCenterWidthBetweenNeighbors(c) < maxSizeToDrawGeneratedMountainOrHill)
+			if (c.elevation > mountainElevationThreshold && !c.isBorder
+					&& graph.findCenterWidthBetweenNeighbors(c) < maxSizeToDrawGeneratedMountainOrHill)
 			{
 				c.isMountain = true;
 			}
@@ -419,13 +421,16 @@ public class IconDrawer
 
 	public double getUnanchoredMountainYChangeFromMountainScaleChange(FreeIcon icon, double newMountainScale)
 	{
-		Image image =  toIconDrawTask(icon).unScaledImageAndMasks.image;
-		// I'm excluding icon level scaling in this calculation because icon level scaling is done about the icon's center even for mountains,
+		Image image = toIconDrawTask(icon).unScaledImageAndMasks.image;
+		// I'm excluding icon level scaling in this calculation because icon level scaling is done about the icon's center even for
+		// mountains,
 		// so it doesn't affect the Y offset for mountains.
-		double prevScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidthOrHeight(IconType.mountains, 0) * mountainScale).height;
-		double newScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(), getBaseWidthOrHeight(IconType.mountains, 0) * newMountainScale).height;
+		double prevScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(),
+				getBaseWidthOrHeight(IconType.mountains, 0) * mountainScale).height;
+		double newScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(),
+				getBaseWidthOrHeight(IconType.mountains, 0) * newMountainScale).height;
 		double offsetFromBottom = getOffsetFromCenterBottomToPutBottomOfMountainImageAt(meanPolygonWidth);
-		return (prevScaledHeightWithoutIconScale/2.0 - offsetFromBottom) - (newScaledHeightWithoutIconScale/2.0 - offsetFromBottom);
+		return (prevScaledHeightWithoutIconScale / 2.0 - offsetFromBottom) - (newScaledHeightWithoutIconScale / 2.0 - offsetFromBottom);
 	}
 
 	/**
@@ -1023,9 +1028,19 @@ public class IconDrawer
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 
+		if (mountainImagesById.isEmpty())
+		{
+			Logger.println("No mountains or hills will be added because there are no mountain images.");
+		}
+
 		// Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
 		// The hill image file names must use the same ids as the mountain ranges.
 		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.hills);
+
+		if (hillImagesById.isEmpty() && !mountainImagesById.isEmpty())
+		{
+			Logger.println("No hills will be added because there are no hill images.");
+		}
 
 		// Warn if images are missing
 		for (String hillGroupId : hillImagesById.keySet())
@@ -1052,7 +1067,7 @@ public class IconDrawer
 			for (Center c : group)
 			{
 				String fileNameRangeId = rangeMap.get(c.mountainRangeId);
-				if ((fileNameRangeId == null))
+				if (fileNameRangeId == null && !mountainImagesById.isEmpty())
 				{
 					fileNameRangeId = new ArrayList<>(mountainImagesById.keySet()).get(rand.nextInt(mountainImagesById.keySet().size()));
 					rangeMap.put(c.mountainRangeId, fileNameRangeId);
@@ -1060,43 +1075,22 @@ public class IconDrawer
 
 				if (c.isMountain)
 				{
-					// I'm deliberately putting this line before checking center size so that the
-					// random number generator is used the same no matter what resolution the map
-					// is drawn at.
-					int i = Math.abs(rand.nextInt());
-
-					double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
-					double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
-					Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
-
-					FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i, c.index);
-
-					IconDrawTask task = toIconDrawTask(icon);
-
-					if (!isContentBottomTouchingWater(task))
-					{
-						freeIcons.addOrReplace(icon);
-					}
-					else
+					if (mountainImagesById.isEmpty())
 					{
 						c.isMountain = false;
 					}
-				}
-				else if (c.isHill)
-				{
-					List<ImageAndMasks> imagesInGroup = hillImagesById.get(fileNameRangeId);
-
-					if (imagesInGroup != null && !imagesInGroup.isEmpty())
+					else
 					{
 						// I'm deliberately putting this line before checking center size so that the
 						// random number generator is used the same no matter what resolution the map
 						// is drawn at.
 						int i = Math.abs(rand.nextInt());
 
-						double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
-						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
+						double widthBeforeTypeLevelScaling = findNewMountainWidthBeforeTypeLevelScaling(c);
+						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
+						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, fileNameRangeId, i, c.index);
+						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, fileNameRangeId, i, c.index);
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1106,7 +1100,42 @@ public class IconDrawer
 						}
 						else
 						{
-							c.isHill = false;
+							c.isMountain = false;
+						}
+					}
+				}
+				else if (c.isHill)
+				{
+					if (fileNameRangeId == null || hillImagesById.isEmpty())
+					{
+						c.isHill = false;
+					}
+					else
+					{
+						List<ImageAndMasks> imagesInGroup = hillImagesById.get(fileNameRangeId);
+
+						if (imagesInGroup != null && !imagesInGroup.isEmpty())
+						{
+							// I'm deliberately putting this line before checking center size so that the
+							// random number generator is used the same no matter what resolution the map
+							// is drawn at.
+							int i = Math.abs(rand.nextInt());
+
+							double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
+							double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
+
+							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, fileNameRangeId, i, c.index);
+
+							IconDrawTask task = toIconDrawTask(icon);
+
+							if (!isContentBottomTouchingWater(task))
+							{
+								freeIcons.addOrReplace(icon);
+							}
+							else
+							{
+								c.isHill = false;
+							}
 						}
 					}
 				}
@@ -1486,7 +1515,8 @@ public class IconDrawer
 		{
 			Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
 					icon.groupId);
-			if (cityImages == null || cityImages.isEmpty() || !cityImages.containsKey(icon.iconName) || cityImages.get(icon.iconName) == null)
+			if (cityImages == null || cityImages.isEmpty() || !cityImages.containsKey(icon.iconName)
+					|| cityImages.get(icon.iconName) == null)
 			{
 				return null;
 			}

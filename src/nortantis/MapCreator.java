@@ -594,7 +594,7 @@ public class MapCreator implements WarningLogger
 
 		textDrawer.setMapTexts(settings.edits.text);
 
-		if (settings.edits.isInitialized())
+		if (settings.edits.isInitialized() || settings.edits.text.size() > 0)
 		{
 			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
 		}
@@ -1194,7 +1194,7 @@ public class MapCreator implements WarningLogger
 				int higherThreshold = (int) (Math.round(highThresholdInKernel));
 				if (higherThreshold > blur.getMaxPixelLevel())
 				{
-					// TODO See if this happens.
+					// Just to be safe
 					higherThreshold = blur.getMaxPixelLevel();
 				}
 
@@ -1277,13 +1277,13 @@ public class MapCreator implements WarningLogger
 		int x1 = (int) x;
 		if (x1 > kernel[y].length - 1)
 		{
-			// TODO check that this doesn't actually happen
+			// Shouldn't happen with the way this method is called
 			return kernel[y][kernel[y].length - 1];
 		}
 		int x2 = x1 + 1;
 		if (x2 > kernel[y].length - 1)
 		{
-			// TODO check that this doesn't actually happen
+			// Shouldn't happen with the way this method is called
 			return kernel[y][kernel[y].length - 1];
 		}
 		double c = x - x1;

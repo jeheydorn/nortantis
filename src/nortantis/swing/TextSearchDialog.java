@@ -33,8 +33,6 @@ public class TextSearchDialog extends JDialog
 	private JButton searchBackward;
 	private JLabel notFoundLabel;
 
-	// TODO Null out MainWindow.textSearchDialog when closing.
-
 	public TextSearchDialog(MainWindow mainWindow)
 	{
 		super(mainWindow, "Search Text", Dialog.ModalityType.MODELESS);
@@ -150,9 +148,6 @@ public class TextSearchDialog extends JDialog
 				scrollTo = scrollTo.translate(borderWidth, borderWidth);
 				scrollTo = scrollTo.scaleAboutOrigin(mainWindow.zoom * (1.0 / mainWindow.mapEditingPanel.osScale));
 				int padding = (int)(250 * (1.0 / mainWindow.mapEditingPanel.osScale));
-				// TODO see if the below is possible and add this back if it is.
-				// Make sure I don't add so much padding that it pushes the text off the screen, if that's possible. 
-				//padding = Math.min(padding, Math.min(mainWindow.mapEditingPanel.getVisibleRect().width / 3, mainWindow.mapEditingPanel.getVisibleRect().width / 3));
 				scrollTo = scrollTo.pad(padding, padding); 
 
 				mainWindow.mapEditingPanel.scrollRectToVisible(AwtFactory.toAwtRectangle(scrollTo));

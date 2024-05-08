@@ -261,7 +261,6 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
-		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
 
 		if (!updater.isMapBeingDrawn())

@@ -759,11 +759,6 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	public void onActivate()
-	{
-	}
-
-	@Override
 	protected void onBeforeShowMap()
 	{
 	}
@@ -835,6 +830,11 @@ public class LandWaterTool extends EditorTool
 
 	@Override
 	public void onBeforeLoadingNewMap()
+	{
+	}
+
+	@Override
+	protected void onBeforeUndoRedo()
 	{
 	}
 }

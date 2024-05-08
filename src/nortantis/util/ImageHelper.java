@@ -1711,7 +1711,6 @@ public class ImageHelper
 
 	/**
 	 * Changes all pixels in target to fillValue where pixels in source are between lowThreshold inclusive and highThreshold exclusive.
-	 * TODO decide if highThreshold should be inclusive or exclusive.
 	 */
 	public static void fillInTarget(Image target, Image source, int lowThreshold, int highThreshold, int fillValue)
 	{

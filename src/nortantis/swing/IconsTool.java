@@ -1136,11 +1136,6 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public void onActivate()
-	{
-	}
-
-	@Override
 	protected void onBeforeShowMap()
 	{
 	}
@@ -1323,5 +1318,10 @@ public class IconsTool extends EditorTool
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
+	}
+
+	@Override
+	protected void onBeforeUndoRedo()
+	{	
 	}
 }

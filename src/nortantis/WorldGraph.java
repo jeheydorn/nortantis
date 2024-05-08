@@ -97,7 +97,7 @@ public class WorldGraph extends VoronoiGraph
 		initVoronoiGraph(v, numLloydRelaxations, lloydRelaxationsScale, createElevationBiomesLakesAndRegions);
 		setupColors();
 		regions = new TreeMap<>();
-		
+
 		// Switch the center locations the Voronoi centroids of each center because I think that
 		// looks better for drawing, and it works better for smooth coastlines.
 		updateCenterLocationsToCentroids();
@@ -143,7 +143,7 @@ public class WorldGraph extends VoronoiGraph
 			for (Center center : changed)
 			{
 				center.updateLocToCentroid();
-			}			
+			}
 		}
 		else if (lineStyle == LineStyle.Splines && areRegionBoundariesVisible)
 		{
@@ -184,7 +184,7 @@ public class WorldGraph extends VoronoiGraph
 					}
 				}
 			}
-			
+
 			for (Center center : next)
 			{
 				center.updateLocToCentroid();
@@ -1266,7 +1266,7 @@ public class WorldGraph extends VoronoiGraph
 			c.isWater = (numLand != c.touches.size()) && !c.isCoast;
 		}
 	}
-	
+
 	private void assignOceanAndContinentalPlates()
 	{
 		for (TectonicPlate plate : plates)
@@ -1517,12 +1517,23 @@ public class WorldGraph extends VoronoiGraph
 		// Add each corner to the bounds.
 		for (Center center : centers)
 		{
+
 			// Use the centroid of the neighbors instead of this center's own
 			// corners because noisy
 			// edges/curves can extend beyond this center.
 			for (Center neighbor : center.neighbors)
 			{
 				bounds = bounds.add(neighbor.loc);
+			}
+
+			// For centers on the edge of the map, add the corners to the bounds because the center doesn't have neighbors in all
+			// directions.
+			if (center.isBorder)
+			{
+				for (Corner corner : center.corners)
+				{
+					bounds = bounds.add(corner.loc);
+				}
 			}
 		}
 

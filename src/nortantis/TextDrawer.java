@@ -782,7 +782,7 @@ public class TextDrawer
 
 	private int getBackgroundBlendingPadding(Dimension textSize)
 	{
-		return getBackgroundBlendingKernelSize(textSize) / 2;
+		return getBackgroundBlendingKernelSize(textSize);
 	}
 
 	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double angle, Point pivot)

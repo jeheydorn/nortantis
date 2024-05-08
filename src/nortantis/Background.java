@@ -393,7 +393,7 @@ public class Background
 			}
 			else
 			{
-				throw new RuntimeException("Couldn't find any edge images in " + borderPath);
+				throw new RuntimeException("Border cannot be drawn. Couldn't find any edge images in " + borderPath);
 			}
 		}
 		if (rightEdge == null)
@@ -432,10 +432,15 @@ public class Background
 		{
 			cornerOriginalWidth = lowerRightCorner.getWidth();
 		}
-
-		if (edgeOriginalWidth == 0 || cornerOriginalWidth == 0)
+		
+		if (cornerOriginalWidth == 0)
 		{
-			throw new RuntimeException("The border cannot be drawn. Either edge or corner images are missing.");
+			throw new RuntimeException("Border cannot be drawn. Could not find any corner images in " + borderPath);
+		}
+
+		if (edgeOriginalWidth == 0)
+		{
+			throw new RuntimeException("Border cannot be drawn. Could not find any edge images in " + borderPath);
 		}
 
 		if (cornerOriginalWidth <= edgeOriginalWidth)
@@ -483,7 +488,7 @@ public class Background
 			}
 			else
 			{
-				throw new RuntimeException("Couldn't find any corner images in " + borderPath);
+				throw new RuntimeException("Border cannot be drawn. Couldn't find any corner images in " + borderPath);
 			}
 		}
 		if (upperRightCorner == null)
