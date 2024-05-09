@@ -1186,7 +1186,6 @@ public class MapCreator implements WarningLogger
 				}
 				float[][] kernel = ImageHelper.createGaussianKernel((int) whiteWidth);
 				// Use 16-bit grayscale for the blur because the thresholding for determining where the waves are needs that extra decision.
-				// TODO See if this is true.
 				Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, ImageType.Grayscale16Bit);
 
 				double highThresholdInKernel = getKernelValueToThreholdWavesForWidth(kernel, scale, targetStrokeWidth, waveWidth,
