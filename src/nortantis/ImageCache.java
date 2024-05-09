@@ -22,6 +22,7 @@ import nortantis.geom.IntDimension;
 import nortantis.platform.Image;
 import nortantis.util.AssetsPath;
 import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.FileHelper;
 import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
@@ -87,7 +88,8 @@ public class ImageCache
 	{
 		if (imagesPath != null && !imagesPath.isEmpty())
 		{
-			return instances.getOrCreate(imagesPath, () -> new ImageCache(imagesPath));
+			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
+			return instances.getOrCreate(pathWithHomeReplaced, () -> new ImageCache(pathWithHomeReplaced));
 		}
 
 		return instances.getOrCreate(AssetsPath.getInstallPath(), () -> new ImageCache(AssetsPath.getInstallPath()));

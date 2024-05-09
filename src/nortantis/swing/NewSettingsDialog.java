@@ -37,6 +37,7 @@ import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.ThemePanel.LandColoringMethod;
+import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 
@@ -293,7 +294,7 @@ public class NewSettingsDialog extends JDialog
 
 		JButton changeButton = new JButton("Change");
 		pathDisplay = new JTextField();
-		pathDisplay.setText(UserPreferences.getInstance().defaultCustomImagesPath);
+		pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(UserPreferences.getInstance().defaultCustomImagesPath));
 		pathDisplay.setEditable(false);
 		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.",
 				Arrays.asList(pathDisplay, changeButton));
@@ -332,7 +333,7 @@ public class NewSettingsDialog extends JDialog
 	{
 		if (settings != null && settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
-			pathDisplay.setText(settings.customImagesPath);
+			pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath));
 		}
 		else
 		{

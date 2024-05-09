@@ -15,6 +15,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
+import nortantis.util.FileHelper;
 import nortantis.util.Logger;
 
 public class UserPreferences
@@ -91,7 +92,7 @@ public class UserPreferences
 				}
 				if (props.containsKey("defaultCustomImagesPath"))
 				{
-					defaultCustomImagesPath = props.getProperty("defaultCustomImagesPath");
+					defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(props.getProperty("defaultCustomImagesPath"));
 				}
 				if (props.containsKey("showNewMapWithSameThemeRegionColorsMessage"))
 				{

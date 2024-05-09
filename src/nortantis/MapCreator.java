@@ -36,6 +36,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
+import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
@@ -468,9 +469,15 @@ public class MapCreator implements WarningLogger
 		if (!AssetsPath.getInstallPath().equals(settings.customImagesPath) && settings.customImagesPath != null
 				&& !settings.customImagesPath.isEmpty())
 		{
-			if (!new File(settings.customImagesPath).exists())
+			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
+			if (!settings.customImagesPath.equals(pathWithHomeReplaced))
 			{
-				throw new RuntimeException("The custom images folder '" + settings.customImagesPath + "' does not exist.");
+				Logger.println("This map uses the custom images folder '" + settings.customImagesPath + "', which contains the home folder of a user other than the logged in user. The path '" + pathWithHomeReplaced + "' will be used instead.");
+			}
+			
+			if (!new File(pathWithHomeReplaced).exists())
+			{
+				throw new RuntimeException("The custom images folder '" + pathWithHomeReplaced + "' does not exist.");
 			}
 			Logger.println("Using custom images folder: " + settings.customImagesPath);
 		}
@@ -1684,6 +1691,10 @@ public class MapCreator implements WarningLogger
 		if (imagesPath == null || imagesPath.isEmpty())
 		{
 			imagesPath = AssetsPath.getInstallPath();
+		}
+		else
+		{
+			imagesPath = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
 		}
 
 		File[] directories = new File(Paths.get(imagesPath, "borders").toString()).listFiles(File::isDirectory);

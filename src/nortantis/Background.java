@@ -19,6 +19,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.util.AssetsPath;
+import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
@@ -55,7 +56,7 @@ public class Background
 	{
 		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
-			this.imagesPath = settings.customImagesPath;
+			this.imagesPath = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
 		}
 		else
 		{

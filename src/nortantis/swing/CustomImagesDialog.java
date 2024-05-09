@@ -34,6 +34,7 @@ import org.apache.commons.io.FileUtils;
 
 import nortantis.editor.UserPreferences;
 import nortantis.util.AssetsPath;
+import nortantis.util.FileHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
@@ -130,7 +131,7 @@ public class CustomImagesDialog extends JDialog
 				openButton.setEnabled(!customImagesFolderField.getText().isEmpty());
 			}
 		});
-		customImagesFolderField.setText(currentCustomImagesPath);
+		customImagesFolderField.setText(FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
 		JButton browseButton = new JButton("Browse");
 		browseButton.addActionListener(new ActionListener()
 		{
@@ -217,7 +218,7 @@ public class CustomImagesDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), currentCustomImagesPath);
+				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
 					JOptionPane.showMessageDialog(null,
@@ -228,12 +229,12 @@ public class CustomImagesDialog extends JDialog
 				// If the custom images folder changed, then store the value, refresh images, and redraw the map.
 				if (isChanged)
 				{
-					storeResult.accept(customImagesFolderField.getText());
+					storeResult.accept(FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText()));
 				}
 
 				if (makeDefaultCheckbox.isSelected())
 				{
-					UserPreferences.getInstance().defaultCustomImagesPath = customImagesFolderField.getText();
+					UserPreferences.getInstance().defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText());
 				}
 
 				dispose();
