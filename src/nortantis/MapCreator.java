@@ -470,11 +470,6 @@ public class MapCreator implements WarningLogger
 				&& !settings.customImagesPath.isEmpty())
 		{
 			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
-			if (!settings.customImagesPath.equals(pathWithHomeReplaced))
-			{
-				Logger.println("This map uses the custom images folder '" + settings.customImagesPath + "', which contains the home folder of a user other than the logged in user. The path '" + pathWithHomeReplaced + "' will be used instead.");
-			}
-			
 			if (!new File(pathWithHomeReplaced).exists())
 			{
 				throw new RuntimeException("The custom images folder '" + pathWithHomeReplaced + "' does not exist.");

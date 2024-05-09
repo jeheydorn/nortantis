@@ -15,7 +15,7 @@ public class FileHelper
 			return absolutePath;
 		}
 		
-		if (absolutePath.startsWith(homePlaceholder))
+		if (absolutePath.startsWith(getHomePlaceholder()))
 		{
 			String userHome = System.getProperty("user.home");
 			if (userHome == null || userHome.isEmpty())
@@ -23,7 +23,7 @@ public class FileHelper
 				return absolutePath;
 			}
 			
-			String relativePart = absolutePath.substring(homePlaceholder.length());
+			String relativePart = absolutePath.substring(getHomePlaceholder().length());
 			return Paths.get(userHome, relativePart).toString();
 		}
 		else
@@ -31,8 +31,19 @@ public class FileHelper
 			return absolutePath;
 		}
 	}
-
-	private static final String homePlaceholder = "<<home>>";
+	
+	private static String getHomePlaceholder()
+	{
+		if (AssetsPath.isWindows())
+		{
+			return "%HOMEPATH%";
+		}
+		else
+		{
+			return "~";
+		}
+	}
+	
 	public static String replaceHomeFolderWithPlaceholder(String absolutePath)
 	{
 		// Get the user's home directory
@@ -49,7 +60,7 @@ public class FileHelper
 			{
 				// Replace the home directory part with the current user's name
 				Path relativePart = FileSystems.getDefault().getPath(userHome).relativize(inputPath);
-				return homePlaceholder + File.separator + relativePart.toString();
+				return getHomePlaceholder() + File.separator + relativePart.toString();
 			}
 			else
 			{

@@ -202,7 +202,7 @@ public class CustomImagesDialog extends JDialog
 
 		organizer.addLeftAlignedComponent(panel, false);
 
-		JCheckBox makeDefaultCheckbox = new JCheckBox("Make this the default for new maps");
+		JCheckBox makeDefaultCheckbox = new JCheckBox("Make this the default for new random maps");
 		organizer.addLeftAlignedComponent(makeDefaultCheckbox);
 
 
