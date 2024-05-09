@@ -17,7 +17,7 @@ import java.util.TreeMap;
 //import de.polygonal.math.PM_PRNG;
 import nortantis.CurveCreator;
 import nortantis.MapSettings.LineStyle;
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 public class NoisyEdges
 {

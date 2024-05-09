@@ -1,8 +1,5 @@
 package nortantis.graph.voronoi;
 
-import java.awt.Polygon;
-import java.awt.geom.Area;
-import java.awt.geom.Line2D;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -13,8 +10,8 @@ import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 import nortantis.TreeType;
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 /**
  * Center.java
@@ -112,7 +109,7 @@ public class Center
 		return width;
 	}
 
-	public double findHight()
+	public double findHeight()
 	{
 		double minY = Double.POSITIVE_INFINITY;
 		double maxY = Double.NEGATIVE_INFINITY;
@@ -212,50 +209,12 @@ public class Center
 	{
 		for (Corner corner : corners)
 		{
-			if (bounds.inBounds(corner.loc))
+			if (bounds.contains(corner.loc))
 			{
 				return true;
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * Determines whether this center contains a given point, not including noisy edges. Note - I left this code in case I want it someday,
-	 * but it's not really tested.
-	 * 
-	 * @param point
-	 * @return
-	 */
-	public boolean contains(Point point)
-	{
-		Area area = createArea();
-		return area.contains(point.x, point.y);
-	}
-
-	/**
-	 * Creates an Area object that for this center. This does not include noisy edges. Note - I left this code in case I want it someday,
-	 * but it's not really tested.
-	 */
-	private Area createArea()
-	{
-		Polygon p = new Polygon();
-
-		// Bug - The v0 and v1 corners of the edges returned below are not guaranteed to be in any particular order, so some might be
-		// backwards.
-		// This means the resulting area could be missing pieces.
-		List<Edge> ordered = orderEdgesAroundCenter();
-		{
-			for (Edge edge : ordered)
-			{
-				if (edge.v0 != null)
-				{
-					p.addPoint((int) edge.v0.loc.x, (int) edge.v0.loc.y);
-				}
-			}
-		}
-
-		return new Area(p);
 	}
 
 	public List<Edge> orderEdgesAroundCenter()
@@ -284,7 +243,7 @@ public class Center
 		{
 			result.add(currentEdge);
 			remaining.remove(currentEdge);
-			// TODO Switch back to simplified version when done debugging
+
 			Edge next = findConnectedEdge(currentEdge, remaining);
 			if (next == null)
 			{
@@ -358,21 +317,19 @@ public class Center
 	{
 		for (Corner corner : corners)
 		{
-			Line2D.Double line = new Line2D.Double(corner.loc.x, corner.loc.y, loc.x, loc.y);
 			for (Edge edge : borders)
 			{
 				if (edge.v0 == null || edge.v1 == null)
 				{
 					continue;
 				}
-				
+
 				if (edge.v0 == corner || edge.v1 == corner)
 				{
 					continue;
 				}
 
-				Line2D.Double edgeLine = new Line2D.Double(edge.v0.loc.x, edge.v0.loc.y, edge.v1.loc.x, edge.v1.loc.y);
-				if (line.intersectsLine(edgeLine))
+				if (linesIntersect(corner.loc, loc, edge.v0.loc, edge.v1.loc))
 				{
 					return false;
 				}
@@ -380,5 +337,84 @@ public class Center
 		}
 		return true;
 	}
-	
+
+	/**
+	 * Determines whether two line segments intersect.
+	 * 
+	 * @param line1Start
+	 *            Start of the first line.
+	 * @param line1End
+	 *            End of the first line.
+	 * @param line2Start
+	 *            Start of the second line.
+	 * @param line2End
+	 *            End of the second line.
+	 * @return Whether the lines intersect.
+	 */
+	private boolean linesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
+	{
+		int o1 = orientation(line1Start, line1End, line2Start);
+		int o2 = orientation(line1Start, line1End, line2End);
+		int o3 = orientation(line2Start, line2End, line1Start);
+		int o4 = orientation(line2Start, line2End, line1End);
+
+		if (o1 != o2 && o3 != o4)
+		{
+			return true;
+		}
+
+		if (o1 == 0 && onSegment(line1Start, line2Start, line1End))
+		{
+			return true;
+		}
+
+		if (o2 == 0 && onSegment(line1Start, line2End, line1End))
+		{
+			return true;
+		}
+
+		if (o3 == 0 && onSegment(line2Start, line1Start, line2End))
+		{
+			return true;
+		}
+
+		if (o4 == 0 && onSegment(line2Start, line1End, line2End))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	private int orientation(Point p, Point q, Point r)
+	{
+		double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
+		if (val == 0)
+		{
+			return 0;
+		}
+		return (val > 0) ? 1 : 2;
+	}
+
+	private boolean onSegment(Point p, Point q, Point r)
+	{
+		if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	public void updateCoast()
+	{
+		int numOcean = 0;
+		int numLand = 0;
+		for (Center center : neighbors)
+		{
+			numOcean += center.isWater ? 1 : 0;
+			numLand += !center.isWater ? 1 : 0;
+		}
+		isCoast = numOcean > 0 && numLand > 0;
+	}
+
 }

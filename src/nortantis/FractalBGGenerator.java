@@ -2,15 +2,15 @@ package nortantis;
 
 import static java.lang.System.out;
 
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import javax.imageio.ImageIO;
-
 import org.jtransforms.fft.FloatFFT_2D;
 
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
 import nortantis.util.ThreadHelper;
 
@@ -27,7 +27,7 @@ public class FractalBGGenerator
 	 *            central value.
 	 * @throws IOException
 	 */
-	public static BufferedImage generate(Random rand, float p, int width, int height, float contrast)
+	public static Image generate(Random rand, float p, int width, int height, float contrast)
 	{
 		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(width);
 		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(height);
@@ -94,7 +94,7 @@ public class FractalBGGenerator
 
 		ImageHelper.setContrast(data, 0.5f - contrast / 2f, 0.5f + contrast / 2f);
 
-		BufferedImage result = ImageHelper.arrayToImage(data, 0, height, 0, width, BufferedImage.TYPE_BYTE_GRAY);
+		Image result = ImageHelper.arrayToImage(data, 0, height, 0, width, ImageType.Grayscale8Bit);
 		return result;
 
 	}
@@ -103,12 +103,15 @@ public class FractalBGGenerator
 	public static void main(String[] args) throws IOException
 	{
 		long startTime = System.currentTimeMillis();
+		
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
 
-		BufferedImage background = generate(new Random(), 1.3f, 4096, 4096, 0.75f);
+		Image background = generate(new Random(), 1.3f, 4096, 4096, 0.75f);
 
 		out.println("Time to generate (in seconds): " + (System.currentTimeMillis() - startTime) / 1000.0);
 
-		ImageIO.write(background, "png", new File("cloud.png"));
+		ImageHelper.openImageInSystemDefaultEditor(background, "cloud");
 		System.out.println("Done.");
 		System.exit(0);
 	}

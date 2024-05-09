@@ -3,7 +3,7 @@ package nortantis.util;
 import java.io.Serializable;
 
 /**
- * A 2-tuple of objects which don't have to be comparable. For a comparable version of this, see Pair.
+ * A 2-tuple of objects which don't have to be comparable. For a comparable version of this, see Tuple2Comp.
  * 
  * @author joseph
  *

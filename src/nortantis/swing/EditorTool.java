@@ -50,8 +50,6 @@ public abstract class EditorTool
 
 	public abstract void onSwitchingAway();
 
-	public abstract void onActivate();
-
 	protected abstract JPanel createToolOptionsPanel();
 
 	public JPanel getToolOptionsPanel()
@@ -111,13 +109,15 @@ public abstract class EditorTool
 	}
 
 	protected abstract void onAfterUndoRedo();
+	
+	protected abstract void onBeforeUndoRedo();
 
-	public nortantis.graph.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
+	public nortantis.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
 	{
 		int borderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 		double zoom = mainWindow.zoom;
 		double osScale = mapEditingPanel.osScale;
-		return new nortantis.graph.geom.Point(
+		return new nortantis.geom.Point(
 				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
 				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
 	}
@@ -155,7 +155,7 @@ public abstract class EditorTool
 		}
 		else
 		{
-			nortantis.graph.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
+			nortantis.geom.Point graphPoint = getPointOnGraph(pointFromMouse);
 			Center closestCenter = updater.mapParts.graph.findClosestCenter(graphPoint);
 			Set<Center> overlapping = updater.mapParts.graph
 					.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, graphPoint, brushDiameter / mainWindow.zoom), closestCenter);
@@ -176,14 +176,14 @@ public abstract class EditorTool
 		}
 	}
 
-	private Edge getClosestEdge(nortantis.graph.geom.Point point)
+	private Edge getClosestEdge(nortantis.geom.Point point)
 	{
 		Center center = updater.mapParts.graph.findClosestCenter(point);
 		Edge closest = null;
 		double closestDistance = Double.POSITIVE_INFINITY;
 		for (Edge edge : center.borders)
 		{
-			nortantis.graph.geom.Point centroid;
+			nortantis.geom.Point centroid;
 			if (edge.v0 == null && edge.v1 != null)
 			{
 				centroid = edge.v1.loc;
@@ -236,7 +236,7 @@ public abstract class EditorTool
 	 * Determines if a center is overlapping the given circle. Note that this isn't super precise because it doesn't account for the edge of
 	 * the circle protruding into the center without overlapping any of the center's corners or centroid.
 	 */
-	private boolean isCenterOverlappingCircle(Center center, nortantis.graph.geom.Point circleCenter, double radius)
+	private boolean isCenterOverlappingCircle(Center center, nortantis.geom.Point circleCenter, double radius)
 	{
 		for (Corner corner : center.corners)
 		{
@@ -249,7 +249,7 @@ public abstract class EditorTool
 		return isPointWithinCircle(center.loc.x, center.loc.y, circleCenter, radius);
 	}
 
-	private boolean isPointWithinCircle(double x, double y, nortantis.graph.geom.Point circleCenter, double radius)
+	private boolean isPointWithinCircle(double x, double y, nortantis.geom.Point circleCenter, double radius)
 	{
 		double deltaX = x - circleCenter.x;
 		double deltaY = y - circleCenter.y;
@@ -257,7 +257,7 @@ public abstract class EditorTool
 	}
 
 	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange,
-			boolean changeEffectsBackgroundImages);
+			boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
 
 	public abstract boolean shouldShowTextWhenTextIsEnabled();
 
@@ -271,7 +271,7 @@ public abstract class EditorTool
 
 	public abstract void onBeforeLoadingNewMap();
 
-	public void handleImagesRefresh(String customImagesPath)
+	public void handleImagesRefresh(MapSettings settings)
 	{
 	}
 }

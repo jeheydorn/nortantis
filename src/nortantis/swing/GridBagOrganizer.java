@@ -28,7 +28,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import nortantis.util.JFontChooser;
 import nortantis.util.Tuple2;
 
 public class GridBagOrganizer

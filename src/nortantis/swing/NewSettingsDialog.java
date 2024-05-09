@@ -12,6 +12,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -32,8 +33,11 @@ import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Rectangle;
+import nortantis.platform.Image;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.ThemePanel.LandColoringMethod;
+import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 
@@ -49,7 +53,7 @@ public class NewSettingsDialog extends JDialog
 	private JProgressBar progressBar;
 	private MapUpdater updater;
 	private MapEditingPanel mapEditingPanel;
-	private Dimension defaultSize = new Dimension(900, 700);
+	private Dimension defaultSize = new Dimension(900, 750);
 	private int amountToSubtractFromLeftAndRightPanels = 40;
 	private Timer progressBarTimer;
 	public final double cityFrequencySliderScale = 100.0 * 1.0 / SettingsGenerator.maxCityProbabillity;
@@ -74,6 +78,9 @@ public class NewSettingsDialog extends JDialog
 		else
 		{
 			settings = settingsToKeepThemeFrom.deepCopy();
+			// Clear out export paths so that creating a new map was the same theme doesn't overwrite exported files from the previous map.
+			settings.imageExportPath = null;
+			settings.heightmapExportPath = null;
 			randomizeLand();
 		}
 		loadSettingsIntoGUI(settings);
@@ -287,7 +294,7 @@ public class NewSettingsDialog extends JDialog
 
 		JButton changeButton = new JButton("Change");
 		pathDisplay = new JTextField();
-		pathDisplay.setText(UserPreferences.getInstance().defaultCustomImagesPath);
+		pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(UserPreferences.getInstance().defaultCustomImagesPath));
 		pathDisplay.setEditable(false);
 		organizer.addLabelAndComponentsHorizontal("Custom Images Folder:", "Configure custom images to use when generating this map.",
 				Arrays.asList(pathDisplay, changeButton));
@@ -326,7 +333,7 @@ public class NewSettingsDialog extends JDialog
 	{
 		if (settings != null && settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
-			pathDisplay.setText(settings.customImagesPath);
+			pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath));
 		}
 		else
 		{
@@ -426,7 +433,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = ImageHelper.createPlaceholderImage(new String[] { "Drawing..." });
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();
@@ -445,7 +452,7 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected MapSettings getSettingsFromGUI()
+			public MapSettings getSettingsFromGUI()
 			{
 				MapSettings settings = NewSettingsDialog.this.getSettingsFromGUI();
 
@@ -457,10 +464,10 @@ public class NewSettingsDialog extends JDialog
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					Rectangle incrementalChangeArea)
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+					Rectangle incrementalChangeArea, List<String> warningMessages)
 			{
-				mapEditingPanel.setImage(map);
+				mapEditingPanel.setImage(AwtFactory.unwrap(map));
 
 				if (!anotherDrawIsQueued)
 				{
@@ -481,14 +488,13 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			protected MapEdits getEdits()
 			{
-				assert settings.edits.isEmpty();
 				return settings.edits;
 			}
 
 			@Override
-			protected BufferedImage getCurrentMapForIncrementalUpdate()
+			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return mapEditingPanel.mapFromMapCreator;
+				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
 			}
 
 		};
@@ -496,14 +502,14 @@ public class NewSettingsDialog extends JDialog
 		updater.setEnabled(false);
 	}
 
-	private Dimension getMapDrawingAreaSize()
+	private nortantis.geom.Dimension getMapDrawingAreaSize()
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
-		return new Dimension(
-				(int) ((mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
-						* mapEditingPanel.osScale),
-				(int) ((mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
-						* mapEditingPanel.osScale));
+		return new nortantis.geom.Dimension(
+				(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
+						* mapEditingPanel.osScale,
+				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
+						* mapEditingPanel.osScale);
 
 	}
 

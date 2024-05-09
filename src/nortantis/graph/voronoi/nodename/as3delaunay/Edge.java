@@ -1,10 +1,9 @@
 package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.HashMap;
-import java.util.Stack;
 
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 /**
  * The line segment connecting the two Sites is part of the Delaunay triangulation; the line segment connecting the two Vertices is part of
@@ -15,9 +14,6 @@ import nortantis.graph.geom.Rectangle;
  */
 public final class Edge
 {
-
-	final private static Stack<Edge> _pool = new Stack<>();
-
 	/**
 	 * This is the only way to create a new Edge
 	 *
@@ -26,7 +22,7 @@ public final class Edge
 	 * @return
 	 *
 	 */
-	public static Edge createBisectingEdge(Site site0, Site site1)
+	public static Edge createBisectingEdge(Site site0, Site site1, int edgeIndex)
 	{
 		double dx, dy, absdx, absdy;
 		double a, b, c;
@@ -49,7 +45,7 @@ public final class Edge
 			c /= dy;
 		}
 
-		Edge edge = Edge.create();
+		Edge edge = new Edge(edgeIndex);
 
 		edge.set_leftSite(site0);
 		edge.set_rightSite(site1);
@@ -67,36 +63,6 @@ public final class Edge
 		return edge;
 	}
 
-	private static Edge create()
-	{
-		Edge edge;
-		if (_pool.size() > 0)
-		{
-			edge = _pool.pop();
-			edge.init();
-		}
-		else
-		{
-			edge = new Edge();
-		}
-		return edge;
-	}
-
-	/*
-	 * final private static LINESPRITE:Sprite = new Sprite(); final private static GRAPHICS:Graphics = LINESPRITE.graphics;
-	 * 
-	 * private var _delaunayLineBmp:BitmapData; internal function get delaunayLineBmp():BitmapData { if (!_delaunayLineBmp) {
-	 * _delaunayLineBmp = makeDelaunayLineBmp(); } return _delaunayLineBmp; }
-	 * 
-	 * // making this available to Voronoi; running out of memory in AIR so I cannot cache the bmp internal function
-	 * makeDelaunayLineBmp():BitmapData { var p0:Point = leftSite.coord; var p1:Point = rightSite.coord;
-	 * 
-	 * GRAPHICS.clear(); // clear() resets line style back to undefined! GRAPHICS.lineStyle(0, 0, 1.0, false, LineScaleMode.NONE,
-	 * CapsStyle.NONE); GRAPHICS.moveTo(p0.x, p0.y); GRAPHICS.lineTo(p1.x, p1.y);
-	 * 
-	 * var w:int = int(Math.ceil(Math.max(p0.x, p1.x))); if (w < 1) { w = 1; } var h:int = int(Math.ceil(Math.max(p0.y, p1.y))); if (h < 1)
-	 * { h = 1; } var bmp:BitmapData = new BitmapData(w, h, true, 0); bmp.draw(LINESPRITE); return bmp; }
-	 */
 	public LineSegment delaunayLine()
 	{
 		// draw a line connecting the input Sites for which the edge is a bisector:
@@ -112,8 +78,7 @@ public final class Edge
 		return new LineSegment(_clippedVertices.get(LR.LEFT), _clippedVertices.get(LR.RIGHT));
 	}
 
-	private static int _nedges = 0;
-	final public static Edge DELETED = new Edge();
+	final public static Edge DELETED = new Edge(-1);
 	// the equation of the edge: ax + by = c
 	public double a, b, c;
 	// the two Voronoi vertices that the edge connects
@@ -225,27 +190,9 @@ public final class Edge
 
 	private int _edgeIndex;
 
-	public void dispose()
+	private Edge(int index)
 	{
-		/*
-		 * if (_delaunayLineBmp) { _delaunayLineBmp.dispose(); _delaunayLineBmp = null; }
-		 */
-		_leftVertex = null;
-		_rightVertex = null;
-		if (_clippedVertices != null)
-		{
-			_clippedVertices.clear();
-			_clippedVertices = null;
-		}
-		_sites.clear();
-		_sites = null;
-
-		_pool.push(this);
-	}
-
-	private Edge()
-	{
-		_edgeIndex = _nedges++;
+		_edgeIndex = index;
 		init();
 	}
 

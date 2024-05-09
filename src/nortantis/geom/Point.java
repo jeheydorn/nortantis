@@ -1,4 +1,4 @@
-package nortantis.graph.geom;
+package nortantis.geom;
 
 import java.io.Serializable;
 
@@ -57,6 +57,11 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return new Point(x * xScale, y * yScale);
 	}
+	
+	public IntPoint toIntPoint()
+	{
+		return new IntPoint((int)x, (int)y);
+	}
 
 	@Override
 	public String toString()
@@ -64,6 +69,19 @@ public class Point implements Comparable<Point>, Serializable
 		return "(" + x + ", " + y + ")";
 	}
 
+	public String toJson()
+	{
+		return "(" + x + ", " + y + ")";
+	}
+	
+	public static Point fromJSonValue(String value)
+	{
+		String[] pieces = value.replace("(", "").replace(")", "").split(",");
+		double x = Double.parseDouble(pieces[0]);
+		double y = Double.parseDouble(pieces[1]);
+		return new Point(x, y);
+	}
+	
 	public double length()
 	{
 		return Math.sqrt(x * x + y * y);
@@ -77,16 +95,16 @@ public class Point implements Comparable<Point>, Serializable
 	@Override
 	public int compareTo(Point other)
 	{
-		int c1 = Double.compare(x, other.x);
-		if (c1 < 0)
-			return -1;
-		if (c1 > 0)
-			return 1;
-
 		int c2 = Double.compare(y, other.y);
 		if (c2 < 0)
 			return -1;
 		if (c2 > 0)
+			return 1;
+
+		int c1 = Double.compare(x, other.x);
+		if (c1 < 0)
+			return -1;
+		if (c1 > 0)
 			return 1;
 
 		return 0;
@@ -120,10 +138,5 @@ public class Point implements Comparable<Point>, Serializable
 		if (Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y))
 			return false;
 		return true;
-	}
-
-	public java.awt.Point toAwtPoint()
-	{
-		return new java.awt.Point((int) x, (int) y);
 	}
 }

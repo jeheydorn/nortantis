@@ -8,17 +8,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
+import nortantis.util.FileHelper;
 import nortantis.util.Logger;
 
 public class UserPreferences
 {
 	private final String userPrefsFileName = "user preferences";
 
-	public String editorImageQuality = "";
+	public DisplayQuality editorImageQuality = DisplayQuality.Low;
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
@@ -26,6 +30,7 @@ public class UserPreferences
 	private final int maxRecentMaps = 15;
 	public String defaultCustomImagesPath;
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
+	public Set<String> collapsedPanels = new TreeSet<>();
 
 	public static UserPreferences instance;
 
@@ -50,7 +55,8 @@ public class UserPreferences
 
 				if (props.containsKey("editorImageQuality"))
 				{
-					editorImageQuality = props.getProperty("editorImageQuality");
+					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra") .replace(" ", "_");
+					editorImageQuality = DisplayQuality.valueOf(quality);
 				}
 				if (props.containsKey("defaultMapExportAction"))
 				{
@@ -86,12 +92,19 @@ public class UserPreferences
 				}
 				if (props.containsKey("defaultCustomImagesPath"))
 				{
-					defaultCustomImagesPath = props.getProperty("defaultCustomImagesPath");
+					defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(props.getProperty("defaultCustomImagesPath"));
 				}
 				if (props.containsKey("showNewMapWithSameThemeRegionColorsMessage"))
 				{
 					String value = props.getProperty("showNewMapWithSameThemeRegionColorsMessage");
 					hideNewMapWithSameThemeRegionColorsMessage = Boolean.parseBoolean(value);
+				}
+				
+				if (props.containsKey("collapsedPanels"))
+				{
+					String[] panelNames = props.getProperty("collapsedPanels").split("\t");
+					collapsedPanels = new TreeSet<>();
+					collapsedPanels.addAll(Arrays.asList(panelNames));
 				}
 			}
 		}
@@ -120,7 +133,7 @@ public class UserPreferences
 	public void save()
 	{
 		Properties props = new Properties();
-		props.setProperty("editorImageQuality", editorImageQuality);
+		props.setProperty("editorImageQuality", editorImageQuality.toString());
 		props.setProperty("defaultMapExportAction",
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
 		props.setProperty("defaultHeightmapExportAction",
@@ -128,6 +141,7 @@ public class UserPreferences
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
+		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
 
 		try
 		{

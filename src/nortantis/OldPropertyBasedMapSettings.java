@@ -1,7 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -27,7 +25,10 @@ import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Function0;
@@ -117,12 +118,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 	 * Default values for new settings
 	 */
 	private final Color defaultRoadColor = Color.black;
-
-
-	public OldPropertyBasedMapSettings()
-	{
-		edits = new MapEdits();
-	}
 
 	public OldPropertyBasedMapSettings(String propertiesFilename)
 	{
@@ -547,14 +542,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return parseFont(props.getProperty("titleFont"));
 			}
 		});
-
-		titleFont = getProperty("titleFont", new Function0<Font>()
-		{
-			public Font apply()
-			{
-				return parseFont(props.getProperty("titleFont"));
-			}
-		});
 		regionFont = getProperty("regionFont", new Function0<Font>()
 		{
 			public Font apply()
@@ -674,7 +661,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 					Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 					double angle = (Double) jsonObj.get("angle");
 					TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-					MapText mp = new MapText(text, location, angle, type);
+					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto);
 					result.add(mp);
 				}
 
@@ -682,15 +669,15 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 		});
 
-		edits.centerEdits = getProperty("centerEdits", new Function0<List<CenterEdit>>()
+		edits.centerEdits = getProperty("centerEdits", new Function0<ConcurrentHashMap<Integer, CenterEdit>>()
 		{
-			public List<CenterEdit> apply()
+			public ConcurrentHashMap<Integer, CenterEdit> apply()
 			{
 				String str = props.getProperty("centerEdits");
 				if (str == null || str.isEmpty())
-					return new ArrayList<>();
+					return new ConcurrentHashMap<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				List<CenterEdit> result = new ArrayList<>();
+				ConcurrentHashMap<Integer, CenterEdit> result = new ConcurrentHashMap<>();
 				int index = 0;
 				for (Object obj : array)
 				{
@@ -714,7 +701,14 @@ public class OldPropertyBasedMapSettings implements Serializable
 							String iconName = (String) iconObj.get("iconName");
 							CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
 							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
-							icon.iconName = iconName;
+							if (iconName != null && !iconName.isEmpty())
+							{
+								icon = new CenterIcon(iconType, iconGroupId, iconName);
+							}
+							else
+							{
+								icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+							}
 						}
 					}
 
@@ -730,7 +724,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 						}
 					}
 
-					result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
+					result.put(index, new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 					index++;
 				}
 
@@ -808,11 +802,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 		String[] parts = str.split(",");
 		if (parts.length == 3)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		}
 		if (parts.length == 4)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
 					Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
@@ -846,11 +840,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 		String[] parts = str.split("\t");
 		if (parts.length != 3)
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
-		Font font = new Font(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		Font font = Font.create(parts[0], FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 		if (parts[0].startsWith("URW Chancery") && font.getFamily().equals("Dialog"))
 		{
 			// Windows doesn't have URW Chancery, so change it to another font.
-			return new Font("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Font.create("Gabriola", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 		}
 		else
 		{

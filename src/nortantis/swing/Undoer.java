@@ -38,7 +38,7 @@ public class Undoer
 		redoStack = null;
 		copyOfSettingsWhenEditorWasOpened = null;
 	}
-
+	
 	public void setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
 		setUndoPoint(updateType, tool, null);
@@ -105,22 +105,29 @@ public class Undoer
 		{
 			return;
 		}
+		
+		mainWindow.toolsPanel.currentTool.onBeforeUndoRedo();
 
 		MapChange changeToUndo = undoStack.pop();
+		
+		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any 
+		// changes made after the latest undo point.
+		changeToUndo.settings = mainWindow.updater.getSettingsFromGUI().deepCopy();
+		
 		redoStack.push(changeToUndo);
 		MapSettings settings;
 		if (undoStack.isEmpty())
 		{
 			// This should not happen because the undoer should not be initialized until the edits are created.
-			assert !copyOfSettingsWhenEditorWasOpened.edits.isEmpty();
+			assert copyOfSettingsWhenEditorWasOpened.edits.isInitialized();
 
 			settings = copyOfSettingsWhenEditorWasOpened.deepCopy();
-			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
+			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
 		}
 		else
 		{
 			settings = undoStack.peek().settings.deepCopy();
-			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true);
+			mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(settings, true, false);
 		}
 
 		if (changeToUndo.toolThatMadeChange != null)
@@ -163,7 +170,7 @@ public class Undoer
 		MapChange changeToRedo = redoStack.pop();
 		undoStack.push(changeToRedo);
 		MapSettings newSettings = changeToRedo.settings.deepCopy();
-		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true);
+		mainWindow.loadSettingsAndEditsIntoThemeAndToolsPanels(newSettings, true, false);
 
 		if (changeToRedo.toolThatMadeChange != null)
 		{

@@ -5,7 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import nortantis.PolarCoordinate;
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 public class PolarCoordinateTest
 {

@@ -2,7 +2,7 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.ArrayList;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 public final class Polygon
 {

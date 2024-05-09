@@ -2,7 +2,7 @@ package nortantis.graph.voronoi;
 
 import java.util.Objects;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 /**
  * Edge.java

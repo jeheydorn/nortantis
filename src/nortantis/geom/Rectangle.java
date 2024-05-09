@@ -1,6 +1,4 @@
-package nortantis.graph.geom;
-
-import nortantis.util.IntRectangle;
+package nortantis.geom;
 
 /**
  * Rectangle.java
@@ -19,15 +17,7 @@ public class Rectangle
 		this.width = width;
 		this.height = height;
 	}
-
-	public Rectangle(java.awt.Rectangle rect)
-	{
-		this.x = rect.x;
-		this.y = rect.y;
-		this.width = rect.width;
-		this.height = rect.height;
-	}
-
+	
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
 	{
 		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance)
@@ -35,12 +25,38 @@ public class Rectangle
 				|| GenUtils.closeEnough(p.y, getBottom(), closeEnoughDistance);
 	}
 
-	public boolean inBounds(Point p)
+	public boolean contains(Rectangle other)
 	{
-		return inBounds(p.x, p.y);
+		// Check if the left edge of the other rectangle is to the right of the left edge of this rectangle
+		if (other.getLeft() < this.getLeft())
+		{
+			return false;
+		}
+		// Check if the right edge of the other rectangle is to the left of the right edge of this rectangle
+		if (other.getRight() > this.getRight())
+		{
+			return false;
+		}
+		// Check if the top edge of the other rectangle is below the top edge of this rectangle
+		if (other.getTop() < this.getTop())
+		{
+			return false;
+		}
+		// Check if the bottom edge of the other rectangle is above the bottom edge of this rectangle
+		if (other.getBottom() > this.getBottom())
+		{
+			return false;
+		}
+		// If none of the conditions are met, return true
+		return true;
 	}
 
-	public boolean inBounds(double x0, double y0)
+	public boolean contains(Point p)
+	{
+		return contains(p.x, p.y);
+	}
+
+	public boolean contains(double x0, double y0)
 	{
 		if (x0 < x || x0 > getRight() || y0 < y || y0 > getBottom())
 		{
@@ -51,47 +67,63 @@ public class Rectangle
 
 	public boolean overlaps(Rectangle other)
 	{
-		if (inBounds(other.x, other.y))
+		if (contains(other.x, other.y))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x, y))
+		if (other.contains(x, y))
 		{
 			return true;
 		}
 
-		if (inBounds(other.x + other.width, other.y))
+		if (contains(other.x + other.width, other.y))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x + width, y))
+		if (other.contains(x + width, y))
 		{
 			return true;
 		}
 
-		if (inBounds(other.x, other.y + other.height))
+		if (contains(other.x, other.y + other.height))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x, y + height))
+		if (other.contains(x, y + height))
 		{
 			return true;
 		}
 
-		if (inBounds(other.x + other.width, other.y + other.height))
+		if (contains(other.x + other.width, other.y + other.height))
 		{
 			return true;
 		}
 
-		if (other.inBounds(x + width, y + height))
+		if (other.contains(x + width, y + height))
 		{
 			return true;
 		}
 
 		return false;
+	}
+	
+	public static Rectangle add(Rectangle r1, Rectangle r2)
+	{
+		if (r1 == null)
+		{
+			return r2;
+		}
+		else if (r2 == null)
+		{
+			return r1;
+		}
+		else
+		{
+			return r1.add(r2);
+		}
 	}
 
 	public Rectangle add(Point point)
@@ -152,6 +184,34 @@ public class Rectangle
 	{
 		return new Rectangle((int) x, (int) y, (int) width, (int) height);
 	}
+	
+	public Rectangle translate(double xTranslation, double yTranslation)
+	{
+		return new Rectangle(x + xTranslation, y + yTranslation, width, height);
+	}
+	
+	public Rectangle scaleAboutCenter(double scale)
+	{
+	    // Calculate the new dimensions after scaling
+        double newWidth = width * scale;
+        double newHeight = height * scale;
+
+        // Calculate the new center coordinates
+        double centerX = x + width / 2.0;
+        double centerY = y + height / 2.0;
+
+        // Calculate the new top-left corner coordinates
+        double newX = centerX - newWidth / 2.0;
+        double newY = centerY - newHeight / 2.0;
+
+        // Create and return the scaled rectangle
+        return new Rectangle(newX, newY, newWidth, newHeight);
+	}
+	
+	public Rectangle scaleAboutOrigin(double scale)
+	{
+		return new Rectangle(x * scale, y * scale, width * scale, height * scale);
+	}
 
 	public Rectangle findIntersection(Rectangle r2)
 	{
@@ -170,25 +230,9 @@ public class Rectangle
 		}
 	}
 
-	public java.awt.Rectangle toAwtRectangle()
-	{
-		// Round up to the nearest integer
-		// int integerWidth = (double)(int)width == width ? (int)(width) :
-		// (int)width + 1;
-		// int integerHeight = (double)(int)height == height ? (int)(height) :
-		// (int)height + 1;
-
-		return new java.awt.Rectangle((int) x, (int) y, (int) width, (int) height);
-	}
-	
 	public IntRectangle toIntRectangle()
 	{
 		return new IntRectangle((int) x, (int) y, (int) width, (int) height);
-	}
-
-	public java.awt.Point upperLeftCornerAsAwtPoint()
-	{
-		return new java.awt.Point((int) x, (int) y);
 	}
 
 	public Point upperLeftCorner()

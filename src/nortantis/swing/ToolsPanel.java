@@ -23,8 +23,9 @@ import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
 import nortantis.MapSettings;
+import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
-import nortantis.util.JComboBoxFixed;
+import nortantis.editor.UserPreferences;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
@@ -36,6 +37,8 @@ public class ToolsPanel extends JPanel
 	private JPanel currentToolOptionsPanel;
 	JComboBox<String> zoomComboBox;
 	List<String> zoomLevels;
+	JComboBox<DisplayQuality> displayQualityComboBox;
+	List<String> displayQualityLevels;
 	private TitledBorder toolOptionsPanelBorder;
 	private JProgressBar progressBar;
 	private JPanel bottomPanel;
@@ -125,10 +128,9 @@ public class ToolsPanel extends JPanel
 				BorderFactory.createEmptyBorder(SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents,
 						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents));
 
-		JLabel lblZoom = new JLabel("Zoom:");
-		bottomPanel.add(lblZoom);
-		lblZoom.setToolTipText("Zoom the map in or out (CTRL + mouse wheel). To view more details at higher zoom levels,"
-				+ " adjust View > Display Quality.");
+		JLabel lblZoom = new JLabel("Zoom");
+		lblZoom.setToolTipText("Zoom the map in or out (mouse wheel). To view more details at higher zoom levels,"
+				+ " adjust the 'Display quality'.");
 
 		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
@@ -136,14 +138,7 @@ public class ToolsPanel extends JPanel
 		{
 			zoomComboBox.addItem(level);
 		}
-
 		zoomComboBox.setSelectedItem(defaultZoomLevel);
-
-		// Add a little space between the label and combo box. I'm using this because for some reason Box.createHorizontalStrut
-		// causes bottomPanel to expand vertically.
-		bottomPanel.add(Box.createRigidArea(new Dimension(5, 4)));
-
-		bottomPanel.add(zoomComboBox);
 		zoomComboBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -152,8 +147,44 @@ public class ToolsPanel extends JPanel
 				mainWindow.updateDisplayedMapFromGeneratedMap(true, null);
 			}
 		});
+		
+		bottomPanel.add(SwingHelper.stackLabelAndComponent(lblZoom, zoomComboBox));
+		
+		
+		
+		//bottomPanel.add(Box.createHorizontalGlue());
+		bottomPanel.add(Box.createRigidArea(new Dimension(12, 4)));
 
-		bottomPanel.add(Box.createHorizontalGlue());
+		JLabel lblDisplayQuality = new JLabel("Display Quality");
+		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+
+		displayQualityComboBox = new JComboBoxFixed<>();
+		for (DisplayQuality quality : DisplayQuality.values())
+		{
+			displayQualityComboBox.addItem(quality);
+		}
+		
+		// Default display quality
+		displayQualityComboBox.setSelectedItem(UserPreferences.getInstance().editorImageQuality);
+		
+		mainWindow.updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
+		
+		bottomPanel.add(displayQualityComboBox);
+		displayQualityComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				DisplayQuality quality = (DisplayQuality) displayQualityComboBox.getSelectedItem();
+				UserPreferences.getInstance().editorImageQuality = quality;
+				mainWindow.handleImageQualityChange(quality);
+			}
+		});
+
+		bottomPanel.add(SwingHelper.stackLabelAndComponent(lblDisplayQuality, displayQualityComboBox));
+
+		
+
 
 		progressAndBottomPanel.add(bottomPanel);
 		add(progressAndBottomPanel);
@@ -171,11 +202,11 @@ public class ToolsPanel extends JPanel
 		progressBarTimer.setInitialDelay(500);
 	}
 
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImageRefresh)
 	{
 		for (EditorTool tool : tools)
 		{
-			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
+			tool.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImageRefresh);
 		}
 	}
 
@@ -193,6 +224,20 @@ public class ToolsPanel extends JPanel
 		{
 			tool.getSettingsFromGUI(settings);
 		}
+	}
+	
+	public TextTool getTextTool()
+	{
+		for (EditorTool tool : tools)
+		{
+			if (tool instanceof TextTool)
+			{
+				return (TextTool) tool;
+			}
+		}
+		
+		assert false;
+		return null;
 	}
 
 	public void handleToolSelected(EditorTool selectedTool)
@@ -216,7 +261,6 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
 		toolsOptionsPanelContainer.revalidate();
 		toolsOptionsPanelContainer.repaint();
-		currentTool.onActivate();
 		mainWindow.themePanel.showOrHideTextHiddenMessage();
 
 		if (!updater.isMapBeingDrawn())
@@ -230,13 +274,7 @@ public class ToolsPanel extends JPanel
 		// Cause the Icons tool to update its image radio buttons
 		for (EditorTool tool : tools)
 		{
-			tool.handleImagesRefresh(settings.customImagesPath);
-		}
-
-		if (settings != null)
-		{
-			// Trigger re-creation of image previews in the Icons tool
-			loadSettingsIntoGUI(settings, false, true);
+			tool.handleImagesRefresh(settings);
 		}
 	}
 

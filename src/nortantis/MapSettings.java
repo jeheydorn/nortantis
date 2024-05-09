@@ -1,8 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
@@ -25,8 +22,12 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
+import nortantis.platform.Color;
+import nortantis.platform.Font;
+import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.Helper;
@@ -40,7 +41,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.1";
+	public static final String currentVersion = "2.4";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -108,6 +109,10 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
+	/**
+	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
+	 * images to use. But the editor now allows selecting city images of any type.
+	 */
 	public String cityIconTypeName;
 	// Not exposed for editing. Only for backwards compatibility so I can change it without braking older settings
 	// files that have edits.
@@ -118,7 +123,10 @@ public class MapSettings implements Serializable
 	public double heightmapResolution = 1.0;
 	public String customImagesPath;
 	public double treeHeightScale;
-
+	public double mountainScale = 1.0;
+	public double hillScale = 1.0;
+	public double duneScale = 1.0;
+	public double cityScale = 1.0;
 	/**
 	 * Default values for new settings
 	 */
@@ -258,6 +266,10 @@ public class MapSettings implements Serializable
 		root.put("customImagesPath", customImagesPath);
 
 		root.put("treeHeightScale", treeHeightScale);
+		root.put("mountainScale", mountainScale);
+		root.put("hillScale", hillScale);
+		root.put("duneScale", duneScale);
+		root.put("cityScale", cityScale);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -266,6 +278,7 @@ public class MapSettings implements Serializable
 			root.put("edits", editsJson);
 			editsJson.put("textEdits", textEditsToJson());
 			editsJson.put("centerEdits", centerEditsToJson());
+			editsJson.put("iconEdits", iconsToJson());
 			editsJson.put("regionEdits", regionEditsToJson());
 			editsJson.put("edgeEdits", edgeEditsToJson());
 			editsJson.put("hasIconEdits", edits.hasIconEdits);
@@ -286,17 +299,17 @@ public class MapSettings implements Serializable
 			mpObj.put("locationY", text.location.y);
 			mpObj.put("angle", text.angle);
 			mpObj.put("type", text.type.toString());
+			mpObj.put("lineBreak", text.lineBreak.toString());
 			list.add(mpObj);
 		}
 		return list;
 	}
 
-
 	@SuppressWarnings("unchecked")
 	private JSONArray centerEditsToJson()
 	{
 		JSONArray list = new JSONArray();
-		for (CenterEdit centerEdit : edits.centerEdits)
+		for (CenterEdit centerEdit : edits.centerEdits.values())
 		{
 			JSONObject mpObj = new JSONObject();
 			if (centerEdit.isWater)
@@ -311,24 +324,40 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("regionId", centerEdit.regionId);
 			}
-			if (centerEdit.icon != null)
-			{
-				JSONObject iconObj = new JSONObject();
-				iconObj.put("iconGroupId", centerEdit.icon.iconGroupId);
-				iconObj.put("iconIndex", centerEdit.icon.iconIndex);
-				iconObj.put("iconName", centerEdit.icon.iconName);
-				iconObj.put("iconType", centerEdit.icon.iconType.toString());
-				mpObj.put("icon", iconObj);
-			}
+			// I'm storing center trees, even though they're mostly only used for adding new trees using editing brushes, because
+			// CenterTrees that failed to draw any trees due to their density being too low should be retried when the tree height slider
+			// changes, because that changes the density. Without retrying those CenterTrees, trees would slowly disappear off the map as he
+			// changed the tree height slighter.
 			if (centerEdit.trees != null)
 			{
 				JSONObject treesObj = new JSONObject();
 				treesObj.put("treeType", centerEdit.trees.treeType);
 				treesObj.put("density", centerEdit.trees.density);
 				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
+				treesObj.put("isDormant", centerEdit.trees.isDormant);
 				mpObj.put("trees", treesObj);
 			}
 			list.add(mpObj);
+		}
+		return list;
+	}
+
+	@SuppressWarnings("unchecked")
+	private JSONArray iconsToJson()
+	{
+		JSONArray list = new JSONArray();
+		for (FreeIcon icon : edits.freeIcons)
+		{
+			JSONObject iconObj = new JSONObject();
+			iconObj.put("groupId", icon.groupId);
+			iconObj.put("iconIndex", icon.iconIndex);
+			iconObj.put("iconName", icon.iconName);
+			iconObj.put("type", icon.type.toString());
+			iconObj.put("locationResolutionInvariant", icon.locationResolutionInvariant.toJson());
+			iconObj.put("scale", icon.scale);
+			iconObj.put("centerIndex", icon.centerIndex);
+			iconObj.put("density", icon.density);
+			list.add(iconObj);
 		}
 		return list;
 	}
@@ -378,7 +407,7 @@ public class MapSettings implements Serializable
 
 	private String fontToString(Font font)
 	{
-		return font.getFontName() + "\t" + font.getStyle() + "\t" + font.getSize();
+		return font.getFontName() + "\t" + font.getStyle().value + "\t" + (int) font.getSize();
 	}
 
 	private void parseFromJson(String fileContents)
@@ -547,7 +576,7 @@ public class MapSettings implements Serializable
 		{
 			borderWidth = 0;
 		}
-
+		
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
 		if (frayedBorderSize >= 100)
 		{
@@ -578,21 +607,91 @@ public class MapSettings implements Serializable
 			treeHeightScale = defaultTreeHeightScaleForOldMaps;
 		}
 
+		if (root.containsKey("mountainScale"))
+		{
+			mountainScale = (double) root.get("mountainScale");
+		}
+
+		if (root.containsKey("hillScale"))
+		{
+			hillScale = (double) root.get("hillScale");
+		}
+
+		if (root.containsKey("duneScale"))
+		{
+			duneScale = (double) root.get("duneScale");
+		}
+
+		if (root.containsKey("cityScale"))
+		{
+			cityScale = (double) root.get("cityScale");
+		}
+
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
 
 		JSONObject editsJson = (JSONObject) root.get("edits");
 		edits.text = parseMapTexts(editsJson);
+		edits.freeIcons = parseIconEdits(editsJson);
 		edits.centerEdits = parseCenterEdits(editsJson);
 		edits.regionEdits = parseRegionEdits(editsJson);
 		edits.edgeEdits = parseEdgeEdits(editsJson);
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
-		
+
 		runConversionForShadingAlphaChange();
+		runConversionForAllowingMultipleCityTypesInOneMap();
+		runConversionToFixDunesGroupId();
 	}
 
 	/**
-	 * Convert old map settings to compensate for a change I introduced to the level at which shading is darkened. 
+	 * Previous versions incorrectly used the group id "sand" for the "dunes" group, which didn't matter because previously I didn't allow
+	 * multiple groups of sand dune images and the value was ignored. But now I do allow multiple sand dune image groups, so this fixes
+	 * that.
+	 */
+	private void runConversionToFixDunesGroupId()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.4"))
+		{
+			return;
+		}
+
+		if (edits == null || edits.centerEdits == null)
+		{
+			return;
+		}
+
+		for (CenterEdit cEdit : edits.centerEdits.values())
+		{
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.Dune)
+			{
+				edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(cEdit.icon.copyWithIconGroupId("dunes")));
+			}
+		}
+	}
+
+	private void runConversionForAllowingMultipleCityTypesInOneMap()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.2"))
+		{
+			return;
+		}
+
+		if (edits == null || edits.centerEdits == null)
+		{
+			return;
+		}
+
+		for (CenterEdit cEdit : edits.centerEdits.values())
+		{
+			if (cEdit.icon != null && cEdit.icon.iconType == CenterIconType.City)
+			{
+				edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(cEdit.icon.copyWithIconGroupId(cityIconTypeName)));
+			}
+		}
+	}
+
+	/**
+	 * Convert old map settings to compensate for a change I introduced to the level at which shading is darkened.
 	 */
 	private void runConversionForShadingAlphaChange()
 	{
@@ -603,19 +702,19 @@ public class MapSettings implements Serializable
 
 		if (coastShadingColor.getAlpha() == 255)
 		{
-			coastShadingColor = new Color(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
+			coastShadingColor = Color.create(coastShadingColor.getRed(), coastShadingColor.getGreen(), coastShadingColor.getBlue(),
 					SettingsGenerator.defaultCoastShadingAlpha);
 		}
-		
+
 		if (oceanEffect == OceanEffect.Blur && oceanEffectsColor.getAlpha() == 255)
 		{
-			oceanEffectsColor = new Color(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
 					SettingsGenerator.defaultOceanShadingAlpha);
 		}
-		
+
 		if (oceanEffect == OceanEffect.Ripples && oceanEffectsColor.getAlpha() == 255)
 		{
-			oceanEffectsColor = new Color(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
 					SettingsGenerator.defaultOceanRipplesAlpha);
 		}
 	}
@@ -636,22 +735,29 @@ public class MapSettings implements Serializable
 			Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 			double angle = (Double) jsonObj.get("angle");
 			TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-			MapText mp = new MapText(text, location, angle, type);
+			LineBreak lineBreak = jsonObj.containsKey("lineBreak")
+					? Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_"))
+					: LineBreak.Auto;
+			MapText mp = new MapText(text, location, angle, type, lineBreak);
 			result.add(mp);
 		}
 
 		return result;
 	}
 
-	public List<CenterEdit> parseCenterEdits(JSONObject editsJson)
+	private ConcurrentHashMap<Integer, CenterEdit> parseCenterEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
-			return new ArrayList<CenterEdit>();
+			return new ConcurrentHashMap<>();
 		}
 
 		JSONArray array = (JSONArray) editsJson.get("centerEdits");
-		List<CenterEdit> result = new ArrayList<>();
+		ConcurrentHashMap<Integer, CenterEdit> result = new ConcurrentHashMap<>();
+		if (array == null)
+		{
+			return result;
+		}
 		int index = 0;
 		for (Object obj : array)
 		{
@@ -667,10 +773,16 @@ public class MapSettings implements Serializable
 				{
 					String iconGroupId = (String) iconObj.get("iconGroupId");
 					int iconIndex = (int) (long) iconObj.get("iconIndex");
-					String iconName = (String) iconObj.get("iconName");
 					CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
-					icon = new CenterIcon(iconType, iconGroupId, iconIndex);
-					icon.iconName = iconName;
+					String iconName = (String) iconObj.get("iconName");
+					if (iconName != null && !iconName.isEmpty())
+					{
+						icon = new CenterIcon(iconType, iconGroupId, iconName);
+					}
+					else
+					{
+						icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+					}
 				}
 			}
 
@@ -682,16 +794,55 @@ public class MapSettings implements Serializable
 					String treeType = (String) treesObj.get("treeType");
 					double density = (Double) treesObj.get("density");
 					long randomSeed = (Long) treesObj.get("randomSeed");
-					trees = new CenterTrees(treeType, density, randomSeed);
+					boolean isDormant = treesObj.containsKey("isDormant") ? (Boolean) treesObj.get("isDormant") : false;
+					trees = new CenterTrees(treeType, density, randomSeed, isDormant);
 				}
 			}
 
-			result.add(new CenterEdit(index, isWater, isLake, regionId, icon, trees));
+			result.put(index, new CenterEdit(index, isWater, isLake, regionId, icon, trees));
 			index++;
 		}
 
 		return result;
 	}
+
+	private FreeIconCollection parseIconEdits(JSONObject editsJson)
+	{
+		if (editsJson == null)
+		{
+			return new FreeIconCollection();
+		}
+
+		JSONArray array = (JSONArray) editsJson.get("iconEdits");
+		FreeIconCollection result = new FreeIconCollection();
+		if (array == null)
+		{
+			return result;
+		}
+
+		for (Object obj : array)
+		{
+			JSONObject iconObj = (JSONObject) obj;
+			IconType type = IconType.valueOf((String) iconObj.get("type"));
+
+			String groupId = (String) iconObj.get("groupId");
+			int iconIndex = (int) (long) iconObj.get("iconIndex");
+			String iconName = (String) iconObj.get("iconName");
+			Point locationResolutionInvariant = Point.fromJSonValue((String) iconObj.get("locationResolutionInvariant"));
+			double scale = (double) iconObj.get("scale");
+			Integer centerIndex = null;
+			if (iconObj.containsKey("centerIndex") && iconObj.get("centerIndex") != null)
+			{
+				centerIndex = (int) (long) iconObj.get("centerIndex");
+			}
+			double density = (double) iconObj.get("density");
+
+			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density));
+		}
+
+		return result;
+	}
+
 
 	public ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
@@ -742,11 +893,11 @@ public class MapSettings implements Serializable
 		String[] parts = str.split(",");
 		if (parts.length == 3)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
 		}
 		if (parts.length == 4)
 		{
-			return new Color(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
+			return Color.create(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]),
 					Integer.parseInt(parts[3]));
 		}
 		throw new IllegalArgumentException("Unable to parse color from string: " + str);
@@ -759,34 +910,21 @@ public class MapSettings implements Serializable
 		{
 			throw new IllegalArgumentException("Unable to parse the value of the font: \"" + str + "\"");
 		}
-		Font font = new Font(parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
-		if (!isFontInstalled(font.getName()))
+		Font font = Font.create(parts[0], FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
+		if (!Font.isInstalled(font.getName()))
 		{
-			if (isFontInstalled("Gabriola"))
+			if (Font.isInstalled("Gabriola"))
 			{
 				// Windows has this font
-				font = new Font("Gabriola", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+				font = Font.create("Gabriola", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}
-			else if (isFontInstalled("Z003"))
+			else if (Font.isInstalled("Z003"))
 			{
 				// Ubuntu has this font
-				font = new Font("Z003", Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+				font = Font.create("Z003", FontStyle.fromNumber(Integer.parseInt(parts[1])), Integer.parseInt(parts[2]));
 			}
 		}
 		return font;
-	}
-
-	private static boolean isFontInstalled(String fontFamily)
-	{
-		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-		for (String font : fonts)
-		{
-			if (font.equals(fontFamily))
-			{
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private void loadFromOldPropertiesFile(String propertiesFilePath)
@@ -868,7 +1006,7 @@ public class MapSettings implements Serializable
 	{
 		return isVersionGreaterThan(version, currentVersion);
 	}
-	
+
 	private boolean isVersionGreaterThan(String version1, String version2)
 	{
 		if (version1 == null || version1.equals(""))
@@ -881,14 +1019,14 @@ public class MapSettings implements Serializable
 		}
 		return Double.parseDouble(version1) > Double.parseDouble(version2);
 	}
-	
+
 	private boolean isVersionGreaterThanOrEqualTo(String version1, String version2)
 	{
 		if (Objects.equals(version1, version2))
 		{
 			return true;
 		}
-		
+
 		return isVersionGreaterThan(version1, version2);
 	}
 
@@ -957,11 +1095,12 @@ public class MapSettings implements Serializable
 		MapSettings other = (MapSettings) obj;
 		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
-				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
-				&& brightnessRange == other.brightnessRange
+				&& Objects.equals(borderType, other.borderType)
+				&& borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
+				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale)
 				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
 				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
@@ -971,6 +1110,7 @@ public class MapSettings implements Serializable
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionColors == other.drawRegionColors
 				&& drawRoads == other.drawRoads && drawText == other.drawText
+				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
 				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
@@ -979,12 +1119,15 @@ public class MapSettings implements Serializable
 				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
-				&& hueRange == other.hueRange && Objects.equals(imageExportPath, other.imageExportPath)
-				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
+				&& Objects.equals(imageExportPath, other.imageExportPath) && Objects.equals(landColor, other.landColor)
+				&& lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
-				&& Objects.equals(mountainRangeFont, other.mountainRangeFont) && Objects.equals(oceanColor, other.oceanColor)
-				&& oceanEffect == other.oceanEffect && Objects.equals(oceanEffectsColor, other.oceanEffectsColor)
-				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
+				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
+				&& Objects.equals(oceanColor, other.oceanColor) && oceanEffect == other.oceanEffect
+				&& Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
+				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
 				&& Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed

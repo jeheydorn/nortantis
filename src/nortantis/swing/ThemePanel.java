@@ -9,9 +9,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 
@@ -38,12 +39,29 @@ import org.apache.commons.io.FilenameUtils;
 
 import nortantis.BackgroundGenerator;
 import nortantis.FractalBGGenerator;
+import nortantis.FreeIconCollection;
+import nortantis.IconDrawer;
+import nortantis.IconType;
+import nortantis.ImageAndMasks;
+import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.WorldGraph;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.CenterTrees;
+import nortantis.editor.FreeIcon;
+import nortantis.geom.IntDimension;
+import nortantis.geom.Point;
+import nortantis.graph.voronoi.Center;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.util.Counter;
 import nortantis.util.ImageHelper;
+import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
 
@@ -122,6 +140,12 @@ public class ThemePanel extends JTabbedPane
 	private JButton grungeColorChooseButton;
 	private JCheckBox drawOceanEffectsInLakesCheckbox;
 	private JSlider treeHeightSlider;
+	private boolean enableSizeSliderListeners;
+	private JSlider mountainScaleSlider;
+	private JSlider hillScaleSlider;
+	private JSlider duneScaleSlider;
+	private JSlider cityScaleSlider;
+
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -407,19 +431,22 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForFullRedraw(borderTypeComboBox);
 		organizer.addLabelAndComponent("Border type:", "The set of images to draw for the border", borderTypeComboBox);
 
-		borderWidthSlider = new JSlider();
-		borderWidthSlider.setToolTipText("");
-		borderWidthSlider.setValue(100);
-		borderWidthSlider.setSnapToTicks(false);
-		borderWidthSlider.setPaintTicks(true);
-		borderWidthSlider.setPaintLabels(true);
-		borderWidthSlider.setMinorTickSpacing(50);
-		borderWidthSlider.setMaximum(600);
-		borderWidthSlider.setMajorTickSpacing(200);
-		createMapChangeListenerForFullRedraw(borderWidthSlider);
-		SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
-		organizer.addLabelAndComponent("Border width:",
-				"Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
+		{
+			borderWidthSlider = new JSlider();
+			borderWidthSlider.setToolTipText("");
+			borderWidthSlider.setValue(100);
+			borderWidthSlider.setSnapToTicks(false);
+			borderWidthSlider.setPaintTicks(true);
+			borderWidthSlider.setPaintLabels(true);
+			borderWidthSlider.setMinorTickSpacing(50);
+			borderWidthSlider.setMaximum(600);
+			borderWidthSlider.setMajorTickSpacing(200);
+			createMapChangeListenerForFullRedraw(borderWidthSlider);
+			SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
+			organizer.addLabelAndComponent("Border width:","Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
+		}
+		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
+
 
 		organizer.addSeperator();
 		frayedEdgeCheckbox = new JCheckBox("Fray edges");
@@ -546,7 +573,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () -> 
+				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () ->
 				{
 					updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
 					handleTerrainChange();
@@ -677,29 +704,260 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addSeperator();
 		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
-		treeHeightSlider = new JSlider(1, 15);
+		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		treeHeightSlider.setMajorTickSpacing(2);
 		treeHeightSlider.setMinorTickSpacing(1);
 		treeHeightSlider.setPaintTicks(true);
 		treeHeightSlider.setPaintLabels(true);
 		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
-		createMapChangeListenerForTerrainChange(treeHeightSlider);
-		organizer.addLabelAndComponent("Tree height:", "Changes the height of all trees on the map", treeHeightSlider);
+		SwingHelper.addListener(treeHeightSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				triggerRebuildAllAnchoredTrees();
+				handleTerrainChange();
+			}
+		});
+		enableSizeSliderListeners = true;
+		organizer.addLabelAndComponent("Tree height:",
+				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
+
+		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		mountainScaleSlider.setMajorTickSpacing(2);
+		mountainScaleSlider.setMinorTickSpacing(1);
+		mountainScaleSlider.setPaintTicks(true);
+		mountainScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(mountainScaleSlider);
+		SwingHelper.addListener(mountainScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				repositionMountainsForNewScale();
+				handleTerrainChange();
+			}
+		});
+		enableSizeSliderListeners = true;
+		organizer.addLabelAndComponent("Mountain size:", "Changes the size of all mountains on the map", mountainScaleSlider);
+
+		hillScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		hillScaleSlider.setMajorTickSpacing(2);
+		hillScaleSlider.setMinorTickSpacing(1);
+		hillScaleSlider.setPaintTicks(true);
+		hillScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(hillScaleSlider);
+		SwingHelper.addListener(hillScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				handleTerrainChange();
+			}
+		});
+		organizer.addLabelAndComponent("Hill size:", "Changes the size of all hills on the map", hillScaleSlider);
+
+		duneScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		duneScaleSlider.setMajorTickSpacing(2);
+		duneScaleSlider.setMinorTickSpacing(1);
+		duneScaleSlider.setPaintTicks(true);
+		duneScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(duneScaleSlider);
+		SwingHelper.addListener(duneScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				handleTerrainChange();
+			}
+		});
+		organizer.addLabelAndComponent("Dune size:", "Changes the size of all sand dunes on the map", duneScaleSlider);
+
+		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		cityScaleSlider.setMajorTickSpacing(2);
+		cityScaleSlider.setMinorTickSpacing(1);
+		cityScaleSlider.setPaintTicks(true);
+		cityScaleSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(cityScaleSlider);
+		SwingHelper.addListener(cityScaleSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				handleTerrainChange();
+			}
+		});
+		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
+
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
 	}
-	
+
+	private void unselectAnyIconBeingEdited()
+	{
+		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null
+				&& mainWindow.toolsPanel.currentTool instanceof IconsTool)
+		{
+			((IconsTool) mainWindow.toolsPanel.currentTool).unselectAnyIconBeingEdited();
+		}
+	}
+
+	private void triggerRebuildAllAnchoredTrees()
+	{
+		mainWindow.edits.freeIcons.doWithLock(() ->
+		{
+			Random rand = new Random();
+			// Reassign the random seeds to all CenterTrees that still exist because they failed to create any trees in their previous
+			// attempt
+			// to draw. Doing this causes those center trees to possibly show up. Without it, they would gradually disappear as you changed
+			// the
+			// tree height slider, especially on the higher ends of the tree height values.
+			// Also mark CenterTrees as not dormant so they will try to draw again.
+			// Also remove CenterTrees that are not close to any trees that are visible so that they don't randomly pop up when you change
+			// the
+			// tree height slider.
+			for (Map.Entry<Integer, CenterEdit> entry : mainWindow.edits.centerEdits.entrySet())
+			{
+				CenterTrees cTrees = entry.getValue().trees;
+				if (cTrees != null)
+				{
+					if (mainWindow.edits.freeIcons.hasTrees(entry.getKey()))
+					{
+						// Visible trees override invisible ones.
+						mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
+					}
+					else
+					{
+						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
+						{
+							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue()
+									.copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong(), false)));
+						}
+						else
+						{
+							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(null));
+						}
+					}
+				}
+			}
+
+			for (int centerIndex : mainWindow.edits.freeIcons.iterateTreeAnchors())
+			{
+				List<FreeIcon> trees = mainWindow.edits.freeIcons.getTrees(centerIndex);
+				if (trees == null || trees.isEmpty())
+				{
+					continue;
+				}
+
+				String treeType = getMostCommonTreeType(trees);
+				assert treeType != null;
+
+				double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
+
+				assert density > 0;
+
+				CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
+				CenterEdit cEdit = mainWindow.edits.centerEdits.get(centerIndex);
+				mainWindow.edits.centerEdits.put(centerIndex, cEdit.copyWithTrees(cTrees));
+			}
+		});
+	}
+
+	/**
+	 * Recalculates where mountains attached to Centers should be positioned so that changing the mountain scale slider keeps the base of
+	 * mountains in approximately the same location.
+	 * 
+	 * I didn't bother doing this with dunes or hills because they tend to be short anyway, and so I've anchored them to the centroid of
+	 * centers rather the the bottom.
+	 */
+	private void repositionMountainsForNewScale()
+	{
+		FreeIconCollection freeIcons = mainWindow.edits.freeIcons;
+		double resolution = mainWindow.displayQualityScale;
+		IconDrawer iconDrawer = mainWindow.updater.mapParts.iconDrawer;
+		WorldGraph graph = mainWindow.updater.mapParts.graph;
+		double mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
+		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(mainWindow.customImagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.mountains);
+		freeIcons.doWithLock(() ->
+		{
+			for (FreeIcon icon : freeIcons.iterateAnchoredNonTreeIcons())
+			{
+				if (icon.type == IconType.mountains)
+				{
+					if (!iconsByGroup.containsKey(icon.groupId))
+					{
+						// I don't think this should happen
+						assert false;
+						continue;
+					}
+					if (iconsByGroup.get(icon.groupId).isEmpty())
+					{
+						// I don't think this should happen
+						assert false;
+						continue;
+					}
+					Point loc = iconDrawer.getAnchoredMountainDrawPoint(graph.centers.get(icon.centerIndex), icon.groupId, icon.iconIndex,
+							mountainScale, iconsByGroup);
+					freeIcons.addOrReplace(icon.copyWithLocation(resolution, loc));
+				}
+			}
+
+			// Do something similar for non-anchored mountains. In this case, we don't have the center the mountain was originally drawn on,
+			// so we use the average center height to calculate approximately what the why offset of the image would have been.
+			for (FreeIcon icon : freeIcons.iterateNonAnchoredIcons())
+			{
+				if (icon.type == IconType.mountains)
+				{
+					double yChange = mainWindow.updater.mapParts.iconDrawer.getUnanchoredMountainYChangeFromMountainScaleChange(icon,
+							mountainScale);
+					Point scaledLocation = icon.getScaledLocation(resolution);
+					FreeIcon updated = icon.copyWithLocation(resolution, new Point(scaledLocation.x, scaledLocation.y + yChange));
+					freeIcons.replace(icon, updated);
+				}
+			}
+		});
+	}
+
+	private String getMostCommonTreeType(List<FreeIcon> trees)
+	{
+		Counter<String> counter = new Counter<>();
+		trees.stream().forEach(tree -> counter.incrementCount(tree.groupId));
+		return counter.argmax();
+	}
+
+	private boolean hasVisibleTreeWithinDistance(int centerStartIndex, String treeType, int maxSearchDistance)
+	{
+		MapEdits edits = mainWindow.edits;
+		WorldGraph graph = mainWindow.updater.mapParts.graph;
+		Center start = graph.centers.get(centerStartIndex);
+		Center found = graph.breadthFirstSearchForGoal((c, distanceFromStart) ->
+		{
+			return distanceFromStart < maxSearchDistance;
+		}, (c) ->
+		{
+			return edits.freeIcons.hasTrees(c.index);
+		}, start);
+
+		return found != null;
+	}
+
+	private boolean disableCoastShadingColorDisplayHandler = false;
+
 	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
 	{
-		Color background = coastShadingColorDisplay.getBackground();
-		int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
-		coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
+		if (!disableCoastShadingColorDisplayHandler)
+		{
+			Color background = coastShadingColorDisplay.getBackground();
+			int alpha = (int) ((1.0 - coastShadingTransparencySlider.getValue() / 100.0) * 255);
+			coastShadingColorDisplay.setBackground(new Color(background.getRed(), background.getGreen(), background.getBlue(), alpha));
+		}
 	}
-	
+
 	private void updateCoastShadingTransparencySliderFromCoastShadingColorDisplay()
 	{
-		coastShadingTransparencySlider.setValue((int)(((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
+		coastShadingTransparencySlider.setValue((int) (((1.0 - coastShadingColorDisplay.getBackground().getAlpha() / 255.0) * 100)));
 	}
 
 	private Component createFontsPanel(MainWindow mainWindow)
@@ -839,14 +1097,13 @@ public class ThemePanel extends JTabbedPane
 
 	private void updateBackgroundImageDisplays()
 	{
-		Dimension size = new Dimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
+		IntDimension size = new IntDimension(backgroundDisplaySize.width, backgroundDisplaySize.height);
 
-		SwingWorker<Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm>, Void> worker = new SwingWorker<Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm>, Void>()
+		SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void> worker = new SwingWorker<Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm>, Void>()
 		{
 
 			@Override
-			protected Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> doInBackground()
-					throws Exception
+			protected Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> doInBackground() throws Exception
 			{
 				long seed = parseBackgroundSeed();
 				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(),
@@ -857,7 +1114,7 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void done()
 			{
-				Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> tuple;
+				Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple;
 				try
 				{
 					tuple = get();
@@ -867,17 +1124,17 @@ public class ThemePanel extends JTabbedPane
 					throw new RuntimeException(e);
 				}
 
-				BufferedImage oceanBackground = tuple.getFirst();
+				Image oceanBackground = tuple.getFirst();
 				ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm = tuple.getSecond();
-				BufferedImage landBackground = tuple.getThird();
+				Image landBackground = tuple.getThird();
 				ImageHelper.ColorifyAlgorithm landColorifyAlgorithm = tuple.getFourth();
 
 				oceanDisplayPanel.setColorifyAlgorithm(oceanColorifyAlgorithm);
-				oceanDisplayPanel.setImage(oceanBackground);
+				oceanDisplayPanel.setImage(AwtFactory.unwrap(oceanBackground));
 				oceanDisplayPanel.repaint();
 
 				landDisplayPanel.setColorifyAlgorithm(landColorifyAlgorithm);
-				landDisplayPanel.setImage(landBackground);
+				landDisplayPanel.setImage(AwtFactory.unwrap(landBackground));
 				landDisplayPanel.repaint();
 			}
 		};
@@ -885,14 +1142,14 @@ public class ThemePanel extends JTabbedPane
 		worker.execute();
 	}
 
-	static Tuple4<BufferedImage, ImageHelper.ColorifyAlgorithm, BufferedImage, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
-			Dimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
+	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
+			IntDimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
 			String textureImageFileName)
 	{
 
-		BufferedImage oceanBackground;
+		Image oceanBackground;
 		ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
-		BufferedImage landBackground;
+		Image landBackground;
 		ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
 
 		if (isFractal)
@@ -904,7 +1161,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		else if (isFromTexture)
 		{
-			BufferedImage texture;
+			Image texture;
 			try
 			{
 				texture = ImageHelper.read(textureImageFileName);
@@ -959,7 +1216,7 @@ public class ThemePanel extends JTabbedPane
 			{
 				oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 				landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-				oceanBackground = landBackground = new BufferedImage(size.width, size.height, BufferedImage.TYPE_INT_ARGB);
+				oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.ARGB);
 			}
 		}
 		else
@@ -1031,18 +1288,26 @@ public class ThemePanel extends JTabbedPane
 		fadingConcentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.FadingConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
-		coastShadingColorDisplay.setBackground(settings.coastShadingColor);
+		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
+
+		// Temporarily disable events on coastShadingColorDisplay while initially setting the value for coastShadingTransparencySlider so
+		// that
+		// the action listener on coastShadingTransparencySlider doesn't fire and then update coastShadingColorDisplay, because doing so can
+		// cause changes in the settings due to integer truncation of the alpha value.
+		disableCoastShadingColorDisplayHandler = true;
 		updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
-		coastlineColorDisplay.setBackground(settings.coastlineColor);
-		oceanEffectsColorDisplay.setBackground(settings.oceanEffectsColor);
-		riverColorDisplay.setBackground(settings.riverColor);
+		disableCoastShadingColorDisplayHandler = false;
+
+		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
+		oceanEffectsColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanEffectsColor));
+		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));
 		frayedEdgeCheckbox.setSelected(settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or
 		// disabled.
 		frayedEdgeCheckboxActionListener.actionPerformed(null);
 		drawGrungeCheckbox.setSelected(settings.drawGrunge);
 		drawGrungeCheckboxActionListener.actionPerformed(null);
-		grungeColorDisplay.setBackground(settings.frayedBorderColor);
+		grungeColorDisplay.setBackground(AwtFactory.unwrap(settings.frayedBorderColor));
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
 		grungeSlider.setValue(settings.grungeWidth);
@@ -1084,8 +1349,8 @@ public class ThemePanel extends JTabbedPane
 			backgroundSeedTextField.setText(String.valueOf(settings.backgroundRandomSeed));
 		}
 
-		oceanDisplayPanel.setColor(settings.oceanColor);
-		landDisplayPanel.setColor(settings.landColor);
+		oceanDisplayPanel.setColor(AwtFactory.unwrap(settings.oceanColor));
+		landDisplayPanel.setColor(AwtFactory.unwrap(settings.landColor));
 
 		if (settings.drawRegionColors)
 		{
@@ -1102,18 +1367,18 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setSelected(settings.drawText);
 		enableTextCheckboxActionListener.actionPerformed(null);
 
-		titleFontDisplay.setFont(settings.titleFont);
+		titleFontDisplay.setFont(AwtFactory.unwrap(settings.titleFont));
 		titleFontDisplay.setText(settings.titleFont.getName());
-		regionFontDisplay.setFont(settings.regionFont);
+		regionFontDisplay.setFont(AwtFactory.unwrap(settings.regionFont));
 		regionFontDisplay.setText(settings.regionFont.getName());
-		mountainRangeFontDisplay.setFont(settings.mountainRangeFont);
+		mountainRangeFontDisplay.setFont(AwtFactory.unwrap(settings.mountainRangeFont));
 		mountainRangeFontDisplay.setText(settings.mountainRangeFont.getName());
-		otherMountainsFontDisplay.setFont(settings.otherMountainsFont);
+		otherMountainsFontDisplay.setFont(AwtFactory.unwrap(settings.otherMountainsFont));
 		otherMountainsFontDisplay.setText(settings.otherMountainsFont.getName());
-		riverFontDisplay.setFont(settings.riverFont);
+		riverFontDisplay.setFont(AwtFactory.unwrap(settings.riverFont));
 		riverFontDisplay.setText(settings.riverFont.getName());
-		textColorDisplay.setBackground(settings.textColor);
-		boldBackgroundColorDisplay.setBackground(settings.boldBackgroundColor);
+		textColorDisplay.setBackground(AwtFactory.unwrap(settings.textColor));
+		boldBackgroundColorDisplay.setBackground(AwtFactory.unwrap(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
@@ -1123,7 +1388,13 @@ public class ThemePanel extends JTabbedPane
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
 
+		enableSizeSliderListeners = false;
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
+		mountainScaleSlider.setValue(getSliderValueForScale(settings.mountainScale));
+		hillScaleSlider.setValue(getSliderValueForScale(settings.hillScale));
+		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
+		cityScaleSlider.setValue(getSliderValueForScale(settings.cityScale));
+		enableSizeSliderListeners = true;
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -1136,6 +1407,45 @@ public class ThemePanel extends JTabbedPane
 
 		return changeEffectsBackgroundImages;
 	}
+
+	private final double scaleMax = 3.0;
+	private final double scaleMin = 0.5;
+	private final double sliderValueFor1Scale = 5;
+	private final int minScaleSliderValue = 1;
+	private final int maxScaleSliderValue = 15;
+
+	private int getSliderValueForScale(double scale)
+	{
+		if (scale <= 1.0)
+		{
+			double slope = (sliderValueFor1Scale - minScaleSliderValue) / (1.0 - scaleMin);
+			double yIntercept = sliderValueFor1Scale - slope;
+			return (int) Math.round(scale * slope + yIntercept);
+		}
+		else
+		{
+			double slope = (maxScaleSliderValue - sliderValueFor1Scale) / (scaleMax - 1.0);
+			double yIntercept = sliderValueFor1Scale - slope * (1.0);
+			return (int) Math.round(scale * slope + yIntercept);
+		}
+	}
+
+	private double getScaleForSliderValue(int sliderValue)
+	{
+		if (sliderValue <= sliderValueFor1Scale)
+		{
+			double slope = (sliderValueFor1Scale - minScaleSliderValue) / (1.0 - scaleMin);
+			double yIntercept = sliderValueFor1Scale - slope;
+			return (sliderValue - yIntercept) / slope;
+		}
+		else
+		{
+			double slope = (maxScaleSliderValue - sliderValueFor1Scale) / (scaleMax - 1.0);
+			double yIntercept = sliderValueFor1Scale - slope * (1.0);
+			return (sliderValue - yIntercept) / slope;
+		}
+	}
+
 
 	private void initializeBorderTypeComboBoxItems(MapSettings settings)
 	{
@@ -1176,7 +1486,7 @@ public class ThemePanel extends JTabbedPane
 			return true;
 		}
 
-		if (!landDisplayPanel.getColor().equals(settings.landColor))
+		if (!landDisplayPanel.getColor().equals(AwtFactory.unwrap(settings.landColor)))
 		{
 			return true;
 		}
@@ -1205,13 +1515,13 @@ public class ThemePanel extends JTabbedPane
 				: shadeRadioButton.isSelected() ? OceanEffect.Blur
 						: concentricWavesButton.isSelected() ? OceanEffect.ConcentricWaves : OceanEffect.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
-		settings.coastShadingColor = coastShadingColorDisplay.getBackground();
-		settings.coastlineColor = coastlineColorDisplay.getBackground();
-		settings.oceanEffectsColor = oceanEffectsColorDisplay.getBackground();
-		settings.riverColor = riverColorDisplay.getBackground();
+		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
+		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());
+		settings.oceanEffectsColor = AwtFactory.wrap(oceanEffectsColorDisplay.getBackground());
+		settings.riverColor = AwtFactory.wrap(riverColorDisplay.getBackground());
 		settings.drawText = enableTextCheckBox.isSelected();
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
-		settings.frayedBorderColor = grungeColorDisplay.getBackground();
+		settings.frayedBorderColor = AwtFactory.wrap(grungeColorDisplay.getBackground());
 		settings.frayedBorderBlurLevel = frayedEdgeShadingSlider.getValue();
 		// Make increasing frayed edge values cause the number of polygons to
 		// decrease so that the fray gets large with
@@ -1236,17 +1546,17 @@ public class ThemePanel extends JTabbedPane
 		{
 			settings.backgroundRandomSeed = 0;
 		}
-		settings.oceanColor = oceanDisplayPanel.getColor();
+		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
-		settings.landColor = landDisplayPanel.getColor();
+		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
-		settings.titleFont = titleFontDisplay.getFont();
-		settings.regionFont = regionFontDisplay.getFont();
-		settings.mountainRangeFont = mountainRangeFontDisplay.getFont();
-		settings.otherMountainsFont = otherMountainsFontDisplay.getFont();
-		settings.riverFont = riverFontDisplay.getFont();
-		settings.textColor = textColorDisplay.getBackground();
-		settings.boldBackgroundColor = boldBackgroundColorDisplay.getBackground();
+		settings.titleFont = AwtFactory.wrap(titleFontDisplay.getFont());
+		settings.regionFont = AwtFactory.wrap(regionFontDisplay.getFont());
+		settings.mountainRangeFont = AwtFactory.wrap(mountainRangeFontDisplay.getFont());
+		settings.otherMountainsFont = AwtFactory.wrap(otherMountainsFontDisplay.getFont());
+		settings.riverFont = AwtFactory.wrap(riverFontDisplay.getFont());
+		settings.textColor = AwtFactory.wrap(textColorDisplay.getBackground());
+		settings.boldBackgroundColor = AwtFactory.wrap(boldBackgroundColorDisplay.getBackground());
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
 
 		settings.drawBorder = drawBorderCheckbox.isSelected();
@@ -1254,6 +1564,10 @@ public class ThemePanel extends JTabbedPane
 		settings.borderWidth = borderWidthSlider.getValue();
 
 		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
+		settings.mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
+		settings.hillScale = getScaleForSliderValue(hillScaleSlider.getValue());
+		settings.duneScale = getScaleForSliderValue(duneScaleSlider.getValue());
+		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
 	}
 
 	private boolean areRegionColorsVisible()

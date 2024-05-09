@@ -1,9 +1,5 @@
 package nortantis;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics2D;
-import java.awt.Stroke;
-import java.awt.image.BufferedImage;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,6 +11,8 @@ import java.util.stream.Collectors;
 
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Image;
+import nortantis.platform.Painter;
 import nortantis.util.OrderlessPair;
 import nortantis.util.Range;
 
@@ -120,13 +118,11 @@ public class RoadDrawer
 	 * @param map
 	 * @param sizeMultiplier
 	 */
-	public void drawRoads(BufferedImage map, double sizeMultiplier)
+	public void drawRoads(Image map, double sizeMultiplier)
 	{
-		Graphics2D g = map.createGraphics();
-		g.setColor(settings.roadColor);
-		// TODO - Add the parameters below for the dashed line in MapSettings.
-		Stroke dashed = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 9 }, 0);
-		g.setStroke(dashed);
+		Painter p = map.createPainter();
+		p.setColor(settings.roadColor);
+		p.setDashedStroke(3f * ((float)sizeMultiplier));
 
 		for (Edge edge : graph.edges)
 		{

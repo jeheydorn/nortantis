@@ -18,27 +18,22 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -54,16 +49,20 @@ import org.imgscalr.Scalr.Method;
 import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.DebugFlags;
-import nortantis.DimensionDouble;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.editor.CenterEdit;
+import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Image;
+import nortantis.platform.PlatformFactory;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
@@ -91,12 +90,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	public Undoer undoer;
 	double zoom;
 	double displayQualityScale;
-	private JMenu displayQualityMenu;
-	private JRadioButtonMenuItem radioButton50Percent;
-	private JRadioButtonMenuItem radioButton75Percent;
-	private JRadioButtonMenuItem radioButton100Percent;
-	private JRadioButtonMenuItem radioButton125Percent;
-	private JRadioButtonMenuItem radioButton150Percent;
 	ThemePanel themePanel;
 	ToolsPanel toolsPanel;
 	MapUpdater updater;
@@ -119,11 +112,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem refreshMenuItem;
 	private JMenuItem customImagesMenuItem;
 	private JMenu toolsMenu;
-	private JRadioButtonMenuItem[] displayQualityButtons;
 	private JMenuItem nameGeneratorMenuItem;
 	protected String customImagesPath;
 	private JMenu fileMenu;
 	private JMenuItem newMapWithSameThemeMenuItem;
+	private JMenuItem searchTextMenuItem;
+	private TextSearchDialog textSearchDialog;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -164,12 +158,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		exportMapAsImageMenuItem.setEnabled(enable);
 		exportHeightmapMenuItem.setEnabled(enable);
 
-		undoButton.setEnabled(enable);
-		redoButton.setEnabled(enable);
+		if (!enable || undoer == null)
+		{
+			undoButton.setEnabled(false);
+			redoButton.setEnabled(false);
+		}
+		else
+		{
+			undoer.updateUndoRedoEnabled();
+		}
 		clearEntireMapButton.setEnabled(enable);
 		customImagesMenuItem.setEnabled(enable);
 
 		nameGeneratorMenuItem.setEnabled(enable);
+		searchTextMenuItem.setEnabled(enable);
 
 		highlightLakesButton.setEnabled(enable);
 		highlightRiversButton.setEnabled(enable);
@@ -185,7 +187,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString()));
+		setIconImage(AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString())));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()
@@ -285,13 +287,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (SwingUtilities.isLeftMouseButton(e))
-				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
-				}
-				else if (SwingUtilities.isMiddleMouseButton(e))
+				if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					mouseLocationForMiddleButtonDrag = e.getPoint();
+				}
+				else if (SwingUtilities.isLeftMouseButton(e))
+				{
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMousePressedOnMap(e));
 				}
 			}
 
@@ -317,11 +319,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (SwingUtilities.isLeftMouseButton(e))
-				{
-					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
-				}
-				else if (SwingUtilities.isMiddleMouseButton(e))
+				if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					if (mouseLocationForMiddleButtonDrag != null)
 					{
@@ -332,6 +330,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 						mapEditingScrollPane.getHorizontalScrollBar()
 								.setValue(mapEditingScrollPane.getHorizontalScrollBar().getValue() + deltaX);
 					}
+				}
+				else if (SwingUtilities.isLeftMouseButton(e))
+				{
+					updater.doIfMapIsReadyForInteractions(() -> toolsPanel.currentTool.handleMouseDraggedOnMap(e));
 				}
 			}
 		});
@@ -370,14 +372,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e)
 			{
-				if (e.isControlDown())
-				{
-					MainWindow.this.handleMouseWheelChangingZoom(e);
-				}
-				else
-				{
-					e.getComponent().getParent().dispatchEvent(e);
-				}
+				MainWindow.this.handleMouseWheelChangingZoom(e);
 			}
 
 		});
@@ -413,7 +408,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected MapSettings getSettingsFromGUI()
+			public MapSettings getSettingsFromGUI()
 			{
 				MapSettings settings = MainWindow.this.getSettingsFromGUI(false);
 				settings.resolution = displayQualityScale;
@@ -428,10 +423,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(BufferedImage map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
-					Rectangle incrementalChangeArea)
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+					Rectangle incrementalChangeArea, List<String> warningMessages)
 			{
-				mapEditingPanel.mapFromMapCreator = map;
+				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 
@@ -466,6 +461,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// Tell the scroll pane to update itself.
 				mapEditingPanel.revalidate();
 				mapEditingPanel.repaint();
+
+				if (warningMessages != null && warningMessages.size() > 0)
+				{
+					JOptionPane.showMessageDialog(MainWindow.this, "<html>" + String.join("<br>", warningMessages) + "</html>",
+							"Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+				}
 			}
 
 			@Override
@@ -488,9 +489,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected BufferedImage getCurrentMapForIncrementalUpdate()
+			protected Image getCurrentMapForIncrementalUpdate()
 			{
-				return mapEditingPanel.mapFromMapCreator;
+				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
 			}
 
 		};
@@ -536,7 +537,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					if (settingsToKeepThemeFrom.drawRegionColors
 							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
-						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage("Region Colors",
+						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(
+								"Region Colors",
 								"New region colors will be generated based on the " + LandWaterTool.colorGeneratorSettingsName + " in the "
 										+ LandWaterTool.toolbarName + " tool"
 										+ ", not the actual colors used in your current map. This means that if you chose your region colors"
@@ -660,7 +662,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				handleImagesRefresh();
-				updater.createAndShowMapFull();
+				updater.createAndShowMapFull(() -> mapEditingPanel.clearAllSelectionsAndHighlights());
 			}
 		});
 
@@ -731,11 +733,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		viewMenu = new JMenu("View");
 		menuBar.add(viewMenu);
 
-		displayQualityMenu = new JMenu("Display Quality");
-		viewMenu.add(displayQualityMenu);
-		displayQualityMenu.setToolTipText(
-				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
-
 		highlightLakesButton = new JCheckBoxMenuItem("Highlight Lakes");
 		highlightLakesButton.setToolTipText("Highlight lakes to make them easier to see.");
 		highlightLakesButton.addActionListener(new ActionListener()
@@ -762,74 +759,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		viewMenu.add(highlightRiversButton);
 
-		ActionListener resolutionListener = new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				String text = ((JRadioButtonMenuItem) e.getSource()).getText();
-				UserPreferences.getInstance().editorImageQuality = text;
-				handleImageQualityChange(text);
-			}
-		};
-
-		ButtonGroup resolutionButtonGroup = new ButtonGroup();
-
-		radioButton50Percent = new JRadioButtonMenuItem("Very Low");
-		radioButton50Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton50Percent);
-		resolutionButtonGroup.add(radioButton50Percent);
-
-		radioButton75Percent = new JRadioButtonMenuItem("Low");
-		radioButton75Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton75Percent);
-		resolutionButtonGroup.add(radioButton75Percent);
-
-		radioButton100Percent = new JRadioButtonMenuItem("Medium");
-		radioButton100Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton100Percent);
-		resolutionButtonGroup.add(radioButton100Percent);
-
-		radioButton125Percent = new JRadioButtonMenuItem("High");
-		radioButton125Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton125Percent);
-		resolutionButtonGroup.add(radioButton125Percent);
-
-		radioButton150Percent = new JRadioButtonMenuItem("Very High");
-		radioButton150Percent.addActionListener(resolutionListener);
-		displayQualityMenu.add(radioButton150Percent);
-		resolutionButtonGroup.add(radioButton150Percent);
-
-		displayQualityButtons = new JRadioButtonMenuItem[] { radioButton50Percent, radioButton75Percent, radioButton100Percent,
-				radioButton125Percent, radioButton150Percent };
-
-		if (UserPreferences.getInstance().editorImageQuality != null && !UserPreferences.getInstance().editorImageQuality.equals(""))
-		{
-			boolean found = false;
-			for (JRadioButtonMenuItem resolutionOption : displayQualityButtons)
-			{
-				if (UserPreferences.getInstance().editorImageQuality.equals(resolutionOption.getText()))
-				{
-					resolutionOption.setSelected(true);
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-			{
-				// Shouldn't happen. This means the user preferences have a bad
-				// value.
-				radioButton100Percent.setSelected(true);
-				UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
-			}
-		}
-		else
-		{
-			radioButton100Percent.setSelected(true);
-			UserPreferences.getInstance().editorImageQuality = radioButton100Percent.getText();
-		}
-		updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
-
 		toolsMenu = new JMenu("Tools");
 		menuBar.add(toolsMenu);
 
@@ -844,6 +773,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		searchTextMenuItem = new JMenuItem("Search Text");
+		searchTextMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK));
+		toolsMenu.add(searchTextMenuItem);
+		searchTextMenuItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleSearchTextPressed();
+			}
+		});
+
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
 
@@ -855,8 +796,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				JOptionPane.showMessageDialog(MainWindow.this,
-						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Ctrl + mouse wheel</li>"
-								+ "<li>Pan: Hold mouse middle button and drag</li>" + "</ul>" + "</html>",
+						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Mouse wheel</li>"
+								+ "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>" + "</html>",
 						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
@@ -1028,7 +969,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (method == Method.QUALITY)
 			{
 				// Can't incrementally zoom. Zoom the whole thing.
-				mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
+				mapEditingPanel.setImage(AwtFactory
+						.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 			}
 			else
 			{
@@ -1040,7 +982,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// The reason is that the incremental case will update pieces of the image created below.
 					// I don't use ImageHelper.scaleInto for the full image case because it's 5x slower than the below
 					// method, which uses ImgScalr.
-					mapEditingPanel.setImage(ImageHelper.scaleByWidth(mapEditingPanel.mapFromMapCreator, zoomedWidth, method));
+					mapEditingPanel.setImage(AwtFactory
+							.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 				}
 				else
 				{
@@ -1048,7 +991,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					// ImageHelper.scaleByWidth called above returns the input image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
-						ImageHelper.scaleInto(mapEditingPanel.mapFromMapCreator, mapEditingPanel.getImage(), incrementalChangeArea);
+						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator),
+								AwtFactory.wrap(mapEditingPanel.getImage()), incrementalChangeArea);
 					}
 				}
 			}
@@ -1098,12 +1042,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (mapEditingPanel.mapFromMapCreator != null)
 			{
 				final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 2;
-				Dimension size = new Dimension(mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
+				nortantis.geom.Dimension size = new nortantis.geom.Dimension(
+						mapEditingScrollPane.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom,
 						mapEditingScrollPane.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom);
 
-				DimensionDouble fitted = ImageHelper.fitDimensionsWithinBoundingBox(size, mapEditingPanel.mapFromMapCreator.getWidth(),
-						mapEditingPanel.mapFromMapCreator.getHeight());
-				return (fitted.getWidth() / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
+				nortantis.geom.Dimension fitted = ImageHelper.fitDimensionsWithinBoundingBox(size,
+						mapEditingPanel.mapFromMapCreator.getWidth(), mapEditingPanel.mapFromMapCreator.getHeight());
+				return (fitted.width / mapEditingPanel.mapFromMapCreator.getWidth()) * mapEditingPanel.osScale;
 			}
 			else
 			{
@@ -1131,6 +1076,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		clearEntireMapButton.setEnabled(!isDrawing);
 		toolsPanel.showAsDrawing(isDrawing);
+		if (textSearchDialog != null)
+		{
+			textSearchDialog.setAllowSearches(!isDrawing);
+		}
 	}
 
 	private double parsePercentage(String zoomStr)
@@ -1142,33 +1091,33 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	/**
 	 * Handles when zoom level changes in the display.
 	 */
-	public void handleImageQualityChange(String resolutionText)
+	public void handleImageQualityChange(DisplayQuality quality)
 	{
-		updateImageQualityScale(resolutionText);
+		updateImageQualityScale(quality);
 
 		ImageCache.clear();
 		updater.createAndShowMapFull();
 	}
 
-	private void updateImageQualityScale(String imageQualityText)
+	public void updateImageQualityScale(DisplayQuality quality)
 	{
-		if (imageQualityText.equals(radioButton50Percent.getText()))
+		if (quality == DisplayQuality.Very_Low)
 		{
 			displayQualityScale = 0.50;
 		}
-		else if (imageQualityText.equals(radioButton75Percent.getText()))
+		else if (quality == DisplayQuality.Low)
 		{
 			displayQualityScale = 0.75;
 		}
-		else if (imageQualityText.equals(radioButton100Percent.getText()))
+		else if (quality == DisplayQuality.Medium)
 		{
 			displayQualityScale = 1.0;
 		}
-		else if (imageQualityText.equals(radioButton125Percent.getText()))
+		else if (quality == DisplayQuality.High)
 		{
 			displayQualityScale = 1.25;
 		}
-		else if (imageQualityText.equals(radioButton150Percent.getText()))
+		else if (quality == DisplayQuality.Ultra)
 		{
 			displayQualityScale = 1.5;
 		}
@@ -1193,21 +1142,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			for (Center center : updater.mapParts.graph.centers)
 			{
-				// Change land to ocean
-				edits.centerEdits.get(center.index).isWater = true;
-				edits.centerEdits.get(center.index).isLake = false;
-
-				// Erase icons
-				edits.centerEdits.get(center.index).trees = null;
-				edits.centerEdits.get(center.index).icon = null;
-
-				// Erase rivers
-				for (Edge edge : center.borders)
-				{
-					EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
-					eEdit.riverLevel = 0;
-				}
+				// Change land to ocean and erase icons
+				CenterEdit newValues = new CenterEdit(center.index, true, false, null, null, null);
+				edits.centerEdits.put(center.index, newValues);
 			}
+
+			// Erase rivers
+			for (Edge edge : updater.mapParts.graph.edges)
+			{
+				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
+				eEdit.riverLevel = 0;
+			}
+
+			// Erase free icons
+			edits.freeIcons.clear();
 
 			undoer.setUndoPoint(UpdateType.Full, null);
 			updater.createAndShowMapTerrainChange();
@@ -1248,6 +1196,28 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		dialog.setVisible(true);
 	}
 
+	private void handleSearchTextPressed()
+	{
+		if (textSearchDialog == null || !(textSearchDialog.isVisible()))
+		{
+			textSearchDialog = new TextSearchDialog(this);
+			textSearchDialog.setAllowSearches((!updater.isMapBeingDrawn()));
+
+			java.awt.Point parentLocation = getLocation();
+			Dimension parentSize = getSize();
+			Dimension dialogSize = textSearchDialog.getSize();
+
+			textSearchDialog.setLocation(parentLocation.x + parentSize.width / 2 - dialogSize.width / 2,
+					parentLocation.y + parentSize.height - dialogSize.height - 18);
+
+			textSearchDialog.setVisible(true);
+		}
+		else
+		{
+			textSearchDialog.searchField.requestFocus();
+		}
+	}
+
 	public boolean checkForUnsavedChanges()
 	{
 		if (lastSettingsLoadedOrSaved == null)
@@ -1278,16 +1248,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		final MapSettings currentSettings = getSettingsFromGUI(false);
 
-		// Debug code
-		// try
-		// {
-		// currentSettings.writeToFile("currentSettings.json");
-		// lastSettingsLoadedOrSaved.writeToFile("lastSettingsLoadedOrSaved.json");
-		// }
-		// catch (IOException e)
-		// {
-		// e.printStackTrace();
-		// }
+		if (DebugFlags.shouldWriteBeforeAndAfterJsonWhenSavePromptShows())
+		{
+			try
+			{
+				currentSettings.writeToFile("currentSettings.json");
+				lastSettingsLoadedOrSaved.writeToFile("lastSettingsLoadedOrSaved.json");
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
 
 		if (hasDrawnCurrentMapAtLeastOnce)
 		{
@@ -1413,7 +1385,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
-		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false);
+		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, needsImagesRefresh);
 
 		updateFrameTitle();
 
@@ -1426,7 +1398,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			handleImagesRefresh();
 		}
 
-		if (settings.edits != null && !settings.edits.isEmpty())
+		if (settings.edits != null && settings.edits.isInitialized())
 		{
 			undoer.initialize(settings);
 			enableOrDisableFieldsThatRequireMap(true, settings);
@@ -1443,7 +1415,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.createAndShowMapFull();
 	}
 
-	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange)
+	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
@@ -1454,7 +1426,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
 		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
-		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages);
+		toolsPanel.loadSettingsIntoGUI(settings, isUndoRedoOrAutomaticChange, changeEffectsBackgroundImages, willDoImagesRefresh);
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
@@ -1519,7 +1491,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(ImageHelper.createPlaceholderImage(message));
+		mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.createPlaceholderImage(message)));
 
 		// Clear out the map from map creator so that causing the window to re-zoom while the placeholder image
 		// is displayed doesn't show the previous map. This can happen when the zoom is fit to window, you create
@@ -1537,7 +1509,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			// Allow editor tools to update based on changes in the themes
 			// panel.
-			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages);
+			toolsPanel.loadSettingsIntoGUI(getSettingsFromGUI(false), true, changeEffectsBackgroundImages, false);
 		}
 	}
 
@@ -1585,6 +1557,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 */
 	public static void main(String[] args)
 	{
+		// Tell drawing code to use AWT.
+		PlatformFactory.setInstance(new AwtFactory());
+
 		try
 		{
 			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -1595,6 +1570,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			System.out.println("Error while setting look and feel: " + e.getMessage());
 			e.printStackTrace();
 		}
+
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()

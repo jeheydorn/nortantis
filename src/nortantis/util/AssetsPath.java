@@ -11,8 +11,7 @@ public class AssetsPath
 
 	static
 	{
-		String OS = System.getProperty("os.name").toUpperCase();
-		if (OS.contains("WIN"))
+		if (isWindows())
 		{
 			if (isInstalled)
 			{
@@ -23,12 +22,12 @@ public class AssetsPath
 				installPath = "assets";
 			}
 		}
-		else if (OS.contains("MAC"))
+		else if (isMac())
 		{
 			// Installers are not supported for Mac.
 			installPath = "assets";
 		}
-		else if (OS.contains("NUX"))
+		else if (isLinux())
 		{
 			if (isInstalled)
 			{
@@ -47,6 +46,24 @@ public class AssetsPath
 					+ ". If you are seeing this message while running from source, then change AssetsPath.isInstalled to false to switch to the assets folder in the source code.");
 		}
 
+	}
+	
+	public static boolean isLinux()
+	{
+		String OS = System.getProperty("os.name").toUpperCase();
+		return OS.contains("NUX");
+	}
+
+	public static boolean isWindows()
+	{
+		String OS = System.getProperty("os.name").toUpperCase();
+		return OS.contains("WIN");
+	}
+	
+	public static boolean isMac()
+	{
+		String OS = System.getProperty("os.name").toUpperCase();
+		return OS.contains("MAC");
 	}
 
 	public static synchronized String getInstallPath()

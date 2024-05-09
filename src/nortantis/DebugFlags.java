@@ -10,6 +10,11 @@ public class DebugFlags
 	private static boolean showIncrementalUpdateBounds = false;
 	
 	/**
+	 * Prints how long incremental updates take.
+	 */
+	private static boolean printIncrementalUpdateTimes = false;
+
+	/**
 	 * Causes the indexes of edges to be be printed to standard out when adding rivers in the Land and Water tool.
 	 * This is useful when you're debugging a need to find the index of an edge for setting a conditional breakpoint.
 	 */
@@ -21,11 +26,23 @@ public class DebugFlags
 	 */
 	private static boolean printCenterIndexes = false;
 	
+	private static boolean printIconBeingEdited = false;
+	
+	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
+	
+	private static int[] indexesOfCentersToHighlight = new int[] {};
+	
+	
 	public static boolean showIncrementalUpdateBounds()
 	{
 		return !AssetsPath.isInstalled && showIncrementalUpdateBounds;
 	}
 	
+	public static boolean printIncrementalUpdateTimes()
+	{
+		return !AssetsPath.isInstalled && printIncrementalUpdateTimes;
+	}
+
 	public static boolean printRiverEdgeIndexes()
 	{
 		return !AssetsPath.isInstalled && printRiverEdgeIndexes; 
@@ -35,4 +52,24 @@ public class DebugFlags
 	{
 		return !AssetsPath.isInstalled && printCenterIndexes;
 	}
+	
+	public static int[] getIndexesOfCentersToHighlight()
+	{
+		if (AssetsPath.isInstalled)
+		{
+			return new int[] {};
+		}
+		return indexesOfCentersToHighlight;
+	}
+	
+	public static boolean shouldWriteBeforeAndAfterJsonWhenSavePromptShows()
+	{
+		return !AssetsPath.isInstalled && writeBeforeAndAfterJsonWhenSavePromptShows;
+	}
+	
+	public static boolean printIconBeingEdited()
+	{
+		return !AssetsPath.isInstalled && printIconBeingEdited;
+	}
+	
 }

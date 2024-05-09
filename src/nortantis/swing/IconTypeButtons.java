@@ -32,4 +32,18 @@ public class IconTypeButtons
 		}
 		return null;
 	}
+	
+	public boolean selectButtonIfPresent(String buttonText)
+	{		
+		for (RadioButtonWithImage buttonWithImage : buttons)
+		{
+			if (buttonWithImage.getText().equals(buttonText))
+			{
+				buttonWithImage.getRadioButton().doClick();
+				return true;
+			}
+		}
+		
+		return false;
+	}
 }

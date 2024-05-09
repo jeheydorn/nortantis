@@ -1,15 +1,14 @@
 package nortantis;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.List;
 
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Rectangle;
+import nortantis.platform.Color;
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
+import nortantis.platform.Painter;
 import nortantis.util.Coordinate;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
@@ -17,29 +16,29 @@ import nortantis.util.Range;
 public class ImageAndMasks
 {
 	private static final int opaqueThreshold = 10;
-	public BufferedImage image;
+	public Image image;
 	/**
 	 * Used to linearly combine pixel values pulled from the background image without other icons vs the the map being drawn so far.
 	 */
-	private BufferedImage contentMask;
-	private Rectangle contentBounds;
+	private Image contentMask;
+	private IntRectangle contentBounds;
 	private Integer[] contentYStarts;
 
 	/**
 	 * Used to linearly combine pixel values pulled from the land background texture vs the background image without other icons. Used to
 	 * blend coastline shading into icons when icons are allowed to draw over coastlines.
 	 */
-	private BufferedImage shadingMask;
+	private Image shadingMask;
 	private IconType iconType;
 
 
-	public ImageAndMasks(BufferedImage image, IconType iconType)
+	public ImageAndMasks(Image image, IconType iconType)
 	{
 		this.image = image;
 		this.iconType = iconType;
 	}
 
-	public ImageAndMasks(BufferedImage image, BufferedImage contentMask, Rectangle contentBounds, BufferedImage shadingMask, IconType iconType)
+	public ImageAndMasks(Image image, Image contentMask, IntRectangle contentBounds, Image shadingMask, IconType iconType)
 	{
 		this(image, iconType);
 		this.contentMask = contentMask;
@@ -47,7 +46,7 @@ public class ImageAndMasks
 		this.contentBounds = contentBounds;
 	}
 
-	public BufferedImage getOrCreateContentMask()
+	public Image getOrCreateContentMask()
 	{
 		if (image == null)
 		{
@@ -72,7 +71,7 @@ public class ImageAndMasks
 	private void createContentMask()
 	{
 		// Top
-		BufferedImage topSilhouette = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		{
 			List<Coordinate> points = new ArrayList<>();
 			for (int x = 0; x < image.getWidth(); x++)
@@ -91,7 +90,7 @@ public class ImageAndMasks
 
 			if (points.size() < 3)
 			{
-				contentMask = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 				return;
 			}
 			points.add(new Coordinate(points.get(points.size() - 1).x, image.getHeight()));
@@ -99,7 +98,7 @@ public class ImageAndMasks
 		}
 
 		// Left side
-		BufferedImage leftSilhouette = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		{
 			List<Coordinate> points = new ArrayList<>();
 			for (int y = 0; y < image.getHeight(); y++)
@@ -122,7 +121,7 @@ public class ImageAndMasks
 		}
 
 		// Right side
-		BufferedImage rightSilhouette = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+		Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		{
 			List<Coordinate> points = new ArrayList<>();
 			for (int y = 0; y < image.getHeight(); y++)
@@ -143,31 +142,27 @@ public class ImageAndMasks
 
 		// The mask image is the intersection of the 3 silhouettes.
 
-		contentMask = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-		WritableRaster maskRaster = contentMask.getRaster();
-		Raster topRaster = topSilhouette.getRaster();
-		Raster leftRaster = leftSilhouette.getRaster();
-		Raster rightRaster = rightSilhouette.getRaster();
+		contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		for (int x = 0; x < contentMask.getWidth(); x++)
 		{
 			for (int y = 0; y < contentMask.getHeight(); y++)
 			{
-				if (topRaster.getSample(x, y, 0) > 0 && leftRaster.getSample(x, y, 0) > 0 && rightRaster.getSample(x, y, 0) > 0)
+				if (topSilhouette.getGrayLevel(x, y) > 0 && leftSilhouette.getGrayLevel(x, y) > 0 && rightSilhouette.getGrayLevel(x, y) > 0)
 				{
-					maskRaster.setSample(x, y, 0, 255);
+					contentMask.setGrayLevel(x, y, 255);
 				}
 			}
 		}
 	}
 	
 	
-	public BufferedImage cropToContent()
+	public Image cropToContent()
 	{
 		getOrCreateContentBounds();
-		return ImageHelper.crop(image, contentBounds);
+		return image.crop(contentBounds);
 	}
 	
-	public Rectangle getOrCreateContentBounds()
+	public IntRectangle getOrCreateContentBounds()
 	{
 		getOrCreateContentMask();
 		return contentBounds;
@@ -227,15 +222,15 @@ public class ImageAndMasks
 		
 		if (contentBounds == null)
 		{
-			contentBounds = new Rectangle(point.x, point.y, 0, 0);
+			contentBounds = new IntRectangle(point.x, point.y, 0, 0);
 		}
 		else
 		{
-			contentBounds.add(point.x, point.y);
+			contentBounds = contentBounds.add(point.x, point.y);
 		}
 	}
 	
-	public BufferedImage getOrCreateShadingMask()
+	public Image getOrCreateShadingMask()
 	{
 		if (image == null)
 		{
@@ -258,7 +253,7 @@ public class ImageAndMasks
 		{
 			// Trees, in my opinion, look better without they feathered shading along the bottom that the shading mask gives.
 			// Use a solid black image.
-			shadingMask = new BufferedImage(contentMask.getWidth(), contentMask.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+			shadingMask = Image.create(contentMask.getWidth(), contentMask.getHeight(), ImageType.Grayscale8Bit);
 			return;
 		}
 		
@@ -276,12 +271,12 @@ public class ImageAndMasks
 				points.add(point);
 			}
 		}
-		BufferedImage bottomSilhouette = new BufferedImage(contentMask.getWidth(), contentMask.getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-		Graphics2D g = bottomSilhouette.createGraphics();
-		g.setColor(Color.white);
+		Image bottomSilhouette = Image.create(contentMask.getWidth(), contentMask.getHeight(), ImageType.Binary);
+		Painter p = bottomSilhouette.createPainter();
+		p.setColor(Color.white);
 		int contentHeight = contentBounds.height;
 		assert contentHeight >= 0;
-		g.setStroke(new BasicStroke(Math.max(1f, contentHeight * 0.01f)));
+		p.setBasicStroke(Math.max(1f, contentHeight * 0.01f));
 		int[] xPoints = new int[points.size()];
 		int[] yPoints = new int[points.size()];
 		for (int i : new Range(points.size()))
@@ -289,17 +284,17 @@ public class ImageAndMasks
 			xPoints[i] = points.get(i).x;
 			yPoints[i] = points.get(i).y;
 		}
-		g.drawPolyline(xPoints, yPoints, points.size());
+		p.drawPolyline(xPoints, yPoints);
 
 		// Blur the line up to a fraction of the height of the content
 		float[][] kernel = ImageHelper.createGaussianKernel(contentHeight / 3);
-		BufferedImage blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
+		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
 
 		// Use the content mask to set non-content pixels to zero.
 		shadingMask = ImageHelper.maskWithColor(blurredLine, Color.black, contentMask, false);
 	}
 
-	private static void drawWhitePolygonFromPoints(BufferedImage image, List<Coordinate> points)
+	private static void drawWhitePolygonFromPoints(Image image, List<Coordinate> points)
 	{
 		int[] xPoints = new int[points.size()];
 		int[] yPoints = new int[points.size()];
@@ -310,19 +305,18 @@ public class ImageAndMasks
 			yPoints[i] = point.y;
 		}
 
-		Graphics2D g = image.createGraphics();
-		g.setColor(Color.white);
-		g.fillPolygon(xPoints, yPoints, xPoints.length);
+		Painter p = image.createPainter();
+		p.setColor(Color.white);
+		p.fillPolygon(xPoints, yPoints);
 	}
 
-	private static Coordinate findLowermostOpaquePixelOnMask(BufferedImage contentMask, int x)
+	private static Coordinate findLowermostOpaquePixelOnMask(Image contentMask, int x)
 	{
-		assert ImageHelper.isSupportedGrayscaleType(contentMask);
+		assert contentMask.isGrayscaleOrBinary();
 
-		Raster maskRaster = contentMask.getRaster();
 		for (int y = contentMask.getHeight() - 1; y >= 0; y--)
 		{
-			if (maskRaster.getSample(x, y, 0) > 0)
+			if (contentMask.getGrayLevel(x, y) > 0)
 			{
 				return new Coordinate(x, y);
 			}
@@ -331,7 +325,7 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static Coordinate findUppermostOpaquePixel(BufferedImage icon, int x)
+	private static Coordinate findUppermostOpaquePixel(Image icon, int x)
 	{
 		for (int y = 0; y < icon.getHeight(); y++)
 		{
@@ -345,7 +339,7 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static Coordinate findLeftmostOpaquePixel(BufferedImage icon, int y)
+	private static Coordinate findLeftmostOpaquePixel(Image icon, int y)
 	{
 		for (int x = 0; x < icon.getWidth(); x++)
 		{
@@ -359,7 +353,7 @@ public class ImageAndMasks
 		return null;
 	}
 
-	private static Coordinate findRightmostOpaquePixel(BufferedImage icon, int y)
+	private static Coordinate findRightmostOpaquePixel(Image icon, int y)
 	{
 		for (int x = icon.getWidth() - 1; x >= 0; x--)
 		{
@@ -374,14 +368,14 @@ public class ImageAndMasks
 	}
 	
 
-	public static java.awt.Rectangle calcScaledContentBounds(BufferedImage originalContentMask, java.awt.Rectangle originalContentBounds,
+	public static IntRectangle calcScaledContentBounds(Image originalContentMask, IntRectangle originalContentBounds,
 			int scaledWidth, int scaledHeight)
 	{
 		final double xScale = (((double) scaledWidth / originalContentMask.getWidth()));
 		final double yScale = (((double) scaledHeight / originalContentMask.getHeight()));
 
-		java.awt.Rectangle scaledContentBounds = new nortantis.graph.geom.Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
-				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toAwtRectangle();
+		IntRectangle scaledContentBounds = new Rectangle(originalContentBounds.x * (xScale), originalContentBounds.y * yScale,
+				originalContentBounds.width * xScale, originalContentBounds.height * yScale).toIntRectangle();
 		return scaledContentBounds;
 	}
 }

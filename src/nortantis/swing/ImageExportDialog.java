@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
@@ -45,6 +44,8 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.ExportAction;
 import nortantis.editor.UserPreferences;
+import nortantis.platform.Image;
+import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -144,7 +145,7 @@ public class ImageExportDialog extends JDialog
 			// Determine the default path to save to.
 			try
 			{
-				String curPath = type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath;
+				String curPath = FileHelper.replaceHomeFolderPlaceholder(type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath);
 				if (curPath == null || curPath.isEmpty())
 				{
 					curPath = mainWindow.getOpenSettingsFilePath() == null
@@ -288,11 +289,11 @@ public class ImageExportDialog extends JDialog
 
 					if (type == ImageExportType.Map)
 					{
-						mainWindow.imageExportPath = exportPath;
+						mainWindow.imageExportPath = FileHelper.replaceHomeFolderWithPlaceholder(exportPath);
 					}
 					else
 					{
-						mainWindow.heightmapExportPath = exportPath;
+						mainWindow.heightmapExportPath = FileHelper.replaceHomeFolderWithPlaceholder(exportPath);
 					}
 				}
 
@@ -399,15 +400,15 @@ public class ImageExportDialog extends JDialog
 		}
 		final MapSettings settings = mainWindow.getSettingsFromGUI(false).deepCopy();
 
-		SwingWorker<BufferedImage, Void> worker = new SwingWorker<BufferedImage, Void>()
+		SwingWorker<Image, Void> worker = new SwingWorker<Image, Void>()
 		{
 			@Override
-			public BufferedImage doInBackground() throws Exception
+			public Image doInBackground() throws Exception
 			{
 				Logger.clear();
 				ImageCache.clear();
 
-				BufferedImage result;
+				Image result;
 				try
 				{
 					if (type == ImageExportType.Map)

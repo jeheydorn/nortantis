@@ -1,4 +1,4 @@
-package nortantis.util;
+package nortantis.swing;
 
 import java.awt.Dimension;
 

@@ -34,6 +34,7 @@ import org.apache.commons.io.FileUtils;
 
 import nortantis.editor.UserPreferences;
 import nortantis.util.AssetsPath;
+import nortantis.util.FileHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
@@ -44,7 +45,7 @@ public class CustomImagesDialog extends JDialog
 	public CustomImagesDialog(MainWindow mainWindow, String currentCustomImagesPath, Consumer<String> storeResult)
 	{
 		super(mainWindow, "Custom Images Folder", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(840, 702));
+		setSize(new Dimension(840, 762));
 		JPanel content = new JPanel();
 		add(content);
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -70,7 +71,7 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "mountains"
 				+ File.separator + "<mountain type>" + File.separator + "<mountain images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "sand"
-				+ File.separator + "dunes" + File.separator + "<sand dune images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+				+ File.separator + "<dune type>" + File.separator + "<sand dune images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "trees"
 				+ File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 
@@ -80,7 +81,7 @@ public class CustomImagesDialog extends JDialog
 				+ " JPG format. PNG is recommended because it" + " supports transparency and isn't lossy.</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>Valid border image names are 'upper_left_corner', 'upper_right_corner', "
 				+ "'lower_left_corner', 'lower_right_corner', 'top_edge', 'bottom_edge', 'left_edge', 'right_edge'. At least one corner and"
-				+ " one edge must be given.</html>"), space, space, false);
+				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
 				+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'. If you don't want all three of those tree types,"
@@ -130,7 +131,7 @@ public class CustomImagesDialog extends JDialog
 				openButton.setEnabled(!customImagesFolderField.getText().isEmpty());
 			}
 		});
-		customImagesFolderField.setText(currentCustomImagesPath);
+		customImagesFolderField.setText(FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
 		JButton browseButton = new JButton("Browse");
 		browseButton.addActionListener(new ActionListener()
 		{
@@ -201,7 +202,7 @@ public class CustomImagesDialog extends JDialog
 
 		organizer.addLeftAlignedComponent(panel, false);
 
-		JCheckBox makeDefaultCheckbox = new JCheckBox("Make this the default for new maps");
+		JCheckBox makeDefaultCheckbox = new JCheckBox("Make this the default for new random maps");
 		organizer.addLeftAlignedComponent(makeDefaultCheckbox);
 
 
@@ -217,7 +218,7 @@ public class CustomImagesDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), currentCustomImagesPath);
+				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
 					JOptionPane.showMessageDialog(null,
@@ -228,12 +229,12 @@ public class CustomImagesDialog extends JDialog
 				// If the custom images folder changed, then store the value, refresh images, and redraw the map.
 				if (isChanged)
 				{
-					storeResult.accept(customImagesFolderField.getText());
+					storeResult.accept(FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText()));
 				}
 
 				if (makeDefaultCheckbox.isSelected())
 				{
-					UserPreferences.getInstance().defaultCustomImagesPath = customImagesFolderField.getText();
+					UserPreferences.getInstance().defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText());
 				}
 
 				dispose();

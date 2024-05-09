@@ -1,9 +1,10 @@
 package nortantis;
 
-import java.awt.Dimension;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -15,9 +16,13 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
+import org.imgscalr.Scalr.Method;
 
+import nortantis.geom.IntDimension;
+import nortantis.platform.Image;
 import nortantis.util.AssetsPath;
 import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.FileHelper;
 import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
@@ -35,12 +40,12 @@ public class ImageCache
 	/**
 	 * Maps original images, to scaled width, to scaled images.
 	 */
-	private ConcurrentHashMapF<BufferedImage, ConcurrentHashMapF<Dimension, BufferedImage>> scaledCache;
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
 	 * Maps file path (or any string key) to images.
 	 */
-	private ConcurrentHashMapF<String, BufferedImage> fileCache;
+	private ConcurrentHashMapF<String, Image> fileCache;
 
 	/**
 	 * Maps icon type > icon sub-type name > lists of icons of that sub-type.
@@ -83,7 +88,8 @@ public class ImageCache
 	{
 		if (imagesPath != null && !imagesPath.isEmpty())
 		{
-			return instances.getOrCreate(imagesPath, () -> new ImageCache(imagesPath));
+			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
+			return instances.getOrCreate(pathWithHomeReplaced, () -> new ImageCache(pathWithHomeReplaced));
 		}
 
 		return instances.getOrCreate(AssetsPath.getInstallPath(), () -> new ImageCache(AssetsPath.getInstallPath()));
@@ -98,40 +104,18 @@ public class ImageCache
 	 *            The desired width
 	 * @return A scaled image
 	 */
-	public BufferedImage getScaledImageByWidth(BufferedImage icon, int width)
+	public Image getScaledImage(Image icon, IntDimension size)
 	{
-		Dimension dimension = new Dimension(width, ImageHelper.getHeightWhenScaledByWidth(icon, width));
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
 		// but if that did happen it would only results in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(dimension,
-				() -> ImageHelper.scaleByWidth(icon, width));
+		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size,
+				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
 	}
 
-	/**
-	 * Either looks up in the cache, or creates, a version of the given icon with the given height.
-	 * 
-	 * @param icon
-	 *            Original image (not scaled)
-	 * @param width
-	 *            The desired width
-	 * @return A scaled image
-	 */
-	public BufferedImage getScaledImageByHeight(BufferedImage icon, int height)
-	{
-		Dimension dimension = new Dimension(ImageHelper.getWidthWhenScaledByHeight(icon, height), height);
-		// There is a small chance the 2 different threads might both add the
-		// same image at the same time,
-		// but if that did happen it would only results in a little bit of
-		// duplicated work, not a functional
-		// problem.
-		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(dimension,
-				() -> ImageHelper.scaleByHeight(icon, height));
-	}
-
-	public BufferedImage getImageFromFile(Path path)
+	public Image getImageFromFile(Path path)
 	{
 		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.read(path.toString()));
 	}
@@ -173,7 +157,7 @@ public class ImageCache
 				{
 					Logger.println("Loading icon: " + path);
 				}
-				BufferedImage icon = getImageFromFile(path);
+				Image icon = getImageFromFile(path);
 
 				imagesPerGroup.add(groupName, new ImageAndMasks(icon, iconType));
 			}
@@ -190,10 +174,10 @@ public class ImageCache
 		for (String fileName : fileNames)
 		{
 			Path path = Paths.get(groupPath, fileName);
-			BufferedImage icon;
+			Image icon;
 
 			icon = getImageFromFile(path);
-			
+
 
 			result.add(new ImageAndMasks(icon, iconType));
 		}
@@ -241,7 +225,7 @@ public class ImageCache
 			{
 				Logger.println("Loading icon: " + path);
 			}
-			BufferedImage icon = getImageFromFile(path);
+			Image icon = getImageFromFile(path);
 
 			int width;
 			try
@@ -294,7 +278,7 @@ public class ImageCache
 			public boolean accept(File dir, String name)
 			{
 				File file = new File(dir, name);
-				return file.isDirectory();
+				return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
 			}
 		});
 
@@ -310,6 +294,19 @@ public class ImageCache
 			result.add(folderName);
 		}
 		return result;
+	}
+
+	private static boolean isDirectoryEmpty(final String directory)
+	{
+		try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
+		{
+			return !dirStream.iterator().hasNext();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return true;
+		}
 	}
 
 	/**

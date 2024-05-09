@@ -1,7 +1,5 @@
 package nortantis;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -18,6 +16,8 @@ import java.util.stream.Collectors;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.editor.UserPreferences;
+import nortantis.geom.IntDimension;
+import nortantis.platform.Color;
 import nortantis.util.AssetsPath;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
@@ -33,7 +33,7 @@ public class SettingsGenerator
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
-	public static int maxWorldSize = 30000;
+	public static int maxWorldSize = 30000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
@@ -43,15 +43,20 @@ public class SettingsGenerator
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
-
+	
 	public static MapSettings generate()
+	{
+		Random rand = new Random();
+		return generate(rand);
+	}
+
+	public static MapSettings generate(Random rand)
 	{
 		if (!Files.exists(Paths.get(defaultSettingsFile)))
 		{
 			throw new IllegalArgumentException("The default settings files " + defaultSettingsFile + " does not exist");
 		}
-
-		Random rand = new Random();
+		
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
@@ -95,7 +100,7 @@ public class SettingsGenerator
 		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 
 		double landBlurColorScale = 0.5;
-		settings.coastShadingColor = new Color((int) (settings.landColor.getRed() * landBlurColorScale),
+		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * landBlurColorScale),
 				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
 				defaultCoastShadingAlpha);
 
@@ -103,7 +108,7 @@ public class SettingsGenerator
 		{
 			final int oceanEffectsAlpha = settings.oceanEffect == OceanEffect.Ripples ? defaultOceanRipplesAlpha : settings.oceanEffect == OceanEffect.Blur ? defaultOceanShadingAlpha : 0;
 			double oceanEffectsColorScale = 0.3;
-			settings.oceanEffectsColor = new Color((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
+			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), oceanEffectsAlpha);
 		}
@@ -112,7 +117,7 @@ public class SettingsGenerator
 			// Concentric waves
 			double oceanEffectsColorScale = 0.5;
 			int alpha = 255;
-			settings.oceanEffectsColor = new Color((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
+			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), alpha);
 
@@ -140,6 +145,10 @@ public class SettingsGenerator
 			if (settings.borderType.equals("dashes"))
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
+			}
+			else if (settings.borderType.equals("dashes with inset corners"))
+			{
+				settings.borderWidth = Math.abs(rand.nextInt(75)) + 50;
 			}
 			else
 			{
@@ -228,7 +237,7 @@ public class SettingsGenerator
 		settings.edgeLandToWaterProbability = Math.round(settings.edgeLandToWaterProbability * 100.0) / 100.0;
 		settings.centerLandToWaterProbability = Math.round(settings.centerLandToWaterProbability * 100.0) / 100.0;
 
-		Dimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(
+		IntDimension dimension = parseGeneratedBackgroundDimensionsFromDropdown(
 				ProbabilityHelper.sampleUniform(rand, getAllowedDimmensions()));
 		settings.generatedWidth = dimension.width;
 		settings.generatedHeight = dimension.height;
@@ -275,11 +284,11 @@ public class SettingsGenerator
 		return result;
 	}
 
-	public static Dimension parseGeneratedBackgroundDimensionsFromDropdown(String selected)
+	public static IntDimension parseGeneratedBackgroundDimensionsFromDropdown(String selected)
 	{
 		selected = selected.substring(0, selected.indexOf("("));
 		String[] parts = selected.split("x");
-		return new Dimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+		return new IntDimension(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
 	}
 
 	public static List<String> getAllBooks()

@@ -29,7 +29,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 
-import nortantis.editor.UserPreferences;
 import nortantis.util.Logger;
 
 public class SwingHelper
@@ -40,7 +39,7 @@ public class SwingHelper
 	public static final int sidePanelMinimumWidth = sidePanelPreferredWidth;
 	private static final int sliderWidth = 160;
 	public static final int colorPickerLeftPadding = 2;
-	public static final int sidePanelScrollSpeed = 20;
+	public static final int sidePanelScrollSpeed = 30;
 
 	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem)
 	{
@@ -283,5 +282,21 @@ public class SwingHelper
 			}
 		}
 		return false;
+	}
+	
+	public static JPanel stackLabelAndComponent(JLabel label, Component component)
+	{
+		JPanel stackPanel = new JPanel();
+		stackPanel.setLayout(new BoxLayout(stackPanel, BoxLayout.Y_AXIS));
+		JPanel labelPanel = new JPanel();
+		labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
+		labelPanel.add(Box.createRigidArea(new Dimension(1, 2)));
+		labelPanel.add(label);
+		labelPanel.add(Box.createHorizontalGlue());
+		stackPanel.add(labelPanel);
+		stackPanel.add(Box.createRigidArea(new Dimension(5, 2)));
+		stackPanel.add(component);
+		
+		return stackPanel;
 	}
 }

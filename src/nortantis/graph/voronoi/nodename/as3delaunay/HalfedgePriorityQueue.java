@@ -2,7 +2,7 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 
 import java.util.ArrayList;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 public final class HalfedgePriorityQueue // also known as heap
 {
@@ -25,10 +25,6 @@ public final class HalfedgePriorityQueue // also known as heap
 	public void dispose()
 	{
 		// get rid of dummies
-		for (int i = 0; i < _hashsize; ++i)
-		{
-			_hash.get(i).dispose();
-		}
 		_hash.clear();
 		_hash = null;
 	}
@@ -83,7 +79,6 @@ public final class HalfedgePriorityQueue // also known as heap
 			_count--;
 			halfEdge.vertex = null;
 			halfEdge.nextInPriorityQueue = null;
-			halfEdge.dispose();
 		}
 	}
 

@@ -3,7 +3,7 @@ package nortantis;
 import java.util.ArrayList;
 import java.util.List;
 
-import nortantis.graph.geom.Point;
+import nortantis.geom.Point;
 
 /**
  * Creates curves using centripetal Catmull–Rom splines

@@ -3,26 +3,15 @@ package nortantis.graph.voronoi.nodename.as3delaunay;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Stack;
 
-import nortantis.graph.geom.Point;
-import nortantis.graph.geom.Rectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 
 public final class Site implements ICoord
 {
-
-	private static Stack<Site> _pool = new Stack<Site>();
-
 	public static Site create(Point p, int index, double weight)
 	{
-		if (_pool.size() > 0)
-		{
-			return _pool.pop().init(p, index, weight);
-		}
-		else
-		{
-			return new Site(p, index, weight);
-		}
+		return new Site(p, index, weight);
 	}
 
 	public static void sortSites(ArrayList<Site> sites)
@@ -124,13 +113,6 @@ public final class Site implements ICoord
 	{
 		clear();
 		_coord = p;
-	}
-
-	public void dispose()
-	{
-		_coord = null;
-		clear();
-		_pool.push(this);
 	}
 
 	private void clear()

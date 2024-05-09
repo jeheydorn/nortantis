@@ -1,10 +1,8 @@
 package nortantis.util;
 
-import java.lang.reflect.InvocationTargetException;
-
-import javax.swing.SwingUtilities;
-
 import org.apache.commons.lang3.exception.ExceptionUtils;
+
+import nortantis.platform.PlatformFactory;
 
 public class Logger
 {
@@ -52,28 +50,10 @@ public class Logger
 	{
 		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
-			if (SwingUtilities.isEventDispatchThread())
+			PlatformFactory.getInstance().doInMainUIThread(() ->
 			{
 				getInstance().appendToTarget(message + "\n");
-			}
-			else
-			{
-				try
-				{
-					SwingUtilities.invokeAndWait(new Runnable()
-					{
-						@Override
-						public void run()
-						{
-							getInstance().appendToTarget(message + "\n");
-						}
-					});
-				}
-				catch (InvocationTargetException | InterruptedException e)
-				{
-					e.printStackTrace();
-				}
-			}
+			});
 		}
 		else
 		{
@@ -90,28 +70,10 @@ public class Logger
 	{
 		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
-			if (SwingUtilities.isEventDispatchThread())
+			PlatformFactory.getInstance().doInMainUIThread(() ->
 			{
 				getInstance().clearTarget();
-			}
-			else
-			{
-				try
-				{
-					SwingUtilities.invokeAndWait(new Runnable()
-					{
-						@Override
-						public void run()
-						{
-							getInstance().clearTarget();
-						}
-					});
-				}
-				catch (InvocationTargetException | InterruptedException e)
-				{
-					e.printStackTrace();
-				}
-			}
+			});
 		}
 	}
 

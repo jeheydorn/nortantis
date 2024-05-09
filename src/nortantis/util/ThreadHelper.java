@@ -14,7 +14,7 @@ public class ThreadHelper
 	private static ThreadHelper instance;
 	private ExecutorService fixedThreadPool;
 	private ExecutorService cachedThreadPool;
-	private int threadCount;
+	private final int threadCount;
 
 	private ThreadHelper()
 	{
