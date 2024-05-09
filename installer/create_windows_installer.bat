@@ -8,7 +8,6 @@ set exeName=Nortantis
 RMDIR /S /Q installer_input
 MKDIR %inputFolder%
 Xcopy "../assets" "%inputFolder%/assets" /E /I
-DEL "%inputFolder%\assets\books\SSA *"
 copy ..\Nortantis.jar %inputFolder%
 DEL "Nortantis Fantasy Maps-*.msi"
 
