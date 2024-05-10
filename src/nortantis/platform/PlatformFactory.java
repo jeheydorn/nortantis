@@ -43,5 +43,5 @@ public abstract class PlatformFactory
 	
 	public abstract <T> void doInBackgroundThread(BackgroundTask<T> task);
 	
-	public abstract void doInMainUIThread(Runnable toRun);
+	public abstract void doInMainUIThreadAsynchronous(Runnable toRun);
 }

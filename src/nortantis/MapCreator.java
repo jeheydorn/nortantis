@@ -92,6 +92,10 @@ public class MapCreator implements WarningLogger
 		for (FreeIcon icon : iconsChanged)
 		{
 			IconDrawTask task = mapParts.iconDrawer.toIconDrawTask(icon);
+			if (task == null)
+			{
+				continue;
+			}
 			Rectangle change = task.createBounds();
 			if (change == null)
 			{

@@ -31,6 +31,7 @@ import javax.swing.border.LineBorder;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.DebugFlags;
+import nortantis.IconDrawTask;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -357,6 +358,7 @@ public class IconsTool extends EditorTool
 
 		// Trigger re-creation of image previews
 		loadSettingsIntoGUI(settings, false, true, false);
+		unselectAnyIconBeingEdited();
 	}
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
@@ -968,7 +970,8 @@ public class IconsTool extends EditorTool
 				{
 					// The user moved the last tree out of that polygon. Remove the invisible CenterTree so that if someone resizes all
 					// trees later, trees don't appear out of nowhere on this Center.
-					mainWindow.edits.centerEdits.put(iconToEdit.centerIndex, mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
+					mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
+							mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
 				}
 			}
 			else if (isScaling)
@@ -1201,9 +1204,14 @@ public class IconsTool extends EditorTool
 				return false;
 			}
 
-			Rectangle rect = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds();
+			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+			if (task == null)
+			{
+				return false;
+			}
+			
+			Rectangle rect = task.createBounds();
 			return rect.contains(graphPoint);
-
 		}
 		else
 		{
@@ -1230,11 +1238,15 @@ public class IconsTool extends EditorTool
 
 		for (FreeIcon icon : underMouse)
 		{
-			double bottom = updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds().getBottom();
-			if (lowest == null || bottom > lowestBottom)
+			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
+			if (task != null)
 			{
-				lowest = icon;
-				lowestBottom = bottom;
+				double bottom = task.createBounds().getBottom();
+				if (lowest == null || bottom > lowestBottom)
+				{
+					lowest = icon;
+					lowestBottom = bottom;
+				}
 			}
 		}
 		return lowest;
@@ -1322,6 +1334,6 @@ public class IconsTool extends EditorTool
 
 	@Override
 	protected void onBeforeUndoRedo()
-	{	
+	{
 	}
 }

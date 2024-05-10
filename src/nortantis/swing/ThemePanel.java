@@ -443,7 +443,8 @@ public class ThemePanel extends JTabbedPane
 			borderWidthSlider.setMajorTickSpacing(200);
 			createMapChangeListenerForFullRedraw(borderWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
-			organizer.addLabelAndComponent("Border width:","Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
+			organizer.addLabelAndComponent("Border width:",
+					"Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
 		}
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
 
@@ -734,8 +735,7 @@ public class ThemePanel extends JTabbedPane
 			if (enableSizeSliderListeners)
 			{
 				unselectAnyIconBeingEdited();
-				repositionMountainsForNewScale();
-				handleTerrainChange();
+				repositionMountainsForNewScaleAndTriggerTerrainChange();
 			}
 		});
 		enableSizeSliderListeners = true;
@@ -871,12 +871,39 @@ public class ThemePanel extends JTabbedPane
 	 * I didn't bother doing this with dunes or hills because they tend to be short anyway, and so I've anchored them to the centroid of
 	 * centers rather the the bottom.
 	 */
-	private void repositionMountainsForNewScale()
+	private void repositionMountainsForNewScaleAndTriggerTerrainChange()
 	{
-		FreeIconCollection freeIcons = mainWindow.edits.freeIcons;
-		double resolution = mainWindow.displayQualityScale;
+		// This is a bit of a hack, but I only call innerRepositionMountainsForNewScaleWithIconDrawer when iconDrawer and graph are not null
+		// rather than always call it in doWhenMapIsReadyForInteractions because for many drawing cases the graph and icon drawer are
+		// available, and for those cases I don't want to do this step later because it causes trouble with undo points (the changes
+		// From this method get mixed in with an undo point from a later actions from the user).
 		IconDrawer iconDrawer = mainWindow.updater.mapParts.iconDrawer;
 		WorldGraph graph = mainWindow.updater.mapParts.graph;
+		if (iconDrawer != null && graph != null)
+		{
+			innerRepositionMountainsForNewScaleWithIconDrawer(graph, iconDrawer);
+			handleTerrainChange();
+		}
+		else
+		{
+			mainWindow.updater.doWhenMapIsReadyForInteractions(() ->
+			{
+				IconDrawer iconDrawer2 = mainWindow.updater.mapParts.iconDrawer;
+				WorldGraph graph2 = mainWindow.updater.mapParts.graph;
+				if (iconDrawer2 != null && graph2 != null)
+				{
+					innerRepositionMountainsForNewScaleWithIconDrawer(graph2, iconDrawer2);
+					handleTerrainChange();
+				}
+			});
+		}
+	}
+
+	private void innerRepositionMountainsForNewScaleWithIconDrawer(WorldGraph graph, IconDrawer iconDrawer)
+	{
+
+		FreeIconCollection freeIcons = mainWindow.edits.freeIcons;
+		double resolution = mainWindow.displayQualityScale;
 		double mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
 		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(mainWindow.customImagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
@@ -918,6 +945,7 @@ public class ThemePanel extends JTabbedPane
 				}
 			}
 		});
+
 	}
 
 	private String getMostCommonTreeType(List<FreeIcon> trees)

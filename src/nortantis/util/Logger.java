@@ -50,7 +50,7 @@ public class Logger
 	{
 		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
-			PlatformFactory.getInstance().doInMainUIThread(() ->
+			PlatformFactory.getInstance().doInMainUIThreadAsynchronous(() ->
 			{
 				getInstance().appendToTarget(message + "\n");
 			});
@@ -70,7 +70,7 @@ public class Logger
 	{
 		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{
-			PlatformFactory.getInstance().doInMainUIThread(() ->
+			PlatformFactory.getInstance().doInMainUIThreadAsynchronous(() ->
 			{
 				getInstance().clearTarget();
 			});

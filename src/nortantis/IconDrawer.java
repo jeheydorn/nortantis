@@ -283,7 +283,7 @@ public class IconDrawer
 			}
 		}
 
-		changeBounds = Rectangle.add(changeBounds, convertTreesFromEditsToFreeIcons(centersToConvert, edits, warningLogger));
+		changeBounds = Rectangle.add(changeBounds, convertTreesFromCenterEditsToFreeIcons(centersToConvert, edits, warningLogger));
 		return changeBounds;
 	}
 
@@ -377,7 +377,11 @@ public class IconDrawer
 		FreeIcon icon = freeIcons.getNonTree(centerIndex);
 		if (icon != null)
 		{
-			changeBounds = Rectangle.add(changeBounds, toIconDrawTask(icon).createBounds());
+			IconDrawTask task = toIconDrawTask(icon);
+			if (task != null)
+			{
+				changeBounds = Rectangle.add(changeBounds, task.createBounds());
+			}
 		}
 		return changeBounds;
 	}
@@ -388,7 +392,11 @@ public class IconDrawer
 		List<FreeIcon> icons = freeIcons.getTrees(centerIndex);
 		for (FreeIcon tree : icons)
 		{
-			changeBounds = Rectangle.add(changeBounds, toIconDrawTask(tree).createBounds());
+			IconDrawTask task = toIconDrawTask(tree);
+			if (task != null)
+			{
+				changeBounds = Rectangle.add(changeBounds, task.createBounds());
+			}
 		}
 		return changeBounds;
 	}
@@ -421,7 +429,13 @@ public class IconDrawer
 
 	public double getUnanchoredMountainYChangeFromMountainScaleChange(FreeIcon icon, double newMountainScale)
 	{
-		Image image = toIconDrawTask(icon).unScaledImageAndMasks.image;
+		IconDrawTask task = toIconDrawTask(icon); 
+		if (task == null)
+		{
+			return 0.0;
+		}
+		
+		Image image = task.unScaledImageAndMasks.image;
 		// I'm excluding icon level scaling in this calculation because icon level scaling is done about the icon's center even for
 		// mountains,
 		// so it doesn't affect the Y offset for mountains.
@@ -1307,7 +1321,8 @@ public class IconDrawer
 	}
 
 
-	private Rectangle convertTreesFromEditsToFreeIcons(Collection<Center> centersToConvert, MapEdits edits, WarningLogger warningLogger)
+	private Rectangle convertTreesFromCenterEditsToFreeIcons(Collection<Center> centersToConvert, MapEdits edits,
+			WarningLogger warningLogger)
 	{
 		if (edits.centerEdits.isEmpty())
 		{
@@ -1529,6 +1544,11 @@ public class IconDrawer
 
 	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)
 	{
+		if (iconTask == null)
+		{
+			return false;
+		}
+		
 		if (iconTask.unScaledImageAndMasks.getOrCreateContentMask().getType() != ImageType.Binary)
 			throw new IllegalArgumentException("Mask type must be TYPE_BYTE_BINARY for checking whether icons touch water.");
 

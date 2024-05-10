@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 
 import javax.imageio.IIOImage;
@@ -283,7 +282,7 @@ public class AwtFactory extends PlatformFactory
 	}
 
 	@Override
-	public void doInMainUIThread(Runnable toRun)
+	public void doInMainUIThreadAsynchronous(Runnable toRun)
 	{
 		if (SwingUtilities.isEventDispatchThread())
 		{
@@ -291,14 +290,7 @@ public class AwtFactory extends PlatformFactory
 		}
 		else
 		{
-			try
-			{
-				SwingUtilities.invokeAndWait(toRun);
-			}
-			catch (InvocationTargetException | InterruptedException e)
-			{
-				e.printStackTrace();
-			}
+			SwingUtilities.invokeLater(toRun);
 		}
 	}
 

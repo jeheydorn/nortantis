@@ -19,6 +19,7 @@ import java.util.Set;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.IconDrawTask;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.WorldGraph;
@@ -138,7 +139,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		iconToEditBounds = iconDrawer.toIconDrawTask(icon).createBounds();
 		this.isIconToEditInAValidPosition = true;
-
 	}
 
 	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition)
@@ -176,8 +176,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedAreas.clear();
 		for (FreeIcon icon : icons)
 		{
-			nortantis.geom.Rectangle bounds = iconDrawer.toIconDrawTask(icon).createBounds();
-			highlightedAreas.add(AwtFactory.toAwtArea(bounds));
+			IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+			if (task != null)
+			{
+				nortantis.geom.Rectangle bounds = task.createBounds();
+				highlightedAreas.add(AwtFactory.toAwtArea(bounds));
+			}
 		}
 	}
 
@@ -626,7 +630,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		this.borderWidth = borderWidth;
 	}
-	
+
 	public int getBorderWidth()
 	{
 		return borderWidth;
