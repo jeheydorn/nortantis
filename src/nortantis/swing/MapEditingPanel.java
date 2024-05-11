@@ -656,8 +656,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearAllSelectionsAndHighlights()
 	{
 		clearAllToolSpecificSelectionsAndHighlights();
-		highlightRivers = false;
-		highlightLakes = false;
+		setHighlightRivers(false);
+		setHighlightLakes(false);
 		repaint();
 	}
 	

@@ -771,8 +771,6 @@ public class LandWaterTool extends EditorTool
 			selectedRegion = null;
 			mapEditingPanel.clearSelectedCenters();
 		}
-		
-		mapEditingPanel.setHighlightLakes(false);
 	}
 
 	@Override
