@@ -444,6 +444,8 @@ public abstract class MapUpdater
 					}
 					else
 					{
+						// Full draw
+
 						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;

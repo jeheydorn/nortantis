@@ -86,7 +86,6 @@ public class NewSettingsDialog extends JDialog
 		loadSettingsIntoGUI(settings);
 
 		updater.setEnabled(true);
-		handleMapChange();
 	}
 
 	private void createGUI(MainWindow mainWindow)
@@ -185,7 +184,6 @@ public class NewSettingsDialog extends JDialog
 		{
 			public void componentResized(ComponentEvent componentEvent)
 			{
-				updater.setMaxMapSize(getMapDrawingAreaSize());
 				handleMapChange();
 			}
 		});
@@ -482,7 +480,6 @@ public class NewSettingsDialog extends JDialog
 			protected void onFailedToDraw()
 			{
 				enableOrDisableProgressBar(false);
-				mapEditingPanel.clearSelectedCenters();
 			}
 
 			@Override
@@ -498,7 +495,6 @@ public class NewSettingsDialog extends JDialog
 			}
 
 		};
-		updater.setMaxMapSize(getMapDrawingAreaSize());
 		updater.setEnabled(false);
 	}
 
@@ -604,7 +600,12 @@ public class NewSettingsDialog extends JDialog
 
 	public void handleMapChange()
 	{
-		enableOrDisableProgressBar(true);
-		updater.createAndShowMapFull();
+		nortantis.geom.Dimension size = getMapDrawingAreaSize();
+		if (size != null && size.width > 0.0 && size.height > 0.0)
+		{
+			updater.setMaxMapSize(getMapDrawingAreaSize());
+			enableOrDisableProgressBar(true);
+			updater.createAndShowMapFull();
+		}
 	}
 }
