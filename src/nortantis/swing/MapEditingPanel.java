@@ -349,7 +349,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		else
 		{
-			g.setColor(highlightEraseColor);
+			g.setColor(getInvalidPositionColor());
 		}
 		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds);
 
@@ -545,6 +545,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		return highlightEditColor;
 	}
+	
+	private Color getInvalidPositionColor()
+	{
+		return highlightEditColor.equals(highlightEraseColor) ? Color.red : highlightEraseColor;
+	}
 
 	private void drawCenterOutlines(Graphics g, Set<Center> centers)
 	{
@@ -626,7 +631,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				moveIconScaled = AwtFactory.unwrap(moveIconScaledWrapped);
 				redMoveIconScaled = AwtFactory
 						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped),
-								AwtFactory.wrap(highlightEraseColor), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
 			{
@@ -637,7 +642,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				scaleIconScaled = AwtFactory.unwrap(scaleIconScaledWrapped);
 				redScaleIconScaled = AwtFactory
 						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
-								AwtFactory.wrap(highlightEraseColor), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
+								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
 		}
