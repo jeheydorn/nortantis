@@ -90,12 +90,6 @@ public class DrawModeWidget
 		drawModeButton.setMnemonic(KeyEvent.VK_D);
 		drawModeButton.setPreferredSize(new Dimension(51, drawModeButton.getPreferredSize().height));
 
-		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
-		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
-		eraseModeButton.addActionListener(modeListener);
-		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		eraseModeButton.setPreferredSize(new Dimension(51, eraseModeButton.getPreferredSize().height));
-
 		replaceModeButton = new JToggleButton("<html><u>R</u>eplace</html>");
 		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
 		replaceModeButton.addActionListener(modeListener);
@@ -107,6 +101,12 @@ public class DrawModeWidget
 		editModeButton.addActionListener(modeListener);
 		editModeButton.setMnemonic(KeyEvent.VK_T);
 		editModeButton.setPreferredSize(new Dimension(51, editModeButton.getPreferredSize().height));
+
+		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
+		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
+		eraseModeButton.addActionListener(modeListener);
+		eraseModeButton.setMnemonic(KeyEvent.VK_E);
+		eraseModeButton.setPreferredSize(new Dimension(51, eraseModeButton.getPreferredSize().height));
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
@@ -128,10 +128,6 @@ public class DrawModeWidget
 		{
 			visibleButtons.add(drawModeButton);
 		}
-		if (showEraseMode)
-		{
-			visibleButtons.add(eraseModeButton);
-		}
 		if (showReplaceMode)
 		{
 			visibleButtons.add(replaceModeButton);
@@ -139,6 +135,10 @@ public class DrawModeWidget
 		if (showEditMode)
 		{
 			visibleButtons.add(editModeButton);
+		}
+		if (showEraseMode)
+		{
+			visibleButtons.add(eraseModeButton);
 		}
 
 		for (JToggleButton button : visibleButtons)

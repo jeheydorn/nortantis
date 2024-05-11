@@ -42,7 +42,7 @@ public class TextTool extends EditorTool
 	private Point mousePressedLocation;
 	private JRadioButton editButton;
 	private JRadioButton addButton;
-	private JRadioButton deleteButton;
+	private JRadioButton eraseButton;
 	private RowHider textTypeHider;
 	private JComboBox<TextType> textTypeComboBox;
 	private TextType textTypeForAdds;
@@ -90,12 +90,12 @@ public class TextTool extends EditorTool
 				}
 			};
 
-			editButton = new JRadioButton("<HTML><U>E</U>dit</HTML>");
+			editButton = new JRadioButton("<HTML>Edi<U>t</U></HTML>");
 			group.add(editButton);
 			radioButtons.add(editButton);
 			editButton.addActionListener(listener);
-			editButton.setMnemonic(KeyEvent.VK_E);
-			editButton.setToolTipText("Edit text (Alt+E)");
+			editButton.setMnemonic(KeyEvent.VK_T);
+			editButton.setToolTipText("Edit text (Alt+T)");
 
 			addButton = new JRadioButton("<HTML><U>A</U>dd</HTML>");
 			group.add(addButton);
@@ -104,12 +104,12 @@ public class TextTool extends EditorTool
 			addButton.setMnemonic(KeyEvent.VK_A);
 			addButton.setToolTipText("Add new text of the selected text type (Alt+A)");
 
-			deleteButton = new JRadioButton("<HTML><U>D</U>elete</HTML>");
-			group.add(deleteButton);
-			radioButtons.add(deleteButton);
-			deleteButton.addActionListener(listener);
-			deleteButton.setMnemonic(KeyEvent.VK_D);
-			deleteButton.setToolTipText("Delete text (Alt+D)");
+			eraseButton = new JRadioButton("<HTML><U>E</U>rase</HTML>");
+			group.add(eraseButton);
+			radioButtons.add(eraseButton);
+			eraseButton.addActionListener(listener);
+			eraseButton.setMnemonic(KeyEvent.VK_E);
+			eraseButton.setToolTipText("Erase text (Alt+E)");
 
 			organizer.addLabelAndComponentsVertical("Action:", "", radioButtons);
 		}
@@ -235,7 +235,7 @@ public class TextTool extends EditorTool
 			handleSelectingTextToEdit(null, false);
 		}
 
-		if (addButton.isSelected() || deleteButton.isSelected())
+		if (addButton.isSelected() || eraseButton.isSelected())
 		{
 			lastSelected = null;
 		}
@@ -265,7 +265,7 @@ public class TextTool extends EditorTool
 			getToolOptionsPanel().repaint();
 		}
 
-		brushSizeHider.setVisible(deleteButton.isSelected());
+		brushSizeHider.setVisible(eraseButton.isSelected());
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
 		mapEditingPanel.hideBrush();
@@ -313,7 +313,7 @@ public class TextTool extends EditorTool
 		isRotating = false;
 		isMoving = false;
 
-		if (deleteButton.isSelected())
+		if (eraseButton.isSelected())
 		{
 			deleteTexts(e.getPoint());
 		}
@@ -423,7 +423,7 @@ public class TextTool extends EditorTool
 				mapEditingPanel.repaint();
 			}
 		}
-		else if (deleteButton.isSelected())
+		else if (eraseButton.isSelected())
 		{
 			deleteTexts(e.getPoint());
 		}
@@ -479,7 +479,7 @@ public class TextTool extends EditorTool
 			}
 		}
 
-		if (deleteButton.isSelected())
+		if (eraseButton.isSelected())
 		{
 			mapEditingPanel.clearHighlightedAreas();
 			mapEditingPanel.repaint();
@@ -598,7 +598,7 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (deleteButton.isSelected())
+		if (eraseButton.isSelected())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
 			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
