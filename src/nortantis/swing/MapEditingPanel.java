@@ -37,7 +37,9 @@ import nortantis.util.ImageHelper.ColorifyAlgorithm;
 @SuppressWarnings("serial")
 public class MapEditingPanel extends UnscaledImagePanel
 {
-	private final Color highlightColor = new Color(255, 227, 74);
+	private final Color highlightEditColor = new Color(255, 227, 74);
+	private final Color highlightEraseColor = highlightEditColor;//new Color(230, 230, 230); // TODO Decide if I want to keep this feature.
+	private boolean isErasing;
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color processingColor = Color.orange;
 	private final Color selectColor = Color.orange;
@@ -83,10 +85,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 		resolution = 0.0;
 	}
 
-	public void showBrush(java.awt.Point location, int brushDiameter)
+	public void showBrush(java.awt.Point location, int brushDiameter, boolean isErasing)
 	{
 		brushLocation = location;
 		this.brushDiameter = brushDiameter;
+		this.isErasing = isErasing;
 	}
 
 	public void hideBrush()
@@ -95,14 +98,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 		brushDiameter = 0;
 	}
 
-	public void addHighlightedEdges(Collection<Edge> edges)
+	public void addHighlightedEdges(Collection<Edge> edges, boolean isErasing)
 	{
 		highlightedEdges.addAll(edges);
+		this.isErasing = isErasing;
 	}
 
-	public void addHighlightedEdge(Edge edge)
+	public void addHighlightedEdge(Edge edge, boolean isErasing)
 	{
 		highlightedEdges.add(edge);
+		this.isErasing = isErasing;
 	}
 
 	public void clearHighlightedEdges()
@@ -154,7 +159,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		moveToolArea = null;
 	}
 
-	public void setHighlightedAreasFromTexts(List<MapText> texts)
+	public void setHighlightedAreasFromTexts(List<MapText> texts, boolean isErasing)
 	{
 		highlightedAreas.clear();
 		for (MapText text : texts)
@@ -169,9 +174,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 				highlightedAreas.add(AwtFactory.toAwtArea(text.line2Area));
 			}
 		}
+		this.isErasing = isErasing;
 	}
 
-	public void setHighlightedAreasFromIcons(IconDrawer iconDrawer, List<FreeIcon> icons)
+	public void setHighlightedAreasFromIcons(IconDrawer iconDrawer, List<FreeIcon> icons, boolean isErasing)
 	{
 		highlightedAreas.clear();
 		for (FreeIcon icon : icons)
@@ -183,6 +189,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				highlightedAreas.add(AwtFactory.toAwtArea(bounds));
 			}
 		}
+		this.isErasing = isErasing;
 	}
 
 	public void clearHighlightedAreas()
@@ -286,7 +293,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		Graphics2D g2 = ((Graphics2D) g);
 		if (brushLocation != null)
 		{
-			g.setColor(highlightColor);
+			g.setColor(getHighlightColor());
 			drawBrush(g2);
 		}
 
@@ -324,8 +331,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 				drawRivers(g);
 			}
 
-			g.setColor(highlightColor);
+			g.setColor(highlightEditColor);
 			drawCenterOutlines(g, highlightedCenters);
+			g.setColor(getHighlightColor());
 			drawEdges(g, highlightedEdges);
 
 			g.setColor(selectColor);
@@ -337,11 +345,11 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		if (isIconToEditInAValidPosition)
 		{
-			g.setColor(highlightColor);
+			g.setColor(highlightEditColor);
 		}
 		else
 		{
-			g.setColor(Color.red);
+			g.setColor(highlightEraseColor);
 		}
 		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds);
 
@@ -404,7 +412,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private void drawTextBox(Graphics2D g2)
 	{
-		g2.setColor(highlightColor);
+		g2.setColor(highlightEditColor);
 		AffineTransform originalTransformCopy = g2.getTransform();
 
 		double centerX = textBoxLocation.x * resolution;
@@ -510,7 +518,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		if (!highlightedAreas.isEmpty())
 		{
-			g.setColor(highlightColor);
+			g.setColor(getHighlightColor());
 			for (Area area : highlightedAreas)
 			{
 				((Graphics2D) g).draw(area);
@@ -527,6 +535,15 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 		}
 
+	}
+
+	private Color getHighlightColor()
+	{
+		if (isErasing)
+		{
+			return highlightEraseColor;
+		}
+		return highlightEditColor;
 	}
 
 	private void drawCenterOutlines(Graphics g, Set<Center> centers)
@@ -609,7 +626,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				moveIconScaled = AwtFactory.unwrap(moveIconScaledWrapped);
 				redMoveIconScaled = AwtFactory
 						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(moveIconScaledWrapped),
-								nortantis.platform.Color.red, ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
+								AwtFactory.wrap(highlightEraseColor), ColorifyAlgorithm.algorithm2), moveIconScaledWrapped));
 			}
 
 			{
@@ -620,7 +637,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 				scaleIconScaled = AwtFactory.unwrap(scaleIconScaledWrapped);
 				redScaleIconScaled = AwtFactory
 						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
-								nortantis.platform.Color.red, ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
+								AwtFactory.wrap(highlightEraseColor), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
 		}
@@ -638,6 +655,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void clearAllSelectionsAndHighlights()
 	{
+		clearAllToolSpecificSelectionsAndHighlights();
+		highlightRivers = false;
+		highlightLakes = false;
+		repaint();
+	}
+	
+	public void clearAllToolSpecificSelectionsAndHighlights()
+	{
 		clearTextBox();
 		clearIconEditTools();
 		clearSelectedCenters();
@@ -646,8 +671,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		hideBrush();
 		clearHighlightedAreas();
 		clearProcessingAreas();
-		highlightRivers = false;
-		highlightLakes = false;
 		repaint();
 	}
+	
+
 }

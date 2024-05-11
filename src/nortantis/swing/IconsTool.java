@@ -108,7 +108,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
-		mapEditingPanel.clearAllSelectionsAndHighlights();
+		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
 	}
 
 	@Override
@@ -263,7 +263,7 @@ public class IconsTool extends EditorTool
 		else
 		{
 			java.awt.Point mouseLocation = e.getPoint();
-			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
+			mapEditingPanel.showBrush(mouseLocation, brushDiameter, modeWidget.isEraseMode());
 			mapEditingPanel.repaint();
 		}
 
@@ -814,7 +814,7 @@ public class IconsTool extends EditorTool
 		});
 
 
-		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, iconsSelectedAfter);
+		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, iconsSelectedAfter, false);
 
 		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
 		{
@@ -1104,14 +1104,14 @@ public class IconsTool extends EditorTool
 				FreeIcon selected = getLowestSelectedIcon(e.getPoint());
 				if (selected != null)
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, Arrays.asList(selected));
+					mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, Arrays.asList(selected), modeWidget.isEraseMode());
 				}
 			}
 		}
 		else
 		{
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons);
+			mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons, modeWidget.isEraseMode());
 		}
 	}
 

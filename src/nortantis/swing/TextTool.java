@@ -601,7 +601,7 @@ public class TextTool extends EditorTool
 		if (eraseButton.isSelected())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
+			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected, true);
 		}
 		else
 		{
@@ -616,7 +616,7 @@ public class TextTool extends EditorTool
 		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
 		if (brushDiameter > 1)
 		{
-			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
+			mapEditingPanel.showBrush(mouseLocation, brushDiameter, eraseButton.isSelected());
 			mapTextsSelected = mainWindow.edits.findTextSelectedByBrush(getPointOnGraph(mouseLocation),
 					(brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
 		}
@@ -662,7 +662,7 @@ public class TextTool extends EditorTool
 				handleSelectingTextToEdit(null, false);
 			}
 
-			mapEditingPanel.clearAllSelectionsAndHighlights();
+			mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
 			mapEditingPanel.repaint();
 		}
 	}
