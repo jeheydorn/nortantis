@@ -9,7 +9,6 @@ exeName="Nortantis"
 rm -rf "$inputFolder"
 mkdir "$inputFolder"
 cp -r "../assets" "$inputFolder/assets"
-rm -f "$inputFolder/assets/books/SSA *"
 cp "../Nortantis.jar" "$inputFolder"
 
 jpackage \
