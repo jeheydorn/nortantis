@@ -56,7 +56,8 @@ public class CustomImagesDialog extends JDialog
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		content.add(organizer.panel, BorderLayout.CENTER);
 		organizer.addLeftAlignedComponent(new JLabel(
-				"<html>A custom images folder allows you to override Nortantis's built-in images for this map. To do so, enter a path to a "
+				"<html>A custom images folder allows you to use your own images instead of Nortantis's built-in images for this map."
+						+ " To do so, enter a path to a "
 						+ "folder with your images. If the folder is empty, Nortantis will copy its installed images into it as a "
 						+ "starting point. " + "The required folder structure is: </html>"),
 				space, space, false);
