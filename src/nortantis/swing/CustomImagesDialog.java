@@ -45,7 +45,7 @@ public class CustomImagesDialog extends JDialog
 	public CustomImagesDialog(MainWindow mainWindow, String currentCustomImagesPath, Consumer<String> storeResult)
 	{
 		super(mainWindow, "Custom Images Folder", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(840, 762));
+		setSize(new Dimension(840, 712));
 		JPanel content = new JPanel();
 		add(content);
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -55,10 +55,10 @@ public class CustomImagesDialog extends JDialog
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		content.add(organizer.panel, BorderLayout.CENTER);
-		organizer.addLeftAlignedComponent(
-				new JLabel("<html>Using custom images with a map is an advanced feature. To use it, enter a path to a "
+		organizer.addLeftAlignedComponent(new JLabel(
+				"<html>A custom images folder allows you to override Nortantis's built-in images for this map. To do so, enter a path to a "
 						+ "folder with your images. If the folder is empty, Nortantis will copy its installed images into it as a "
-						+ "starting point. " + "The folder structure Nortantis uses is: </html>"),
+						+ "starting point. " + "The required folder structure is: </html>"),
 				space, space, false);
 
 		int spaceBetweenPaths = 2;
@@ -76,16 +76,18 @@ public class CustomImagesDialog extends JDialog
 				+ File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>The names above in angle brackets are folder and file names"
-				+ " that you can configure to be whatever name you want. Folder names without angle brackets, however, must be exactly as described above or else Nortantis won't"
-				+ " be able to find the image is in those folders. Images must be either PNG or"
-				+ " JPG format. PNG is recommended because it" + " supports transparency and isn't lossy.</html>"), space, space, false);
+				+ " that you can configure to be whatever name you want. Folder names without angle brackets, however, must be exactly as described above or else Nortantis"
+				+ " will ignore those folders. Images must be either PNG or" + " JPG format. PNG is recommended because it"
+				+ " supports transparency and isn't lossy.</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>Valid border image names are 'upper_left_corner', 'upper_right_corner', "
 				+ "'lower_left_corner', 'lower_right_corner', 'top_edge', 'bottom_edge', 'left_edge', 'right_edge'. At least one corner and"
-				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"), space, space, false);
+				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"),
+				space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
-				+ " if you want new maps to use your tree type, then you must use 'cacti', 'deciduous', and 'pine'. If you don't want all three of those tree types,"
-				+ " then simply delete the folder or images for the type you don't want to use.</html>"), space, space, false);
+				+ " if you want new maps to use your tree type appropriately for the biomes the trees are placed in, then you must use the folder names 'cacti', 'deciduous',"
+				+ " and 'pine'. If you don't want all three of those tree types,"
+				+ " then simply don't include the folder or images for the type you don't want to use.</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>If you want new maps to add hills around mountains, then for each mountain type, create a hill type with the same name.</html>"),
@@ -94,15 +96,8 @@ public class CustomImagesDialog extends JDialog
 
 		organizer
 				.addLeftAlignedComponent(new JLabel("<html>After making changes to custom images, to get Nortantis to see those changes you"
-						+ " can either close and re-open the program or use " + mainWindow.getFileMenuName() + " -> "
+						+ " can either close and re-open Nortantis or use " + mainWindow.getFileMenuName() + " -> "
 						+ mainWindow.getRefreshImagesMenuName() + ".</html>"), space, space, false);
-		organizer.addLeftAlignedComponent(new JLabel(
-				"<html>Using a custom images folder causes this map to use your images rather than the images built into Nortantis,"
-						+ " even if you install a new version of Nortantis that might include new images or fixes to existing images."
-						+ " To update your custom"
-						+ " images folder, you can create a new map, add a new custom images folder to the new map, grab the "
-						+ " folder of images that creates, and merge it with your custom images folder from this map." + " </html>"),
-				space, space, false);
 		organizer.addLeftAlignedComponent(
 				new JLabel("<html>To revert back to using Nortantis's installed images, clear out the" + " field below.</html>"), space, 10,
 				false);
@@ -218,7 +213,8 @@ public class CustomImagesDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				boolean isChanged = !Objects.equals(customImagesFolderField.getText(), FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
+				boolean isChanged = !Objects.equals(customImagesFolderField.getText(),
+						FileHelper.replaceHomeFolderPlaceholder(currentCustomImagesPath));
 				if (mergeInstalledImagesIntoCustomFolderIfEmpty(customImagesFolderField.getText()))
 				{
 					JOptionPane.showMessageDialog(null,
@@ -234,7 +230,8 @@ public class CustomImagesDialog extends JDialog
 
 				if (makeDefaultCheckbox.isSelected())
 				{
-					UserPreferences.getInstance().defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText());
+					UserPreferences.getInstance().defaultCustomImagesPath = FileHelper
+							.replaceHomeFolderWithPlaceholder(customImagesFolderField.getText());
 				}
 
 				dispose();
