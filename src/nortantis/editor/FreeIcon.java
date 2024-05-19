@@ -183,7 +183,7 @@ public class FreeIcon
 		if (iconName != null && !iconName.isEmpty())
 		{
 			Map<String, Tuple2<ImageAndMasks, Integer>> iconsWithWidths = ImageCache.getInstance(imagesPath)
-					.getIconsWithWidths(IconType.cities, groupId);
+					.getIconsWithWidths(type, groupId);
 			if (iconsWithWidths == null || iconsWithWidths.isEmpty())
 			{
 				return null;

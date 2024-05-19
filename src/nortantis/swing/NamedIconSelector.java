@@ -13,17 +13,20 @@ import javax.swing.UIManager;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
+import nortantis.IconType;
 import nortantis.util.Tuple2;
 
-public class CityButtons
+public class NamedIconSelector
 {
 	public RowHider hider;
 	private Map<String, List<Tuple2<String, JToggleButton>>> buttons;
 	public JPanel typesPanel;
 	private Map<String, CollapsiblePanel> panels;
+	public final IconType type;
 
-	public CityButtons()
+	public NamedIconSelector(IconType type)
 	{
+		this.type = type;
 		this.buttons = new TreeMap<>();
 		panels = new TreeMap<>();
 	}
@@ -35,35 +38,35 @@ public class CityButtons
 		typesPanel.removeAll();
 	}
 
-	public void addButton(String cityType, String cityFileNameWithoutWidthOrExtension, JToggleButton button)
+	public void addButton(String type, String iconFileNameWithoutWidthOrExtension, JToggleButton button)
 	{
-		if (!buttons.containsKey(cityType))
+		if (!buttons.containsKey(type))
 		{
-			buttons.put(cityType, new ArrayList<>());
+			buttons.put(type, new ArrayList<>());
 		}
 
-		buttons.get(cityType).add(new Tuple2<>(cityFileNameWithoutWidthOrExtension, button));
+		buttons.get(type).add(new Tuple2<>(iconFileNameWithoutWidthOrExtension, button));
 	}
 
-	public List<Tuple2<String, JToggleButton>> getIconNamesAndButtons(String cityType)
+	public List<Tuple2<String, JToggleButton>> getIconNamesAndButtons(String type)
 	{
-		return buttons.get(cityType);
+		return buttons.get(type);
 	}
 
-	public Set<String> getCityTypes()
+	public Set<String> getTypes()
 	{
 		return buttons.keySet();
 	}
 
-	public Tuple2<String, String> getSelectedCity()
+	public Tuple2<String, String> getSelectedButton()
 	{
-		for (String cityType : getCityTypes())
+		for (String type : getTypes())
 		{
-			for (Tuple2<String, JToggleButton> tuple : buttons.get(cityType))
+			for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
 			{
 				if (tuple.getSecond().isSelected())
 				{
-					return new Tuple2<>(cityType, tuple.getFirst());
+					return new Tuple2<>(type, tuple.getFirst());
 				}
 			}
 		}
@@ -73,16 +76,16 @@ public class CityButtons
 	public void selectFirstButton()
 	{
 		unselectAllButtons();
-		JToggleButton toggleButton = getIconNamesAndButtons(getCityTypes().iterator().next()).get(0).getSecond();
+		JToggleButton toggleButton = getIconNamesAndButtons(getTypes().iterator().next()).get(0).getSecond();
 		toggleButton.setSelected(true);
 		updateToggleButtonBorder(toggleButton);
 	}
 
 	private void unselectAllButtons()
 	{
-		for (String cityType : getCityTypes())
+		for (String type : getTypes())
 		{
-			for (Tuple2<String, JToggleButton> tuple : buttons.get(cityType))
+			for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
 			{
 				if (tuple.getSecond().isSelected())
 				{
@@ -95,9 +98,9 @@ public class CityButtons
 	
 	public void unselectAllButtonsExcept(JToggleButton buttonToIgnore)
 	{
-		for (String cityType : getCityTypes())
+		for (String type : getTypes())
 		{
-			for (Tuple2<String, JToggleButton> tuple : buttons.get(cityType))
+			for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
 			{
 				if (tuple.getSecond().isSelected() && tuple.getSecond() != buttonToIgnore)
 				{
@@ -108,18 +111,18 @@ public class CityButtons
 		}
 	}
 
-	public boolean selectButtonIfPresent(String cityType, String cityIconNameWithoutWidthOrExtension)
+	public boolean selectButtonIfPresent(String type, String iconNameWithoutWidthOrExtension)
 	{
 		unselectAllButtons();
 		
-		if (!buttons.containsKey(cityType))
+		if (!buttons.containsKey(type))
 		{
 			return false;
 		}
 		
-		for (Tuple2<String, JToggleButton> tuple : buttons.get(cityType))
+		for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
 		{
-			if (tuple.getFirst().equals(cityIconNameWithoutWidthOrExtension))
+			if (tuple.getFirst().equals(iconNameWithoutWidthOrExtension))
 			{
 				if (!tuple.getSecond().isSelected())
 				{
@@ -150,8 +153,8 @@ public class CityButtons
 		}	
 	}
 	
-	public void addCollapsiblePanel(String cityType, CollapsiblePanel panel)
+	public void addCollapsiblePanel(String type, CollapsiblePanel panel)
 	{
-		panels.put(cityType, panel);
+		panels.put(type, panel);
 	}
 }

@@ -32,6 +32,7 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.DebugFlags;
 import nortantis.IconDrawTask;
+import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
@@ -70,12 +71,14 @@ public class IconsTool extends EditorTool
 	private IconTypeButtons hillTypes;
 	private IconTypeButtons duneTypes;
 	private IconTypeButtons treeTypes;
-	private CityButtons cityButtons;
+	private NamedIconSelector cityButtons;
+	private NamedIconSelector decorationButtons;
 	private JSlider densitySlider;
 	private Random rand;
 	private RowHider densityHider;
 	private JRadioButton allButton;
 	private JRadioButton citiesButton;
+	private JRadioButton decorationsButton;
 	private DrawModeWidget modeWidget;
 	private FreeIcon iconToEdit;
 	private java.awt.Point editStart;
@@ -185,6 +188,18 @@ public class IconsTool extends EditorTool
 				}
 			});
 
+			decorationsButton = new JRadioButton("Decorations");
+			group.add(decorationsButton);
+			radioButtons.add(decorationsButton);
+			decorationsButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent event)
+				{
+					updateTypePanels();
+				}
+			});
+
 			allButton = new JRadioButton("All");
 			group.add(allButton);
 			radioButtons.add(allButton);
@@ -204,7 +219,6 @@ public class IconsTool extends EditorTool
 				"Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons",
 				() -> handleModeChanged());
 		modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
-
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -226,6 +240,7 @@ public class IconsTool extends EditorTool
 
 		createOrUpdateButtonsForCities(organizer, null);
 
+		createOrUpdateDecorationButtons(organizer, null);
 
 		mountainsButton.doClick();
 
@@ -278,9 +293,10 @@ public class IconsTool extends EditorTool
 		duneTypes.hider.setVisible(dunesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		treeTypes.hider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		cityButtons.hider.setVisible(citiesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
+		decorationButtons.hider.setVisible(decorationsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
-		brushSizeHider.setVisible(
-				(modeWidget.isDrawMode() && !citiesButton.isSelected()) || modeWidget.isReplaceMode() || modeWidget.isEraseMode());
+		brushSizeHider.setVisible((modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected())
+				|| modeWidget.isReplaceMode() || modeWidget.isEraseMode());
 		toolsPanel.revalidate();
 		toolsPanel.repaint();
 	}
@@ -355,6 +371,7 @@ public class IconsTool extends EditorTool
 		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, customImagesPath);
 
 		createOrUpdateButtonsForCities(null, settings.customImagesPath);
+		createOrUpdateDecorationButtons(null, settings.customImagesPath);
 
 		// Trigger re-creation of image previews
 		loadSettingsIntoGUI(settings, false, true, false);
@@ -369,8 +386,8 @@ public class IconsTool extends EditorTool
 		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, customImagesPath);
 		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, customImagesPath);
 
-
-		updateCityButtonPreviewImages(settings);
+		updateNamedIconButtonPreviewImages(settings, cityButtons);
+		updateNamedIconButtonPreviewImages(settings, decorationButtons);
 	}
 
 	private void updateOneIconTypeButtonPreviewImages(MapSettings settings, IconType iconType, IconTypeButtons buttons,
@@ -408,11 +425,11 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private void updateCityButtonPreviewImages(MapSettings settings)
+	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector)
 	{
-		for (String cityType : ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities))
+		for (String groupId : ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(selector.type))
 		{
-			final List<Tuple2<String, JToggleButton>> namesAndButtons = cityButtons.getIconNamesAndButtons(cityType);
+			final List<Tuple2<String, JToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
 
 			if (namesAndButtons != null)
 			{
@@ -422,18 +439,18 @@ public class IconsTool extends EditorTool
 					protected List<Image> doInBackground() throws Exception
 					{
 						List<Image> previewImages = new ArrayList<>();
-						Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(settings.customImagesPath)
-								.getIconsWithWidths(IconType.cities, cityType);
+						Map<String, Tuple2<ImageAndMasks, Integer>> iconsInGroup = ImageCache.getInstance(settings.customImagesPath)
+								.getIconsWithWidths(selector.type, groupId);
 
 						for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
 						{
-							String cityIconNameWithoutWidthOrExtension = nameAndButton.getFirst();
-							if (!cityIcons.containsKey(cityIconNameWithoutWidthOrExtension))
+							String iconNameWithoutWidthOrExtension = nameAndButton.getFirst();
+							if (!iconsInGroup.containsKey(iconNameWithoutWidthOrExtension))
 							{
 								throw new IllegalArgumentException(
-										"No city icon exists for the button '" + cityIconNameWithoutWidthOrExtension + "'");
+										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
-							Image icon = cityIcons.get(cityIconNameWithoutWidthOrExtension).getFirst().image;
+							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
 							Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0);
 							previewImages.add(preview);
 						}
@@ -456,7 +473,7 @@ public class IconsTool extends EditorTool
 
 						for (int i : new Range(previewImages.size()))
 						{
-							cityButtons.getIconNamesAndButtons(cityType).get(i).getSecond()
+							selector.getIconNamesAndButtons(groupId).get(i).getSecond()
 									.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
 						}
 					}
@@ -474,7 +491,7 @@ public class IconsTool extends EditorTool
 		if (cityButtons == null)
 		{
 			// This is the first time to create the city buttons.
-			cityButtons = new CityButtons();
+			cityButtons = new NamedIconSelector(IconType.cities);
 			JPanel typesPanel = new JPanel();
 			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
 			cityButtons.typesPanel = typesPanel;
@@ -482,20 +499,48 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			selectedCity = cityButtons.getSelectedCity();
+			selectedCity = cityButtons.getSelectedButton();
 			cityButtons.clearButtons();
 			isNew = false;
 		}
 
-		boolean hasAtLeastOneCityImage = false;
-		for (String cityType : ImageCache.getInstance(customImagesPath).getIconGroupNames(IconType.cities))
+		updateNamedIconSelector(organizer, customImagesPath, cityButtons, isNew, selectedCity, "Decorations: ");
+	}
+
+	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String customImagesPath)
+	{
+		boolean isNew;
+		Tuple2<String, String> selectedButton = null;
+		if (decorationButtons == null)
+		{
+			// This is the first time to create the buttons.
+			decorationButtons = new NamedIconSelector(IconType.decorations);
+			JPanel typesPanel = new JPanel();
+			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
+			decorationButtons.typesPanel = typesPanel;
+			isNew = true;
+		}
+		else
+		{
+			selectedButton = decorationButtons.getSelectedButton();
+			decorationButtons.clearButtons();
+			isNew = false;
+		}
+
+		updateNamedIconSelector(organizer, customImagesPath, decorationButtons, isNew, selectedButton, "Decorations: ");
+	}
+
+	private static void updateNamedIconSelector(GridBagOrganizer organizer, String customImagesPath, NamedIconSelector selector,
+			boolean isNew, Tuple2<String, String> selectedCity, String labelText)
+	{
+		boolean hasAtLeastOneImage = false;
+		for (String groupId : ImageCache.getInstance(customImagesPath).getIconGroupNames(selector.type))
 		{
 			JPanel typePanel = new JPanel();
 			typePanel.setLayout(new WrapLayout());
-			// typePanel.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), cityType));
 			typePanel.setBorder(new LineBorder(UIManager.getColor("controlShadow"), 1));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtension(IconType.cities, cityType))
+					.getIconGroupFileNamesWithoutWidthOrExtension(selector.type, groupId))
 			{
 				JToggleButton toggleButton = new JToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
@@ -509,43 +554,43 @@ public class IconsTool extends EditorTool
 						{
 							toggleButton.setSelected(true);
 						}
-						cityButtons.unselectAllButtonsExcept(toggleButton);
-						CityButtons.updateToggleButtonBorder(toggleButton);
+						selector.unselectAllButtonsExcept(toggleButton);
+						NamedIconSelector.updateToggleButtonBorder(toggleButton);
 					}
 				});
-				CityButtons.updateToggleButtonBorder(toggleButton);
+				NamedIconSelector.updateToggleButtonBorder(toggleButton);
 
-				cityButtons.addButton(cityType, fileNameWithoutWidthOrExtension, toggleButton);
+				selector.addButton(groupId, fileNameWithoutWidthOrExtension, toggleButton);
 				typePanel.add(toggleButton);
-				hasAtLeastOneCityImage = true;
+				hasAtLeastOneImage = true;
 			}
 
 			// If at least one button was added
-			if (cityButtons.getCityTypes().contains(cityType))
+			if (selector.getTypes().contains(groupId))
 			{
-				CollapsiblePanel panel = new CollapsiblePanel("cityType", cityType, typePanel);
-				cityButtons.typesPanel.add(panel);
+				CollapsiblePanel panel = new CollapsiblePanel(selector.type.toString() + "Type", groupId, typePanel);
+				selector.typesPanel.add(panel);
 			}
 		}
 
 		if (isNew)
 		{
-			cityButtons.hider = organizer.addLeftAlignedComponentWithStackedLabel("Cities:", "", cityButtons.typesPanel);
+			selector.hider = organizer.addLeftAlignedComponentWithStackedLabel(labelText, "", selector.typesPanel);
 		}
 
-		if (hasAtLeastOneCityImage)
+		if (hasAtLeastOneImage)
 		{
 			if (selectedCity != null)
 			{
-				boolean found = cityButtons.selectButtonIfPresent(selectedCity.getFirst(), selectedCity.getSecond());
+				boolean found = selector.selectButtonIfPresent(selectedCity.getFirst(), selectedCity.getSecond());
 				if (!found)
 				{
-					cityButtons.selectFirstButton();
+					selector.selectFirstButton();
 				}
 			}
 			else
 			{
-				cityButtons.selectFirstButton();
+				selector.selectFirstButton();
 			}
 		}
 	}
@@ -594,7 +639,8 @@ public class IconsTool extends EditorTool
 
 		// Create the background image for the preview
 		final int fadeWidth = Math.max(padding - 2, 0);
-		// Multiply the width padding by 2.2 instead of 2 to compensate for the image library I'm using not always scaling to the size I
+		// Multiply the width padding by 2.2 instead of 2 to compensate for the
+		// image library I'm using not always scaling to the size I
 		// give.
 		IntDimension size = new IntDimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
 
@@ -659,7 +705,7 @@ public class IconsTool extends EditorTool
 		showOrHideBrush(e);
 		if (modeWidget.isDrawMode())
 		{
-			handleDrawIcons(e);
+			handleDrawIcons(e, isPress);
 		}
 		else if (modeWidget.isReplaceMode())
 		{
@@ -675,17 +721,16 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private void handleDrawIcons(MouseEvent e)
+	private void handleDrawIcons(MouseEvent e, boolean isPress)
 	{
 		if (treesButton.isSelected())
 		{
 			eraseTreesThatFailedToDrawDueToLowDensity(e);
 		}
 
-		Set<Center> selected = getSelectedLandCenters(e.getPoint());
-
 		if (mountainsButton.isSelected())
 		{
+			Set<Center> selected = getSelectedLandCenters(e.getPoint());
 			String rangeId = mountainTypes.getSelectedOption();
 			for (Center center : selected)
 			{
@@ -693,9 +738,11 @@ public class IconsTool extends EditorTool
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, rangeId, Math.abs(rand.nextInt()));
 				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 			}
+			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (hillsButton.isSelected())
 		{
+			Set<Center> selected = getSelectedLandCenters(e.getPoint());
 			String rangeId = hillTypes.getSelectedOption();
 			for (Center center : selected)
 			{
@@ -703,9 +750,11 @@ public class IconsTool extends EditorTool
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, rangeId, Math.abs(rand.nextInt()));
 				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 			}
+			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (dunesButton.isSelected())
 		{
+			Set<Center> selected = getSelectedLandCenters(e.getPoint());
 			String rangeId = duneTypes.getSelectedOption();
 			for (Center center : selected)
 			{
@@ -713,9 +762,11 @@ public class IconsTool extends EditorTool
 				CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, rangeId, Math.abs(rand.nextInt()));
 				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
 			}
+			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (treesButton.isSelected())
 		{
+			Set<Center> selected = getSelectedLandCenters(e.getPoint());
 			String treeType = treeTypes.getSelectedOption();
 			for (Center center : selected)
 			{
@@ -723,10 +774,12 @@ public class IconsTool extends EditorTool
 				CenterTrees newTrees = new CenterTrees(treeType, densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
 				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
 			}
+			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (citiesButton.isSelected())
 		{
-			Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
+			Set<Center> selected = getSelectedLandCenters(e.getPoint());
+			Tuple2<String, String> selectedCity = cityButtons.getSelectedButton();
 			if (selectedCity == null)
 			{
 				return;
@@ -740,9 +793,26 @@ public class IconsTool extends EditorTool
 				CenterIcon cityIcon = new CenterIcon(CenterIconType.City, cityType, cityName);
 				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(cityIcon));
 			}
+			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
+		else if (decorationsButton.isSelected())
+		{
+			if (isPress)
+			{
+				Tuple2<String, String> selectedButton = decorationButtons.getSelectedButton();
+				if (selectedButton == null)
+				{
+					return;
+				}
 
-		updater.createAndShowMapIncrementalUsingCenters(selected);
+				String groupId = selectedButton.getFirst();
+				String iconName = selectedButton.getSecond();
+				nortantis.geom.Point point = getPointOnGraph(e.getPoint());
+				FreeIcon icon = new FreeIcon(mainWindow.displayQualityScale, point, 1.0, IconType.decorations, groupId, iconName, null);
+				mainWindow.edits.freeIcons.addOrReplace(icon);
+				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(icon));
+			}
+		}
 	}
 
 	private void handleReplaceIcons(MouseEvent e)
@@ -786,7 +856,7 @@ public class IconsTool extends EditorTool
 				}
 				else if (citiesButton.isSelected())
 				{
-					Tuple2<String, String> selectedCity = cityButtons.getSelectedCity();
+					Tuple2<String, String> selectedCity = cityButtons.getSelectedButton();
 					if (selectedCity == null)
 					{
 						continue;
@@ -812,7 +882,6 @@ public class IconsTool extends EditorTool
 
 			return iconsBeforeAndAfter;
 		});
-
 
 		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, iconsSelectedAfter, false);
 
@@ -968,8 +1037,10 @@ public class IconsTool extends EditorTool
 
 				if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
 				{
-					// The user moved the last tree out of that polygon. Remove the invisible CenterTree so that if someone resizes all
-					// trees later, trees don't appear out of nowhere on this Center.
+					// The user moved the last tree out of that polygon. Remove
+					// the invisible CenterTree so that if someone resizes all
+					// trees later, trees don't appear out of nowhere on this
+					// Center.
 					mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
 							mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
 				}
@@ -1069,7 +1140,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		if (modeWidget.isDrawMode())
+		if (modeWidget.isDrawMode() && !decorationsButton.isSelected())
 		{
 			highlightHoverCenters(e);
 		}
@@ -1104,7 +1175,8 @@ public class IconsTool extends EditorTool
 				FreeIcon selected = getLowestSelectedIcon(e.getPoint());
 				if (selected != null)
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, Arrays.asList(selected), modeWidget.isEraseMode());
+					mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, Arrays.asList(selected),
+							modeWidget.isEraseMode());
 				}
 			}
 		}
@@ -1118,7 +1190,7 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		if (modeWidget.isDrawMode())
+		if (modeWidget.isDrawMode() && !decorationsButton.isSelected())
 		{
 			highlightHoverCenters(e);
 		}
@@ -1209,7 +1281,7 @@ public class IconsTool extends EditorTool
 			{
 				return false;
 			}
-			
+
 			Rectangle rect = task.createBounds();
 			return rect.contains(graphPoint);
 		}
@@ -1279,7 +1351,6 @@ public class IconsTool extends EditorTool
 			return true;
 		}
 
-
 		if (treesButton.isSelected() && icon.type == IconType.trees)
 		{
 			return true;
@@ -1303,7 +1374,8 @@ public class IconsTool extends EditorTool
 			boolean willDoImagesRefresh)
 	{
 		updateTypePanels();
-		// Skip updating icon previews now if there will be an images refresh in a moment, because that will handle it, and because the
+		// Skip updating icon previews now if there will be an images refresh in
+		// a moment, because that will handle it, and because the
 		// ImageCache hasn't been cleared yet.
 		if (changeEffectsBackgroundImages && !willDoImagesRefresh)
 		{

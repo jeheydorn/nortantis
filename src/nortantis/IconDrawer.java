@@ -47,12 +47,16 @@ public class IconDrawer
 	public static final double hillElevationThreshold = 0.53;
 	final double meanPolygonWidth;
 	final double cityScale;
-	// Max gap (in polygons) between mountains for considering them a single group. Warning:
-	// there tend to be long polygons along edges, so if this value is much more than 2,
-	// mountains near the ocean may be connected despite long distances between them..
+	// Max gap (in polygons) between mountains for considering them a single
+	// group. Warning:
+	// there tend to be long polygons along edges, so if this value is much more
+	// than 2,
+	// mountains near the ocean may be connected despite long distances between
+	// them..
 	private final int maxGapSizeInMountainClusters = 2;
 	private final int maxGapBetweenBiomeGroups = 2;
-	// For hills and mountains, if a polygon is this number times meanPolygonWidth wide, no icon will be added to it when creating a new
+	// For hills and mountains, if a polygon is this number times
+	// meanPolygonWidth wide, no icon will be added to it when creating a new
 	// map.
 	final double maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill = 5.0;
 	final double maxSizeToDrawGeneratedMountainOrHill;
@@ -70,6 +74,7 @@ public class IconDrawer
 	private String cityIconTypeForNewMaps;
 	private String imagesPath;
 	private double resolutionScale;
+	private double decorationScale;
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
@@ -104,6 +109,7 @@ public class IconDrawer
 		mountainScale = settings.mountainScale;
 		hillScale = settings.hillScale;
 		cityScale = settings.cityScale;
+		decorationScale = 1.0; // TODO Create a setting for this if I want one
 
 		treeHeightScale = settings.treeHeightScale;
 		treeDensityScale = calcTreeDensityScale();
@@ -112,7 +118,6 @@ public class IconDrawer
 		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors
 				* maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
 	}
-
 
 	public void markMountains()
 	{
@@ -145,12 +150,18 @@ public class IconDrawer
 		{
 			if (!c.isMountain && !c.isHill && !c.isWater && !c.isBorder && !c.neighbors.stream().anyMatch(n -> n.isBorder))
 			{
-				// I'm generating these numbers now instead of waiting to see if they are needed in the if statements below because
-				// there is a problem in the graph such that maps generated at different resolutions can have slight differences in their
-				// rivers, which appears to be caused by floating point precision issues while calculating elevation of corners.
-				// Thus, the slightest change in a river on one corner could cause a center to change whether it's a river, which
-				// would modify the way the random number generator is called, which would then change everything else used by that
-				// random number generator after it. But this fix only reduces the issue, since other things will also change
+				// I'm generating these numbers now instead of waiting to see if
+				// they are needed in the if statements below because
+				// there is a problem in the graph such that maps generated at
+				// different resolutions can have slight differences in their
+				// rivers, which appears to be caused by floating point
+				// precision issues while calculating elevation of corners.
+				// Thus, the slightest change in a river on one corner could
+				// cause a center to change whether it's a river, which
+				// would modify the way the random number generator is called,
+				// which would then change everything else used by that
+				// random number generator after it. But this fix only reduces
+				// the issue, since other things will also change
 				// when rivers move.
 				double cityByRiverProbability = rand.nextDouble();
 				double cityByCoastProbability = rand.nextDouble();
@@ -191,7 +202,8 @@ public class IconDrawer
 	}
 
 	/**
-	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
+	 * Finds and marks mountain ranges, and groups smaller than ranges, and
+	 * surrounding hills.
 	 */
 	public List<Set<Center>> findMountainAndHillGroups()
 	{
@@ -253,8 +265,8 @@ public class IconDrawer
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
-					Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconName,
-							warningLogger);
+					Tuple2<String, String> groupAndName = adjustNamedIconGroupAndNameIfNeeded(IconType.cities, "city",
+							cEdit.icon.iconGroupId, cEdit.icon.iconName, warningLogger);
 
 					if (groupAndName != null)
 					{
@@ -321,7 +333,6 @@ public class IconDrawer
 		return new Dimension(xSize, scaledHeight);
 	}
 
-
 	private Rectangle convertWidthBasedShuffledAnchoredIcon(MapEdits edits, Center center, CenterEdit cEdit,
 			ListMap<String, ImageAndMasks> iconsByGroup, WarningLogger warningLogger)
 	{
@@ -335,7 +346,8 @@ public class IconDrawer
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
 			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
-			// There is no change bounds to return because this icon was never drawn.
+			// There is no change bounds to return because this icon was never
+			// drawn.
 			return null;
 		}
 
@@ -429,14 +441,15 @@ public class IconDrawer
 
 	public double getUnanchoredMountainYChangeFromMountainScaleChange(FreeIcon icon, double newMountainScale)
 	{
-		IconDrawTask task = toIconDrawTask(icon); 
+		IconDrawTask task = toIconDrawTask(icon);
 		if (task == null)
 		{
 			return 0.0;
 		}
-		
+
 		Image image = task.unScaledImageAndMasks.image;
-		// I'm excluding icon level scaling in this calculation because icon level scaling is done about the icon's center even for
+		// I'm excluding icon level scaling in this calculation because icon
+		// level scaling is done about the icon's center even for
 		// mountains,
 		// so it doesn't affect the Y offset for mountains.
 		double prevScaledHeightWithoutIconScale = getDimensionsWhenScaledByWidth(image.size(),
@@ -448,9 +461,11 @@ public class IconDrawer
 	}
 
 	/**
-	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. Also handles Replacing the image
-	 * for icons whose image does not exist, and removing icons that should not be drawn because their bottom would touch water. The actual
-	 * drawing of the icons is done later.
+	 * This is used to add icon to draw tasks from map edits rather than using
+	 * the generator to add them. Also handles Replacing the image for icons
+	 * whose image does not exist, and removing icons that should not be drawn
+	 * because their bottom would touch water. The actual drawing of the icons
+	 * is done later.
 	 * 
 	 * @return The bounds of icons that changed, if any.
 	 */
@@ -468,17 +483,22 @@ public class IconDrawer
 
 	private Rectangle createDrawTasksForFreeIconsAndRemovedFailedIcons(WarningLogger warningLogger)
 	{
-		// Check the performance of this method since it re-creates all icon draw tasks for each incremental update, although I might not
+		// Check the performance of this method since it re-creates all icon
+		// draw tasks for each incremental update, although I might not
 		// have a better option.
 
 		iconsToDraw.clear();
 
-		// In theory it should be safe to just remove free icons as I iterate over the collection, but I'm leary of it because there are
-		// multiple underlying iterators involved in looping over the collection, so I'm doing it afterward.
+		// In theory it should be safe to just remove free icons as I iterate
+		// over the collection, but I'm leary of it because there are
+		// multiple underlying iterators involved in looping over the
+		// collection, so I'm doing it afterward.
 		List<FreeIcon> toRemove = new ArrayList<>();
 
-		// Note: There's no need to update removeBounds in this loop for cases that replace an icon because removeBounds it is only needed
-		// for incremental draws, and code for changing an icon because the previous icon did not exist will only be triggered during an
+		// Note: There's no need to update removeBounds in this loop for cases
+		// that replace an icon because removeBounds it is only needed
+		// for incremental draws, and code for changing an icon because the
+		// previous icon did not exist will only be triggered during an
 		// image refresh or an initial full draw, which are both full draws.
 		for (FreeIcon icon : freeIcons)
 		{
@@ -501,7 +521,8 @@ public class IconDrawer
 			}
 			else if (icon.type == IconType.cities)
 			{
-				Tuple2<String, String> groupAndName = adjustCityIconGroupAndNameIfNeeded(icon.groupId, icon.iconName, warningLogger);
+				Tuple2<String, String> groupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, "city", icon.groupId, icon.iconName,
+						warningLogger);
 				if (groupAndName != null)
 				{
 					FreeIcon updated = icon.copyWith(groupAndName.getFirst(), groupAndName.getSecond());
@@ -521,6 +542,29 @@ public class IconDrawer
 				{
 					toRemove.add(icon);
 				}
+			}
+			else if (icon.type == IconType.decorations)
+			{
+				Tuple2<String, String> groupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, "decorations", icon.groupId,
+						icon.iconName, warningLogger);
+				if (groupAndName != null)
+				{
+					FreeIcon updated = icon.copyWith(groupAndName.getFirst(), groupAndName.getSecond());
+
+					IconDrawTask task = toIconDrawTask(updated);
+					// TODO remove the icon if it is entirely off the map.
+					
+					freeIcons.replace(icon, updated);
+					iconsToDraw.add(toIconDrawTask(updated));
+				}
+				else
+				{
+					toRemove.add(icon);
+				}
+			}
+			else if (icon.type == IconType.decorations)
+			{
+
 			}
 			else if (icon.type == IconType.trees)
 			{
@@ -542,41 +586,50 @@ public class IconDrawer
 		return removeBounds;
 	}
 
-	private Tuple2<String, String> adjustCityIconGroupAndNameIfNeeded(String groupId, String name, WarningLogger warningLogger)
+	private Tuple2<String, String> adjustNamedIconGroupAndNameIfNeeded(IconType type, String typeNameSingular, String groupId, String name,
+			WarningLogger warningLogger)
 	{
-		Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
-				groupId);
-		if (cityImages == null || cityImages.isEmpty())
+		Map<String, Tuple2<ImageAndMasks, Integer>> imagesInGroup = ImageCache.getInstance(imagesPath).getIconsWithWidths(type, groupId);
+		if (imagesInGroup == null || imagesInGroup.isEmpty())
 		{
-			String newGroupId = chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.cities), groupId);
+			String newGroupId = chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(type), groupId);
 			if (newGroupId == null)
 			{
-				warningLogger.addWarningMessage(
-						"Unable to find the city image group '" + groupId + "'. There are no city icons, so none will be drawn.");
+				warningLogger.addWarningMessage("Unable to find the " + typeNameSingular + " image group '" + groupId + "'. There are no "
+						+ typeNameSingular + " icons, so none will be drawn.");
 				return null;
 			}
-			cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities, newGroupId);
-			if (cityImages == null || cityImages.isEmpty())
+			imagesInGroup = ImageCache.getInstance(imagesPath).getIconsWithWidths(type, newGroupId);
+			if (imagesInGroup == null || imagesInGroup.isEmpty())
 			{
-				// This shouldn't happens since the new group id shouldn't have been an option if it were empty or null.
+				// This shouldn't happens since the new group id shouldn't have
+				// been an option if it were empty or null.
 				assert false;
 				return null;
 			}
-			warningLogger.addWarningMessage(
-					"Unable to find the city image group '" + groupId + "'. The group '" + newGroupId + "' will be used instead.");
+			warningLogger.addWarningMessage("Unable to find the " + typeNameSingular + " image group '" + groupId + "'. The group '"
+					+ newGroupId + "' will be used instead.");
 			groupId = newGroupId;
 		}
 
 		String oldName = name;
-		if (!cityImages.containsKey(name) && cityImages.size() > 0)
+		if (!imagesInGroup.containsKey(name) && imagesInGroup.size() > 0)
 		{
-			// Either the city image is missing, or the icon set name changed. Choose a new image in a deterministic but
+			// Either the image is missing, or the icon set name changed. Choose
+			// a new image in a deterministic but
 			// random way.
-			name = chooseNewCityIconName(cityImages.keySet(), name);
+			if (type == IconType.cities)
+			{
+				name = chooseNewCityIconName(imagesInGroup.keySet(), name);
+			}
+			else
+			{
+				name = ProbabilityHelper.sampleUniform(new Random(name.hashCode()), imagesInGroup.keySet());
+			}
 			if (name != null)
 			{
-				warningLogger.addWarningMessage(
-						"Unable to find the city icon '" + oldName.trim() + "'. The icon '" + name.trim() + "' will be used instead.");
+				warningLogger.addWarningMessage("Unable to find the " + typeNameSingular + " icon '" + oldName.trim() + "'. The icon '"
+						+ name.trim() + "' will be used instead.");
 			}
 		}
 
@@ -614,7 +667,7 @@ public class IconDrawer
 		}
 	}
 
-	private double getBaseWidthOrHeight(IconType type, double cityWidthFromFileName)
+	private double getBaseWidthOrHeight(IconType type, double widthFromFileName)
 	{
 		if (type == IconType.mountains)
 		{
@@ -628,9 +681,9 @@ public class IconDrawer
 		{
 			return meanPolygonWidth * 1.2;
 		}
-		else if (type == IconType.cities)
+		else if (type == IconType.cities || type == IconType.decorations)
 		{
-			return meanPolygonWidth * (1.0 / 11.0) * cityWidthFromFileName;
+			return meanPolygonWidth * (1.0 / 11.0) * widthFromFileName;
 		}
 		else if (type == IconType.trees)
 		{
@@ -657,13 +710,16 @@ public class IconDrawer
 		{
 			return cityScale;
 		}
+		else if (type == IconType.decorations)
+		{
+			return decorationScale;
+		}
 		else if (type == IconType.trees)
 		{
 			return treeHeightScale;
 		}
 		throw new IllegalArgumentException("Unrecognized icon type for gettling type-level scale: " + type);
 	}
-
 
 	private String getNewGroupIdIfNeeded(final String groupId, String iconTypeNameForWarnings, ListMap<String, ImageAndMasks> iconsByGroup,
 			WarningLogger warningLogger)
@@ -738,22 +794,28 @@ public class IconDrawer
 	}
 
 	/**
-	 * Finds groups of centers that accepted according to a given function. A group is a set of centers for which there exists a path from
-	 * any member of the set to any other such that you never have to skip over more than maxGapSize centers not accepted at once to get to
-	 * that other center. If distanceThreshold > 1, the result will include those centers which connect centeres that are accepted.
+	 * Finds groups of centers that accepted according to a given function. A
+	 * group is a set of centers for which there exists a path from any member
+	 * of the set to any other such that you never have to skip over more than
+	 * maxGapSize centers not accepted at once to get to that other center. If
+	 * distanceThreshold > 1, the result will include those centers which
+	 * connect centeres that are accepted.
 	 */
 	private static List<Set<Center>> findCenterGroups(WorldGraph graph, int maxGapSize, Function<Center, Boolean> accept)
 	{
 		List<Set<Center>> groups = new ArrayList<>();
-		// Contains all explored centers in this graph. This prevents me from making a new group
+		// Contains all explored centers in this graph. This prevents me from
+		// making a new group
 		// for every center.
 		Set<Center> explored = new HashSet<>();
 		for (Center center : graph.centers)
 		{
 			if (accept.apply(center) && !explored.contains(center))
 			{
-				// Do a breadth-first-search from that center, creating a new group.
-				// "frontier" maps centers to their distance from a center of the desired biome.
+				// Do a breadth-first-search from that center, creating a new
+				// group.
+				// "frontier" maps centers to their distance from a center of
+				// the desired biome.
 				// 0 means it is of the desired biome.
 				Map<Center, Integer> frontier = new HashMap<>();
 				frontier.put(center, 0);
@@ -793,9 +855,11 @@ public class IconDrawer
 
 	/**
 	 * 
-	 * = * @param mask A gray scale image which is white where the background should be drawn, and black where the map should be drawn
-	 * instead of the background. This is necessary so that when I draw an icon that is transparent (such as a hand drawn mountain), I
-	 * cannot see other mountains through it.
+	 * = * @param mask A gray scale image which is white where the background
+	 * should be drawn, and black where the map should be drawn instead of the
+	 * background. This is necessary so that when I draw an icon that is
+	 * transparent (such as a hand drawn mountain), I cannot see other mountains
+	 * through it.
 	 */
 	private void drawIconWithBackgroundAndMask(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
 			Image landTexture, int xCenter, int yCenter)
@@ -837,7 +901,8 @@ public class IconDrawer
 				Color bgColor;
 				Color mapColor;
 				Color landTextureColor;
-				// Find the location on the background and map where this pixel will be drawn.
+				// Find the location on the background and map where this pixel
+				// will be drawn.
 				int xLoc = xLeft + x;
 				int yLoc = yBottom + y;
 				try
@@ -852,11 +917,16 @@ public class IconDrawer
 					continue;
 				}
 
-				// Use the shading mask to blend the coastline shading with the land background texture for pixels
-				// with transparency in the icon and non-zero values in the content mask. This way coastline shading
-				// doesn't draw through icons, since that would look weird when the icon extends over the coastline.
-				// It also makes the transparent pixels in the content of the icon draw the land background texture
-				// when the shading mask is white, so that icons extending into the ocean draw the land texture behind
+				// Use the shading mask to blend the coastline shading with the
+				// land background texture for pixels
+				// with transparency in the icon and non-zero values in the
+				// content mask. This way coastline shading
+				// doesn't draw through icons, since that would look weird when
+				// the icon extends over the coastline.
+				// It also makes the transparent pixels in the content of the
+				// icon draw the land background texture
+				// when the shading mask is white, so that icons extending into
+				// the ocean draw the land texture behind
 				// them rather than the ocean texture.
 				int red = (int) (alpha * (iconColor.getRed()) + (1 - alpha)
 						* (contentMaskLevel * ((1 - shadingMaskLevel) * landTextureColor.getRed() + (shadingMaskLevel * bgColor.getRed()))
@@ -875,8 +945,9 @@ public class IconDrawer
 	/**
 	 * Draws all icons in iconsToDraw that touch drawBounds.
 	 * 
-	 * I draw all the icons at once this way so that I can sort the icons by the y-coordinate of the base of each icon. This way icons lower
-	 * on the map are drawn in front of those that are higher.
+	 * I draw all the icons at once this way so that I can sort the icons by the
+	 * y-coordinate of the base of each icon. This way icons lower on the map
+	 * are drawn in front of those that are higher.
 	 * 
 	 * @return The icons that drew.
 	 */
@@ -892,7 +963,8 @@ public class IconDrawer
 		}
 		Collections.sort(tasks);
 
-		// Force mask creation now if it hasn't already happened so that so that multiple threads don't try to create the same masks at the
+		// Force mask creation now if it hasn't already happened so that so that
+		// multiple threads don't try to create the same masks at the
 		// same time and end up repeating work.
 		for (final IconDrawTask task : tasks)
 		{
@@ -930,8 +1002,8 @@ public class IconDrawer
 	}
 
 	/**
-	 * Draws content masks on top of the land mask so that icons that protrude over coastlines don't turn into ocean when text is drawn on
-	 * top of them.
+	 * Draws content masks on top of the land mask so that icons that protrude
+	 * over coastlines don't turn into ocean when text is drawn on top of them.
 	 */
 	public void drawContentMasksOntoLandMask(Image landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
@@ -968,7 +1040,8 @@ public class IconDrawer
 			List<Set<Center>> mountainGroups;
 			;
 			addOrUnmarkMountainsAndHills(mountainAndHillGroups);
-			// I find the mountain groups after adding or unmarking mountains so that mountains that get unmarked because their image
+			// I find the mountain groups after adding or unmarking mountains so
+			// that mountains that get unmarked because their image
 			// couldn't draw
 			// don't later get labels.
 			mountainGroups = findMountainGroups();
@@ -990,9 +1063,11 @@ public class IconDrawer
 	}
 
 	/**
-	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed where it cannot be drawn, this will un-mark it as a city.
+	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed
+	 * where it cannot be drawn, this will un-mark it as a city.
 	 * 
-	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
+	 * @return IconDrawTask of each city icon added. Needed to avoid drawing
+	 *         text on top of cities.
 	 */
 	public List<IconDrawTask> addOrUnmarkCities()
 	{
@@ -1030,7 +1105,6 @@ public class IconDrawer
 		return cities;
 	}
 
-
 	/**
 	 * Creates tasks for drawing mountains and hills.
 	 * 
@@ -1038,7 +1112,8 @@ public class IconDrawer
 	 */
 	public void addOrUnmarkMountainsAndHills(List<Set<Center>> mountainAndHillGroups)
 	{
-		// Maps mountain range ids (the ids in the file names) to list of mountain images and their masks.
+		// Maps mountain range ids (the ids in the file names) to list of
+		// mountain images and their masks.
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 
@@ -1047,8 +1122,10 @@ public class IconDrawer
 			Logger.println("No mountains or hills will be added because there are no mountain images.");
 		}
 
-		// Maps mountain range ids (the ids in the file names) to list of hill images and their masks.
-		// The hill image file names must use the same ids as the mountain ranges.
+		// Maps mountain range ids (the ids in the file names) to list of hill
+		// images and their masks.
+		// The hill image file names must use the same ids as the mountain
+		// ranges.
 		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.hills);
 
 		if (hillImagesById.isEmpty() && !mountainImagesById.isEmpty())
@@ -1073,7 +1150,8 @@ public class IconDrawer
 			}
 		}
 
-		// Maps from the mountainRangeId of Centers to the range id's from the mountain image file names.
+		// Maps from the mountainRangeId of Centers to the range id's from the
+		// mountain image file names.
 		Map<Integer, String> rangeMap = new TreeMap<>();
 
 		for (Set<Center> group : mountainAndHillGroups)
@@ -1095,8 +1173,10 @@ public class IconDrawer
 					}
 					else
 					{
-						// I'm deliberately putting this line before checking center size so that the
-						// random number generator is used the same no matter what resolution the map
+						// I'm deliberately putting this line before checking
+						// center size so that the
+						// random number generator is used the same no matter
+						// what resolution the map
 						// is drawn at.
 						int i = Math.abs(rand.nextInt());
 
@@ -1130,8 +1210,10 @@ public class IconDrawer
 
 						if (imagesInGroup != null && !imagesInGroup.isEmpty())
 						{
-							// I'm deliberately putting this line before checking center size so that the
-							// random number generator is used the same no matter what resolution the map
+							// I'm deliberately putting this line before
+							// checking center size so that the
+							// random number generator is used the same no
+							// matter what resolution the map
 							// is drawn at.
 							int i = Math.abs(rand.nextInt());
 
@@ -1165,7 +1247,8 @@ public class IconDrawer
 
 	private double findNewHillWidthBeforeTypeLevelScaling(Center c)
 	{
-		// Find the center's size along the x axis and reduce it to make hills smaller than mountains.
+		// Find the center's size along the x axis and reduce it to make hills
+		// smaller than mountains.
 		return findNewMountainWidthBeforeTypeLevelScaling(c) * hillSizeComparedToMountains;
 	}
 
@@ -1255,7 +1338,8 @@ public class IconDrawer
 			}
 		}
 
-		// Process forest types that don't use biome groups separately for efficiency.
+		// Process forest types that don't use biome groups separately for
+		// efficiency.
 		for (Center c : graph.centers)
 		{
 			for (ForestType forest : forestTypes)
@@ -1319,7 +1403,6 @@ public class IconDrawer
 	{
 		return c.elevation < mountainElevationThreshold && !c.isWater && !c.isCoast;
 	}
-
 
 	private Rectangle convertTreesFromCenterEditsToFreeIcons(Collection<Center> centersToConvert, MapEdits edits,
 			WarningLogger warningLogger)
@@ -1393,13 +1476,17 @@ public class IconDrawer
 
 	private double calcTreeDensityScale()
 	{
-		// The purpose of the number below is to make it so that adjusting the height of trees also adjusts the density so that the spacing
+		// The purpose of the number below is to make it so that adjusting the
+		// height of trees also adjusts the density so that the spacing
 		// between trees remains
-		// looking about the same. As for how I calculated this number, the minimum treeHeightScale is 0.1, and each tick on the tree height
+		// looking about the same. As for how I calculated this number, the
+		// minimum treeHeightScale is 0.1, and each tick on the tree height
 		// slider increases by 0.05,
-		// with the highest possible value being 0.85. So I then fitted a curve to (0.1, 12), (0.35, 2), (0.5, 1.0), (0.65, 0.6) and (0.85,
+		// with the highest possible value being 0.85. So I then fitted a curve
+		// to (0.1, 12), (0.35, 2), (0.5, 1.0), (0.65, 0.6) and (0.85,
 		// 0.3).
-		// The first point is the minimum tree height. The second is the default. The third is the old default. The fourth is the maximum.
+		// The first point is the minimum tree height. The second is the
+		// default. The third is the old default. The fourth is the maximum.
 		return 2.0 * ((71.5152) * (treeHeightScale * treeHeightScale * treeHeightScale * treeHeightScale)
 				- 178.061 * (treeHeightScale * treeHeightScale * treeHeightScale) + 164.876 * (treeHeightScale * treeHeightScale)
 				- 68.633 * treeHeightScale + 11.3855);
@@ -1418,7 +1505,8 @@ public class IconDrawer
 		addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.treeType);
 
 		// Draw trees at the neighboring corners too.
-		// Note that corners use their own Random instance because the random seed of that random needs to not depend on the center or else
+		// Note that corners use their own Random instance because the random
+		// seed of that random needs to not depend on the center or else
 		// trees would be placed differently based on which center drew first.
 		for (Corner corner : center.corners)
 		{
@@ -1469,8 +1557,9 @@ public class IconDrawer
 
 		/**
 		 * @param biomeProb
-		 *            If this is not 1.0, groups of centers of biome type "biome" will be found and each groups will have this type of
-		 *            forest with probability biomeProb.
+		 *            If this is not 1.0, groups of centers of biome type
+		 *            "biome" will be found and each groups will have this type
+		 *            of forest with probability biomeProb.
 		 */
 		public ForestType(TreeType treeType, Biome biome, double density, double biomeFrequency)
 		{
@@ -1484,7 +1573,8 @@ public class IconDrawer
 	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
 			Random rand, String groupId)
 	{
-		// Convert the forestDensity into an integer number of trees to draw such that the expected
+		// Convert the forestDensity into an integer number of trees to draw
+		// such that the expected
 		// value is forestDensity.
 		double density = forestDensity * treeDensityScale;
 		double fraction = density - (int) density;
@@ -1526,21 +1616,20 @@ public class IconDrawer
 	private IconDrawTask toIconDrawTask(FreeIcon icon, double typeLevelScale)
 	{
 		double widthFromFileName = 0;
-		if (icon.type == IconType.cities)
+		if (icon.type == IconType.cities || icon.type == IconType.decorations)
 		{
-			Map<String, Tuple2<ImageAndMasks, Integer>> cityImages = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
+			Map<String, Tuple2<ImageAndMasks, Integer>> imagesInGroup = ImageCache.getInstance(imagesPath).getIconsWithWidths(icon.type,
 					icon.groupId);
-			if (cityImages == null || cityImages.isEmpty() || !cityImages.containsKey(icon.iconName)
-					|| cityImages.get(icon.iconName) == null)
+			if (imagesInGroup == null || imagesInGroup.isEmpty() || !imagesInGroup.containsKey(icon.iconName)
+					|| imagesInGroup.get(icon.iconName) == null)
 			{
 				return null;
 			}
-			widthFromFileName = cityImages.get(icon.iconName).getSecond();
+			widthFromFileName = imagesInGroup.get(icon.iconName).getSecond();
 		}
 
 		return icon.toIconDrawTask(imagesPath, resolutionScale, typeLevelScale, getBaseWidthOrHeight(icon.type, widthFromFileName));
 	}
-
 
 	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)
 	{
@@ -1548,7 +1637,7 @@ public class IconDrawer
 		{
 			return false;
 		}
-		
+
 		if (iconTask.unScaledImageAndMasks.getOrCreateContentMask().getType() != ImageType.Binary)
 			throw new IllegalArgumentException("Mask type must be TYPE_BYTE_BINARY for checking whether icons touch water.");
 
@@ -1573,9 +1662,12 @@ public class IconDrawer
 					contentBounds.width * xScaleToScaledIconSpace, contentBounds.height * yScaleToScaledIconSpace);
 		}
 
-		// The constant in this number is in number of pixels at 100% resolution. I include the resolution here
-		// so that the loop below will make the same number of steps (approximately) no matter the resolution.
-		// This is to reduce the chances that icons will appear or disappear when you draw the map at a different resolution.
+		// The constant in this number is in number of pixels at 100%
+		// resolution. I include the resolution here
+		// so that the loop below will make the same number of steps
+		// (approximately) no matter the resolution.
+		// This is to reduce the chances that icons will appear or disappear
+		// when you draw the map at a different resolution.
 		final double stepSize = 2.0 * resolutionScale;
 
 		final double xScaleToMaskSpace = ((double) iconTask.unScaledImageAndMasks.getOrCreateContentMask().getWidth())
