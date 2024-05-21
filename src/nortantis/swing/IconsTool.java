@@ -866,6 +866,18 @@ public class IconsTool extends EditorTool
 					String cityName = selectedCity.getSecond();
 					after = before.copyWith(cityType, cityName);
 				}
+				else if (decorationsButton.isSelected())
+				{
+					Tuple2<String, String> selectedDecoration = decorationButtons.getSelectedButton();
+					if (selectedDecoration == null)
+					{
+						continue;
+					}
+
+					String type = selectedDecoration.getFirst();
+					String iconName = selectedDecoration.getSecond();
+					after = before.copyWith(type, iconName);
+				}
 				else
 				{
 					assert false;
@@ -992,7 +1004,7 @@ public class IconsTool extends EditorTool
 
 				if (updated != null)
 				{
-					boolean isValidPosition = !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
+					boolean isValidPosition = updated.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
 					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition);
 				}
 			}
@@ -1061,7 +1073,7 @@ public class IconsTool extends EditorTool
 				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(iconToEdit, updated));
 				iconToEdit = updated;
-				boolean isValidPosition = !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
+				boolean isValidPosition = updated.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
 				if (isValidPosition)
 				{
 					mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, updated);
@@ -1352,6 +1364,11 @@ public class IconsTool extends EditorTool
 		}
 
 		if (treesButton.isSelected() && icon.type == IconType.trees)
+		{
+			return true;
+		}
+		
+		if (decorationsButton.isSelected() && icon.type == IconType.decorations)
 		{
 			return true;
 		}

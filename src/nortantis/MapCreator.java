@@ -332,7 +332,7 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Draw icons
-			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, drawBounds);
+			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, oceanTextureSnippet, drawBounds);
 
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew,
 					landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer,
@@ -942,7 +942,7 @@ public class MapCreator implements WarningLogger
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		List<IconDrawTask> iconsThatDrew = iconDrawer.drawAllIcons(map, landBackground, background.land, null);
+		List<IconDrawTask> iconsThatDrew = iconDrawer.drawAllIcons(map, landBackground, background.land, background.ocean, null);
 		landBackground = null;
 
 		// Needed for drawing text

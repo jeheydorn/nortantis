@@ -704,26 +704,6 @@ public class ThemePanel extends JTabbedPane
 
 
 		organizer.addSeperator();
-		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
-		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
-		treeHeightSlider.setMajorTickSpacing(2);
-		treeHeightSlider.setMinorTickSpacing(1);
-		treeHeightSlider.setPaintTicks(true);
-		treeHeightSlider.setPaintLabels(true);
-		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
-		SwingHelper.addListener(treeHeightSlider, () ->
-		{
-			if (enableSizeSliderListeners)
-			{
-				unselectAnyIconBeingEdited();
-				triggerRebuildAllAnchoredTrees();
-				handleTerrainChange();
-			}
-		});
-		enableSizeSliderListeners = true;
-		organizer.addLabelAndComponent("Tree height:",
-				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
-
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		mountainScaleSlider.setMajorTickSpacing(2);
 		mountainScaleSlider.setMinorTickSpacing(1);
@@ -772,6 +752,28 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		organizer.addLabelAndComponent("Dune size:", "Changes the size of all sand dunes on the map", duneScaleSlider);
+		
+		
+		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
+		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
+		treeHeightSlider.setMajorTickSpacing(2);
+		treeHeightSlider.setMinorTickSpacing(1);
+		treeHeightSlider.setPaintTicks(true);
+		treeHeightSlider.setPaintLabels(true);
+		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
+		SwingHelper.addListener(treeHeightSlider, () ->
+		{
+			if (enableSizeSliderListeners)
+			{
+				unselectAnyIconBeingEdited();
+				triggerRebuildAllAnchoredTrees();
+				handleTerrainChange();
+			}
+		});
+		enableSizeSliderListeners = true;
+		organizer.addLabelAndComponent("Tree height:",
+				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
+		
 
 		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		cityScaleSlider.setMajorTickSpacing(2);

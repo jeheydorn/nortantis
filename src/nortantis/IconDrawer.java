@@ -202,8 +202,7 @@ public class IconDrawer
 	}
 
 	/**
-	 * Finds and marks mountain ranges, and groups smaller than ranges, and
-	 * surrounding hills.
+	 * Finds and marks mountain ranges, and groups smaller than ranges, and surrounding hills.
 	 */
 	public List<Set<Center>> findMountainAndHillGroups()
 	{
@@ -461,11 +460,9 @@ public class IconDrawer
 	}
 
 	/**
-	 * This is used to add icon to draw tasks from map edits rather than using
-	 * the generator to add them. Also handles Replacing the image for icons
-	 * whose image does not exist, and removing icons that should not be drawn
-	 * because their bottom would touch water. The actual drawing of the icons
-	 * is done later.
+	 * This is used to add icon to draw tasks from map edits rather than using the generator to add them. Also handles Replacing the image
+	 * for icons whose image does not exist, and removing icons that should not be drawn because their bottom would touch water. The actual
+	 * drawing of the icons is done later.
 	 * 
 	 * @return The bounds of icons that changed, if any.
 	 */
@@ -553,7 +550,7 @@ public class IconDrawer
 
 					IconDrawTask task = toIconDrawTask(updated);
 					// TODO remove the icon if it is entirely off the map.
-					
+
 					freeIcons.replace(icon, updated);
 					iconsToDraw.add(toIconDrawTask(updated));
 				}
@@ -794,12 +791,9 @@ public class IconDrawer
 	}
 
 	/**
-	 * Finds groups of centers that accepted according to a given function. A
-	 * group is a set of centers for which there exists a path from any member
-	 * of the set to any other such that you never have to skip over more than
-	 * maxGapSize centers not accepted at once to get to that other center. If
-	 * distanceThreshold > 1, the result will include those centers which
-	 * connect centeres that are accepted.
+	 * Finds groups of centers that accepted according to a given function. A group is a set of centers for which there exists a path from
+	 * any member of the set to any other such that you never have to skip over more than maxGapSize centers not accepted at once to get to
+	 * that other center. If distanceThreshold > 1, the result will include those centers which connect centeres that are accepted.
 	 */
 	private static List<Set<Center>> findCenterGroups(WorldGraph graph, int maxGapSize, Function<Center, Boolean> accept)
 	{
@@ -853,16 +847,8 @@ public class IconDrawer
 		return groups;
 	}
 
-	/**
-	 * 
-	 * = * @param mask A gray scale image which is white where the background
-	 * should be drawn, and black where the map should be drawn instead of the
-	 * background. This is necessary so that when I draw an icon that is
-	 * transparent (such as a hand drawn mountain), I cannot see other mountains
-	 * through it.
-	 */
 	private void drawIconWithBackgroundAndMask(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
-			Image landTexture, int xCenter, int yCenter)
+			Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
@@ -887,7 +873,10 @@ public class IconDrawer
 		}
 
 		int xLeft = xCenter - icon.getWidth() / 2;
-		int yBottom = yCenter - icon.getHeight() / 2;
+		int yTop = yCenter - icon.getHeight() / 2;
+
+		int graphXLeft = graphXCenter - icon.getWidth() / 2;
+		int graphYTop = graphYCenter - icon.getHeight() / 2;
 
 		for (int x : new Range(icon.getWidth()))
 		{
@@ -904,12 +893,29 @@ public class IconDrawer
 				// Find the location on the background and map where this pixel
 				// will be drawn.
 				int xLoc = xLeft + x;
-				int yLoc = yBottom + y;
+				int yLoc = yTop + y;
 				try
 				{
-					bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+					Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), false);
+					if (closest == null)
+					{
+						// The pixel isn't on the map.
+						continue;
+					}
+
+					if (type == IconType.decorations)
+					{
+						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc)) : Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc)) : Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+					}
+					else
+					{
+						bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc));
+					}
+					
 					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc));
-					landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc));
+					
 				}
 				catch (IndexOutOfBoundsException e)
 				{
@@ -945,13 +951,12 @@ public class IconDrawer
 	/**
 	 * Draws all icons in iconsToDraw that touch drawBounds.
 	 * 
-	 * I draw all the icons at once this way so that I can sort the icons by the
-	 * y-coordinate of the base of each icon. This way icons lower on the map
-	 * are drawn in front of those that are higher.
+	 * I draw all the icons at once this way so that I can sort the icons by the y-coordinate of the base of each icon. This way icons lower
+	 * on the map are drawn in front of those that are higher.
 	 * 
 	 * @return The icons that drew.
 	 */
-	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Rectangle drawBounds)
+	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanTexture, Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (IconDrawTask task : iconsToDraw)
@@ -968,8 +973,11 @@ public class IconDrawer
 		// same time and end up repeating work.
 		for (final IconDrawTask task : tasks)
 		{
-			task.unScaledImageAndMasks.getOrCreateContentMask();
-			task.unScaledImageAndMasks.getOrCreateShadingMask();
+			if (task.type != IconType.decorations)
+			{
+				task.unScaledImageAndMasks.getOrCreateContentMask();
+				task.unScaledImageAndMasks.getOrCreateShadingMask();
+			}
 		}
 
 		// Scale the icons in parallel.
@@ -994,16 +1002,16 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture,
-					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract);
+			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanTexture, task.type,
+					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
 		}
 
 		return tasks;
 	}
 
 	/**
-	 * Draws content masks on top of the land mask so that icons that protrude
-	 * over coastlines don't turn into ocean when text is drawn on top of them.
+	 * Draws content masks on top of the land mask so that icons that protrude over coastlines don't turn into ocean when text is drawn on
+	 * top of them.
 	 */
 	public void drawContentMasksOntoLandMask(Image landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
@@ -1063,11 +1071,9 @@ public class IconDrawer
 	}
 
 	/**
-	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed
-	 * where it cannot be drawn, this will un-mark it as a city.
+	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed where it cannot be drawn, this will un-mark it as a city.
 	 * 
-	 * @return IconDrawTask of each city icon added. Needed to avoid drawing
-	 *         text on top of cities.
+	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
 	 */
 	public List<IconDrawTask> addOrUnmarkCities()
 	{
@@ -1557,9 +1563,8 @@ public class IconDrawer
 
 		/**
 		 * @param biomeProb
-		 *            If this is not 1.0, groups of centers of biome type
-		 *            "biome" will be found and each groups will have this type
-		 *            of forest with probability biomeProb.
+		 *            If this is not 1.0, groups of centers of biome type "biome" will be found and each groups will have this type of
+		 *            forest with probability biomeProb.
 		 */
 		public ForestType(TreeType treeType, Biome biome, double density, double biomeFrequency)
 		{
