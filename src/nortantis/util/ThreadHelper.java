@@ -12,14 +12,12 @@ import java.util.function.Consumer;
 public class ThreadHelper
 {
 	private static ThreadHelper instance;
-	private ExecutorService fixedThreadPool;
 	private ExecutorService cachedThreadPool;
 	private final int threadCount;
 
 	private ThreadHelper()
 	{
 		threadCount = Runtime.getRuntime().availableProcessors();
-		fixedThreadPool = Executors.newFixedThreadPool(threadCount);
 		cachedThreadPool = Executors.newCachedThreadPool();
 	}
 
@@ -43,31 +41,44 @@ public class ThreadHelper
 	public void processInParallel(List<Runnable> jobs, boolean useFixedThreadPool)
 	{
 		List<Future<?>> futures = new ArrayList<Future<?>>();
-		for (Runnable job : jobs)
+		ExecutorService threadPool;
+		if (useFixedThreadPool)
+		{
+			threadPool = Executors.newFixedThreadPool(threadCount);
+		}
+		else
+		{
+			threadPool = cachedThreadPool;
+		}
+
+		try
+		{
+			for (Runnable job : jobs)
+			{
+				futures.add(threadPool.submit(job));
+			}
+
+			for (int i : new Range(jobs.size()))
+			{
+				try
+				{
+					futures.get(i).get();
+				}
+				catch (ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+				catch (InterruptedException e)
+				{
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		finally
 		{
 			if (useFixedThreadPool)
 			{
-				futures.add(fixedThreadPool.submit(job));
-			}
-			else
-			{
-				futures.add(cachedThreadPool.submit(job));
-			}
-		}
-
-		for (int i : new Range(jobs.size()))
-		{
-			try
-			{
-				futures.get(i).get();
-			}
-			catch (ExecutionException e)
-			{
-				throw new RuntimeException(e);
-			}
-			catch (InterruptedException e)
-			{
-				throw new RuntimeException(e);
+				threadPool.shutdown();
 			}
 		}
 	}
@@ -88,33 +99,45 @@ public class ThreadHelper
 	{
 		List<Future<T>> futures = new ArrayList<>();
 		List<T> results = new ArrayList<>();
-		for (Callable<T> job : jobs)
+		ExecutorService threadPool;
+		if (useFixedThreadPool)
+		{
+			threadPool = Executors.newFixedThreadPool(threadCount);
+		}
+		else
+		{
+			threadPool = cachedThreadPool;
+		}
+
+		try
+		{
+			for (Callable<T> job : jobs)
+			{
+				futures.add(threadPool.submit(job));
+			}
+
+			for (int i : new Range(jobs.size()))
+			{
+				try
+				{
+					T result = futures.get(i).get();
+					results.add(result);
+				}
+				catch (ExecutionException e)
+				{
+					throw new RuntimeException(e);
+				}
+				catch (InterruptedException e)
+				{
+					throw new RuntimeException(e);
+				}
+			}
+		}
+		finally
 		{
 			if (useFixedThreadPool)
 			{
-				futures.add(fixedThreadPool.submit(job));
-			}
-			else
-			{
-				futures.add(cachedThreadPool.submit(job));
-			}
-
-		}
-
-		for (int i : new Range(jobs.size()))
-		{
-			try
-			{
-				T result = futures.get(i).get();
-				results.add(result);
-			}
-			catch (ExecutionException e)
-			{
-				throw new RuntimeException(e);
-			}
-			catch (InterruptedException e)
-			{
-				throw new RuntimeException(e);
+				threadPool.shutdown();
 			}
 		}
 
@@ -149,28 +172,14 @@ public class ThreadHelper
 		ThreadHelper.getInstance().processInParallel(tasks, true);
 	}
 
-	public <T> Future<T> submit(Callable<T> job, boolean useFixedThreadPool)
+	public <T> Future<T> submit(Callable<T> job)
 	{
-		if (useFixedThreadPool)
-		{
-			return fixedThreadPool.submit(job);
-		}
-		else
-		{
-			return cachedThreadPool.submit(job);
-		}
+		return cachedThreadPool.submit(job);
 	}
 
-	public Future<?> submit(Runnable job, boolean useFixedThreadPool)
+	public Future<?> submit(Runnable job)
 	{
-		if (useFixedThreadPool)
-		{
-			return fixedThreadPool.submit(job);
-		}
-		else
-		{
-			return cachedThreadPool.submit(job);
-		}
+		return cachedThreadPool.submit(job);
 	}
 
 	public <T> T getResult(Future<T> task)
@@ -205,7 +214,6 @@ public class ThreadHelper
 	@Override
 	protected void finalize()
 	{
-		fixedThreadPool.shutdown();
 		cachedThreadPool.shutdown();
 	}
 }

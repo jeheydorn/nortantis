@@ -372,15 +372,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseWheelMoved(MouseWheelEvent e)
 			{
-				if (e.isControlDown())
-				{
-					MainWindow.this.handleMouseWheelChangingZoom(e);
-				}
-				else
-				{
-					Component source = (Component) e.getSource();
-					source.getParent().dispatchEvent(e);
-				}
+				MainWindow.this.handleMouseWheelChangingZoom(e);
 			}
 
 		});
@@ -804,7 +796,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				JOptionPane.showMessageDialog(MainWindow.this,
-						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: CTRL + mouse wheel</li>"
+						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: mouse wheel</li>"
 								+ "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>" + "</html>",
 						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}

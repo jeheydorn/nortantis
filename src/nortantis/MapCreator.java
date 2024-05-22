@@ -503,7 +503,7 @@ public class MapCreator implements WarningLogger
 			{
 				return mapParts.graph;
 			}
-		}, false);
+		});
 
 		Background background;
 		if (mapParts != null && mapParts.background != null)
@@ -765,7 +765,7 @@ public class MapCreator implements WarningLogger
 				}
 
 				return new Tuple2<Image, Image>(frayedBorderMask, frayedBorderBlur);
-			}, false);
+			});
 		}
 		return null;
 	}
@@ -798,7 +798,7 @@ public class MapCreator implements WarningLogger
 				darkenMiddleOfImage(settings.resolution, grunge, settings.grungeWidth);
 
 				return grunge;
-			}, false);
+			});
 		}
 		else
 		{
