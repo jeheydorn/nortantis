@@ -67,6 +67,8 @@ public class CustomImagesDialog extends JDialog
 				+ "<border type>" + File.separator + "<border images>"), space, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "cities"
 				+ File.separator + "<city type>" + File.separator + "<city images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "decorations"
+				+ File.separator + "<decoration type>" + File.separator + "<decoration images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "hills"
 				+ File.separator + "<hill type>" + File.separator + "<hill images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "mountains"
@@ -93,7 +95,6 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>If you want new maps to add hills around mountains, then for each mountain type, create a hill type with the same name.</html>"),
 				space, space, false);
-
 
 		organizer
 				.addLeftAlignedComponent(new JLabel("<html>After making changes to custom images, to get Nortantis to see those changes you"

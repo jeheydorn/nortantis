@@ -109,7 +109,8 @@ public class IconDrawer
 		mountainScale = settings.mountainScale;
 		hillScale = settings.hillScale;
 		cityScale = settings.cityScale;
-		decorationScale = 1.0; // TODO Create a setting for this if I want one
+		// I didn't create a setting for map-level decoration scale because it didn't seem very useful.
+		decorationScale = 1.0;
 
 		treeHeightScale = settings.treeHeightScale;
 		treeDensityScale = calcTreeDensityScale();
@@ -549,10 +550,17 @@ public class IconDrawer
 					FreeIcon updated = icon.copyWith(groupAndName.getFirst(), groupAndName.getSecond());
 
 					IconDrawTask task = toIconDrawTask(updated);
-					// TODO remove the icon if it is entirely off the map.
-
-					freeIcons.replace(icon, updated);
-					iconsToDraw.add(toIconDrawTask(updated));
+					
+					// Remove the icon if it is entirely off the map.
+					if (task != null && graph.bounds.overlaps(task.createBounds()))
+					{
+						freeIcons.replace(icon, updated);
+						iconsToDraw.add(toIconDrawTask(updated));
+					}
+					else
+					{
+						toRemove.add(icon);
+					}
 				}
 				else
 				{

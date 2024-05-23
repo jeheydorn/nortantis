@@ -451,7 +451,7 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
-							Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0);
+							Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
 							previewImages.add(preview);
 						}
 
@@ -602,10 +602,10 @@ public class IconsTool extends EditorTool
 		{
 			croppedImages.add(imageAndMasks.cropToContent());
 		}
-		return createIconPreview(settings, croppedImages, 30, 9);
+		return createIconPreview(settings, croppedImages, 30, 9, iconType);
 	}
 
-	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight, int padding)
+	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight, int padding, IconType iconType)
 	{
 		final int maxRowWidth = 168;
 		final int horizontalPaddingBetweenImages = 2;
@@ -649,8 +649,17 @@ public class IconsTool extends EditorTool
 		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
 				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
 						settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
-		previewImage = tuple.getThird();
-		previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
+		if (iconType == IconType.decorations)
+		{
+			previewImage = tuple.getFirst();
+			previewImage = ImageHelper.colorify(previewImage, settings.oceanColor, tuple.getSecond());
+		}
+		else
+		{
+			previewImage = tuple.getThird();	
+			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
+		}
+		
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
 
@@ -1192,7 +1201,7 @@ public class IconsTool extends EditorTool
 				}
 			}
 		}
-		else
+		else if (!(modeWidget.isDrawMode() && decorationsButton.isSelected()))
 		{
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
 			mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons, modeWidget.isEraseMode());

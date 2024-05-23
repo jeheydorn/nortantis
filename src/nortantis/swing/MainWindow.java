@@ -76,7 +76,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private boolean forceSaveAs;
 	MapSettings lastSettingsLoadedOrSaved;
 	boolean hasDrawnCurrentMapAtLeastOnce;
-	static final String frameTitleBase = "Nortantis Fantasy Maps";
+	static final String frameTitleBase = "Nortantis";
 	public MapEdits edits;
 	public JMenuItem clearEditsMenuItem;
 
@@ -1364,10 +1364,14 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void updateFrameTitle()
 	{
-		String title = frameTitleBase;
+		String title;
 		if (openSettingsFilePath != null)
 		{
-			title += " - " + FilenameUtils.getName(openSettingsFilePath.toString());
+			title = FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
+		}
+		else
+		{
+			title = frameTitleBase;
 		}
 		setTitle(title);
 	}

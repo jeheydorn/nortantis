@@ -1520,6 +1520,11 @@ public class ThemePanel extends JTabbedPane
 		{
 			return true;
 		}
+		
+		if (!oceanDisplayPanel.getColor().equals(AwtFactory.unwrap(settings.oceanColor)))
+		{
+			return true;
+		}
 
 		return false;
 	}
