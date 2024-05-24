@@ -528,7 +528,10 @@ public class IconDrawer
 					IconDrawTask task = toIconDrawTask(updated);
 					if (!isContentBottomTouchingWater(task))
 					{
-						freeIcons.replace(icon, updated);
+						if (!icon.equals(updated))
+						{
+							freeIcons.replace(icon, updated);
+						}
 						iconsToDraw.add(toIconDrawTask(updated));
 					}
 					else
@@ -554,7 +557,10 @@ public class IconDrawer
 					// Remove the icon if it is entirely off the map.
 					if (task != null && graph.bounds.overlaps(task.createBounds()))
 					{
-						freeIcons.replace(icon, updated);
+						if (!icon.equals(updated))
+						{
+							freeIcons.replace(icon, updated);
+						}
 						iconsToDraw.add(toIconDrawTask(updated));
 					}
 					else
