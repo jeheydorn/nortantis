@@ -32,7 +32,6 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.DebugFlags;
 import nortantis.IconDrawTask;
-import nortantis.IconDrawer;
 import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
