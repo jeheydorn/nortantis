@@ -1,9 +1,11 @@
 package nortantis;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -11,6 +13,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import javax.swing.JOptionPane;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -30,7 +35,9 @@ import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
+import nortantis.util.FileHelper;
 import nortantis.util.Helper;
+import nortantis.util.Logger;
 
 /**
  * For parsing and storing map settings.
@@ -167,6 +174,77 @@ public class MapSettings implements Serializable
 	public static boolean isOldPropertiesFile(String filePath)
 	{
 		return FilenameUtils.getExtension(filePath).toLowerCase().equals("properties");
+	}
+
+	public boolean hasOldCustomImagesFolderStructure()
+	{
+		if (customImagesPath == null || customImagesPath.isEmpty())
+		{
+			return false;
+		}
+		
+		if (isVersionGreaterThanOrEqualTo(version, "2.5"))
+		{
+			return false;
+		}
+
+		return isOldCustomImagesFolderStructure(customImagesPath);
+	}
+	
+	public static boolean isOldCustomImagesFolderStructure(String customImagesPath)
+	{
+		String customImagesFolder = FileHelper.replaceHomeFolderPlaceholder(customImagesPath);
+		File file = new File(customImagesFolder);
+		if (!file.exists())
+		{
+			return false;
+		}
+
+		if (!file.isDirectory())
+		{
+			return false;
+		}
+
+		File iconsFolder = Paths.get(customImagesFolder, "icons").toFile();
+		if (!iconsFolder.exists() || !iconsFolder.isDirectory())
+		{
+			return false;
+		}
+
+		boolean topFolderHasConvertedTypeFolder = Arrays.stream(IconType.values())
+				.anyMatch(type -> Paths.get(customImagesFolder, type.toString()).toFile().isDirectory());
+		if (topFolderHasConvertedTypeFolder)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	public static void convertOldCustomImagesFolder(String customImagesPath) throws IOException
+	{
+		if (!isOldCustomImagesFolderStructure(customImagesPath))
+		{
+			return;
+		}
+
+		String customImagesFolder = FileHelper.replaceHomeFolderPlaceholder(customImagesPath);
+
+		for (IconType type : IconType.values())
+		{
+			File oldTypeFile = Paths.get(customImagesFolder, "icons", type.toString()).toFile();
+			if (oldTypeFile.exists() && oldTypeFile.isDirectory())
+			{
+				FileUtils.moveDirectoryToDirectory(Paths.get(customImagesFolder, "icons", type.toString()).toFile(),
+						Paths.get(customImagesFolder).toFile(), false);
+			}
+		}
+
+		File iconsFolder = Paths.get(customImagesFolder, "icons").toFile();
+		if (iconsFolder.list().length == 0)
+		{
+			FileUtils.deleteDirectory(iconsFolder);
+		}
 	}
 
 	public void writeToFile(String filePath) throws IOException
@@ -576,7 +654,7 @@ public class MapSettings implements Serializable
 		{
 			borderWidth = 0;
 		}
-		
+
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
 		if (frayedBorderSize >= 100)
 		{
@@ -1095,8 +1173,8 @@ public class MapSettings implements Serializable
 		MapSettings other = (MapSettings) obj;
 		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
-				&& Objects.equals(borderType, other.borderType)
-				&& borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
+				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
+				&& brightnessRange == other.brightnessRange
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)

@@ -39,6 +39,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
@@ -882,6 +883,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				createOrUpdateRecentMapMenuButtons();
 			}
 			MapSettings settings = new MapSettings(openSettingsFilePath.toString());
+			convertCustomImagesFolderIfNeeded(settings);
 
 			updater.cancel();
 			updater.dowWhenMapIsNotDrawing(() ->
@@ -897,6 +899,26 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			JOptionPane.showMessageDialog(null, "Error while opening '" + absolutePath + "': " + e.getMessage(), "Error While Opening Map",
 					JOptionPane.ERROR_MESSAGE);
 			Logger.printError("Unable to open '" + absolutePath + "' due to an error:", e);
+		}
+	}
+
+	private void convertCustomImagesFolderIfNeeded(MapSettings settings)
+	{
+		if (settings.hasOldCustomImagesFolderStructure())
+		{
+			try
+			{
+				MapSettings.convertOldCustomImagesFolder(settings.customImagesPath);
+
+				JOptionPane.showMessageDialog(null, "Your custom images folder has been automatically converted to the new structure.",
+						"Custom Images Folder Converted", JOptionPane.INFORMATION_MESSAGE);
+			}
+			catch (IOException ex)
+			{
+				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
+				Logger.printError(errorMessage, ex);
+				JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
+			}
 		}
 	}
 

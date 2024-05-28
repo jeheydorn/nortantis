@@ -32,6 +32,8 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FileUtils;
 
+import nortantis.IconType;
+import nortantis.MapSettings;
 import nortantis.editor.UserPreferences;
 import nortantis.util.AssetsPath;
 import nortantis.util.FileHelper;
@@ -65,17 +67,17 @@ public class CustomImagesDialog extends JDialog
 		int spaceBetweenPaths = 2;
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "borders" + File.separator
 				+ "<border type>" + File.separator + "<border images>"), space, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "cities"
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "cities"
 				+ File.separator + "<city type>" + File.separator + "<city images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "decorations"
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "decorations"
 				+ File.separator + "<decoration type>" + File.separator + "<decoration images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "hills"
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "hills"
 				+ File.separator + "<hill type>" + File.separator + "<hill images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "mountains"
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "mountains"
 				+ File.separator + "<mountain type>" + File.separator + "<mountain images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "sand"
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "sand"
 				+ File.separator + "<dune type>" + File.separator + "<sand dune images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "icons" + File.separator + "trees"
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "trees"
 				+ File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>The names above in angle brackets are folder and file names"
@@ -223,6 +225,22 @@ public class CustomImagesDialog extends JDialog
 							"Installed images successfully copied into " + Paths.get(customImagesFolderField.getText()).toAbsolutePath(),
 							"Success", JOptionPane.INFORMATION_MESSAGE);
 				}
+				else if (MapSettings.isOldCustomImagesFolderStructure(customImagesFolderField.getText()))
+				{
+					try
+					{
+						MapSettings.convertOldCustomImagesFolder(customImagesFolderField.getText());
+
+						JOptionPane.showMessageDialog(null, "Your custom images folder has been automatically converted to the new structure.",
+								"Custom Images Folder Converted", JOptionPane.INFORMATION_MESSAGE);
+					}
+					catch (IOException ex)
+					{
+						String errorMessage = "Error while restructuring custom images folder for " + customImagesFolderField.getText() + ": " + ex.getMessage();
+						Logger.printError(errorMessage, ex);
+						JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
+					}
+				}
 
 				// If the custom images folder changed, then store the value, refresh images, and redraw the map.
 				if (isChanged)
@@ -294,7 +312,10 @@ public class CustomImagesDialog extends JDialog
 			if (isFolderEmpty)
 			{
 				FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), "borders").toFile(), folder);
-				FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), "icons").toFile(), folder);
+				for (IconType type : IconType.values())
+				{
+					FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), type.toString()).toFile(), folder);					
+				}
 				return true;
 			}
 		}
