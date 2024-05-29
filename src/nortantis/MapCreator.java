@@ -895,7 +895,9 @@ public class MapCreator implements WarningLogger
 		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
 		{
-			iconDrawer.addIcons(mountainAndHillGroups, this);
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> tuple = iconDrawer.addIcons(mountainAndHillGroups, this);
+			mountainGroups = tuple.getFirst();
+			cities = tuple.getSecond();
 		}
 
 		if (settings.drawRoads)

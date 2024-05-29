@@ -258,6 +258,10 @@ public class IconsTool extends EditorTool
 		{
 			typeButtons.buttons.get(1).getRadioButton().setSelected(true);
 		}
+		else if (typeButtons.buttons.size() > 0)
+		{
+			typeButtons.buttons.get(0).getRadioButton().setSelected(true);
+		}
 	}
 
 	private void handleModeChanged()
@@ -308,19 +312,6 @@ public class IconsTool extends EditorTool
 		ButtonGroup group = new ButtonGroup();
 		List<RadioButtonWithImage> radioButtons = new ArrayList<>();
 		List<String> groupNames = new ArrayList<>(ImageCache.getInstance(customImagesPath).getIconGroupNames(iconType));
-		if (iconType == IconType.trees && groupNames.contains("deciduous") && groupNames.contains("pine") && groupNames.contains("cacti"))
-		{
-			// Force trees used by the generator to sort first
-			List<String> temp = new ArrayList<>();
-			temp.add("cacti");
-			temp.add("deciduous");
-			temp.add("pine");
-			groupNames.remove("cacti");
-			groupNames.remove("deciduous");
-			groupNames.remove("pine");
-			temp.addAll(groupNames);
-			groupNames = temp;
-		}
 		for (String groupName : groupNames)
 		{
 			RadioButtonWithImage button = new RadioButtonWithImage(groupName, null);

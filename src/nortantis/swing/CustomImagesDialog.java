@@ -90,9 +90,8 @@ public class CustomImagesDialog extends JDialog
 				space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
-				+ " if you want new maps to use your tree type appropriately for the biomes the trees are placed in, then you must use the folder names 'cacti', 'deciduous',"
-				+ " and 'pine'. If you don't want all three of those tree types,"
-				+ " then simply don't include the folder or images for the type you don't want to use.</html>"), space, space, false);
+				+ " if you want new maps to use your tree type appropriately for the biomes the trees are placed in, then use folder names including the words 'cacti', 'deciduous',"
+				+ " and 'pine'.</html>"), space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>If you want new maps to add hills around mountains, then for each mountain type, create a hill type with the same name.</html>"),

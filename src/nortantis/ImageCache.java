@@ -198,6 +198,11 @@ public class ImageCache
 	private Map<String, Tuple2<ImageAndMasks, Integer>> loadIconsWithWidths(IconType iconType, String groupName)
 	{
 		Map<String, Tuple2<ImageAndMasks, Integer>> imagesAndMasks = new HashMap<>();
+		if (groupName == null || groupName.isEmpty())
+		{
+			return imagesAndMasks;
+		}
+		
 		String[] fileNames = getIconGroupFileNames(iconType, groupName);
 		if (fileNames.length == 0)
 		{

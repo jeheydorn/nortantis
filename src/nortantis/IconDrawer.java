@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -1095,7 +1096,7 @@ public class IconDrawer
 				cityIconTypeForNewMaps);
 		if (cityIcons.isEmpty())
 		{
-			Logger.println("Cities will not be drawn because there are no city icons.");
+			Logger.println("Cities will not be drawn because there are no city icons of type '" + cityIconTypeForNewMaps + "'.");
 			return new ArrayList<>(0);
 		}
 
@@ -1334,6 +1335,7 @@ public class IconDrawer
 		{
 			if (forest.biomeFrequency != 1.0)
 			{
+				String iconGroupId = getGroupIdForForestType(forest);
 				List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, new Function<Center, Boolean>()
 				{
 					public Boolean apply(Center center)
@@ -1350,7 +1352,7 @@ public class IconDrawer
 							if (canGenerateTreesOnCenter(c))
 							{
 								treesByCenter.put(c.index,
-										new CenterTrees(forest.treeType.toString().toLowerCase(), forest.density, c.treeSeed));
+										new CenterTrees(iconGroupId, forest.density, c.treeSeed));
 							}
 						}
 					}
@@ -1366,12 +1368,13 @@ public class IconDrawer
 			{
 				if (forest.biomeFrequency == 1.0)
 				{
+					String iconGroupId = getGroupIdForForestType(forest);
 					if (forest.biome.equals(c.biome))
 					{
 						if (canGenerateTreesOnCenter(c))
 						{
 							treesByCenter.put(c.index,
-									new CenterTrees(forest.treeType.toString().toLowerCase(), forest.density, c.treeSeed));
+									new CenterTrees(iconGroupId, forest.density, c.treeSeed));
 						}
 					}
 				}
@@ -1588,6 +1591,34 @@ public class IconDrawer
 			this.biomeFrequency = biomeFrequency;
 		}
 	};
+	
+	private String getGroupIdForForestType(ForestType forest)
+	{
+		Set<String> groups = ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.trees);
+		String keyWord = forest.treeType.toString().toLowerCase();
+		
+		if (groups == null || groups.isEmpty())
+		{
+			// No tree images.
+			return keyWord;
+		}
+		
+		// If there is a folder of tree images that with the exact name we want, then prefer that.
+		if (groups.contains(keyWord))
+		{
+			return keyWord;
+		}
+		
+		// Pick the first folder that contains the forest type name in the folder name.
+		Optional<String> optional = groups.stream().filter(groupId -> groupId.contains(keyWord)).findFirst();
+		if (optional.isPresent())
+		{
+			return optional.get();
+		}
+		
+		// When all else fails, arbitrarily pick one of the tree types.
+		return chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.trees), keyWord);
+	}
 
 	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
 			Random rand, String groupId)

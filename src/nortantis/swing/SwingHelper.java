@@ -41,7 +41,7 @@ public class SwingHelper
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 
-	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem)
+	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem, boolean forceAddSelectedItem)
 	{
 		comboBox.removeAllItems();
 		for (String item : items)
@@ -52,7 +52,14 @@ public class SwingHelper
 		{
 			if (!items.contains(selectedItem))
 			{
-				comboBox.addItem(selectedItem);
+				if (forceAddSelectedItem)
+				{
+					comboBox.addItem(selectedItem);
+				}
+				else if (items.size() > 0)
+				{
+					comboBox.setSelectedIndex(0);
+				}
 			}
 			comboBox.setSelectedItem(selectedItem);
 		}
