@@ -39,7 +39,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
@@ -797,7 +796,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				JOptionPane.showMessageDialog(MainWindow.this,
-						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: mouse wheel</li>"
+						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Mouse wheel</li>"
 								+ "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>" + "</html>",
 						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}

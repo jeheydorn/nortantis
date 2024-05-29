@@ -13,8 +13,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.swing.JOptionPane;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONArray;
@@ -37,7 +35,6 @@ import nortantis.swing.MapEdits;
 import nortantis.util.AssetsPath;
 import nortantis.util.FileHelper;
 import nortantis.util.Helper;
-import nortantis.util.Logger;
 
 /**
  * For parsing and storing map settings.
@@ -48,7 +45,7 @@ import nortantis.util.Logger;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.5";
+	public static final String currentVersion = "2.6";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;

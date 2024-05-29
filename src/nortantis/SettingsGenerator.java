@@ -44,13 +44,13 @@ public class SettingsGenerator
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
 	
-	public static MapSettings generate()
+	public static MapSettings generate(String imagesPath)
 	{
 		Random rand = new Random();
-		return generate(rand);
+		return generate(rand, imagesPath);
 	}
 
-	public static MapSettings generate(Random rand)
+	public static MapSettings generate(Random rand, String imagesPath)
 	{
 		if (!Files.exists(Paths.get(defaultSettingsFile)))
 		{
@@ -136,7 +136,7 @@ public class SettingsGenerator
 
 		final double drawBorderProbability = 0.75;
 		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
-		Set<String> borderTypes = MapCreator.getAvailableBorderTypes(settings.customImagesPath);
+		Set<String> borderTypes = MapCreator.getAvailableBorderTypes(imagesPath);
 		if (!borderTypes.isEmpty())
 		{
 			// Random border type.

@@ -72,7 +72,7 @@ public class MapCreatorTest
 	@Test
 	public void drawWithoutEditsMatchesWithEdits()
 	{
-		MapSettings settings = SettingsGenerator.generate(new Random(1));
+		MapSettings settings = SettingsGenerator.generate(new Random(1), null);
 		settings.resolution = 0.5;
 		Tuple1<Image> mapTuple = new Tuple1<>();
 		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
@@ -159,6 +159,18 @@ public class MapCreatorTest
 			}
 		}
 		return mapTuple.get();
+	}
+	
+	@Test
+	public void newRandomMapTest1()
+	{
+		generateRandomAndCompare(1);
+	}
+		
+	@Test
+	public void newRandomMapTest2()
+	{
+		generateRandomAndCompare(3);
 	}
 
 	@Test
@@ -283,10 +295,56 @@ public class MapCreatorTest
 	{
 		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + " - diff.png").toString();
 	}
+	
+	private void generateRandomAndCompare(long seed)
+	{
+		String expectedFileName = "random map for seed " + seed;
+		String expectedMapFilePath = getExpectedMapFilePath(expectedFileName);
+		Image expected;
+		if (new File(expectedMapFilePath).exists())
+		{
+			expected = ImageHelper.read(expectedMapFilePath);
+		}
+		else
+		{
+			expected = null;
+		}
+		
+		MapSettings settings = SettingsGenerator.generate(new Random(seed), null);
+		settings.resolution = 0.5;
+		MapCreator mapCreator = new MapCreator();
+		Logger.println("Creating random map to match '" + expectedFileName + "'");
+		Image actual;
+		actual = mapCreator.createMap(settings, null, null);
+
+		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
+		// more complete test that way.
+		testDeepCopy(settings);
+
+		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
+		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
+		{
+			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			ImageHelper.write(actual, getActualMapFilePath(expectedFileName));
+			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
+			fail(comparisonErrorMessage);
+		}
+		
+	}
 
 	private void generateAndCompare(String settingsFileName)
 	{
-		Image expected = ImageHelper.read(getExpectedMapFilePath(settingsFileName));
+		String expectedMapFilePath = getExpectedMapFilePath(settingsFileName);
+		Image expected;
+		if (new File(expectedMapFilePath).exists())
+		{
+			expected = ImageHelper.read(expectedMapFilePath);
+		}
+		else
+		{
+			expected = null;
+		}
+		
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
 		MapCreator mapCreator = new MapCreator();
@@ -316,6 +374,16 @@ public class MapCreatorTest
 
 	private String checkIfImagesEqual(Image image1, Image image2)
 	{
+		if (image1 == null)
+		{
+			return "Image 1 is null.";
+		}
+
+		if (image2 == null)
+		{
+			return "Image 2 is null.";
+		}
+
 		if (image1.getWidth() == image2.getWidth() && image1.getHeight() == image2.getHeight())
 		{
 			for (int x = 0; x < image1.getWidth(); x++)

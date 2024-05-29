@@ -1480,7 +1480,7 @@ public class ThemePanel extends JTabbedPane
 	private void initializeBorderTypeComboBoxItems(MapSettings settings)
 	{
 		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(settings.customImagesPath),
-				settings.borderType);
+				settings.borderType, true);
 
 	}
 

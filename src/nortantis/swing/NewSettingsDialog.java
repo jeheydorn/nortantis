@@ -73,7 +73,7 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			settings = SettingsGenerator.generate();
+			settings = SettingsGenerator.generate(null);
 		}
 		else
 		{
@@ -308,7 +308,10 @@ public class NewSettingsDialog extends JDialog
 					updatePathDisplay();
 					initializeCityTypeOptions();
 
-					updater.createAndShowMapFull(() -> ImageCache.clear());
+					updater.createAndShowMapFull(() ->
+					{
+						ImageCache.clear();
+					});
 				});
 				dialog.setLocationRelativeTo(NewSettingsDialog.this);
 				dialog.setVisible(true);
@@ -324,7 +327,7 @@ public class NewSettingsDialog extends JDialog
 	private void initializeCityTypeOptions()
 	{
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities), settings.cityIconTypeName);
+				ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities), settings.cityIconTypeName, false);
 	}
 
 	private void updatePathDisplay()
@@ -377,7 +380,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void randomizeTheme()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate();
+		MapSettings randomSettings = SettingsGenerator.generate(settings.customImagesPath);
 		settings.coastShadingLevel = randomSettings.coastShadingLevel;
 		settings.oceanEffectsLevel = randomSettings.oceanEffectsLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
@@ -424,7 +427,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void randomizeLand()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate();
+		MapSettings randomSettings = SettingsGenerator.generate(null);
 		settings.randomSeed = randomSettings.randomSeed;
 		handleMapChange();
 	}
@@ -502,8 +505,7 @@ public class NewSettingsDialog extends JDialog
 	{
 		final int additionalWidthToRemoveIDontKnowWhereItsCommingFrom = 4;
 		return new nortantis.geom.Dimension(
-				(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
-						* mapEditingPanel.osScale,
+				(mapEditingPanelContainer.getSize().width - additionalWidthToRemoveIDontKnowWhereItsCommingFrom) * mapEditingPanel.osScale,
 				(mapEditingPanelContainer.getSize().height - additionalWidthToRemoveIDontKnowWhereItsCommingFrom)
 						* mapEditingPanel.osScale);
 
