@@ -310,6 +310,11 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
+		if (drawTextDisabledLabel.isVisible())
+		{
+			return;
+		}
+		
 		isRotating = false;
 		isMoving = false;
 
@@ -395,6 +400,11 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
+		if (drawTextDisabledLabel.isVisible())
+		{
+			return;
+		}
+
 		if (lastSelected != null)
 		{
 			if (isMoving)
@@ -432,6 +442,11 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
+		if (drawTextDisabledLabel.isVisible())
+		{
+			return;
+		}
+
 		if (lastSelected != null)
 		{
 			if (isMoving)
@@ -598,6 +613,11 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
+		if (drawTextDisabledLabel.isVisible())
+		{
+			return;
+		}
+
 		if (eraseButton.isSelected())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
@@ -671,12 +691,6 @@ public class TextTool extends EditorTool
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.books = booksWidget.getSelectedBooks();
-	}
-
-	@Override
-	public boolean shouldShowTextWhenTextIsEnabled()
-	{
-		return true;
 	}
 
 	@Override

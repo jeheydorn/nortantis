@@ -1405,12 +1405,6 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	public boolean shouldShowTextWhenTextIsEnabled()
-	{
-		return true;
-	}
-
-	@Override
 	public void handleEnablingAndDisabling(MapSettings settings)
 	{
 	}

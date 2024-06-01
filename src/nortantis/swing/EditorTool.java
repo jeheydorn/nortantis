@@ -259,8 +259,6 @@ public abstract class EditorTool
 	public abstract void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange,
 			boolean changeEffectsBackgroundImages, boolean willDoImagesRefresh);
 
-	public abstract boolean shouldShowTextWhenTextIsEnabled();
-
 	public abstract void getSettingsFromGUI(MapSettings settings);
 
 	/**

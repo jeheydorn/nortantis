@@ -122,7 +122,6 @@ public class ThemePanel extends JTabbedPane
 	private RowHider textureImageHider;
 	private RowHider colorizeOceanCheckboxHider;
 	private RowHider colorizeLandCheckboxHider;
-	private RowHider textHiddenMessageHider;
 	private RowHider landColorHider;
 	private JButton btnChooseBoldBackgroundColor;
 	private JButton btnTitleFont;
@@ -999,9 +998,6 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox = new JCheckBox("Enable text");
 		enableTextCheckBox.setToolTipText("Enable/disable drawing text. When unselected, text will still exist, but will not be shown.");
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
-		textHiddenMessageHider = organizer.addLeftAlignedComponent(
-				new JLabel("<html>Text is currently hidden because the selected editing tool does not display text.</html>"));
-		showOrHideTextHiddenMessage();
 		organizer.addSeperator();
 
 		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70, () -> handleFontsChange());
@@ -1073,7 +1069,6 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				handleEnablingAndDisabling();
-				showOrHideTextHiddenMessage();
 				handleTextChange();
 			}
 		};
@@ -1083,16 +1078,6 @@ public class ThemePanel extends JTabbedPane
 		organizer.addVerticalFillerRow();
 		organizer.addLeftAlignedComponent(Box.createHorizontalStrut(100));
 		return organizer.createScrollPane();
-	}
-
-	void showOrHideTextHiddenMessage()
-	{
-		boolean currentToolSupportsText = true;
-		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null)
-		{
-			currentToolSupportsText = mainWindow.toolsPanel.currentTool.shouldShowTextWhenTextIsEnabled();
-		}
-		textHiddenMessageHider.setVisible(enableTextCheckBox.isSelected() && !currentToolSupportsText);
 	}
 
 	private void updateDrawRegionsCheckboxEnabledAndSelected()

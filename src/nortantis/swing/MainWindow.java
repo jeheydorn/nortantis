@@ -412,13 +412,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				MapSettings settings = MainWindow.this.getSettingsFromGUI(false);
 				settings.resolution = displayQualityScale;
-				if (settings.drawText)
-				{
-					if (toolsPanel.currentTool != null && !toolsPanel.currentTool.shouldShowTextWhenTextIsEnabled())
-					{
-						settings.drawText = false;
-					}
-				}
 				return settings;
 			}
 

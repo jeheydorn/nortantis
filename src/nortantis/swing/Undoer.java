@@ -112,7 +112,7 @@ public class Undoer
 		
 		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any 
 		// changes made after the latest undo point.
-		changeToUndo.settings = mainWindow.updater.getSettingsFromGUI().deepCopy();
+		changeToUndo.settings = mainWindow.getSettingsFromGUI(true);
 		
 		redoStack.push(changeToUndo);
 		MapSettings settings;
