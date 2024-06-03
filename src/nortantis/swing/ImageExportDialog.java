@@ -43,7 +43,6 @@ import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.ExportAction;
-import nortantis.editor.UserPreferences;
 import nortantis.platform.Image;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
