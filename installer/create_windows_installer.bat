@@ -22,7 +22,7 @@ jpackage ^
 --icon "taskbar icon.ico" ^
 --file-associations file_associations.txt ^
 --vendor "Joseph Heydorn" ^
---app-version "2.6" ^
+--app-version "2.7" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --license-file end_user_license_agreement.txt ^
 --java-options -Dfile.encoding=UTF-8

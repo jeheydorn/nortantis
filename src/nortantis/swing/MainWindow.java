@@ -44,6 +44,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.exception.DefaultExceptionContext;
 import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -55,6 +56,7 @@ import nortantis.MapText;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.ExportAction;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
@@ -97,6 +99,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JCheckBoxMenuItem highlightRiversButton;
 	private JScrollPane consoleOutputPane;
 	double exportResolution;
+	ExportAction defaultMapExportAction;
+	ExportAction defaultHeightmapExportAction;
 	String imageExportPath;
 	double heightmapExportResolution;
 	String heightmapExportPath;
@@ -1404,6 +1408,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, needsImagesRefresh);
+		exportResolution = settings.resolution;
+		imageExportPath = settings.imageExportPath;
+		heightmapExportResolution = settings.heightmapResolution;
+		heightmapExportPath = settings.heightmapExportPath;
 
 		updateFrameTitle();
 
@@ -1431,16 +1439,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		toolsPanel.resetZoomToDefault();
 		updater.createAndShowMapFull();
+		
+		defaultMapExportAction = settings.defaultHeightmapExportAction;
+		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
 	}
 
 	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
-		exportResolution = settings.resolution;
-		imageExportPath = settings.imageExportPath;
-		heightmapExportResolution = settings.heightmapResolution;
-		heightmapExportPath = settings.heightmapExportPath;
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
 		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
@@ -1474,6 +1481,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		// Settings which have a UI in a popup.
 		settings.resolution = exportResolution;
+		settings.defaultMapExportAction = defaultMapExportAction;
+		settings.defaultHeightmapExportAction = defaultHeightmapExportAction;
 		settings.imageExportPath = imageExportPath;
 		settings.heightmapResolution = heightmapExportResolution;
 		settings.heightmapExportPath = heightmapExportPath;
@@ -1498,7 +1507,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			settings.generatedWidth = lastSettingsLoadedOrSaved.generatedWidth;
 			settings.generatedHeight = lastSettingsLoadedOrSaved.generatedHeight;
 		}
-
+		
 		return settings;
 	}
 

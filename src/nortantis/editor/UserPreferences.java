@@ -23,9 +23,6 @@ public class UserPreferences
 	private final String userPrefsFileName = "user preferences";
 
 	public DisplayQuality editorImageQuality = DisplayQuality.Low;
-	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
-	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
-	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private ArrayDeque<String> recentMapFilePaths = new ArrayDeque<>();
 	private final int maxRecentMaps = 15;
 	public String defaultCustomImagesPath;
@@ -57,26 +54,6 @@ public class UserPreferences
 				{
 					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra") .replace(" ", "_");
 					editorImageQuality = DisplayQuality.valueOf(quality);
-				}
-				if (props.containsKey("defaultMapExportAction"))
-				{
-					try
-					{
-						defaultMapExportAction = ExportAction.valueOf(props.getProperty("defaultMapExportAction"));
-					}
-					catch (IllegalArgumentException e)
-					{
-					}
-				}
-				if (props.containsKey("defaultHeightmapExportAction"))
-				{
-					try
-					{
-						defaultHeightmapExportAction = ExportAction.valueOf(props.getProperty("defaultHeightmapExportAction"));
-					}
-					catch (IllegalArgumentException e)
-					{
-					}
 				}
 
 				if (props.containsKey("recentMapFilePaths"))
@@ -134,10 +111,6 @@ public class UserPreferences
 	{
 		Properties props = new Properties();
 		props.setProperty("editorImageQuality", editorImageQuality.toString());
-		props.setProperty("defaultMapExportAction",
-				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
-		props.setProperty("defaultHeightmapExportAction",
-				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");

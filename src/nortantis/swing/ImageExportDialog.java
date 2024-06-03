@@ -203,7 +203,7 @@ public class ImageExportDialog extends JDialog
 
 		if (type == ImageExportType.Map)
 		{
-			if (UserPreferences.getInstance().defaultMapExportAction == ExportAction.OpenInDefaultImageViewer)
+			if (mainWindow.defaultMapExportAction == ExportAction.OpenInDefaultImageViewer)
 			{
 				openInViewerRadioButton.setSelected(true);
 			}
@@ -214,7 +214,7 @@ public class ImageExportDialog extends JDialog
 		}
 		else
 		{
-			if (UserPreferences.getInstance().defaultHeightmapExportAction == ExportAction.OpenInDefaultImageViewer)
+			if (mainWindow.defaultHeightmapExportAction == ExportAction.OpenInDefaultImageViewer)
 			{
 				openInViewerRadioButton.setSelected(true);
 			}
@@ -301,11 +301,11 @@ public class ImageExportDialog extends JDialog
 
 				if (type == ImageExportType.Map)
 				{
-					UserPreferences.getInstance().defaultMapExportAction = exportAction;
+					mainWindow.defaultMapExportAction = exportAction;
 				}
 				else
 				{
-					UserPreferences.getInstance().defaultHeightmapExportAction = exportAction;
+					mainWindow.defaultHeightmapExportAction = exportAction;
 				}
 				exportButton.setEnabled(false);
 				resolutionSlider.setEnabled(false);
