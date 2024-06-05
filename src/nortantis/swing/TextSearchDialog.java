@@ -225,4 +225,9 @@ public class TextSearchDialog extends JDialog
 		searchForward.setEnabled(enable && allowSearches);
 		searchBackward.setEnabled(enable && allowSearches);
 	}
+	
+	public void selectAll()
+	{
+		searchField.selectAll();
+	}
 }
