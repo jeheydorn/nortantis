@@ -13,10 +13,12 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -72,8 +74,23 @@ public class TextSearchDialog extends JDialog
 			}
 		});
 
+		
+		// Request focus on the text field and select all when CTRL+F is pressed.
+		javax.swing.Action ctrlFAction = new javax.swing.AbstractAction()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				searchField.requestFocus();
+				searchField.selectAll();
+			}
+		};
+		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"), "ctrlF");
+		getRootPane().getActionMap().put("ctrlF", ctrlFAction);
+		
 		container.add(notFoundLabel);
 		container.add(Box.createRigidArea(new Dimension(padding, 1)));
+
 
 		final int fontSize = 24;
 		searchForward = new JButton("→");
@@ -147,8 +164,8 @@ public class TextSearchDialog extends JDialog
 				double borderWidth = mainWindow.mapEditingPanel.getBorderWidth();
 				scrollTo = scrollTo.translate(borderWidth, borderWidth);
 				scrollTo = scrollTo.scaleAboutOrigin(mainWindow.zoom * (1.0 / mainWindow.mapEditingPanel.osScale));
-				int padding = (int)(250 * (1.0 / mainWindow.mapEditingPanel.osScale));
-				scrollTo = scrollTo.pad(padding, padding); 
+				int padding = (int) (250 * (1.0 / mainWindow.mapEditingPanel.osScale));
+				scrollTo = scrollTo.pad(padding, padding);
 
 				mainWindow.mapEditingPanel.scrollRectToVisible(AwtFactory.toAwtRectangle(scrollTo));
 			}
@@ -225,7 +242,7 @@ public class TextSearchDialog extends JDialog
 		searchForward.setEnabled(enable && allowSearches);
 		searchBackward.setEnabled(enable && allowSearches);
 	}
-	
+
 	public void selectAll()
 	{
 		searchField.selectAll();
