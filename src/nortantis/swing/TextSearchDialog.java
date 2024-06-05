@@ -29,7 +29,7 @@ import nortantis.platform.awt.AwtFactory;
 @SuppressWarnings("serial")
 public class TextSearchDialog extends JDialog
 {
-	public JTextField searchField;
+	private JTextField searchField;
 	private MainWindow mainWindow;
 	private JButton searchForward;
 	private JButton searchBackward;
@@ -81,8 +81,7 @@ public class TextSearchDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				searchField.requestFocus();
-				searchField.selectAll();
+				requestFocusAndSelectAll();
 			}
 		};
 		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"), "ctrlF");
@@ -243,8 +242,9 @@ public class TextSearchDialog extends JDialog
 		searchBackward.setEnabled(enable && allowSearches);
 	}
 
-	public void selectAll()
+	public void requestFocusAndSelectAll()
 	{
+		searchField.requestFocus();
 		searchField.selectAll();
 	}
 }

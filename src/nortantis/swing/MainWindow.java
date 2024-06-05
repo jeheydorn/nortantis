@@ -1231,8 +1231,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		else
 		{
-			textSearchDialog.searchField.requestFocus();
-			textSearchDialog.selectAll();
+			textSearchDialog.requestFocusAndSelectAll();
 		}
 	}
 
