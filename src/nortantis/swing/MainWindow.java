@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
@@ -44,6 +45,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -52,10 +54,12 @@ import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.Stopwatch;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.ExportAction;
+import nortantis.editor.FreeIcon;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
@@ -490,6 +494,27 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
 			}
 
+			@Override
+			protected void onDrawSubmitted(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged,
+					List<MapText> textChanged, List<FreeIcon> iconsChanged, boolean isUndoRedo)
+			{
+				if (updateType != UpdateType.Incremental || isUndoRedo)
+				{
+					boolean isChange = settingsHaveUnsavedChanges();
+					updateFrameTitle(isChange, !isChange);
+				}
+				else if (centersChanged != null && !centersChanged.isEmpty() || edgesChanged != null && !edgesChanged.isEmpty()
+						|| textChanged != null && !textChanged.isEmpty() || iconsChanged != null && !iconsChanged.isEmpty())
+				{
+					updateFrameTitle(true, false);
+				}
+				else
+				{
+					updateFrameTitle(false, false);
+				}
+				
+			}
+
 		};
 	}
 
@@ -886,7 +911,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				loadSettingsIntoGUI(settings);
 			});
 
-			updateFrameTitle();
+			updateFrameTitle(false, true);
 		}
 		catch (Exception e)
 		{
@@ -910,7 +935,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			catch (IOException ex)
 			{
-				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
+				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": "
+						+ ex.getMessage();
 				Logger.printError(errorMessage, ex);
 				JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -1263,6 +1289,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private boolean settingsHaveUnsavedChanges()
 	{
+		if (lastSettingsLoadedOrSaved == null)
+		{
+			return true;
+		}
+
 		final MapSettings currentSettings = getSettingsFromGUI(false);
 
 		if (DebugFlags.shouldWriteBeforeAndAfterJsonWhenSavePromptShows())
@@ -1311,7 +1342,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				Logger.printError("Error while saving map.", e);
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
-			updateFrameTitle();
+			updateFrameTitle(false, true);
 		}
 	}
 
@@ -1366,7 +1397,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
 
-			updateFrameTitle();
+			updateFrameTitle(false, true);
 		}
 	}
 
@@ -1379,12 +1410,22 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		createOrUpdateRecentMapMenuButtons();
 	}
 
-	private void updateFrameTitle()
+	private boolean showUnsavedChangesSymbol = false;
+	private void updateFrameTitle(boolean isTriggeredByChange, boolean clearUnsavedChangesSymbol)
 	{
+		if (isTriggeredByChange)
+		{
+			showUnsavedChangesSymbol = true;
+		}
+		if (clearUnsavedChangesSymbol)
+		{
+			showUnsavedChangesSymbol = false;
+		}
+		
 		String title;
 		if (openSettingsFilePath != null)
 		{
-			title = FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
+			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
 		}
 		else
 		{
@@ -1412,8 +1453,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		updateFrameTitle();
-
 		setPlaceholderImage(new String[] { "Drawing map..." });
 
 		undoer.reset();
@@ -1438,7 +1477,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		toolsPanel.resetZoomToDefault();
 		updater.createAndShowMapFull();
-		
+		updateFrameTitle(false, true);
+
 		defaultMapExportAction = settings.defaultHeightmapExportAction;
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
 	}
@@ -1506,7 +1546,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			settings.generatedWidth = lastSettingsLoadedOrSaved.generatedWidth;
 			settings.generatedHeight = lastSettingsLoadedOrSaved.generatedHeight;
 		}
-		
+
 		return settings;
 	}
 
