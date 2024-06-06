@@ -498,6 +498,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			protected void onDrawSubmitted(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged,
 					List<MapText> textChanged, List<FreeIcon> iconsChanged, boolean isUndoRedo)
 			{
+				// Note - All cases below could use the first case that calls settingsHaveUnsavedChanges. The only reason I'm not doing that
+				// is to save a little on performance when doing incremental updates that are not from undo/redo.
+				// For undo/redo, I must check settingsHaveUnsavedChanges to catch the case where you undo/redo to a point you have
+				// previously saved.
 				if (updateType != UpdateType.Incremental || isUndoRedo)
 				{
 					boolean isChange = settingsHaveUnsavedChanges();
@@ -512,7 +516,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					updateFrameTitle(false, false);
 				}
-				
+
 			}
 
 		};
@@ -1411,6 +1415,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	}
 
 	private boolean showUnsavedChangesSymbol = false;
+
 	private void updateFrameTitle(boolean isTriggeredByChange, boolean clearUnsavedChangesSymbol)
 	{
 		if (isTriggeredByChange)
@@ -1421,11 +1426,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		{
 			showUnsavedChangesSymbol = false;
 		}
-		
+
 		String title;
 		if (openSettingsFilePath != null)
 		{
-			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
+			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - "
+					+ frameTitleBase;
 		}
 		else
 		{
