@@ -329,25 +329,25 @@ public abstract class MapUpdater
 
 		List<MapText> copiedText = textChanged == null ? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
-		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copiedText, iconsChanged, preRuns, postRuns, isUndoRedo);
+		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copiedText, iconsChanged, preRuns, postRuns);
 	}
 
 	/**
 	 * Redraws the map, then displays it
 	 */
 	private void innerCreateAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
-			List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns, boolean isUndoRedo)
+			List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 	{
 		if (!enabled)
 		{
 			return;
 		}
 		
-		onDrawSubmitted(updateType, centersChanged, edgesChanged, textChanged, iconsChanged, isUndoRedo);
+		onDrawSubmitted(updateType);
 
 		if (isMapBeingDrawn)
 		{
-			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, textChanged, iconsChanged, preRuns, postRuns, isUndoRedo));
+			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, textChanged, iconsChanged, preRuns, postRuns));
 			return;
 		}
 
@@ -532,7 +532,7 @@ public abstract class MapUpdater
 					if (next != null)
 					{
 						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.iconsChanged,
-								next.preRuns, next.postRuns, next.isUndoRedo);
+								next.preRuns, next.postRuns);
 					}
 
 					isMapReadyForInteractions = true;
@@ -571,8 +571,7 @@ public abstract class MapUpdater
 
 	protected abstract void onBeginDraw();
 	
-	protected void onDrawSubmitted(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
-			List<FreeIcon> iconsChanged, boolean isUndoRedo)
+	protected void onDrawSubmitted(UpdateType updateType)
 	{
 	}
 
@@ -640,7 +639,7 @@ public abstract class MapUpdater
 			edits.initializeRegionEdits(mapParts.graph.regions.values());
 		}
 	}
-
+	
 	public void setMaxMapSize(Dimension dimension)
 	{
 		maxMapSize = dimension;
@@ -655,10 +654,9 @@ public abstract class MapUpdater
 		UpdateType updateType;
 		List<Runnable> postRuns;
 		List<Runnable> preRuns;
-		boolean isUndoRedo;
 
 		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
-				List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns, boolean isUndoRedo)
+				List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 		{
 			this.updateType = updateType;
 			if (centersChanged != null)
@@ -695,8 +693,6 @@ public abstract class MapUpdater
 			{
 				this.preRuns = new ArrayList<>();
 			}
-			
-			this.isUndoRedo = isUndoRedo;
 		}
 
 		public void add(MapUpdate other)
@@ -752,8 +748,6 @@ public abstract class MapUpdater
 					iconsChanged = new ArrayList<>(iconsChanged);
 				}
 			}
-			
-			isUndoRedo = isUndoRedo || other.isUndoRedo;
 		}
 	}
 

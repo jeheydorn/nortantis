@@ -139,6 +139,17 @@ public class MapEdits implements Serializable
 		}
 		return result;
 	}
+	
+	public void purgeEmptyText()
+	{
+		for (int i = text.size() - 1; i >= 0; i--)
+		{
+			if (text.get(i).value == null || text.get(i).value.isEmpty())
+			{
+				text.remove(i);
+			}
+		}
+	}
 
 	public MapEdits deepCopy()
 	{

@@ -389,6 +389,7 @@ public class TextTool extends EditorTool
 				}
 			}
 
+			triggerPurgeEmptyText();
 			updater.createAndShowMapIncrementalUsingText(before, () ->
 			{
 				mapEditingPanel.removeProcessingAreas(areasToRemove);
@@ -536,6 +537,8 @@ public class TextTool extends EditorTool
 
 		if (selectedText == null)
 		{
+			triggerPurgeEmptyText();
+			
 			mapEditingPanel.clearTextBox();
 			editTextField.setText("");
 			editTextFieldHider.setVisible(false);
@@ -565,6 +568,20 @@ public class TextTool extends EditorTool
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;
+	}
+	
+	private void triggerPurgeEmptyText()
+	{
+		if (updater != null)
+		{
+			updater.dowWhenMapIsNotDrawing(() -> 
+			{
+				if (mainWindow.edits != null && mainWindow.edits.isInitialized())
+				{
+					mainWindow.edits.purgeEmptyText();
+				}
+			});
+		}
 	}
 
 	public MapText getTextBeingEdited()

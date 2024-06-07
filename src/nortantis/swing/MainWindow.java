@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
@@ -45,7 +44,6 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -53,13 +51,10 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
-import nortantis.MapText;
-import nortantis.Stopwatch;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.ExportAction;
-import nortantis.editor.FreeIcon;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
@@ -223,10 +218,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void windowActivated(WindowEvent e)
 			{
-				// There's a bug in Windows where all of my swing components
-				// disappear when you lock the screen and unlock it.
-				// The is a fix that works most of the time.
-				repaint();
 			}
 		});
 
@@ -467,6 +458,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					JOptionPane.showMessageDialog(MainWindow.this, "<html>" + String.join("<br>", warningMessages) + "</html>",
 							"Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
 				}
+
+				boolean isChange = settingsHaveUnsavedChanges();
+				updateFrameTitle(isChange, !isChange);
 			}
 
 			@Override
@@ -495,28 +489,15 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onDrawSubmitted(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged,
-					List<MapText> textChanged, List<FreeIcon> iconsChanged, boolean isUndoRedo)
+			protected void onDrawSubmitted(UpdateType updateType)
 			{
-				// Note - All cases below could use the first case that calls settingsHaveUnsavedChanges. The only reason I'm not doing that
-				// is to save a little on performance when doing incremental updates that are not from undo/redo.
-				// For undo/redo, I must check settingsHaveUnsavedChanges to catch the case where you undo/redo to a point you have
-				// previously saved.
-				if (updateType != UpdateType.Incremental || isUndoRedo)
+				// Incremental changes are handled in onFinishedDrawing to make the drawing more responsive and to pick up changes caused by
+				// the drawing code, such as when icons are removed because they couldn't draw in the space provided.
+				if (updateType != UpdateType.Incremental)
 				{
 					boolean isChange = settingsHaveUnsavedChanges();
 					updateFrameTitle(isChange, !isChange);
 				}
-				else if (centersChanged != null && !centersChanged.isEmpty() || edgesChanged != null && !edgesChanged.isEmpty()
-						|| textChanged != null && !textChanged.isEmpty() || iconsChanged != null && !iconsChanged.isEmpty())
-				{
-					updateFrameTitle(true, false);
-				}
-				else
-				{
-					updateFrameTitle(false, false);
-				}
-
 			}
 
 		};
@@ -1182,10 +1163,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			toolsPanel.resetToolsForNewMap();
 
 			// Erase text
-			for (MapText text : edits.text)
-			{
-				text.value = "";
-			}
+			edits.text.clear();
 
 			for (Center center : updater.mapParts.graph.centers)
 			{
