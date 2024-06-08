@@ -51,7 +51,7 @@ public class AboutDialog extends JDialog
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
 		rightPanel.setPreferredSize(new Dimension(nortantisImage.getWidth(), nortantisImage.getHeight()));
-		JLabel text = new JLabel("<html>" + "Nortantis version " + MapSettings.currentVersion + "." + "" + "<html>");
+		JLabel text = new JLabel("<html>" + "Nortantis version " + MapSettings.currentVersion + "" + "<html>");
 		rightPanel.add(text);
 
 		rightPanel.add(new JLabel(" "));

@@ -815,12 +815,6 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	public boolean shouldShowTextWhenTextIsEnabled()
-	{
-		return true;
-	}
-
-	@Override
 	public void handleEnablingAndDisabling(MapSettings settings)
 	{
 		// There's nothing to do because this tool never disables anything.

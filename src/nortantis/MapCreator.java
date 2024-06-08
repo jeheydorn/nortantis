@@ -148,6 +148,10 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
+		if (bounds == null)
+		{
+			return null;
+		}
 		return bounds.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
 	}
 
@@ -543,7 +547,7 @@ public class MapCreator implements WarningLogger
 		Image textBackground;
 		List<Set<Center>> mountainGroups;
 		List<IconDrawTask> cities;
-		if (mapParts == null || mapParts.mapBeforeAddingText == null || settings.edits.text.size() == 0)
+		if (mapParts == null || mapParts.mapBeforeAddingText == null || !settings.edits.isInitialized())
 		{
 			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background);
 
@@ -600,7 +604,7 @@ public class MapCreator implements WarningLogger
 
 		textDrawer.setMapTexts(settings.edits.text);
 
-		if (settings.edits.isInitialized() || settings.edits.text.size() > 0)
+		if (settings.edits.isInitialized())
 		{
 			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
 		}

@@ -81,6 +81,10 @@ public class IntRectangle
 	 */
 	public IntRectangle add(IntRectangle other)
 	{
+		if (other == null)
+		{
+			return this;
+		}
 		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
 				other.y + other.height);
 	}

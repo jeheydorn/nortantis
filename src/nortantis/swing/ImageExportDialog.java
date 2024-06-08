@@ -43,7 +43,6 @@ import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.ExportAction;
-import nortantis.editor.UserPreferences;
 import nortantis.platform.Image;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
@@ -203,7 +202,7 @@ public class ImageExportDialog extends JDialog
 
 		if (type == ImageExportType.Map)
 		{
-			if (UserPreferences.getInstance().defaultMapExportAction == ExportAction.OpenInDefaultImageViewer)
+			if (mainWindow.defaultMapExportAction == ExportAction.OpenInDefaultImageViewer)
 			{
 				openInViewerRadioButton.setSelected(true);
 			}
@@ -214,7 +213,7 @@ public class ImageExportDialog extends JDialog
 		}
 		else
 		{
-			if (UserPreferences.getInstance().defaultHeightmapExportAction == ExportAction.OpenInDefaultImageViewer)
+			if (mainWindow.defaultHeightmapExportAction == ExportAction.OpenInDefaultImageViewer)
 			{
 				openInViewerRadioButton.setSelected(true);
 			}
@@ -301,11 +300,11 @@ public class ImageExportDialog extends JDialog
 
 				if (type == ImageExportType.Map)
 				{
-					UserPreferences.getInstance().defaultMapExportAction = exportAction;
+					mainWindow.defaultMapExportAction = exportAction;
 				}
 				else
 				{
-					UserPreferences.getInstance().defaultHeightmapExportAction = exportAction;
+					mainWindow.defaultHeightmapExportAction = exportAction;
 				}
 				exportButton.setEnabled(false);
 				resolutionSlider.setEnabled(false);

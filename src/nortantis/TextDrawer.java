@@ -82,7 +82,7 @@ public class TextDrawer
 		this.settings = settings;
 		this.r = new Random(settings.textRandomSeed);
 
-		if (settings.edits != null && settings.edits.text != null && settings.edits.text.size() > 0)
+		if (settings.edits != null && settings.edits.text != null && settings.edits.isInitialized())
 		{
 			// Set the MapTexts in this TextDrawer to be the same object as
 			// settings.edits.text.

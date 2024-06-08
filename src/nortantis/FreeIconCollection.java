@@ -396,15 +396,54 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		}
 		FreeIconCollection other = (FreeIconCollection) obj;
 
-		return innerEquals(other);
+		boolean areEqual = innerEquals(other);
+		return areEqual;
 	}
 
 	private boolean innerEquals(FreeIconCollection other)
 	{
-		// Note - this method considers lists different if they have the same elements in different orders. If that's an issue, I'll need a
-		// different solution.
-		return Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons)
-				&& Objects.equals(anchoredTreeIcons, other.anchoredTreeIcons) && Objects.equals(nonAnchoredIcons, other.nonAnchoredIcons);
+		if (!Objects.equals(anchoredNonTreeIcons, other.anchoredNonTreeIcons))
+		{
+			return false;
+		}
+		
+		if (!anchoredTreeIcons.keySet().equals(other.anchoredTreeIcons.keySet()))
+		{
+			return false;
+		}
+		
+		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : anchoredTreeIcons.entrySet())
+		{
+			if (!areListsEqualOrderInvariant(entry.getValue(), other.anchoredTreeIcons.get(entry.getKey())))
+			{
+				return false;
+			}
+		}
+		
+		return areListsEqualOrderInvariant(nonAnchoredIcons, other.nonAnchoredIcons);
+		
+	}
+	
+	private boolean areListsEqualOrderInvariant(List<FreeIcon> list1, List<FreeIcon> list2)
+	{
+		if (list1 == null)
+		{
+			return list2 == null;
+		}
+		if (list2 == null)
+		{
+			return list1 == null;
+		}
+		
+		if (list1.size() != list2.size())
+		{
+			return false;
+		}
+		
+		HashSet<FreeIcon> set1 = new HashSet<>(list1);
+		HashSet<FreeIcon> set2 = new HashSet<>(list2);
+		boolean areEqual = set1.equals(set2);
+		return areEqual;
 	}
 
 }

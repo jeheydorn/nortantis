@@ -51,10 +51,10 @@ import com.formdev.flatlaf.FlatDarkLaf;
 import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
-import nortantis.MapText;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.ExportAction;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
@@ -97,6 +97,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JCheckBoxMenuItem highlightRiversButton;
 	private JScrollPane consoleOutputPane;
 	double exportResolution;
+	ExportAction defaultMapExportAction;
+	ExportAction defaultHeightmapExportAction;
 	String imageExportPath;
 	double heightmapExportResolution;
 	String heightmapExportPath;
@@ -216,10 +218,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void windowActivated(WindowEvent e)
 			{
-				// There's a bug in Windows where all of my swing components
-				// disappear when you lock the screen and unlock it.
-				// The is a fix that works most of the time.
-				repaint();
 			}
 		});
 
@@ -412,13 +410,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				MapSettings settings = MainWindow.this.getSettingsFromGUI(false);
 				settings.resolution = displayQualityScale;
-				if (settings.drawText)
-				{
-					if (toolsPanel.currentTool != null && !toolsPanel.currentTool.shouldShowTextWhenTextIsEnabled())
-					{
-						settings.drawText = false;
-					}
-				}
 				return settings;
 			}
 
@@ -467,6 +458,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					JOptionPane.showMessageDialog(MainWindow.this, "<html>" + String.join("<br>", warningMessages) + "</html>",
 							"Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
 				}
+
+				boolean isChange = settingsHaveUnsavedChanges();
+				updateFrameTitle(isChange, !isChange);
 			}
 
 			@Override
@@ -492,6 +486,18 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			protected Image getCurrentMapForIncrementalUpdate()
 			{
 				return AwtFactory.wrap(mapEditingPanel.mapFromMapCreator);
+			}
+
+			@Override
+			protected void onDrawSubmitted(UpdateType updateType)
+			{
+				// Incremental changes are handled in onFinishedDrawing to make the drawing more responsive and to pick up changes caused by
+				// the drawing code, such as when icons are removed because they couldn't draw in the space provided.
+				if (updateType != UpdateType.Incremental)
+				{
+					boolean isChange = settingsHaveUnsavedChanges();
+					updateFrameTitle(isChange, !isChange);
+				}
 			}
 
 		};
@@ -890,7 +896,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				loadSettingsIntoGUI(settings);
 			});
 
-			updateFrameTitle();
+			updateFrameTitle(false, true);
 		}
 		catch (Exception e)
 		{
@@ -914,7 +920,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			catch (IOException ex)
 			{
-				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": " + ex.getMessage();
+				String errorMessage = "Error while restructuring custom images folder for " + settings.customImagesPath + ": "
+						+ ex.getMessage();
 				Logger.printError(errorMessage, ex);
 				JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -1156,10 +1163,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			toolsPanel.resetToolsForNewMap();
 
 			// Erase text
-			for (MapText text : edits.text)
-			{
-				text.value = "";
-			}
+			edits.text.clear();
 
 			for (Center center : updater.mapParts.graph.centers)
 			{
@@ -1235,7 +1239,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		else
 		{
-			textSearchDialog.searchField.requestFocus();
+			textSearchDialog.requestFocusAndSelectAll();
 		}
 	}
 
@@ -1267,6 +1271,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private boolean settingsHaveUnsavedChanges()
 	{
+		if (lastSettingsLoadedOrSaved == null)
+		{
+			return true;
+		}
+
 		final MapSettings currentSettings = getSettingsFromGUI(false);
 
 		if (DebugFlags.shouldWriteBeforeAndAfterJsonWhenSavePromptShows())
@@ -1315,7 +1324,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				Logger.printError("Error while saving map.", e);
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
-			updateFrameTitle();
+			updateFrameTitle(false, true);
 		}
 	}
 
@@ -1370,7 +1379,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				JOptionPane.showMessageDialog(null, e.getMessage(), "Unable to save settings.", JOptionPane.ERROR_MESSAGE);
 			}
 
-			updateFrameTitle();
+			updateFrameTitle(false, true);
 		}
 	}
 
@@ -1383,12 +1392,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		createOrUpdateRecentMapMenuButtons();
 	}
 
-	private void updateFrameTitle()
+	private boolean showUnsavedChangesSymbol = false;
+
+	private void updateFrameTitle(boolean isTriggeredByChange, boolean clearUnsavedChangesSymbol)
 	{
+		if (isTriggeredByChange)
+		{
+			showUnsavedChangesSymbol = true;
+		}
+		if (clearUnsavedChangesSymbol)
+		{
+			showUnsavedChangesSymbol = false;
+		}
+
 		String title;
 		if (openSettingsFilePath != null)
 		{
-			title = FilenameUtils.getName(openSettingsFilePath.toString()) + " - " + frameTitleBase;
+			title = (showUnsavedChangesSymbol ? "✎ " : "") + FilenameUtils.getName(openSettingsFilePath.toString()) + " - "
+					+ frameTitleBase;
 		}
 		else
 		{
@@ -1411,8 +1432,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, needsImagesRefresh);
-
-		updateFrameTitle();
+		exportResolution = settings.resolution;
+		imageExportPath = settings.imageExportPath;
+		heightmapExportResolution = settings.heightmapResolution;
+		heightmapExportPath = settings.heightmapExportPath;
 
 		setPlaceholderImage(new String[] { "Drawing map..." });
 
@@ -1438,16 +1461,16 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		toolsPanel.resetZoomToDefault();
 		updater.createAndShowMapFull();
+		updateFrameTitle(false, true);
+
+		defaultMapExportAction = settings.defaultHeightmapExportAction;
+		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
 	}
 
 	void loadSettingsAndEditsIntoThemeAndToolsPanels(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean willDoImagesRefresh)
 	{
 		updater.setEnabled(false);
 		undoer.setEnabled(false);
-		exportResolution = settings.resolution;
-		imageExportPath = settings.imageExportPath;
-		heightmapExportResolution = settings.heightmapResolution;
-		heightmapExportPath = settings.heightmapExportPath;
 		customImagesPath = settings.customImagesPath;
 		edits = settings.edits;
 		boolean changeEffectsBackgroundImages = themePanel.loadSettingsIntoGUI(settings);
@@ -1481,6 +1504,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		// Settings which have a UI in a popup.
 		settings.resolution = exportResolution;
+		settings.defaultMapExportAction = defaultMapExportAction;
+		settings.defaultHeightmapExportAction = defaultHeightmapExportAction;
 		settings.imageExportPath = imageExportPath;
 		settings.heightmapResolution = heightmapExportResolution;
 		settings.heightmapExportPath = heightmapExportPath;

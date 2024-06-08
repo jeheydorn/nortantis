@@ -25,6 +25,7 @@ import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.ExportAction;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Point;
@@ -45,7 +46,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.6";
+	public static final String currentVersion = "2.8";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -131,9 +132,9 @@ public class MapSettings implements Serializable
 	public double hillScale = 1.0;
 	public double duneScale = 1.0;
 	public double cityScale = 1.0;
-	/**
-	 * Default values for new settings
-	 */
+	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
+	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
+	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
 
 
@@ -179,7 +180,7 @@ public class MapSettings implements Serializable
 		{
 			return false;
 		}
-		
+
 		if (isVersionGreaterThanOrEqualTo(version, "2.5"))
 		{
 			return false;
@@ -187,7 +188,7 @@ public class MapSettings implements Serializable
 
 		return isOldCustomImagesFolderStructure(customImagesPath);
 	}
-	
+
 	public static boolean isOldCustomImagesFolderStructure(String customImagesPath)
 	{
 		String customImagesFolder = FileHelper.replaceHomeFolderPlaceholder(customImagesPath);
@@ -345,6 +346,11 @@ public class MapSettings implements Serializable
 		root.put("hillScale", hillScale);
 		root.put("duneScale", duneScale);
 		root.put("cityScale", cityScale);
+		root.put("defaultMapExportAction",
+				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
+		root.put("defaultHeightmapExportAction",
+				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
+
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -700,6 +706,24 @@ public class MapSettings implements Serializable
 		if (root.containsKey("cityScale"))
 		{
 			cityScale = (double) root.get("cityScale");
+		}
+
+		if (root.containsKey("defaultMapExportAction"))
+		{
+			defaultMapExportAction = ExportAction.valueOf((String) root.get("defaultMapExportAction"));
+		}
+		else
+		{
+			defaultMapExportAction = defaultDefaultExportAction;
+		}
+
+		if (root.containsKey("defaultHeightmapExportAction"))
+		{
+			defaultHeightmapExportAction = ExportAction.valueOf((String) root.get("defaultHeightmapExportAction"));
+		}
+		else
+		{
+			defaultHeightmapExportAction = defaultDefaultExportAction;
 		}
 
 		edits = new MapEdits();
@@ -1151,7 +1175,6 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -1179,7 +1202,10 @@ public class MapSettings implements Serializable
 				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
 				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
 				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
-				&& Objects.equals(customImagesPath, other.customImagesPath) && Objects.equals(defaultRoadColor, other.defaultRoadColor)
+				&& Objects.equals(customImagesPath, other.customImagesPath)
+				&& defaultDefaultExportAction == other.defaultDefaultExportAction
+				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction
+				&& defaultMapExportAction == other.defaultMapExportAction && Objects.equals(defaultRoadColor, other.defaultRoadColor)
 				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge

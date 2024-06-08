@@ -139,6 +139,17 @@ public class MapEdits implements Serializable
 		}
 		return result;
 	}
+	
+	public void purgeEmptyText()
+	{
+		for (int i = text.size() - 1; i >= 0; i--)
+		{
+			if (text.get(i).value == null || text.get(i).value.isEmpty())
+			{
+				text.remove(i);
+			}
+		}
+	}
 
 	public MapEdits deepCopy()
 	{
@@ -170,6 +181,9 @@ public class MapEdits implements Serializable
 		return copy;
 	}
 
+	/**
+	 * Warning when re-creating this function: This must not include hasCreatedTextBounds.
+	 */
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -188,7 +202,7 @@ public class MapEdits implements Serializable
 		MapEdits other = (MapEdits) obj;
 		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits)
 				&& Objects.equals(edgeEdits, other.edgeEdits) && Objects.equals(freeIcons, other.freeIcons)
-				&& hasCreatedTextBounds == other.hasCreatedTextBounds && hasIconEdits == other.hasIconEdits
+				&& hasIconEdits == other.hasIconEdits
 				&& Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
 	}
 
