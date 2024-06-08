@@ -74,19 +74,34 @@ public class TextSearchDialog extends JDialog
 			}
 		});
 
-		
-		// Request focus on the text field and select all when CTRL+F is pressed.
-		javax.swing.Action ctrlFAction = new javax.swing.AbstractAction()
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			// Request focus on the text field and select all when CTRL+F is pressed.
+			javax.swing.Action ctrlFAction = new javax.swing.AbstractAction()
 			{
-				requestFocusAndSelectAll();
-			}
-		};
-		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"), "ctrlF");
-		getRootPane().getActionMap().put("ctrlF", ctrlFAction);
-		
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					requestFocusAndSelectAll();
+				}
+			};
+			getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control F"), "ctrlF");
+			getRootPane().getActionMap().put("ctrlF", ctrlFAction);
+		}
+
+		{
+			// Save when CTRL+S is pressed.
+			javax.swing.Action ctrlSAction = new javax.swing.AbstractAction()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					mainWindow.saveSettings(mainWindow);
+				}
+			};
+			getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control S"), "ctrlS");
+			getRootPane().getActionMap().put("ctrlS", ctrlSAction);
+		}
+
 		container.add(notFoundLabel);
 		container.add(Box.createRigidArea(new Dimension(padding, 1)));
 
