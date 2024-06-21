@@ -20,8 +20,6 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
 import nortantis.MapCreator;
-import nortantis.Stroke;
-import nortantis.WorldGraph;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;

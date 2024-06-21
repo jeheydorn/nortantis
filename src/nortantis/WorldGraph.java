@@ -2083,6 +2083,11 @@ public class WorldGraph extends VoronoiGraph
 			return Collections.emptyList();
 		}
 		
+		if (edges.size() == 1)
+		{
+			return noisyEdges.getNoisyEdge(edges.get(0).index);
+		}
+		
 		List<Point> result = new ArrayList<Point>();
 		for (int i = 0; i < edges.size(); i++)
 		{
