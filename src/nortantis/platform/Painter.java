@@ -2,6 +2,8 @@ package nortantis.platform;
 
 import java.util.List;
 
+import nortantis.Stroke;
+import nortantis.StrokeType;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 
@@ -58,7 +60,7 @@ public abstract class Painter
 
 	public abstract void setBasicStroke(float width);
 	
-	public abstract void setDashedStroke(float width);
+	public abstract void setStroke(Stroke stroke, double resolutionScale);
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
 	

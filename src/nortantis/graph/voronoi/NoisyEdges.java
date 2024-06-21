@@ -229,24 +229,24 @@ public class NoisyEdges
 	 */
 	public Edge findEdgeToFollow(Corner corner, Edge edge)
 	{
-		EdgeType type = getEdgeDrawType(edge);
+		EdgeDrawType type = getEdgeDrawType(edge);
 
-		if (type.equals(EdgeType.Region))
+		if (type.equals(EdgeDrawType.Region))
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeType.Region)
+				if (edge != other && getEdgeDrawType(other) == EdgeDrawType.Region)
 				{
 					return other;
 				}
 			}
 			return null;
 		}
-		else if (type.equals(EdgeType.Coast))
+		else if (type.equals(EdgeDrawType.Coast))
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeType.Coast)
+				if (edge != other && getEdgeDrawType(other) == EdgeDrawType.Coast)
 				{
 					return other;
 				}
@@ -254,11 +254,11 @@ public class NoisyEdges
 			return null;
 
 		}
-		else if (type.equals(EdgeType.River))
+		else if (type.equals(EdgeDrawType.River))
 		{
 			// Follow the largest river other than the one we came from. That way small rivers branch off of large ones, instead of the other
 			// way round.
-			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> edge != other && getEdgeDrawType(other) == EdgeType.River)
+			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> edge != other && getEdgeDrawType(other) == EdgeDrawType.River)
 					.max((e1, e2) -> Integer.compare(e1.river, e2.river));
 			if (optional.isPresent())
 			{
@@ -267,11 +267,11 @@ public class NoisyEdges
 
 			return null;
 		}
-		else if (type.equals(EdgeType.FrayedBorder))
+		else if (type.equals(EdgeDrawType.FrayedBorder))
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeType.FrayedBorder)
+				if (edge != other && getEdgeDrawType(other) == EdgeDrawType.FrayedBorder)
 				{
 					return other;
 				}
@@ -291,20 +291,20 @@ public class NoisyEdges
 	 */
 	private int getNoisyEdgeMinLength(Edge edge)
 	{
-		EdgeType type = getEdgeDrawType(edge);
-		if (type.equals(EdgeType.Region))
+		EdgeDrawType type = getEdgeDrawType(edge);
+		if (type.equals(EdgeDrawType.Region))
 		{
 			return 3;
 		}
-		if (type.equals(EdgeType.Coast))
+		if (type.equals(EdgeDrawType.Coast))
 		{
 			return 3;
 		}
-		if (type.equals(EdgeType.River))
+		if (type.equals(EdgeDrawType.River))
 		{
 			return 2;
 		}
-		if (type.equals(EdgeType.FrayedBorder))
+		if (type.equals(EdgeDrawType.FrayedBorder))
 		{
 			return 3;
 		}
@@ -312,43 +312,38 @@ public class NoisyEdges
 		return 1000; // A number big enough to not create noisy edges
 	}
 
-	private EdgeType getEdgeDrawType(Edge edge)
+	public EdgeDrawType getEdgeDrawType(Edge edge)
 	{
 		// Changes to this method will likely also need to update MapCreator.applyCenterEdits where it sets needsRebuild.
 		if (isForFrayedBorder)
 		{
 			if (edge.d0.isBorder != edge.d1.isBorder)
 			{
-				return EdgeType.FrayedBorder;
+				return EdgeDrawType.FrayedBorder;
 			}
 		}
 		else
 		{
 			if (edge.d0.isWater != edge.d1.isWater)
 			{
-				return EdgeType.Coast;
+				return EdgeDrawType.Coast;
 			}
 			if (edge.isRiver() && !edge.isOceanOrLakeOrShore())
 			{
-				return EdgeType.River;
+				return EdgeDrawType.River;
 			}
 			if (((edge.d0.region == null) != (edge.d1.region == null)) || edge.d0.region != null && edge.d0.region.id != edge.d1.region.id)
 			{
-				return EdgeType.Region;
+				return EdgeDrawType.Region;
 			}
 		}
 
-		return EdgeType.None;
-	}
-
-	private enum EdgeType
-	{
-		None, Region, Coast, River, FrayedBorder
+		return EdgeDrawType.None;
 	}
 
 	private boolean shouldDrawEdge(Edge edge)
 	{
-		return getEdgeDrawType(edge) != EdgeType.None;
+		return getEdgeDrawType(edge) != EdgeDrawType.None;
 	}
 
 	public List<Point> getNoisyEdge(int edgeIndex)

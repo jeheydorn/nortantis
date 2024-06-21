@@ -20,6 +20,8 @@ import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
 import nortantis.MapCreator;
+import nortantis.Stroke;
+import nortantis.WorldGraph;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -123,7 +125,7 @@ public abstract class VoronoiGraph
 			assignBiomes();
 		}
 	}
-	
+
 	private void setupRandomSeeds(Random rand)
 	{
 		for (Center c : centers)
@@ -133,7 +135,8 @@ public abstract class VoronoiGraph
 
 		for (Edge e : edges)
 		{
-			e.noisyEdgesSeed = rand.nextLong();;
+			e.noisyEdgesSeed = rand.nextLong();
+			;
 		}
 	}
 
@@ -495,7 +498,7 @@ public abstract class VoronoiGraph
 			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
 				float currentWidth = calcRiverStrokeWidth(e);
-				
+
 				Edge fromEdge = null;
 				if (e.v0 != null)
 				{
@@ -509,7 +512,7 @@ public abstract class VoronoiGraph
 					toEdge = noisyEdges.findEdgeToFollow(e.v1, e);
 				}
 				float toWidth = (toEdge == null || !toEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(toEdge);
-				
+
 				drawPathWithSmoothLineTransitions(g, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
 			}
 		}
@@ -519,12 +522,12 @@ public abstract class VoronoiGraph
 			g.setTransform(orig);
 		}
 	}
-	
+
 	private float calcRiverStrokeWidth(Edge e)
 	{
 		return Math.max(1, (int) (resolutionScale * Math.sqrt(e.river * 0.5)));
 	}
-	
+
 	protected void drawUsingTriangles(Painter g, Center c, boolean drawElevation)
 	{
 		// Only used if Center c is on the edge of the graph. allows for
@@ -693,10 +696,10 @@ public abstract class VoronoiGraph
 		float previousWidth = widthAtStart;
 		List<Point> pathSoFar = new ArrayList<Point>();
 		pathSoFar.add(path.get(0));
-		
+
 		float pathLength = getPathLength(path);
 		float lengthSoFar = 0;
-		
+
 		for (int i = 1; i < path.size(); i++)
 		{
 			float width;
@@ -711,67 +714,71 @@ public abstract class VoronoiGraph
 				float ratio = distanceRatio - 0.5f;
 				width = (1f - ratio) * currentEdgeWidth + ratio * widthAtEnd;
 			}
-			
+
 			pathSoFar.add(path.get(i));
 			if (width != previousWidth)
 			{
 				p.setBasicStroke(width);
 				drawPolyline(p, pathSoFar);
 				pathSoFar.add(path.get(i));
-			}			
-			
+			}
+
 			lengthSoFar += (float) path.get(i - 1).distanceTo(path.get(i));
 		}
-		
+
 		if (pathSoFar.size() > 1)
 		{
 			p.setBasicStroke(widthAtEnd);
 			drawPolyline(p, pathSoFar);
 		}
 	}
-	
+
 	private float getPathLength(List<Point> path)
 	{
 		if (path.size() < 2)
 		{
 			return 0;
 		}
-		
+
 		float length = 0;
 		for (int i = 1; i < path.size(); i++)
 		{
-			length += (float) path.get(i-1).distanceTo(path.get(i));
+			length += (float) path.get(i - 1).distanceTo(path.get(i));
 		}
-		
+
 		return length;
 	}
 
-	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public Set<Center> getCentersFromEdges(Set<Edge> edges)
 	{
-		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
-	}
-
-	public void drawCoastlineWithLakeShores(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
-	{
-		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
-	}
-
-	public void drawRegionBorders(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
-	{
-		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge ->
+		Set<Center> centers = new HashSet<Center>();
+		for (Edge edge : edges)
 		{
-			if (ignoreRiverEdges && edge.isRiver())
+			if (edge.d0 != null)
 			{
-				// Don't draw region boundaries where there are rivers.
-				return false;
+				centers.add(edge.d0);
 			}
 
-			return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
-		});
+			if (edge.d1 != null)
+			{
+				centers.add(edge.d1);
+			}
+		}
+
+		return centers;
 	}
 
-	private void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
+	public Set<Edge> getEdgesFromCenters(Collection<Center> centers)
+	{
+		Set<Edge> edges = new HashSet<>();
+		for (Center center : centers)
+		{
+			edges.addAll(center.borders);
+		}
+		return edges;
+	}
+
+	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
 			Function<Edge, Boolean> shouldDraw)
 	{
 		if (centersToDraw == null)
@@ -823,8 +830,8 @@ public abstract class VoronoiGraph
 		List<Point> path = noisyEdges.getNoisyEdge(edge.index);
 		drawPolyline(p, path);
 	}
-	
-	private void drawPolyline(Painter p, List<Point> line)
+
+	protected void drawPolyline(Painter p, List<Point> line)
 	{
 		int[] xPoints = new int[line.size()];
 		int[] yPoints = new int[line.size()];
