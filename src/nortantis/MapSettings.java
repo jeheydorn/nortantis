@@ -114,6 +114,8 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
+	// TODO Make this a setting, and save and load it.
+	public Stroke regionBorderStyle = new Stroke(StrokeType.Dashed, (float) MapCreator.calcSizeMultipilerFromResolutionScale(1.0));
 	/**
 	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
 	 * images to use. But the editor now allows selecting city images of any type.
