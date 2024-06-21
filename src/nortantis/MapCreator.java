@@ -194,7 +194,7 @@ public class MapCreator implements WarningLogger
 
 		if (edgesChanged != null)
 		{
-			centersChanged.addAll(getCentersFromEdges(mapParts.graph, edgesChanged));
+			centersChanged.addAll(mapParts.graph.getCentersFromEdges(edgesChanged));
 		}
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 
@@ -305,10 +305,10 @@ public class MapCreator implements WarningLogger
 			{
 				Painter g = mapSnippet.createPainter();
 				g.setColor(settings.coastlineColor);
-				mapParts.graph.drawRegionBorders(g, sizeMultiplier, true, centersToDraw, drawBounds);
+				mapParts.graph.drawRegionBorders(g, settings.regionBorderStyle, settings.resolution, centersToDraw, drawBounds);
 			}
 
-			Set<Edge> edgesToDraw = getEdgesFromCenters(mapParts.graph, centersToDraw);
+			Set<Edge> edgesToDraw = mapParts.graph.getEdgesFromCenters(centersToDraw);
 			drawRivers(settings, mapParts.graph, mapSnippet, edgesToDraw, drawBounds);
 
 			// Draw ocean
@@ -882,8 +882,7 @@ public class MapCreator implements WarningLogger
 			{
 				Painter g = map.createPainter();
 				g.setColor(settings.coastlineColor);
-				double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
-				graph.drawRegionBorders(g, sizeMultiplier, true, null, null);
+				graph.drawRegionBorders(g, settings.regionBorderStyle, settings.resolution, null, null);
 			}
 		}
 
@@ -1038,7 +1037,7 @@ public class MapCreator implements WarningLogger
 				if (settings.drawRegionColors)
 				{
 					p.setColor(Color.white);
-					graph.drawRegionBorders(p, sizeMultiplier, false, centersToDraw, drawBounds);
+					graph.drawRegionBordersSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
 					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
 
 				}
@@ -1716,35 +1715,6 @@ public class MapCreator implements WarningLogger
 				settings.generatedHeight * settings.heightmapResolution).toIntDimension();
 		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
-	}
-
-	private Set<Center> getCentersFromEdges(WorldGraph graph, Set<Edge> edges)
-	{
-		Set<Center> centers = new HashSet<Center>();
-		for (Edge edge : edges)
-		{
-			if (edge.d0 != null)
-			{
-				centers.add(edge.d0);
-			}
-
-			if (edge.d1 != null)
-			{
-				centers.add(edge.d1);
-			}
-		}
-
-		return centers;
-	}
-
-	private Set<Edge> getEdgesFromCenters(WorldGraph graph, Collection<Center> centers)
-	{
-		Set<Edge> edges = new HashSet<>();
-		for (Center center : centers)
-		{
-			edges.addAll(center.borders);
-		}
-		return edges;
 	}
 
 	private List<CenterEdit> getCenterEditsForCenters(MapEdits edits, Collection<Center> centers)

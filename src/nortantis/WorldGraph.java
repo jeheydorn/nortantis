@@ -1,5 +1,6 @@
 package nortantis;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.EdgeDrawType;
 import nortantis.graph.voronoi.NoisyEdges;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
@@ -35,6 +37,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.Transform;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 
@@ -1969,5 +1972,235 @@ public class WorldGraph extends VoronoiGraph
 		});
 		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
 		return cSize;
+	}
+	
+	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
+	}
+
+	public void drawCoastlineWithLakeShores(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
+	}
+
+	public void drawRegionBordersSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
+			Rectangle drawBounds)
+	{
+		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge ->
+		{
+			if (ignoreRiverEdges && edge.isRiver())
+			{
+				// Don't draw region boundaries where there are rivers.
+				return false;
+			}
+
+			return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
+		});
+	}
+
+	public void drawRegionBorders(Painter p, Stroke stroke, double resolutionScale, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+
+		p.setStroke(stroke, resolutionScale);
+
+		if (stroke.type == StrokeType.Solid)
+		{
+			drawSpecifiedEdges(p, Math.max(1, stroke.width * resolutionScale), centersToDraw, drawBounds, edge ->
+			{
+				if (edge.isRiver())
+				{
+					// Don't draw region boundaries where there are rivers.
+					return false;
+				}
+	
+				return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
+			});
+		}
+		else
+		{
+			// TODO
+			Set<Edge> found = new HashSet<>();
+			for (Center center : (centersToDraw == null ? centers : centersToDraw))
+			{
+				for (Edge edge : center.borders)
+				{
+					List<Edge> regionBoundary = findPath(found, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Region);
+					if (regionBoundary == null || regionBoundary.isEmpty())
+					{
+						continue;
+					}
+					else
+					{
+						List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
+						
+						if (DebugFlags.drawRegionBoundaryPathJoins() && drawPoints.size() > 0)
+						{
+							Color color = p.getColor();
+							p.setColor(Color.red);
+							p.setBasicStroke(1f * (float) resolutionScale);
+							final int diameter = (int)(8.0 * resolutionScale); 
+							
+							p.drawOval((int)(drawPoints.get(0).x) - diameter/2, (int)(drawPoints.get(0).y) - diameter/2, diameter, diameter);
+							
+							p.setColor(color);
+							p.setStroke(stroke, resolutionScale);
+						}
+						
+						drawPolyline(p, drawPoints);
+					}
+				}
+			}
+		}
+
+		if (drawBounds != null)
+		{
+			p.setTransform(orig);
+		}
+	}
+	
+	private List<Point> edgeListToDrawPoints(List<Edge> edges)
+	{
+		if (edges.isEmpty())
+		{
+			return Collections.emptyList();
+		}
+		
+		if (edges.size() == 1)
+		{
+			return noisyEdges.getNoisyEdge(edges.get(0).index);
+		}
+		
+		List<Point> result = new ArrayList<Point>();
+		for (int i = 0; i < edges.size(); i++)
+		{
+			Edge current = edges.get(i);
+			if (current.v0 == null || current.v1 == null)
+			{
+				continue;
+			}
+			
+			boolean reverse;
+			if (i == 0)
+			{
+				Edge next = edges.get(i + 1);
+				if (current.v0 == next.v0 || current.v0 == next.v1)
+				{
+					reverse = true;
+				}
+				else
+				{
+					reverse = false;
+				}				
+			}
+			else
+			{
+				Edge prev = edges.get(i - 1);
+				if (current.v1 == prev.v0 || current.v1 == prev.v1)
+				{
+					reverse = true;
+				}
+				else
+				{
+					reverse = false;
+				}
+			}
+			
+			addEdgePoints(result, current, reverse);
+		}
+		
+		return result;
+	}
+	
+	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse)
+	{
+		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
+		if (noisyEdge == null)
+		{
+			if (reverse)
+			{
+				points.add(edge.v1.loc);
+				points.add(edge.v0.loc);
+			}
+			else
+			{
+				points.add(edge.v0.loc);
+				points.add(edge.v1.loc);
+			}
+		}
+		else
+		{
+			if (reverse)
+			{
+				noisyEdge = new ArrayList<>(noisyEdge);
+				Collections.reverse(noisyEdge);
+			}
+			points.addAll(noisyEdge);
+		}
+	}
+
+	/**
+	 * Given an edge start start at, this returns an ordered sequence of edges in the path that edge is included in.
+	 * 
+	 * @param start Where to start to search. Not necessarily the start of the path we're searching for.
+	 * @param accept
+	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
+	 *            returned.
+	 * @return A list of edges forming a path.
+	 */
+	private List<Edge> findPath(Set<Edge> found, Edge start, Function<Edge, Boolean> accept)
+	{
+		if (start == null || !accept.apply(start))
+		{
+			return null;
+		}
+		
+		ArrayDeque<Edge> deque = new ArrayDeque<>();
+		deque.add(start);
+		found.add(start);
+		
+		// TODO I need a consistent way to decide which direction to follow even for incremental drawing. Probably do something like TextDrawer.findRiver
+		
+		if (start.v0 != null)
+		{
+			Edge e = start;
+			
+			while (true)
+			{
+				Edge next = noisyEdges.findEdgeToFollow(e.v0, e);
+				if (next == null || !accept.apply(next) || found.contains(next))
+				{
+					break;
+				}
+				deque.addFirst(next);
+				found.add(next);
+				e = next;
+			}
+		}
+		
+		if (start.v1 != null)
+		{
+			Edge e = start;
+			while (true)
+			{
+				Edge next = noisyEdges.findEdgeToFollow(e.v1, e);
+				if (next == null || !accept.apply(next) || found.contains(next))
+				{
+					break;
+				}
+				deque.addLast(next);
+				found.add(next);
+				e = next;
+			}
+		}
+		
+		return new ArrayList<>(deque);
 	}
 }

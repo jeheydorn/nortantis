@@ -31,6 +31,8 @@ public class DebugFlags
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 	
 	private static int[] indexesOfCentersToHighlight = new int[] {};
+
+	private static boolean drawRegionBoundaryPathJoins = true;
 	
 	
 	public static boolean showIncrementalUpdateBounds()
@@ -70,6 +72,11 @@ public class DebugFlags
 	public static boolean printIconBeingEdited()
 	{
 		return !AssetsPath.isInstalled && printIconBeingEdited;
+	}
+	
+	public static boolean drawRegionBoundaryPathJoins()
+	{
+		return !AssetsPath.isInstalled && drawRegionBoundaryPathJoins;
 	}
 	
 }
