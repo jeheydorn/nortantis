@@ -2,6 +2,8 @@ package nortantis.platform.awt;
 
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.awt.image.DataBufferInt;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 
@@ -127,9 +129,42 @@ class AwtImage extends Image
 	}
 
 	@Override
+	public int getRGB(int[] data, int x, int y)
+	{
+		return data[(y * image.getWidth()) + x];
+	}
+
+	@Override
 	public void setRGB(int x, int y, int rgb)
 	{
 		image.setRGB(x, y, rgb);
+	}
+	
+
+	@Override
+	public void setRGB(int x, int y, int red, int green, int blue)
+	{
+		setRGB(x, y, (red << 16) | (green << 8) | blue);
+	}
+
+	@Override
+	public void setRGB(int[] data, int x, int y, int red, int green, int blue)
+	{
+		//setRGB(x, y, red, green, blue);
+		data[(y * image.getWidth()) + x] = (red << 16) | (green << 8) | blue;
+	}
+	
+	@Override
+	public void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha)
+	{
+		//setRGB(x, y, red, green, blue, alpha);
+		data[(y * image.getWidth()) + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
+	}
+
+	@Override
+	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
+	{
+		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
 	}
 
 	@Override
@@ -249,22 +284,21 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public void setRGB(int x, int y, int red, int green, int blue)
-	{
-		setRGB(x, y, (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
-	public void setRGB(int x, int y, int red, int green, int blue, int alpha)
-	{
-		setRGB(x, y, (alpha << 24) | (red << 16) | (green << 8) | blue);
-	}
-
-	@Override
 	public void setAlpha(int x, int y, int alpha)
 	{
 		int newColor = image.getRGB(x, y) | (alpha << 24);
 		setRGB(x, y, newColor);
 	}
 
+	@Override
+	public int[] getDataIntBased()
+	{
+		return ((DataBufferInt)raster.getDataBuffer()).getData();
+	}
+	
+	@Override 
+	public boolean isIntBased()
+	{
+		return raster.getDataBuffer() instanceof DataBufferInt;
+	}
 }
