@@ -31,8 +31,14 @@ public class DebugFlags
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 	
 	private static int[] indexesOfCentersToHighlight = new int[] {};
+	
+	private static int[] indexesOfEdgesToHighlight = new int[] {};
 
 	private static boolean drawRegionBoundaryPathJoins = true;
+	
+	private static boolean drawCorners = false;
+	
+	private static boolean drawVoronoi = false;
 	
 	
 	public static boolean showIncrementalUpdateBounds()
@@ -64,6 +70,15 @@ public class DebugFlags
 		return indexesOfCentersToHighlight;
 	}
 	
+	public static int[] getIndexesOfEdgesToHighlight()
+	{
+		if (AssetsPath.isInstalled)
+		{
+			return new int[] {};
+		}
+		return indexesOfEdgesToHighlight;
+	}
+	
 	public static boolean shouldWriteBeforeAndAfterJsonWhenSavePromptShows()
 	{
 		return !AssetsPath.isInstalled && writeBeforeAndAfterJsonWhenSavePromptShows;
@@ -77,6 +92,16 @@ public class DebugFlags
 	public static boolean drawRegionBoundaryPathJoins()
 	{
 		return !AssetsPath.isInstalled && drawRegionBoundaryPathJoins;
+	}
+	
+	public static boolean drawCorners()
+	{
+		return !AssetsPath.isInstalled && drawCorners;
+	}
+	
+	public static boolean drawVoronoi()
+	{
+		return !AssetsPath.isInstalled && drawVoronoi;
 	}
 	
 }
