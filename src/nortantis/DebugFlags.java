@@ -31,6 +31,8 @@ public class DebugFlags
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 	
 	private static int[] indexesOfCentersToHighlight = new int[] {};
+	
+	private static int[] indexesOfEdgesToHighlight = new int[] {};
 
 	private static int[] indexesOfEdgesToHighlight = new int[] {};
 
