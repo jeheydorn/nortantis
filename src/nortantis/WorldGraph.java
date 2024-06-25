@@ -2019,6 +2019,11 @@ public class WorldGraph extends VoronoiGraph
 			{
 				for (Edge edge : center.borders)
 				{
+					if (found.contains(edge))
+					{
+						continue;
+					}
+					
 					List<Edge> regionBoundary = findPath(found, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Region);
 					if (regionBoundary == null || regionBoundary.isEmpty())
 					{
