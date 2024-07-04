@@ -286,7 +286,7 @@ public class MapCreatorTest
 		return Paths.get("unit test files", "expected maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
 	}
 
-	private static String getActualMapFilePath(String settingsFileName)
+	private static String getFailedMapFilePath(String settingsFileName)
 	{
 		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + ".png").toString();
 	}
@@ -316,6 +316,13 @@ public class MapCreatorTest
 		Logger.println("Creating random map to match '" + expectedFileName + "'");
 		Image actual;
 		actual = mapCreator.createMap(settings, null, null);
+		
+		if (expected == null)
+		{
+			// Create the expected map from the actual one.
+			expected = actual;
+			ImageHelper.write(actual, getExpectedMapFilePath(expectedFileName));
+		}
 
 		// Test deep copy after creating the map because MapCreator sets some fields during map creation, so it's a
 		// more complete test that way.
@@ -325,7 +332,7 @@ public class MapCreatorTest
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			ImageHelper.write(actual, getActualMapFilePath(expectedFileName));
+			ImageHelper.write(actual, getFailedMapFilePath(expectedFileName));
 			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
 			fail(comparisonErrorMessage);
 		}
@@ -360,7 +367,7 @@ public class MapCreatorTest
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
 			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
-			ImageHelper.write(actual, getActualMapFilePath(settingsFileName));
+			ImageHelper.write(actual, getFailedMapFilePath(settingsFileName));
 			createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName);
 			fail(comparisonErrorMessage);
 		}
