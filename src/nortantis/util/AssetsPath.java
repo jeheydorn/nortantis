@@ -3,7 +3,8 @@ package nortantis.util;
 public class AssetsPath
 {
 	/**
-	 * This flag is set by hand to tell assets to look for files in the install folder for the system rather than in a relative folder.
+	 * This flag is set by hand to tell assets to look for files in the install
+	 * folder for the system rather than in a relative folder.
 	 */
 	public static boolean isInstalled = false;
 
@@ -11,18 +12,7 @@ public class AssetsPath
 
 	static
 	{
-		if (isWindows())
-		{
-			if (isInstalled)
-			{
-				installPath = "C:\\Program Files\\Nortantis\\app\\assets";
-			}
-			else
-			{
-				installPath = "assets";
-			}
-		}
-		else if (isMac())
+		if (isMac())
 		{
 			// Installers are not supported for Mac.
 			installPath = "assets";
@@ -39,6 +29,20 @@ public class AssetsPath
 			}
 
 		}
+		else
+		{
+			// Windows. Note that I'm not checking isWindows() because I've seen
+			// it fail to detect Windows, and because something needs to be the
+			// default.
+			if (isInstalled)
+			{
+				installPath = "C:\\Program Files\\Nortantis\\app\\assets";
+			}
+			else
+			{
+				installPath = "assets";
+			}
+		}
 
 		if (isInstalled)
 		{
@@ -47,7 +51,7 @@ public class AssetsPath
 		}
 
 	}
-	
+
 	public static boolean isLinux()
 	{
 		String OS = System.getProperty("os.name").toUpperCase();
@@ -59,7 +63,7 @@ public class AssetsPath
 		String OS = System.getProperty("os.name").toUpperCase();
 		return OS.contains("WIN");
 	}
-	
+
 	public static boolean isMac()
 	{
 		String OS = System.getProperty("os.name").toUpperCase();
