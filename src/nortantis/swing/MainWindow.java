@@ -44,6 +44,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.imgscalr.Scalr.Method;
 
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -127,7 +128,21 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		Logger.setLoggerTarget(this);
 
-		createGUI();
+		try
+		{
+			createGUI();
+		}
+		catch (Exception ex)
+		{
+			try
+			{
+				JOptionPane.showMessageDialog(null, "Unnable to create GUI because of error: " + ex.getMessage() + "\n\n" + ExceptionUtils.getStackTrace(ex), "Error", JOptionPane.ERROR_MESSAGE);
+			}
+			catch(Exception inner)
+			{
+			}
+			throw ex;
+		}
 
 		boolean isMapOpen = false;
 		try
@@ -471,8 +486,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
 						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
-				// In theory, enabling fields now could lead to the undoer not working quite right since edits might not have been created.
-				// But leaving fields disabled makes the user unable to fix the error.
+				// In theory, enabling fields now could lead to the undoer not
+				// working quite right since edits might not have been created.
+				// But leaving fields disabled makes the user unable to fix the
+				// error.
 				enableOrDisableFieldsThatRequireMap(true, MainWindow.this.getSettingsFromGUI(false));
 			}
 
@@ -491,8 +508,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			protected void onDrawSubmitted(UpdateType updateType)
 			{
-				// Incremental changes are handled in onFinishedDrawing to make the drawing more responsive and to pick up changes caused by
-				// the drawing code, such as when icons are removed because they couldn't draw in the space provided.
+				// Incremental changes are handled in onFinishedDrawing to make
+				// the drawing more responsive and to pick up changes caused by
+				// the drawing code, such as when icons are removed because they
+				// couldn't draw in the space provided.
 				if (updateType != UpdateType.Incremental)
 				{
 					boolean isChange = settingsHaveUnsavedChanges();
@@ -1005,18 +1024,24 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (incrementalChangeArea == null)
 				{
-					// It's important that this image scaling is done using the same method as the incremental case below
-					// (when incrementalChangeArea != null), or at least close enough that people can't tell the difference.
-					// The reason is that the incremental case will update pieces of the image created below.
-					// I don't use ImageHelper.scaleInto for the full image case because it's 5x slower than the below
+					// It's important that this image scaling is done using the
+					// same method as the incremental case below
+					// (when incrementalChangeArea != null), or at least close
+					// enough that people can't tell the difference.
+					// The reason is that the incremental case will update
+					// pieces of the image created below.
+					// I don't use ImageHelper.scaleInto for the full image case
+					// because it's 5x slower than the below
 					// method, which uses ImgScalr.
 					mapEditingPanel.setImage(AwtFactory
 							.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator), zoomedWidth, method)));
 				}
 				else
 				{
-					// These two images will be the same if the zoom and display quality are the same, in which case
-					// ImageHelper.scaleByWidth called above returns the input image.
+					// These two images will be the same if the zoom and display
+					// quality are the same, in which case
+					// ImageHelper.scaleByWidth called above returns the input
+					// image.
 					if (mapEditingPanel.mapFromMapCreator != mapEditingPanel.getImage())
 					{
 						ImageHelper.scaleInto(AwtFactory.wrap(mapEditingPanel.mapFromMapCreator),
@@ -1453,9 +1478,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 		else
 		{
-			// Note - this call needs to come after everything that calls into loadSettingsAndEditsIntoThemeAndToolsPanels because the text
+			// Note - this call needs to come after everything that calls into
+			// loadSettingsAndEditsIntoThemeAndToolsPanels because the text
 			// tool
-			// might enable fields when when loading settings, which will cause fields to be enabled before the map is ready.
+			// might enable fields when when loading settings, which will cause
+			// fields to be enabled before the map is ready.
 			enableOrDisableFieldsThatRequireMap(false, settings);
 		}
 
@@ -1543,9 +1570,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.createPlaceholderImage(message)));
 
-		// Clear out the map from map creator so that causing the window to re-zoom while the placeholder image
-		// is displayed doesn't show the previous map. This can happen when the zoom is fit to window, you create
-		// a new map, then resize the window while the new map is drawing for the first time.
+		// Clear out the map from map creator so that causing the window to
+		// re-zoom while the placeholder image
+		// is displayed doesn't show the previous map. This can happen when the
+		// zoom is fit to window, you create
+		// a new map, then resize the window while the new map is drawing for
+		// the first time.
 		mapEditingPanel.mapFromMapCreator = null;
 
 		mapEditingPanel.repaint();
@@ -1620,7 +1650,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			System.out.println("Error while setting look and feel: " + e.getMessage());
 			e.printStackTrace();
 		}
-
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()

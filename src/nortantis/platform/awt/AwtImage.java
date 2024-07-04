@@ -76,15 +76,19 @@ class AwtImage extends Image
 
 	private static ImageType toImageType(int bufferedImageType)
 	{
-		if (bufferedImageType == BufferedImage.TYPE_INT_ARGB)
+		if (bufferedImageType == BufferedImage.TYPE_INT_ARGB ||
+				bufferedImageType == BufferedImage.TYPE_INT_ARGB_PRE ||
+				bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR ||
+				bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR_PRE)
 		{
 			return ImageType.ARGB;
 		}
-		if (bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR)
-		{
-			return ImageType.ARGB;
-		}
-		if (bufferedImageType == BufferedImage.TYPE_INT_RGB)
+		if (bufferedImageType == BufferedImage.TYPE_INT_RGB ||
+				bufferedImageType == BufferedImage.TYPE_INT_BGR ||
+				bufferedImageType == BufferedImage.TYPE_3BYTE_BGR ||
+				bufferedImageType == BufferedImage.TYPE_USHORT_565_RGB ||
+				bufferedImageType == BufferedImage.TYPE_USHORT_555_RGB ||
+				bufferedImageType == BufferedImage.TYPE_BYTE_INDEXED)
 		{
 			return ImageType.RGB;
 		}
