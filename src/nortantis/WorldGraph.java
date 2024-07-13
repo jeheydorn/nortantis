@@ -2046,7 +2046,12 @@ public class WorldGraph extends VoronoiGraph
 					{
 						List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
 						
-						if (DebugFlags.drawRegionBoundaryPathJoins() && drawPoints.size() > 0)
+						if (drawPoints == null || drawPoints.isEmpty())
+						{
+							continue;
+						}
+						
+						if (DebugFlags.drawRegionBoundaryPathJoins())
 						{
 							Color color = p.getColor();
 							p.setColor(Color.red);
@@ -2176,14 +2181,19 @@ public class WorldGraph extends VoronoiGraph
 		if (start.v0 != null)
 		{
 			Edge e = start;
-			
+			Edge prev = e;
 			while (true)
 			{
-				Edge next = noisyEdges.findEdgeToFollow(e.v0, e);
+				Edge next = noisyEdges.findEdgeToFollow(e.v0, e, prev);
+				if (next == null || found.contains(next))
+				{
+					next = noisyEdges.findEdgeToFollow(e.v1, e, prev);
+				}
 				if (next == null || !accept.apply(next) || found.contains(next))
 				{
 					break;
 				}
+				prev = e;
 				deque.addFirst(next);
 				found.add(next);
 				e = next;
@@ -2193,13 +2203,19 @@ public class WorldGraph extends VoronoiGraph
 		if (start.v1 != null)
 		{
 			Edge e = start;
+			Edge prev = e;
 			while (true)
-			{
-				Edge next = noisyEdges.findEdgeToFollow(e.v1, e);
+			{				
+				Edge next = noisyEdges.findEdgeToFollow(e.v1, e, prev);
+				if (next == null || found.contains(next))
+				{
+					next = noisyEdges.findEdgeToFollow(e.v0, e, prev);
+				}
 				if (next == null || !accept.apply(next) || found.contains(next))
 				{
 					break;
 				}
+				prev = e;
 				deque.addLast(next);
 				found.add(next);
 				e = next;
