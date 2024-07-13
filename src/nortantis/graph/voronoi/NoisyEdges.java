@@ -21,12 +21,15 @@ import nortantis.geom.Point;
 
 public class NoisyEdges
 {
-	final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged v-edge; high: jagged d-edge
+	final double NOISY_LINE_TRADEOFF = 0.5; // low: jagged v-edge; high: jagged
+											// d-edge
 
 	private LineStyle lineStyle;
-	private Map<Integer, List<Point>> paths; // edge index -> List of points in that edge.
+	private Map<Integer, List<Point>> paths; // edge index -> List of points in
+												// that edge.
 
-	// Maps edge index to a list of points that draw the same position in path0 but with curves
+	// Maps edge index to a list of points that draw the same position in path0
+	// but with curves
 	private Map<Integer, List<Point>> curves;
 
 	private double scaleMultiplyer;
@@ -82,13 +85,37 @@ public class NoisyEdges
 
 				int minLength = getNoisyEdgeMinLength(edge);
 
-				List<Point> path0 = buildNoisyLineSegments(rand, edge.v0.loc, t, edge.midpoint, q, minLength); // List of points in that
-																												// edge from corner v0 to
-																												// the midpoint of the edge
+				List<Point> path0 = buildNoisyLineSegments(rand, edge.v0.loc, t, edge.midpoint, q, minLength); // List
+																												// of
+																												// points
+																												// in
+																												// that
+																												// edge
+																												// from
+																												// corner
+																												// v0
+																												// to
+																												// the
+																												// midpoint
+																												// of
+																												// the
+																												// edge
 				path0.add(edge.midpoint);
-				List<Point> path1 = buildNoisyLineSegments(rand, edge.v1.loc, s, edge.midpoint, r, minLength); // List of points in that
-																												// edge from corner v1 to
-																												// the midpoint of the edge
+				List<Point> path1 = buildNoisyLineSegments(rand, edge.v1.loc, s, edge.midpoint, r, minLength); // List
+																												// of
+																												// points
+																												// in
+																												// that
+																												// edge
+																												// from
+																												// corner
+																												// v1
+																												// to
+																												// the
+																												// midpoint
+																												// of
+																												// the
+																												// edge
 				// Ad path1 in reverse order.
 				for (int i = path1.size() - 1; i >= 0; i--)
 				{
@@ -98,7 +125,6 @@ public class NoisyEdges
 			}
 		}
 	}
-
 
 	// Helper function: build a single noisy line in a quadrilateral A-B-C-D,
 	// and store the output points in a Vector.
@@ -118,8 +144,10 @@ public class NoisyEdges
 			return;
 		}
 		// Subdivide the quadrilateral
-		double p = nextDoubleRange(random, 0.2, 0.8); // vertical (along A-D and B-C)
-		double q = nextDoubleRange(random, 0.2, 0.8); // horizontal (along A-B and D-C)
+		double p = nextDoubleRange(random, 0.2, 0.8); // vertical (along A-D and
+														// B-C)
+		double q = nextDoubleRange(random, 0.2, 0.8); // horizontal (along A-B
+														// and D-C)
 
 		// Midpoints
 		Point E = Point.interpolate(A, D, p);
@@ -161,7 +189,8 @@ public class NoisyEdges
 				Point p1 = edge.v0.loc;
 				Point p2 = edge.v1.loc;
 				Point p3 = findPrevOrNextPointOnCurve(edge, edge.v1);
-				// Create enough points that you can't see the lines in the curves.
+				// Create enough points that you can't see the lines in the
+				// curves.
 				int numPoints = (int) (p1.distanceTo(p2) * 0.25);
 				List<Point> curve = new LinkedList<>();
 				if (numPoints > 0)
@@ -183,22 +212,25 @@ public class NoisyEdges
 	}
 
 	/**
-	 * Find the previous point when drawing a curve and the curve segment currently being drawn doesn't contain that point. That point is
-	 * needed to maintain C1 continuity at corners in the voronoi graph.
+	 * Find the previous point when drawing a curve and the curve segment
+	 * currently being drawn doesn't contain that point. That point is needed to
+	 * maintain C1 continuity at corners in the voronoi graph.
 	 * 
 	 * @param edge
 	 * @param firstPointOnCurve
 	 * @param corner
-	 *            This must be either edge.v0 or edge.v1. Whichever is the first point in the curve.
+	 *            This must be either edge.v0 or edge.v1. Whichever is the first
+	 *            point in the curve.
 	 * @return
 	 */
 	private Point findPrevOrNextPointOnCurve(Edge edge, Corner corner)
 	{
 		// Use the last point in the edge edge connecting to this one.
-		Edge toFollow = findEdgeToFollow(corner, edge);
+		Edge toFollow = findEdgeToFollow(corner, edge, null);
 		if (toFollow == null)
 		{
-			// p1 is the first or last point in a river / coast line / region boundary.
+			// p1 is the first or last point in a river / coast line / region
+			// boundary.
 			return corner.loc;
 		}
 
@@ -219,7 +251,8 @@ public class NoisyEdges
 	}
 
 	/**
-	 * Determines which edge curves we should follow since there are always multiple directions curves can go.
+	 * Determines which edge curves we should follow since there are always
+	 * multiple directions curves can go.
 	 * 
 	 * @param corner
 	 *            Corner to search from
@@ -229,13 +262,18 @@ public class NoisyEdges
 	 */
 	public Edge findEdgeToFollow(Corner corner, Edge edge)
 	{
+		return findEdgeToFollow(corner, edge, null);
+	}
+	
+	public Edge findEdgeToFollow(Corner corner, Edge edge, Edge toIgnore)
+	{
 		EdgeDrawType type = getEdgeDrawType(edge);
 
 		if (type.equals(EdgeDrawType.Region))
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeDrawType.Region)
+				if (other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.Region)
 				{
 					return other;
 				}
@@ -246,7 +284,7 @@ public class NoisyEdges
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeDrawType.Coast)
+				if (other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.Coast)
 				{
 					return other;
 				}
@@ -256,9 +294,11 @@ public class NoisyEdges
 		}
 		else if (type.equals(EdgeDrawType.River))
 		{
-			// Follow the largest river other than the one we came from. That way small rivers branch off of large ones, instead of the other
+			// Follow the largest river other than the one we came from. That
+			// way small rivers branch off of large ones, instead of the other
 			// way round.
-			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> edge != other && getEdgeDrawType(other) == EdgeDrawType.River)
+			Optional<Edge> optional = corner.protrudes.stream()
+					.filter((other) -> other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.River)
 					.max((e1, e2) -> Integer.compare(e1.river, e2.river));
 			if (optional.isPresent())
 			{
@@ -271,7 +311,7 @@ public class NoisyEdges
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (edge != other && getEdgeDrawType(other) == EdgeDrawType.FrayedBorder)
+				if (other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.FrayedBorder)
 				{
 					return other;
 				}
@@ -284,7 +324,8 @@ public class NoisyEdges
 	}
 
 	/**
-	 * Determines how small lines should be segmented to when drawing noisy edges.
+	 * Determines how small lines should be segmented to when drawing noisy
+	 * edges.
 	 * 
 	 * @param edge
 	 * @return
@@ -314,7 +355,8 @@ public class NoisyEdges
 
 	public EdgeDrawType getEdgeDrawType(Edge edge)
 	{
-		// Changes to this method will likely also need to update MapCreator.applyCenterEdits where it sets needsRebuild.
+		// Changes to this method will likely also need to update
+		// MapCreator.applyCenterEdits where it sets needsRebuild.
 		if (isForFrayedBorder)
 		{
 			if (edge.d0.isBorder != edge.d1.isBorder)
@@ -358,10 +400,8 @@ public class NoisyEdges
 		}
 	}
 
-
 	public LineStyle getLineStyle()
 	{
 		return lineStyle;
 	}
 }
-

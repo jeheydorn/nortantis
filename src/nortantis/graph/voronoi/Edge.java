@@ -159,6 +159,32 @@ public class Edge implements Comparable<Edge>
 		}
 		return v0;
 	}
+	
+	public Corner findCornerSharedWithEdge(Edge other)
+	{
+		if (v0 != null && v0.protrudesContains(other))
+		{
+			return v0;
+		}
+		if (v1 != null && v1.protrudesContains(other))
+		{
+			return v1;
+		}
+		return null;
+	}
+	
+	public Corner findCornerNotSharedWithEdge(Edge other)
+	{
+		if (v0 != null && !v0.protrudesContains(other))
+		{
+			return v0;
+		}
+		if (v1 != null && !v1.protrudesContains(other))
+		{
+			return v1;
+		}
+		return null;
+	}
 
 	@Override
 	public String toString()
