@@ -89,6 +89,18 @@ public class Corner
 		}
 		return null;
 	}
+	
+	public boolean protrudesContains(Edge e)
+	{
+		for (Edge p : protrudes)
+		{
+			if (p.index == e.index)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
 	// This is needed to give the object a deterministic hash code. If I use the
 	// object's address as the hash
