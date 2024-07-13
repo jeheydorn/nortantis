@@ -32,8 +32,6 @@ public class DebugFlags
 	
 	private static int[] indexesOfCentersToHighlight = new int[] {};
 	
-	private static int[] indexesOfEdgesToHighlight = new int[] {13002};
-
 	private static int[] indexesOfEdgesToHighlight = new int[] {};
 
 	private static boolean drawRegionBoundaryPathJoins = true;
