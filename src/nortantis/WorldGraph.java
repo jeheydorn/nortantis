@@ -2033,7 +2033,7 @@ public class WorldGraph extends VoronoiGraph
 					{
 						List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
 						
-						if (drawPoints == null || drawPoints.isEmpty())
+						if (drawPoints == null || drawPoints.isEmpty() || drawPoints.size() == 1)
 						{
 							continue;
 						}
@@ -2070,11 +2070,6 @@ public class WorldGraph extends VoronoiGraph
 			return Collections.emptyList();
 		}
 		
-		if (edges.size() == 1)
-		{
-			return noisyEdges.getNoisyEdge(edges.get(0).index);
-		}
-		
 		List<Point> result = new ArrayList<Point>();
 		for (int i = 0; i < edges.size(); i++)
 		{
@@ -2087,15 +2082,22 @@ public class WorldGraph extends VoronoiGraph
 			boolean reverse;
 			if (i == 0)
 			{
-				Edge next = edges.get(i + 1);
-				if (current.v0 == next.v0 || current.v0 == next.v1)
+				if (edges.size() == 1)
 				{
-					reverse = true;
+					reverse = false;
 				}
 				else
 				{
-					reverse = false;
-				}				
+					Edge next = edges.get(i + 1);
+					if (current.v0 == next.v0 || current.v0 == next.v1)
+					{
+						reverse = true;
+					}
+					else
+					{
+						reverse = false;
+					}
+				}
 			}
 			else
 			{
