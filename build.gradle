@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation fileTree(dir: 'libraries', include: ['*.jar'])
+    testImplementation 'junit:junit:4.12'
+}
+
+application {
+    mainClass = 'nortantis.swing.MainWindow'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_9
+    targetCompatibility = JavaVersion.VERSION_1_9
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-Xlint:deprecation' << '-Xlint:unchecked'
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'nortantis.swing.MainWindow'
+    }
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    }
+    from(sourceSets.main.output) {
+        include '**/*.class'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+            include '**/*.java'
+            exclude 'nortantis/test/**/*.java'
+        }
+        resources {
+            srcDirs = ['assets']
+            include '**/*'
+            exclude '**/test/**'
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src']
+            include 'nortantis/test/**/*.java'
+        }
+    }
+}
