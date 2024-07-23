@@ -34,5 +34,3 @@ temp.nort
 *.msi
 *.deb
 Nortantis.jar
-.gradle
-build

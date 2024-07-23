@@ -6,12 +6,12 @@ import java.util.List;
 import nortantis.geom.Point;
 
 /**
- * Creates curves using centripetal Catmull-Rom splines
+ * Creates curves using centripetal Catmull–Rom splines
  */
 public class CurveCreator
 {
 	/**
-	 * Creates a curve from p1 to p2 inclusive by creating a centripetal Catmull-Rom spline.
+	 * Creates a curve from p1 to p2 inclusive by creating a centripetal Catmull–Rom spline.
 	 * 
 	 * @param p0
 	 *            Control point for controlling the curve shape
