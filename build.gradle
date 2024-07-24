@@ -17,8 +17,8 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_9
-    targetCompatibility = JavaVersion.VERSION_1_9
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.withType(JavaCompile) {
@@ -36,8 +36,9 @@ jar {
     } {
         exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
     }
-    from(sourceSets.main.output) {
-        include '**/*.class'
+    from(sourceSets.main.output)
+    from('assets') {
+        into 'assets'
     }
 }
 
