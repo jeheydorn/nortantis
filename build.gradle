@@ -43,18 +43,21 @@ jar {
     }
 }
 
+test {
+	jvmArgs = ['-Dfile.encoding=UTF-8', '-Xmx3g']
+}
+
 sourceSets {
     main {
         java {
             srcDirs = ['src']
             include '**/*.java'
-            exclude 'nortantis/test/**/*.java'
         }
     }
     test {
         java {
-            srcDirs = ['src']
-            include 'nortantis/test/**/*.java'
+            srcDirs = ['test']
+            include '**/*.java'
         }
     }
 }
