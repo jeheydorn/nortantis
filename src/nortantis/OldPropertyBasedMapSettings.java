@@ -3,6 +3,8 @@ package nortantis;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,7 +113,8 @@ public class OldPropertyBasedMapSettings implements Serializable
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconSetName;
-	public double pointPrecision = defaultPointPrecision; // Not exposed for editing. Only for backwards compatibility so I can change it
+	public double pointPrecision = defaultPointPrecision; // Not exposed for editing. Only for backwards compatibility
+															// so I can change it
 															// without braking older settings files that have edits.
 
 	/**
@@ -119,12 +122,12 @@ public class OldPropertyBasedMapSettings implements Serializable
 	 */
 	private final Color defaultRoadColor = Color.black;
 
-	public OldPropertyBasedMapSettings(String propertiesFilename)
+	public OldPropertyBasedMapSettings(String fileContents)
 	{
 		final Properties props = new Properties();
 		try
 		{
-			props.load(new FileInputStream(propertiesFilename));
+			props.load(new StringReader(fileContents));
 		}
 		catch (IOException e)
 		{
@@ -309,11 +312,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 			public Double apply()
 			{
 				String str = props.getProperty("pointPrecision");
-				return (str == null || str == "") ? 10.0 : (double) (Double.parseDouble(str)); // 10.0 was the value used before I made a
+				return (str == null || str == "") ? 10.0 : (double) (Double.parseDouble(str)); // 10.0 was the value
+																								// used before I made a
 																								// setting for it.
 			}
 		});
-
 
 		// Background image stuff.
 		generateBackground = getProperty("generateBackground", new Function0<Boolean>()
@@ -534,6 +537,12 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return Arrays.asList(props.getProperty("books").split("\t"));
 			}
 		}));
+
+		// Ensure there is at least one book
+		if (books.isEmpty())
+		{
+			throw new IllegalStateException("At least one book must be selected to generate text.");
+		}
 
 		titleFont = getProperty("titleFont", new Function0<Font>()
 		{

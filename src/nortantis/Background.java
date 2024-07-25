@@ -1,14 +1,5 @@
 package nortantis;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
@@ -18,15 +9,27 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
 
-/**
- * An assortment of things needed to draw the background.
- */
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
+import javax.imageio.ImageIO;
+
+/** An assortment of things needed to draw the background. */
 public class Background
 {
 	Image landBeforeRegionColoring;
@@ -51,7 +54,6 @@ public class Background
 	private int cornerWidth;
 	private boolean hasInsetCorners;
 
-
 	public Background(MapSettings settings, Dimension mapBounds)
 	{
 		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
@@ -60,7 +62,7 @@ public class Background
 		}
 		else
 		{
-			this.imagesPath = AssetsPath.getInstallPath();
+			this.imagesPath = "assets"; // Ensure this is relative to the JAR's resources
 		}
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
@@ -114,7 +116,7 @@ public class Background
 			Image texture;
 			try
 			{
-				texture = ImageCache.getInstance(imagesPath).getImageFromFile(Paths.get(settings.backgroundTextureImage));
+				texture = readImageFromAssets("assets/example textures/" + settings.backgroundTextureImage);
 			}
 			catch (RuntimeException e)
 			{
@@ -342,13 +344,7 @@ public class Background
 		Painter p = result.createPainter();
 		p.drawImage(map, borderWidthScaled, borderWidthScaled);
 
-		Path allBordersPath = Paths.get(imagesPath, "borders");
-		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
-		if (!Files.exists(borderPath))
-		{
-			throw new RuntimeException(
-					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
-		}
+		Path borderPath = Paths.get("assets", "borders", borderType);
 
 		int edgeOriginalWidth = 0;
 		// Edges
@@ -376,7 +372,6 @@ public class Background
 			edgeOriginalWidth = rightEdge.getWidth();
 			rightEdge = ImageHelper.scaleByWidth(rightEdge, borderWidthScaled);
 		}
-
 
 		if (topEdge == null)
 		{
@@ -433,7 +428,7 @@ public class Background
 		{
 			cornerOriginalWidth = lowerRightCorner.getWidth();
 		}
-		
+
 		if (cornerOriginalWidth == 0)
 		{
 			throw new RuntimeException("Border cannot be drawn. Could not find any corner images in " + borderPath);
@@ -454,7 +449,6 @@ public class Background
 			hasInsetCorners = true;
 			cornerWidth = (int) (borderWidthScaled * (((double) cornerOriginalWidth) / ((double) edgeOriginalWidth)));
 		}
-
 
 		if (upperLeftCorner != null)
 		{
@@ -604,7 +598,6 @@ public class Background
 					new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
 					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()),
 					0);
-
 		}
 		Painter p = target.createPainter();
 		p.translate(-drawOffset.x, -drawOffset.y);
@@ -621,7 +614,6 @@ public class Background
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth,
 							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()),
 					0);
-
 		}
 		Painter p = target.createPainter();
 		p.translate(-drawOffset.x, -drawOffset.y);
@@ -634,7 +626,7 @@ public class Background
 		{
 			return;
 		}
-		
+
 		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderWidthScaled,
 				drawBoundsBeforeBorder.toIntRectangle().y + borderWidthScaled);
 		Rectangle bounds = drawBoundsBeforeBorder.translate(borderWidthScaled, borderWidthScaled);
@@ -804,25 +796,78 @@ public class Background
 
 	private Image loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
 	{
-		File[] cornerArray = new File(path.toString()).listFiles(file -> file.getName().contains(inFileName));
-		if (cornerArray.length == 0)
+		String relativePath = path.toString().replaceFirst(".*/assets/", "assets/");
+		List<String> fileNames = AssetsPath.listFilesFromJar(relativePath, "");
+
+		// Filter files that contain the inFileName pattern
+		for (String fileName : fileNames)
 		{
-			if (throwExceptionIfMissing)
-				throw new RuntimeException(
-						"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
-			else
-				return null;
-		}
-		if (cornerArray.length > 1)
-		{
-			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+			if (fileName.contains(inFileName))
+			{
+				String fullPath = relativePath + "/" + fileName;
+				try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fullPath))
+				{
+					if (inputStream == null)
+					{
+						if (throwExceptionIfMissing)
+						{
+							throw new RuntimeException(
+									"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+						}
+						else
+						{
+							return null;
+						}
+					}
+					BufferedImage bufferedImage = ImageIO.read(inputStream);
+					if (bufferedImage == null)
+					{
+						throw new RuntimeException("Unable to read the file " + fullPath);
+					}
+					return AwtFactory.wrap(bufferedImage); // Use AwtFactory.wrap to create an AwtImage
+				}
+				catch (IOException e)
+				{
+					throw new RuntimeException("Unable to read the file " + fullPath, e);
+				}
+			}
 		}
 
-		return ImageHelper.read(cornerArray[0].getPath());
+		if (throwExceptionIfMissing)
+		{
+			throw new RuntimeException("Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+		}
+		else
+		{
+			return null;
+		}
 	}
 
 	public int getBorderWidthScaledByResolution()
 	{
 		return borderWidthScaled;
+	}
+
+	private Image readImageFromAssets(String filePath)
+	{
+		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath))
+		{
+			if (inputStream == null)
+			{
+				throw new RuntimeException("Resource not found: " + filePath);
+			}
+
+			BufferedImage bufferedImage = ImageIO.read(inputStream);
+			if (bufferedImage == null)
+			{
+				throw new RuntimeException("Can't read the file " + filePath + ". It might be in an unsupported format or corrupted.");
+			}
+
+			return AwtFactory.wrap(bufferedImage);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Can't read the file " + filePath, e);
+		}
 	}
 }

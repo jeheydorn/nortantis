@@ -2,6 +2,9 @@ package nortantis;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -137,7 +140,6 @@ public class MapSettings implements Serializable
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
 
-
 	public MapSettings()
 	{
 		edits = new MapEdits();
@@ -145,8 +147,8 @@ public class MapSettings implements Serializable
 	}
 
 	/**
-	 * Loads map settings file. The file can either be the newer JSON format, or the older *.properties format, which is supported only for
-	 * converting old files to the new format.
+	 * Loads map settings from a file path. The file can either be the newer JSON format, or the older *.properties format, which is
+	 * supported only for converting old files to the new format.
 	 * 
 	 * @param filePath
 	 *            file path and file name
@@ -160,12 +162,48 @@ public class MapSettings implements Serializable
 		}
 		else if (FilenameUtils.getExtension(filePath).toLowerCase().equals("properties"))
 		{
-			loadFromOldPropertiesFile(filePath);
+			String fileContents = Helper.readFile(filePath);
+			parseFromPropertiesFile(fileContents);
 		}
 		else
 		{
 			throw new IllegalArgumentException("The map settings file, '" + filePath
-					+ "', is not a supported file type. It must be either either a json file or a properties file.");
+					+ "', is not a supported file type. It must be either a json file or a properties file.");
+		}
+	}
+
+	/**
+	 * Loads map settings from an InputStream. The stream can either be the newer JSON format, or the older *.properties format, which is
+	 * supported only for converting old files to the new format.
+	 * 
+	 * @param inputStream
+	 *            input stream of the file contents
+	 */
+	public MapSettings(InputStream inputStream)
+	{
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream)))
+		{
+			StringBuilder sb = new StringBuilder();
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				sb.append(line).append("\n");
+			}
+			String fileContents = sb.toString();
+
+			// Determine file type and parse accordingly
+			if (fileContents.trim().startsWith("{"))
+			{
+				parseFromJson(fileContents);
+			}
+			else
+			{
+				parseFromPropertiesFile(fileContents);
+			}
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Failed to load properties from input stream", e);
 		}
 	}
 
@@ -314,7 +352,6 @@ public class MapSettings implements Serializable
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
 
-
 		JSONArray booksArray = new JSONArray();
 		for (String book : books)
 		{
@@ -350,7 +387,6 @@ public class MapSettings implements Serializable
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
 		root.put("defaultHeightmapExportAction",
 				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
-
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -405,9 +441,12 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("regionId", centerEdit.regionId);
 			}
-			// I'm storing center trees, even though they're mostly only used for adding new trees using editing brushes, because
-			// CenterTrees that failed to draw any trees due to their density being too low should be retried when the tree height slider
-			// changes, because that changes the density. Without retrying those CenterTrees, trees would slowly disappear off the map as he
+			// I'm storing center trees, even though they're mostly only used for adding new trees using editing
+			// brushes, because
+			// CenterTrees that failed to draw any trees due to their density being too low should be retried when the
+			// tree height slider
+			// changes, because that changes the density. Without retrying those CenterTrees, trees would slowly
+			// disappear off the map as he
 			// changed the tree height slighter.
 			if (centerEdit.trees != null)
 			{
@@ -572,7 +611,6 @@ public class MapSettings implements Serializable
 			lloydRelaxationsScale = 0.0;
 		}
 
-
 		// Background image stuff.
 		generateBackground = (boolean) root.get("generateBackground");
 		generateBackgroundFromTexture = (boolean) root.get("generateBackgroundFromTexture");
@@ -661,11 +699,11 @@ public class MapSettings implements Serializable
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
 		if (frayedBorderSize >= 100)
 		{
-			// Convert from the old format the held the number of the polygons to the new format that uses a small scale.
+			// Convert from the old format the held the number of the polygons to the new format that uses a small
+			// scale.
 			// The +1 is just to make sure we don't try to find the log of 0.
 			frayedBorderSize = (int) (Math.log((((frayedBorderSize - 100) / 2) + 1)) / Math.log(2));
 		}
-
 
 		imageExportPath = (String) root.get("imageExportPath");
 		heightmapExportPath = (String) root.get("heightmapExportPath");
@@ -942,7 +980,6 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-
 	public ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
@@ -1026,9 +1063,9 @@ public class MapSettings implements Serializable
 		return font;
 	}
 
-	private void loadFromOldPropertiesFile(String propertiesFilePath)
+	private void parseFromPropertiesFile(String fileContents)
 	{
-		OldPropertyBasedMapSettings old = new OldPropertyBasedMapSettings(propertiesFilePath);
+		OldPropertyBasedMapSettings old = new OldPropertyBasedMapSettings(fileContents);
 		version = "0.0";
 		randomSeed = old.randomSeed;
 		resolution = old.resolution;
