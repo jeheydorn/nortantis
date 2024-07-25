@@ -2,6 +2,9 @@ package nortantis;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.InputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,12 +31,14 @@ import nortantis.util.Range;
  */
 public class SettingsGenerator
 {
-	private static String defaultSettingsFile = Paths.get(AssetsPath.getInstallPath(), "internal/old_paper.properties").toString();
+	private static String defaultSettingsFile = "assets/internal/old_paper.properties";
 	public static int minWorldSize = 2000;
-	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
+	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map,
+	// very small world sizes
 	// can result to in a map that is all land or all ocean.
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
-	public static int maxWorldSize = 30000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
+	public static int maxWorldSize = 30000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will
+											// not work.
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
@@ -43,7 +48,7 @@ public class SettingsGenerator
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
-	
+
 	public static MapSettings generate(String imagesPath)
 	{
 		Random rand = new Random();
@@ -52,18 +57,21 @@ public class SettingsGenerator
 
 	public static MapSettings generate(Random rand, String imagesPath)
 	{
-		if (!Files.exists(Paths.get(defaultSettingsFile)))
+		InputStream inputStream = SettingsGenerator.class.getClassLoader().getResourceAsStream(defaultSettingsFile);
+		if (inputStream == null)
 		{
-			throw new IllegalArgumentException("The default settings files " + defaultSettingsFile + " does not exist");
+			throw new IllegalArgumentException("The default settings file " + defaultSettingsFile + " does not exist");
 		}
-		
+
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
 			rand.nextInt();
 		}
 
-		MapSettings settings = new MapSettings(defaultSettingsFile);
+		// Load the MapSettings using the input stream
+		MapSettings settings = new MapSettings(inputStream);
+
 		settings.pointPrecision = MapSettings.defaultPointPrecision;
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 
@@ -106,7 +114,9 @@ public class SettingsGenerator
 
 		if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
 		{
-			final int oceanEffectsAlpha = settings.oceanEffect == OceanEffect.Ripples ? defaultOceanRipplesAlpha : settings.oceanEffect == OceanEffect.Blur ? defaultOceanShadingAlpha : 0;
+			final int oceanEffectsAlpha = settings.oceanEffect == OceanEffect.Ripples
+					? defaultOceanRipplesAlpha
+					: settings.oceanEffect == OceanEffect.Blur ? defaultOceanShadingAlpha : 0;
 			double oceanEffectsColorScale = 0.3;
 			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
@@ -198,29 +208,34 @@ public class SettingsGenerator
 
 		}
 
-		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching
+		// Always set a background texture even if it is not used so that the editor doesn't give an error when
+		// switching
 		// to the background texture file path field.
-		Path exampleTexturesPath = Paths.get(AssetsPath.getInstallPath(), "example textures");
-		List<Path> textureFiles;
+		List<String> textureFiles;
 		try
 		{
-			textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
+			textureFiles = AssetsPath.listFilesFromJar("assets/example textures", ".png");
+			if (textureFiles.isEmpty())
+			{
+				throw new RuntimeException("The example textures folder does not contain any files.");
+			}
 		}
-		catch (IOException ex)
+		catch (RuntimeException ex)
 		{
-			throw new RuntimeException("The example textures folder does not exist.", ex);
+			throw new RuntimeException("The example textures folder does not exist or is empty.", ex);
 		}
 
-		if (textureFiles.size() > 0)
+		if (!textureFiles.isEmpty())
 		{
-			settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toAbsolutePath().toString();
+			settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles);
 		}
 
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;
 		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange,
 				brightnessRange);
 
-		// This threshold prevents large maps from having land on the edge, because such maps should be the entire world/continent.
+		// This threshold prevents large maps from having land on the edge, because such maps should be the entire
+		// world/continent.
 		int noOceanOnEdgeThreshold = 15000;
 		if (settings.worldSize < noOceanOnEdgeThreshold)
 		{
@@ -265,7 +280,7 @@ public class SettingsGenerator
 
 		return settings;
 	}
-	
+
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
 		long seed = Math.abs(rand.nextInt());
@@ -293,13 +308,12 @@ public class SettingsGenerator
 
 	public static List<String> getAllBooks()
 	{
-		String[] filenames = new File(Paths.get(AssetsPath.getInstallPath(), "books").toString()).list(new FilenameFilter()
+		List<String> filenames = AssetsPath.listFilesFromJar("assets/books", "_place_names.txt");
+
+		if (filenames.isEmpty())
 		{
-			public boolean accept(File arg0, String name)
-			{
-				return name.endsWith("_place_names.txt");
-			}
-		});
+			throw new RuntimeException("No book files ending with '_place_names.txt' were found in the assets/books directory.");
+		}
 
 		List<String> result = new ArrayList<>();
 		for (String filename : filenames)

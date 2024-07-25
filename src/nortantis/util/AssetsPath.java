@@ -1,10 +1,18 @@
 package nortantis.util;
 
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.net.JarURLConnection;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.ArrayList;
+import java.net.URL;
+import java.io.IOException;
+
 public class AssetsPath
 {
 	/**
-	 * This flag is set by hand to tell assets to look for files in the install
-	 * folder for the system rather than in a relative folder.
+	 * This flag is set by hand to tell assets to look for files in the install folder for the system rather than in a relative folder.
 	 */
 	public static boolean isInstalled = false;
 
@@ -78,5 +86,38 @@ public class AssetsPath
 	public static synchronized void setInstallPath(String path)
 	{
 		installPath = path;
+	}
+
+	public static List<String> listFilesFromJar(String path, String suffix)
+	{
+		List<String> result = new ArrayList<>();
+		try
+		{
+			Enumeration<URL> urls = AssetsPath.class.getClassLoader().getResources(path);
+			while (urls.hasMoreElements())
+			{
+				URL dirUrl = urls.nextElement();
+				if (dirUrl != null && dirUrl.getProtocol().equals("jar"))
+				{
+					JarURLConnection jarConnection = (JarURLConnection) dirUrl.openConnection();
+					JarFile jarFile = jarConnection.getJarFile();
+					Enumeration<JarEntry> entries = jarFile.entries();
+					while (entries.hasMoreElements())
+					{
+						JarEntry entry = entries.nextElement();
+						String entryName = entry.getName();
+						if (entryName.startsWith(path) && entryName.endsWith(suffix))
+						{
+							result.add(entryName.substring(path.length() + 1)); // +1 to remove the leading slash
+						}
+					}
+				}
+			}
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Error reading directory from resources: " + path, e);
+		}
+		return result;
 	}
 }

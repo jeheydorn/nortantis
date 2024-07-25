@@ -3,6 +3,9 @@ package nortantis;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -45,15 +48,27 @@ public class NameCompiler
 	public NameCompiler(Random r, List<Pair<String>> nounAdjectivePairs, List<Pair<String>> nounVerbPairs)
 	{
 		// Load the word dictionary.
-		List<String> lines;
-		try
+		List<String> lines = new ArrayList<>();
+		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("assets/internal/en_GB.dic"))
 		{
-			lines = Files.readAllLines(Paths.get(AssetsPath.getInstallPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
+			if (inputStream == null)
+			{
+				throw new RuntimeException("Resource not found: assets/internal/en_GB.dic");
+			}
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)))
+			{
+				String line;
+				while ((line = reader.readLine()) != null)
+				{
+					lines.add(line);
+				}
+			}
 		}
 		catch (IOException e)
 		{
 			throw new RuntimeException("Unable to read word dictionary file.", e);
 		}
+
 		dict = new TreeSet<>();
 		for (String line : lines)
 		{
@@ -73,13 +88,10 @@ public class NameCompiler
 		this.nounVerbPairs = capitalizeFirstLetters(this.nounVerbPairs);
 		nounAdjectivePairs = null;
 
-
 		this.r = r;
 		counter = new Counter<>();
 		counter.addCount("adjectives", this.nounAdjectivePairs.size());
 		counter.addCount("verbs", this.nounVerbPairs.size());
-
-
 	}
 
 	private List<Pair<String>> convertToPresentTense(List<Pair<String>> verbPairs)
@@ -196,7 +208,6 @@ public class NameCompiler
 		{
 			return verb.substring(0, verb.length() - 2) + "ing";
 		}
-
 
 		if (verb.endsWith("aid"))
 		{

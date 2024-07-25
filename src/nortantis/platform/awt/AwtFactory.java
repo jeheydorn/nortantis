@@ -5,6 +5,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
@@ -44,9 +45,14 @@ public class AwtFactory extends PlatformFactory
 	@Override
 	public Image readImage(String filePath)
 	{
-		try
+		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filePath))
 		{
-			BufferedImage image = ImageIO.read(new File(filePath));
+			if (inputStream == null)
+			{
+				throw new RuntimeException("Resource not found: " + filePath);
+			}
+
+			BufferedImage image = ImageIO.read(inputStream);
 			if (image == null)
 			{
 				throw new RuntimeException(
@@ -58,7 +64,7 @@ public class AwtFactory extends PlatformFactory
 		}
 		catch (IOException e)
 		{
-			throw new RuntimeException("Can't read the file " + filePath);
+			throw new RuntimeException("Can't read the file " + filePath, e);
 		}
 	}
 
@@ -106,7 +112,7 @@ public class AwtFactory extends PlatformFactory
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static Image convertARGBToRGB(Image image)
 	{
 		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
@@ -136,7 +142,7 @@ public class AwtFactory extends PlatformFactory
 	@Override
 	public Font createFont(String name, FontStyle style, float size)
 	{
-		return new AwtFont(new java.awt.Font(name, style.value, (int)size));
+		return new AwtFont(new java.awt.Font(name, style.value, (int) size));
 	}
 
 	@Override
@@ -150,7 +156,6 @@ public class AwtFactory extends PlatformFactory
 	{
 		return new AwtColor(red, green, blue);
 	}
-
 
 	@Override
 	public Color createColor(float red, float green, float blue)
@@ -226,7 +231,7 @@ public class AwtFactory extends PlatformFactory
 				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
-	
+
 	public static Painter wrap(java.awt.Graphics2D g)
 	{
 		return new AwtPainter(g);
@@ -294,5 +299,4 @@ public class AwtFactory extends PlatformFactory
 		}
 	}
 
-	
 }
