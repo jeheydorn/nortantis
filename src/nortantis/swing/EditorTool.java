@@ -29,7 +29,7 @@ public abstract class EditorTool
 	private JToggleButton toggleButton;
 	protected Undoer undoer;
 	protected ToolsPanel toolsPanel;
-	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
+	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70, 140);
 	protected MapUpdater updater;
 
 	public EditorTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
