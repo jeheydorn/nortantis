@@ -2026,7 +2026,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			// TODO
 			Set<Edge> found = new HashSet<>();
 			for (Center center : (centersToDraw == null ? centers : centersToDraw))
 			{
@@ -2046,7 +2045,7 @@ public class WorldGraph extends VoronoiGraph
 					{
 						List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
 						
-						if (drawPoints == null || drawPoints.isEmpty() || drawPoints.size() == 1)
+						if (drawPoints == null || drawPoints.size() <= 1)
 						{
 							continue;
 						}
