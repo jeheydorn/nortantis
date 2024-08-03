@@ -686,6 +686,11 @@ public abstract class VoronoiGraph
 	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
 			float nextEdgeWidth)
 	{
+		if (path == null)
+		{
+			return;
+		}
+		
 		if (path.size() < 2)
 		{
 			return;
@@ -994,6 +999,13 @@ public abstract class VoronoiGraph
 			edge.v1 = makeCorner(pointCornerMap, vEdge.p1);
 			edge.d0 = pointCenterMap.get(dEdge.p0);
 			edge.d1 = pointCenterMap.get(dEdge.p1);
+			if (edge.v0 == edge.v1)
+			{
+				// Zero length edges are worthless because they can't be drawn, so don't hook them up to the rest of the graph. Ideally, I
+				// would just throw them away, but that would break backwards compatibility with previously existing map edits because it
+				// would shift the edge indexes of subsequent edges.
+				continue;
+			}
 
 			// Centers point to edges. Corners point to edges.
 			if (edge.d0 != null)
