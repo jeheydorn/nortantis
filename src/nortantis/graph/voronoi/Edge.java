@@ -1,6 +1,8 @@
 package nortantis.graph.voronoi;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import nortantis.geom.Point;
 
@@ -134,7 +136,7 @@ public class Edge implements Comparable<Edge>
 
 		return false;
 	}
-	
+
 	public boolean isRiver()
 	{
 		return river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn;
@@ -159,7 +161,7 @@ public class Edge implements Comparable<Edge>
 		}
 		return v0;
 	}
-	
+
 	public Corner findCornerSharedWithEdge(Edge other)
 	{
 		if (v0 != null && v0.protrudesContains(other))
@@ -172,7 +174,7 @@ public class Edge implements Comparable<Edge>
 		}
 		return null;
 	}
-	
+
 	public Corner findCornerNotSharedWithEdge(Edge other)
 	{
 		if (v0 != null && !v0.protrudesContains(other))
@@ -184,6 +186,26 @@ public class Edge implements Comparable<Edge>
 			return v1;
 		}
 		return null;
+	}
+
+	public boolean sharesCornerWith(Edge other)
+	{
+		if (other == null)
+		{
+			return false;
+		}
+
+		if (v0 != null && (v0.equals(other.v0) || v0.equals(other.v1)))
+		{
+			return true;
+		}
+
+		if (v1 != null && (v1.equals(other.v0) || v1.equals(other.v1)))
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	@Override

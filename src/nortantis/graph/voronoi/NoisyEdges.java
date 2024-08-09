@@ -212,15 +212,13 @@ public class NoisyEdges
 	}
 
 	/**
-	 * Find the previous point when drawing a curve and the curve segment
-	 * currently being drawn doesn't contain that point. That point is needed to
-	 * maintain C1 continuity at corners in the voronoi graph.
+	 * Find the previous point when drawing a curve and the curve segment currently being drawn doesn't contain that point. That point is
+	 * needed to maintain C1 continuity at corners in the voronoi graph.
 	 * 
 	 * @param edge
 	 * @param firstPointOnCurve
 	 * @param corner
-	 *            This must be either edge.v0 or edge.v1. Whichever is the first
-	 *            point in the curve.
+	 *            This must be either edge.v0 or edge.v1. Whichever is the first point in the curve.
 	 * @return
 	 */
 	private Point findPrevOrNextPointOnCurve(Edge edge, Corner corner)
@@ -251,8 +249,7 @@ public class NoisyEdges
 	}
 
 	/**
-	 * Determines which edge curves we should follow since there are always
-	 * multiple directions curves can go.
+	 * Determines which edge curves we should follow since there are always multiple directions curves can go.
 	 * 
 	 * @param corner
 	 *            Corner to search from
@@ -264,16 +261,18 @@ public class NoisyEdges
 	{
 		return findEdgeToFollow(corner, edge, null);
 	}
-	
-	public Edge findEdgeToFollow(Corner corner, Edge edge, Edge toIgnore)
+
+	public Edge findEdgeToFollow(Corner corner, Edge edge, Edge prev)
 	{
 		EdgeDrawType type = getEdgeDrawType(edge);
 
+		// The reason for the checks for !other.sharesCornerWith(prev) is so that if prev is not null, we don't end up finding a path that
+		// takes a turn, then immediately turns back on itself and goes another way.
 		if (type.equals(EdgeDrawType.Region))
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.Region)
+				if (other != edge && other != prev && !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.Region)
 				{
 					return other;
 				}
@@ -284,7 +283,7 @@ public class NoisyEdges
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.Coast)
+				if (other != edge && other != prev && !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.Coast)
 				{
 					return other;
 				}
@@ -297,8 +296,8 @@ public class NoisyEdges
 			// Follow the largest river other than the one we came from. That
 			// way small rivers branch off of large ones, instead of the other
 			// way round.
-			Optional<Edge> optional = corner.protrudes.stream()
-					.filter((other) -> other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.River)
+			Optional<Edge> optional = corner.protrudes.stream().filter((other) -> other != edge && other != prev
+					&& !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.River)
 					.max((e1, e2) -> Integer.compare(e1.river, e2.river));
 			if (optional.isPresent())
 			{
@@ -311,7 +310,7 @@ public class NoisyEdges
 		{
 			for (Edge other : corner.protrudes)
 			{
-				if (other != edge && other != toIgnore && getEdgeDrawType(other) == EdgeDrawType.FrayedBorder)
+				if (other != edge && other != prev && !other.sharesCornerWith(prev) && getEdgeDrawType(other) == EdgeDrawType.FrayedBorder)
 				{
 					return other;
 				}
@@ -324,8 +323,7 @@ public class NoisyEdges
 	}
 
 	/**
-	 * Determines how small lines should be segmented to when drawing noisy
-	 * edges.
+	 * Determines how small lines should be segmented to when drawing noisy edges.
 	 * 
 	 * @param edge
 	 * @return
