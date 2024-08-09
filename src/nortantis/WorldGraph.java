@@ -2158,7 +2158,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Given an edge start start at, this returns an ordered sequence of edges in the path that edge is included in.
+	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
 	 * 
 	 * @param start Where to start to search. Not necessarily the start of the path we're searching for.
 	 * @param accept
@@ -2182,7 +2182,7 @@ public class WorldGraph extends VoronoiGraph
 		if (start.v0 != null)
 		{
 			Edge e = start;
-			Edge prev = e;
+			Edge prev = null;
 			while (true)
 			{
 				Edge next = noisyEdges.findEdgeToFollow(e.v0, e, prev);
@@ -2204,7 +2204,7 @@ public class WorldGraph extends VoronoiGraph
 		if (start.v1 != null)
 		{
 			Edge e = start;
-			Edge prev = e;
+			Edge prev = null;
 			while (true)
 			{				
 				Edge next = noisyEdges.findEdgeToFollow(e.v1, e, prev);
