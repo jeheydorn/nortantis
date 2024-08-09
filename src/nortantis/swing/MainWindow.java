@@ -1496,7 +1496,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.createAndShowMapFull();
 		updateFrameTitle(false, true);
 
-		defaultMapExportAction = settings.defaultHeightmapExportAction;
+		defaultMapExportAction = settings.defaultMapExportAction;
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
 	}
 

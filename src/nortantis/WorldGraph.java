@@ -2013,6 +2013,7 @@ public class WorldGraph extends VoronoiGraph
 
 		if (stroke.type == StrokeType.Solid)
 		{
+			// For solid stroke lines, we can save some processing by not ordering edges to draw.
 			drawSpecifiedEdges(p, Math.max(1, stroke.width * resolutionScale), centersToDraw, drawBounds, edge ->
 			{
 				if (edge.isRiver())

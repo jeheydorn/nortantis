@@ -4,6 +4,8 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 
+import org.apache.commons.lang3.NotImplementedException;
+
 import nortantis.StrokeType;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -148,11 +150,27 @@ class AwtPainter extends Painter
 		{
 			setBasicStroke(stroke.width * (float) resolutionScale);
 		}
-		else
+		else if (stroke.type == StrokeType.Dashed)
 		{
 			Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-					new float[] { 4f, 4f }, 0f);
+					new float[] { 4f * (float) resolutionScale, 4f * (float) resolutionScale}, 0f);
 			g.setStroke(dashed);
+		}
+		else if (stroke.type == StrokeType.Dotted)
+		{
+			Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
+					new float[] { 2f * (float) resolutionScale, 4f * (float) resolutionScale }, 0f);
+			g.setStroke(dashed);			
+		}
+		else if (stroke.type == StrokeType.DashDot)
+		{
+			Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
+					new float[] { 6f * (float) resolutionScale, 4f * (float) resolutionScale, 2f * (float) resolutionScale, 4f * (float) resolutionScale}, 0f);
+			g.setStroke(dashed);		
+		}
+		else
+		{
+			throw new NotImplementedException("Unrecognized stroke type: " + stroke);
 		}
 	}
 
