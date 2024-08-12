@@ -49,6 +49,7 @@ import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.StrokeType;
 import nortantis.WorldGraph;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
@@ -144,6 +145,10 @@ public class ThemePanel extends JTabbedPane
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
 	private JSlider cityScaleSlider;
+	private ItemListener drawRegionBoundariesCheckboxListener;
+	private JCheckBox drawRegionBoundariesCheckbox;
+	private JComboBox regionBoundaryTypeComboBox;
+	private JSlider regionBoundaryWidthSlider;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -283,6 +288,41 @@ public class ThemePanel extends JTabbedPane
 				Arrays.asList(backgroundSeedTextField, btnNewBackgroundSeed));
 
 		organizer.addSeperator();
+
+
+		drawRegionBoundariesCheckboxListener = new ItemListener()
+		{
+			@Override
+			public void itemStateChanged(ItemEvent e)
+			{
+				updateBackgroundAndRegionFieldStates(mainWindow);
+				handleTerrainChange();
+			}
+		};
+		drawRegionBoundariesCheckbox = new JCheckBox("Draw region boundaries");
+		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
+		createMapChangeListenerForTerrainChange(drawRegionBoundariesCheckbox);
+		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
+
+		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
+		organizer.addLabelAndComponent("Style:", "How to draw region boundaries", regionBoundaryTypeComboBox);
+
+		{
+			regionBoundaryWidthSlider = new JSlider();
+			regionBoundaryWidthSlider.setPaintLabels(false);
+			regionBoundaryWidthSlider.setValue(10);
+			regionBoundaryWidthSlider.setMinorTickSpacing(1);
+			regionBoundaryWidthSlider.setMaximum(50);
+			regionBoundaryWidthSlider.setMajorTickSpacing(5);
+			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
+			SwingHelper.setSliderWidthForSidePanel(regionBoundaryWidthSlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider,
+					(value) -> String.format("Value: %.1f", value / 10f), null);
+			sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
+		}
+		organizer.addSeperator();
+
+
 		colorizeLandCheckbox = new JCheckBox("Color land");
 		colorizeLandCheckbox
 				.setToolTipText("Whether to change the land texture to a custom color versus use the color of the texture image");
@@ -596,7 +636,7 @@ public class ThemePanel extends JTabbedPane
 			final int initialValue = 0;
 			coastShadingTransparencySlider.setValue(initialValue);
 			SwingHelper.setSliderWidthForSidePanel(coastShadingTransparencySlider);
-			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastShadingTransparencySlider, () ->
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastShadingTransparencySlider, null, () ->
 			{
 				updateCoastShadingColorDisplayFromCoastShadingTransparencySlider();
 				handleTerrainChange();
@@ -751,8 +791,8 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		organizer.addLabelAndComponent("Dune size:", "Changes the size of all sand dunes on the map", duneScaleSlider);
-		
-		
+
+
 		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
 		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		treeHeightSlider.setMajorTickSpacing(2);
@@ -772,7 +812,7 @@ public class ThemePanel extends JTabbedPane
 		enableSizeSliderListeners = true;
 		organizer.addLabelAndComponent("Tree height:",
 				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
-		
+
 
 		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		cityScaleSlider.setMajorTickSpacing(2);
@@ -1505,7 +1545,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			return true;
 		}
-		
+
 		if (!oceanDisplayPanel.getColor().equals(AwtFactory.unwrap(settings.oceanColor)))
 		{
 			return true;
