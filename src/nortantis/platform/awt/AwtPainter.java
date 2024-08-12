@@ -6,6 +6,7 @@ import java.awt.Stroke;
 
 import org.apache.commons.lang3.NotImplementedException;
 
+import nortantis.MapCreator;
 import nortantis.StrokeType;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -148,29 +149,34 @@ class AwtPainter extends Painter
 	{
 		if (stroke.type == StrokeType.Solid)
 		{
-			setBasicStroke(stroke.width * (float) resolutionScale);
-		}
-		else if (stroke.type == StrokeType.Dashed)
-		{
-			Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-					new float[] { 4f * (float) resolutionScale, 4f * (float) resolutionScale}, 0f);
-			g.setStroke(dashed);
-		}
-		else if (stroke.type == StrokeType.Dotted)
-		{
-			Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-					new float[] { 2f * (float) resolutionScale, 4f * (float) resolutionScale }, 0f);
-			g.setStroke(dashed);			
-		}
-		else if (stroke.type == StrokeType.DashDot)
-		{
-			Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-					new float[] { 6f * (float) resolutionScale, 4f * (float) resolutionScale, 2f * (float) resolutionScale, 4f * (float) resolutionScale}, 0f);
-			g.setStroke(dashed);		
+			setBasicStroke(stroke.width * (float) MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale));
 		}
 		else
 		{
-			throw new NotImplementedException("Unrecognized stroke type: " + stroke);
+			float scale = ((float) resolutionScale) * stroke.width;
+			if (stroke.type == StrokeType.Dashes)
+			{
+				Stroke dashed = new BasicStroke(stroke.width * (float) MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale),
+						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
+				g.setStroke(dashed);
+			}
+			else if (stroke.type == StrokeType.Short_Dashes)
+			{
+				Stroke dashed = new BasicStroke(stroke.width * (float) MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale),
+						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 3f * (float) scale, 8f * (float) scale }, 0f);
+				g.setStroke(dashed);
+			}
+			else if (stroke.type == StrokeType.Long_and_Short_Dashes)
+			{
+				Stroke dashed = new BasicStroke(stroke.width * (float) MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale),
+						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
+						new float[] { 12f * (float) scale, 8f * (float) scale, 4f * (float) scale, 8f * (float) scale }, 0f);
+				g.setStroke(dashed);
+			}
+			else
+			{
+				throw new NotImplementedException("Unrecognized stroke type: " + stroke);
+			}
 		}
 	}
 
