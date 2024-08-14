@@ -23,21 +23,14 @@ public class SliderWithDisplayedValue
 	{
 		this.slider = slider;
 		
-		valueDisplay = new JLabel(slider.getValue() + "");
+		valueDisplay = new JLabel(getDisplayValue(valueFormatter));
 		valueDisplay.setPreferredSize(new Dimension(24, valueDisplay.getPreferredSize().height));
 		slider.addChangeListener(new ChangeListener()
 		{
 			@Override
 			public void stateChanged(ChangeEvent e)
 			{
-				if (valueFormatter == null)
-				{
-					valueDisplay.setText(slider.getValue() + "");
-				}
-				else
-				{
-					valueDisplay.setText(valueFormatter.apply(slider.getValue()));
-				}
+				valueDisplay.setText(getDisplayValue(valueFormatter));
 				
 				if (changeListener != null && !slider.getValueIsAdjusting())
 				{
@@ -45,6 +38,18 @@ public class SliderWithDisplayedValue
 				}	
 			}
 		});
+	}
+	
+	private String getDisplayValue(Function<Integer, String> valueFormatter)
+	{
+		if (valueFormatter == null)
+		{
+			return slider.getValue() + "";
+		}
+		else
+		{
+			return valueFormatter.apply(slider.getValue());
+		}
 	}
 	
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip)

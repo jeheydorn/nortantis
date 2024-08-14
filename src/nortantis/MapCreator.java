@@ -305,7 +305,7 @@ public class MapCreator implements WarningLogger
 			{
 				Painter p = mapSnippet.createPainter(DrawQuality.High);
 				p.setColor(settings.coastlineColor);
-				mapParts.graph.drawRegionBorders(p, settings.regionBorderStyle, settings.resolution, centersToDraw, drawBounds);
+				mapParts.graph.drawRegionBorders(p, settings.regionBoundaryStyle, settings.resolution, centersToDraw, drawBounds);
 			}
 
 			Set<Edge> edgesToDraw = mapParts.graph.getEdgesFromCenters(centersToDraw);
@@ -913,7 +913,7 @@ public class MapCreator implements WarningLogger
 			{
 				Painter g = map.createPainter(DrawQuality.High);
 				g.setColor(settings.coastlineColor);
-				graph.drawRegionBorders(g, settings.regionBorderStyle, settings.resolution, null, null);
+				graph.drawRegionBorders(g, settings.regionBoundaryStyle, settings.resolution, null, null);
 			}
 		}
 
