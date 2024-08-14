@@ -26,7 +26,11 @@ jpackage \
 --icon "taskbar icon.png" \
 --file-associations file_associations.txt \
 --vendor "Joseph Heydorn" \
+<<<<<<< HEAD
 --app-version "2.85" \
+=======
+--app-version "2.9" \
+>>>>>>> 3bf0c91 (Working on UI for more region boundary options.)
 --java-options -XX:MaxRAMPercentage=50.0 \
 --java-options -Dfile.encoding=UTF-8 \
 --license-file end_user_license_agreement.txt

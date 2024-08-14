@@ -49,6 +49,7 @@ import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanEffect;
 import nortantis.SettingsGenerator;
+import nortantis.Stroke;
 import nortantis.StrokeType;
 import nortantis.WorldGraph;
 import nortantis.editor.CenterEdit;
@@ -145,10 +146,11 @@ public class ThemePanel extends JTabbedPane
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
 	private JSlider cityScaleSlider;
-	private ItemListener drawRegionBoundariesCheckboxListener;
 	private JCheckBox drawRegionBoundariesCheckbox;
-	private JComboBox regionBoundaryTypeComboBox;
+	private JComboBox<StrokeType> regionBoundaryTypeComboBox;
 	private JSlider regionBoundaryWidthSlider;
+	private RowHider regionBoundaryTypeComboBoxHider;
+	private RowHider regionBoundaryWidthSliderHider;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -173,7 +175,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				updateBackgroundAndRegionFieldStates(mainWindow);
+				updateBackgroundAndRegionFieldStates();
 				updateBackgroundImageDisplays();
 				handleFullRedraw();
 			}
@@ -290,37 +292,35 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSeperator();
 
 
-		drawRegionBoundariesCheckboxListener = new ItemListener()
+		drawRegionBoundariesCheckbox = new JCheckBox("Draw region boundaries");
+		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
+		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
 		{
 			@Override
 			public void itemStateChanged(ItemEvent e)
 			{
-				updateBackgroundAndRegionFieldStates(mainWindow);
+				updateBackgroundAndRegionFieldStates();
 				handleTerrainChange();
 			}
-		};
-		drawRegionBoundariesCheckbox = new JCheckBox("Draw region boundaries");
-		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
-		createMapChangeListenerForTerrainChange(drawRegionBoundariesCheckbox);
+		});
 		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
-		organizer.addLabelAndComponent("Style:", "How to draw region boundaries", regionBoundaryTypeComboBox);
+		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "How to draw region boundaries", regionBoundaryTypeComboBox);
+		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
 
 		{
 			regionBoundaryWidthSlider = new JSlider();
 			regionBoundaryWidthSlider.setPaintLabels(false);
 			regionBoundaryWidthSlider.setValue(10);
-			regionBoundaryWidthSlider.setMinorTickSpacing(1);
 			regionBoundaryWidthSlider.setMaximum(50);
-			regionBoundaryWidthSlider.setMajorTickSpacing(5);
+			regionBoundaryWidthSlider.setMinimum(5);
 			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(regionBoundaryWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider,
-					(value) -> String.format("Value: %.1f", value / 10f), null);
-			sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
+					(value) -> String.format("%.1f", value / 10f), null);
+			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
 		}
-		organizer.addSeperator();
 
 
 		colorizeLandCheckbox = new JCheckBox("Color land");
@@ -350,7 +350,7 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void itemStateChanged(ItemEvent e)
 			{
-				updateBackgroundAndRegionFieldStates(mainWindow);
+				updateBackgroundAndRegionFieldStates();
 				updateBackgroundImageDisplays();
 				handleFullRedraw();
 			}
@@ -445,6 +445,8 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		organizer.addVerticalFillerRow();
+		updateBackgroundAndRegionFieldVisibility();
+		
 		return organizer.createScrollPane();
 	}
 
@@ -1120,14 +1122,12 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	private void updateDrawRegionsCheckboxEnabledAndSelected()
+	private void updateLandColoringMethodIfNeeded()
 	{
-		if (!landSupportsColoring())
+		if (!landSupportsColoring() || !drawRegionBoundariesCheckbox.isSelected())
 		{
 			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
 		}
-
-		handleEnablingAndDisabling();
 	}
 
 	private boolean landSupportsColoring()
@@ -1139,15 +1139,23 @@ public class ThemePanel extends JTabbedPane
 	{
 		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeOceanCheckbox.isSelected());
 	}
-
-	private void updateBackgroundAndRegionFieldStates(MainWindow mainWindow)
+	
+	private void updateBackgroundAndRegionFieldVisibility()
 	{
 		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeLandCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		handleEnablingAndDisabling();
+		regionBoundaryTypeComboBoxHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
+		regionBoundaryWidthSliderHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
+		
+		
+	}
 
-		updateDrawRegionsCheckboxEnabledAndSelected();
+	private void updateBackgroundAndRegionFieldStates()
+	{
+		updateBackgroundAndRegionFieldVisibility();
+		updateLandColoringMethodIfNeeded();
+		handleEnablingAndDisabling();
 	}
 
 	private void updateBackgroundImageDisplays()
@@ -1390,7 +1398,7 @@ public class ThemePanel extends JTabbedPane
 		colorizeLandCheckbox.addItemListener(colorizeCheckboxListener);
 		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
 		rdbtnFractal.setSelected(settings.generateBackground);
-		updateBackgroundAndRegionFieldStates(mainWindow);
+		updateBackgroundAndRegionFieldStates();
 
 		// Only do this if there is a change so we don't trigger the document listeners unnecessarily.
 		if (!textureImageFilename.getText().equals(settings.backgroundTextureImage))
@@ -1416,6 +1424,10 @@ public class ThemePanel extends JTabbedPane
 			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
 		}
 		handleLandColoringMethodChanged();
+
+		drawRegionBoundariesCheckbox.setSelected(settings.drawRegionBoundaries);
+		regionBoundaryTypeComboBox.setSelectedItem(settings.regionBoundaryStyle.type);
+		regionBoundaryWidthSlider.setValue((int)(settings.regionBoundaryStyle.width * 10f));
 
 		// Do a click to update other components on the panel as enabled or
 		// disabled.
@@ -1608,6 +1620,8 @@ public class ThemePanel extends JTabbedPane
 		}
 		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
+		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
+		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(), regionBoundaryWidthSlider.getValue() / 10f);
 		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
 		settings.titleFont = AwtFactory.wrap(titleFontDisplay.getFont());
@@ -1736,7 +1750,8 @@ public class ThemePanel extends JTabbedPane
 		btnChooseLandColor.setEnabled(landSupportsColoring());
 
 		btnChooseCoastShadingColor.setEnabled(!areRegionColorsVisible());
-
+		
+		landColoringMethodComboBox.setEnabled(drawRegionBoundariesCheckbox.isSelected());
 	}
 
 	void enableOrDisableEverything(boolean enable)

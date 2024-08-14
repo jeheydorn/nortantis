@@ -46,7 +46,7 @@ import nortantis.util.Helper;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.85";
+	public static final String currentVersion = "2.9";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -114,9 +114,8 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
-	// TODO Make this a setting, and save and load it.
-	//public Stroke regionBorderStyle = new Stroke(StrokeType.Dashed, 1.0f);
-	public Stroke regionBorderStyle = new Stroke(StrokeType.Long_and_Short_Dashes, 1.5f);
+	public boolean drawRegionBoundaries = true;
+	public Stroke regionBoundaryStyle;
 	/**
 	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
 	 * images to use. But the editor now allows selecting city images of any type.
@@ -310,6 +309,8 @@ public class MapSettings implements Serializable
 		root.put("hueRange", hueRange);
 		root.put("saturationRange", saturationRange);
 		root.put("brightnessRange", brightnessRange);
+		root.put("drawRegionBoundaries", drawRegionBoundaries);
+		root.put("regionBoundaryStyle", regionBoundaryStyleToJson());
 
 		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
@@ -458,6 +459,15 @@ public class MapSettings implements Serializable
 			list.add(mpObj);
 		}
 		return list;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private JSONObject regionBoundaryStyleToJson()
+	{
+		JSONObject obj = new JSONObject();
+		obj.put("type", regionBoundaryStyle.type);
+		obj.put("width", regionBoundaryStyle.width);
+		return obj;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -610,6 +620,9 @@ public class MapSettings implements Serializable
 		hueRange = (int) (long) root.get("hueRange");
 		saturationRange = (int) (long) root.get("saturationRange");
 		brightnessRange = (int) (long) root.get("brightnessRange");
+		drawRegionBoundaries = root.containsKey(("drawRegionBoundaries")) ? (boolean) root.get("drawRegionBoundaries") : true;
+		regionBoundaryStyle = parseRegionBoundaryStyle((JSONObject) root.get("regionBoundaryStyle"));
+		
 		drawRoads = (boolean) root.get("drawRoads");
 
 		if (root.containsKey("cityIconSetName"))
@@ -946,7 +959,7 @@ public class MapSettings implements Serializable
 	}
 
 
-	public ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
+	private ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
@@ -964,8 +977,20 @@ public class MapSettings implements Serializable
 
 		return result;
 	}
+	
+	private Stroke parseRegionBoundaryStyle(JSONObject obj)
+	{
+		if (obj == null)
+		{
+			return new Stroke(StrokeType.Solid, 1f);
+		}
+		
+		StrokeType type = Enum.valueOf(StrokeType.class, ((String) obj.get("type")).replace(" ", "_"));
+		float width = (float)(double) obj.get("width");
+		return new Stroke(type, width);
+	}
 
-	public List<EdgeEdit> parseEdgeEdits(JSONObject editsJson)
+	private List<EdgeEdit> parseEdgeEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
 		{
@@ -1077,6 +1102,7 @@ public class MapSettings implements Serializable
 		textColor = old.textColor;
 		drawBoldBackground = old.drawBoldBackground;
 		drawRegionColors = old.drawRegionColors;
+		regionBoundaryStyle = parseRegionBoundaryStyle(null);
 		regionsRandomSeed = old.regionsRandomSeed;
 		drawBorder = old.drawBorder;
 		borderType = old.borderType;
@@ -1177,6 +1203,7 @@ public class MapSettings implements Serializable
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+	
 
 	@Override
 	public boolean equals(Object obj)
@@ -1212,8 +1239,8 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
-				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionColors == other.drawRegionColors
-				&& drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionBoundaries == other.drawRegionBoundaries
+				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
@@ -1234,7 +1261,8 @@ public class MapSettings implements Serializable
 				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
-				&& Objects.equals(regionFont, other.regionFont) && regionsRandomSeed == other.regionsRandomSeed
+				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && Objects.equals(regionFont, other.regionFont)
+				&& regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
 				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
@@ -1243,5 +1271,6 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+
 
 }

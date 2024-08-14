@@ -13,4 +13,23 @@ public class Stroke implements Serializable
 		this.type = type;
 		this.width = width;
 	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		Stroke other = (Stroke) obj;
+		return type == other.type && Float.floatToIntBits(width) == Float.floatToIntBits(other.width);
+	}
 }
