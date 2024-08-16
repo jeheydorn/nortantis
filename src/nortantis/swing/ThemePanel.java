@@ -313,8 +313,8 @@ public class ThemePanel extends JTabbedPane
 			regionBoundaryWidthSlider = new JSlider();
 			regionBoundaryWidthSlider.setPaintLabels(false);
 			regionBoundaryWidthSlider.setValue(10);
-			regionBoundaryWidthSlider.setMaximum(50);
-			regionBoundaryWidthSlider.setMinimum(5);
+			regionBoundaryWidthSlider.setMaximum(100);
+			regionBoundaryWidthSlider.setMinimum(10);
 			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(regionBoundaryWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider,

@@ -66,8 +66,9 @@ public class GraphCreator
 		{
 			mountains = ImageHelper.convertImageToType(mountains, ImageType.Grayscale16Bit);
 		}
+		double mountainTextureScale = graph.getWidth() * (2.0 / 3.0);
 		mountains = ImageHelper.scaleByWidth(mountains,
-				(int) (mountains.getWidth() * MapCreator.calcSizeMultiplier(graph.getWidth()) * 0.25f));
+				(int) (mountains.getWidth() * mountainTextureScale));
 		Image mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(),
 				false);
 		// ImageHelper.write(mountainTexture, "mountainTexture.png");

@@ -523,7 +523,7 @@ public abstract class VoronoiGraph
 
 	private float calcRiverStrokeWidth(Edge e)
 	{
-		return Math.max(1, (int) (resolutionScale * Math.sqrt(e.river * 0.5)));
+		return (float) (resolutionScale * Math.sqrt(e.river * 0.5));
 	}
 
 	protected void drawUsingTriangles(Painter g, Center c, boolean drawElevation)
@@ -1101,9 +1101,11 @@ public abstract class VoronoiGraph
 
 		// This magic number exists because I originally designed point precision to be based on
 		// 'Size multiplier', which is an old number used to determined at what scale to draw things.
-		// Now graphs are created at a constant size, so that isn't be necessary for new maps,
+		// When a map is at 1.0 resolution scale, size multiplier use to be (8.0 / 3.0). I've since
+		// changed it, but it needs to remain (8.0 / 3.0) here for backwards compatibility.
+		// Now graphs are created at a constant size, so that isn't necessary for new maps,
 		// but is still necessary for backwards compatibility with older maps.
-		final double scaleForBackwardsCompatibility = MapCreator.calcSizeMultipilerFromResolutionScale(1.0);
+		final double scaleForBackwardsCompatibility = (8.0 / 3.0);
 
 		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
 				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);

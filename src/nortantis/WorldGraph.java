@@ -1976,18 +1976,18 @@ public class WorldGraph extends VoronoiGraph
 	
 	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
+		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoast());
 	}
 
 	public void drawCoastlineWithLakeShores(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
+		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
 	}
 
 	public void drawRegionBordersSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
 			Rectangle drawBounds)
 	{
-		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge ->
+		drawSpecifiedEdges(g, strokeWidth, centersToDraw, drawBounds, edge ->
 		{
 			if (ignoreRiverEdges && edge.isRiver())
 			{
@@ -2008,13 +2008,10 @@ public class WorldGraph extends VoronoiGraph
 			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
-
-		p.setStroke(stroke, resolutionScale);
-
 		if (stroke.type == StrokeType.Solid)
 		{
 			// For solid stroke lines, we can save some processing by not ordering edges to draw.
-			drawSpecifiedEdges(p, Math.max(1, stroke.width * resolutionScale), centersToDraw, drawBounds, edge ->
+			drawSpecifiedEdges(p, stroke.width * resolutionScale, centersToDraw, drawBounds, edge ->
 			{
 				if (edge.isRiver())
 				{
@@ -2027,6 +2024,8 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
+			p.setStroke(stroke, resolutionScale);
+
 			Set<Edge> found = new HashSet<>();
 			for (Center center : (centersToDraw == null ? centers : centersToDraw))
 			{

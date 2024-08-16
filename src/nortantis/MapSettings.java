@@ -982,7 +982,7 @@ public class MapSettings implements Serializable
 	{
 		if (obj == null)
 		{
-			return new Stroke(StrokeType.Solid, 1f);
+			return new Stroke(StrokeType.Solid, (float) (Math.round(10.0 * MapCreator.calcSizeMultipilerFromResolutionScale(1.0)) / 10.0));
 		}
 		
 		StrokeType type = Enum.valueOf(StrokeType.class, ((String) obj.get("type")).replace(" ", "_"));
