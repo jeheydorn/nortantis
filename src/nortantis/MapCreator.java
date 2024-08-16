@@ -269,7 +269,7 @@ public class MapCreator implements WarningLogger
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 		Image mapSnippet;
 		Image textBackground;
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
+		double sizeMultiplierRounded = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
 
 		if (!onlyTextChanged)
 		{
@@ -331,7 +331,7 @@ public class MapCreator implements WarningLogger
 			{
 				Painter p = mapSnippet.createPainter(DrawQuality.High);
 				p.setColor(settings.coastlineColor);
-				mapParts.graph.drawCoastlineWithLakeShores(p, sizeMultiplier, centersToDraw, drawBounds);
+				mapParts.graph.drawCoastlineWithLakeShores(p, sizeMultiplierRounded, centersToDraw, drawBounds);
 			}
 
 			// Draw icons
@@ -373,7 +373,7 @@ public class MapCreator implements WarningLogger
 		// Add frayed border
 		if (settings.frayedBorder)
 		{
-			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplier);
+			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplierRounded);
 			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
 					drawBoundsUpperLeftCornerAdjustedForBorder);
 			if (blurLevel > 0)
@@ -425,7 +425,7 @@ public class MapCreator implements WarningLogger
 
 	private double calcEffectsPadding(final MapSettings settings)
 	{
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
 
 		// To handle edge/effects changes outside centersChangedBounds box
 		// caused by centers in centersChanged, pad the bounds of the
@@ -970,7 +970,7 @@ public class MapCreator implements WarningLogger
 		{
 			Painter g = map.createPainter(DrawQuality.High);
 			g.setColor(settings.coastlineColor);
-			double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
+			double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
 			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
 		}
 
@@ -1114,7 +1114,7 @@ public class MapCreator implements WarningLogger
 		{
 			drawBounds = graph.bounds;
 		}
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
 
 		Image oceanEffects = null;
 		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
@@ -1181,7 +1181,7 @@ public class MapCreator implements WarningLogger
 		int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
 		// This number just needs to be big enough that the waves are sufficiently thick.
 		final float scaleForDarkening = 20f;
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
 		double targetStrokeWidth = sizeMultiplier;
 		float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 				* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
@@ -1427,12 +1427,20 @@ public class MapCreator implements WarningLogger
 	}
 
 	/*
-	 * A constant based on the resolution for determining how large things should draw. This used to be 8.0/3.0, but I rounded it to 2.7 so
-	 * that a component that selects this value can have tenths precision.
+	 * A constant based on the resolution for determining how large things should draw.
 	 */
 	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
 	{
-		return 2.7 * resoutionScale;
+		return (8.0 / 3.0) * resoutionScale;
+	}
+
+	/**
+	 * Like calcSizeMultipilerFromResolutionScale, but rounds to the nearest tenth for use with components that have that limit on numeric
+	 * precision.
+	 */
+	public static double calcSizeMultipilerFromResolutionScaleRounded(double resolutionScale)
+	{
+		return Math.round(10.0 * calcSizeMultipilerFromResolutionScale(resolutionScale)) / 10.0;
 	}
 
 	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)
