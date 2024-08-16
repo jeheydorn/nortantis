@@ -53,8 +53,6 @@ public class MapCreator implements WarningLogger
 	private static final float coastlineShadingScale = 5.27f;
 
 	private Random r;
-	// This is a base width for determining how large to draw text and effects.
-	private static final double baseResolution = 1536;
 
 	private static final double concentricWaveWidthBetweenWaves = 7;
 	private static final double concentricWaveLineWidth = 1.1;
@@ -137,7 +135,8 @@ public class MapCreator implements WarningLogger
 			}
 			Rectangle padded = change.pad(paddingToAccountForIntegerTruncation, paddingToAccountForIntegerTruncation);
 			mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, Collections.emptySet(), this);
-			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer, onlyTextChanged);
+			IntRectangle updateBounds = incrementalUpdateBounds(settings, mapParts, fullSizeMap, padded, effectsPadding, textDrawer,
+					onlyTextChanged);
 			if (bounds == null)
 			{
 				bounds = updateBounds;
@@ -265,7 +264,7 @@ public class MapCreator implements WarningLogger
 		// that draw them, and we need those to be included in the snippet to
 		// replace.
 		Rectangle drawBounds = replaceBounds.pad(effectsPadding, effectsPadding).floor();
-		
+
 		IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x,
 				(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 		Image mapSnippet;
@@ -336,11 +335,11 @@ public class MapCreator implements WarningLogger
 			}
 
 			// Draw icons
-			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet, oceanTextureSnippet, drawBounds);
+			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet,
+					oceanTextureSnippet, drawBounds);
 
-			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew,
-					landTextureSnippet, oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer,
-					centersToDraw, drawBounds);
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
+					oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
 
 			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,
@@ -356,7 +355,7 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			mapSnippet = ImageHelper.copySnippet(mapParts.mapBeforeAddingText, drawBounds.toIntRectangle());
-			textBackground =  ImageHelper.copySnippet(mapParts.textBackground, drawBounds.toIntRectangle());
+			textBackground = ImageHelper.copySnippet(mapParts.textBackground, drawBounds.toIntRectangle());
 		}
 
 		if (settings.drawText)
@@ -368,7 +367,7 @@ public class MapCreator implements WarningLogger
 		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
 				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
 				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
-		
+
 		mapParts.background.drawInsetCornersIfBoundsTouchesThem(mapSnippet, drawBounds);
 
 		// Add frayed border
@@ -625,7 +624,7 @@ public class MapCreator implements WarningLogger
 		}
 		if (DebugFlags.drawVoronoi())
 		{
-			graph.drawVoronoi(map.createPainter());	
+			graph.drawVoronoi(map.createPainter());
 		}
 
 		if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
@@ -645,21 +644,21 @@ public class MapCreator implements WarningLogger
 			for (Integer index : DebugFlags.getIndexesOfEdgesToHighlight())
 			{
 				Edge e = graph.edges.get(index);
-				
+
 				p.setColor(Color.blue);
 				p.setBasicStroke(1f * (float) settings.resolution);
-				final int diameter = (int)(6.0 * settings.resolution); 
-				
+				final int diameter = (int) (6.0 * settings.resolution);
+
 				if (e.v0 != null)
 				{
-					p.drawOval((int)(e.v0.loc.x) - diameter/2, (int)(e.v0.loc.y) - diameter/2, diameter, diameter);
+					p.drawOval((int) (e.v0.loc.x) - diameter / 2, (int) (e.v0.loc.y) - diameter / 2, diameter, diameter);
 				}
-				
+
 				if (e.v1 != null)
 				{
-					p.drawOval((int)(e.v1.loc.x) - diameter/2, (int)(e.v1.loc.y) - diameter/2, diameter, diameter);
+					p.drawOval((int) (e.v1.loc.x) - diameter / 2, (int) (e.v1.loc.y) - diameter / 2, diameter, diameter);
 				}
-				
+
 				p.setColor(Color.cyan);
 				graph.drawEdge(p, e);
 			}
@@ -1427,15 +1426,13 @@ public class MapCreator implements WarningLogger
 		return graph;
 	}
 
-
-	public static double calcSizeMultiplier(double mapWidth)
-	{
-		return mapWidth / baseResolution;
-	}
-
+	/*
+	 * A constant based on the resolution for determining how large things should draw. This used to be 8.0/3.0, but I rounded it to 2.7 so
+	 * that a component that selects this value can have tenths precision.
+	 */
 	public static double calcSizeMultipilerFromResolutionScale(double resoutionScale)
 	{
-		return (8.0 / 3.0) * resoutionScale;
+		return 2.7 * resoutionScale;
 	}
 
 	private static void applyRegionEdits(WorldGraph graph, MapEdits edits)
