@@ -160,17 +160,16 @@ class AwtPainter extends Painter
 						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
-			else if (stroke.type == StrokeType.Short_Dashes)
+			else if (stroke.type == StrokeType.Rounded_Dashes)
 			{
 				Stroke dashed = new BasicStroke(stroke.width * (float) MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale),
-						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 3f * (float) scale, 8f * (float) scale }, 0f);
+						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 6f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
-			else if (stroke.type == StrokeType.Long_and_Short_Dashes)
+			else if (stroke.type == StrokeType.Dots)
 			{
 				Stroke dashed = new BasicStroke(stroke.width * (float) MapCreator.calcSizeMultipilerFromResolutionScale(resolutionScale),
-						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
-						new float[] { 12f * (float) scale, 8f * (float) scale, 4f * (float) scale, 8f * (float) scale }, 0f);
+						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale, 5f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else

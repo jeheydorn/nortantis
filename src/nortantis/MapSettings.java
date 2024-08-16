@@ -465,7 +465,7 @@ public class MapSettings implements Serializable
 	private JSONObject regionBoundaryStyleToJson()
 	{
 		JSONObject obj = new JSONObject();
-		obj.put("type", regionBoundaryStyle.type);
+		obj.put("type", regionBoundaryStyle.type.toString());
 		obj.put("width", regionBoundaryStyle.width);
 		return obj;
 	}
