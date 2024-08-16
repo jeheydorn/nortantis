@@ -2,7 +2,7 @@ package nortantis;
 
 public enum StrokeType
 {
-	Solid, Dashes, Short_Dashes, Long_and_Short_Dashes;
+	Solid, Dashes, Rounded_Dashes, Dots;
 
 	@Override
 	public String toString()
