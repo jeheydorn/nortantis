@@ -653,6 +653,8 @@ public class LandWaterTool extends EditorTool
 				updater.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
+		
+		updater.dowWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges());
 
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 	}

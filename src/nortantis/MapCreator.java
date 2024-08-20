@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
@@ -58,10 +59,12 @@ public class MapCreator implements WarningLogger
 	private static final double concentricWaveLineWidth = 1.1;
 	private boolean isCanceled;
 	private List<String> warningMessages;
+	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
 
 	public MapCreator()
 	{
 		warningMessages = new ArrayList<>();
+		centersToRedrawLowPriority = new ConcurrentHashMap<>();
 	}
 
 	public IntRectangle incrementalUpdateText(final MapSettings settings, MapParts mapParts, Image fullSizeMap, List<MapText> textChanged)
@@ -249,10 +252,9 @@ public class MapCreator implements WarningLogger
 				{
 					regionBoundaryCenters.addAll(mapParts.graph.getCentersFromEdges(boundary));
 				}
-				Rectangle bounds = WorldGraph.getBoundingBox(regionBoundaryCenters);
-				if (bounds != null)
+				if (!regionBoundaryCenters.isEmpty())
 				{
-					replaceBounds = replaceBounds.add(bounds);
+					addLowPriorityCentersToRedraw(regionBoundaryCenters);
 				}
 			}
 
@@ -271,6 +273,14 @@ public class MapCreator implements WarningLogger
 		replaceBounds = replaceBounds.floor();
 
 		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, false);
+	}
+	
+	private void addLowPriorityCentersToRedraw(Collection<Center> toAdd)
+	{
+		for (Center c : toAdd)
+		{
+			centersToRedrawLowPriority.put(c.index, c);
+		}
 	}
 
 	private IntRectangle incrementalUpdateBounds(final MapSettings settings, MapParts mapParts, Image fullSizedMap, Rectangle replaceBounds,

@@ -2008,49 +2008,32 @@ public class WorldGraph extends VoronoiGraph
 			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
-		if (stroke.type == StrokeType.Solid)
+		p.setStroke(stroke, resolutionScale);
+
+		List<List<Edge>> regionBoundaries = findRegionBoundaries(centersToDraw);
+		for (List<Edge> regionBoundary : regionBoundaries)
 		{
-			// For solid stroke lines, we can save some processing by not ordering edges to draw.
-			drawSpecifiedEdges(p, stroke.width * resolutionScale, centersToDraw, drawBounds, edge ->
+			List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
+
+			if (drawPoints == null || drawPoints.size() <= 1)
 			{
-				if (edge.isRiver())
-				{
-					// Don't draw region boundaries where there are rivers.
-					return false;
-				}
-
-				return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
-			});
-		}
-		else
-		{
-			p.setStroke(stroke, resolutionScale);
-
-			List<List<Edge>> regionBoundaries = findRegionBoundaries(centersToDraw);
-			for (List<Edge> regionBoundary : regionBoundaries)
-			{
-				List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
-
-				if (drawPoints == null || drawPoints.size() <= 1)
-				{
-					continue;
-				}
-
-				if (DebugFlags.drawRegionBoundaryPathJoins())
-				{
-					Color color = p.getColor();
-					p.setColor(Color.red);
-					p.setBasicStroke(1f * (float) resolutionScale);
-					final int diameter = (int) (8.0 * resolutionScale);
-
-					p.drawOval((int) (drawPoints.get(0).x) - diameter / 2, (int) (drawPoints.get(0).y) - diameter / 2, diameter, diameter);
-
-					p.setColor(color);
-					p.setStroke(stroke, resolutionScale);
-				}
-
-				drawPolyline(p, drawPoints);
+				continue;
 			}
+
+			if (DebugFlags.drawRegionBoundaryPathJoins())
+			{
+				Color color = p.getColor();
+				p.setColor(Color.red);
+				p.setBasicStroke(1f * (float) resolutionScale);
+				final int diameter = (int) (8.0 * resolutionScale);
+
+				p.drawOval((int) (drawPoints.get(0).x) - diameter / 2, (int) (drawPoints.get(0).y) - diameter / 2, diameter, diameter);
+
+				p.setColor(color);
+				p.setStroke(stroke, resolutionScale);
+			}
+
+			drawPolyline(p, drawPoints);
 		}
 
 		if (drawBounds != null)
