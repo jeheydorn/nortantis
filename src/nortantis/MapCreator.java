@@ -228,7 +228,7 @@ public class MapCreator implements WarningLogger
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
 		boolean changeAffectsLandOrRegionShape = applyCenterEdits(mapParts.graph, settings.edits,
-				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionColors);
+				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionBoundaries);
 
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
@@ -238,9 +238,26 @@ public class MapCreator implements WarningLogger
 
 		if (changeAffectsLandOrRegionShape)
 		{
+			if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
+			{
+				// When using non-solid region boundaries, expand the replace bounds to include region borders inside the replace bounds so
+				// that
+				// the dashed pattern is correct.
+				List<List<Edge>> regionBoundaries = mapParts.graph.findRegionBoundaries(centersChanged);
+				Set<Center> regionBoundaryCenters = new HashSet<>();
+				for (List<Edge> boundary : regionBoundaries)
+				{
+					regionBoundaryCenters.addAll(mapParts.graph.getCentersFromEdges(boundary));
+				}
+				Rectangle bounds = WorldGraph.getBoundingBox(regionBoundaryCenters);
+				if (bounds != null)
+				{
+					replaceBounds = replaceBounds.add(bounds);
+				}
+			}
+
 			// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
-			// to
-			// two or vice versa.
+			// to two or vice versa.
 			Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
 					settings);
 			replaceBounds = replaceBounds.add(textChangeBounds);

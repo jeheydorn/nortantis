@@ -754,7 +754,7 @@ public abstract class VoronoiGraph
 		return length;
 	}
 
-	public Set<Center> getCentersFromEdges(Set<Edge> edges)
+	public Set<Center> getCentersFromEdges(Collection<Edge> edges)
 	{
 		Set<Center> centers = new HashSet<Center>();
 		for (Edge edge : edges)

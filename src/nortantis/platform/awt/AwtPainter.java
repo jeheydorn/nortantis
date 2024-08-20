@@ -169,7 +169,7 @@ class AwtPainter extends Painter
 			else if (stroke.type == StrokeType.Dots)
 			{
 				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale,
-						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale, 2.4f * (float) scale }, 0f);
+						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale, 2.3f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else
