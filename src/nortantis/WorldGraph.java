@@ -1973,7 +1973,7 @@ public class WorldGraph extends VoronoiGraph
 		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
 		return cSize;
 	}
-	
+
 	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoast());
@@ -2018,7 +2018,7 @@ public class WorldGraph extends VoronoiGraph
 					// Don't draw region boundaries where there are rivers.
 					return false;
 				}
-	
+
 				return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
 			});
 		}
@@ -2026,46 +2026,30 @@ public class WorldGraph extends VoronoiGraph
 		{
 			p.setStroke(stroke, resolutionScale);
 
-			Set<Edge> found = new HashSet<>();
-			for (Center center : (centersToDraw == null ? centers : centersToDraw))
+			List<List<Edge>> regionBoundaries = findRegionBoundaries(centersToDraw);
+			for (List<Edge> regionBoundary : regionBoundaries)
 			{
-				for (Edge edge : center.borders)
+				List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
+
+				if (drawPoints == null || drawPoints.size() <= 1)
 				{
-					if (found.contains(edge))
-					{
-						continue;
-					}
-					
-					List<Edge> regionBoundary = findPath(found, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Region);
-					if (regionBoundary == null || regionBoundary.isEmpty())
-					{
-						continue;
-					}
-					else
-					{
-						List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
-						
-						if (drawPoints == null || drawPoints.size() <= 1)
-						{
-							continue;
-						}
-						
-						if (DebugFlags.drawRegionBoundaryPathJoins())
-						{
-							Color color = p.getColor();
-							p.setColor(Color.red);
-							p.setBasicStroke(1f * (float) resolutionScale);
-							final int diameter = (int)(8.0 * resolutionScale); 
-							
-							p.drawOval((int)(drawPoints.get(0).x) - diameter/2, (int)(drawPoints.get(0).y) - diameter/2, diameter, diameter);
-							
-							p.setColor(color);
-							p.setStroke(stroke, resolutionScale);
-						}
-						
-						drawPolyline(p, drawPoints);
-					}
+					continue;
 				}
+
+				if (DebugFlags.drawRegionBoundaryPathJoins())
+				{
+					Color color = p.getColor();
+					p.setColor(Color.red);
+					p.setBasicStroke(1f * (float) resolutionScale);
+					final int diameter = (int) (8.0 * resolutionScale);
+
+					p.drawOval((int) (drawPoints.get(0).x) - diameter / 2, (int) (drawPoints.get(0).y) - diameter / 2, diameter, diameter);
+
+					p.setColor(color);
+					p.setStroke(stroke, resolutionScale);
+				}
+
+				drawPolyline(p, drawPoints);
 			}
 		}
 
@@ -2074,14 +2058,38 @@ public class WorldGraph extends VoronoiGraph
 			p.setTransform(orig);
 		}
 	}
-	
+
+	public List<List<Edge>> findRegionBoundaries(Collection<Center> centersToDraw)
+	{
+		List<List<Edge>> result = new ArrayList<>();
+		Set<Edge> explored = new HashSet<>();
+		for (Center center : (centersToDraw == null ? centers : centersToDraw))
+		{
+			for (Edge edge : center.borders)
+			{
+				if (explored.contains(edge))
+				{
+					continue;
+				}
+
+				List<Edge> regionBoundary = findPath(explored, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Region);
+				if (regionBoundary != null && !regionBoundary.isEmpty())
+				{
+					result.add(regionBoundary);
+				}
+			}
+		}
+
+		return result;
+	}
+
 	private List<Point> edgeListToDrawPoints(List<Edge> edges)
 	{
 		if (edges.isEmpty())
 		{
 			return Collections.emptyList();
 		}
-		
+
 		List<Point> result = new ArrayList<Point>();
 		for (int i = 0; i < edges.size(); i++)
 		{
@@ -2090,7 +2098,7 @@ public class WorldGraph extends VoronoiGraph
 			{
 				continue;
 			}
-			
+
 			boolean reverse;
 			if (i == 0)
 			{
@@ -2123,13 +2131,13 @@ public class WorldGraph extends VoronoiGraph
 					reverse = false;
 				}
 			}
-			
+
 			addEdgePoints(result, current, reverse);
 		}
-		
+
 		return result;
 	}
-	
+
 	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse)
 	{
 		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
@@ -2160,7 +2168,8 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
 	 * 
-	 * @param start Where to start to search. Not necessarily the start of the path we're searching for.
+	 * @param start
+	 *            Where to start to search. Not necessarily the start of the path we're searching for.
 	 * @param accept
 	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
 	 *            returned.
@@ -2172,13 +2181,14 @@ public class WorldGraph extends VoronoiGraph
 		{
 			return null;
 		}
-		
+
 		ArrayDeque<Edge> deque = new ArrayDeque<>();
 		deque.add(start);
 		found.add(start);
-		
-		// TODO I need a consistent way to decide which direction to follow even for incremental drawing. Probably do something like TextDrawer.findRiver
-		
+
+		// TODO I need a consistent way to decide which direction to follow even for incremental drawing. Probably do something like
+		// TextDrawer.findRiver
+
 		if (start.v0 != null)
 		{
 			Edge e = start;
@@ -2200,13 +2210,13 @@ public class WorldGraph extends VoronoiGraph
 				e = next;
 			}
 		}
-		
+
 		if (start.v1 != null)
 		{
 			Edge e = start;
 			Edge prev = null;
 			while (true)
-			{				
+			{
 				Edge next = noisyEdges.findEdgeToFollow(e.v1, e, prev);
 				if (next == null || found.contains(next))
 				{
@@ -2222,7 +2232,7 @@ public class WorldGraph extends VoronoiGraph
 				e = next;
 			}
 		}
-		
+
 		return new ArrayList<>(deque);
 	}
 }
