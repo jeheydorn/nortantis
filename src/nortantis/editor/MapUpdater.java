@@ -3,11 +3,14 @@ package nortantis.editor;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -45,7 +48,8 @@ public abstract class MapUpdater
 	private boolean isMapReadyForInteractions;
 	private Queue<Runnable> tasksToRunWhenMapReady;
 	private ArrayDeque<MapUpdate> updatesToDraw;
-	private MapCreator currentNonIncrementalMapCreator;
+	private MapCreator currentMapCreator;
+	private ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
 
 	/**
 	 * 
@@ -60,6 +64,7 @@ public abstract class MapUpdater
 		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
 		tasksToRunWhenMapReady = new ConcurrentLinkedQueue<>();
 		updatesToDraw = new ArrayDeque<>();
+		centersToRedrawLowPriority = new ConcurrentHashMap<>();
 	}
 
 	/**
@@ -133,6 +138,13 @@ public abstract class MapUpdater
 	public void createAndShowMapIncrementalUsingIcons(List<FreeIcon> iconsChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, null, false);
+	}
+	
+	public void createAndShowLowPriorityChanges()
+	{
+		Set<Center> toDraw = new HashSet<>(centersToRedrawLowPriority.values());
+		centersToRedrawLowPriority.clear();
+		innerCreateAndShowMap(UpdateType.Incremental, toDraw, null, null, null, null, null);
 	}
 
 	public void reprocessBooks()
@@ -400,7 +412,8 @@ public abstract class MapUpdater
 						if (centersChanged != null && centersChanged.size() > 0 || edgesChanged != null && edgesChanged.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
-							IntRectangle replaceBounds = new MapCreator().incrementalUpdateForCentersAndEdges(settings, mapParts, map,
+							currentMapCreator = new MapCreator();
+							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
 							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
@@ -413,7 +426,8 @@ public abstract class MapUpdater
 						if (textChanged != null && textChanged.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for text");
-							IntRectangle replaceBounds = new MapCreator().incrementalUpdateText(settings, mapParts, map, textChanged);
+							currentMapCreator = new MapCreator();
+							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateText(settings, mapParts, map, textChanged);
 							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
@@ -425,7 +439,8 @@ public abstract class MapUpdater
 						if (iconsChanged != null && iconsChanged.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
-							IntRectangle replaceBounds = new MapCreator().incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
+							currentMapCreator = new MapCreator();
+							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
 							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
@@ -447,7 +462,7 @@ public abstract class MapUpdater
 					else
 					{
 						// Full draw
-
+						
 						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;
@@ -457,12 +472,14 @@ public abstract class MapUpdater
 						{
 							mapParts = new MapParts();
 						}
+						
+						centersToRedrawLowPriority.clear();
 
 						Image map;
 						try
 						{
-							currentNonIncrementalMapCreator = new MapCreator();
-							map = currentNonIncrementalMapCreator.createMap(settings, maxMapSize, mapParts);
+							currentMapCreator = new MapCreator();
+							map = currentMapCreator.createMap(settings, maxMapSize, mapParts);
 						}
 						catch (CancelledException e)
 						{
@@ -471,7 +488,7 @@ public abstract class MapUpdater
 						}
 
 						System.gc();
-						return new UpdateResult(map, null, currentNonIncrementalMapCreator.getWarningMessages());
+						return new UpdateResult(map, null, currentMapCreator.getWarningMessages());
 					}
 				}
 				finally
@@ -504,6 +521,11 @@ public abstract class MapUpdater
 						initializeCenterEditsIfEmpty(settings.edits);
 						initializeRegionEditsIfEmpty(settings.edits);
 						initializeEdgeEditsIfEmpty(settings.edits);
+					}
+					
+					if (currentMapCreator != null)
+					{
+						addLowPriorityCentersToRedraw(currentMapCreator.centersToRedrawLowPriority);	
 					}
 
 					MapUpdate next = combineAndGetNextUpdateToDraw();
@@ -545,6 +567,8 @@ public abstract class MapUpdater
 					}
 					isMapBeingDrawn = false;
 				}
+				
+				currentMapCreator = null;
 
 				while (tasksToRunWhenMapReady.size() > 0)
 				{
@@ -553,6 +577,14 @@ public abstract class MapUpdater
 			}
 
 		});
+	}
+	
+	private void addLowPriorityCentersToRedraw(Map<Integer, Center> toAdd)
+	{
+		for (Center c : toAdd.values())
+		{
+			centersToRedrawLowPriority.put(c.index, c);
+		}
 	}
 
 	private class UpdateResult
@@ -862,11 +894,13 @@ public abstract class MapUpdater
 
 	public void cancel()
 	{
-		if (currentNonIncrementalMapCreator != null && isMapBeingDrawn)
+		MapCreator current = currentMapCreator;
+		if (current != null && isMapBeingDrawn)
 		{
-			currentNonIncrementalMapCreator.cancel();
+			current.cancel();
 		}
 		tasksToRunWhenMapReady.clear();
+		centersToRedrawLowPriority.clear();
 	}
 
 }
