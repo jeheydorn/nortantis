@@ -1,15 +1,19 @@
-REM Before running this script, in Eclipse, change AssetsPath.isInstalled to true and then export as a runnable jar file named Nortantis.jar.
+REM Before running this script, in Eclipse, change AssetsPath.isInstalled to true.
 
-REM When updating the app version, make sure to also update MapSettings.currentVersion. Although that can be skipped if MapSettings does not change.
+REM When updating the app version, make sure to also update MapSettings.currentVersion.
 
 set inputFolder=installer_input
 set exeName=Nortantis
 
+REM Build the jar file
+pushd ..
+call gradle :jar
+popd
+
 RMDIR /S /Q installer_input
 MKDIR %inputFolder%
 Xcopy "../assets" "%inputFolder%/assets" /E /I
-copy ..\Nortantis.jar %inputFolder%
-DEL "Nortantis Fantasy Maps-*.msi"
+copy ..\build\libs\Nortantis.jar %inputFolder%
 
 jpackage ^
 --input "%inputFolder%" ^
@@ -22,7 +26,7 @@ jpackage ^
 --icon "taskbar icon.ico" ^
 --file-associations file_associations.txt ^
 --vendor "Joseph Heydorn" ^
---app-version "2.83" ^
+--app-version "2.84" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^

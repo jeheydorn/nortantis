@@ -911,7 +911,7 @@ public class IconDrawer
 				int yLoc = yTop + y;
 				try
 				{
-					Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), false);
+					Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
 					if (closest == null)
 					{
 						// The pixel isn't on the map.

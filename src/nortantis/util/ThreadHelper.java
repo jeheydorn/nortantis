@@ -210,10 +210,4 @@ public class ThreadHelper
 	{
 		return threadCount;
 	}
-
-	@Override
-	protected void finalize()
-	{
-		cachedThreadPool.shutdown();
-	}
 }
