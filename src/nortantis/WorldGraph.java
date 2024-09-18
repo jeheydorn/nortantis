@@ -410,14 +410,27 @@ public class WorldGraph extends VoronoiGraph
 				}
 				else
 				{
-					return Color.create(closestLand.region.id, closestLand.region.id, closestLand.region.id);
+					return storeValueAsColor(closestLand.region.id);
 				}
 			}
 			else
 			{
-				return Color.create(c.region.id, c.region.id, c.region.id);
+				return storeValueAsColor(c.region.id);
 			}
 		});
+	}
+	
+	public static Color storeValueAsColor(int value)
+	{
+		int blue = value & 0xFF;
+		int green = (value >> 8) & 0xFF;
+		int red = (value >> 16) & 0xFF;
+		return Color.create(red, green, blue);
+	}
+	
+	public static int getValueFromColor(Color color)
+	{
+		return color.getRed() << 16 | color.getGreen() << 8 | color.getBlue();
 	}
 
 	private Center findClosestLand(Center center, int maxDistanceInPolygons)

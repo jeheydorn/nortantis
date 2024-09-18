@@ -17,6 +17,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
 import nortantis.TextDrawer;
+import nortantis.WorldGraph;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
@@ -625,8 +626,9 @@ public class ImageHelper
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
-		if (colorIndexes.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("colorIndexes type must be ImageType.Grayscale.");
+		if (colorIndexes.getType() != ImageType.RGB)
+			throw new IllegalArgumentException("colorIndexes type must be type RGB.");
+
 
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
@@ -648,7 +650,7 @@ public class ImageHelper
 					for (int x = 0; x < image.getWidth(); x++)
 					{
 						Color col = Color.create(image.getRGB(x, y));
-						Color color = colors.get(colorIndexes.getGrayLevel(x, y));
+						Color color = colors.get(WorldGraph.getValueFromColor(colorIndexes.getPixelColor(x, y)));
 						if (color != null)
 						{
 							int maskLevel = mask.getGrayLevel(x, y);
@@ -1523,8 +1525,8 @@ public class ImageHelper
 	{
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
-		if (colorIndexes.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("colorIndexes type must be ImageType.Grayscale.");
+		if (colorIndexes.getType() != ImageType.RGB)
+			throw new IllegalArgumentException("colorIndexes type must be type RGB, but was type " + colorIndexes.getType());
 
 		if (where == null)
 		{
@@ -1554,7 +1556,7 @@ public class ImageHelper
 					continue;
 				}
 				float level = image.getNormalizedPixelLevel(x + whereFinal.x, y + whereFinal.y);
-				int colorKey = colorIndexes.getGrayLevel(x, y);
+				int colorKey = WorldGraph.getValueFromColor(colorIndexes.getPixelColor(x, y));
 				float[] hsb = hsbMap.get(colorKey);
 				// hsb can be null if a region edit is missing from the nort file. I saw this happen, but I don't know what caused it.
 				// When it did happen, it happened to region 0, which is also the color index used for ocean, so I don't think there

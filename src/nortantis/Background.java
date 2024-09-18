@@ -275,7 +275,7 @@ public class Background
 
 			if (drawBounds == null || centersToDraw == null)
 			{
-				regionIndexes = Image.create(land.getWidth(), land.getHeight(), ImageType.Grayscale8Bit);
+				regionIndexes = Image.create(land.getWidth(), land.getHeight(), ImageType.RGB);
 				graph.drawRegionIndexes(regionIndexes.createPainter(), null, null);
 
 				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
@@ -283,7 +283,7 @@ public class Background
 			else
 			{
 				// Update only a piece of the land
-				regionIndexes = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
+				regionIndexes = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.RGB);
 				graph.drawRegionIndexes(regionIndexes.createPainter(), centersToDraw, drawBounds);
 				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
 						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
