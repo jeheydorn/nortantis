@@ -715,11 +715,11 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);
 
 		oceanEffectsLevelSlider = new JSlider();
-		oceanEffectsLevelSlider.setMinorTickSpacing(5);
-		oceanEffectsLevelSlider.setValue(2);
+		oceanEffectsLevelSlider.setMinorTickSpacing(25);
 		oceanEffectsLevelSlider.setPaintTicks(true);
 		oceanEffectsLevelSlider.setPaintLabels(true);
-		oceanEffectsLevelSlider.setMajorTickSpacing(20);
+		oceanEffectsLevelSlider.setMajorTickSpacing(100);
+		oceanEffectsLevelSlider.setMaximum(400);
 		createMapChangeListenerForTerrainChange(oceanEffectsLevelSlider);
 		SwingHelper.setSliderWidthForSidePanel(oceanEffectsLevelSlider);
 		organizer.addLabelAndComponentsVertical("Ocean effects width:", "How far from coastlines ocean effects should extend.",

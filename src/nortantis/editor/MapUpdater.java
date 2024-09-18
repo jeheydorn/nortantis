@@ -777,7 +777,7 @@ public abstract class MapUpdater
 				}
 				else if (iconsChanged == null && other.iconsChanged != null)
 				{
-					iconsChanged = new ArrayList<>(iconsChanged);
+					iconsChanged = new ArrayList<>(other.iconsChanged);
 				}
 			}
 		}
