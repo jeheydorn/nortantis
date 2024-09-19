@@ -788,7 +788,7 @@ public class LandWaterTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
 			boolean willDoImagesRefresh)
 	{
-		areRegionColorsVisible = settings.drawRegionColors;
+		areRegionColorsVisible = settings.drawPoliticalRegions && settings.drawRegionColors;
 
 		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.

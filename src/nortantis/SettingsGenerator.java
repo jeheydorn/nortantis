@@ -184,6 +184,7 @@ public class SettingsGenerator
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
 		}
 
+		settings.drawPoliticalRegions = rand.nextDouble() > 0.25;
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
 
 		if (rand.nextDouble() > 0.25)

@@ -146,11 +146,12 @@ public class ThemePanel extends JTabbedPane
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
 	private JSlider cityScaleSlider;
-	private JCheckBox drawRegionBoundariesCheckbox;
+	private JCheckBox drawPoliticalRegionsCheckbox;
 	private JComboBox<StrokeType> regionBoundaryTypeComboBox;
 	private JSlider regionBoundaryWidthSlider;
 	private RowHider regionBoundaryTypeComboBoxHider;
 	private RowHider regionBoundaryWidthSliderHider;
+	private RowHider landColoringMethodHider;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -292,9 +293,9 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSeperator();
 
 
-		drawRegionBoundariesCheckbox = new JCheckBox("Draw region boundaries");
-		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
-		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
+		drawPoliticalRegionsCheckbox = new JCheckBox("Draw political regions");
+		drawPoliticalRegionsCheckbox.setToolTipText("Whether to show region boundaires");
+		drawPoliticalRegionsCheckbox.addItemListener(new ItemListener()
 		{
 			@Override
 			public void itemStateChanged(ItemEvent e)
@@ -303,7 +304,7 @@ public class ThemePanel extends JTabbedPane
 				handleTerrainChange();
 			}
 		});
-		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
+		organizer.addLeftAlignedComponent(drawPoliticalRegionsCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
 		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "How to draw region boundaries", regionBoundaryTypeComboBox);
@@ -343,7 +344,7 @@ public class ThemePanel extends JTabbedPane
 				handleFullRedraw();
 			}
 		});
-		organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
+		landColoringMethodHider = organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
 
 		colorizeCheckboxListener = new ItemListener()
 		{
@@ -1122,14 +1123,6 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	private void updateLandColoringMethodIfNeeded()
-	{
-		if (!landSupportsColoring() || !drawRegionBoundariesCheckbox.isSelected())
-		{
-			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
-		}
-	}
-
 	private boolean landSupportsColoring()
 	{
 		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeLandCheckbox.isSelected());
@@ -1145,16 +1138,14 @@ public class ThemePanel extends JTabbedPane
 		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeLandCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		regionBoundaryTypeComboBoxHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
-		regionBoundaryWidthSliderHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
-		
-		
+		regionBoundaryTypeComboBoxHider.setVisible(drawPoliticalRegionsCheckbox.isSelected());
+		regionBoundaryWidthSliderHider.setVisible(drawPoliticalRegionsCheckbox.isSelected());
 	}
 
 	private void updateBackgroundAndRegionFieldStates()
 	{
 		updateBackgroundAndRegionFieldVisibility();
-		updateLandColoringMethodIfNeeded();
+		landColoringMethodHider.setVisible(canShowPoliticalRegions());
 		handleEnablingAndDisabling();
 	}
 
@@ -1425,7 +1416,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		handleLandColoringMethodChanged();
 
-		drawRegionBoundariesCheckbox.setSelected(settings.drawRegionBoundaries);
+		drawPoliticalRegionsCheckbox.setSelected(settings.drawPoliticalRegions);
 		regionBoundaryTypeComboBox.setSelectedItem(settings.regionBoundaryStyle.type);
 		regionBoundaryWidthSlider.setValue((int)(settings.regionBoundaryStyle.width * 10f));
 
@@ -1620,7 +1611,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
-		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
+		settings.drawPoliticalRegions = drawPoliticalRegionsCheckbox.isSelected();
 		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(), regionBoundaryWidthSlider.getValue() / 10f);
 		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
@@ -1644,9 +1635,29 @@ public class ThemePanel extends JTabbedPane
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
 	}
 
-	private boolean areRegionColorsVisible()
+	boolean areRegionColorsVisible()
 	{
-		return landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
+		return getLandColoringMethod().equals(LandColoringMethod.ColorPoliticalRegions);
+	}
+	
+	private boolean canShowPoliticalRegions()
+	{
+		return landSupportsColoring() && drawPoliticalRegionsCheckbox.isSelected();
+	}
+	
+	/**
+	 * This should be used instead of directly calling landColoringMethodComboBox.getSelectedItem()
+	 * because sometimes the landColoringMethodComboBox is hidden and its value should be assumed
+	 * to be LandColoringMethod.SingleColor.
+	 */
+	private LandColoringMethod getLandColoringMethod()
+	{
+		if (!canShowPoliticalRegions())
+		{
+			return LandColoringMethod.SingleColor;
+		}
+		
+		return (LandColoringMethod) landColoringMethodComboBox.getSelectedItem();
 	}
 
 	public Color getLandColor()
@@ -1744,14 +1755,10 @@ public class ThemePanel extends JTabbedPane
 		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
 		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
 
-		landColoringMethodComboBox.setEnabled(landSupportsColoring());
-
 		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
 		btnChooseLandColor.setEnabled(landSupportsColoring());
 
 		btnChooseCoastShadingColor.setEnabled(!areRegionColorsVisible());
-		
-		landColoringMethodComboBox.setEnabled(drawRegionBoundariesCheckbox.isSelected());
 	}
 
 	void enableOrDisableEverything(boolean enable)
