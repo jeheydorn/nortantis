@@ -231,7 +231,7 @@ public class MapCreator implements WarningLogger
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
 		boolean changeAffectsLandOrRegionShape = applyCenterEdits(mapParts.graph, settings.edits,
-				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionBoundaries);
+				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawPoliticalRegions);
 
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
@@ -241,7 +241,7 @@ public class MapCreator implements WarningLogger
 
 		if (changeAffectsLandOrRegionShape)
 		{
-			if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
+			if (settings.drawPoliticalRegions && settings.regionBoundaryStyle.type != StrokeType.Solid)
 			{
 				// When using non-solid region boundaries, expand the replace bounds to include region borders inside the replace bounds so
 				// that
@@ -327,7 +327,7 @@ public class MapCreator implements WarningLogger
 			// Store the current version of mapSnippet for a background when drawing icons later.
 			Image landBackground = mapSnippet.deepCopy();
 
-			if (settings.drawRegionColors)
+			if (settings.drawPoliticalRegions)
 			{
 				Painter p = mapSnippet.createPainter(DrawQuality.High);
 				p.setColor(settings.coastlineColor);
@@ -874,7 +874,7 @@ public class MapCreator implements WarningLogger
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
 		// edge edits.
 		applyEdgeEdits(graph, settings.edits, null);
-		applyCenterEdits(graph, settings.edits, null, settings.drawRegionColors);
+		applyCenterEdits(graph, settings.edits, null, settings.drawPoliticalRegions);
 
 		checkForCancel();
 
@@ -934,7 +934,7 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		if (settings.drawRegionColors)
+		if (settings.drawPoliticalRegions)
 		{
 			{
 				Painter g = map.createPainter(DrawQuality.High);
@@ -1091,7 +1091,7 @@ public class MapCreator implements WarningLogger
 				p.setColor(Color.white);
 				graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
 
-				if (settings.drawRegionColors)
+				if (settings.drawPoliticalRegions)
 				{
 					p.setColor(Color.white);
 					graph.drawRegionBordersSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
@@ -1104,7 +1104,7 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			if (settings.drawRegionColors)
+			if (settings.drawPoliticalRegions && settings.drawRegionColors)
 			{
 				// Color the blur according to each region's blur color.
 				Map<Integer, Color> colors = new HashMap<>();
@@ -1443,7 +1443,7 @@ public class MapCreator implements WarningLogger
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
-				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale, settings.drawRegionColors);
+				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale, settings.drawPoliticalRegions);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,

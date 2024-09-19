@@ -137,10 +137,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			try
 			{
 				JOptionPane.showMessageDialog(null,
-						"Unnable to create GUI because of error: " + ex.getMessage() 
-								+ "\nVersion: " + MapSettings.currentVersion
-								+ "\nOS Name: " + System.getProperty("os.name") 
-								+ "\nInstall path: " + AssetsPath.getInstallPath()
+						"Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion
+								+ "\nOS Name: " + System.getProperty("os.name") + "\nInstall path: " + AssetsPath.getInstallPath()
 								+ "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
 						"Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -565,7 +563,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					MapSettings settingsToKeepThemeFrom = getSettingsFromGUI(false);
 					settingsToKeepThemeFrom.edits = new MapEdits();
 
-					if (settingsToKeepThemeFrom.drawRegionColors
+					if (themePanel.areRegionColorsVisible()
 							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
 						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(
@@ -1396,6 +1394,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (!openSettingsFilePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
 			{
 				openSettingsFilePath = Paths.get(openSettingsFilePath.toString() + MapSettings.fileExtensionWithDot);
+			}
+
+			if (!openSettingsFilePath.equals(curPath))
+			{
+				// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
+				imageExportPath = null;
+				heightmapExportPath = null;
 			}
 
 			final MapSettings settings = getSettingsFromGUI(false);
