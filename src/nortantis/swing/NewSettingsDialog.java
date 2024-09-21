@@ -415,7 +415,7 @@ public class NewSettingsDialog extends JDialog
 		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
 		settings.textColor = randomSettings.textColor;
 		settings.drawBoldBackground = randomSettings.drawBoldBackground;
-		settings.drawPoliticalRegions = randomSettings.drawPoliticalRegions;
+		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
 		settings.drawRegionColors = randomSettings.drawRegionColors;
 		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
 		settings.drawBorder = randomSettings.drawBorder;
@@ -547,7 +547,7 @@ public class NewSettingsDialog extends JDialog
 		resultSettings.generatedHeight = (int) generatedDimensions.getHeight();
 
 		resultSettings.drawRegionColors = landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
-		resultSettings.drawPoliticalRegions = true ; // TODO Pull from new field.
+		resultSettings.drawRegionBoundaries = true ; // TODO Pull from new field.
 
 		resultSettings.books = booksWidget.getSelectedBooks();
 

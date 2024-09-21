@@ -563,7 +563,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					MapSettings settingsToKeepThemeFrom = getSettingsFromGUI(false);
 					settingsToKeepThemeFrom.edits = new MapEdits();
 
-					if (themePanel.areRegionColorsVisible()
+					if (settingsToKeepThemeFrom.drawRegionColors
 							&& !UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage)
 					{
 						UserPreferences.getInstance().hideNewMapWithSameThemeRegionColorsMessage = SwingHelper.showDismissibleMessage(

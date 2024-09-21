@@ -146,12 +146,11 @@ public class ThemePanel extends JTabbedPane
 	private JSlider hillScaleSlider;
 	private JSlider duneScaleSlider;
 	private JSlider cityScaleSlider;
-	private JCheckBox drawPoliticalRegionsCheckbox;
+	private JCheckBox drawRegionBoundariesCheckbox;
 	private JComboBox<StrokeType> regionBoundaryTypeComboBox;
 	private JSlider regionBoundaryWidthSlider;
 	private RowHider regionBoundaryTypeComboBoxHider;
 	private RowHider regionBoundaryWidthSliderHider;
-	private RowHider landColoringMethodHider;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -293,9 +292,9 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSeperator();
 
 
-		drawPoliticalRegionsCheckbox = new JCheckBox("Draw political regions");
-		drawPoliticalRegionsCheckbox.setToolTipText("Whether to show region boundaires");
-		drawPoliticalRegionsCheckbox.addItemListener(new ItemListener()
+		drawRegionBoundariesCheckbox = new JCheckBox("Draw political region boundaries");
+		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
+		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
 		{
 			@Override
 			public void itemStateChanged(ItemEvent e)
@@ -304,7 +303,7 @@ public class ThemePanel extends JTabbedPane
 				handleTerrainChange();
 			}
 		});
-		organizer.addLeftAlignedComponent(drawPoliticalRegionsCheckbox);
+		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
 		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "How to draw region boundaries", regionBoundaryTypeComboBox);
@@ -323,7 +322,8 @@ public class ThemePanel extends JTabbedPane
 			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
 		}
 
-
+		organizer.addSeperator();
+		
 		colorizeLandCheckbox = new JCheckBox("Color land");
 		colorizeLandCheckbox
 				.setToolTipText("Whether to change the land texture to a custom color versus use the color of the texture image");
@@ -344,7 +344,7 @@ public class ThemePanel extends JTabbedPane
 				handleFullRedraw();
 			}
 		});
-		landColoringMethodHider = organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
+		organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
 
 		colorizeCheckboxListener = new ItemListener()
 		{
@@ -1138,14 +1138,18 @@ public class ThemePanel extends JTabbedPane
 		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeLandCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
-		regionBoundaryTypeComboBoxHider.setVisible(drawPoliticalRegionsCheckbox.isSelected());
-		regionBoundaryWidthSliderHider.setVisible(drawPoliticalRegionsCheckbox.isSelected());
+		regionBoundaryTypeComboBoxHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
+		regionBoundaryWidthSliderHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 	}
 
 	private void updateBackgroundAndRegionFieldStates()
 	{
+		if (!landSupportsColoring())
+		{
+			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
+		}
+	
 		updateBackgroundAndRegionFieldVisibility();
-		landColoringMethodHider.setVisible(canShowPoliticalRegions());
 		handleEnablingAndDisabling();
 	}
 
@@ -1416,7 +1420,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		handleLandColoringMethodChanged();
 
-		drawPoliticalRegionsCheckbox.setSelected(settings.drawPoliticalRegions);
+		drawRegionBoundariesCheckbox.setSelected(settings.drawRegionBoundaries);
 		regionBoundaryTypeComboBox.setSelectedItem(settings.regionBoundaryStyle.type);
 		regionBoundaryWidthSlider.setValue((int)(settings.regionBoundaryStyle.width * 10f));
 
@@ -1611,7 +1615,7 @@ public class ThemePanel extends JTabbedPane
 		}
 		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
-		settings.drawPoliticalRegions = drawPoliticalRegionsCheckbox.isSelected();
+		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
 		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(), regionBoundaryWidthSlider.getValue() / 10f);
 		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
@@ -1635,14 +1639,9 @@ public class ThemePanel extends JTabbedPane
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
 	}
 
-	boolean areRegionColorsVisible()
+	private boolean areRegionColorsVisible()
 	{
 		return getLandColoringMethod().equals(LandColoringMethod.ColorPoliticalRegions);
-	}
-	
-	private boolean canShowPoliticalRegions()
-	{
-		return landSupportsColoring() && drawPoliticalRegionsCheckbox.isSelected();
 	}
 	
 	/**
@@ -1652,7 +1651,7 @@ public class ThemePanel extends JTabbedPane
 	 */
 	private LandColoringMethod getLandColoringMethod()
 	{
-		if (!canShowPoliticalRegions())
+		if (!landSupportsColoring())
 		{
 			return LandColoringMethod.SingleColor;
 		}
@@ -1759,6 +1758,8 @@ public class ThemePanel extends JTabbedPane
 		btnChooseLandColor.setEnabled(landSupportsColoring());
 
 		btnChooseCoastShadingColor.setEnabled(!areRegionColorsVisible());
+		
+		landColoringMethodComboBox.setEnabled(landSupportsColoring());
 	}
 
 	void enableOrDisableEverything(boolean enable)
