@@ -3,7 +3,6 @@ package nortantis.platform;
 import java.util.List;
 
 import nortantis.Stroke;
-import nortantis.StrokeType;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 

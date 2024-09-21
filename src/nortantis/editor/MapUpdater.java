@@ -3,7 +3,6 @@ package nortantis.editor;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -72,12 +71,12 @@ public abstract class MapUpdater
 	 */
 	public void createAndShowMapFull()
 	{
-		createAndShowMap(UpdateType.Full, null, null, null, null, null, null, false);
+		createAndShowMap(UpdateType.Full, null, null, null, null, null, null);
 	}
 
 	public void createAndShowMapFull(Runnable preRun)
 	{
-		createAndShowMap(UpdateType.Full, null, null, null, null, preRun, null, false);
+		createAndShowMap(UpdateType.Full, null, null, null, null, preRun, null);
 	}
 
 	public void createAndShowMapTextChange()
@@ -87,69 +86,69 @@ public abstract class MapUpdater
 
 	public void createAndShowMapTextChange(Runnable postRun)
 	{
-		createAndShowMap(UpdateType.Text, null, null, null, null, null, postRun, false);
+		createAndShowMap(UpdateType.Text, null, null, null, null, null, postRun);
 	}
 
 	public void createAndShowMapFontsChange()
 	{
-		createAndShowMap(UpdateType.Fonts, null, null, null, null, null, null, false);
+		createAndShowMap(UpdateType.Fonts, null, null, null, null, null, null);
 	}
 
 	public void createAndShowMapTerrainChange()
 	{
-		createAndShowMap(UpdateType.Terrain, null, null, null, null, null, null, false);
+		createAndShowMap(UpdateType.Terrain, null, null, null, null, null, null);
 	}
 
 	public void createAndShowMapTerrainChange(Runnable preRun)
 	{
-		createAndShowMap(UpdateType.Terrain, null, null, null, null, preRun, null, false);
+		createAndShowMap(UpdateType.Terrain, null, null, null, null, preRun, null);
 	}
 
 	public void createAndShowMapGrungeOrFrayedEdgeChange()
 	{
-		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null, null, null, false);
+		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, null, false);
+		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged, Runnable postRun)
 	{
-		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, postRun, false);
+		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, postRun);
 	}
 
 	public void createAndShowMapIncrementalUsingEdges(Set<Edge> edgesChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null, null, null, null, false);
+		createAndShowMap(UpdateType.Incremental, null, edgesChanged, null, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingText(List<MapText> textChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null, null, false);
+		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null, null);
 	}
 
 	public void createAndShowMapIncrementalUsingText(List<MapText> textChanged, Runnable postRun)
 	{
-		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null, postRun, false);
+		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null, postRun);
 	}
 
 	public void createAndShowMapIncrementalUsingIcons(List<FreeIcon> iconsChanged)
 	{
-		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, null, false);
+		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, null);
 	}
 	
 	public void createAndShowLowPriorityChanges()
 	{
-		Set<Center> toDraw = new HashSet<>(centersToRedrawLowPriority.values());
+		Set<Integer> centersToDrawIds = new HashSet<>(centersToRedrawLowPriority.keySet());
 		centersToRedrawLowPriority.clear();
-		innerCreateAndShowMap(UpdateType.Incremental, toDraw, null, null, null, null, null);
+		innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null);
 	}
 
 	public void reprocessBooks()
 	{
-		createAndShowMap(UpdateType.ReprocessBooks, null, null, null, null, null, null, false);
+		createAndShowMap(UpdateType.ReprocessBooks, null, null, null, null, null, null);
 	}
 
 	/**
@@ -167,41 +166,41 @@ public abstract class MapUpdater
 	{
 		if (change.updateType != UpdateType.Incremental)
 		{
-			createAndShowMap(change.updateType, null, null, null, null, change.preRun, null, true);
+			createAndShowMap(change.updateType, null, null, null, null, change.preRun, null);
 		}
 		else
 		{
-			Set<Center> centersChanged = getCentersWithChangesInEdits(change.settings.edits);
-			Set<Edge> edgesChanged = getEdgesWithChangesInEdits(change.settings.edits);
+			Set<Integer> centersChanged = getIdsOfCentersWithChangesInEdits(change.settings.edits);
+			Set<Integer> edgesChanged = getIdsOfEdgesWithChangesInEdits(change.settings.edits);
 			List<MapText> textChanged = getTextWithChangesInEdits(change.settings.edits);
 			List<FreeIcon> iconsChanged = getIconsWithChangesInEdits(change.settings.edits);
-			createAndShowMap(UpdateType.Incremental, centersChanged, edgesChanged, textChanged, iconsChanged, change.preRun, null, true);
+			createAndShowMapUsingIds(UpdateType.Incremental, centersChanged, edgesChanged, textChanged, iconsChanged, change.preRun, null);
 		}
 	}
 
-	private Set<Center> getCentersWithChangesInEdits(MapEdits changeEdits)
+	private Set<Integer> getIdsOfCentersWithChangesInEdits(MapEdits changeEdits)
 	{
-		Set<Center> changedCenters = getEdits().centerEdits.values().stream()
+		Set<Integer> changedCentersIds = getEdits().centerEdits.values().stream()
 				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
-				.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
+				.map(cEdit -> cEdit.index).collect(Collectors.toSet());
 
 		Set<RegionEdit> regionChanges = getEdits().regionEdits.values().stream()
 				.filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
 		for (RegionEdit rEdit : regionChanges)
 		{
-			Set<Center> regionCenterEdits = changeEdits.centerEdits.values().stream()
+			Set<Integer> regionCenterEdits = changeEdits.centerEdits.values().stream()
 					.filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId)
-					.map(cEdit -> mapParts.graph.centers.get(cEdit.index)).collect(Collectors.toSet());
-			changedCenters.addAll(regionCenterEdits);
+					.map(cEdit -> cEdit.index).collect(Collectors.toSet());
+			changedCentersIds.addAll(regionCenterEdits);
 		}
 
-		return changedCenters;
+		return changedCentersIds;
 	}
 
-	private Set<Edge> getEdgesWithChangesInEdits(MapEdits changeEdits)
+	private Set<Integer> getIdsOfEdgesWithChangesInEdits(MapEdits changeEdits)
 	{
 		return getEdits().edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
-				.map(eEdit -> mapParts.graph.edges.get(eEdit.index)).collect(Collectors.toSet());
+				.map(eEdit -> eEdit.index).collect(Collectors.toSet());
 	}
 
 	private List<MapText> getTextWithChangesInEdits(MapEdits changeEdits)
@@ -292,40 +291,22 @@ public abstract class MapUpdater
 
 	}
 
-	/**
-	 * Creates a new set that has the most up-to-date version of the centers in the given set. This is necessary because incremental and
-	 * full redraws can run out of order, and as a result, a full redraw might recreate the graph, while an incremental change is waiting to
-	 * run, causing centersChanged (passed to createAndShowMap) to hold Center objects no longer in the graph, and so they could be out of
-	 * date.
-	 */
-	private Set<Center> getCurrentCenters(Set<Center> centers)
-	{
-		if (centers == null)
-		{
-			return null;
-		}
-		return centers.stream().map(c -> mapParts.graph.centers.get(c.index)).collect(Collectors.toSet());
-	}
-
-	/**
-	 * Like getCurrentCenters but for edges.
-	 */
-	private Set<Edge> getCurrentEdges(Set<Edge> edges)
-	{
-		if (edges == null)
-		{
-			return null;
-		}
-		return edges.stream().map(e -> mapParts.graph.edges.get(e.index)).collect(Collectors.toSet());
-	}
-
 	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
 	{
 		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
 	}
-
+	
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
-			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun, boolean isUndoRedo)
+			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
+	{
+		Set<Integer> centersChangedIds = centersChanged == null ? null : centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
+		Set<Integer> edgesChangedIds = edgesChanged == null ? null : edgesChanged.stream().map(e -> e.index).collect(Collectors.toSet());
+
+		createAndShowMapUsingIds(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRun, postRun);
+	}
+
+	private void createAndShowMapUsingIds(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
+			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
 		List<Runnable> preRuns = new ArrayList<>();
 		if (preRun != null)
@@ -338,16 +319,16 @@ public abstract class MapUpdater
 		{
 			postRuns.add(postRun);
 		}
-
+		
 		List<MapText> copiedText = textChanged == null ? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
-		innerCreateAndShowMap(updateType, centersChanged, edgesChanged, copiedText, iconsChanged, preRuns, postRuns);
+		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns);
 	}
 
 	/**
 	 * Redraws the map, then displays it
 	 */
-	private void innerCreateAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
+	private void innerCreateAndShowMap(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
 			List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 	{
 		if (!enabled)
@@ -359,7 +340,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			updatesToDraw.add(new MapUpdate(updateType, centersChanged, edgesChanged, textChanged, iconsChanged, preRuns, postRuns));
+			updatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns));
 			return;
 		}
 
@@ -409,12 +390,12 @@ public abstract class MapUpdater
 						Image map = getCurrentMapForIncrementalUpdate();
 						IntRectangle combinedReplaceBounds = null;
 						// Incremental update
-						if (centersChanged != null && centersChanged.size() > 0 || edgesChanged != null && edgesChanged.size() > 0)
+						if (centersChangedIds != null && centersChangedIds.size() > 0 || centersChangedIds != null && centersChangedIds.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
-									getCurrentCenters(centersChanged), getCurrentEdges(edgesChanged));
+									centersChangedIds, edgesChangedIds);
 							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
@@ -553,7 +534,7 @@ public abstract class MapUpdater
 
 					if (next != null)
 					{
-						innerCreateAndShowMap(next.updateType, next.centersChanged, next.edgesChanged, next.textChanged, next.iconsChanged,
+						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged, next.iconsChanged,
 								next.preRuns, next.postRuns);
 					}
 
@@ -679,25 +660,25 @@ public abstract class MapUpdater
 
 	private class MapUpdate
 	{
-		Set<Center> centersChanged;
-		Set<Edge> edgesChanged;
+		Set<Integer> centersChangedIds;
+		Set<Integer> edgesChangedIds;
 		List<MapText> textChanged;
 		List<FreeIcon> iconsChanged;
 		UpdateType updateType;
 		List<Runnable> postRuns;
 		List<Runnable> preRuns;
 
-		public MapUpdate(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
+		public MapUpdate(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
 				List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 		{
 			this.updateType = updateType;
-			if (centersChanged != null)
+			if (centersChangedIds != null)
 			{
-				this.centersChanged = new HashSet<Center>(centersChanged);
+				this.centersChangedIds = new HashSet<>(centersChangedIds);
 			}
-			if (edgesChanged != null)
+			if (edgesChangedIds != null)
 			{
-				this.edgesChanged = new HashSet<Edge>(edgesChanged);
+				this.edgesChangedIds = new HashSet<>(edgesChangedIds);
 			}
 			if (textChanged != null)
 			{
@@ -744,22 +725,22 @@ public abstract class MapUpdater
 
 			if (updateType == UpdateType.Incremental)
 			{
-				if (centersChanged != null && other.centersChanged != null)
+				if (centersChangedIds != null && other.centersChangedIds != null)
 				{
-					centersChanged.addAll(other.centersChanged);
+					centersChangedIds.addAll(other.centersChangedIds);
 				}
-				else if (centersChanged == null && other.centersChanged != null)
+				else if (centersChangedIds == null && other.centersChangedIds != null)
 				{
-					centersChanged = new HashSet<>(other.centersChanged);
+					centersChangedIds = new HashSet<>(other.centersChangedIds);
 				}
 
-				if (edgesChanged != null && other.edgesChanged != null)
+				if (edgesChangedIds != null && other.edgesChangedIds != null)
 				{
-					edgesChanged.addAll(other.edgesChanged);
+					edgesChangedIds.addAll(other.edgesChangedIds);
 				}
-				else if (edgesChanged == null && other.edgesChanged != null)
+				else if (edgesChangedIds == null && other.edgesChangedIds != null)
 				{
-					edgesChanged = new HashSet<>(other.edgesChanged);
+					edgesChangedIds = new HashSet<>(other.edgesChangedIds);
 				}
 
 				if (textChanged != null && other.textChanged != null)

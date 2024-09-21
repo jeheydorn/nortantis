@@ -30,7 +30,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
 import nortantis.util.Tuple2;
 

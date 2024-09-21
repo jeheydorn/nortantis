@@ -16,7 +16,6 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
-import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;

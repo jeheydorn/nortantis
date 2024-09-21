@@ -1,8 +1,6 @@
 package nortantis.graph.voronoi;
 
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 import nortantis.geom.Point;
 

@@ -19,9 +19,6 @@ import java.util.function.Function;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
-import nortantis.MapCreator;
-import nortantis.Stroke;
-import nortantis.WorldGraph;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -759,6 +756,26 @@ public abstract class VoronoiGraph
 		Set<Center> centers = new HashSet<Center>();
 		for (Edge edge : edges)
 		{
+			if (edge.d0 != null)
+			{
+				centers.add(edge.d0);
+			}
+
+			if (edge.d1 != null)
+			{
+				centers.add(edge.d1);
+			}
+		}
+
+		return centers;
+	}
+	
+	public Set<Center> getCentersFromEdgeIds(Collection<Integer> edgeIds)
+	{
+		Set<Center> centers = new HashSet<Center>();
+		for (Integer id : edgeIds)
+		{
+			Edge edge = edges.get(id);
 			if (edge.d0 != null)
 			{
 				centers.add(edge.d0);
