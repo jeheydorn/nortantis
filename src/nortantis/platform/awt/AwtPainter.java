@@ -6,7 +6,6 @@ import java.awt.Stroke;
 
 import org.apache.commons.lang3.NotImplementedException;
 
-import nortantis.MapCreator;
 import nortantis.StrokeType;
 import nortantis.platform.Color;
 import nortantis.platform.Font;

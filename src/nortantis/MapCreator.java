@@ -172,19 +172,19 @@ public class MapCreator implements WarningLogger
 	 *            If edges changed, this is the list of edge edits that changed
 	 */
 	public IntRectangle incrementalUpdateForCentersAndEdges(final MapSettings settings, MapParts mapParts, Image fullSizedMap,
-			Set<Center> centersChanged, Set<Edge> edgesChanged)
+			Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds)
 	{
 		// Stopwatch updateSW = new Stopwatch("incremental update");
-
-		if (centersChanged == null)
+		
+		Set<Center> centersChanged;
+		if (centersChangedIds != null)
 		{
-			centersChanged = new HashSet<>();
+			centersChanged = new HashSet<>(centersChangedIds.stream().map(id -> mapParts.graph.centers.get(id)).collect(Collectors.toSet()));
 		}
 		else
 		{
-			centersChanged = new HashSet<>(centersChanged);
+			centersChanged = new HashSet<>();
 		}
-
 
 		// If any of the centers changed are are touching a lake, add the lake too since adding the change could have
 		// changed whether the lake is land-locked, which will change how it's drawn.
@@ -194,9 +194,9 @@ public class MapCreator implements WarningLogger
 			centersChanged.addAll(neighboringLakes);
 		}
 
-		if (edgesChanged != null)
+		if (edgesChangedIds != null)
 		{
-			centersChanged.addAll(mapParts.graph.getCentersFromEdges(edgesChanged));
+			centersChanged.addAll(mapParts.graph.getCentersFromEdgeIds(edgesChangedIds));
 		}
 		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
 
@@ -216,9 +216,9 @@ public class MapCreator implements WarningLogger
 		// edge edits.
 		{
 			Set<EdgeEdit> edgeEdits;
-			if (edgesChanged != null)
+			if (edgesChangedIds != null)
 			{
-				edgeEdits = getEdgeEditsForEdges(settings.edits, edgesChanged);
+				edgeEdits = getEdgeEditsForEdgeIds(settings.edits, edgesChangedIds);
 			}
 			else
 			{
@@ -1786,9 +1786,9 @@ public class MapCreator implements WarningLogger
 		return centers.stream().map(center -> edits.centerEdits.get(center.index)).collect(Collectors.toList());
 	}
 
-	private Set<EdgeEdit> getEdgeEditsForEdges(MapEdits edits, Collection<Edge> edges)
+	private Set<EdgeEdit> getEdgeEditsForEdgeIds(MapEdits edits, Collection<Integer> edgeIds)
 	{
-		return edges.stream().map(edge -> edits.edgeEdits.get(edge.index)).collect(Collectors.toSet());
+		return edgeIds.stream().map(id -> edits.edgeEdits.get(id)).collect(Collectors.toSet());
 	}
 
 	private Set<EdgeEdit> getEdgeEditsForCenters(MapEdits edits, Collection<Center> centers)
