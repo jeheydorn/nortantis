@@ -41,6 +41,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.AssetsPath;
+import nortantis.util.Counter;
 import nortantis.util.Tuple2;
 
 public class LandWaterTool extends EditorTool
@@ -355,8 +356,10 @@ public class LandWaterTool extends EditorTool
 	{
 	}
 
+	private Integer regionIdToExpand;
 	private void handleMousePressOrDrag(MouseEvent e, boolean isMouseDrag)
 	{
+		
 		if (mergeRegionsButton.isSelected() && isMouseDrag)
 		{
 			return;
@@ -424,6 +427,31 @@ public class LandWaterTool extends EditorTool
 		else if (landButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
+
+			if (!isMouseDrag)
+			{
+				// Set the id of the region that will be expanded as the user drags the mouse.
+
+				Counter<Integer> regionIdCounts = new Counter<>();
+				for (Center center : selected)
+				{
+					CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
+					if (edit.regionId != null)
+					{
+						regionIdCounts.addCount(edit.regionId, 1);
+					}
+				}
+				
+				if (regionIdCounts.isEmpty())
+				{
+					regionIdToExpand = null;
+				}
+				else
+				{
+					regionIdToExpand = regionIdCounts.argmax();
+				}			
+			}
+			
 			boolean hasChange = false;
 			for (Center center : selected)
 			{
@@ -562,13 +590,19 @@ public class LandWaterTool extends EditorTool
 	}
 
 	private int getOrCreateRegionIdForEdit(Center center, Color color)
-	{
+	{	
+		// When the land is a single color, and the user clicked down on centers that had a region id, use that one.
+		if (!areRegionColorsVisible && regionIdToExpand != null)
+		{
+			return regionIdToExpand;
+		}
+		
 		// If a neighboring center has the desired region color, then use that region.
 		for (Center neighbor : center.neighbors)
 		{
 			CenterEdit neighborEdit = mainWindow.edits.centerEdits.get(neighbor.index);
-			if (neighborEdit.regionId != null
-					&& AwtFactory.unwrap(mainWindow.edits.regionEdits.get(neighborEdit.regionId).color).equals(color))
+			if (neighborEdit.regionId != null && (!areRegionColorsVisible ||
+					AwtFactory.unwrap(mainWindow.edits.regionEdits.get(neighborEdit.regionId).color).equals(color)))
 			{
 				return neighborEdit.regionId;
 			}
@@ -577,7 +611,7 @@ public class LandWaterTool extends EditorTool
 		// Find the closest region of that color.
 		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream()
 				.filter(cEdit1 -> cEdit1.regionId != null
-						&& AwtFactory.unwrap(mainWindow.edits.regionEdits.get(cEdit1.regionId).color).equals(color))
+						&& (!areRegionColorsVisible || AwtFactory.unwrap(mainWindow.edits.regionEdits.get(cEdit1.regionId).color).equals(color)))
 				.min((cEdit1, cEdit2) -> Double.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc),
 						updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
 		if (opt.isPresent())
@@ -613,7 +647,7 @@ public class LandWaterTool extends EditorTool
 
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
-	{
+	{		
 		handleMousePressOrDrag(e, false);
 
 		if (riversButton.isSelected() && modeWidget.isDrawMode())
@@ -624,7 +658,9 @@ public class LandWaterTool extends EditorTool
 
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
-	{
+	{	
+		regionIdToExpand = null;
+		
 		if (riversButton.isSelected() && modeWidget.isDrawMode())
 		{
 			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
@@ -788,7 +824,7 @@ public class LandWaterTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
 			boolean willDoImagesRefresh)
 	{
-		areRegionColorsVisible = settings.drawPoliticalRegions && settings.drawRegionColors;
+		areRegionColorsVisible = settings.drawRegionColors;
 
 		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.

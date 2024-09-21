@@ -1365,7 +1365,7 @@ public class TextDrawer
 			return true;
 		}
 
-		if (!settings.drawPoliticalRegions || (type != TextType.Region))
+		if (!settings.drawRegionBoundaries || (type != TextType.Region))
 		{
 			return false;
 		}

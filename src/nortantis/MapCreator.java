@@ -231,7 +231,7 @@ public class MapCreator implements WarningLogger
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
 		boolean changeAffectsLandOrRegionShape = applyCenterEdits(mapParts.graph, settings.edits,
-				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawPoliticalRegions);
+				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionBoundaries || settings.drawRegionColors);
 
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
@@ -241,7 +241,7 @@ public class MapCreator implements WarningLogger
 
 		if (changeAffectsLandOrRegionShape)
 		{
-			if (settings.drawPoliticalRegions && settings.regionBoundaryStyle.type != StrokeType.Solid)
+			if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
 			{
 				// When using non-solid region boundaries, expand the replace bounds to include region borders inside the replace bounds so
 				// that
@@ -274,7 +274,7 @@ public class MapCreator implements WarningLogger
 
 		return incrementalUpdateBounds(settings, mapParts, fullSizedMap, replaceBounds, effectsPadding, textDrawer, false);
 	}
-	
+
 	private void addLowPriorityCentersToRedraw(Collection<Center> toAdd)
 	{
 		for (Center c : toAdd)
@@ -327,7 +327,7 @@ public class MapCreator implements WarningLogger
 			// Store the current version of mapSnippet for a background when drawing icons later.
 			Image landBackground = mapSnippet.deepCopy();
 
-			if (settings.drawPoliticalRegions)
+			if (settings.drawRegionBoundaries)
 			{
 				Painter p = mapSnippet.createPainter(DrawQuality.High);
 				p.setColor(settings.coastlineColor);
@@ -874,7 +874,7 @@ public class MapCreator implements WarningLogger
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
 		// edge edits.
 		applyEdgeEdits(graph, settings.edits, null);
-		applyCenterEdits(graph, settings.edits, null, settings.drawPoliticalRegions);
+		applyCenterEdits(graph, settings.edits, null, settings.drawRegionBoundaries || settings.drawRegionColors);
 
 		checkForCancel();
 
@@ -934,7 +934,7 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		if (settings.drawPoliticalRegions)
+		if (settings.drawRegionBoundaries)
 		{
 			{
 				Painter g = map.createPainter(DrawQuality.High);
@@ -1091,7 +1091,7 @@ public class MapCreator implements WarningLogger
 				p.setColor(Color.white);
 				graph.drawCoastlineWithLakeShores(p, targetStrokeWidth, centersToDraw, drawBounds);
 
-				if (settings.drawPoliticalRegions)
+				if (settings.drawRegionBoundaries)
 				{
 					p.setColor(Color.white);
 					graph.drawRegionBordersSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
@@ -1104,7 +1104,7 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			if (settings.drawPoliticalRegions && settings.drawRegionColors)
+			if (settings.drawRegionBoundaries && settings.drawRegionColors)
 			{
 				// Color the blur according to each region's blur color.
 				Map<Integer, Color> colors = new HashMap<>();
@@ -1443,7 +1443,8 @@ public class MapCreator implements WarningLogger
 	{
 		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
-				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale, settings.drawPoliticalRegions);
+				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale,
+				settings.drawRegionBoundaries || settings.drawRegionColors);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,

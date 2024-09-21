@@ -106,8 +106,10 @@ public class MapSettings implements Serializable
 	public Color textColor;
 	public MapEdits edits;
 	public boolean drawBoldBackground;
+	public boolean drawRegionBoundaries = true;
+	public Stroke regionBoundaryStyle;
 	/**
-	 * Note - this should be considered false if drawPoliticalRegions is false.
+	 * Note - this should be considered false if drawRegionBoundaries is false.
 	 */
 	public boolean drawRegionColors;
 	public long regionsRandomSeed;
@@ -117,8 +119,6 @@ public class MapSettings implements Serializable
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
-	public boolean drawPoliticalRegions = true;
-	public Stroke regionBoundaryStyle;
 	/**
 	 * No longer an editable field. Maintained for backwards compatibility when loading older maps, and for telling new maps which city
 	 * images to use. But the editor now allows selecting city images of any type.
@@ -312,7 +312,7 @@ public class MapSettings implements Serializable
 		root.put("hueRange", hueRange);
 		root.put("saturationRange", saturationRange);
 		root.put("brightnessRange", brightnessRange);
-		root.put("drawPoliticalRegions", drawPoliticalRegions);
+		root.put("drawRegionBoundaries", drawRegionBoundaries);
 		root.put("regionBoundaryStyle", regionBoundaryStyleToJson());
 
 		// Icons
@@ -623,7 +623,7 @@ public class MapSettings implements Serializable
 		hueRange = (int) (long) root.get("hueRange");
 		saturationRange = (int) (long) root.get("saturationRange");
 		brightnessRange = (int) (long) root.get("brightnessRange");
-		drawPoliticalRegions = root.containsKey(("drawPoliticalRegions")) ? (boolean) root.get("drawPoliticalRegions") : true;
+		drawRegionBoundaries = root.containsKey(("drawRegionBoundaries")) ? (boolean) root.get("drawRegionBoundaries") : true;
 		regionBoundaryStyle = parseRegionBoundaryStyle((JSONObject) root.get("regionBoundaryStyle"));
 		
 		drawRoads = (boolean) root.get("drawRoads");
@@ -1105,7 +1105,7 @@ public class MapSettings implements Serializable
 		textColor = old.textColor;
 		drawBoldBackground = old.drawBoldBackground;
 		drawRegionColors = old.drawRegionColors;
-		drawPoliticalRegions = old.drawRegionColors;
+		drawRegionBoundaries = old.drawRegionColors;
 		regionBoundaryStyle = parseRegionBoundaryStyle(null);
 		regionsRandomSeed = old.regionsRandomSeed;
 		drawBorder = old.drawBorder;
@@ -1243,7 +1243,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
-				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawPoliticalRegions == other.drawPoliticalRegions
+				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionBoundaries == other.drawRegionBoundaries
 				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)

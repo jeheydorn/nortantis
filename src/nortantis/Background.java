@@ -63,7 +63,7 @@ public class Background
 			this.imagesPath = AssetsPath.getInstallPath();
 		}
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
-		shouldDrawRegionColors = settings.drawPoliticalRegions && settings.drawRegionColors && !backgroundFromFilesNotGenerated
+		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
 				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
 
 		Image landGeneratedBackground;
