@@ -2,6 +2,8 @@ package nortantis;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -39,7 +41,7 @@ public class NameCreator
 		this.namesGenerated = new HashSet<>();
 		processBooks(settings.books);
 	}
-	
+
 	private void processBooks(Set<String> books)
 	{
 		List<String> placeNames = new ArrayList<>();
@@ -48,10 +50,10 @@ public class NameCreator
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : books)
 		{
-			placeNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_place_names.txt"));
-			personNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_person_names.txt"));
-			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames.addAll(readNameList("assets/books/" + book + "_place_names.txt"));
+			personNames.addAll(readNameList("assets/books/" + book + "_person_names.txt"));
+			nounAdjectivePairs.addAll(readStringPairs("assets/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(readStringPairs("assets/books/" + book + "_noun_verb_pairs.txt"));
 		}
 
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
@@ -65,8 +67,10 @@ public class NameCreator
 	private List<Pair<String>> readStringPairs(String filename)
 	{
 		List<Pair<String>> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
+		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filename);
+				BufferedReader br = new BufferedReader(new InputStreamReader(inputStream)))
 		{
+
 			int lineNum = 0;
 			for (String line; (line = br.readLine()) != null;)
 			{
@@ -85,13 +89,9 @@ public class NameCreator
 				}
 			}
 		}
-		catch (FileNotFoundException e)
-		{
-			throw new RuntimeException(e);
-		}
 		catch (IOException e)
 		{
-			throw new RuntimeException(e);
+			throw new RuntimeException("Unable to read string pairs from the file " + filename, e);
 		}
 
 		return result;
@@ -100,8 +100,10 @@ public class NameCreator
 	private List<String> readNameList(String filename)
 	{
 		List<String> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
+		try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(filename);
+				BufferedReader br = new BufferedReader(new InputStreamReader(inputStream)))
 		{
+
 			for (String line; (line = br.readLine()) != null;)
 			{
 				// Remove white space lines.
@@ -118,7 +120,7 @@ public class NameCreator
 
 		return result;
 	}
-	
+
 	public String generatePlaceName(String format, boolean requireUnique)
 	{
 		return generatePlaceName(format, requireUnique, "");
@@ -179,7 +181,6 @@ public class NameCreator
 		throw new NotEnoughNamesException();
 
 	}
-	
 
 	public static List<CityType> findCityTypeFromCityFileName(String cityFileNameNoExtension)
 	{
@@ -208,7 +209,7 @@ public class NameCreator
 
 		return result;
 	}
-	
+
 	/**
 	 * Generate a name of a specified type.
 	 * 
@@ -406,7 +407,7 @@ public class NameCreator
 			throw new UnsupportedOperationException("Unknown text type: " + type);
 		}
 	}
-	
+
 	private String getOtherMountainNameFormat(OtherMountainsType mountainType)
 	{
 		switch (mountainType)
@@ -433,7 +434,7 @@ public class NameCreator
 
 		return ProbabilityHelper.sampleUniform(r, types);
 	}
-	
+
 	private String getRiverNameFormat(RiverType riverType)
 	{
 		String format;
@@ -452,7 +453,7 @@ public class NameCreator
 
 		return format;
 	}
-	
+
 	/**
 	 * Generates a name of the specified type. This is for when the user adds new text to the map. It is not used when the map text is first
 	 * generated.
@@ -496,7 +497,6 @@ public class NameCreator
 			return "name";
 		}
 	}
-	
 
 	/**
 	 * Adds text that the user is manually creating.
