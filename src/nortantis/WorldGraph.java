@@ -1971,7 +1971,7 @@ public class WorldGraph extends VoronoiGraph
 		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
 	}
 
-	public void drawRegionBordersSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
+	public void drawRegionBoundariesSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
 			Rectangle drawBounds)
 	{
 		drawSpecifiedEdges(g, strokeWidth, centersToDraw, drawBounds, edge ->
@@ -1986,7 +1986,7 @@ public class WorldGraph extends VoronoiGraph
 		});
 	}
 
-	public void drawRegionBorders(Painter p, Stroke stroke, double resolutionScale, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public void drawRegionBoundaries(Painter p, Stroke stroke, double resolutionScale, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		Transform orig = null;
 		if (drawBounds != null)

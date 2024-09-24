@@ -73,12 +73,15 @@ public class LandWaterTool extends EditorTool
 	private JSlider saturationSlider;
 	private JSlider brightnessSlider;
 	private boolean areRegionColorsVisible;
+	private boolean areRegionBoundariesVisible;
 	private RowHider onlyUpdateLandCheckboxHider;
 	private RowHider generateColorButtonHider;
 	private RowHider colorGeneratorSettingsHider;
 	private JPanel baseColorPanel;
 	private ActionListener brushActionListener;
 	private DrawModeWidget modeWidget;
+	private JToggleButton newRegionButton;
+	private RowHider newRegionButtonHider;
 	static String toolbarName = "Land and Water";
 	static String colorGeneratorSettingsName = "Color Generator Settings";
 
@@ -141,6 +144,9 @@ public class LandWaterTool extends EditorTool
 					colorGeneratorSettingsHider.setVisible(false);
 					onlyUpdateLandCheckbox.setVisible(false);
 				}
+				
+				showOrHideNewRegionButton();
+				newRegionButton.setSelected(false);
 
 				if (brushSizeComboBox != null)
 				{
@@ -190,6 +196,12 @@ public class LandWaterTool extends EditorTool
 
 		oceanButton.setSelected(true); // Selected by default
 		organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
+		
+		// Create new region button
+		{
+			newRegionButton = new JToggleButton("Create New Political Region");
+			newRegionButtonHider = organizer.addLabelAndComponent("", "Toggle this to start a new political region with the next brushstroke.", newRegionButton);
+		}
 
 		// River options
 		{
@@ -333,7 +345,7 @@ public class LandWaterTool extends EditorTool
 	{
 		paintRegionButton.setVisible(areRegionColorsVisible);
 		fillRegionColorButton.setVisible(areRegionColorsVisible);
-		mergeRegionsButton.setVisible(areRegionColorsVisible);
+		mergeRegionsButton.setVisible(areRegionBoundariesVisible || areRegionColorsVisible);
 		landButton.setVisible(!areRegionColorsVisible);
 
 		colorChooserHider.setVisible(areRegionColorsVisible);
@@ -349,6 +361,13 @@ public class LandWaterTool extends EditorTool
 			landButton.setSelected(true);
 		}
 		brushActionListener.actionPerformed(null);
+		
+		showOrHideNewRegionButton();
+	}
+	
+	private void showOrHideNewRegionButton()
+	{
+		newRegionButtonHider.setVisible(areRegionBoundariesVisible && landButton.isSelected());
 	}
 
 	@Override
@@ -432,31 +451,40 @@ public class LandWaterTool extends EditorTool
 			{
 				// Set the id of the region that will be expanded as the user drags the mouse.
 
-				Counter<Integer> regionIdCounts = new Counter<>();
-				for (Center center : selected)
+				if (newRegionButton.isSelected())
 				{
-					CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
-					if (edit.regionId != null)
-					{
-						regionIdCounts.addCount(edit.regionId, 1);
-					}
-				}
-				
-				if (regionIdCounts.isEmpty())
-				{
-					regionIdToExpand = null;
+					Color color = mainWindow.getLandColor();
+					regionIdToExpand = createNewRegion(color);
+					newRegionButton.setSelected(false);
 				}
 				else
 				{
-					regionIdToExpand = regionIdCounts.argmax();
-				}			
+					Counter<Integer> regionIdCounts = new Counter<>();
+					for (Center center : selected)
+					{
+						CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
+						if (edit.regionId != null)
+						{
+							regionIdCounts.addCount(edit.regionId, 1);
+						}
+					}
+					
+					if (regionIdCounts.isEmpty())
+					{
+						regionIdToExpand = null;
+					}
+					else
+					{
+						regionIdToExpand = regionIdCounts.argmax();
+					}
+				}
 			}
 			
 			boolean hasChange = false;
 			for (Center center : selected)
 			{
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
-				// Still need to add region IDs to edits because the user might switch to region editing later.
+				// Always add region IDs to edits even if regions aren't displayed because the user might show them later.
 				Integer newRegionId = getOrCreateRegionIdForEdit(center, mainWindow.getLandColor());
 				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
 				hasChange |= edit.isWater;
@@ -592,7 +620,7 @@ public class LandWaterTool extends EditorTool
 	private int getOrCreateRegionIdForEdit(Center center, Color color)
 	{	
 		// When the land is a single color, and the user clicked down on centers that had a region id, use that one.
-		if (!areRegionColorsVisible && regionIdToExpand != null)
+		if (regionIdToExpand != null)
 		{
 			return regionIdToExpand;
 		}
@@ -620,24 +648,29 @@ public class LandWaterTool extends EditorTool
 		}
 		else
 		{
-			int largestRegionId;
-			if (mainWindow.edits.regionEdits.isEmpty())
-			{
-				largestRegionId = -1;
-			}
-			else
-			{
-				largestRegionId = mainWindow.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId))
-						.get().regionId;
-			}
-
-			int newRegionId = largestRegionId + 1;
-
-			RegionEdit regionEdit = new RegionEdit(newRegionId, AwtFactory.wrap(color));
-			mainWindow.edits.regionEdits.put(newRegionId, regionEdit);
-
+			int newRegionId = createNewRegion(color);
 			return newRegionId;
 		}
+	}
+	
+	private int createNewRegion(Color color)
+	{
+		int largestRegionId;
+		if (mainWindow.edits.regionEdits.isEmpty())
+		{
+			largestRegionId = -1;
+		}
+		else
+		{
+			largestRegionId = mainWindow.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId))
+					.get().regionId;
+		}
+
+		int newRegionId = largestRegionId + 1;
+		
+		RegionEdit regionEdit = new RegionEdit(newRegionId, AwtFactory.wrap(color));
+		mainWindow.edits.regionEdits.put(newRegionId, regionEdit);
+		return newRegionId;
 	}
 
 	private void handleMapChange(Set<Center> centers)
@@ -825,6 +858,7 @@ public class LandWaterTool extends EditorTool
 			boolean willDoImagesRefresh)
 	{
 		areRegionColorsVisible = settings.drawRegionColors;
+		areRegionBoundariesVisible = settings.drawRegionBoundaries;
 
 		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
