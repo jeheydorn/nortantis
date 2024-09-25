@@ -351,15 +351,23 @@ public class LandWaterTool extends EditorTool
 		colorChooserHider.setVisible(areRegionColorsVisible);
 		selectColorHider.setVisible(areRegionColorsVisible);
 
-		if (areRegionColorsVisible && landButton.isSelected())
+		if (landButton.isSelected() && !landButton.isVisible())
 		{
 			paintRegionButton.setSelected(true);
 		}
-		else if (!areRegionColorsVisible
-				&& (paintRegionButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected()))
+		else if (paintRegionButton.isSelected() && !paintRegionButton.isVisible())
 		{
 			landButton.setSelected(true);
 		}
+		else if (mergeRegionsButton.isSelected() && !mergeRegionsButton.isVisible())
+		{
+			landButton.setSelected(true);
+		}
+		else if (fillRegionColorButton.isSelected() && !fillRegionColorButton.isVisible())
+		{
+			landButton.setSelected(true);
+		}
+		
 		brushActionListener.actionPerformed(null);
 		
 		showOrHideNewRegionButton();
@@ -873,6 +881,10 @@ public class LandWaterTool extends EditorTool
 			// not on undo/redo or in response to the Theme panel changing.
 			colorDisplay.setBackground(AwtFactory.unwrap(settings.regionBaseColor));
 		}
+		
+		// Clear any selection
+		selectedRegion = null;
+		mapEditingPanel.clearSelectedCenters();
 
 		showOrHideRegionColoringOptions();
 	}
