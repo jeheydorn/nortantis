@@ -186,6 +186,7 @@ public class SettingsGenerator
 
 		settings.drawRegionBoundaries = rand.nextDouble() > 0.25;
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
+		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class), settings.regionBoundaryStyle.width) ;
 
 		if (rand.nextDouble() > 0.25)
 		{

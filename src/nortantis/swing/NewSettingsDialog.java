@@ -547,7 +547,6 @@ public class NewSettingsDialog extends JDialog
 		resultSettings.generatedHeight = (int) generatedDimensions.getHeight();
 
 		resultSettings.drawRegionColors = landColoringMethodComboBox.getSelectedItem().equals(LandColoringMethod.ColorPoliticalRegions);
-		resultSettings.drawRegionBoundaries = true ; // TODO Pull from new field.
 
 		resultSettings.books = booksWidget.getSelectedBooks();
 

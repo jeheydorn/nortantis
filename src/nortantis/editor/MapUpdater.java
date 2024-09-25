@@ -390,7 +390,7 @@ public abstract class MapUpdater
 						Image map = getCurrentMapForIncrementalUpdate();
 						IntRectangle combinedReplaceBounds = null;
 						// Incremental update
-						if (centersChangedIds != null && centersChangedIds.size() > 0 || centersChangedIds != null && centersChangedIds.size() > 0)
+						if (centersChangedIds != null && centersChangedIds.size() > 0 || edgesChangedIds != null && edgesChangedIds.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
 							currentMapCreator = new MapCreator();

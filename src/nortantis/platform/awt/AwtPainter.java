@@ -167,10 +167,10 @@ class AwtPainter extends Painter
 			}
 			else if (stroke.type == StrokeType.Dots)
 			{
-				final float scaleBecauseDotsLookSmaller = (3.9f / 2.7f);
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmaller, BasicStroke.CAP_ROUND,
-						BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale * scaleBecauseDotsLookSmaller,
-								2.0f * (float) scale * scaleBecauseDotsLookSmaller },
+				final float scaleBecauseDotsLookSmallerThanDashes = (3.9f / 2.7f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes, BasicStroke.CAP_ROUND,
+						BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes,
+								2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes },
 						0f);
 				g.setStroke(dashed);
 			}
