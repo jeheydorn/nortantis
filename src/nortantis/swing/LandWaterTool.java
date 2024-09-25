@@ -142,7 +142,7 @@ public class LandWaterTool extends EditorTool
 					selectColorHider.setVisible(false);
 					generateColorButtonHider.setVisible(false);
 					colorGeneratorSettingsHider.setVisible(false);
-					onlyUpdateLandCheckbox.setVisible(false);
+					onlyUpdateLandCheckbox.setVisible(landButton.isSelected());
 				}
 				
 				showOrHideNewRegionButton();
@@ -492,6 +492,10 @@ public class LandWaterTool extends EditorTool
 			for (Center center : selected)
 			{
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
+				if (onlyUpdateLandCheckbox.isSelected() && edit.isWater)
+				{
+					continue;
+				}
 				// Always add region IDs to edits even if regions aren't displayed because the user might show them later.
 				Integer newRegionId = getOrCreateRegionIdForEdit(center, mainWindow.getLandColor());
 				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
