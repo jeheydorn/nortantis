@@ -155,20 +155,23 @@ class AwtPainter extends Painter
 			float scale = ((float) resolutionScale) * stroke.width;
 			if (stroke.type == StrokeType.Dashes)
 			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale,
-						BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 3f * (float) scale }, 0f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
+						new float[] { 6f * (float) scale, 3f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else if (stroke.type == StrokeType.Rounded_Dashes)
 			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale,
-						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
+						new float[] { 6f * (float) scale, 4f * (float) scale }, 0f);
 				g.setStroke(dashed);
 			}
 			else if (stroke.type == StrokeType.Dots)
 			{
-				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale,
-						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale, 2.3f * (float) scale }, 0f);
+				final float scaleBecauseDotsLookSmaller = (3.9f / 2.7f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmaller, BasicStroke.CAP_ROUND,
+						BasicStroke.JOIN_ROUND, 1f, new float[] { 0f * (float) scale * scaleBecauseDotsLookSmaller,
+								2.0f * (float) scale * scaleBecauseDotsLookSmaller },
+						0f);
 				g.setStroke(dashed);
 			}
 			else
