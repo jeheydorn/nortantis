@@ -18,7 +18,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.MapSettings.OceanEffect;
+import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
@@ -52,7 +52,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 	public int coastShadingLevel;
 	public int oceanEffectsLevel;
 	public int concentricWaveCount;
-	public OceanEffect oceanEffect;
+	public OceanWaves oceanEffect;
 	public int worldSize;
 	public Color riverColor;
 	public Color roadColor;
@@ -222,9 +222,9 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return parseColor(props.getProperty("coastlineColor"));
 			}
 		});
-		oceanEffect = getProperty("addWavesToOcean", new Function0<OceanEffect>()
+		oceanEffect = getProperty("addWavesToOcean", new Function0<OceanWaves>()
 		{
-			public OceanEffect apply()
+			public OceanWaves apply()
 			{
 				String str = props.getProperty("oceanEffect");
 				if (str == null || str.equals(""))
@@ -233,11 +233,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 					String str2 = props.getProperty("addWavesToOcean");
 					if (str2 == null || str2.equals(""))
 					{
-						return OceanEffect.Ripples;
+						return OceanWaves.Ripples;
 					}
-					return parseBoolean(str2) ? OceanEffect.Ripples : OceanEffect.Ripples;
+					return parseBoolean(str2) ? OceanWaves.Ripples : OceanWaves.Ripples;
 				}
-				return OceanEffect.valueOf(str);
+				return OceanWaves.valueOf(str);
 			}
 		});
 		centerLandToWaterProbability = getProperty("centerLandToWaterProbability", new Function0<Double>()

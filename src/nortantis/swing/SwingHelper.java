@@ -112,6 +112,7 @@ public class SwingHelper
 			{
 				colorDisplay.setBackground(colorChooser.getColor());
 				colorDisplay.repaint();
+				parent.repaint();
 				okAction.run();
 			}
 

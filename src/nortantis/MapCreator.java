@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
-import nortantis.MapSettings.OceanEffect;
+import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.FreeIcon;
@@ -175,11 +175,12 @@ public class MapCreator implements WarningLogger
 			Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds)
 	{
 		// Stopwatch updateSW = new Stopwatch("incremental update");
-		
+
 		Set<Center> centersChanged;
 		if (centersChangedIds != null)
 		{
-			centersChanged = new HashSet<>(centersChangedIds.stream().map(id -> mapParts.graph.centers.get(id)).collect(Collectors.toSet()));
+			centersChanged = new HashSet<>(
+					centersChangedIds.stream().map(id -> mapParts.graph.centers.get(id)).collect(Collectors.toSet()));
 		}
 		else
 		{
@@ -344,13 +345,21 @@ public class MapCreator implements WarningLogger
 				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
 			}
 
-			// Add effects to ocean along coastlines
-			Image oceanBlur;
+			// Add shading and waves to ocean along coastlines
+			Image oceanWaves;
+			Image oceanShading;
 			{
-				oceanBlur = createOceanEffects(settings, mapParts.graph, settings.resolution, landMask, centersToDraw, drawBounds);
-				if (oceanBlur != null)
+				Tuple2<Image, Image> oceanTuple = createOceanWaveAndShading(settings, mapParts.graph, settings.resolution, landMask,
+						centersToDraw, drawBounds);
+				oceanWaves = oceanTuple.getFirst();
+				oceanShading = oceanTuple.getSecond();
+				if (oceanShading != null)
 				{
-					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanEffectsColor, oceanBlur, true);
+					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
+				}
+				if (oceanWaves != null)
+				{
+					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanWaves, true);
 				}
 			}
 
@@ -366,7 +375,8 @@ public class MapCreator implements WarningLogger
 					oceanTextureSnippet, drawBounds);
 
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
-					oceanTextureSnippet, mapParts.background, oceanBlur, coastShading, mapParts.iconDrawer, centersToDraw, drawBounds);
+					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
+					drawBounds);
 
 			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,
@@ -459,10 +469,16 @@ public class MapCreator implements WarningLogger
 		// snippet to replace to include the width of ocean effects, land
 		// effects, and with widest possible line that can be drawn,
 		// whichever is largest.
-		double effectsPadding = Math.ceil(
-				Math.max((settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
-						? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
-						: settings.oceanEffectsLevel, settings.coastShadingLevel));
+
+		double concentricWaveWidth = settings.hasConcentricWaves()
+				? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
+				: 0;
+		double rippleWaveWidth = settings.hasRippleWaves() ? settings.oceanWavesLevel * sizeMultiplier : 0;
+		double oceanShadingWidth = settings.oceanWavesLevel * sizeMultiplier;
+		double coastShadingWidth = settings.coastShadingLevel * sizeMultiplier;
+
+		double effectsPadding = Math
+				.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 		// Increase effectsPadding by the width of a coastline, plus one pixel
 		// extra just to be safe.
 		effectsPadding += 2;
@@ -471,7 +487,9 @@ public class MapCreator implements WarningLogger
 		// with any line can be drawn, which would probably be a very wide
 		// river.
 		// Since there is no easy way to know what that will be, just guess.
-		effectsPadding = Math.max(effectsPadding, 8);
+		double guessAtMaxRiverWidth = 16;
+		effectsPadding = Math.max(effectsPadding,
+				Math.max((guessAtMaxRiverWidth / 2.0) * settings.resolution, SettingsGenerator.maxLineWidthInEditor * settings.resolution));
 
 		effectsPadding *= sizeMultiplier;
 		return effectsPadding;
@@ -984,11 +1002,19 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		Image oceanBlur = createOceanEffects(settings, graph, settings.resolution, landMask, null, null);
-		if (oceanBlur != null)
+		Tuple2<Image, Image> oceanTuple = createOceanWaveAndShading(settings, graph, settings.resolution, landMask, null, null);
+		Image oceanWaves = oceanTuple.getFirst();
+		Image oceanShading = oceanTuple.getSecond();
+		if (oceanShading != null)
 		{
-			Logger.println("Adding effects to ocean along coastlines.");
-			map = ImageHelper.maskWithColor(map, settings.oceanEffectsColor, oceanBlur, true);
+			Logger.println("Adding shading to ocean along coastlines.");
+			map = ImageHelper.maskWithColor(map, settings.oceanShadingColor, oceanShading, true);
+		}
+
+		if (oceanWaves != null)
+		{
+			Logger.println("Adding waves to ocean along coastlines.");
+			map = ImageHelper.maskWithColor(map, settings.oceanWavesColor, oceanWaves, true);
 		}
 
 		checkForCancel();
@@ -1009,7 +1035,7 @@ public class MapCreator implements WarningLogger
 
 		// Needed for drawing text
 		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsThatDrew, background.land,
-				background.ocean, background, oceanBlur, coastShading, iconDrawer, null, null);
+				background.ocean, background, oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
 		{
@@ -1029,8 +1055,8 @@ public class MapCreator implements WarningLogger
 	}
 
 	private Image updateLandMaskAndCreateTextBackground(MapSettings settings, WorldGraph graph, Image landMask,
-			List<IconDrawTask> iconsThatDrew, Image landTexture, Image oceanTexture, Background background, Image oceanBlur,
-			Image coastShading, IconDrawer iconDrawer, Collection<Center> centersToDraw, Rectangle drawBounds)
+			List<IconDrawTask> iconsThatDrew, Image landTexture, Image oceanTexture, Background background, Image oceanWaves,
+			Image oceanShading, Image coastShading, IconDrawer iconDrawer, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		iconDrawer.drawContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
@@ -1038,10 +1064,13 @@ public class MapCreator implements WarningLogger
 		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,
 				background, coastShading, centersToDraw, drawBounds, false).getFirst();
 		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
-		if (oceanBlur != null)
+		if (oceanShading != null)
 		{
-			oceanBlur = ImageHelper.maskWithColor(oceanBlur, Color.black, landMask, true);
-			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanEffectsColor, oceanBlur, true);
+			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);
+		}
+		if (oceanWaves != null)
+		{
+			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanWavesColor, oceanWaves, true);
 		}
 		return textBackground;
 	}
@@ -1134,7 +1163,7 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private Image createOceanEffects(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
+	private Tuple2<Image, Image> createOceanWaveAndShading(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
@@ -1143,11 +1172,9 @@ public class MapCreator implements WarningLogger
 		}
 		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
 
-		Image oceanEffects = null;
-		if (((settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
-				&& (int) (settings.oceanEffectsLevel * sizeMultiplier) > 0)
-				|| ((settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
-						&& settings.concentricWaveCount > 0))
+		Image oceanWaves = null;
+		Image oceanShading = null;
+		if (settings.hasRippleWaves() || settings.hasConcentricWaves() || settings.hasOceanShading())
 		{
 			double targetStrokeWidth = sizeMultiplier;
 			Image coastlineMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
@@ -1165,40 +1192,53 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
+			if (settings.hasRippleWaves())
 			{
-				float[][] kernel;
-				if (settings.oceanEffect == OceanEffect.Ripples)
-				{
-					kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanEffectsLevel * sizeMultiplier),
-							1.0 / sizeMultiplier);
-				}
-				else
-				{
-					kernel = ImageHelper.createGaussianKernel((int) (settings.oceanEffectsLevel * sizeMultiplier));
-				}
+				float[][] kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier),
+						1.0 / sizeMultiplier);
+
 				int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
 				final float scaleForDarkening = coastlineShadingScale;
-				float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanEffectsLevel, sizeMultiplier)
+				float scale = ((float) settings.oceanShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanEffects = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
 				if (settings.drawOceanEffectsInLakes)
 				{
-					oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
+					oceanWaves = removeOceanEffectsFromLand(graph, oceanWaves, landMask, centersToDraw, drawBounds);
 				}
 				else
 				{
-					oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
+					oceanWaves = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanWaves, centersToDraw, drawBounds);
 				}
 			}
-			else
+			else if (settings.hasConcentricWaves())
 			{
-				oceanEffects = createConcentricWavesMask(settings, graph, resolutionScaled, landMask, centersToDraw, drawBounds,
+				oceanWaves = createConcentricWavesMask(settings, graph, resolutionScaled, landMask, centersToDraw, drawBounds,
 						coastlineMask);
 			}
+
+			if (settings.hasOceanShading())
+			{
+				float[][] kernel = ImageHelper.createGaussianKernel((int) (settings.oceanShadingLevel * sizeMultiplier));
+
+				int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
+				final float scaleForDarkening = coastlineShadingScale;
+				float scale = ((float) settings.oceanShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
+						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+				oceanShading = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				if (settings.drawOceanEffectsInLakes)
+				{
+					oceanShading = removeOceanEffectsFromLand(graph, oceanShading, landMask, centersToDraw, drawBounds);
+				}
+				else
+				{
+					oceanShading = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanShading, centersToDraw, drawBounds);
+				}
+			}
 		}
-		return oceanEffects;
+		return new Tuple2<>(oceanWaves, oceanShading);
 	}
 
 	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
@@ -1210,16 +1250,16 @@ public class MapCreator implements WarningLogger
 		final float scaleForDarkening = 20f;
 		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
 		double targetStrokeWidth = sizeMultiplier;
-		float scale = ((float) settings.oceanEffectsColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+		float scale = ((float) settings.oceanWavesColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 				* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
-		if (settings.oceanEffect == OceanEffect.ConcentricWaves || settings.oceanEffect == OceanEffect.FadingConcentricWaves)
+		if (settings.oceanWavesType == OceanWaves.ConcentricWaves || settings.oceanWavesType == OceanWaves.FadingConcentricWaves)
 		{
 			double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
 			double waveWidth = concentricWaveLineWidth * sizeMultiplier;
 			double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + waveWidth);
 			final double opacityOfLastWave;
-			if (settings.oceanEffect == OceanEffect.ConcentricWaves)
+			if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
 			{
 				opacityOfLastWave = 1.0;
 			}
@@ -1278,8 +1318,7 @@ public class MapCreator implements WarningLogger
 				assert waveOpacity <= 1.0;
 				assert waveOpacity >= 0.0;
 
-				ImageHelper.fillInTarget(oceanEffects, blur, 1, higherThreshold,
-						(int) (settings.oceanEffectsColor.getAlpha() * waveOpacity));
+				ImageHelper.fillInTarget(oceanEffects, blur, 1, higherThreshold, (int) (settings.oceanWavesColor.getAlpha() * waveOpacity));
 			}
 		}
 

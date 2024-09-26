@@ -47,7 +47,7 @@ import nortantis.ImageCache;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapSettings.LineStyle;
-import nortantis.MapSettings.OceanEffect;
+import nortantis.MapSettings.OceanWaves;
 import nortantis.SettingsGenerator;
 import nortantis.Stroke;
 import nortantis.StrokeType;
@@ -72,17 +72,17 @@ public class ThemePanel extends JTabbedPane
 {
 	private MainWindow mainWindow;
 	private JSlider coastShadingSlider;
-	private JSlider oceanEffectsLevelSlider;
+	private JSlider oceanWavesLevelSlider;
 	private JSlider concentricWavesLevelSlider;
 	private JRadioButton ripplesRadioButton;
-	private JRadioButton shadeRadioButton;
+	private JRadioButton noneRadioButton;
 	private JRadioButton concentricWavesButton;
 	private JRadioButton fadingConcentricWavesButton;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
 	private RowHider coastShadingTransparencyHider;
-	private JPanel oceanEffectsColorDisplay;
+	private JPanel oceanWavesColorDisplay;
 	private JPanel riverColorDisplay;
 	private JCheckBox enableTextCheckBox;
 	private JPanel grungeColorDisplay;
@@ -151,6 +151,9 @@ public class ThemePanel extends JTabbedPane
 	private JSlider regionBoundaryWidthSlider;
 	private RowHider regionBoundaryTypeComboBoxHider;
 	private RowHider regionBoundaryWidthSliderHider;
+	private JSlider oceanShadingSlider;
+	private JPanel oceanShadingColorDisplay;
+	private JButton btnChooseOceanShadingColor;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -306,7 +309,8 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
-		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "How to draw region boundaries", regionBoundaryTypeComboBox);
+		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "How to draw region boundaries",
+				regionBoundaryTypeComboBox);
 		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
 
 		{
@@ -318,12 +322,12 @@ public class ThemePanel extends JTabbedPane
 			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(regionBoundaryWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider,
-					(value) -> String.format("%.1f", value / 10f), null);
+					(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
 			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
 		}
 
 		organizer.addSeperator();
-		
+
 		colorizeLandCheckbox = new JCheckBox("Color land");
 		colorizeLandCheckbox
 				.setToolTipText("Whether to change the land texture to a custom color versus use the color of the texture image");
@@ -447,7 +451,7 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addVerticalFillerRow();
 		updateBackgroundAndRegionFieldVisibility();
-		
+
 		return organizer.createScrollPane();
 	}
 
@@ -609,30 +613,18 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentsHorizontal("Coastline color:", "The color of the coastline",
 				Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor), SwingHelper.colorPickerLeftPadding);
 
-		coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
-		btnChooseCoastShadingColor = new JButton("Choose");
-		btnChooseCoastShadingColor.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () ->
-				{
-					updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
-					handleTerrainChange();
-				});
-			}
-		});
-		String coastShadingColorLabelText = "Coast shading color:";
-		coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText,
-				"Land near coastlines will be shaded this color. Transparency is supported.",
-				Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor), SwingHelper.colorPickerLeftPadding);
-
-		final String message = "<html>Disabled because the land coloring" + " method is '" + LandColoringMethod.ColorPoliticalRegions
-				+ "'.<html>";
-		coastShadingColorDisabledMessageHider = organizer.addLabelAndComponent(coastShadingColorLabelText, "", new JLabel(message));
-		coastShadingColorDisabledMessageHider.setVisible(false);
-
+		coastShadingSlider = new JSlider();
+		coastShadingSlider.setValue(30);
+		coastShadingSlider.setPaintTicks(true);
+		coastShadingSlider.setPaintLabels(true);
+		coastShadingSlider.setMinorTickSpacing(5);
+		coastShadingSlider.setMaximum(100);
+		coastShadingSlider.setMajorTickSpacing(20);
+		createMapChangeListenerForTerrainChange(coastShadingSlider);
+		SwingHelper.setSliderWidthForSidePanel(coastShadingSlider);
+		organizer.addLabelAndComponent("Coast shading width:",
+				"How far in from coastlines to shade land. Also applies to region boundaries if regions are drawn.", coastShadingSlider);
 
 		{
 			coastShadingTransparencySlider = new JSlider(0, 100);
@@ -647,20 +639,68 @@ public class ThemePanel extends JTabbedPane
 			coastShadingTransparencyHider = sliderWithDisplay.addToOrganizer(organizer, "Coast shading transparency:",
 					"Transparency of shading of land near coastlines");
 		}
+		
+		{
+			coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+
+			btnChooseCoastShadingColor = new JButton("Choose");
+			btnChooseCoastShadingColor.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					SwingHelper.showColorPicker(effectsPanel, coastShadingColorDisplay, "Coast Shading Color", () ->
+					{
+						updateCoastShadingTransparencySliderFromCoastShadingColorDisplay();
+						handleTerrainChange();
+					});
+				}
+			});
+			String coastShadingColorLabelText = "Coast shading color:";
+			coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText,
+					"Land near coastlines will be shaded this color. Transparency is supported.",
+					Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor), SwingHelper.colorPickerLeftPadding);
+
+			final String message = "<html>Disabled because the land coloring" + " method is '" + LandColoringMethod.ColorPoliticalRegions
+					+ "'.<html>";
+			coastShadingColorDisabledMessageHider = organizer.addLabelAndComponent(coastShadingColorLabelText, "", new JLabel(message));
+			coastShadingColorDisabledMessageHider.setVisible(false);
+		}
 
 
-		coastShadingSlider = new JSlider();
-		coastShadingSlider.setValue(30);
-		coastShadingSlider.setPaintTicks(true);
-		coastShadingSlider.setPaintLabels(true);
-		coastShadingSlider.setMinorTickSpacing(5);
-		coastShadingSlider.setMaximum(100);
-		coastShadingSlider.setMajorTickSpacing(20);
-		createMapChangeListenerForTerrainChange(coastShadingSlider);
-		SwingHelper.setSliderWidthForSidePanel(coastShadingSlider);
-		organizer.addLabelAndComponent("Coast shading width:",
-				"How far in from coastlines to shade land. Also applies to region boundaries if regions are drawn.", coastShadingSlider);
+		organizer.addSeperator();
+		
+		
+		oceanShadingSlider = new JSlider();
+		oceanShadingSlider.setPaintTicks(true);
+		oceanShadingSlider.setPaintLabels(true);
+		oceanShadingSlider.setMinorTickSpacing(25);
+		oceanShadingSlider.setMaximum(400);
+		oceanShadingSlider.setMajorTickSpacing(100);
+		createMapChangeListenerForTerrainChange(oceanShadingSlider);
+		SwingHelper.setSliderWidthForSidePanel(oceanShadingSlider);
+		organizer.addLabelAndComponent("Ocean shading width:",
+				"How far from coastlines to shade ocean.", oceanShadingSlider);
+		
+		{
+			oceanShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			btnChooseOceanShadingColor = new JButton("Choose");
+			btnChooseOceanShadingColor.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					SwingHelper.showColorPicker(effectsPanel, oceanShadingColorDisplay, "Ocean Shading Color", () ->
+					{
+						handleTerrainChange();
+					});
+				}
+			});
+			organizer.addLabelAndComponentsHorizontal("Ocean shading color:",
+					"Ocean near coastlines will be shaded this color. Transparency is supported.",
+					Arrays.asList(oceanShadingColorDisplay, btnChooseOceanShadingColor), SwingHelper.colorPickerLeftPadding);
+		}
 
+		organizer.addSeperator();
+		
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
 
 		concentricWavesButton = new JRadioButton("Concentric waves");
@@ -671,7 +711,7 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected() || fadingConcentricWavesButton.isSelected());
-				oceanEffectsLevelSlider.setVisible(ripplesRadioButton.isSelected() || shadeRadioButton.isSelected());
+				oceanWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
 				handleTerrainChange();
 			}
 		};
@@ -685,25 +725,11 @@ public class ThemePanel extends JTabbedPane
 		oceanEffectButtonGroup.add(ripplesRadioButton);
 		ripplesRadioButton.addActionListener(oceanEffectsListener);
 
-		shadeRadioButton = new JRadioButton("Shade");
-		oceanEffectButtonGroup.add(shadeRadioButton);
-		shadeRadioButton.addActionListener(oceanEffectsListener);
-		organizer.addLabelAndComponentsVertical("Ocean effects type:", "How to draw either waves or shading in the ocean along coastlines",
-				Arrays.asList(concentricWavesButton, fadingConcentricWavesButton, ripplesRadioButton, shadeRadioButton));
-
-		oceanEffectsColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-		JButton btnChooseOceanEffectsColor = new JButton("Choose");
-		btnChooseOceanEffectsColor.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent e)
-			{
-				SwingHelper.showColorPicker(effectsPanel, oceanEffectsColorDisplay, "Ocean Effects Color", () -> handleTerrainChange());
-			}
-		});
-		btnChooseOceanEffectsColor.setToolTipText("Choose a color for ocean effects near coastlines. Transparency is supported.");
-		organizer.addLabelAndComponentsHorizontal("Ocean effects color:", "The color of the ocean effects. Transparency is supported.",
-				Arrays.asList(oceanEffectsColorDisplay, btnChooseOceanEffectsColor), SwingHelper.colorPickerLeftPadding);
+		noneRadioButton = new JRadioButton("None");
+		oceanEffectButtonGroup.add(noneRadioButton);
+		noneRadioButton.addActionListener(oceanEffectsListener);
+		organizer.addLabelAndComponentsVertical("Wave type:", "How to draw waves in the ocean along coastlines.",
+				Arrays.asList(concentricWavesButton, fadingConcentricWavesButton, ripplesRadioButton, noneRadioButton));
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -715,16 +741,32 @@ public class ThemePanel extends JTabbedPane
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
 		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);
 
-		oceanEffectsLevelSlider = new JSlider();
-		oceanEffectsLevelSlider.setMinorTickSpacing(25);
-		oceanEffectsLevelSlider.setPaintTicks(true);
-		oceanEffectsLevelSlider.setPaintLabels(true);
-		oceanEffectsLevelSlider.setMajorTickSpacing(100);
-		oceanEffectsLevelSlider.setMaximum(400);
-		createMapChangeListenerForTerrainChange(oceanEffectsLevelSlider);
-		SwingHelper.setSliderWidthForSidePanel(oceanEffectsLevelSlider);
-		organizer.addLabelAndComponentsVertical("Ocean effects width:", "How far from coastlines ocean effects should extend.",
-				Arrays.asList(concentricWavesLevelSlider, oceanEffectsLevelSlider));
+		oceanWavesLevelSlider = new JSlider();
+		oceanWavesLevelSlider.setMinorTickSpacing(5);
+		oceanWavesLevelSlider.setPaintTicks(true);
+		oceanWavesLevelSlider.setPaintLabels(true);
+		oceanWavesLevelSlider.setMajorTickSpacing(20);
+		oceanWavesLevelSlider.setMaximum(100);
+		createMapChangeListenerForTerrainChange(oceanWavesLevelSlider);
+		SwingHelper.setSliderWidthForSidePanel(oceanWavesLevelSlider);
+		organizer.addLabelAndComponentsVertical("Wave width:", "How far from coastlines waves should draw.",
+				Arrays.asList(concentricWavesLevelSlider, oceanWavesLevelSlider));
+		
+		{
+			oceanWavesColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+
+			JButton btnChooseOceanEffectsColor = new JButton("Choose");
+			btnChooseOceanEffectsColor.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					SwingHelper.showColorPicker(effectsPanel, oceanWavesColorDisplay, "Wave Color", () -> handleTerrainChange());
+				}
+			});
+			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines. Transparency is supported.");
+			organizer.addLabelAndComponentsHorizontal("Wave color:", "The color of the ocean waves. Transparency is supported.",
+					Arrays.asList(oceanWavesColorDisplay, btnChooseOceanEffectsColor), SwingHelper.colorPickerLeftPadding);
+		}
 
 		drawOceanEffectsInLakesCheckbox = new JCheckBox("Draw ocean waves/shading in lakes.");
 		createMapChangeListenerForTerrainChange(drawOceanEffectsInLakesCheckbox);
@@ -835,6 +877,7 @@ public class ThemePanel extends JTabbedPane
 
 
 		organizer.addVerticalFillerRow();
+		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
 		return organizer.createScrollPane();
 	}
 
@@ -1132,7 +1175,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeOceanCheckbox.isSelected());
 	}
-	
+
 	private void updateBackgroundAndRegionFieldVisibility()
 	{
 		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
@@ -1148,7 +1191,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			landColoringMethodComboBox.setSelectedItem(LandColoringMethod.SingleColor);
 		}
-	
+
 		updateBackgroundAndRegionFieldVisibility();
 		handleEnablingAndDisabling();
 	}
@@ -1338,12 +1381,13 @@ public class ThemePanel extends JTabbedPane
 		boolean changeEffectsBackgroundImages = doesChangeEffectBackgroundDisplays(settings);
 
 		coastShadingSlider.setValue(settings.coastShadingLevel);
-		oceanEffectsLevelSlider.setValue(settings.oceanEffectsLevel);
+		oceanShadingSlider.setValue(settings.oceanShadingLevel);
+		oceanWavesLevelSlider.setValue(settings.oceanWavesLevel);
 		concentricWavesLevelSlider.setValue(settings.concentricWaveCount);
-		ripplesRadioButton.setSelected(settings.oceanEffect == OceanEffect.Ripples);
-		shadeRadioButton.setSelected(settings.oceanEffect == OceanEffect.Blur);
-		concentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.ConcentricWaves);
-		fadingConcentricWavesButton.setSelected(settings.oceanEffect == OceanEffect.FadingConcentricWaves);
+		ripplesRadioButton.setSelected(settings.oceanWavesType == OceanWaves.Ripples);
+		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
+		concentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.ConcentricWaves);
+		fadingConcentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.FadingConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
@@ -1357,7 +1401,8 @@ public class ThemePanel extends JTabbedPane
 		disableCoastShadingColorDisplayHandler = false;
 
 		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
-		oceanEffectsColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanEffectsColor));
+		oceanWavesColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanWavesColor));
+		oceanShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanShadingColor));
 		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));
 		frayedEdgeCheckbox.setSelected(settings.frayedBorder);
 		// Do a click here to update other components on the panel as enabled or
@@ -1422,7 +1467,7 @@ public class ThemePanel extends JTabbedPane
 
 		drawRegionBoundariesCheckbox.setSelected(settings.drawRegionBoundaries);
 		regionBoundaryTypeComboBox.setSelectedItem(settings.regionBoundaryStyle.type);
-		regionBoundaryWidthSlider.setValue((int)(settings.regionBoundaryStyle.width * 10f));
+		regionBoundaryWidthSlider.setValue((int) (settings.regionBoundaryStyle.width * 10f));
 
 		// Do a click to update other components on the panel as enabled or
 		// disabled.
@@ -1576,15 +1621,17 @@ public class ThemePanel extends JTabbedPane
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.coastShadingLevel = coastShadingSlider.getValue();
-		settings.oceanEffectsLevel = oceanEffectsLevelSlider.getValue();
+		settings.oceanWavesLevel = oceanWavesLevelSlider.getValue();
+		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanEffect = ripplesRadioButton.isSelected() ? OceanEffect.Ripples
-				: shadeRadioButton.isSelected() ? OceanEffect.Blur
-						: concentricWavesButton.isSelected() ? OceanEffect.ConcentricWaves : OceanEffect.FadingConcentricWaves;
+		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
+				: noneRadioButton.isSelected() ? OceanWaves.None
+						: concentricWavesButton.isSelected() ? OceanWaves.ConcentricWaves : OceanWaves.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
 		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());
-		settings.oceanEffectsColor = AwtFactory.wrap(oceanEffectsColorDisplay.getBackground());
+		settings.oceanWavesColor = AwtFactory.wrap(oceanWavesColorDisplay.getBackground());
+		settings.oceanShadingColor = AwtFactory.wrap(oceanShadingColorDisplay.getBackground());
 		settings.riverColor = AwtFactory.wrap(riverColorDisplay.getBackground());
 		settings.drawText = enableTextCheckBox.isSelected();
 		settings.frayedBorder = frayedEdgeCheckbox.isSelected();
@@ -1616,7 +1663,8 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
 		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
-		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(), regionBoundaryWidthSlider.getValue() / 10f);
+		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(),
+				regionBoundaryWidthSlider.getValue() / 10f);
 		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
 		settings.titleFont = AwtFactory.wrap(titleFontDisplay.getFont());
@@ -1643,11 +1691,10 @@ public class ThemePanel extends JTabbedPane
 	{
 		return getLandColoringMethod().equals(LandColoringMethod.ColorPoliticalRegions);
 	}
-	
+
 	/**
-	 * This should be used instead of directly calling landColoringMethodComboBox.getSelectedItem()
-	 * because sometimes the landColoringMethodComboBox is hidden and its value should be assumed
-	 * to be LandColoringMethod.SingleColor.
+	 * This should be used instead of directly calling landColoringMethodComboBox.getSelectedItem() because sometimes the
+	 * landColoringMethodComboBox is hidden and its value should be assumed to be LandColoringMethod.SingleColor.
 	 */
 	private LandColoringMethod getLandColoringMethod()
 	{
@@ -1655,7 +1702,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			return LandColoringMethod.SingleColor;
 		}
-		
+
 		return (LandColoringMethod) landColoringMethodComboBox.getSelectedItem();
 	}
 
@@ -1758,7 +1805,7 @@ public class ThemePanel extends JTabbedPane
 		btnChooseLandColor.setEnabled(landSupportsColoring());
 
 		btnChooseCoastShadingColor.setEnabled(!areRegionColorsVisible());
-		
+
 		landColoringMethodComboBox.setEnabled(landSupportsColoring());
 	}
 

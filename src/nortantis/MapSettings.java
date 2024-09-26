@@ -58,15 +58,21 @@ public class MapSettings implements Serializable
 	 */
 	public double resolution;
 	public int coastShadingLevel;
+	@Deprecated
 	public int oceanEffectsLevel;
+	public int oceanWavesLevel;
+	public int oceanShadingLevel;
 	public int concentricWaveCount;
-	public OceanEffect oceanEffect;
+	public OceanWaves oceanWavesType;
 	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
 	public Color riverColor;
 	public Color roadColor;
 	public Color coastShadingColor;
+	@Deprecated
 	public Color oceanEffectsColor;
+	public Color oceanWavesColor;
+	public Color oceanShadingColor;
 	public Color coastlineColor;
 	public double centerLandToWaterProbability;
 	public double edgeLandToWaterProbability;
@@ -271,15 +277,19 @@ public class MapSettings implements Serializable
 		root.put("randomSeed", randomSeed);
 		root.put("resolution", resolution);
 		root.put("coastShadingLevel", coastShadingLevel);
+		root.put("oceanWavesLevel", oceanWavesLevel);
+		root.put("oceanCoastalShading", oceanShadingLevel);
 		root.put("oceanEffectsLevel", oceanEffectsLevel);
 		root.put("concentricWaveCount", concentricWaveCount);
-		root.put("oceanEffect", oceanEffect.toString());
+		root.put("oceanEffect", oceanWavesType.toString());
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
 		root.put("riverColor", colorToString(riverColor));
 		root.put("roadColor", colorToString(roadColor));
 		root.put("coastShadingColor", colorToString(coastShadingColor));
 		root.put("oceanEffectsColor", colorToString(oceanEffectsColor));
+		root.put("oceanWavesColor", colorToString(oceanWavesColor));
+		root.put("oceanShadingColor", colorToString(oceanShadingColor));
 		root.put("coastlineColor", colorToString(coastlineColor));
 		root.put("edgeLandToWaterProbability", edgeLandToWaterProbability);
 		root.put("centerLandToWaterProbability", centerLandToWaterProbability);
@@ -463,7 +473,7 @@ public class MapSettings implements Serializable
 		}
 		return list;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONObject regionBoundaryStyleToJson()
 	{
@@ -528,7 +538,7 @@ public class MapSettings implements Serializable
 		randomSeed = (long) root.get("randomSeed");
 		resolution = (double) root.get("resolution");
 		coastShadingLevel = (int) (long) root.get("coastShadingLevel");
-		oceanEffectsLevel = (int) (long) root.get("oceanEffectsLevel");
+
 		concentricWaveCount = (int) (long) root.get("concentricWaveCount");
 		worldSize = (int) (long) root.get("worldSize");
 		riverColor = parseColor((String) root.get("riverColor"));
@@ -541,9 +551,67 @@ public class MapSettings implements Serializable
 			roadColor = defaultRoadColor;
 		}
 		coastShadingColor = parseColor((String) root.get("coastShadingColor"));
-		oceanEffectsColor = parseColor((String) root.get("oceanEffectsColor"));
+		
+		// oceanWavesColor and oceanShadingColor replaced oceanEffectsColor.
+		if (root.containsKey("oceanWavesColor") && !((String) root.get("oceanWavesColor")).isEmpty())
+		{
+			oceanWavesColor = parseColor((String) root.get("oceanWavesColor"));
+		}
+		else
+		{
+			oceanWavesColor = parseColor((String) root.get("oceanEffectsColor"));
+		}
+		
+		if (root.containsKey("oceanShadingColor") && !((String) root.get("oceanShadingColor")).isEmpty())
+		{
+			oceanShadingColor = parseColor((String) root.get("oceanShadingColor"));
+		}
+		else
+		{
+			oceanShadingColor = parseColor((String) root.get("oceanEffectsColor"));
+		}
+		
 		coastlineColor = parseColor((String) root.get("coastlineColor"));
-		oceanEffect = OceanEffect.valueOf((String) root.get("oceanEffect"));
+		oceanWavesType = OceanWaves.valueOf((String) root.get("oceanEffect"));
+
+		// oceanEffectsLevel was replaced by oceanShadingLevel and oceanWavesLevel, so convert the values here.
+		if (root.containsKey("oceanShadingLevel"))
+		{
+			oceanShadingLevel = (int) (long) root.get("oceanShadingLevel");
+		}
+		else
+		{
+			if (oceanWavesType == OceanWaves.Blur)
+			{
+				oceanShadingLevel = (int) (long) root.get("oceanEffectsLevel");
+			}
+			else
+			{
+				oceanShadingLevel = 0;
+			}
+		}
+
+		if (root.containsKey("oceanWavesLevel"))
+		{
+			oceanShadingLevel = (int) (long) root.get("oceanWavesLevel");
+		}
+		else
+		{
+			if (oceanWavesType != OceanWaves.Blur)
+			{
+				oceanWavesLevel = (int) (long) root.get("oceanEffectsLevel");
+			}
+			else
+			{
+				oceanWavesLevel = 0;
+			}
+		}
+		
+		if (oceanWavesType == OceanWaves.Blur)
+		{
+			oceanWavesType = OceanWaves.None;
+		}
+
 		drawOceanEffectsInLakes = root.containsKey("drawOceanEffectsInLakes") ? (boolean) root.get("drawOceanEffectsInLakes") : false;
 		centerLandToWaterProbability = (double) root.get("centerLandToWaterProbability");
 		edgeLandToWaterProbability = (double) root.get("edgeLandToWaterProbability");
@@ -625,7 +693,7 @@ public class MapSettings implements Serializable
 		brightnessRange = (int) (long) root.get("brightnessRange");
 		drawRegionBoundaries = root.containsKey(("drawRegionBoundaries")) ? (boolean) root.get("drawRegionBoundaries") : true;
 		regionBoundaryStyle = parseRegionBoundaryStyle((JSONObject) root.get("regionBoundaryStyle"));
-		
+
 		drawRoads = (boolean) root.get("drawRoads");
 
 		if (root.containsKey("cityIconSetName"))
@@ -824,15 +892,15 @@ public class MapSettings implements Serializable
 					SettingsGenerator.defaultCoastShadingAlpha);
 		}
 
-		if (oceanEffect == OceanEffect.Blur && oceanEffectsColor.getAlpha() == 255)
+		if (oceanShadingColor.getAlpha() == 255)
 		{
-			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+			oceanShadingColor = Color.create(oceanShadingColor.getRed(), oceanShadingColor.getGreen(), oceanShadingColor.getBlue(),
 					SettingsGenerator.defaultOceanShadingAlpha);
 		}
-
-		if (oceanEffect == OceanEffect.Ripples && oceanEffectsColor.getAlpha() == 255)
+		
+		if (oceanWavesType == OceanWaves.Ripples && oceanWavesColor.getAlpha() == 255)
 		{
-			oceanEffectsColor = Color.create(oceanEffectsColor.getRed(), oceanEffectsColor.getGreen(), oceanEffectsColor.getBlue(),
+			oceanWavesColor = Color.create(oceanWavesColor.getRed(), oceanWavesColor.getGreen(), oceanWavesColor.getBlue(),
 					SettingsGenerator.defaultOceanRipplesAlpha);
 		}
 	}
@@ -980,16 +1048,16 @@ public class MapSettings implements Serializable
 
 		return result;
 	}
-	
+
 	private Stroke parseRegionBoundaryStyle(JSONObject obj)
 	{
 		if (obj == null)
 		{
 			return new Stroke(StrokeType.Solid, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0)));
 		}
-		
+
 		StrokeType type = Enum.valueOf(StrokeType.class, ((String) obj.get("type")).replace(" ", "_"));
-		float width = (float)(double) obj.get("width");
+		float width = (float) (double) obj.get("width");
 		return new Stroke(type, width);
 	}
 
@@ -1065,7 +1133,7 @@ public class MapSettings implements Serializable
 		resolution = old.resolution;
 		oceanEffectsLevel = old.oceanEffectsLevel;
 		concentricWaveCount = old.concentricWaveCount;
-		oceanEffect = old.oceanEffect;
+		oceanWavesType = old.oceanEffect;
 		worldSize = old.worldSize;
 		riverColor = old.riverColor;
 		roadColor = old.roadColor;
@@ -1162,6 +1230,22 @@ public class MapSettings implements Serializable
 		return isVersionGreaterThan(version1, version2);
 	}
 	
+	public boolean hasOceanShading()
+	{
+		return oceanShadingLevel > 0;
+	}
+	
+	public boolean hasRippleWaves()
+	{
+		return oceanWavesType == OceanWaves.Ripples && oceanWavesLevel > 0;
+	}
+	
+	public boolean hasConcentricWaves()
+	{
+		return (oceanWavesType == OceanWaves.ConcentricWaves
+				|| oceanWavesType == OceanWaves.FadingConcentricWaves) && concentricWaveCount > 0;
+	}
+
 	public boolean equalsIgnoringEdits(MapSettings other)
 	{
 		return toJson(true).equals(other.toJson(true));
@@ -1200,14 +1284,15 @@ public class MapSettings implements Serializable
 		Jagged, Splines, SplinesWithSmoothedCoastlines
 	}
 
-	public enum OceanEffect
+	public enum OceanWaves
 	{
-		Blur, Ripples, ConcentricWaves, FadingConcentricWaves
+		@Deprecated
+		Blur, Ripples, ConcentricWaves, FadingConcentricWaves, None
 	}
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
-	
+
 
 	@Override
 	public boolean equals(Object obj)
@@ -1260,7 +1345,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
 				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
-				&& Objects.equals(oceanColor, other.oceanColor) && oceanEffect == other.oceanEffect
+				&& Objects.equals(oceanColor, other.oceanColor) && oceanWavesType == other.oceanWavesType
 				&& Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
 				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
