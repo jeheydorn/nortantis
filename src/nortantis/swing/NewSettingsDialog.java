@@ -382,13 +382,13 @@ public class NewSettingsDialog extends JDialog
 	{
 		MapSettings randomSettings = SettingsGenerator.generate(settings.customImagesPath);
 		settings.coastShadingLevel = randomSettings.coastShadingLevel;
-		settings.oceanEffectsLevel = randomSettings.oceanEffectsLevel;
+		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
-		settings.oceanEffect = randomSettings.oceanEffect;
+		settings.oceanWavesType = randomSettings.oceanWavesType;
 		settings.riverColor = randomSettings.riverColor;
 		settings.roadColor = randomSettings.roadColor;
 		settings.coastShadingColor = randomSettings.coastShadingColor;
-		settings.oceanEffectsColor = randomSettings.oceanEffectsColor;
+		settings.oceanWavesColor = randomSettings.oceanWavesColor;
 		settings.coastlineColor = randomSettings.coastlineColor;
 		settings.frayedBorder = randomSettings.frayedBorder;
 		settings.frayedBorderSize = randomSettings.frayedBorderSize;

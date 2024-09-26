@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.MapSettings.OceanEffect;
+import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
@@ -43,6 +43,7 @@ public class SettingsGenerator
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
+	public static final float maxLineWidthInEditor = 10f;
 	
 	public static MapSettings generate(String imagesPath)
 	{
@@ -75,7 +76,7 @@ public class SettingsGenerator
 
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		Color oceanColor;
-		if (settings.oceanEffect == OceanEffect.Ripples)
+		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
 			oceanColor = settings.oceanColor;
 		}
@@ -87,9 +88,9 @@ public class SettingsGenerator
 		{
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
-		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
+		settings.oceanWavesType = ProbabilityHelper.sampleEnumUniform(rand, OceanWaves.class);
 		settings.drawOceanEffectsInLakes = true;
-		settings.oceanEffectsLevel = 15 + Math.abs(rand.nextInt(35));
+		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
 				Math.min(maxConcentricWaveCountToGenerate, Math.abs((new Random().nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
@@ -104,11 +105,12 @@ public class SettingsGenerator
 				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
 				defaultCoastShadingAlpha);
 
-		if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
+		// TODO Handle ocean shading
+		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
-			final int oceanEffectsAlpha = settings.oceanEffect == OceanEffect.Ripples ? defaultOceanRipplesAlpha : settings.oceanEffect == OceanEffect.Blur ? defaultOceanShadingAlpha : 0;
+			final int oceanEffectsAlpha = settings.oceanWavesType == OceanWaves.Ripples ? defaultOceanRipplesAlpha : settings.oceanWavesType == OceanWaves.Blur ? defaultOceanShadingAlpha : 0;
 			double oceanEffectsColorScale = 0.3;
-			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), oceanEffectsAlpha);
 		}
@@ -117,7 +119,7 @@ public class SettingsGenerator
 			// Concentric waves
 			double oceanEffectsColorScale = 0.5;
 			int alpha = 255;
-			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), alpha);
 
