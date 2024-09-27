@@ -673,9 +673,9 @@ public class ThemePanel extends JTabbedPane
 		oceanShadingSlider = new JSlider();
 		oceanShadingSlider.setPaintTicks(true);
 		oceanShadingSlider.setPaintLabels(true);
-		oceanShadingSlider.setMinorTickSpacing(25);
-		oceanShadingSlider.setMaximum(400);
-		oceanShadingSlider.setMajorTickSpacing(100);
+		oceanShadingSlider.setMinorTickSpacing(5);
+		oceanShadingSlider.setMaximum(100);
+		oceanShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(oceanShadingSlider);
 		SwingHelper.setSliderWidthForSidePanel(oceanShadingSlider);
 		organizer.addLabelAndComponent("Ocean shading width:",

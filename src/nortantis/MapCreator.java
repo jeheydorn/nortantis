@@ -474,7 +474,7 @@ public class MapCreator implements WarningLogger
 				? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
 				: 0;
 		double rippleWaveWidth = settings.hasRippleWaves() ? settings.oceanWavesLevel * sizeMultiplier : 0;
-		double oceanShadingWidth = settings.oceanWavesLevel * sizeMultiplier;
+		double oceanShadingWidth = settings.oceanShadingLevel * sizeMultiplier;
 		double coastShadingWidth = settings.coastShadingLevel * sizeMultiplier;
 
 		double effectsPadding = Math
@@ -1199,7 +1199,7 @@ public class MapCreator implements WarningLogger
 
 				int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
 				final float scaleForDarkening = coastlineShadingScale;
-				float scale = ((float) settings.oceanShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+				float scale = ((float) settings.oceanWavesColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);

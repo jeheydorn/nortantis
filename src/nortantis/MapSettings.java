@@ -1293,7 +1293,6 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -1345,8 +1344,10 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
 				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
-				&& Objects.equals(oceanColor, other.oceanColor) && oceanWavesType == other.oceanWavesType
-				&& Objects.equals(oceanEffectsColor, other.oceanEffectsColor) && oceanEffectsLevel == other.oceanEffectsLevel
+				&& Objects.equals(oceanColor, other.oceanColor) && Objects.equals(oceanEffectsColor, other.oceanEffectsColor)
+				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(oceanShadingColor, other.oceanShadingColor)
+				&& oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor)
+				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType
 				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
@@ -1360,6 +1361,9 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+
+
+	
 
 
 }
