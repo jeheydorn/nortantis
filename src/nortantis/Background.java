@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.geom.Dimension;
+import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -38,6 +39,7 @@ public class Background
 	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+	private ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
 	// regionIndexes is a gray scale image where the level of each pixel is the
 	// index of the region it is in.
 	Image regionIndexes;
@@ -50,6 +52,8 @@ public class Background
 	private Image lowerRightCorner;
 	private int cornerWidth;
 	private boolean hasInsetCorners;
+	private Color borderColor;
+	private Image backgroundTexture;
 
 
 	public Background(MapSettings settings, Dimension mapBounds)
@@ -82,8 +86,23 @@ public class Background
 					((int) mapBounds.width) + borderWidthScaled * 2, ((int) mapBounds.height) + borderWidthScaled * 2, 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-			borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
-					ImageHelper.ColorifyAlgorithm.algorithm2);
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
+			
+			if (settings.borderColorOption == BorderColorOption.Ocean_color)
+			{
+				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
+						oceanColorifyAlgorithm);
+			}
+			else
+			{
+				IntRectangle mapBoundsInt = new IntRectangle(borderWidthScaled, borderWidthScaled,
+						(int) (oceanGeneratedBackground.getWidth() - borderWidthScaled * 2),
+						(int) (oceanGeneratedBackground.getHeight() - borderWidthScaled * 2));
+				borderBackground = ImageHelper.colorifyBorder(oceanGeneratedBackground, settings.oceanColor, settings.borderColor,
+						oceanColorifyAlgorithm, mapBoundsInt);
+				borderColor = settings.borderColor;
+				backgroundTexture = oceanGeneratedBackground;
+			}
 
 			if (settings.drawBorder)
 			{
@@ -120,6 +139,8 @@ public class Background
 			{
 				throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
 			}
+			
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
 			Image oceanGeneratedBackground;
 			if (settings.colorizeOcean)
@@ -127,8 +148,23 @@ public class Background
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
 						ImageHelper.convertToGrayscale(texture), ((int) mapBounds.height) + borderWidthScaled * 2,
 						((int) mapBounds.width) + borderWidthScaled * 2);
-				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
-						ImageHelper.ColorifyAlgorithm.algorithm3);
+
+				if (settings.borderColorOption == BorderColorOption.Ocean_color)
+				{
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
+							oceanColorifyAlgorithm);
+				}
+				else
+				{
+					IntRectangle mapBoundsInt = new IntRectangle(borderWidthScaled, borderWidthScaled,
+							(int) (oceanGeneratedBackground.getWidth() - borderWidthScaled * 2),
+							(int) (oceanGeneratedBackground.getHeight() - borderWidthScaled * 2));
+					borderBackground = ImageHelper.colorifyBorder(oceanGeneratedBackground, settings.oceanColor, settings.borderColor,
+							oceanColorifyAlgorithm, mapBoundsInt);
+					borderColor = settings.borderColor;
+					backgroundTexture = oceanGeneratedBackground;
+				}
+
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(borderBackground);
@@ -433,7 +469,7 @@ public class Background
 		{
 			cornerOriginalWidth = lowerRightCorner.getWidth();
 		}
-		
+
 		if (cornerOriginalWidth == 0)
 		{
 			throw new RuntimeException("Border cannot be drawn. Could not find any corner images in " + borderPath);
@@ -571,9 +607,19 @@ public class Background
 	{
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
 		if (hasInsetCorners)
-		{
-			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
-					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
+		{	
+			IntRectangle cornerLocation = new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight());
+			if (borderColor != null)
+			{
+				Image cornerBackground = ImageHelper.colorify(backgroundTexture, borderColor, oceanColorifyAlgorithm, cornerLocation);
+				Painter p = target.createPainter();
+				p.drawImage(cornerBackground, cornerLocation.x - drawOffset.x, cornerLocation.y - drawOffset.y);
+			}
+			else
+			{
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground, new IntPoint(0, 0).subtract(drawOffset),
+						cornerLocation, 0);				
+			}
 		}
 		Painter p = target.createPainter();
 		p.translate(-drawOffset.x, -drawOffset.y);
@@ -634,7 +680,7 @@ public class Background
 		{
 			return;
 		}
-		
+
 		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderWidthScaled,
 				drawBoundsBeforeBorder.toIntRectangle().y + borderWidthScaled);
 		Rectangle bounds = drawBoundsBeforeBorder.translate(borderWidthScaled, borderWidthScaled);
