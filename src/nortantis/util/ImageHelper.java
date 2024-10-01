@@ -1539,49 +1539,6 @@ public class ImageHelper
 		return result;
 	}
 	
-	/**
-	 * Creates a colored image from a grayscale one. Does an inner background color for oceans and an outer one for borders.
-	 */
-	public static Image colorifyBorder(Image image, Color oceanColor, Color borderColor, ColorifyAlgorithm how, IntRectangle mapBounds)
-	{
-		if (how == ColorifyAlgorithm.none)
-		{
-			return image;
-		}
-
-		if (mapBounds == null)
-		{
-			mapBounds = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
-		}
-
-		if (image.getType() != ImageType.Grayscale8Bit)
-			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
-		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
-
-		float[] oceanHsb = oceanColor.getHSB();
-		float[] borderHsb = borderColor.getHSB();
-		final IntRectangle mapBoundsFinal = mapBounds;
-		ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
-		{
-			for (int x = 0; x < image.getWidth(); x++)
-			{
-				if (mapBoundsFinal.contains(x, y))
-				{
-					float level = image.getNormalizedPixelLevel(x, y);
-					result.setRGB(x, y, colorifyPixel(level, oceanHsb, how));
-				}
-				else
-				{
-					float level = image.getNormalizedPixelLevel(x, y);
-					result.setRGB(x, y, colorifyPixel(level, borderHsb, how));
-				}
-			}
-		});
-
-		return result;
-	}
-
-
 	private static int colorifyPixel(float pixelLevelNormalized, float[] hsb, ColorifyAlgorithm how)
 	{
 		if (how == ColorifyAlgorithm.algorithm2)
