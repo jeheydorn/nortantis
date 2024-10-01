@@ -122,6 +122,8 @@ public class MapSettings implements Serializable
 	public boolean drawBorder;
 	public String borderType;
 	public int borderWidth;
+	public BorderColorOption borderColorOption;
+	public Color borderColor;
 	public boolean drawRoads = true;
 	public double cityProbability;
 	public LineStyle lineStyle;
@@ -278,7 +280,7 @@ public class MapSettings implements Serializable
 		root.put("resolution", resolution);
 		root.put("coastShadingLevel", coastShadingLevel);
 		root.put("oceanWavesLevel", oceanWavesLevel);
-		root.put("oceanCoastalShading", oceanShadingLevel);
+		root.put("oceanShadingLevel", oceanShadingLevel);
 		root.put("oceanEffectsLevel", oceanEffectsLevel);
 		root.put("concentricWaveCount", concentricWaveCount);
 		root.put("oceanEffect", oceanWavesType.toString());
@@ -351,6 +353,8 @@ public class MapSettings implements Serializable
 		root.put("drawBorder", drawBorder);
 		root.put("borderType", borderType);
 		root.put("borderWidth", borderWidth);
+		root.put("borderColorOption", borderColorOption.toString());
+		root.put("borderColor", colorToString(borderColor));
 		root.put("frayedBorderSize", frayedBorderSize);
 		root.put("drawRoads", drawRoads);
 		root.put("imageExportPath", imageExportPath);
@@ -593,7 +597,7 @@ public class MapSettings implements Serializable
 
 		if (root.containsKey("oceanWavesLevel"))
 		{
-			oceanShadingLevel = (int) (long) root.get("oceanWavesLevel");
+			oceanWavesLevel = (int) (long) root.get("oceanWavesLevel");
 		}
 		else
 		{
@@ -736,6 +740,7 @@ public class MapSettings implements Serializable
 		{
 			borderType = (String) root.get("borderType");
 		}
+		
 		if (root.containsKey("borderWidth"))
 		{
 			borderWidth = (int) (long) root.get("borderWidth");
@@ -743,6 +748,24 @@ public class MapSettings implements Serializable
 		else
 		{
 			borderWidth = 0;
+		}
+		
+		if (root.containsKey("borderColorOption"))
+		{
+			borderColorOption = Enum.valueOf(BorderColorOption.class, ((String) root.get("borderColorOption")).replace(" ", "_"));
+		}
+		else
+		{
+			borderColorOption = BorderColorOption.Ocean_color;
+		}
+		
+		if (root.containsKey("borderColor"))
+		{
+			borderColor = parseColor((String) root.get("borderColor"));
+		}
+		else
+		{
+			borderColor = landColor;
 		}
 
 		frayedBorderSize = (int) (long) root.get("frayedBorderSize");
@@ -1179,6 +1202,8 @@ public class MapSettings implements Serializable
 		drawBorder = old.drawBorder;
 		borderType = old.borderType;
 		borderWidth = old.borderWidth;
+		borderColorOption = BorderColorOption.Ocean_color;
+		borderColor = landColor;
 		frayedBorderSize = old.frayedBorderSize;
 		drawRoads = old.drawRoads;
 		cityProbability = old.cityProbability;
@@ -1293,6 +1318,7 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
+
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -1311,6 +1337,7 @@ public class MapSettings implements Serializable
 		MapSettings other = (MapSettings) obj;
 		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
+				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
 				&& brightnessRange == other.brightnessRange
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
@@ -1361,9 +1388,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
-
-	
-
 
 }

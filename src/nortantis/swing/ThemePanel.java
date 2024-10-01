@@ -38,6 +38,7 @@ import javax.swing.filechooser.FileFilter;
 import org.apache.commons.io.FilenameUtils;
 
 import nortantis.BackgroundGenerator;
+import nortantis.BorderColorOption;
 import nortantis.FractalBGGenerator;
 import nortantis.FreeIconCollection;
 import nortantis.IconDrawer;
@@ -154,6 +155,10 @@ public class ThemePanel extends JTabbedPane
 	private JSlider oceanShadingSlider;
 	private JPanel oceanShadingColorDisplay;
 	private JButton btnChooseOceanShadingColor;
+	private JPanel borderColorDisplay;
+	private JButton borderColorChooseButton;
+	private JComboBox<BorderColorOption> borderColorOptionComboBox;
+	private RowHider borderColorHider;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -492,10 +497,44 @@ public class ThemePanel extends JTabbedPane
 			organizer.addLabelAndComponent("Border width:",
 					"Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
 		}
+
+		borderColorOptionComboBox = new JComboBox<BorderColorOption>();
+		borderColorOptionComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (borderColorHider != null)
+				{
+					borderColorHider.setVisible(((BorderColorOption) borderColorOptionComboBox.getSelectedItem()) == BorderColorOption.Choose_color);
+					handleFullRedraw();
+				}
+			}
+		});
+		for (BorderColorOption option : BorderColorOption.values())
+		{
+			borderColorOptionComboBox.addItem(option);
+		}
+		organizer.addLabelAndComponent("Border color:",
+				"Transparent pixels in the border will show the background texture drawn with this color.", borderColorOptionComboBox);
+
+		borderColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+
+		borderColorChooseButton = new JButton("Choose");
+		borderColorChooseButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent arg0)
+			{
+				SwingHelper.showColorPicker(borderPanel, borderColorDisplay, "Border Color", () -> handleFullRedraw());
+			}
+		});
+		borderColorHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(borderColorDisplay, borderColorChooseButton),
+				SwingHelper.colorPickerLeftPadding);
+		borderColorHider.setVisible(false);
+
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
-
-
 		organizer.addSeperator();
+
 		frayedEdgeCheckbox = new JCheckBox("Fray edges");
 		frayedEdgeCheckbox.setToolTipText("Whether to fray the edges of the map.");
 		frayedEdgeCheckboxActionListener = new ActionListener()
@@ -639,7 +678,7 @@ public class ThemePanel extends JTabbedPane
 			coastShadingTransparencyHider = sliderWithDisplay.addToOrganizer(organizer, "Coast shading transparency:",
 					"Transparency of shading of land near coastlines");
 		}
-		
+
 		{
 			coastShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
@@ -668,8 +707,8 @@ public class ThemePanel extends JTabbedPane
 
 
 		organizer.addSeperator();
-		
-		
+
+
 		oceanShadingSlider = new JSlider();
 		oceanShadingSlider.setPaintTicks(true);
 		oceanShadingSlider.setPaintLabels(true);
@@ -678,9 +717,8 @@ public class ThemePanel extends JTabbedPane
 		oceanShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(oceanShadingSlider);
 		SwingHelper.setSliderWidthForSidePanel(oceanShadingSlider);
-		organizer.addLabelAndComponent("Ocean shading width:",
-				"How far from coastlines to shade ocean.", oceanShadingSlider);
-		
+		organizer.addLabelAndComponent("Ocean shading width:", "How far from coastlines to shade ocean.", oceanShadingSlider);
+
 		{
 			oceanShadingColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 			btnChooseOceanShadingColor = new JButton("Choose");
@@ -700,7 +738,7 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		organizer.addSeperator();
-		
+
 		ButtonGroup oceanEffectButtonGroup = new ButtonGroup();
 
 		concentricWavesButton = new JRadioButton("Concentric waves");
@@ -751,7 +789,7 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(oceanWavesLevelSlider);
 		organizer.addLabelAndComponentsVertical("Wave width:", "How far from coastlines waves should draw.",
 				Arrays.asList(concentricWavesLevelSlider, oceanWavesLevelSlider));
-		
+
 		{
 			oceanWavesColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
@@ -1494,6 +1532,8 @@ public class ThemePanel extends JTabbedPane
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
+		borderColorOptionComboBox.setSelectedItem(settings.borderColorOption);
+		borderColorDisplay.setBackground(AwtFactory.unwrap(settings.borderColor));
 
 		enableSizeSliderListeners = false;
 		treeHeightSlider.setValue((int) (Math.round((settings.treeHeightScale - 0.1) * 20.0)));
@@ -1679,6 +1719,8 @@ public class ThemePanel extends JTabbedPane
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
+		settings.borderColorOption = (BorderColorOption) borderColorOptionComboBox.getSelectedItem();
+		settings.borderColor = AwtFactory.wrap(borderColorDisplay.getBackground());
 
 		settings.treeHeightScale = 0.1 + (treeHeightSlider.getValue() * 0.05);
 		settings.mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
@@ -1783,6 +1825,8 @@ public class ThemePanel extends JTabbedPane
 	{
 		borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
 		borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
+		borderColorOptionComboBox.setEnabled(drawBorderCheckbox.isSelected());
+		borderColorChooseButton.setEnabled(drawBorderCheckbox.isSelected());
 
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 		frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
