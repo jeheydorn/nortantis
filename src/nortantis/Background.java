@@ -93,7 +93,10 @@ public class Background
 			}
 			else
 			{
-				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+				if (settings.drawBorder)
+				{
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+				}
 				ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 			}
 
@@ -148,7 +151,10 @@ public class Background
 				}
 				else
 				{
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+					if (settings.drawBorder)
+					{
+						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+					}
 					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 				}
 
@@ -168,7 +174,15 @@ public class Background
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
-					borderBackground = oceanGeneratedBackground;
+					
+					if (settings.borderColorOption == BorderColorOption.Ocean_color)
+					{
+						borderBackground = oceanGeneratedBackground;
+					}
+					else
+					{
+						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorifyAlgorithm);
+					}
 				}
 				else
 				{
