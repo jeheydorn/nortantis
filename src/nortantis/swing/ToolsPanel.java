@@ -322,5 +322,10 @@ public class ToolsPanel extends JPanel
 				}
 			}
 		}
+		else
+		{
+			// Always enabled
+			displayQualityComboBox.setEnabled(true);
+		}
 	}
 }
