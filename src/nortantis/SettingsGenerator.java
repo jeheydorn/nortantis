@@ -92,7 +92,7 @@ public class SettingsGenerator
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
-				Math.min(maxConcentricWaveCountToGenerate, Math.abs((new Random().nextInt() % maxConcentricWaveCountInEditor)) + 1));
+				Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);

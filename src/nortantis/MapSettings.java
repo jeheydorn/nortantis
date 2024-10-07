@@ -112,7 +112,7 @@ public class MapSettings implements Serializable
 	public Color textColor;
 	public MapEdits edits;
 	public boolean drawBoldBackground;
-	public boolean drawRegionBoundaries = true;
+	public boolean drawRegionBoundaries;
 	public Stroke regionBoundaryStyle;
 	/**
 	 * Note - this should be considered false if drawRegionBoundaries is false.
@@ -695,7 +695,7 @@ public class MapSettings implements Serializable
 		hueRange = (int) (long) root.get("hueRange");
 		saturationRange = (int) (long) root.get("saturationRange");
 		brightnessRange = (int) (long) root.get("brightnessRange");
-		drawRegionBoundaries = root.containsKey(("drawRegionBoundaries")) ? (boolean) root.get("drawRegionBoundaries") : true;
+		drawRegionBoundaries = root.containsKey(("drawRegionBoundaries")) ? (boolean) root.get("drawRegionBoundaries") : drawRegionColors;
 		regionBoundaryStyle = parseRegionBoundaryStyle((JSONObject) root.get("regionBoundaryStyle"));
 
 		drawRoads = (boolean) root.get("drawRoads");
