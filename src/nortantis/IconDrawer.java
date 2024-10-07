@@ -72,6 +72,12 @@ public class IconDrawer
 	WorldGraph graph;
 	Random rand;
 	private double averageCenterWidthBetweenNeighbors;
+	/**
+	 * This number exists because I used averageCenterWidthBetweenNeighbors, then made changes in the graph creation algorithm but changed
+	 * that number, but I didn't want those changes to cause icons to scale differently, so I'm using this constant to keep them
+	 * approximately the same.
+	 */
+	private final double scaleForNumbersBasedOnAverageCenterWidthBetweenNeighbors = 1.0688468621986605371099494961509;
 	private String cityIconTypeForNewMaps;
 	private String imagesPath;
 	private double resolutionScale;
@@ -554,7 +560,7 @@ public class IconDrawer
 					FreeIcon updated = icon.copyWith(groupAndName.getFirst(), groupAndName.getSecond());
 
 					IconDrawTask task = toIconDrawTask(updated);
-					
+
 					// Remove the icon if it is entirely off the map.
 					if (task != null && graph.bounds.overlaps(task.createBounds()))
 					{
@@ -683,11 +689,12 @@ public class IconDrawer
 	{
 		if (type == IconType.mountains)
 		{
-			return averageCenterWidthBetweenNeighbors;
+			return averageCenterWidthBetweenNeighbors * scaleForNumbersBasedOnAverageCenterWidthBetweenNeighbors;
 		}
 		else if (type == IconType.hills)
 		{
-			return averageCenterWidthBetweenNeighbors * hillSizeComparedToMountains;
+			return averageCenterWidthBetweenNeighbors * scaleForNumbersBasedOnAverageCenterWidthBetweenNeighbors
+					* hillSizeComparedToMountains;
 		}
 		else if (type == IconType.sand)
 		{
@@ -699,7 +706,7 @@ public class IconDrawer
 		}
 		else if (type == IconType.trees)
 		{
-			return averageCenterWidthBetweenNeighbors;
+			return averageCenterWidthBetweenNeighbors * scaleForNumbersBasedOnAverageCenterWidthBetweenNeighbors;
 		}
 		throw new IllegalArgumentException("Unrecognized icon type for getting base width or height: " + type);
 	}
@@ -920,17 +927,19 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
-						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc)) : Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
-						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc)) : Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
 					}
 					else
 					{
 						bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
 						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc));
 					}
-					
+
 					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc));
-					
+
 				}
 				catch (IndexOutOfBoundsException e)
 				{
@@ -971,7 +980,8 @@ public class IconDrawer
 	 * 
 	 * @return The icons that drew.
 	 */
-	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanTexture, Rectangle drawBounds)
+	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanTexture,
+			Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (IconDrawTask task : iconsToDraw)
@@ -1018,7 +1028,8 @@ public class IconDrawer
 		for (final IconDrawTask task : tasks)
 		{
 			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanTexture, task.type,
-					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
+					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
+					(int) task.centerLoc.y);
 		}
 
 		return tasks;
@@ -1351,8 +1362,7 @@ public class IconDrawer
 						{
 							if (canGenerateTreesOnCenter(c))
 							{
-								treesByCenter.put(c.index,
-										new CenterTrees(iconGroupId, forest.density, c.treeSeed));
+								treesByCenter.put(c.index, new CenterTrees(iconGroupId, forest.density, c.treeSeed));
 							}
 						}
 					}
@@ -1373,8 +1383,7 @@ public class IconDrawer
 					{
 						if (canGenerateTreesOnCenter(c))
 						{
-							treesByCenter.put(c.index,
-									new CenterTrees(iconGroupId, forest.density, c.treeSeed));
+							treesByCenter.put(c.index, new CenterTrees(iconGroupId, forest.density, c.treeSeed));
 						}
 					}
 				}
@@ -1591,31 +1600,31 @@ public class IconDrawer
 			this.biomeFrequency = biomeFrequency;
 		}
 	};
-	
+
 	private String getGroupIdForForestType(ForestType forest)
 	{
 		Set<String> groups = ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.trees);
 		String keyWord = forest.treeType.toString().toLowerCase();
-		
+
 		if (groups == null || groups.isEmpty())
 		{
 			// No tree images.
 			return keyWord;
 		}
-		
+
 		// If there is a folder of tree images that with the exact name we want, then prefer that.
 		if (groups.contains(keyWord))
 		{
 			return keyWord;
 		}
-		
+
 		// Pick the first folder that contains the forest type name in the folder name.
 		Optional<String> optional = groups.stream().filter(groupId -> groupId.contains(keyWord)).findFirst();
 		if (optional.isPresent())
 		{
 			return optional.get();
 		}
-		
+
 		// When all else fails, arbitrarily pick one of the tree types.
 		return chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.trees), keyWord);
 	}
@@ -1639,7 +1648,7 @@ public class IconDrawer
 			int x = (int) (loc.x);
 			int y = (int) (loc.y);
 
-			final double scale = (averageCenterWidthBetweenNeighbors / 10.0);
+			final double scale = ((averageCenterWidthBetweenNeighbors * scaleForNumbersBasedOnAverageCenterWidthBetweenNeighbors) / 10.0);
 			x += rand.nextGaussian() * scale;
 			y += rand.nextGaussian() * scale;
 
