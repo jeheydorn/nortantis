@@ -63,6 +63,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Counter;
+import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
@@ -208,7 +209,7 @@ public class ThemePanel extends JTabbedPane
 			public void changedUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
-				if (new File(textureImageFilename.getText()).exists())
+				if (FileHelper.isFile(textureImageFilename.getText()))
 				{
 					handleFullRedraw();
 				}
@@ -217,7 +218,7 @@ public class ThemePanel extends JTabbedPane
 			public void removeUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
-				if (new File(textureImageFilename.getText()).exists())
+				if (FileHelper.isFile(textureImageFilename.getText()))
 				{
 					handleFullRedraw();
 				}
@@ -226,7 +227,7 @@ public class ThemePanel extends JTabbedPane
 			public void insertUpdate(DocumentEvent e)
 			{
 				updateBackgroundImageDisplays();
-				if (new File(textureImageFilename.getText()).exists())
+				if (FileHelper.isFile(textureImageFilename.getText()))
 				{
 					handleFullRedraw();
 				}

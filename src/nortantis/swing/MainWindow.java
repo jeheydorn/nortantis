@@ -709,7 +709,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsReadyForInteractions(() ->
+					updater.dowWhenMapIsNotDrawing(() ->
 					{
 						undoer.undo();
 					});
@@ -728,7 +728,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsReadyForInteractions(() ->
+					updater.dowWhenMapIsNotDrawing(() ->
 					{
 						undoer.redo();
 					});

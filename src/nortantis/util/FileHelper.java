@@ -73,4 +73,10 @@ public class FileHelper
 			return absolutePath;
 		}
 	}
+	
+	public static boolean isFile(String filePath)
+	{
+		File file = new File(filePath);
+		return file.exists() && !file.isDirectory();
+	}
 }
