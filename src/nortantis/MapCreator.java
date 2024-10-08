@@ -349,7 +349,7 @@ public class MapCreator implements WarningLogger
 			Image oceanWaves;
 			Image oceanShading;
 			{
-				Tuple2<Image, Image> oceanTuple = createOceanWaveAndShading(settings, mapParts.graph, settings.resolution, landMask,
+				Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask,
 						centersToDraw, drawBounds);
 				oceanWaves = oceanTuple.getFirst();
 				oceanShading = oceanTuple.getSecond();
@@ -359,7 +359,7 @@ public class MapCreator implements WarningLogger
 				}
 				if (oceanWaves != null)
 				{
-					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanWaves, true);
+					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
 				}
 			}
 
@@ -1002,7 +1002,7 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		Tuple2<Image, Image> oceanTuple = createOceanWaveAndShading(settings, graph, settings.resolution, landMask, null, null);
+		Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, graph, settings.resolution, landMask, null, null);
 		Image oceanWaves = oceanTuple.getFirst();
 		Image oceanShading = oceanTuple.getSecond();
 		if (oceanShading != null)
@@ -1163,7 +1163,7 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private Tuple2<Image, Image> createOceanWaveAndShading(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
+	private Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
