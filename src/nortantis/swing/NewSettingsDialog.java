@@ -381,12 +381,13 @@ public class NewSettingsDialog extends JDialog
 	private void randomizeTheme()
 	{
 		MapSettings randomSettings = SettingsGenerator.generate(settings.customImagesPath);
-		settings.coastShadingLevel = randomSettings.coastShadingLevel;
+		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
 		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
 		settings.oceanWavesType = randomSettings.oceanWavesType;
 		settings.riverColor = randomSettings.riverColor;
 		settings.roadColor = randomSettings.roadColor;
+		settings.coastShadingLevel = randomSettings.coastShadingLevel;
 		settings.coastShadingColor = randomSettings.coastShadingColor;
 		settings.oceanWavesColor = randomSettings.oceanWavesColor;
 		settings.coastlineColor = randomSettings.coastlineColor;

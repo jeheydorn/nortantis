@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -44,20 +45,21 @@ public class SettingsGenerator
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
 	public static final float maxLineWidthInEditor = 10f;
-	
+
 	public static MapSettings generate(String imagesPath)
 	{
 		Random rand = new Random();
 		return generate(rand, imagesPath);
 	}
 
+	@SuppressWarnings("deprecation")
 	public static MapSettings generate(Random rand, String imagesPath)
 	{
 		if (!Files.exists(Paths.get(defaultSettingsFile)))
 		{
 			throw new IllegalArgumentException("The default settings files " + defaultSettingsFile + " does not exist");
 		}
-		
+
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
@@ -88,9 +90,15 @@ public class SettingsGenerator
 		{
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
-		settings.oceanWavesType = ProbabilityHelper.sampleEnumUniform(rand, OceanWaves.class);
+
+		List<OceanWaves> oceanWaveOptions = new ArrayList<>(Arrays.asList(OceanWaves.values()));
+		// Remove deprecated option.
+		oceanWaveOptions.remove(OceanWaves.Blur);
+
+		settings.oceanWavesType = ProbabilityHelper.sampleUniform(rand, oceanWaveOptions);
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
+		settings.oceanShadingLevel = 0;
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
 				Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
@@ -104,24 +112,37 @@ public class SettingsGenerator
 		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * landBlurColorScale),
 				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
 				defaultCoastShadingAlpha);
+		
+		{
+			double oceanShadingColorScale = 0.3;
+			settings.oceanShadingColor = Color.create((int) (settings.oceanColor.getRed() * oceanShadingColorScale),
+					(int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
+					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
+		}
 
-		// TODO Handle ocean shading
+		if (settings.oceanWavesType == OceanWaves.None)
+		{
+			// Use ocean shading instead.
+			// Not that I don't generate a map that uses both shading and waves because although it can look nice, it renders slowly, so I
+			// don't encourage it.
+			settings.oceanShadingLevel = 15 + Math.abs(rand.nextInt(35));
+		}
+		
 		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
-			final int oceanEffectsAlpha = settings.oceanWavesType == OceanWaves.Ripples ? defaultOceanRipplesAlpha : settings.oceanWavesType == OceanWaves.Blur ? defaultOceanShadingAlpha : 0;
-			double oceanEffectsColorScale = 0.3;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), oceanEffectsAlpha);
+			double ripplesColorScale = 0.3;
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * ripplesColorScale),
+					(int) (settings.oceanColor.getGreen() * ripplesColorScale),
+					(int) (settings.oceanColor.getBlue() * ripplesColorScale), defaultOceanRipplesAlpha);
 		}
 		else
 		{
 			// Concentric waves
-			double oceanEffectsColorScale = 0.5;
+			double wavesColorScale = 0.5;
 			int alpha = 255;
-			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), alpha);
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale),
+					(int) (settings.oceanColor.getGreen() * wavesColorScale),
+					(int) (settings.oceanColor.getBlue() * wavesColorScale), alpha);
 
 		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
@@ -188,7 +209,8 @@ public class SettingsGenerator
 
 		settings.drawRegionBoundaries = rand.nextDouble() > 0.25;
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
-		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class), settings.regionBoundaryStyle.width) ;
+		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class),
+				settings.regionBoundaryStyle.width);
 
 		if (rand.nextDouble() > 0.25)
 		{
@@ -269,7 +291,7 @@ public class SettingsGenerator
 
 		return settings;
 	}
-	
+
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
 		long seed = Math.abs(rand.nextInt());

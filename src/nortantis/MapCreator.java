@@ -474,8 +474,10 @@ public class MapCreator implements WarningLogger
 				? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
 				: 0;
 		double rippleWaveWidth = settings.hasRippleWaves() ? settings.oceanWavesLevel * sizeMultiplier : 0;
-		double oceanShadingWidth = settings.oceanShadingLevel * sizeMultiplier;
-		double coastShadingWidth = settings.coastShadingLevel * sizeMultiplier;
+		// There shading from gaussian blur isn't visible very far out, so save performance by reducing the width
+		// contributed by it.
+		double oceanShadingWidth = 0.5 * (settings.oceanShadingLevel * sizeMultiplier);
+		double coastShadingWidth = 0.5 * (settings.coastShadingLevel * sizeMultiplier);
 
 		double effectsPadding = Math
 				.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
@@ -488,8 +490,8 @@ public class MapCreator implements WarningLogger
 		// river.
 		// Since there is no easy way to know what that will be, just guess.
 		double guessAtMaxRiverWidth = 16;
-		effectsPadding = Math.max(effectsPadding,
-				Math.max((guessAtMaxRiverWidth / 2.0) * settings.resolution, SettingsGenerator.maxLineWidthInEditor * settings.resolution));
+		effectsPadding = Math.max(effectsPadding, Math.max((guessAtMaxRiverWidth / 2.0) * settings.resolution,
+				(SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
 
 		effectsPadding *= sizeMultiplier;
 		return effectsPadding;

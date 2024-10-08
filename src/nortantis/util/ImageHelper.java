@@ -323,8 +323,7 @@ public class ImageHelper
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math
 						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
-				kernel[y][x] = (float) dist.value(distanceFromCenter * scale);
-				kernel[y][x] = Math.max(0, kernel[y][x]);
+				kernel[y][x] = Math.max(0, (float) dist.value(distanceFromCenter * scale));
 			}
 		}
 		normalize(kernel);
