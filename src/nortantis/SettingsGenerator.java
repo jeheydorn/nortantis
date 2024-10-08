@@ -119,13 +119,13 @@ public class SettingsGenerator
 					(int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
 		}
-
+		
 		if (settings.oceanWavesType == OceanWaves.None)
 		{
 			// Use ocean shading instead.
 			// Not that I don't generate a map that uses both shading and waves because although it can look nice, it renders slowly, so I
 			// don't encourage it.
-			settings.oceanShadingLevel = 15 + Math.abs(rand.nextInt(35));
+			settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
 		}
 		
 		if (settings.oceanWavesType == OceanWaves.Ripples)

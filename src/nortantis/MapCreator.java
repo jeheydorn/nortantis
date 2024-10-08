@@ -473,7 +473,7 @@ public class MapCreator implements WarningLogger
 		double concentricWaveWidth = settings.hasConcentricWaves()
 				? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
 				: 0;
-		double rippleWaveWidth = settings.hasRippleWaves() ? settings.oceanWavesLevel * sizeMultiplier : 0;
+		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? settings.oceanWavesLevel * sizeMultiplier : 0;
 		// There shading from gaussian blur isn't visible very far out, so save performance by reducing the width
 		// contributed by it.
 		double oceanShadingWidth = 0.5 * (settings.oceanShadingLevel * sizeMultiplier);
@@ -1165,18 +1165,18 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(mapOrSnippet, null);
 	}
 
-	private Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
+	private Tuple2<Image, Image> createOceanWavesAndShading(MapSettings settings, WorldGraph graph, double resolutionScale, Image landMask,
 			Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		if (drawBounds == null)
 		{
 			drawBounds = graph.bounds;
 		}
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
+		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
 
 		Image oceanWaves = null;
 		Image oceanShading = null;
-		if (settings.hasRippleWaves() || settings.hasConcentricWaves() || settings.hasOceanShading())
+		if (settings.hasRippleWaves(resolutionScale) || settings.hasConcentricWaves() || settings.hasOceanShading(resolutionScale))
 		{
 			double targetStrokeWidth = sizeMultiplier;
 			Image coastlineMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
@@ -1194,7 +1194,7 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			if (settings.hasRippleWaves())
+			if (settings.hasRippleWaves(resolutionScale))
 			{
 				float[][] kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier),
 						1.0 / sizeMultiplier);
@@ -1216,11 +1216,11 @@ public class MapCreator implements WarningLogger
 			}
 			else if (settings.hasConcentricWaves())
 			{
-				oceanWaves = createConcentricWavesMask(settings, graph, resolutionScaled, landMask, centersToDraw, drawBounds,
+				oceanWaves = createConcentricWavesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds,
 						coastlineMask);
 			}
 
-			if (settings.hasOceanShading())
+			if (settings.hasOceanShading(resolutionScale))
 			{
 				float[][] kernel = ImageHelper.createGaussianKernel((int) (settings.oceanShadingLevel * sizeMultiplier));
 

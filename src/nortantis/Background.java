@@ -10,7 +10,6 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.geom.Dimension;
-import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;

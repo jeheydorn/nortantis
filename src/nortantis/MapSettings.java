@@ -1255,14 +1255,16 @@ public class MapSettings implements Serializable
 		return isVersionGreaterThan(version1, version2);
 	}
 	
-	public boolean hasOceanShading()
+	public boolean hasOceanShading(double resolutionScale)
 	{
-		return oceanShadingLevel > 0;
+		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
+		return (int) (sizeMultiplier * oceanShadingLevel) > 0;
 	}
 	
-	public boolean hasRippleWaves()
+	public boolean hasRippleWaves(double resolutionScale)
 	{
-		return oceanWavesType == OceanWaves.Ripples && oceanWavesLevel > 0;
+		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
+		return oceanWavesType == OceanWaves.Ripples && ((int) oceanWavesLevel * sizeMultiplier) > 0;
 	}
 	
 	public boolean hasConcentricWaves()
