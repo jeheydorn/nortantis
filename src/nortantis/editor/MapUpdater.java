@@ -138,12 +138,15 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, null);
 	}
-	
+
 	public void createAndShowLowPriorityChanges()
 	{
-		Set<Integer> centersToDrawIds = new HashSet<>(centersToRedrawLowPriority.keySet());
-		centersToRedrawLowPriority.clear();
-		innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null);
+		if (!centersToRedrawLowPriority.isEmpty())
+		{
+			Set<Integer> centersToDrawIds = new HashSet<>(centersToRedrawLowPriority.keySet());
+			centersToRedrawLowPriority.clear();
+			innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null);
+		}
 	}
 
 	public void reprocessBooks()
@@ -181,16 +184,16 @@ public abstract class MapUpdater
 	private Set<Integer> getIdsOfCentersWithChangesInEdits(MapEdits changeEdits)
 	{
 		Set<Integer> changedCentersIds = getEdits().centerEdits.values().stream()
-				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index)))
-				.map(cEdit -> cEdit.index).collect(Collectors.toSet());
+				.filter(cEdit -> !cEdit.equals(changeEdits.centerEdits.get(cEdit.index))).map(cEdit -> cEdit.index)
+				.collect(Collectors.toSet());
 
 		Set<RegionEdit> regionChanges = getEdits().regionEdits.values().stream()
 				.filter(rEdit -> !rEdit.equals(changeEdits.regionEdits.get(rEdit.regionId))).collect(Collectors.toSet());
 		for (RegionEdit rEdit : regionChanges)
 		{
 			Set<Integer> regionCenterEdits = changeEdits.centerEdits.values().stream()
-					.filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId)
-					.map(cEdit -> cEdit.index).collect(Collectors.toSet());
+					.filter(cEdit -> cEdit.regionId != null && cEdit.regionId == rEdit.regionId).map(cEdit -> cEdit.index)
+					.collect(Collectors.toSet());
 			changedCentersIds.addAll(regionCenterEdits);
 		}
 
@@ -295,18 +298,19 @@ public abstract class MapUpdater
 	{
 		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
 	}
-	
+
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
 			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
-		Set<Integer> centersChangedIds = centersChanged == null ? null : centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
+		Set<Integer> centersChangedIds = centersChanged == null ? null
+				: centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
 		Set<Integer> edgesChangedIds = edgesChanged == null ? null : edgesChanged.stream().map(e -> e.index).collect(Collectors.toSet());
 
 		createAndShowMapUsingIds(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRun, postRun);
 	}
 
-	private void createAndShowMapUsingIds(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
-			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
+	private void createAndShowMapUsingIds(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
+			List<MapText> textChanged, List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
 		List<Runnable> preRuns = new ArrayList<>();
 		if (preRun != null)
@@ -319,7 +323,7 @@ public abstract class MapUpdater
 		{
 			postRuns.add(postRun);
 		}
-		
+
 		List<MapText> copiedText = textChanged == null ? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
 		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns);
@@ -328,14 +332,14 @@ public abstract class MapUpdater
 	/**
 	 * Redraws the map, then displays it
 	 */
-	private void innerCreateAndShowMap(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
-			List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
+	private void innerCreateAndShowMap(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
+			List<MapText> textChanged, List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
 	{
 		if (!enabled)
 		{
 			return;
 		}
-		
+
 		onDrawSubmitted(updateType);
 
 		if (isMapBeingDrawn)
@@ -390,7 +394,8 @@ public abstract class MapUpdater
 						Image map = getCurrentMapForIncrementalUpdate();
 						IntRectangle combinedReplaceBounds = null;
 						// Incremental update
-						if (centersChangedIds != null && centersChangedIds.size() > 0 || edgesChangedIds != null && edgesChangedIds.size() > 0)
+						if (centersChangedIds != null && centersChangedIds.size() > 0
+								|| edgesChangedIds != null && edgesChangedIds.size() > 0)
 						{
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
 							currentMapCreator = new MapCreator();
@@ -443,7 +448,7 @@ public abstract class MapUpdater
 					else
 					{
 						// Full draw
-						
+
 						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
 						{
 							return null;
@@ -453,7 +458,7 @@ public abstract class MapUpdater
 						{
 							mapParts = new MapParts();
 						}
-						
+
 						centersToRedrawLowPriority.clear();
 
 						Image map;
@@ -503,10 +508,10 @@ public abstract class MapUpdater
 						initializeRegionEditsIfEmpty(settings.edits);
 						initializeEdgeEditsIfEmpty(settings.edits);
 					}
-					
+
 					if (currentMapCreator != null)
 					{
-						addLowPriorityCentersToRedraw(currentMapCreator.centersToRedrawLowPriority);	
+						addLowPriorityCentersToRedraw(currentMapCreator.centersToRedrawLowPriority);
 					}
 
 					MapUpdate next = combineAndGetNextUpdateToDraw();
@@ -534,8 +539,8 @@ public abstract class MapUpdater
 
 					if (next != null)
 					{
-						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged, next.iconsChanged,
-								next.preRuns, next.postRuns);
+						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
+								next.iconsChanged, next.preRuns, next.postRuns);
 					}
 
 					isMapReadyForInteractions = true;
@@ -548,7 +553,7 @@ public abstract class MapUpdater
 					}
 					isMapBeingDrawn = false;
 				}
-				
+
 				currentMapCreator = null;
 
 				while (tasksToRunWhenMapReady.size() > 0)
@@ -559,7 +564,7 @@ public abstract class MapUpdater
 
 		});
 	}
-	
+
 	private void addLowPriorityCentersToRedraw(Map<Integer, Center> toAdd)
 	{
 		for (Center c : toAdd.values())
@@ -583,7 +588,7 @@ public abstract class MapUpdater
 	}
 
 	protected abstract void onBeginDraw();
-	
+
 	protected void onDrawSubmitted(UpdateType updateType)
 	{
 	}
@@ -652,7 +657,7 @@ public abstract class MapUpdater
 			edits.initializeRegionEdits(mapParts.graph.regions.values());
 		}
 	}
-	
+
 	public void setMaxMapSize(Dimension dimension)
 	{
 		maxMapSize = dimension;

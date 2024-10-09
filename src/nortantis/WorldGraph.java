@@ -171,7 +171,7 @@ public class WorldGraph extends VoronoiGraph
 		int size;
 		int loopCount = 0;
 		do
-		{
+		{	
 			for (Center center : loopOver)
 			{
 				if (!center.isWellFormedForDrawing())
@@ -422,7 +422,7 @@ public class WorldGraph extends VoronoiGraph
 			}
 		});
 	}
-	
+
 	public static Color storeValueAsColor(int value)
 	{
 		int blue = value & 0xFF;
@@ -430,7 +430,7 @@ public class WorldGraph extends VoronoiGraph
 		int red = (value >> 16) & 0xFF;
 		return Color.create(red, green, blue);
 	}
-	
+
 	public static int getValueFromColor(Color color)
 	{
 		return color.getRed() << 16 | color.getGreen() << 8 | color.getBlue();
@@ -1880,10 +1880,6 @@ public class WorldGraph extends VoronoiGraph
 		for (Center center : centers)
 		{
 			center.loc = center.loc.mult(widthScale, heightScale);
-			if (center.originalLoc != null)
-			{
-				center.originalLoc = center.originalLoc.mult(widthScale, heightScale);
-			}
 		}
 		for (Edge edge : edges)
 		{
@@ -1999,7 +1995,8 @@ public class WorldGraph extends VoronoiGraph
 		});
 	}
 
-	public void drawRegionBoundaries(Painter p, Stroke stroke, double resolutionScale, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public void drawRegionBoundaries(Painter p, Stroke stroke, double resolutionScale, Collection<Center> centersToDraw,
+			Rectangle drawBounds)
 	{
 		Transform orig = null;
 		if (drawBounds != null)
@@ -2020,14 +2017,26 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
+			// Enforce an order in which the region boundary is drawn so that full versus incremental redraws don't draw dotted lines
+			// in the opposite order and so end up drawing the dashed pattern slightly differently.
+			if (drawPoints.get(0).compareTo(drawPoints.get(drawPoints.size() - 1)) > 0)
+			{
+				Collections.reverse(drawPoints);
+			}
+
 			if (DebugFlags.drawRegionBoundaryPathJoins())
 			{
 				Color color = p.getColor();
-				p.setColor(Color.red);
 				p.setBasicStroke(1f * (float) resolutionScale);
-				final int diameter = (int) (8.0 * resolutionScale);
 
+				int diameter = (int) (7.0 * resolutionScale);
+				p.setColor(Color.red);
 				p.drawOval((int) (drawPoints.get(0).x) - diameter / 2, (int) (drawPoints.get(0).y) - diameter / 2, diameter, diameter);
+
+				diameter = (int) (10.0 * resolutionScale);
+				p.setColor(Color.blue);
+				p.drawOval((int) (drawPoints.get(drawPoints.size() - 1).x) - diameter / 2,
+						(int) (drawPoints.get(drawPoints.size() - 1).y) - diameter / 2, diameter, diameter);
 
 				p.setColor(color);
 				p.setStroke(stroke, resolutionScale);
@@ -2170,7 +2179,6 @@ public class WorldGraph extends VoronoiGraph
 		found.add(start);
 
 		// TODO I need a consistent way to decide which direction to follow even for incremental drawing. Probably do something like
-		// TextDrawer.findRiver
 
 		if (start.v0 != null)
 		{

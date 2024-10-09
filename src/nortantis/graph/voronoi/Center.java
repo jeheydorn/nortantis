@@ -44,7 +44,6 @@ public class Center
 	// neighborsNotInSamePlateRatio is only here to make GraphImpl.createTectonicPlates faster.
 	public float neighborsNotInSamePlateRatio;
 	public Integer mountainRangeId;
-	public Point originalLoc;
 
 	/**
 	 * Used to deterministically place trees so that edits don't cause changes in other centers.

@@ -105,7 +105,6 @@ public abstract class VoronoiGraph
 		buildGraph(v);
 		improveCorners();
 		storeOriginalCornerLocations();
-		storeOriginalCentersLocations();
 		assignBorderToCenters();
 		setupRandomSeeds(rand);
 
@@ -144,15 +143,6 @@ public abstract class VoronoiGraph
 			c.originalLoc = c.loc;
 		}
 	}
-
-	private void storeOriginalCentersLocations()
-	{
-		for (Center c : centers)
-		{
-			c.originalLoc = c.loc;
-		}
-	}
-
 
 	private void assignBorderToCenters()
 	{

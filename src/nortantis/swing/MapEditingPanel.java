@@ -38,7 +38,7 @@ import nortantis.util.ImageHelper.ColorifyAlgorithm;
 public class MapEditingPanel extends UnscaledImagePanel
 {
 	private final Color highlightEditColor = new Color(255, 227, 74);
-	private final Color highlightEraseColor = highlightEditColor;//new Color(230, 230, 230); // TODO Decide if I want to keep this feature.
+	private final Color highlightEraseColor = highlightEditColor;//new Color(230, 230, 230); // Put this back if I decide if I want to keep this feature.
 	private boolean isErasing;
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color processingColor = Color.orange;

@@ -471,7 +471,9 @@ public class MapCreator implements WarningLogger
 		// whichever is largest.
 
 		double concentricWaveWidth = settings.hasConcentricWaves()
-				? settings.concentricWaveCount * (concentricWaveLineWidth + concentricWaveWidthBetweenWaves)
+				? settings.concentricWaveCount
+						* (concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier)
+						+ (8 * settings.resolution)
 				: 0;
 		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? settings.oceanWavesLevel * sizeMultiplier : 0;
 		// There shading from gaussian blur isn't visible very far out, so save performance by reducing the width
@@ -483,7 +485,7 @@ public class MapCreator implements WarningLogger
 				.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
 		// Increase effectsPadding by the width of a coastline, plus one pixel
 		// extra just to be safe.
-		effectsPadding += 2;
+		effectsPadding += 2 * settings.resolution;
 
 		// Make sure effectsPadding is at least half the width of the maximum
 		// with any line can be drawn, which would probably be a very wide

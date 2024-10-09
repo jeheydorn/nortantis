@@ -223,7 +223,7 @@ public class NoisyEdges
 	 */
 	private Point findPrevOrNextPointOnCurve(Edge edge, Corner corner)
 	{
-		// Use the last point in the edge edge connecting to this one.
+		// Use the last point in the edge connecting to this one.
 		Edge toFollow = findEdgeToFollow(corner, edge, null);
 		if (toFollow == null)
 		{
