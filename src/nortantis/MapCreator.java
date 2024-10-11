@@ -491,8 +491,8 @@ public class MapCreator implements WarningLogger
 		// with any line can be drawn, which would probably be a very wide
 		// river.
 		// Since there is no easy way to know what that will be, just guess.
-		double guessAtMaxRiverWidth = 16;
-		effectsPadding = Math.max(effectsPadding, Math.max((guessAtMaxRiverWidth / 2.0) * settings.resolution,
+		double guessAtMaxRiverWidthPlustSomeBuffer = 70;
+		effectsPadding = Math.max(effectsPadding, Math.max((guessAtMaxRiverWidthPlustSomeBuffer / 2.0) * settings.resolution,
 				(SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
 
 		effectsPadding *= sizeMultiplier;
@@ -1538,7 +1538,7 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private static boolean applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerChanges,
+	private static boolean applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges,
 			boolean areRegionBoundariesVisible)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
@@ -1552,15 +1552,15 @@ public class MapCreator implements WarningLogger
 					"The map edits have " + edits.centerEdits.size() + " polygons, but the world size is " + graph.centers.size());
 		}
 
-		if (centerChanges == null)
+		if (centerEditChanges == null)
 		{
-			centerChanges = edits.centerEdits.values();
+			centerEditChanges = edits.centerEdits.values();
 		}
 
 		Set<Center> centersChanged = new HashSet<>();
 		Set<Center> needsRebuildNoisyEdges = new HashSet<>();
 
-		for (CenterEdit cEdit : centerChanges)
+		for (CenterEdit cEdit : centerEditChanges)
 		{
 			Center center = graph.centers.get(cEdit.index);
 			centersChanged.add(center);

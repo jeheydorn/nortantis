@@ -101,6 +101,11 @@ public class Corner
 		}
 		return false;
 	}
+	
+	public void resetLocToOriginal()
+	{
+		loc = originalLoc;
+	}
 
 	// This is needed to give the object a deterministic hash code. If I use the
 	// object's address as the hash

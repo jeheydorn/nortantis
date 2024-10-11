@@ -180,7 +180,7 @@ public class WorldGraph extends VoronoiGraph
 					changed.add(center);
 					for (Corner corner : center.corners)
 					{
-						corner.loc = corner.originalLoc;
+						corner.resetLocToOriginal();
 
 						next.addAll(corner.touches);
 						changed.addAll(corner.touches);
@@ -266,10 +266,10 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth == null || edgesToSmooth.size() == 0)
 		{
-			// This corner is not on an edge to it smooth. Clear the override to set the corner's location back to how it was first
+			// This corner is not on an edge to smooth. Clear the override to set the corner's location back to how it was first
 			// generated.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
-			corner.loc = corner.originalLoc;
+			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
 		}
 
@@ -280,7 +280,7 @@ public class WorldGraph extends VoronoiGraph
 			if (corner.touches.stream().anyMatch(center -> center.isSinglePolygonIsland() || center.isSinglePolygonWater()))
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
-				corner.loc = corner.originalLoc;
+				corner.resetLocToOriginal();
 				return new SmoothingResult(isChanged, false);
 			}
 
@@ -297,7 +297,7 @@ public class WorldGraph extends VoronoiGraph
 		else
 		{
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
-			corner.loc = corner.originalLoc;
+			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
 		}
 	}
