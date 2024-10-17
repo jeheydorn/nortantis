@@ -296,6 +296,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
+			// 3 or more boundaries that should be smoothed intersect. Don't smooth because it's not clear what direction to smooth.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
