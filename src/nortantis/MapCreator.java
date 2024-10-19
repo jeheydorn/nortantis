@@ -299,10 +299,11 @@ public class MapCreator implements WarningLogger
 		Image textBackground;
 		double sizeMultiplierRounded = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
 
+		Set<Center> centersToDraw = null;
 		if (!onlyTextChanged)
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
-			Set<Center> centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
+			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
 
 			mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
 
@@ -425,6 +426,15 @@ public class MapCreator implements WarningLogger
 		{
 			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true,
 					drawBoundsUpperLeftCornerAdjustedForBorder);
+		}
+		
+		if (DebugFlags.drawCorners())
+		{
+			mapParts.graph.drawCorners(mapSnippet.createPainter(), centersToDraw, drawBounds);
+		}
+		if (DebugFlags.drawVoronoi())
+		{
+			mapParts.graph.drawVoronoi(mapSnippet.createPainter(), centersToDraw, drawBounds);
 		}
 
 		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
@@ -669,11 +679,11 @@ public class MapCreator implements WarningLogger
 
 		if (DebugFlags.drawCorners())
 		{
-			graph.drawCorners(map.createPainter());
+			graph.drawCorners(map.createPainter(), null, null);
 		}
 		if (DebugFlags.drawVoronoi())
 		{
-			graph.drawVoronoi(map.createPainter());
+			graph.drawVoronoi(map.createPainter(), null, null);
 		}
 
 		if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
@@ -1613,7 +1623,6 @@ public class MapCreator implements WarningLogger
 		for (Center center : needsRebuildNoisyEdges)
 		{
 			graph.rebuildNoisyEdgesForCenter(center, needsRebuildNoisyEdges);
-
 		}
 
 		return !needsRebuildNoisyEdges.isEmpty();

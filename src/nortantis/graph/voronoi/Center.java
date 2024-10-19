@@ -314,6 +314,7 @@ public class Center
 	 */
 	public boolean isWellFormedForDrawing()
 	{
+		Point centroid = calcCentroid();
 		for (Corner corner : corners)
 		{
 			for (Edge edge : borders)
@@ -328,7 +329,7 @@ public class Center
 					continue;
 				}
 
-				if (linesIntersect(corner.loc, loc, edge.v0.loc, edge.v1.loc))
+				if (linesIntersect(corner.loc, centroid, edge.v0.loc, edge.v1.loc))
 				{
 					return false;
 				}
@@ -350,7 +351,7 @@ public class Center
 	 *            End of the second line.
 	 * @return Whether the lines intersect.
 	 */
-	private boolean linesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
+	private static boolean linesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
 	{
 		int o1 = orientation(line1Start, line1End, line2Start);
 		int o2 = orientation(line1Start, line1End, line2End);
@@ -385,7 +386,7 @@ public class Center
 		return false;
 	}
 
-	private int orientation(Point p, Point q, Point r)
+	private static int orientation(Point p, Point q, Point r)
 	{
 		double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 		if (val == 0)
@@ -395,7 +396,7 @@ public class Center
 		return (val > 0) ? 1 : 2;
 	}
 
-	private boolean onSegment(Point p, Point q, Point r)
+	private static boolean onSegment(Point p, Point q, Point r)
 	{
 		if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
 		{

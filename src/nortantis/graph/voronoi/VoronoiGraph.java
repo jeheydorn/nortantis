@@ -407,20 +407,6 @@ public abstract class VoronoiGraph
 		}
 	}
 
-	/**
-	 * For debugging
-	 */
-	public void drawVoronoi(Painter g)
-	{
-		g.setColor(Color.white);
-		for (Corner c : corners)
-		{
-			for (Corner adjacent : c.adjacent)
-			{
-				g.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
-			}
-		}
-	}
 
 	/**
 	 * For debugging
@@ -438,13 +424,63 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawCorners(Painter g)
+	public void drawVoronoi(Painter g, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		for (Corner c : corners)
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		g.setColor(Color.white);
+
+		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
+		for (Corner c : cornersToDraw)
+		{
+			for (Corner adjacent : c.adjacent)
+			{
+				g.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
+			}
+		}
+
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
+		}
+	}
+
+	protected Set<Corner> getCornersFromCenters(Collection<Center> centers)
+	{
+		Set<Corner> result = new HashSet<>();
+		centers.stream().forEach(c -> result.addAll(c.corners));
+		return result;
+	}
+
+	/**
+	 * For debugging
+	 */
+	public void drawCorners(Painter g, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
+		for (Corner c : cornersToDraw)
 		{
 			g.setColor(Color.pink);
 
-			g.fillOval((int) (c.loc.x - 5), (int) (c.loc.y - 5), 10, 10);
+			g.fillOval((int) (c.loc.x - 5 * resolutionScale), (int) (c.loc.y - 5 * resolutionScale), (int) (10 * resolutionScale),
+					(int) (10 * resolutionScale));
+		}
+
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
 		}
 	}
 
@@ -677,7 +713,7 @@ public abstract class VoronoiGraph
 		{
 			return;
 		}
-		
+
 		if (path.size() < 2)
 		{
 			return;
@@ -759,7 +795,7 @@ public abstract class VoronoiGraph
 
 		return centers;
 	}
-	
+
 	public Set<Center> getCentersFromEdgeIds(Collection<Integer> edgeIds)
 	{
 		Set<Center> centers = new HashSet<Center>();

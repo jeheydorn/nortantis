@@ -135,14 +135,17 @@ public class WorldGraph extends VoronoiGraph
 	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle,
 			boolean areRegionBoundariesVisible)
 	{
+		if (centersToUpdate != centers)
+		{
+			// When doing incremental drawing, expand the centers to update to include neighbors so that and single-center islands or water
+			// that were expanded by the last brush stroke get reevaluated.
+			addNeighbors(centersToUpdate);
+		}
+
 		Set<Center> changed = new HashSet<Center>();
 		if (lineStyle == LineStyle.SplinesWithSmoothedCoastlines)
 		{
-			for (Center center : centersToUpdate)
-			{
-				Set<Center> needsRebuild = smoothCoastlinesAndOptionallyRegionBoundaries(center, areRegionBoundariesVisible);
-				changed.addAll(needsRebuild);
-			}
+			changed = smoothCoastlinesAndOptionallyRegionBoundaries(centersToUpdate, areRegionBoundariesVisible);
 			for (Center center : changed)
 			{
 				center.updateLocToCentroid();
@@ -150,11 +153,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else if (lineStyle == LineStyle.Splines && areRegionBoundariesVisible)
 		{
-			for (Center center : centersToUpdate)
-			{
-				Set<Center> needsRebuild = smoothRegionBoundaries(center);
-				changed.addAll(needsRebuild);
-			}
+			changed = smoothRegionBoundaries(centersToUpdate);
 			for (Center center : changed)
 			{
 				center.updateLocToCentroid();
@@ -171,7 +170,7 @@ public class WorldGraph extends VoronoiGraph
 		int size;
 		int loopCount = 0;
 		do
-		{	
+		{
 			for (Center center : loopOver)
 			{
 				if (!center.isWellFormedForDrawing())
@@ -203,11 +202,22 @@ public class WorldGraph extends VoronoiGraph
 		return changed;
 	}
 
-	private Set<Center> smoothCoastlinesAndOptionallyRegionBoundaries(Center center, boolean smoothRegionBoundaries)
+	private void addNeighbors(Collection<Center> centers)
 	{
-		assert center != null;
-		boolean isChanged = false;
-		for (Corner corner : center.corners)
+		assert centers instanceof Set;
+		Set<Center> loopOver = new HashSet<>(centers);
+		for (Center c : loopOver)
+		{
+			centers.addAll(c.neighbors);
+		}
+	}
+
+	private Set<Center> smoothCoastlinesAndOptionallyRegionBoundaries(Collection<Center> centersToUpdate, boolean smoothRegionBoundaries)
+	{
+		Set<Corner> cornersToUpdate = getCornersFromCenters(centersToUpdate);
+		Set<Center> centersChanged = new HashSet<Center>();
+
+		for (Corner corner : cornersToUpdate)
 		{
 			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, e -> e.isCoast());
 			boolean isCornerChanged = coastlineResult.isCornerChanged;
@@ -218,35 +228,28 @@ public class WorldGraph extends VoronoiGraph
 				SmoothingResult regionResult = updateCornerLocationToSmoothEdges(corner, e -> e.isRegionBoundary() && !e.isRiver());
 				isCornerChanged |= regionResult.isCornerChanged;
 			}
-			isChanged |= isCornerChanged;
+			if (isCornerChanged)
+			{
+				centersChanged.addAll(corner.touches);
+			}
 		}
-		Set<Center> result = new HashSet<Center>();
-		if (isChanged)
-		{
-			result.add(center);
-			result.addAll(center.neighbors);
-
-		}
-		return result;
+		return centersChanged;
 	}
 
-	private Set<Center> smoothRegionBoundaries(Center center)
+	private Set<Center> smoothRegionBoundaries(Collection<Center> centersToUpdate)
 	{
-		assert center != null;
-		boolean isChanged = false;
-		for (Corner corner : center.corners)
+		Set<Corner> cornersToUpdate = getCornersFromCenters(centersToUpdate);
+		Set<Center> centersChanged = new HashSet<Center>();
+
+		for (Corner corner : cornersToUpdate)
 		{
 			SmoothingResult result = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver());
-			isChanged |= result.isCornerChanged;
+			if (result.isCornerChanged)
+			{
+				centersChanged.addAll(corner.touches);
+			}
 		}
-		Set<Center> result = new HashSet<Center>();
-		if (isChanged)
-		{
-			result.add(center);
-			result.addAll(center.neighbors);
-
-		}
-		return result;
+		return centersChanged;
 	}
 
 	private SmoothingResult updateCornerLocationToSmoothEdges(Corner corner, Function<Edge, Boolean> shouldSmoothEdge)
@@ -284,7 +287,7 @@ public class WorldGraph extends VoronoiGraph
 				return new SmoothingResult(isChanged, false);
 			}
 
-			// This is a coastline.
+			// Smooth the edge
 			Corner otherCorner0 = edgesToSmooth.get(0).v0 == corner ? edgesToSmooth.get(0).v1 : edgesToSmooth.get(0).v0;
 			Corner otherCorner1 = edgesToSmooth.get(1).v0 == corner ? edgesToSmooth.get(1).v1 : edgesToSmooth.get(1).v0;
 			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2,
