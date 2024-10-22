@@ -951,26 +951,44 @@ public abstract class VoronoiGraph
 			if (color != null)
 			{
 				p.setColor(color);
-				for (final Center r : c.neighbors)
-				{
-					Edge edge = lookupEdgeFromCenter(c, r);
-
-					if (noisyEdges == null || noisyEdges.getNoisyEdge(edge.index) == null)
-					{
-						// This can happen if noisy edges haven't been created
-						// yet or if the polygon is on the border.
-						drawPieceWithoutNoisyEdges(p, edge, c);
-					}
-					else
-					{
-						dawPieceUsingNoisyEdges(p, edge, c);
-					}
-				}
+//				if (c.isWellFormedForDrawingPiecewise())
+//				{
+//					drawPolygonPiecewise(p, c);
+//				}
+//				else
+//				{
+					drawPolygon(p, c);
+//				}
 			}
 
 		}
 	}
+	
+	/**
+	 * Fills in a polygon (a Center) by filling in the space between the polygon's center and each edge separately. 
+	 * @param p
+	 * @param c
+	 */
+	private void drawPolygonPiecewise(Painter p, Center c)
+	{
+		for (final Center r : c.neighbors)
+		{
+			Edge edge = lookupEdgeFromCenter(c, r);
 
+			if (noisyEdges == null || noisyEdges.getNoisyEdge(edge.index) == null)
+			{
+				// This can happen if noisy edges haven't been created
+				// yet or if the polygon is on the border.
+				drawPieceWithoutNoisyEdges(p, edge, c);
+			}
+			else
+			{
+				dawPieceUsingNoisyEdges(p, edge, c);
+			}
+		}
+
+	}
+	
 	private void drawPieceWithoutNoisyEdges(Painter p, Edge edge, Center c)
 	{
 		List<IntPoint> vertices = new ArrayList<>();
@@ -993,6 +1011,96 @@ public abstract class VoronoiGraph
 			vertices.add(new IntPoint((int) point.x, (int) point.y));
 		}
 		p.fillPolygon(vertices);
+	}
+	
+	private void drawPolygon(Painter p, Center c)
+	{
+		List<Edge> edges = c.orderEdgesAroundCenter();
+		List<Point> vertices = edgeListToDrawPoints(edges);
+		//if (c.index == 26976) { System.out.println("vertices: " + vertices); } // TODO remove
+		p.fillPolygonDouble(vertices);
+	}
+	
+	protected List<Point> edgeListToDrawPoints(List<Edge> edges)
+	{
+		if (edges.isEmpty())
+		{
+			return Collections.emptyList();
+		}
+
+		List<Point> result = new ArrayList<Point>();
+		for (int i = 0; i < edges.size(); i++)
+		{
+			Edge current = edges.get(i);
+			if (current.v0 == null || current.v1 == null)
+			{
+				continue;
+			}
+
+			boolean reverse;
+			if (i == 0)
+			{
+				if (edges.size() == 1)
+				{
+					reverse = false;
+				}
+				else
+				{
+					Edge next = edges.get(i + 1);
+					if (current.v0 == next.v0 || current.v0 == next.v1)
+					{
+						reverse = true;
+					}
+					else
+					{
+						reverse = false;
+					}
+				}
+			}
+			else
+			{
+				Edge prev = edges.get(i - 1);
+				if (current.v1 == prev.v0 || current.v1 == prev.v1)
+				{
+					reverse = true;
+				}
+				else
+				{
+					reverse = false;
+				}
+			}
+
+			addEdgePoints(result, current, reverse);
+		}
+
+		return result;
+	}
+
+	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse)
+	{
+		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
+		if (noisyEdge == null)
+		{
+			if (reverse)
+			{
+				points.add(edge.v1.loc);
+				points.add(edge.v0.loc);
+			}
+			else
+			{
+				points.add(edge.v0.loc);
+				points.add(edge.v1.loc);
+			}
+		}
+		else
+		{
+			if (reverse)
+			{
+				noisyEdge = new ArrayList<>(noisyEdge);
+				Collections.reverse(noisyEdge);
+			}
+			points.addAll(noisyEdge);
+		}
 	}
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi

@@ -160,45 +160,6 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 
-		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
-		// I reapply this loop as a fixed-point algorithm, stopping when either it makes a pass were no
-		// centers were malformed, or the last pass made no progress.
-		// I also check a maximum number of loops to make sure this algorithm doesn't take a really long time for some really strange map,
-		// although in practice that doesn't seem to happen.
-		Set<Center> loopOver = new HashSet<>(changed);
-		Set<Center> next = new HashSet<>();
-		int size;
-		int loopCount = 0;
-		do
-		{
-			for (Center center : loopOver)
-			{
-				if (!center.isWellFormedForDrawing())
-				{
-					next.add(center);
-					changed.add(center);
-					for (Corner corner : center.corners)
-					{
-						corner.resetLocToOriginal();
-
-						next.addAll(corner.touches);
-						changed.addAll(corner.touches);
-					}
-				}
-			}
-
-			for (Center center : next)
-			{
-				center.updateLocToCentroid();
-			}
-
-			size = loopOver.size();
-			loopOver = next;
-			next = new HashSet<>();
-			loopCount++;
-		}
-		while (size > loopOver.size() && loopOver.size() > 0 && loopCount <= 10);
-
 		return changed;
 	}
 
@@ -2079,88 +2040,6 @@ public class WorldGraph extends VoronoiGraph
 		return result;
 	}
 
-	private List<Point> edgeListToDrawPoints(List<Edge> edges)
-	{
-		if (edges.isEmpty())
-		{
-			return Collections.emptyList();
-		}
-
-		List<Point> result = new ArrayList<Point>();
-		for (int i = 0; i < edges.size(); i++)
-		{
-			Edge current = edges.get(i);
-			if (current.v0 == null || current.v1 == null)
-			{
-				continue;
-			}
-
-			boolean reverse;
-			if (i == 0)
-			{
-				if (edges.size() == 1)
-				{
-					reverse = false;
-				}
-				else
-				{
-					Edge next = edges.get(i + 1);
-					if (current.v0 == next.v0 || current.v0 == next.v1)
-					{
-						reverse = true;
-					}
-					else
-					{
-						reverse = false;
-					}
-				}
-			}
-			else
-			{
-				Edge prev = edges.get(i - 1);
-				if (current.v1 == prev.v0 || current.v1 == prev.v1)
-				{
-					reverse = true;
-				}
-				else
-				{
-					reverse = false;
-				}
-			}
-
-			addEdgePoints(result, current, reverse);
-		}
-
-		return result;
-	}
-
-	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse)
-	{
-		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
-		if (noisyEdge == null)
-		{
-			if (reverse)
-			{
-				points.add(edge.v1.loc);
-				points.add(edge.v0.loc);
-			}
-			else
-			{
-				points.add(edge.v0.loc);
-				points.add(edge.v1.loc);
-			}
-		}
-		else
-		{
-			if (reverse)
-			{
-				noisyEdge = new ArrayList<>(noisyEdge);
-				Collections.reverse(noisyEdge);
-			}
-			points.addAll(noisyEdge);
-		}
-	}
-
 	/**
 	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
 	 * 
@@ -2181,8 +2060,6 @@ public class WorldGraph extends VoronoiGraph
 		ArrayDeque<Edge> deque = new ArrayDeque<>();
 		deque.add(start);
 		found.add(start);
-
-		// TODO I need a consistent way to decide which direction to follow even for incremental drawing. Probably do something like
 
 		if (start.v0 != null)
 		{

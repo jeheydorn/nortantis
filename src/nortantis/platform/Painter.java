@@ -50,6 +50,18 @@ public abstract class Painter
 		}
 		fillPolygon(xPoints, yPoints);
 	}
+	
+	public void fillPolygonDouble(List<Point> vertices)
+	{
+		int[] xPoints = new int[vertices.size()];
+		int[] yPoints = new int[vertices.size()];
+		for (int i = 0; i < vertices.size(); i++)
+		{
+			xPoints[i] = (int) vertices.get(i).x;
+			yPoints[i] = (int) vertices.get(i).y;
+		}
+		fillPolygon(xPoints, yPoints);
+	}
 
 	public abstract void drawPolygon(int[] xPoints, int[] yPoints);
 

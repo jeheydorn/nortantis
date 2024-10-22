@@ -18,7 +18,7 @@ import nortantis.geom.Rectangle;
  *
  * @author Connor
  */
-public class Center
+public class Center implements Comparable<Center>
 {
 
 	public int index;
@@ -312,7 +312,7 @@ public class Center
 	 * Determines whether this center can draw without overlapping other polygons. This is defined as being able to draw a straight line
 	 * from each corner to the center's center such that that line does not overlap any edges of this center.
 	 */
-	public boolean isWellFormedForDrawing()
+	public boolean isWellFormedForDrawingPiecewise()
 	{
 		Point centroid = calcCentroid();
 		for (Corner corner : corners)
@@ -416,5 +416,18 @@ public class Center
 		}
 		isCoast = numOcean > 0 && numLand > 0;
 	}
+
+	@Override
+	public int compareTo(Center o)
+	{
+		int locComp = loc.compareTo(o.loc);
+		if (locComp == 0)
+		{
+			return Integer.compare(hashCode(), o.hashCode());
+		}
+		return locComp;
+	}
+	
+	
 
 }
