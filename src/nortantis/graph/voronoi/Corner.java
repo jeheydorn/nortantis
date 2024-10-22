@@ -106,6 +106,13 @@ public class Corner
 	{
 		loc = originalLoc;
 	}
+	
+
+	@Override
+	public String toString()
+	{
+		return "Corner [loc=" + loc + ", index=" + index + "]";
+	}
 
 	// This is needed to give the object a deterministic hash code. If I use the
 	// object's address as the hash
@@ -128,4 +135,5 @@ public class Corner
 
 		return index == ((Corner) other).index;
 	}
+
 }

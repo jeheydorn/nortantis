@@ -10,8 +10,10 @@ import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 import nortantis.TreeType;
+import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
+import nortantis.util.Counter;
 
 /**
  * Center.java
@@ -305,6 +307,30 @@ public class Center implements Comparable<Center>
 			}
 		}
 
+		return true;
+	}
+	
+	public boolean isWellFormedForDrawingAsPolygon()
+	{
+		Counter<IntPoint> counter = new Counter<>();
+		for (Edge edge : borders)
+		{
+			if (edge.v0 != null)
+			{
+				counter.incrementCount(edge.v0.loc.toIntPoint());
+			}
+			
+			if (edge.v1 != null)
+			{
+				counter.incrementCount(edge.v1.loc.toIntPoint());
+			}
+		}
+		
+		IntPoint mostFrequent = counter.argmax();
+		if (mostFrequent != null && counter.getCount(mostFrequent) > 2)
+		{
+			return false;
+		}
 		return true;
 	}
 

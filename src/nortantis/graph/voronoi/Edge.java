@@ -218,4 +218,32 @@ public class Edge implements Comparable<Edge>
 		return b.toString();
 	}
 
+	// Override hashCode and equals methods so that HashSets order edges in a consistent order between runs. Otherwise
+	// Center.orderEdgesAroundCenter can return different results based on in-memory addresses from one run to another.
+	@Override
+	public int hashCode()
+	{
+		return index;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		Edge other = (Edge) obj;
+		return index == other.index;
+	}
+
+
 }

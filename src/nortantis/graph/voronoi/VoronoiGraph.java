@@ -15,6 +15,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -29,6 +30,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.Transform;
+import nortantis.util.Logger;
 import nortantis.util.Range;
 
 /**
@@ -951,21 +953,24 @@ public abstract class VoronoiGraph
 			if (color != null)
 			{
 				p.setColor(color);
-//				if (c.isWellFormedForDrawingPiecewise())
-//				{
-//					drawPolygonPiecewise(p, c);
-//				}
-//				else
-//				{
+				// I want to just draw using drawPolygon, but sometimes the graph has Centers with polygons that don't make sense, so I have
+				// a bunch of checks to fall back to drawing piecewise.
+				if (c.isWellFormedForDrawingPiecewise() || !c.isWellFormedForDrawingAsPolygon())
+				{
+					drawPolygonPiecewise(p, c);
+				}
+				else
+				{
 					drawPolygon(p, c);
-//				}
+				}
 			}
 
 		}
 	}
-	
+
 	/**
-	 * Fills in a polygon (a Center) by filling in the space between the polygon's center and each edge separately. 
+	 * Fills in a polygon (a Center) by filling in the space between the polygon's center and each edge separately.
+	 * 
 	 * @param p
 	 * @param c
 	 */
@@ -988,7 +993,7 @@ public abstract class VoronoiGraph
 		}
 
 	}
-	
+
 	private void drawPieceWithoutNoisyEdges(Painter p, Edge edge, Center c)
 	{
 		List<IntPoint> vertices = new ArrayList<>();
@@ -1012,15 +1017,29 @@ public abstract class VoronoiGraph
 		}
 		p.fillPolygon(vertices);
 	}
-	
+
 	private void drawPolygon(Painter p, Center c)
 	{
 		List<Edge> edges = c.orderEdgesAroundCenter();
 		List<Point> vertices = edgeListToDrawPoints(edges);
-		//if (c.index == 26976) { System.out.println("vertices: " + vertices); } // TODO remove
+
+		// TODO remove debug code
+		// if (c.index == 10406)
+		// {
+		// Logger.println();
+		// Logger.println("Edges:");
+		// c.borders.stream().forEach(edge -> Logger.println(edge.toString()));
+		// Logger.println("Verticies adjusted:");
+		// Logger.println(vertices.stream().map(point -> point.subtract(new Point(500, 500)).toIntPoint()).collect(Collectors.toList()));
+		// Logger.println();
+		// Logger.println("Ordered edges:");
+		// Logger.println(edges);
+		//
+		// }
+
 		p.fillPolygonDouble(vertices);
 	}
-	
+
 	protected List<Point> edgeListToDrawPoints(List<Edge> edges)
 	{
 		if (edges.isEmpty())
