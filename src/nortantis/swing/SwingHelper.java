@@ -212,8 +212,8 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (isCausedByOutOfMemoryError(ex))
 				{
-					String message = isExport ? "Out of memory. Try exporting at a lower resolution."
-							: "Out of memory. Try decreasing the Display Quality in the View menu.";
+					String message = isExport ? "Out of memory. Try exporting at a lower resolution, or decreasing the Display Quality before exporting."
+							: "Out of memory. Try decreasing the Display Quality.";
 					Logger.printError(message, ex);
 					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
 				}
