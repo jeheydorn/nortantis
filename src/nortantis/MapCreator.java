@@ -332,7 +332,7 @@ public class MapCreator implements WarningLogger
 			if (settings.drawRegionBoundaries)
 			{
 				Painter p = mapSnippet.createPainter(DrawQuality.High);
-				p.setColor(settings.coastlineColor);
+				p.setColor(settings.regionBoundaryColor);
 				mapParts.graph.drawRegionBoundaries(p, settings.regionBoundaryStyle, settings.resolution, centersToDraw, drawBounds);
 			}
 
@@ -368,7 +368,7 @@ public class MapCreator implements WarningLogger
 			{
 				Painter p = mapSnippet.createPainter(DrawQuality.High);
 				p.setColor(settings.coastlineColor);
-				mapParts.graph.drawCoastlineWithLakeShores(p, sizeMultiplierRounded, centersToDraw, drawBounds);
+				mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
 			}
 
 			// Draw icons
@@ -970,7 +970,7 @@ public class MapCreator implements WarningLogger
 		{
 			{
 				Painter g = map.createPainter(DrawQuality.High);
-				g.setColor(settings.coastlineColor);
+				g.setColor(settings.regionBoundaryColor);
 				graph.drawRegionBoundaries(g, settings.regionBoundaryStyle, settings.resolution, null, null);
 			}
 		}
@@ -1037,8 +1037,7 @@ public class MapCreator implements WarningLogger
 		{
 			Painter g = map.createPainter(DrawQuality.High);
 			g.setColor(settings.coastlineColor);
-			double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(settings.resolution);
-			graph.drawCoastlineWithLakeShores(g, sizeMultiplier, null, null);
+			graph.drawCoastlineWithLakeShores(g, settings.coastlineWidth * settings.resolution, null, null);
 		}
 
 		checkForCancel();

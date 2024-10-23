@@ -160,6 +160,9 @@ public class ThemePanel extends JTabbedPane
 	private JButton borderColorChooseButton;
 	private JComboBox<BorderColorOption> borderColorOptionComboBox;
 	private RowHider borderColorHider;
+	private JSlider coastlineWidthSlider;
+	private JPanel regionBoundaryColorDisplay;
+	private RowHider regionBoundaryColorHider;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -331,6 +334,20 @@ public class ThemePanel extends JTabbedPane
 					(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
 			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
 		}
+		
+		
+		regionBoundaryColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+		JButton buttonChooseRegionBoundaryColor = new JButton("Choose");
+		buttonChooseRegionBoundaryColor.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				SwingHelper.showColorPicker(backgroundPanel, regionBoundaryColorDisplay, "Coastline Color", () -> handleTerrainChange());
+			}
+		});
+		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line-color of region boundaries",
+				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding);
+		
 
 		organizer.addSeperator();
 
@@ -507,7 +524,8 @@ public class ThemePanel extends JTabbedPane
 			{
 				if (borderColorHider != null)
 				{
-					borderColorHider.setVisible(((BorderColorOption) borderColorOptionComboBox.getSelectedItem()) == BorderColorOption.Choose_color);
+					borderColorHider.setVisible(
+							((BorderColorOption) borderColorOptionComboBox.getSelectedItem()) == BorderColorOption.Choose_color);
 					handleFullRedraw();
 				}
 			}
@@ -590,6 +608,19 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(drawGrungeCheckbox);
 
 
+		grungeSlider = new JSlider();
+		grungeSlider.setValue(0);
+		grungeSlider.setPaintTicks(true);
+		grungeSlider.setPaintLabels(true);
+		grungeSlider.setMinorTickSpacing(250);
+		grungeSlider.setMaximum(2000);
+		grungeSlider.setMajorTickSpacing(1000);
+		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
+		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
+		organizer.addLabelAndComponent("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.",
+				grungeSlider);
+
+		
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		grungeColorChooseButton = new JButton("Choose");
@@ -603,17 +634,6 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentsHorizontal("Edge/Grunge color:", "Grunge and frayed edge shading will be this color",
 				Arrays.asList(grungeColorDisplay, grungeColorChooseButton), SwingHelper.colorPickerLeftPadding);
 
-		grungeSlider = new JSlider();
-		grungeSlider.setValue(0);
-		grungeSlider.setPaintTicks(true);
-		grungeSlider.setPaintLabels(true);
-		grungeSlider.setMinorTickSpacing(250);
-		grungeSlider.setMaximum(2000);
-		grungeSlider.setMajorTickSpacing(1000);
-		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
-		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
-		organizer.addLabelAndComponent("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.",
-				grungeSlider);
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
@@ -639,6 +659,21 @@ public class ThemePanel extends JTabbedPane
 				"The style of lines to use when drawing coastlines, lakeshores, and region boundaries",
 				Arrays.asList(jaggedLinesButton, splinesLinesButton, splinesWithSmoothedCoastlinesButton));
 		organizer.addSeperator();
+
+
+		{
+			coastlineWidthSlider = new JSlider();
+			coastlineWidthSlider.setPaintLabels(false);
+			coastlineWidthSlider.setValue(10);
+			coastlineWidthSlider.setMaximum(100);
+			coastlineWidthSlider.setMinimum(10);
+			createMapChangeListenerForTerrainChange(coastlineWidthSlider);
+			SwingHelper.setSliderWidthForSidePanel(coastlineWidthSlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastlineWidthSlider,
+					(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
+			sliderWithDisplay.addToOrganizer(organizer, "Coastline width:", "Line width of coastlines");
+		}
+
 
 		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
@@ -1222,6 +1257,7 @@ public class ThemePanel extends JTabbedPane
 		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		regionBoundaryTypeComboBoxHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 		regionBoundaryWidthSliderHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
+		regionBoundaryColorHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 	}
 
 	private void updateBackgroundAndRegionFieldStates()
@@ -1440,6 +1476,7 @@ public class ThemePanel extends JTabbedPane
 		disableCoastShadingColorDisplayHandler = false;
 
 		coastlineColorDisplay.setBackground(AwtFactory.unwrap(settings.coastlineColor));
+		coastlineWidthSlider.setValue((int) (settings.coastlineWidth * 10.0));
 		oceanWavesColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanWavesColor));
 		oceanShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.oceanShadingColor));
 		riverColorDisplay.setBackground(AwtFactory.unwrap(settings.riverColor));
@@ -1507,6 +1544,7 @@ public class ThemePanel extends JTabbedPane
 		drawRegionBoundariesCheckbox.setSelected(settings.drawRegionBoundaries);
 		regionBoundaryTypeComboBox.setSelectedItem(settings.regionBoundaryStyle.type);
 		regionBoundaryWidthSlider.setValue((int) (settings.regionBoundaryStyle.width * 10f));
+		regionBoundaryColorDisplay.setBackground(AwtFactory.unwrap(settings.regionBoundaryColor));
 
 		// Do a click to update other components on the panel as enabled or
 		// disabled.
@@ -1671,6 +1709,7 @@ public class ThemePanel extends JTabbedPane
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
 		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());
+		settings.coastlineWidth = coastlineWidthSlider.getValue() / 10.0;
 		settings.oceanWavesColor = AwtFactory.wrap(oceanWavesColorDisplay.getBackground());
 		settings.oceanShadingColor = AwtFactory.wrap(oceanShadingColorDisplay.getBackground());
 		settings.riverColor = AwtFactory.wrap(riverColorDisplay.getBackground());
@@ -1706,6 +1745,7 @@ public class ThemePanel extends JTabbedPane
 		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
 		settings.regionBoundaryStyle = new Stroke((StrokeType) regionBoundaryTypeComboBox.getSelectedItem(),
 				regionBoundaryWidthSlider.getValue() / 10f);
+		settings.regionBoundaryColor = AwtFactory.wrap(regionBoundaryColorDisplay.getBackground());
 		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
 		settings.titleFont = AwtFactory.wrap(titleFontDisplay.getFont());

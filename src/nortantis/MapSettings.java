@@ -74,6 +74,7 @@ public class MapSettings implements Serializable
 	public Color oceanWavesColor;
 	public Color oceanShadingColor;
 	public Color coastlineColor;
+	public double coastlineWidth;
 	public double centerLandToWaterProbability;
 	public double edgeLandToWaterProbability;
 	public boolean frayedBorder;
@@ -114,6 +115,7 @@ public class MapSettings implements Serializable
 	public boolean drawBoldBackground;
 	public boolean drawRegionBoundaries;
 	public Stroke regionBoundaryStyle;
+	public Color regionBoundaryColor;
 	/**
 	 * Note - this should be considered false if drawRegionBoundaries is false.
 	 */
@@ -293,6 +295,7 @@ public class MapSettings implements Serializable
 		root.put("oceanWavesColor", colorToString(oceanWavesColor));
 		root.put("oceanShadingColor", colorToString(oceanShadingColor));
 		root.put("coastlineColor", colorToString(coastlineColor));
+		root.put("coastlineWidth", coastlineWidth);
 		root.put("edgeLandToWaterProbability", edgeLandToWaterProbability);
 		root.put("centerLandToWaterProbability", centerLandToWaterProbability);
 		root.put("frayedBorder", frayedBorder);
@@ -326,6 +329,7 @@ public class MapSettings implements Serializable
 		root.put("brightnessRange", brightnessRange);
 		root.put("drawRegionBoundaries", drawRegionBoundaries);
 		root.put("regionBoundaryStyle", regionBoundaryStyleToJson());
+		root.put("regionBoundaryColor", colorToString(regionBoundaryColor));
 
 		// Icons
 		root.put("cityIconSetName", cityIconTypeName);
@@ -576,6 +580,14 @@ public class MapSettings implements Serializable
 		}
 		
 		coastlineColor = parseColor((String) root.get("coastlineColor"));
+		if (root.containsKey("coastlineWidth"))
+		{
+			coastlineWidth = (double) root.get("coastlineWidth");
+		}
+		else
+		{
+			coastlineWidth = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0);
+		}
 		oceanWavesType = OceanWaves.valueOf((String) root.get("oceanEffect"));
 
 		// oceanEffectsLevel was replaced by oceanShadingLevel and oceanWavesLevel, so convert the values here.
@@ -697,6 +709,11 @@ public class MapSettings implements Serializable
 		brightnessRange = (int) (long) root.get("brightnessRange");
 		drawRegionBoundaries = root.containsKey(("drawRegionBoundaries")) ? (boolean) root.get("drawRegionBoundaries") : drawRegionColors;
 		regionBoundaryStyle = parseRegionBoundaryStyle((JSONObject) root.get("regionBoundaryStyle"));
+		regionBoundaryColor = parseColor((String) root.get("regionBoundaryColor"));
+		if (regionBoundaryColor == null)
+		{
+			regionBoundaryColor = coastlineColor;
+		}
 
 		drawRoads = (boolean) root.get("drawRoads");
 
@@ -1109,8 +1126,10 @@ public class MapSettings implements Serializable
 
 	private static Color parseColor(String str)
 	{
-		if (str == null)
-			throw new NullPointerException("A color is null.");
+		if (str == null || str.isEmpty())
+		{
+			return null;
+		}
 		String[] parts = str.split(",");
 		if (parts.length == 3)
 		{
@@ -1164,6 +1183,7 @@ public class MapSettings implements Serializable
 		coastShadingLevel = old.coastShadingLevel;
 		oceanEffectsColor = old.oceanEffectsColor;
 		coastlineColor = old.coastlineColor;
+		coastlineWidth = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0);
 		centerLandToWaterProbability = old.centerLandToWaterProbability;
 		edgeLandToWaterProbability = old.edgeLandToWaterProbability;
 		frayedBorder = old.frayedBorder;
@@ -1198,6 +1218,7 @@ public class MapSettings implements Serializable
 		drawRegionColors = old.drawRegionColors;
 		drawRegionBoundaries = old.drawRegionColors;
 		regionBoundaryStyle = parseRegionBoundaryStyle(null);
+		regionBoundaryColor = coastlineColor;
 		regionsRandomSeed = old.regionsRandomSeed;
 		drawBorder = old.drawBorder;
 		borderType = old.borderType;
@@ -1320,7 +1341,6 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -1347,9 +1367,10 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
 				&& Double.doubleToLongBits(cityScale) == Double.doubleToLongBits(other.cityScale)
 				&& Objects.equals(coastShadingColor, other.coastShadingColor) && coastShadingLevel == other.coastShadingLevel
-				&& Objects.equals(coastlineColor, other.coastlineColor) && colorizeLand == other.colorizeLand
-				&& colorizeOcean == other.colorizeOcean && concentricWaveCount == other.concentricWaveCount
-				&& Objects.equals(customImagesPath, other.customImagesPath)
+				&& Objects.equals(coastlineColor, other.coastlineColor)
+				&& Double.doubleToLongBits(coastlineWidth) == Double.doubleToLongBits(other.coastlineWidth)
+				&& colorizeLand == other.colorizeLand && colorizeOcean == other.colorizeOcean
+				&& concentricWaveCount == other.concentricWaveCount && Objects.equals(customImagesPath, other.customImagesPath)
 				&& defaultDefaultExportAction == other.defaultDefaultExportAction
 				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction
 				&& defaultMapExportAction == other.defaultMapExportAction && Objects.equals(defaultRoadColor, other.defaultRoadColor)
@@ -1380,6 +1401,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
+				&& Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
 				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && Objects.equals(regionFont, other.regionFont)
 				&& regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
