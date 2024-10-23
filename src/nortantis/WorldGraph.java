@@ -239,9 +239,8 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth.size() == 2)
 		{
-			// Don't smooth edges on islands made of only one center, because it tends to make the island disappear. Same for single-polygon
-			// oceans or lakes.
-			if (corner.touches.stream().anyMatch(center -> center.isSinglePolygonIsland() || center.isSinglePolygonWater()))
+			// Don't smooth edges on islands/regions made of only one center, because it tends to make the center very small.
+			if (corner.touches.stream().anyMatch(center -> isSinglePolygonToSmooth(center, shouldSmoothEdge)))
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
 				corner.resetLocToOriginal();
@@ -265,6 +264,11 @@ public class WorldGraph extends VoronoiGraph
 			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
 		}
+	}
+	
+	private boolean isSinglePolygonToSmooth(Center center, Function<Edge, Boolean> shouldSmoothEdge)
+	{
+		return center.borders.stream().allMatch(e -> shouldSmoothEdge.apply(e));
 	}
 
 	private class SmoothingResult

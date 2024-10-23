@@ -15,7 +15,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
@@ -30,7 +29,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.Transform;
-import nortantis.util.Logger;
 import nortantis.util.Range;
 
 /**
@@ -1022,21 +1020,6 @@ public abstract class VoronoiGraph
 	{
 		List<Edge> edges = c.orderEdgesAroundCenter();
 		List<Point> vertices = edgeListToDrawPoints(edges);
-
-		// TODO remove debug code
-		// if (c.index == 10406)
-		// {
-		// Logger.println();
-		// Logger.println("Edges:");
-		// c.borders.stream().forEach(edge -> Logger.println(edge.toString()));
-		// Logger.println("Verticies adjusted:");
-		// Logger.println(vertices.stream().map(point -> point.subtract(new Point(500, 500)).toIntPoint()).collect(Collectors.toList()));
-		// Logger.println();
-		// Logger.println("Ordered edges:");
-		// Logger.println(edges);
-		//
-		// }
-
 		p.fillPolygonDouble(vertices);
 	}
 

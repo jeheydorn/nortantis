@@ -274,42 +274,6 @@ public class Center implements Comparable<Center>
 		return null;
 	}
 
-	public boolean isSinglePolygonIsland()
-	{
-		if (isWater)
-		{
-			return false;
-		}
-
-		for (Center neighbor : neighbors)
-		{
-			if (!neighbor.isWater)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	public boolean isSinglePolygonWater()
-	{
-		if (!isWater)
-		{
-			return false;
-		}
-
-		for (Center neighbor : neighbors)
-		{
-			if (neighbor.isWater)
-			{
-				return false;
-			}
-		}
-
-		return true;
-	}
-	
 	public boolean isWellFormedForDrawingAsPolygon()
 	{
 		Counter<IntPoint> counter = new Counter<>();
