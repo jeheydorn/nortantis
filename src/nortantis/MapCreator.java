@@ -1800,8 +1800,7 @@ public class MapCreator implements WarningLogger
 	public static void drawRivers(MapSettings settings, WorldGraph graph, Image map, Collection<Edge> edgesToDraw, Rectangle drawBounds)
 	{
 		Painter p = map.createPainter(DrawQuality.High);
-		p.setColor(settings.riverColor);
-		graph.drawRivers(p, edgesToDraw, drawBounds);
+		graph.drawRivers(p, edgesToDraw, drawBounds, settings.riverColor, settings.drawRegionBoundaries, settings.regionBoundaryColor);
 	}
 
 	public static Set<String> getAvailableBorderTypes(String imagesPath)

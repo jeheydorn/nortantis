@@ -502,7 +502,8 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Painter g, Collection<Edge> edgesToDraw, Rectangle drawBounds)
+	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor,
+			boolean areRegionBoundariesVisible, Color regionBoundaryColor)
 	{
 		if (edgesToDraw == null)
 		{
@@ -512,14 +513,25 @@ public abstract class VoronoiGraph
 		Transform orig = null;
 		if (drawBounds != null)
 		{
-			orig = g.getTransform();
-			g.translate(-drawBounds.x, -drawBounds.y);
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
 		for (Edge e : edgesToDraw)
 		{
 			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
+				// If a river is also a region boundary, and region boundaries are visible, then draw the river with the region boundary
+				// color.
+				if (areRegionBoundariesVisible && e.isRegionBoundary())
+				{
+					p.setColor(regionBoundaryColor);
+				}
+				else
+				{
+					p.setColor(riverColor);
+				}
+
 				float currentWidth = calcRiverStrokeWidth(e);
 
 				Edge fromEdge = null;
@@ -536,13 +548,15 @@ public abstract class VoronoiGraph
 				}
 				float toWidth = (toEdge == null || !toEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(toEdge);
 
-				drawPathWithSmoothLineTransitions(g, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
+				drawPathWithSmoothLineTransitions(p, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
+
 			}
 		}
 
 		if (drawBounds != null)
+
 		{
-			g.setTransform(orig);
+			p.setTransform(orig);
 		}
 	}
 
