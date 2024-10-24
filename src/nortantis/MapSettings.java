@@ -406,6 +406,10 @@ public class MapSettings implements Serializable
 			mpObj.put("angle", text.angle);
 			mpObj.put("type", text.type.toString());
 			mpObj.put("lineBreak", text.lineBreak.toString());
+			if (text.colorOverride != null)
+			{
+				mpObj.put("colorOverride", colorToString(text.colorOverride));
+			}
 			list.add(mpObj);
 		}
 		return list;
@@ -964,7 +968,8 @@ public class MapSettings implements Serializable
 			LineBreak lineBreak = jsonObj.containsKey("lineBreak")
 					? Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_"))
 					: LineBreak.Auto;
-			MapText mp = new MapText(text, location, angle, type, lineBreak);
+			Color colorOverride = jsonObj.containsKey("colorOverride") ? parseColor((String) jsonObj.get("colorOverride")) : null;
+			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride);
 			result.add(mp);
 		}
 

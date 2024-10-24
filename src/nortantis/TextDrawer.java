@@ -412,8 +412,6 @@ public class TextDrawer
 	{
 		Painter p = map.createPainter(DrawQuality.High);
 
-		p.setColor(settings.textColor);
-
 		Point drawOffset = drawBounds == null ? null : drawBounds.upperLeftCorner();
 
 		doForEachTextInBounds(textToDraw, graph, drawBounds, ((text, ignored) ->
@@ -1175,6 +1173,8 @@ public class TextDrawer
 
 			if (settings.drawText)
 			{
+				p.setColor(text.colorOverride == null ? settings.textColor : text.colorOverride);
+				
 				{
 					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + p.getFontAscent());
 					drawBackgroundBlendingForText(map, p, textStart, line1Size, text.angle, line1,
@@ -1433,7 +1433,7 @@ public class TextDrawer
 	{
 		// Divide by settings.resolution so that the location does not depend on
 		// the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto);
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, null);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

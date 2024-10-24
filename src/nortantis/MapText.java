@@ -6,6 +6,7 @@ import java.util.Objects;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
+import nortantis.platform.Color;
 
 /**
  * Stores a piece of text (and data about it) drawn onto a map.
@@ -38,11 +39,13 @@ public class MapText implements Serializable
 	 * (within the limits of floating point precision).
 	 */
 	public Point location;
-	
+
 	/**
 	 * Allows the user to override whether the text can be split into two lines.
 	 */
 	public LineBreak lineBreak;
+
+	public Color colorOverride;
 
 	/**
 	 * Holds the bounds of the text before rotation. This is not saved. Rather, it is populated by the generator when a map is first drawn.
@@ -52,8 +55,8 @@ public class MapText implements Serializable
 	public Rectangle line1Bounds;
 	public Rectangle line2Bounds;
 
-	public MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Area, RotatedRectangle line2Area, Rectangle line1Bounds,
-			Rectangle line2Bounds, LineBreak lineBreak)
+	public MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Area, RotatedRectangle line2Area,
+			Rectangle line1Bounds, Rectangle line2Bounds, LineBreak lineBreak, Color colorOverride)
 	{
 		this.value = text;
 		this.line1Area = line1Area;
@@ -64,17 +67,18 @@ public class MapText implements Serializable
 		this.line1Bounds = line1Bounds;
 		this.line2Bounds = line2Bounds;
 		this.lineBreak = lineBreak;
+		this.colorOverride = colorOverride;
 	}
 
-	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak)
+	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, Color colorOverride)
 	{
-		this(text, location, angle, type, null, null, null, null, lineBreak);
+		this(text, location, angle, type, null, null, null, null, lineBreak, colorOverride);
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, location, type, value);
+		return Objects.hash(angle, location, type, value, colorOverride);
 	}
 
 	public MapText deepCopy()
@@ -88,8 +92,9 @@ public class MapText implements Serializable
 		Rectangle line1Bounds = this.line1Bounds;
 		Rectangle line2Bounds = this.line2Bounds;
 		LineBreak lineBreak = this.lineBreak;
+		Color colorOverride = this.colorOverride;
 
-		return new MapText(value, location, angle, type, line1Area, line2Area, line1Bounds, line2Bounds, lineBreak);
+		return new MapText(value, location, angle, type, line1Area, line2Area, line1Bounds, line2Bounds, lineBreak, colorOverride);
 	}
 
 	@Override
@@ -103,14 +108,15 @@ public class MapText implements Serializable
 			return false;
 		MapText other = (MapText) obj;
 		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Objects.equals(location, other.location)
-				&& type == other.type && Objects.equals(value, other.value) && lineBreak == other.lineBreak;
+				&& type == other.type && Objects.equals(value, other.value) && lineBreak == other.lineBreak
+				&& Objects.equals(colorOverride, other.colorOverride);
 	}
 
 	@Override
 	public String toString()
 	{
 		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location=" + location + ", lineBreak=" + lineBreak
-				+ "]";
+				+ ", colorOverride=" + colorOverride + "]";
 	}
 
 }
