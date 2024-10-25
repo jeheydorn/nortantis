@@ -1875,16 +1875,14 @@ public class ThemePanel extends JTabbedPane
 		grungeColorChooseButton.setEnabled(drawGrungeCheckbox.isSelected());
 		grungeSlider.setEnabled(drawGrungeCheckbox.isSelected());
 
-		btnChooseBoldBackgroundColor.setEnabled(drawBoldBackgroundCheckbox.isSelected());
-
 		btnTitleFont.setEnabled(enableTextCheckBox.isSelected());
 		btnRegionFont.setEnabled(enableTextCheckBox.isSelected());
 		btnMountainRangeFont.setEnabled(enableTextCheckBox.isSelected());
 		btnOtherMountainsFont.setEnabled(enableTextCheckBox.isSelected());
 		btnRiverFont.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
-		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected());
 		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
+		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected() && drawBoldBackgroundCheckbox.isSelected());
 
 		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
 		btnChooseLandColor.setEnabled(landSupportsColoring());

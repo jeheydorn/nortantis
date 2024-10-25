@@ -783,7 +783,7 @@ public class TextDrawer
 		return getBackgroundBlendingKernelSize(textSize);
 	}
 
-	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double angle, Point pivot)
+	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double angle, Point pivot, Color boldBackgroundColorOverride)
 	{
 		if (name.length() == 0)
 			return;
@@ -800,7 +800,7 @@ public class TextDrawer
 		for (int i : new Range(name.length()))
 		{
 			p.setFont(background);
-			p.setColor(settings.boldBackgroundColor);
+			p.setColor(boldBackgroundColorOverride != null ? boldBackgroundColorOverride : settings.boldBackgroundColor);
 			p.drawString("" + name.charAt(i), (int) curLocNotRotated.x, (int) curLocNotRotated.y);
 
 			p.setFont(original);
@@ -1181,7 +1181,7 @@ public class TextDrawer
 							pivotMinusDrawOffset);
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(p, line1, textStart, text.angle, pivot);
+						drawStringWithBoldBackground(p, line1, textStart, text.angle, pivot, text.boldBackgroundColorOverride);
 					}
 					else
 					{
@@ -1195,7 +1195,7 @@ public class TextDrawer
 							pivotMinusDrawOffset);
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(p, line2, textStart, text.angle, pivot);
+						drawStringWithBoldBackground(p, line2, textStart, text.angle, pivot, text.boldBackgroundColorOverride);
 					}
 					else
 					{
@@ -1433,7 +1433,7 @@ public class TextDrawer
 	{
 		// Divide by settings.resolution so that the location does not depend on
 		// the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, null);
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, null, null);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

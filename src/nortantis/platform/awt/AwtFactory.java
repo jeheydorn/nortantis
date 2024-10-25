@@ -172,31 +172,55 @@ public class AwtFactory extends PlatformFactory
 
 	public static BufferedImage unwrap(Image image)
 	{
+		if (image == null)
+		{
+			return null;
+		}
 		return ((AwtImage) image).image;
 	}
 
 	public static Image wrap(BufferedImage image)
 	{
+		if (image == null)
+		{
+			return null;
+		}
 		return new AwtImage(image);
 	}
 
 	public static Color wrap(java.awt.Color color)
 	{
+		if (color == null)
+		{
+			return null;
+		}
 		return new AwtColor(color);
 	}
 
 	public static java.awt.Color unwrap(Color color)
 	{
+		if (color == null)
+		{
+			return null;
+		}
 		return ((AwtColor) color).color;
 	}
 
 	public static Font wrap(java.awt.Font font)
 	{
+		if (font == null)
+		{
+			return null;
+		}
 		return new AwtFont(font);
 	}
 
 	public static java.awt.Font unwrap(Font font)
 	{
+		if (font == null)
+		{
+			return null;
+		}
 		return ((AwtFont) font).font;
 	}
 
@@ -229,6 +253,10 @@ public class AwtFactory extends PlatformFactory
 	
 	public static Painter wrap(java.awt.Graphics2D g)
 	{
+		if (g == null)
+		{
+			return null;
+		}
 		return new AwtPainter(g);
 	}
 

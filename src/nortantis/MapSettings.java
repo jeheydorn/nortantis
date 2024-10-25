@@ -410,6 +410,10 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("colorOverride", colorToString(text.colorOverride));
 			}
+			if (text.boldBackgroundColorOverride != null)
+			{
+				mpObj.put("boldBackgroundColorOverride", colorToString(text.boldBackgroundColorOverride));
+			}
 			list.add(mpObj);
 		}
 		return list;
@@ -563,7 +567,7 @@ public class MapSettings implements Serializable
 			roadColor = defaultRoadColor;
 		}
 		coastShadingColor = parseColor((String) root.get("coastShadingColor"));
-		
+
 		// oceanWavesColor and oceanShadingColor replaced oceanEffectsColor.
 		if (root.containsKey("oceanWavesColor") && !((String) root.get("oceanWavesColor")).isEmpty())
 		{
@@ -573,7 +577,7 @@ public class MapSettings implements Serializable
 		{
 			oceanWavesColor = parseColor((String) root.get("oceanEffectsColor"));
 		}
-		
+
 		if (root.containsKey("oceanShadingColor") && !((String) root.get("oceanShadingColor")).isEmpty())
 		{
 			oceanShadingColor = parseColor((String) root.get("oceanShadingColor"));
@@ -582,7 +586,7 @@ public class MapSettings implements Serializable
 		{
 			oceanShadingColor = parseColor((String) root.get("oceanEffectsColor"));
 		}
-		
+
 		coastlineColor = parseColor((String) root.get("coastlineColor"));
 		if (root.containsKey("coastlineWidth"))
 		{
@@ -626,7 +630,7 @@ public class MapSettings implements Serializable
 				oceanWavesLevel = 0;
 			}
 		}
-		
+
 		if (oceanWavesType == OceanWaves.Blur)
 		{
 			oceanWavesType = OceanWaves.None;
@@ -761,7 +765,7 @@ public class MapSettings implements Serializable
 		{
 			borderType = (String) root.get("borderType");
 		}
-		
+
 		if (root.containsKey("borderWidth"))
 		{
 			borderWidth = (int) (long) root.get("borderWidth");
@@ -770,7 +774,7 @@ public class MapSettings implements Serializable
 		{
 			borderWidth = 0;
 		}
-		
+
 		if (root.containsKey("borderColorOption"))
 		{
 			borderColorOption = Enum.valueOf(BorderColorOption.class, ((String) root.get("borderColorOption")).replace(" ", "_"));
@@ -779,7 +783,7 @@ public class MapSettings implements Serializable
 		{
 			borderColorOption = BorderColorOption.Ocean_color;
 		}
-		
+
 		if (root.containsKey("borderColor"))
 		{
 			borderColor = parseColor((String) root.get("borderColor"));
@@ -941,7 +945,7 @@ public class MapSettings implements Serializable
 			oceanShadingColor = Color.create(oceanShadingColor.getRed(), oceanShadingColor.getGreen(), oceanShadingColor.getBlue(),
 					SettingsGenerator.defaultOceanShadingAlpha);
 		}
-		
+
 		if (oceanWavesType == OceanWaves.Ripples && oceanWavesColor.getAlpha() == 255)
 		{
 			oceanWavesColor = Color.create(oceanWavesColor.getRed(), oceanWavesColor.getGreen(), oceanWavesColor.getBlue(),
@@ -969,7 +973,10 @@ public class MapSettings implements Serializable
 					? Enum.valueOf(LineBreak.class, ((String) jsonObj.get("lineBreak")).replace(" ", "_"))
 					: LineBreak.Auto;
 			Color colorOverride = jsonObj.containsKey("colorOverride") ? parseColor((String) jsonObj.get("colorOverride")) : null;
-			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride);
+			Color boldBackgroundColorOverride = jsonObj.containsKey("boldBackgroundColorOverride")
+					? parseColor((String) jsonObj.get("boldBackgroundColorOverride"))
+					: null;
+			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride);
 			result.add(mp);
 		}
 
@@ -1280,23 +1287,23 @@ public class MapSettings implements Serializable
 
 		return isVersionGreaterThan(version1, version2);
 	}
-	
+
 	public boolean hasOceanShading(double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
 		return (int) (sizeMultiplier * oceanShadingLevel) > 0;
 	}
-	
+
 	public boolean hasRippleWaves(double resolutionScale)
 	{
 		double sizeMultiplier = MapCreator.calcSizeMultipilerFromResolutionScaleRounded(resolutionScale);
 		return oceanWavesType == OceanWaves.Ripples && ((int) oceanWavesLevel * sizeMultiplier) > 0;
 	}
-	
+
 	public boolean hasConcentricWaves()
 	{
-		return (oceanWavesType == OceanWaves.ConcentricWaves
-				|| oceanWavesType == OceanWaves.FadingConcentricWaves) && concentricWaveCount > 0;
+		return (oceanWavesType == OceanWaves.ConcentricWaves || oceanWavesType == OceanWaves.FadingConcentricWaves)
+				&& concentricWaveCount > 0;
 	}
 
 	public boolean equalsIgnoringEdits(MapSettings other)
