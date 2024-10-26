@@ -608,7 +608,7 @@ public class IconsTool extends EditorTool
 			for (int i : new Range(images.size()))
 			{
 				Image image = images.get(i);
-				int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
+				int scaledWidth = Math.min(maxRowWidth, ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight));
 				if (rowWidth + scaledWidth > maxRowWidth)
 				{
 					rowCount++;
@@ -632,7 +632,7 @@ public class IconsTool extends EditorTool
 		// Multiply the width padding by 2.2 instead of 2 to compensate for the
 		// image library I'm using not always scaling to the size I
 		// give.
-		IntDimension size = new IntDimension(largestRowWidth + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
+		IntDimension size = new IntDimension(Math.min(maxRowWidth, largestRowWidth) + ((int) (padding * 2.2)), (rowCount * scaledHeight) + (padding * 2));
 
 		Image previewImage;
 
@@ -660,7 +660,13 @@ public class IconsTool extends EditorTool
 		for (int i : new Range(images.size()))
 		{
 			Image image = images.get(i);
-			int scaledWidth = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
+			int widthForHeight = ImageHelper.getWidthWhenScaledByHeight(image, scaledHeight);
+			int scaledWidth = Math.min(widthForHeight, maxRowWidth);
+			int yExtraForCentering = 0;
+			if (scaledHeight > ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth))
+			{
+				yExtraForCentering = (scaledHeight - ImageHelper.getHeightWhenScaledByWidth(image, scaledWidth)) / 2;
+			}
 			Image scaled = ImageHelper.scaleByWidth(image, scaledWidth, Method.ULTRA_QUALITY);
 			if (x - padding + scaled.getWidth() > maxRowWidth)
 			{
@@ -668,7 +674,7 @@ public class IconsTool extends EditorTool
 				y += scaledHeight;
 			}
 
-			p.drawImage(scaled, x, y);
+			p.drawImage(scaled, x, y + yExtraForCentering);
 
 			x += scaled.getWidth();
 			if (i < images.size() - 1)

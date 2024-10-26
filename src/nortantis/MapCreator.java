@@ -1071,7 +1071,7 @@ public class MapCreator implements WarningLogger
 			List<IconDrawTask> iconsThatDrew, Image landTexture, Image oceanTexture, Background background, Image oceanWaves,
 			Image oceanShading, Image coastShading, IconDrawer iconDrawer, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		iconDrawer.drawContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
+		iconDrawer.drawNondecorationContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
 		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
 		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,

@@ -1039,11 +1039,13 @@ public class IconDrawer
 	 * Draws content masks on top of the land mask so that icons that protrude over coastlines don't turn into ocean when text is drawn on
 	 * top of them.
 	 */
-	public void drawContentMasksOntoLandMask(Image landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
+	public void drawNondecorationContentMasksOntoLandMask(Image landMask, List<IconDrawTask> tasks, Rectangle drawBounds)
 	{
 		for (final IconDrawTask task : tasks)
 		{
-			if (drawBounds == null || task.overlaps(drawBounds))
+			// Skip decorations because the texture behind a decoration on the ocean should be ocean, as opposed to a land-based icon
+			// like mountains.
+			if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
 			{
 				int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
 				int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
