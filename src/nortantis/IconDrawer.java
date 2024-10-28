@@ -993,16 +993,12 @@ public class IconDrawer
 		}
 		Collections.sort(tasks);
 
-		// Force mask creation now if it hasn't already happened so that so that
-		// multiple threads don't try to create the same masks at the
-		// same time and end up repeating work.
+		// Force mask creation now if it hasn't already happened so that so that multiple threads don't try to create the same masks at the
+		// same time and end up repeating work or create a race condition that corrupts the masks.
 		for (final IconDrawTask task : tasks)
 		{
-			if (task.type != IconType.decorations)
-			{
-				task.unScaledImageAndMasks.getOrCreateContentMask();
-				task.unScaledImageAndMasks.getOrCreateShadingMask();
-			}
+			task.unScaledImageAndMasks.getOrCreateContentMask();
+			task.unScaledImageAndMasks.getOrCreateShadingMask();
 		}
 
 		// Scale the icons in parallel.

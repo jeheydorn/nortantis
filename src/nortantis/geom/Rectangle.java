@@ -67,47 +67,7 @@ public class Rectangle
 
 	public boolean overlaps(Rectangle other)
 	{
-		if (contains(other.x, other.y))
-		{
-			return true;
-		}
-
-		if (other.contains(x, y))
-		{
-			return true;
-		}
-
-		if (contains(other.x + other.width, other.y))
-		{
-			return true;
-		}
-
-		if (other.contains(x + width, y))
-		{
-			return true;
-		}
-
-		if (contains(other.x, other.y + other.height))
-		{
-			return true;
-		}
-
-		if (other.contains(x, y + height))
-		{
-			return true;
-		}
-
-		if (contains(other.x + other.width, other.y + other.height))
-		{
-			return true;
-		}
-
-		if (other.contains(x + width, y + height))
-		{
-			return true;
-		}
-
-		return false;
+		return new RotatedRectangle(this).overlaps(new RotatedRectangle(other));
 	}
 	
 	public static Rectangle add(Rectangle r1, Rectangle r2)
