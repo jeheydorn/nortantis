@@ -13,6 +13,7 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -82,6 +83,7 @@ public class NewSettingsDialog extends JDialog
 			settings.imageExportPath = null;
 			settings.heightmapExportPath = null;
 			randomizeLand();
+			settings.textRandomSeed = Math.abs(new Random().nextInt());
 		}
 		loadSettingsIntoGUI(settings);
 
