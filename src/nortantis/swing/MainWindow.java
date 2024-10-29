@@ -64,7 +64,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -138,7 +138,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				JOptionPane.showMessageDialog(null,
 						"Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion
-								+ "\nOS Name: " + System.getProperty("os.name") + "\nInstall path: " + AssetsPath.getInstallPath()
+								+ "\nOS Name: " + System.getProperty("os.name") + "\nInstall path: " + Assets.getAssetsPath()
 								+ "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
 						"Error", JOptionPane.ERROR_MESSAGE);
 			}
@@ -208,7 +208,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString())));
+		setIconImage(AwtFactory.unwrap(ImageHelper.readFromDiskOrAssets(Paths.get(Assets.getAssetsPath(), "internal/taskbar icon.png").toString())));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()

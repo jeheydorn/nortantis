@@ -33,7 +33,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Helper;
 
@@ -692,7 +692,7 @@ public class MapSettings implements Serializable
 		}
 		if (backgroundTextureImage == null || backgroundTextureImage.isEmpty())
 		{
-			backgroundTextureImage = Paths.get(AssetsPath.getInstallPath(), "example textures").toString();
+			backgroundTextureImage = Paths.get(Assets.getAssetsPath(), "background textures").toString();
 		}
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));

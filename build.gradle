@@ -36,9 +36,11 @@ jar {
     } {
         exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
     }
-    from(sourceSets.main.output) {
-        include '**/*.class'
-    }
+	from(sourceSets.main.output) {
+	    from('assets') {
+	        into 'assets'
+	    }
+	}
 }
 
 test {
@@ -50,10 +52,6 @@ sourceSets {
         java {
             srcDirs = ['src']
             include '**/*.java'
-        }
-        resources {
-            srcDirs = ['assets']
-            include '**/*'
         }
     }
     test {

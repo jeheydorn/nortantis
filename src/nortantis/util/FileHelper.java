@@ -34,7 +34,7 @@ public class FileHelper
 	
 	private static String getHomePlaceholder()
 	{
-		if (AssetsPath.isWindows())
+		if (Assets.isWindows())
 		{
 			return "%HOMEPATH%";
 		}

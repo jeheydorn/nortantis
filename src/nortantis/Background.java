@@ -18,7 +18,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
@@ -61,7 +61,7 @@ public class Background
 		}
 		else
 		{
-			this.imagesPath = AssetsPath.getInstallPath();
+			this.imagesPath = Assets.getAssetsPath();
 		}
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
@@ -853,7 +853,7 @@ public class Background
 			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
 		}
 
-		return ImageHelper.read(cornerArray[0].getPath());
+		return ImageHelper.readFromDiskOrAssets(cornerArray[0].getPath());
 	}
 
 	public int getBorderWidthScaledByResolution()

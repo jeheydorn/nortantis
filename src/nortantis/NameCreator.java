@@ -13,7 +13,7 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.geom.Point;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Function0;
 import nortantis.util.Logger;
 import nortantis.util.Pair;
@@ -48,10 +48,10 @@ public class NameCreator
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : books)
 		{
-			placeNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_place_names.txt"));
-			personNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_person_names.txt"));
-			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames.addAll(readNameList(Assets.getAssetsPath() + "/books/" + book + "_place_names.txt"));
+			personNames.addAll(readNameList(Assets.getAssetsPath() + "/books/" + book + "_person_names.txt"));
+			nounAdjectivePairs.addAll(readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,

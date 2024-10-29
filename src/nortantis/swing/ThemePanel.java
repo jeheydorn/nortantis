@@ -10,6 +10,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +164,9 @@ public class ThemePanel extends JTabbedPane
 	private JSlider coastlineWidthSlider;
 	private JPanel regionBoundaryColorDisplay;
 	private RowHider regionBoundaryColorHider;
+	private JRadioButton assetsRadioButton;
+	private JRadioButton fileRadionButton;
+	private JComboBox<String> textureImageComboBox;
 
 
 	public ThemePanel(MainWindow mainWindow)
@@ -193,18 +197,40 @@ public class ThemePanel extends JTabbedPane
 			}
 		};
 
-		rdbtnFractal = new JRadioButton("Fractal noise");
-		rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
+		{
+			rdbtnFractal = new JRadioButton("Fractal noise");
+			rdbtnFractal.addActionListener(backgroundImageButtonGroupListener);
 
-		rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
-		rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
+			rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
+			rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
 
-		ButtonGroup backgoundImageButtonGroup = new ButtonGroup();
-		backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
-		backgoundImageButtonGroup.add(rdbtnFractal);
+			ButtonGroup backgoundImageButtonGroup = new ButtonGroup();
+			backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
+			backgoundImageButtonGroup.add(rdbtnFractal);
 
-		organizer.addLabelAndComponentsVertical("Background:", "Select how to generate the background image.",
-				Arrays.asList(rdbtnFractal, rdbtnGeneratedFromTexture));
+			organizer.addLabelAndComponentsVertical("Background:", "Select how to generate the background image.",
+					Arrays.asList(rdbtnFractal, rdbtnGeneratedFromTexture));
+		}
+
+		{
+			assetsRadioButton = new JRadioButton("Assets");
+			assetsRadioButton.addActionListener(backgroundImageButtonGroupListener);
+
+			fileRadionButton = new JRadioButton("File");
+			fileRadionButton.addActionListener(backgroundImageButtonGroupListener);
+
+			ButtonGroup buttonGroup = new ButtonGroup();
+			buttonGroup.add(assetsRadioButton);
+			buttonGroup.add(assetsRadioButton);
+			organizer.addLabelAndComponentsVertical("Texture source:", "Select where to get the texture seed image from.",
+					Arrays.asList(assetsRadioButton, fileRadionButton));
+		}
+
+		{
+			textureImageComboBox = new JComboBox<String>();
+			organizer.addLabelAndComponent("Texture:", "Select a texture image as a seed from installed images, art packs, or a custom images folder.", textureImageComboBox);
+			List<Path> textureFiles = SettingsGenerator.readExampleTextureFileNames();
+		}
 
 		textureImageFilename = new JTextField();
 		textureImageFilename.getDocument().addDocumentListener(new DocumentListener()
@@ -334,8 +360,8 @@ public class ThemePanel extends JTabbedPane
 					(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
 			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
 		}
-		
-		
+
+
 		regionBoundaryColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		JButton buttonChooseRegionBoundaryColor = new JButton("Choose");
 		buttonChooseRegionBoundaryColor.addActionListener(new ActionListener()
@@ -347,7 +373,7 @@ public class ThemePanel extends JTabbedPane
 		});
 		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line-color of region boundaries",
 				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding);
-		
+
 
 		organizer.addSeperator();
 
@@ -620,7 +646,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponent("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.",
 				grungeSlider);
 
-		
+
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		grungeColorChooseButton = new JButton("Choose");
@@ -1340,7 +1366,7 @@ public class ThemePanel extends JTabbedPane
 			Image texture;
 			try
 			{
-				texture = ImageHelper.read(textureImageFileName);
+				texture = ImageHelper.readFromDiskOrAssets(textureImageFileName);
 
 				if (colorizeOcean)
 				{

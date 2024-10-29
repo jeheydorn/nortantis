@@ -10,7 +10,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -61,7 +61,7 @@ public class GraphCreator
 		heightMap = ImageHelper.blur(heightMap, (int) graph.getMeanCenterWidth() / 2, false);
 
 		// Use a texture generated from mountain elevation to carve mountain shapes into the areas with high elevation.
-		Image mountains = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/mountain texture.png").toString());
+		Image mountains = ImageHelper.readFromDiskOrAssets(Paths.get(Assets.getAssetsPath(), "internal/mountain texture.png").toString());
 		if (mountains.getType() != ImageType.Grayscale16Bit)
 		{
 			mountains = ImageHelper.convertImageToType(mountains, ImageType.Grayscale16Bit);

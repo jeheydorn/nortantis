@@ -28,7 +28,7 @@ import javax.swing.JPanel;
 
 import nortantis.MapSettings;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -45,7 +45,7 @@ public class AboutDialog extends JDialog
 		content.setLayout(new BorderLayout());
 		content.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		BufferedImage nortantisImage = AwtFactory.unwrap(ImageHelper
-				.read(Paths.get(AssetsPath.getInstallPath(), "internal", "taskbar icon medium size.png").toString()));
+				.readFromDiskOrAssets(Paths.get(Assets.getAssetsPath(), "internal", "taskbar icon medium size.png").toString()));
 		content.add(new ImagePanel(nortantisImage), BorderLayout.WEST);
 
 		JPanel rightPanel = new JPanel();

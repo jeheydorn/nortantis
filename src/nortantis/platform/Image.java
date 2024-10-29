@@ -1,5 +1,7 @@
 package nortantis.platform;
 
+import java.io.InputStream;
+
 import org.imgscalr.Scalr.Method;
 
 import nortantis.geom.IntDimension;
@@ -91,6 +93,11 @@ public abstract class Image
 	public static Image read(String filePath)
 	{
 		return PlatformFactory.getInstance().readImage(filePath);
+	}
+	
+	public static Image read(InputStream stream)
+	{
+		return PlatformFactory.getInstance().readImage(stream);
 	}
 	
 	public void write(String filePath)

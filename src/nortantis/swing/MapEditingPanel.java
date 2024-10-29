@@ -30,7 +30,7 @@ import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
@@ -619,12 +619,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 			final double iconScale = 0.2;
 
 			BufferedImage rotateIcon = AwtFactory
-					.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "rotate text.png").toString()));
+					.unwrap(ImageHelper.readFromDiskOrAssets(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
 			rotateIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
 					(int) (rotateIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
 
 			{
-				Image moveIcon = ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "move text.png").toString());
+				Image moveIcon = ImageHelper.readFromDiskOrAssets(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * iconScale),
 						Method.ULTRA_QUALITY);
 				moveIconScaled = AwtFactory.unwrap(moveIconScaledWrapped);
@@ -635,7 +635,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			{
 				BufferedImage scaleIcon = AwtFactory
-						.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal", "scale.png").toString()));
+						.unwrap(ImageHelper.readFromDiskOrAssets(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
 				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
 						(int) (scaleIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY);
 				scaleIconScaled = AwtFactory.unwrap(scaleIconScaledWrapped);

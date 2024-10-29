@@ -30,7 +30,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Function0;
 
 /**
@@ -377,7 +377,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 			{
 				String result = props.getProperty("backgroundTextureImage");
 				if (result == null)
-					result = Paths.get(AssetsPath.getInstallPath(), "example textures").toString();
+					result = Paths.get(Assets.getAssetsPath(), "background textures").toString();
 				return result;
 			}
 		});
@@ -500,7 +500,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 
 			if (setName == null || setName.isEmpty())
 			{
-				Set<String> cityTypes = ImageCache.getInstance(AssetsPath.getInstallPath()).getIconGroupNames(IconType.cities);
+				Set<String> cityTypes = ImageCache.getInstance(Assets.getAssetsPath()).getIconGroupNames(IconType.cities);
 				if (cityTypes.size() > 0)
 				{
 					setName = cityTypes.iterator().next();

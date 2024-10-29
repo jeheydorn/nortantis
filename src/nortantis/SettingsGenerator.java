@@ -19,7 +19,7 @@ import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 
@@ -29,7 +29,7 @@ import nortantis.util.Range;
  */
 public class SettingsGenerator
 {
-	private static String defaultSettingsFile = Paths.get(AssetsPath.getInstallPath(), "internal/old_paper.properties").toString();
+	private static String defaultSettingsFile = Paths.get(Assets.getAssetsPath(), "internal/old_paper.properties").toString();
 	public static int minWorldSize = 2000;
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
@@ -226,16 +226,7 @@ public class SettingsGenerator
 
 		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching
 		// to the background texture file path field.
-		Path exampleTexturesPath = Paths.get(AssetsPath.getInstallPath(), "example textures");
-		List<Path> textureFiles;
-		try
-		{
-			textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
-		}
-		catch (IOException ex)
-		{
-			throw new RuntimeException("The example textures folder does not exist.", ex);
-		}
+		List<Path> textureFiles = readExampleTextureFileNames();
 
 		if (textureFiles.size() > 0)
 		{
@@ -291,6 +282,22 @@ public class SettingsGenerator
 
 		return settings;
 	}
+	
+	public static List<Path> readExampleTextureFileNames()
+	{
+		Path exampleTexturesPath = Paths.get(Assets.getAssetsPath(), "background textures");
+		List<Path> textureFiles;
+		try
+		{
+			textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
+		}
+		catch (IOException ex)
+		{
+			throw new RuntimeException("The background textures folder does not exist.", ex);
+		}
+		
+		return textureFiles;
+	}
 
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
@@ -319,7 +326,7 @@ public class SettingsGenerator
 
 	public static List<String> getAllBooks()
 	{
-		String[] filenames = new File(Paths.get(AssetsPath.getInstallPath(), "books").toString()).list(new FilenameFilter()
+		String[] filenames = new File(Paths.get(Assets.getAssetsPath(), "books").toString()).list(new FilenameFilter()
 		{
 			public boolean accept(File arg0, String name)
 			{

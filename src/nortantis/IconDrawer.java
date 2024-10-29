@@ -32,7 +32,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.swing.MapEdits;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Function;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
@@ -94,7 +94,7 @@ public class IconDrawer
 		}
 		else
 		{
-			this.imagesPath = AssetsPath.getInstallPath();
+			this.imagesPath = Assets.getAssetsPath();
 		}
 		this.resolutionScale = settings.resolution;
 

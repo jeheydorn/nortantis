@@ -1,6 +1,6 @@
 package nortantis;
 
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 
 public class DebugFlags
 {	
@@ -43,27 +43,27 @@ public class DebugFlags
 	
 	public static boolean showIncrementalUpdateBounds()
 	{
-		return !AssetsPath.isInstalled && showIncrementalUpdateBounds;
+		return !isRunningFromJar() && showIncrementalUpdateBounds;
 	}
 	
 	public static boolean printIncrementalUpdateTimes()
 	{
-		return !AssetsPath.isInstalled && printIncrementalUpdateTimes;
+		return !isRunningFromJar() && printIncrementalUpdateTimes;
 	}
 
 	public static boolean printRiverEdgeIndexes()
 	{
-		return !AssetsPath.isInstalled && printRiverEdgeIndexes; 
+		return !isRunningFromJar() && printRiverEdgeIndexes; 
 	}
 	
 	public static boolean printCenterIndexes()
 	{
-		return !AssetsPath.isInstalled && printCenterIndexes;
+		return !isRunningFromJar() && printCenterIndexes;
 	}
 	
 	public static int[] getIndexesOfCentersToHighlight()
 	{
-		if (AssetsPath.isInstalled)
+		if (isRunningFromJar())
 		{
 			return new int[] {};
 		}
@@ -72,7 +72,7 @@ public class DebugFlags
 	
 	public static int[] getIndexesOfEdgesToHighlight()
 	{
-		if (AssetsPath.isInstalled)
+		if (isRunningFromJar())
 		{
 			return new int[] {};
 		}
@@ -81,27 +81,37 @@ public class DebugFlags
 	
 	public static boolean shouldWriteBeforeAndAfterJsonWhenSavePromptShows()
 	{
-		return !AssetsPath.isInstalled && writeBeforeAndAfterJsonWhenSavePromptShows;
+		return !isRunningFromJar() && writeBeforeAndAfterJsonWhenSavePromptShows;
 	}
 	
 	public static boolean printIconBeingEdited()
 	{
-		return !AssetsPath.isInstalled && printIconBeingEdited;
+		return !isRunningFromJar() && printIconBeingEdited;
 	}
 	
 	public static boolean drawRegionBoundaryPathJoins()
 	{
-		return !AssetsPath.isInstalled && drawRegionBoundaryPathJoins;
+		return !isRunningFromJar() && drawRegionBoundaryPathJoins;
 	}
 	
 	public static boolean drawCorners()
 	{
-		return !AssetsPath.isInstalled && drawCorners;
+		return !isRunningFromJar() && drawCorners;
 	}
 	
 	public static boolean drawVoronoi()
 	{
-		return !AssetsPath.isInstalled && drawVoronoi;
+		return !isRunningFromJar() && drawVoronoi;
+	}
+	
+	/**
+	 * Used to disable debug settings when not running from source.
+	 */
+	private static boolean isRunningFromJar()
+	{
+		String className = DebugFlags.class.getName().replace('.', '/');
+		String classJar = DebugFlags.class.getResource("/" + className + ".class").toString();
+		return classJar.startsWith("jar:");
 	}
 	
 }

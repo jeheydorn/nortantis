@@ -303,7 +303,7 @@ public class MapCreatorTest
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
-			expected = ImageHelper.read(expectedMapFilePath);
+			expected = ImageHelper.readFromDiskOrAssets(expectedMapFilePath);
 		}
 		else
 		{
@@ -345,7 +345,7 @@ public class MapCreatorTest
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
-			expected = ImageHelper.read(expectedMapFilePath);
+			expected = ImageHelper.readFromDiskOrAssets(expectedMapFilePath);
 		}
 		else
 		{

@@ -52,7 +52,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
@@ -99,7 +99,7 @@ public class IconsTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.getInstallPath(), "internal/Icon tool.png").toString();
+		return Paths.get(Assets.getAssetsPath(), "internal/Icon tool.png").toString();
 	}
 
 	@Override
