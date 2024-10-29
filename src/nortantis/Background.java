@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -18,7 +19,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
@@ -61,7 +62,7 @@ public class Background
 		}
 		else
 		{
-			this.imagesPath = AssetsPath.getInstallPath();
+			this.imagesPath = Assets.getAssetsPath();
 		}
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
@@ -839,8 +840,8 @@ public class Background
 
 	private Image loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
 	{
-		File[] cornerArray = new File(path.toString()).listFiles(file -> file.getName().contains(inFileName));
-		if (cornerArray.length == 0)
+		List<Path> corners = Assets.listFiles(path.toString(), inFileName);
+		if (corners.isEmpty())
 		{
 			if (throwExceptionIfMissing)
 				throw new RuntimeException(
@@ -848,12 +849,12 @@ public class Background
 			else
 				return null;
 		}
-		if (cornerArray.length > 1)
+		if (corners.size() > 1)
 		{
 			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
 		}
 
-		return ImageHelper.read(cornerArray[0].getPath());
+		return ImageHelper.readFromDiskOrAssets(corners.get(0).toString());
 	}
 
 	public int getBorderWidthScaledByResolution()

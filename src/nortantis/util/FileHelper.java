@@ -8,33 +8,33 @@ import java.nio.file.Paths;
 
 public class FileHelper
 {
-	public static String replaceHomeFolderPlaceholder(String absolutePath)
+	public static String replaceHomeFolderPlaceholder(String path)
 	{
-		if (absolutePath == null)
+		if (path == null)
 		{
-			return absolutePath;
+			return path;
 		}
 		
-		if (absolutePath.startsWith(getHomePlaceholder()))
+		if (path.startsWith(getHomePlaceholder()))
 		{
 			String userHome = System.getProperty("user.home");
 			if (userHome == null || userHome.isEmpty())
 			{
-				return absolutePath;
+				return path;
 			}
 			
-			String relativePart = absolutePath.substring(getHomePlaceholder().length());
+			String relativePart = path.substring(getHomePlaceholder().length());
 			return Paths.get(userHome, relativePart).toString();
 		}
 		else
 		{
-			return absolutePath;
+			return path;
 		}
 	}
 	
 	private static String getHomePlaceholder()
 	{
-		if (AssetsPath.isWindows())
+		if (OSHelper.isWindows())
 		{
 			return "%HOMEPATH%";
 		}
@@ -44,18 +44,18 @@ public class FileHelper
 		}
 	}
 	
-	public static String replaceHomeFolderWithPlaceholder(String absolutePath)
+	public static String replaceHomeFolderWithPlaceholder(String path)
 	{
 		// Get the user's home directory
 		String userHome = System.getProperty("user.home");
 		if (userHome == null || userHome.isEmpty())
 		{
-			return absolutePath;
+			return path;
 		}
 
 		try
 		{
-			Path inputPath = Paths.get(absolutePath);
+			Path inputPath = Paths.get(path);
 			if (inputPath.startsWith(userHome))
 			{
 				// Replace the home directory part with the current user's name
@@ -65,12 +65,12 @@ public class FileHelper
 			else
 			{
 				// If the input path doesn't start with the home directory, return it unchanged
-				return absolutePath;
+				return path;
 			}
 		}
 		catch (InvalidPathException ex)
 		{
-			return absolutePath;
+			return path;
 		}
 	}
 	

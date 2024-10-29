@@ -40,7 +40,7 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Counter;
 import nortantis.util.Tuple2;
 
@@ -99,7 +99,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.getInstallPath(), "internal/Land Water tool.png").toString();
+		return Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString();
 	}
 
 	@Override

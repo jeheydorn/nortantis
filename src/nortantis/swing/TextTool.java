@@ -36,7 +36,7 @@ import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Tuple2;
 
 public class TextTool extends EditorTool
@@ -377,7 +377,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.getInstallPath(), "internal/Text tool.png").toString();
+		return Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString();
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package nortantis.platform;
 
+import java.io.InputStream;
+
 public abstract class PlatformFactory
 {
 	private static PlatformFactory instance; 
@@ -17,6 +19,8 @@ public abstract class PlatformFactory
 	public abstract Image createImage(int width, int height, ImageType type);
 	
 	public abstract Image readImage(String filePath);
+	
+	public abstract Image readImage(InputStream stream);
 	
 	public abstract void writeImage(Image image, String filePath);
 	

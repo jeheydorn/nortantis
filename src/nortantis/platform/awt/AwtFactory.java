@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
@@ -59,6 +60,25 @@ public class AwtFactory extends PlatformFactory
 		catch (IOException e)
 		{
 			throw new RuntimeException("Can't read the file " + filePath);
+		}
+	}
+	
+
+	@Override
+	public Image readImage(InputStream stream)
+	{
+		if (stream == null)
+		{
+			throw new RuntimeException("Unable to read an image file stream because it is null.");
+		}
+		
+		try
+		{
+			return wrap(ImageIO.read(stream));
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
 		}
 	}
 

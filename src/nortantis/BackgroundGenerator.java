@@ -224,7 +224,7 @@ public class BackgroundGenerator
 		
 		Stopwatch sw = new Stopwatch();
 
-		Image image = Image.read("C:\\Program Files\\Nortantis\\app\\assets\\example textures\\wavy paper.png");
+		Image image = Image.read("C:\\Program Files\\Nortantis\\app\\assets\\background textures\\wavy paper.png");
 		if (image == null)
 		{
 			out.print("Unable to load image.");

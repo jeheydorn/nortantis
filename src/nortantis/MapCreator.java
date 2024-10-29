@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
@@ -36,7 +38,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.swing.MapEdits;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -532,8 +534,7 @@ public class MapCreator implements WarningLogger
 		boolean isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
 		Logger.println("Using " + (isLowMemoryMode ? "low" : "high") + " memory mode.");
 
-		if (!AssetsPath.getInstallPath().equals(settings.customImagesPath) && settings.customImagesPath != null
-				&& !settings.customImagesPath.isEmpty())
+		if (StringUtils.isNotEmpty(settings.customImagesPath))
 		{
 			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
 			if (!new File(pathWithHomeReplaced).exists())
@@ -1807,7 +1808,7 @@ public class MapCreator implements WarningLogger
 	{
 		if (imagesPath == null || imagesPath.isEmpty())
 		{
-			imagesPath = AssetsPath.getInstallPath();
+			imagesPath = Assets.getAssetsPath();
 		}
 		else
 		{

@@ -3,24 +3,31 @@ package nortantis;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.geom.IntDimension;
 import nortantis.platform.Image;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
 import nortantis.util.HashMapF;
@@ -92,7 +99,7 @@ public class ImageCache
 			return instances.getOrCreate(pathWithHomeReplaced, () -> new ImageCache(pathWithHomeReplaced));
 		}
 
-		return instances.getOrCreate(AssetsPath.getInstallPath(), () -> new ImageCache(AssetsPath.getInstallPath()));
+		return instances.getOrCreate(Assets.getAssetsPath(), () -> new ImageCache(Assets.getAssetsPath()));
 	}
 
 	/**
@@ -117,7 +124,7 @@ public class ImageCache
 
 	public Image getImageFromFile(Path path)
 	{
-		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.read(path.toString()));
+		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.readFromDiskOrAssets(path.toString()));
 	}
 
 	public boolean containsImageFile(Path path)
@@ -202,7 +209,7 @@ public class ImageCache
 		{
 			return imagesAndMasks;
 		}
-		
+
 		String[] fileNames = getIconGroupFileNames(iconType, groupName);
 		if (fileNames.length == 0)
 		{
@@ -277,22 +284,13 @@ public class ImageCache
 	{
 		String path = Paths.get(imagesPath, iconType.toString()).toString();
 
-		String[] folderNames = new File(path).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
-			}
-		});
+		List<String> folderNames = listFolders(path, true);
 
 		if (folderNames == null)
 		{
 			return new TreeSet<>();
 		}
 
-		Arrays.sort(folderNames);
 		Set<String> result = new TreeSet<>();
 		for (String folderName : folderNames)
 		{
@@ -301,17 +299,45 @@ public class ImageCache
 		return result;
 	}
 
-	private static boolean isDirectoryEmpty(final String directory)
+	public boolean isDirectoryEmpty(final String directory)
 	{
-		try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
+		URL resource = getClass().getResource(directory);
+		if (resource != null)
 		{
-			return !dirStream.iterator().hasNext();
+			if (resource.getProtocol().equals("jar"))
+			{
+				String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
+				try (JarFile jarFile = new JarFile(jarPath))
+				{
+					Enumeration<JarEntry> entries = jarFile.entries();
+					while (entries.hasMoreElements())
+					{
+						JarEntry entry = entries.nextElement();
+						if (entry.getName().startsWith(directory) && !entry.getName().equals(directory + "/"))
+						{
+							return false;
+						}
+					}
+				}
+				catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+			}
 		}
-		catch (IOException e)
+		else
 		{
-			e.printStackTrace();
-			return true;
+			try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
+			{
+				return !dirStream.iterator().hasNext();
+			}
+			catch (IOException e)
+			{
+				e.printStackTrace();
+				return true;
+			}
 		}
+		return true;
 	}
 
 	/**
@@ -336,29 +362,68 @@ public class ImageCache
 	private String[] loadIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String path = getIconGroupPath(iconType, groupName);
-
-		String[] fileNames = new File(path).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return !file.isDirectory();
-			}
-		});
-
-		if (fileNames == null)
-		{
-			return new String[] {};
-		}
-
-		Arrays.sort(fileNames);
-		return fileNames;
+		return Assets.listFileNames(path);
 	}
 
 	private String getIconGroupPath(IconType iconType, String groupName)
 	{
 		return Paths.get(imagesPath, iconType.toString(), groupName).toString();
+	}
+
+	public List<String> listFolders(String path, boolean ignoreEmptyFolders)
+	{
+		List<String> folderNames = new ArrayList<>();
+
+		// Try to load as a resource from the jar
+		URL resource = getClass().getResource(path);
+		if (resource != null)
+		{
+			try
+			{
+				if (resource.getProtocol().equals("jar"))
+				{
+					String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
+					final List<String> folderNamesFinal = folderNames;
+					try (JarFile jarFile = new JarFile(jarPath))
+					{
+						jarFile.stream().filter(e -> e.isDirectory() && e.getName().startsWith(path))
+								.forEach(e -> folderNamesFinal.add(e.getName()));
+					}
+				}
+				else
+				{
+					try (Stream<String> lines = Files.lines(Paths.get(resource.toURI())))
+					{
+						folderNames = lines.filter(line -> new File(line).isDirectory()).collect(Collectors.toList());
+					}
+				}
+			}
+			catch (URISyntaxException | IOException e)
+			{
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			// If not a resource, try to load from the file system
+
+			String[] folderNamesArray = new File(path).list(new FilenameFilter()
+			{
+				@Override
+				public boolean accept(File dir, String name)
+				{
+					File file = new File(dir, name);
+					return file.isDirectory() && (!ignoreEmptyFolders || !isDirectoryEmpty(file.getAbsolutePath()));
+				}
+			});
+
+			if (folderNamesArray != null)
+			{
+				folderNames.addAll(Arrays.asList(folderNamesArray));
+			}
+		}
+
+		return folderNames;
 	}
 
 	public static void clear()

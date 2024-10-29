@@ -3,6 +3,7 @@ package nortantis;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,9 +34,10 @@ import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Helper;
+import nortantis.util.OSHelper;
 
 /**
  * For parsing and storing map settings.
@@ -91,7 +93,14 @@ public class MapSettings implements Serializable
 	public boolean generateBackgroundFromTexture;
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
 	public boolean colorizeLand; // For backgrounds generated from a texture.
+	/**
+	 * The path to the background texture image if a specific file was selected.
+	 */
 	public String backgroundTextureImage;
+	/**
+	 * The path to the background texture image if one was selected from an art pack.
+	 */
+	public String backgroundTextureResource;
 	public long backgroundRandomSeed;
 	public Color oceanColor;
 	public Color landColor;
@@ -312,6 +321,7 @@ public class MapSettings implements Serializable
 		root.put("backgroundRandomSeed", backgroundRandomSeed);
 		root.put("generateBackground", generateBackground);
 		root.put("backgroundTextureImage", backgroundTextureImage);
+		root.put("backgroundTextureResource", backgroundTextureResource);
 		root.put("generateBackgroundFromTexture", generateBackgroundFromTexture);
 		root.put("colorizeOcean", colorizeOcean);
 		root.put("colorizeLand", colorizeLand);
@@ -690,9 +700,9 @@ public class MapSettings implements Serializable
 		{
 			backgroundTextureImage = (String) root.get("backgroundTextureImage");
 		}
-		if (backgroundTextureImage == null || backgroundTextureImage.isEmpty())
+		if (root.containsKey("backgroundTextureResource"))
 		{
-			backgroundTextureImage = Paths.get(AssetsPath.getInstallPath(), "example textures").toString();
+			backgroundTextureResource = (String) root.get("backgroundTextureResource");
 		}
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));
@@ -875,6 +885,43 @@ public class MapSettings implements Serializable
 		runConversionForShadingAlphaChange();
 		runConversionForAllowingMultipleCityTypesInOneMap();
 		runConversionToFixDunesGroupId();
+		runConversionOnBackgroundTextureImagePaths();
+	}
+	
+	private void runConversionOnBackgroundTextureImagePaths()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.9"))
+		{
+			return;
+		}
+		
+		if (!OSHelper.isLinux() && !OSHelper.isWindows())
+		{
+			return;
+		}
+		
+		if (backgroundTextureImage != null && !backgroundTextureImage.isEmpty())
+		{
+			// It should be absolute.
+			if (new File(backgroundTextureImage).isAbsolute())
+			{
+				String oldExampleTexturesPath;
+				if (OSHelper.isLinux())
+				{
+					oldExampleTexturesPath = "/opt/nortantis/lib/app/assets/example textures";
+				}
+				else
+				{
+					// Windows
+					oldExampleTexturesPath = "C:\\Program Files\\Nortantis\\app\\assets\\example textures";
+				}
+				
+				if (backgroundTextureImage.startsWith(oldExampleTexturesPath))
+				{
+					backgroundTextureResource = Assets.installedArtPack + "/" + FilenameUtils.getName(backgroundTextureImage);
+				}
+			}
+		}
 	}
 
 	/**
@@ -1370,6 +1417,7 @@ public class MapSettings implements Serializable
 		}
 		MapSettings other = (MapSettings) obj;
 		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
+				&& Objects.equals(backgroundTextureResource, other.backgroundTextureResource)
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
@@ -1425,4 +1473,5 @@ public class MapSettings implements Serializable
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
 
+	
 }

@@ -13,7 +13,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Counter;
 import nortantis.util.Function;
 import nortantis.util.Helper;
@@ -48,7 +48,7 @@ public class NameCompiler
 		List<String> lines;
 		try
 		{
-			lines = Files.readAllLines(Paths.get(AssetsPath.getInstallPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
+			lines = Files.readAllLines(Paths.get(Assets.getAssetsPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
 		}
 		catch (IOException e)
 		{

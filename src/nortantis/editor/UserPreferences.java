@@ -17,6 +17,7 @@ import java.util.TreeSet;
 
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 public class UserPreferences
 {
@@ -131,19 +132,6 @@ public class UserPreferences
 
 	private Path getSavePath()
 	{
-		String OS = System.getProperty("os.name").toUpperCase();
-		if (OS.contains("WIN"))
-		{
-			return Paths.get(System.getenv("APPDATA"), "Nortantis");
-		}
-		else if (OS.contains("MAC"))
-		{
-			return Paths.get(System.getProperty("user.home"), ".Nortantis");
-		}
-		else if (OS.contains("NUX"))
-		{
-			return Paths.get(System.getProperty("user.home"), ".Nortantis");
-		}
-		return Paths.get(System.getProperty("user.dir"));
+		return OSHelper.getAppDataPath();
 	}
 }

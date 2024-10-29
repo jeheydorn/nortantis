@@ -3,6 +3,7 @@ package nortantis.util;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.PlatformFactory;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
@@ -1649,9 +1651,28 @@ public class ImageHelper
 		image.write(fileName);
 	}
 
-	public static Image read(String fileName)
+	public static Image readFromDiskOrAssets(String filePath)
 	{
-		return Image.read(fileName);
+		try (InputStream inputStream = ImageHelper.class.getClassLoader().getResourceAsStream(filePath))
+		{
+			if (inputStream == null)
+			{
+				// Not an asset. Read from disk.
+				return Image.read(filePath);
+			}
+
+			Image image = PlatformFactory.getInstance().readImage(inputStream);
+			if (image == null)
+			{
+				throw new RuntimeException("Can't read the file " + filePath + " from assets. It might be in an unsupported format or corrupted.");
+			}
+
+			return image;
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Can't read the file " + filePath, e);
+		}
 	}
 
 	/***

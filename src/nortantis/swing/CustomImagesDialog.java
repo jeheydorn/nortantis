@@ -35,7 +35,7 @@ import org.apache.commons.io.FileUtils;
 import nortantis.IconType;
 import nortantis.MapSettings;
 import nortantis.editor.UserPreferences;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
 
@@ -310,10 +310,10 @@ public class CustomImagesDialog extends JDialog
 		{
 			if (isFolderEmpty)
 			{
-				FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), "borders").toFile(), folder);
+				FileUtils.copyDirectoryToDirectory(Paths.get(Assets.getAssetsPath(), "borders").toFile(), folder);
 				for (IconType type : IconType.values())
 				{
-					FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), type.toString()).toFile(), folder);					
+					FileUtils.copyDirectoryToDirectory(Paths.get(Assets.getAssetsPath(), type.toString()).toFile(), folder);					
 				}
 				return true;
 			}
