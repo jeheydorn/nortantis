@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import nortantis.BackgroundTextureResource;
 import nortantis.ImageCache;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
@@ -55,14 +56,14 @@ public class Assets
 		return result;
 	}
 
-	public static List<String> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
+	public static List<BackgroundTextureResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
 	{
-		List<String> result = new ArrayList<>();
+		List<BackgroundTextureResource> result = new ArrayList<>();
 		for (String artPack : Assets.listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
 		{
 			for (String textureName : Assets.listBackgroundTexturesForArtPack(artPack, customImagesFolder))
 			{
-				result.add(textureName);
+				result.add(new BackgroundTextureResource(artPack, textureName));
 			}
 		}
 
@@ -97,7 +98,7 @@ public class Assets
 
 		if (artPack.equals(installedArtPack))
 		{
-			return Paths.get(Assets.getAssetsPath());
+			return Paths.get(Assets.getAssetsPath(), "background textures");
 		}
 
 		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder, artPack);

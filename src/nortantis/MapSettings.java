@@ -93,6 +93,7 @@ public class MapSettings implements Serializable
 	public boolean generateBackgroundFromTexture;
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
 	public boolean colorizeLand; // For backgrounds generated from a texture.
+	public TextureSource backgroundTextureSource;
 	/**
 	 * The path to the background texture image if a specific file was selected.
 	 */
@@ -100,7 +101,7 @@ public class MapSettings implements Serializable
 	/**
 	 * The path to the background texture image if one was selected from an art pack.
 	 */
-	public String backgroundTextureResource;
+	public BackgroundTextureResource backgroundTextureResource;
 	public long backgroundRandomSeed;
 	public Color oceanColor;
 	public Color landColor;
@@ -321,7 +322,11 @@ public class MapSettings implements Serializable
 		root.put("backgroundRandomSeed", backgroundRandomSeed);
 		root.put("generateBackground", generateBackground);
 		root.put("backgroundTextureImage", backgroundTextureImage);
-		root.put("backgroundTextureResource", backgroundTextureResource);
+		if (backgroundTextureResource != null)
+		{
+			root.put("backgroundTextureResource", backgroundTextureResource.toJSon());	
+		}
+		root.put("backgroundTextureSource", backgroundTextureSource.toString());
 		root.put("generateBackgroundFromTexture", generateBackgroundFromTexture);
 		root.put("colorizeOcean", colorizeOcean);
 		root.put("colorizeLand", colorizeLand);
@@ -696,13 +701,21 @@ public class MapSettings implements Serializable
 		generateBackgroundFromTexture = (boolean) root.get("generateBackgroundFromTexture");
 		colorizeOcean = (boolean) root.get("colorizeOcean");
 		colorizeLand = (boolean) root.get("colorizeLand");
+		if (root.containsKey("backgroundTextureSource"))
+		{
+			backgroundTextureSource = Enum.valueOf(TextureSource.class, ((String) root.get("backgroundTextureSource")));
+		}
+		else
+		{
+			backgroundTextureSource = TextureSource.File;
+		}
 		if (root.containsKey("backgroundTextureImage"))
 		{
 			backgroundTextureImage = (String) root.get("backgroundTextureImage");
 		}
 		if (root.containsKey("backgroundTextureResource"))
 		{
-			backgroundTextureResource = (String) root.get("backgroundTextureResource");
+			backgroundTextureResource = BackgroundTextureResource.fromJson((JSONObject) root.get("backgroundTextureResource"));
 		}
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));
@@ -918,9 +931,22 @@ public class MapSettings implements Serializable
 				
 				if (backgroundTextureImage.startsWith(oldExampleTexturesPath))
 				{
-					backgroundTextureResource = Assets.installedArtPack + "/" + FilenameUtils.getName(backgroundTextureImage);
+					backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack, FilenameUtils.getName(backgroundTextureImage));
+					backgroundTextureSource = TextureSource.Assets;
+				}
+				else
+				{
+					backgroundTextureSource = TextureSource.File;
 				}
 			}
+			else
+			{
+				backgroundTextureSource = TextureSource.File;
+			}
+		}
+		else
+		{
+			backgroundTextureSource = TextureSource.Assets;
 		}
 	}
 
@@ -1399,6 +1425,7 @@ public class MapSettings implements Serializable
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+	
 
 	@Override
 	public boolean equals(Object obj)
@@ -1418,6 +1445,7 @@ public class MapSettings implements Serializable
 		MapSettings other = (MapSettings) obj;
 		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(backgroundTextureResource, other.backgroundTextureResource)
+				&& backgroundTextureSource == other.backgroundTextureSource
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
 				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
@@ -1472,6 +1500,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
 	
 }

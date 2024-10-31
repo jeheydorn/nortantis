@@ -64,6 +64,31 @@ public class SwingHelper
 			comboBox.setSelectedItem(selectedItem);
 		}
 	}
+	
+	public static <T> void initializeComboBoxItems(JComboBox<T> comboBox, Collection<T> items, T selectedItem, boolean forceAddSelectedItem)
+	{
+		comboBox.removeAllItems();
+		for (T item : items)
+		{
+			comboBox.addItem(item);
+		}
+		if (selectedItem != null)
+		{
+			if (!items.contains(selectedItem))
+			{
+				if (forceAddSelectedItem)
+				{
+					comboBox.addItem(selectedItem);
+				}
+				else if (items.size() > 0)
+				{
+					comboBox.setSelectedIndex(0);
+				}
+			}
+			comboBox.setSelectedItem(selectedItem);
+		}
+	}
+
 
 	public static void setSliderWidthForSidePanel(JSlider slider)
 	{

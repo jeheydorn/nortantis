@@ -112,14 +112,14 @@ public class SettingsGenerator
 		settings.coastShadingColor = Color.create((int) (settings.landColor.getRed() * landBlurColorScale),
 				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
 				defaultCoastShadingAlpha);
-		
+
 		{
 			double oceanShadingColorScale = 0.3;
 			settings.oceanShadingColor = Color.create((int) (settings.oceanColor.getRed() * oceanShadingColorScale),
 					(int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
 					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
 		}
-		
+
 		if (settings.oceanWavesType == OceanWaves.None)
 		{
 			// Use ocean shading instead.
@@ -127,13 +127,13 @@ public class SettingsGenerator
 			// don't encourage it.
 			settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
 		}
-		
+
 		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
 			double ripplesColorScale = 0.3;
 			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * ripplesColorScale),
-					(int) (settings.oceanColor.getGreen() * ripplesColorScale),
-					(int) (settings.oceanColor.getBlue() * ripplesColorScale), defaultOceanRipplesAlpha);
+					(int) (settings.oceanColor.getGreen() * ripplesColorScale), (int) (settings.oceanColor.getBlue() * ripplesColorScale),
+					defaultOceanRipplesAlpha);
 		}
 		else
 		{
@@ -141,8 +141,8 @@ public class SettingsGenerator
 			double wavesColorScale = 0.5;
 			int alpha = 255;
 			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale),
-					(int) (settings.oceanColor.getGreen() * wavesColorScale),
-					(int) (settings.oceanColor.getBlue() * wavesColorScale), alpha);
+					(int) (settings.oceanColor.getGreen() * wavesColorScale), (int) (settings.oceanColor.getBlue() * wavesColorScale),
+					alpha);
 
 		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
@@ -231,8 +231,11 @@ public class SettingsGenerator
 
 		if (textureFiles.size() > 0)
 		{
-			settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textureFiles);
+			// TODO Pass in the selected art pack once I have an art pack selector.
+			settings.backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack,
+					ProbabilityHelper.sampleUniform(rand, textureFiles));
 		}
+		settings.backgroundTextureSource = TextureSource.Assets;
 
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;
 		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange,
