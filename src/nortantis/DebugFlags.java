@@ -43,27 +43,27 @@ public class DebugFlags
 	
 	public static boolean showIncrementalUpdateBounds()
 	{
-		return !isRunningFromJar() && showIncrementalUpdateBounds;
+		return !Assets.isRunningFromJar() && showIncrementalUpdateBounds;
 	}
 	
 	public static boolean printIncrementalUpdateTimes()
 	{
-		return !isRunningFromJar() && printIncrementalUpdateTimes;
+		return !Assets.isRunningFromJar() && printIncrementalUpdateTimes;
 	}
 
 	public static boolean printRiverEdgeIndexes()
 	{
-		return !isRunningFromJar() && printRiverEdgeIndexes; 
+		return !Assets.isRunningFromJar() && printRiverEdgeIndexes; 
 	}
 	
 	public static boolean printCenterIndexes()
 	{
-		return !isRunningFromJar() && printCenterIndexes;
+		return !Assets.isRunningFromJar() && printCenterIndexes;
 	}
 	
 	public static int[] getIndexesOfCentersToHighlight()
 	{
-		if (isRunningFromJar())
+		if (Assets.isRunningFromJar())
 		{
 			return new int[] {};
 		}
@@ -72,7 +72,7 @@ public class DebugFlags
 	
 	public static int[] getIndexesOfEdgesToHighlight()
 	{
-		if (isRunningFromJar())
+		if (Assets.isRunningFromJar())
 		{
 			return new int[] {};
 		}
@@ -81,37 +81,27 @@ public class DebugFlags
 	
 	public static boolean shouldWriteBeforeAndAfterJsonWhenSavePromptShows()
 	{
-		return !isRunningFromJar() && writeBeforeAndAfterJsonWhenSavePromptShows;
+		return !Assets.isRunningFromJar() && writeBeforeAndAfterJsonWhenSavePromptShows;
 	}
 	
 	public static boolean printIconBeingEdited()
 	{
-		return !isRunningFromJar() && printIconBeingEdited;
+		return !Assets.isRunningFromJar() && printIconBeingEdited;
 	}
 	
 	public static boolean drawRegionBoundaryPathJoins()
 	{
-		return !isRunningFromJar() && drawRegionBoundaryPathJoins;
+		return !Assets.isRunningFromJar() && drawRegionBoundaryPathJoins;
 	}
 	
 	public static boolean drawCorners()
 	{
-		return !isRunningFromJar() && drawCorners;
+		return !Assets.isRunningFromJar() && drawCorners;
 	}
 	
 	public static boolean drawVoronoi()
 	{
-		return !isRunningFromJar() && drawVoronoi;
-	}
-	
-	/**
-	 * Used to disable debug settings when not running from source.
-	 */
-	private static boolean isRunningFromJar()
-	{
-		String className = DebugFlags.class.getName().replace('.', '/');
-		String classJar = DebugFlags.class.getResource("/" + className + ".class").toString();
-		return classJar.startsWith("jar:");
+		return !Assets.isRunningFromJar() && drawVoronoi;
 	}
 	
 }

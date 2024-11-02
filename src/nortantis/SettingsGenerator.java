@@ -314,13 +314,7 @@ public class SettingsGenerator
 
 	public static List<String> getAllBooks()
 	{
-		String[] filenames = new File(Paths.get(Assets.getAssetsPath(), "books").toString()).list(new FilenameFilter()
-		{
-			public boolean accept(File arg0, String name)
-			{
-				return name.endsWith("_place_names.txt");
-			}
-		});
+		String[] filenames = Assets.listFileNames(Paths.get(Assets.getAssetsPath(), "books").toString(), null, "_place_names.txt");
 
 		List<String> result = new ArrayList<>();
 		for (String filename : filenames)

@@ -638,7 +638,7 @@ public class IconsTool extends EditorTool
 
 		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
 				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
-						settings.generateBackground, settings.generateBackgroundFromTexture, settings.backgroundTextureImage);
+						settings.generateBackground, settings.generateBackgroundFromTexture, settings.getBackgroundImagePath().toString());
 		if (iconType == IconType.decorations)
 		{
 			previewImage = tuple.getFirst();

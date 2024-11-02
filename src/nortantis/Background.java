@@ -126,13 +126,14 @@ public class Background
 			// Generate the background images from a texture
 
 			Image texture;
+			Path texturePath = settings.getBackgroundImagePath();
 			try
 			{
-				texture = ImageCache.getInstance(imagesPath).getImageFromFile(Paths.get(settings.backgroundTextureImage));
+				texture = ImageCache.getInstance(imagesPath).getImageFromFile(settings.getBackgroundImagePath());
 			}
 			catch (RuntimeException e)
 			{
-				throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
+				throw new RuntimeException("Unable to read the texture image file name \"" + texturePath + "\"", e);
 			}
 
 			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
@@ -840,7 +841,7 @@ public class Background
 
 	private Image loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
 	{
-		List<Path> corners = Assets.listFiles(path.toString(), inFileName);
+		List<Path> corners = Assets.listFiles(path.toString(), inFileName, null);
 		if (corners.isEmpty())
 		{
 			if (throwExceptionIfMissing)

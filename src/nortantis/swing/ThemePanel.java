@@ -235,7 +235,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			textureImageComboBox = new JComboBox<>();
 			textureImageComboBoxHider = organizer.addLabelAndComponent("Texture:",
-					"Select a texture image as a seed from installed images, art packs, or a custom images folder.", textureImageComboBox);
+					"Select a texture image as a seed from installed images that came with Nortantis, art packs, or a custom images folder.", textureImageComboBox);
 			textureImageComboBox.addActionListener(backgroundImageButtonGroupListener);
 			textureImageComboBox.setMinimumSize(new Dimension(100, textureImageComboBox.getMinimumSize().height));
 		}
@@ -1572,9 +1572,9 @@ public class ThemePanel extends JTabbedPane
 		}
 
 		// Only do this if there is a change so we don't trigger the document listeners unnecessarily.
-		if (!textureImageFilename.getText().equals(settings.backgroundTextureImage))
+		if (!textureImageFilename.getText().equals(FileHelper.replaceHomeFolderPlaceholder(settings.backgroundTextureImage)))
 		{
-			textureImageFilename.setText(settings.backgroundTextureImage);
+			textureImageFilename.setText(FileHelper.replaceHomeFolderPlaceholder(settings.backgroundTextureImage));
 		}
 
 		// Only do this if there is a change so we don't trigger the document listeners unnecessarily.
@@ -1802,7 +1802,7 @@ public class ThemePanel extends JTabbedPane
 		settings.colorizeOcean = colorizeOceanCheckbox.isSelected();
 		settings.colorizeLand = colorizeLandCheckbox.isSelected();
 		settings.backgroundTextureSource = assetsRadioButton.isSelected() ? TextureSource.Assets : TextureSource.File;
-		settings.backgroundTextureImage = textureImageFilename.getText();
+		settings.backgroundTextureImage = FileHelper.replaceHomeFolderWithPlaceholder(textureImageFilename.getText());
 		settings.backgroundTextureResource = (BackgroundTextureResource) textureImageComboBox.getSelectedItem();
 		try
 		{

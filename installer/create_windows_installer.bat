@@ -1,5 +1,3 @@
-REM Before running this script, in Eclipse, change AssetsPath.isInstalled to true.
-
 REM When updating the app version, make sure to also update MapSettings.currentVersion.
 
 set inputFolder=installer_input
@@ -12,7 +10,6 @@ popd
 
 RMDIR /S /Q installer_input
 MKDIR %inputFolder%
-Xcopy "../assets" "%inputFolder%/assets" /E /I
 copy ..\build\libs\Nortantis.jar %inputFolder%
 
 jpackage ^
@@ -30,6 +27,7 @@ jpackage ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^
+--win-console ^
 --java-options -Dfile.encoding=UTF-8
 
 

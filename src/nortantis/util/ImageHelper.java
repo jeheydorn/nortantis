@@ -38,7 +38,7 @@ public class ImageHelper
 	/**
 	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
 	 * 
-	 * For some reason this doesn't need to be called when running a GUI, and will throw an errror if you do.
+	 * For some reason this doesn't need to be called when running a GUI, and will throw an error if you do.
 	 */
 	public static void shutdownThreadPool()
 	{
@@ -1539,7 +1539,7 @@ public class ImageHelper
 
 		return result;
 	}
-	
+
 	private static int colorifyPixel(float pixelLevelNormalized, float[] hsb, ColorifyAlgorithm how)
 	{
 		if (how == ColorifyAlgorithm.algorithm2)
@@ -1653,7 +1653,8 @@ public class ImageHelper
 
 	public static Image readFromDiskOrAssets(String filePath)
 	{
-		try (InputStream inputStream = ImageHelper.class.getClassLoader().getResourceAsStream(filePath))
+		try (InputStream inputStream = ImageHelper.class
+				.getResourceAsStream(Assets.convertToAssetPath(filePath)))
 		{
 			if (inputStream == null)
 			{
@@ -1664,7 +1665,8 @@ public class ImageHelper
 			Image image = PlatformFactory.getInstance().readImage(inputStream);
 			if (image == null)
 			{
-				throw new RuntimeException("Can't read the file " + filePath + " from assets. It might be in an unsupported format or corrupted.");
+				throw new RuntimeException(
+						"Can't read the file " + filePath + " from assets. It might be in an unsupported format or corrupted.");
 			}
 
 			return image;

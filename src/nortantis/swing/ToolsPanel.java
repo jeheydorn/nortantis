@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,6 +27,8 @@ import nortantis.MapSettings;
 import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
@@ -74,7 +77,8 @@ public class ToolsPanel extends JPanel
 			JToggleButton toolButton = new JToggleButton();
 			try
 			{
-				toolButton.setIcon(new ImageIcon(tool.getImageIconFilePath()));
+				BufferedImage icon = AwtFactory.unwrap(ImageHelper.readFromDiskOrAssets(tool.getImageIconFilePath()));
+				toolButton.setIcon(new ImageIcon(icon));
 			}
 			catch (Exception e)
 			{

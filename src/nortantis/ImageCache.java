@@ -284,7 +284,7 @@ public class ImageCache
 	{
 		String path = Paths.get(imagesPath, iconType.toString()).toString();
 
-		List<String> folderNames = listFolders(path, true);
+		List<String> folderNames = Assets.listNonEmptySubFolders(path);
 
 		if (folderNames == null)
 		{
@@ -297,47 +297,6 @@ public class ImageCache
 			result.add(folderName);
 		}
 		return result;
-	}
-
-	public boolean isDirectoryEmpty(final String directory)
-	{
-		URL resource = getClass().getResource(directory);
-		if (resource != null)
-		{
-			if (resource.getProtocol().equals("jar"))
-			{
-				String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
-				try (JarFile jarFile = new JarFile(jarPath))
-				{
-					Enumeration<JarEntry> entries = jarFile.entries();
-					while (entries.hasMoreElements())
-					{
-						JarEntry entry = entries.nextElement();
-						if (entry.getName().startsWith(directory) && !entry.getName().equals(directory + "/"))
-						{
-							return false;
-						}
-					}
-				}
-				catch (IOException e)
-				{
-					e.printStackTrace();
-				}
-			}
-		}
-		else
-		{
-			try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
-			{
-				return !dirStream.iterator().hasNext();
-			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
-				return true;
-			}
-		}
-		return true;
 	}
 
 	/**
@@ -368,62 +327,6 @@ public class ImageCache
 	private String getIconGroupPath(IconType iconType, String groupName)
 	{
 		return Paths.get(imagesPath, iconType.toString(), groupName).toString();
-	}
-
-	public List<String> listFolders(String path, boolean ignoreEmptyFolders)
-	{
-		List<String> folderNames = new ArrayList<>();
-
-		// Try to load as a resource from the jar
-		URL resource = getClass().getResource(path);
-		if (resource != null)
-		{
-			try
-			{
-				if (resource.getProtocol().equals("jar"))
-				{
-					String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
-					final List<String> folderNamesFinal = folderNames;
-					try (JarFile jarFile = new JarFile(jarPath))
-					{
-						jarFile.stream().filter(e -> e.isDirectory() && e.getName().startsWith(path))
-								.forEach(e -> folderNamesFinal.add(e.getName()));
-					}
-				}
-				else
-				{
-					try (Stream<String> lines = Files.lines(Paths.get(resource.toURI())))
-					{
-						folderNames = lines.filter(line -> new File(line).isDirectory()).collect(Collectors.toList());
-					}
-				}
-			}
-			catch (URISyntaxException | IOException e)
-			{
-				e.printStackTrace();
-			}
-		}
-		else
-		{
-			// If not a resource, try to load from the file system
-
-			String[] folderNamesArray = new File(path).list(new FilenameFilter()
-			{
-				@Override
-				public boolean accept(File dir, String name)
-				{
-					File file = new File(dir, name);
-					return file.isDirectory() && (!ignoreEmptyFolders || !isDirectoryEmpty(file.getAbsolutePath()));
-				}
-			});
-
-			if (folderNamesArray != null)
-			{
-				folderNames.addAll(Arrays.asList(folderNamesArray));
-			}
-		}
-
-		return folderNames;
 	}
 
 	public static void clear()

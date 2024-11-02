@@ -326,7 +326,7 @@ public class MapSettings implements Serializable
 		{
 			root.put("backgroundTextureResource", backgroundTextureResource.toJSon());	
 		}
-		root.put("backgroundTextureSource", backgroundTextureSource.toString());
+		root.put("backgroundTextureSource", backgroundTextureSource == null ? TextureSource.Assets.toString() : backgroundTextureSource.toString());
 		root.put("generateBackgroundFromTexture", generateBackgroundFromTexture);
 		root.put("colorizeOcean", colorizeOcean);
 		root.put("colorizeLand", colorizeLand);
@@ -1382,6 +1382,19 @@ public class MapSettings implements Serializable
 	public boolean equalsIgnoringEdits(MapSettings other)
 	{
 		return toJson(true).equals(other.toJson(true));
+	}
+	
+	public Path getBackgroundImagePath()
+	{
+		if (backgroundTextureSource == TextureSource.Assets)
+		{
+			return Assets.getResourcePath(backgroundTextureResource, customImagesPath);
+		}
+		else
+		{
+			// File
+			return Paths.get(FileHelper.replaceHomeFolderPlaceholder(backgroundTextureImage));
+		}
 	}
 
 	/**
