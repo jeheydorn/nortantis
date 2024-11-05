@@ -1,10 +1,14 @@
 package nortantis.util;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -133,8 +137,8 @@ public class Assets
 		}
 
 		File[] files = new File(folderPath.toString())
-				.listFiles(file -> (containsText == null || containsText.isEmpty()) || file.getName().contains(containsText)
-						&& (endingText == null || endingText.isEmpty() || file.getName().endsWith(endingText)));
+				.listFiles(file -> ((containsText == null || containsText.isEmpty()) || file.getName().contains(containsText))
+						&& ((endingText == null || endingText.isEmpty()) || file.getName().endsWith(endingText)));
 		List<String> fileNames = Arrays.asList(files).stream().map(file -> file.getName()).collect(Collectors.toList());
 		fileNames.sort(String::compareTo);
 
@@ -332,9 +336,9 @@ public class Assets
 		}
 	}
 
-	public static String readFileAsStringFromDiskOrAssets(String filePath)
+	public static String readFileAsString(String filePath)
 	{
-		InputStream inputStream = readFileAsInputStreamFromDiskOrAssets(filePath);
+		InputStream inputStream = createInputStream(filePath);
 		try
 		{
 			return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
@@ -344,8 +348,43 @@ public class Assets
 			throw new RuntimeException("Error while reading from " + filePath, e);
 		}
 	}
+	
+	public static BufferedReader createBufferedReader(String filePath) throws FileNotFoundException
+	{
+		if (isJarAsset(filePath))
+		{
+			return new BufferedReader(new InputStreamReader(createInputStream(filePath), StandardCharsets.UTF_8));
+		}
+		else
+		{
+			return new BufferedReader(new FileReader(new File(filePath)));
+		}
+	}
 
-	public static InputStream readFileAsInputStreamFromDiskOrAssets(String filePath)
+	public static List<String> readAllLines(String filePath) throws IOException
+	{
+		if (isJarAsset(filePath))
+		{
+			InputStream inputStream = createInputStream(filePath);
+			List<String> lines = new ArrayList<>();
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)))
+			{
+				String line;
+				while ((line = reader.readLine()) != null)
+				{
+					lines.add(line);
+				}
+			}
+			return lines;
+		}
+		else
+		{
+			return Files.readAllLines(Paths.get(filePath), StandardCharsets.UTF_8);
+		}
+
+	}
+
+	public static InputStream createInputStream(String filePath)
 	{
 		if (isJarAsset(filePath))
 		{

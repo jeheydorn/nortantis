@@ -100,7 +100,7 @@ public class NameCreator
 	private List<String> readNameList(String filename)
 	{
 		List<String> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
+		try (BufferedReader br = Assets.createBufferedReader(filename))
 		{
 			for (String line; (line = br.readLine()) != null;)
 			{

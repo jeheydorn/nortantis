@@ -48,7 +48,7 @@ public class NameCompiler
 		List<String> lines;
 		try
 		{
-			lines = Files.readAllLines(Paths.get(Assets.getAssetsPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
+			lines = Assets.readAllLines(Paths.get(Assets.getAssetsPath(), "internal/en_GB.dic").toString());
 		}
 		catch (IOException e)
 		{

@@ -124,7 +124,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 		final Properties props = new Properties();
 		try
 		{
-			props.load(Assets.readFileAsInputStreamFromDiskOrAssets(propertiesFilename));
+			props.load(Assets.createInputStream(propertiesFilename));
 		}
 		catch (IOException e)
 		{
