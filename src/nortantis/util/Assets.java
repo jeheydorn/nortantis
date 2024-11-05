@@ -1,16 +1,19 @@
 package nortantis.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.JarURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -20,7 +23,9 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import nortantis.BackgroundTextureResource;
@@ -79,16 +84,7 @@ public class Assets
 		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
 
 		List<String> textureFiles;
-		try
-		{
-			textureFiles = Files.list(artPackPath).filter(path -> !Files.isDirectory(path))
-					.map(path -> FilenameUtils.getName(path.toString())).collect(Collectors.toList());
-		}
-		catch (IOException ex)
-		{
-			throw new RuntimeException(
-					"Error while reading background textures from art pack " + artPack + ". Path read from: " + artPackPath, ex);
-		}
+		textureFiles = listFileNames(artPackPath.toString());
 
 		return textureFiles;
 	}
@@ -110,20 +106,23 @@ public class Assets
 
 	public static Path getResourcePath(BackgroundTextureResource resource, String customImagesFolder)
 	{
+		if (resource == null)
+		{
+			return null;
+		}
 		Path artPackPath = getArtPackPath(resource.artPack, customImagesFolder);
 		return Paths.get(artPackPath.toString(), resource.fileName);
 	}
 
-	public static String[] listFileNames(String path)
+	public static List<String> listFileNames(String path)
 	{
 		return listFileNames(path, null, null);
 	}
 
-	public static String[] listFileNames(String path, String containsText, String endingText)
+	public static List<String> listFileNames(String path, String containsText, String endingText)
 	{
-		List<String> fileNames = listFiles(path, containsText, endingText).stream()
-				.map(filePath -> FilenameUtils.getName(filePath.toString())).collect(Collectors.toList());
-		return fileNames.toArray(new String[0]);
+		return listFiles(path, containsText, endingText).stream().map(filePath -> FilenameUtils.getName(filePath.toString()))
+				.collect(Collectors.toList());
 	}
 
 	public static List<Path> listFiles(String folderPath, String containsText, String endingText)
@@ -132,27 +131,6 @@ public class Assets
 		{
 			return listFilesFromJar(folderPath, containsText, endingText);
 		}
-		// TODO remove
-		// Try to load as a resource from the jar
-		// URL resource = Assets.class.getResource(FileHelper.convertToAssetPath(folderPath));
-		// Path path;
-		// if (resource != null)
-		// {
-		// try
-		// {
-		// path = Paths.get(resource.toURI());
-		// }
-		// catch (URISyntaxException e)
-		// {
-		// throw new RuntimeException("Error while trying to list resource files in folder: " + folderPath, e);
-		// }
-		// }
-		// else
-		// {
-		// path = Paths.get(folderPath);
-		// }
-		//
-		// File[] files = new File(path.toString())
 
 		File[] files = new File(folderPath.toString())
 				.listFiles(file -> (containsText == null || containsText.isEmpty()) || file.getName().contains(containsText)
@@ -182,16 +160,18 @@ public class Assets
 				if (dirUrl != null && dirUrl.getProtocol().equals("jar"))
 				{
 					JarURLConnection jarConnection = (JarURLConnection) dirUrl.openConnection();
-					JarFile jarFile = jarConnection.getJarFile();
-					Enumeration<JarEntry> entries = jarFile.entries();
-					while (entries.hasMoreElements())
+					try (JarFile jarFile = jarConnection.getJarFile())
 					{
-						JarEntry entry = entries.nextElement();
-						String entryName = entry.getName();
-						if (entryName.startsWith(path) && (StringUtils.isEmpty(suffix)
-								|| entryName.endsWith(suffix) && (StringUtils.isEmpty(contains) || entryName.contains(contains))))
+						Enumeration<JarEntry> entries = jarFile.entries();
+						while (entries.hasMoreElements())
 						{
-							result.add(Paths.get(path, entryName.substring(path.length() + 1))); // +1 to remove the leading slash
+							JarEntry entry = entries.nextElement();
+							String entryName = entry.getName();
+							if (entryName.startsWith(path) && (StringUtils.isEmpty(suffix)
+									|| entryName.endsWith(suffix) && (StringUtils.isEmpty(contains) || entryName.contains(contains))))
+							{
+								result.add(Paths.get(path, entryName.substring(path.length() + 1))); // +1 to remove the leading slash
+							}
 						}
 					}
 				}
@@ -209,24 +189,22 @@ public class Assets
 		List<String> subFolders = new ArrayList<>();
 		String assetsPath = convertToAssetPath(folderPath);
 
-		URL jarUrl = Assets.class.getResource(folderPath);
+		URL jarUrl = Assets.class.getResource(assetsPath);
 		if (jarUrl == null)
 		{
 			throw new RuntimeException("Unable to list non-empty subfolders in path '" + folderPath
 					+ "' because the URL for that path was null. assetsPath: " + assetsPath);
 		}
 
-		String jarFilePath = jarUrl.getPath();
-		if (jarFilePath.startsWith("jar:file:"))
+		try
 		{
-			jarFilePath = jarFilePath.substring(5, jarFilePath.indexOf("!"));
-		}
-
-		try (JarFile jarFile = new JarFile(jarFilePath))
-		{
-			jarFile.stream().filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetsPath))
-					.filter(entry -> jarFile.getEntry(entry.getName()).getSize() > 0)
-					.map(entry -> entry.getName().substring(assetsPath.length())).collect(Collectors.toList());
+			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
+			try (JarFile jarFile = jarConnection.getJarFile())
+			{
+				jarFile.stream().filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetsPath))
+						.filter(entry -> jarFile.getEntry(entry.getName()).getSize() > 0)
+						.map(entry -> entry.getName().substring(assetsPath.length())).collect(Collectors.toList());
+			}
 		}
 		catch (IOException e)
 		{
@@ -242,55 +220,22 @@ public class Assets
 		{
 			return listNonEmptySubFoldersInJar(path);
 		}
+		// If not a resource, try to load from the file system
 
 		List<String> folderNames = new ArrayList<>();
-
-		// TODO remove commented out code and extra scope block
-		// // Try to load as a resource from the jar
-		// URL resource = Assets.class.getResource(convertToAssetPath(path));
-		// if (resource != null)
-		// {
-		// try
-		// {
-		// if (resource.getProtocol().equals("jar"))
-		// {
-		// String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
-		// final List<String> folderNamesFinal = folderNames;
-		// try (JarFile jarFile = new JarFile(jarPath))
-		// {
-		// jarFile.stream().filter(e -> e.isDirectory() && e.getName().startsWith(path))
-		// .forEach(e -> folderNamesFinal.add(e.getName()));
-		// }
-		// }
-		// else
-		// {
-		// throw new RuntimeException("Non-jar resources are not supported. Path given: " + path);
-		// }
-		// }
-		// catch (IOException e)
-		// {
-		// e.printStackTrace();// TODO remove this line.
-		// throw new RuntimeException("Unable to list folders for resource for path " + path + ".", e);
-		// }
-		// }
-		// else
+		String[] folderNamesArray = new File(path).list(new FilenameFilter()
 		{
-			// If not a resource, try to load from the file system
-
-			String[] folderNamesArray = new File(path).list(new FilenameFilter()
+			@Override
+			public boolean accept(File dir, String name)
 			{
-				@Override
-				public boolean accept(File dir, String name)
-				{
-					File file = new File(dir, name);
-					return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
-				}
-			});
-
-			if (folderNamesArray != null)
-			{
-				folderNames.addAll(Arrays.asList(folderNamesArray));
+				File file = new File(dir, name);
+				return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
 			}
+		});
+
+		if (folderNamesArray != null)
+		{
+			folderNames.addAll(Arrays.asList(folderNamesArray));
 		}
 
 		return folderNames;
@@ -305,16 +250,19 @@ public class Assets
 			{
 				if (resource.getProtocol().equals("jar"))
 				{
-					String jarPath = resource.getPath().substring(5, resource.getPath().indexOf("!"));
-					try (JarFile jarFile = new JarFile(jarPath))
+					try
 					{
-						Enumeration<JarEntry> entries = jarFile.entries();
-						while (entries.hasMoreElements())
+						JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
+						try (JarFile jarFile = jarConnection.getJarFile())
 						{
-							JarEntry entry = entries.nextElement();
-							if (entry.getName().startsWith(directory) && !entry.getName().equals(directory + "/"))
+							Enumeration<JarEntry> entries = jarFile.entries();
+							while (entries.hasMoreElements())
 							{
-								return false;
+								JarEntry entry = entries.nextElement();
+								if (entry.getName().startsWith(directory) && !entry.getName().equals(directory + "/"))
+								{
+									return false;
+								}
 							}
 						}
 					}
@@ -381,6 +329,85 @@ public class Assets
 		else
 		{
 			return filePath;
+		}
+	}
+
+	public static String readFileAsStringFromDiskOrAssets(String filePath)
+	{
+		InputStream inputStream = readFileAsInputStreamFromDiskOrAssets(filePath);
+		try
+		{
+			return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Error while reading from " + filePath, e);
+		}
+	}
+
+	public static InputStream readFileAsInputStreamFromDiskOrAssets(String filePath)
+	{
+		if (isJarAsset(filePath))
+		{
+			InputStream inputStream = ImageHelper.class.getResourceAsStream(Assets.convertToAssetPath(filePath));
+			return inputStream;
+		}
+		else
+		{
+			try
+			{
+				return new FileInputStream(filePath);
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Can't read the file " + filePath, e);
+			}
+		}
+	}
+
+	/**
+	 * Recursively copies the contents of a folder either from disk or packaged in the jar file this program is running from to a given
+	 * location on disk.
+	 * 
+	 * @throws IOException
+	 */
+	public static void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
+	{
+		if (isJarAsset(sourceDir.toString()))
+		{
+			// Copy from jar file
+			URL resource = FileHelper.class.getResource(sourceDir.toString());
+			if (resource != null && resource.getProtocol().equals("jar"))
+			{
+				JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
+				try (JarFile jarFile = jarConnection.getJarFile())
+				{
+					Enumeration<JarEntry> entries = jarFile.entries();
+					while (entries.hasMoreElements())
+					{
+						JarEntry entry = entries.nextElement();
+						if (entry.getName().startsWith(sourceDir.toString().substring(1)))
+						{
+							Path destPath = destDir.resolve(entry.getName().substring(sourceDir.toString().length()));
+							if (entry.isDirectory())
+							{
+								Files.createDirectories(destPath);
+							}
+							else
+							{
+								try (InputStream inputStream = jarFile.getInputStream(entry))
+								{
+									Files.copy(inputStream, destPath, StandardCopyOption.REPLACE_EXISTING);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			FileUtils.copyDirectoryToDirectory(sourceDir.toFile(), destDir.toFile());
 		}
 	}
 }

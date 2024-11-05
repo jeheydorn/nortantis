@@ -1815,12 +1815,8 @@ public class MapCreator implements WarningLogger
 			imagesPath = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
 		}
 
-		File[] directories = new File(Paths.get(imagesPath, "borders").toString()).listFiles(File::isDirectory);
-		if (directories == null || directories.length == 0)
-		{
-			return new TreeSet<String>();
-		}
-		return new TreeSet<String>(Arrays.stream(directories).map(file -> file.getName()).collect(Collectors.toList()));
+		List<String> borderTypes = Assets.listNonEmptySubFolders(Paths.get(imagesPath, "borders").toString());
+		return new TreeSet<>(borderTypes);
 	}
 
 	public Image createHeightMap(MapSettings settings)

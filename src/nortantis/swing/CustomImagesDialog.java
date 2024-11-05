@@ -310,10 +310,10 @@ public class CustomImagesDialog extends JDialog
 		{
 			if (isFolderEmpty)
 			{
-				FileUtils.copyDirectoryToDirectory(Paths.get(Assets.getAssetsPath(), "borders").toFile(), folder);
+				Assets.copyDirectoryToDirectory(Paths.get(Assets.getAssetsPath(), "borders"), folder.toPath());
 				for (IconType type : IconType.values())
 				{
-					FileUtils.copyDirectoryToDirectory(Paths.get(Assets.getAssetsPath(), type.toString()).toFile(), folder);					
+					Assets.copyDirectoryToDirectory(Paths.get(Assets.getAssetsPath(), type.toString()), folder.toPath());				
 				}
 				return true;
 			}

@@ -64,7 +64,7 @@ public class ImageCache
 	 */
 	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, Map<String, Tuple2<ImageAndMasks, Integer>>>> iconsWithWidthsCache;
 
-	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, String[]>> iconGroupFilesNamesCache;
+	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, List<String>>> iconGroupFilesNamesCache;
 
 	private ConcurrentHashMapF<IconType, Set<String>> iconGroupNames;
 
@@ -150,9 +150,9 @@ public class ImageCache
 		Set<String> groupNames = getIconGroupNames(iconType);
 		for (String groupName : groupNames)
 		{
-			String[] fileNames = getIconGroupFileNames(iconType, groupName);
+			List<String> fileNames = getIconGroupFileNames(iconType, groupName);
 			String groupPath = getIconGroupPath(iconType, groupName);
-			if (fileNames.length == 0)
+			if (fileNames.size() == 0)
 			{
 				continue;
 			}
@@ -174,7 +174,7 @@ public class ImageCache
 
 	public List<ImageAndMasks> loadIconGroup(IconType iconType, String groupName)
 	{
-		String[] fileNames = getIconGroupFileNames(iconType, groupName);
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
 		String groupPath = getIconGroupPath(iconType, groupName);
 		List<ImageAndMasks> result = new ArrayList<>();
 
@@ -210,8 +210,8 @@ public class ImageCache
 			return imagesAndMasks;
 		}
 
-		String[] fileNames = getIconGroupFileNames(iconType, groupName);
-		if (fileNames.length == 0)
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
+		if (fileNames.size() == 0)
 		{
 			return imagesAndMasks;
 		}
@@ -259,11 +259,11 @@ public class ImageCache
 
 	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
 	{
-		String[] folderNames = getIconGroupFileNames(iconType, groupName);
+		List<String> folderNames = getIconGroupFileNames(iconType, groupName);
 		Set<String> result = new TreeSet<String>();
-		for (int i : new Range(folderNames.length))
+		for (int i : new Range(folderNames.size()))
 		{
-			result.add(getFileNameBaseWithoutWidth(folderNames[i]));
+			result.add(getFileNameBaseWithoutWidth(folderNames.get(i)));
 		}
 		return result;
 	}
@@ -311,14 +311,14 @@ public class ImageCache
 		return iconGroupNames.getOrCreate(iconType, () -> loadIconGroupNames(iconType));
 	}
 
-	private String[] getIconGroupFileNames(IconType iconType, String groupName)
+	private List<String> getIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String groupNameToUse = groupName == null ? "" : groupName;
 		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
 				() -> loadIconGroupFileNames(iconType, groupNameToUse));
 	}
 
-	private String[] loadIconGroupFileNames(IconType iconType, String groupName)
+	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String path = getIconGroupPath(iconType, groupName);
 		return Assets.listFileNames(path);

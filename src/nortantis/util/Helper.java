@@ -90,20 +90,6 @@ public class Helper
 		return minEntry.getValue();
 	}
 
-	public static String readFile(String path)
-	{
-		try
-		{
-			Charset encoding = Charset.defaultCharset();
-			byte[] encoded = Files.readAllBytes(Paths.get(path));
-			return encoding.decode(ByteBuffer.wrap(encoded)).toString();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
-	}
-
 	public static <K, V extends Comparable<V>> K argmax(Map<K, V> map)
 	{
 		Map.Entry<K, V> maxEntry = null;

@@ -129,7 +129,7 @@ public class Background
 			Path texturePath = settings.getBackgroundImagePath();
 			try
 			{
-				texture = ImageCache.getInstance(imagesPath).getImageFromFile(settings.getBackgroundImagePath());
+				texture = ImageCache.getInstance(imagesPath).getImageFromFile(texturePath);
 			}
 			catch (RuntimeException e)
 			{

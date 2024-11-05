@@ -1,7 +1,11 @@
 package nortantis.util;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -80,5 +84,19 @@ public class FileHelper
 	{
 		File file = new File(filePath);
 		return file.exists() && !file.isDirectory();
+	}
+	
+	public static String readFile(String path)
+	{
+		try
+		{
+			Charset encoding = Charset.defaultCharset();
+			byte[] encoded = Files.readAllBytes(Paths.get(path));
+			return encoding.decode(ByteBuffer.wrap(encoded)).toString();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
 	}
 }

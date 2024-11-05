@@ -55,11 +55,6 @@ public class SettingsGenerator
 	@SuppressWarnings("deprecation")
 	public static MapSettings generate(Random rand, String imagesPath)
 	{
-		if (!Files.exists(Paths.get(defaultSettingsFile)))
-		{
-			throw new IllegalArgumentException("The default settings files " + defaultSettingsFile + " does not exist");
-		}
-
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
@@ -314,7 +309,7 @@ public class SettingsGenerator
 
 	public static List<String> getAllBooks()
 	{
-		String[] filenames = Assets.listFileNames(Paths.get(Assets.getAssetsPath(), "books").toString(), null, "_place_names.txt");
+		List<String> filenames = Assets.listFileNames(Paths.get(Assets.getAssetsPath(), "books").toString(), null, "_place_names.txt");
 
 		List<String> result = new ArrayList<>();
 		for (String filename : filenames)

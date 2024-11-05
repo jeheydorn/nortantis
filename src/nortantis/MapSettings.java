@@ -180,7 +180,7 @@ public class MapSettings implements Serializable
 	{
 		if (FilenameUtils.getExtension(filePath).toLowerCase().equals("nort"))
 		{
-			String fileContents = Helper.readFile(filePath);
+			String fileContents = Assets.readFileAsStringFromDiskOrAssets(filePath);
 			parseFromJson(fileContents);
 		}
 		else if (FilenameUtils.getExtension(filePath).toLowerCase().equals("properties"))
