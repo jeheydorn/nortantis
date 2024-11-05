@@ -1388,7 +1388,7 @@ public class MapSettings implements Serializable
 	{
 		if (backgroundTextureSource == TextureSource.Assets)
 		{
-			return Assets.getResourcePath(backgroundTextureResource, customImagesPath);
+			return Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath);
 		}
 		else
 		{

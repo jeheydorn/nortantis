@@ -62,10 +62,10 @@ public class NameCreator
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 	}
 
-	private List<Pair<String>> readStringPairs(String filename)
+	private List<Pair<String>> readStringPairs(String filePath)
 	{
 		List<Pair<String>> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
+		try (BufferedReader br = Assets.createBufferedReader(filePath))
 		{
 			int lineNum = 0;
 			for (String line; (line = br.readLine()) != null;)
@@ -78,7 +78,7 @@ public class NameCreator
 					String[] parts = line.split("\t");
 					if (parts.length != 2)
 					{
-						Logger.println("Warning: No string pair found in " + filename + " at line " + lineNum + ".");
+						Logger.println("Warning: No string pair found in " + filePath + " at line " + lineNum + ".");
 						continue;
 					}
 					result.add(new Pair<>(parts[0], parts[1]));
@@ -97,10 +97,10 @@ public class NameCreator
 		return result;
 	}
 
-	private List<String> readNameList(String filename)
+	private List<String> readNameList(String filePath)
 	{
 		List<String> result = new ArrayList<>();
-		try (BufferedReader br = Assets.createBufferedReader(filename))
+		try (BufferedReader br = Assets.createBufferedReader(filePath))
 		{
 			for (String line; (line = br.readLine()) != null;)
 			{
@@ -113,7 +113,7 @@ public class NameCreator
 		}
 		catch (IOException e)
 		{
-			throw new RuntimeException("Unable to read names from the file " + filename, e);
+			throw new RuntimeException("Unable to read names from the file " + filePath, e);
 		}
 
 		return result;

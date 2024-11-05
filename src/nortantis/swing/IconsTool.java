@@ -524,8 +524,10 @@ public class IconsTool extends EditorTool
 			boolean isNew, Tuple2<String, String> selectedCity, String labelText)
 	{
 		boolean hasAtLeastOneImage = false;
+		System.out.println("In updateNamedIconSelector for type: " + selector.type);
 		for (String groupId : ImageCache.getInstance(customImagesPath).getIconGroupNames(selector.type))
 		{
+			System.out.println("groupId: " + groupId);
 			JPanel typePanel = new JPanel();
 			typePanel.setLayout(new WrapLayout());
 			typePanel.setBorder(new LineBorder(UIManager.getColor("controlShadow"), 1));

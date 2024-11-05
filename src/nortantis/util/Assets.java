@@ -88,7 +88,7 @@ public class Assets
 		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
 
 		List<String> textureFiles;
-		textureFiles = listFileNames(artPackPath.toString());
+		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString());
 
 		return textureFiles;
 	}
@@ -102,20 +102,20 @@ public class Assets
 
 		if (artPack.equals(installedArtPack))
 		{
-			return Paths.get(Assets.getAssetsPath(), "background textures");
+			return Paths.get(Assets.getAssetsPath());
 		}
 
 		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder, artPack);
 	}
 
-	public static Path getResourcePath(BackgroundTextureResource resource, String customImagesFolder)
+	public static Path getBackgroundTextureResourcePath(BackgroundTextureResource resource, String customImagesFolder)
 	{
 		if (resource == null)
 		{
 			return null;
 		}
 		Path artPackPath = getArtPackPath(resource.artPack, customImagesFolder);
-		return Paths.get(artPackPath.toString(), resource.fileName);
+		return Paths.get(artPackPath.toString(), "background textures", resource.fileName);
 	}
 
 	public static List<String> listFileNames(String path)
@@ -137,8 +137,12 @@ public class Assets
 		}
 
 		File[] files = new File(folderPath.toString())
-				.listFiles(file -> ((containsText == null || containsText.isEmpty()) || file.getName().contains(containsText))
-						&& ((endingText == null || endingText.isEmpty()) || file.getName().endsWith(endingText)));
+				.listFiles(file -> (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
+						&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText)));
+		if (files == null)
+		{
+			return new ArrayList<>();
+		}
 		List<String> fileNames = Arrays.asList(files).stream().map(file -> file.getName()).collect(Collectors.toList());
 		fileNames.sort(String::compareTo);
 
@@ -152,46 +156,61 @@ public class Assets
 		return StringUtils.isNotEmpty(path) && isRunningFromJar() && path.startsWith(getAssetsPath());
 	}
 
-	public static List<Path> listFilesFromJar(String path, String contains, String suffix)
+	public static List<Path> listFilesFromJar(String path, String containsText, String endingText)
 	{
+		System.out.println("In listFilesFromJar");
+		System.out.println("path: " + path);
+		System.out.println("containsText: " + containsText);
+		System.out.println("endingText: " + endingText);
+
 		List<Path> result = new ArrayList<>();
 		try
 		{
-			Enumeration<URL> urls = Assets.class.getClassLoader().getResources(path);
-			while (urls.hasMoreElements())
+			String assetsPath = convertToAssetPath(path);
+			String assetsPathWithoutLeadingSlash = assetsPath.substring(1);
+			URL jarUrl = Assets.class.getResource(assetsPath);
+			if (jarUrl == null)
 			{
-				URL dirUrl = urls.nextElement();
-				if (dirUrl != null && dirUrl.getProtocol().equals("jar"))
+				throw new RuntimeException(
+						"Unable to list files in path '" + path + "' because the URL for that path was null. assetsPath: " + assetsPath);
+			}
+
+			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
+			try (JarFile jarFile = jarConnection.getJarFile())
+			{
+				jarFile.stream().forEach(entry ->
 				{
-					JarURLConnection jarConnection = (JarURLConnection) dirUrl.openConnection();
-					try (JarFile jarFile = jarConnection.getJarFile())
+					String entryName = entry.getName();
+					if (!entry.isDirectory() && entryName.startsWith(assetsPathWithoutLeadingSlash)
+							&& ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
+							&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
 					{
-						Enumeration<JarEntry> entries = jarFile.entries();
-						while (entries.hasMoreElements())
-						{
-							JarEntry entry = entries.nextElement();
-							String entryName = entry.getName();
-							if (entryName.startsWith(path) && (StringUtils.isEmpty(suffix)
-									|| entryName.endsWith(suffix) && (StringUtils.isEmpty(contains) || entryName.contains(contains))))
-							{
-								result.add(Paths.get(path, entryName.substring(path.length() + 1))); // +1 to remove the leading slash
-							}
-						}
+						result.add(Paths.get(path, entryName));
 					}
-				}
+				});
 			}
 		}
 		catch (IOException e)
 		{
 			throw new RuntimeException("Error reading directory from resources: " + path, e);
 		}
+
+		System.out.println("result: " + result);
 		return result;
 	}
 
-	public static List<String> listNonEmptySubFoldersInJar(String folderPath)
+	public static List<String> listSubFoldersInJar(String folderPath)
 	{
+		System.out.println("In listSubFoldersInJar");
+		System.out.println("folderPath: " + folderPath);
 		List<String> subFolders = new ArrayList<>();
 		String assetsPath = convertToAssetPath(folderPath);
+		String assetsPathWithoutLeadingSlash = assetsPath.substring(1);
+		String assetsPathWithLeadingSlashNoTrailingSlash = removeTrailingForwardSlash(assetsPathWithoutLeadingSlash);
+
+		System.out.println("assetsPath: " + assetsPath);
+		System.out.println("assetsPathWithoutLeadingSlash: " + assetsPathWithoutLeadingSlash);
+		System.out.println("assetsPathWithLeadingSlashNoTrailingSlash: " + assetsPathWithLeadingSlashNoTrailingSlash);
 
 		URL jarUrl = Assets.class.getResource(assetsPath);
 		if (jarUrl == null)
@@ -205,9 +224,18 @@ public class Assets
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
 			try (JarFile jarFile = jarConnection.getJarFile())
 			{
-				jarFile.stream().filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetsPath))
-						.filter(entry -> jarFile.getEntry(entry.getName()).getSize() > 0)
-						.map(entry -> entry.getName().substring(assetsPath.length())).collect(Collectors.toList());
+				// if (folderPath.equals("assets\\cities"))
+				// {
+				// System.out.println("entries: ");
+				// jarFile.stream().forEach(entry ->
+				// {
+				// System.out.println("entry name: " + entry.getName());
+				// });
+				// }
+				subFolders = jarFile.stream()
+						.filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetsPathWithoutLeadingSlash)
+								&& !removeTrailingForwardSlash(entry.getName()).equals(assetsPathWithLeadingSlashNoTrailingSlash))
+						.map(entry -> FilenameUtils.getName(removeTrailingForwardSlash(entry.getName()))).collect(Collectors.toList());
 			}
 		}
 		catch (IOException e)
@@ -218,11 +246,28 @@ public class Assets
 		return subFolders;
 	}
 
+	private static String removeTrailingForwardSlash(String path)
+	{
+		if (path.endsWith("/"))
+		{
+			return path.substring(0, path.length() - 1);
+		}
+		return path;
+	}
+
+	/**
+	 * Lists sub-folders of the given path that are non-empty when path is in the file system. When the path is in a jar file, it lists all
+	 * sub-folders, empty or not, with the expectation that I won't release empty folders in the assets.
+	 * 
+	 * @param path
+	 *            Either a file path on disk or a relative path of the assets folder.
+	 * @return A list of folder names (not paths).
+	 */
 	public static List<String> listNonEmptySubFolders(String path)
 	{
 		if (isJarAsset(path))
 		{
-			return listNonEmptySubFoldersInJar(path);
+			return listSubFoldersInJar(path);
 		}
 		// If not a resource, try to load from the file system
 
@@ -348,7 +393,7 @@ public class Assets
 			throw new RuntimeException("Error while reading from " + filePath, e);
 		}
 	}
-	
+
 	public static BufferedReader createBufferedReader(String filePath) throws FileNotFoundException
 	{
 		if (isJarAsset(filePath))
@@ -415,7 +460,7 @@ public class Assets
 		if (isJarAsset(sourceDir.toString()))
 		{
 			// Copy from jar file
-			URL resource = FileHelper.class.getResource(sourceDir.toString());
+			URL resource = FileHelper.class.getResource(convertToAssetPath(sourceDir.toString()));
 			if (resource != null && resource.getProtocol().equals("jar"))
 			{
 				JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
@@ -447,6 +492,30 @@ public class Assets
 		else
 		{
 			FileUtils.copyDirectoryToDirectory(sourceDir.toFile(), destDir.toFile());
+		}
+	}
+
+	public static boolean exists(String filePath)
+	{
+		if (isJarAsset(filePath))
+		{
+			return existsInJar(filePath);
+		}
+		else
+		{
+			return Files.exists(Paths.get(filePath));
+		}
+	}
+
+	public static boolean existsInJar(String filePath)
+	{
+		try (InputStream inputStream = ImageHelper.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
+		{
+			return inputStream != null;
+		}
+		catch (IOException e)
+		{
+			return false;
 		}
 	}
 }

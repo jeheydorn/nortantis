@@ -1,7 +1,5 @@
 package nortantis;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -127,6 +125,9 @@ public class Background
 
 			Image texture;
 			Path texturePath = settings.getBackgroundImagePath();
+			System.out.println("backgroundTextureSource: " + settings.backgroundTextureSource);
+			System.out.println("backgroundTextureResource: " + settings.backgroundTextureResource);
+			System.out.println("backgroundTextureImage: " + settings.backgroundTextureImage);
 			try
 			{
 				texture = ImageCache.getInstance(imagesPath).getImageFromFile(texturePath);
@@ -381,7 +382,7 @@ public class Background
 
 		Path allBordersPath = Paths.get(imagesPath, "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
-		if (!Files.exists(borderPath))
+		if (!Assets.exists(borderPath.toString()))
 		{
 			throw new RuntimeException(
 					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
