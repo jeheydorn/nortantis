@@ -25,6 +25,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
+import nortantis.util.Assets;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -303,7 +304,7 @@ public class MapCreatorTest
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
-			expected = ImageHelper.readFromDiskOrAssets(expectedMapFilePath);
+			expected = Assets.readImage(expectedMapFilePath);
 		}
 		else
 		{
@@ -345,7 +346,7 @@ public class MapCreatorTest
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
-			expected = ImageHelper.readFromDiskOrAssets(expectedMapFilePath);
+			expected = Assets.readImage(expectedMapFilePath);
 		}
 		else
 		{

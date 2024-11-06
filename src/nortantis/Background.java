@@ -371,6 +371,7 @@ public class Background
 
 	public Image addBorder(Image map)
 	{
+		System.out.println("In addBorder");
 		if (borderWidthScaled == 0)
 		{
 			return map;
@@ -390,6 +391,9 @@ public class Background
 
 		int edgeOriginalWidth = 0;
 		// Edges
+		System.out.println("imagesPath: " + imagesPath);
+		System.out.println("allBordersPath: " + allBordersPath);
+		System.out.println("borderPath: " + borderPath);
 		Image topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
 		if (topEdge != null)
 		{
@@ -846,17 +850,21 @@ public class Background
 		if (corners.isEmpty())
 		{
 			if (throwExceptionIfMissing)
+			{
 				throw new RuntimeException(
 						"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+			}
 			else
+			{
 				return null;
+			}
 		}
 		if (corners.size() > 1)
 		{
 			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
 		}
 
-		return ImageHelper.readFromDiskOrAssets(corners.get(0).toString());
+		return Assets.readImage(corners.get(0).toString());
 	}
 
 	public int getBorderWidthScaledByResolution()

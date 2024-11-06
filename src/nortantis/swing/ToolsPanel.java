@@ -28,6 +28,7 @@ import nortantis.editor.DisplayQuality;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
@@ -77,7 +78,7 @@ public class ToolsPanel extends JPanel
 			JToggleButton toolButton = new JToggleButton();
 			try
 			{
-				BufferedImage icon = AwtFactory.unwrap(ImageHelper.readFromDiskOrAssets(tool.getImageIconFilePath()));
+				BufferedImage icon = AwtFactory.unwrap(Assets.readImage(tool.getImageIconFilePath()));
 				toolButton.setIcon(new ImageIcon(icon));
 			}
 			catch (Exception e)

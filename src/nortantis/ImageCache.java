@@ -124,7 +124,7 @@ public class ImageCache
 
 	public Image getImageFromFile(Path path)
 	{
-		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.readFromDiskOrAssets(path.toString()));
+		return fileCache.getOrCreate(path.toString(), () -> Assets.readImage(path.toString()));
 	}
 
 	public boolean containsImageFile(Path path)

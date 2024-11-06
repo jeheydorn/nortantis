@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -156,23 +157,23 @@ public class Assets
 		return StringUtils.isNotEmpty(path) && isRunningFromJar() && path.startsWith(getAssetsPath());
 	}
 
-	public static List<Path> listFilesFromJar(String path, String containsText, String endingText)
+	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
 	{
 		System.out.println("In listFilesFromJar");
-		System.out.println("path: " + path);
+		System.out.println("folderPath: " + folderPath);
 		System.out.println("containsText: " + containsText);
 		System.out.println("endingText: " + endingText);
 
-		List<Path> result = new ArrayList<>();
+		List<Path> fileNames = new ArrayList<>();
 		try
 		{
-			String assetsPath = convertToAssetPath(path);
-			String assetsPathWithoutLeadingSlash = assetsPath.substring(1);
+			String assetsPath = convertToAssetPath(folderPath);
+			String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
 			URL jarUrl = Assets.class.getResource(assetsPath);
 			if (jarUrl == null)
 			{
 				throw new RuntimeException(
-						"Unable to list files in path '" + path + "' because the URL for that path was null. assetsPath: " + assetsPath);
+						"Unable to list files in path '" + folderPath + "' because the URL for that path was null. assetsPath: " + assetsPath);
 			}
 
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
@@ -181,36 +182,35 @@ public class Assets
 				jarFile.stream().forEach(entry ->
 				{
 					String entryName = entry.getName();
-					if (!entry.isDirectory() && entryName.startsWith(assetsPathWithoutLeadingSlash)
+					if (!entry.isDirectory() && entryName.startsWith(assetPathInEntryFormat)
 							&& ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
 							&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
 					{
-						result.add(Paths.get(path, entryName));
+						fileNames.add(Paths.get(folderPath, FilenameUtils.getName(entryName)));
 					}
 				});
 			}
 		}
 		catch (IOException e)
 		{
-			throw new RuntimeException("Error reading directory from resources: " + path, e);
+			throw new RuntimeException("Error reading directory from resources: " + folderPath, e);
 		}
 
-		System.out.println("result: " + result);
-		return result;
+		System.out.println("fileNames: " + fileNames);
+		// I don't know how it's possible, but the jar file can give me duplicates. So remove duplicates and sort.
+		return new ArrayList<>(new TreeSet<>(fileNames));
 	}
 
 	public static List<String> listSubFoldersInJar(String folderPath)
 	{
 		System.out.println("In listSubFoldersInJar");
 		System.out.println("folderPath: " + folderPath);
-		List<String> subFolders = new ArrayList<>();
+		List<String> subfolders = new ArrayList<>();
 		String assetsPath = convertToAssetPath(folderPath);
-		String assetsPathWithoutLeadingSlash = assetsPath.substring(1);
-		String assetsPathWithLeadingSlashNoTrailingSlash = removeTrailingForwardSlash(assetsPathWithoutLeadingSlash);
+		String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
 
 		System.out.println("assetsPath: " + assetsPath);
-		System.out.println("assetsPathWithoutLeadingSlash: " + assetsPathWithoutLeadingSlash);
-		System.out.println("assetsPathWithLeadingSlashNoTrailingSlash: " + assetsPathWithLeadingSlashNoTrailingSlash);
+		System.out.println("assetPathInEntryFormat: " + assetPathInEntryFormat);
 
 		URL jarUrl = Assets.class.getResource(assetsPath);
 		if (jarUrl == null)
@@ -224,6 +224,7 @@ public class Assets
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
 			try (JarFile jarFile = jarConnection.getJarFile())
 			{
+				// TODO remove debug code
 				// if (folderPath.equals("assets\\cities"))
 				// {
 				// System.out.println("entries: ");
@@ -232,10 +233,10 @@ public class Assets
 				// System.out.println("entry name: " + entry.getName());
 				// });
 				// }
-				subFolders = jarFile.stream()
-						.filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetsPathWithoutLeadingSlash)
-								&& !removeTrailingForwardSlash(entry.getName()).equals(assetsPathWithLeadingSlashNoTrailingSlash))
-						.map(entry -> FilenameUtils.getName(removeTrailingForwardSlash(entry.getName()))).collect(Collectors.toList());
+				subfolders = jarFile.stream()
+						.filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetPathInEntryFormat)
+								&& !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
+						.map(entry -> FilenameUtils.getName(removeTrailingSlash(entry.getName()))).collect(Collectors.toList());
 			}
 		}
 		catch (IOException e)
@@ -243,16 +244,33 @@ public class Assets
 			e.printStackTrace();
 		}
 
-		return subFolders;
+		return new ArrayList<>(new TreeSet<>(subfolders));
 	}
 
-	private static String removeTrailingForwardSlash(String path)
+	private static String removeTrailingSlash(String path)
 	{
 		if (path.endsWith("/"))
 		{
 			return path.substring(0, path.length() - 1);
 		}
 		return path;
+	}
+	
+	private static String addTrailingSlash(String path)
+	{
+		if (StringUtils.isEmpty(path))
+		{
+			return path;
+		}
+		
+		if (path.endsWith("/"))
+		{
+			return path;
+		}
+		else
+		{
+			return path + "/";
+		}
 	}
 
 	/**
@@ -516,6 +534,39 @@ public class Assets
 		catch (IOException e)
 		{
 			return false;
+		}
+	}
+
+	public static Image readImage(String filePath)
+	{
+		if (isJarAsset(filePath))
+		{
+			try (InputStream inputStream = ImageHelper.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
+			{
+				if (inputStream == null)
+				{
+					throw new RuntimeException("Can't read the image resource '" + filePath
+							+ "' because either it doesn't or it's an unsupported format or corrupted.");
+				}
+
+				Image image = PlatformFactory.getInstance().readImage(inputStream);
+				if (image == null)
+				{
+					throw new RuntimeException(
+							"Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
+				}
+
+				return image;
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Error while reading image from resource " + filePath, e);
+			}
+		}
+		else
+		{
+			// Not an asset. Read from disk.
+			return Image.read(filePath);
 		}
 	}
 }

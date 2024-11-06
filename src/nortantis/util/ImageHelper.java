@@ -1651,32 +1651,6 @@ public class ImageHelper
 		image.write(fileName);
 	}
 
-	public static Image readFromDiskOrAssets(String filePath)
-	{
-		try (InputStream inputStream = ImageHelper.class
-				.getResourceAsStream(Assets.convertToAssetPath(filePath)))
-		{
-			if (inputStream == null)
-			{
-				// Not an asset. Read from disk.
-				return Image.read(filePath);
-			}
-
-			Image image = PlatformFactory.getInstance().readImage(inputStream);
-			if (image == null)
-			{
-				throw new RuntimeException(
-						"Can't read the file " + filePath + " from assets. It might be in an unsupported format or corrupted.");
-			}
-
-			return image;
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Can't read the file " + filePath, e);
-		}
-	}
-
 	/***
 	 * Opens an image in the system default image editor.
 	 * 

@@ -1378,7 +1378,7 @@ public class ThemePanel extends JTabbedPane
 			Image texture;
 			try
 			{
-				texture = ImageHelper.readFromDiskOrAssets(textureImageFileName);
+				texture = Assets.readImage(textureImageFileName);
 
 				if (colorizeOcean)
 				{
