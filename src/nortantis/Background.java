@@ -125,9 +125,6 @@ public class Background
 
 			Image texture;
 			Path texturePath = settings.getBackgroundImagePath();
-			System.out.println("backgroundTextureSource: " + settings.backgroundTextureSource);
-			System.out.println("backgroundTextureResource: " + settings.backgroundTextureResource);
-			System.out.println("backgroundTextureImage: " + settings.backgroundTextureImage);
 			try
 			{
 				texture = ImageCache.getInstance(imagesPath).getImageFromFile(texturePath);
@@ -371,7 +368,6 @@ public class Background
 
 	public Image addBorder(Image map)
 	{
-		System.out.println("In addBorder");
 		if (borderWidthScaled == 0)
 		{
 			return map;
@@ -391,9 +387,6 @@ public class Background
 
 		int edgeOriginalWidth = 0;
 		// Edges
-		System.out.println("imagesPath: " + imagesPath);
-		System.out.println("allBordersPath: " + allBordersPath);
-		System.out.println("borderPath: " + borderPath);
 		Image topEdge = loadImageWithStringInFileName(borderPath, "top_edge.", false);
 		if (topEdge != null)
 		{

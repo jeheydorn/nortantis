@@ -223,7 +223,6 @@ public class SettingsGenerator
 		// to the background texture file path field.
 		// TODO Pass in the selected art pack once I have an art pack selector.
 		List<String> textureFiles = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, settings.customImagesPath);
-		System.out.println("textureFiles: " + textureFiles);
 
 		if (textureFiles.size() > 0)
 		{

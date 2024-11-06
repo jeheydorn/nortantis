@@ -203,7 +203,7 @@ public class Helper
 		}
 		catch (IOException ex)
 		{
-			System.out.println("Helper.writeToFile caught error: " + ex.getMessage());
+			throw new RuntimeException("Helper.writeToFile caught error: " + ex.getMessage(), ex);
 		}
 	}
 

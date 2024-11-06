@@ -48,10 +48,10 @@ public class NameCreator
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : books)
 		{
-			placeNames.addAll(readNameList(Assets.getAssetsPath() + "/books/" + book + "_place_names.txt"));
-			personNames.addAll(readNameList(Assets.getAssetsPath() + "/books/" + book + "_person_names.txt"));
-			nounAdjectivePairs.addAll(readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames.addAll(Assets.readNameList(Assets.getAssetsPath() + "/books/" + book + "_place_names.txt"));
+			personNames.addAll(Assets.readNameList(Assets.getAssetsPath() + "/books/" + book + "_person_names.txt"));
+			nounAdjectivePairs.addAll(Assets.readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(Assets.readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
@@ -62,63 +62,6 @@ public class NameCreator
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 	}
 
-	private List<Pair<String>> readStringPairs(String filePath)
-	{
-		List<Pair<String>> result = new ArrayList<>();
-		try (BufferedReader br = Assets.createBufferedReader(filePath))
-		{
-			int lineNum = 0;
-			for (String line; (line = br.readLine()) != null;)
-			{
-				lineNum++;
-
-				// Remove white space lines.
-				if (!line.trim().isEmpty())
-				{
-					String[] parts = line.split("\t");
-					if (parts.length != 2)
-					{
-						Logger.println("Warning: No string pair found in " + filePath + " at line " + lineNum + ".");
-						continue;
-					}
-					result.add(new Pair<>(parts[0], parts[1]));
-				}
-			}
-		}
-		catch (FileNotFoundException e)
-		{
-			throw new RuntimeException(e);
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
-
-		return result;
-	}
-
-	private List<String> readNameList(String filePath)
-	{
-		List<String> result = new ArrayList<>();
-		try (BufferedReader br = Assets.createBufferedReader(filePath))
-		{
-			for (String line; (line = br.readLine()) != null;)
-			{
-				// Remove white space lines.
-				if (!line.trim().isEmpty())
-				{
-					result.add(line);
-				}
-			}
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Unable to read names from the file " + filePath, e);
-		}
-
-		return result;
-	}
-	
 	public String generatePlaceName(String format, boolean requireUnique)
 	{
 		return generatePlaceName(format, requireUnique, "");

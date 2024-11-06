@@ -121,10 +121,10 @@ public class OldPropertyBasedMapSettings implements Serializable
 
 	public OldPropertyBasedMapSettings(String propertiesFilename)
 	{
-		final Properties props = new Properties();
+		final Properties props;
 		try
 		{
-			props.load(Assets.createInputStream(propertiesFilename));
+			props = Assets.loadPropertiesFile(propertiesFilename);
 		}
 		catch (IOException e)
 		{

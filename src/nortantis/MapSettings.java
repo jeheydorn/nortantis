@@ -37,6 +37,7 @@ import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Helper;
+import nortantis.util.Logger;
 import nortantis.util.OSHelper;
 
 /**
@@ -1328,7 +1329,7 @@ public class MapSettings implements Serializable
 		}
 		catch (Exception e)
 		{
-			System.out.println("Exception while parsing json in conversion. JSON: " + json);
+			Logger.println("Error while parsing json in conversion. JSON: " + json);
 			throw e;
 		}
 	}

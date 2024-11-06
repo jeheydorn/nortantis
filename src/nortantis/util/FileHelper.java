@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -97,6 +98,18 @@ public class FileHelper
 		catch (IOException e)
 		{
 			throw new RuntimeException(e);
+		}
+	}
+	
+	public static boolean isDirectoryEmpty(String directory)
+	{
+		try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
+		{
+			return !dirStream.iterator().hasNext();
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Unable to check if directory on disk is empty. Directory: " + directory + ".", e);
 		}
 	}
 }

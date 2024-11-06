@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Properties;
 import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -157,13 +158,8 @@ public class Assets
 		return StringUtils.isNotEmpty(path) && isRunningFromJar() && path.startsWith(getAssetsPath());
 	}
 
-	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
+	public static synchronized List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
 	{
-		System.out.println("In listFilesFromJar");
-		System.out.println("folderPath: " + folderPath);
-		System.out.println("containsText: " + containsText);
-		System.out.println("endingText: " + endingText);
-
 		List<Path> fileNames = new ArrayList<>();
 		try
 		{
@@ -196,21 +192,15 @@ public class Assets
 			throw new RuntimeException("Error reading directory from resources: " + folderPath, e);
 		}
 
-		System.out.println("fileNames: " + fileNames);
 		// I don't know how it's possible, but the jar file can give me duplicates. So remove duplicates and sort.
 		return new ArrayList<>(new TreeSet<>(fileNames));
 	}
 
-	public static List<String> listSubFoldersInJar(String folderPath)
+	public static synchronized List<String> listSubFoldersInJar(String folderPath)
 	{
-		System.out.println("In listSubFoldersInJar");
-		System.out.println("folderPath: " + folderPath);
 		List<String> subfolders = new ArrayList<>();
 		String assetsPath = convertToAssetPath(folderPath);
 		String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
-
-		System.out.println("assetsPath: " + assetsPath);
-		System.out.println("assetPathInEntryFormat: " + assetPathInEntryFormat);
 
 		URL jarUrl = Assets.class.getResource(assetsPath);
 		if (jarUrl == null)
@@ -224,15 +214,6 @@ public class Assets
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
 			try (JarFile jarFile = jarConnection.getJarFile())
 			{
-				// TODO remove debug code
-				// if (folderPath.equals("assets\\cities"))
-				// {
-				// System.out.println("entries: ");
-				// jarFile.stream().forEach(entry ->
-				// {
-				// System.out.println("entry name: " + entry.getName());
-				// });
-				// }
 				subfolders = jarFile.stream()
 						.filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetPathInEntryFormat)
 								&& !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
@@ -245,6 +226,54 @@ public class Assets
 		}
 
 		return new ArrayList<>(new TreeSet<>(subfolders));
+	}
+	
+	/**
+	 * Recursively copies the contents of a folder either from disk or packaged in the jar file this program is running from to a given
+	 * location on disk.
+	 * 
+	 * @throws IOException
+	 */
+	public static synchronized void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
+	{
+		if (isJarAsset(sourceDir.toString()))
+		{
+			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString().substring(1)));
+
+			// Copy from jar file
+			URL resource = Assets.class.getResource(convertToAssetPath(sourceDir.toString()));
+			if (resource != null && resource.getProtocol().equals("jar"))
+			{
+				JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
+				try (JarFile jarFile = jarConnection.getJarFile())
+				{
+					Enumeration<JarEntry> entries = jarFile.entries();
+					while (entries.hasMoreElements())
+					{
+						JarEntry entry = entries.nextElement();
+						if (entry.getName().startsWith(sourceDirInEntryFormat))
+						{
+							Path destPath = destDir.resolve(FilenameUtils.getName(removeTrailingSlash(entry.getName())));
+							if (entry.isDirectory())
+							{
+								Files.createDirectories(destPath);
+							}
+							else
+							{
+								try (InputStream inputStream = jarFile.getInputStream(entry))
+								{
+									Files.copy(inputStream, destPath);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			FileUtils.copyDirectoryToDirectory(sourceDir.toFile(), destDir.toFile());
+		}
 	}
 
 	private static String removeTrailingSlash(String path)
@@ -281,7 +310,7 @@ public class Assets
 	 *            Either a file path on disk or a relative path of the assets folder.
 	 * @return A list of folder names (not paths).
 	 */
-	public static List<String> listNonEmptySubFolders(String path)
+	public static synchronized List<String> listNonEmptySubFolders(String path)
 	{
 		if (isJarAsset(path))
 		{
@@ -296,7 +325,7 @@ public class Assets
 			public boolean accept(File dir, String name)
 			{
 				File file = new File(dir, name);
-				return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
+				return file.isDirectory() && !FileHelper.isDirectoryEmpty(file.getAbsolutePath());
 			}
 		});
 
@@ -308,70 +337,13 @@ public class Assets
 		return folderNames;
 	}
 
-	public static boolean isDirectoryEmpty(final String directory)
-	{
-		if (isJarAsset(directory))
-		{
-			URL resource = Assets.class.getResource(convertToAssetPath(directory));
-			if (resource != null)
-			{
-				if (resource.getProtocol().equals("jar"))
-				{
-					try
-					{
-						JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-						try (JarFile jarFile = jarConnection.getJarFile())
-						{
-							Enumeration<JarEntry> entries = jarFile.entries();
-							while (entries.hasMoreElements())
-							{
-								JarEntry entry = entries.nextElement();
-								if (entry.getName().startsWith(directory) && !entry.getName().equals(directory + "/"))
-								{
-									return false;
-								}
-							}
-						}
-					}
-					catch (IOException e)
-					{
-						throw new RuntimeException("Unable to check if resource directory is empty. Directory: " + directory + ".", e);
-					}
-				}
-				else
-				{
-					throw new RuntimeException("Non-jar resources are not supported. Directory given: " + directory);
-				}
-			}
-			else
-			{
-				throw new RuntimeException(
-						"Cannot check if resource directory is empty because it does not exist. Directory: " + directory);
-			}
-
-		}
-		else
-		{
-			try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
-			{
-				return !dirStream.iterator().hasNext();
-			}
-			catch (IOException e)
-			{
-				throw new RuntimeException("Unable to check if directory on disk is empty. Directory: " + directory + ".", e);
-			}
-		}
-		return true;
-	}
-
-
 	/**
 	 * Used to disable debug settings when not running from source.
 	 */
 	public static boolean isRunningFromJar()
 	{
-		String className = DebugFlags.class.getName().replace('.', '/');
-		String classJar = DebugFlags.class.getResource("/" + className + ".class").toString();
+		String className = Assets.class.getName().replace('.', '/');
+		String classJar = Assets.class.getResource("/" + className + ".class").toString();
 		return classJar.startsWith("jar:");
 	}
 
@@ -399,7 +371,7 @@ public class Assets
 		}
 	}
 
-	public static String readFileAsString(String filePath)
+	public static synchronized String readFileAsString(String filePath)
 	{
 		InputStream inputStream = createInputStream(filePath);
 		try
@@ -412,7 +384,7 @@ public class Assets
 		}
 	}
 
-	public static BufferedReader createBufferedReader(String filePath) throws FileNotFoundException
+	private static BufferedReader createBufferedReader(String filePath) throws FileNotFoundException
 	{
 		if (isJarAsset(filePath))
 		{
@@ -428,17 +400,7 @@ public class Assets
 	{
 		if (isJarAsset(filePath))
 		{
-			InputStream inputStream = createInputStream(filePath);
-			List<String> lines = new ArrayList<>();
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)))
-			{
-				String line;
-				while ((line = reader.readLine()) != null)
-				{
-					lines.add(line);
-				}
-			}
-			return lines;
+			return readAllLinesFromFileInJar(filePath);
 		}
 		else
 		{
@@ -446,13 +408,27 @@ public class Assets
 		}
 
 	}
+	
+	private static synchronized List<String> readAllLinesFromFileInJar(String filePath) throws IOException
+	{
+		InputStream inputStream = createInputStream(filePath);
+		List<String> lines = new ArrayList<>();
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)))
+		{
+			String line;
+			while ((line = reader.readLine()) != null)
+			{
+				lines.add(line);
+			}
+		}
+		return lines;
+	}
 
-	public static InputStream createInputStream(String filePath)
+	private static synchronized InputStream createInputStream(String filePath)
 	{
 		if (isJarAsset(filePath))
 		{
-			InputStream inputStream = ImageHelper.class.getResourceAsStream(Assets.convertToAssetPath(filePath));
-			return inputStream;
+			return createInputStreamFromFileInJar(filePath);
 		}
 		else
 		{
@@ -466,51 +442,10 @@ public class Assets
 			}
 		}
 	}
-
-	/**
-	 * Recursively copies the contents of a folder either from disk or packaged in the jar file this program is running from to a given
-	 * location on disk.
-	 * 
-	 * @throws IOException
-	 */
-	public static void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
+	
+	private static synchronized InputStream createInputStreamFromFileInJar(String filePath)
 	{
-		if (isJarAsset(sourceDir.toString()))
-		{
-			// Copy from jar file
-			URL resource = FileHelper.class.getResource(convertToAssetPath(sourceDir.toString()));
-			if (resource != null && resource.getProtocol().equals("jar"))
-			{
-				JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-				try (JarFile jarFile = jarConnection.getJarFile())
-				{
-					Enumeration<JarEntry> entries = jarFile.entries();
-					while (entries.hasMoreElements())
-					{
-						JarEntry entry = entries.nextElement();
-						if (entry.getName().startsWith(sourceDir.toString().substring(1)))
-						{
-							Path destPath = destDir.resolve(entry.getName().substring(sourceDir.toString().length()));
-							if (entry.isDirectory())
-							{
-								Files.createDirectories(destPath);
-							}
-							else
-							{
-								try (InputStream inputStream = jarFile.getInputStream(entry))
-								{
-									Files.copy(inputStream, destPath, StandardCopyOption.REPLACE_EXISTING);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			FileUtils.copyDirectoryToDirectory(sourceDir.toFile(), destDir.toFile());
-		}
+		return Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath));
 	}
 
 	public static boolean exists(String filePath)
@@ -525,9 +460,9 @@ public class Assets
 		}
 	}
 
-	public static boolean existsInJar(String filePath)
+	public static synchronized boolean existsInJar(String filePath)
 	{
-		try (InputStream inputStream = ImageHelper.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
+		try (InputStream inputStream = Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
 		{
 			return inputStream != null;
 		}
@@ -541,32 +476,101 @@ public class Assets
 	{
 		if (isJarAsset(filePath))
 		{
-			try (InputStream inputStream = ImageHelper.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
-			{
-				if (inputStream == null)
-				{
-					throw new RuntimeException("Can't read the image resource '" + filePath
-							+ "' because either it doesn't or it's an unsupported format or corrupted.");
-				}
-
-				Image image = PlatformFactory.getInstance().readImage(inputStream);
-				if (image == null)
-				{
-					throw new RuntimeException(
-							"Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
-				}
-
-				return image;
-			}
-			catch (IOException e)
-			{
-				throw new RuntimeException("Error while reading image from resource " + filePath, e);
-			}
+			return readImageFromJar(filePath);
 		}
 		else
 		{
 			// Not an asset. Read from disk.
 			return Image.read(filePath);
 		}
+	}
+	
+	private static synchronized Image readImageFromJar(String filePath)
+	{
+		try (InputStream inputStream = Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
+		{
+			if (inputStream == null)
+			{
+				throw new RuntimeException("Can't read the image resource '" + filePath
+						+ "' because either it doesn't or it's an unsupported format or corrupted.");
+			}
+
+			Image image = PlatformFactory.getInstance().readImage(inputStream);
+			if (image == null)
+			{
+				throw new RuntimeException(
+						"Can't read the image resource " + filePath + ". It might be in an unsupported format or corrupted.");
+			}
+
+			return image;
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Error while reading image from resource " + filePath, e);
+		}
+	}
+	
+	public static synchronized List<Pair<String>> readStringPairs(String filePath)
+	{
+		List<Pair<String>> result = new ArrayList<>();
+		try (BufferedReader br = Assets.createBufferedReader(filePath))
+		{
+			int lineNum = 0;
+			for (String line; (line = br.readLine()) != null;)
+			{
+				lineNum++;
+
+				// Remove white space lines.
+				if (!line.trim().isEmpty())
+				{
+					String[] parts = line.split("\t");
+					if (parts.length != 2)
+					{
+						Logger.println("Warning: No string pair found in " + filePath + " at line " + lineNum + ".");
+						continue;
+					}
+					result.add(new Pair<>(parts[0], parts[1]));
+				}
+			}
+		}
+		catch (FileNotFoundException e)
+		{
+			throw new RuntimeException(e);
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+
+		return result;
+	}
+
+	public static synchronized List<String> readNameList(String filePath)
+	{
+		List<String> result = new ArrayList<>();
+		try (BufferedReader br = Assets.createBufferedReader(filePath))
+		{
+			for (String line; (line = br.readLine()) != null;)
+			{
+				// Remove white space lines.
+				if (!line.trim().isEmpty())
+				{
+					result.add(line);
+				}
+			}
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException("Unable to read names from the file " + filePath, e);
+		}
+
+		return result;
+	}
+	
+	public static synchronized Properties loadPropertiesFile(String filePath) throws IOException
+	{
+		final Properties props = new Properties();
+		props.load(Assets.createInputStream(filePath));
+		return props;
 	}
 }

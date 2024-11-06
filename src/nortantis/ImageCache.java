@@ -284,12 +284,7 @@ public class ImageCache
 	{
 		String path = Paths.get(imagesPath, iconType.toString()).toString();
 
-		System.out.println("In loadIconGroupNames");
-		System.out.println("iconType: " + iconType);
-		System.out.println("imagesPath: " + imagesPath);
-		System.out.println("path: " + path);
 		List<String> folderNames = Assets.listNonEmptySubFolders(path);
-		System.out.println("folderNames: " + folderNames);
 
 		if (folderNames == null)
 		{
@@ -326,10 +321,6 @@ public class ImageCache
 	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String path = getIconGroupPath(iconType, groupName);
-		System.out.println("In loadIconGroupFileNames");
-		System.out.println("iconType: " + iconType);
-		System.out.println("groupName: " + groupName);
-		System.out.println("path: " + path);
 		return Assets.listFileNames(path);
 	}
 
