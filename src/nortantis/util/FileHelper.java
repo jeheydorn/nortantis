@@ -11,8 +11,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.apache.commons.lang3.StringUtils;
-
 public class FileHelper
 {
 	public static String replaceHomeFolderPlaceholder(String path)

@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +37,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import nortantis.BackgroundGenerator;
 import nortantis.BackgroundTextureResource;
@@ -169,7 +169,7 @@ public class ThemePanel extends JTabbedPane
 	private JPanel regionBoundaryColorDisplay;
 	private RowHider regionBoundaryColorHider;
 	private JRadioButton assetsRadioButton;
-	private JRadioButton fileRadionButton;
+	private JRadioButton fileRadioButton;
 	private JComboBox<BackgroundTextureResource> textureImageComboBox;
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
@@ -199,7 +199,10 @@ public class ThemePanel extends JTabbedPane
 			{
 				updateBackgroundAndRegionFieldStates();
 				updateBackgroundImageDisplays();
-				handleFullRedraw();
+				if (!(e.getSource() == fileRadioButton && StringUtils.isEmpty(textureImageFilename.getText())))
+				{
+					handleFullRedraw();
+				}
 			}
 		};
 
@@ -222,20 +225,21 @@ public class ThemePanel extends JTabbedPane
 			assetsRadioButton = new JRadioButton("Assets");
 			assetsRadioButton.addActionListener(backgroundImageButtonGroupListener);
 
-			fileRadionButton = new JRadioButton("File");
-			fileRadionButton.addActionListener(backgroundImageButtonGroupListener);
+			fileRadioButton = new JRadioButton("File");
+			fileRadioButton.addActionListener(backgroundImageButtonGroupListener);
 
 			ButtonGroup buttonGroup = new ButtonGroup();
 			buttonGroup.add(assetsRadioButton);
-			buttonGroup.add(fileRadionButton);
+			buttonGroup.add(fileRadioButton);
 			textureSourceButtonsHider = organizer.addLabelAndComponentsVertical("Texture source:",
-					"Select where to get the texture seed image from.", Arrays.asList(assetsRadioButton, fileRadionButton));
+					"Select where to get the texture seed image from.", Arrays.asList(assetsRadioButton, fileRadioButton));
 		}
 
 		{
 			textureImageComboBox = new JComboBox<>();
 			textureImageComboBoxHider = organizer.addLabelAndComponent("Texture:",
-					"Select a texture image as a seed from installed images that came with Nortantis, art packs, or a custom images folder.", textureImageComboBox);
+					"Select a texture image as a seed from installed images that came with Nortantis, art packs, or a custom images folder.",
+					textureImageComboBox);
 			textureImageComboBox.addActionListener(backgroundImageButtonGroupListener);
 			textureImageComboBox.setMinimumSize(new Dimension(100, textureImageComboBox.getMinimumSize().height));
 		}
@@ -1290,7 +1294,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		textureSourceButtonsHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		textureImageComboBoxHider.setVisible(rdbtnGeneratedFromTexture.isSelected() && assetsRadioButton.isSelected());
-		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected() && fileRadionButton.isSelected());
+		textureImageHider.setVisible(rdbtnGeneratedFromTexture.isSelected() && fileRadioButton.isSelected());
 		colorizeLandCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		colorizeOceanCheckboxHider.setVisible(rdbtnGeneratedFromTexture.isSelected());
 		regionBoundaryTypeComboBoxHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
@@ -1559,9 +1563,9 @@ public class ThemePanel extends JTabbedPane
 		{
 			assetsRadioButton.setSelected(true);
 		}
-		else if (!fileRadionButton.isSelected() && settings.backgroundTextureSource == TextureSource.File)
+		else if (!fileRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.File)
 		{
-			fileRadionButton.setSelected(true);
+			fileRadioButton.setSelected(true);
 		}
 
 		// Only set the selected item if there was a change in case doing so causes change listeners to fire.
@@ -1622,7 +1626,7 @@ public class ThemePanel extends JTabbedPane
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
 
 		// Borders
-		initializeBorderTypeComboBoxItems(settings);
+		initializeComboBoxItems(settings);
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
@@ -1688,7 +1692,7 @@ public class ThemePanel extends JTabbedPane
 	}
 
 
-	private void initializeBorderTypeComboBoxItems(MapSettings settings)
+	private void initializeComboBoxItems(MapSettings settings)
 	{
 		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(settings.customImagesPath),
 				settings.borderType, true);
@@ -1733,10 +1737,10 @@ public class ThemePanel extends JTabbedPane
 		{
 			return true;
 		}
-		
+
 		// TODO test this
-		if (!assetsRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.Assets 
-				|| !fileRadionButton.isSelected() && settings.backgroundTextureSource == TextureSource.File)
+		if (!assetsRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.Assets
+				|| !fileRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.File)
 		{
 			return true;
 		}
@@ -1750,7 +1754,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			return true;
 		}
-		
+
 
 		return false;
 	}
@@ -1977,6 +1981,6 @@ public class ThemePanel extends JTabbedPane
 
 	void handleImagesRefresh(MapSettings settings)
 	{
-		initializeBorderTypeComboBoxItems(settings);
+		initializeComboBoxItems(settings);
 	}
 }

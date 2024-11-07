@@ -29,7 +29,6 @@ import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
-import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")

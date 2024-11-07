@@ -16,6 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -39,6 +40,7 @@ import nortantis.util.FileHelper;
 import nortantis.util.Helper;
 import nortantis.util.Logger;
 import nortantis.util.OSHelper;
+import nortantis.util.Tuple2;
 
 /**
  * For parsing and storing map settings.
@@ -325,9 +327,10 @@ public class MapSettings implements Serializable
 		root.put("backgroundTextureImage", backgroundTextureImage);
 		if (backgroundTextureResource != null)
 		{
-			root.put("backgroundTextureResource", backgroundTextureResource.toJSon());	
+			root.put("backgroundTextureResource", backgroundTextureResource.toJSon());
 		}
-		root.put("backgroundTextureSource", backgroundTextureSource == null ? TextureSource.Assets.toString() : backgroundTextureSource.toString());
+		root.put("backgroundTextureSource",
+				backgroundTextureSource == null ? TextureSource.Assets.toString() : backgroundTextureSource.toString());
 		root.put("generateBackgroundFromTexture", generateBackgroundFromTexture);
 		root.put("colorizeOcean", colorizeOcean);
 		root.put("colorizeLand", colorizeLand);
@@ -901,19 +904,19 @@ public class MapSettings implements Serializable
 		runConversionToFixDunesGroupId();
 		runConversionOnBackgroundTextureImagePaths();
 	}
-	
+
 	private void runConversionOnBackgroundTextureImagePaths()
 	{
 		if (isVersionGreaterThanOrEqualTo(version, "2.9"))
 		{
 			return;
 		}
-		
+
 		if (!OSHelper.isLinux() && !OSHelper.isWindows())
 		{
 			return;
 		}
-		
+
 		if (backgroundTextureImage != null && !backgroundTextureImage.isEmpty())
 		{
 			// It should be absolute.
@@ -929,10 +932,11 @@ public class MapSettings implements Serializable
 					// Windows
 					oldExampleTexturesPath = "C:\\Program Files\\Nortantis\\app\\assets\\example textures";
 				}
-				
+
 				if (backgroundTextureImage.startsWith(oldExampleTexturesPath))
 				{
-					backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack, FilenameUtils.getName(backgroundTextureImage));
+					backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack,
+							FilenameUtils.getName(backgroundTextureImage));
 					backgroundTextureSource = TextureSource.Assets;
 				}
 				else
@@ -1384,17 +1388,28 @@ public class MapSettings implements Serializable
 	{
 		return toJson(true).equals(other.toJson(true));
 	}
-	
-	public Path getBackgroundImagePath()
+
+	/**
+	 * Gets the path to the background texture image to use.
+	 * 
+	 * @return Piece 1 - The path Piece 2 - An optional warning message.
+	 */
+	public Tuple2<Path, String> getBackgroundImagePath()
 	{
+		if (backgroundTextureSource == TextureSource.File && StringUtils.isEmpty(backgroundTextureImage))
+		{
+			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath),
+					"The selected background texture source is '" + backgroundTextureSource
+							+ "', but no texture image file is selected. An image from assets was used instead.");
+		}
 		if (backgroundTextureSource == TextureSource.Assets)
 		{
-			return Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath);
+			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath), null);
 		}
 		else
 		{
 			// File
-			return Paths.get(FileHelper.replaceHomeFolderPlaceholder(backgroundTextureImage));
+			return new Tuple2<>(Paths.get(FileHelper.replaceHomeFolderPlaceholder(backgroundTextureImage)), null);
 		}
 	}
 
@@ -1439,7 +1454,7 @@ public class MapSettings implements Serializable
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
-	
+
 
 	@Override
 	public boolean equals(Object obj)
@@ -1514,5 +1529,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
+
 }

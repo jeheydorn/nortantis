@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
@@ -22,6 +24,7 @@ import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 /**
  * An assortment of things needed to draw the background.
@@ -52,7 +55,7 @@ public class Background
 	private boolean hasInsetCorners;
 
 
-	public Background(MapSettings settings, Dimension mapBounds)
+	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
 		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
 		{
@@ -124,7 +127,13 @@ public class Background
 			// Generate the background images from a texture
 
 			Image texture;
-			Path texturePath = settings.getBackgroundImagePath();
+			Tuple2<Path, String> tuple = settings.getBackgroundImagePath();
+			Path texturePath = tuple.getFirst();
+			String warning = tuple.getSecond();
+			if (!StringUtils.isEmpty(warning))
+			{
+				warningLogger.addWarningMessage(warning);
+			}
 			try
 			{
 				texture = ImageCache.getInstance(imagesPath).getImageFromFile(texturePath);

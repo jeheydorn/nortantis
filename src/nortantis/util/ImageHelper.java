@@ -3,7 +3,6 @@ package nortantis.util;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +29,6 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.platform.PlatformFactory;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper

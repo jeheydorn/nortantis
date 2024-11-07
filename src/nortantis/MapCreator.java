@@ -576,7 +576,7 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Generating the background image.");
-			background = new Background(settings, mapBounds);
+			background = new Background(settings, mapBounds, this);
 		}
 
 		if (mapParts != null)

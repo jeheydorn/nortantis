@@ -1,10 +1,5 @@
 package nortantis;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -15,7 +10,6 @@ import java.util.Set;
 import nortantis.geom.Point;
 import nortantis.util.Assets;
 import nortantis.util.Function0;
-import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;

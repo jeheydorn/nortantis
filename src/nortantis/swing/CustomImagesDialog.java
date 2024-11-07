@@ -30,8 +30,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 
-import org.apache.commons.io.FileUtils;
-
 import nortantis.IconType;
 import nortantis.MapSettings;
 import nortantis.editor.UserPreferences;

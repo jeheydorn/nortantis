@@ -29,7 +29,6 @@ import javax.swing.JPanel;
 import nortantis.MapSettings;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
-import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
 @SuppressWarnings("serial")
