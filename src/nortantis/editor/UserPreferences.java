@@ -1,9 +1,12 @@
 package nortantis.editor;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -49,11 +52,14 @@ public class UserPreferences
 			Path filePath = Paths.get(getSavePath().toString(), userPrefsFileName);
 			if (Files.exists(filePath))
 			{
-				props.load(new FileInputStream(filePath.toString()));
+				try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8))
+				{
+					props.load(reader);
+				}
 
 				if (props.containsKey("editorImageQuality"))
 				{
-					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra") .replace(" ", "_");
+					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra").replace(" ", "_");
 					editorImageQuality = DisplayQuality.valueOf(quality);
 				}
 
@@ -77,7 +83,7 @@ public class UserPreferences
 					String value = props.getProperty("showNewMapWithSameThemeRegionColorsMessage");
 					hideNewMapWithSameThemeRegionColorsMessage = Boolean.parseBoolean(value);
 				}
-				
+
 				if (props.containsKey("collapsedPanels"))
 				{
 					String[] panelNames = props.getProperty("collapsedPanels").split("\t");
