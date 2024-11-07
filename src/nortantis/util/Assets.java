@@ -168,8 +168,8 @@ public class Assets
 			URL jarUrl = Assets.class.getResource(assetsPath);
 			if (jarUrl == null)
 			{
-				throw new RuntimeException(
-						"Unable to list files in path '" + folderPath + "' because the URL for that path was null. assetsPath: " + assetsPath);
+				throw new RuntimeException("Unable to list files in path '" + folderPath
+						+ "' because the URL for that path was null. assetsPath: " + assetsPath);
 			}
 
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
@@ -227,7 +227,7 @@ public class Assets
 
 		return new ArrayList<>(new TreeSet<>(subfolders));
 	}
-	
+
 	/**
 	 * Recursively copies the contents of a folder either from disk or packaged in the jar file this program is running from to a given
 	 * location on disk.
@@ -238,32 +238,31 @@ public class Assets
 	{
 		if (isJarAsset(sourceDir.toString()))
 		{
-			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString().substring(1)));
+			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString()).substring(1));
 
 			// Copy from jar file
 			URL resource = Assets.class.getResource(convertToAssetPath(sourceDir.toString()));
-			if (resource != null && resource.getProtocol().equals("jar"))
+			JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
+			try (JarFile jarFile = jarConnection.getJarFile())
 			{
-				JarURLConnection jarConnection = (JarURLConnection) resource.openConnection();
-				try (JarFile jarFile = jarConnection.getJarFile())
+				Enumeration<JarEntry> entries = jarFile.entries();
+				while (entries.hasMoreElements())
 				{
-					Enumeration<JarEntry> entries = jarFile.entries();
-					while (entries.hasMoreElements())
+					JarEntry entry = entries.nextElement();
+					if (entry.getName().startsWith(sourceDirInEntryFormat) && !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
 					{
-						JarEntry entry = entries.nextElement();
-						if (entry.getName().startsWith(sourceDirInEntryFormat))
+						String entryPathWithoutAssetsFolder = entry.getName().substring((assetsPath + "/").length());
+						
+						Path destPath = Paths.get(destDir.toString(), entryPathWithoutAssetsFolder);
+						if (entry.isDirectory())
 						{
-							Path destPath = destDir.resolve(FilenameUtils.getName(removeTrailingSlash(entry.getName())));
-							if (entry.isDirectory())
+							Files.createDirectories(destPath);
+						}
+						else
+						{
+							try (InputStream inputStream = jarFile.getInputStream(entry))
 							{
-								Files.createDirectories(destPath);
-							}
-							else
-							{
-								try (InputStream inputStream = jarFile.getInputStream(entry))
-								{
-									Files.copy(inputStream, destPath);
-								}
+								Files.copy(inputStream, destPath);
 							}
 						}
 					}
@@ -275,7 +274,7 @@ public class Assets
 			FileUtils.copyDirectoryToDirectory(sourceDir.toFile(), destDir.toFile());
 		}
 	}
-
+	
 	private static String removeTrailingSlash(String path)
 	{
 		if (path.endsWith("/"))
@@ -284,14 +283,14 @@ public class Assets
 		}
 		return path;
 	}
-	
+
 	private static String addTrailingSlash(String path)
 	{
 		if (StringUtils.isEmpty(path))
 		{
 			return path;
 		}
-		
+
 		if (path.endsWith("/"))
 		{
 			return path;
@@ -408,7 +407,7 @@ public class Assets
 		}
 
 	}
-	
+
 	private static synchronized List<String> readAllLinesFromFileInJar(String filePath) throws IOException
 	{
 		InputStream inputStream = createInputStream(filePath);
@@ -442,7 +441,7 @@ public class Assets
 			}
 		}
 	}
-	
+
 	private static synchronized InputStream createInputStreamFromFileInJar(String filePath)
 	{
 		return Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath));
@@ -484,7 +483,7 @@ public class Assets
 			return Image.read(filePath);
 		}
 	}
-	
+
 	private static synchronized Image readImageFromJar(String filePath)
 	{
 		try (InputStream inputStream = Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
@@ -509,7 +508,7 @@ public class Assets
 			throw new RuntimeException("Error while reading image from resource " + filePath, e);
 		}
 	}
-	
+
 	public static synchronized List<Pair<String>> readStringPairs(String filePath)
 	{
 		List<Pair<String>> result = new ArrayList<>();
@@ -566,7 +565,7 @@ public class Assets
 
 		return result;
 	}
-	
+
 	public static synchronized Properties loadPropertiesFile(String filePath) throws IOException
 	{
 		final Properties props = new Properties();
