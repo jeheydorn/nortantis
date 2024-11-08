@@ -45,7 +45,7 @@ public class Background
 	// index of the region it is in.
 	Image regionIndexes;
 	private int borderWidthScaled;
-	private String borderType;
+	private NamedResource borderResouce;
 	private String imagesPath;
 	private Image upperLeftCorner;
 	private Image upperRightCorner;
@@ -74,7 +74,7 @@ public class Background
 		this.mapBounds = mapBounds;
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-		borderType = settings.borderType;
+		borderResouce = settings.borderResource;
 
 		if (settings.generateBackground)
 		{
@@ -387,11 +387,11 @@ public class Background
 		p.drawImage(map, borderWidthScaled, borderWidthScaled);
 
 		Path allBordersPath = Paths.get(imagesPath, "borders");
-		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
+		Path borderPath = Paths.get(allBordersPath.toString(), borderResouce.name);
 		if (!Assets.exists(borderPath.toString()))
 		{
 			throw new RuntimeException(
-					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
+					"The selected border type '" + borderResouce + "' does not have a folder for images in " + allBordersPath + ".");
 		}
 
 		int edgeOriginalWidth = 0;

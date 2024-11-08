@@ -28,6 +28,8 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.Timer;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -38,6 +40,7 @@ import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.ThemePanel.LandColoringMethod;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
@@ -64,6 +67,7 @@ public class NewSettingsDialog extends JDialog
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 	MainWindow mainWindow;
 	private JTextField pathDisplay;
+	private JComboBox<String> artPackComboBox;
 
 	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
@@ -308,7 +312,8 @@ public class NewSettingsDialog extends JDialog
 				{
 					settings.customImagesPath = value;
 					updatePathDisplay();
-					initializeCityTypeOptions();
+					settings.artPack = Assets.customArtPack;
+					initializeArtPackOptionsAndCityTypeOptions();
 
 					updater.createAndShowMapFull(() ->
 					{
@@ -332,6 +337,13 @@ public class NewSettingsDialog extends JDialog
 				ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities), settings.cityIconTypeName, false);
 	}
 
+	private void initializeArtPackOptionsAndCityTypeOptions()
+	{
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(settings.customImagesPath)),
+				settings.artPack, false);
+		initializeCityTypeOptions();
+	}
+
 	private void updatePathDisplay()
 	{
 		if (settings != null && settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
@@ -352,6 +364,29 @@ public class NewSettingsDialog extends JDialog
 		generatorSettingsPanel.add(rightPanel);
 
 
+		artPackComboBox = new JComboBox<String>();
+		JLabel artPackLabel = new JLabel("Art pack:");
+		artPackLabel.setToolTipText("The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '"
+						+ Assets.customArtPack + "' means use the custom images folder, if one is selected.");
+
+
+		cityIconsTypeComboBox = new JComboBox<String>();
+		createMapChangeListener(cityIconsTypeComboBox);
+		JLabel cityIconTypeLabel = new JLabel("City icon type:");
+		cityIconTypeLabel.setToolTipText("The set of city images to use.");
+		
+		JPanel rowPanel = new JPanel();
+		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
+		organizer.addLeftAlignedComponent(rowPanel);
+		rowPanel.add(artPackLabel);
+		rowPanel.add(Box.createHorizontalStrut(5));
+		rowPanel.add(artPackComboBox);
+		rowPanel.add(Box.createHorizontalGlue());
+		rowPanel.add(cityIconTypeLabel);
+		rowPanel.add(Box.createHorizontalStrut(5));
+		rowPanel.add(cityIconsTypeComboBox);
+
+
 		cityFrequencySlider = new JSlider();
 		cityFrequencySlider.setPaintLabels(true);
 		cityFrequencySlider.setSnapToTicks(false);
@@ -363,10 +398,6 @@ public class NewSettingsDialog extends JDialog
 		createMapChangeListener(cityFrequencySlider);
 		organizer.addLabelAndComponent("City frequency:",
 				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
-
-		cityIconsTypeComboBox = new JComboBox<String>();
-		createMapChangeListener(cityIconsTypeComboBox);
-		organizer.addLabelAndComponent("City icon type:", "The set of city images to use.", cityIconsTypeComboBox);
 
 
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
@@ -422,7 +453,7 @@ public class NewSettingsDialog extends JDialog
 		settings.drawRegionColors = randomSettings.drawRegionColors;
 		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
 		settings.drawBorder = randomSettings.drawBorder;
-		settings.borderType = randomSettings.borderType;
+		settings.borderResource = randomSettings.borderResource;
 		settings.borderWidth = randomSettings.borderWidth;
 		settings.lineStyle = randomSettings.lineStyle;
 
@@ -531,7 +562,7 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
-		initializeCityTypeOptions();
+		initializeArtPackOptionsAndCityTypeOptions();
 
 		booksWidget.checkSelectedBooks(settings.books);
 

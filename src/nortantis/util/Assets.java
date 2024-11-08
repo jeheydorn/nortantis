@@ -17,9 +17,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -30,14 +32,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import nortantis.BackgroundTextureResource;
+import nortantis.NamedResource;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 
 public class Assets
 {
 	private final static String assetsPath = "assets";
-	private final static String customArtPack = "custom";
+	public final static String customArtPack = "custom";
 	private final static String artPacksFolder = "art packs";
 	public final static String installedArtPack = "nortantis";
 
@@ -64,15 +66,15 @@ public class Assets
 		return result;
 	}
 
-	public static List<BackgroundTextureResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
+	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
 	{
-		List<BackgroundTextureResource> result = new ArrayList<>();
-		for (String artPack : Assets.listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
+		List<NamedResource> result = new ArrayList<>();
+		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
 		{
-			for (String textureName : Assets.listBackgroundTexturesForArtPack(artPack,
+			for (String textureName : listBackgroundTexturesForArtPack(artPack,
 					FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
 			{
-				result.add(new BackgroundTextureResource(artPack, textureName));
+				result.add(new NamedResource(artPack, textureName));
 			}
 		}
 
@@ -93,25 +95,48 @@ public class Assets
 	{
 		if (artPack.equals(customArtPack))
 		{
-			return Paths.get(customImagesFolder);
+			if (StringUtils.isEmpty(customImagesFolder))
+			{
+				return null;
+			}
+			return Paths.get(FileHelper.replaceHomeFolderPlaceholder(customImagesFolder));
 		}
 
 		if (artPack.equals(installedArtPack))
 		{
-			return Paths.get(Assets.getAssetsPath());
+			return Paths.get(getAssetsPath());
 		}
 
 		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder, artPack);
 	}
 
-	public static Path getBackgroundTextureResourcePath(BackgroundTextureResource resource, String customImagesFolder)
+	public static Path getBackgroundTextureResourcePath(NamedResource resource, String customImagesFolder)
 	{
 		if (resource == null)
 		{
 			return null;
 		}
 		Path artPackPath = getArtPackPath(resource.artPack, customImagesFolder);
-		return Paths.get(artPackPath.toString(), "background textures", resource.fileName);
+		return Paths.get(artPackPath.toString(), "background textures", resource.name);
+	}
+
+	public static List<NamedResource> listAllBorderTypes(String customImagesFolder)
+	{
+		List<NamedResource> result = new ArrayList<>();
+		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
+		{
+			result.addAll(listBorderTypesForArtPack(artPack, customImagesFolder));
+		}
+
+		return result;
+	}
+
+	public static List<NamedResource> listBorderTypesForArtPack(String artPack, String customImagesFolder)
+	{
+		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
+		List<String> borderTypes = listNonEmptySubFolders(Paths.get(artPackPath.toString(), "borders").toString());
+		Collections.sort(borderTypes);
+		return borderTypes.stream().map(bt -> new NamedResource(artPack, bt)).collect(Collectors.toList());
 	}
 
 	public static List<String> listFileNames(String path)
@@ -243,10 +268,11 @@ public class Assets
 				while (entries.hasMoreElements())
 				{
 					JarEntry entry = entries.nextElement();
-					if (entry.getName().startsWith(sourceDirInEntryFormat) && !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
+					if (entry.getName().startsWith(sourceDirInEntryFormat)
+							&& !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
 					{
 						String entryPathWithoutAssetsFolder = entry.getName().substring((assetsPath + "/").length());
-						
+
 						Path destPath = Paths.get(destDir.toString(), entryPathWithoutAssetsFolder);
 						if (entry.isDirectory())
 						{
@@ -268,7 +294,7 @@ public class Assets
 			FileUtils.copyDirectoryToDirectory(sourceDir.toFile(), destDir.toFile());
 		}
 	}
-	
+
 	private static String removeTrailingSlash(String path)
 	{
 		if (path.endsWith("/"))
@@ -347,7 +373,7 @@ public class Assets
 			return filePath;
 		}
 
-		if (StringUtils.isNotEmpty(filePath) && filePath.startsWith(Assets.getAssetsPath()))
+		if (StringUtils.isNotEmpty(filePath) && filePath.startsWith(getAssetsPath()))
 		{
 			if (OSHelper.isWindows())
 			{
@@ -438,7 +464,7 @@ public class Assets
 
 	private static synchronized InputStream createInputStreamFromFileInJar(String filePath)
 	{
-		return Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath));
+		return Assets.class.getResourceAsStream(convertToAssetPath(filePath));
 	}
 
 	public static boolean exists(String filePath)
@@ -455,7 +481,7 @@ public class Assets
 
 	public static synchronized boolean existsInJar(String filePath)
 	{
-		try (InputStream inputStream = Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
+		try (InputStream inputStream = Assets.class.getResourceAsStream(convertToAssetPath(filePath)))
 		{
 			return inputStream != null;
 		}
@@ -480,7 +506,7 @@ public class Assets
 
 	private static synchronized Image readImageFromJar(String filePath)
 	{
-		try (InputStream inputStream = Assets.class.getResourceAsStream(Assets.convertToAssetPath(filePath)))
+		try (InputStream inputStream = Assets.class.getResourceAsStream(convertToAssetPath(filePath)))
 		{
 			if (inputStream == null)
 			{
@@ -506,7 +532,7 @@ public class Assets
 	public static synchronized List<Pair<String>> readStringPairs(String filePath)
 	{
 		List<Pair<String>> result = new ArrayList<>();
-		try (BufferedReader br = Assets.createBufferedReader(filePath))
+		try (BufferedReader br = createBufferedReader(filePath))
 		{
 			int lineNum = 0;
 			for (String line; (line = br.readLine()) != null;)
@@ -541,7 +567,7 @@ public class Assets
 	public static synchronized List<String> readNameList(String filePath)
 	{
 		List<String> result = new ArrayList<>();
-		try (BufferedReader br = Assets.createBufferedReader(filePath))
+		try (BufferedReader br = createBufferedReader(filePath))
 		{
 			for (String line; (line = br.readLine()) != null;)
 			{
@@ -563,7 +589,7 @@ public class Assets
 	public static synchronized Properties loadPropertiesFile(String filePath) throws IOException
 	{
 		final Properties props = new Properties();
-		props.load(Assets.createInputStream(filePath));
+		props.load(createInputStream(filePath));
 		return props;
 	}
 }

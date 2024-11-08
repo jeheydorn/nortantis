@@ -73,7 +73,7 @@ public class MapCreatorTest
 	@Test
 	public void drawWithoutEditsMatchesWithEdits()
 	{
-		MapSettings settings = SettingsGenerator.generate(new Random(1), null);
+		MapSettings settings = SettingsGenerator.generate(new Random(1), Assets.installedArtPack, null);
 		settings.resolution = 0.5;
 		Tuple1<Image> mapTuple = new Tuple1<>();
 		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
@@ -311,7 +311,7 @@ public class MapCreatorTest
 			expected = null;
 		}
 		
-		MapSettings settings = SettingsGenerator.generate(new Random(seed), null);
+		MapSettings settings = SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
 		settings.resolution = 0.5;
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating random map to match '" + expectedFileName + "'");

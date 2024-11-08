@@ -7,15 +7,15 @@ import org.apache.commons.io.FilenameUtils;
 import org.json.simple.JSONObject;
 
 @SuppressWarnings("serial")
-public class BackgroundTextureResource implements Serializable
+public class NamedResource implements Serializable
 {
-	public final String fileName;
+	public final String name;
 	public final String artPack;
 	
-	public BackgroundTextureResource(String artPack, String fileName)
+	public NamedResource(String artPack, String fileOrFolderName)
 	{
 		super();
-		this.fileName = fileName;
+		this.name = fileOrFolderName;
 		this.artPack = artPack;
 	}
 	
@@ -23,26 +23,26 @@ public class BackgroundTextureResource implements Serializable
 	public JSONObject toJSon()
 	{
 		JSONObject obj = new JSONObject();
-		obj.put("fileName", fileName);
+		obj.put("name", name);
 		obj.put("artPack", artPack);
 		return obj;
 	}
 	
-	public static BackgroundTextureResource fromJson(JSONObject obj)
+	public static NamedResource fromJson(JSONObject obj)
 	{
 		if (obj == null)
 		{
 			return null;
 		}
-		String fileName = (String) obj.get("fileName");
+		String fileName = (String) obj.get("name");
 		String artPack = (String) obj.get("artPack");
-		return new BackgroundTextureResource(artPack, fileName);
+		return new NamedResource(artPack, fileName);
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(artPack, fileName);
+		return Objects.hash(artPack, name);
 	}
 
 	@Override
@@ -60,14 +60,14 @@ public class BackgroundTextureResource implements Serializable
 		{
 			return false;
 		}
-		BackgroundTextureResource other = (BackgroundTextureResource) obj;
-		return Objects.equals(artPack, other.artPack) && Objects.equals(fileName, other.fileName);
+		NamedResource other = (NamedResource) obj;
+		return Objects.equals(artPack, other.artPack) && Objects.equals(name, other.name);
 	}
 
 	@Override
 	public String toString()
 	{
-		return FilenameUtils.getBaseName(fileName) + " [" + artPack + "]";
+		return FilenameUtils.getBaseName(name) + " [" + artPack + "]";
 	}
 	
 	

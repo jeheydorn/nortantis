@@ -40,7 +40,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import nortantis.BackgroundGenerator;
-import nortantis.BackgroundTextureResource;
+import nortantis.NamedResource;
 import nortantis.BorderColorOption;
 import nortantis.FractalBGGenerator;
 import nortantis.FreeIconCollection;
@@ -109,7 +109,7 @@ public class ThemePanel extends JTabbedPane
 	private JButton btnChooseOceanColor;
 	private JButton btnNewBackgroundSeed;
 	private ItemListener colorizeCheckboxListener;
-	private JComboBox<String> borderTypeComboBox;
+	private JComboBox<NamedResource> borderTypeComboBox;
 	private JSlider borderWidthSlider;
 	private JCheckBox drawBorderCheckbox;
 	private JSlider frayedEdgeSizeSlider;
@@ -170,7 +170,7 @@ public class ThemePanel extends JTabbedPane
 	private RowHider regionBoundaryColorHider;
 	private JRadioButton assetsRadioButton;
 	private JRadioButton fileRadioButton;
-	private JComboBox<BackgroundTextureResource> textureImageComboBox;
+	private JComboBox<NamedResource> textureImageComboBox;
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
 
@@ -536,7 +536,7 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLeftAlignedComponent(drawBorderCheckbox);
 
-		borderTypeComboBox = new JComboBox<String>();
+		borderTypeComboBox = new JComboBox<>();
 		createMapChangeListenerForFullRedraw(borderTypeComboBox);
 		organizer.addLabelAndComponent("Border type:", "The set of images to draw for the border", borderTypeComboBox);
 
@@ -1694,8 +1694,8 @@ public class ThemePanel extends JTabbedPane
 
 	private void initializeComboBoxItems(MapSettings settings)
 	{
-		SwingHelper.initializeComboBoxItems(borderTypeComboBox, MapCreator.getAvailableBorderTypes(settings.customImagesPath),
-				settings.borderType, true);
+		SwingHelper.initializeComboBoxItems(borderTypeComboBox, Assets.listAllBorderTypes(settings.customImagesPath),
+				settings.borderResource, true);
 		SwingHelper.initializeComboBoxItems(textureImageComboBox, Assets.listBackgroundTexturesForAllArtPacks(settings.customImagesPath),
 				settings.backgroundTextureResource, true);
 	}
@@ -1807,7 +1807,7 @@ public class ThemePanel extends JTabbedPane
 		settings.colorizeLand = colorizeLandCheckbox.isSelected();
 		settings.backgroundTextureSource = assetsRadioButton.isSelected() ? TextureSource.Assets : TextureSource.File;
 		settings.backgroundTextureImage = FileHelper.replaceHomeFolderWithPlaceholder(textureImageFilename.getText());
-		settings.backgroundTextureResource = (BackgroundTextureResource) textureImageComboBox.getSelectedItem();
+		settings.backgroundTextureResource = (NamedResource) textureImageComboBox.getSelectedItem();
 		try
 		{
 			settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
@@ -1834,7 +1834,7 @@ public class ThemePanel extends JTabbedPane
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
 
 		settings.drawBorder = drawBorderCheckbox.isSelected();
-		settings.borderType = (String) borderTypeComboBox.getSelectedItem();
+		settings.borderResource = (NamedResource) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
 		settings.borderColorOption = (BorderColorOption) borderColorOptionComboBox.getSelectedItem();
 		settings.borderColor = AwtFactory.wrap(borderColorDisplay.getBackground());

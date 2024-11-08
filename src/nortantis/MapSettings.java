@@ -104,7 +104,7 @@ public class MapSettings implements Serializable
 	/**
 	 * The path to the background texture image if one was selected from an art pack.
 	 */
-	public BackgroundTextureResource backgroundTextureResource;
+	public NamedResource backgroundTextureResource;
 	public long backgroundRandomSeed;
 	public Color oceanColor;
 	public Color landColor;
@@ -135,7 +135,9 @@ public class MapSettings implements Serializable
 	public boolean drawRegionColors;
 	public long regionsRandomSeed;
 	public boolean drawBorder;
+	@Deprecated
 	public String borderType;
+	public NamedResource borderResource;
 	public int borderWidth;
 	public BorderColorOption borderColorOption;
 	public Color borderColor;
@@ -155,6 +157,10 @@ public class MapSettings implements Serializable
 	public String heightmapExportPath;
 	public double heightmapResolution = 1.0;
 	public String customImagesPath;
+	/**
+	 * When generating a new map, this is the art pack to use. When editing a map, this is the art pack displayed in the UI.
+	 */
+	public String artPack;
 	public double treeHeightScale;
 	public double mountainScale = 1.0;
 	public double hillScale = 1.0;
@@ -164,7 +170,7 @@ public class MapSettings implements Serializable
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
-
+	
 
 	public MapSettings()
 	{
@@ -374,7 +380,10 @@ public class MapSettings implements Serializable
 		root.put("textColor", colorToString(textColor));
 
 		root.put("drawBorder", drawBorder);
-		root.put("borderType", borderType);
+		if (borderResource != null)
+		{
+			root.put("borderResource", borderResource.toJSon());
+		}
 		root.put("borderWidth", borderWidth);
 		root.put("borderColorOption", borderColorOption.toString());
 		root.put("borderColor", colorToString(borderColor));
@@ -384,6 +393,7 @@ public class MapSettings implements Serializable
 		root.put("heightmapExportPath", heightmapExportPath);
 		root.put("heightmapResolution", heightmapResolution);
 		root.put("customImagesPath", customImagesPath);
+		root.put("artPack", artPack);
 
 		root.put("treeHeightScale", treeHeightScale);
 		root.put("mountainScale", mountainScale);
@@ -719,7 +729,7 @@ public class MapSettings implements Serializable
 		}
 		if (root.containsKey("backgroundTextureResource"))
 		{
-			backgroundTextureResource = BackgroundTextureResource.fromJson((JSONObject) root.get("backgroundTextureResource"));
+			backgroundTextureResource = NamedResource.fromJson((JSONObject) root.get("backgroundTextureResource"));
 		}
 		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
 		oceanColor = parseColor((String) root.get("oceanColor"));
@@ -792,6 +802,10 @@ public class MapSettings implements Serializable
 		{
 			borderType = (String) root.get("borderType");
 		}
+		if (root.containsKey("borderResource"))
+		{
+			borderResource = NamedResource.fromJson((JSONObject) root.get("borderResource"));
+		}
 
 		if (root.containsKey("borderWidth"))
 		{
@@ -835,10 +849,19 @@ public class MapSettings implements Serializable
 		{
 			heightmapResolution = (double) root.get("heightmapResolution");
 		}
-
+		
 		if (root.containsKey("customImagesPath"))
 		{
 			customImagesPath = (String) root.get("customImagesPath");
+		}
+		
+		if (root.containsKey("artPack"))
+		{
+			artPack = (String) root.get("artPack");
+		}
+		else
+		{
+			artPack =  StringUtils.isEmpty(customImagesPath) ? Assets.installedArtPack : Assets.customArtPack;
 		}
 
 		if (root.containsKey("treeHeightScale"))
@@ -903,8 +926,30 @@ public class MapSettings implements Serializable
 		runConversionForAllowingMultipleCityTypesInOneMap();
 		runConversionToFixDunesGroupId();
 		runConversionOnBackgroundTextureImagePaths();
+		runConversionOnBorderType();
 	}
 
+	/**
+	 * Move the border type to the new field so it can support art packs.
+	 */
+	private void runConversionOnBorderType()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "2.9"))
+		{
+			return;
+		}
+
+		if (!StringUtils.isEmpty(borderType))
+		{
+			borderResource = new NamedResource(StringUtils.isEmpty(customImagesPath) ? Assets.installedArtPack : Assets.customArtPack,
+					borderType);
+			borderType = null;
+		}
+	}
+
+	/**
+	 * Convert background texture image to a resource if possible.
+	 */
 	private void runConversionOnBackgroundTextureImagePaths()
 	{
 		if (isVersionGreaterThanOrEqualTo(version, "2.9"))
@@ -935,8 +980,7 @@ public class MapSettings implements Serializable
 
 				if (backgroundTextureImage.startsWith(oldExampleTexturesPath))
 				{
-					backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack,
-							FilenameUtils.getName(backgroundTextureImage));
+					backgroundTextureResource = new NamedResource(Assets.installedArtPack, FilenameUtils.getName(backgroundTextureImage));
 					backgroundTextureSource = TextureSource.Assets;
 				}
 				else
@@ -1477,8 +1521,8 @@ public class MapSettings implements Serializable
 				&& backgroundTextureSource == other.backgroundTextureSource
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
-				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
-				&& brightnessRange == other.brightnessRange
+				&& Objects.equals(borderResource, other.borderResource) && Objects.equals(borderType, other.borderType)
+				&& borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
@@ -1524,10 +1568,11 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
 				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
-				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
-				&& Objects.equals(titleFont, other.titleFont)
+				&& Objects.equals(artPack, other.artPack) && Objects.equals(textColor, other.textColor)
+				&& textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+
 
 }

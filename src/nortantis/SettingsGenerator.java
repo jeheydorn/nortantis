@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.UserPreferences;
@@ -40,14 +42,15 @@ public class SettingsGenerator
 	public static final int defaultOceanRipplesAlpha = 204;
 	public static final float maxLineWidthInEditor = 10f;
 
-	public static MapSettings generate(String imagesPath)
+	public static MapSettings generate(String customImageFolder)
 	{
 		Random rand = new Random();
-		return generate(rand, imagesPath);
+		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacks(!StringUtils.isEmpty(customImageFolder)));
+		return generate(rand, artPack, customImageFolder);
 	}
 
 	@SuppressWarnings("deprecation")
-	public static MapSettings generate(Random rand, String imagesPath)
+	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
 	{
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
@@ -60,6 +63,9 @@ public class SettingsGenerator
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 
 		setRandomSeeds(settings, rand);
+		
+		settings.artPack = artPack;
+		settings.customImagesPath = customImagesFolder;
 
 		int hueRange = 16;
 		int saturationRange = 25;
@@ -148,17 +154,22 @@ public class SettingsGenerator
 
 		final double drawBorderProbability = 0.75;
 		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
-		Set<String> borderTypes = MapCreator.getAvailableBorderTypes(imagesPath);
-		if (!borderTypes.isEmpty())
+		List<NamedResource> borderTypes = Assets.listBorderTypesForArtPack(artPack, customImagesFolder);
+		if (borderTypes.isEmpty())
+		{
+			borderTypes = Assets.listAllBorderTypes(customImagesFolder);
+		}
+		// Note- borderTypes shouldn't be empty since that would mean there's no border types, including installed ones.
+		if (!borderTypes.isEmpty()) 
 		{
 			// Random border type.
-			int index = Math.abs(rand.nextInt()) % borderTypes.size();
-			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
-			if (settings.borderType.equals("dashes"))
+			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
+			
+			if (settings.borderResource.name.equals("dashes"))
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
 			}
-			else if (settings.borderType.equals("dashes with inset corners"))
+			else if (settings.borderResource.name.equals("dashes with inset corners"))
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(75)) + 50;
 			}
@@ -170,7 +181,7 @@ public class SettingsGenerator
 
 		if (settings.drawBorder)
 		{
-			if (settings.borderType.equals("dashes"))
+			if (settings.borderResource.name.equals("dashes"))
 			{
 				settings.frayedBorder = false;
 			}
@@ -221,14 +232,14 @@ public class SettingsGenerator
 		if (textureFiles.size() > 0)
 		{
 			// TODO Pass in the selected art pack once I have an art pack selector.
-			settings.backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack,
+			settings.backgroundTextureResource = new NamedResource(Assets.installedArtPack,
 					ProbabilityHelper.sampleUniform(rand, textureFiles));
 		}
 		else
 		{
 			// Use the built-in background textures
 			textureFiles = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, settings.customImagesPath);
-			settings.backgroundTextureResource = new BackgroundTextureResource(Assets.installedArtPack,
+			settings.backgroundTextureResource = new NamedResource(Assets.installedArtPack,
 					ProbabilityHelper.sampleUniform(rand, textureFiles));
 		}
 		settings.backgroundTextureSource = TextureSource.Assets;

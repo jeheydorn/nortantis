@@ -1804,21 +1804,6 @@ public class MapCreator implements WarningLogger
 		graph.drawRivers(p, edgesToDraw, drawBounds, settings.riverColor, settings.drawRegionBoundaries, settings.regionBoundaryColor);
 	}
 
-	public static Set<String> getAvailableBorderTypes(String imagesPath)
-	{
-		if (imagesPath == null || imagesPath.isEmpty())
-		{
-			imagesPath = Assets.getAssetsPath();
-		}
-		else
-		{
-			imagesPath = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
-		}
-
-		List<String> borderTypes = Assets.listNonEmptySubFolders(Paths.get(imagesPath, "borders").toString());
-		return new TreeSet<>(borderTypes);
-	}
-
 	public Image createHeightMap(MapSettings settings)
 	{
 		r = new Random(settings.randomSeed);
