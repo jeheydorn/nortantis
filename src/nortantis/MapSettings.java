@@ -170,7 +170,7 @@ public class MapSettings implements Serializable
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
-	
+
 
 	public MapSettings()
 	{
@@ -474,6 +474,7 @@ public class MapSettings implements Serializable
 			if (centerEdit.trees != null)
 			{
 				JSONObject treesObj = new JSONObject();
+				treesObj.put("artPack", centerEdit.trees.artPack);
 				treesObj.put("treeType", centerEdit.trees.treeType);
 				treesObj.put("density", centerEdit.trees.density);
 				treesObj.put("randomSeed", centerEdit.trees.randomSeed);
@@ -492,6 +493,7 @@ public class MapSettings implements Serializable
 		for (FreeIcon icon : edits.freeIcons)
 		{
 			JSONObject iconObj = new JSONObject();
+			iconObj.put("artPack", icon.artPack);
 			iconObj.put("groupId", icon.groupId);
 			iconObj.put("iconIndex", icon.iconIndex);
 			iconObj.put("iconName", icon.iconName);
@@ -849,19 +851,19 @@ public class MapSettings implements Serializable
 		{
 			heightmapResolution = (double) root.get("heightmapResolution");
 		}
-		
+
 		if (root.containsKey("customImagesPath"))
 		{
 			customImagesPath = (String) root.get("customImagesPath");
 		}
-		
+
 		if (root.containsKey("artPack"))
 		{
 			artPack = (String) root.get("artPack");
 		}
 		else
 		{
-			artPack =  StringUtils.isEmpty(customImagesPath) ? Assets.installedArtPack : Assets.customArtPack;
+			artPack = StringUtils.isEmpty(customImagesPath) ? Assets.installedArtPack : Assets.customArtPack;
 		}
 
 		if (root.containsKey("treeHeightScale"))
@@ -914,10 +916,11 @@ public class MapSettings implements Serializable
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
 
+		boolean hasCustomImagesPath = !StringUtils.isEmpty(customImagesPath);
 		JSONObject editsJson = (JSONObject) root.get("edits");
 		edits.text = parseMapTexts(editsJson);
-		edits.freeIcons = parseIconEdits(editsJson);
-		edits.centerEdits = parseCenterEdits(editsJson);
+		edits.freeIcons = parseIconEdits(editsJson, hasCustomImagesPath);
+		edits.centerEdits = parseCenterEdits(editsJson, hasCustomImagesPath);
 		edits.regionEdits = parseRegionEdits(editsJson);
 		edits.edgeEdits = parseEdgeEdits(editsJson);
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
@@ -1105,7 +1108,7 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private ConcurrentHashMap<Integer, CenterEdit> parseCenterEdits(JSONObject editsJson)
+	private ConcurrentHashMap<Integer, CenterEdit> parseCenterEdits(JSONObject editsJson, boolean hasCustomImagesPath)
 	{
 		if (editsJson == null)
 		{
@@ -1131,17 +1134,27 @@ public class MapSettings implements Serializable
 				JSONObject iconObj = (JSONObject) jsonObj.get("icon");
 				if (iconObj != null)
 				{
+					String artPack;
+					if (iconObj.containsKey("artPack"))
+					{
+						artPack = (String) iconObj.get("artPack");
+					}
+					else
+					{
+						// Map versions before art packs either use the installed images or accustom images folder.
+						artPack = hasCustomImagesPath ? Assets.customArtPack : Assets.installedArtPack;
+					}
 					String iconGroupId = (String) iconObj.get("iconGroupId");
 					int iconIndex = (int) (long) iconObj.get("iconIndex");
 					CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
 					String iconName = (String) iconObj.get("iconName");
 					if (iconName != null && !iconName.isEmpty())
 					{
-						icon = new CenterIcon(iconType, iconGroupId, iconName);
+						icon = new CenterIcon(iconType, artPack, iconGroupId, iconName);
 					}
 					else
 					{
-						icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+						icon = new CenterIcon(iconType, artPack, iconGroupId, iconIndex);
 					}
 				}
 			}
@@ -1151,11 +1164,21 @@ public class MapSettings implements Serializable
 				JSONObject treesObj = (JSONObject) jsonObj.get("trees");
 				if (treesObj != null)
 				{
+					String artPack;
+					if (treesObj.containsKey("artPack"))
+					{
+						artPack = (String) treesObj.get("artPack");
+					}
+					else
+					{
+						// Map versions before art packs either use the installed images or accustom images folder.
+						artPack = hasCustomImagesPath ? Assets.customArtPack : Assets.installedArtPack;
+					}
 					String treeType = (String) treesObj.get("treeType");
 					double density = (Double) treesObj.get("density");
 					long randomSeed = (Long) treesObj.get("randomSeed");
 					boolean isDormant = treesObj.containsKey("isDormant") ? (Boolean) treesObj.get("isDormant") : false;
-					trees = new CenterTrees(treeType, density, randomSeed, isDormant);
+					trees = new CenterTrees(artPack, treeType, density, randomSeed, isDormant);
 				}
 			}
 
@@ -1166,7 +1189,7 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-	private FreeIconCollection parseIconEdits(JSONObject editsJson)
+	private FreeIconCollection parseIconEdits(JSONObject editsJson, boolean hasCustomImagesPath)
 	{
 		if (editsJson == null)
 		{
@@ -1185,6 +1208,16 @@ public class MapSettings implements Serializable
 			JSONObject iconObj = (JSONObject) obj;
 			IconType type = IconType.valueOf((String) iconObj.get("type"));
 
+			String artPack;
+			if (iconObj.containsKey("artPack"))
+			{
+				artPack = (String) iconObj.get("artPack");
+			}
+			else
+			{
+				// Map versions before art packs either use the installed images or accustom images folder.
+				artPack = hasCustomImagesPath ? Assets.customArtPack : Assets.installedArtPack;
+			}
 			String groupId = (String) iconObj.get("groupId");
 			int iconIndex = (int) (long) iconObj.get("iconIndex");
 			String iconName = (String) iconObj.get("iconName");
@@ -1197,7 +1230,8 @@ public class MapSettings implements Serializable
 			}
 			double density = (double) iconObj.get("density");
 
-			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, groupId, iconIndex, iconName, centerIndex, density));
+			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName,
+					centerIndex, density));
 		}
 
 		return result;

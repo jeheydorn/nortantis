@@ -10,6 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
@@ -334,7 +335,8 @@ public class NewSettingsDialog extends JDialog
 	private void initializeCityTypeOptions()
 	{
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities), settings.cityIconTypeName, false);
+				ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities),
+				settings.cityIconTypeName, false);
 	}
 
 	private void initializeArtPackOptionsAndCityTypeOptions()
@@ -366,15 +368,25 @@ public class NewSettingsDialog extends JDialog
 
 		artPackComboBox = new JComboBox<String>();
 		JLabel artPackLabel = new JLabel("Art pack:");
-		artPackLabel.setToolTipText("The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '"
+		artPackLabel.setToolTipText(
+				"The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '"
 						+ Assets.customArtPack + "' means use the custom images folder, if one is selected.");
+		artPackComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				initializeCityTypeOptions();
+				handleMapChange();
+			}
+		});
 
 
 		cityIconsTypeComboBox = new JComboBox<String>();
 		createMapChangeListener(cityIconsTypeComboBox);
 		JLabel cityIconTypeLabel = new JLabel("City icon type:");
 		cityIconTypeLabel.setToolTipText("The set of city images to use.");
-		
+
 		JPanel rowPanel = new JPanel();
 		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
 		organizer.addLeftAlignedComponent(rowPanel);

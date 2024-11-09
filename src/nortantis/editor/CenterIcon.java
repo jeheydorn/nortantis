@@ -8,6 +8,7 @@ import java.util.Objects;
 public class CenterIcon
 {
 	public final CenterIconType iconType;
+	public final String artPack;
 	public final String iconGroupId;
 	/**
 	 * When moduloed by the number of icons in a group, this gives an index into the set of icons.
@@ -18,27 +19,29 @@ public class CenterIcon
 	 */
 	public final String iconName;
 
-	public CenterIcon(CenterIconType iconType, String iconGroupId, int iconIndex)
+	public CenterIcon(CenterIconType iconType, String artPack, String iconGroupId, int iconIndex)
 	{
-		this(iconType, iconGroupId, iconIndex, null);
+		this(iconType, artPack, iconGroupId, iconIndex, null);
 	}
 
-	public CenterIcon(CenterIconType iconType, String iconGroupId, String iconName)
+	public CenterIcon(CenterIconType iconType, String artPack, String iconGroupId, String iconName)
 	{
-		this(iconType, iconGroupId, -1, iconName);
+		this(iconType, artPack, iconGroupId, -1, iconName);
 	}
 
-	private CenterIcon(CenterIconType iconType, String iconGroupId, int iconIndex, String iconName)
+	private CenterIcon(CenterIconType iconType, String artPack, String iconGroupId, int iconIndex, String iconName)
 	{
 		this.iconType = iconType;
+		this.artPack = artPack;
 		this.iconGroupId = iconGroupId;
 		this.iconIndex = iconIndex;
 		this.iconName = iconName;
 	}
 	
+	// TODO Check if calls to this should also pass in art pack
 	public CenterIcon copyWithIconGroupId(String iconGroupId)
 	{
-		return new CenterIcon(iconType, iconGroupId, iconIndex, iconName);
+		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName);
 	}
 
 	@Override

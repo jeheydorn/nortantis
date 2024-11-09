@@ -64,6 +64,10 @@ public class SettingsGenerator
 
 		setRandomSeeds(settings, rand);
 		
+		if (artPack == null)
+		{
+			throw new IllegalArgumentException("artPack cannot be null.");
+		}
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
 
@@ -160,7 +164,7 @@ public class SettingsGenerator
 			borderTypes = Assets.listAllBorderTypes(customImagesFolder);
 		}
 		// Note- borderTypes shouldn't be empty since that would mean there's no border types, including installed ones.
-		if (!borderTypes.isEmpty()) 
+		if (!borderTypes.isEmpty())
 		{
 			// Random border type.
 			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
@@ -226,22 +230,13 @@ public class SettingsGenerator
 
 		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching
 		// to the background texture file path field.
-		// TODO Pass in the selected art pack once I have an art pack selector.
-		List<String> textureFiles = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, settings.customImagesPath);
+		List<NamedResource> textureFiles = Assets.listBackgroundTexturesForArtPack(artPack, settings.customImagesPath);
+		if (textureFiles.isEmpty())
+		{
+			textureFiles = Assets.listBackgroundTexturesForAllArtPacks(settings.customImagesPath);
+		}
 
-		if (textureFiles.size() > 0)
-		{
-			// TODO Pass in the selected art pack once I have an art pack selector.
-			settings.backgroundTextureResource = new NamedResource(Assets.installedArtPack,
-					ProbabilityHelper.sampleUniform(rand, textureFiles));
-		}
-		else
-		{
-			// Use the built-in background textures
-			textureFiles = Assets.listBackgroundTexturesForArtPack(Assets.installedArtPack, settings.customImagesPath);
-			settings.backgroundTextureResource = new NamedResource(Assets.installedArtPack,
-					ProbabilityHelper.sampleUniform(rand, textureFiles));
-		}
+		settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textureFiles);
 		settings.backgroundTextureSource = TextureSource.Assets;
 
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.geom.IntDimension;
@@ -78,15 +79,29 @@ public class ImageCache
 	 * @param imagesPath
 	 * @return
 	 */
-	public synchronized static ImageCache getInstance(String imagesPath)
+	private synchronized static ImageCache getInstance(String imagesPath)
 	{
-		if (imagesPath != null && !imagesPath.isEmpty())
+		String pathWithHomeReplaced;
+		if (StringUtils.isEmpty(imagesPath))
 		{
-			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
-			return instances.getOrCreate(pathWithHomeReplaced, () -> new ImageCache(pathWithHomeReplaced));
+			imagesPath = Assets.getArtPackPath(Assets.installedArtPack, null).toString();
+			pathWithHomeReplaced = imagesPath;
 		}
-
-		return instances.getOrCreate(Assets.getAssetsPath(), () -> new ImageCache(Assets.getAssetsPath()));
+		else
+		{
+			pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
+		}
+		
+		// Probably not necessary, but I don't want to take a chance of accidentally creating multiple ImageCache instances.
+		String normalizedPath = FilenameUtils.normalize(pathWithHomeReplaced);
+		
+		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath));
+	}
+	
+	public synchronized static ImageCache getInstance(String artPack, String customImagesFolder)
+	{
+		Path artPackPath = Assets.getArtPackPath(artPack, customImagesFolder);
+		return getInstance(artPackPath.toString());
 	}
 
 	/**
@@ -303,6 +318,16 @@ public class ImageCache
 		String groupNameToUse = groupName == null ? "" : groupName;
 		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
 				() -> loadIconGroupFileNames(iconType, groupNameToUse));
+	}
+	
+	public boolean hasNamedIcon(IconType iconType, String groupName, String iconName)
+	{
+		if (!getIconGroupNames(iconType).contains(groupName))
+		{
+			return false;
+		}
+		
+		return getIconGroupFileNames(iconType, groupName).contains(iconName);
 	}
 
 	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)

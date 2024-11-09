@@ -71,26 +71,31 @@ public class Assets
 		List<NamedResource> result = new ArrayList<>();
 		for (String artPack : listArtPacks(StringUtils.isNotEmpty(customImagesFolder)))
 		{
-			for (String textureName : listBackgroundTexturesForArtPack(artPack,
+			for (NamedResource textureResource : listBackgroundTexturesForArtPack(artPack,
 					FileHelper.replaceHomeFolderPlaceholder(customImagesFolder)))
 			{
-				result.add(new NamedResource(artPack, textureName));
+				result.add(textureResource);
 			}
 		}
 
 		return result;
 	}
 
-	public static List<String> listBackgroundTexturesForArtPack(String artPack, String customImagesFolder)
+	public static List<NamedResource> listBackgroundTexturesForArtPack(String artPack, String customImagesFolder)
 	{
 		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
 
 		List<String> textureFiles;
 		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString());
-
-		return textureFiles;
+		return textureFiles.stream().map(fileName -> new NamedResource(artPack, fileName)).toList();
 	}
 
+	/**
+	 * Gets the path to the assets of an art pack.
+	 * @param artPack Art pack name
+	 * @param customImagesFolder The map's custom images folder. Only required if art pack is "custom".
+	 * @return A  path to a the art pack assets, which may be in the jar file the program is running from.
+	 */
 	public static Path getArtPackPath(String artPack, String customImagesFolder)
 	{
 		if (artPack.equals(customArtPack))

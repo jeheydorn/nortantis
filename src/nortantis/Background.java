@@ -46,25 +46,18 @@ public class Background
 	Image regionIndexes;
 	private int borderWidthScaled;
 	private NamedResource borderResouce;
-	private String imagesPath;
 	private Image upperLeftCorner;
 	private Image upperRightCorner;
 	private Image lowerLeftCorner;
 	private Image lowerRightCorner;
 	private int cornerWidth;
 	private boolean hasInsetCorners;
+	private String customImagesPath;
 
 
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
-		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
-		{
-			this.imagesPath = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
-		}
-		else
-		{
-			this.imagesPath = Assets.getAssetsPath();
-		}
+		customImagesPath = settings.customImagesPath;
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
 				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
@@ -136,7 +129,8 @@ public class Background
 			}
 			try
 			{
-				texture = ImageCache.getInstance(imagesPath).getImageFromFile(texturePath);
+				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customImagesPath)
+						.getImageFromFile(texturePath);
 			}
 			catch (RuntimeException e)
 			{
@@ -182,14 +176,15 @@ public class Background
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
-					
+
 					if (settings.borderColorOption == BorderColorOption.Ocean_color)
 					{
 						borderBackground = oceanGeneratedBackground;
 					}
 					else
 					{
-						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground), settings.borderColor, oceanColorifyAlgorithm);
+						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground),
+								settings.borderColor, oceanColorifyAlgorithm);
 					}
 				}
 				else
@@ -386,7 +381,7 @@ public class Background
 		Painter p = result.createPainter();
 		p.drawImage(map, borderWidthScaled, borderWidthScaled);
 
-		Path allBordersPath = Paths.get(imagesPath, "borders");
+		Path allBordersPath = Paths.get(Assets.getArtPackPath(borderResouce.artPack, customImagesPath).toString(), "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderResouce.name);
 		if (!Assets.exists(borderPath.toString()))
 		{
