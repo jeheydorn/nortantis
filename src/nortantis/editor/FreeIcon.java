@@ -89,7 +89,7 @@ public class FreeIcon
 		this.centerIndex = centerIndex;
 	}
 
-	public FreeIcon copyWith(String groupId)
+	public FreeIcon copyWithGroupId(String groupId)
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
 	}
@@ -100,6 +100,11 @@ public class FreeIcon
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, int iconIndex)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+	}
+	
+	public FreeIcon copyWithArtPack(String artPack)
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
 	}

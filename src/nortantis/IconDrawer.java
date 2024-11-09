@@ -269,7 +269,7 @@ public class IconDrawer
 				}
 				else if (cEdit.icon.iconType == CenterIconType.City)
 				{
-					Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(IconType.cities, "city",
+					Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(IconType.cities,
 							cEdit.icon.artPack, cEdit.icon.iconGroupId, cEdit.icon.iconName, warningLogger);
 
 					if (artPackAndGroupAndName != null)
@@ -346,8 +346,8 @@ public class IconDrawer
 			return null;
 		}
 
-		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, cEdit.icon.iconType.toString().toLowerCase(), iconsByGroup,
-				warningLogger);
+		IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
+		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, type, cEdit.icon.artPack, iconsByGroup, warningLogger);
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
 			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -356,7 +356,6 @@ public class IconDrawer
 			return null;
 		}
 
-		IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
 		Point loc;
 		if (type == IconType.mountains)
 		{
@@ -524,7 +523,7 @@ public class IconDrawer
 			}
 			else if (icon.type == IconType.cities)
 			{
-				Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, "city", icon.artPack,
+				Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, icon.artPack,
 						icon.groupId, icon.iconName, warningLogger);
 				if (artPackAndGroupAndName != null)
 				{
@@ -552,8 +551,8 @@ public class IconDrawer
 			}
 			else if (icon.type == IconType.decorations)
 			{
-				Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, "decorations",
-						icon.artPack, icon.groupId, icon.iconName, warningLogger);
+				Tuple3<String, String, String> artPackAndGroupAndName = adjustNamedIconGroupAndNameIfNeeded(icon.type, icon.artPack,
+						icon.groupId, icon.iconName, warningLogger);
 				if (artPackAndGroupAndName != null)
 				{
 					FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(),
@@ -604,19 +603,10 @@ public class IconDrawer
 		return removeBounds;
 	}
 
-	private Tuple3<String, String, String> adjustNamedIconGroupAndNameIfNeeded(IconType type, String typeNameSingular, String artPack,
-			String groupId, String name, WarningLogger warningLogger)
+	private Tuple3<String, String, String> adjustNamedIconGroupAndNameIfNeeded(IconType type, String artPack, String groupId, String name,
+			WarningLogger warningLogger)
 	{
-		List<String> allArtPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
-		String artPackToUse;
-		if (!allArtPacks.contains(artPack))
-		{
-			artPackToUse = chooseNewArtPack(allArtPacks, type, typeNameSingular, artPack, groupId, name, warningLogger);
-		}
-		else
-		{
-			artPackToUse = artPack;
-		}
+		String artPackToUse = chooseNewArtPackIfNeeded(type, artPack, groupId, name, warningLogger);
 
 		Map<String, Tuple2<ImageAndMasks, Integer>> imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath)
 				.getIconsWithWidths(type, groupId);
@@ -625,8 +615,8 @@ public class IconDrawer
 			String newGroupId = chooseNewGroupId(ImageCache.getInstance(artPackToUse, customImagesPath).getIconGroupNames(type), groupId);
 			if (newGroupId == null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + typeNameSingular + " image group '" + groupId + "' in art pack '"
-						+ artPack + "'. There are no " + typeNameSingular + " icons, so none will be drawn.");
+				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId
+						+ "' in art pack '" + artPack + "'. There are no " + type.getSingularName() + " icons, so none will be drawn.");
 				return null;
 			}
 			imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath).getIconsWithWidths(type, newGroupId);
@@ -637,7 +627,7 @@ public class IconDrawer
 				assert false;
 				return null;
 			}
-			warningLogger.addWarningMessage("Unable to find the " + typeNameSingular + " image group '" + groupId + "' in art pack '"
+			warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '"
 					+ artPack + "'. The group '" + newGroupId + "' in art pack '" + artPackToUse + "' will be used instead.");
 			groupId = newGroupId;
 		}
@@ -658,8 +648,9 @@ public class IconDrawer
 			}
 			if (name != null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + typeNameSingular + " icon '" + oldName.trim() + "' in art pack '"
-						+ artPack + "'. The icon '" + name.trim() + "' in art pack '" + artPackToUse + "' will be used instead.");
+				warningLogger
+						.addWarningMessage("Unable to find the " + type.getSingularName() + " icon '" + oldName.trim() + "' in art pack '"
+								+ artPack + "'. The icon '" + name.trim() + "' in art pack '" + artPackToUse + "' will be used instead.");
 			}
 		}
 
@@ -669,11 +660,20 @@ public class IconDrawer
 	private void updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger,
 			List<FreeIcon> toRemove)
 	{
-		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(icon.type);
-		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type.toString(), iconsByGroup, warningLogger);
+		String artPackToUse = chooseNewArtPackIfNeeded(icon.type, icon.artPack, icon.groupId, icon.iconName, warningLogger);
+		if (!icon.artPack.equals(artPackToUse))
+		{
+			FreeIcon updated = icon.copyWithArtPack(artPackToUse);
+			freeIcons.replace(icon, updated);
+			icon = updated;
+		}
+
+		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, customImagesPath)
+				.getAllIconGroupsAndMasksForType(icon.type);
+		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type, artPackToUse, iconsByGroup, warningLogger);
 		if (!icon.groupId.equals(newGroupId) && newGroupId != null)
 		{
-			FreeIcon updated = icon.copyWith(newGroupId);
+			FreeIcon updated = icon.copyWithGroupId(newGroupId);
 			freeIcons.replace(icon, updated);
 			icon = updated;
 		}
@@ -752,7 +752,7 @@ public class IconDrawer
 		throw new IllegalArgumentException("Unrecognized icon type for gettling type-level scale: " + type);
 	}
 
-	private String getNewGroupIdIfNeeded(final String groupId, String iconTypeNameForWarnings, ListMap<String, ImageAndMasks> iconsByGroup,
+	private String getNewGroupIdIfNeeded(final String groupId, IconType type, String artPack, ListMap<String, ImageAndMasks> iconsByGroup,
 			WarningLogger warningLogger)
 	{
 		if (!iconsByGroup.containsKey(groupId))
@@ -761,13 +761,12 @@ public class IconDrawer
 			String newGroupId = chooseNewGroupId(iconsByGroup.keySet(), groupId);
 			if (newGroupId == null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
-						+ "' in art pack '" + artPack + "'. There are no " + iconTypeNameForWarnings.toString().toLowerCase()
-						+ " icons, so none will be drawn.");
+				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId
+						+ "' in art pack '" + artPack + "'. There are no " + type.getSingularName() + " icons, so none will be drawn.");
 			}
 			else
 			{
-				warningLogger.addWarningMessage("Unable to find the " + iconTypeNameForWarnings.toLowerCase() + " image group '" + groupId
+				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId
 						+ "' in art pack '" + artPack + "'. The group '" + newGroupId + "' in that art pack will be used instead.");
 			}
 			return newGroupId;
@@ -825,24 +824,52 @@ public class IconDrawer
 		return groupIds.toArray(new String[groupIds.size()])[index];
 	}
 
-	private String chooseNewArtPack(List<String> allArtPacks, IconType type, String typeNameSingular, String oldArtPack, String oldGroupId,
-			String oldIconName, WarningLogger warningLogger)
+	private String chooseNewArtPackIfNeeded(IconType type, String oldArtPack, String oldGroupId, String oldIconName,
+			WarningLogger warningLogger)
 	{
-		// Prefer an art pack that has an image with the same name and group name in hopes that it is the same art pack but renamed.
-		for (String artPack : allArtPacks)
+
+		List<String> allArtPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
+		if (!allArtPacks.contains(oldArtPack))
 		{
-			if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
+			// Prefer an art pack that has an image with the same name and group name in hopes that it is the same art pack but renamed.
+			for (String artPack : allArtPacks)
 			{
-				return artPack;
+				if (StringUtils.isEmpty(oldIconName))
+				{
+					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
+					{
+						warningLogger.addWarningMessage(
+								"Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName()
+										+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead.");
+						return artPack;
+					}
+				}
+				else
+				{
+					if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
+					{
+						warningLogger.addWarningMessage(
+								"Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + " from " + type.getSingularName()
+										+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead.");
+						return artPack;
+					}
+				}
 			}
+
+			int index = Math.abs(oldArtPack.hashCode() % allArtPacks.size());
+			String artPackToUse = allArtPacks.get(index);
+
+			warningLogger.addWarningMessage(
+					"Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + " from " + type.getSingularName()
+							+ " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
+			return allArtPacks.get(index);
+		}
+		else
+		{
+			return oldArtPack;
 		}
 
-		int index = Math.abs(oldArtPack.hashCode() % allArtPacks.size());
-		String artPackToUse = allArtPacks.get(index);
 
-		warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + " from "
-				+ typeNameSingular + " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
-		return allArtPacks.get(index);
 	}
 
 	/**
@@ -1507,14 +1534,6 @@ public class IconDrawer
 
 	private Rectangle convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
 	{
-		// Load the images and masks.
-		ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees);
-		if (treesById == null || treesById.isEmpty())
-		{
-			Logger.println("Trees will not be drawn because no tree images were found.");
-			return null;
-		}
-
 		Rectangle changeBounds = null;
 
 		for (Entry<Integer, CenterTrees> entry : treesByCenter.entrySet())
@@ -1522,7 +1541,21 @@ public class IconDrawer
 			CenterTrees cTrees = entry.getValue();
 			if (cTrees != null && !cTrees.isDormant)
 			{
-				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, "tree", treesById, warningLogger);
+				String artPackToUse = chooseNewArtPackIfNeeded(IconType.trees, cTrees.artPack, cTrees.treeType, null, warningLogger);
+				if (!cTrees.artPack.equals(artPackToUse))
+				{
+					cTrees = cTrees.copyWithArtPack(artPackToUse);
+				}
+
+				// Load the images and masks.
+				ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(cTrees.artPack, customImagesPath)
+						.getAllIconGroupsAndMasksForType(IconType.trees);
+				if (treesById == null || treesById.isEmpty())
+				{
+					continue;
+				}
+
+				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, IconType.trees, cTrees.artPack, treesById, warningLogger);
 				if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)
 				{
 					// Skip since there are no tree images to use.

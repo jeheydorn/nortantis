@@ -32,6 +32,11 @@ public class CenterTrees
 	{
 		return new CenterTrees(artPack, treeType, density, randomSeed, isDormant);
 	}
+	
+	public CenterTrees copyWithArtPack(String artPack)
+	{	
+		return new CenterTrees(artPack, treeType, density, randomSeed, isDormant);
+	}
 
 	public CenterTrees copyWithIsDormant(boolean isDormant)
 	{

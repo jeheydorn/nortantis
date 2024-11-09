@@ -45,16 +45,28 @@ public class CenterIcon
 	}
 
 	@Override
+	public int hashCode()
+	{
+		return Objects.hash(artPack, iconGroupId, iconIndex, iconName, iconType);
+	}
+
+	@Override
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
+		{
 			return true;
+		}
 		if (obj == null)
+		{
 			return false;
+		}
 		if (getClass() != obj.getClass())
+		{
 			return false;
+		}
 		CenterIcon other = (CenterIcon) obj;
-		return Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
-				&& iconType == other.iconType;
+		return Objects.equals(artPack, other.artPack) && Objects.equals(iconGroupId, other.iconGroupId) && iconIndex == other.iconIndex
+				&& Objects.equals(iconName, other.iconName) && iconType == other.iconType;
 	}
 }

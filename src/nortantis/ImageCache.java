@@ -329,6 +329,16 @@ public class ImageCache
 		
 		return getIconGroupFileNames(iconType, groupName).contains(iconName);
 	}
+	
+	public boolean hasGroupName(IconType iconType, String groupName)
+	{
+		Set<String> groupNames = getIconGroupNames(iconType);
+		if (groupNames == null)
+		{
+			return false;
+		}
+		return groupNames.contains(groupName);
+	}
 
 	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)
 	{

@@ -48,6 +48,7 @@ public class Assets
 		return assetsPath;
 	}
 
+	// TODO Cache this in image cache for performance
 	public static List<String> listArtPacks(boolean includeCustomArtPack)
 	{
 		List<String> result = new ArrayList<>();
