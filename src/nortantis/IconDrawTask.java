@@ -56,16 +56,16 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	{
 		if (scaledImageAndMasks == null)
 		{
-			Image scaledImage = ImageCache.getInstance(Assets.getAssetsPath()).getScaledImage(unScaledImageAndMasks.image,
+			// The path passed to ImageCache.getInstance isn't important so long as other calls to getScaledImageByWidth
+			// use the same path, since getScaledImage doesn't load images from disk.
+			Image scaledImage = ImageCache.getInstance(Assets.installedArtPack, null).getScaledImage(unScaledImageAndMasks.image,
 					scaledSize);
-			// The path passed to ImageCache.getInstance insn't important so long as other calls to getScaledImageByWidth
-			// use the same path, since getScaledImageByWidth doesn't load images from disk.
 
-			Image scaledContentMask = ImageCache.getInstance(Assets.getAssetsPath())
+			Image scaledContentMask = ImageCache.getInstance(Assets.installedArtPack, null)
 					.getScaledImage(unScaledImageAndMasks.getOrCreateContentMask(), scaledSize);
 
 			Image scaledShadingMask = null;
-			scaledShadingMask = ImageCache.getInstance(Assets.getAssetsPath())
+			scaledShadingMask = ImageCache.getInstance(Assets.installedArtPack, null)
 					.getScaledImage(unScaledImageAndMasks.getOrCreateShadingMask(), scaledSize);
 
 			IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),

@@ -72,6 +72,7 @@ import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
+import nortantis.util.Tuple2Comp;
 import nortantis.util.Tuple4;
 
 @SuppressWarnings("serial")
@@ -1033,7 +1034,7 @@ public class ThemePanel extends JTabbedPane
 						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
 						{
 							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue()
-									.copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.density, rand.nextLong(), false)));
+									.copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.artPack, cTrees.density, rand.nextLong(), false)));
 						}
 						else
 						{
@@ -1051,14 +1052,23 @@ public class ThemePanel extends JTabbedPane
 					continue;
 				}
 
-				String treeType = getMostCommonTreeType(trees);
+				Tuple2Comp<String, String> tuple = getMostCommonTreeType(trees);
+				if (tuple == null)
+				{
+					// This shouldn't happen because we checked that trees was not null or empty.
+					assert false;
+					continue;
+				}
+				String artPack = tuple.getFirst();
+				String treeType = tuple.getSecond();
+				assert artPack != null;
 				assert treeType != null;
 
 				double density = trees.stream().mapToDouble(t -> t.density).average().getAsDouble();
 
 				assert density > 0;
 
-				CenterTrees cTrees = new CenterTrees(treeType, density, rand.nextLong());
+				CenterTrees cTrees = new CenterTrees(artPack, treeType, density, rand.nextLong());
 				CenterEdit cEdit = mainWindow.edits.centerEdits.get(centerIndex);
 				mainWindow.edits.centerEdits.put(centerIndex, cEdit.copyWithTrees(cTrees));
 			}
@@ -1077,7 +1087,7 @@ public class ThemePanel extends JTabbedPane
 		// This is a bit of a hack, but I only call innerRepositionMountainsForNewScaleWithIconDrawer when iconDrawer and graph are not null
 		// rather than always call it in doWhenMapIsReadyForInteractions because for many drawing cases the graph and icon drawer are
 		// available, and for those cases I don't want to do this step later because it causes trouble with undo points (the changes
-		// From this method get mixed in with an undo point from a later actions from the user).
+		// from this method get mixed in with an undo point from a later actions from the user).
 		IconDrawer iconDrawer = mainWindow.updater.mapParts.iconDrawer;
 		WorldGraph graph = mainWindow.updater.mapParts.graph;
 		if (iconDrawer != null && graph != null)
@@ -1102,16 +1112,15 @@ public class ThemePanel extends JTabbedPane
 
 	private void innerRepositionMountainsForNewScaleWithIconDrawer(WorldGraph graph, IconDrawer iconDrawer)
 	{
-
 		FreeIconCollection freeIcons = mainWindow.edits.freeIcons;
 		double resolution = mainWindow.displayQualityScale;
 		double mountainScale = getScaleForSliderValue(mountainScaleSlider.getValue());
-		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(mainWindow.customImagesPath)
-				.getAllIconGroupsAndMasksForType(IconType.mountains);
 		freeIcons.doWithLock(() ->
 		{
 			for (FreeIcon icon : freeIcons.iterateAnchoredNonTreeIcons())
 			{
+				ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, mainWindow.customImagesPath)
+						.getAllIconGroupsAndMasksForType(IconType.mountains);
 				if (icon.type == IconType.mountains)
 				{
 					if (!iconsByGroup.containsKey(icon.groupId))
@@ -1149,10 +1158,10 @@ public class ThemePanel extends JTabbedPane
 
 	}
 
-	private String getMostCommonTreeType(List<FreeIcon> trees)
+	private Tuple2Comp<String, String> getMostCommonTreeType(List<FreeIcon> trees)
 	{
-		Counter<String> counter = new Counter<>();
-		trees.stream().forEach(tree -> counter.incrementCount(tree.groupId));
+		Counter<Tuple2Comp<String, String>> counter = new Counter<>();
+		trees.stream().forEach(tree -> counter.incrementCount(new Tuple2Comp<>(tree.artPack, tree.groupId)));
 		return counter.argmax();
 	}
 

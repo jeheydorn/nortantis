@@ -38,7 +38,6 @@ public class CenterIcon
 		this.iconName = iconName;
 	}
 	
-	// TODO Check if calls to this should also pass in art pack
 	public CenterIcon copyWithIconGroupId(String iconGroupId)
 	{
 		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName);

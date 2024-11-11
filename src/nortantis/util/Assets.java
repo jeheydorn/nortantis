@@ -40,22 +40,28 @@ public class Assets
 {
 	private final static String assetsPath = "assets";
 	public final static String customArtPack = "custom";
-	private final static String artPacksFolder = "art packs";
-	public final static String installedArtPack = "nortantis";
+	public final static String artPacksFolder = "art packs";
+	public final static String installedArtPack = "nortantis";	
+	private static List<String> artPacksInArtPacksFolderCache;
+
 
 	public static String getAssetsPath()
 	{
 		return assetsPath;
 	}
+	
+	public static String getInstalledArtPackPath()
+	{
+		return Paths.get(assetsPath, "installed art pack").toString();
+	}
 
-	// TODO Cache this in image cache for performance
 	public static List<String> listArtPacks(boolean includeCustomArtPack)
 	{
 		List<String> result = new ArrayList<>();
 		result.add(installedArtPack);
 
 		// Add installed art packs.
-		result.addAll(listNonEmptySubFolders(Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder).toString()));
+		result.addAll(getArtPacksFromArtPackFolderCached());
 
 		// Add custom images folder if the map has one.
 		if (includeCustomArtPack)
@@ -65,6 +71,36 @@ public class Assets
 
 		result.sort(String::compareTo);
 		return result;
+	}
+	
+	public static boolean artPackExists(String artPack, String customImagesFolder)
+	{
+		return listArtPacks(!StringUtils.isEmpty(customImagesFolder)).contains(artPack);
+	}
+	
+	
+	private static synchronized List<String> getArtPacksFromArtPackFolderCached()
+	{
+		if (artPacksInArtPacksFolderCache == null)
+		{
+			artPacksInArtPacksFolderCache = listArtPacksFromArtPackFolder();
+		}
+		return artPacksInArtPacksFolderCache;
+	}
+	
+	private static List<String> listArtPacksFromArtPackFolder()
+	{
+		List<String> result = new ArrayList<>();
+		// Add installed art packs.
+		result.addAll(Assets.listNonEmptySubFolders(Paths.get(OSHelper.getAppDataPath().toString(), Assets.artPacksFolder).toString()));
+
+		result.sort(String::compareTo);
+		return result;
+	}
+	
+	public static synchronized void clearCache()
+	{
+		artPacksInArtPacksFolderCache = null;
 	}
 
 	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
@@ -110,7 +146,7 @@ public class Assets
 
 		if (artPack.equals(installedArtPack))
 		{
-			return Paths.get(getAssetsPath());
+			return Paths.get(getInstalledArtPackPath());
 		}
 
 		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder, artPack);

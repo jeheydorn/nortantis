@@ -138,7 +138,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				JOptionPane.showMessageDialog(null,
 						"Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion
-								+ "\nOS Name: " + System.getProperty("os.name") + "\nAssets path: " + Assets.getAssetsPath()
+								+ "\nOS Name: " + System.getProperty("os.name")
 								+ "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
 						"Error", JOptionPane.ERROR_MESSAGE);
 			}

@@ -496,7 +496,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 
 			if (setName == null || setName.isEmpty())
 			{
-				Set<String> cityTypes = ImageCache.getInstance(Assets.getAssetsPath()).getIconGroupNames(IconType.cities);
+				Set<String> cityTypes = ImageCache.getInstance(Assets.installedArtPack, null).getIconGroupNames(IconType.cities);
 				if (cityTypes.size() > 0)
 				{
 					setName = cityTypes.iterator().next();
@@ -696,14 +696,14 @@ public class OldPropertyBasedMapSettings implements Serializable
 							int iconIndex = (int) (long) iconObj.get("iconIndex");
 							String iconName = (String) iconObj.get("iconName");
 							CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
-							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+							icon = new CenterIcon(iconType, Assets.installedArtPack, iconGroupId, iconIndex);
 							if (iconName != null && !iconName.isEmpty())
 							{
-								icon = new CenterIcon(iconType, iconGroupId, iconName);
+								icon = new CenterIcon(iconType, Assets.installedArtPack, iconGroupId, iconName);
 							}
 							else
 							{
-								icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+								icon = new CenterIcon(iconType, Assets.installedArtPack, iconGroupId, iconIndex);
 							}
 						}
 					}
@@ -716,7 +716,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 							String treeType = (String) treesObj.get("treeType");
 							double density = (Double) treesObj.get("density");
 							long randomSeed = (Long) treesObj.get("randomSeed");
-							trees = new CenterTrees(treeType, density, randomSeed);
+							trees = new CenterTrees(treeType, Assets.installedArtPack, density, randomSeed);
 						}
 					}
 

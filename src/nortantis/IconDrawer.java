@@ -84,6 +84,7 @@ public class IconDrawer
 	private double resolutionScale;
 	private double decorationScale;
 	private String customImagesPath;
+	private String artPackForNewMap;
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
@@ -91,6 +92,7 @@ public class IconDrawer
 		this.rand = rand;
 		this.cityIconTypeForNewMaps = settings.cityIconTypeName;
 		this.customImagesPath = settings.customImagesPath;
+		this.artPackForNewMap = settings.artPack;
 		this.resolutionScale = settings.resolution;
 
 		if (!settings.edits.isInitialized())
@@ -367,7 +369,7 @@ public class IconDrawer
 		}
 		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, type);
 		double scale = scaledWidth / getBaseWidthOrHeight(type, 0);
-		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, null, groupId, cEdit.icon.iconIndex, cEdit.index);
+		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, cEdit.icon.artPack, groupId, cEdit.icon.iconIndex, cEdit.index);
 		Rectangle changeBounds = null;
 		IconDrawTask drawTask = toIconDrawTask(icon);
 		if (!isContentBottomTouchingWater(drawTask))
@@ -831,6 +833,10 @@ public class IconDrawer
 		List<String> allArtPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
 		if (!allArtPacks.contains(oldArtPack))
 		{
+			// Prefer the custom art pack first, then ones in the art packs folder, then the installed one last.
+			allArtPacks = new ArrayList<>(allArtPacks);
+			Collections.reverse(allArtPacks);
+
 			// Prefer an art pack that has an image with the same name and group name in hopes that it is the same art pack but renamed.
 			for (String artPack : allArtPacks)
 			{
@@ -838,8 +844,8 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
 					{
-						warningLogger.addWarningMessage(
-								"Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName()
+						warningLogger
+								.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName()
 										+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead.");
 						return artPack;
 					}
@@ -848,9 +854,9 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
 					{
-						warningLogger.addWarningMessage(
-								"Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + " from " + type.getSingularName()
-										+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead.");
+						warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName
+								+ " from " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack
+								+ "' will be used instead.");
 						return artPack;
 					}
 				}
@@ -1155,14 +1161,14 @@ public class IconDrawer
 	}
 
 	/**
-	 * Adds icon draw tasks to draw cities. Side effect � if a city is placed where it cannot be drawn, this will un-mark it as a city.
+	 * Adds icon draw tasks to draw cities. Side effect: if a city is placed where it cannot be drawn, this will un-mark it as a city.
 	 * 
 	 * @return IconDrawTask of each city icon added. Needed to avoid drawing text on top of cities.
 	 */
 	public List<IconDrawTask> addOrUnmarkCities()
 	{
-		Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(imagesPath).getIconsWithWidths(IconType.cities,
-				cityIconTypeForNewMaps);
+		Map<String, Tuple2<ImageAndMasks, Integer>> cityIcons = ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getIconsWithWidths(IconType.cities, cityIconTypeForNewMaps);
 		if (cityIcons.isEmpty())
 		{
 			Logger.println("Cities will not be drawn because there are no city icons of type '" + cityIconTypeForNewMaps + "'.");
@@ -1178,7 +1184,7 @@ public class IconDrawer
 			if (c.isCity)
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, cityIconTypeForNewMaps, cityName, c.index);
+				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForNewMap, cityIconTypeForNewMaps, cityName, c.index);
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -1204,7 +1210,7 @@ public class IconDrawer
 	{
 		// Maps mountain range ids (the ids in the file names) to list of
 		// mountain images and their masks.
-		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(imagesPath)
+		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(artPackForNewMap, customImagesPath)
 				.getAllIconGroupsAndMasksForType(IconType.mountains);
 
 		if (mountainImagesById.isEmpty())
@@ -1216,7 +1222,8 @@ public class IconDrawer
 		// images and their masks.
 		// The hill image file names must use the same ids as the mountain
 		// ranges.
-		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.hills);
+		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.hills);
 
 		if (hillImagesById.isEmpty() && !mountainImagesById.isEmpty())
 		{
@@ -1274,7 +1281,8 @@ public class IconDrawer
 						double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.mountains, 0);
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
-						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, null, fileNameRangeId, i, c.index);
+						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForNewMap, fileNameRangeId, i,
+								c.index);
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1310,7 +1318,7 @@ public class IconDrawer
 							double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
 							double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
 
-							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, null, fileNameRangeId, i, c.index);
+							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForNewMap, fileNameRangeId, i, c.index);
 
 							IconDrawTask task = toIconDrawTask(icon);
 
@@ -1344,7 +1352,8 @@ public class IconDrawer
 
 	public void addSandDunes()
 	{
-		ListMap<String, ImageAndMasks> sandGroups = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.sand);
+		ListMap<String, ImageAndMasks> sandGroups = ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.sand);
 		if (sandGroups == null || sandGroups.isEmpty())
 		{
 			Logger.println("Sand dunes will not be drawn because no sand images were found.");
@@ -1385,7 +1394,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = Math.abs(rand.nextInt());
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, null, groupId, i, c.index);
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForNewMap, groupId, i, c.index);
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -1420,7 +1429,7 @@ public class IconDrawer
 						{
 							if (canGenerateTreesOnCenter(c))
 							{
-								treesByCenter.put(c.index, new CenterTrees(iconGroupId, forest.density, c.treeSeed));
+								treesByCenter.put(c.index, new CenterTrees(artPackForNewMap, iconGroupId, forest.density, c.treeSeed));
 							}
 						}
 					}
@@ -1441,7 +1450,7 @@ public class IconDrawer
 					{
 						if (canGenerateTreesOnCenter(c))
 						{
-							treesByCenter.put(c.index, new CenterTrees(iconGroupId, forest.density, c.treeSeed));
+							treesByCenter.put(c.index, new CenterTrees(artPackForNewMap, iconGroupId, forest.density, c.treeSeed));
 						}
 					}
 				}
@@ -1595,10 +1604,10 @@ public class IconDrawer
 		Rectangle changeBounds = getAnchoredTreeIconBoundsAt(center.index);
 		freeIcons.clearTrees(center.index);
 
-		List<ImageAndMasks> unscaledImages = ImageCache.getInstance(imagesPath).getAllIconGroupsAndMasksForType(IconType.trees)
-				.get(cTrees.treeType);
+		List<ImageAndMasks> unscaledImages = ImageCache.getInstance(cTrees.artPack, customImagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.trees).get(cTrees.treeType);
 		Random rand = new Random(cTrees.randomSeed);
-		addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.treeType);
+		addTreeNearLocation(graph, unscaledImages, center.loc, cTrees.density, center, rand, cTrees.artPack, cTrees.treeType);
 
 		// Draw trees at the neighboring corners too.
 		// Note that corners use their own Random instance because the random
@@ -1608,7 +1617,7 @@ public class IconDrawer
 		{
 			if (shouldCenterDrawTreesForCorner(center, corner, additionalCentersThatWillHaveTrees))
 			{
-				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.treeType);
+				addTreeNearLocation(graph, unscaledImages, corner.loc, cTrees.density, center, rand, cTrees.artPack, cTrees.treeType);
 			}
 		}
 
@@ -1667,7 +1676,7 @@ public class IconDrawer
 
 	private String getGroupIdForForestType(ForestType forest)
 	{
-		Set<String> groups = ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.trees);
+		Set<String> groups = ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupNames(IconType.trees);
 		String keyWord = forest.treeType.toString().toLowerCase();
 
 		if (groups == null || groups.isEmpty())
@@ -1690,11 +1699,11 @@ public class IconDrawer
 		}
 
 		// When all else fails, arbitrarily pick one of the tree types.
-		return chooseNewGroupId(ImageCache.getInstance(imagesPath).getIconGroupNames(IconType.trees), keyWord);
+		return chooseNewGroupId(ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupNames(IconType.trees), keyWord);
 	}
 
 	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
-			Random rand, String groupId)
+			Random rand, String artPack, String groupId)
 	{
 		// Convert the forestDensity into an integer number of trees to draw
 		// such that the expected
@@ -1716,7 +1725,7 @@ public class IconDrawer
 			x += rand.nextGaussian() * scale;
 			y += rand.nextGaussian() * scale;
 
-			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, null, groupId, index, center.index,
+			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, artPack, groupId, index, center.index,
 					forestDensity);
 
 			if (!isContentBottomTouchingWater(icon))
@@ -1741,8 +1750,12 @@ public class IconDrawer
 		double widthFromFileName = 0;
 		if (icon.type == IconType.cities || icon.type == IconType.decorations)
 		{
-			Map<String, Tuple2<ImageAndMasks, Integer>> imagesInGroup = ImageCache.getInstance(imagesPath).getIconsWithWidths(icon.type,
-					icon.groupId);
+			if (!Assets.artPackExists(icon.artPack, customImagesPath))
+			{
+				return null;
+			}
+			Map<String, Tuple2<ImageAndMasks, Integer>> imagesInGroup = ImageCache.getInstance(icon.artPack, customImagesPath)
+					.getIconsWithWidths(icon.type, icon.groupId);
 			if (imagesInGroup == null || imagesInGroup.isEmpty() || !imagesInGroup.containsKey(icon.iconName)
 					|| imagesInGroup.get(icon.iconName) == null)
 			{
@@ -1751,7 +1764,7 @@ public class IconDrawer
 			widthFromFileName = imagesInGroup.get(icon.iconName).getSecond();
 		}
 
-		return icon.toIconDrawTask(imagesPath, resolutionScale, typeLevelScale, getBaseWidthOrHeight(icon.type, widthFromFileName));
+		return icon.toIconDrawTask(customImagesPath, resolutionScale, typeLevelScale, getBaseWidthOrHeight(icon.type, widthFromFileName));
 	}
 
 	private boolean isContentBottomTouchingWater(IconDrawTask iconTask)

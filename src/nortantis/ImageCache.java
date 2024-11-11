@@ -22,6 +22,7 @@ import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 
@@ -354,5 +355,7 @@ public class ImageCache
 	public static void clear()
 	{
 		instances.clear();
+		// Also clear the assets cache so that any change to the list of art packs becomes visible.
+		Assets.clearCache();
 	}
 }

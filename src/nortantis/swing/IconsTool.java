@@ -28,6 +28,7 @@ import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
 
+import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.DebugFlags;
@@ -132,6 +133,9 @@ public class IconsTool extends EditorTool
 				handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
 			}
 		});
+		organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '" + Assets.installedArtPack
+				+ "' selects art that comes with Nortantis. '" + Assets.customArtPack + "' selects images from this map's Custom Images Folder.",
+				artPackComboBox);
 
 		// Tools
 		{
@@ -374,7 +378,6 @@ public class IconsTool extends EditorTool
 
 		createOrUpdateButtonsForCities(null, settings.artPack, settings.customImagesPath);
 		createOrUpdateDecorationButtons(null, settings.artPack, settings.customImagesPath);
-		updateArtPackOptions(settings.customImagesPath);
 
 		// Trigger re-creation of image previews
 		loadSettingsIntoGUI(settings, false, true, false);
@@ -512,8 +515,8 @@ public class IconsTool extends EditorTool
 
 	private void updateArtPackOptions(String customImagesPath)
 	{
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(isMoving), (String) artPackComboBox.getSelectedItem(),
-				false);
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)),
+				(String) artPackComboBox.getSelectedItem(), false);
 	}
 
 	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String artPack, String customImagesPath)
@@ -1427,6 +1430,16 @@ public class IconsTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
 			boolean willDoImagesRefresh)
 	{
+		updateArtPackOptions(settings.customImagesPath);
+		if (Assets.artPackExists(settings.artPack, settings.customImagesPath))
+		{
+			artPackComboBox.setSelectedItem(settings.artPack);
+		}
+		else
+		{
+			artPackComboBox.setSelectedItem(Assets.installedArtPack);
+		}
+
 		updateTypePanels();
 		// Skip updating icon previews now if there will be an images refresh in
 		// a moment, because that will handle it, and because the
@@ -1441,6 +1454,7 @@ public class IconsTool extends EditorTool
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
+		assert !StringUtils.isEmpty(settings.artPack);
 	}
 
 	@Override

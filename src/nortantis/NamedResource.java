@@ -16,7 +16,9 @@ public class NamedResource implements Serializable
 	{
 		super();
 		this.name = fileOrFolderName;
+		assert name != null;
 		this.artPack = artPack;
+		assert artPack != null;
 	}
 	
 	@SuppressWarnings("unchecked")
