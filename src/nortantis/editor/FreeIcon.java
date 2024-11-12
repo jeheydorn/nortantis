@@ -234,7 +234,7 @@ public class FreeIcon
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(centerIndex, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
+		return Objects.hash(artPack, centerIndex, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
 	}
 
 	@Override
@@ -253,8 +253,9 @@ public class FreeIcon
 			return false;
 		}
 		FreeIcon other = (FreeIcon) obj;
-		return Objects.equals(centerIndex, other.centerIndex) && Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density)
-				&& Objects.equals(groupId, other.groupId) && iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
+		return Objects.equals(artPack, other.artPack) && Objects.equals(centerIndex, other.centerIndex)
+				&& Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density) && Objects.equals(groupId, other.groupId)
+				&& iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
 				&& Objects.equals(locationResolutionInvariant, other.locationResolutionInvariant)
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
@@ -262,9 +263,11 @@ public class FreeIcon
 	@Override
 	public String toString()
 	{
-		return "FreeIcon [type=" + type + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName=" + iconName
-				+ ", locationResolutionInvariant=" + locationResolutionInvariant + ", scale=" + scale + ", centerIndex=" + centerIndex
-				+ ", density=" + density + "]";
+		return "FreeIcon [type=" + type + ", artPack=" + artPack + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName="
+				+ iconName + ", locationResolutionInvariant=" + locationResolutionInvariant + ", scale=" + scale + ", centerIndex="
+				+ centerIndex + ", density=" + density + "]";
 	}
+
+
 
 }

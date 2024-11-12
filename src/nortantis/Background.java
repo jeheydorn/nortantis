@@ -381,7 +381,13 @@ public class Background
 		Painter p = result.createPainter();
 		p.drawImage(map, borderWidthScaled, borderWidthScaled);
 
-		Path allBordersPath = Paths.get(Assets.getArtPackPath(borderResouce.artPack, customImagesPath).toString(), "borders");
+		Path artPackPath = Assets.getArtPackPath(borderResouce.artPack, customImagesPath);
+		if (artPackPath == null)
+		{
+			throw new RuntimeException("Unable to draw the border because the selected border type, '" + borderResouce.name
+					+ "', is from the art pack '" + borderResouce.artPack + "', which does not exist.");
+		}
+		Path allBordersPath = Paths.get(artPackPath.toString(), "borders");
 		Path borderPath = Paths.get(allBordersPath.toString(), borderResouce.name);
 		if (!Assets.exists(borderPath.toString()))
 		{

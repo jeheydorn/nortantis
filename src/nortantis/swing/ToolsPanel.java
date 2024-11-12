@@ -274,10 +274,18 @@ public class ToolsPanel extends JPanel
 
 	public void handleImagesRefresh(MapSettings settings)
 	{
-		// Cause the Icons tool to update its image radio buttons
+		// Cause the Icons tool to update its image previews
 		for (EditorTool tool : tools)
 		{
 			tool.handleImagesRefresh(settings);
+		}
+	}
+	
+	public void handleCustomImagesPathChanged(String customImagesPath)
+	{
+		for (EditorTool tool : tools)
+		{
+			tool.handleCustomImagesPathChanged(customImagesPath);
 		}
 	}
 

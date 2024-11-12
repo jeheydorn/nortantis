@@ -844,9 +844,9 @@ public class IconDrawer
 				{
 					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
 					{
-						warningLogger
-								.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName()
-										+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead.");
+						warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the "
+								+ type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack
+								+ "' will be used instead because it has the same image group folder name.");
 						return artPack;
 					}
 				}
@@ -855,8 +855,8 @@ public class IconDrawer
 					if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
 					{
 						warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName
-								+ " from " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack
-								+ "' will be used instead.");
+								+ "' from " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack
+								+ "' will be used instead because it has the same image group folder and image name.");
 						return artPack;
 					}
 				}
@@ -865,9 +865,19 @@ public class IconDrawer
 			int index = Math.abs(oldArtPack.hashCode() % allArtPacks.size());
 			String artPackToUse = allArtPacks.get(index);
 
-			warningLogger.addWarningMessage(
-					"Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + " from " + type.getSingularName()
-							+ " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
+			if (StringUtils.isEmpty(oldIconName))
+			{
+				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the "
+						+ type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPackToUse
+						+ "' will be used instead.");
+			}
+			else
+			{
+				warningLogger.addWarningMessage(
+						"Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + "' from " + type.getSingularName()
+								+ " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
+			}
+			
 			return allArtPacks.get(index);
 		}
 		else
@@ -1184,7 +1194,8 @@ public class IconDrawer
 			if (c.isCity)
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForNewMap, cityIconTypeForNewMaps, cityName, c.index);
+				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForNewMap, cityIconTypeForNewMaps,
+						cityName, c.index);
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -1318,7 +1329,8 @@ public class IconDrawer
 							double widthBeforeTypeLevelScaling = findNewHillWidthBeforeTypeLevelScaling(c);
 							double scale = widthBeforeTypeLevelScaling / getBaseWidthOrHeight(IconType.hills, 0);
 
-							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForNewMap, fileNameRangeId, i, c.index);
+							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForNewMap, fileNameRangeId,
+									i, c.index);
 
 							IconDrawTask task = toIconDrawTask(icon);
 

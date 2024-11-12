@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
@@ -474,8 +475,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (warningMessages != null && warningMessages.size() > 0)
 				{
-					JOptionPane.showMessageDialog(MainWindow.this, "<html>" + String.join("<br>", warningMessages) + "</html>",
-							"Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+					JTextArea textArea = new JTextArea(String.join("\n\n", warningMessages));
+					textArea.setEditable(false);
+					textArea.setLineWrap(true);
+					textArea.setWrapStyleWord(true);
+					textArea.setCaretPosition(0);
+					textArea.setSelectionStart(0);
+					textArea.setSelectionEnd(0);
+					textArea.setBorder(BorderFactory.createEmptyBorder());
+
+					JScrollPane scrollPane = new JScrollPane(textArea);
+					scrollPane.setPreferredSize(new Dimension(600, 350));
+
+					JOptionPane.showMessageDialog(MainWindow.this, scrollPane, "Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+
 				}
 
 				boolean isChange = settingsHaveUnsavedChanges();
@@ -618,10 +631,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					openMap(fileChooser.getSelectedFile().getAbsolutePath());
 
-					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
+					if (openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
 						JOptionPane.showMessageDialog(MainWindow.this, FilenameUtils.getName(openSettingsFilePath.toString())
-								+ " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
+								+ " is an older format '.properties' file. When you save, it will be converted to the newer format, a '"
 								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
 								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot);
@@ -1235,6 +1248,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		CustomImagesDialog dialog = new CustomImagesDialog(this, customImagesPath, (value) ->
 		{
 			customImagesPath = value;
+			loadSettingsIntoGUI(getSettingsFromGUI(false));
+			toolsPanel.handleCustomImagesPathChanged(customImagesPath);
 			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
 			updater.createAndShowMapFull(() -> handleImagesRefresh());
 		});

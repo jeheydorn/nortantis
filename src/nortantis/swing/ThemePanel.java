@@ -1034,7 +1034,7 @@ public class ThemePanel extends JTabbedPane
 						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
 						{
 							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue()
-									.copyWithTrees(new CenterTrees(cTrees.treeType, cTrees.artPack, cTrees.density, rand.nextLong(), false)));
+									.copyWithTrees(new CenterTrees(cTrees.artPack, cTrees.treeType, cTrees.density, rand.nextLong(), false)));
 						}
 						else
 						{
@@ -1565,7 +1565,6 @@ public class ThemePanel extends JTabbedPane
 		colorizeLandCheckbox.addItemListener(colorizeCheckboxListener);
 		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
 		rdbtnFractal.setSelected(settings.generateBackground);
-		updateBackgroundAndRegionFieldStates();
 
 		// Only set radio buttons selected if there was a change in case doing so causes change listeners to fire.
 		if (!assetsRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.Assets)
@@ -1595,6 +1594,8 @@ public class ThemePanel extends JTabbedPane
 		{
 			backgroundSeedTextField.setText(String.valueOf(settings.backgroundRandomSeed));
 		}
+		
+		updateBackgroundAndRegionFieldStates();
 
 		oceanDisplayPanel.setColor(AwtFactory.unwrap(settings.oceanColor));
 		landDisplayPanel.setColor(AwtFactory.unwrap(settings.landColor));

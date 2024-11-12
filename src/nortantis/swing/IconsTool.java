@@ -133,8 +133,9 @@ public class IconsTool extends EditorTool
 				handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
 			}
 		});
-		organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '" + Assets.installedArtPack
-				+ "' selects art that comes with Nortantis. '" + Assets.customArtPack + "' selects images from this map's Custom Images Folder.",
+		organizer.addLabelAndComponent("Art pack:",
+				"For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
+						+ Assets.customArtPack + "' selects images from this map's Custom Images Folder.",
 				artPackComboBox);
 
 		// Tools
@@ -479,8 +480,13 @@ public class IconsTool extends EditorTool
 
 						for (int i : new Range(previewImages.size()))
 						{
-							selector.getIconNamesAndButtons(groupId).get(i).getSecond()
-									.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+							// Checking for null because I hit a crash once when the below returned null. There didn't seem to be any
+							// functional impact from the crash though.
+							if (selector.getIconNamesAndButtons(groupId) != null)
+							{
+								selector.getIconNamesAndButtons(groupId).get(i).getSecond()
+										.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+							}
 						}
 					}
 				};
@@ -1470,5 +1476,14 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onBeforeUndoRedo()
 	{
+	}
+
+	@Override
+	public void handleCustomImagesPathChanged(String customImagesPath)
+	{
+		if (!StringUtils.isEmpty(customImagesPath))
+		{
+			artPackComboBox.setSelectedItem(Assets.customArtPack);
+		}
 	}
 }

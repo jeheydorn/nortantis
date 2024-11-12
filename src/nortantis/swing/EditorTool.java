@@ -272,4 +272,9 @@ public abstract class EditorTool
 	public void handleImagesRefresh(MapSettings settings)
 	{
 	}
+	
+	public void handleCustomImagesPathChanged(String customImagesPath)
+	{
+		
+	}
 }

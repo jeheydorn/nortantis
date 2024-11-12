@@ -328,7 +328,7 @@ public class ImageCache
 			return false;
 		}
 		
-		return getIconGroupFileNames(iconType, groupName).contains(iconName);
+		return getIconGroupFileNamesWithoutWidthOrExtension(iconType, groupName).contains(iconName);
 	}
 	
 	public boolean hasGroupName(IconType iconType, String groupName)

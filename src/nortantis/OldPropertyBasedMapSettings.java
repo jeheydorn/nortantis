@@ -716,7 +716,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 							String treeType = (String) treesObj.get("treeType");
 							double density = (Double) treesObj.get("density");
 							long randomSeed = (Long) treesObj.get("randomSeed");
-							trees = new CenterTrees(treeType, Assets.installedArtPack, density, randomSeed);
+							trees = new CenterTrees(Assets.installedArtPack, treeType, density, randomSeed);
 						}
 					}
 

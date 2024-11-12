@@ -51,7 +51,7 @@ import nortantis.util.Tuple2;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "2.9";
+	public static final String currentVersion = "2.91";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -937,7 +937,7 @@ public class MapSettings implements Serializable
 	 */
 	private void runConversionOnBorderType()
 	{
-		if (isVersionGreaterThanOrEqualTo(version, "2.9"))
+		if (isVersionGreaterThanOrEqualTo(version, "2.91"))
 		{
 			return;
 		}
@@ -955,7 +955,7 @@ public class MapSettings implements Serializable
 	 */
 	private void runConversionOnBackgroundTextureImagePaths()
 	{
-		if (isVersionGreaterThanOrEqualTo(version, "2.9"))
+		if (isVersionGreaterThanOrEqualTo(version, "2.91"))
 		{
 			return;
 		}
@@ -970,18 +970,22 @@ public class MapSettings implements Serializable
 			// It should be absolute.
 			if (new File(backgroundTextureImage).isAbsolute())
 			{
-				String oldExampleTexturesPath;
+				String oldExampleTexturesInstalledPath;
 				if (OSHelper.isLinux())
 				{
-					oldExampleTexturesPath = "/opt/nortantis/lib/app/assets/example textures";
+					oldExampleTexturesInstalledPath = "/opt/nortantis/lib/app/assets/example textures";
 				}
 				else
 				{
 					// Windows
-					oldExampleTexturesPath = "C:\\Program Files\\Nortantis\\app\\assets\\example textures";
+					oldExampleTexturesInstalledPath = "C:\\Program Files\\Nortantis\\app\\assets\\example textures";
 				}
 
-				if (backgroundTextureImage.startsWith(oldExampleTexturesPath))
+				// This path only needs checked for maps that were created when running from source, such as my unit test maps.
+				String oldExampleTexturesRunningFromSourcePath = Paths.get("assets", "example textures").toAbsolutePath().toString();
+
+				if (backgroundTextureImage.startsWith(oldExampleTexturesInstalledPath)
+						|| backgroundTextureImage.startsWith(oldExampleTexturesRunningFromSourcePath))
 				{
 					backgroundTextureResource = new NamedResource(Assets.installedArtPack, FilenameUtils.getName(backgroundTextureImage));
 					backgroundTextureSource = TextureSource.Assets;
@@ -1230,8 +1234,8 @@ public class MapSettings implements Serializable
 			}
 			double density = (double) iconObj.get("density");
 
-			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName,
-					centerIndex, density));
+			result.addOrReplace(
+					new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density));
 		}
 
 		return result;
@@ -1341,6 +1345,7 @@ public class MapSettings implements Serializable
 		version = "0.0";
 		randomSeed = old.randomSeed;
 		resolution = old.resolution;
+		artPack = Assets.installedArtPack;
 		oceanEffectsLevel = old.oceanEffectsLevel;
 		concentricWaveCount = old.concentricWaveCount;
 		oceanWavesType = old.oceanEffect;
