@@ -1,4 +1,4 @@
-To run the GUI, run RunSwing.java. For a command line interface, run MapCreator.java.
+To run the GUI, run MainWindow.java.
 
 
 This project was built from a java verson of Amit Patel's island generator. The
