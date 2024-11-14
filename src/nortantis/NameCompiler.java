@@ -71,12 +71,10 @@ public class NameCompiler
 		this.nounVerbPairs = capitalizeFirstLetters(this.nounVerbPairs);
 		nounAdjectivePairs = null;
 
-
 		this.r = r;
 		counter = new Counter<>();
 		counter.addCount("adjectives", this.nounAdjectivePairs.size());
 		counter.addCount("verbs", this.nounVerbPairs.size());
-
 
 	}
 
@@ -194,7 +192,6 @@ public class NameCompiler
 		{
 			return verb.substring(0, verb.length() - 2) + "ing";
 		}
-
 
 		if (verb.endsWith("aid"))
 		{

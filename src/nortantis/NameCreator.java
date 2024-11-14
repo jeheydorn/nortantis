@@ -33,7 +33,7 @@ public class NameCreator
 		this.namesGenerated = new HashSet<>();
 		processBooks(settings.books);
 	}
-	
+
 	private void processBooks(Set<String> books)
 	{
 		List<String> placeNames = new ArrayList<>();
@@ -116,7 +116,6 @@ public class NameCreator
 		throw new NotEnoughNamesException();
 
 	}
-	
 
 	public static List<CityType> findCityTypeFromCityFileName(String cityFileNameNoExtension)
 	{
@@ -145,7 +144,7 @@ public class NameCreator
 
 		return result;
 	}
-	
+
 	/**
 	 * Generate a name of a specified type.
 	 * 
@@ -343,7 +342,7 @@ public class NameCreator
 			throw new UnsupportedOperationException("Unknown text type: " + type);
 		}
 	}
-	
+
 	private String getOtherMountainNameFormat(OtherMountainsType mountainType)
 	{
 		switch (mountainType)
@@ -370,7 +369,7 @@ public class NameCreator
 
 		return ProbabilityHelper.sampleUniform(r, types);
 	}
-	
+
 	private String getRiverNameFormat(RiverType riverType)
 	{
 		String format;
@@ -389,7 +388,7 @@ public class NameCreator
 
 		return format;
 	}
-	
+
 	/**
 	 * Generates a name of the specified type. This is for when the user adds new text to the map. It is not used when the map text is first
 	 * generated.
@@ -433,7 +432,6 @@ public class NameCreator
 			return "name";
 		}
 	}
-	
 
 	/**
 	 * Adds text that the user is manually creating.

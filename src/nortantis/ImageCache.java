@@ -92,13 +92,13 @@ public class ImageCache
 		{
 			pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
 		}
-		
+
 		// Probably not necessary, but I don't want to take a chance of accidentally creating multiple ImageCache instances.
 		String normalizedPath = FilenameUtils.normalize(pathWithHomeReplaced);
-		
+
 		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath));
 	}
-	
+
 	public synchronized static ImageCache getInstance(String artPack, String customImagesFolder)
 	{
 		Path artPackPath = Assets.getArtPackPath(artPack, customImagesFolder);
@@ -187,7 +187,6 @@ public class ImageCache
 			Image icon;
 
 			icon = getImageFromFile(path);
-
 
 			result.add(new ImageAndMasks(icon, iconType));
 		}
@@ -320,17 +319,17 @@ public class ImageCache
 		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
 				() -> loadIconGroupFileNames(iconType, groupNameToUse));
 	}
-	
+
 	public boolean hasNamedIcon(IconType iconType, String groupName, String iconName)
 	{
 		if (!getIconGroupNames(iconType).contains(groupName))
 		{
 			return false;
 		}
-		
+
 		return getIconGroupFileNamesWithoutWidthOrExtension(iconType, groupName).contains(iconName);
 	}
-	
+
 	public boolean hasGroupName(IconType iconType, String groupName)
 	{
 		Set<String> groupNames = getIconGroupNames(iconType);

@@ -2,7 +2,6 @@ package nortantis.geom;
 
 import java.util.Objects;
 
-
 public class IntPoint implements Comparable<IntPoint>
 {
 
@@ -97,7 +96,5 @@ public class IntPoint implements Comparable<IntPoint>
 
 		return 0;
 	}
-	
-	
-}
 
+}

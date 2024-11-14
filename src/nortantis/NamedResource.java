@@ -11,7 +11,7 @@ public class NamedResource implements Serializable
 {
 	public final String name;
 	public final String artPack;
-	
+
 	public NamedResource(String artPack, String fileOrFolderName)
 	{
 		super();
@@ -20,7 +20,7 @@ public class NamedResource implements Serializable
 		this.artPack = artPack;
 		assert artPack != null;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public JSONObject toJSon()
 	{
@@ -29,7 +29,7 @@ public class NamedResource implements Serializable
 		obj.put("artPack", artPack);
 		return obj;
 	}
-	
+
 	public static NamedResource fromJson(JSONObject obj)
 	{
 		if (obj == null)
@@ -71,6 +71,5 @@ public class NamedResource implements Serializable
 	{
 		return FilenameUtils.getBaseName(name) + " [" + artPack + "]";
 	}
-	
-	
+
 }

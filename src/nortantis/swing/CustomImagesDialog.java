@@ -63,8 +63,10 @@ public class CustomImagesDialog extends JDialog
 				space, space, false);
 
 		int spaceBetweenPaths = 2;
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "background textures" + File.separator
-				+ "<background texture images>"), space, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel(
+						"<custom images folder>" + File.separator + "background textures" + File.separator + "<background texture images>"),
+				space, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "borders" + File.separator
 				+ "<border type>" + File.separator + "<border images>"), space, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel(
@@ -92,9 +94,11 @@ public class CustomImagesDialog extends JDialog
 				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"),
 				space, space, false);
 
-		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folders can have any names,"
-				+ " if you want new maps to use your tree types appropriately for the biomes the trees are placed in, then use folder names including the words 'cacti', 'deciduous',"
-				+ " and 'pine'.</html>"), space, space, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folders can have any names,"
+						+ " if you want new maps to use your tree types appropriately for the biomes the trees are placed in, then use folder names including the words 'cacti', 'deciduous',"
+						+ " and 'pine'.</html>"),
+				space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>If you want new maps to add hills around mountains, then for each mountain type, create a hill type with the same name.</html>"),
@@ -205,7 +209,6 @@ public class CustomImagesDialog extends JDialog
 
 		JCheckBox makeDefaultCheckbox = new JCheckBox("Make this the default for new random maps");
 		organizer.addLeftAlignedComponent(makeDefaultCheckbox);
-
 
 		organizer.addVerticalFillerRow();
 

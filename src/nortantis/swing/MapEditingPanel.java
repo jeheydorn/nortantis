@@ -38,7 +38,8 @@ import nortantis.util.ImageHelper.ColorifyAlgorithm;
 public class MapEditingPanel extends UnscaledImagePanel
 {
 	private final Color highlightEditColor = new Color(255, 227, 74);
-	private final Color highlightEraseColor = highlightEditColor;//new Color(230, 230, 230); // Put this back if I decide if I want to keep this feature.
+	private final Color highlightEraseColor = highlightEditColor;// new Color(230, 230, 230); // Put this back if I decide if I want to keep
+																	// this feature.
 	private boolean isErasing;
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color processingColor = Color.orange;
@@ -297,7 +298,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawBrush(g2);
 		}
 
-
 		// Handle zoom and border width. This transform transforms from graph
 		// space to image space.
 		AffineTransform transform = new AffineTransform();
@@ -505,7 +505,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return scaleToolArea.contains(tPoint);
 	}
 
-
 	private void drawBrush(Graphics2D g)
 	{
 		AffineTransform t = g.getTransform();
@@ -545,7 +544,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 		return highlightEditColor;
 	}
-	
+
 	private Color getInvalidPositionColor()
 	{
 		return highlightEditColor.equals(highlightEraseColor) ? Color.red : highlightEraseColor;
@@ -664,7 +663,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		setHighlightLakes(false);
 		repaint();
 	}
-	
+
 	public void clearAllToolSpecificSelectionsAndHighlights()
 	{
 		clearTextBox();
@@ -677,6 +676,5 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearProcessingAreas();
 		repaint();
 	}
-	
 
 }

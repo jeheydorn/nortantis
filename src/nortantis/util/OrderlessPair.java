@@ -38,7 +38,6 @@ public class OrderlessPair<T> implements Serializable
 		this.s = s;
 	}
 
-
 	@Override
 	public String toString()
 	{

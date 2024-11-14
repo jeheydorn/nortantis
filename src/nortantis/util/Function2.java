@@ -22,4 +22,3 @@ public interface Function2<I, R>
 
 	public R apply(I item1, I item2);
 }
-

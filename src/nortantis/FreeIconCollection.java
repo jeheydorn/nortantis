@@ -156,12 +156,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 	{
 		return anchoredTreeIcons.keySet();
 	}
-	
+
 	public synchronized Iterable<FreeIcon> iterateAnchoredNonTreeIcons()
 	{
 		return anchoredNonTreeIcons.values();
 	}
-	
+
 	public synchronized Iterable<FreeIcon> iterateNonAnchoredIcons()
 	{
 		return nonAnchoredIcons;
@@ -201,7 +201,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			}
 		}
 	}
-	
+
 	@Override
 	public Iterator<FreeIcon> iterator()
 	{
@@ -315,7 +315,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			return new ArrayList<>(asSet());
 		}
 
-
 		Set<FreeIcon> diff;
 		// To avoid a potential deadlock, always compare this object with the one passed in in the same order no matter what direction this
 		// method is called. That way the locks are always acquired and released in the same order, so we cannot have a circular hold and
@@ -406,12 +405,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			return false;
 		}
-		
+
 		if (!anchoredTreeIcons.keySet().equals(other.anchoredTreeIcons.keySet()))
 		{
 			return false;
 		}
-		
+
 		for (Map.Entry<Integer, CopyOnWriteArrayList<FreeIcon>> entry : anchoredTreeIcons.entrySet())
 		{
 			if (!areListsEqualOrderInvariant(entry.getValue(), other.anchoredTreeIcons.get(entry.getKey())))
@@ -419,11 +418,11 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 				return false;
 			}
 		}
-		
+
 		return areListsEqualOrderInvariant(nonAnchoredIcons, other.nonAnchoredIcons);
-		
+
 	}
-	
+
 	private boolean areListsEqualOrderInvariant(List<FreeIcon> list1, List<FreeIcon> list2)
 	{
 		if (list1 == null)
@@ -434,12 +433,12 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			return list1 == null;
 		}
-		
+
 		if (list1.size() != list2.size())
 		{
 			return false;
 		}
-		
+
 		HashSet<FreeIcon> set1 = new HashSet<>(list1);
 		HashSet<FreeIcon> set2 = new HashSet<>(list2);
 		boolean areEqual = set1.equals(set2);

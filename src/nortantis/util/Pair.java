@@ -38,7 +38,6 @@ public class Pair<T> implements Serializable
 		this.s = s;
 	}
 
-
 	@Override
 	public String toString()
 	{

@@ -144,7 +144,6 @@ public class ImageHelper
 		return inImage.scale(method, xSize, ySize);
 	}
 
-
 	/**
 	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic
 	 * scaling is about five times slower than the one used by ImgScalr, but is much faster when I only want to update a small piece of a
@@ -227,9 +226,13 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
-
 
 		NormalDistribution dist = createDistributionForSize(size);
 		int resultSize = (size * 2);
@@ -284,7 +287,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		float[][] kernel = new float[size][size];
@@ -308,7 +316,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		Sinc dist = new Sinc();
@@ -698,7 +711,6 @@ public class ImageHelper
 		if (colorIndexes.getType() != ImageType.RGB)
 			throw new IllegalArgumentException("colorIndexes type must be type RGB.");
 
-
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
 		if (image.getHeight() != mask.getHeight())
@@ -992,7 +1004,6 @@ public class ImageHelper
 
 		return result;
 	}
-
 
 	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
@@ -1405,8 +1416,7 @@ public class ImageHelper
 		for (int r = 0; r < result.length; r++)
 			for (int c = 0; c < result[0].length; c++)
 			{
-				int arrayRow = (r + rowOffset) % array.length;
-				;
+				int arrayRow = (r + rowOffset) % array.length;;
 				if (((r + rowOffset) / array.length) % 2 == 1)
 					arrayRow = array.length - 1 - arrayRow;
 

@@ -867,24 +867,22 @@ public class IconDrawer
 
 			if (StringUtils.isEmpty(oldIconName))
 			{
-				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the "
-						+ type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPackToUse
-						+ "' will be used instead.");
+				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName()
+						+ " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
 			}
 			else
 			{
-				warningLogger.addWarningMessage(
-						"Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName + "' from " + type.getSingularName()
-								+ " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
+				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the icon '" + oldIconName
+						+ "' from " + type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPackToUse
+						+ "' will be used instead.");
 			}
-			
+
 			return allArtPacks.get(index);
 		}
 		else
 		{
 			return oldArtPack;
 		}
-
 
 	}
 
@@ -1003,9 +1001,11 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
-						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+						bgColor = closest.isWater
+								? Color.create(oceanTexture.getRGB(xLoc, yLoc))
 								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
-						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+						landTextureColor = closest.isWater
+								? Color.create(oceanTexture.getRGB(xLoc, yLoc))
 								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
 					}
 					else
@@ -1140,13 +1140,11 @@ public class IconDrawer
 	{
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
-			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
-			;
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);;
 			List<IconDrawTask> cities;
 
 			Logger.println("Adding mountains and hills.");
-			List<Set<Center>> mountainGroups;
-			;
+			List<Set<Center>> mountainGroups;;
 			addOrUnmarkMountainsAndHills(mountainAndHillGroups);
 			// I find the mountain groups after adding or unmarking mountains so
 			// that mountains that get unmarked because their image

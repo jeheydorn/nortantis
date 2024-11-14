@@ -50,7 +50,7 @@ public abstract class Painter
 		}
 		fillPolygon(xPoints, yPoints);
 	}
-	
+
 	public void fillPolygonDouble(List<Point> vertices)
 	{
 		int[] xPoints = new int[vertices.size()];
@@ -70,20 +70,20 @@ public abstract class Painter
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 
 	public abstract void setBasicStroke(float width);
-	
+
 	public abstract void setStroke(Stroke stroke, double resolutionScale);
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
-	
+
 	public abstract void drawOval(int x, int y, int width, int height);
 
 	public abstract void fillOval(int x, int y, int width, int height);
 
 	public abstract void fillRect(int x, int y, int width, int height);
-	
+
 	public abstract int stringWidth(String string);
-	
+
 	public abstract int getFontAscent();
-	
+
 	public abstract int getFontDescent();
 }

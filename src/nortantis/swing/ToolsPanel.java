@@ -133,10 +133,13 @@ public class ToolsPanel extends JPanel
 						SwingHelper.borderWidthBetweenComponents, SwingHelper.borderWidthBetweenComponents));
 
 		JLabel lblZoom = new JLabel("Zoom");
-		lblZoom.setToolTipText("Zoom the map in or out (mouse wheel). To view more details at higher zoom levels,"
-				+ " adjust the 'Display quality'.");
+		lblZoom.setToolTipText(
+				"Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
 
-		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
+		zoomLevels = Arrays.asList(new String[]
+		{
+				fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%"
+		});
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{
@@ -151,28 +154,27 @@ public class ToolsPanel extends JPanel
 				mainWindow.updateDisplayedMapFromGeneratedMap(true, null);
 			}
 		});
-		
+
 		bottomPanel.add(SwingHelper.stackLabelAndComponent(lblZoom, zoomComboBox));
-		
-		
-		
-		//bottomPanel.add(Box.createHorizontalGlue());
+
+		// bottomPanel.add(Box.createHorizontalGlue());
 		bottomPanel.add(Box.createRigidArea(new Dimension(12, 4)));
 
 		JLabel lblDisplayQuality = new JLabel("Display Quality");
-		lblDisplayQuality.setToolTipText("Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
+		lblDisplayQuality.setToolTipText(
+				"Change the quality of the map displayed in the editor. Does not apply when exporting the map to an image. Higher values make the editor slower.");
 
 		displayQualityComboBox = new JComboBoxFixed<>();
 		for (DisplayQuality quality : DisplayQuality.values())
 		{
 			displayQualityComboBox.addItem(quality);
 		}
-		
+
 		// Default display quality
 		displayQualityComboBox.setSelectedItem(UserPreferences.getInstance().editorImageQuality);
-		
+
 		mainWindow.updateImageQualityScale(UserPreferences.getInstance().editorImageQuality);
-		
+
 		bottomPanel.add(displayQualityComboBox);
 		displayQualityComboBox.addActionListener(new ActionListener()
 		{
@@ -186,9 +188,6 @@ public class ToolsPanel extends JPanel
 		});
 
 		bottomPanel.add(SwingHelper.stackLabelAndComponent(lblDisplayQuality, displayQualityComboBox));
-
-		
-
 
 		progressAndBottomPanel.add(bottomPanel);
 		add(progressAndBottomPanel);
@@ -206,7 +205,8 @@ public class ToolsPanel extends JPanel
 		progressBarTimer.setInitialDelay(500);
 	}
 
-	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages, boolean willDoImageRefresh)
+	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
+			boolean willDoImageRefresh)
 	{
 		for (EditorTool tool : tools)
 		{
@@ -229,7 +229,7 @@ public class ToolsPanel extends JPanel
 			tool.getSettingsFromGUI(settings);
 		}
 	}
-	
+
 	public TextTool getTextTool()
 	{
 		for (EditorTool tool : tools)
@@ -239,7 +239,7 @@ public class ToolsPanel extends JPanel
 				return (TextTool) tool;
 			}
 		}
-		
+
 		assert false;
 		return null;
 	}
@@ -280,7 +280,7 @@ public class ToolsPanel extends JPanel
 			tool.handleImagesRefresh(settings);
 		}
 	}
-	
+
 	public void handleCustomImagesPathChanged(String customImagesPath)
 	{
 		for (EditorTool tool : tools)
@@ -293,7 +293,7 @@ public class ToolsPanel extends JPanel
 	{
 		return (String) zoomComboBox.getSelectedItem();
 	}
-	
+
 	public void resetZoomToDefault()
 	{
 		zoomComboBox.setSelectedItem(defaultZoomLevel);

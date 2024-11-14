@@ -62,7 +62,6 @@ public class AwtFactory extends PlatformFactory
 			throw new RuntimeException("Can't read the file " + filePath);
 		}
 	}
-	
 
 	@Override
 	public Image readImage(InputStream stream)
@@ -71,7 +70,7 @@ public class AwtFactory extends PlatformFactory
 		{
 			throw new RuntimeException("Unable to read an image file stream because it is null.");
 		}
-		
+
 		try
 		{
 			return wrap(ImageIO.read(stream));
@@ -126,7 +125,7 @@ public class AwtFactory extends PlatformFactory
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static Image convertARGBToRGB(Image image)
 	{
 		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
@@ -156,7 +155,7 @@ public class AwtFactory extends PlatformFactory
 	@Override
 	public Font createFont(String name, FontStyle style, float size)
 	{
-		return new AwtFont(new java.awt.Font(name, style.value, (int)size));
+		return new AwtFont(new java.awt.Font(name, style.value, (int) size));
 	}
 
 	@Override
@@ -170,7 +169,6 @@ public class AwtFactory extends PlatformFactory
 	{
 		return new AwtColor(red, green, blue);
 	}
-
 
 	@Override
 	public Color createColor(float red, float green, float blue)
@@ -270,7 +268,7 @@ public class AwtFactory extends PlatformFactory
 				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
-	
+
 	public static Painter wrap(java.awt.Graphics2D g)
 	{
 		if (g == null)
@@ -342,5 +340,4 @@ public class AwtFactory extends PlatformFactory
 		}
 	}
 
-	
 }

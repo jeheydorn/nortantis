@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.diffplug.spotless' version '6.23.3'
 }
 
 repositories {
@@ -58,6 +59,26 @@ sourceSets {
         java {
             srcDirs = ['test']
             include '**/*.java'
+        }
+    }
+}
+
+spotless {
+    java {
+        eclipse().configFile 'eclipse-formatter-config.xml'
+    }
+}
+
+
+// Define a task to format a specific file
+task formatSpecificFile {
+    doLast {
+        def filePath = project.hasProperty('filePath') ? project.filePath : 'src/nortantis/Background.java'
+        println "Formatting file: $filePath"
+        javaexec {
+            main = 'com.diffplug.spotless.Main'
+            classpath = configurations.spotless
+            args 'apply', '--java', filePath
         }
     }
 }

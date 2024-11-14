@@ -245,5 +245,4 @@ public class Edge implements Comparable<Edge>
 		return index == other.index;
 	}
 
-
 }

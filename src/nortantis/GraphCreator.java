@@ -38,7 +38,6 @@ public class GraphCreator
 		graph.scale(width, height);
 		graph.buildNoisyEdges(lineStyle, false);
 
-
 		// Debug code to log elapsed time.
 		// double elapsedTime = System.currentTimeMillis() - startTime;
 		// Logger.println("Time to generate graph (in seconds): " + elapsedTime
@@ -67,8 +66,7 @@ public class GraphCreator
 			mountains = ImageHelper.convertImageToType(mountains, ImageType.Grayscale16Bit);
 		}
 		double mountainTextureScale = 2.0 / 3.0;
-		mountains = ImageHelper.scaleByWidth(mountains,
-				(int) (mountains.getWidth() * mountainTextureScale));
+		mountains = ImageHelper.scaleByWidth(mountains, (int) (mountains.getWidth() * mountainTextureScale));
 		Image mountainTexture = BackgroundGenerator.generateUsingWhiteNoiseConvolution(rand, mountains, graph.getHeight(), graph.getWidth(),
 				false);
 		// ImageHelper.write(mountainTexture, "mountainTexture.png");
@@ -127,7 +125,6 @@ public class GraphCreator
 		graph.scale(width, height);
 		graph.buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
 
-
 		return graph;
 	}
 
@@ -146,6 +143,5 @@ public class GraphCreator
 
 		return new Dimension(standardWidth, drawResolution.height * (standardWidth / drawResolution.width));
 	}
-
 
 }

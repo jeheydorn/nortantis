@@ -48,7 +48,6 @@ public class FractalBGGenerator
 					data[r][c] = rand.nextFloat();
 				}
 
-
 			// Do the forward FFT.
 			fft.realForwardFull(data);
 		}
@@ -91,7 +90,6 @@ public class FractalBGGenerator
 		ImageHelper.moveRealToLeftSide(data);
 		ImageHelper.swapQuadrantsOfLeftSideInPlace(data);
 
-
 		ImageHelper.setContrast(data, 0.5f - contrast / 2f, 0.5f + contrast / 2f);
 
 		Image result = ImageHelper.arrayToImage(data, 0, height, 0, width, ImageType.Grayscale8Bit);
@@ -99,11 +97,10 @@ public class FractalBGGenerator
 
 	}
 
-
 	public static void main(String[] args) throws IOException
 	{
 		long startTime = System.currentTimeMillis();
-		
+
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 

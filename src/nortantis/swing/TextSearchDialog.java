@@ -105,7 +105,6 @@ public class TextSearchDialog extends JDialog
 		container.add(notFoundLabel);
 		container.add(Box.createRigidArea(new Dimension(padding, 1)));
 
-
 		final int fontSize = 24;
 		searchForward = new JButton("→");
 		searchForward.setToolTipText("Search forward (enter key)");

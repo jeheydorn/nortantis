@@ -14,12 +14,12 @@ public class Dimension implements Comparable<Dimension>
 
 	public IntDimension toIntDimension()
 	{
-		return new IntDimension((int)width, (int)height);
+		return new IntDimension((int) width, (int) height);
 	}
 
 	public IntDimension roundToIntDimension()
 	{
-		return new IntDimension((int)Math.round(width), (int)Math.round(height));
+		return new IntDimension((int) Math.round(width), (int) Math.round(height));
 	}
 
 	@Override
@@ -27,12 +27,11 @@ public class Dimension implements Comparable<Dimension>
 	{
 		return width + ", " + height;
 	}
-	
+
 	public Dimension mult(double scale)
 	{
 		return new Dimension(width * scale, height * scale);
 	}
-
 
 	@Override
 	public int compareTo(Dimension other)

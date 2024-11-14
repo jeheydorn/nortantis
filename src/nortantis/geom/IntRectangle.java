@@ -12,7 +12,7 @@ public class IntRectangle
 		this.width = width;
 		this.height = height;
 	}
-	
+
 	public IntRectangle(IntPoint location, IntDimension size)
 	{
 		this(location.x, location.y, size.width, size.height);
@@ -36,15 +36,16 @@ public class IntRectangle
 	{
 		return contains(other.x, other.y) && contains(other.x + other.width, other.y + other.height);
 	}
-	
+
 	/**
-	 * Returns a new IntRectangle with the same centroid as this one (if the paddings are even numbers) but with the width and height expanded by the given width and height.
+	 * Returns a new IntRectangle with the same centroid as this one (if the paddings are even numbers) but with the width and height
+	 * expanded by the given width and height.
 	 */
 	public IntRectangle pad(int paddWidth, int paddHeight)
 	{
 		return new IntRectangle(x - paddWidth / 2, y - paddHeight / 2, width + paddWidth, height + paddHeight);
 	}
-	
+
 	public IntRectangle add(IntPoint point)
 	{
 		return add(point.x, point.y);
@@ -72,10 +73,10 @@ public class IntRectangle
 			newY = yToAdd;
 			newHeight = height + (y - yToAdd);
 		}
-		
+
 		return new IntRectangle(newX, newY, newWidth, newHeight);
 	}
-	
+
 	/**
 	 * Returns a new rectangle expanded to include both this rectangle and the one passed in.
 	 */
@@ -88,7 +89,7 @@ public class IntRectangle
 		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
 				other.y + other.height);
 	}
-	
+
 	public Rectangle toRectangle()
 	{
 		return new Rectangle(x, y, width, height);

@@ -30,7 +30,7 @@ public class NamedIconSelector
 		this.buttons = new TreeMap<>();
 		panels = new TreeMap<>();
 	}
-	
+
 	public void clearButtons()
 	{
 		this.buttons = new TreeMap<>();
@@ -95,7 +95,7 @@ public class NamedIconSelector
 			}
 		}
 	}
-	
+
 	public void unselectAllButtonsExcept(JToggleButton buttonToIgnore)
 	{
 		for (String type : getTypes())
@@ -114,12 +114,12 @@ public class NamedIconSelector
 	public boolean selectButtonIfPresent(String type, String iconNameWithoutWidthOrExtension)
 	{
 		unselectAllButtons();
-		
+
 		if (!buttons.containsKey(type))
 		{
 			return false;
 		}
-		
+
 		for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
 		{
 			if (tuple.getFirst().equals(iconNameWithoutWidthOrExtension))
@@ -132,10 +132,10 @@ public class NamedIconSelector
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
-	
+
 	public static void updateToggleButtonBorder(JToggleButton toggleButton)
 	{
 		if (UIManager.getLookAndFeel() instanceof FlatDarkLaf)
@@ -150,9 +150,9 @@ public class NamedIconSelector
 			{
 				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 			}
-		}	
+		}
 	}
-	
+
 	public void addCollapsiblePanel(String type, CollapsiblePanel panel)
 	{
 		panels.put(type, panel);

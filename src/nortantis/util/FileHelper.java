@@ -19,7 +19,7 @@ public class FileHelper
 		{
 			return path;
 		}
-		
+
 		if (path.startsWith(getHomePlaceholder()))
 		{
 			String userHome = System.getProperty("user.home");
@@ -27,7 +27,7 @@ public class FileHelper
 			{
 				return path;
 			}
-			
+
 			String relativePart = path.substring(getHomePlaceholder().length());
 			return Paths.get(userHome, relativePart).toString();
 		}
@@ -36,7 +36,7 @@ public class FileHelper
 			return path;
 		}
 	}
-	
+
 	private static String getHomePlaceholder()
 	{
 		if (OSHelper.isWindows())
@@ -48,7 +48,7 @@ public class FileHelper
 			return "~";
 		}
 	}
-	
+
 	public static String replaceHomeFolderWithPlaceholder(String path)
 	{
 		// Get the user's home directory
@@ -78,13 +78,13 @@ public class FileHelper
 			return path;
 		}
 	}
-	
+
 	public static boolean isFile(String filePath)
 	{
 		File file = new File(filePath);
 		return file.exists() && !file.isDirectory();
 	}
-	
+
 	public static String readFile(String path)
 	{
 		try
@@ -98,7 +98,7 @@ public class FileHelper
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static boolean isDirectoryEmpty(String directory)
 	{
 		try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))

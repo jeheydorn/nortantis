@@ -65,5 +65,4 @@ public class MapParts
 	 */
 	public Image mapBeforeAddingText;
 
-
 }

@@ -265,7 +265,7 @@ public class WorldGraph extends VoronoiGraph
 			return new SmoothingResult(isChanged, false);
 		}
 	}
-	
+
 	private boolean isSinglePolygonToSmooth(Center center, Function<Edge, Boolean> shouldSmoothEdge)
 	{
 		return center.borders.stream().allMatch(e -> shouldSmoothEdge.apply(e));
@@ -1198,8 +1198,7 @@ public class WorldGraph extends VoronoiGraph
 						}
 					}
 				}
-			}
-			while (cornerFound);
+			} while (cornerFound);
 
 		}
 	}
@@ -1741,7 +1740,8 @@ public class WorldGraph extends VoronoiGraph
 				if (neighbor != null)
 				{
 					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge);
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor)
+							? centerNodeMap.get(neighbor).scoreSoFar
 							: Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{

@@ -41,15 +41,14 @@ public class Assets
 	private final static String assetsPath = "assets";
 	public final static String customArtPack = "custom";
 	public final static String artPacksFolder = "art packs";
-	public final static String installedArtPack = "nortantis";	
+	public final static String installedArtPack = "nortantis";
 	private static List<String> artPacksInArtPacksFolderCache;
-
 
 	public static String getAssetsPath()
 	{
 		return assetsPath;
 	}
-	
+
 	public static String getInstalledArtPackPath()
 	{
 		return Paths.get(assetsPath, "installed art pack").toString();
@@ -72,13 +71,12 @@ public class Assets
 		result.sort(String::compareTo);
 		return result;
 	}
-	
+
 	public static boolean artPackExists(String artPack, String customImagesFolder)
 	{
 		return listArtPacks(!StringUtils.isEmpty(customImagesFolder)).contains(artPack);
 	}
-	
-	
+
 	private static synchronized List<String> getArtPacksFromArtPackFolderCached()
 	{
 		if (artPacksInArtPacksFolderCache == null)
@@ -87,7 +85,7 @@ public class Assets
 		}
 		return artPacksInArtPacksFolderCache;
 	}
-	
+
 	private static List<String> listArtPacksFromArtPackFolder()
 	{
 		List<String> result = new ArrayList<>();
@@ -97,7 +95,7 @@ public class Assets
 		result.sort(String::compareTo);
 		return result;
 	}
-	
+
 	public static synchronized void clearCache()
 	{
 		artPacksInArtPacksFolderCache = null;
@@ -129,9 +127,12 @@ public class Assets
 
 	/**
 	 * Gets the path to the assets of an art pack.
-	 * @param artPack Art pack name
-	 * @param customImagesFolder The map's custom images folder. Only required if art pack is "custom".
-	 * @return A  path to a the art pack assets, which may be in the jar file the program is running from.
+	 * 
+	 * @param artPack
+	 *            Art pack name
+	 * @param customImagesFolder
+	 *            The map's custom images folder. Only required if art pack is "custom".
+	 * @return A path to a the art pack assets, which may be in the jar file the program is running from.
 	 */
 	public static Path getArtPackPath(String artPack, String customImagesFolder)
 	{

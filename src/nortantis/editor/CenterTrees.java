@@ -18,7 +18,7 @@ public class CenterTrees
 	{
 		this(artPack, treeType, density, randomSeed, false);
 	}
-	
+
 	public CenterTrees(String artPack, String treeType, double density, long randomSeed, boolean isDormant)
 	{
 		this.artPack = artPack;
@@ -27,14 +27,14 @@ public class CenterTrees
 		this.randomSeed = randomSeed;
 		this.isDormant = isDormant;
 	}
-	
+
 	public CenterTrees copyWithTreeType(String treeType)
 	{
 		return new CenterTrees(artPack, treeType, density, randomSeed, isDormant);
 	}
-	
+
 	public CenterTrees copyWithArtPack(String artPack)
-	{	
+	{
 		return new CenterTrees(artPack, treeType, density, randomSeed, isDormant);
 	}
 

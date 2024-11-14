@@ -175,7 +175,6 @@ public class ThemePanel extends JTabbedPane
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
 
-
 	public ThemePanel(MainWindow mainWindow)
 	{
 		this.mainWindow = mainWindow;
@@ -344,7 +343,6 @@ public class ThemePanel extends JTabbedPane
 
 		organizer.addSeperator();
 
-
 		drawRegionBoundariesCheckbox = new JCheckBox("Draw political region boundaries");
 		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
 		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
@@ -376,7 +374,6 @@ public class ThemePanel extends JTabbedPane
 			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
 		}
 
-
 		regionBoundaryColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		JButton buttonChooseRegionBoundaryColor = new JButton("Choose");
 		buttonChooseRegionBoundaryColor.addActionListener(new ActionListener()
@@ -388,7 +385,6 @@ public class ThemePanel extends JTabbedPane
 		});
 		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line-color of region boundaries",
 				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding);
-
 
 		organizer.addSeperator();
 
@@ -648,7 +644,6 @@ public class ThemePanel extends JTabbedPane
 		drawGrungeCheckbox.addActionListener(drawGrungeCheckboxActionListener);
 		organizer.addLeftAlignedComponent(drawGrungeCheckbox);
 
-
 		grungeSlider = new JSlider();
 		grungeSlider.setValue(0);
 		grungeSlider.setPaintTicks(true);
@@ -660,7 +655,6 @@ public class ThemePanel extends JTabbedPane
 		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
 		organizer.addLabelAndComponent("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.",
 				grungeSlider);
-
 
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
@@ -674,7 +668,6 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponentsHorizontal("Edge/Grunge color:", "Grunge and frayed edge shading will be this color",
 				Arrays.asList(grungeColorDisplay, grungeColorChooseButton), SwingHelper.colorPickerLeftPadding);
-
 
 		organizer.addVerticalFillerRow();
 		return organizer.createScrollPane();
@@ -701,7 +694,6 @@ public class ThemePanel extends JTabbedPane
 				Arrays.asList(jaggedLinesButton, splinesLinesButton, splinesWithSmoothedCoastlinesButton));
 		organizer.addSeperator();
 
-
 		{
 			coastlineWidthSlider = new JSlider();
 			coastlineWidthSlider.setPaintLabels(false);
@@ -715,7 +707,6 @@ public class ThemePanel extends JTabbedPane
 			sliderWithDisplay.addToOrganizer(organizer, "Coastline width:", "Line width of coastlines");
 		}
 
-
 		coastlineColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
 		JButton buttonChooseCoastlineColor = new JButton("Choose");
@@ -728,7 +719,6 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponentsHorizontal("Coastline color:", "The color of the coastline",
 				Arrays.asList(coastlineColorDisplay, buttonChooseCoastlineColor), SwingHelper.colorPickerLeftPadding);
-
 
 		coastShadingSlider = new JSlider();
 		coastShadingSlider.setValue(30);
@@ -782,9 +772,7 @@ public class ThemePanel extends JTabbedPane
 			coastShadingColorDisabledMessageHider.setVisible(false);
 		}
 
-
 		organizer.addSeperator();
-
 
 		oceanShadingSlider = new JSlider();
 		oceanShadingSlider.setPaintTicks(true);
@@ -901,7 +889,6 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
 				Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
 
-
 		organizer.addSeperator();
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		mountainScaleSlider.setMajorTickSpacing(2);
@@ -952,7 +939,6 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponent("Dune size:", "Changes the size of all sand dunes on the map", duneScaleSlider);
 
-
 		// If I change the maximum here, also update densityScale in IconDrawer.drawTreesForCenters.
 		treeHeightSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		treeHeightSlider.setMajorTickSpacing(2);
@@ -973,7 +959,6 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponent("Tree height:",
 				"Changes the height of all trees on the map, and redistributes trees to preserve forest density", treeHeightSlider);
 
-
 		cityScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		cityScaleSlider.setMajorTickSpacing(2);
 		cityScaleSlider.setMinorTickSpacing(1);
@@ -989,7 +974,6 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
-
 
 		organizer.addVerticalFillerRow();
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
@@ -1033,8 +1017,8 @@ public class ThemePanel extends JTabbedPane
 					{
 						if (hasVisibleTreeWithinDistance(entry.getKey(), cTrees.treeType, 3))
 						{
-							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue()
-									.copyWithTrees(new CenterTrees(cTrees.artPack, cTrees.treeType, cTrees.density, rand.nextLong(), false)));
+							mainWindow.edits.centerEdits.put(entry.getKey(), entry.getValue().copyWithTrees(
+									new CenterTrees(cTrees.artPack, cTrees.treeType, cTrees.density, rand.nextLong(), false)));
 						}
 						else
 						{
@@ -1594,7 +1578,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			backgroundSeedTextField.setText(String.valueOf(settings.backgroundRandomSeed));
 		}
-		
+
 		updateBackgroundAndRegionFieldStates();
 
 		oceanDisplayPanel.setColor(AwtFactory.unwrap(settings.oceanColor));
@@ -1701,7 +1685,6 @@ public class ThemePanel extends JTabbedPane
 		}
 	}
 
-
 	private void initializeComboBoxItems(MapSettings settings)
 	{
 		SwingHelper.initializeComboBoxItems(borderTypeComboBox, Assets.listAllBorderTypes(settings.customImagesPath),
@@ -1765,7 +1748,6 @@ public class ThemePanel extends JTabbedPane
 			return true;
 		}
 
-
 		return false;
 	}
 
@@ -1787,8 +1769,10 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanWavesLevel = oceanWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
-				: noneRadioButton.isSelected() ? OceanWaves.None
+		settings.oceanWavesType = ripplesRadioButton.isSelected()
+				? OceanWaves.Ripples
+				: noneRadioButton.isSelected()
+						? OceanWaves.None
 						: concentricWavesButton.isSelected() ? OceanWaves.ConcentricWaves : OceanWaves.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
@@ -1807,7 +1791,8 @@ public class ThemePanel extends JTabbedPane
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
+		settings.lineStyle = jaggedLinesButton.isSelected()
+				? LineStyle.Jagged
 				: splinesLinesButton.isSelected() ? LineStyle.Splines : LineStyle.SplinesWithSmoothedCoastlines;
 
 		// Background image settings

@@ -1,6 +1,5 @@
 package nortantis;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -123,9 +122,7 @@ public class TextDrawer
 
 	}
 
-
-	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph,
-			Rectangle drawBounds)
+	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
 	{
 		this.landAndOceanBackground = landAndOceanBackground;
 
@@ -274,8 +271,7 @@ public class TextDrawer
 			}
 
 			p.dispose();
-		}
-		finally
+		} finally
 		{
 			settings.drawText = drawTextPrev;
 		}
@@ -284,7 +280,8 @@ public class TextDrawer
 		drawText(map, graph, mapTexts, null);
 	}
 
-	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds, BiConsumer<MapText, RotatedRectangle> action)
+	public void doForEachTextInBounds(List<MapText> mapTexts, WorldGraph graph, Rectangle bounds,
+			BiConsumer<MapText, RotatedRectangle> action)
 	{
 		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
 
@@ -309,10 +306,10 @@ public class TextDrawer
 				// so they aren't useful for telling whether the text will appear in 'bounds'.
 
 				Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
-				
+
 				Rectangle singleLineBounds = getLine1Bounds(text.value, textLocation, p, false);
 				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds);
-				
+
 				Rectangle textBoundsAllLines;
 				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
 				// the bounds for both cases if it's possible the text could be split.
@@ -322,17 +319,17 @@ public class TextDrawer
 
 					Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
 					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
-					
+
 					Rectangle line2Bounds = getLine2Bounds(lines.getFirst(), textLocation, p);
 					line2Bounds = addBackgroundBlendingPadding(line2Bounds);
-					
+
 					textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
-				}			
+				}
 				else
 				{
 					textBoundsAllLines = singleLineBounds;
 				}
-				
+
 				callIfMapTextIsInBounds(bounds, text, textBoundsAllLines, textLocation, action);
 			}
 		}
@@ -385,7 +382,7 @@ public class TextDrawer
 			BiConsumer<MapText, RotatedRectangle> action)
 	{
 		RotatedRectangle lineArea = new RotatedRectangle(lineBounds, text.angle, pivot);
-		
+
 		if (boundsArea == null || doAreasIntersect(new RotatedRectangle(boundsArea), lineArea))
 		{
 			action.accept(text, lineArea);
@@ -448,14 +445,13 @@ public class TextDrawer
 		}));
 
 		p.dispose();
-		
+
 		// Only mark this flag if we drew all text, not just an incremental update.
 		if (drawBounds == null || drawBounds.equals(graph.bounds))
 		{
 			settings.edits.hasCreatedTextBounds = true;
 		}
 	}
-
 
 	private void setFontForTextType(Painter p, TextType type)
 	{
@@ -743,8 +739,8 @@ public class TextDrawer
 	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is
 	 * drawn on top of mountains or trees.
 	 */
-	private void drawBackgroundBlendingForText(Image map, Painter p, Point textStart, Dimension textSize, double angle,
-			String text, Point pivot)
+	private void drawBackgroundBlendingForText(Image map, Painter p, Point textStart, Dimension textSize, double angle, String text,
+			Point pivot)
 	{
 		int kernelSize = getBackgroundBlendingKernelSize(textSize);
 		if (kernelSize == 0)
@@ -753,7 +749,7 @@ public class TextDrawer
 		}
 		int padding = getBackgroundBlendingPadding(textSize);
 
-		Image textBG = Image.create((int)(textSize.width + padding * 2), (int)(textSize.height + padding * 2), ImageType.Grayscale8Bit);
+		Image textBG = Image.create((int) (textSize.width + padding * 2), (int) (textSize.height + padding * 2), ImageType.Grayscale8Bit);
 
 		Painter bP = textBG.createPainter(DrawQuality.High);
 		bP.setFont(p.getFont());
@@ -783,7 +779,8 @@ public class TextDrawer
 		return getBackgroundBlendingKernelSize(textSize);
 	}
 
-	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double angle, Point pivot, Color boldBackgroundColorOverride)
+	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double angle, Point pivot,
+			Color boldBackgroundColorOverride)
 	{
 		if (name.length() == 0)
 			return;
@@ -896,7 +893,7 @@ public class TextDrawer
 	{
 		return new Dimension(painter.stringWidth(text), painter.getFontAscent() + painter.getFontDescent());
 	}
-	
+
 	public static Dimension getTextDimensions(String text, Font font)
 	{
 		Painter p = Image.create(1, 1, ImageType.ARGB).createPainter();
@@ -917,23 +914,23 @@ public class TextDrawer
 	 * 
 	 * @return True iff text was drawn.
 	 */
-	private boolean drawNameSplitIfNeeded(Image map, Painter p, WorldGraph graph, double riseOffset,
-			boolean enableBoundsChecking, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
+	private boolean drawNameSplitIfNeeded(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
+			MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
 		boolean hasMultipleWords = text.value.trim().split(" ").length > 1;
 		if (text.lineBreak == LineBreak.Auto)
-		{		
+		{
 			Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
 			Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
-			if (hasMultipleWords
-					&& overlapsBoundaryThatShouldCauseLineSplit(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine, text.angle, text.type, graph))
+			if (hasMultipleWords && overlapsBoundaryThatShouldCauseLineSplit(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine,
+					text.angle, text.type, graph))
 			{
 				// The text doesn't fit into centerLocations. Draw it split onto two
 				// lines.
 				Pair<String> lines = addLineBreakNearMiddle(text.value);
 				String nameLine1 = lines.getFirst();
 				String nameLine2 = lines.getSecond();
-	
+
 				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
 						allowNegatingRizeOffset, drawOffset);
 			}
@@ -959,7 +956,8 @@ public class TextDrawer
 		}
 		else
 		{
-			throw new IllegalArgumentException("Unrecognized text line break value for text '" + text.value + "'. Line break value: " + text.lineBreak);
+			throw new IllegalArgumentException(
+					"Unrecognized text line break value for text '" + text.value + "'. Line break value: " + text.lineBreak);
 		}
 	}
 
@@ -985,7 +983,10 @@ public class TextDrawer
 		SimpleRegression regression = new SimpleRegression();
 		for (Point point : locations)
 		{
-			regression.addObservation(new double[] { point.x }, point.y);
+			regression.addObservation(new double[]
+			{
+					point.x
+			}, point.y);
 		}
 		double angle;
 		try
@@ -1034,14 +1035,14 @@ public class TextDrawer
 	 * 
 	 * @return true iff the text was drawn.
 	 */
-	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
-			MapText text, boolean boldBackground, Point drawOffset)
+	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
+			boolean boldBackground, Point drawOffset)
 	{
 		return drawNameSplitIfNeeded(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, true, drawOffset);
 	}
 
-	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
-			MapText text, boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset, Point drawOffset)
+	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
+			boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset, Point drawOffset)
 	{
 		if (line2 != null && line2.equals(""))
 		{
@@ -1099,7 +1100,8 @@ public class TextDrawer
 		{
 			p.rotate(text.angle, pivotMinusDrawOffset.x, pivotMinusDrawOffset.y);
 
-			// Rotate the bounds for the text. Use rotated rectangles rather than p's transform because we need to not include drawOffset when
+			// Rotate the bounds for the text. Use rotated rectangles rather than p's transform because we need to not include drawOffset
+			// when
 			// rotating.
 			RotatedRectangle area1 = new RotatedRectangle(bounds1, text.angle, pivot);
 			RotatedRectangle area2 = line2 == null ? null : new RotatedRectangle(bounds2, text.angle, pivot);
@@ -1108,8 +1110,8 @@ public class TextDrawer
 			{
 				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1)
 						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2));
-				boolean overlapsRegionLakeOrCoastline = overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type, graph)
-						|| overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type, graph);
+				boolean overlapsRegionLakeOrCoastline = overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type,
+						graph) || overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type, graph);
 				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region
 						|| text.type == TextType.City || text.type == TextType.Mountain_range;
 
@@ -1160,9 +1162,9 @@ public class TextDrawer
 			text.line2Area = area2;
 			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
 			// before the text is redrawn.
-			text.line1Bounds = new Rectangle((int) (bounds1.x - pivot.x), (int) (bounds1.y - pivot.y), bounds1.width,
-					bounds1.height);
-			text.line2Bounds = bounds2 == null ? null
+			text.line1Bounds = new Rectangle((int) (bounds1.x - pivot.x), (int) (bounds1.y - pivot.y), bounds1.width, bounds1.height);
+			text.line2Bounds = bounds2 == null
+					? null
 					: new Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y), bounds2.width, bounds2.height);
 			if (riseOffset != 0)
 			{
@@ -1174,11 +1176,10 @@ public class TextDrawer
 			if (settings.drawText)
 			{
 				p.setColor(text.colorOverride == null ? settings.textColor : text.colorOverride);
-				
+
 				{
 					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + p.getFontAscent());
-					drawBackgroundBlendingForText(map, p, textStart, line1Size, text.angle, line1,
-							pivotMinusDrawOffset);
+					drawBackgroundBlendingForText(map, p, textStart, line1Size, text.angle, line1, pivotMinusDrawOffset);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(p, line1, textStart, text.angle, pivot, text.boldBackgroundColorOverride);
@@ -1191,8 +1192,7 @@ public class TextDrawer
 				if (line2 != null)
 				{
 					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + p.getFontAscent());
-					drawBackgroundBlendingForText(map, p, textStart, line2Size, text.angle, line2,
-							pivotMinusDrawOffset);
+					drawBackgroundBlendingForText(map, p, textStart, line2Size, text.angle, line2, pivotMinusDrawOffset);
 					if (boldBackground)
 					{
 						drawStringWithBoldBackground(p, line2, textStart, text.angle, pivot, text.boldBackgroundColorOverride);
@@ -1205,8 +1205,7 @@ public class TextDrawer
 			}
 
 			return true;
-		}
-		finally
+		} finally
 		{
 			p.setTransform(orig);
 		}
@@ -1271,12 +1270,12 @@ public class TextDrawer
 		return new Rectangle((int) (pivot.x - size.width / 2), (int) (pivot.y - (size.height / 2) + fontHeight / 2), size.width,
 				size.height);
 	}
-	
+
 	/**
-	 * Sets the bounds and areas of any texts for which those are null. This is needed because the editor allows making changes when a map is
-	 * loaded from a file before it draws the first time. Text bounds and areas aren't set until the text is drawn the first time, and
-	 * changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function must
-	 * be called each draw to make sure null bounds and areas don't get perpetuated from those undo points.
+	 * Sets the bounds and areas of any texts for which those are null. This is needed because the editor allows making changes when a map
+	 * is loaded from a file before it draws the first time. Text bounds and areas aren't set until the text is drawn the first time, and
+	 * changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function
+	 * must be called each draw to make sure null bounds and areas don't get perpetuated from those undo points.
 	 */
 	public void updateTextBoundsIfNeeded(WorldGraph graph)
 	{
@@ -1284,21 +1283,19 @@ public class TextDrawer
 		{
 			return;
 		}
-		
+
 		boolean originalDrawText = settings.drawText;
 		try
 		{
 			settings.drawText = false;
 			Image fakeMapThatNothingShouldDrawOn = Image.create(1, 1, ImageType.ARGB);
 			drawText(fakeMapThatNothingShouldDrawOn, graph, settings.edits.text, null);
-		}
-		finally
+		} finally
 		{
 			settings.drawText = originalDrawText;
 		}
 	}
 
-	
 	public Point findCentroid(Collection<Point> plateCenters)
 	{
 		Point centroid = new Point(0, 0);
@@ -1313,7 +1310,8 @@ public class TextDrawer
 		return centroid;
 	}
 
-	private boolean overlapsBoundaryThatShouldCauseLineSplit(Rectangle textBounds, Point pivot, double angle, TextType type, WorldGraph graph)
+	private boolean overlapsBoundaryThatShouldCauseLineSplit(Rectangle textBounds, Point pivot, double angle, TextType type,
+			WorldGraph graph)
 	{
 		if (textBounds == null)
 		{
@@ -1358,7 +1356,6 @@ public class TextDrawer
 		{
 			return false;
 		}
-
 
 		if (c1.isWater != c2.isWater)
 		{
@@ -1425,7 +1422,7 @@ public class TextDrawer
 		// the resolution we're drawing at.
 		return createMapText(text, location, angle, type, settings.resolution);
 	}
-	
+
 	/**
 	 * Creates a new MapText, taking settings.resolution into account.
 	 */

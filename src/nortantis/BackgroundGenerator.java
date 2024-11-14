@@ -58,7 +58,6 @@ public class BackgroundGenerator
 		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
 		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
 
-
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();
 		float varianceScaler = (float) Math.sqrt(((float) (rows * cols)) / textureArea);
@@ -73,7 +72,10 @@ public class BackgroundGenerator
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[] { ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue };
+			means = new float[]
+			{
+					ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue
+			};
 		}
 		else
 		{
@@ -82,10 +84,8 @@ public class BackgroundGenerator
 			means = ImageHelper.calcMeanOfEachColor(texture);
 		}
 
-		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit
-				: ImageType.Grayscale8Bit;
+		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 		Image randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), randomImageType);
-
 
 		for (int channel : new Range(numberOfColorChannels))
 		{
@@ -221,7 +221,7 @@ public class BackgroundGenerator
 	{
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
-		
+
 		Stopwatch sw = new Stopwatch();
 
 		Image image = Image.read("C:\\Program Files\\Nortantis\\app\\assets\\background textures\\wavy paper.png");

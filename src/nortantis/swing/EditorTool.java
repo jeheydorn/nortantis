@@ -109,7 +109,7 @@ public abstract class EditorTool
 	}
 
 	protected abstract void onAfterUndoRedo();
-	
+
 	protected abstract void onBeforeUndoRedo();
 
 	public nortantis.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
@@ -117,8 +117,7 @@ public abstract class EditorTool
 		int borderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 		double zoom = mainWindow.zoom;
 		double osScale = mapEditingPanel.osScale;
-		return new nortantis.geom.Point(
-				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
+		return new nortantis.geom.Point((((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
 				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
 	}
 
@@ -272,9 +271,9 @@ public abstract class EditorTool
 	public void handleImagesRefresh(MapSettings settings)
 	{
 	}
-	
+
 	public void handleCustomImagesPathChanged(String customImagesPath)
 	{
-		
+
 	}
 }

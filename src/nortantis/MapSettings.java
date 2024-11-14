@@ -171,7 +171,6 @@ public class MapSettings implements Serializable
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
 
-
 	public MapSettings()
 	{
 		edits = new MapEdits();
@@ -362,7 +361,6 @@ public class MapSettings implements Serializable
 		root.put("drawText", drawText);
 		root.put("textRandomSeed", textRandomSeed);
 
-
 		JSONArray booksArray = new JSONArray();
 		for (String book : books)
 		{
@@ -404,7 +402,6 @@ public class MapSettings implements Serializable
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
 		root.put("defaultHeightmapExportAction",
 				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
-
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -711,7 +708,6 @@ public class MapSettings implements Serializable
 			lloydRelaxationsScale = 0.0;
 		}
 
-
 		// Background image stuff.
 		generateBackground = (boolean) root.get("generateBackground");
 		generateBackgroundFromTexture = (boolean) root.get("generateBackgroundFromTexture");
@@ -843,7 +839,6 @@ public class MapSettings implements Serializable
 			// The +1 is just to make sure we don't try to find the log of 0.
 			frayedBorderSize = (int) (Math.log((((frayedBorderSize - 100) / 2) + 1)) / Math.log(2));
 		}
-
 
 		imageExportPath = (String) root.get("imageExportPath");
 		heightmapExportPath = (String) root.get("heightmapExportPath");
@@ -1241,7 +1236,6 @@ public class MapSettings implements Serializable
 		return result;
 	}
 
-
 	private ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
 		if (editsJson == null)
@@ -1538,7 +1532,6 @@ public class MapSettings implements Serializable
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
 
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -1612,6 +1605,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
 
 }

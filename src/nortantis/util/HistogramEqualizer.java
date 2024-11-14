@@ -175,7 +175,6 @@ public class HistogramEqualizer
 		Helper.writeToFile(csvFileName, exportStr.toString());
 	}
 
-
 	public Image equalize(Image inImage)
 	{
 		return applyLookupTables(inImage, lookupTables);
@@ -230,7 +229,7 @@ public class HistogramEqualizer
 	{
 
 		// Create the list of pixels to use with the histogram.
-		int[] counts = new int[image.getMaxPixelLevel()+1];
+		int[] counts = new int[image.getMaxPixelLevel() + 1];
 		for (int y = 0; y < image.getHeight(); y++)
 		{
 			for (int x = 0; x < image.getWidth(); x++)

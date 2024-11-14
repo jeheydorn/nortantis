@@ -40,7 +40,7 @@ class AwtImage extends Image
 	private void createRastersIfNeeded()
 	{
 		raster = image.getRaster();
-		
+
 		if (hasAlpha())
 		{
 			alphaRaster = image.getAlphaRaster();
@@ -77,19 +77,14 @@ class AwtImage extends Image
 
 	private static ImageType toImageType(int bufferedImageType)
 	{
-		if (bufferedImageType == BufferedImage.TYPE_INT_ARGB ||
-				bufferedImageType == BufferedImage.TYPE_INT_ARGB_PRE ||
-				bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR ||
-				bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR_PRE)
+		if (bufferedImageType == BufferedImage.TYPE_INT_ARGB || bufferedImageType == BufferedImage.TYPE_INT_ARGB_PRE
+				|| bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR || bufferedImageType == BufferedImage.TYPE_4BYTE_ABGR_PRE)
 		{
 			return ImageType.ARGB;
 		}
-		if (bufferedImageType == BufferedImage.TYPE_INT_RGB ||
-				bufferedImageType == BufferedImage.TYPE_INT_BGR ||
-				bufferedImageType == BufferedImage.TYPE_3BYTE_BGR ||
-				bufferedImageType == BufferedImage.TYPE_USHORT_565_RGB ||
-				bufferedImageType == BufferedImage.TYPE_USHORT_555_RGB ||
-				bufferedImageType == BufferedImage.TYPE_BYTE_INDEXED)
+		if (bufferedImageType == BufferedImage.TYPE_INT_RGB || bufferedImageType == BufferedImage.TYPE_INT_BGR
+				|| bufferedImageType == BufferedImage.TYPE_3BYTE_BGR || bufferedImageType == BufferedImage.TYPE_USHORT_565_RGB
+				|| bufferedImageType == BufferedImage.TYPE_USHORT_555_RGB || bufferedImageType == BufferedImage.TYPE_BYTE_INDEXED)
 		{
 			return ImageType.RGB;
 		}
@@ -138,7 +133,6 @@ class AwtImage extends Image
 	{
 		image.setRGB(x, y, rgb);
 	}
-	
 
 	@Override
 	public void setRGB(int x, int y, int red, int green, int blue)
@@ -149,14 +143,14 @@ class AwtImage extends Image
 	@Override
 	public void setRGB(int[] data, int x, int y, int red, int green, int blue)
 	{
-		//setRGB(x, y, red, green, blue);
+		// setRGB(x, y, red, green, blue);
 		data[(y * image.getWidth()) + x] = (red << 16) | (green << 8) | blue;
 	}
-	
+
 	@Override
 	public void setRGB(int[] data, int x, int y, int red, int green, int blue, int alpha)
 	{
-		//setRGB(x, y, red, green, blue, alpha);
+		// setRGB(x, y, red, green, blue, alpha);
 		data[(y * image.getWidth()) + x] = (alpha << 24) | (red << 16) | (green << 8) | blue;
 	}
 
@@ -185,7 +179,7 @@ class AwtImage extends Image
 		{
 			return alphaRaster.getSample(x, y, 0);
 		}
-		
+
 		return 0;
 	}
 
@@ -292,10 +286,10 @@ class AwtImage extends Image
 	@Override
 	public int[] getDataIntBased()
 	{
-		return ((DataBufferInt)raster.getDataBuffer()).getData();
+		return ((DataBufferInt) raster.getDataBuffer()).getData();
 	}
-	
-	@Override 
+
+	@Override
 	public boolean isIntBased()
 	{
 		return raster.getDataBuffer() instanceof DataBufferInt;

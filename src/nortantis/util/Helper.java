@@ -32,7 +32,6 @@ public class Helper
 		return result;
 	}
 
-
 	/**
 	 * Combines 2 lists of the same length by applying the given function to each pair of items in the 2 lists.
 	 */
@@ -274,4 +273,3 @@ public class Helper
 	}
 
 }
-

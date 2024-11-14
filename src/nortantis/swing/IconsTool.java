@@ -9,8 +9,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -54,6 +56,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
+import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
@@ -90,6 +93,8 @@ public class IconsTool extends EditorTool
 	{
 		super(parent, toolsPanel, mapUpdater);
 		rand = new Random();
+		namedIconPreviewCache = new ConcurrentHashMapF<>();
+		groupPreviewCache = new ConcurrentHashMapF<>();
 	}
 
 	@Override
@@ -130,7 +135,7 @@ public class IconsTool extends EditorTool
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				handleImagesRefresh(mainWindow.getSettingsFromGUI(false));
+				refreshImagesWithoutClearingCache(mainWindow.getSettingsFromGUI(false));
 			}
 		});
 		organizer.addLabelAndComponent("Art pack:",
@@ -371,6 +376,14 @@ public class IconsTool extends EditorTool
 	@Override
 	public void handleImagesRefresh(MapSettings settings)
 	{
+		groupPreviewCache.clear();
+		namedIconPreviewCache.clear();
+		
+		refreshImagesWithoutClearingCache(settings);
+	}
+	
+	private void refreshImagesWithoutClearingCache(MapSettings settings)
+	{
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, settings.artPack, customImagesPath);
 		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, settings.artPack, customImagesPath);
@@ -432,6 +445,7 @@ public class IconsTool extends EditorTool
 		}
 	}
 
+	private ConcurrentHashMapF<Tuple2<IconType, String>, Image> namedIconPreviewCache;
 	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector)
 	{
 		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
@@ -458,7 +472,11 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
-							Image preview = createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
+							Image preview = namedIconPreviewCache.getOrCreate(new Tuple2<>(selector.type, iconNameWithoutWidthOrExtension), () -> 
+							{
+								return createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
+							});
+							
 							previewImages.add(preview);
 						}
 
@@ -613,14 +631,18 @@ public class IconsTool extends EditorTool
 		}
 	}
 
+	private ConcurrentHashMapF<Tuple2<IconType, String>, Image> groupPreviewCache;
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		List<Image> croppedImages = new ArrayList<>();
-		for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType, groupName))
+		return groupPreviewCache.getOrCreate(new Tuple2<>(iconType, groupName), () -> 
 		{
-			croppedImages.add(imageAndMasks.cropToContent());
-		}
-		return createIconPreview(settings, croppedImages, 30, 9, iconType);
+			List<Image> croppedImages = new ArrayList<>();
+			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType, groupName))
+			{
+				croppedImages.add(imageAndMasks.cropToContent());
+			}
+			return createIconPreview(settings, croppedImages, 30, 9, iconType);
+		});
 	}
 
 	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight, int padding, IconType iconType)
@@ -679,7 +701,6 @@ public class IconsTool extends EditorTool
 			previewImage = tuple.getThird();
 			previewImage = ImageHelper.colorify(previewImage, settings.landColor, tuple.getFourth());
 		}
-
 
 		previewImage = fadeEdges(previewImage, fadeWidth);
 
@@ -1437,13 +1458,16 @@ public class IconsTool extends EditorTool
 			boolean willDoImagesRefresh)
 	{
 		updateArtPackOptions(settings.customImagesPath);
-		if (Assets.artPackExists(settings.artPack, settings.customImagesPath))
+		if (!Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack) && !isUndoRedoOrAutomaticChange)
 		{
-			artPackComboBox.setSelectedItem(settings.artPack);
-		}
-		else
-		{
-			artPackComboBox.setSelectedItem(Assets.installedArtPack);
+			if (Assets.artPackExists(settings.artPack, settings.customImagesPath))
+			{
+				artPackComboBox.setSelectedItem(settings.artPack);
+			}
+			else
+			{
+				artPackComboBox.setSelectedItem(Assets.installedArtPack);
+			}
 		}
 
 		updateTypePanels();

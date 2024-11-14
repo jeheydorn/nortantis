@@ -37,7 +37,7 @@ public class CenterIcon
 		this.iconIndex = iconIndex;
 		this.iconName = iconName;
 	}
-	
+
 	public CenterIcon copyWithIconGroupId(String iconGroupId)
 	{
 		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName);

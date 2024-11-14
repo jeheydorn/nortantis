@@ -144,7 +144,8 @@ public class ImageExportDialog extends JDialog
 			// Determine the default path to save to.
 			try
 			{
-				String curPath = FileHelper.replaceHomeFolderPlaceholder(type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath);
+				String curPath = FileHelper.replaceHomeFolderPlaceholder(
+						type == ImageExportType.Map ? mainWindow.imageExportPath : mainWindow.heightmapExportPath);
 				if (curPath == null || curPath.isEmpty())
 				{
 					curPath = mainWindow.getOpenSettingsFilePath() == null

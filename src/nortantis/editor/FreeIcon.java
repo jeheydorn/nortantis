@@ -268,6 +268,4 @@ public class FreeIcon
 				+ centerIndex + ", density=" + density + "]";
 	}
 
-
-
 }

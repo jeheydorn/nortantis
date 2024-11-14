@@ -236,7 +236,6 @@ public class MapCreator implements WarningLogger
 		boolean changeAffectsLandOrRegionShape = applyCenterEdits(mapParts.graph, settings.edits,
 				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionBoundaries || settings.drawRegionColors);
 
-
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
 		TextDrawer textDrawer = new TextDrawer(settings);
@@ -267,7 +266,6 @@ public class MapCreator implements WarningLogger
 					settings);
 			replaceBounds = replaceBounds.add(textChangeBounds);
 		}
-
 
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
 		Rectangle iconChangeBounds = mapParts.iconDrawer.addOrUpdateIconsFromEdits(settings.edits, centersChanged, this);
@@ -318,7 +316,6 @@ public class MapCreator implements WarningLogger
 
 			Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
 			mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
-
 
 			Image coastShading;
 			{
@@ -429,7 +426,7 @@ public class MapCreator implements WarningLogger
 			mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.grunge, true,
 					drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
-		
+
 		if (DebugFlags.drawCorners())
 		{
 			mapParts.graph.drawCorners(mapSnippet.createPainter(), centersToDraw, drawBounds);
@@ -791,7 +788,6 @@ public class MapCreator implements WarningLogger
 				// Run the job now so it can run in parallel with other stuff.
 				grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
 			}
-
 
 			if (grungeTask != null)
 			{
@@ -1311,7 +1307,6 @@ public class MapCreator implements WarningLogger
 				double highThresholdInKernel = getKernelValueToThreholdWavesForWidth(kernel, scale, targetStrokeWidth, waveWidth,
 						blur.getMaxPixelLevel());
 
-
 				int higherThreshold = (int) (Math.round(highThresholdInKernel));
 				if (higherThreshold > blur.getMaxPixelLevel())
 				{
@@ -1435,7 +1430,6 @@ public class MapCreator implements WarningLogger
 	{
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landMask, true);
 	}
-
 
 	private static float calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(double targetStrokeWidth)
 	{
@@ -1850,7 +1844,6 @@ public class MapCreator implements WarningLogger
 	{
 		return isCanceled;
 	}
-
 
 	public static int calcMaximumResolution()
 	{

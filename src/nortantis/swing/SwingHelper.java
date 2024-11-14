@@ -116,14 +116,13 @@ public class SwingHelper
 		{
 			comboBox.setSelectedIndex(0);
 		}
-		
+
 		// Re-add the action listeners
 		for (ActionListener listener : listeners)
 		{
 			comboBox.addActionListener(listener);
 		}
 	}
-
 
 	public static void setSliderWidthForSidePanel(JSlider slider)
 	{
@@ -333,7 +332,10 @@ public class SwingHelper
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options = { "OK" };
+		Object[] options =
+		{
+				"OK"
+		};
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");

@@ -63,7 +63,7 @@ public class SettingsGenerator
 		settings.lloydRelaxationsScale = MapSettings.defaultLloydRelaxationsScale;
 
 		setRandomSeeds(settings, rand);
-		
+
 		if (artPack == null)
 		{
 			throw new IllegalArgumentException("artPack cannot be null.");
@@ -168,7 +168,7 @@ public class SettingsGenerator
 		{
 			// Random border type.
 			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
-			
+
 			if (settings.borderResource.name.equals("dashes"))
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;

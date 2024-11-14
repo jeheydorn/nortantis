@@ -312,7 +312,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 		});
 
-
 		// Background image stuff.
 		generateBackground = getProperty("generateBackground", new Function0<Boolean>()
 		{

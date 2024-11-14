@@ -9,22 +9,22 @@ import nortantis.platform.Color;
 public class AwtColor extends Color implements Serializable
 {
 	java.awt.Color color;
-	
+
 	public AwtColor(int rgb, boolean hasAlpha)
 	{
 		color = new java.awt.Color(rgb, hasAlpha);
 	}
-	
+
 	public AwtColor(int red, int green, int blue)
 	{
 		color = new java.awt.Color(red, green, blue);
 	}
-	
+
 	public AwtColor(float red, float green, float blue)
 	{
 		color = new java.awt.Color(red, green, blue);
 	}
-	
+
 	public AwtColor(int red, int green, int blue, int alpha)
 	{
 		color = new java.awt.Color(red, green, blue, alpha);

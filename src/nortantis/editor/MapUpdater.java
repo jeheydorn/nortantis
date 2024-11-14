@@ -302,7 +302,8 @@ public abstract class MapUpdater
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
 			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
-		Set<Integer> centersChangedIds = centersChanged == null ? null
+		Set<Integer> centersChangedIds = centersChanged == null
+				? null
 				: centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
 		Set<Integer> edgesChangedIds = edgesChanged == null ? null : edgesChanged.stream().map(e -> e.index).collect(Collectors.toSet());
 
@@ -324,7 +325,8 @@ public abstract class MapUpdater
 			postRuns.add(postRun);
 		}
 
-		List<MapText> copiedText = textChanged == null ? null
+		List<MapText> copiedText = textChanged == null
+				? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
 		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns);
 	}
@@ -401,7 +403,8 @@ public abstract class MapUpdater
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 									centersChangedIds, edgesChangedIds);
-							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
+							combinedReplaceBounds = combinedReplaceBounds == null
+									? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -414,7 +417,8 @@ public abstract class MapUpdater
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for text");
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateText(settings, mapParts, map, textChanged);
-							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
+							combinedReplaceBounds = combinedReplaceBounds == null
+									? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -427,7 +431,8 @@ public abstract class MapUpdater
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
-							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
+							combinedReplaceBounds = combinedReplaceBounds == null
+									? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -476,8 +481,7 @@ public abstract class MapUpdater
 						System.gc();
 						return new UpdateResult(map, null, currentMapCreator.getWarningMessages());
 					}
-				}
-				finally
+				} finally
 				{
 					drawLock.unlock();
 					if (!isUpdateTypeThatAllowsInteractions(updateType))
@@ -521,7 +525,8 @@ public abstract class MapUpdater
 						boolean anotherDrawIsQueued = next != null;
 						int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
-								replaceBounds == null ? null
+								replaceBounds == null
+										? null
 										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
 												replaceBounds.width, replaceBounds.height),
 								warningMessages);
@@ -821,8 +826,7 @@ public abstract class MapUpdater
 			}
 			catch (InterruptedException e1)
 			{
-			}
-			finally
+			} finally
 			{
 				if (isLocked)
 				{
@@ -858,8 +862,7 @@ public abstract class MapUpdater
 			}
 			catch (InterruptedException e1)
 			{
-			}
-			finally
+			} finally
 			{
 				if (isLocked)
 				{

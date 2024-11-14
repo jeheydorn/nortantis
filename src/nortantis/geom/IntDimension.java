@@ -6,13 +6,13 @@ public class IntDimension
 {
 	public final int width;
 	public final int height;
-	
+
 	public IntDimension(int width, int height)
 	{
 		this.width = width;
 		this.height = height;
 	}
-	
+
 	public Dimension toDimension()
 	{
 		return new Dimension(width, height);
@@ -48,6 +48,5 @@ public class IntDimension
 		IntDimension other = (IntDimension) obj;
 		return height == other.height && width == other.width;
 	}
-	
-	
+
 }

@@ -178,7 +178,6 @@ public class TextTool extends EditorTool
 			textTypeComboBox.addItem(type);
 		}
 
-
 		lineBreakComboBox = new JComboBoxFixed<>();
 		lineBreakHider = organizer.addLabelAndComponent("Number of lines:", "", lineBreakComboBox);
 		for (LineBreak type : LineBreak.values())
@@ -201,7 +200,6 @@ public class TextTool extends EditorTool
 			}
 		});
 
-
 		JButton clearRotationButton = new JButton("Rotate to Horizontal");
 		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
 		clearRotationButton.addActionListener(new ActionListener()
@@ -220,7 +218,6 @@ public class TextTool extends EditorTool
 			}
 		});
 		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
-
 
 		useDefaultColorCheckbox = new JCheckBox("Use default color");
 		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");
@@ -294,7 +291,6 @@ public class TextTool extends EditorTool
 				"Change the color of the bold background of this text",
 				Arrays.asList(boldBackgroundColorOverrideDisplay, buttonChooseBoldBackgroundColorOverride),
 				SwingHelper.colorPickerLeftPadding);
-
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -734,7 +730,6 @@ public class TextTool extends EditorTool
 		mapEditingPanel.clearProcessingAreas();
 		mapEditingPanel.repaint();
 	}
-
 
 	@Override
 	protected void onBeforeUndoRedo()

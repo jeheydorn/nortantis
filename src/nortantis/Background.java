@@ -54,7 +54,6 @@ public class Background
 	private boolean hasInsetCorners;
 	private String customImagesPath;
 
-
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
 		customImagesPath = settings.customImagesPath;
@@ -422,7 +421,6 @@ public class Background
 			rightEdge = ImageHelper.scaleByWidth(rightEdge, borderWidthScaled);
 		}
 
-
 		if (topEdge == null)
 		{
 			if (rightEdge != null)
@@ -499,7 +497,6 @@ public class Background
 			hasInsetCorners = true;
 			cornerWidth = (int) (borderWidthScaled * (((double) cornerOriginalWidth) / ((double) edgeOriginalWidth)));
 		}
-
 
 		if (upperLeftCorner != null)
 		{

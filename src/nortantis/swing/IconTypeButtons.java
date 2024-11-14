@@ -32,9 +32,9 @@ public class IconTypeButtons
 		}
 		return null;
 	}
-	
+
 	public boolean selectButtonIfPresent(String buttonText)
-	{		
+	{
 		for (RadioButtonWithImage buttonWithImage : buttons)
 		{
 			if (buttonWithImage.getText().equals(buttonText))
@@ -43,7 +43,7 @@ public class IconTypeButtons
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 }

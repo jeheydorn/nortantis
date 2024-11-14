@@ -89,7 +89,7 @@ public class Corner
 		}
 		return null;
 	}
-	
+
 	public boolean protrudesContains(Edge e)
 	{
 		for (Edge p : protrudes)
@@ -101,12 +101,11 @@ public class Corner
 		}
 		return false;
 	}
-	
+
 	public void resetLocToOriginal()
 	{
 		loc = originalLoc;
 	}
-	
 
 	@Override
 	public String toString()

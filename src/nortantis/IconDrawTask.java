@@ -28,18 +28,18 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	IconType type;
 	String fileName;
 
-
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize)
 	{
 		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null);
 	}
-	
+
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName)
 	{
 		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName);
 	}
 
-	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName)
+	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
+			IntDimension scaledSize, String fileName)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -51,7 +51,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 		this.fileName = fileName;
 	}
-	
+
 	public void scaleIcon()
 	{
 		if (scaledImageAndMasks == null)

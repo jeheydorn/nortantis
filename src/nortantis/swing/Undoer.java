@@ -38,7 +38,7 @@ public class Undoer
 		redoStack = null;
 		copyOfSettingsWhenEditorWasOpened = null;
 	}
-	
+
 	public void setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
 		setUndoPoint(updateType, tool, null);
@@ -105,15 +105,15 @@ public class Undoer
 		{
 			return;
 		}
-		
+
 		mainWindow.toolsPanel.currentTool.onBeforeUndoRedo();
 
 		MapChange changeToUndo = undoStack.pop();
-		
-		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any 
+
+		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any
 		// changes made after the latest undo point.
 		changeToUndo.settings = mainWindow.getSettingsFromGUI(true);
-		
+
 		redoStack.push(changeToUndo);
 		MapSettings settings;
 		if (undoStack.isEmpty())

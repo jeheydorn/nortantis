@@ -411,8 +411,8 @@ public class GridBagOrganizer
 	private void drawCenteredString(Graphics2D g, String text, Point point)
 	{
 		FontMetrics metrics = g.getFontMetrics(g.getFont());
-		int x = (int)(point.x - metrics.stringWidth(text) / 2.0);
-		int y = (int)(point.y - metrics.getHeight() / 2.0 + metrics.getAscent());
+		int x = (int) (point.x - metrics.stringWidth(text) / 2.0);
+		int y = (int) (point.y - metrics.getHeight() / 2.0 + metrics.getAscent());
 		g.drawString(text, x, y);
 	}
 

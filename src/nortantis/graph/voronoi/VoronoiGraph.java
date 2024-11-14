@@ -131,8 +131,7 @@ public abstract class VoronoiGraph
 
 		for (Edge e : edges)
 		{
-			e.noisyEdgesSeed = rand.nextLong();
-			;
+			e.noisyEdgesSeed = rand.nextLong();;
 		}
 	}
 
@@ -406,7 +405,6 @@ public abstract class VoronoiGraph
 			}
 		}
 	}
-
 
 	/**
 	 * For debugging
@@ -697,7 +695,8 @@ public abstract class VoronoiGraph
 
 						// One of the corners of the graph is the next point. Determine which corner that is.
 						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
-						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y)
+								? bounds.y
 								: bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;

@@ -30,8 +30,8 @@ public final class Voronoi
 
 	public Voronoi(int numSites, double maxWidth, double maxHeight, Random r)
 	{
-		ArrayList<Point> points = new ArrayList<Point>();		
-			
+		ArrayList<Point> points = new ArrayList<Point>();
+
 		for (int i = 0; i < numSites; i++)
 		{
 			points.add(new Point(r.nextDouble() * maxWidth, r.nextDouble() * maxHeight));
@@ -48,7 +48,7 @@ public final class Voronoi
 		_plotBounds = plotBounds;
 		_edges = new ArrayList<Edge>();
 	}
-	
+
 	private void addSites(ArrayList<Point> points)
 	{
 		int length = points.size();
@@ -187,7 +187,6 @@ public final class Voronoi
 				filtered.add(e);
 			}
 		}
-
 
 		return filtered;
 

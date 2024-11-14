@@ -185,7 +185,6 @@ public class Center implements Comparable<Center>
 		return false;
 	}
 
-
 	public boolean isOcean()
 	{
 		return isWater && !isLake;
@@ -254,8 +253,7 @@ public class Center implements Comparable<Center>
 			{
 				currentEdge = next;
 			}
-		}
-		while (!remaining.isEmpty() && currentEdge != null);
+		} while (!remaining.isEmpty() && currentEdge != null);
 
 		return result;
 	}
@@ -283,13 +281,13 @@ public class Center implements Comparable<Center>
 			{
 				counter.incrementCount(edge.v0.loc.toIntPoint());
 			}
-			
+
 			if (edge.v1 != null)
 			{
 				counter.incrementCount(edge.v1.loc.toIntPoint());
 			}
 		}
-		
+
 		IntPoint mostFrequent = counter.argmax();
 		if (mostFrequent != null && counter.getCount(mostFrequent) > 2)
 		{
@@ -417,7 +415,5 @@ public class Center implements Comparable<Center>
 		}
 		return locComp;
 	}
-	
-	
 
 }
