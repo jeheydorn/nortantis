@@ -1,7 +1,12 @@
 package nortantis.util;
 
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import javax.swing.JOptionPane;
 
 public class OSHelper
 {
@@ -38,5 +43,25 @@ public class OSHelper
 			return Paths.get(System.getProperty("user.home"), ".Nortantis");
 		}
 		return Paths.get(System.getProperty("user.dir"));
+	}
+	
+	public static void openFileExplorerTo(File folder)
+	{
+		Desktop desktop = Desktop.getDesktop();
+		if (desktop.isSupported(Desktop.Action.OPEN))
+		{
+			try
+			{
+				desktop.open(folder);
+			}
+			catch (IOException ex)
+			{
+				Logger.printError("Error while trying to open folder '" + folder + " in your system's file explorer.", ex);
+			}
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(null, "Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error", JOptionPane.ERROR_MESSAGE);
+		}
 	}
 }

@@ -40,7 +40,7 @@ public class Assets
 {
 	private final static String assetsPath = "assets";
 	public final static String customArtPack = "custom";
-	public final static String artPacksFolder = "art packs";
+	private final static String artPacksFolder = "art packs";
 	public final static String installedArtPack = "nortantis";
 	private static List<String> artPacksInArtPacksFolderCache;
 
@@ -90,7 +90,7 @@ public class Assets
 	{
 		List<String> result = new ArrayList<>();
 		// Add installed art packs.
-		result.addAll(Assets.listNonEmptySubFolders(Paths.get(OSHelper.getAppDataPath().toString(), Assets.artPacksFolder).toString()));
+		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()));
 
 		result.sort(String::compareTo);
 		return result;
@@ -150,7 +150,12 @@ public class Assets
 			return Paths.get(getInstalledArtPackPath());
 		}
 
-		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder, artPack);
+		return Paths.get(getArtPacksFolder().toString(), artPack);
+	}
+	
+	public static Path getArtPacksFolder()
+	{
+		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder);
 	}
 
 	public static Path getBackgroundTextureResourcePath(NamedResource resource, String customImagesFolder)

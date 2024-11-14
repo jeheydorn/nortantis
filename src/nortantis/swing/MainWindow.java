@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -20,6 +21,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -44,6 +46,7 @@ import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.imgscalr.Scalr.Method;
@@ -66,9 +69,11 @@ import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
+import nortantis.util.FileHelper;
 import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -166,10 +171,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[]
-			{
-					"Welcome to Nortantis. To create or open a map,", "use the File menu."
-			});
+			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 	}
@@ -502,11 +504,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearSelectedCenters();
-				setPlaceholderImage(new String[]
-				{
-						"Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "."
-				});
+				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
+						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -611,8 +610,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null
-						? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 						: openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
@@ -833,6 +831,44 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		JMenu artPacksMenu = new JMenu("Art Packs");
+		toolsMenu.add(artPacksMenu);
+
+		JMenuItem addArtPackItem = new JMenuItem("Add Art Pack");
+		artPacksMenu.add(addArtPackItem);
+		addArtPackItem.addActionListener(new ActionListener()
+		{
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleAddArtPack();
+			}
+		});
+
+		JMenuItem openArtPacksFolderItem = new JMenuItem("Open Art Packs Folder");
+		artPacksMenu.add(openArtPacksFolderItem);
+		openArtPacksFolderItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleOpenArtPacksFolder();
+			}
+		});
+
+		JMenuItem highlightIconsInArtPackItem = new JMenuItem("Highlight Icons in Art Pack");
+		artPacksMenu.add(highlightIconsInArtPackItem);
+		highlightIconsInArtPackItem.addActionListener(new ActionListener()
+		{	
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleHighlightIconsInArtPack();
+			}
+		});
+
+
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
 
@@ -860,6 +896,147 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				showAboutNortantisDialog();
 			}
 		});
+	}
+	
+	private void handleHighlightIconsInArtPack()
+	{
+		// TODO
+	}
+
+	private void handleOpenArtPacksFolder()
+	{
+		Path artPacksPath = Assets.getArtPacksFolder();
+
+		if (!artPacksPath.toFile().exists())
+		{
+			try
+			{
+				Files.createDirectories(artPacksPath);
+			}
+			catch (IOException ex)
+			{
+				String message = "An error occurred while creating the folder: " + ex.getMessage();
+				Logger.printError(message, ex);
+				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+		}
+
+		OSHelper.openFileExplorerTo(artPacksPath.toFile());
+	}
+
+	private void handleAddArtPack()
+	{
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setDialogTitle("Select Art Pack (ZIP File)");
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return "Art Pack (ZIP File)";
+			}
+
+			@Override
+			public boolean accept(File f)
+			{
+				return f.isDirectory() || f.getName().toLowerCase().endsWith(".zip");
+			}
+		});
+
+		int result = fileChooser.showOpenDialog(MainWindow.this);
+		if (result == JFileChooser.APPROVE_OPTION)
+		{
+			File selectedFile = fileChooser.getSelectedFile();
+
+			// Check for forbidden names. I'm adding 'all' to the list in case I someday decide I want an 'all' option for showing
+			// art packs in IconsTool.
+			List<String> subfolderNames;
+			try
+			{
+				subfolderNames = FileHelper.getTopLevelSubFolders(selectedFile.toPath());
+			}
+			catch (IOException ex)
+			{
+				String message = "Error while reading zip file '" + selectedFile + "': " + ex.getMessage();
+				Logger.printError(message, ex);
+				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			if (subfolderNames.isEmpty())
+			{
+				JOptionPane.showMessageDialog(this,
+						"Invalid art pack. It's empty. It should have exactly one top-level folder, the name of which is the name of the art pack.",
+						"Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			if (subfolderNames.size() > 1)
+			{
+				JOptionPane.showMessageDialog(this,
+						"Invalid art pack. It should have exactly one top-level folder, the name of which will be the name of the art pack. It has "
+								+ subfolderNames.size() + " top-level folders.",
+						"Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			String artPackName = subfolderNames.get(0);
+
+			if (artPackName.toLowerCase().equals(Assets.installedArtPack)
+					|| artPackName.toLowerCase().equals(Assets.customArtPack) || artPackName.toLowerCase().equals("all"))
+			{
+				JOptionPane
+						.showMessageDialog(this,
+								"The art pack name cannot be '" + Assets.installedArtPack + "', '" + Assets.customArtPack
+										+ "', or 'all'.",
+								"Invalid Art Pack Name", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			File artPackFolderAsFile = Assets.getArtPackPath(artPackName, null).toFile();
+			if (artPackFolderAsFile.exists() && artPackFolderAsFile.isDirectory())
+			{
+				// Show the dialog
+				int response = JOptionPane.showOptionDialog(this,
+						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
+
+				if (response == 0)
+				{
+					// Overwrite
+					try
+					{
+						FileUtils.deleteDirectory(artPackFolderAsFile);
+					}
+					catch (IOException e)
+					{
+						Logger.printError("Error while deleting folder '" + artPackFolderAsFile + "': " + e.getMessage(), e);
+						return;
+					}
+				}
+				else
+				{
+					// Cancel
+					return;
+				}
+			}
+
+			// Uncompress the zip file
+			Path artPacksFolder = Assets.getArtPacksFolder();
+			try
+			{
+				FileHelper.unzip(selectedFile, artPacksFolder, true);
+				JOptionPane.showMessageDialog(MainWindow.this, "Art pack added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+			}
+			catch (IOException ex)
+			{
+				JOptionPane.showMessageDialog(MainWindow.this, "Error uncompressing the zip file: " + ex.getMessage(), "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+			handleImagesRefresh();
+		}
 	}
 
 	void handleImagesRefresh()
@@ -1380,8 +1557,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null
-				? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 				: openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
@@ -1495,10 +1671,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[]
-		{
-				"Drawing map..."
-		});
+		setPlaceholderImage(new String[] { "Drawing map..." });
 
 		undoer.reset();
 

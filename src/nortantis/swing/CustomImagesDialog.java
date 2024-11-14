@@ -36,6 +36,7 @@ import nortantis.editor.UserPreferences;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class CustomImagesDialog extends JDialog
@@ -179,18 +180,7 @@ public class CustomImagesDialog extends JDialog
 					return;
 				}
 
-				if (Desktop.isDesktopSupported())
-				{
-					try
-					{
-						Desktop.getDesktop().open(folder);
-					}
-					catch (IOException ex)
-					{
-						ex.printStackTrace();
-						Logger.printError("Error while trying to open custom images folder: ", ex);
-					}
-				}
+				OSHelper.openFileExplorerTo(folder);
 			}
 		});
 		openButton.setEnabled(!customImagesFolderField.getText().isEmpty());
