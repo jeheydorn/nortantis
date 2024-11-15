@@ -41,6 +41,8 @@ public class MapCreatorTest
 	{
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
+		
+		Assets.disableAddedArtPacksForUnitTests();
 
 		// Create the expected images if they don't already exist.
 		// Note that this means that if you haven't already created the images, you run these tests before making changes that will need to

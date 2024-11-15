@@ -42,9 +42,9 @@ public class Assets
 	public final static String customArtPack = "custom";
 	private final static String artPacksFolder = "art packs";
 	public final static String installedArtPack = "nortantis";
-	public final static List<String> reservedArtPacks = Collections
-			.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
+	public final static List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
 	private static List<String> artPacksInArtPacksFolderCache;
+	private static boolean disableAddedArtPacksForUnitTests;
 
 	public static String getAssetsPath()
 	{
@@ -61,8 +61,11 @@ public class Assets
 		List<String> result = new ArrayList<>();
 		result.add(installedArtPack);
 
-		// Add installed art packs.
-		result.addAll(getArtPacksFromArtPackFolderCached());
+		// Add added art packs from the art packs folder.
+		if (!disableAddedArtPacksForUnitTests)
+		{
+			result.addAll(getArtPacksFromArtPackFolderCached());
+		}
 
 		// Add custom images folder if the map has one.
 		if (includeCustomArtPack)
@@ -643,7 +646,12 @@ public class Assets
 		{
 			props.load(inputStream);
 		}
-		
+
 		return props;
+	}
+
+	public static void disableAddedArtPacksForUnitTests()
+	{
+		disableAddedArtPacksForUnitTests = true;
 	}
 }
