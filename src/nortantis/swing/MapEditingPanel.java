@@ -16,9 +16,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.imgscalr.Scalr.Method;
 
+import nortantis.FreeIconCollection;
 import nortantis.IconDrawTask;
 import nortantis.IconDrawer;
 import nortantis.MapText;
@@ -42,6 +44,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 																	// this feature.
 	private boolean isErasing;
 	private final Color waterHighlightColor = new Color(0, 193, 245);
+	private final Color artPackHighlightColor = Color.CYAN;
 	private final Color processingColor = Color.orange;
 	private final Color selectColor = Color.orange;
 	private Set<Center> highlightedCenters;
@@ -73,6 +76,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Rectangle textBoxBoundsLine2;
 	private Set<Area> highlightedAreas;
 	private Set<RotatedRectangle> processingAreas;
+	private Set<String> artPacksToHighlight;
+	private FreeIconCollection freeIcons;
+	private IconDrawer iconDrawer;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -82,6 +88,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedEdges = new HashSet<>();
 		highlightedAreas = new HashSet<>();
 		processingAreas = new HashSet<>();
+		artPacksToHighlight = new TreeSet<>();
 		zoom = 1.0;
 		resolution = 0.0;
 	}
@@ -141,8 +148,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxAngle = 0.0;
 	}
 
-	public void showIconEditToolsAt(IconDrawer iconDrawer, FreeIcon icon)
+	public void showIconEditToolsAt(FreeIcon icon)
 	{
+		assert iconDrawer != null;
+		if (iconDrawer == null)
+		{
+			return;
+		}
+
 		iconToEditBounds = iconDrawer.toIconDrawTask(icon).createBounds();
 		this.isIconToEditInAValidPosition = true;
 	}
@@ -178,8 +191,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.isErasing = isErasing;
 	}
 
-	public void setHighlightedAreasFromIcons(IconDrawer iconDrawer, List<FreeIcon> icons, boolean isErasing)
+	public void setHighlightedAreasFromIcons(List<FreeIcon> icons, boolean isErasing)
 	{
+		assert iconDrawer != null;
+		if (iconDrawer == null)
+		{
+			return;
+		}
+
 		highlightedAreas.clear();
 		for (FreeIcon icon : icons)
 		{
@@ -286,12 +305,28 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.highlightMode = mode;
 	}
 
+	public void setArtPacksToHighlight(Set<String> artPacksToHighlight)
+	{
+		this.artPacksToHighlight = artPacksToHighlight == null ? new TreeSet<>() : artPacksToHighlight;
+	}
+
+	public void setFreeIcons(FreeIconCollection freeIcons)
+	{
+		this.freeIcons = freeIcons;
+	}
+
+	public void setIconDrawer(IconDrawer iconDrawer)
+	{
+		this.iconDrawer = iconDrawer;
+	}
+
 	@Override
 	protected void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
 
 		Graphics2D g2 = ((Graphics2D) g);
+
 		if (brushLocation != null)
 		{
 			g.setColor(getHighlightColor());
@@ -306,6 +341,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		((Graphics2D) g).transform(transform);
 
 		// Handle drawing/highlighting
+
+		highlightArtPacksIfNeeded(g2);
 
 		if (textBoxBoundsLine1 != null)
 		{
@@ -338,6 +375,26 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
+		}
+	}
+
+	private void highlightArtPacksIfNeeded(Graphics2D g)
+	{
+		if (freeIcons != null && artPacksToHighlight != null && !artPacksToHighlight.isEmpty())
+		{
+			g.setColor(artPackHighlightColor);
+			for (FreeIcon icon : freeIcons)
+			{
+				if (artPacksToHighlight.contains(icon.artPack))
+				{
+					IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+					if (task != null)
+					{
+						nortantis.geom.Rectangle bounds = task.createBounds();
+						((Graphics2D) g).draw(AwtFactory.toAwtArea(bounds));
+					}
+				}
+			}
 		}
 	}
 
@@ -661,6 +718,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearAllToolSpecificSelectionsAndHighlights();
 		setHighlightRivers(false);
 		setHighlightLakes(false);
+		freeIcons = null;
 		repaint();
 	}
 

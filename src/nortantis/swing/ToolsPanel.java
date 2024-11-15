@@ -62,7 +62,7 @@ public class ToolsPanel extends JPanel
 		// Setup tools
 		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater),
 				new TextTool(mainWindow, this, updater));
-		currentTool = tools.get(2);
+		currentTool = tools.get(0);
 
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));

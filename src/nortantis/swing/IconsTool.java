@@ -378,20 +378,21 @@ public class IconsTool extends EditorTool
 	{
 		groupPreviewCache.clear();
 		namedIconPreviewCache.clear();
-		
+
 		refreshImagesWithoutClearingCache(settings);
 	}
-	
+
 	private void refreshImagesWithoutClearingCache(MapSettings settings)
 	{
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
-		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, settings.artPack, customImagesPath);
-		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, settings.artPack, customImagesPath);
-		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, settings.artPack, customImagesPath);
-		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, settings.artPack, customImagesPath);
+		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
+		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, artPack, customImagesPath);
+		hillTypes = createOrUpdateRadioButtonsForIconType(null, IconType.hills, hillTypes, artPack, customImagesPath);
+		duneTypes = createOrUpdateRadioButtonsForIconType(null, IconType.sand, duneTypes, artPack, customImagesPath);
+		treeTypes = createOrUpdateRadioButtonsForIconType(null, IconType.trees, treeTypes, artPack, customImagesPath);
 
-		createOrUpdateButtonsForCities(null, settings.artPack, settings.customImagesPath);
-		createOrUpdateDecorationButtons(null, settings.artPack, settings.customImagesPath);
+		createOrUpdateButtonsForCities(null, artPack, customImagesPath);
+		createOrUpdateDecorationButtons(null, artPack, customImagesPath);
 
 		// Trigger re-creation of image previews
 		loadSettingsIntoGUI(settings, false, true, false);
@@ -400,11 +401,14 @@ public class IconsTool extends EditorTool
 
 	private void updateIconTypeButtonPreviewImages(MapSettings settings)
 	{
-		String customImagesPath = settings == null ? null : settings.customImagesPath;
-		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, customImagesPath);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, customImagesPath);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, customImagesPath);
-		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, customImagesPath);
+		if (settings == null)
+		{
+			return;
+		}
+		updateOneIconTypeButtonPreviewImages(settings, IconType.mountains, mountainTypes, settings.customImagesPath);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.hills, hillTypes, settings.customImagesPath);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.sand, duneTypes, settings.customImagesPath);
+		updateOneIconTypeButtonPreviewImages(settings, IconType.trees, treeTypes, settings.customImagesPath);
 
 		updateNamedIconButtonPreviewImages(settings, cityButtons);
 		updateNamedIconButtonPreviewImages(settings, decorationButtons);
@@ -446,8 +450,13 @@ public class IconsTool extends EditorTool
 	}
 
 	private ConcurrentHashMapF<Tuple2<IconType, String>, Image> namedIconPreviewCache;
+
 	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector)
 	{
+		if (settings == null)
+		{
+			return;
+		}
 		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
 		{
 			final List<Tuple2<String, JToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
@@ -472,11 +481,12 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
-							Image preview = namedIconPreviewCache.getOrCreate(new Tuple2<>(selector.type, iconNameWithoutWidthOrExtension), () -> 
-							{
-								return createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
-							});
-							
+							Image preview = namedIconPreviewCache.getOrCreate(new Tuple2<>(selector.type, iconNameWithoutWidthOrExtension),
+									() ->
+									{
+										return createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
+									});
+
 							previewImages.add(preview);
 						}
 
@@ -632,12 +642,14 @@ public class IconsTool extends EditorTool
 	}
 
 	private ConcurrentHashMapF<Tuple2<IconType, String>, Image> groupPreviewCache;
+
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		return groupPreviewCache.getOrCreate(new Tuple2<>(iconType, groupName), () -> 
+		return groupPreviewCache.getOrCreate(new Tuple2<>(iconType, groupName), () ->
 		{
 			List<Image> croppedImages = new ArrayList<>();
-			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType, groupName))
+			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType,
+					groupName))
 			{
 				croppedImages.add(imageAndMasks.cropToContent());
 			}
@@ -960,7 +972,7 @@ public class IconsTool extends EditorTool
 			return iconsBeforeAndAfter;
 		});
 
-		mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, iconsSelectedAfter, false);
+		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter, false);
 
 		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
 		{
@@ -1024,7 +1036,7 @@ public class IconsTool extends EditorTool
 				iconToEdit = getLowestSelectedIcon(e.getPoint());
 				if (iconToEdit != null)
 				{
-					mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, iconToEdit);
+					mapEditingPanel.showIconEditToolsAt(iconToEdit);
 					if (DebugFlags.printIconBeingEdited())
 					{
 						System.out.println("Selected icon for editing: " + iconToEdit);
@@ -1143,7 +1155,7 @@ public class IconsTool extends EditorTool
 						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
 				if (isValidPosition)
 				{
-					mapEditingPanel.showIconEditToolsAt(updater.mapParts.iconDrawer, updated);
+					mapEditingPanel.showIconEditToolsAt(updated);
 				}
 				else
 				{
@@ -1254,15 +1266,14 @@ public class IconsTool extends EditorTool
 				FreeIcon selected = getLowestSelectedIcon(e.getPoint());
 				if (selected != null)
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, Arrays.asList(selected),
-							modeWidget.isEraseMode());
+					mapEditingPanel.setHighlightedAreasFromIcons(Arrays.asList(selected), modeWidget.isEraseMode());
 				}
 			}
 		}
 		else if (!(modeWidget.isDrawMode() && decorationsButton.isSelected()))
 		{
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromIcons(updater.mapParts.iconDrawer, icons, modeWidget.isEraseMode());
+			mapEditingPanel.setHighlightedAreasFromIcons(icons, modeWidget.isEraseMode());
 		}
 	}
 
@@ -1457,12 +1468,14 @@ public class IconsTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
 			boolean willDoImagesRefresh)
 	{
-		updateArtPackOptions(settings.customImagesPath);
-		if (!Objects.equals(artPackComboBox.getSelectedItem(), settings.artPack) && !isUndoRedoOrAutomaticChange)
+		String customImagesPath = settings == null ? null : settings.customImagesPath;
+		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
+		updateArtPackOptions(customImagesPath);
+		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
-			if (Assets.artPackExists(settings.artPack, settings.customImagesPath))
+			if (Assets.artPackExists(artPack, customImagesPath))
 			{
-				artPackComboBox.setSelectedItem(settings.artPack);
+				artPackComboBox.setSelectedItem(artPack);
 			}
 			else
 			{

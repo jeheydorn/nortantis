@@ -42,6 +42,8 @@ public class Assets
 	public final static String customArtPack = "custom";
 	private final static String artPacksFolder = "art packs";
 	public final static String installedArtPack = "nortantis";
+	public final static List<String> reservedArtPacks = Collections
+			.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
 	private static List<String> artPacksInArtPacksFolderCache;
 
 	public static String getAssetsPath()
@@ -90,7 +92,8 @@ public class Assets
 	{
 		List<String> result = new ArrayList<>();
 		// Add installed art packs.
-		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()));
+		result.addAll(Assets.listNonEmptySubFolders(getArtPacksFolder().toString()).stream()
+				.filter(name -> !reservedArtPacks.contains(name.toLowerCase())).toList());
 
 		result.sort(String::compareTo);
 		return result;
@@ -152,7 +155,7 @@ public class Assets
 
 		return Paths.get(getArtPacksFolder().toString(), artPack);
 	}
-	
+
 	public static Path getArtPacksFolder()
 	{
 		return Paths.get(OSHelper.getAppDataPath().toString(), artPacksFolder);

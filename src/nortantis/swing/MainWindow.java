@@ -24,11 +24,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -37,6 +41,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -48,6 +53,7 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.imgscalr.Scalr.Method;
 
@@ -127,6 +133,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem newMapWithSameThemeMenuItem;
 	private JMenuItem searchTextMenuItem;
 	private TextSearchDialog textSearchDialog;
+	private JMenu highlightIconsInArtPackMenu;
+	private List<JCheckBoxMenuItem> artPacksToHighlight;
 
 	public MainWindow(String fileToOpen)
 	{
@@ -174,6 +182,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
+		
 	}
 
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
@@ -444,6 +453,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
+				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
+				mapEditingPanel.setIconDrawer(mapParts.iconDrawer);
 
 				if (!undoer.isInitialized())
 				{
@@ -503,7 +514,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			protected void onFailedToDraw()
 			{
 				showAsDrawing(false);
-				mapEditingPanel.clearSelectedCenters();
+				mapEditingPanel.clearAllSelectionsAndHighlights();
 				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
 						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
@@ -857,16 +868,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
-		JMenuItem highlightIconsInArtPackItem = new JMenuItem("Highlight Icons in Art Pack");
-		artPacksMenu.add(highlightIconsInArtPackItem);
-		highlightIconsInArtPackItem.addActionListener(new ActionListener()
-		{	
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				handleHighlightIconsInArtPack();
-			}
-		});
+		artPacksToHighlight = new ArrayList<>();
+		highlightIconsInArtPackMenu = new JMenu("Highlight Icons in Art Packs");
+		artPacksMenu.add(highlightIconsInArtPackMenu);
+		updateArtPackHighlightOptions();
 
 
 		helpMenu = new JMenu("Help");
@@ -897,10 +902,55 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 	}
-	
-	private void handleHighlightIconsInArtPack()
+
+	private void updateArtPackHighlightOptions()
 	{
-		// TODO
+		Set<String> highlightedArtPacks = getSelectedArtPacksToHighlight();
+		highlightIconsInArtPackMenu.removeAll();
+		artPacksToHighlight.clear();
+		List<String> artPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
+		ActionListener listener = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				updateArtPackHighlights();
+			}
+		};
+		for (String artPack : artPacks)
+		{
+			JCheckBoxMenuItem item = new JCheckBoxMenuItem(artPack);
+			highlightIconsInArtPackMenu.add(item);
+			artPacksToHighlight.add(item);
+			if (highlightedArtPacks.contains(artPack))
+			{
+				item.setSelected(true);
+			}
+			item.addActionListener(listener);
+		}
+		
+	}
+	
+	private void updateArtPackHighlights()
+	{
+		if (mapEditingPanel != null)
+		{
+			mapEditingPanel.setArtPacksToHighlight(getSelectedArtPacksToHighlight());
+			mapEditingPanel.repaint();
+		}
+	}
+
+	private Set<String> getSelectedArtPacksToHighlight()
+	{
+		Set<String> result = new TreeSet<>();
+		for (JCheckBoxMenuItem item : artPacksToHighlight)
+		{
+			if (item.isSelected())
+			{
+				result.add(item.getText());
+			}
+		}
+		return result;
 	}
 
 	private void handleOpenArtPacksFolder()
@@ -984,14 +1034,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			String artPackName = subfolderNames.get(0);
 
-			if (artPackName.toLowerCase().equals(Assets.installedArtPack)
-					|| artPackName.toLowerCase().equals(Assets.customArtPack) || artPackName.toLowerCase().equals("all"))
+			if (Assets.reservedArtPacks.contains(artPackName.toLowerCase()))
 			{
-				JOptionPane
-						.showMessageDialog(this,
-								"The art pack name cannot be '" + Assets.installedArtPack + "', '" + Assets.customArtPack
-										+ "', or 'all'.",
-								"Invalid Art Pack Name", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(this, "The art pack name '" + artPackName + "' is not allowed.", "Invalid Art Pack Name",
+						JOptionPane.ERROR_MESSAGE);
 				return;
 			}
 
@@ -1048,6 +1094,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		themePanel.handleImagesRefresh(settings);
 		// Tell Icons tool to refresh image previews
 		toolsPanel.handleImagesRefresh(settings);
+		updateArtPackHighlightOptions();
+		updateArtPackHighlights();
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}

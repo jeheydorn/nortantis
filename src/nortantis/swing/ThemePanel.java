@@ -1687,10 +1687,12 @@ public class ThemePanel extends JTabbedPane
 
 	private void initializeComboBoxItems(MapSettings settings)
 	{
-		SwingHelper.initializeComboBoxItems(borderTypeComboBox, Assets.listAllBorderTypes(settings.customImagesPath),
-				settings.borderResource, true);
-		SwingHelper.initializeComboBoxItems(textureImageComboBox, Assets.listBackgroundTexturesForAllArtPacks(settings.customImagesPath),
-				settings.backgroundTextureResource, true);
+		SwingHelper.initializeComboBoxItems(borderTypeComboBox,
+				Assets.listAllBorderTypes(settings == null ? null : settings.customImagesPath),
+				settings == null ? null : settings.borderResource, true);
+		SwingHelper.initializeComboBoxItems(textureImageComboBox,
+				Assets.listBackgroundTexturesForAllArtPacks(settings == null ? null : settings.customImagesPath),
+				settings == null ? null : settings.backgroundTextureResource, true);
 	}
 
 	private boolean doesChangeEffectBackgroundDisplays(MapSettings settings)
@@ -1769,10 +1771,8 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanWavesLevel = oceanWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanWavesType = ripplesRadioButton.isSelected()
-				? OceanWaves.Ripples
-				: noneRadioButton.isSelected()
-						? OceanWaves.None
+		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
+				: noneRadioButton.isSelected() ? OceanWaves.None
 						: concentricWavesButton.isSelected() ? OceanWaves.ConcentricWaves : OceanWaves.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
@@ -1791,8 +1791,7 @@ public class ThemePanel extends JTabbedPane
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.lineStyle = jaggedLinesButton.isSelected()
-				? LineStyle.Jagged
+		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
 				: splinesLinesButton.isSelected() ? LineStyle.Splines : LineStyle.SplinesWithSmoothedCoastlines;
 
 		// Background image settings

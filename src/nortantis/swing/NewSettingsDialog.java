@@ -79,7 +79,7 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			settings = SettingsGenerator.generate(null);
+			settings = SettingsGenerator.generate(UserPreferences.getInstance().defaultCustomImagesPath);
 		}
 		else
 		{
@@ -591,6 +591,7 @@ public class NewSettingsDialog extends JDialog
 
 		resultSettings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
 		resultSettings.cityIconTypeName = (String) cityIconsTypeComboBox.getSelectedItem();
+		resultSettings.artPack = (String) artPackComboBox.getSelectedItem();
 
 		return resultSettings;
 	}

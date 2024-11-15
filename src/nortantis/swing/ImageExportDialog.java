@@ -319,7 +319,7 @@ public class ImageExportDialog extends JDialog
 				// that we don't risk running out of memory
 				// or end up clearing the image cache while a draw is still
 				// going.
-				mainWindow.updater.doWhenMapIsReadyForInteractions(
+				mainWindow.updater.dowWhenMapIsNotDrawing(
 						() -> exportMapAndCloseDialog(mainWindow, resolutionSlider.getValue() / 100.0, exportAction, exportPathFinal));
 			}
 		});
