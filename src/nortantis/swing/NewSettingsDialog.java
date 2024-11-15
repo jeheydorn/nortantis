@@ -329,7 +329,7 @@ public class NewSettingsDialog extends JDialog
 	private void initializeCityTypeOptions()
 	{
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities),
+				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath).getIconGroupNames(IconType.cities),
 				settings.cityIconTypeName, false);
 	}
 

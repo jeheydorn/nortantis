@@ -443,8 +443,7 @@ public class Assets
 
 	public static synchronized String readFileAsString(String filePath)
 	{
-		InputStream inputStream = createInputStream(filePath);
-		try
+		try (InputStream inputStream = createInputStream(filePath))
 		{
 			return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 		}
@@ -640,7 +639,11 @@ public class Assets
 	public static synchronized Properties loadPropertiesFile(String filePath) throws IOException
 	{
 		final Properties props = new Properties();
-		props.load(createInputStream(filePath));
+		try (InputStream inputStream = createInputStream(filePath))
+		{
+			props.load(inputStream);
+		}
+		
 		return props;
 	}
 }

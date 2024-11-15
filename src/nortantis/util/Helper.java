@@ -227,6 +227,7 @@ public class Helper
 			ObjectInputStream p;
 			p = new ObjectInputStream(new BufferedInputStream(istream));
 			toReturn = p.readObject();
+			p.close();
 		}
 		catch (IOException | ClassNotFoundException e)
 		{
