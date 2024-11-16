@@ -182,7 +182,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
-		
+
 	}
 
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
@@ -500,7 +500,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					textArea.setBorder(BorderFactory.createEmptyBorder());
 
 					JScrollPane scrollPane = new JScrollPane(textArea);
-					scrollPane.setPreferredSize(new Dimension(600, 350));
+					scrollPane.setPreferredSize(new Dimension(500, 150));
 
 					JOptionPane.showMessageDialog(MainWindow.this, scrollPane, "Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
 
@@ -884,10 +884,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this,
-						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Mouse wheel</li>"
-								+ "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>" + "</html>",
-						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this, "<html>Keyboard shortcuts for navigating the map:" + "<ul>"
+						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>"
+						+ "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut."
+						 + "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -928,9 +928,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			item.addActionListener(listener);
 		}
-		
+
 	}
-	
+
 	private void updateArtPackHighlights()
 	{
 		if (mapEditingPanel != null)
@@ -1404,7 +1404,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (quality == DisplayQuality.Very_Low)
 		{
-			displayQualityScale = 0.50;
+			displayQualityScale = 0.5;
 		}
 		else if (quality == DisplayQuality.Low)
 		{

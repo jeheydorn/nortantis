@@ -182,7 +182,8 @@ public class TextDrawer
 				String cityName = nameCreator.generateNameOfType(TextType.City, nameCreator.sampleCityTypesForCityFileName(city.fileName),
 						true);
 				double riseOffset = city.scaledSize.height / 2 + (cityYNameOffset * settings.resolution);
-				drawNameRotated(map, p, graph, cityName, cityLoc, riseOffset, true, TextType.City);
+				RotatedRectangle cityArea = city.createArea();
+				drawNameRotated(map, p, graph, cityName, cityLoc, riseOffset, true, cityArea, TextType.City);
 			}
 
 			setFontForTextType(p, TextType.Region);
@@ -208,7 +209,7 @@ public class TextDrawer
 					setFontForTextType(p, TextType.Mountain_range);
 					Set<Point> locations = extractLocationsFromCenters(mountainGroup);
 					drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.Mountain_range, null, true), locations, 0.0,
-							true, TextType.Mountain_range);
+							true, null, TextType.Mountain_range);
 				}
 				else
 				{
@@ -221,7 +222,7 @@ public class TextDrawer
 							MapText text = createMapText(
 									nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peaks, true), location, 0.0,
 									TextType.Other_mountains);
-							if (drawNameRotated(map, p, graph, twoMountainsYOffset * settings.resolution, true, text, false, null))
+							if (drawNameRotated(map, p, graph, twoMountainsYOffset * settings.resolution, true, null, text, false, null))
 							{
 								mapTexts.add(text);
 							}
@@ -230,7 +231,7 @@ public class TextDrawer
 						{
 							drawNameRotated(map, p, graph,
 									nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Mountains, true),
-									extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true,
+									extractLocationsFromCenters(mountainGroup), mountainGroupYOffset * settings.resolution, true, null,
 									TextType.Other_mountains);
 						}
 					}
@@ -240,7 +241,7 @@ public class TextDrawer
 						MapText text = createMapText(
 								nameCreator.generateNameOfType(TextType.Other_mountains, OtherMountainsType.Peak, true), location, 0.0,
 								TextType.Other_mountains);
-						if (drawNameRotated(map, p, graph, singleMountainYOffset * settings.resolution, true, text, false, null))
+						if (drawNameRotated(map, p, graph, singleMountainYOffset * settings.resolution, true, null, text, false, null))
 						{
 							mapTexts.add(text);
 						}
@@ -253,7 +254,7 @@ public class TextDrawer
 			{
 				String name = nameCreator.generateNameOfType(TextType.Lake, null, true);
 				Set<Point> locations = extractLocationsFromCenters(lake);
-				drawNameRotated(map, p, graph, name, locations, 0.0, true, TextType.Lake);
+				drawNameRotated(map, p, graph, name, locations, 0.0, true, null, TextType.Lake);
 			}
 
 			List<River> rivers = findRivers(graph);
@@ -265,13 +266,14 @@ public class TextDrawer
 
 					Set<Point> locations = extractLocationsFromEdges(river.getSegmentForPlacingText());
 					drawNameRotated(map, p, graph, nameCreator.generateNameOfType(TextType.River, riverType, true), locations,
-							riverNameRiseHeight * settings.resolution, true, TextType.River);
+							riverNameRiseHeight * settings.resolution, true, null, TextType.River);
 				}
 
 			}
 
 			p.dispose();
-		} finally
+		}
+		finally
 		{
 			settings.drawText = drawTextPrev;
 		}
@@ -416,31 +418,31 @@ public class TextDrawer
 			setFontForTextType(p, text.type);
 			if (text.type == TextType.Title)
 			{
-				drawNameSplitIfNeeded(map, p, graph, 0.0, false, text, settings.drawBoldBackground, true, drawOffset);
+				drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, settings.drawBoldBackground, true, drawOffset);
 			}
 			else if (text.type == TextType.City)
 			{
-				drawNameRotated(map, p, graph, 0, false, text, false, drawOffset);
+				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 			}
 			else if (text.type == TextType.Region)
 			{
-				drawNameSplitIfNeeded(map, p, graph, 0.0, false, text, settings.drawBoldBackground, true, drawOffset);
+				drawNameSplitIfNeeded(map, p, graph, 0.0, false, null, text, settings.drawBoldBackground, true, drawOffset);
 			}
 			else if (text.type == TextType.Mountain_range)
 			{
-				drawNameRotated(map, p, graph, 0, false, text, false, drawOffset);
+				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 			}
 			else if (text.type == TextType.Other_mountains)
 			{
-				drawNameRotated(map, p, graph, 0, false, text, false, drawOffset);
+				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 			}
 			else if (text.type == TextType.River)
 			{
-				drawNameRotated(map, p, graph, 0, false, text, false, drawOffset);
+				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 			}
 			else if (text.type == TextType.Lake)
 			{
-				drawNameRotated(map, p, graph, 0, false, text, false, drawOffset);
+				drawNameRotated(map, p, graph, 0, false, null, text, false, drawOffset);
 			}
 		}));
 
@@ -798,11 +800,11 @@ public class TextDrawer
 		{
 			p.setFont(background);
 			p.setColor(boldBackgroundColorOverride != null ? boldBackgroundColorOverride : settings.boldBackgroundColor);
-			p.drawString("" + name.charAt(i), (int) curLocNotRotated.x, (int) curLocNotRotated.y);
+			p.drawString("" + name.charAt(i), curLocNotRotated.x, curLocNotRotated.y);
 
 			p.setFont(original);
 			p.setColor(originalColor);
-			p.drawString("" + name.charAt(i), (int) curLocNotRotated.x, (int) curLocNotRotated.y);
+			p.drawString("" + name.charAt(i), curLocNotRotated.x, curLocNotRotated.y);
 
 			int charWidth = p.stringWidth("" + name.charAt(i));
 			curLocNotRotated = new Point(curLocNotRotated.x + charWidth, curLocNotRotated.y);
@@ -824,7 +826,7 @@ public class TextDrawer
 		Point centroid = findCentroid(centerLocations);
 
 		MapText text = createMapText(name, centroid, 0.0, textType);
-		if (drawNameSplitIfNeeded(map, p, graph, 0.0, enableBoundsChecking, text, boldBackground, true, null))
+		if (drawNameSplitIfNeeded(map, p, graph, 0.0, enableBoundsChecking, null, text, boldBackground, true, null))
 		{
 			mapTexts.add(text);
 			return true;
@@ -849,7 +851,7 @@ public class TextDrawer
 						(point1, point2) -> -Double.compare(point1.distanceTo(centroid), point2.distanceTo(centroid)));
 
 				text = createMapText(name, loc, 0.0, textType);
-				if (drawNameSplitIfNeeded(map, p, graph, 0.0, enableBoundsChecking, text, boldBackground, true, null))
+				if (drawNameSplitIfNeeded(map, p, graph, 0.0, enableBoundsChecking, null, text, boldBackground, true, null))
 				{
 					mapTexts.add(text);
 					return true;
@@ -915,7 +917,8 @@ public class TextDrawer
 	 * @return True iff text was drawn.
 	 */
 	private boolean drawNameSplitIfNeeded(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
-			MapText text, boolean boldBackground, boolean allowNegatingRizeOffset, Point drawOffset)
+			RotatedRectangle areaToIgnoreInBoundsChecks, MapText text, boolean boldBackground, boolean allowNegatingRizeOffset,
+			Point drawOffset)
 	{
 		boolean hasMultipleWords = text.value.trim().split(" ").length > 1;
 		if (text.lineBreak == LineBreak.Auto)
@@ -931,19 +934,19 @@ public class TextDrawer
 				String nameLine1 = lines.getFirst();
 				String nameLine2 = lines.getSecond();
 
-				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
-						allowNegatingRizeOffset, drawOffset);
+				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, areaToIgnoreInBoundsChecks, text, boldBackground,
+						nameLine1, nameLine2, allowNegatingRizeOffset, drawOffset);
 			}
 			else
 			{
-				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
-						allowNegatingRizeOffset, drawOffset);
+				return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, areaToIgnoreInBoundsChecks, text, boldBackground,
+						text.value, null, allowNegatingRizeOffset, drawOffset);
 			}
 		}
 		else if (text.lineBreak == LineBreak.One_line || !hasMultipleWords)
 		{
-			return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, text.value, null,
-					allowNegatingRizeOffset, drawOffset);
+			return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, areaToIgnoreInBoundsChecks, text, boldBackground,
+					text.value, null, allowNegatingRizeOffset, drawOffset);
 		}
 		else if (text.lineBreak == LineBreak.Two_lines)
 		{
@@ -951,8 +954,8 @@ public class TextDrawer
 			String nameLine1 = lines.getFirst();
 			String nameLine2 = lines.getSecond();
 
-			return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, nameLine1, nameLine2,
-					allowNegatingRizeOffset, drawOffset);
+			return drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, areaToIgnoreInBoundsChecks, text, boldBackground,
+					nameLine1, nameLine2, allowNegatingRizeOffset, drawOffset);
 		}
 		else
 		{
@@ -973,7 +976,7 @@ public class TextDrawer
 	 *            Positive y is down.
 	 */
 	public void drawNameRotated(Image map, Painter p, WorldGraph graph, String name, Set<Point> locations, double riseOffset,
-			boolean enableBoundsChecking, TextType type)
+			boolean enableBoundsChecking, RotatedRectangle areaToIgnoreInBoundsChecks, TextType type)
 	{
 		if (name.length() == 0)
 			return;
@@ -983,10 +986,7 @@ public class TextDrawer
 		SimpleRegression regression = new SimpleRegression();
 		for (Point point : locations)
 		{
-			regression.addObservation(new double[]
-			{
-					point.x
-			}, point.y);
+			regression.addObservation(new double[] { point.x }, point.y);
 		}
 		double angle;
 		try
@@ -1017,7 +1017,7 @@ public class TextDrawer
 		}
 
 		MapText text = createMapText(name, centroid, angle, type);
-		if (drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, text, false, null))
+		if (drawNameRotated(map, p, graph, riseOffset, enableBoundsChecking, areaToIgnoreInBoundsChecks, text, false, null))
 		{
 			mapTexts.add(text);
 		}
@@ -1035,14 +1035,16 @@ public class TextDrawer
 	 * 
 	 * @return true iff the text was drawn.
 	 */
-	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
-			boolean boldBackground, Point drawOffset)
+	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
+			RotatedRectangle areaToIgnoreInBoundsChecks, MapText text, boolean boldBackground, Point drawOffset)
 	{
-		return drawNameSplitIfNeeded(map, p, graph, riseOffset, enableBoundsChecking, text, boldBackground, true, drawOffset);
+		return drawNameSplitIfNeeded(map, p, graph, riseOffset, enableBoundsChecking, areaToIgnoreInBoundsChecks, text, boldBackground,
+				true, drawOffset);
 	}
 
-	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking, MapText text,
-			boolean boldBackground, String line1, String line2, boolean allowNegatingRizeOffset, Point drawOffset)
+	public boolean drawNameRotated(Image map, Painter p, WorldGraph graph, double riseOffset, boolean enableBoundsChecking,
+			RotatedRectangle areaToIgnoreInBoundsChecks, MapText text, boolean boldBackground, String line1, String line2,
+			boolean allowNegatingRizeOffset, Point drawOffset)
 	{
 		if (line2 != null && line2.equals(""))
 		{
@@ -1058,28 +1060,7 @@ public class TextDrawer
 		Point pivotMinusDrawOffset = pivot.subtract(drawOffset);
 
 		Rectangle bounds1 = getLine1Bounds(line1, pivot, p, line2 != null);
-		// If the above integer conversion resulted in a truncation that resulted in a negative number, then subtract 1. This is
-		// necessary because in Java, positive floating point numbers converted to integers round down, but negative numbers round up.
-		if (bounds1.x < 0 && (pivot.x - (int) pivot.x != 0.0))
-		{
-			bounds1 = bounds1.translate(-1, 0);
-		}
-		if (bounds1.y < 0 && (pivot.y - (int) pivot.y != 0.0))
-		{
-			bounds1 = bounds1.translate(0, -1);
-		}
 		Rectangle bounds2 = getLine2Bounds(line2, pivot, p);
-		if (bounds2 != null)
-		{
-			if (bounds2.x < 0 && (pivot.x - (int) pivot.x != 0.0))
-			{
-				bounds2 = bounds2.translate(-1, 0);
-			}
-			if (bounds2.y < 0 && (pivot.y - (int) pivot.y != 0.0))
-			{
-				bounds2 = bounds2.translate(0, -1);
-			}
-		}
 
 		Dimension line1Size = new Dimension(bounds1.width, bounds1.height);
 		if (line1Size.width == 0 || line1Size.height == 0)
@@ -1108,8 +1089,8 @@ public class TextDrawer
 			// Make sure we don't draw on top of existing text.
 			if (enableBoundsChecking)
 			{
-				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1)
-						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2));
+				boolean overlapsExistingTextOrCityOrIsOffMap = overlapsExistingTextOrCityOrIsOffMap(area1, areaToIgnoreInBoundsChecks)
+						|| (line2 != null && overlapsExistingTextOrCityOrIsOffMap(area2, areaToIgnoreInBoundsChecks));
 				boolean overlapsRegionLakeOrCoastline = overlapsBoundaryThatShouldCauseLineSplit(bounds1, pivot, text.angle, text.type,
 						graph) || overlapsBoundaryThatShouldCauseLineSplit(bounds2, pivot, text.angle, text.type, graph);
 				boolean isTypeAllowedToCrossBoundaries = text.type == TextType.Title || text.type == TextType.Region
@@ -1123,7 +1104,7 @@ public class TextDrawer
 					{
 						Transform rotatedTransform = p.getTransform();
 						p.setTransform(orig);
-						if (drawNameSplitIfNeeded(map, p, graph, -riseOffset, enableBoundsChecking, text, boldBackground, false,
+						if (drawNameSplitIfNeeded(map, p, graph, -riseOffset, enableBoundsChecking, null, text, boldBackground, false,
 								drawOffset))
 						{
 							return true;
@@ -1163,8 +1144,7 @@ public class TextDrawer
 			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
 			// before the text is redrawn.
 			text.line1Bounds = new Rectangle((int) (bounds1.x - pivot.x), (int) (bounds1.y - pivot.y), bounds1.width, bounds1.height);
-			text.line2Bounds = bounds2 == null
-					? null
+			text.line2Bounds = bounds2 == null ? null
 					: new Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y), bounds2.width, bounds2.height);
 			if (riseOffset != 0)
 			{
@@ -1186,7 +1166,7 @@ public class TextDrawer
 					}
 					else
 					{
-						p.drawString(line1, (int) textStart.x, (int) textStart.y);
+						p.drawString(line1, textStart.x, textStart.y);
 					}
 				}
 				if (line2 != null)
@@ -1199,13 +1179,14 @@ public class TextDrawer
 					}
 					else
 					{
-						p.drawString(line2, (int) textStart.x, (int) textStart.y);
+						p.drawString(line2, textStart.x, textStart.y);
 					}
 				}
 			}
 
 			return true;
-		} finally
+		}
+		finally
 		{
 			p.setTransform(orig);
 		}
@@ -1254,8 +1235,8 @@ public class TextDrawer
 	{
 		int fontHeight = getFontHeight(p);
 		Dimension size = getTextDimensions(line1, p);
-		return new Rectangle((int) (pivot.x - size.width / 2), (int) (pivot.y - size.height / 2) - (hasLine2 ? fontHeight / 2 : 0),
-				size.width, size.height);
+		return new Rectangle(pivot.x - size.width / 2, pivot.y - size.height / 2 - (hasLine2 ? fontHeight / 2 : 0), size.width,
+				size.height);
 	}
 
 	private Rectangle getLine2Bounds(String line2, Point pivot, Painter p)
@@ -1267,8 +1248,7 @@ public class TextDrawer
 
 		int fontHeight = getFontHeight(p);
 		Dimension size = getTextDimensions(line2, p);
-		return new Rectangle((int) (pivot.x - size.width / 2), (int) (pivot.y - (size.height / 2) + fontHeight / 2), size.width,
-				size.height);
+		return new Rectangle(pivot.x - size.width / 2, pivot.y - (size.height / 2) + fontHeight / 2, size.width, size.height);
 	}
 
 	/**
@@ -1290,7 +1270,8 @@ public class TextDrawer
 			settings.drawText = false;
 			Image fakeMapThatNothingShouldDrawOn = Image.create(1, 1, ImageType.ARGB);
 			drawText(fakeMapThatNothingShouldDrawOn, graph, settings.edits.text, null);
-		} finally
+		}
+		finally
 		{
 			settings.drawText = originalDrawText;
 		}
@@ -1370,7 +1351,7 @@ public class TextDrawer
 		return c1.region != c2.region;
 	}
 
-	private boolean overlapsExistingTextOrCityOrIsOffMap(RotatedRectangle bounds)
+	private boolean overlapsExistingTextOrCityOrIsOffMap(RotatedRectangle bounds, RotatedRectangle areaToIgnore)
 	{
 		for (MapText mp : mapTexts)
 		{
@@ -1397,6 +1378,11 @@ public class TextDrawer
 
 		for (RotatedRectangle a : cityAreas)
 		{
+			if (areaToIgnore != null && areaToIgnore.equals(a))
+			{
+				continue;
+			}
+			
 			if (doAreasIntersect(bounds, a))
 			{
 				return true;

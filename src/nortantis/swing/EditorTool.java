@@ -43,6 +43,10 @@ public abstract class EditorTool
 	}
 
 	public abstract String getToolbarName();
+	
+	public abstract int getMnemonic();
+	
+	public abstract String getKeyboardShortcutText();
 
 	public abstract String getImageIconFilePath();
 

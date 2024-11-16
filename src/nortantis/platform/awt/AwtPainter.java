@@ -65,9 +65,9 @@ class AwtPainter extends Painter
 	}
 
 	@Override
-	public void drawString(String string, int x, int y)
+	public void drawString(String string, double x, double y)
 	{
-		g.drawString(string, x, y);
+		g.drawString(string, (float) x, (float) y);
 	}
 
 	@Override

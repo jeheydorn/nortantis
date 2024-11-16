@@ -95,6 +95,7 @@ public class NameGeneratorDialog extends JDialog
 		});
 
 		textBox = new JTextArea(numberToGenerate, 30);
+		textBox.setEditable(false);
 		JScrollPane textBoxScrollPane = new JScrollPane(textBox);
 		organizer.addLeftAlignedComponentWithStackedLabel("Generated names:", "", textBoxScrollPane, true, 0.8);
 

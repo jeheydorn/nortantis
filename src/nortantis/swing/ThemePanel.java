@@ -1722,18 +1722,16 @@ public class ThemePanel extends JTabbedPane
 			return true;
 		}
 
-		if (!textureImageFilename.getText().equals(settings.backgroundTextureImage))
+		if (!textureImageFilename.getText().equals(FileHelper.replaceHomeFolderPlaceholder(settings.backgroundTextureImage)))
 		{
 			return true;
 		}
 
-		// TODO test this
 		if (!Objects.equals(textureImageComboBox.getSelectedItem(), settings.backgroundTextureResource))
 		{
 			return true;
 		}
 
-		// TODO test this
 		if (!assetsRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.Assets
 				|| !fileRadioButton.isSelected() && settings.backgroundTextureSource == TextureSource.File)
 		{

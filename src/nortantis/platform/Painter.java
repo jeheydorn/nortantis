@@ -27,7 +27,7 @@ public abstract class Painter
 
 	public abstract void setFont(Font font);
 
-	public abstract void drawString(String string, int x, int y);
+	public abstract void drawString(String string, double x, double y);
 
 	public abstract void setTransform(Transform transform);
 

@@ -140,6 +140,10 @@ public class NameCreator
 			{
 				result.add(CityType.Homestead);
 			}
+			if (words.contains("farm") || words.contains("plantation") || words.contains("farmstead") || words.contains("ranch"))
+			{
+				result.add(CityType.Farm);
+			}
 		}
 
 		return result;
@@ -254,8 +258,12 @@ public class NameCreator
 			}
 			else if (cityType.equals(CityType.Homestead))
 			{
+				structureName = "Village";
+			}
+			else if (cityType.equals(CityType.Farm))
+			{
 				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.5, "Farm"), new Tuple2<>(0.5, "Village")));
+						Arrays.asList(new Tuple2<>(0.7, "Farm"), new Tuple2<>(0.3, "Ranch")));
 			}
 			else
 			{

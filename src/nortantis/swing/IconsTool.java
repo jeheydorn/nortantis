@@ -2,6 +2,7 @@ package nortantis.swing;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -103,6 +104,18 @@ public class IconsTool extends EditorTool
 		return "Icons";
 	}
 
+	@Override
+	public int getMnemonic()
+	{
+		return KeyEvent.VK_X;
+	}
+	
+	@Override
+	public String getKeyboardShortcutText()
+	{
+		return "(Alt+X)";
+	}
+	
 	@Override
 	public String getImageIconFilePath()
 	{
@@ -1523,4 +1536,6 @@ public class IconsTool extends EditorTool
 			artPackComboBox.setSelectedItem(Assets.customArtPack);
 		}
 	}
+
+
 }

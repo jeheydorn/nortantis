@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -95,6 +96,19 @@ public class LandWaterTool extends EditorTool
 	{
 		return toolbarName;
 	}
+	
+	@Override
+	public int getMnemonic()
+	{
+		return KeyEvent.VK_Z;
+	}
+	
+	
+	@Override
+	public String getKeyboardShortcutText()
+	{
+		return "(Alt+Z)";
+	}
 
 	@Override
 	public String getImageIconFilePath()
@@ -162,7 +176,7 @@ public class LandWaterTool extends EditorTool
 		group.add(lakesButton);
 		radioButtons.add(lakesButton);
 		lakesButton.setToolTipText(
-				"Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines, and they don't do coastline smoothing when enabled.");
+				"Lakes are the same as ocean except ocean effects (waves or shading) along their shores can be disabled, and they don't do coastline smoothing when enabled.");
 		lakesButton.addActionListener(brushActionListener);
 
 		riversButton = new JRadioButton("Rivers");
