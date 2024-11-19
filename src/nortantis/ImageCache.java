@@ -3,6 +3,7 @@ package nortantis;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class ImageCache
 
 	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, List<String>>> iconGroupFilesNamesCache;
 
-	private ConcurrentHashMapF<IconType, Set<String>> iconGroupNames;
+	private ConcurrentHashMapF<IconType, List<String>> iconGroupNames;
 
 	private String imagesPath;
 
@@ -150,7 +151,7 @@ public class ImageCache
 	{
 		ListMap<String, ImageAndMasks> imagesPerGroup = new ListMap<>();
 
-		Set<String> groupNames = getIconGroupNames(iconType);
+		List<String> groupNames = getIconGroupNames(iconType);
 		for (String groupName : groupNames)
 		{
 			List<String> fileNames = getIconGroupFileNames(iconType, groupName);
@@ -282,7 +283,7 @@ public class ImageCache
 		}
 	}
 
-	public Set<String> loadIconGroupNames(IconType iconType)
+	public List<String> loadIconGroupNames(IconType iconType)
 	{
 		String path = Paths.get(imagesPath, iconType.toString()).toString();
 
@@ -290,15 +291,12 @@ public class ImageCache
 
 		if (folderNames == null)
 		{
-			return new TreeSet<>();
+			return new ArrayList<>();
 		}
 
-		Set<String> result = new TreeSet<>();
-		for (String folderName : folderNames)
-		{
-			result.add(folderName);
-		}
-		return result;
+		Collections.sort(folderNames, String.CASE_INSENSITIVE_ORDER);
+		
+		return folderNames;
 	}
 
 	/**
@@ -308,7 +306,7 @@ public class ImageCache
 	 *            Name of a folder under assets/icons
 	 * @return Array of file names sorted with no duplicates
 	 */
-	public Set<String> getIconGroupNames(IconType iconType)
+	public List<String> getIconGroupNames(IconType iconType)
 	{
 		return iconGroupNames.getOrCreate(iconType, () -> loadIconGroupNames(iconType));
 	}
@@ -332,7 +330,7 @@ public class ImageCache
 
 	public boolean hasGroupName(IconType iconType, String groupName)
 	{
-		Set<String> groupNames = getIconGroupNames(iconType);
+		List<String> groupNames = getIconGroupNames(iconType);
 		if (groupNames == null)
 		{
 			return false;
@@ -355,6 +353,6 @@ public class ImageCache
 	{
 		instances.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
-		Assets.clearCache();
+		Assets.clearArtPackCache();
 	}
 }

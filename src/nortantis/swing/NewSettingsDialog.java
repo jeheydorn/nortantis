@@ -329,7 +329,8 @@ public class NewSettingsDialog extends JDialog
 	private void initializeCityTypeOptions()
 	{
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath).getIconGroupNames(IconType.cities),
+				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath)
+						.getIconGroupNames(IconType.cities),
 				settings.cityIconTypeName, false);
 	}
 
@@ -369,6 +370,7 @@ public class NewSettingsDialog extends JDialog
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				updateBackgroundTextureAndBorderToUseArtPackIfNeeded();
 				initializeCityTypeOptions();
 				handleMapChange();
 			}
@@ -413,9 +415,34 @@ public class NewSettingsDialog extends JDialog
 		organizer.addVerticalFillerRow();
 	}
 
+	private void updateBackgroundTextureAndBorderToUseArtPackIfNeeded()
+	{
+		String artPack = (String) artPackComboBox.getSelectedItem();
+		boolean backgroundTextureNeedsUpdate = settings.backgroundTextureResource != null
+				&& !settings.backgroundTextureResource.artPack.equals(artPack);
+		boolean borderNeedsUpdate = settings.borderResource != null && !settings.borderResource.artPack.equals(artPack);
+
+		if (backgroundTextureNeedsUpdate || borderNeedsUpdate)
+		{
+			MapSettings randomSettings = SettingsGenerator.generate(new Random(), artPack, settings.customImagesPath);
+
+			if (backgroundTextureNeedsUpdate)
+			{
+				settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
+			}
+			if (borderNeedsUpdate)
+			{
+				settings.borderResource = randomSettings.borderResource;
+			}
+		}
+
+
+	}
+
 	private void randomizeTheme()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate(settings.customImagesPath);
+		MapSettings randomSettings = SettingsGenerator.generate(new Random(), (String) artPackComboBox.getSelectedItem(),
+				settings.customImagesPath);
 		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
 		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
@@ -435,6 +462,7 @@ public class NewSettingsDialog extends JDialog
 		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
 		settings.colorizeOcean = randomSettings.colorizeOcean;
 		settings.colorizeLand = randomSettings.colorizeLand;
+		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
 		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
 		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
 		settings.oceanColor = randomSettings.oceanColor;
@@ -471,10 +499,7 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[]
-		{
-				"Drawing..."
-		}));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();

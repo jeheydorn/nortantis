@@ -19,7 +19,8 @@ public class OSHelper
 	public static boolean isWindows()
 	{
 		String OS = System.getProperty("os.name").toUpperCase();
-		return OS.contains("WIN");
+		// Return true if either this is Windows or this is a system on which we can't tell (meaning Windows is the default).
+		return OS.contains("WIN") || (!isLinux() && !isMac());
 	}
 
 	public static boolean isMac()
@@ -42,9 +43,9 @@ public class OSHelper
 		{
 			return Paths.get(System.getProperty("user.home"), ".Nortantis");
 		}
-		return Paths.get(System.getProperty("user.dir"));
+		return Paths.get(System.getProperty("user.home"), ".Nortantis");
 	}
-	
+
 	public static void openFileExplorerTo(File folder)
 	{
 		Desktop desktop = Desktop.getDesktop();
@@ -61,7 +62,9 @@ public class OSHelper
 		}
 		else
 		{
-			JOptionPane.showMessageDialog(null, "Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null,
+					"Unable to open the folder '" + folder + "'. Opening folders is not supported on your system.", "Error",
+					JOptionPane.ERROR_MESSAGE);
 		}
 	}
 }

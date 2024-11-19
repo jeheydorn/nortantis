@@ -10,6 +10,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -238,7 +240,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			textureImageComboBox = new JComboBox<>();
 			textureImageComboBoxHider = organizer.addLabelAndComponent("Texture:",
-					"Select a texture image as a seed from installed images that came with Nortantis, art packs, or a custom images folder.",
+					"Select a texture image as a seed from installed images that came with Nortantis, or from art packs or a custom images folder.",
 					textureImageComboBox);
 			textureImageComboBox.addActionListener(backgroundImageButtonGroupListener);
 			textureImageComboBox.setMinimumSize(new Dimension(100, textureImageComboBox.getMinimumSize().height));
@@ -344,7 +346,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addSeperator();
 
 		drawRegionBoundariesCheckbox = new JCheckBox("Draw political region boundaries");
-		drawRegionBoundariesCheckbox.setToolTipText("Whether to show region boundaires");
+		drawRegionBoundariesCheckbox.setToolTipText("Whether to show political region boundaires");
 		drawRegionBoundariesCheckbox.addItemListener(new ItemListener()
 		{
 			@Override
@@ -357,7 +359,7 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLeftAlignedComponent(drawRegionBoundariesCheckbox);
 
 		regionBoundaryTypeComboBox = new JComboBox<>(StrokeType.values());
-		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "How to draw region boundaries",
+		regionBoundaryTypeComboBoxHider = organizer.addLabelAndComponent("Style:", "Line style for drawing region boundaries",
 				regionBoundaryTypeComboBox);
 		createMapChangeListenerForTerrainChange(regionBoundaryTypeComboBox);
 
@@ -383,7 +385,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(backgroundPanel, regionBoundaryColorDisplay, "Coastline Color", () -> handleTerrainChange());
 			}
 		});
-		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line-color of region boundaries",
+		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line color of region boundaries",
 				Arrays.asList(regionBoundaryColorDisplay, buttonChooseRegionBoundaryColor), SwingHelper.colorPickerLeftPadding);
 
 		organizer.addSeperator();
@@ -1316,10 +1318,24 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			protected Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> doInBackground() throws Exception
 			{
+				MapSettings tempSettings = new MapSettings();
+				getSettingsFromGUI(tempSettings);
+				String texturePath;
+				Tuple2<Path, String> texturePathWithWarning = tempSettings.getBackgroundImagePath();
+				if (texturePathWithWarning != null && texturePathWithWarning.getFirst() != null)
+				{
+					texturePath = tempSettings.getBackgroundImagePath().getFirst().toString();
+				}
+				else
+				{
+					return null;
+				}
+				
+
 				long seed = parseBackgroundSeed();
 				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(),
 						colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(), rdbtnGeneratedFromTexture.isSelected(),
-						textureImageFilename.getText());
+						texturePath);
 			}
 
 			@Override
@@ -1333,6 +1349,11 @@ public class ThemePanel extends JTabbedPane
 				catch (InterruptedException | ExecutionException e)
 				{
 					throw new RuntimeException(e);
+				}
+				
+				if (tuple == null)
+				{
+					return;
 				}
 
 				Image oceanBackground = tuple.getFirst();

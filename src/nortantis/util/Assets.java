@@ -33,6 +33,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import nortantis.NamedResource;
+import nortantis.Stopwatch;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 
@@ -43,8 +44,13 @@ public class Assets
 	private final static String artPacksFolder = "art packs";
 	public final static String installedArtPack = "nortantis";
 	public final static List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
-	private static List<String> artPacksInArtPacksFolderCache;
 	private static boolean disableAddedArtPacksForUnitTests;
+	private static List<CachedEntry> cachedEntries;
+
+	static
+	{
+		initializeEntryCache();
+	}
 
 	public static String getAssetsPath()
 	{
@@ -64,7 +70,7 @@ public class Assets
 		// Add added art packs from the art packs folder.
 		if (!disableAddedArtPacksForUnitTests)
 		{
-			result.addAll(getArtPacksFromArtPackFolderCached());
+			result.addAll(ArtPacksFromArtPacksFolderCache.getArtPacksFromArtPackFolder());
 		}
 
 		// Add custom images folder if the map has one.
@@ -81,14 +87,24 @@ public class Assets
 	{
 		return listArtPacks(!StringUtils.isEmpty(customImagesFolder)).contains(artPack);
 	}
-
-	private static synchronized List<String> getArtPacksFromArtPackFolderCached()
+	
+	private static class ArtPacksFromArtPacksFolderCache
 	{
-		if (artPacksInArtPacksFolderCache == null)
+		private static List<String> artPacksInArtPacksFolderCache;
+		
+		public static synchronized List<String> getArtPacksFromArtPackFolder()
 		{
-			artPacksInArtPacksFolderCache = listArtPacksFromArtPackFolder();
+			if (artPacksInArtPacksFolderCache == null)
+			{
+				artPacksInArtPacksFolderCache = listArtPacksFromArtPackFolder();
+			}
+			return artPacksInArtPacksFolderCache;
 		}
-		return artPacksInArtPacksFolderCache;
+		
+		public static synchronized void clearCache()
+		{
+			artPacksInArtPacksFolderCache = null;
+		}
 	}
 
 	private static List<String> listArtPacksFromArtPackFolder()
@@ -102,9 +118,10 @@ public class Assets
 		return result;
 	}
 
-	public static synchronized void clearCache()
+	public static void clearArtPackCache()
 	{
-		artPacksInArtPacksFolderCache = null;
+		ArtPacksFromArtPacksFolderCache.clearCache();
+		// Don't clear cachedEntires because it's values never change while the program is running.
 	}
 
 	public static List<NamedResource> listBackgroundTexturesForAllArtPacks(String customImagesFolder)
@@ -212,7 +229,7 @@ public class Assets
 		}
 
 		File[] files = new File(folderPath.toString())
-				.listFiles(file -> (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
+				.listFiles(file -> !file.isDirectory() && (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
 						&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText)));
 		if (files == null)
 		{
@@ -231,55 +248,57 @@ public class Assets
 		return StringUtils.isNotEmpty(path) && isRunningFromJar() && path.startsWith(getAssetsPath());
 	}
 
-	public static synchronized List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
+	public static List<Path> listFilesFromJar(String folderPath, String containsText, String endingText)
 	{
 		List<Path> fileNames = new ArrayList<>();
-		try
-		{
-			String assetsPath = convertToAssetPath(folderPath);
-			String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
-			URL jarUrl = Assets.class.getResource(assetsPath);
-			if (jarUrl == null)
-			{
-				throw new RuntimeException("Unable to list files in path '" + folderPath
-						+ "' because the URL for that path was null. assetsPath: " + assetsPath);
-			}
 
-			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
-			try (JarFile jarFile = jarConnection.getJarFile())
-			{
-				jarFile.stream().forEach(entry ->
-				{
-					String entryName = entry.getName();
-					if (!entry.isDirectory() && entryName.startsWith(assetPathInEntryFormat)
-							&& ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
-							&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
-					{
-						fileNames.add(Paths.get(folderPath, FilenameUtils.getName(entryName)));
-					}
-				});
-			}
-		}
-		catch (IOException e)
+		String assetsPath = convertToAssetPath(folderPath);
+		String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
+
+		cachedEntries.stream().forEach(entry ->
 		{
-			throw new RuntimeException("Error reading directory from resources: " + folderPath, e);
-		}
+			String entryName = entry.name;
+			if (!entry.isDirectory && entryName.startsWith(assetPathInEntryFormat)
+					&& ((StringUtils.isEmpty(containsText) || entryName.contains(containsText)))
+					&& (StringUtils.isEmpty(endingText) || entryName.endsWith(endingText)))
+			{
+				fileNames.add(Paths.get(folderPath, FilenameUtils.getName(entryName)));
+			}
+		});
 
 		// I don't know how it's possible, but the jar file can give me duplicates. So remove duplicates and sort.
 		return new ArrayList<>(new TreeSet<>(fileNames));
 	}
 
-	public static synchronized List<String> listSubFoldersInJar(String folderPath)
+	public static List<String> listSubFoldersInJar(String folderPath)
 	{
 		List<String> subfolders = new ArrayList<>();
 		String assetsPath = convertToAssetPath(folderPath);
 		String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
 
-		URL jarUrl = Assets.class.getResource(assetsPath);
+		cachedEntries.stream()
+				.filter(entry -> entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat)
+						&& !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
+				.map(entry -> FilenameUtils.getName(removeTrailingSlash(entry.name))).collect(Collectors.toList());
+
+		return new ArrayList<>(new TreeSet<>(subfolders));
+	}
+
+	private static synchronized void initializeEntryCache()
+	{
+		if (cachedEntries != null)
+		{
+			return;
+		}
+
+		cachedEntries = new ArrayList<>();
+		String assetPathInEntryFormat = addTrailingSlash(assetsPath);
+
+		URL jarUrl = Assets.class.getResource("/" + assetsPath);
 		if (jarUrl == null)
 		{
-			throw new RuntimeException("Unable to list non-empty subfolders in path '" + folderPath
-					+ "' because the URL for that path was null. assetsPath: " + assetsPath);
+			throw new RuntimeException(
+					"Unable to check installed assets" + " because the URL for the jar file was null. assetsPath: " + assetsPath);
 		}
 
 		try
@@ -287,10 +306,10 @@ public class Assets
 			JarURLConnection jarConnection = (JarURLConnection) jarUrl.openConnection();
 			try (JarFile jarFile = jarConnection.getJarFile())
 			{
-				subfolders = jarFile.stream()
-						.filter(entry -> entry.isDirectory() && entry.getName().startsWith(assetPathInEntryFormat)
+				jarFile.stream()
+						.filter(entry -> entry.getName().startsWith(assetPathInEntryFormat)
 								&& !addTrailingSlash(entry.getName()).equals(assetPathInEntryFormat))
-						.map(entry -> FilenameUtils.getName(removeTrailingSlash(entry.getName()))).collect(Collectors.toList());
+						.forEach(entry -> cachedEntries.add(new CachedEntry(entry.getName(), entry.isDirectory())));
 			}
 		}
 		catch (IOException e)
@@ -298,7 +317,6 @@ public class Assets
 			e.printStackTrace();
 		}
 
-		return new ArrayList<>(new TreeSet<>(subfolders));
 	}
 
 	/**
@@ -311,6 +329,7 @@ public class Assets
 	{
 		if (isJarAsset(sourceDir.toString()))
 		{
+			String sourceDirParentInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.getParent().toString()).substring(1));
 			String sourceDirInEntryFormat = addTrailingSlash(convertToAssetPath(sourceDir.toString()).substring(1));
 
 			// Copy from jar file
@@ -325,15 +344,17 @@ public class Assets
 					if (entry.getName().startsWith(sourceDirInEntryFormat)
 							&& !addTrailingSlash(entry.getName()).equals(sourceDirInEntryFormat))
 					{
-						String entryPathWithoutAssetsFolder = entry.getName().substring((assetsPath + "/").length());
+						String entryPathInParentFolder = entry.getName()
+								.substring((addTrailingSlash(sourceDirParentInEntryFormat)).length());
 
-						Path destPath = Paths.get(destDir.toString(), entryPathWithoutAssetsFolder);
+						Path destPath = Paths.get(destDir.toString(), entryPathInParentFolder);
 						if (entry.isDirectory())
 						{
 							Files.createDirectories(destPath);
 						}
 						else
 						{
+							Files.createDirectories(destPath.getParent());
 							try (InputStream inputStream = jarFile.getInputStream(entry))
 							{
 								Files.copy(inputStream, destPath);
@@ -383,7 +404,7 @@ public class Assets
 	 *            Either a file path on disk or a relative path of the assets folder.
 	 * @return A list of folder names (not paths).
 	 */
-	public static synchronized List<String> listNonEmptySubFolders(String path)
+	public static List<String> listNonEmptySubFolders(String path)
 	{
 		if (isJarAsset(path))
 		{
@@ -648,6 +669,20 @@ public class Assets
 		}
 
 		return props;
+	}
+
+	private static class CachedEntry
+	{
+		public final String name;
+		public final boolean isDirectory;
+
+		public CachedEntry(String name, boolean isDirectory)
+		{
+			super();
+			this.name = name;
+			this.isDirectory = isDirectory;
+		}
+
 	}
 
 	public static void disableAddedArtPacksForUnitTests()

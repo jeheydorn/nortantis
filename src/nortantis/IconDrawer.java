@@ -816,7 +816,7 @@ public class IconDrawer
 		return compatibleCities.get(index);
 	}
 
-	private String chooseNewGroupId(Set<String> groupIds, String oldGroupId)
+	private String chooseNewGroupId(Collection<String> groupIds, String oldGroupId)
 	{
 		if (groupIds.isEmpty())
 		{
@@ -1686,7 +1686,7 @@ public class IconDrawer
 
 	private String getGroupIdForForestType(ForestType forest)
 	{
-		Set<String> groups = ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupNames(IconType.trees);
+		List<String> groups = ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupNames(IconType.trees);
 		String keyWord = forest.treeType.toString().toLowerCase();
 
 		if (groups == null || groups.isEmpty())

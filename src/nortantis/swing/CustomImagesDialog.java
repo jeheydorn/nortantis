@@ -308,6 +308,7 @@ public class CustomImagesDialog extends JDialog
 		{
 			if (isFolderEmpty)
 			{
+				Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), "background textures"), folder.toPath());
 				Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), "borders"), folder.toPath());
 				for (IconType type : IconType.values())
 				{
@@ -318,9 +319,9 @@ public class CustomImagesDialog extends JDialog
 		}
 		catch (IOException ex)
 		{
-			JOptionPane.showMessageDialog(null,
-					"Error while copying installed images into " + folder.getAbsolutePath() + ": " + ex.getMessage(), "Error",
-					JOptionPane.ERROR_MESSAGE);
+			String message = "Error while copying installed images into " + folder.getAbsolutePath() + ": " + ex.getMessage();
+			JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+			Logger.printError(message, ex);
 		}
 
 		return false;

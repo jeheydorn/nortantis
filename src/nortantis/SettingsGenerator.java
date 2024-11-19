@@ -205,7 +205,7 @@ public class SettingsGenerator
 
 		settings.cityProbability = 0.25 * maxCityProbabillity;
 
-		Set<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
+		List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
 		if (cityIconTypes.size() > 0)
 		{
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));

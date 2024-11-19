@@ -153,7 +153,7 @@ public class IconsTool extends EditorTool
 		});
 		organizer.addLabelAndComponent("Art pack:",
 				"For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
-						+ Assets.customArtPack + "' selects images from this map's Custom Images Folder.",
+						+ Assets.customArtPack + "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
 				artPackComboBox);
 
 		// Tools

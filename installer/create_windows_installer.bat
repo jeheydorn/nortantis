@@ -27,7 +27,6 @@ jpackage ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^
---win-console ^
 --java-options -Dfile.encoding=UTF-8
 
 
