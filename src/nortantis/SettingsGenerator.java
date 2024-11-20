@@ -153,7 +153,6 @@ public class SettingsGenerator
 
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 
-		settings.customImagesPath = UserPreferences.getInstance().defaultCustomImagesPath;
 		settings.treeHeightScale = 0.35;
 
 		final double drawBorderProbability = 0.75;
@@ -216,7 +215,7 @@ public class SettingsGenerator
 		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class),
 				settings.regionBoundaryStyle.width);
 
-		if (rand.nextDouble() > 0.25)
+		if (rand.nextDouble() > 0.75)
 		{
 			settings.generateBackground = true;
 			settings.generateBackgroundFromTexture = false;

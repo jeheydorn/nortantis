@@ -310,6 +310,7 @@ public class NewSettingsDialog extends JDialog
 					settings.artPack = Assets.customArtPack;
 					initializeArtPackOptionsAndCityTypeOptions();
 
+					enableOrDisableProgressBar(true);
 					updater.createAndShowMapFull(() ->
 					{
 						ImageCache.clear();
@@ -331,7 +332,7 @@ public class NewSettingsDialog extends JDialog
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
 				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath)
 						.getIconGroupNames(IconType.cities),
-				settings.cityIconTypeName, false);
+				(String) cityIconsTypeComboBox.getSelectedItem(), false);
 	}
 
 	private void initializeArtPackOptionsAndCityTypeOptions()

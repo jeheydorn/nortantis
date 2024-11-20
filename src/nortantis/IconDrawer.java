@@ -879,6 +879,64 @@ public class IconDrawer
 
 			return allArtPacks.get(index);
 		}
+		else if (ImageCache.getInstance(oldArtPack, customImagesPath).getIconGroupNames(type).isEmpty())
+		{
+			// Prefer the custom art pack first, then ones in the art packs folder, then the installed one last.
+			allArtPacks = new ArrayList<>(allArtPacks);
+			Collections.reverse(allArtPacks);
+
+			// Prefer an art pack that has an image with the same name and group name in hopes that it is the same art pack but renamed.
+			for (String artPack : allArtPacks)
+			{
+				if (StringUtils.isEmpty(oldIconName))
+				{
+					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
+					{
+						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
+								+ " images, so it does not have " + type.getSingularName() + " the image group '" + oldGroupId
+								+ "'. The art pack '" + artPack
+								+ "' will be used instead because it has the same image group folder name.");
+						return artPack;
+					}
+				}
+				else
+				{
+					if (ImageCache.getInstance(artPack, customImagesPath).hasNamedIcon(type, oldGroupId, oldIconName))
+					{
+						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
+								+ " images, so it does not have the icon '" + oldIconName + "' from " + type.getSingularName()
+								+ " image group '" + oldGroupId + "'. The art pack '" + artPack
+								+ "' will be used instead because it has the same image group folder and image name.");
+						return artPack;
+					}
+				}
+			}
+
+			// Try again but take the first art pack that has images of that type.
+			for (String artPack : allArtPacks)
+			{
+				if (!ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(type).isEmpty())
+
+					if (StringUtils.isEmpty(oldIconName))
+					{
+						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
+								+ " images, so it does not have " + type.getSingularName() + " the image group '" + oldGroupId
+								+ "'. The art pack '" + artPack + "' will be used instead because it has " + type.getSingularName()
+								+ " images.");
+						return artPack;
+					}
+					else
+					{
+						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
+								+ " images, so it does not have the icon '" + oldIconName + "' from " + type.getSingularName()
+								+ " image group '" + oldGroupId + "'. The art pack '" + artPack + "' will be used instead because it has "
+								+ type.getSingularName() + " images.");
+						return artPack;
+					}
+			}
+
+			return oldArtPack;
+		}
 		else
 		{
 			return oldArtPack;
@@ -1001,11 +1059,9 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
-						bgColor = closest.isWater
-								? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
 								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
-						landTextureColor = closest.isWater
-								? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
 								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
 					}
 					else
@@ -1140,11 +1196,13 @@ public class IconDrawer
 	{
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
-			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);;
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
+			;
 			List<IconDrawTask> cities;
 
 			Logger.println("Adding mountains and hills.");
-			List<Set<Center>> mountainGroups;;
+			List<Set<Center>> mountainGroups;
+			;
 			addOrUnmarkMountainsAndHills(mountainAndHillGroups);
 			// I find the mountain groups after adding or unmarking mountains so
 			// that mountains that get unmarked because their image
@@ -1524,9 +1582,15 @@ public class IconDrawer
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
 		for (Center center : centersToConvert)
 		{
-			if (edits.centerEdits.get(center.index).trees != null)
+			CenterTrees cTrees = edits.centerEdits.get(center.index).trees;
+			if (cTrees != null)
 			{
-				treesByCenter.put(center.index, edits.centerEdits.get(center.index).trees);
+				CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
+				if (toUse != cTrees)
+				{
+					edits.centerEdits.put(center.index, edits.centerEdits.get(center.index).copyWithTrees(toUse));
+				}
+				treesByCenter.put(center.index, toUse);
 			}
 		}
 
@@ -1551,6 +1615,37 @@ public class IconDrawer
 		return changeBounds;
 	}
 
+	private CenterTrees replaceTreeAssetsIfNeeded(CenterTrees cTrees, WarningLogger warningLogger)
+	{
+		if (cTrees == null)
+		{
+			return null;
+		}
+
+		String artPackToUse = chooseNewArtPackIfNeeded(IconType.trees, cTrees.artPack, cTrees.treeType, null, warningLogger);
+		if (!cTrees.artPack.equals(artPackToUse))
+		{
+			cTrees = cTrees.copyWithArtPack(artPackToUse);
+		}
+
+		// Load the images and masks.
+		ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(cTrees.artPack, customImagesPath)
+				.getAllIconGroupsAndMasksForType(IconType.trees);
+		if (treesById == null || treesById.isEmpty())
+		{
+			return cTrees;
+		}
+
+		final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, IconType.trees, cTrees.artPack, treesById, warningLogger);
+		if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)
+		{
+			// Skip since there are no tree images to use.
+			return cTrees;
+		}
+
+		return cTrees.copyWithTreeType(groupId);
+	}
+
 	private Rectangle convertTreesToFreeIcons(Map<Integer, CenterTrees> treesByCenter, WarningLogger warningLogger)
 	{
 		Rectangle changeBounds = null;
@@ -1560,28 +1655,10 @@ public class IconDrawer
 			CenterTrees cTrees = entry.getValue();
 			if (cTrees != null && !cTrees.isDormant)
 			{
-				String artPackToUse = chooseNewArtPackIfNeeded(IconType.trees, cTrees.artPack, cTrees.treeType, null, warningLogger);
-				if (!cTrees.artPack.equals(artPackToUse))
-				{
-					cTrees = cTrees.copyWithArtPack(artPackToUse);
-				}
-
-				// Load the images and masks.
-				ListMap<String, ImageAndMasks> treesById = ImageCache.getInstance(cTrees.artPack, customImagesPath)
-						.getAllIconGroupsAndMasksForType(IconType.trees);
-				if (treesById == null || treesById.isEmpty())
-				{
-					continue;
-				}
-
-				final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, IconType.trees, cTrees.artPack, treesById, warningLogger);
-				if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)
-				{
-					// Skip since there are no tree images to use.
-					continue;
-				}
-
-				CenterTrees toUse = cTrees.copyWithTreeType(groupId);
+				// This shouldn't log any warnings because replaceTreeAssetsIfNeeded has already been called on CenterTrees in treesByCenter,
+				// or this call is coming from drawing new trees.
+				CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
+				
 				Center c = graph.centers.get(entry.getKey());
 				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet()));
 			}

@@ -136,7 +136,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenu highlightIconsInArtPackMenu;
 	private List<JCheckBoxMenuItem> artPacksToHighlight;
 
-	public MainWindow(String fileToOpen)
+	public MainWindow(String fileToOpen) throws Exception
 	{
 		super(frameTitleBase);
 
@@ -157,6 +157,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			catch (Exception inner)
 			{
+				Logger.printError("Error while trying to log an error at startup: " + inner.getMessage(), inner);
 			}
 			throw ex;
 		}

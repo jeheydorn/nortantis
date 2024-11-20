@@ -110,7 +110,7 @@ public class CustomImagesDialog extends JDialog
 						+ " can either close and re-open Nortantis or use " + mainWindow.getFileMenuName() + " -> "
 						+ mainWindow.getRefreshImagesMenuName() + ".</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<html>To revert back to using Nortantis's installed images, clear out the" + " field below.</html>"), space, 10,
+				new JLabel("<html>To revert back to using installed images/art packs, clear out the" + " field below.</html>"), space, 10,
 				false);
 
 		JButton openButton = new JButton("Open");

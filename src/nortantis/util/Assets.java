@@ -1,6 +1,8 @@
 package nortantis.util;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -20,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
@@ -32,8 +35,10 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import nortantis.MapSettings;
 import nortantis.NamedResource;
 import nortantis.Stopwatch;
+import nortantis.editor.UserPreferences;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 
@@ -59,7 +64,7 @@ public class Assets
 
 	public static String getInstalledArtPackPath()
 	{
-		return Paths.get(assetsPath, "installed art pack").toString();
+		return Paths.get(getAssetsPath(), "installed art pack").toString();
 	}
 
 	public static List<String> listArtPacks(boolean includeCustomArtPack)
@@ -87,11 +92,11 @@ public class Assets
 	{
 		return listArtPacks(!StringUtils.isEmpty(customImagesFolder)).contains(artPack);
 	}
-	
+
 	private static class ArtPacksFromArtPacksFolderCache
 	{
 		private static List<String> artPacksInArtPacksFolderCache;
-		
+
 		public static synchronized List<String> getArtPacksFromArtPackFolder()
 		{
 			if (artPacksInArtPacksFolderCache == null)
@@ -100,7 +105,7 @@ public class Assets
 			}
 			return artPacksInArtPacksFolderCache;
 		}
-		
+
 		public static synchronized void clearCache()
 		{
 			artPacksInArtPacksFolderCache = null;
@@ -188,6 +193,10 @@ public class Assets
 			return null;
 		}
 		Path artPackPath = getArtPackPath(resource.artPack, customImagesFolder);
+		if (artPackPath == null)
+		{
+			return null;
+		}
 		return Paths.get(artPackPath.toString(), "background textures", resource.name);
 	}
 
@@ -272,19 +281,23 @@ public class Assets
 
 	public static List<String> listSubFoldersInJar(String folderPath)
 	{
-		List<String> subfolders = new ArrayList<>();
 		String assetsPath = convertToAssetPath(folderPath);
 		String assetPathInEntryFormat = addTrailingSlash(assetsPath.substring(1));
 
-		cachedEntries.stream()
-				.filter(entry -> entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat)
+		List<String> result = new ArrayList<>();
+		for (CachedEntry entry : cachedEntries)
+		{
+			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat)
 						&& !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
-				.map(entry -> FilenameUtils.getName(removeTrailingSlash(entry.name))).collect(Collectors.toList());
-
-		return new ArrayList<>(new TreeSet<>(subfolders));
+			{
+				result.add(FilenameUtils.getName(removeTrailingSlash(entry.name)));
+			}
+		}
+		
+		return result;
 	}
 
-	private static synchronized void initializeEntryCache()
+	private static void initializeEntryCache()
 	{
 		if (cachedEntries != null)
 		{
@@ -325,7 +338,7 @@ public class Assets
 	 * 
 	 * @throws IOException
 	 */
-	public static synchronized void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
+	public static void copyDirectoryToDirectory(Path sourceDir, Path destDir) throws IOException
 	{
 		if (isJarAsset(sourceDir.toString()))
 		{
@@ -465,7 +478,7 @@ public class Assets
 		}
 	}
 
-	public static synchronized String readFileAsString(String filePath)
+	public static String readFileAsString(String filePath)
 	{
 		try (InputStream inputStream = createInputStream(filePath))
 		{
@@ -502,7 +515,7 @@ public class Assets
 
 	}
 
-	private static synchronized List<String> readAllLinesFromFileInJar(String filePath) throws IOException
+	private static List<String> readAllLinesFromFileInJar(String filePath) throws IOException
 	{
 		InputStream inputStream = createInputStream(filePath);
 		List<String> lines = new ArrayList<>();
@@ -517,11 +530,18 @@ public class Assets
 		return lines;
 	}
 
-	private static synchronized InputStream createInputStream(String filePath)
+	private static InputStream createInputStream(String filePath)
 	{
 		if (isJarAsset(filePath))
 		{
-			return createInputStreamFromFileInJar(filePath);
+			try
+			{
+				return createInputStreamFromFileInJar(filePath);
+			}
+			catch (IOException e)
+			{
+				throw new RuntimeException("Can't read the file '" + filePath + "' from the jar.", e);
+			}
 		}
 		else
 		{
@@ -531,14 +551,15 @@ public class Assets
 			}
 			catch (IOException e)
 			{
-				throw new RuntimeException("Can't read the file " + filePath, e);
+				throw new RuntimeException("Can't read the file '" + filePath + "'", e);
 			}
 		}
 	}
 
-	private static synchronized InputStream createInputStreamFromFileInJar(String filePath)
+	private static InputStream createInputStreamFromFileInJar(String filePath) throws IOException
 	{
-		return Assets.class.getResourceAsStream(convertToAssetPath(filePath));
+		InputStream result = Assets.class.getResourceAsStream(convertToAssetPath(filePath));
+		return result;
 	}
 
 	public static boolean exists(String filePath)
@@ -553,9 +574,9 @@ public class Assets
 		}
 	}
 
-	public static synchronized boolean existsInJar(String filePath)
+	public static boolean existsInJar(String filePath)
 	{
-		try (InputStream inputStream = Assets.class.getResourceAsStream(convertToAssetPath(filePath)))
+		try (InputStream inputStream = createInputStreamFromFileInJar(filePath))
 		{
 			return inputStream != null;
 		}
@@ -578,9 +599,9 @@ public class Assets
 		}
 	}
 
-	private static synchronized Image readImageFromJar(String filePath)
+	private static Image readImageFromJar(String filePath)
 	{
-		try (InputStream inputStream = Assets.class.getResourceAsStream(convertToAssetPath(filePath)))
+		try (InputStream inputStream = createInputStreamFromFileInJar(filePath))
 		{
 			if (inputStream == null)
 			{
@@ -603,7 +624,7 @@ public class Assets
 		}
 	}
 
-	public static synchronized List<Pair<String>> readStringPairs(String filePath)
+	public static List<Pair<String>> readStringPairs(String filePath)
 	{
 		List<Pair<String>> result = new ArrayList<>();
 		try (BufferedReader br = createBufferedReader(filePath))
@@ -638,7 +659,7 @@ public class Assets
 		return result;
 	}
 
-	public static synchronized List<String> readNameList(String filePath)
+	public static List<String> readNameList(String filePath)
 	{
 		List<String> result = new ArrayList<>();
 		try (BufferedReader br = createBufferedReader(filePath))
@@ -660,7 +681,7 @@ public class Assets
 		return result;
 	}
 
-	public static synchronized Properties loadPropertiesFile(String filePath) throws IOException
+	public static Properties loadPropertiesFile(String filePath) throws IOException
 	{
 		final Properties props = new Properties();
 		try (InputStream inputStream = createInputStream(filePath))
@@ -681,6 +702,12 @@ public class Assets
 			super();
 			this.name = name;
 			this.isDirectory = isDirectory;
+		}
+
+		@Override
+		public String toString()
+		{
+			return "CachedEntry [name=" + name + ", isDirectory=" + isDirectory + "]";
 		}
 
 	}
