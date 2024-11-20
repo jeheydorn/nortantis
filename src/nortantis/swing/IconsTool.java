@@ -23,6 +23,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
@@ -59,6 +60,7 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.ImageHelper;
+import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple4;
@@ -109,13 +111,13 @@ public class IconsTool extends EditorTool
 	{
 		return KeyEvent.VK_X;
 	}
-	
+
 	@Override
 	public String getKeyboardShortcutText()
 	{
 		return "(Alt+X)";
 	}
-	
+
 	@Override
 	public String getImageIconFilePath()
 	{
@@ -142,7 +144,7 @@ public class IconsTool extends EditorTool
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
 
 		artPackComboBox = new JComboBox<String>();
-		updateArtPackOptions(null);
+		updateArtPackOptions(Assets.installedArtPack, null);
 		artPackComboBox.addActionListener(new ActionListener()
 		{
 			@Override
@@ -151,9 +153,9 @@ public class IconsTool extends EditorTool
 				refreshImagesWithoutClearingCache(mainWindow.getSettingsFromGUI(false));
 			}
 		});
-		organizer.addLabelAndComponent("Art pack:",
-				"For filtering the icons shown in this tool. '" + Assets.installedArtPack + "' selects art that comes with Nortantis. '"
-						+ Assets.customArtPack + "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
+		organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '" + Assets.installedArtPack
+				+ "' selects art that comes with Nortantis. '" + Assets.customArtPack
+				+ "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
 				artPackComboBox);
 
 		// Tools
@@ -451,7 +453,11 @@ public class IconsTool extends EditorTool
 					}
 					catch (InterruptedException | ExecutionException e)
 					{
-						throw new RuntimeException(e);
+						String message = "Error while creating preview images for buttons: " + e.getMessage();
+						Logger.printError(message, e);
+						e.printStackTrace();
+						JOptionPane.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
+						return;
 					}
 
 					button.setImage(AwtFactory.unwrap(previewImage));
@@ -516,7 +522,11 @@ public class IconsTool extends EditorTool
 						}
 						catch (InterruptedException | ExecutionException e)
 						{
-							throw new RuntimeException(e);
+							String message = "Error while creating preview images for buttons: " + e.getMessage();
+							Logger.printError(message, e);
+							e.printStackTrace();
+							JOptionPane.showMessageDialog(IconsTool.this.mainWindow, message, "Error", JOptionPane.ERROR_MESSAGE);
+							return;
 						}
 
 						for (int i : new Range(previewImages.size()))
@@ -560,10 +570,10 @@ public class IconsTool extends EditorTool
 		updateNamedIconSelector(organizer, artPack, customImagesPath, cityButtons, isNew, selectedCity, "Decorations: ");
 	}
 
-	private void updateArtPackOptions(String customImagesPath)
+	private void updateArtPackOptions(String selectedArtPack, String customImagesPath)
 	{
-		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)),
-				(String) artPackComboBox.getSelectedItem(), false);
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)), selectedArtPack,
+				false);
 	}
 
 	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String artPack, String customImagesPath)
@@ -1483,7 +1493,7 @@ public class IconsTool extends EditorTool
 	{
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
-		updateArtPackOptions(customImagesPath);
+		updateArtPackOptions(settings.artPack, customImagesPath);
 		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
 			if (Assets.artPackExists(artPack, customImagesPath))

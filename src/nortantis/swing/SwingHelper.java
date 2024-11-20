@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractButton;
@@ -44,6 +45,8 @@ public class SwingHelper
 	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem,
 			boolean forceAddSelectedItem)
 	{
+		String selectedBefore = (String) comboBox.getSelectedItem();
+		
 		// Remove all action listeners
 		ActionListener[] listeners = comboBox.getActionListeners();
 		for (ActionListener listener : listeners)
@@ -81,10 +84,21 @@ public class SwingHelper
 		{
 			comboBox.addActionListener(listener);
 		}
+
+		// If the selection changed, trigger the action listener. I do this here instead of leaving the action listeners when doing
+		// the manipulations above to avoid triggering the action listener when adding and removing items.
+		String selectedNow = (String) comboBox.getSelectedItem();
+		if (!Objects.equals(selectedNow, selectedBefore))
+		{
+			comboBox.setSelectedItem(comboBox.getSelectedItem());
+		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static <T> void initializeComboBoxItems(JComboBox<T> comboBox, Collection<T> items, T selectedItem, boolean forceAddSelectedItem)
 	{
+		T selectedBefore = (T) comboBox.getSelectedItem();
+
 		// Remove all action listeners
 		ActionListener[] listeners = comboBox.getActionListeners();
 		for (ActionListener listener : listeners)
@@ -121,6 +135,14 @@ public class SwingHelper
 		for (ActionListener listener : listeners)
 		{
 			comboBox.addActionListener(listener);
+		}
+
+		// If the selection changed, trigger the action listener. I do this here instead of leaving the action listeners when doing
+		// the manipulations above to avoid triggering the action listener when adding and removing items.
+		T selectedNow = (T) comboBox.getSelectedItem();
+		if (!Objects.equals(selectedNow, selectedBefore))
+		{
+			comboBox.setSelectedItem(comboBox.getSelectedItem());
 		}
 	}
 
@@ -332,10 +354,7 @@ public class SwingHelper
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options =
-		{
-				"OK"
-		};
+		Object[] options = { "OK" };
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");

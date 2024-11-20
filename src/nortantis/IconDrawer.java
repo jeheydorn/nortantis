@@ -349,7 +349,7 @@ public class IconDrawer
 		}
 
 		IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
-		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, type, cEdit.icon.artPack, iconsByGroup, warningLogger);
+		final String groupId = getNewGroupIdIfNeeded(cEdit.icon.iconGroupId, type, cEdit.icon.artPack, iconsByGroup, warningLogger, false);
 		if (groupId == null || !iconsByGroup.containsKey(groupId) || iconsByGroup.get(groupId).size() == 0)
 		{
 			edits.centerEdits.put(cEdit.index, cEdit.copyWithIcon(null));
@@ -608,7 +608,7 @@ public class IconDrawer
 	private Tuple3<String, String, String> adjustNamedIconGroupAndNameIfNeeded(IconType type, String artPack, String groupId, String name,
 			WarningLogger warningLogger)
 	{
-		String artPackToUse = chooseNewArtPackIfNeeded(type, artPack, groupId, name, warningLogger);
+		String artPackToUse = chooseNewArtPackIfNeeded(type, artPack, groupId, name, warningLogger, false);
 
 		Map<String, Tuple2<ImageAndMasks, Integer>> imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath)
 				.getIconsWithWidths(type, groupId);
@@ -662,7 +662,7 @@ public class IconDrawer
 	private void updateGroupIdAndAddShuffledFreeIcon(FreeIcon icon, double typeLevelScale, WarningLogger warningLogger,
 			List<FreeIcon> toRemove)
 	{
-		String artPackToUse = chooseNewArtPackIfNeeded(icon.type, icon.artPack, icon.groupId, icon.iconName, warningLogger);
+		String artPackToUse = chooseNewArtPackIfNeeded(icon.type, icon.artPack, icon.groupId, icon.iconName, warningLogger, false);
 		if (!icon.artPack.equals(artPackToUse))
 		{
 			FreeIcon updated = icon.copyWithArtPack(artPackToUse);
@@ -672,7 +672,7 @@ public class IconDrawer
 
 		ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, customImagesPath)
 				.getAllIconGroupsAndMasksForType(icon.type);
-		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type, artPackToUse, iconsByGroup, warningLogger);
+		String newGroupId = getNewGroupIdIfNeeded(icon.groupId, icon.type, artPackToUse, iconsByGroup, warningLogger, false);
 		if (!icon.groupId.equals(newGroupId) && newGroupId != null)
 		{
 			FreeIcon updated = icon.copyWithGroupId(newGroupId);
@@ -755,21 +755,28 @@ public class IconDrawer
 	}
 
 	private String getNewGroupIdIfNeeded(final String groupId, IconType type, String artPack, ListMap<String, ImageAndMasks> iconsByGroup,
-			WarningLogger warningLogger)
+			WarningLogger warningLogger, boolean isForDormantTrees)
 	{
+
+		String dormantTreesMessage = isForDormantTrees
+				? " These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."
+				: "";
+
 		if (!iconsByGroup.containsKey(groupId))
 		{
 			// Someone removed the icon group. Choose a new group.
 			String newGroupId = chooseNewGroupId(iconsByGroup.keySet(), groupId);
 			if (newGroupId == null)
 			{
-				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId
-						+ "' in art pack '" + artPack + "'. There are no " + type.getSingularName() + " icons, so none will be drawn.");
+				warningLogger.addWarningMessage(
+						"Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '" + artPack
+								+ "'. There are no " + type.getSingularName() + " icons in that art pack, so none will be drawn.");
 			}
 			else
 			{
-				warningLogger.addWarningMessage("Unable to find the " + type.getSingularName() + " image group '" + groupId
-						+ "' in art pack '" + artPack + "'. The group '" + newGroupId + "' in that art pack will be used instead.");
+				warningLogger.addWarningMessage(
+						"Unable to find the " + type.getSingularName() + " image group '" + groupId + "' in art pack '" + artPack
+								+ "'. The group '" + newGroupId + "' in that art pack will be used instead." + dormantTreesMessage);
 			}
 			return newGroupId;
 		}
@@ -827,8 +834,11 @@ public class IconDrawer
 	}
 
 	private String chooseNewArtPackIfNeeded(IconType type, String oldArtPack, String oldGroupId, String oldIconName,
-			WarningLogger warningLogger)
+			WarningLogger warningLogger, boolean isForDormantTrees)
 	{
+		String dormantTreesMessage = isForDormantTrees
+				? " These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."
+				: "";
 
 		List<String> allArtPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
 		if (!allArtPacks.contains(oldArtPack))
@@ -846,7 +856,7 @@ public class IconDrawer
 					{
 						warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the "
 								+ type.getSingularName() + " image group '" + oldGroupId + "'. The art pack '" + artPack
-								+ "' will be used instead because it has the same image group folder name.");
+								+ "' will be used instead because it has the same image group folder name." + dormantTreesMessage);
 						return artPack;
 					}
 				}
@@ -867,8 +877,9 @@ public class IconDrawer
 
 			if (StringUtils.isEmpty(oldIconName))
 			{
-				warningLogger.addWarningMessage("Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName()
-						+ " image group '" + oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead.");
+				warningLogger.addWarningMessage(
+						"Unable to find the art pack '" + oldArtPack + "' to load the " + type.getSingularName() + " image group '"
+								+ oldGroupId + "'. The art pack '" + artPackToUse + "' will be used instead." + dormantTreesMessage);
 			}
 			else
 			{
@@ -894,8 +905,8 @@ public class IconDrawer
 					{
 						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
 								+ " images, so it does not have " + type.getSingularName() + " the image group '" + oldGroupId
-								+ "'. The art pack '" + artPack
-								+ "' will be used instead because it has the same image group folder name.");
+								+ "'. The art pack '" + artPack + "' will be used instead because it has the same image group folder name."
+								+ dormantTreesMessage);
 						return artPack;
 					}
 				}
@@ -922,7 +933,7 @@ public class IconDrawer
 						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
 								+ " images, so it does not have " + type.getSingularName() + " the image group '" + oldGroupId
 								+ "'. The art pack '" + artPack + "' will be used instead because it has " + type.getSingularName()
-								+ " images.");
+								+ " images." + dormantTreesMessage);
 						return artPack;
 					}
 					else
@@ -1622,7 +1633,8 @@ public class IconDrawer
 			return null;
 		}
 
-		String artPackToUse = chooseNewArtPackIfNeeded(IconType.trees, cTrees.artPack, cTrees.treeType, null, warningLogger);
+		String artPackToUse = chooseNewArtPackIfNeeded(IconType.trees, cTrees.artPack, cTrees.treeType, null, warningLogger,
+				cTrees.isDormant);
 		if (!cTrees.artPack.equals(artPackToUse))
 		{
 			cTrees = cTrees.copyWithArtPack(artPackToUse);
@@ -1636,7 +1648,8 @@ public class IconDrawer
 			return cTrees;
 		}
 
-		final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, IconType.trees, cTrees.artPack, treesById, warningLogger);
+		final String groupId = getNewGroupIdIfNeeded(cTrees.treeType, IconType.trees, cTrees.artPack, treesById, warningLogger,
+				cTrees.isDormant);
 		if (groupId == null || !treesById.containsKey(groupId) || treesById.get(groupId).size() == 0)
 		{
 			// Skip since there are no tree images to use.
@@ -1655,10 +1668,11 @@ public class IconDrawer
 			CenterTrees cTrees = entry.getValue();
 			if (cTrees != null && !cTrees.isDormant)
 			{
-				// This shouldn't log any warnings because replaceTreeAssetsIfNeeded has already been called on CenterTrees in treesByCenter,
+				// This shouldn't log any warnings because replaceTreeAssetsIfNeeded has already been called on CenterTrees in
+				// treesByCenter,
 				// or this call is coming from drawing new trees.
 				CenterTrees toUse = replaceTreeAssetsIfNeeded(cTrees, warningLogger);
-				
+
 				Center c = graph.centers.get(entry.getKey());
 				changeBounds = Rectangle.add(changeBounds, drawTreesAtCenterAndCorners(graph, c, toUse, treesByCenter.keySet()));
 			}

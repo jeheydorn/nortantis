@@ -30,7 +30,6 @@ public class UserPreferences
 	public String defaultCustomImagesPath;
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
 	public Set<String> collapsedPanels = new TreeSet<>();
-	public String assetsFolderVersion;
 
 	public static UserPreferences instance;
 
@@ -89,11 +88,6 @@ public class UserPreferences
 					collapsedPanels = new TreeSet<>();
 					collapsedPanels.addAll(Arrays.asList(panelNames));
 				}
-				
-				if (props.containsKey("assetsFolderVersion"))
-				{
-					assetsFolderVersion = props.getProperty("assetsFolderVersion");
-				}
 			}
 		}
 		catch (IOException e)
@@ -126,7 +120,6 @@ public class UserPreferences
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
 		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
-		props.setProperty("assetsFolderVersion", assetsFolderVersion);
 
 		try
 		{
