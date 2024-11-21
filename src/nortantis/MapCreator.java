@@ -1801,8 +1801,8 @@ public class MapCreator implements WarningLogger
 	public Image createHeightMap(MapSettings settings)
 	{
 		r = new Random(settings.randomSeed);
-		IntDimension mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution,
-				settings.generatedHeight * settings.heightmapResolution).toIntDimension();
+		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution,
+				settings.generatedHeight * settings.heightmapResolution);
 		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}

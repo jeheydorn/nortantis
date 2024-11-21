@@ -14,11 +14,7 @@ import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 
-/**
- * TestDriver.java
- *
- * @author Connor
- */
+
 public class GraphCreator
 {
 	public static WorldGraph createGraph(double width, double height, int numSites, double borderPlateContinentalProbability,
