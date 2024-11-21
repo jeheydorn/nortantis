@@ -240,26 +240,46 @@ public class MapCreatorTest
 			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
 		}).getWarningMessages();
 
-		assertTrue(warnings.contains("The art pack 'custom' no longer has tree images, so it does not have tree the image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has tree images, so it does not have tree the image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
-		assertTrue(warnings.contains("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has mountain images, so it does not have mountain the image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images."));
-		assertTrue(warnings.contains("Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has hill images, so it does not have hill the image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images."));
-		assertTrue(warnings.contains("Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has sand images, so it does not have sand the image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has hill images, so it does not have hill the image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has tree images, so it does not have tree the image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images."));
-		assertTrue(warnings.contains("Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has tree images, so it does not have tree the image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has mountain images, so it does not have mountain the image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1 ' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6 ' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images."));
-		assertTrue(warnings.contains("Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1 ' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images."));
-		assertTrue(warnings.contains("Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
-		assertTrue(warnings.contains("Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
-		assertTrue(warnings.contains("The art pack 'custom' no longer has city images, so it does not have the icon 'town ' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
+		assertTrue(warnings.contains(
+				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has mountain images, so it does not have mountain the image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images."));
+		assertTrue(warnings.contains(
+				"Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has hill images, so it does not have hill the image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images."));
+		assertTrue(warnings.contains(
+				"Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has sand images, so it does not have sand the image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has hill images, so it does not have hill the image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images."));
+		assertTrue(warnings.contains(
+				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has mountain images, so it does not have mountain the image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1 ' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6 ' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images."));
+		assertTrue(warnings.contains(
+				"Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1 ' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images."));
+		assertTrue(warnings.contains(
+				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has city images, so it does not have the icon 'town ' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertEquals(20, warnings.size());
 	}
 

@@ -1070,9 +1070,11 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
-						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+						bgColor = closest.isWater
+								? Color.create(oceanTexture.getRGB(xLoc, yLoc))
 								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
-						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
+						landTextureColor = closest.isWater
+								? Color.create(oceanTexture.getRGB(xLoc, yLoc))
 								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
 					}
 					else
@@ -1208,12 +1210,10 @@ public class IconDrawer
 		return freeIcons.doWithLockAndReturnResult(() ->
 		{
 			Tuple2<List<Set<Center>>, List<IconDrawTask>> result = new Tuple2<>(null, null);
-			;
 			List<IconDrawTask> cities;
 
 			Logger.println("Adding mountains and hills.");
 			List<Set<Center>> mountainGroups;
-			;
 			addOrUnmarkMountainsAndHills(mountainAndHillGroups);
 			// I find the mountain groups after adding or unmarking mountains so
 			// that mountains that get unmarked because their image

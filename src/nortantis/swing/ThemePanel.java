@@ -1330,12 +1330,10 @@ public class ThemePanel extends JTabbedPane
 				{
 					return null;
 				}
-				
 
 				long seed = parseBackgroundSeed();
 				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(),
-						colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(), rdbtnGeneratedFromTexture.isSelected(),
-						texturePath);
+						colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(), rdbtnGeneratedFromTexture.isSelected(), texturePath);
 			}
 
 			@Override
@@ -1350,7 +1348,7 @@ public class ThemePanel extends JTabbedPane
 				{
 					throw new RuntimeException(e);
 				}
-				
+
 				if (tuple == null)
 				{
 					return;
@@ -1790,8 +1788,10 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanWavesLevel = oceanWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
-		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
-				: noneRadioButton.isSelected() ? OceanWaves.None
+		settings.oceanWavesType = ripplesRadioButton.isSelected()
+				? OceanWaves.Ripples
+				: noneRadioButton.isSelected()
+						? OceanWaves.None
 						: concentricWavesButton.isSelected() ? OceanWaves.ConcentricWaves : OceanWaves.FadingConcentricWaves;
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
@@ -1810,7 +1810,8 @@ public class ThemePanel extends JTabbedPane
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
-		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
+		settings.lineStyle = jaggedLinesButton.isSelected()
+				? LineStyle.Jagged
 				: splinesLinesButton.isSelected() ? LineStyle.Splines : LineStyle.SplinesWithSmoothedCoastlines;
 
 		// Background image settings

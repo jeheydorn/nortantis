@@ -1547,5 +1547,4 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-
 }

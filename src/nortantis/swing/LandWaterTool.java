@@ -96,14 +96,13 @@ public class LandWaterTool extends EditorTool
 	{
 		return toolbarName;
 	}
-	
+
 	@Override
 	public int getMnemonic()
 	{
 		return KeyEvent.VK_Z;
 	}
-	
-	
+
 	@Override
 	public String getKeyboardShortcutText()
 	{

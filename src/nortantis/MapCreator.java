@@ -242,7 +242,6 @@ public class MapCreator implements WarningLogger
 		// The bounds to replace in the original map.
 		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
 
-
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
 		TextDrawer textDrawer = new TextDrawer(settings);

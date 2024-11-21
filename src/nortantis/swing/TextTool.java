@@ -369,13 +369,13 @@ public class TextTool extends EditorTool
 	{
 		return "Text";
 	}
-	
+
 	@Override
 	public int getMnemonic()
 	{
 		return KeyEvent.VK_C;
 	}
-	
+
 	@Override
 	public String getKeyboardShortcutText()
 	{

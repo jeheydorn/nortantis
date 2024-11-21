@@ -180,7 +180,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
+			setPlaceholderImage(new String[]
+			{
+					"Welcome to Nortantis. To create or open a map,", "use the File menu."
+			});
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 
@@ -516,8 +519,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
-				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
+				setPlaceholderImage(new String[]
+				{
+						"Map failed to draw due to an error.",
+						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "."
+				});
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -622,7 +628,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+				Path curPath = openSettingsFilePath == null
+						? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 						: openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
@@ -874,7 +881,6 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		artPacksMenu.add(highlightIconsInArtPackMenu);
 		updateArtPackHighlightOptions();
 
-
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
 
@@ -886,9 +892,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				JOptionPane.showMessageDialog(MainWindow.this, "<html>Keyboard shortcuts for navigating the map:" + "<ul>"
-						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>"
+						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>"
+						+ "</ul>"
 						+ "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut."
-						 + "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
+						+ "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -1048,7 +1055,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// Show the dialog
 				int response = JOptionPane.showOptionDialog(this,
 						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
+						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]
+						{
+								"Overwrite", "Cancel"
+						}, "Cancel");
 
 				if (response == 0)
 				{
@@ -1606,7 +1616,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+		Path curPath = openSettingsFilePath == null
+				? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 				: openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
@@ -1720,7 +1731,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[] { "Drawing map..." });
+		setPlaceholderImage(new String[]
+		{
+				"Drawing map..."
+		});
 
 		undoer.reset();
 

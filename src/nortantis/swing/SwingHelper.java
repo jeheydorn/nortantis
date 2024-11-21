@@ -46,7 +46,7 @@ public class SwingHelper
 			boolean forceAddSelectedItem)
 	{
 		String selectedBefore = (String) comboBox.getSelectedItem();
-		
+
 		// Remove all action listeners
 		ActionListener[] listeners = comboBox.getActionListeners();
 		for (ActionListener listener : listeners)
@@ -354,7 +354,10 @@ public class SwingHelper
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options = { "OK" };
+		Object[] options =
+		{
+				"OK"
+		};
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");

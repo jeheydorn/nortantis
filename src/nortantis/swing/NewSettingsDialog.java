@@ -437,7 +437,6 @@ public class NewSettingsDialog extends JDialog
 			}
 		}
 
-
 	}
 
 	private void randomizeTheme()
@@ -501,7 +500,10 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[]
+		{
+				"Drawing..."
+		}));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();

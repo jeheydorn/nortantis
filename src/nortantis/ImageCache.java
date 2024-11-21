@@ -295,7 +295,7 @@ public class ImageCache
 		}
 
 		Collections.sort(folderNames, String.CASE_INSENSITIVE_ORDER);
-		
+
 		return folderNames;
 	}
 

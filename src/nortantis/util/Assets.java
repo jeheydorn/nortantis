@@ -288,12 +288,12 @@ public class Assets
 		for (CachedEntry entry : cachedEntries)
 		{
 			if (entry.isDirectory && entry.name.startsWith(assetPathInEntryFormat)
-						&& !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
+					&& !addTrailingSlash(entry.name).equals(assetPathInEntryFormat))
 			{
 				result.add(FilenameUtils.getName(removeTrailingSlash(entry.name)));
 			}
 		}
-		
+
 		return result;
 	}
 
