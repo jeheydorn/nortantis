@@ -481,6 +481,7 @@ public class NewSettingsDialog extends JDialog
 		settings.textColor = randomSettings.textColor;
 		settings.drawBoldBackground = randomSettings.drawBoldBackground;
 		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
+		settings.regionBoundaryStyle = randomSettings.regionBoundaryStyle;
 		settings.drawRegionColors = randomSettings.drawRegionColors;
 		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
 		settings.drawBorder = randomSettings.drawBorder;

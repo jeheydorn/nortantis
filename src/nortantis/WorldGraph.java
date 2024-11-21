@@ -163,7 +163,7 @@ public class WorldGraph extends VoronoiGraph
 		return changed;
 	}
 
-	private void addNeighbors(Collection<Center> centers)
+	public void addNeighbors(Collection<Center> centers)
 	{
 		assert centers instanceof Set;
 		Set<Center> loopOver = new HashSet<>(centers);

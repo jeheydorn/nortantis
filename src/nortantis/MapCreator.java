@@ -176,8 +176,6 @@ public class MapCreator implements WarningLogger
 	public IntRectangle incrementalUpdateForCentersAndEdges(final MapSettings settings, MapParts mapParts, Image fullSizedMap,
 			Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds)
 	{
-		// Stopwatch updateSW = new Stopwatch("incremental update");
-
 		Set<Center> centersChanged;
 		if (centersChangedIds != null)
 		{
@@ -201,18 +199,6 @@ public class MapCreator implements WarningLogger
 		{
 			centersChanged.addAll(mapParts.graph.getCentersFromEdgeIds(edgesChangedIds));
 		}
-		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
-
-		if (centersChangedBounds == null)
-		{
-			// Nothing changed
-			return null;
-		}
-
-		double effectsPadding = calcEffectsPadding(settings);
-
-		// The bounds to replace in the original map.
-		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
 
 		applyRegionEdits(mapParts.graph, settings.edits);
 		// Apply edge edits before center edits because applying center edits smoothes region boundaries, which depends on rivers, which are
@@ -233,15 +219,36 @@ public class MapCreator implements WarningLogger
 			}
 			applyEdgeEdits(mapParts.graph, settings.edits, edgeEdits);
 		}
-		boolean changeAffectsLandOrRegionShape = applyCenterEdits(mapParts.graph, settings.edits,
+		Set<Center> centersChangedThatAffectedLandOrRegionBoundaries = applyCenterEdits(mapParts.graph, settings.edits,
 				getCenterEditsForCenters(settings.edits, centersChanged), settings.drawRegionBoundaries || settings.drawRegionColors);
+
+		Rectangle centersChangedBounds = WorldGraph.getBoundingBox(centersChanged);
+
+		if (centersChangedBounds == null)
+		{
+			// Nothing changed
+			return null;
+		}
+
+		if (!centersChangedThatAffectedLandOrRegionBoundaries.isEmpty())
+		{
+			// Expand the centers that changed to include those that had noisy edges recalculated when applying center edits. This is
+			// necessary because WorldGraph.smoothCoastlinesAndRegionBoundariesIfNeeded expands the set of centers that changed to check for
+			// single polygon islands or single polygon water, and updates those noisy edges.
+			centersChangedBounds = centersChangedBounds.add(WorldGraph.getBoundingBox(centersChangedThatAffectedLandOrRegionBoundaries));
+		}
+
+		double effectsPadding = calcEffectsPadding(settings);
+		// The bounds to replace in the original map.
+		Rectangle replaceBounds = centersChangedBounds.pad(effectsPadding, effectsPadding);
+
 
 		mapParts.graph.updateCenterLookupTable(centersChanged);
 
 		TextDrawer textDrawer = new TextDrawer(settings);
 		textDrawer.setMapTexts(settings.edits.text);
 
-		if (changeAffectsLandOrRegionShape)
+		if (!centersChangedThatAffectedLandOrRegionBoundaries.isEmpty())
 		{
 			if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
 			{
@@ -496,13 +503,11 @@ public class MapCreator implements WarningLogger
 		// extra just to be safe.
 		effectsPadding += 2 * settings.resolution;
 
-		// Make sure effectsPadding is at least half the width of the maximum
-		// with any line can be drawn, which would probably be a very wide
-		// river.
-		// Since there is no easy way to know what that will be, just guess.
-		double guessAtMaxRiverWidthPlustSomeBuffer = 70;
-		effectsPadding = Math.max(effectsPadding, Math.max((guessAtMaxRiverWidthPlustSomeBuffer / 2.0) * settings.resolution,
-				(SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
+		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very
+		// wide river. Since there is no easy way to know what that will be, just guess.
+		double buffer = 70;
+		effectsPadding = Math.max(effectsPadding,
+				Math.max((buffer / 2.0) * settings.resolution, (SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
 
 		effectsPadding *= sizeMultiplier;
 		return effectsPadding;
@@ -1542,12 +1547,27 @@ public class MapCreator implements WarningLogger
 		}
 	}
 
-	private static boolean applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges,
+	/**
+	 * Applies changes to Centers from user edits to the Center objects in the graph.
+	 * 
+	 * @param graph
+	 *            The graph being drawn
+	 * @param edits
+	 *            User edits
+	 * @param centerEditChanges
+	 *            Edits of centers that changed. Pass this in if only some of the center edits changed, avoid having to loop over all of
+	 *            them.
+	 * @param areRegionBoundariesVisible
+	 *            whether region boundaries are visible on the map
+	 * @return A set of centers whose noisy edges have been recalculated, meaning something about their terrain or region boundaries
+	 *         changed.
+	 */
+	private static Set<Center> applyCenterEdits(WorldGraph graph, MapEdits edits, Collection<CenterEdit> centerEditChanges,
 			boolean areRegionBoundariesVisible)
 	{
 		if (edits == null || edits.centerEdits.isEmpty())
 		{
-			return false;
+			return Collections.emptySet();
 		}
 
 		if (edits.centerEdits.size() != graph.centers.size())
@@ -1619,7 +1639,7 @@ public class MapCreator implements WarningLogger
 			graph.rebuildNoisyEdgesForCenter(center, needsRebuildNoisyEdges);
 		}
 
-		return !needsRebuildNoisyEdges.isEmpty();
+		return needsRebuildNoisyEdges;
 	}
 
 	private static void applyEdgeEdits(WorldGraph graph, MapEdits edits, Collection<EdgeEdit> edgeChanges)
