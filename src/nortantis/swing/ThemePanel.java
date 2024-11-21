@@ -188,7 +188,6 @@ public class ThemePanel extends JTabbedPane
 		addTab("Border", createBorderPanel(mainWindow));
 		addTab("Effects", createEffectsPanel(mainWindow));
 		addTab("Fonts", createFontsPanel(mainWindow));
-		addTab("Icons", createIconsPanel(mainWindow));
 	}
 
 	private Component createBackgroundPanel(MainWindow mainWindow)
@@ -1271,16 +1270,6 @@ public class ThemePanel extends JTabbedPane
 
 		enableTextCheckBox.addActionListener(enableTextCheckboxActionListener);
 
-		organizer.addVerticalFillerRow();
-		organizer.addLeftAlignedComponent(Box.createHorizontalStrut(100));
-		return organizer.createScrollPane();
-	}
-	
-	private Component createIconsPanel(MainWindow mainWindow)
-	{
-		GridBagOrganizer organizer = new GridBagOrganizer();
-
-		JPanel iconsPanel = organizer.panel;
 		organizer.addVerticalFillerRow();
 		organizer.addLeftAlignedComponent(Box.createHorizontalStrut(100));
 		return organizer.createScrollPane();
