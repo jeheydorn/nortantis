@@ -23,7 +23,7 @@ jpackage \
 --type deb \
 --linux-shortcut \
 --icon "taskbar icon.png" \
---file-associations file_associations.txt \
+--file-associations file_associations_linux.txt \
 --vendor "Joseph Heydorn" \
 --app-version "2.91" \
 --java-options -XX:MaxRAMPercentage=50.0 \

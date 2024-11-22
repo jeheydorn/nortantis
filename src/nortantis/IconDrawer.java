@@ -904,7 +904,7 @@ public class IconDrawer
 					if (ImageCache.getInstance(artPack, customImagesPath).hasGroupName(type, oldGroupId))
 					{
 						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
-								+ " images, so it does not have " + type.getSingularName() + " the image group '" + oldGroupId
+								+ " images, so it does not have the " + type.getSingularName() + " image group '" + oldGroupId
 								+ "'. The art pack '" + artPack + "' will be used instead because it has the same image group folder name."
 								+ dormantTreesMessage);
 						return artPack;
@@ -931,7 +931,7 @@ public class IconDrawer
 					if (StringUtils.isEmpty(oldIconName))
 					{
 						warningLogger.addWarningMessage("The art pack '" + oldArtPack + "' no longer has " + type.getSingularName()
-								+ " images, so it does not have " + type.getSingularName() + " the image group '" + oldGroupId
+								+ " images, so it does not have the " + type.getSingularName() + " image group '" + oldGroupId
 								+ "'. The art pack '" + artPack + "' will be used instead because it has " + type.getSingularName()
 								+ " images." + dormantTreesMessage);
 						return artPack;

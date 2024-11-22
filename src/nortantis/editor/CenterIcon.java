@@ -32,7 +32,9 @@ public class CenterIcon
 	private CenterIcon(CenterIconType iconType, String artPack, String iconGroupId, int iconIndex, String iconName)
 	{
 		this.iconType = iconType;
+		assert artPack != null;
 		this.artPack = artPack;
+		assert iconGroupId != null;
 		this.iconGroupId = iconGroupId;
 		this.iconIndex = iconIndex;
 		this.iconName = iconName;

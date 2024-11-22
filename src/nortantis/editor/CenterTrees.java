@@ -21,7 +21,9 @@ public class CenterTrees
 
 	public CenterTrees(String artPack, String treeType, double density, long randomSeed, boolean isDormant)
 	{
+		assert artPack != null;
 		this.artPack = artPack;
+		assert treeType != null;
 		this.treeType = treeType;
 		this.density = density;
 		this.randomSeed = randomSeed;

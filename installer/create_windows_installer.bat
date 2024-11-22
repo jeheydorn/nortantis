@@ -8,9 +8,12 @@ pushd ..
 call .\gradlew :jar
 popd
 
-RMDIR /S /Q installer_input
+IF EXIST installer_input (
+    RMDIR /S /Q installer_input
+)
 MKDIR %inputFolder%
 copy ..\build\libs\Nortantis.jar %inputFolder%
+copy "taskbar icon.ico" %inputFolder%
 
 jpackage ^
 --input "%inputFolder%" ^
@@ -21,7 +24,7 @@ jpackage ^
 --win-menu ^
 --win-shortcut ^
 --icon "taskbar icon.ico" ^
---file-associations file_associations.txt ^
+--file-associations file_associations_windows.txt ^
 --vendor "Joseph Heydorn" ^
 --app-version "2.91" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^

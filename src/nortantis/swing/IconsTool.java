@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -23,6 +24,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -357,18 +359,21 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
+		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
+				: Arrays.asList(
+						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;
 		if (existing == null)
 		{
 			JPanel buttonsPanel = new JPanel();
-			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", radioButtons, buttonsPanel),
+			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", listToUse, buttonsPanel),
 					radioButtons, buttonsPanel);
 		}
 		else
 		{
 			result = existing;
 			existing.buttons = radioButtons;
-			GridBagOrganizer.updateComponentsPanelVertical(radioButtons, existing.buttonsPanel);
+			GridBagOrganizer.updateComponentsPanelVertical(listToUse, existing.buttonsPanel);
 		}
 
 		if (prevSelection == null || !result.selectButtonIfPresent(prevSelection))
@@ -501,8 +506,8 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
-							Image preview = namedIconPreviewCache.getOrCreate(new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension),
-									() ->
+							Image preview = namedIconPreviewCache
+									.getOrCreate(new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension), () ->
 									{
 										return createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
 									});
@@ -568,7 +573,7 @@ public class IconsTool extends EditorTool
 			isNew = false;
 		}
 
-		updateNamedIconSelector(organizer, artPack, customImagesPath, cityButtons, isNew, selectedCity, "Decorations: ");
+		updateNamedIconSelector(organizer, artPack, customImagesPath, cityButtons, isNew, selectedCity, "Cities: ");
 	}
 
 	private void updateArtPackOptions(String selectedArtPack, String customImagesPath)
@@ -635,7 +640,7 @@ public class IconsTool extends EditorTool
 				hasAtLeastOneImage = true;
 			}
 
-			// If at least one button was added
+			// If at least one button was added for this group
 			if (selector.getTypes().contains(groupId))
 			{
 				CollapsiblePanel panel = new CollapsiblePanel(selector.type.toString() + "Type", groupId, typePanel);
@@ -662,6 +667,10 @@ public class IconsTool extends EditorTool
 			{
 				selector.selectFirstButton();
 			}
+		}
+		else
+		{
+			selector.typesPanel.add(new JLabel("<html>The art pack '" + artPack + "' has no " + selector.type + ".</html>"));
 		}
 	}
 
@@ -823,54 +832,66 @@ public class IconsTool extends EditorTool
 		if (mountainsButton.isSelected())
 		{
 			Set<Center> selected = getSelectedLandCenters(e.getPoint());
-			String rangeId = mountainTypes.getSelectedOption();
-			for (Center center : selected)
+			String groupId = mountainTypes.getSelectedOption();
+			if (!StringUtils.isEmpty(groupId))
 			{
-				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), rangeId,
-						Math.abs(rand.nextInt()));
-				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Mountain, (String) artPackComboBox.getSelectedItem(), groupId,
+							Math.abs(rand.nextInt()));
+					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+				}
+				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
-			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (hillsButton.isSelected())
 		{
-			Set<Center> selected = getSelectedLandCenters(e.getPoint());
+			Set<Center> groupId = getSelectedLandCenters(e.getPoint());
 			String rangeId = hillTypes.getSelectedOption();
-			for (Center center : selected)
+			if (!StringUtils.isEmpty(rangeId))
 			{
-				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId,
-						Math.abs(rand.nextInt()));
-				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+				for (Center center : groupId)
+				{
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Hill, (String) artPackComboBox.getSelectedItem(), rangeId,
+							Math.abs(rand.nextInt()));
+					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+				}
+				updater.createAndShowMapIncrementalUsingCenters(groupId);
 			}
-			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (dunesButton.isSelected())
 		{
 			Set<Center> selected = getSelectedLandCenters(e.getPoint());
-			String rangeId = duneTypes.getSelectedOption();
-			for (Center center : selected)
+			String groupId = duneTypes.getSelectedOption();
+			if (!StringUtils.isEmpty(groupId))
 			{
-				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), rangeId,
-						Math.abs(rand.nextInt()));
-				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+					CenterIcon newIcon = new CenterIcon(CenterIconType.Dune, (String) artPackComboBox.getSelectedItem(), groupId,
+							Math.abs(rand.nextInt()));
+					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithIcon(newIcon));
+				}
+				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
-			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (treesButton.isSelected())
 		{
 			Set<Center> selected = getSelectedLandCenters(e.getPoint());
 			String treeType = treeTypes.getSelectedOption();
-			for (Center center : selected)
+			if (!StringUtils.isEmpty(treeType))
 			{
-				CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
-				CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType,
-						densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
-				mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
+				for (Center center : selected)
+				{
+					CenterEdit cEdit = mainWindow.edits.centerEdits.get(center.index);
+					CenterTrees newTrees = new CenterTrees((String) artPackComboBox.getSelectedItem(), treeType,
+							densitySlider.getValue() / 10.0, Math.abs(rand.nextLong()));
+					mainWindow.edits.centerEdits.put(center.index, cEdit.copyWithTrees(newTrees));
+				}
+				updater.createAndShowMapIncrementalUsingCenters(selected);
 			}
-			updater.createAndShowMapIncrementalUsingCenters(selected);
 		}
 		else if (citiesButton.isSelected())
 		{
@@ -934,26 +955,38 @@ public class IconsTool extends EditorTool
 			{
 				iconsBeforeAndAfter.add(before);
 
-				FreeIcon after;
+				FreeIcon after = null;
 				if (mountainsButton.isSelected())
 				{
-					after = before.copyWith((String) artPackComboBox.getSelectedItem(), mountainTypes.getSelectedOption(),
-							Math.abs(rand.nextInt()));
+					String groupId = mountainTypes.getSelectedOption();
+					if (!StringUtils.isEmpty(groupId))
+					{
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
+					}
 				}
 				else if (hillsButton.isSelected())
 				{
-					after = before.copyWith((String) artPackComboBox.getSelectedItem(), hillTypes.getSelectedOption(),
-							Math.abs(rand.nextInt()));
+					String groupId = hillTypes.getSelectedOption();
+					if (!StringUtils.isEmpty(groupId))
+					{
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
+					}
 				}
 				else if (dunesButton.isSelected())
 				{
-					after = before.copyWith((String) artPackComboBox.getSelectedItem(), duneTypes.getSelectedOption(),
-							Math.abs(rand.nextInt()));
+					String groupId = duneTypes.getSelectedOption();
+					if (!StringUtils.isEmpty(groupId))
+					{
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()));
+					}
 				}
 				else if (treesButton.isSelected())
 				{
-					after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeTypes.getSelectedOption(),
-							Math.abs(rand.nextInt()));
+					String treeType = treeTypes.getSelectedOption();
+					if (!StringUtils.isEmpty(treeType))
+					{
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()));
+					}
 				}
 				else if (citiesButton.isSelected())
 				{
@@ -985,11 +1018,14 @@ public class IconsTool extends EditorTool
 					continue;
 				}
 
-				mainWindow.edits.freeIcons.replace(before, after);
-				iconsBeforeAndAfter.add(after);
-				if (isSelected(e.getPoint(), after))
+				if (after != null)
 				{
-					iconsSelectedAfter.add(after);
+					mainWindow.edits.freeIcons.replace(before, after);
+					iconsBeforeAndAfter.add(after);
+					if (isSelected(e.getPoint(), after))
+					{
+						iconsSelectedAfter.add(after);
+					}
 				}
 			}
 
@@ -1221,8 +1257,12 @@ public class IconsTool extends EditorTool
 			CenterTrees currentTrees = mainWindow.edits.centerEdits.get(center.index).trees;
 			if (currentTrees != null)
 			{
-				CenterTrees newTrees = currentTrees.copyWithTreeType(treeTypes.getSelectedOption());
-				mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(newTrees));
+				String treeType = treeTypes.getSelectedOption();
+				if (!StringUtils.isEmpty(treeType))
+				{
+					CenterTrees newTrees = currentTrees.copyWithTreeType(treeType);
+					mainWindow.edits.centerEdits.put(center.index, mainWindow.edits.centerEdits.get(center.index).copyWithTrees(newTrees));
+				}
 			}
 		}
 	}
