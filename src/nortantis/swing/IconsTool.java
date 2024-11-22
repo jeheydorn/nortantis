@@ -63,6 +63,7 @@ import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
+import nortantis.util.Tuple3;
 import nortantis.util.Tuple4;
 
 public class IconsTool extends EditorTool
@@ -468,7 +469,7 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private ConcurrentHashMapF<Tuple2<IconType, String>, Image> namedIconPreviewCache;
+	private ConcurrentHashMapF<Tuple3<String, IconType, String>, Image> namedIconPreviewCache;
 
 	private void updateNamedIconButtonPreviewImages(MapSettings settings, NamedIconSelector selector)
 	{
@@ -500,7 +501,7 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
-							Image preview = namedIconPreviewCache.getOrCreate(new Tuple2<>(selector.type, iconNameWithoutWidthOrExtension),
+							Image preview = namedIconPreviewCache.getOrCreate(new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension),
 									() ->
 									{
 										return createIconPreview(settings, Collections.singletonList(icon), 45, 0, selector.type);
@@ -664,11 +665,11 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private ConcurrentHashMapF<Tuple2<IconType, String>, Image> groupPreviewCache;
+	private ConcurrentHashMapF<Tuple3<String, IconType, String>, Image> groupPreviewCache;
 
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		return groupPreviewCache.getOrCreate(new Tuple2<>(iconType, groupName), () ->
+		return groupPreviewCache.getOrCreate(new Tuple3<>(settings.artPack, iconType, groupName), () ->
 		{
 			List<Image> croppedImages = new ArrayList<>();
 			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType,

@@ -5,7 +5,7 @@ set exeName=Nortantis
 
 REM Build the jar file
 pushd ..
-call gradle :jar
+call .\gradlew :jar
 popd
 
 RMDIR /S /Q installer_input
