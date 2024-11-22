@@ -7,13 +7,12 @@ inputFolder="installer_input"
 exeName="Nortantis"
 
 # Build the jar file
-pushd
-gradle :jar
+pushd ..
+./gradlew :jar
 popd
 
 rm -rf "$inputFolder"
 mkdir "$inputFolder"
-cp -r "../assets" "$inputFolder/assets"
 cp "../build/libs/Nortantis.jar" "$inputFolder"
 
 jpackage \
@@ -31,7 +30,6 @@ jpackage \
 --java-options -Dfile.encoding=UTF-8 \
 --license-file end_user_license_agreement.txt
 
-# Line to create Windows console: --win-console ^
 rm -rf "$inputFolder"
 # rm -f "..\Nortantis.jar"
 
