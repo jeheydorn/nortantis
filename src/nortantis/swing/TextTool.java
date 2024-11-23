@@ -379,7 +379,7 @@ public class TextTool extends EditorTool
 	@Override
 	public String getKeyboardShortcutText()
 	{
-		return "(Alt+C";
+		return "(Alt+C)";
 	}
 
 	@Override
