@@ -22,7 +22,7 @@ public class Stopwatch
 	{
 		this(name, true);
 	}
-	
+
 	public Stopwatch(String name, boolean startTimerNow)
 	{
 		this.name = name;
@@ -31,7 +31,7 @@ public class Stopwatch
 			startOrContinue();
 		}
 	}
-	
+
 	public void startOrContinue()
 	{
 		if (isRunning)
@@ -41,7 +41,7 @@ public class Stopwatch
 		isRunning = true;
 		startTime = System.currentTimeMillis();
 	}
-	
+
 	public void pause()
 	{
 		if (isRunning)

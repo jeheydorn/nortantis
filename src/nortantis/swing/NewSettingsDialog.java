@@ -10,9 +10,11 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -27,6 +29,8 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.Timer;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.IconType;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -37,6 +41,7 @@ import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.ThemePanel.LandColoringMethod;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Range;
@@ -63,6 +68,7 @@ public class NewSettingsDialog extends JDialog
 	private JComboBox<LandColoringMethod> landColoringMethodComboBox;
 	MainWindow mainWindow;
 	private JTextField pathDisplay;
+	private JComboBox<String> artPackComboBox;
 
 	public NewSettingsDialog(MainWindow mainWindow, MapSettings settingsToKeepThemeFrom)
 	{
@@ -73,7 +79,7 @@ public class NewSettingsDialog extends JDialog
 
 		if (settingsToKeepThemeFrom == null)
 		{
-			settings = SettingsGenerator.generate(null);
+			settings = SettingsGenerator.generate(UserPreferences.getInstance().defaultCustomImagesPath);
 		}
 		else
 		{
@@ -82,6 +88,7 @@ public class NewSettingsDialog extends JDialog
 			settings.imageExportPath = null;
 			settings.heightmapExportPath = null;
 			randomizeLand();
+			settings.textRandomSeed = Math.abs(new Random().nextInt());
 		}
 		loadSettingsIntoGUI(settings);
 
@@ -107,11 +114,9 @@ public class NewSettingsDialog extends JDialog
 		generatorSettingsPanel.add(Box.createHorizontalStrut(20));
 		createRightPanel(generatorSettingsPanel);
 
-
 		createMapEditingPanel();
 		createMapUpdater();
 		organizer.addLeftAlignedComponent(mapEditingPanelContainer, 0, 0, true);
-
 
 		ActionListener listener = new ActionListener()
 		{
@@ -127,7 +132,6 @@ public class NewSettingsDialog extends JDialog
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
 
-
 		JButton randomizeThemeButton = new JButton("Randomize Theme");
 		randomizeThemeButton.addActionListener(new ActionListener()
 		{
@@ -140,7 +144,6 @@ public class NewSettingsDialog extends JDialog
 		bottomPanel.add(randomizeThemeButton);
 		bottomPanel.add(Box.createHorizontalStrut(5));
 
-
 		JButton randomizeLandButton = new JButton("Randomize Land");
 		randomizeLandButton.addActionListener(new ActionListener()
 		{
@@ -152,7 +155,6 @@ public class NewSettingsDialog extends JDialog
 		});
 		bottomPanel.add(randomizeLandButton);
 		bottomPanel.add(Box.createHorizontalStrut(10));
-
 
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
@@ -289,7 +291,6 @@ public class NewSettingsDialog extends JDialog
 		createMapChangeListener(landColoringMethodComboBox);
 		organizer.addLabelAndComponent("Land coloring method:", "How to color the land.", landColoringMethodComboBox);
 
-
 		JButton changeButton = new JButton("Change");
 		pathDisplay = new JTextField();
 		pathDisplay.setText(FileHelper.replaceHomeFolderPlaceholder(UserPreferences.getInstance().defaultCustomImagesPath));
@@ -306,8 +307,10 @@ public class NewSettingsDialog extends JDialog
 				{
 					settings.customImagesPath = value;
 					updatePathDisplay();
-					initializeCityTypeOptions();
+					settings.artPack = Assets.customArtPack;
+					initializeArtPackOptionsAndCityTypeOptions();
 
+					enableOrDisableProgressBar(true);
 					updater.createAndShowMapFull(() ->
 					{
 						ImageCache.clear();
@@ -327,7 +330,16 @@ public class NewSettingsDialog extends JDialog
 	private void initializeCityTypeOptions()
 	{
 		SwingHelper.initializeComboBoxItems(cityIconsTypeComboBox,
-				ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities), settings.cityIconTypeName, false);
+				ImageCache.getInstance((String) artPackComboBox.getSelectedItem(), (String) settings.customImagesPath)
+						.getIconGroupNames(IconType.cities),
+				(String) cityIconsTypeComboBox.getSelectedItem(), false);
+	}
+
+	private void initializeArtPackOptionsAndCityTypeOptions()
+	{
+		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(settings.customImagesPath)),
+				settings.artPack, false);
+		initializeCityTypeOptions();
 	}
 
 	private void updatePathDisplay()
@@ -349,6 +361,37 @@ public class NewSettingsDialog extends JDialog
 		JPanel rightPanel = organizer.panel;
 		generatorSettingsPanel.add(rightPanel);
 
+		artPackComboBox = new JComboBox<String>();
+		JLabel artPackLabel = new JLabel("Art pack:");
+		artPackLabel.setToolTipText(
+				"The set of images and icons to use. '" + Assets.installedArtPack + "' is the images that come installed with Nortantis. '"
+						+ Assets.customArtPack + "' means use the custom images folder, if one is selected.");
+		artPackComboBox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				updateBackgroundTextureAndBorderToUseArtPackIfNeeded();
+				initializeCityTypeOptions();
+				handleMapChange();
+			}
+		});
+
+		cityIconsTypeComboBox = new JComboBox<String>();
+		createMapChangeListener(cityIconsTypeComboBox);
+		JLabel cityIconTypeLabel = new JLabel("City icon type:");
+		cityIconTypeLabel.setToolTipText("The set of city images to use.");
+
+		JPanel rowPanel = new JPanel();
+		rowPanel.setLayout(new BoxLayout(rowPanel, BoxLayout.X_AXIS));
+		organizer.addLeftAlignedComponent(rowPanel);
+		rowPanel.add(artPackLabel);
+		rowPanel.add(Box.createHorizontalStrut(5));
+		rowPanel.add(artPackComboBox);
+		rowPanel.add(Box.createHorizontalGlue());
+		rowPanel.add(cityIconTypeLabel);
+		rowPanel.add(Box.createHorizontalStrut(5));
+		rowPanel.add(cityIconsTypeComboBox);
 
 		cityFrequencySlider = new JSlider();
 		cityFrequencySlider.setPaintLabels(true);
@@ -362,11 +405,6 @@ public class NewSettingsDialog extends JDialog
 		organizer.addLabelAndComponent("City frequency:",
 				"Higher values create more cities. Lower values create less cities. Zero means no cities.", cityFrequencySlider);
 
-		cityIconsTypeComboBox = new JComboBox<String>();
-		createMapChangeListener(cityIconsTypeComboBox);
-		organizer.addLabelAndComponent("City icon type:", "The set of city images to use.", cityIconsTypeComboBox);
-
-
 		booksWidget = new BooksWidget(true, () -> handleMapChange());
 		booksWidget.getContentPanel().setPreferredSize(new Dimension(360, 180));
 		organizer.addLeftAlignedComponentWithStackedLabel("Books for generating text:",
@@ -378,17 +416,42 @@ public class NewSettingsDialog extends JDialog
 		organizer.addVerticalFillerRow();
 	}
 
+	private void updateBackgroundTextureAndBorderToUseArtPackIfNeeded()
+	{
+		String artPack = (String) artPackComboBox.getSelectedItem();
+		boolean backgroundTextureNeedsUpdate = settings.backgroundTextureResource != null
+				&& !settings.backgroundTextureResource.artPack.equals(artPack);
+		boolean borderNeedsUpdate = settings.borderResource != null && !settings.borderResource.artPack.equals(artPack);
+
+		if (backgroundTextureNeedsUpdate || borderNeedsUpdate)
+		{
+			MapSettings randomSettings = SettingsGenerator.generate(new Random(), artPack, settings.customImagesPath);
+
+			if (backgroundTextureNeedsUpdate)
+			{
+				settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
+			}
+			if (borderNeedsUpdate)
+			{
+				settings.borderResource = randomSettings.borderResource;
+			}
+		}
+
+	}
+
 	private void randomizeTheme()
 	{
-		MapSettings randomSettings = SettingsGenerator.generate(settings.customImagesPath);
-		settings.coastShadingLevel = randomSettings.coastShadingLevel;
-		settings.oceanEffectsLevel = randomSettings.oceanEffectsLevel;
+		MapSettings randomSettings = SettingsGenerator.generate(new Random(), (String) artPackComboBox.getSelectedItem(),
+				settings.customImagesPath);
+		settings.oceanShadingLevel = randomSettings.oceanShadingLevel;
+		settings.oceanWavesLevel = randomSettings.oceanWavesLevel;
 		settings.concentricWaveCount = randomSettings.concentricWaveCount;
-		settings.oceanEffect = randomSettings.oceanEffect;
+		settings.oceanWavesType = randomSettings.oceanWavesType;
 		settings.riverColor = randomSettings.riverColor;
 		settings.roadColor = randomSettings.roadColor;
+		settings.coastShadingLevel = randomSettings.coastShadingLevel;
 		settings.coastShadingColor = randomSettings.coastShadingColor;
-		settings.oceanEffectsColor = randomSettings.oceanEffectsColor;
+		settings.oceanWavesColor = randomSettings.oceanWavesColor;
 		settings.coastlineColor = randomSettings.coastlineColor;
 		settings.frayedBorder = randomSettings.frayedBorder;
 		settings.frayedBorderSize = randomSettings.frayedBorderSize;
@@ -399,6 +462,7 @@ public class NewSettingsDialog extends JDialog
 		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
 		settings.colorizeOcean = randomSettings.colorizeOcean;
 		settings.colorizeLand = randomSettings.colorizeLand;
+		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;
 		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
 		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
 		settings.oceanColor = randomSettings.oceanColor;
@@ -415,10 +479,12 @@ public class NewSettingsDialog extends JDialog
 		settings.boldBackgroundColor = randomSettings.boldBackgroundColor;
 		settings.textColor = randomSettings.textColor;
 		settings.drawBoldBackground = randomSettings.drawBoldBackground;
+		settings.drawRegionBoundaries = randomSettings.drawRegionBoundaries;
+		settings.regionBoundaryStyle = randomSettings.regionBoundaryStyle;
 		settings.drawRegionColors = randomSettings.drawRegionColors;
 		settings.regionsRandomSeed = randomSettings.regionsRandomSeed;
 		settings.drawBorder = randomSettings.drawBorder;
-		settings.borderType = randomSettings.borderType;
+		settings.borderResource = randomSettings.borderResource;
 		settings.borderWidth = randomSettings.borderWidth;
 		settings.lineStyle = randomSettings.lineStyle;
 
@@ -434,7 +500,10 @@ public class NewSettingsDialog extends JDialog
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." }));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[]
+		{
+				"Drawing..."
+		}));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();
@@ -527,7 +596,7 @@ public class NewSettingsDialog extends JDialog
 		}
 
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
-		initializeCityTypeOptions();
+		initializeArtPackOptionsAndCityTypeOptions();
 
 		booksWidget.checkSelectedBooks(settings.books);
 
@@ -551,6 +620,7 @@ public class NewSettingsDialog extends JDialog
 
 		resultSettings.cityProbability = cityFrequencySlider.getValue() / cityFrequencySliderScale;
 		resultSettings.cityIconTypeName = (String) cityIconsTypeComboBox.getSelectedItem();
+		resultSettings.artPack = (String) artPackComboBox.getSelectedItem();
 
 		return resultSettings;
 	}

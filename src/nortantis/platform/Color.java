@@ -3,12 +3,12 @@ package nortantis.platform;
 public abstract class Color
 {
 	public abstract int getRGB();
-	
+
 	public abstract int getRed();
 	public abstract int getGreen();
 	public abstract int getBlue();
 	public abstract int getAlpha();
-	
+
 	public static Color create(int rgb)
 	{
 		return create(rgb, false);
@@ -23,12 +23,12 @@ public abstract class Color
 	{
 		return PlatformFactory.getInstance().createColor(red, green, blue);
 	}
-	
+
 	public static Color create(int red, int green, int blue, int alpha)
 	{
 		return PlatformFactory.getInstance().createColor(red, green, blue, alpha);
 	}
-	
+
 	/**
 	 * Create a color from floating point values for red, green, and blue, ranging from 0.0 - 1.0.
 	 */
@@ -53,17 +53,16 @@ public abstract class Color
 
 	/**
 	 * Converts this color to HSB
+	 * 
 	 * @param color
-	 * @return An array with 3 elements:
-	 * 		result[0] = hue
-	 * 		result[1] = saturation
-	 * 		result[3] = value
+	 * @return An array with 3 elements: result[0] = hue result[1] = saturation result[3] = value
 	 * 
 	 */
 	public abstract float[] getHSB();
-	
+
 	/**
 	 * Creates a new color object from the given hue, saturation, and brightness.
+	 * 
 	 * @return A new color object.
 	 */
 	public static Color createFromHSB(float hue, float saturation, float brightness)

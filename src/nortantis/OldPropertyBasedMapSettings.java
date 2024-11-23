@@ -1,9 +1,7 @@
 package nortantis;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +16,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.MapSettings.OceanEffect;
+import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
@@ -30,7 +28,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.FontStyle;
 import nortantis.swing.MapEdits;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Function0;
 
 /**
@@ -52,7 +50,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 	public int coastShadingLevel;
 	public int oceanEffectsLevel;
 	public int concentricWaveCount;
-	public OceanEffect oceanEffect;
+	public OceanWaves oceanEffect;
 	public int worldSize;
 	public Color riverColor;
 	public Color roadColor;
@@ -121,10 +119,10 @@ public class OldPropertyBasedMapSettings implements Serializable
 
 	public OldPropertyBasedMapSettings(String propertiesFilename)
 	{
-		final Properties props = new Properties();
+		final Properties props;
 		try
 		{
-			props.load(new FileInputStream(propertiesFilename));
+			props = Assets.loadPropertiesFile(propertiesFilename);
 		}
 		catch (IOException e)
 		{
@@ -222,9 +220,9 @@ public class OldPropertyBasedMapSettings implements Serializable
 				return parseColor(props.getProperty("coastlineColor"));
 			}
 		});
-		oceanEffect = getProperty("addWavesToOcean", new Function0<OceanEffect>()
+		oceanEffect = getProperty("addWavesToOcean", new Function0<OceanWaves>()
 		{
-			public OceanEffect apply()
+			public OceanWaves apply()
 			{
 				String str = props.getProperty("oceanEffect");
 				if (str == null || str.equals(""))
@@ -233,11 +231,11 @@ public class OldPropertyBasedMapSettings implements Serializable
 					String str2 = props.getProperty("addWavesToOcean");
 					if (str2 == null || str2.equals(""))
 					{
-						return OceanEffect.Ripples;
+						return OceanWaves.Ripples;
 					}
-					return parseBoolean(str2) ? OceanEffect.Ripples : OceanEffect.Ripples;
+					return parseBoolean(str2) ? OceanWaves.Ripples : OceanWaves.Ripples;
 				}
-				return OceanEffect.valueOf(str);
+				return OceanWaves.valueOf(str);
 			}
 		});
 		centerLandToWaterProbability = getProperty("centerLandToWaterProbability", new Function0<Double>()
@@ -314,7 +312,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 		});
 
-
 		// Background image stuff.
 		generateBackground = getProperty("generateBackground", new Function0<Boolean>()
 		{
@@ -376,8 +373,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 			public String apply()
 			{
 				String result = props.getProperty("backgroundTextureImage");
-				if (result == null)
-					result = Paths.get(AssetsPath.getInstallPath(), "example textures").toString();
 				return result;
 			}
 		});
@@ -500,7 +495,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 
 			if (setName == null || setName.isEmpty())
 			{
-				Set<String> cityTypes = ImageCache.getInstance(AssetsPath.getInstallPath()).getIconGroupNames(IconType.cities);
+				List<String> cityTypes = ImageCache.getInstance(Assets.installedArtPack, null).getIconGroupNames(IconType.cities);
 				if (cityTypes.size() > 0)
 				{
 					setName = cityTypes.iterator().next();
@@ -661,7 +656,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 					Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 					double angle = (Double) jsonObj.get("angle");
 					TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto);
+					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, null, null);
 					result.add(mp);
 				}
 
@@ -700,14 +695,14 @@ public class OldPropertyBasedMapSettings implements Serializable
 							int iconIndex = (int) (long) iconObj.get("iconIndex");
 							String iconName = (String) iconObj.get("iconName");
 							CenterIconType iconType = CenterIconType.valueOf((String) iconObj.get("iconType"));
-							icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+							icon = new CenterIcon(iconType, Assets.installedArtPack, iconGroupId, iconIndex);
 							if (iconName != null && !iconName.isEmpty())
 							{
-								icon = new CenterIcon(iconType, iconGroupId, iconName);
+								icon = new CenterIcon(iconType, Assets.installedArtPack, iconGroupId, iconName);
 							}
 							else
 							{
-								icon = new CenterIcon(iconType, iconGroupId, iconIndex);
+								icon = new CenterIcon(iconType, Assets.installedArtPack, iconGroupId, iconIndex);
 							}
 						}
 					}
@@ -720,7 +715,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 							String treeType = (String) treesObj.get("treeType");
 							double density = (Double) treesObj.get("density");
 							long randomSeed = (Long) treesObj.get("randomSeed");
-							trees = new CenterTrees(treeType, density, randomSeed);
+							trees = new CenterTrees(Assets.installedArtPack, treeType, density, randomSeed);
 						}
 					}
 

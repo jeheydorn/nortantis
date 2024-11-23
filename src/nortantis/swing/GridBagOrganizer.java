@@ -6,10 +6,12 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -28,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
+import nortantis.geom.Point;
 import nortantis.util.Tuple2;
 
 public class GridBagOrganizer
@@ -368,28 +371,49 @@ public class GridBagOrganizer
 
 	public Tuple2<JComboBox<ImageIcon>, RowHider> addBrushSizeComboBox(List<Integer> brushSizes)
 	{
+		final int maxBrushSizeDisplay = 70;
 		JComboBox<ImageIcon> brushSizeComboBox = new JComboBox<>();
-		int largest = Collections.max(brushSizes);
+		int displaySize = Math.min(maxBrushSizeDisplay, Collections.max(brushSizes));
 		for (int brushSize : brushSizes)
 		{
 			if (brushSize == 1)
 			{
 				brushSize = 4; // Needed to make it visible
 			}
-			BufferedImage image = new BufferedImage(largest, largest, BufferedImage.TYPE_INT_ARGB);
+			BufferedImage image = new BufferedImage(displaySize, displaySize, BufferedImage.TYPE_INT_ARGB);
 			Graphics2D g = image.createGraphics();
-			g.setColor(Color.white);
+
+			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
 			g.setColor(Color.black);
-			g.fillOval(largest / 2 - brushSize / 2, largest / 2 - brushSize / 2, brushSize, brushSize);
+			int sizeToDraw = Math.min(maxBrushSizeDisplay, brushSize);
+			g.fillOval(displaySize / 2 - sizeToDraw / 2, displaySize / 2 - sizeToDraw / 2, sizeToDraw, sizeToDraw);
 			brushSizeComboBox.addItem(new ImageIcon(image));
+			if (brushSize > maxBrushSizeDisplay)
+			{
+				g.setColor(new Color(187, 187, 187));
+				g.setFont(new Font("default", Font.BOLD, 24));
+				String text = (brushSize / maxBrushSizeDisplay) + "x";
+				drawCenteredString(g, text, new Point(sizeToDraw / 2.0, sizeToDraw / 2.0));
+			}
 		}
-		brushSizeComboBox.setPreferredSize(new Dimension(largest + 40, brushSizeComboBox.getPreferredSize().height));
+		brushSizeComboBox.setPreferredSize(new Dimension(displaySize + 40, brushSizeComboBox.getPreferredSize().height));
 		JPanel brushSizeContainer = new JPanel();
 		brushSizeContainer.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
 		brushSizeContainer.add(brushSizeComboBox);
 		RowHider brushSizeHider = addLabelAndComponent("Brush size:", "", brushSizeContainer);
 
 		return new Tuple2<>(brushSizeComboBox, brushSizeHider);
+	}
+
+	private void drawCenteredString(Graphics2D g, String text, Point point)
+	{
+		FontMetrics metrics = g.getFontMetrics(g.getFont());
+		int x = (int) (point.x - metrics.stringWidth(text) / 2.0);
+		int y = (int) (point.y - metrics.getHeight() / 2.0 + metrics.getAscent());
+		g.drawString(text, x, y);
 	}
 
 }

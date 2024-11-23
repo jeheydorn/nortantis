@@ -30,14 +30,13 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 
-import org.apache.commons.io.FileUtils;
-
 import nortantis.IconType;
 import nortantis.MapSettings;
 import nortantis.editor.UserPreferences;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class CustomImagesDialog extends JDialog
@@ -47,7 +46,7 @@ public class CustomImagesDialog extends JDialog
 	public CustomImagesDialog(MainWindow mainWindow, String currentCustomImagesPath, Consumer<String> storeResult)
 	{
 		super(mainWindow, "Custom Images Folder", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(840, 680));
+		setSize(new Dimension(840, 705));
 		JPanel content = new JPanel();
 		add(content);
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -57,28 +56,35 @@ public class CustomImagesDialog extends JDialog
 
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		content.add(organizer.panel, BorderLayout.CENTER);
-		organizer.addLeftAlignedComponent(new JLabel(
-				"<html>A custom images folder allows you to use your own images instead of Nortantis's built-in images for a map."
-						+ " To do so, enter a path to a "
+		organizer.addLeftAlignedComponent(
+				new JLabel("<html>A custom images folder allows you to use your own images to create an art pack named '"
+						+ Assets.customArtPack + "' that is specific to this map." + " To do so, enter a path to a "
 						+ "folder with your images. If the folder is empty, Nortantis will copy its installed images into it as a "
 						+ "starting point. " + "The required folder structure is: </html>"),
 				space, space, false);
 
 		int spaceBetweenPaths = 2;
+		organizer.addLeftAlignedComponent(
+				new JLabel(
+						"<custom images folder>" + File.separator + "background textures" + File.separator + "<background texture images>"),
+				space, spaceBetweenPaths, false);
 		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "borders" + File.separator
 				+ "<border type>" + File.separator + "<border images>"), space, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "cities"
-				+ File.separator + "<city type>" + File.separator + "<city images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "decorations"
-				+ File.separator + "<decoration type>" + File.separator + "<decoration images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "hills"
-				+ File.separator + "<hill type>" + File.separator + "<hill images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "mountains"
-				+ File.separator + "<mountain type>" + File.separator + "<mountain images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "sand"
-				+ File.separator + "<dune type>" + File.separator + "<sand dune images>"), spaceBetweenPaths, spaceBetweenPaths, false);
-		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "trees"
-				+ File.separator + "<tree type>" + File.separator + "<tree images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(
+				"<custom images folder>" + File.separator + "cities" + File.separator + "<city type>" + File.separator + "<city images>"),
+				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "decorations" + File.separator
+				+ "<decoration type>" + File.separator + "<decoration images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(
+				"<custom images folder>" + File.separator + "hills" + File.separator + "<hill type>" + File.separator + "<hill images>"),
+				spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "mountains" + File.separator
+				+ "<mountain type>" + File.separator + "<mountain images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel("<custom images folder>" + File.separator + "sand" + File.separator + "<dune type>"
+				+ File.separator + "<sand dune images>"), spaceBetweenPaths, spaceBetweenPaths, false);
+		organizer.addLeftAlignedComponent(new JLabel(
+				"<custom images folder>" + File.separator + "trees" + File.separator + "<tree type>" + File.separator + "<tree images>"),
+				spaceBetweenPaths, spaceBetweenPaths, false);
 
 		organizer.addLeftAlignedComponent(new JLabel("<html>The names above in angle brackets are folder and file names"
 				+ " that you can configure to be whatever name you want. Folder names without angle brackets, however, must be exactly as described above or else Nortantis"
@@ -89,9 +95,11 @@ public class CustomImagesDialog extends JDialog
 				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"),
 				space, space, false);
 
-		organizer.addLeftAlignedComponent(new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folder can have any name,"
-				+ " if you want new maps to use your tree type appropriately for the biomes the trees are placed in, then use folder names including the words 'cacti', 'deciduous',"
-				+ " and 'pine'.</html>"), space, space, false);
+		organizer.addLeftAlignedComponent(
+				new JLabel("<html>Regarding tree images, although the &lt;tree type&gt; folders can have any names,"
+						+ " if you want new maps to use your tree types appropriately for the biomes the trees are placed in, then use folder names including the words 'cacti', 'deciduous',"
+						+ " and 'pine'.</html>"),
+				space, space, false);
 
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>If you want new maps to add hills around mountains, then for each mountain type, create a hill type with the same name.</html>"),
@@ -102,7 +110,7 @@ public class CustomImagesDialog extends JDialog
 						+ " can either close and re-open Nortantis or use " + mainWindow.getFileMenuName() + " -> "
 						+ mainWindow.getRefreshImagesMenuName() + ".</html>"), space, space, false);
 		organizer.addLeftAlignedComponent(
-				new JLabel("<html>To revert back to using Nortantis's installed images, clear out the" + " field below.</html>"), space, 10,
+				new JLabel("<html>To revert back to using installed images/art packs, clear out the" + " field below.</html>"), space, 10,
 				false);
 
 		JButton openButton = new JButton("Open");
@@ -172,18 +180,7 @@ public class CustomImagesDialog extends JDialog
 					return;
 				}
 
-				if (Desktop.isDesktopSupported())
-				{
-					try
-					{
-						Desktop.getDesktop().open(folder);
-					}
-					catch (IOException ex)
-					{
-						ex.printStackTrace();
-						Logger.printError("Error while trying to open custom images folder: ", ex);
-					}
-				}
+				OSHelper.openFileExplorerTo(folder);
 			}
 		});
 		openButton.setEnabled(!customImagesFolderField.getText().isEmpty());
@@ -202,7 +199,6 @@ public class CustomImagesDialog extends JDialog
 
 		JCheckBox makeDefaultCheckbox = new JCheckBox("Make this the default for new random maps");
 		organizer.addLeftAlignedComponent(makeDefaultCheckbox);
-
 
 		organizer.addVerticalFillerRow();
 
@@ -230,12 +226,14 @@ public class CustomImagesDialog extends JDialog
 					{
 						MapSettings.convertOldCustomImagesFolder(customImagesFolderField.getText());
 
-						JOptionPane.showMessageDialog(null, "Your custom images folder has been automatically converted to the new structure.",
+						JOptionPane.showMessageDialog(null,
+								"Your custom images folder has been automatically converted to the new structure.",
 								"Custom Images Folder Converted", JOptionPane.INFORMATION_MESSAGE);
 					}
 					catch (IOException ex)
 					{
-						String errorMessage = "Error while restructuring custom images folder for " + customImagesFolderField.getText() + ": " + ex.getMessage();
+						String errorMessage = "Error while restructuring custom images folder for " + customImagesFolderField.getText()
+								+ ": " + ex.getMessage();
 						Logger.printError(errorMessage, ex);
 						JOptionPane.showMessageDialog(null, errorMessage, "Error", JOptionPane.ERROR_MESSAGE);
 					}
@@ -310,19 +308,20 @@ public class CustomImagesDialog extends JDialog
 		{
 			if (isFolderEmpty)
 			{
-				FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), "borders").toFile(), folder);
+				Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), "background textures"), folder.toPath());
+				Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), "borders"), folder.toPath());
 				for (IconType type : IconType.values())
 				{
-					FileUtils.copyDirectoryToDirectory(Paths.get(AssetsPath.getInstallPath(), type.toString()).toFile(), folder);					
+					Assets.copyDirectoryToDirectory(Paths.get(Assets.getInstalledArtPackPath(), type.toString()), folder.toPath());
 				}
 				return true;
 			}
 		}
 		catch (IOException ex)
 		{
-			JOptionPane.showMessageDialog(null,
-					"Error while copying installed images into " + folder.getAbsolutePath() + ": " + ex.getMessage(), "Error",
-					JOptionPane.ERROR_MESSAGE);
+			String message = "Error while copying installed images into " + folder.getAbsolutePath() + ": " + ex.getMessage();
+			JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+			Logger.printError(message, ex);
 		}
 
 		return false;

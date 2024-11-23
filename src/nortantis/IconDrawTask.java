@@ -6,7 +6,7 @@ import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Image;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 
 /**
  * Stores things needed to draw an icon onto the map.
@@ -28,18 +28,18 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	IconType type;
 	String fileName;
 
-
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize)
 	{
 		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null);
 	}
-	
+
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName)
 	{
 		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName);
 	}
 
-	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName)
+	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
+			IntDimension scaledSize, String fileName)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -51,21 +51,21 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 		this.fileName = fileName;
 	}
-	
+
 	public void scaleIcon()
 	{
 		if (scaledImageAndMasks == null)
 		{
-			Image scaledImage = ImageCache.getInstance(AssetsPath.getInstallPath()).getScaledImage(unScaledImageAndMasks.image,
+			// The path passed to ImageCache.getInstance isn't important so long as other calls to getScaledImageByWidth
+			// use the same path, since getScaledImage doesn't load images from disk.
+			Image scaledImage = ImageCache.getInstance(Assets.installedArtPack, null).getScaledImage(unScaledImageAndMasks.image,
 					scaledSize);
-			// The path passed to ImageCache.getInstance insn't important so long as other calls to getScaledImageByWidth
-			// use the same path, since getScaledImageByWidth doesn't load images from disk.
 
-			Image scaledContentMask = ImageCache.getInstance(AssetsPath.getInstallPath())
+			Image scaledContentMask = ImageCache.getInstance(Assets.installedArtPack, null)
 					.getScaledImage(unScaledImageAndMasks.getOrCreateContentMask(), scaledSize);
 
 			Image scaledShadingMask = null;
-			scaledShadingMask = ImageCache.getInstance(AssetsPath.getInstallPath())
+			scaledShadingMask = ImageCache.getInstance(Assets.installedArtPack, null)
 					.getScaledImage(unScaledImageAndMasks.getOrCreateShadingMask(), scaledSize);
 
 			IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),

@@ -13,10 +13,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +31,6 @@ public class Helper
 			result.add(fun.apply(item));
 		return result;
 	}
-
 
 	/**
 	 * Combines 2 lists of the same length by applying the given function to each pair of items in the 2 lists.
@@ -88,20 +83,6 @@ public class Helper
 			}
 		}
 		return minEntry.getValue();
-	}
-
-	public static String readFile(String path)
-	{
-		try
-		{
-			Charset encoding = Charset.defaultCharset();
-			byte[] encoded = Files.readAllBytes(Paths.get(path));
-			return encoding.decode(ByteBuffer.wrap(encoded)).toString();
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
 	}
 
 	public static <K, V extends Comparable<V>> K argmax(Map<K, V> map)
@@ -217,7 +198,7 @@ public class Helper
 		}
 		catch (IOException ex)
 		{
-			System.out.println("Helper.writeToFile caught error: " + ex.getMessage());
+			throw new RuntimeException("Helper.writeToFile caught error: " + ex.getMessage(), ex);
 		}
 	}
 
@@ -246,6 +227,7 @@ public class Helper
 			ObjectInputStream p;
 			p = new ObjectInputStream(new BufferedInputStream(istream));
 			toReturn = p.readObject();
+			p.close();
 		}
 		catch (IOException | ClassNotFoundException e)
 		{
@@ -292,4 +274,3 @@ public class Helper
 	}
 
 }
-

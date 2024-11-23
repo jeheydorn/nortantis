@@ -1,9 +1,10 @@
 package nortantis.editor;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +18,7 @@ import java.util.TreeSet;
 
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 public class UserPreferences
 {
@@ -48,11 +50,14 @@ public class UserPreferences
 			Path filePath = Paths.get(getSavePath().toString(), userPrefsFileName);
 			if (Files.exists(filePath))
 			{
-				props.load(new FileInputStream(filePath.toString()));
+				try (BufferedReader reader = Files.newBufferedReader(filePath, StandardCharsets.UTF_8))
+				{
+					props.load(reader);
+				}
 
 				if (props.containsKey("editorImageQuality"))
 				{
-					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra") .replace(" ", "_");
+					String quality = props.getProperty("editorImageQuality").replace("Very High", "Ultra").replace(" ", "_");
 					editorImageQuality = DisplayQuality.valueOf(quality);
 				}
 
@@ -76,7 +81,7 @@ public class UserPreferences
 					String value = props.getProperty("showNewMapWithSameThemeRegionColorsMessage");
 					hideNewMapWithSameThemeRegionColorsMessage = Boolean.parseBoolean(value);
 				}
-				
+
 				if (props.containsKey("collapsedPanels"))
 				{
 					String[] panelNames = props.getProperty("collapsedPanels").split("\t");
@@ -131,19 +136,6 @@ public class UserPreferences
 
 	private Path getSavePath()
 	{
-		String OS = System.getProperty("os.name").toUpperCase();
-		if (OS.contains("WIN"))
-		{
-			return Paths.get(System.getenv("APPDATA"), "Nortantis");
-		}
-		else if (OS.contains("MAC"))
-		{
-			return Paths.get(System.getProperty("user.home"), ".Nortantis");
-		}
-		else if (OS.contains("NUX"))
-		{
-			return Paths.get(System.getProperty("user.home"), ".Nortantis");
-		}
-		return Paths.get(System.getProperty("user.dir"));
+		return OSHelper.getAppDataPath();
 	}
 }

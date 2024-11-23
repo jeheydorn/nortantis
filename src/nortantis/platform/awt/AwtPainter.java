@@ -4,6 +4,9 @@ import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
 
+import org.apache.commons.lang3.NotImplementedException;
+
+import nortantis.StrokeType;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
@@ -13,7 +16,7 @@ import nortantis.platform.Transform;
 class AwtPainter extends Painter
 {
 	public Graphics2D g;
-	
+
 	public AwtPainter(Graphics2D graphics)
 	{
 		this.g = graphics;
@@ -22,7 +25,7 @@ class AwtPainter extends Painter
 	@Override
 	public void drawImage(Image image, int x, int y)
 	{
-		g.drawImage(((AwtImage)image).image, x, y, null);
+		g.drawImage(((AwtImage) image).image, x, y, null);
 	}
 
 	@Override
@@ -40,7 +43,7 @@ class AwtPainter extends Painter
 	@Override
 	public void setColor(Color color)
 	{
-		g.setColor(((AwtColor)color).color);
+		g.setColor(((AwtColor) color).color);
 	}
 
 	@Override
@@ -58,19 +61,19 @@ class AwtPainter extends Painter
 	@Override
 	public void setFont(Font font)
 	{
-		g.setFont(((AwtFont)font).font);
+		g.setFont(((AwtFont) font).font);
 	}
 
 	@Override
-	public void drawString(String string, int x, int y)
+	public void drawString(String string, double x, double y)
 	{
-		g.drawString(string, x, y);
+		g.drawString(string, (float) x, (float) y);
 	}
 
 	@Override
 	public void setTransform(Transform transform)
 	{
-		g.setTransform(((AwtTransform)transform).transform);
+		g.setTransform(((AwtTransform) transform).transform);
 	}
 
 	@Override
@@ -106,13 +109,7 @@ class AwtPainter extends Painter
 	@Override
 	public void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2)
 	{
-		g.setPaint(new java.awt.GradientPaint(x1, y1, ((AwtColor)color1).color, x2, y2, ((AwtColor)color2).color));
-	}
-
-	@Override
-	public void setBasicStroke(float width)
-	{
-		g.setStroke(new BasicStroke(width));
+		g.setPaint(new java.awt.GradientPaint(x1, y1, ((AwtColor) color1).color, x2, y2, ((AwtColor) color2).color));
 	}
 
 	@Override
@@ -140,10 +137,56 @@ class AwtPainter extends Painter
 	}
 
 	@Override
-	public void setDashedStroke(float width)
+	public void setBasicStroke(float width)
 	{
-		Stroke dashed = new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1f, new float[] { 9 }, 0);
-		g.setStroke(dashed);
+		// Use CAP_ROUND to avoid corners sticking out of the sides of thick lines (like rivers) when drawn piecewise.
+		g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, null, 0f));
+	}
+
+	@Override
+	public void setStroke(nortantis.Stroke stroke, double resolutionScale)
+	{
+		if (stroke.type == StrokeType.Solid)
+		{
+			setBasicStroke(stroke.width * (float) resolutionScale);
+		}
+		else
+		{
+			float scale = ((float) resolutionScale) * stroke.width;
+			if (stroke.type == StrokeType.Dashes)
+			{
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f,
+						new float[]
+						{
+								6f * (float) scale, 3f * (float) scale
+						}, 0f);
+				g.setStroke(dashed);
+			}
+			else if (stroke.type == StrokeType.Rounded_Dashes)
+			{
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f,
+						new float[]
+						{
+								6f * (float) scale, 4f * (float) scale
+						}, 0f);
+				g.setStroke(dashed);
+			}
+			else if (stroke.type == StrokeType.Dots)
+			{
+				final float scaleBecauseDotsLookSmallerThanDashes = (3.9f / 2.7f);
+				Stroke dashed = new BasicStroke(stroke.width * (float) resolutionScale * scaleBecauseDotsLookSmallerThanDashes,
+						BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, new float[]
+						{
+								0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes,
+								2.0f * (float) scale * scaleBecauseDotsLookSmallerThanDashes
+						}, 0f);
+				g.setStroke(dashed);
+			}
+			else
+			{
+				throw new NotImplementedException("Unrecognized stroke type: " + stroke);
+			}
+		}
 	}
 
 	@Override

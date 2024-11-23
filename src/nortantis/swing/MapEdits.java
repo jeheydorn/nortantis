@@ -47,7 +47,7 @@ public class MapEdits implements Serializable
 	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
 	 */
 	public boolean bakeGeneratedTextAsEdits;
-	
+
 	/**
 	 * Not stored. A flag to ensure text bounds and areas are always present after drawing.
 	 */
@@ -61,7 +61,7 @@ public class MapEdits implements Serializable
 		edgeEdits = new ArrayList<>();
 		freeIcons = new FreeIconCollection();
 	}
-	
+
 	public boolean isInitialized()
 	{
 		return !centerEdits.isEmpty();
@@ -96,7 +96,7 @@ public class MapEdits implements Serializable
 			regionEdits.put(edit.regionId, edit);
 		}
 	}
-	
+
 	/**
 	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
 	 */
@@ -139,7 +139,7 @@ public class MapEdits implements Serializable
 		}
 		return result;
 	}
-	
+
 	public void purgeEmptyText()
 	{
 		for (int i = text.size() - 1; i >= 0; i--)
@@ -172,7 +172,7 @@ public class MapEdits implements Serializable
 		{
 			copy.edgeEdits.add(eEdit.deepCopy());
 		}
-		
+
 		copy.freeIcons = new FreeIconCollection(freeIcons);
 
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
@@ -202,8 +202,7 @@ public class MapEdits implements Serializable
 		MapEdits other = (MapEdits) obj;
 		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits)
 				&& Objects.equals(edgeEdits, other.edgeEdits) && Objects.equals(freeIcons, other.freeIcons)
-				&& hasIconEdits == other.hasIconEdits
-				&& Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
+				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
 	}
 
 }

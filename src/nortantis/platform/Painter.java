@@ -2,6 +2,7 @@ package nortantis.platform;
 
 import java.util.List;
 
+import nortantis.Stroke;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 
@@ -26,7 +27,7 @@ public abstract class Painter
 
 	public abstract void setFont(Font font);
 
-	public abstract void drawString(String string, int x, int y);
+	public abstract void drawString(String string, double x, double y);
 
 	public abstract void setTransform(Transform transform);
 
@@ -50,6 +51,18 @@ public abstract class Painter
 		fillPolygon(xPoints, yPoints);
 	}
 
+	public void fillPolygonDouble(List<Point> vertices)
+	{
+		int[] xPoints = new int[vertices.size()];
+		int[] yPoints = new int[vertices.size()];
+		for (int i = 0; i < vertices.size(); i++)
+		{
+			xPoints[i] = (int) vertices.get(i).x;
+			yPoints[i] = (int) vertices.get(i).y;
+		}
+		fillPolygon(xPoints, yPoints);
+	}
+
 	public abstract void drawPolygon(int[] xPoints, int[] yPoints);
 
 	public abstract void drawPolyline(int[] xPoints, int[] yPoints);
@@ -57,20 +70,20 @@ public abstract class Painter
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 
 	public abstract void setBasicStroke(float width);
-	
-	public abstract void setDashedStroke(float width);
+
+	public abstract void setStroke(Stroke stroke, double resolutionScale);
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
-	
+
 	public abstract void drawOval(int x, int y, int width, int height);
 
 	public abstract void fillOval(int x, int y, int width, int height);
 
 	public abstract void fillRect(int x, int y, int width, int height);
-	
+
 	public abstract int stringWidth(String string);
-	
+
 	public abstract int getFontAscent();
-	
+
 	public abstract int getFontDescent();
 }

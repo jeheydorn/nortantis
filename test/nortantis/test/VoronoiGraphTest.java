@@ -13,7 +13,7 @@ public class VoronoiGraphTest
 	{
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
-		
+
 		VoronoiGraph.runPrivateUnitTests();
 	}
 

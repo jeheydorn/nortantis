@@ -90,6 +90,29 @@ public class Corner
 		return null;
 	}
 
+	public boolean protrudesContains(Edge e)
+	{
+		for (Edge p : protrudes)
+		{
+			if (p.index == e.index)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public void resetLocToOriginal()
+	{
+		loc = originalLoc;
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Corner [loc=" + loc + ", index=" + index + "]";
+	}
+
 	// This is needed to give the object a deterministic hash code. If I use the
 	// object's address as the hash
 	// code, it may change from one run to the next, and so HashSet iterates
@@ -111,4 +134,5 @@ public class Corner
 
 		return index == ((Corner) other).index;
 	}
+
 }

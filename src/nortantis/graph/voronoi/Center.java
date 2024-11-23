@@ -10,15 +10,17 @@ import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
 import nortantis.TreeType;
+import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
+import nortantis.util.Counter;
 
 /**
  * Center.java
  *
  * @author Connor
  */
-public class Center
+public class Center implements Comparable<Center>
 {
 
 	public int index;
@@ -44,7 +46,6 @@ public class Center
 	// neighborsNotInSamePlateRatio is only here to make GraphImpl.createTectonicPlates faster.
 	public float neighborsNotInSamePlateRatio;
 	public Integer mountainRangeId;
-	public Point originalLoc;
 
 	/**
 	 * Used to deterministically place trees so that edits don't cause changes in other centers.
@@ -184,7 +185,6 @@ public class Center
 		return false;
 	}
 
-
 	public boolean isOcean()
 	{
 		return isWater && !isLake;
@@ -253,8 +253,7 @@ public class Center
 			{
 				currentEdge = next;
 			}
-		}
-		while (!remaining.isEmpty() && currentEdge != null);
+		} while (!remaining.isEmpty() && currentEdge != null);
 
 		return result;
 	}
@@ -273,39 +272,27 @@ public class Center
 		return null;
 	}
 
-	public boolean isSinglePolygonIsland()
+	public boolean isWellFormedForDrawingAsPolygon()
 	{
-		if (isWater)
+		Counter<IntPoint> counter = new Counter<>();
+		for (Edge edge : borders)
 		{
-			return false;
-		}
-
-		for (Center neighbor : neighbors)
-		{
-			if (!neighbor.isWater)
+			if (edge.v0 != null)
 			{
-				return false;
+				counter.incrementCount(edge.v0.loc.toIntPoint());
+			}
+
+			if (edge.v1 != null)
+			{
+				counter.incrementCount(edge.v1.loc.toIntPoint());
 			}
 		}
 
-		return true;
-	}
-
-	public boolean isSinglePolygonWater()
-	{
-		if (!isWater)
+		IntPoint mostFrequent = counter.argmax();
+		if (mostFrequent != null && counter.getCount(mostFrequent) > 2)
 		{
 			return false;
 		}
-
-		for (Center neighbor : neighbors)
-		{
-			if (neighbor.isWater)
-			{
-				return false;
-			}
-		}
-
 		return true;
 	}
 
@@ -313,8 +300,9 @@ public class Center
 	 * Determines whether this center can draw without overlapping other polygons. This is defined as being able to draw a straight line
 	 * from each corner to the center's center such that that line does not overlap any edges of this center.
 	 */
-	public boolean isWellFormedForDrawing()
+	public boolean isWellFormedForDrawingPiecewise()
 	{
+		Point centroid = calcCentroid();
 		for (Corner corner : corners)
 		{
 			for (Edge edge : borders)
@@ -329,7 +317,7 @@ public class Center
 					continue;
 				}
 
-				if (linesIntersect(corner.loc, loc, edge.v0.loc, edge.v1.loc))
+				if (linesIntersect(corner.loc, centroid, edge.v0.loc, edge.v1.loc))
 				{
 					return false;
 				}
@@ -351,7 +339,7 @@ public class Center
 	 *            End of the second line.
 	 * @return Whether the lines intersect.
 	 */
-	private boolean linesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
+	private static boolean linesIntersect(Point line1Start, Point line1End, Point line2Start, Point line2End)
 	{
 		int o1 = orientation(line1Start, line1End, line2Start);
 		int o2 = orientation(line1Start, line1End, line2End);
@@ -386,7 +374,7 @@ public class Center
 		return false;
 	}
 
-	private int orientation(Point p, Point q, Point r)
+	private static int orientation(Point p, Point q, Point r)
 	{
 		double val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 		if (val == 0)
@@ -396,7 +384,7 @@ public class Center
 		return (val > 0) ? 1 : 2;
 	}
 
-	private boolean onSegment(Point p, Point q, Point r)
+	private static boolean onSegment(Point p, Point q, Point r)
 	{
 		if (q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y))
 		{
@@ -415,6 +403,17 @@ public class Center
 			numLand += !center.isWater ? 1 : 0;
 		}
 		isCoast = numOcean > 0 && numLand > 0;
+	}
+
+	@Override
+	public int compareTo(Center o)
+	{
+		int locComp = loc.compareTo(o.loc);
+		if (locComp == 0)
+		{
+			return Integer.compare(hashCode(), o.hashCode());
+		}
+		return locComp;
 	}
 
 }

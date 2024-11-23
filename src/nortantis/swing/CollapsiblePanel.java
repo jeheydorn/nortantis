@@ -26,9 +26,14 @@ public class CollapsiblePanel extends JPanel
 
 	/**
 	 * Create a CollapsiblePanel with the given name and content.
-	 * @param namespace  A unique identifier to use when storing the name in user preferences to store the collapsed state. Name + namespace must be globally unique.
-	 * @param name  Name to display
-	 * @param contentPanel  Content to display when expanded
+	 * 
+	 * @param namespace
+	 *            A unique identifier to use when storing the name in user preferences to store the collapsed state. Name + namespace must
+	 *            be globally unique.
+	 * @param name
+	 *            Name to display
+	 * @param contentPanel
+	 *            Content to display when expanded
 	 */
 	public CollapsiblePanel(String namespace, String name, JPanel contentPanel)
 	{
@@ -73,7 +78,7 @@ public class CollapsiblePanel extends JPanel
 
 		add(contentPanel, BorderLayout.CENTER);
 	}
-	
+
 	private void updateCollapsed()
 	{
 		if (isCollapsed)
@@ -99,7 +104,7 @@ public class CollapsiblePanel extends JPanel
 			UserPreferences.getInstance().collapsedPanels.remove(getNameKey());
 		}
 	}
-	
+
 	private String getNameKey()
 	{
 		return namespace + "~" + name;

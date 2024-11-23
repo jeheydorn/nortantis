@@ -73,8 +73,7 @@ public class ThreadHelper
 					throw new RuntimeException(e);
 				}
 			}
-		}
-		finally
+		} finally
 		{
 			if (useFixedThreadPool)
 			{
@@ -132,8 +131,7 @@ public class ThreadHelper
 					throw new RuntimeException(e);
 				}
 			}
-		}
-		finally
+		} finally
 		{
 			if (useFixedThreadPool)
 			{

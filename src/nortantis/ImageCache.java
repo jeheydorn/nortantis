@@ -1,14 +1,9 @@
 package nortantis;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,17 +11,19 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
 
 import nortantis.geom.IntDimension;
 import nortantis.platform.Image;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
 import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 
@@ -57,9 +54,9 @@ public class ImageCache
 	 */
 	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, Map<String, Tuple2<ImageAndMasks, Integer>>>> iconsWithWidthsCache;
 
-	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, String[]>> iconGroupFilesNamesCache;
+	private ConcurrentHashMapF<IconType, ConcurrentHashMapF<String, List<String>>> iconGroupFilesNamesCache;
 
-	private ConcurrentHashMapF<IconType, Set<String>> iconGroupNames;
+	private ConcurrentHashMapF<IconType, List<String>> iconGroupNames;
 
 	private String imagesPath;
 
@@ -84,15 +81,29 @@ public class ImageCache
 	 * @param imagesPath
 	 * @return
 	 */
-	public synchronized static ImageCache getInstance(String imagesPath)
+	private synchronized static ImageCache getInstance(String imagesPath)
 	{
-		if (imagesPath != null && !imagesPath.isEmpty())
+		String pathWithHomeReplaced;
+		if (StringUtils.isEmpty(imagesPath))
 		{
-			String pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
-			return instances.getOrCreate(pathWithHomeReplaced, () -> new ImageCache(pathWithHomeReplaced));
+			imagesPath = Assets.getArtPackPath(Assets.installedArtPack, null).toString();
+			pathWithHomeReplaced = imagesPath;
+		}
+		else
+		{
+			pathWithHomeReplaced = FileHelper.replaceHomeFolderPlaceholder(imagesPath);
 		}
 
-		return instances.getOrCreate(AssetsPath.getInstallPath(), () -> new ImageCache(AssetsPath.getInstallPath()));
+		// Probably not necessary, but I don't want to take a chance of accidentally creating multiple ImageCache instances.
+		String normalizedPath = FilenameUtils.normalize(pathWithHomeReplaced);
+
+		return instances.getOrCreate(normalizedPath, () -> new ImageCache(normalizedPath));
+	}
+
+	public synchronized static ImageCache getInstance(String artPack, String customImagesFolder)
+	{
+		Path artPackPath = Assets.getArtPackPath(artPack, customImagesFolder);
+		return getInstance(artPackPath.toString());
 	}
 
 	/**
@@ -117,7 +128,7 @@ public class ImageCache
 
 	public Image getImageFromFile(Path path)
 	{
-		return fileCache.getOrCreate(path.toString(), () -> ImageHelper.read(path.toString()));
+		return fileCache.getOrCreate(path.toString(), () -> Assets.readImage(path.toString()));
 	}
 
 	public boolean containsImageFile(Path path)
@@ -140,12 +151,12 @@ public class ImageCache
 	{
 		ListMap<String, ImageAndMasks> imagesPerGroup = new ListMap<>();
 
-		Set<String> groupNames = getIconGroupNames(iconType);
+		List<String> groupNames = getIconGroupNames(iconType);
 		for (String groupName : groupNames)
 		{
-			String[] fileNames = getIconGroupFileNames(iconType, groupName);
+			List<String> fileNames = getIconGroupFileNames(iconType, groupName);
 			String groupPath = getIconGroupPath(iconType, groupName);
-			if (fileNames.length == 0)
+			if (fileNames.size() == 0)
 			{
 				continue;
 			}
@@ -167,7 +178,7 @@ public class ImageCache
 
 	public List<ImageAndMasks> loadIconGroup(IconType iconType, String groupName)
 	{
-		String[] fileNames = getIconGroupFileNames(iconType, groupName);
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
 		String groupPath = getIconGroupPath(iconType, groupName);
 		List<ImageAndMasks> result = new ArrayList<>();
 
@@ -177,7 +188,6 @@ public class ImageCache
 			Image icon;
 
 			icon = getImageFromFile(path);
-
 
 			result.add(new ImageAndMasks(icon, iconType));
 		}
@@ -202,9 +212,9 @@ public class ImageCache
 		{
 			return imagesAndMasks;
 		}
-		
-		String[] fileNames = getIconGroupFileNames(iconType, groupName);
-		if (fileNames.length == 0)
+
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
+		if (fileNames.size() == 0)
 		{
 			return imagesAndMasks;
 		}
@@ -252,11 +262,11 @@ public class ImageCache
 
 	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
 	{
-		String[] folderNames = getIconGroupFileNames(iconType, groupName);
+		List<String> folderNames = getIconGroupFileNames(iconType, groupName);
 		Set<String> result = new TreeSet<String>();
-		for (int i : new Range(folderNames.length))
+		for (int i : new Range(folderNames.size()))
 		{
-			result.add(getFileNameBaseWithoutWidth(folderNames[i]));
+			result.add(getFileNameBaseWithoutWidth(folderNames.get(i)));
 		}
 		return result;
 	}
@@ -273,45 +283,20 @@ public class ImageCache
 		}
 	}
 
-	public Set<String> loadIconGroupNames(IconType iconType)
+	public List<String> loadIconGroupNames(IconType iconType)
 	{
 		String path = Paths.get(imagesPath, iconType.toString()).toString();
 
-		String[] folderNames = new File(path).list(new FilenameFilter()
-		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return file.isDirectory() && !isDirectoryEmpty(file.getAbsolutePath());
-			}
-		});
+		List<String> folderNames = Assets.listNonEmptySubFolders(path);
 
 		if (folderNames == null)
 		{
-			return new TreeSet<>();
+			return new ArrayList<>();
 		}
 
-		Arrays.sort(folderNames);
-		Set<String> result = new TreeSet<>();
-		for (String folderName : folderNames)
-		{
-			result.add(folderName);
-		}
-		return result;
-	}
+		Collections.sort(folderNames, String.CASE_INSENSITIVE_ORDER);
 
-	private static boolean isDirectoryEmpty(final String directory)
-	{
-		try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(Paths.get(directory)))
-		{
-			return !dirStream.iterator().hasNext();
-		}
-		catch (IOException e)
-		{
-			e.printStackTrace();
-			return true;
-		}
+		return folderNames;
 	}
 
 	/**
@@ -321,39 +306,42 @@ public class ImageCache
 	 *            Name of a folder under assets/icons
 	 * @return Array of file names sorted with no duplicates
 	 */
-	public Set<String> getIconGroupNames(IconType iconType)
+	public List<String> getIconGroupNames(IconType iconType)
 	{
 		return iconGroupNames.getOrCreate(iconType, () -> loadIconGroupNames(iconType));
 	}
 
-	private String[] getIconGroupFileNames(IconType iconType, String groupName)
+	private List<String> getIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String groupNameToUse = groupName == null ? "" : groupName;
 		return iconGroupFilesNamesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupNameToUse,
 				() -> loadIconGroupFileNames(iconType, groupNameToUse));
 	}
 
-	private String[] loadIconGroupFileNames(IconType iconType, String groupName)
+	public boolean hasNamedIcon(IconType iconType, String groupName, String iconName)
 	{
-		String path = getIconGroupPath(iconType, groupName);
-
-		String[] fileNames = new File(path).list(new FilenameFilter()
+		if (!getIconGroupNames(iconType).contains(groupName))
 		{
-			@Override
-			public boolean accept(File dir, String name)
-			{
-				File file = new File(dir, name);
-				return !file.isDirectory();
-			}
-		});
-
-		if (fileNames == null)
-		{
-			return new String[] {};
+			return false;
 		}
 
-		Arrays.sort(fileNames);
-		return fileNames;
+		return getIconGroupFileNamesWithoutWidthOrExtension(iconType, groupName).contains(iconName);
+	}
+
+	public boolean hasGroupName(IconType iconType, String groupName)
+	{
+		List<String> groupNames = getIconGroupNames(iconType);
+		if (groupNames == null)
+		{
+			return false;
+		}
+		return groupNames.contains(groupName);
+	}
+
+	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)
+	{
+		String path = getIconGroupPath(iconType, groupName);
+		return Assets.listFileNames(path);
 	}
 
 	private String getIconGroupPath(IconType iconType, String groupName)
@@ -364,5 +352,7 @@ public class ImageCache
 	public static void clear()
 	{
 		instances.clear();
+		// Also clear the assets cache so that any change to the list of art packs becomes visible.
+		Assets.clearArtPackCache();
 	}
 }

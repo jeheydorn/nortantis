@@ -43,5 +43,4 @@ public class TectonicPlate
 		return WorldGraph.findCentroid(centers);
 	}
 
-
 }

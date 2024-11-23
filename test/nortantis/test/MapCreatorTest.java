@@ -6,8 +6,12 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -17,6 +21,7 @@ import org.junit.Test;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.SettingsGenerator;
+import nortantis.WarningLogger;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.Rectangle;
 import nortantis.platform.Color;
@@ -25,6 +30,7 @@ import nortantis.platform.ImageType;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
+import nortantis.util.Assets;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -39,6 +45,8 @@ public class MapCreatorTest
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
+		Assets.disableAddedArtPacksForUnitTests();
+
 		// Create the expected images if they don't already exist.
 		// Note that this means that if you haven't already created the images, you run these tests before making changes that will need to
 		// be tested.
@@ -52,9 +60,10 @@ public class MapCreatorTest
 		for (String settingsFileName : mapSettingsFileNames)
 		{
 			String expectedMapFilePath = getExpectedMapFilePath(settingsFileName);
-			if (!new File(expectedMapFilePath).exists())
+			String filePath = Paths.get("unit test files", "map settings", settingsFileName).toString();
+			if (!new File(filePath).isDirectory() && !new File(expectedMapFilePath).exists())
 			{
-				MapSettings settings = new MapSettings(Paths.get("unit test files", "map settings", settingsFileName).toString());
+				MapSettings settings = new MapSettings(filePath);
 				MapCreator mapCreator = new MapCreator();
 				Logger.println("Creating map '" + expectedMapFilePath + "'");
 				Image map = mapCreator.createMap(settings, null, null);
@@ -72,7 +81,7 @@ public class MapCreatorTest
 	@Test
 	public void drawWithoutEditsMatchesWithEdits()
 	{
-		MapSettings settings = SettingsGenerator.generate(new Random(1), null);
+		MapSettings settings = SettingsGenerator.generate(new Random(1), Assets.installedArtPack, null);
 		settings.resolution = 0.5;
 		Tuple1<Image> mapTuple = new Tuple1<>();
 		Tuple1<Boolean> doneTuple = new Tuple1<>(false);
@@ -121,7 +130,7 @@ public class MapCreatorTest
 
 		assertTrue(!settings.edits.isInitialized());
 		Image drawnWithoutEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
-	
+
 		assertTrue(settings.edits.isInitialized());
 		Image drawnWithEdits = createMapUsingUpdater(updater, mapTuple, doneTuple);
 
@@ -135,7 +144,7 @@ public class MapCreatorTest
 			fail(comparisonErrorMessage);
 		}
 	}
-	
+
 	private Image createMapUsingUpdater(MapUpdater updater, Tuple1<Image> mapTuple, Tuple1<Boolean> doneTuple)
 	{
 		doneTuple.set(false);
@@ -160,13 +169,13 @@ public class MapCreatorTest
 		}
 		return mapTuple.get();
 	}
-	
+
 	@Test
 	public void newRandomMapTest1()
 	{
 		generateRandomAndCompare(1);
 	}
-		
+
 	@Test
 	public void newRandomMapTest2()
 	{
@@ -177,6 +186,101 @@ public class MapCreatorTest
 	public void allTypesOfEdits()
 	{
 		generateAndCompare("allTypesOfEdits.nort");
+	}
+
+	@Test
+	public void iconReplacements()
+	{
+		// Clear the custom images path to force icons to be replaced with images from the installed art pack.
+		List<String> warnings = generateAndCompare("iconReplacements.nort", (settings -> settings.customImagesPath = null))
+				.getWarningMessages();
+
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the mountain image group 'jagged'. The art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the hill image group 'jagged'. The art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the sand image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the hill image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the tree image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the tree image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the icon 'compass 1 ' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the icon 'ship 6 ' from decoration image group 'boats'. The art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the icon 'small house 1 ' from city image group 'other'. The art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the art pack 'custom' to load the icon 'town ' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+		assertEquals(17, warnings.size());
+	}
+
+	@Test
+	public void iconReplacementsWithMissingIconTypes()
+	{
+		List<String> warnings = generateAndCompare("iconReplacementsWithMissingIconTypes.nort", (settings) ->
+		{
+			settings.customImagesPath = Paths.get("unit test files", "map settings", "empty custom images").toAbsolutePath().toString();
+		}).getWarningMessages();
+
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
+		assertTrue(warnings.contains(
+				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead. These trees are not visible because they were drawn at low density, but may become visible if you change the tree height in the Effects tab."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has mountain images, so it does not have mountain the image group 'jagged'. The art pack 'nortantis' will be used instead because it has mountain images."));
+		assertTrue(warnings.contains(
+				"Unable to find the mountain image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has hill images, so it does not have hill the image group 'jagged'. The art pack 'nortantis' will be used instead because it has hill images."));
+		assertTrue(warnings.contains(
+				"Unable to find the hill image group 'jagged' in art pack 'nortantis'. The group 'round' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has sand images, so it does not have sand the image group 'dunes'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has hill images, so it does not have hill the image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'generated deciduous 6'. The art pack 'nortantis' will be used instead because it has tree images."));
+		assertTrue(warnings.contains(
+				"Unable to find the tree image group 'generated deciduous 6' in art pack 'nortantis'. The group 'original pine' in that art pack will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has tree images, so it does not have tree the image group 'pine'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has mountain images, so it does not have mountain the image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1 ' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6 ' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images."));
+		assertTrue(warnings.contains(
+				"Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1 ' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images."));
+		assertTrue(warnings.contains(
+				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
+		assertTrue(warnings.contains(
+				"The art pack 'custom' no longer has city images, so it does not have the icon 'town ' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+		assertEquals(20, warnings.size());
 	}
 
 	@Test
@@ -295,7 +399,7 @@ public class MapCreatorTest
 	{
 		return Paths.get("unit test files", "failed maps", FilenameUtils.getBaseName(settingsFileName) + " - diff.png").toString();
 	}
-	
+
 	private void generateRandomAndCompare(long seed)
 	{
 		String expectedFileName = "random map for seed " + seed;
@@ -303,20 +407,20 @@ public class MapCreatorTest
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
-			expected = ImageHelper.read(expectedMapFilePath);
+			expected = Assets.readImage(expectedMapFilePath);
 		}
 		else
 		{
 			expected = null;
 		}
-		
-		MapSettings settings = SettingsGenerator.generate(new Random(seed), null);
+
+		MapSettings settings = SettingsGenerator.generate(new Random(seed), Assets.installedArtPack, null);
 		settings.resolution = 0.5;
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating random map to match '" + expectedFileName + "'");
 		Image actual;
 		actual = mapCreator.createMap(settings, null, null);
-		
+
 		if (expected == null)
 		{
 			// Create the expected map from the actual one.
@@ -336,24 +440,33 @@ public class MapCreatorTest
 			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
 			fail(comparisonErrorMessage);
 		}
-		
+
 	}
 
 	private void generateAndCompare(String settingsFileName)
+	{
+		generateAndCompare(settingsFileName, null);
+	}
+
+	private WarningLogger generateAndCompare(String settingsFileName, Consumer<MapSettings> preprocessSettings)
 	{
 		String expectedMapFilePath = getExpectedMapFilePath(settingsFileName);
 		Image expected;
 		if (new File(expectedMapFilePath).exists())
 		{
-			expected = ImageHelper.read(expectedMapFilePath);
+			expected = Assets.readImage(expectedMapFilePath);
 		}
 		else
 		{
 			expected = null;
 		}
-		
+
 		String settingsPath = Paths.get("unit test files", "map settings", settingsFileName).toString();
 		MapSettings settings = new MapSettings(settingsPath);
+		if (preprocessSettings != null)
+		{
+			preprocessSettings.accept(settings);
+		}
 		MapCreator mapCreator = new MapCreator();
 		Logger.println("Creating map from '" + settingsPath + "'");
 		Image actual;
@@ -371,6 +484,8 @@ public class MapCreatorTest
 			createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName);
 			fail(comparisonErrorMessage);
 		}
+
+		return mapCreator;
 	}
 
 	private void testDeepCopy(MapSettings settings)

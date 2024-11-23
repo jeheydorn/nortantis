@@ -2,8 +2,7 @@ package nortantis.geom;
 
 import java.util.Objects;
 
-
-public class IntPoint 
+public class IntPoint implements Comparable<IntPoint>
 {
 
 	public static double distance(IntPoint _coord, IntPoint _coord0)
@@ -79,7 +78,23 @@ public class IntPoint
 		return Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
 				&& Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
 	}
-	
-	
-}
 
+	@Override
+	public int compareTo(IntPoint other)
+	{
+		int c2 = Integer.compare(y, other.y);
+		if (c2 < 0)
+			return -1;
+		if (c2 > 0)
+			return 1;
+
+		int c1 = Integer.compare(x, other.x);
+		if (c1 < 0)
+			return -1;
+		if (c1 > 0)
+			return 1;
+
+		return 0;
+	}
+
+}

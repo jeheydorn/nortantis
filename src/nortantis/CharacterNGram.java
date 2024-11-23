@@ -126,8 +126,7 @@ public class CharacterNGram
 			{
 				result += next;
 			}
-		}
-		while (next != endToken);
+		} while (next != endToken);
 
 		return result;
 	}

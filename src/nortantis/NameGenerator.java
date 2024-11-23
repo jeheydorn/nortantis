@@ -82,8 +82,7 @@ public class NameGenerator
 				}
 			});
 			attemptCount++;
-		}
-		while (((longestWord.length() > (averageWordLength * maxWordLengthComparedToAverage)) || isTooShort(name))
+		} while (((longestWord.length() > (averageWordLength * maxWordLengthComparedToAverage)) || isTooShort(name))
 				&& attemptCount < maxAttemptsToGetCorrectLength);
 
 		// Capitalize first letter of generated names, including for multi-word names.

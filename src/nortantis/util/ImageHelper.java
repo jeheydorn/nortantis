@@ -36,7 +36,7 @@ public class ImageHelper
 	/**
 	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
 	 * 
-	 * For some reason this doesn't need to be called when running a GUI, and will throw an errror if you do.
+	 * For some reason this doesn't need to be called when running a GUI, and will throw an error if you do.
 	 */
 	public static void shutdownThreadPool()
 	{
@@ -126,7 +126,7 @@ public class ImageHelper
 			xSize = 1;
 		return xSize;
 	}
-	
+
 	/**
 	 * Scales the given image, preserving aspect ratio.
 	 */
@@ -143,7 +143,6 @@ public class ImageHelper
 		int xSize = getWidthWhenScaledByHeight(inImage, ySize);
 		return inImage.scale(method, xSize, ySize);
 	}
-
 
 	/**
 	 * Update one piece of a scaled image. Takes an area defined by boundsInSource and scales it into target. This implementation bicubic
@@ -227,9 +226,13 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
-
 
 		NormalDistribution dist = createDistributionForSize(size);
 		int resultSize = (size * 2);
@@ -284,7 +287,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		float[][] kernel = new float[size][size];
@@ -308,7 +316,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		Sinc dist = new Sinc();
@@ -323,8 +336,7 @@ public class ImageHelper
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math
 						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
-				kernel[y][x] = (float) dist.value(distanceFromCenter * scale);
-				kernel[y][x] = Math.max(0, kernel[y][x]);
+				kernel[y][x] = Math.max(0, (float) dist.value(distanceFromCenter * scale));
 			}
 		}
 		normalize(kernel);
@@ -391,7 +403,7 @@ public class ImageHelper
 
 		float range = max - min;
 		float targetRange = targetMax - targetMin;
-		
+
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
 			for (int c = colStart; c < colStart + cols; c++)
@@ -502,11 +514,25 @@ public class ImageHelper
 			throw new IllegalArgumentException("Region for masking is not contained within image2.");
 		}
 
-		Image result = Image.create(image1.getWidth(), image2.getHeight(), image1.getType());
+		if (image1.getType() != ImageType.RGB)
+		{
+			throw new IllegalArgumentException("Image 1 must be type " + ImageType.RGB + ", but was type " + image1.getType() + ".");
+		}
+		if (image2.getType() != ImageType.RGB)
+		{
+			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + ", but was type " + image2.getType() + ".");
+		}
+
+		Image result = Image.create(image1.getWidth(), image1.getHeight(), image1.getType());
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
 		int rowsPerJob = image1.getHeight() / numTasks;
+
+		int[] resultData = result.getDataIntBased();
+		int[] image1Data = image1.getDataIntBased();
+		int[] image2Data = image2.getDataIntBased();
+
 		for (int taskNumber : new Range(numTasks))
 		{
 			tasks.add(() ->
@@ -515,8 +541,9 @@ public class ImageHelper
 				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
 					for (int x = 0; x < image1.getWidth(); x++)
 					{
-						Color color1 = Color.create(image1.getRGB(x, y));
-						Color color2 = Color.create(image2.getRGB(x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
+						Color color1 = Color.create(image1.getRGB(image1Data, x, y));
+						Color color2 = Color
+								.create(image2.getRGB(image2Data, x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
 						float maskLevel = mask.getNormalizedPixelLevel(x, y);
 						if (mask.getType() == ImageType.Grayscale8Bit)
 						{
@@ -526,7 +553,7 @@ public class ImageHelper
 						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
 						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
 						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-						result.setRGB(x, y, r, g, b);
+						result.setRGB(resultData, x, y, r, g, b);
 					}
 			});
 		}
@@ -564,53 +591,108 @@ public class ImageHelper
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
 		int rowsPerJob = image.getHeight() / numTasks;
-		for (int taskNumber : new Range(numTasks))
+		if (result.isIntBased())
 		{
-			tasks.add(() ->
+			int[] resultData = result.getDataIntBased();
+			int[] imageData = image.getDataIntBased();
+			for (int taskNumber : new Range(numTasks))
 			{
-				int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-				for (int y = taskNumber * rowsPerJob; y < endY; y++)
+				tasks.add(() ->
 				{
-					for (int x = 0; x < image.getWidth(); x++)
+					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
+					for (int y = taskNumber * rowsPerJob; y < endY; y++)
 					{
-						int xInMask = x + imageOffsetInMask.x;
-						int yInMask = y + imageOffsetInMask.y;
-						if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+						for (int x = 0; x < image.getWidth(); x++)
 						{
-							continue;
-						}
+							int xInMask = x + imageOffsetInMask.x;
+							int yInMask = y + imageOffsetInMask.y;
+							if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+							{
+								continue;
+							}
 
-						Color col = Color.create(image.getRGB(x, y));
+							Color col = Color.create(image.getRGB(imageData, x, y));
 
-						int maskLevel = mask.getGrayLevel(xInMask, yInMask);
-						if (mask.getType() == ImageType.Grayscale8Bit)
-						{
-							if (invertMask)
-								maskLevel = 255 - maskLevel;
+							int maskLevel = mask.getGrayLevel(xInMask, yInMask);
+							if (mask.getType() == ImageType.Grayscale8Bit)
+							{
+								if (invertMask)
+									maskLevel = 255 - maskLevel;
 
-							int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-							int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-							int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-							Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
-							result.setRGB(x, y, combined.getRGB());
-						}
-						else
-						{
-							// TYPE_BYTE_BINARY
+								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+								result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
+							}
+							else
+							{
+								// TYPE_BYTE_BINARY
 
-							if (invertMask)
-								maskLevel = 1 - maskLevel;
+								if (invertMask)
+									maskLevel = 1 - maskLevel;
 
-							int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-							int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-							int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-							Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
-							result.setRGB(x, y, combined.getRGB());
+								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+								result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
+							}
 						}
 					}
-				}
-			});
+				});
+			}
 		}
+		else
+		{
+			for (int taskNumber : new Range(numTasks))
+			{
+				tasks.add(() ->
+				{
+					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
+					for (int y = taskNumber * rowsPerJob; y < endY; y++)
+					{
+						for (int x = 0; x < image.getWidth(); x++)
+						{
+							int xInMask = x + imageOffsetInMask.x;
+							int yInMask = y + imageOffsetInMask.y;
+							if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
+							{
+								continue;
+							}
+
+							Color col = Color.create(image.getRGB(x, y));
+
+							int maskLevel = mask.getGrayLevel(xInMask, yInMask);
+							if (mask.getType() == ImageType.Grayscale8Bit)
+							{
+								if (invertMask)
+									maskLevel = 255 - maskLevel;
+
+								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
+								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
+								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
+								// result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
+								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
+								result.setRGB(x, y, combined.getRGB());
+							}
+							else
+							{
+								// TYPE_BYTE_BINARY
+
+								if (invertMask)
+									maskLevel = 1 - maskLevel;
+
+								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
+								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
+								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
+								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
+								result.setRGB(x, y, combined.getRGB());
+							}
+						}
+					}
+				});
+			}
+		}
+
 		ThreadHelper.getInstance().processInParallel(tasks, true);
 
 		return result;
@@ -628,7 +710,6 @@ public class ImageHelper
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or ImageType.Binary.");
 		if (colorIndexes.getType() != ImageType.RGB)
 			throw new IllegalArgumentException("colorIndexes type must be type RGB.");
-
 
 		if (image.getWidth() != mask.getWidth())
 			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image has width " + image.getWidth() + ".");
@@ -749,18 +830,19 @@ public class ImageHelper
 				}
 
 				Color originalColor = image.getPixelColor(x, y);
-				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), maskLevel));
+				result.setPixelColor(x, y,
+						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), maskLevel));
 			}
 		return result;
 	}
-	
+
 	public static Image copyAlphaTo(Image target, Image alphaSource)
 	{
 		if (alphaSource.getType() != ImageType.ARGB)
 		{
 			throw new IllegalArgumentException("alphaSource is not a supported type");
 		}
-		
+
 		if (!target.size().equals(alphaSource.size()))
 		{
 			throw new IllegalArgumentException("target and alphaSource are different sizes.");
@@ -773,7 +855,8 @@ public class ImageHelper
 
 				int alphaLevel = alphaSource.getAlphaLevel(x, y);
 				Color originalColor = target.getPixelColor(x, y);
-				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
+				result.setPixelColor(x, y,
+						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
 			}
 		return result;
 	}
@@ -921,11 +1004,11 @@ public class ImageHelper
 
 		return result;
 	}
-	
 
 	public static Image copySnippet(Image source, IntRectangle boundsInSourceToCopyFrom)
 	{
-		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
+		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width,
+				boundsInSourceToCopyFrom.height);
 	}
 
 	/**
@@ -1043,12 +1126,12 @@ public class ImageHelper
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
-	{	
+	{
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
-		
+
 	/**
 	 * Convolves a gray-scale image with a kernel. The input image is unchanged. The convolved image will be scaled while it is still in
 	 * floating point representation. Values below 0 will be made 0. Values above 1 will be made 1.
@@ -1063,7 +1146,8 @@ public class ImageHelper
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
 	 * @return The convolved image.
 	 */
-	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, ImageType resultType)
+	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping,
+			ImageType resultType)
 	{
 		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
@@ -1176,7 +1260,7 @@ public class ImageHelper
 		int rowPaddingOver2 = rowPadding / 2;
 		int colPadding = cols - input[0].length;
 		int columnPaddingOver2 = colPadding / 2;
-		for (int r = 0; r < input.length; r++) 
+		for (int r = 0; r < input.length; r++)
 		{
 			for (int c = 0; c < input[0].length; c++)
 			{
@@ -1332,8 +1416,7 @@ public class ImageHelper
 		for (int r = 0; r < result.length; r++)
 			for (int c = 0; c < result[0].length; c++)
 			{
-				int arrayRow = (r + rowOffset) % array.length;
-				;
+				int arrayRow = (r + rowOffset) % array.length;;
 				if (((r + rowOffset) / array.length) % 2 == 1)
 					arrayRow = array.length - 1 - arrayRow;
 
@@ -1576,11 +1659,6 @@ public class ImageHelper
 		image.write(fileName);
 	}
 
-	public static Image read(String fileName)
-	{
-		return Image.read(fileName);
-	}
-
 	/***
 	 * Opens an image in the system default image editor.
 	 * 
@@ -1781,8 +1859,8 @@ public class ImageHelper
 
 		if (!toThreshold.size().equals(toAddTo.size()))
 		{
-			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: "
-					+ toThreshold.size() + ", second size: " + toAddTo.size());
+			throw new IllegalArgumentException("Images for thresholding and adding must be the same size. First size: " + toThreshold.size()
+					+ ", second size: " + toAddTo.size());
 		}
 
 		ThreadHelper.getInstance().processRowsInParallel(0, toThreshold.getHeight(), (y) ->

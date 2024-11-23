@@ -1,4 +1,4 @@
 extension=nort
 mime-type=application/json
-icon=assets\internal\\taskbar icon.ico
+icon=taskbar icon.png
 description=Nortantis Fantasy Map

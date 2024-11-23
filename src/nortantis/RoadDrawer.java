@@ -122,7 +122,7 @@ public class RoadDrawer
 	{
 		Painter p = map.createPainter();
 		p.setColor(settings.roadColor);
-		p.setDashedStroke(3f * ((float)sizeMultiplier));
+		// TODO Set stroke
 
 		for (Edge edge : graph.edges)
 		{
@@ -135,7 +135,7 @@ public class RoadDrawer
 				road.addAll(d1Road);
 
 				// Convert the road to a polyline
-				// TODO - Rather than use NoisyEdges, use CurveCreator to create a curve on the fly, and there is no need to store it.
+				// TODO - Rather than use NoisyEdges, use CurveCreator to create a curve on the fly, as there is no need to store it.
 
 				// Draw the road
 				// g.drawPolyline();
@@ -183,4 +183,3 @@ public class RoadDrawer
 	}
 
 }
-

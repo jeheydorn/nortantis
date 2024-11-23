@@ -57,7 +57,6 @@ public class BooksWidget
 		buttonsPanel.add(checkAll);
 		buttonsPanel.add(uncheckAll);
 
-
 		content = new JPanel();
 		content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
 		if (createScrollPane)

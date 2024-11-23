@@ -1,5 +1,6 @@
 package nortantis;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
+import nortantis.graph.voronoi.EdgeDrawType;
 import nortantis.graph.voronoi.NoisyEdges;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.graph.voronoi.nodename.as3delaunay.Voronoi;
@@ -35,6 +37,7 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.Transform;
 import nortantis.util.Helper;
 import nortantis.util.Range;
 
@@ -132,14 +135,17 @@ public class WorldGraph extends VoronoiGraph
 	public Set<Center> smoothCoastlinesAndRegionBoundariesIfNeeded(Collection<Center> centersToUpdate, LineStyle lineStyle,
 			boolean areRegionBoundariesVisible)
 	{
+		if (centersToUpdate != centers)
+		{
+			// When doing incremental drawing, expand the centers to update to include neighbors so that and single-center islands or water
+			// that were expanded by the last brush stroke get reevaluated.
+			addNeighbors(centersToUpdate);
+		}
+
 		Set<Center> changed = new HashSet<Center>();
 		if (lineStyle == LineStyle.SplinesWithSmoothedCoastlines)
 		{
-			for (Center center : centersToUpdate)
-			{
-				Set<Center> needsRebuild = smoothCoastlinesAndOptionallyRegionBoundaries(center, areRegionBoundariesVisible);
-				changed.addAll(needsRebuild);
-			}
+			changed = smoothCoastlinesAndOptionallyRegionBoundaries(centersToUpdate, areRegionBoundariesVisible);
 			for (Center center : changed)
 			{
 				center.updateLocToCentroid();
@@ -147,64 +153,32 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else if (lineStyle == LineStyle.Splines && areRegionBoundariesVisible)
 		{
-			for (Center center : centersToUpdate)
-			{
-				Set<Center> needsRebuild = smoothRegionBoundaries(center);
-				changed.addAll(needsRebuild);
-			}
+			changed = smoothRegionBoundaries(centersToUpdate);
 			for (Center center : changed)
 			{
 				center.updateLocToCentroid();
 			}
 		}
 
-		// Check if the smoothing caused any centers to be malformed, and if so, clear the smoothing on them.
-		// I reapply this loop as a fixed-point algorithm, stopping when either it makes a pass were no
-		// centers were malformed, or the last pass made no progress.
-		// I also check a maximum number of loops to make sure this algorithm doesn't take a really long time for some really strange map,
-		// although in practice that doesn't seem to happen.
-		Set<Center> loopOver = new HashSet<>(changed);
-		Set<Center> next = new HashSet<>();
-		int size;
-		int loopCount = 0;
-		do
-		{
-			for (Center center : loopOver)
-			{
-				if (!center.isWellFormedForDrawing())
-				{
-					next.add(center);
-					changed.add(center);
-					for (Corner corner : center.corners)
-					{
-						corner.loc = corner.originalLoc;
-
-						next.addAll(corner.touches);
-						changed.addAll(corner.touches);
-					}
-				}
-			}
-
-			for (Center center : next)
-			{
-				center.updateLocToCentroid();
-			}
-
-			size = loopOver.size();
-			loopOver = next;
-			next = new HashSet<>();
-			loopCount++;
-		}
-		while (size > loopOver.size() && loopOver.size() > 0 && loopCount <= 10);
-
 		return changed;
 	}
 
-	private Set<Center> smoothCoastlinesAndOptionallyRegionBoundaries(Center center, boolean smoothRegionBoundaries)
+	public void addNeighbors(Collection<Center> centers)
 	{
-		assert center != null;
-		boolean isChanged = false;
-		for (Corner corner : center.corners)
+		assert centers instanceof Set;
+		Set<Center> loopOver = new HashSet<>(centers);
+		for (Center c : loopOver)
+		{
+			centers.addAll(c.neighbors);
+		}
+	}
+
+	private Set<Center> smoothCoastlinesAndOptionallyRegionBoundaries(Collection<Center> centersToUpdate, boolean smoothRegionBoundaries)
+	{
+		Set<Corner> cornersToUpdate = getCornersFromCenters(centersToUpdate);
+		Set<Center> centersChanged = new HashSet<Center>();
+
+		for (Corner corner : cornersToUpdate)
 		{
 			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, e -> e.isCoast());
 			boolean isCornerChanged = coastlineResult.isCornerChanged;
@@ -215,35 +189,28 @@ public class WorldGraph extends VoronoiGraph
 				SmoothingResult regionResult = updateCornerLocationToSmoothEdges(corner, e -> e.isRegionBoundary() && !e.isRiver());
 				isCornerChanged |= regionResult.isCornerChanged;
 			}
-			isChanged |= isCornerChanged;
+			if (isCornerChanged)
+			{
+				centersChanged.addAll(corner.touches);
+			}
 		}
-		Set<Center> result = new HashSet<Center>();
-		if (isChanged)
-		{
-			result.add(center);
-			result.addAll(center.neighbors);
-
-		}
-		return result;
+		return centersChanged;
 	}
 
-	private Set<Center> smoothRegionBoundaries(Center center)
+	private Set<Center> smoothRegionBoundaries(Collection<Center> centersToUpdate)
 	{
-		assert center != null;
-		boolean isChanged = false;
-		for (Corner corner : center.corners)
+		Set<Corner> cornersToUpdate = getCornersFromCenters(centersToUpdate);
+		Set<Center> centersChanged = new HashSet<Center>();
+
+		for (Corner corner : cornersToUpdate)
 		{
 			SmoothingResult result = updateCornerLocationToSmoothEdges(corner, c -> c.isRegionBoundary() && !c.isRiver());
-			isChanged |= result.isCornerChanged;
+			if (result.isCornerChanged)
+			{
+				centersChanged.addAll(corner.touches);
+			}
 		}
-		Set<Center> result = new HashSet<Center>();
-		if (isChanged)
-		{
-			result.add(center);
-			result.addAll(center.neighbors);
-
-		}
-		return result;
+		return centersChanged;
 	}
 
 	private SmoothingResult updateCornerLocationToSmoothEdges(Corner corner, Function<Edge, Boolean> shouldSmoothEdge)
@@ -263,25 +230,24 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth == null || edgesToSmooth.size() == 0)
 		{
-			// This corner is not on an edge to it smooth. Clear the override to set the corner's location back to how it was first
+			// This corner is not on an edge to smooth. Clear the override to set the corner's location back to how it was first
 			// generated.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
-			corner.loc = corner.originalLoc;
+			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
 		}
 
 		if (edgesToSmooth.size() == 2)
 		{
-			// Don't smooth edges on islands made of only one center, because it tends to make the island disappear. Same for single-polygon
-			// oceans or lakes.
-			if (corner.touches.stream().anyMatch(center -> center.isSinglePolygonIsland() || center.isSinglePolygonWater()))
+			// Don't smooth edges on islands/regions made of only one center, because it tends to make the center very small.
+			if (corner.touches.stream().anyMatch(center -> isSinglePolygonToSmooth(center, shouldSmoothEdge)))
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
-				corner.loc = corner.originalLoc;
+				corner.resetLocToOriginal();
 				return new SmoothingResult(isChanged, false);
 			}
 
-			// This is a coastline.
+			// Smooth the edge
 			Corner otherCorner0 = edgesToSmooth.get(0).v0 == corner ? edgesToSmooth.get(0).v1 : edgesToSmooth.get(0).v0;
 			Corner otherCorner1 = edgesToSmooth.get(1).v0 == corner ? edgesToSmooth.get(1).v1 : edgesToSmooth.get(1).v0;
 			Point smoothedLoc = new Point((otherCorner0.originalLoc.x + otherCorner1.originalLoc.x) / 2,
@@ -293,10 +259,16 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
+			// 3 or more boundaries that should be smoothed intersect. Don't smooth because it's not clear what direction to smooth.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
-			corner.loc = corner.originalLoc;
+			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
 		}
+	}
+
+	private boolean isSinglePolygonToSmooth(Center center, Function<Edge, Boolean> shouldSmoothEdge)
+	{
+		return center.borders.stream().allMatch(e -> shouldSmoothEdge.apply(e));
 	}
 
 	private class SmoothingResult
@@ -419,7 +391,7 @@ public class WorldGraph extends VoronoiGraph
 			}
 		});
 	}
-	
+
 	public static Color storeValueAsColor(int value)
 	{
 		int blue = value & 0xFF;
@@ -427,7 +399,7 @@ public class WorldGraph extends VoronoiGraph
 		int red = (value >> 16) & 0xFF;
 		return Color.create(red, green, blue);
 	}
-	
+
 	public static int getValueFromColor(Color color)
 	{
 		return color.getRed() << 16 | color.getGreen() << 8 | color.getBlue();
@@ -1226,8 +1198,7 @@ public class WorldGraph extends VoronoiGraph
 						}
 					}
 				}
-			}
-			while (cornerFound);
+			} while (cornerFound);
 
 		}
 	}
@@ -1769,7 +1740,8 @@ public class WorldGraph extends VoronoiGraph
 				if (neighbor != null)
 				{
 					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge);
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor)
+							? centerNodeMap.get(neighbor).scoreSoFar
 							: Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{
@@ -1877,10 +1849,6 @@ public class WorldGraph extends VoronoiGraph
 		for (Center center : centers)
 		{
 			center.loc = center.loc.mult(widthScale, heightScale);
-			if (center.originalLoc != null)
-			{
-				center.originalLoc = center.originalLoc.mult(widthScale, heightScale);
-			}
 		}
 		for (Edge edge : edges)
 		{
@@ -1969,5 +1937,178 @@ public class WorldGraph extends VoronoiGraph
 		});
 		double cSize = Math.abs(eastMostNeighbor.loc.x - westMostNeighbor.loc.x);
 		return cSize;
+	}
+
+	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoast());
+	}
+
+	public void drawCoastlineWithLakeShores(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		drawSpecifiedEdges(p, strokeWidth, centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
+	}
+
+	public void drawRegionBoundariesSolid(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
+			Rectangle drawBounds)
+	{
+		drawSpecifiedEdges(g, strokeWidth, centersToDraw, drawBounds, edge ->
+		{
+			if (ignoreRiverEdges && edge.isRiver())
+			{
+				// Don't draw region boundaries where there are rivers.
+				return false;
+			}
+
+			return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
+		});
+	}
+
+	public void drawRegionBoundaries(Painter p, Stroke stroke, double resolutionScale, Collection<Center> centersToDraw,
+			Rectangle drawBounds)
+	{
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		p.setStroke(stroke, resolutionScale);
+
+		List<List<Edge>> regionBoundaries = findRegionBoundaries(centersToDraw);
+		for (List<Edge> regionBoundary : regionBoundaries)
+		{
+			List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
+
+			if (drawPoints == null || drawPoints.size() <= 1)
+			{
+				continue;
+			}
+
+			// Enforce an order in which the region boundary is drawn so that full versus incremental redraws don't draw dotted lines
+			// in the opposite order and so end up drawing the dashed pattern slightly differently.
+			if (drawPoints.get(0).compareTo(drawPoints.get(drawPoints.size() - 1)) > 0)
+			{
+				Collections.reverse(drawPoints);
+			}
+
+			if (DebugFlags.drawRegionBoundaryPathJoins())
+			{
+				Color color = p.getColor();
+				p.setBasicStroke(1f * (float) resolutionScale);
+
+				int diameter = (int) (7.0 * resolutionScale);
+				p.setColor(Color.red);
+				p.drawOval((int) (drawPoints.get(0).x) - diameter / 2, (int) (drawPoints.get(0).y) - diameter / 2, diameter, diameter);
+
+				diameter = (int) (10.0 * resolutionScale);
+				p.setColor(Color.blue);
+				p.drawOval((int) (drawPoints.get(drawPoints.size() - 1).x) - diameter / 2,
+						(int) (drawPoints.get(drawPoints.size() - 1).y) - diameter / 2, diameter, diameter);
+
+				p.setColor(color);
+				p.setStroke(stroke, resolutionScale);
+			}
+
+			drawPolyline(p, drawPoints);
+		}
+
+		if (drawBounds != null)
+		{
+			p.setTransform(orig);
+		}
+	}
+
+	public List<List<Edge>> findRegionBoundaries(Collection<Center> centersToDraw)
+	{
+		List<List<Edge>> result = new ArrayList<>();
+		Set<Edge> explored = new HashSet<>();
+		for (Center center : (centersToDraw == null ? centers : centersToDraw))
+		{
+			for (Edge edge : center.borders)
+			{
+				if (explored.contains(edge))
+				{
+					continue;
+				}
+
+				List<Edge> regionBoundary = findPath(explored, edge, (e) -> noisyEdges.getEdgeDrawType(e) == EdgeDrawType.Region);
+				if (regionBoundary != null && !regionBoundary.isEmpty())
+				{
+					result.add(regionBoundary);
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
+	 * 
+	 * @param start
+	 *            Where to start to search. Not necessarily the start of the path we're searching for.
+	 * @param accept
+	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
+	 *            returned.
+	 * @return A list of edges forming a path.
+	 */
+	private List<Edge> findPath(Set<Edge> found, Edge start, Function<Edge, Boolean> accept)
+	{
+		if (start == null || !accept.apply(start))
+		{
+			return null;
+		}
+
+		ArrayDeque<Edge> deque = new ArrayDeque<>();
+		deque.add(start);
+		found.add(start);
+
+		if (start.v0 != null)
+		{
+			Edge e = start;
+			Edge prev = null;
+			while (true)
+			{
+				Edge next = noisyEdges.findEdgeToFollow(e.v0, e, prev);
+				if (next == null || found.contains(next))
+				{
+					next = noisyEdges.findEdgeToFollow(e.v1, e, prev);
+				}
+				if (next == null || !accept.apply(next) || found.contains(next))
+				{
+					break;
+				}
+				prev = e;
+				deque.addFirst(next);
+				found.add(next);
+				e = next;
+			}
+		}
+
+		if (start.v1 != null)
+		{
+			Edge e = start;
+			Edge prev = null;
+			while (true)
+			{
+				Edge next = noisyEdges.findEdgeToFollow(e.v1, e, prev);
+				if (next == null || found.contains(next))
+				{
+					next = noisyEdges.findEdgeToFollow(e.v0, e, prev);
+				}
+				if (next == null || !accept.apply(next) || found.contains(next))
+				{
+					break;
+				}
+				prev = e;
+				deque.addLast(next);
+				found.add(next);
+				e = next;
+			}
+		}
+
+		return new ArrayList<>(deque);
 	}
 }

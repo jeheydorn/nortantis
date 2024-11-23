@@ -3,8 +3,6 @@ package nortantis;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,7 +11,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Counter;
 import nortantis.util.Function;
 import nortantis.util.Helper;
@@ -48,7 +46,7 @@ public class NameCompiler
 		List<String> lines;
 		try
 		{
-			lines = Files.readAllLines(Paths.get(AssetsPath.getInstallPath(), "internal/en_GB.dic"), StandardCharsets.UTF_8);
+			lines = Assets.readAllLines(Paths.get(Assets.getAssetsPath(), "internal/en_GB.dic").toString());
 		}
 		catch (IOException e)
 		{
@@ -73,12 +71,10 @@ public class NameCompiler
 		this.nounVerbPairs = capitalizeFirstLetters(this.nounVerbPairs);
 		nounAdjectivePairs = null;
 
-
 		this.r = r;
 		counter = new Counter<>();
 		counter.addCount("adjectives", this.nounAdjectivePairs.size());
 		counter.addCount("verbs", this.nounVerbPairs.size());
-
 
 	}
 
@@ -196,7 +192,6 @@ public class NameCompiler
 		{
 			return verb.substring(0, verb.length() - 2) + "ing";
 		}
-
 
 		if (verb.endsWith("aid"))
 		{

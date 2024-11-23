@@ -2,5 +2,5 @@ package nortantis;
 
 enum CityType
 {
-	Fortification, City, Town, Homestead,
+	Fortification, City, Town, Homestead, Farm
 }

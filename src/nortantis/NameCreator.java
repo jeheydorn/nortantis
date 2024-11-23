@@ -1,10 +1,5 @@
 package nortantis;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,9 +8,8 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.geom.Point;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.Function0;
-import nortantis.util.Logger;
 import nortantis.util.Pair;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
@@ -39,7 +33,7 @@ public class NameCreator
 		this.namesGenerated = new HashSet<>();
 		processBooks(settings.books);
 	}
-	
+
 	private void processBooks(Set<String> books)
 	{
 		List<String> placeNames = new ArrayList<>();
@@ -48,10 +42,10 @@ public class NameCreator
 		List<Pair<String>> nounVerbPairs = new ArrayList<>();
 		for (String book : books)
 		{
-			placeNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_place_names.txt"));
-			personNames.addAll(readNameList(AssetsPath.getInstallPath() + "/books/" + book + "_person_names.txt"));
-			nounAdjectivePairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
-			nounVerbPairs.addAll(readStringPairs(AssetsPath.getInstallPath() + "/books/" + book + "_noun_verb_pairs.txt"));
+			placeNames.addAll(Assets.readNameList(Assets.getAssetsPath() + "/books/" + book + "_place_names.txt"));
+			personNames.addAll(Assets.readNameList(Assets.getAssetsPath() + "/books/" + book + "_person_names.txt"));
+			nounAdjectivePairs.addAll(Assets.readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_adjective_pairs.txt"));
+			nounVerbPairs.addAll(Assets.readStringPairs(Assets.getAssetsPath() + "/books/" + book + "_noun_verb_pairs.txt"));
 		}
 
 		placeNameGenerator = new NameGenerator(r, placeNames, maxWordLengthComparedToAverage, probabilityOfKeepingNameLength1,
@@ -62,63 +56,6 @@ public class NameCreator
 		nameCompiler = new NameCompiler(r, nounAdjectivePairs, nounVerbPairs);
 	}
 
-	private List<Pair<String>> readStringPairs(String filename)
-	{
-		List<Pair<String>> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
-		{
-			int lineNum = 0;
-			for (String line; (line = br.readLine()) != null;)
-			{
-				lineNum++;
-
-				// Remove white space lines.
-				if (!line.trim().isEmpty())
-				{
-					String[] parts = line.split("\t");
-					if (parts.length != 2)
-					{
-						Logger.println("Warning: No string pair found in " + filename + " at line " + lineNum + ".");
-						continue;
-					}
-					result.add(new Pair<>(parts[0], parts[1]));
-				}
-			}
-		}
-		catch (FileNotFoundException e)
-		{
-			throw new RuntimeException(e);
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException(e);
-		}
-
-		return result;
-	}
-
-	private List<String> readNameList(String filename)
-	{
-		List<String> result = new ArrayList<>();
-		try (BufferedReader br = new BufferedReader(new FileReader(new File(filename))))
-		{
-			for (String line; (line = br.readLine()) != null;)
-			{
-				// Remove white space lines.
-				if (!line.trim().isEmpty())
-				{
-					result.add(line);
-				}
-			}
-		}
-		catch (IOException e)
-		{
-			throw new RuntimeException("Unable to read names from the file " + filename, e);
-		}
-
-		return result;
-	}
-	
 	public String generatePlaceName(String format, boolean requireUnique)
 	{
 		return generatePlaceName(format, requireUnique, "");
@@ -179,7 +116,6 @@ public class NameCreator
 		throw new NotEnoughNamesException();
 
 	}
-	
 
 	public static List<CityType> findCityTypeFromCityFileName(String cityFileNameNoExtension)
 	{
@@ -204,11 +140,15 @@ public class NameCreator
 			{
 				result.add(CityType.Homestead);
 			}
+			if (words.contains("farm") || words.contains("plantation") || words.contains("farmstead") || words.contains("ranch"))
+			{
+				result.add(CityType.Farm);
+			}
 		}
 
 		return result;
 	}
-	
+
 	/**
 	 * Generate a name of a specified type.
 	 * 
@@ -318,8 +258,12 @@ public class NameCreator
 			}
 			else if (cityType.equals(CityType.Homestead))
 			{
+				structureName = "Village";
+			}
+			else if (cityType.equals(CityType.Farm))
+			{
 				structureName = ProbabilityHelper.sampleCategorical(r,
-						Arrays.asList(new Tuple2<>(0.5, "Farm"), new Tuple2<>(0.5, "Village")));
+						Arrays.asList(new Tuple2<>(0.7, "Farm"), new Tuple2<>(0.3, "Ranch")));
 			}
 			else
 			{
@@ -406,7 +350,7 @@ public class NameCreator
 			throw new UnsupportedOperationException("Unknown text type: " + type);
 		}
 	}
-	
+
 	private String getOtherMountainNameFormat(OtherMountainsType mountainType)
 	{
 		switch (mountainType)
@@ -433,7 +377,7 @@ public class NameCreator
 
 		return ProbabilityHelper.sampleUniform(r, types);
 	}
-	
+
 	private String getRiverNameFormat(RiverType riverType)
 	{
 		String format;
@@ -452,7 +396,7 @@ public class NameCreator
 
 		return format;
 	}
-	
+
 	/**
 	 * Generates a name of the specified type. This is for when the user adds new text to the map. It is not used when the map text is first
 	 * generated.
@@ -496,7 +440,6 @@ public class NameCreator
 			return "name";
 		}
 	}
-	
 
 	/**
 	 * Adds text that the user is manually creating.

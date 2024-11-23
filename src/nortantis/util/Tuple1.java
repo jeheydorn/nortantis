@@ -5,13 +5,14 @@ import java.util.Objects;
 
 /**
  * A 1-tuple. Useful when you need to wrap an object with a pointer.
+ * 
  * @param <F>
  */
 @SuppressWarnings("serial")
 public class Tuple1<F> implements Serializable
 {
 	private F f;
-	
+
 	public Tuple1(F f)
 	{
 		this.f = f;

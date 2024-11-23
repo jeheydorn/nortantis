@@ -1,13 +1,14 @@
 package nortantis;
 
-import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import org.apache.commons.lang3.StringUtils;
 
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
@@ -18,11 +19,12 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 /**
  * An assortment of things needed to draw the background.
@@ -38,30 +40,23 @@ public class Background
 	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
+	private ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
 	// regionIndexes is a gray scale image where the level of each pixel is the
 	// index of the region it is in.
 	Image regionIndexes;
 	private int borderWidthScaled;
-	private String borderType;
-	private String imagesPath;
+	private NamedResource borderResouce;
 	private Image upperLeftCorner;
 	private Image upperRightCorner;
 	private Image lowerLeftCorner;
 	private Image lowerRightCorner;
 	private int cornerWidth;
 	private boolean hasInsetCorners;
+	private String customImagesPath;
 
-
-	public Background(MapSettings settings, Dimension mapBounds)
+	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
-		if (settings.customImagesPath != null && !settings.customImagesPath.isEmpty())
-		{
-			this.imagesPath = FileHelper.replaceHomeFolderPlaceholder(settings.customImagesPath);
-		}
-		else
-		{
-			this.imagesPath = AssetsPath.getInstallPath();
-		}
+		customImagesPath = settings.customImagesPath;
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
 		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
 				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
@@ -71,7 +66,7 @@ public class Background
 		this.mapBounds = mapBounds;
 
 		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
-		borderType = settings.borderType;
+		borderResouce = settings.borderResource;
 
 		if (settings.generateBackground)
 		{
@@ -82,16 +77,28 @@ public class Background
 					((int) mapBounds.width) + borderWidthScaled * 2, ((int) mapBounds.height) + borderWidthScaled * 2, 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
-			borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
-					ImageHelper.ColorifyAlgorithm.algorithm2);
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 
-			if (settings.drawBorder)
+			if (settings.borderColorOption == BorderColorOption.Ocean_color)
 			{
-				ocean = removeBorderPadding(borderBackground);
+				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = borderBackground;
 			}
 			else
 			{
-				ocean = borderBackground;
+				if (settings.drawBorder)
+				{
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+				}
+				ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+			}
+
+			if (settings.drawBorder)
+			{
+				ocean = removeBorderPadding(ocean);
+			}
+			else
+			{
 				borderBackground = null;
 			}
 
@@ -112,14 +119,24 @@ public class Background
 			// Generate the background images from a texture
 
 			Image texture;
+			Tuple2<Path, String> tuple = settings.getBackgroundImagePath();
+			Path texturePath = tuple.getFirst();
+			String warning = tuple.getSecond();
+			if (!StringUtils.isEmpty(warning))
+			{
+				warningLogger.addWarningMessage(warning);
+			}
 			try
 			{
-				texture = ImageCache.getInstance(imagesPath).getImageFromFile(Paths.get(settings.backgroundTextureImage));
+				texture = ImageCache.getInstance(settings.backgroundTextureResource.artPack, settings.customImagesPath)
+						.getImageFromFile(texturePath);
 			}
 			catch (RuntimeException e)
 			{
-				throw new RuntimeException("Unable to read the texture image file name \"" + settings.backgroundTextureImage + "\"", e);
+				throw new RuntimeException("Unable to read the texture image file name \"" + texturePath + "\"", e);
 			}
+
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
 			Image oceanGeneratedBackground;
 			if (settings.colorizeOcean)
@@ -127,15 +144,27 @@ public class Background
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
 						ImageHelper.convertToGrayscale(texture), ((int) mapBounds.height) + borderWidthScaled * 2,
 						((int) mapBounds.width) + borderWidthScaled * 2);
-				borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor,
-						ImageHelper.ColorifyAlgorithm.algorithm3);
-				if (settings.drawBorder)
+
+				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
-					ocean = removeBorderPadding(borderBackground);
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+					ocean = borderBackground;
 				}
 				else
 				{
-					ocean = borderBackground;
+					if (settings.drawBorder)
+					{
+						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+					}
+					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
+				}
+
+				if (settings.drawBorder)
+				{
+					ocean = removeBorderPadding(ocean);
+				}
+				else
+				{
 					borderBackground = null;
 				}
 			}
@@ -146,7 +175,16 @@ public class Background
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
-					borderBackground = oceanGeneratedBackground;
+
+					if (settings.borderColorOption == BorderColorOption.Ocean_color)
+					{
+						borderBackground = oceanGeneratedBackground;
+					}
+					else
+					{
+						borderBackground = ImageHelper.colorify(ImageHelper.convertToGrayscale(oceanGeneratedBackground),
+								settings.borderColor, oceanColorifyAlgorithm);
+					}
 				}
 				else
 				{
@@ -342,12 +380,18 @@ public class Background
 		Painter p = result.createPainter();
 		p.drawImage(map, borderWidthScaled, borderWidthScaled);
 
-		Path allBordersPath = Paths.get(imagesPath, "borders");
-		Path borderPath = Paths.get(allBordersPath.toString(), borderType);
-		if (!Files.exists(borderPath))
+		Path artPackPath = Assets.getArtPackPath(borderResouce.artPack, customImagesPath);
+		if (artPackPath == null)
+		{
+			throw new RuntimeException("Unable to draw the border because the selected border type, '" + borderResouce.name
+					+ "', is from the art pack '" + borderResouce.artPack + "', which does not exist.");
+		}
+		Path allBordersPath = Paths.get(artPackPath.toString(), "borders");
+		Path borderPath = Paths.get(allBordersPath.toString(), borderResouce.name);
+		if (!Assets.exists(borderPath.toString()))
 		{
 			throw new RuntimeException(
-					"The selected border type '" + borderType + "' does not have a folder for images in " + allBordersPath + ".");
+					"The selected border type '" + borderResouce + "' does not have a folder for images in " + allBordersPath + ".");
 		}
 
 		int edgeOriginalWidth = 0;
@@ -376,7 +420,6 @@ public class Background
 			edgeOriginalWidth = rightEdge.getWidth();
 			rightEdge = ImageHelper.scaleByWidth(rightEdge, borderWidthScaled);
 		}
-
 
 		if (topEdge == null)
 		{
@@ -433,7 +476,7 @@ public class Background
 		{
 			cornerOriginalWidth = lowerRightCorner.getWidth();
 		}
-		
+
 		if (cornerOriginalWidth == 0)
 		{
 			throw new RuntimeException("Border cannot be drawn. Could not find any corner images in " + borderPath);
@@ -454,7 +497,6 @@ public class Background
 			hasInsetCorners = true;
 			cornerWidth = (int) (borderWidthScaled * (((double) cornerOriginalWidth) / ((double) edgeOriginalWidth)));
 		}
-
 
 		if (upperLeftCorner != null)
 		{
@@ -634,7 +676,7 @@ public class Background
 		{
 			return;
 		}
-		
+
 		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderWidthScaled,
 				drawBoundsBeforeBorder.toIntRectangle().y + borderWidthScaled);
 		Rectangle bounds = drawBoundsBeforeBorder.translate(borderWidthScaled, borderWidthScaled);
@@ -804,21 +846,25 @@ public class Background
 
 	private Image loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
 	{
-		File[] cornerArray = new File(path.toString()).listFiles(file -> file.getName().contains(inFileName));
-		if (cornerArray.length == 0)
+		List<Path> corners = Assets.listFiles(path.toString(), inFileName, null);
+		if (corners.isEmpty())
 		{
 			if (throwExceptionIfMissing)
+			{
 				throw new RuntimeException(
 						"Unable to find a file containing \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
+			}
 			else
+			{
 				return null;
+			}
 		}
-		if (cornerArray.length > 1)
+		if (corners.size() > 1)
 		{
 			throw new RuntimeException("More than one file contains \"" + inFileName + "\" in the directory " + path.toAbsolutePath());
 		}
 
-		return ImageHelper.read(cornerArray[0].getPath());
+		return Assets.readImage(corners.get(0).toString());
 	}
 
 	public int getBorderWidthScaledByResolution()

@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
@@ -20,12 +21,18 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -34,6 +41,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -43,7 +51,9 @@ import javax.swing.UIManager;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.imgscalr.Scalr.Method;
 
@@ -64,10 +74,12 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
+import nortantis.util.FileHelper;
 import nortantis.util.ILoggerTarget;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class MainWindow extends JFrame implements ILoggerTarget
@@ -121,8 +133,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	private JMenuItem newMapWithSameThemeMenuItem;
 	private JMenuItem searchTextMenuItem;
 	private TextSearchDialog textSearchDialog;
+	private JMenu highlightIconsInArtPackMenu;
+	private List<JCheckBoxMenuItem> artPacksToHighlight;
 
-	public MainWindow(String fileToOpen)
+	public MainWindow(String fileToOpen) throws Exception
 	{
 		super(frameTitleBase);
 
@@ -137,15 +151,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			try
 			{
 				JOptionPane.showMessageDialog(null,
-						"Unnable to create GUI because of error: " + ex.getMessage() 
-								+ "\nVersion: " + MapSettings.currentVersion
-								+ "\nOS Name: " + System.getProperty("os.name") 
-								+ "\nInstall path: " + AssetsPath.getInstallPath()
-								+ "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
+						"Unnable to create GUI because of error: " + ex.getMessage() + "\nVersion: " + MapSettings.currentVersion
+								+ "\nOS Name: " + System.getProperty("os.name") + "\nStack trace: " + ExceptionUtils.getStackTrace(ex),
 						"Error", JOptionPane.ERROR_MESSAGE);
 			}
 			catch (Exception inner)
 			{
+				Logger.printError("Error while trying to log an error at startup: " + inner.getMessage(), inner);
 			}
 			throw ex;
 		}
@@ -168,9 +180,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
+			setPlaceholderImage(new String[]
+			{
+					"Welcome to Nortantis. To create or open a map,", "use the File menu."
+			});
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
+
 	}
 
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
@@ -210,7 +226,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		getContentPane().setPreferredSize(new Dimension(1400, 780));
 		getContentPane().setLayout(new BorderLayout());
 
-		setIconImage(AwtFactory.unwrap(ImageHelper.read(Paths.get(AssetsPath.getInstallPath(), "internal/taskbar icon.png").toString())));
+		setIconImage(AwtFactory.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal/taskbar icon.png").toString())));
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
 		addWindowListener(new WindowAdapter()
@@ -441,6 +457,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
 				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
+				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
+				mapEditingPanel.setIconDrawer(mapParts.iconDrawer);
 
 				if (!undoer.isInitialized())
 				{
@@ -476,8 +494,20 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 				if (warningMessages != null && warningMessages.size() > 0)
 				{
-					JOptionPane.showMessageDialog(MainWindow.this, "<html>" + String.join("<br>", warningMessages) + "</html>",
-							"Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+					JTextArea textArea = new JTextArea(String.join("\n\n", warningMessages));
+					textArea.setEditable(false);
+					textArea.setLineWrap(true);
+					textArea.setWrapStyleWord(true);
+					textArea.setCaretPosition(0);
+					textArea.setSelectionStart(0);
+					textArea.setSelectionEnd(0);
+					textArea.setBorder(BorderFactory.createEmptyBorder());
+
+					JScrollPane scrollPane = new JScrollPane(textArea);
+					scrollPane.setPreferredSize(new Dimension(500, 150));
+
+					JOptionPane.showMessageDialog(MainWindow.this, scrollPane, "Map Drew With Warnings", JOptionPane.WARNING_MESSAGE);
+
 				}
 
 				boolean isChange = settingsHaveUnsavedChanges();
@@ -488,9 +518,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			protected void onFailedToDraw()
 			{
 				showAsDrawing(false);
-				mapEditingPanel.clearSelectedCenters();
-				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
+				mapEditingPanel.clearAllSelectionsAndHighlights();
+				setPlaceholderImage(new String[]
+				{
+						"Map failed to draw due to an error.",
+						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "."
+				});
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -595,7 +628,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+				Path curPath = openSettingsFilePath == null
+						? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 						: openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
@@ -620,10 +654,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				{
 					openMap(fileChooser.getSelectedFile().getAbsolutePath());
 
-					if (MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
+					if (openSettingsFilePath != null && MapSettings.isOldPropertiesFile(openSettingsFilePath.toString()))
 					{
 						JOptionPane.showMessageDialog(MainWindow.this, FilenameUtils.getName(openSettingsFilePath.toString())
-								+ " is an older format '.properties' file. \nWhen you save, it will be converted to the newer format, a '"
+								+ " is an older format '.properties' file. When you save, it will be converted to the newer format, a '"
 								+ MapSettings.fileExtensionWithDot + "' file.", "File Converted", JOptionPane.INFORMATION_MESSAGE);
 						openSettingsFilePath = Paths.get(FilenameUtils.getFullPath(openSettingsFilePath.toString()),
 								FilenameUtils.getBaseName(openSettingsFilePath.toString()) + MapSettings.fileExtensionWithDot);
@@ -711,7 +745,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsReadyForInteractions(() ->
+					updater.dowWhenMapIsNotDrawing(() ->
 					{
 						undoer.undo();
 					});
@@ -730,7 +764,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				if (toolsPanel.currentTool != null)
 				{
-					updater.doWhenMapIsReadyForInteractions(() ->
+					updater.dowWhenMapIsNotDrawing(() ->
 					{
 						undoer.redo();
 					});
@@ -816,6 +850,37 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 		});
 
+		JMenu artPacksMenu = new JMenu("Art Packs");
+		toolsMenu.add(artPacksMenu);
+
+		JMenuItem addArtPackItem = new JMenuItem("Add Art Pack");
+		artPacksMenu.add(addArtPackItem);
+		addArtPackItem.addActionListener(new ActionListener()
+		{
+
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleAddArtPack();
+			}
+		});
+
+		JMenuItem openArtPacksFolderItem = new JMenuItem("Open Art Packs Folder");
+		artPacksMenu.add(openArtPacksFolderItem);
+		openArtPacksFolderItem.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				handleOpenArtPacksFolder();
+			}
+		});
+
+		artPacksToHighlight = new ArrayList<>();
+		highlightIconsInArtPackMenu = new JMenu("Highlight Icons in Art Packs");
+		artPacksMenu.add(highlightIconsInArtPackMenu);
+		updateArtPackHighlightOptions();
+
 		helpMenu = new JMenu("Help");
 		menuBar.add(helpMenu);
 
@@ -826,10 +891,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				JOptionPane.showMessageDialog(MainWindow.this,
-						"<html>Keyboard shortcuts for navigating the map:" + "<ul>" + "<li>Zoom: Mouse wheel</li>"
-								+ "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>" + "</ul>" + "</html>",
-						"Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(MainWindow.this, "<html>Keyboard shortcuts for navigating the map:" + "<ul>"
+						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>"
+						+ "</ul>"
+						+ "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut."
+						+ "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 
@@ -845,6 +911,191 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 	}
 
+	private void updateArtPackHighlightOptions()
+	{
+		Set<String> highlightedArtPacks = getSelectedArtPacksToHighlight();
+		highlightIconsInArtPackMenu.removeAll();
+		artPacksToHighlight.clear();
+		List<String> artPacks = Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath));
+		ActionListener listener = new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				updateArtPackHighlights();
+			}
+		};
+		for (String artPack : artPacks)
+		{
+			JCheckBoxMenuItem item = new JCheckBoxMenuItem(artPack);
+			highlightIconsInArtPackMenu.add(item);
+			artPacksToHighlight.add(item);
+			if (highlightedArtPacks.contains(artPack))
+			{
+				item.setSelected(true);
+			}
+			item.addActionListener(listener);
+		}
+
+	}
+
+	private void updateArtPackHighlights()
+	{
+		if (mapEditingPanel != null)
+		{
+			mapEditingPanel.setArtPacksToHighlight(getSelectedArtPacksToHighlight());
+			mapEditingPanel.repaint();
+		}
+	}
+
+	private Set<String> getSelectedArtPacksToHighlight()
+	{
+		Set<String> result = new TreeSet<>();
+		for (JCheckBoxMenuItem item : artPacksToHighlight)
+		{
+			if (item.isSelected())
+			{
+				result.add(item.getText());
+			}
+		}
+		return result;
+	}
+
+	private void handleOpenArtPacksFolder()
+	{
+		Path artPacksPath = Assets.getArtPacksFolder();
+
+		if (!artPacksPath.toFile().exists())
+		{
+			try
+			{
+				Files.createDirectories(artPacksPath);
+			}
+			catch (IOException ex)
+			{
+				String message = "An error occurred while creating the folder: " + ex.getMessage();
+				Logger.printError(message, ex);
+				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+		}
+
+		OSHelper.openFileExplorerTo(artPacksPath.toFile());
+	}
+
+	private void handleAddArtPack()
+	{
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setDialogTitle("Select Art Pack (ZIP File)");
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return "Art Pack (ZIP File)";
+			}
+
+			@Override
+			public boolean accept(File f)
+			{
+				return f.isDirectory() || f.getName().toLowerCase().endsWith(".zip");
+			}
+		});
+
+		int result = fileChooser.showOpenDialog(MainWindow.this);
+		if (result == JFileChooser.APPROVE_OPTION)
+		{
+			File selectedFile = fileChooser.getSelectedFile();
+
+			// Check for forbidden names. I'm adding 'all' to the list in case I someday decide I want an 'all' option for showing
+			// art packs in IconsTool.
+			List<String> subfolderNames;
+			try
+			{
+				subfolderNames = FileHelper.getTopLevelSubFolders(selectedFile.toPath());
+			}
+			catch (IOException ex)
+			{
+				String message = "Error while reading zip file '" + selectedFile + "': " + ex.getMessage();
+				Logger.printError(message, ex);
+				JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			if (subfolderNames.isEmpty())
+			{
+				JOptionPane.showMessageDialog(this,
+						"Invalid art pack. It's empty. It should have exactly one top-level folder, the name of which is the name of the art pack.",
+						"Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			if (subfolderNames.size() > 1)
+			{
+				JOptionPane.showMessageDialog(this,
+						"Invalid art pack. It should have exactly one top-level folder, the name of which will be the name of the art pack. It has "
+								+ subfolderNames.size() + " top-level folders.",
+						"Error", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			String artPackName = subfolderNames.get(0);
+
+			if (Assets.reservedArtPacks.contains(artPackName.toLowerCase()))
+			{
+				JOptionPane.showMessageDialog(this, "The art pack name '" + artPackName + "' is not allowed.", "Invalid Art Pack Name",
+						JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+
+			File artPackFolderAsFile = Assets.getArtPackPath(artPackName, null).toFile();
+			if (artPackFolderAsFile.exists() && artPackFolderAsFile.isDirectory())
+			{
+				// Show the dialog
+				int response = JOptionPane.showOptionDialog(this,
+						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
+						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]
+						{
+								"Overwrite", "Cancel"
+						}, "Cancel");
+
+				if (response == 0)
+				{
+					// Overwrite
+					try
+					{
+						FileUtils.deleteDirectory(artPackFolderAsFile);
+					}
+					catch (IOException e)
+					{
+						Logger.printError("Error while deleting folder '" + artPackFolderAsFile + "': " + e.getMessage(), e);
+						return;
+					}
+				}
+				else
+				{
+					// Cancel
+					return;
+				}
+			}
+
+			// Uncompress the zip file
+			Path artPacksFolder = Assets.getArtPacksFolder();
+			try
+			{
+				FileHelper.unzip(selectedFile, artPacksFolder, true);
+				JOptionPane.showMessageDialog(MainWindow.this, "Art pack added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+			}
+			catch (IOException ex)
+			{
+				JOptionPane.showMessageDialog(MainWindow.this, "Error uncompressing the zip file: " + ex.getMessage(), "Error",
+						JOptionPane.ERROR_MESSAGE);
+			}
+			handleImagesRefresh();
+		}
+	}
+
 	void handleImagesRefresh()
 	{
 		updater.setEnabled(false);
@@ -854,6 +1105,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		themePanel.handleImagesRefresh(settings);
 		// Tell Icons tool to refresh image previews
 		toolsPanel.handleImagesRefresh(settings);
+		updateArtPackHighlightOptions();
+		updateArtPackHighlights();
 		undoer.setEnabled(true);
 		updater.setEnabled(true);
 	}
@@ -1162,7 +1415,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	{
 		if (quality == DisplayQuality.Very_Low)
 		{
-			displayQualityScale = 0.50;
+			displayQualityScale = 0.5;
 		}
 		else if (quality == DisplayQuality.Low)
 		{
@@ -1237,6 +1490,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		CustomImagesDialog dialog = new CustomImagesDialog(this, customImagesPath, (value) ->
 		{
 			customImagesPath = value;
+			loadSettingsAndEditsIntoThemeAndToolsPanels(getSettingsFromGUI(false), false, true);
+			toolsPanel.handleCustomImagesPathChanged(customImagesPath);
 			undoer.setUndoPoint(UpdateType.Full, null, () -> handleImagesRefresh());
 			updater.createAndShowMapFull(() -> handleImagesRefresh());
 		});
@@ -1361,7 +1616,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+		Path curPath = openSettingsFilePath == null
+				? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 				: openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
@@ -1396,6 +1652,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			if (!openSettingsFilePath.getFileName().toString().endsWith(MapSettings.fileExtensionWithDot))
 			{
 				openSettingsFilePath = Paths.get(openSettingsFilePath.toString() + MapSettings.fileExtensionWithDot);
+			}
+
+			if (!openSettingsFilePath.equals(curPath))
+			{
+				// Clear previous image export locations so that a new copy of a map doesn't export over the images from the older version.
+				imageExportPath = null;
+				heightmapExportPath = null;
 			}
 
 			final MapSettings settings = getSettingsFromGUI(false);
@@ -1468,7 +1731,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[] { "Drawing map..." });
+		setPlaceholderImage(new String[]
+		{
+				"Drawing map..."
+		});
 
 		undoer.reset();
 
@@ -1496,7 +1762,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updater.createAndShowMapFull();
 		updateFrameTitle(false, true);
 
-		defaultMapExportAction = settings.defaultHeightmapExportAction;
+		defaultMapExportAction = settings.defaultMapExportAction;
 		defaultHeightmapExportAction = settings.defaultHeightmapExportAction;
 	}
 

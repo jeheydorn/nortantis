@@ -52,15 +52,15 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return new Point(x * value, y * value);
 	}
-	
+
 	public Point mult(double xScale, double yScale)
 	{
 		return new Point(x * xScale, y * yScale);
 	}
-	
+
 	public IntPoint toIntPoint()
 	{
-		return new IntPoint((int)x, (int)y);
+		return new IntPoint((int) x, (int) y);
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class Point implements Comparable<Point>, Serializable
 	{
 		return "(" + x + ", " + y + ")";
 	}
-	
+
 	public static Point fromJSonValue(String value)
 	{
 		String[] pieces = value.replace("(", "").replace(")", "").split(",");
@@ -81,7 +81,7 @@ public class Point implements Comparable<Point>, Serializable
 		double y = Double.parseDouble(pieces[1]);
 		return new Point(x, y);
 	}
-	
+
 	public double length()
 	{
 		return Math.sqrt(x * x + y * y);

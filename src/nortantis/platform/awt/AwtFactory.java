@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
@@ -63,6 +64,24 @@ public class AwtFactory extends PlatformFactory
 	}
 
 	@Override
+	public Image readImage(InputStream stream)
+	{
+		if (stream == null)
+		{
+			throw new RuntimeException("Unable to read an image file stream because it is null.");
+		}
+
+		try
+		{
+			return wrap(ImageIO.read(stream));
+		}
+		catch (IOException e)
+		{
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
 	public void writeImage(Image image, String filePath)
 	{
 		try
@@ -106,7 +125,7 @@ public class AwtFactory extends PlatformFactory
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public static Image convertARGBToRGB(Image image)
 	{
 		Image newImage = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
@@ -136,7 +155,7 @@ public class AwtFactory extends PlatformFactory
 	@Override
 	public Font createFont(String name, FontStyle style, float size)
 	{
-		return new AwtFont(new java.awt.Font(name, style.value, (int)size));
+		return new AwtFont(new java.awt.Font(name, style.value, (int) size));
 	}
 
 	@Override
@@ -150,7 +169,6 @@ public class AwtFactory extends PlatformFactory
 	{
 		return new AwtColor(red, green, blue);
 	}
-
 
 	@Override
 	public Color createColor(float red, float green, float blue)
@@ -172,31 +190,55 @@ public class AwtFactory extends PlatformFactory
 
 	public static BufferedImage unwrap(Image image)
 	{
+		if (image == null)
+		{
+			return null;
+		}
 		return ((AwtImage) image).image;
 	}
 
 	public static Image wrap(BufferedImage image)
 	{
+		if (image == null)
+		{
+			return null;
+		}
 		return new AwtImage(image);
 	}
 
 	public static Color wrap(java.awt.Color color)
 	{
+		if (color == null)
+		{
+			return null;
+		}
 		return new AwtColor(color);
 	}
 
 	public static java.awt.Color unwrap(Color color)
 	{
+		if (color == null)
+		{
+			return null;
+		}
 		return ((AwtColor) color).color;
 	}
 
 	public static Font wrap(java.awt.Font font)
 	{
+		if (font == null)
+		{
+			return null;
+		}
 		return new AwtFont(font);
 	}
 
 	public static java.awt.Font unwrap(Font font)
 	{
+		if (font == null)
+		{
+			return null;
+		}
 		return ((AwtFont) font).font;
 	}
 
@@ -226,9 +268,13 @@ public class AwtFactory extends PlatformFactory
 				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
 		return new java.awt.geom.Area(rotatedRect);
 	}
-	
+
 	public static Painter wrap(java.awt.Graphics2D g)
 	{
+		if (g == null)
+		{
+			return null;
+		}
 		return new AwtPainter(g);
 	}
 
@@ -294,5 +340,4 @@ public class AwtFactory extends PlatformFactory
 		}
 	}
 
-	
 }

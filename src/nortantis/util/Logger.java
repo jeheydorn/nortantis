@@ -46,7 +46,7 @@ public class Logger
 		println(ExceptionUtils.getStackTrace(e));
 	}
 
-	public static void println(final String message)
+	public static void println(final Object message)
 	{
 		if (getInstance().target != null && getInstance().target.isReadyForLogging())
 		{

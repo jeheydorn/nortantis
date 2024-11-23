@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.AffineTransform;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 import javax.swing.AbstractButton;
@@ -41,8 +42,18 @@ public class SwingHelper
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 
-	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem, boolean forceAddSelectedItem)
+	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem,
+			boolean forceAddSelectedItem)
 	{
+		String selectedBefore = (String) comboBox.getSelectedItem();
+
+		// Remove all action listeners
+		ActionListener[] listeners = comboBox.getActionListeners();
+		for (ActionListener listener : listeners)
+		{
+			comboBox.removeActionListener(listener);
+		}
+
 		comboBox.removeAllItems();
 		for (String item : items)
 		{
@@ -62,6 +73,76 @@ public class SwingHelper
 				}
 			}
 			comboBox.setSelectedItem(selectedItem);
+		}
+		else if (items.size() > 0)
+		{
+			comboBox.setSelectedIndex(0);
+		}
+
+		// Re-add the action listeners
+		for (ActionListener listener : listeners)
+		{
+			comboBox.addActionListener(listener);
+		}
+
+		// If the selection changed, trigger the action listener. I do this here instead of leaving the action listeners when doing
+		// the manipulations above to avoid triggering the action listener when adding and removing items.
+		String selectedNow = (String) comboBox.getSelectedItem();
+		if (!Objects.equals(selectedNow, selectedBefore))
+		{
+			comboBox.setSelectedItem(comboBox.getSelectedItem());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> void initializeComboBoxItems(JComboBox<T> comboBox, Collection<T> items, T selectedItem, boolean forceAddSelectedItem)
+	{
+		T selectedBefore = (T) comboBox.getSelectedItem();
+
+		// Remove all action listeners
+		ActionListener[] listeners = comboBox.getActionListeners();
+		for (ActionListener listener : listeners)
+		{
+			comboBox.removeActionListener(listener);
+		}
+
+		comboBox.removeAllItems();
+		for (T item : items)
+		{
+			comboBox.addItem(item);
+		}
+		if (selectedItem != null)
+		{
+			if (!items.contains(selectedItem))
+			{
+				if (forceAddSelectedItem)
+				{
+					comboBox.addItem(selectedItem);
+				}
+				else if (items.size() > 0)
+				{
+					comboBox.setSelectedIndex(0);
+				}
+			}
+			comboBox.setSelectedItem(selectedItem);
+		}
+		else if (items.size() > 0)
+		{
+			comboBox.setSelectedIndex(0);
+		}
+
+		// Re-add the action listeners
+		for (ActionListener listener : listeners)
+		{
+			comboBox.addActionListener(listener);
+		}
+
+		// If the selection changed, trigger the action listener. I do this here instead of leaving the action listeners when doing
+		// the manipulations above to avoid triggering the action listener when adding and removing items.
+		T selectedNow = (T) comboBox.getSelectedItem();
+		if (!Objects.equals(selectedNow, selectedBefore))
+		{
+			comboBox.setSelectedItem(comboBox.getSelectedItem());
 		}
 	}
 
@@ -112,6 +193,7 @@ public class SwingHelper
 			{
 				colorDisplay.setBackground(colorChooser.getColor());
 				colorDisplay.repaint();
+				parent.repaint();
 				okAction.run();
 			}
 
@@ -211,8 +293,9 @@ public class SwingHelper
 				ex.getCause().printStackTrace();
 				if (isCausedByOutOfMemoryError(ex))
 				{
-					String message = isExport ? "Out of memory. Try exporting at a lower resolution."
-							: "Out of memory. Try decreasing the Display Quality in the View menu.";
+					String message = isExport
+							? "Out of memory. Try exporting at a lower resolution, or decreasing the Display Quality before exporting."
+							: "Out of memory. Try decreasing the Display Quality.";
 					Logger.printError(message, ex);
 					JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -262,15 +345,19 @@ public class SwingHelper
 		transform.transform(point, result);
 		return result;
 	}
-	
+
 	/**
 	 * Shows a message with the option to hide it in the future.
+	 * 
 	 * @return True if the message should be hidden in the future. False if not.
 	 */
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options = { "OK" };
+		Object[] options =
+		{
+				"OK"
+		};
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");
@@ -279,8 +366,8 @@ public class SwingHelper
 		panel.add(Box.createVerticalGlue());
 		panel.add(checkBox);
 		panel.setPreferredSize(popupSize);
-		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION,
-				JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+				options, options[0]);
 		if (result == JOptionPane.YES_OPTION)
 		{
 			if (checkBox.isSelected())
@@ -290,7 +377,7 @@ public class SwingHelper
 		}
 		return false;
 	}
-	
+
 	public static JPanel stackLabelAndComponent(JLabel label, Component component)
 	{
 		JPanel stackPanel = new JPanel();
@@ -303,7 +390,7 @@ public class SwingHelper
 		stackPanel.add(labelPanel);
 		stackPanel.add(Box.createRigidArea(new Dimension(5, 2)));
 		stackPanel.add(component);
-		
+
 		return stackPanel;
 	}
 }

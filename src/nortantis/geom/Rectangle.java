@@ -17,7 +17,7 @@ public class Rectangle
 		this.width = width;
 		this.height = height;
 	}
-	
+
 	public boolean liesOnAxes(Point p, double closeEnoughDistance)
 	{
 		return GenUtils.closeEnough(p.x, x, closeEnoughDistance) || GenUtils.closeEnough(p.y, y, closeEnoughDistance)
@@ -67,49 +67,9 @@ public class Rectangle
 
 	public boolean overlaps(Rectangle other)
 	{
-		if (contains(other.x, other.y))
-		{
-			return true;
-		}
-
-		if (other.contains(x, y))
-		{
-			return true;
-		}
-
-		if (contains(other.x + other.width, other.y))
-		{
-			return true;
-		}
-
-		if (other.contains(x + width, y))
-		{
-			return true;
-		}
-
-		if (contains(other.x, other.y + other.height))
-		{
-			return true;
-		}
-
-		if (other.contains(x, y + height))
-		{
-			return true;
-		}
-
-		if (contains(other.x + other.width, other.y + other.height))
-		{
-			return true;
-		}
-
-		if (other.contains(x + width, y + height))
-		{
-			return true;
-		}
-
-		return false;
+		return new RotatedRectangle(this).overlaps(new RotatedRectangle(other));
 	}
-	
+
 	public static Rectangle add(Rectangle r1, Rectangle r2)
 	{
 		if (r1 == null)
@@ -184,30 +144,30 @@ public class Rectangle
 	{
 		return new Rectangle((int) x, (int) y, (int) width, (int) height);
 	}
-	
+
 	public Rectangle translate(double xTranslation, double yTranslation)
 	{
 		return new Rectangle(x + xTranslation, y + yTranslation, width, height);
 	}
-	
+
 	public Rectangle scaleAboutCenter(double scale)
 	{
-	    // Calculate the new dimensions after scaling
-        double newWidth = width * scale;
-        double newHeight = height * scale;
+		// Calculate the new dimensions after scaling
+		double newWidth = width * scale;
+		double newHeight = height * scale;
 
-        // Calculate the new center coordinates
-        double centerX = x + width / 2.0;
-        double centerY = y + height / 2.0;
+		// Calculate the new center coordinates
+		double centerX = x + width / 2.0;
+		double centerY = y + height / 2.0;
 
-        // Calculate the new top-left corner coordinates
-        double newX = centerX - newWidth / 2.0;
-        double newY = centerY - newHeight / 2.0;
+		// Calculate the new top-left corner coordinates
+		double newX = centerX - newWidth / 2.0;
+		double newY = centerY - newHeight / 2.0;
 
-        // Create and return the scaled rectangle
-        return new Rectangle(newX, newY, newWidth, newHeight);
+		// Create and return the scaled rectangle
+		return new Rectangle(newX, newY, newWidth, newHeight);
 	}
-	
+
 	public Rectangle scaleAboutOrigin(double scale)
 	{
 		return new Rectangle(x * scale, y * scale, width * scale, height * scale);

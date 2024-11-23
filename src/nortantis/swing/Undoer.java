@@ -38,7 +38,7 @@ public class Undoer
 		redoStack = null;
 		copyOfSettingsWhenEditorWasOpened = null;
 	}
-	
+
 	public void setUndoPoint(UpdateType updateType, EditorTool tool)
 	{
 		setUndoPoint(updateType, tool, null);
@@ -105,15 +105,15 @@ public class Undoer
 		{
 			return;
 		}
-		
+
 		mainWindow.toolsPanel.currentTool.onBeforeUndoRedo();
 
 		MapChange changeToUndo = undoStack.pop();
-		
-		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any 
+
+		// The change to undo should use the latest settings rather than what came from undo stack so that we catch any
 		// changes made after the latest undo point.
 		changeToUndo.settings = mainWindow.getSettingsFromGUI(true);
-		
+
 		redoStack.push(changeToUndo);
 		MapSettings settings;
 		if (undoStack.isEmpty())
@@ -132,12 +132,10 @@ public class Undoer
 
 		if (changeToUndo.toolThatMadeChange != null)
 		{
-			if (mainWindow.toolsPanel.currentTool != changeToUndo.toolThatMadeChange)
+			if (mainWindow.toolsPanel.currentTool == changeToUndo.toolThatMadeChange)
 			{
-				mainWindow.toolsPanel.handleToolSelected(changeToUndo.toolThatMadeChange);
+				changeToUndo.toolThatMadeChange.onAfterUndoRedo();
 			}
-
-			changeToUndo.toolThatMadeChange.onAfterUndoRedo();
 		}
 		else
 		{
@@ -146,6 +144,7 @@ public class Undoer
 		}
 
 		mainWindow.updater.createAndShowMapFromChange(changeToUndo);
+		mainWindow.updater.dowWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
 		updateUndoRedoEnabled();
 	}
 
@@ -175,12 +174,10 @@ public class Undoer
 		if (changeToRedo.toolThatMadeChange != null)
 		{
 			// Switch to the tool that made the change.
-			if (mainWindow.toolsPanel.currentTool != changeToRedo.toolThatMadeChange)
+			if (mainWindow.toolsPanel.currentTool == changeToRedo.toolThatMadeChange)
 			{
-				mainWindow.toolsPanel.handleToolSelected(changeToRedo.toolThatMadeChange);
+				changeToRedo.toolThatMadeChange.onAfterUndoRedo();
 			}
-
-			changeToRedo.toolThatMadeChange.onAfterUndoRedo();
 		}
 		else
 		{
@@ -191,6 +188,7 @@ public class Undoer
 		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange,
 				changeToRedo.preRun);
 		mainWindow.updater.createAndShowMapFromChange(changeWithPrevSettings);
+		mainWindow.updater.dowWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
 		updateUndoRedoEnabled();
 	}
 

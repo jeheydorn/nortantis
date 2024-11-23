@@ -3,6 +3,7 @@ package nortantis.swing;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -40,7 +41,8 @@ import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
+import nortantis.util.Counter;
 import nortantis.util.Tuple2;
 
 public class LandWaterTool extends EditorTool
@@ -72,12 +74,15 @@ public class LandWaterTool extends EditorTool
 	private JSlider saturationSlider;
 	private JSlider brightnessSlider;
 	private boolean areRegionColorsVisible;
+	private boolean areRegionBoundariesVisible;
 	private RowHider onlyUpdateLandCheckboxHider;
 	private RowHider generateColorButtonHider;
 	private RowHider colorGeneratorSettingsHider;
 	private JPanel baseColorPanel;
 	private ActionListener brushActionListener;
 	private DrawModeWidget modeWidget;
+	private JToggleButton newRegionButton;
+	private RowHider newRegionButtonHider;
 	static String toolbarName = "Land and Water";
 	static String colorGeneratorSettingsName = "Color Generator Settings";
 
@@ -93,9 +98,21 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
+	public int getMnemonic()
+	{
+		return KeyEvent.VK_Z;
+	}
+
+	@Override
+	public String getKeyboardShortcutText()
+	{
+		return "(Alt+Z)";
+	}
+
+	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.getInstallPath(), "internal/Land Water tool.png").toString();
+		return Paths.get(Assets.getAssetsPath(), "internal/Land Water tool.png").toString();
 	}
 
 	@Override
@@ -110,7 +127,6 @@ public class LandWaterTool extends EditorTool
 
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-
 
 		List<JComponent> radioButtons = new ArrayList<>();
 		ButtonGroup group = new ButtonGroup();
@@ -138,8 +154,11 @@ public class LandWaterTool extends EditorTool
 					selectColorHider.setVisible(false);
 					generateColorButtonHider.setVisible(false);
 					colorGeneratorSettingsHider.setVisible(false);
-					onlyUpdateLandCheckbox.setVisible(false);
+					onlyUpdateLandCheckbox.setVisible(landButton.isSelected());
 				}
+
+				showOrHideNewRegionButton();
+				newRegionButton.setSelected(false);
 
 				if (brushSizeComboBox != null)
 				{
@@ -156,7 +175,7 @@ public class LandWaterTool extends EditorTool
 		group.add(lakesButton);
 		radioButtons.add(lakesButton);
 		lakesButton.setToolTipText(
-				"Lakes are the same as ocean except they have no ocean effects (waves or darkening) along coastlines, and they don't do coastline smoothing when enabled.");
+				"Lakes are the same as ocean except ocean effects (waves or shading) along their shores can be disabled, and they don't do coastline smoothing when enabled.");
 		lakesButton.addActionListener(brushActionListener);
 
 		riversButton = new JRadioButton("Rivers");
@@ -173,11 +192,9 @@ public class LandWaterTool extends EditorTool
 		radioButtons.add(paintRegionButton);
 		paintRegionButton.addActionListener(brushActionListener);
 
-
 		group.add(fillRegionColorButton);
 		radioButtons.add(fillRegionColorButton);
 		fillRegionColorButton.addActionListener(brushActionListener);
-
 
 		group.add(mergeRegionsButton);
 		radioButtons.add(mergeRegionsButton);
@@ -189,6 +206,13 @@ public class LandWaterTool extends EditorTool
 
 		oceanButton.setSelected(true); // Selected by default
 		organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
+
+		// Create new region button
+		{
+			newRegionButton = new JToggleButton("Create New Political Region");
+			newRegionButtonHider = organizer.addLabelAndComponent("",
+					"Toggle this to start a new political region with the next brushstroke.", newRegionButton);
+		}
 
 		// River options
 		{
@@ -209,7 +233,6 @@ public class LandWaterTool extends EditorTool
 		colorDisplay = SwingHelper.createColorPickerPreviewPanel();
 		colorDisplay.setBackground(Color.black);
 
-
 		JButton chooseButton = new JButton("Choose");
 		chooseButton.addActionListener(new ActionListener()
 		{
@@ -222,12 +245,10 @@ public class LandWaterTool extends EditorTool
 		colorChooserHider = organizer.addLabelAndComponentsHorizontal("Color:", "", Arrays.asList(colorDisplay, chooseButton),
 				SwingHelper.colorPickerLeftPadding);
 
-
 		selectColorFromMapButton = new JToggleButton("Select Color From Map");
 		selectColorFromMapButton
 				.setToolTipText("To select the color of an existing region, click this button, then click that region on the map.");
 		selectColorHider = organizer.addLabelAndComponent("", "", selectColorFromMapButton, 0);
-
 
 		JButton generateColorButton = new JButton("Generate Color");
 		generateColorButton.setToolTipText("Generate a new color based on the random generation settings below.");
@@ -249,17 +270,13 @@ public class LandWaterTool extends EditorTool
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
 
-
 		onlyUpdateLandCheckbox = new JCheckBox("Only update existing land");
 		onlyUpdateLandCheckbox.setToolTipText("Causes the paint region brush to not create new land in the ocean.");
 		onlyUpdateLandCheckboxHider = organizer.addLabelAndComponent("", "", onlyUpdateLandCheckbox);
 
-
 		colorGeneratorSettingsHider = organizer.addLeftAlignedComponent(createColorGeneratorOptionsPanel(toolOptionsPanel));
 
-
 		showOrHideRegionColoringOptions();
-
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
 		organizer.addVerticalFillerRow();
@@ -277,7 +294,6 @@ public class LandWaterTool extends EditorTool
 		GridBagOrganizer organizer = new GridBagOrganizer();
 		organizer.panel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), colorGeneratorSettingsName));
 
-
 		baseColorPanel = SwingHelper.createColorPickerPreviewPanel();
 		final JButton baseColorChooseButton = new JButton("Choose");
 		baseColorChooseButton.addActionListener(new ActionListener()
@@ -293,7 +309,6 @@ public class LandWaterTool extends EditorTool
 				"The base color for generating new region colors. This is the map's land color when not coloring regions.",
 				Arrays.asList(baseColorPanel, baseColorChooseButton), SwingHelper.borderWidthBetweenComponents);
 
-
 		hueSlider = new JSlider();
 		hueSlider.setPaintTicks(true);
 		hueSlider.setPaintLabels(true);
@@ -302,7 +317,6 @@ public class LandWaterTool extends EditorTool
 		hueSlider.setMaximum(360);
 		organizer.addLabelAndComponent("Hue range:",
 				"The possible range of hue values for generated region colors. The range is centered at the base color hue.", hueSlider);
-
 
 		saturationSlider = new JSlider();
 		saturationSlider.setPaintTicks(true);
@@ -313,7 +327,6 @@ public class LandWaterTool extends EditorTool
 		organizer.addLabelAndComponent("Saturation range:",
 				"The possible range of saturation values for generated region colors. The range is centered at the land color saturation.",
 				saturationSlider);
-
 
 		brightnessSlider = new JSlider();
 		brightnessSlider.setPaintTicks(true);
@@ -332,22 +345,37 @@ public class LandWaterTool extends EditorTool
 	{
 		paintRegionButton.setVisible(areRegionColorsVisible);
 		fillRegionColorButton.setVisible(areRegionColorsVisible);
-		mergeRegionsButton.setVisible(areRegionColorsVisible);
+		mergeRegionsButton.setVisible(areRegionBoundariesVisible || areRegionColorsVisible);
 		landButton.setVisible(!areRegionColorsVisible);
 
 		colorChooserHider.setVisible(areRegionColorsVisible);
 		selectColorHider.setVisible(areRegionColorsVisible);
 
-		if (areRegionColorsVisible && landButton.isSelected())
+		if (landButton.isSelected() && !landButton.isVisible())
 		{
 			paintRegionButton.setSelected(true);
 		}
-		else if (!areRegionColorsVisible
-				&& (paintRegionButton.isSelected() || mergeRegionsButton.isSelected() || fillRegionColorButton.isSelected()))
+		else if (paintRegionButton.isSelected() && !paintRegionButton.isVisible())
 		{
 			landButton.setSelected(true);
 		}
+		else if (mergeRegionsButton.isSelected() && !mergeRegionsButton.isVisible())
+		{
+			landButton.setSelected(true);
+		}
+		else if (fillRegionColorButton.isSelected() && !fillRegionColorButton.isVisible())
+		{
+			landButton.setSelected(true);
+		}
+
 		brushActionListener.actionPerformed(null);
+
+		showOrHideNewRegionButton();
+	}
+
+	private void showOrHideNewRegionButton()
+	{
+		newRegionButtonHider.setVisible(areRegionBoundariesVisible && landButton.isSelected());
 	}
 
 	@Override
@@ -355,8 +383,10 @@ public class LandWaterTool extends EditorTool
 	{
 	}
 
+	private Integer regionIdToExpand;
 	private void handleMousePressOrDrag(MouseEvent e, boolean isMouseDrag)
 	{
+
 		if (mergeRegionsButton.isSelected() && isMouseDrag)
 		{
 			return;
@@ -424,11 +454,49 @@ public class LandWaterTool extends EditorTool
 		else if (landButton.isSelected())
 		{
 			Set<Center> selected = getSelectedCenters(e.getPoint());
+
+			if (!isMouseDrag)
+			{
+				// Set the id of the region that will be expanded as the user drags the mouse.
+
+				if (newRegionButton.isSelected())
+				{
+					Color color = mainWindow.getLandColor();
+					regionIdToExpand = createNewRegion(color);
+					newRegionButton.setSelected(false);
+				}
+				else
+				{
+					Counter<Integer> regionIdCounts = new Counter<>();
+					for (Center center : selected)
+					{
+						CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
+						if (edit.regionId != null)
+						{
+							regionIdCounts.addCount(edit.regionId, 1);
+						}
+					}
+
+					if (regionIdCounts.isEmpty())
+					{
+						regionIdToExpand = null;
+					}
+					else
+					{
+						regionIdToExpand = regionIdCounts.argmax();
+					}
+				}
+			}
+
 			boolean hasChange = false;
 			for (Center center : selected)
 			{
 				CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);
-				// Still need to add region IDs to edits because the user might switch to region editing later.
+				if (onlyUpdateLandCheckbox.isSelected() && edit.isWater)
+				{
+					continue;
+				}
+				// Always add region IDs to edits even if regions aren't displayed because the user might show them later.
 				Integer newRegionId = getOrCreateRegionIdForEdit(center, mainWindow.getLandColor());
 				hasChange |= (edit.regionId == null) || newRegionId != edit.regionId;
 				hasChange |= edit.isWater;
@@ -563,21 +631,26 @@ public class LandWaterTool extends EditorTool
 
 	private int getOrCreateRegionIdForEdit(Center center, Color color)
 	{
+		// When the land is a single color, and the user clicked down on centers that had a region id, use that one.
+		if (regionIdToExpand != null)
+		{
+			return regionIdToExpand;
+		}
+
 		// If a neighboring center has the desired region color, then use that region.
 		for (Center neighbor : center.neighbors)
 		{
 			CenterEdit neighborEdit = mainWindow.edits.centerEdits.get(neighbor.index);
-			if (neighborEdit.regionId != null
-					&& AwtFactory.unwrap(mainWindow.edits.regionEdits.get(neighborEdit.regionId).color).equals(color))
+			if (neighborEdit.regionId != null && (!areRegionColorsVisible
+					|| AwtFactory.unwrap(mainWindow.edits.regionEdits.get(neighborEdit.regionId).color).equals(color)))
 			{
 				return neighborEdit.regionId;
 			}
 		}
 
 		// Find the closest region of that color.
-		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream()
-				.filter(cEdit1 -> cEdit1.regionId != null
-						&& AwtFactory.unwrap(mainWindow.edits.regionEdits.get(cEdit1.regionId).color).equals(color))
+		Optional<CenterEdit> opt = mainWindow.edits.centerEdits.values().stream().filter(cEdit1 -> cEdit1.regionId != null
+				&& (!areRegionColorsVisible || AwtFactory.unwrap(mainWindow.edits.regionEdits.get(cEdit1.regionId).color).equals(color)))
 				.min((cEdit1, cEdit2) -> Double.compare(updater.mapParts.graph.centers.get(cEdit1.index).loc.distanceTo(center.loc),
 						updater.mapParts.graph.centers.get(cEdit2.index).loc.distanceTo(center.loc)));
 		if (opt.isPresent())
@@ -586,24 +659,29 @@ public class LandWaterTool extends EditorTool
 		}
 		else
 		{
-			int largestRegionId;
-			if (mainWindow.edits.regionEdits.isEmpty())
-			{
-				largestRegionId = -1;
-			}
-			else
-			{
-				largestRegionId = mainWindow.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId))
-						.get().regionId;
-			}
-
-			int newRegionId = largestRegionId + 1;
-
-			RegionEdit regionEdit = new RegionEdit(newRegionId, AwtFactory.wrap(color));
-			mainWindow.edits.regionEdits.put(newRegionId, regionEdit);
-
+			int newRegionId = createNewRegion(color);
 			return newRegionId;
 		}
+	}
+
+	private int createNewRegion(Color color)
+	{
+		int largestRegionId;
+		if (mainWindow.edits.regionEdits.isEmpty())
+		{
+			largestRegionId = -1;
+		}
+		else
+		{
+			largestRegionId = mainWindow.edits.regionEdits.values().stream().max((r1, r2) -> Integer.compare(r1.regionId, r2.regionId))
+					.get().regionId;
+		}
+
+		int newRegionId = largestRegionId + 1;
+
+		RegionEdit regionEdit = new RegionEdit(newRegionId, AwtFactory.wrap(color));
+		mainWindow.edits.regionEdits.put(newRegionId, regionEdit);
+		return newRegionId;
 	}
 
 	private void handleMapChange(Set<Center> centers)
@@ -625,6 +703,8 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
+		regionIdToExpand = null;
+
 		if (riversButton.isSelected() && modeWidget.isDrawMode())
 		{
 			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
@@ -653,6 +733,8 @@ public class LandWaterTool extends EditorTool
 				updater.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
+
+		updater.dowWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges());
 
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 	}
@@ -787,6 +869,7 @@ public class LandWaterTool extends EditorTool
 			boolean willDoImagesRefresh)
 	{
 		areRegionColorsVisible = settings.drawRegionColors;
+		areRegionBoundariesVisible = settings.drawRegionBoundaries;
 
 		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
@@ -798,9 +881,13 @@ public class LandWaterTool extends EditorTool
 			brightnessSlider.setValue(settings.brightnessRange);
 
 			// I'm setting this color here because I only want it to change when you create new settings or load settings from a file,
-			// not on undo/redo or in response to the Theme panel changing.
+			// not on undo/redo or in response to the ThemePanel changing.
 			colorDisplay.setBackground(AwtFactory.unwrap(settings.regionBaseColor));
 		}
+
+		// Clear any selection
+		selectedRegion = null;
+		mapEditingPanel.clearSelectedCenters();
 
 		showOrHideRegionColoringOptions();
 	}

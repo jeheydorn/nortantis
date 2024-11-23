@@ -31,7 +31,6 @@ public class ImageAndMasks
 	private Image shadingMask;
 	private IconType iconType;
 
-
 	public ImageAndMasks(Image image, IconType iconType)
 	{
 		this.image = image;
@@ -179,7 +178,6 @@ public class ImageAndMasks
 			}
 		}
 	}
-
 
 	public Image cropToContent()
 	{
@@ -392,7 +390,6 @@ public class ImageAndMasks
 
 		return null;
 	}
-
 
 	public static IntRectangle calcScaledContentBounds(Image originalContentMask, IntRectangle originalContentBounds, int scaledWidth,
 			int scaledHeight)

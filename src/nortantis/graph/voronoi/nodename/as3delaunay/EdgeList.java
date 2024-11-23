@@ -126,8 +126,7 @@ public final class EdgeList implements IDisposable
 			do
 			{
 				halfEdge = halfEdge.edgeListRightNeighbor;
-			}
-			while (halfEdge != rightEnd && halfEdge.isLeftOf(p));
+			} while (halfEdge != rightEnd && halfEdge.isLeftOf(p));
 			halfEdge = halfEdge.edgeListLeftNeighbor;
 		}
 		else
@@ -135,8 +134,7 @@ public final class EdgeList implements IDisposable
 			do
 			{
 				halfEdge = halfEdge.edgeListLeftNeighbor;
-			}
-			while (halfEdge != leftEnd && !halfEdge.isLeftOf(p));
+			} while (halfEdge != leftEnd && !halfEdge.isLeftOf(p));
 		}
 
 		/* Update hash table and reference counts */

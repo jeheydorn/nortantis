@@ -18,7 +18,6 @@ public class CenterEdit implements Serializable
 	public final CenterIcon icon;
 	public final CenterTrees trees;
 
-
 	public final int index;
 
 	public CenterEdit(int index, boolean isWater, boolean isLake, Integer regionId, CenterIcon icon, CenterTrees trees)
@@ -30,17 +29,17 @@ public class CenterEdit implements Serializable
 		this.trees = trees;
 		this.isLake = isLake;
 	}
-	
+
 	public CenterEdit copyWithIcon(CenterIcon icon)
 	{
 		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);
 	}
-	
+
 	public CenterEdit copyWithTrees(CenterTrees trees)
 	{
-		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);	
+		return new CenterEdit(index, isWater, isLake, regionId, icon, trees);
 	}
-	
+
 	@Override
 	public int hashCode()
 	{

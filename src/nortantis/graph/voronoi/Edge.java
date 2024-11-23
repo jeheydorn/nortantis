@@ -134,7 +134,7 @@ public class Edge implements Comparable<Edge>
 
 		return false;
 	}
-	
+
 	public boolean isRiver()
 	{
 		return river > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn;
@@ -160,6 +160,52 @@ public class Edge implements Comparable<Edge>
 		return v0;
 	}
 
+	public Corner findCornerSharedWithEdge(Edge other)
+	{
+		if (v0 != null && v0.protrudesContains(other))
+		{
+			return v0;
+		}
+		if (v1 != null && v1.protrudesContains(other))
+		{
+			return v1;
+		}
+		return null;
+	}
+
+	public Corner findCornerNotSharedWithEdge(Edge other)
+	{
+		if (v0 != null && !v0.protrudesContains(other))
+		{
+			return v0;
+		}
+		if (v1 != null && !v1.protrudesContains(other))
+		{
+			return v1;
+		}
+		return null;
+	}
+
+	public boolean sharesCornerWith(Edge other)
+	{
+		if (other == null)
+		{
+			return false;
+		}
+
+		if (v0 != null && (v0.equals(other.v0) || v0.equals(other.v1)))
+		{
+			return true;
+		}
+
+		if (v1 != null && (v1.equals(other.v0) || v1.equals(other.v1)))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 	@Override
 	public String toString()
 	{
@@ -170,6 +216,33 @@ public class Edge implements Comparable<Edge>
 		b.append(v1);
 		b.append("}");
 		return b.toString();
+	}
+
+	// Override hashCode and equals methods so that HashSets order edges in a consistent order between runs. Otherwise
+	// Center.orderEdgesAroundCenter can return different results based on in-memory addresses from one run to another.
+	@Override
+	public int hashCode()
+	{
+		return index;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		Edge other = (Edge) obj;
+		return index == other.index;
 	}
 
 }

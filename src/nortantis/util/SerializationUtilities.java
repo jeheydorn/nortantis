@@ -90,7 +90,6 @@ public class SerializationUtilities
 		oos.close();
 	}
 
-
 	/**
 	 * Convenience method used to deserialize objects from a file
 	 * 

@@ -1,24 +1,21 @@
 package nortantis;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 
 import nortantis.MapSettings.LineStyle;
-import nortantis.MapSettings.OceanEffect;
+import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
-import nortantis.util.AssetsPath;
+import nortantis.util.Assets;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 
@@ -28,7 +25,7 @@ import nortantis.util.Range;
  */
 public class SettingsGenerator
 {
-	private static String defaultSettingsFile = Paths.get(AssetsPath.getInstallPath(), "internal/old_paper.properties").toString();
+	private static String defaultSettingsFile = Paths.get(Assets.getAssetsPath(), "internal/old_paper.properties").toString();
 	public static int minWorldSize = 2000;
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
@@ -43,20 +40,18 @@ public class SettingsGenerator
 	public static final int defaultCoastShadingAlpha = 87;
 	public static final int defaultOceanShadingAlpha = 87;
 	public static final int defaultOceanRipplesAlpha = 204;
-	
-	public static MapSettings generate(String imagesPath)
+	public static final float maxLineWidthInEditor = 10f;
+
+	public static MapSettings generate(String customImageFolder)
 	{
 		Random rand = new Random();
-		return generate(rand, imagesPath);
+		String artPack = ProbabilityHelper.sampleUniform(rand, Assets.listArtPacks(!StringUtils.isEmpty(customImageFolder)));
+		return generate(rand, artPack, customImageFolder);
 	}
 
-	public static MapSettings generate(Random rand, String imagesPath)
+	@SuppressWarnings("deprecation")
+	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
 	{
-		if (!Files.exists(Paths.get(defaultSettingsFile)))
-		{
-			throw new IllegalArgumentException("The default settings files " + defaultSettingsFile + " does not exist");
-		}
-		
 		// Prime the random number generator
 		for (int i = 0; i < 100; i++)
 		{
@@ -69,13 +64,20 @@ public class SettingsGenerator
 
 		setRandomSeeds(settings, rand);
 
+		if (artPack == null)
+		{
+			throw new IllegalArgumentException("artPack cannot be null.");
+		}
+		settings.artPack = artPack;
+		settings.customImagesPath = customImagesFolder;
+
 		int hueRange = 16;
 		int saturationRange = 25;
 		int brightnessRange = 25;
 
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		Color oceanColor;
-		if (settings.oceanEffect == OceanEffect.Ripples)
+		if (settings.oceanWavesType == OceanWaves.Ripples)
 		{
 			oceanColor = settings.oceanColor;
 		}
@@ -87,11 +89,17 @@ public class SettingsGenerator
 		{
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
-		settings.oceanEffect = ProbabilityHelper.sampleEnumUniform(rand, OceanEffect.class);
+
+		List<OceanWaves> oceanWaveOptions = new ArrayList<>(Arrays.asList(OceanWaves.values()));
+		// Remove deprecated option.
+		oceanWaveOptions.remove(OceanWaves.Blur);
+
+		settings.oceanWavesType = ProbabilityHelper.sampleUniform(rand, oceanWaveOptions);
 		settings.drawOceanEffectsInLakes = true;
-		settings.oceanEffectsLevel = 15 + Math.abs(rand.nextInt(35));
+		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
+		settings.oceanShadingLevel = 0;
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
-				Math.min(maxConcentricWaveCountToGenerate, Math.abs((new Random().nextInt() % maxConcentricWaveCountInEditor)) + 1));
+				Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
@@ -104,22 +112,36 @@ public class SettingsGenerator
 				(int) (settings.landColor.getGreen() * landBlurColorScale), (int) (settings.landColor.getBlue() * landBlurColorScale),
 				defaultCoastShadingAlpha);
 
-		if (settings.oceanEffect == OceanEffect.Ripples || settings.oceanEffect == OceanEffect.Blur)
 		{
-			final int oceanEffectsAlpha = settings.oceanEffect == OceanEffect.Ripples ? defaultOceanRipplesAlpha : settings.oceanEffect == OceanEffect.Blur ? defaultOceanShadingAlpha : 0;
-			double oceanEffectsColorScale = 0.3;
-			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), oceanEffectsAlpha);
+			double oceanShadingColorScale = 0.3;
+			settings.oceanShadingColor = Color.create((int) (settings.oceanColor.getRed() * oceanShadingColorScale),
+					(int) (settings.oceanColor.getGreen() * oceanShadingColorScale),
+					(int) (settings.oceanColor.getBlue() * oceanShadingColorScale), defaultOceanShadingAlpha);
+		}
+
+		if (settings.oceanWavesType == OceanWaves.None)
+		{
+			// Use ocean shading instead.
+			// Not that I don't generate a map that uses both shading and waves because although it can look nice, it renders slowly, so I
+			// don't encourage it.
+			settings.oceanShadingLevel = 20 + Math.abs(rand.nextInt(40));
+		}
+
+		if (settings.oceanWavesType == OceanWaves.Ripples)
+		{
+			double ripplesColorScale = 0.3;
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * ripplesColorScale),
+					(int) (settings.oceanColor.getGreen() * ripplesColorScale), (int) (settings.oceanColor.getBlue() * ripplesColorScale),
+					defaultOceanRipplesAlpha);
 		}
 		else
 		{
 			// Concentric waves
-			double oceanEffectsColorScale = 0.5;
+			double wavesColorScale = 0.5;
 			int alpha = 255;
-			settings.oceanEffectsColor = Color.create((int) (settings.oceanColor.getRed() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getGreen() * oceanEffectsColorScale),
-					(int) (settings.oceanColor.getBlue() * oceanEffectsColorScale), alpha);
+			settings.oceanWavesColor = Color.create((int) (settings.oceanColor.getRed() * wavesColorScale),
+					(int) (settings.oceanColor.getGreen() * wavesColorScale), (int) (settings.oceanColor.getBlue() * wavesColorScale),
+					alpha);
 
 		}
 		settings.riverColor = MapCreator.generateColorFromBaseColor(rand, settings.riverColor, hueRange, saturationRange, brightnessRange);
@@ -131,22 +153,26 @@ public class SettingsGenerator
 
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 
-		settings.customImagesPath = UserPreferences.getInstance().defaultCustomImagesPath;
 		settings.treeHeightScale = 0.35;
 
 		final double drawBorderProbability = 0.75;
 		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
-		Set<String> borderTypes = MapCreator.getAvailableBorderTypes(imagesPath);
+		List<NamedResource> borderTypes = Assets.listBorderTypesForArtPack(artPack, customImagesFolder);
+		if (borderTypes.isEmpty())
+		{
+			borderTypes = Assets.listAllBorderTypes(customImagesFolder);
+		}
+		// Note- borderTypes shouldn't be empty since that would mean there's no border types, including installed ones.
 		if (!borderTypes.isEmpty())
 		{
 			// Random border type.
-			int index = Math.abs(rand.nextInt()) % borderTypes.size();
-			settings.borderType = borderTypes.toArray(new String[borderTypes.size()])[index];
-			if (settings.borderType.equals("dashes"))
+			settings.borderResource = ProbabilityHelper.sampleUniform(rand, borderTypes);
+
+			if (settings.borderResource.name.equals("dashes"))
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(50)) + 25;
 			}
-			else if (settings.borderType.equals("dashes with inset corners"))
+			else if (settings.borderResource.name.equals("dashes with inset corners"))
 			{
 				settings.borderWidth = Math.abs(rand.nextInt(75)) + 50;
 			}
@@ -158,7 +184,7 @@ public class SettingsGenerator
 
 		if (settings.drawBorder)
 		{
-			if (settings.borderType.equals("dashes"))
+			if (settings.borderResource.name.equals("dashes"))
 			{
 				settings.frayedBorder = false;
 			}
@@ -178,15 +204,18 @@ public class SettingsGenerator
 
 		settings.cityProbability = 0.25 * maxCityProbabillity;
 
-		Set<String> cityIconTypes = ImageCache.getInstance(settings.customImagesPath).getIconGroupNames(IconType.cities);
+		List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
 		if (cityIconTypes.size() > 0)
 		{
 			settings.cityIconTypeName = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
 		}
 
+		settings.drawRegionBoundaries = rand.nextDouble() > 0.25;
 		settings.drawRegionColors = rand.nextDouble() > 0.25;
+		settings.regionBoundaryStyle = new Stroke(ProbabilityHelper.sampleEnumUniform(rand, StrokeType.class),
+				settings.regionBoundaryStyle.width);
 
-		if (rand.nextDouble() > 0.25)
+		if (rand.nextDouble() > 0.75)
 		{
 			settings.generateBackground = true;
 			settings.generateBackgroundFromTexture = false;
@@ -200,21 +229,14 @@ public class SettingsGenerator
 
 		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching
 		// to the background texture file path field.
-		Path exampleTexturesPath = Paths.get(AssetsPath.getInstallPath(), "example textures");
-		List<Path> textureFiles;
-		try
+		List<NamedResource> textureFiles = Assets.listBackgroundTexturesForArtPack(artPack, settings.customImagesPath);
+		if (textureFiles.isEmpty())
 		{
-			textureFiles = Files.list(exampleTexturesPath).filter(path -> !Files.isDirectory(path)).collect(Collectors.toList());
-		}
-		catch (IOException ex)
-		{
-			throw new RuntimeException("The example textures folder does not exist.", ex);
+			textureFiles = Assets.listBackgroundTexturesForAllArtPacks(settings.customImagesPath);
 		}
 
-		if (textureFiles.size() > 0)
-		{
-			settings.backgroundTextureImage = ProbabilityHelper.sampleUniform(rand, textureFiles).toAbsolutePath().toString();
-		}
+		settings.backgroundTextureResource = ProbabilityHelper.sampleUniform(rand, textureFiles);
+		settings.backgroundTextureSource = TextureSource.Assets;
 
 		settings.drawBoldBackground = rand.nextDouble() > 0.5;
 		settings.boldBackgroundColor = MapCreator.generateColorFromBaseColor(rand, settings.boldBackgroundColor, hueRange, saturationRange,
@@ -265,7 +287,7 @@ public class SettingsGenerator
 
 		return settings;
 	}
-	
+
 	private static void setRandomSeeds(MapSettings settings, Random rand)
 	{
 		long seed = Math.abs(rand.nextInt());
@@ -293,13 +315,7 @@ public class SettingsGenerator
 
 	public static List<String> getAllBooks()
 	{
-		String[] filenames = new File(Paths.get(AssetsPath.getInstallPath(), "books").toString()).list(new FilenameFilter()
-		{
-			public boolean accept(File arg0, String name)
-			{
-				return name.endsWith("_place_names.txt");
-			}
-		});
+		List<String> filenames = Assets.listFileNames(Paths.get(Assets.getAssetsPath(), "books").toString(), null, "_place_names.txt");
 
 		List<String> result = new ArrayList<>();
 		for (String filename : filenames)

@@ -8,7 +8,7 @@ import nortantis.platform.Transform;
 public class AwtTransform extends Transform
 {
 	AffineTransform transform;
-	
+
 	public AwtTransform(AffineTransform transform)
 	{
 		this.transform = transform;
@@ -17,7 +17,7 @@ public class AwtTransform extends Transform
 	@Override
 	public Transform copy()
 	{
-		return new AwtTransform(new AffineTransform(((AwtTransform)this).transform));
+		return new AwtTransform(new AffineTransform(((AwtTransform) this).transform));
 	}
 
 	@Override

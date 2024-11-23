@@ -10,7 +10,7 @@ import nortantis.platform.FontStyle;
 public class AwtFont extends Font implements Serializable
 {
 	public java.awt.Font font;
-	
+
 	public AwtFont(java.awt.Font font)
 	{
 		this.font = font;
@@ -21,7 +21,7 @@ public class AwtFont extends Font implements Serializable
 	{
 		return new AwtFont(font.deriveFont(convertFontStyle(style), size));
 	}
-	
+
 	private int convertFontStyle(FontStyle style)
 	{
 		if (style == FontStyle.Italic)

@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,6 +21,7 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,7 +34,9 @@ import nortantis.MapText;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
-import nortantis.util.AssetsPath;
+import nortantis.platform.Color;
+import nortantis.platform.awt.AwtFactory;
+import nortantis.util.Assets;
 import nortantis.util.Tuple2;
 
 public class TextTool extends EditorTool
@@ -58,6 +62,15 @@ public class TextTool extends EditorTool
 	private RowHider clearRotationButtonHider;
 	private JComboBoxFixed<LineBreak> lineBreakComboBox;
 	private RowHider lineBreakHider;
+	private JCheckBox useDefaultColorCheckbox;
+	private JPanel colorOverrideDisplay;
+	private RowHider useDefaultColorCheckboxHider;
+	private RowHider colorOverrideHider;
+	private Color defaultTextColor;
+	private Color defaultBoldBackgroundColor;
+	private JPanel boldBackgroundColorOverrideDisplay;
+	private RowHider boldBackgroundColorOverrideHider;
+	private boolean areBoldBackgroundsVisible;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -165,26 +178,6 @@ public class TextTool extends EditorTool
 			textTypeComboBox.addItem(type);
 		}
 
-		JButton clearRotationButton = new JButton("Rotate to Horizontal");
-		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
-		clearRotationButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				if (lastSelected != null)
-				{
-					MapText before = lastSelected.deepCopy();
-					lastSelected.angle = 0;
-					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
-					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
-					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
-				}
-			}
-		});
-		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
-
-
 		lineBreakComboBox = new JComboBoxFixed<>();
 		lineBreakHider = organizer.addLabelAndComponent("Number of lines:", "", lineBreakComboBox);
 		for (LineBreak type : LineBreak.values())
@@ -207,6 +200,97 @@ public class TextTool extends EditorTool
 			}
 		});
 
+		JButton clearRotationButton = new JButton("Rotate to Horizontal");
+		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
+		clearRotationButton.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (lastSelected != null)
+				{
+					MapText before = lastSelected.deepCopy();
+					lastSelected.angle = 0;
+					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+				}
+			}
+		});
+		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
+
+		useDefaultColorCheckbox = new JCheckBox("Use default color");
+		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");
+		useDefaultColorCheckbox.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				colorOverrideHider.setVisible(!useDefaultColorCheckbox.isSelected());
+				showOrHideBoldBackgroundFields(lastSelected);
+				if (useDefaultColorCheckbox.isSelected())
+				{
+					lastSelected.colorOverride = null;
+					lastSelected.boldBackgroundColorOverride = null;
+					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
+				}
+				else
+				{
+					// I'm not setting an undo point here because, although this is a change to the map settings, it doesn't change the
+					// appearance of the map, so I think it could be confusing to then hit the undo button and nothing seems to change
+					// unless you know which text to look at to see this checkbox flip.
+					lastSelected.colorOverride = defaultTextColor;
+					colorOverrideDisplay.setBackground(AwtFactory.unwrap(defaultTextColor));
+					lastSelected.boldBackgroundColorOverride = defaultBoldBackgroundColor;
+					boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(defaultBoldBackgroundColor));
+				}
+
+			}
+		});
+		useDefaultColorCheckboxHider = organizer.addLeftAlignedComponent(useDefaultColorCheckbox);
+
+		colorOverrideDisplay = SwingHelper.createColorPickerPreviewPanel();
+		JButton buttonChooseColorOverride = new JButton("Choose");
+		buttonChooseColorOverride.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				SwingHelper.showColorPicker(organizer.panel, colorOverrideDisplay, "Text Color", () ->
+				{
+					if (lastSelected != null)
+					{
+						lastSelected.colorOverride = AwtFactory.wrap(colorOverrideDisplay.getBackground());
+						undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+						updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
+					}
+				});
+			}
+		});
+		colorOverrideHider = organizer.addLabelAndComponentsHorizontal("Color:", "Change the color of this text",
+				Arrays.asList(colorOverrideDisplay, buttonChooseColorOverride), SwingHelper.colorPickerLeftPadding);
+
+		boldBackgroundColorOverrideDisplay = SwingHelper.createColorPickerPreviewPanel();
+		JButton buttonChooseBoldBackgroundColorOverride = new JButton("Choose");
+		buttonChooseBoldBackgroundColorOverride.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				SwingHelper.showColorPicker(organizer.panel, boldBackgroundColorOverrideDisplay, "Text Bold Background Color", () ->
+				{
+					if (lastSelected != null)
+					{
+						lastSelected.boldBackgroundColorOverride = AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground());
+						undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+						updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
+					}
+				});
+			}
+		});
+		boldBackgroundColorOverrideHider = organizer.addLabelAndComponentsHorizontal("Bold background color:",
+				"Change the color of the bold background of this text",
+				Arrays.asList(boldBackgroundColorOverrideDisplay, buttonChooseBoldBackgroundColorOverride),
+				SwingHelper.colorPickerLeftPadding);
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -224,6 +308,12 @@ public class TextTool extends EditorTool
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
 		organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
+	}
+
+	protected void showOrHideBoldBackgroundFields(MapText selectedText)
+	{
+		boldBackgroundColorOverrideHider.setVisible(editButton.isSelected() && selectedText != null && !useDefaultColorCheckbox.isSelected()
+				&& areBoldBackgroundsVisible && (selectedText.type == TextType.Title || selectedText.type == TextType.Region));
 	}
 
 	private void handleActionChanged()
@@ -250,6 +340,9 @@ public class TextTool extends EditorTool
 		booksHider.setVisible(addButton.isSelected());
 		editTextFieldHider.setVisible(false);
 		lineBreakHider.setVisible(false);
+		useDefaultColorCheckboxHider.setVisible(false);
+		colorOverrideHider.setVisible(false);
+		boldBackgroundColorOverrideHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
 		if (editButton.isSelected() && lastSelected != null)
 		{
@@ -278,9 +371,21 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
+	public int getMnemonic()
+	{
+		return KeyEvent.VK_C;
+	}
+
+	@Override
+	public String getKeyboardShortcutText()
+	{
+		return "(Alt+C)";
+	}
+
+	@Override
 	public String getImageIconFilePath()
 	{
-		return Paths.get(AssetsPath.getInstallPath(), "internal/Text tool.png").toString();
+		return Paths.get(Assets.getAssetsPath(), "internal/Text tool.png").toString();
 	}
 
 	@Override
@@ -314,7 +419,7 @@ public class TextTool extends EditorTool
 		{
 			return;
 		}
-		
+
 		isRotating = false;
 		isMoving = false;
 
@@ -522,13 +627,19 @@ public class TextTool extends EditorTool
 	{
 		if (lastSelected != null && !(editTextField.getText().trim().equals(lastSelected.value)
 				&& textTypeComboBox.getSelectedItem().equals(lastSelected.type)
-				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())))
+				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())
+				&& Objects.equals(lastSelected.colorOverride, AwtFactory.wrap(colorOverrideDisplay.getBackground())) && Objects.equals(
+						lastSelected.boldBackgroundColorOverride, AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground()))))
 		{
 			MapText before = lastSelected.deepCopy();
 			// The user changed the last selected text. Need to save the change.
 			lastSelected.value = editTextField.getText().trim();
 			lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
 			lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
+			lastSelected.colorOverride = colorOverrideHider.isVisible() ? AwtFactory.wrap(colorOverrideDisplay.getBackground()) : null;
+			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideHider.isVisible()
+					? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground())
+					: null;
 
 			// Need to re-draw all of the text.
 			undoer.setUndoPoint(UpdateType.Text, this);
@@ -538,13 +649,7 @@ public class TextTool extends EditorTool
 		if (selectedText == null)
 		{
 			triggerPurgeEmptyText();
-			
-			mapEditingPanel.clearTextBox();
-			editTextField.setText("");
-			editTextFieldHider.setVisible(false);
-			clearRotationButtonHider.setVisible(false);
-			textTypeHider.setVisible(false);
-			lineBreakHider.setVisible(false);
+			hideTextEditComponents();
 		}
 		else
 		{
@@ -564,17 +669,46 @@ public class TextTool extends EditorTool
 			textTypeHider.setVisible(true);
 			lineBreakComboBox.setSelectedItem(selectedText.lineBreak);
 			lineBreakHider.setVisible(true);
+			useDefaultColorCheckboxHider.setVisible(true);
+			useDefaultColorCheckbox.setSelected(selectedText.colorOverride == null);
+			colorOverrideHider.setVisible(selectedText.colorOverride != null);
+			if (selectedText.colorOverride != null && selectedText.boldBackgroundColorOverride == null)
+			{
+				selectedText.boldBackgroundColorOverride = defaultBoldBackgroundColor;
+			}
+			showOrHideBoldBackgroundFields(selectedText);
+			if (selectedText.colorOverride != null)
+			{
+				colorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.colorOverride));
+			}
+			if (selectedText.boldBackgroundColorOverride != null)
+			{
+				boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.boldBackgroundColorOverride));
+			}
 		}
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;
 	}
-	
+
+	private void hideTextEditComponents()
+	{
+		mapEditingPanel.clearTextBox();
+		editTextField.setText("");
+		editTextFieldHider.setVisible(false);
+		clearRotationButtonHider.setVisible(false);
+		textTypeHider.setVisible(false);
+		lineBreakHider.setVisible(false);
+		useDefaultColorCheckboxHider.setVisible(false);
+		colorOverrideHider.setVisible(false);
+		boldBackgroundColorOverrideHider.setVisible(false);
+	}
+
 	private void triggerPurgeEmptyText()
 	{
 		if (updater != null)
 		{
-			updater.dowWhenMapIsNotDrawing(() -> 
+			updater.dowWhenMapIsNotDrawing(() ->
 			{
 				if (mainWindow.edits != null && mainWindow.edits.isInitialized())
 				{
@@ -608,7 +742,6 @@ public class TextTool extends EditorTool
 		mapEditingPanel.clearProcessingAreas();
 		mapEditingPanel.repaint();
 	}
-	
 
 	@Override
 	protected void onBeforeUndoRedo()
@@ -616,7 +749,7 @@ public class TextTool extends EditorTool
 		// Create an undo point for any current changes.
 		handleSelectingTextToEdit(lastSelected, false);
 	}
-	
+
 	@Override
 	protected void onAfterUndoRedo()
 	{
@@ -690,6 +823,15 @@ public class TextTool extends EditorTool
 			booksWidget.checkSelectedBooks(settings.books);
 		}
 
+		defaultTextColor = settings.textColor;
+		defaultBoldBackgroundColor = settings.boldBackgroundColor;
+		boolean boldBackgroundVisibleChanged = areBoldBackgroundsVisible != settings.drawBoldBackground;
+		areBoldBackgroundsVisible = settings.drawBoldBackground;
+		if (editButton.isSelected() && lastSelected != null && boldBackgroundVisibleChanged)
+		{
+			handleSelectingTextToEdit(lastSelected, false);
+		}
+
 		handleEnablingAndDisabling(settings);
 		drawTextDisabledLabelHider.setVisible(!settings.drawText);
 		if (!settings.drawText)
@@ -719,8 +861,12 @@ public class TextTool extends EditorTool
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
-		lastSelected = null;
-		editTextField.setText("");
+		if (editButton.isSelected() && lastSelected != null)
+		{
+			lastSelected = null;
+			editTextField.setText("");
+			hideTextEditComponents();
+		}
 	}
 
 }

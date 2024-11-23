@@ -1,5 +1,3 @@
-REM Before running this script, in Eclipse, change AssetsPath.isInstalled to true.
-
 REM When updating the app version, make sure to also update MapSettings.currentVersion.
 
 set inputFolder=installer_input
@@ -7,13 +5,15 @@ set exeName=Nortantis
 
 REM Build the jar file
 pushd ..
-call gradle :jar
+call .\gradlew :jar
 popd
 
-RMDIR /S /Q installer_input
+IF EXIST installer_input (
+    RMDIR /S /Q installer_input
+)
 MKDIR %inputFolder%
-Xcopy "../assets" "%inputFolder%/assets" /E /I
 copy ..\build\libs\Nortantis.jar %inputFolder%
+copy "taskbar icon.ico" %inputFolder%
 
 jpackage ^
 --input "%inputFolder%" ^
@@ -24,9 +24,9 @@ jpackage ^
 --win-menu ^
 --win-shortcut ^
 --icon "taskbar icon.ico" ^
---file-associations file_associations.txt ^
+--file-associations file_associations_windows.txt ^
 --vendor "Joseph Heydorn" ^
---app-version "2.85" ^
+--app-version "2.91" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^

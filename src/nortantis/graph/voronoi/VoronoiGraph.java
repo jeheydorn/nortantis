@@ -19,7 +19,6 @@ import java.util.function.Function;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
-import nortantis.MapCreator;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -106,7 +105,6 @@ public abstract class VoronoiGraph
 		buildGraph(v);
 		improveCorners();
 		storeOriginalCornerLocations();
-		storeOriginalCentersLocations();
 		assignBorderToCenters();
 		setupRandomSeeds(rand);
 
@@ -123,7 +121,7 @@ public abstract class VoronoiGraph
 			assignBiomes();
 		}
 	}
-	
+
 	private void setupRandomSeeds(Random rand)
 	{
 		for (Center c : centers)
@@ -144,15 +142,6 @@ public abstract class VoronoiGraph
 			c.originalLoc = c.loc;
 		}
 	}
-
-	private void storeOriginalCentersLocations()
-	{
-		for (Center c : centers)
-		{
-			c.originalLoc = c.loc;
-		}
-	}
-
 
 	private void assignBorderToCenters()
 	{
@@ -420,21 +409,6 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawVoronoi(Painter g)
-	{
-		g.setColor(Color.white);
-		for (Corner c : corners)
-		{
-			for (Corner adjacent : c.adjacent)
-			{
-				g.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
-			}
-		}
-	}
-
-	/**
-	 * For debugging
-	 */
 	public void drawDelaunay(Painter g)
 	{
 		for (Edge e : edges)
@@ -448,13 +422,63 @@ public abstract class VoronoiGraph
 	/**
 	 * For debugging
 	 */
-	public void drawCorners(Painter g)
+	public void drawVoronoi(Painter g, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
-		for (Corner c : corners)
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		g.setColor(Color.white);
+
+		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
+		for (Corner c : cornersToDraw)
+		{
+			for (Corner adjacent : c.adjacent)
+			{
+				g.drawLine((int) c.loc.x, (int) c.loc.y, (int) adjacent.loc.x, (int) adjacent.loc.y);
+			}
+		}
+
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
+		}
+	}
+
+	protected Set<Corner> getCornersFromCenters(Collection<Center> centers)
+	{
+		Set<Corner> result = new HashSet<>();
+		centers.stream().forEach(c -> result.addAll(c.corners));
+		return result;
+	}
+
+	/**
+	 * For debugging
+	 */
+	public void drawCorners(Painter g, Collection<Center> centersToDraw, Rectangle drawBounds)
+	{
+		Transform orig = null;
+		if (drawBounds != null)
+		{
+			orig = g.getTransform();
+			g.translate(-drawBounds.x, -drawBounds.y);
+		}
+
+		Collection<Corner> cornersToDraw = centersToDraw == null ? corners : getCornersFromCenters(centersToDraw);
+		for (Corner c : cornersToDraw)
 		{
 			g.setColor(Color.pink);
 
-			g.fillOval((int) (c.loc.x - 5), (int) (c.loc.y - 5), 10, 10);
+			g.fillOval((int) (c.loc.x - 5 * resolutionScale), (int) (c.loc.y - 5 * resolutionScale), (int) (10 * resolutionScale),
+					(int) (10 * resolutionScale));
+		}
+
+		if (drawBounds != null)
+		{
+			g.setTransform(orig);
 		}
 	}
 
@@ -476,7 +500,8 @@ public abstract class VoronoiGraph
 		});
 	}
 
-	public void drawRivers(Painter g, Collection<Edge> edgesToDraw, Rectangle drawBounds)
+	public void drawRivers(Painter p, Collection<Edge> edgesToDraw, Rectangle drawBounds, Color riverColor,
+			boolean areRegionBoundariesVisible, Color regionBoundaryColor)
 	{
 		if (edgesToDraw == null)
 		{
@@ -486,16 +511,27 @@ public abstract class VoronoiGraph
 		Transform orig = null;
 		if (drawBounds != null)
 		{
-			orig = g.getTransform();
-			g.translate(-drawBounds.x, -drawBounds.y);
+			orig = p.getTransform();
+			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
 		for (Edge e : edgesToDraw)
 		{
 			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
+				// If a river is also a region boundary, and region boundaries are visible, then draw the river with the region boundary
+				// color.
+				if (areRegionBoundariesVisible && e.isRegionBoundary())
+				{
+					p.setColor(regionBoundaryColor);
+				}
+				else
+				{
+					p.setColor(riverColor);
+				}
+
 				float currentWidth = calcRiverStrokeWidth(e);
-				
+
 				Edge fromEdge = null;
 				if (e.v0 != null)
 				{
@@ -509,22 +545,24 @@ public abstract class VoronoiGraph
 					toEdge = noisyEdges.findEdgeToFollow(e.v1, e);
 				}
 				float toWidth = (toEdge == null || !toEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(toEdge);
-				
-				drawPathWithSmoothLineTransitions(g, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
+
+				drawPathWithSmoothLineTransitions(p, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
+
 			}
 		}
 
 		if (drawBounds != null)
+
 		{
-			g.setTransform(orig);
+			p.setTransform(orig);
 		}
 	}
-	
+
 	private float calcRiverStrokeWidth(Edge e)
 	{
-		return Math.max(1, (int) (resolutionScale * Math.sqrt(e.river * 0.5)));
+		return (float) (resolutionScale * Math.sqrt(e.river * 0.5));
 	}
-	
+
 	protected void drawUsingTriangles(Painter g, Center c, boolean drawElevation)
 	{
 		// Only used if Center c is on the edge of the graph. allows for
@@ -657,7 +695,8 @@ public abstract class VoronoiGraph
 
 						// One of the corners of the graph is the next point. Determine which corner that is.
 						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
-						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y)
+								? bounds.y
 								: bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
@@ -683,6 +722,11 @@ public abstract class VoronoiGraph
 	private void drawPathWithSmoothLineTransitions(Painter p, List<Point> path, float previousEdgeWidth, float currentEdgeWidth,
 			float nextEdgeWidth)
 	{
+		if (path == null)
+		{
+			return;
+		}
+
 		if (path.size() < 2)
 		{
 			return;
@@ -693,10 +737,10 @@ public abstract class VoronoiGraph
 		float previousWidth = widthAtStart;
 		List<Point> pathSoFar = new ArrayList<Point>();
 		pathSoFar.add(path.get(0));
-		
+
 		float pathLength = getPathLength(path);
 		float lengthSoFar = 0;
-		
+
 		for (int i = 1; i < path.size(); i++)
 		{
 			float width;
@@ -711,67 +755,91 @@ public abstract class VoronoiGraph
 				float ratio = distanceRatio - 0.5f;
 				width = (1f - ratio) * currentEdgeWidth + ratio * widthAtEnd;
 			}
-			
+
 			pathSoFar.add(path.get(i));
 			if (width != previousWidth)
 			{
 				p.setBasicStroke(width);
 				drawPolyline(p, pathSoFar);
 				pathSoFar.add(path.get(i));
-			}			
-			
+			}
+
 			lengthSoFar += (float) path.get(i - 1).distanceTo(path.get(i));
 		}
-		
+
 		if (pathSoFar.size() > 1)
 		{
 			p.setBasicStroke(widthAtEnd);
 			drawPolyline(p, pathSoFar);
 		}
 	}
-	
+
 	private float getPathLength(List<Point> path)
 	{
 		if (path.size() < 2)
 		{
 			return 0;
 		}
-		
+
 		float length = 0;
 		for (int i = 1; i < path.size(); i++)
 		{
-			length += (float) path.get(i-1).distanceTo(path.get(i));
+			length += (float) path.get(i - 1).distanceTo(path.get(i));
 		}
-		
+
 		return length;
 	}
 
-	public void drawCoastline(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
+	public Set<Center> getCentersFromEdges(Collection<Edge> edges)
 	{
-		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoast());
-	}
-
-	public void drawCoastlineWithLakeShores(Painter p, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds)
-	{
-		drawSpecifiedEdges(p, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge -> edge.isCoastOrLakeShore());
-	}
-
-	public void drawRegionBorders(Painter g, double strokeWidth, boolean ignoreRiverEdges, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
-	{
-		drawSpecifiedEdges(g, Math.max(1, strokeWidth), centersToDraw, drawBounds, edge ->
+		Set<Center> centers = new HashSet<Center>();
+		for (Edge edge : edges)
 		{
-			if (ignoreRiverEdges && edge.isRiver())
+			if (edge.d0 != null)
 			{
-				// Don't draw region boundaries where there are rivers.
-				return false;
+				centers.add(edge.d0);
 			}
 
-			return edge.d0.region != edge.d1.region && !edge.isCoastOrLakeShore();
-		});
+			if (edge.d1 != null)
+			{
+				centers.add(edge.d1);
+			}
+		}
+
+		return centers;
 	}
 
-	private void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
+	public Set<Center> getCentersFromEdgeIds(Collection<Integer> edgeIds)
+	{
+		Set<Center> centers = new HashSet<Center>();
+		for (Integer id : edgeIds)
+		{
+			Edge edge = edges.get(id);
+			if (edge.d0 != null)
+			{
+				centers.add(edge.d0);
+			}
+
+			if (edge.d1 != null)
+			{
+				centers.add(edge.d1);
+			}
+		}
+
+		return centers;
+	}
+
+	public Set<Edge> getEdgesFromCenters(Collection<Center> centers)
+	{
+		Set<Edge> edges = new HashSet<>();
+		for (Center center : centers)
+		{
+			edges.addAll(center.borders);
+		}
+		return edges;
+	}
+
+	protected void drawSpecifiedEdges(Painter g, double strokeWidth, Collection<Center> centersToDraw, Rectangle drawBounds,
 			Function<Edge, Boolean> shouldDraw)
 	{
 		if (centersToDraw == null)
@@ -823,8 +891,8 @@ public abstract class VoronoiGraph
 		List<Point> path = noisyEdges.getNoisyEdge(edge.index);
 		drawPolyline(p, path);
 	}
-	
-	private void drawPolyline(Painter p, List<Point> line)
+
+	protected void drawPolyline(Painter p, List<Point> line)
 	{
 		int[] xPoints = new int[line.size()];
 		int[] yPoints = new int[line.size()];
@@ -896,24 +964,45 @@ public abstract class VoronoiGraph
 			if (color != null)
 			{
 				p.setColor(color);
-				for (final Center r : c.neighbors)
+				// I want to just draw using drawPolygon, but sometimes the graph has Centers with polygons that don't make sense, so I have
+				// a bunch of checks to fall back to drawing piecewise.
+				if (c.isWellFormedForDrawingPiecewise() || !c.isWellFormedForDrawingAsPolygon())
 				{
-					Edge edge = lookupEdgeFromCenter(c, r);
-
-					if (noisyEdges == null || noisyEdges.getNoisyEdge(edge.index) == null)
-					{
-						// This can happen if noisy edges haven't been created
-						// yet or if the polygon is on the border.
-						drawPieceWithoutNoisyEdges(p, edge, c);
-					}
-					else
-					{
-						dawPieceUsingNoisyEdges(p, edge, c);
-					}
+					drawPolygonPiecewise(p, c);
+				}
+				else
+				{
+					drawPolygon(p, c);
 				}
 			}
 
 		}
+	}
+
+	/**
+	 * Fills in a polygon (a Center) by filling in the space between the polygon's center and each edge separately.
+	 * 
+	 * @param p
+	 * @param c
+	 */
+	private void drawPolygonPiecewise(Painter p, Center c)
+	{
+		for (final Center r : c.neighbors)
+		{
+			Edge edge = lookupEdgeFromCenter(c, r);
+
+			if (noisyEdges == null || noisyEdges.getNoisyEdge(edge.index) == null)
+			{
+				// This can happen if noisy edges haven't been created
+				// yet or if the polygon is on the border.
+				drawPieceWithoutNoisyEdges(p, edge, c);
+			}
+			else
+			{
+				dawPieceUsingNoisyEdges(p, edge, c);
+			}
+		}
+
 	}
 
 	private void drawPieceWithoutNoisyEdges(Painter p, Edge edge, Center c)
@@ -938,6 +1027,95 @@ public abstract class VoronoiGraph
 			vertices.add(new IntPoint((int) point.x, (int) point.y));
 		}
 		p.fillPolygon(vertices);
+	}
+
+	private void drawPolygon(Painter p, Center c)
+	{
+		List<Edge> edges = c.orderEdgesAroundCenter();
+		List<Point> vertices = edgeListToDrawPoints(edges);
+		p.fillPolygonDouble(vertices);
+	}
+
+	protected List<Point> edgeListToDrawPoints(List<Edge> edges)
+	{
+		if (edges.isEmpty())
+		{
+			return Collections.emptyList();
+		}
+
+		List<Point> result = new ArrayList<Point>();
+		for (int i = 0; i < edges.size(); i++)
+		{
+			Edge current = edges.get(i);
+			if (current.v0 == null || current.v1 == null)
+			{
+				continue;
+			}
+
+			boolean reverse;
+			if (i == 0)
+			{
+				if (edges.size() == 1)
+				{
+					reverse = false;
+				}
+				else
+				{
+					Edge next = edges.get(i + 1);
+					if (current.v0 == next.v0 || current.v0 == next.v1)
+					{
+						reverse = true;
+					}
+					else
+					{
+						reverse = false;
+					}
+				}
+			}
+			else
+			{
+				Edge prev = edges.get(i - 1);
+				if (current.v1 == prev.v0 || current.v1 == prev.v1)
+				{
+					reverse = true;
+				}
+				else
+				{
+					reverse = false;
+				}
+			}
+
+			addEdgePoints(result, current, reverse);
+		}
+
+		return result;
+	}
+
+	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse)
+	{
+		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
+		if (noisyEdge == null)
+		{
+			if (reverse)
+			{
+				points.add(edge.v1.loc);
+				points.add(edge.v0.loc);
+			}
+			else
+			{
+				points.add(edge.v0.loc);
+				points.add(edge.v1.loc);
+			}
+		}
+		else
+		{
+			if (reverse)
+			{
+				noisyEdge = new ArrayList<>(noisyEdge);
+				Collections.reverse(noisyEdge);
+			}
+			points.addAll(noisyEdge);
+		}
 	}
 
 	// Look up a Voronoi Edge object given two adjacent Voronoi
@@ -987,6 +1165,13 @@ public abstract class VoronoiGraph
 			edge.v1 = makeCorner(pointCornerMap, vEdge.p1);
 			edge.d0 = pointCenterMap.get(dEdge.p0);
 			edge.d1 = pointCenterMap.get(dEdge.p1);
+			if (edge.v0 == edge.v1)
+			{
+				// Zero length edges are worthless because they can't be drawn, so don't hook them up to the rest of the graph. Ideally, I
+				// would just throw them away, but that would break backwards compatibility with previously existing map edits because it
+				// would shift the edge indexes of subsequent edges.
+				continue;
+			}
 
 			// Centers point to edges. Corners point to edges.
 			if (edge.d0 != null)
@@ -1084,9 +1269,11 @@ public abstract class VoronoiGraph
 
 		// This magic number exists because I originally designed point precision to be based on
 		// 'Size multiplier', which is an old number used to determined at what scale to draw things.
-		// Now graphs are created at a constant size, so that isn't be necessary for new maps,
+		// When a map is at 1.0 resolution scale, size multiplier use to be (8.0 / 3.0). I've since
+		// changed it, but it needs to remain (8.0 / 3.0) here for backwards compatibility.
+		// Now graphs are created at a constant size, so that isn't necessary for new maps,
 		// but is still necessary for backwards compatibility with older maps.
-		final double scaleForBackwardsCompatibility = MapCreator.calcSizeMultipilerFromResolutionScale(1.0);
+		final double scaleForBackwardsCompatibility = (8.0 / 3.0);
 
 		Point key = new Point((int) (p.x / scaleForBackwardsCompatibility) * pointPrecision,
 				(int) (p.y / scaleForBackwardsCompatibility) * pointPrecision);

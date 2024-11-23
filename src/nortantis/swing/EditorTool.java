@@ -29,7 +29,7 @@ public abstract class EditorTool
 	private JToggleButton toggleButton;
 	protected Undoer undoer;
 	protected ToolsPanel toolsPanel;
-	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70);
+	protected List<Integer> brushSizes = Arrays.asList(1, 25, 70, 140);
 	protected MapUpdater updater;
 
 	public EditorTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
@@ -43,6 +43,10 @@ public abstract class EditorTool
 	}
 
 	public abstract String getToolbarName();
+
+	public abstract int getMnemonic();
+
+	public abstract String getKeyboardShortcutText();
 
 	public abstract String getImageIconFilePath();
 
@@ -109,7 +113,7 @@ public abstract class EditorTool
 	}
 
 	protected abstract void onAfterUndoRedo();
-	
+
 	protected abstract void onBeforeUndoRedo();
 
 	public nortantis.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
@@ -117,8 +121,7 @@ public abstract class EditorTool
 		int borderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 		double zoom = mainWindow.zoom;
 		double osScale = mapEditingPanel.osScale;
-		return new nortantis.geom.Point(
-				(((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
+		return new nortantis.geom.Point((((pointOnMapEditingPanel.x - (borderWidth * zoom * (1.0 / osScale))) * (1.0 / zoom) * osScale)),
 				(((pointOnMapEditingPanel.y - (borderWidth * zoom) * (1.0 / osScale)) * (1.0 / zoom) * osScale)));
 	}
 
@@ -271,5 +274,10 @@ public abstract class EditorTool
 
 	public void handleImagesRefresh(MapSettings settings)
 	{
+	}
+
+	public void handleCustomImagesPathChanged(String customImagesPath)
+	{
+
 	}
 }
