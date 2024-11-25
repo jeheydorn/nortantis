@@ -2,12 +2,13 @@ package nortantis.editor;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,8 @@ public class UserPreferences
 	public String defaultCustomImagesPath;
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
 	public Set<String> collapsedPanels = new TreeSet<>();
+	public String lastVersionFromCheck;
+	public LocalDateTime lastVersionCheckTime;
 
 	public static UserPreferences instance;
 
@@ -88,9 +91,20 @@ public class UserPreferences
 					collapsedPanels = new TreeSet<>();
 					collapsedPanels.addAll(Arrays.asList(panelNames));
 				}
+
+				if (props.containsKey("lastVersionFromCheck"))
+				{
+					lastVersionFromCheck = props.getProperty("lastVersionFromCheck");
+				}
+				if (props.containsKey("lastVersionCheckTime"))
+				{
+					// Convert the string back to LocalDateTime
+					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"),
+							DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+				}
 			}
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			e.printStackTrace();
 			Logger.printError("Error while loading user preferences:", e);
@@ -120,6 +134,9 @@ public class UserPreferences
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
 		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
+		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
+		props.setProperty("lastVersionCheckTime",
+				(lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
 		try
 		{

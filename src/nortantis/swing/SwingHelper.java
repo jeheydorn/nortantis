@@ -3,11 +3,18 @@ package nortantis.swing;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
@@ -392,5 +399,28 @@ public class SwingHelper
 		stackPanel.add(component);
 
 		return stackPanel;
+	}
+	
+	public static JLabel createHyperlink(String text, String URL)
+	{
+		JLabel link = new JLabel(text);
+		link.setForeground(new Color(26, 113, 228));
+		link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+		link.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mouseClicked(MouseEvent e)
+			{
+				try
+				{
+					Desktop.getDesktop().browse(new URI(URL));
+				}
+				catch (IOException | URISyntaxException ex)
+				{
+					Logger.printError("Error while trying to open URL: " + URL, ex);
+				}
+			}
+		});
+		return link;
 	}
 }

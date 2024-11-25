@@ -23,7 +23,6 @@ import nortantis.util.HashMapF;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
-import nortantis.util.OSHelper;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
 

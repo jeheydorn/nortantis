@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import java.awt.BorderLayout;
-import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
