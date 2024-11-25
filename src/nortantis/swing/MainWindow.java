@@ -3,9 +3,9 @@ package nortantis.swing;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Desktop;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -21,9 +21,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,16 +38,15 @@ import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -56,9 +61,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.imgscalr.Scalr.Method;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.formdev.flatlaf.FlatDarkLaf;
 
+import nortantis.CancelledException;
 import nortantis.DebugFlags;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
@@ -71,6 +79,7 @@ import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
@@ -180,13 +189,104 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[]
-			{
-					"Welcome to Nortantis. To create or open a map,", "use the File menu."
-			});
+			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 
+		launchNewVersionCheck();
+	}
+
+	private void launchNewVersionCheck()
+	{
+		LocalDateTime lastVersionCheckTime = UserPreferences.getInstance().lastVersionCheckTime;
+		LocalDateTime currentTime = LocalDateTime.now();
+		if (lastVersionCheckTime == null || ChronoUnit.HOURS.between(lastVersionCheckTime, currentTime) >= 24)
+		{
+			PlatformFactory.getInstance().doInBackgroundThread(new BackgroundTask<String>()
+			{
+
+				@Override
+				public String doInBackground() throws IOException, CancelledException
+				{
+					return getLatestVersion();
+				}
+
+				@Override
+				public void done(String latestVersion)
+				{
+					try
+					{
+						if (StringUtils.isEmpty(latestVersion))
+						{
+							return;
+						}
+
+						String lastCheckedVersion = UserPreferences.getInstance().lastVersionFromCheck;
+
+						if (MapSettings.isVersionGreatherThanCurrent(latestVersion) && (StringUtils.isEmpty(lastCheckedVersion)
+								|| MapSettings.isVersionGreaterThan(latestVersion, lastCheckedVersion)))
+						{
+							UserPreferences.getInstance().lastVersionFromCheck = latestVersion;
+							UserPreferences.getInstance().lastVersionCheckTime = currentTime;
+
+							String message = "Version " + latestVersion + " is now available. You can download it at";
+							String url = "https://jandjheydorn.com/nortantis";
+
+							JPanel messagePanel = new JPanel();
+							messagePanel.setLayout(new FlowLayout());
+
+							JLabel messageLabel = new JLabel(message);
+							messagePanel.add(messageLabel);
+
+							JLabel hyperlink = SwingHelper.createHyperlink(url, url);
+							messagePanel.add(hyperlink);
+
+
+							JOptionPane.showMessageDialog(MainWindow.this, messagePanel, "Update Available",
+									JOptionPane.INFORMATION_MESSAGE);
+						}
+					}
+					catch (Exception e)
+					{
+						Logger.printError("Unexpected error while checking if version " + latestVersion + " is a new release.", e);
+					}
+				}
+			});
+		}
+	}
+
+	private String getLatestVersion()
+	{
+		try
+		{
+			// URL of the JSON file with the latest released version.
+			String urlString = "https://jandjheydorn.com/s/current-version.json";
+			URL url = new URI(urlString).toURL();
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+
+			// Set timeouts
+			connection.setConnectTimeout(30000);
+			connection.setReadTimeout(30000);
+
+			// Parse the JSON response
+			JSONParser parser = new JSONParser();
+			try (InputStreamReader reader = new InputStreamReader(connection.getInputStream()))
+			{
+				JSONObject jsonObject = (JSONObject) parser.parse(reader);
+
+				String version = (String) jsonObject.get("version");
+				return version;
+			}
+
+		}
+		catch (Exception e)
+		{
+			// I intentionally do not log this error to Logger because doing so causes the I causes the theme panel to we created extra
+			// wide when a map is being immediately opened, and I don't want network errors when checking the latest version to cause any noticeable issue.
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	void enableOrDisableFieldsThatRequireMap(boolean enable, MapSettings settings)
@@ -519,11 +619,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
-				setPlaceholderImage(new String[]
-				{
-						"Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "."
-				});
+				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
+						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -628,8 +725,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null
-						? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 						: openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
@@ -1055,10 +1151,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// Show the dialog
 				int response = JOptionPane.showOptionDialog(this,
 						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]
-						{
-								"Overwrite", "Cancel"
-						}, "Cancel");
+						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
 
 				if (response == 0)
 				{
@@ -1616,8 +1709,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null
-				? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 				: openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
@@ -1731,10 +1823,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[]
-		{
-				"Drawing map..."
-		});
+		setPlaceholderImage(new String[] { "Drawing map..." });
 
 		undoer.reset();
 

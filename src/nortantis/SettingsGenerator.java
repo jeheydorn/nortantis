@@ -6,13 +6,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
 import nortantis.MapSettings.LineStyle;
 import nortantis.MapSettings.OceanWaves;
-import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.util.Assets;

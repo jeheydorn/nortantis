@@ -1415,12 +1415,12 @@ public class MapSettings implements Serializable
 		}
 	}
 
-	private boolean isVersionGreatherThanCurrent(String version)
+	public static boolean isVersionGreatherThanCurrent(String version)
 	{
 		return isVersionGreaterThan(version, currentVersion);
 	}
 
-	private boolean isVersionGreaterThan(String version1, String version2)
+	public static boolean isVersionGreaterThan(String version1, String version2)
 	{
 		if (version1 == null || version1.equals(""))
 		{

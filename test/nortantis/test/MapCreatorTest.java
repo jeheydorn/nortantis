@@ -6,11 +6,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
 
 import org.apache.commons.io.FileUtils;

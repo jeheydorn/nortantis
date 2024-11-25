@@ -1,8 +1,6 @@
 package nortantis.util;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,9 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -35,10 +31,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import nortantis.MapSettings;
 import nortantis.NamedResource;
-import nortantis.Stopwatch;
-import nortantis.editor.UserPreferences;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 
