@@ -17,6 +17,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         java-version: '17'
+        distribution: 'oracle_open_jdk'
 
     - name: Build Windows Installer
       run: |
@@ -40,6 +41,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         java-version: '17'
+        distribution: 'oracle_open_jdk'
 
     - name: Build Linux Installer
       run: |
