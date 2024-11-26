@@ -28,7 +28,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
-        path: installer/Nortantis.msi
+        path: installer/Nortantis-2.91.msi
 
   build-linux:
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: linux-installer
-        path: installer/Nortantis.deb
+        path: installer/nortantis_2.91_amd64.deb
 
   sign-windows:
     needs: [build-windows]
