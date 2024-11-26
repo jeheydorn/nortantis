@@ -25,8 +25,8 @@ jobs:
         ./create_windows_installer.bat
         cd ..
 
-    - name: Upload Windows Installer
-      id: upload_windows
+    - id: upload_windows
+      name: Upload Windows Installer
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
