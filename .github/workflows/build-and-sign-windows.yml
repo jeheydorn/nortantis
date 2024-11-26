@@ -1,4 +1,4 @@
-name: Build and Sign Installers
+name: Build and Sign Windows Installer
 
 on:
   push:
@@ -19,6 +19,13 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
+   - name: Extract Version from Windows Script
+      id: extract_version_windows
+      run: |
+        version=$(grep -- '--app-version' installer/create_windows_installer.bat | sed 's/.*--app-version "\(.*\)".*/\1/')
+        echo "VERSION=$version" >> $GITHUB_ENV
+        echo "Installer version: $version"
+
     - name: Build Windows Installer
       run: |
         cd installer
@@ -29,7 +36,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
-        path: installer/Nortantis-2.91.msi
+        path: installer/Nortantis-${{ env.VERSION }}.msi
     
     - name: Submit Signing Request for Windows Installer
       id: sign_windows
@@ -47,33 +54,8 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: signed-windows-installer
-        path: ./installer/signed/Nortantis-2.91.msi
+        path: ./installer/signed/Nortantis-${{ env.VERSION }}.msi
 
-  build-linux:
-    runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up JDK
-      uses: actions/setup-java@v2
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-
-    - name: Build Linux Installer
-      run: |
-        cd installer
-        bash create_ubuntu_installer.sh
-        
-    - name: List installer directory contents
-      run: ls -la installer
-
-    - name: Upload Linux Installer
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-installer
-        path: installer/nortantis_2.91_amd64.deb
 
 
