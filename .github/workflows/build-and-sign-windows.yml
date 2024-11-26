@@ -29,8 +29,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
-        $version = Get-Content -Path "installers\version.txt" -First 1
-        path: installers/Nortantis-${{ version }}.msi
+        path: installers/Nortantis-${{ Get-Content -Path "installers\version.txt" -First 1 }}.msi
     
     - name: Submit Signing Request for Windows Installer
       id: sign_windows
