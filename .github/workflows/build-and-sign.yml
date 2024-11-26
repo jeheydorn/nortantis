@@ -52,8 +52,8 @@ jobs:
         name: linux-installer
         path: installer/Nortantis.deb
 
-  sign:
-    needs: [build-windows, build-linux]
+  sign-windows:
+    needs: [build-windows]
     runs-on: ubuntu-latest
 
     steps:
