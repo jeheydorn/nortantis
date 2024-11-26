@@ -19,17 +19,23 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
  
+    - name: Get Version
+      run: |
+        $version = Get-Content -Path "installers\version.txt" -First 1
+        Write-Host "Version: $version"
+        echo "VERSION=$version" >> $GITHUB_ENV
+        
     - name: Build Windows Installer
       run: |
         cd installer
         ./create_windows_installer.bat
-        
+
     - id: upload_windows
       name: Upload Windows Installer
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
-        path: installers/Nortantis-${{ Get-Content -Path "installers\version.txt" -First 1 }}.msi
+        path: installers/Nortantis-${{ env.VERSION }}.msi
     
     - name: Submit Signing Request for Windows Installer
       id: sign_windows
@@ -47,7 +53,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: signed-windows-installer
-        path: ./installers/signed/Nortantis-${{ Get-Content -Path "installers\version.txt" -First 1 }}.msi
+        path: ./installers/signed/Nortantis-${{ env.VERSION }}.msi
 
 
 
