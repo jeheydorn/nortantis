@@ -18,31 +18,13 @@ jobs:
       with:
         java-version: '22'
         distribution: 'temurin'
-
-    - name: Extract Version from Windows Script
-      id: extract_version_windows
-      run: |
-        @echo off
-        setlocal enabledelayedexpansion
-        REM Find the line containing --app-version and extract the version number
-        for /f "tokens=2 delims=^" %%a in ('findstr /c:"--app-version" installer\create_windows_installer.bat') do (
-            set "line=%%a"
-            for /f "tokens=2 delims=^" %%b in ("!line!") do (
-                set "version=%%b"
-            )
-        )
-        REM Remove the quotes from the version number
-        set version=%version:"=%
-        REM Output the version number
-        echo Version: %version%
-        echo "VERSION=$version" >> $GITHUB_ENV
-        endlocal
-
-
+ 
     - name: Build Windows Installer
       run: |
         cd installer
         ./create_windows_installer.bat
+        Write-Host "Version: $env:nortantis_version"
+        echo "VERSION=$env:nortantis_version" >> $GITHUB_ENV
 
     - id: upload_windows
       name: Upload Windows Installer

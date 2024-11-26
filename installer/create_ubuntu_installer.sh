@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Before running this script, in Eclipse, change AssetsPath.isInstalled to true and then export as a runnable jar file named Nortantis.jar.
 # When updating the app version, make sure to also update MapSettings.currentVersion.
+nortantis_version="2.91"
 
 inputFolder="installer_input"
 exeName="Nortantis"
@@ -26,7 +26,7 @@ jpackage \
 --icon "taskbar icon.png" \
 --file-associations file_associations_linux.txt \
 --vendor "Joseph Heydorn" \
---app-version "2.91" \
+--app-version "$nortantis_version" \
 --java-options -XX:MaxRAMPercentage=50.0 \
 --java-options -Dfile.encoding=UTF-8 \
 --license-file end_user_license_agreement.txt

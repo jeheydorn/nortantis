@@ -22,7 +22,7 @@ jobs:
     - name: Extract Version from Linux Script
       id: extract_version_linux
       run: |
-        version=$(grep -- '--app-version' installer/create_ubuntu_installer.sh | sed 's/.*--app-version "\(.*\)".*/\1/')
+        version=$(grep 'nortantis_version=' create_ubuntu_installer.sh | sed 's/.*nortantis_version="\([^"]*\)".*/\1/')
         echo "VERSION=$version" >> $GITHUB_ENV
         echo "Installer version: $version"
 
