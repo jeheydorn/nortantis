@@ -22,9 +22,22 @@ jobs:
     - name: Extract Version from Windows Script
       id: extract_version_windows
       run: |
-        version=$(grep -- '--app-version' installer/create_windows_installer.bat | sed 's/.*--app-version "\(.*\)".*/\1/')
+        @echo off
+        setlocal enabledelayedexpansion
+        REM Find the line containing --app-version and extract the version number
+        for /f "tokens=2 delims=^" %%a in ('findstr /c:"--app-version" installer\create_windows_installer.bat') do (
+            set "line=%%a"
+            for /f "tokens=2 delims=^" %%b in ("!line!") do (
+                set "version=%%b"
+            )
+        )
+        REM Remove the quotes from the version number
+        set version=%version:"=%
+        REM Output the version number
+        echo Version: %version%
         echo "VERSION=$version" >> $GITHUB_ENV
-        echo "Installer version: $version"
+        endlocal
+
 
     - name: Build Windows Installer
       run: |
