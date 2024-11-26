@@ -31,8 +31,23 @@ jobs:
         name: windows-installer
         path: installer/Nortantis-2.91.msi
     
-    - name: Set artifact ID output
-      run: echo "::set-output name=artifact-id::${{ steps.upload_windows.outputs.artifact-id }}"
+    - name: Submit Signing Request for Windows Installer
+      id: sign_windows
+      uses: signpath/github-action-submit-signing-request@v1
+      with:
+        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+        organization-id: 'cb1b9ef5-2e6a-442f-acb7-8521004476b5'
+        project-slug: 'nortantis'
+        signing-policy-slug: 'test-signing'
+        github-artifact-id: '${{steps.upload_windows.outputs.artifact-id}}'
+        wait-for-completion: true
+        output-artifact-directory: './installer/signed'
+
+    - name: Upload Signed Windows Installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: signed-windows-installer
+        path: ./installer/signed/Nortantis-2.91.msi
 
   build-linux:
     runs-on: ubuntu-latest
@@ -61,35 +76,4 @@ jobs:
         name: linux-installer
         path: installer/nortantis_2.91_amd64.deb
 
-  sign-windows:
-    needs: [build-windows]
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Download Windows Installer
-      uses: actions/download-artifact@v4
-      with:
-        name: windows-installer
-        path: ./installer
-
-    - name: Submit Signing Request for Windows Installer
-      id: sign_windows
-      uses: signpath/github-action-submit-signing-request@v1
-      with:
-        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
-        organization-id: 'cb1b9ef5-2e6a-442f-acb7-8521004476b5'
-        project-slug: 'nortantis'
-        signing-policy-slug: 'test-signing'
-        github-artifact-id: '${{needs.upload_windows.outputs.artifact-id}}'
-        wait-for-completion: true
-        output-artifact-directory: './installer/signed'
-
-    - name: Upload Signed Windows Installer
-      uses: actions/upload-artifact@v4
-      with:
-        name: signed-windows-installer
-        path: ./installer/signed/Nortantis-2.91.msi
 
