@@ -17,7 +17,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         java-version: '17'
-        distribution: 'oracle_open_jdk'
+        distribution: 'temurin'
 
     - name: Build Windows Installer
       run: |
@@ -41,7 +41,7 @@ jobs:
       uses: actions/setup-java@v2
       with:
         java-version: '17'
-        distribution: 'oracle_open_jdk'
+        distribution: 'temurin'
 
     - name: Build Linux Installer
       run: |
