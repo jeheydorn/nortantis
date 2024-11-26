@@ -24,7 +24,7 @@ jobs:
         ./create_windows_installer.bat
 
     - name: Upload Windows Installer
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: windows-installer
         path: installer/Nortantis.msi
@@ -47,7 +47,7 @@ jobs:
         ./installer/create_ubuntu_installer.sh
 
     - name: Upload Linux Installer
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: linux-installer
         path: installer/Nortantis.deb
@@ -79,7 +79,7 @@ jobs:
         output-artifact-directory: './installer/signed'
 
     - name: Upload Signed Windows Installer
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: signed-windows-installer
         path: ./installer/signed/Nortantis-2.91.msi
