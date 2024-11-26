@@ -19,7 +19,7 @@ jobs:
         java-version: '22'
         distribution: 'temurin'
 
-   - name: Extract Version from Windows Script
+    - name: Extract Version from Windows Script
       id: extract_version_windows
       run: |
         version=$(grep -- '--app-version' installer/create_windows_installer.bat | sed 's/.*--app-version "\(.*\)".*/\1/')
