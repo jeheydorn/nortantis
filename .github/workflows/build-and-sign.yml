@@ -1,0 +1,86 @@
+name: Build and Sign Installers
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v2
+      with:
+        java-version: '17'
+
+    - name: Build Windows Installer
+      run: |
+        cd installer
+        ./create_windows_installer.bat
+
+    - name: Upload Windows Installer
+      uses: actions/upload-artifact@v2
+      with:
+        name: windows-installer
+        path: installer/Nortantis.msi
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v2
+      with:
+        java-version: '17'
+
+    - name: Build Linux Installer
+      run: |
+        chmod +x installer/create_ubuntu_installer.sh
+        ./installer/create_ubuntu_installer.sh
+
+    - name: Upload Linux Installer
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-installer
+        path: installer/Nortantis.deb
+
+  sign:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Download Windows Installer
+      uses: actions/download-artifact@v2
+      with:
+        name: windows-installer
+        path: ./installer
+
+     - name: Submit Signing Request for Windows Installer
+      id: sign_windows
+      uses: signpath/github-action-submit-signing-request@v1
+      with:
+        api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
+        organization-id: 'cb1b9ef5-2e6a-442f-acb7-8521004476b5'
+        project-slug: 'nortantis'
+        signing-policy-slug: 'test-signing'
+        github-artifact-id: ${{ steps.upload_windows.outputs.artifact-id }}
+        wait-for-completion: true
+        output-artifact-directory: './installer/signed'
+
+    - name: Upload Signed Windows Installer
+      uses: actions/upload-artifact@v2
+      with:
+        name: signed-windows-installer
+        path: ./installer/signed/Nortantis-2.91.msi
+

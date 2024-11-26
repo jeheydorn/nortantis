@@ -39,5 +39,3 @@ REM line to add license file: --license-file end_user_license_agreement.txt ^
 
 RMDIR /S /Q installer_input
 REM DEL "..\Nortantis.jar"
-
-pause
