@@ -28,7 +28,7 @@ jobs:
 
     - name: Build Linux Installer
       run: |
-        cd installer
+        cd installers
         bash create_ubuntu_installer.sh
 
     - name: Upload Linux Installer

@@ -27,7 +27,7 @@ jobs:
         
     - name: Build Windows Installer
       run: |
-        cd installer
+        cd installers
         ./create_windows_installer.bat
 
     - id: upload_windows
