@@ -23,6 +23,7 @@ jobs:
       run: |
         cd installer
         ./create_windows_installer.bat
+        cd ..
 
     - name: Upload Windows Installer
       id: upload_windows
@@ -48,6 +49,7 @@ jobs:
       run: |
         cd installer
         bash create_ubuntu_installer.sh
+        cd ..
 
     - name: Upload Linux Installer
       uses: actions/upload-artifact@v4
@@ -77,7 +79,7 @@ jobs:
         organization-id: 'cb1b9ef5-2e6a-442f-acb7-8521004476b5'
         project-slug: 'nortantis'
         signing-policy-slug: 'test-signing'
-        github-artifact-id: '${{ steps.upload_windows.outputs.artifact-id }}'
+        github-artifact-id: '${{steps.upload_windows.outputs.artifact-id}}'
         wait-for-completion: true
         output-artifact-directory: './installer/signed'
 
