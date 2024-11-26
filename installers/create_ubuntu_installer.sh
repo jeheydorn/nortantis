@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # When updating the app version, make sure to also update MapSettings.currentVersion.
-nortantis_version="2.91"
+nortantis_version=$(cat version.txt)
 
 inputFolder="installer_input"
 exeName="Nortantis"

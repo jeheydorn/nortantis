@@ -23,15 +23,14 @@ jobs:
       run: |
         cd installer
         ./create_windows_installer.bat
-        Write-Host "Version: $env:nortantis_version"
-        echo "VERSION=$env:nortantis_version" >> $GITHUB_ENV
-
+        
     - id: upload_windows
       name: Upload Windows Installer
       uses: actions/upload-artifact@v4
       with:
         name: windows-installer
-        path: installer/Nortantis-${{ env.VERSION }}.msi
+        $version = Get-Content -Path "installers\version.txt" -First 1
+        path: installers/Nortantis-${{ version }}.msi
     
     - name: Submit Signing Request for Windows Installer
       id: sign_windows
@@ -43,13 +42,14 @@ jobs:
         signing-policy-slug: 'test-signing'
         github-artifact-id: '${{steps.upload_windows.outputs.artifact-id}}'
         wait-for-completion: true
-        output-artifact-directory: './installer/signed'
+        output-artifact-directory: './installers/signed'
 
     - name: Upload Signed Windows Installer
       uses: actions/upload-artifact@v4
       with:
         name: signed-windows-installer
-        path: ./installer/signed/Nortantis-${{ env.VERSION }}.msi
+        $version = Get-Content -Path "installers\version.txt" -First 1
+        path: ./installers/signed/Nortantis-${{ version }}.msi
 
 
 

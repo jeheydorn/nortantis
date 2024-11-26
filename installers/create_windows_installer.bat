@@ -1,6 +1,6 @@
 
 REM When updating the app version, make sure to also update MapSettings.currentVersion.
-set nortantis_version=2.91
+set /p nortantis_version=< version.txt
 
 set inputFolder=installer_input
 set exeName=Nortantis
@@ -28,7 +28,7 @@ jpackage ^
 --icon "taskbar icon.ico" ^
 --file-associations file_associations_windows.txt ^
 --vendor "Joseph Heydorn" ^
---app-version "$nortantis_version" ^
+--app-version "%nortantis_version%" ^
 --java-options -XX:MaxRAMPercentage=50.0 ^
 --java-options -Dsun.java2d.d3d=false ^
 --license-file end_user_license_agreement.txt ^
