@@ -19,10 +19,10 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
 
-    - name: Extract Version from Linux Script
+    - name: Get Version
       id: extract_version_linux
       run: |
-        version=$(grep 'nortantis_version=' installers/create_ubuntu_installer.sh | sed 's/.*nortantis_version="\([^"]*\)".*/\1/')
+        version=$(cat installers/version.txt)
         echo "VERSION=$version" >> $GITHUB_ENV
         echo "Installer version: $version"
 

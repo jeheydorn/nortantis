@@ -20,10 +20,11 @@ jobs:
         distribution: 'temurin'
  
     - name: Get Version
+      shell: pwsh
       run: |
         $version = Get-Content -Path "installers\version.txt" -First 1
         Write-Host "Version: $version"
-        echo "VERSION=$version" >> $GITHUB_ENV
+        echo "VERSION=$version" >> $env:GITHUB_ENV
         
     - name: Build Windows Installer
       run: |
