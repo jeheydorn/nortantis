@@ -66,7 +66,7 @@ jobs:
         name: windows-installer
         path: ./installer
 
-     - name: Submit Signing Request for Windows Installer
+    - name: Submit Signing Request for Windows Installer
       id: sign_windows
       uses: signpath/github-action-submit-signing-request@v1
       with:
