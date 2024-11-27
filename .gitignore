@@ -32,6 +32,7 @@ temp.nort
 /unit test files/expected maps
 /unit test files/failed maps
 *.msi
+*.exe
 *.deb
 Nortantis.jar
 .gradle

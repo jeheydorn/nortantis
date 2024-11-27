@@ -22,7 +22,7 @@ jpackage ^
 --name "%exeName%" ^
 --main-jar "Nortantis.jar" ^
 --main-class nortantis.swing.MainWindow ^
---type msi ^
+--type exe ^
 --win-menu ^
 --win-shortcut ^
 --icon "taskbar icon.ico" ^
