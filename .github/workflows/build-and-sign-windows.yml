@@ -45,7 +45,7 @@ jobs:
         api-token: '${{ secrets.SIGNPATH_API_TOKEN }}'
         organization-id: 'cb1b9ef5-2e6a-442f-acb7-8521004476b5'
         project-slug: 'nortantis'
-        signing-policy-slug: 'test-signing'
+        signing-policy-slug: 'release-signing'
         github-artifact-id: '${{steps.upload_windows.outputs.artifact-id}}'
         wait-for-completion: true
         output-artifact-directory: './installers/signed'
