@@ -358,7 +358,8 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
-		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
+		List<? extends Component> listToUse = radioButtons.size() > 0
+				? radioButtons
 				: Arrays.asList(
 						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;

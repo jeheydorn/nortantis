@@ -14,7 +14,7 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.util.ImageHelper;
 import nortantis.util.ThreadHelper;
 
-public class FractalBGGenerator
+public class TempFractalBGGenerator
 {
 	/**
 	 * Generates a fractal image using the tutorial at http://paulbourke.net/fractals/noise/, under "Frequency Synthesis of Landscapes (and

@@ -400,7 +400,7 @@ public class SwingHelper
 
 		return stackPanel;
 	}
-	
+
 	public static JLabel createHyperlink(String text, String URL)
 	{
 		JLabel link = new JLabel(text);

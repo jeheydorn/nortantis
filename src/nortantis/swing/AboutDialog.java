@@ -48,7 +48,8 @@ public class AboutDialog extends JDialog
 
 		rightPanel.add(new JLabel("<html>If you have encountered a bug and wish to report it, you may do so at the Nortantis project's"
 				+ " GitHub issue tracker here: </html>"));
-		rightPanel.add(SwingHelper.createHyperlink("github.com/jeheydorn/nortantis/issues", "https://github.com/jeheydorn/nortantis/issues"));
+		rightPanel
+				.add(SwingHelper.createHyperlink("github.com/jeheydorn/nortantis/issues", "https://github.com/jeheydorn/nortantis/issues"));
 
 		rightPanel.add(new JLabel(" "));
 		rightPanel.add(new JLabel("<html>If you have enjoyed Nortantis and wish to support it, and you like clean, happy, fantasy "
@@ -76,6 +77,5 @@ public class AboutDialog extends JDialog
 
 		pack();
 	}
-
 
 }
