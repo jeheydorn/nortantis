@@ -1472,7 +1472,7 @@ public class MapSettings implements Serializable
 	 * @return Piece 1 - The path Piece 2 - An optional warning message.
 	 */
 	public Tuple2<Path, String> getBackgroundImagePath()
-	{
+	{	
 		if (backgroundTextureSource == TextureSource.File && StringUtils.isEmpty(backgroundTextureImage))
 		{
 			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath),

@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -731,10 +732,11 @@ public class IconsTool extends EditorTool
 
 		Image previewImage;
 
+		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
 		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
 				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
 						settings.generateBackground, settings.generateBackgroundFromTexture,
-						settings.getBackgroundImagePath().getFirst().toString());
+						backgroundImagePath == null ? null : backgroundImagePath.toString());
 		if (iconType == IconType.decorations)
 		{
 			previewImage = tuple.getFirst();
