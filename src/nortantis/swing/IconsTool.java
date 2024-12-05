@@ -1535,7 +1535,10 @@ public class IconsTool extends EditorTool
 	{
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
-		updateArtPackOptions(settings.artPack, customImagesPath);
+		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem())
+				? (String) artPackComboBox.getSelectedItem()
+				: settings.artPack;
+		updateArtPackOptions(artPackToSelect, customImagesPath);
 		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
 			if (Assets.artPackExists(artPack, customImagesPath))
