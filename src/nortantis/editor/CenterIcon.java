@@ -44,6 +44,12 @@ public class CenterIcon
 	{
 		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName);
 	}
+	
+
+	public CenterIcon copyWithIconName(String iconName)
+	{
+		return new CenterIcon(iconType, artPack, iconGroupId, iconIndex, iconName);
+	}
 
 	@Override
 	public int hashCode()

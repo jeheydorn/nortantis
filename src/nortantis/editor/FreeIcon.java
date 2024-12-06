@@ -100,6 +100,11 @@ public class FreeIcon
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
 	}
+	
+	public FreeIcon copyWithName(String iconName)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+	}
 
 	public FreeIcon copyWith(String artPack, String groupId, String iconName)
 	{

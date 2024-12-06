@@ -8,7 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -20,11 +23,13 @@ import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
 import nortantis.util.HashMapF;
+import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 import nortantis.util.Tuple2;
+import nortantis.util.Tuple3;
 
 /**
  * Caches icons in memory to avoid recreating or reloading them.
@@ -154,7 +159,6 @@ public class ImageCache
 		for (String groupName : groupNames)
 		{
 			List<String> fileNames = getIconGroupFileNames(iconType, groupName);
-			String groupPath = getIconGroupPath(iconType, groupName);
 			if (fileNames.size() == 0)
 			{
 				continue;
@@ -162,13 +166,7 @@ public class ImageCache
 
 			for (String fileName : fileNames)
 			{
-				Path path = Paths.get(groupPath, fileName);
-				if (!containsImageFile(path))
-				{
-					Logger.println("Loading icon: " + path);
-				}
-				Image icon = getImageFromFile(path);
-
+				Image icon = loadIconFromDiskOrCache(iconType, groupName, fileName);
 				imagesPerGroup.add(groupName, new ImageAndMasks(icon, iconType));
 			}
 		}
@@ -218,68 +216,130 @@ public class ImageCache
 			return imagesAndMasks;
 		}
 
+		// Maps from image base name without width to (image base name without width, width, file name).
+		Map<String, Tuple3<String, Integer, String>> namesAndWidths = new TreeMap<>();
 		for (String fileName : fileNames)
 		{
-			String[] parts = FilenameUtils.getBaseName(fileName).split("width=");
-			if (parts.length < 2)
-			{
-				throw new RuntimeException("The image '" + fileName + "' of type " + iconType
-						+ " must have its default width stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png.");
-			}
+			Tuple2<String, Integer> nameAndWidth = parseBaseNameAndWidth(fileName);
 
-			String fileNameBaseWithoutWidth = getFileNameBaseWithoutWidth(fileName);
-			if (imagesAndMasks.containsKey(fileNameBaseWithoutWidth))
+			String fileNameBaseWithoutWidth = nameAndWidth.getFirst();
+			if (namesAndWidths.containsKey(fileNameBaseWithoutWidth))
 			{
 				throw new RuntimeException("There are multiple images for " + iconType + " named '" + fileNameBaseWithoutWidth
-						+ "' whose file names only differ by their width." + " Rename one of them.");
+						+ "' whose file names only differ by their encoded width or extension." + " Rename one of them.");
 			}
 
-			Path path = Paths.get(getIconGroupPath(iconType, groupName), fileName);
-			if (!containsImageFile(path))
+			namesAndWidths.put(fileNameBaseWithoutWidth, new Tuple3<>(nameAndWidth.getFirst(), nameAndWidth.getSecond(), fileName));
+		}
+
+		Tuple3<String, Integer, String> widest = Helper.maxElement(namesAndWidths, (tuple1, tuple2) ->
+		{
+			Integer w1 = tuple1.getSecond();
+			Integer w2 = tuple2.getSecond();
+			if (w1 == null && w2 == null)
 			{
-				Logger.println("Loading icon: " + path);
+				return 0;
 			}
-			Image icon = getImageFromFile(path);
+			if (w1 == null)
+			{
+				return -1;
+			}
+			if (w2 == null)
+			{
+				return 1;
+			}
+			return w1.compareTo(w2);
+		});
+
+		if (widest.getSecond() == null)
+		{
+			throw new RuntimeException("The " + iconType + " image group '" + groupName
+					+ "' must have at least one image with a default width encoded in either the format width=<number> or w<number>. Example: \"small town w20.png.\""
+					+ " Images in that group that don't have an encoded width will use a default width calculated relative to the largest image in the group that does have an encoded width.");
+		}
+		Image widestIcon = loadIconFromDiskOrCache(iconType, groupName, widest.getThird());
+
+		for (Tuple3<String, Integer, String> nameAndWidth : namesAndWidths.values())
+		{
+			Image icon = loadIconFromDiskOrCache(iconType, groupName, nameAndWidth.getThird());
 
 			int width;
-			try
+			// If any don't have an encoded width, then calculate the width relative to the largest image that does have an encoded width.
+			if (nameAndWidth.getSecond() == null)
 			{
-				String widthStr = parts[parts.length - 1];
-				width = Integer.parseInt(widthStr);
+				width = (int) (icon.getWidth() * (((double) widest.getSecond()) / widestIcon.getWidth()));
 			}
-			catch (RuntimeException e)
+			else
 			{
-				throw new RuntimeException("Unable to load image '" + path.toString()
-						+ "'. Make sure the default width of the image is stored at the end of the file name in the format width=<number>. Example: myCityIcon width=64.png. Error: "
-						+ e.getMessage(), e);
+				width = nameAndWidth.getSecond();
 			}
-			imagesAndMasks.put(fileNameBaseWithoutWidth, new Tuple2<>(new ImageAndMasks(icon, iconType), width));
+
+
+			imagesAndMasks.put(nameAndWidth.getFirst(), new Tuple2<>(new ImageAndMasks(icon, iconType), width));
 		}
+
 
 		return imagesAndMasks;
 	}
 
-	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
+	private Image loadIconFromDiskOrCache(IconType iconType, String groupName, String fileName)
 	{
-		List<String> folderNames = getIconGroupFileNames(iconType, groupName);
-		Set<String> result = new TreeSet<String>();
-		for (int i : new Range(folderNames.size()))
+		Path path = Paths.get(getIconGroupPath(iconType, groupName), fileName);
+		if (!containsImageFile(path))
 		{
-			result.add(getFileNameBaseWithoutWidth(folderNames.get(i)));
+			Logger.println("Loading icon: " + path);
 		}
-		return result;
+		Image icon = getImageFromFile(path);
+		return icon;
 	}
 
-	private static String getFileNameBaseWithoutWidth(String fileName)
+	/**
+	 * Given a file name (without the path), this parses out the width encoded in the file name, along with the rest of the file name, not
+	 * including the extension. The width can be encoded as "width=[number]", or as "w[number]" for short. The width must be delimited from
+	 * the rest of the file name by either a space or underscore.
+	 * 
+	 * Example: fileName: "large castle w2.png" result: ("large castle", 2)
+	 * 
+	 * @param fileName
+	 *            Image file name, including extension but excluding file path.
+	 * @return A 2-tuple, where the first item is the file name without the width encoded string. Note that spaces and underscores that
+	 *         delimited the width encoded string are also removed. The second item is the width, or null if the file name did not contain a
+	 *         width.
+	 */
+	public static Tuple2<String, Integer> parseBaseNameAndWidth(String fileName)
 	{
-		if (fileName.contains("width="))
+		if (fileName == null || fileName.isEmpty())
 		{
-			return fileName.substring(0, fileName.lastIndexOf("width="));
+			return new Tuple2<>(null, null);
 		}
-		else
+
+		// Remove the file extension
+		int dotIndex = fileName.lastIndexOf('.');
+		String baseName = (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
+
+		// Define the regex pattern for width
+		Pattern pattern = Pattern.compile("(.*?)(?:\\s|_)(?:width=|w)(\\d+)");
+		Matcher matcher = pattern.matcher(baseName);
+
+		if (matcher.find())
 		{
-			return fileName;
+			String nameWithoutWidth = matcher.group(1).trim();
+			Integer width = Integer.parseInt(matcher.group(2));
+			return new Tuple2<>(nameWithoutWidth, width);
 		}
+
+		return new Tuple2<>(baseName, null);
+	}
+
+	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
+	{
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
+		Set<String> result = new TreeSet<String>();
+		for (int i : new Range(fileNames.size()))
+		{
+			result.add(parseBaseNameAndWidth(fileNames.get(i)).getFirst());
+		}
+		return result;
 	}
 
 	public List<String> loadIconGroupNames(IconType iconType)

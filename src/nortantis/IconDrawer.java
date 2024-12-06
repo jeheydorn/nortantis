@@ -651,8 +651,8 @@ public class IconDrawer
 			if (name != null)
 			{
 				warningLogger
-						.addWarningMessage("Unable to find the " + type.getSingularName() + " icon '" + oldName.trim() + "' in art pack '"
-								+ artPack + "'. The icon '" + name.trim() + "' in art pack '" + artPackToUse + "' will be used instead.");
+						.addWarningMessage("Unable to find the " + type.getSingularName() + " icon '" + oldName + "' in art pack '"
+								+ artPack + "'. The icon '" + name + "' in art pack '" + artPackToUse + "' will be used instead.");
 			}
 		}
 
