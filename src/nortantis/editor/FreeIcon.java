@@ -14,7 +14,6 @@ import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
-import nortantis.util.Tuple2;
 
 public class FreeIcon
 {
@@ -155,58 +154,17 @@ public class FreeIcon
 	 *            MapSettings.resolution that we're currently drawing at.
 	 * @param typeLevelScale
 	 *            The scaling from the sliders that scale all icons of a type.
-	 * @param baseWidthOrHeight
-	 *            The width or height (which is used depends on the type of icon) of the icon before type-level scaling. Should already be
-	 *            adjusted for resolution..
+	 * @param baseWidth
+	 *            The width of the icon before type-level scaling. Should already be
+	 *            adjusted for resolution.
 	 * @return a new IconDrawTask.
 	 */
-	public IconDrawTask toIconDrawTask(String customImagesFolder, double resolutionScale, double typeLevelScale, double baseWidthOrHeight)
-	{
-		if (isScaledByWidthRatherThanHeight())
-		{
-			return toIconDrawTaskUsingWidth(customImagesFolder, resolutionScale, typeLevelScale, baseWidthOrHeight);
-		}
-		else
-		{
-			return toIconDrawTaskUsingHeight(customImagesFolder, resolutionScale, typeLevelScale, baseWidthOrHeight);
-		}
-	}
-
-	private boolean isScaledByWidthRatherThanHeight()
-	{
-		return type != IconType.trees;
-	}
-
-	private IconDrawTask toIconDrawTaskUsingHeight(String customImagesFolder, double resolutionScale, double typeLevelScale,
-			double baseHeight)
+	public IconDrawTask toIconDrawTask(String customImagesFolder, double resolutionScale, double typeLevelScale, double baseWidth)
 	{
 		if (iconName != null && !iconName.isEmpty())
 		{
-			throw new NotImplementedException("Named icon drawing by height is not implemented since it's only used for trees.");
-		}
-		else
-		{
-			List<ImageAndMasks> groupImages = ImageCache.getInstance(artPack, customImagesFolder).getAllIconGroupsAndMasksForType(type)
-					.get(groupId);
-			if (groupImages == null || groupImages.isEmpty())
-			{
-				return null;
-			}
-			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
-			IntDimension drawSize = IconDrawer
-					.getDimensionsWhenScaledByHeight(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseHeight))
-					.roundToIntDimension();
-			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
-		}
-	}
-
-	private IconDrawTask toIconDrawTaskUsingWidth(String customImagesFolder, double resolutionScale, double typeLevelScale,
-			double baseWidth)
-	{
-		if (iconName != null && !iconName.isEmpty())
-		{
-			Map<String, Tuple2<ImageAndMasks, Integer>> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder)
-					.getIconsWithWidths(type, groupId);
+			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder)
+					.getIconsByNameForGroup(type, groupId);
 			if (iconsWithWidths == null || iconsWithWidths.isEmpty())
 			{
 				return null;
@@ -215,7 +173,7 @@ public class FreeIcon
 			{
 				return null;
 			}
-			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName).getFirst();
+			ImageAndMasks imageAndMasks = iconsWithWidths.get(iconName);
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth))
 					.toIntDimension();
@@ -223,8 +181,7 @@ public class FreeIcon
 		}
 		else
 		{
-			List<ImageAndMasks> groupImages = ImageCache.getInstance(artPack, customImagesFolder).getAllIconGroupsAndMasksForType(type)
-					.get(groupId);
+			List<ImageAndMasks> groupImages = ImageCache.getInstance(artPack, customImagesFolder).getIconsInGroup(type, groupId);
 			if (groupImages == null || groupImages.isEmpty())
 			{
 				return null;

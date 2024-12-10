@@ -1104,7 +1104,7 @@ public class ThemePanel extends JTabbedPane
 			for (FreeIcon icon : freeIcons.iterateAnchoredNonTreeIcons())
 			{
 				ListMap<String, ImageAndMasks> iconsByGroup = ImageCache.getInstance(icon.artPack, mainWindow.customImagesPath)
-						.getAllIconGroupsAndMasksForType(IconType.mountains);
+						.getIconGroupsAsListsForType(IconType.mountains);
 				if (icon.type == IconType.mountains)
 				{
 					if (!iconsByGroup.containsKey(icon.groupId))
@@ -1131,8 +1131,9 @@ public class ThemePanel extends JTabbedPane
 			{
 				if (icon.type == IconType.mountains)
 				{
+					ImageAndMasks imageAndMasks = ImageCache.getInstance(icon.artPack, mainWindow.customImagesPath).getImageAndMasks(icon);
 					double yChange = mainWindow.updater.mapParts.iconDrawer.getUnanchoredMountainYChangeFromMountainScaleChange(icon,
-							mountainScale);
+							mountainScale, imageAndMasks);
 					Point scaledLocation = icon.getScaledLocation(resolution);
 					FreeIcon updated = icon.copyWithLocation(resolution, new Point(scaledLocation.x, scaledLocation.y + yChange));
 					freeIcons.replace(icon, updated);

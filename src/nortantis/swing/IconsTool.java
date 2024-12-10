@@ -494,8 +494,8 @@ public class IconsTool extends EditorTool
 					protected List<Image> doInBackground() throws Exception
 					{
 						List<Image> previewImages = new ArrayList<>();
-						Map<String, Tuple2<ImageAndMasks, Integer>> iconsInGroup = ImageCache
-								.getInstance(settings.artPack, settings.customImagesPath).getIconsWithWidths(selector.type, groupId);
+						Map<String, ImageAndMasks> iconsInGroup = ImageCache
+								.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
 
 						for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
 						{
@@ -505,7 +505,7 @@ public class IconsTool extends EditorTool
 								throw new IllegalArgumentException(
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
-							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
+							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).image;
 							Image preview = namedIconPreviewCache
 									.getOrCreate(new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension), () ->
 									{
@@ -681,7 +681,7 @@ public class IconsTool extends EditorTool
 		return groupPreviewCache.getOrCreate(new Tuple3<>(settings.artPack, iconType, groupName), () ->
 		{
 			List<Image> croppedImages = new ArrayList<>();
-			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType,
+			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType,
 					groupName))
 			{
 				croppedImages.add(imageAndMasks.cropToContent());
