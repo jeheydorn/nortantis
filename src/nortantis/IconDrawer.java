@@ -1329,9 +1329,7 @@ public class IconDrawer
 						int i = Math.abs(rand.nextInt());
 
 						double widthBeforeTypeLevelScaling = getShuffledIconWidthBeforeTypeLevelScaling(c, IconType.mountains);
-						ImageAndMasks imageAndMasks = mountainImagesById.get(fileNameRangeId)
-								.get(i % mountainImagesById.get(fileNameRangeId).size());
-						double scale = widthBeforeTypeLevelScaling / getBaseWidth(IconType.mountains, imageAndMasks);
+						double scale = widthBeforeTypeLevelScaling / meanPolygonWidth;
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForNewMap, fileNameRangeId, i,

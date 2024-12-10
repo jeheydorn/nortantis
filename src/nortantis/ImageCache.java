@@ -358,10 +358,14 @@ public class ImageCache
 			// width
 			return 13;
 		}
-		else if (type == IconType.cities || type == IconType.decorations)
+		else if (type == IconType.cities)
 		{
 			// width
-			return 11;
+			return 32;
+		}
+		else if (type == IconType.decorations)
+		{
+			return 50;
 		}
 		else if (type == IconType.trees)
 		{
@@ -424,8 +428,13 @@ public class ImageCache
 		if (matcher.find())
 		{
 			String nameWithoutWidth = matcher.group(1).trim();
-			Double width = (double) Integer.parseInt(matcher.group(2));
-			return new Tuple2<>(nameWithoutWidth, width);
+			Double size = (double) Integer.parseInt(matcher.group(2));
+			if (size == 0.0)
+			{
+				throw new RuntimeException("The image '" + fileName + "' has an encoded width or height of 0.");
+			}
+			
+			return new Tuple2<>(nameWithoutWidth, size);
 		}
 
 		return new Tuple2<>(baseName, null);
