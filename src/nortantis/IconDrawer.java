@@ -304,19 +304,19 @@ public class IconDrawer
 		return changeBounds;
 	}
 
-	private double getShuffledIconWidthBeforeTypeLevelScaling(Center center, IconType type)
+	private double getWidthScaleForNewShuffledIcon(Center center, IconType type)
 	{
 		if (type == IconType.mountains)
 		{
-			return center.findWidth();
+			return graph.findCenterWidthBetweenNeighbors(center) / averageCenterWidthBetweenNeighbors;
 		}
 		else if (type == IconType.hills)
 		{
-			return center.findWidth();
+			return graph.findCenterWidthBetweenNeighbors(center) / averageCenterWidthBetweenNeighbors;
 		}
 		else if (type == IconType.sand)
 		{
-			return meanPolygonWidth;
+			return 1.0;
 		}
 		else
 		{
@@ -365,8 +365,7 @@ public class IconDrawer
 		{
 			loc = center.loc;
 		}
-		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, type);
-		double scale = scaledWidth / meanPolygonWidth;
+		double scale = getWidthScaleForNewShuffledIcon(center, type);
 		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, cEdit.icon.artPack, groupId, cEdit.icon.iconIndex, cEdit.index);
 		Rectangle changeBounds = null;
 		IconDrawTask drawTask = toIconDrawTask(icon);
@@ -421,7 +420,8 @@ public class IconDrawer
 			ListMap<String, ImageAndMasks> iconsByGroup)
 	{
 		ImageAndMasks imageAndMasks = iconsByGroup.get(groupId).get(iconIndex % iconsByGroup.get(groupId).size());
-		double scaledWidth = getShuffledIconWidthBeforeTypeLevelScaling(center, IconType.mountains);
+		double scale = getWidthScaleForNewShuffledIcon(center, IconType.mountains);
+		double scaledWidth = getBaseWidth(IconType.mountains, imageAndMasks) * scale;
 		return getImageCenterToDrawImageNearBottomOfCenter(imageAndMasks.image, scaledWidth * mountainScale, center);
 	}
 
@@ -608,7 +608,8 @@ public class IconDrawer
 	{
 		String artPackToUse = chooseNewArtPackIfNeeded(type, artPack, groupId, name, warningLogger, false);
 
-		Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath).getIconsByNameForGroup(type, groupId);
+		Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(artPackToUse, customImagesPath).getIconsByNameForGroup(type,
+				groupId);
 		if (imagesInGroup == null || imagesInGroup.isEmpty())
 		{
 			String newGroupId = chooseNewGroupId(ImageCache.getInstance(artPackToUse, customImagesPath).getIconGroupNames(type), groupId);
@@ -1328,8 +1329,7 @@ public class IconDrawer
 						// is drawn at.
 						int i = Math.abs(rand.nextInt());
 
-						double widthBeforeTypeLevelScaling = getShuffledIconWidthBeforeTypeLevelScaling(c, IconType.mountains);
-						double scale = widthBeforeTypeLevelScaling / meanPolygonWidth;
+						double scale = getWidthScaleForNewShuffledIcon(c, IconType.mountains);
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForNewMap, fileNameRangeId, i,
@@ -1366,10 +1366,9 @@ public class IconDrawer
 							// is drawn at.
 							int i = Math.abs(rand.nextInt());
 
-							double widthBeforeTypeLevelScaling = getShuffledIconWidthBeforeTypeLevelScaling(c, IconType.hills);
 							ImageAndMasks imageAndMasks = hillImagesById.get(fileNameRangeId)
 									.get(i % hillImagesById.get(fileNameRangeId).size());
-							double scale = widthBeforeTypeLevelScaling / getBaseWidth(IconType.hills, imageAndMasks);
+							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
 
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForNewMap, fileNameRangeId,
 									i, c.index);
@@ -1818,8 +1817,8 @@ public class IconDrawer
 		ImageAndMasks imageAndMasks;
 		if (icon.type == IconType.cities || icon.type == IconType.decorations)
 		{
-			Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(icon.artPack, customImagesPath).getIconsByNameForGroup(icon.type,
-					icon.groupId);
+			Map<String, ImageAndMasks> imagesInGroup = ImageCache.getInstance(icon.artPack, customImagesPath)
+					.getIconsByNameForGroup(icon.type, icon.groupId);
 
 			if (imagesInGroup == null || imagesInGroup.isEmpty())
 			{
@@ -1837,12 +1836,12 @@ public class IconDrawer
 		{
 			List<ImageAndMasks> imagesInGroup = ImageCache.getInstance(icon.artPack, customImagesPath).getIconsInGroup(icon.type,
 					icon.groupId);
-			
+
 			if (imagesInGroup == null || imagesInGroup.isEmpty())
 			{
 				return null;
 			}
-			
+
 			imageAndMasks = imagesInGroup.get(icon.iconIndex % imagesInGroup.size());
 		}
 
