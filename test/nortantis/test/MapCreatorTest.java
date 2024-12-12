@@ -184,6 +184,12 @@ public class MapCreatorTest
 	{
 		generateAndCompare("allTypesOfEdits.nort");
 	}
+	
+	@Test
+	public void customImagesWithSizesInFileNames()
+	{
+		generateAndCompare("customImagesWithSizesInFileNames.nort");
+	}
 
 	@Test
 	public void iconReplacements()
@@ -213,19 +219,19 @@ public class MapCreatorTest
 		assertTrue(warnings.contains(
 				"Unable to find the art pack 'custom' to load the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
 		assertTrue(warnings.contains(
-				"Unable to find the art pack 'custom' to load the icon 'compass 1 ' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+				"Unable to find the art pack 'custom' to load the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertTrue(warnings.contains(
-				"Unable to find the art pack 'custom' to load the icon 'ship 6 ' from decoration image group 'boats'. The art pack 'nortantis' will be used instead."));
+				"Unable to find the art pack 'custom' to load the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
 				"Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
-				"Unable to find the art pack 'custom' to load the icon 'small house 1 ' from city image group 'other'. The art pack 'nortantis' will be used instead."));
+				"Unable to find the art pack 'custom' to load the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
 				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
 				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
-				"Unable to find the art pack 'custom' to load the icon 'town ' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+				"Unable to find the art pack 'custom' to load the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertEquals(17, warnings.size());
 	}
 
@@ -264,19 +270,19 @@ public class MapCreatorTest
 		assertTrue(warnings.contains(
 				"The art pack 'custom' no longer has mountain images, so it does not have the mountain image group 'sharp'. The art pack 'nortantis' will be used instead because it has the same image group folder name."));
 		assertTrue(warnings.contains(
-				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1 ' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'compass 1' from decoration image group 'compasses'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertTrue(warnings.contains(
-				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6 ' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images."));
+				"The art pack 'custom' no longer has decoration images, so it does not have the icon 'ship 6' from decoration image group 'boats'. The art pack 'nortantis' will be used instead because it has decoration images."));
 		assertTrue(warnings.contains(
 				"Unable to find the decoration image group 'boats' in art pack 'custom'. The group 'ships' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
-				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1 ' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images."));
+				"The art pack 'custom' no longer has city images, so it does not have the icon 'small house 1' from city image group 'other'. The art pack 'nortantis' will be used instead because it has city images."));
 		assertTrue(warnings.contains(
 				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
 				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
-				"The art pack 'custom' no longer has city images, so it does not have the icon 'town ' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
+				"The art pack 'custom' no longer has city images, so it does not have the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertEquals(20, warnings.size());
 	}
 

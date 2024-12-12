@@ -227,7 +227,6 @@ public class ImageCache
 					Image icon = loadIconFromDiskOrCache(iconType, groupName, fileName);
 					double width = IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), nameAndHeight.getSecond()).width;
 					nameAndWidth = new Tuple2<>(nameAndHeight.getFirst(), width);
-					System.out.println("Calculating width of " + imagesPath + "> " + iconType + " > " + groupName + " > " + fileName + " from height of " + nameAndHeight.getSecond() + ". Result: " + width);
 				}
 			}
 			else
@@ -236,7 +235,6 @@ public class ImageCache
 				{
 					throw new RuntimeException("The image " + fileName + " has both an encoded height and width. Only one is allowed.");
 				}
-				System.out.println("Width of " + imagesPath + "> " + iconType + " > " + groupName + " > " + fileName + " loaded from file name. Result: " + nameAndWidth.getSecond());
 			}
 
 			String fileNameBaseWithoutWidth = nameAndWidth.getFirst();
@@ -262,7 +260,6 @@ public class ImageCache
 			if (nameAndWidth.getSecond() == null)
 			{
 				width = icon.getWidth() * (widthOfWidest / widest.getWidth());
-				System.out.println("Calculating width of " + imagesPath + "> " + iconType + " > " + groupName + " > " + nameAndWidth.getThird() + " from widest icon. Result: " + width);
 			}
 			else
 			{
@@ -316,27 +313,19 @@ public class ImageCache
 			{
 				IntDimension d1 = icon1.size();
 				IntDimension d2 = icon2.size();
-
-				if (preferTallestInsteadOfWidestForSizeReferenceIcon(iconType))
-				{
-					return Integer.compare(d1.height, d2.height);
-				}
-				else
-				{
-					return Integer.compare(d1.width, d2.width);
-				}
+				return Integer.compare(d1.width, d2.width);
 			});
 
 			Image icon = iconsByName.get(nameOfWidestOrTallest);
 			double widthOrHeight = getDefaultWidthOrHeight(iconType);
-			double width = preferTallestInsteadOfWidestForSizeReferenceIcon(iconType) ? widthOrHeight
+			double width = isDefaultSizeByWidth(iconType) ? widthOrHeight
 					: IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), widthOrHeight).width;
 			return new Tuple2<>(icon, width);
 		}
 	}
 	
 	
-	private boolean preferTallestInsteadOfWidestForSizeReferenceIcon(IconType type)
+	private boolean isDefaultSizeByWidth(IconType type)
 	{
 		return type != IconType.trees;
 	}
