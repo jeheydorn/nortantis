@@ -1365,11 +1365,8 @@ public class IconDrawer
 							// matter what resolution the map
 							// is drawn at.
 							int i = Math.abs(rand.nextInt());
-
-							ImageAndMasks imageAndMasks = hillImagesById.get(fileNameRangeId)
-									.get(i % hillImagesById.get(fileNameRangeId).size());
+							
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
-
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForNewMap, fileNameRangeId,
 									i, c.index);
 
