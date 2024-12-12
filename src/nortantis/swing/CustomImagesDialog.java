@@ -92,7 +92,7 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(new JLabel(
 				"<html>For icons (things drawn in the Icons tool), to control the size your images draw on your map, you can specify a"
 						+ " width or height in the file name, such as width=&lt;number&gt;"
-						+ " (or w&lt;number&gt; for short) or height=&lt;number&gt; (or h&lt;number&gt; for short). Example: \"large castle w28.png\" will draw"
+						+ " (or w&lt;number&gt; for short) or height=&lt;number&gt; (or h&lt;number&gt; for short). For example, an image named \"large castle w28.png\" will draw"
 						+ " at 28 units wide (where a unit is a measurement based on the width of polygons in the map). Only width <em>or</em> height can be given, not"
 						+ " both, that way scaling respects the aspect ratio. If you specify the size of just one image in a folder, then the others will be"
 						+ " scaled proportionately to that one. Note that mountain and hill sizes vary based on the size of the polygons they are initially drawn on. "
