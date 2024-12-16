@@ -128,7 +128,7 @@ public class NameCreator
 		}
 		else
 		{
-			if (words.contains("city") || words.contains("buildings"))
+			if (words.contains("city") || words.contains("buildings") || words.contains("cathedral"))
 			{
 				result.add(CityType.City);
 			}
