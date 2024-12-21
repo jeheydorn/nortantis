@@ -229,7 +229,7 @@ public class MapCreatorTest
 		assertTrue(warnings.contains(
 				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
-				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
+				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'town on a hill' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
 				"Unable to find the art pack 'custom' to load the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertEquals(17, warnings.size());
@@ -280,7 +280,7 @@ public class MapCreatorTest
 		assertTrue(warnings.contains(
 				"Unable to find the city image group 'other' in art pack 'custom'. The group 'flat' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
-				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'farm' in art pack 'nortantis' will be used instead."));
+				"Unable to find the city icon 'small house 1' in art pack 'custom'. The icon 'town on a hill' in art pack 'nortantis' will be used instead."));
 		assertTrue(warnings.contains(
 				"The art pack 'custom' no longer has city images, so it does not have the icon 'town' from city image group 'middle ages'. The art pack 'nortantis' will be used instead because it has the same image group folder and image name."));
 		assertEquals(20, warnings.size());

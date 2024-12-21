@@ -354,7 +354,7 @@ public class ImageCache
 		}
 		else if (type == IconType.decorations)
 		{
-			return 50;
+			return 45;
 		}
 		else if (type == IconType.trees)
 		{

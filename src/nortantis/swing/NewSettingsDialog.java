@@ -10,6 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
@@ -43,6 +44,7 @@ import nortantis.swing.ThemePanel.LandColoringMethod;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
+import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
 
 @SuppressWarnings("serial")
@@ -88,6 +90,11 @@ public class NewSettingsDialog extends JDialog
 			settings.heightmapExportPath = null;
 			randomizeLand();
 			settings.textRandomSeed = Math.abs(new Random().nextInt());
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
+			if (cityIconTypes.size() > 0)
+			{
+				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
+			}
 		}
 		loadSettingsIntoGUI(settings);
 
@@ -596,6 +603,7 @@ public class NewSettingsDialog extends JDialog
 
 		cityFrequencySlider.setValue((int) (settings.cityProbability * cityFrequencySliderScale));
 		initializeArtPackOptionsAndCityTypeOptions();
+		cityIconsTypeComboBox.setSelectedItem(settings.cityIconTypeName);
 
 		booksWidget.checkSelectedBooks(settings.books);
 

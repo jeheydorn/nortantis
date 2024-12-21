@@ -136,11 +136,13 @@ public class NameCreator
 			{
 				result.add(CityType.Town);
 			}
-			if (words.contains("farm") || words.contains("homestead") || words.contains("building") || words.contains("house"))
+			if (words.contains("homestead") || words.contains("building") || words.contains("house")
+					|| words.contains("windmill"))
 			{
 				result.add(CityType.Homestead);
 			}
-			if (words.contains("farm") || words.contains("plantation") || words.contains("farmstead") || words.contains("ranch"))
+			if (words.contains("farm") || words.contains("plantation") || words.contains("farmstead") || words.contains("ranch")
+					|| words.contains("windmill"))
 			{
 				result.add(CityType.Farm);
 			}

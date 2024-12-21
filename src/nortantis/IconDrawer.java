@@ -1218,11 +1218,37 @@ public class IconDrawer
 	 */
 	public List<IconDrawTask> addOrUnmarkCities()
 	{
-		Map<String, ImageAndMasks> cityIcons = ImageCache.getInstance(artPackForNewMap, customImagesPath)
-				.getIconsByNameForGroup(IconType.cities, cityIconTypeForNewMaps);
+		String artPackForCities;
+		String cityTypeToUse;
+		if (StringUtils.isEmpty(cityIconTypeForNewMaps) || ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getIconsByNameForGroup(IconType.cities, cityIconTypeForNewMaps).isEmpty())
+		{
+			artPackForCities = Assets.installedArtPack;
+			List<String> cityIconTypes = ImageCache.getInstance(artPackForCities, customImagesPath).getIconGroupNames(IconType.cities);
+			if (cityIconTypes.size() > 0)
+			{
+				cityTypeToUse = ProbabilityHelper.sampleUniform(rand, new ArrayList<>(cityIconTypes));
+			}
+			else
+			{
+				// Should never happen since there are installed cities.
+				Logger.println("The selected art pack, '" + artPackForNewMap + "', has no cities for the city type '" + cityIconTypeForNewMaps + ". There are also no cities in the " + Assets.installedArtPack + " art pack, so none will be drawn."); 
+				return new ArrayList<>(0);
+			}
+
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no cities for the city type '" + cityIconTypeForNewMaps + "'. Cities from the '" + Assets.installedArtPack + "' art pack will be used instead.");			
+		}
+		else
+		{
+			artPackForCities = artPackForNewMap;
+			cityTypeToUse = cityIconTypeForNewMaps;
+		}
+		
+		Map<String, ImageAndMasks> cityIcons = ImageCache.getInstance(artPackForCities, customImagesPath)
+				.getIconsByNameForGroup(IconType.cities, cityTypeToUse);
 		if (cityIcons.isEmpty())
 		{
-			Logger.println("Cities will not be drawn because there are no city icons of type '" + cityIconTypeForNewMaps + "'.");
+			Logger.println("Cities will not be drawn because there are no city icons of type '" + cityTypeToUse + "'.");
 			return new ArrayList<>(0);
 		}
 
@@ -1235,7 +1261,7 @@ public class IconDrawer
 			if (c.isCity)
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForNewMap, cityIconTypeForNewMaps,
+				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse,
 						cityName, c.index);
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
@@ -1260,21 +1286,45 @@ public class IconDrawer
 	 */
 	public void addOrUnmarkMountainsAndHills(List<Set<Center>> mountainAndHillGroups)
 	{
+		String artPackForMountains;
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getIconGroupsAsListsForType(IconType.mountains).isEmpty())
+		{
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no mountains. Mountains from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			artPackForMountains = Assets.installedArtPack;
+		}
+		else
+		{
+			artPackForMountains = artPackForNewMap;
+		}
+		
 		// Maps mountain range ids (the ids in the file names) to list of
 		// mountain images and their masks.
-		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(artPackForNewMap, customImagesPath)
+		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(artPackForMountains, customImagesPath)
 				.getIconGroupsAsListsForType(IconType.mountains);
 
 		if (mountainImagesById.isEmpty())
 		{
 			Logger.println("No mountains or hills will be added because there are no mountain images.");
 		}
+		
+		String artPackForHills;
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getIconGroupsAsListsForType(IconType.hills).isEmpty())
+		{
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no hills. Hills from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			artPackForHills = Assets.installedArtPack;
+		}
+		else
+		{
+			artPackForHills = artPackForNewMap;
+		}
 
 		// Maps mountain range ids (the ids in the file names) to list of hill
 		// images and their masks.
 		// The hill image file names must use the same ids as the mountain
 		// ranges.
-		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(artPackForNewMap, customImagesPath)
+		ListMap<String, ImageAndMasks> hillImagesById = ImageCache.getInstance(artPackForHills, customImagesPath)
 				.getIconGroupsAsListsForType(IconType.hills);
 
 		if (hillImagesById.isEmpty() && !mountainImagesById.isEmpty())
@@ -1332,7 +1382,7 @@ public class IconDrawer
 						double scale = getWidthScaleForNewShuffledIcon(c, IconType.mountains);
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
-						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForNewMap, fileNameRangeId, i,
+						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId, i,
 								c.index);
 
 						IconDrawTask task = toIconDrawTask(icon);
@@ -1367,7 +1417,7 @@ public class IconDrawer
 							int i = Math.abs(rand.nextInt());
 							
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
-							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForNewMap, fileNameRangeId,
+							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId,
 									i, c.index);
 
 							IconDrawTask task = toIconDrawTask(icon);
@@ -1389,7 +1439,19 @@ public class IconDrawer
 
 	public void addSandDunes()
 	{
-		ListMap<String, ImageAndMasks> sandGroups = ImageCache.getInstance(artPackForNewMap, customImagesPath)
+		String artPackForDunes;
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getIconGroupsAsListsForType(IconType.sand).isEmpty())
+		{
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no sand dune images. Sand dunes from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			artPackForDunes = Assets.installedArtPack;
+		}
+		else
+		{
+			artPackForDunes = artPackForNewMap;
+		}
+		
+		ListMap<String, ImageAndMasks> sandGroups = ImageCache.getInstance(artPackForDunes, customImagesPath)
 				.getIconGroupsAsListsForType(IconType.sand);
 		if (sandGroups == null || sandGroups.isEmpty())
 		{
@@ -1431,7 +1493,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = Math.abs(rand.nextInt());
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForNewMap, groupId, i, c.index);
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index);
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -1444,13 +1506,25 @@ public class IconDrawer
 
 	public void addTrees()
 	{
+		String artPackForTrees;
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
+				.getIconGroupsAsListsForType(IconType.sand).isEmpty())
+		{
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no trees. Trees from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			artPackForTrees = Assets.installedArtPack;
+		}
+		else
+		{
+			artPackForTrees = artPackForNewMap;
+		}
+		
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
 
 		for (final ForestType forest : forestTypes)
 		{
 			if (forest.biomeFrequency != 1.0)
 			{
-				String iconGroupId = getGroupIdForForestType(forest);
+				String iconGroupId = getGroupIdForForestType(artPackForTrees, forest);
 				List<Set<Center>> groups = findCenterGroups(graph, maxGapBetweenBiomeGroups, new Function<Center, Boolean>()
 				{
 					public Boolean apply(Center center)
@@ -1466,7 +1540,7 @@ public class IconDrawer
 						{
 							if (canGenerateTreesOnCenter(c))
 							{
-								treesByCenter.put(c.index, new CenterTrees(artPackForNewMap, iconGroupId, forest.density, c.treeSeed));
+								treesByCenter.put(c.index, new CenterTrees(artPackForTrees, iconGroupId, forest.density, c.treeSeed));
 							}
 						}
 					}
@@ -1482,12 +1556,12 @@ public class IconDrawer
 			{
 				if (forest.biomeFrequency == 1.0)
 				{
-					String iconGroupId = getGroupIdForForestType(forest);
+					String iconGroupId = getGroupIdForForestType(artPackForTrees, forest);
 					if (forest.biome.equals(c.biome))
 					{
 						if (canGenerateTreesOnCenter(c))
 						{
-							treesByCenter.put(c.index, new CenterTrees(artPackForNewMap, iconGroupId, forest.density, c.treeSeed));
+							treesByCenter.put(c.index, new CenterTrees(artPackForTrees, iconGroupId, forest.density, c.treeSeed));
 						}
 					}
 				}
@@ -1498,32 +1572,6 @@ public class IconDrawer
 		convertTreesToFreeIcons(treesByCenter, new LoggerWarningLogger());
 	}
 
-	public static Set<TreeType> getTreeTypesForBiome(Biome biome)
-	{
-		Set<TreeType> result = new TreeSet<TreeType>();
-		for (final ForestType forest : forestTypes)
-		{
-			if (forest.biome == biome)
-			{
-				result.add(forest.treeType);
-			}
-		}
-		return result;
-	}
-
-	public static Set<Biome> getBiomesForTreeType(TreeType type)
-	{
-		Set<Biome> result = new TreeSet<>();
-		for (final ForestType forest : forestTypes)
-		{
-			if (forest.treeType == type)
-			{
-				result.add(forest.biome);
-			}
-		}
-		return result;
-	}
-
 	private static List<ForestType> forestTypes;
 	static
 	{
@@ -1532,7 +1580,8 @@ public class IconDrawer
 		forestTypes.add(new ForestType(TreeType.Pine, Biome.TAIGA, 1.0, 1.0));
 		forestTypes.add(new ForestType(TreeType.Pine, Biome.SHRUBLAND, 1.0, 1.0));
 		forestTypes.add(new ForestType(TreeType.Pine, Biome.HIGH_TEMPERATE_DECIDUOUS_FOREST, 1.0, 0.25));
-		forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 1.0 / 8.0, 0.1));
+		forestTypes.add(new ForestType(TreeType.Cacti, Biome.HIGH_TEMPERATE_DESERT, 1.0 / 16.0, 0.25));
+		forestTypes.add(new ForestType(TreeType.Cacti, Biome.TEMPERATE_DESERT, 1.0 / 16.0, 0.25));
 	}
 
 	private boolean canGenerateTreesOnCenter(Center c)
@@ -1733,9 +1782,9 @@ public class IconDrawer
 		}
 	};
 
-	private String getGroupIdForForestType(ForestType forest)
+	private String getGroupIdForForestType(String artPack, ForestType forest)
 	{
-		List<String> groups = ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupNames(IconType.trees);
+		List<String> groups = ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(IconType.trees);
 		String keyWord = forest.treeType.toString().toLowerCase();
 
 		if (groups == null || groups.isEmpty())
@@ -1758,7 +1807,7 @@ public class IconDrawer
 		}
 
 		// When all else fails, arbitrarily pick one of the tree types.
-		return chooseNewGroupId(ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupNames(IconType.trees), keyWord);
+		return chooseNewGroupId(ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(IconType.trees), keyWord);
 	}
 
 	private void addTreeNearLocation(WorldGraph graph, List<ImageAndMasks> unscaledImages, Point loc, double forestDensity, Center center,
