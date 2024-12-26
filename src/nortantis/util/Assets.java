@@ -185,6 +185,11 @@ public class Assets
 		{
 			return null;
 		}
+		if (StringUtils.isEmpty(resource.name) || StringUtils.isEmpty(resource.artPack))
+		{
+			// I don't know how, but in a stack trace of a crash I found that resource.name was null, so I'm adding this to be safe.
+			return null;
+		}
 		Path artPackPath = getArtPackPath(resource.artPack, customImagesFolder);
 		if (artPackPath == null)
 		{

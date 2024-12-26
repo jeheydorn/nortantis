@@ -190,11 +190,6 @@ public class Center implements Comparable<Center>
 		return isWater && !isLake;
 	}
 
-	public Set<TreeType> getTreeTypes()
-	{
-		return IconDrawer.getTreeTypesForBiome(biome);
-	}
-
 	public static double distanceBetween(Center c1, Center c2)
 	{
 		if (c1 == null || c2 == null)

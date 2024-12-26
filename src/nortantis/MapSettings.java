@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -51,7 +52,7 @@ import nortantis.util.Tuple2;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "3.0";
+	public static final String currentVersion = "3.01";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -925,6 +926,37 @@ public class MapSettings implements Serializable
 		runConversionToFixDunesGroupId();
 		runConversionOnBackgroundTextureImagePaths();
 		runConversionOnBorderType();
+		runConversionToRemoveTrailingSpacesInImageNamesWithWidth();
+	}
+	
+	private void runConversionToRemoveTrailingSpacesInImageNamesWithWidth()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.01"))
+		{
+			return;
+		}
+		
+		for (FreeIcon icon : edits.freeIcons)
+		{
+			String trimmed = StringHelper.trimTrailingSpacesAndUnderscores(icon.iconName);
+			if (!Objects.equals(trimmed, icon.iconName))
+			{
+				edits.freeIcons.replace(icon, icon.copyWithName(trimmed));
+			}
+		}
+		
+		for (Entry<Integer, CenterEdit> entry : edits.centerEdits.entrySet())
+		{
+			CenterEdit cEdit = entry.getValue();
+			if (cEdit.icon != null && !StringUtils.isEmpty(cEdit.icon.iconName))
+			{
+				String trimmed = StringHelper.trimTrailingSpacesAndUnderscores(cEdit.icon.iconName);
+				if (!Objects.equals(trimmed, cEdit.icon.iconName))
+				{
+					edits.centerEdits.put(entry.getKey(), cEdit.copyWithIcon(cEdit.icon.copyWithIconName(trimmed)));
+				}
+			}
+		}
 	}
 
 	/**
@@ -1472,7 +1504,7 @@ public class MapSettings implements Serializable
 	 * @return Piece 1 - The path Piece 2 - An optional warning message.
 	 */
 	public Tuple2<Path, String> getBackgroundImagePath()
-	{
+	{	
 		if (backgroundTextureSource == TextureSource.File && StringUtils.isEmpty(backgroundTextureImage))
 		{
 			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath),

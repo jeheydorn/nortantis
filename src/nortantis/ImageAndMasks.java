@@ -30,16 +30,23 @@ public class ImageAndMasks
 	 */
 	private Image shadingMask;
 	private IconType iconType;
+	/**
+	 * Either the width encoded in the icons' file name, or a width calculated based on the size of other icons in the group and the default
+	 * size of icons in the group.
+	 */
+	public final double widthFromFileName;
 
-	public ImageAndMasks(Image image, IconType iconType)
+	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName)
 	{
 		this.image = image;
 		this.iconType = iconType;
+		this.widthFromFileName = widthFromFileName;
 	}
 
-	public ImageAndMasks(Image image, Image contentMask, IntRectangle contentBounds, Image shadingMask, IconType iconType)
+	public ImageAndMasks(Image image, Image contentMask, IntRectangle contentBounds, Image shadingMask, IconType iconType,
+			double widthFromFileName)
 	{
-		this(image, iconType);
+		this(image, iconType, widthFromFileName);
 		this.contentMask = contentMask;
 		this.shadingMask = shadingMask;
 		this.contentBounds = contentBounds;

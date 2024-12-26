@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -494,8 +495,8 @@ public class IconsTool extends EditorTool
 					protected List<Image> doInBackground() throws Exception
 					{
 						List<Image> previewImages = new ArrayList<>();
-						Map<String, Tuple2<ImageAndMasks, Integer>> iconsInGroup = ImageCache
-								.getInstance(settings.artPack, settings.customImagesPath).getIconsWithWidths(selector.type, groupId);
+						Map<String, ImageAndMasks> iconsInGroup = ImageCache
+								.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
 
 						for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
 						{
@@ -505,7 +506,7 @@ public class IconsTool extends EditorTool
 								throw new IllegalArgumentException(
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
-							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).getFirst().image;
+							Image icon = iconsInGroup.get(iconNameWithoutWidthOrExtension).image;
 							Image preview = namedIconPreviewCache
 									.getOrCreate(new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension), () ->
 									{
@@ -681,7 +682,7 @@ public class IconsTool extends EditorTool
 		return groupPreviewCache.getOrCreate(new Tuple3<>(settings.artPack, iconType, groupName), () ->
 		{
 			List<Image> croppedImages = new ArrayList<>();
-			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).loadIconGroup(iconType,
+			for (ImageAndMasks imageAndMasks : ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType,
 					groupName))
 			{
 				croppedImages.add(imageAndMasks.cropToContent());
@@ -732,10 +733,11 @@ public class IconsTool extends EditorTool
 
 		Image previewImage;
 
+		Path backgroundImagePath = settings.getBackgroundImagePath().getFirst();
 		Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> tuple = ThemePanel
 				.createBackgroundImageDisplaysImages(size, settings.backgroundRandomSeed, settings.colorizeOcean, settings.colorizeLand,
 						settings.generateBackground, settings.generateBackgroundFromTexture,
-						settings.getBackgroundImagePath().getFirst().toString());
+						backgroundImagePath == null ? null : backgroundImagePath.toString());
 		if (iconType == IconType.decorations)
 		{
 			previewImage = tuple.getFirst();
@@ -1534,7 +1536,10 @@ public class IconsTool extends EditorTool
 	{
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
-		updateArtPackOptions(settings.artPack, customImagesPath);
+		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem())
+				? (String) artPackComboBox.getSelectedItem()
+				: settings.artPack;
+		updateArtPackOptions(artPackToSelect, customImagesPath);
 		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
 			if (Assets.artPackExists(artPack, customImagesPath))

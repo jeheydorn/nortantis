@@ -71,7 +71,8 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 			IntRectangle scaledContentBounds = ImageAndMasks.calcScaledContentBounds(unScaledImageAndMasks.getOrCreateContentMask(),
 					unScaledImageAndMasks.getOrCreateContentBounds(), scaledSize.width, scaledSize.height);
 
-			scaledImageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type);
+			scaledImageAndMasks = new ImageAndMasks(scaledImage, scaledContentMask, scaledContentBounds, scaledShadingMask, type,
+					unScaledImageAndMasks.widthFromFileName);
 		}
 	}
 

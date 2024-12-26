@@ -45,7 +45,7 @@ public class CustomImagesDialog extends JDialog
 	public CustomImagesDialog(MainWindow mainWindow, String currentCustomImagesPath, Consumer<String> storeResult)
 	{
 		super(mainWindow, "Custom Images Folder", Dialog.ModalityType.APPLICATION_MODAL);
-		setSize(new Dimension(840, 705));
+		setSize(new Dimension(860, OSHelper.isWindows() ? 750 : 800));
 		JPanel content = new JPanel();
 		add(content);
 		content.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -58,8 +58,8 @@ public class CustomImagesDialog extends JDialog
 		organizer.addLeftAlignedComponent(
 				new JLabel("<html>A custom images folder allows you to use your own images to create an art pack named '"
 						+ Assets.customArtPack + "' that is specific to this map." + " To do so, enter a path to a "
-						+ "folder with your images. If the folder is empty, Nortantis will copy its installed images into it as a "
-						+ "starting point. " + "The required folder structure is: </html>"),
+						+ "folder with your images, or select and folder and Nortantis will copy its installed images into it as a starting point. "
+						+ "The required folder structure is given below. Note that this is the same folder structured used by art packs.</html>"),
 				space, space, false);
 
 		int spaceBetweenPaths = 2;
@@ -89,6 +89,15 @@ public class CustomImagesDialog extends JDialog
 				+ " that you can configure to be whatever name you want. Folder names without angle brackets, however, must be exactly as described above or else Nortantis"
 				+ " will ignore those folders. Images must be either PNG or" + " JPG format. PNG is recommended because it"
 				+ " supports transparency and isn't lossy.</html>"), space, space, false);
+		organizer.addLeftAlignedComponent(new JLabel(
+				"<html>For icons (things drawn in the Icons tool), to control the size your images draw on your map, you can specify a"
+						+ " width or height in the file name, such as width=&lt;number&gt;"
+						+ " (or w&lt;number&gt; for short) or height=&lt;number&gt; (or h&lt;number&gt; for short). For example, an image named \"large castle w28.png\" will draw"
+						+ " at 28 units wide (where a unit is a measurement based on the width of polygons in the map). Only width <em>or</em> height can be given, not"
+						+ " both, that way scaling respects the aspect ratio. If you specify the size of just one image in a folder, then the others will be"
+						+ " scaled proportionately to that one. Note that mountain and hill sizes vary based on the size of the polygons they are initially drawn on. "
+						+ " Also, any icon can be resized on the map by editing it using the Icons tool, and the Effects tab has slider bars to resize all icons of a type.</html>"),
+				space, space, false);
 		organizer.addLeftAlignedComponent(new JLabel("<html>Valid border image names are 'upper_left_corner', 'upper_right_corner', "
 				+ "'lower_left_corner', 'lower_right_corner', 'top_edge', 'bottom_edge', 'left_edge', 'right_edge'. At least one corner and"
 				+ " one edge must be given. If corners are wider than the sides of edges, the corners will be inset into the map.</html>"),

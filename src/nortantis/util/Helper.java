@@ -113,7 +113,7 @@ public class Helper
 		return maxEntry.getKey();
 	}
 
-	public static <K, V> K maxElement(Map<K, V> map, Comparator<V> comparator)
+	public static <K, V> V maxElement(Map<K, V> map, Comparator<V> comparator)
 	{
 		Map.Entry<K, V> maxEntry = null;
 
@@ -124,7 +124,7 @@ public class Helper
 				maxEntry = entry;
 			}
 		}
-		return maxEntry.getKey();
+		return maxEntry.getValue();
 	}
 
 	public static <T> T maxItem(List<T> list, Comparator<T> comparator)

@@ -32,7 +32,6 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -1822,13 +1821,12 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	void loadSettingsIntoGUI(MapSettings settings)
 	{
-		boolean needsImagesRefresh = !Objects.equals(settings.customImagesPath, customImagesPath);
 		hasDrawnCurrentMapAtLeastOnce = false;
 		mapEditingPanel.clearAllSelectionsAndHighlights();
 
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
-		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, needsImagesRefresh);
+		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, true);
 		exportResolution = settings.resolution;
 		imageExportPath = settings.imageExportPath;
 		heightmapExportResolution = settings.heightmapResolution;
@@ -1841,10 +1839,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		undoer.reset();
 
-		if (needsImagesRefresh)
-		{
-			handleImagesRefresh();
-		}
+		handleImagesRefresh();
 
 		if (settings.edits != null && settings.edits.isInitialized())
 		{
