@@ -17,6 +17,7 @@ import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
@@ -128,6 +129,13 @@ public abstract class EditorTool
 	protected Set<Center> getSelectedCenters(java.awt.Point pointFromMouse, int brushDiameter)
 	{
 		Set<Center> selected = new HashSet<Center>();
+		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
+		
+		if (!new RotatedRectangle(updater.mapParts.graph.bounds).overlapsCircle(getPointOnGraph(pointFromMouse), brushRadius) )
+		{
+			// The brush is off the map.
+			return selected;
+		}
 
 		Center center = updater.mapParts.graph.findClosestCenter(getPointOnGraph(pointFromMouse));
 		if (center == null)
@@ -143,8 +151,6 @@ public abstract class EditorTool
 		{
 			return selected;
 		}
-
-		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
 
 		return updater.mapParts.graph.breadthFirstSearch((c) -> isCenterOverlappingCircle(c, getPointOnGraph(pointFromMouse), brushRadius),
 				center);
