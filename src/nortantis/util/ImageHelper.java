@@ -376,16 +376,16 @@ public class ImageHelper
 			}
 		}
 	}
-
+	
 	/*
 	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
 	 */
-	public static void setContrast(float[][] array, float targetMin, float targetMax)
+	public static void setContrast(float[] array, float targetMin, float targetMax, int rows, int cols)
 	{
-		setContrast(array, targetMin, targetMax, 0, array.length, 0, array[0].length);
+		setContrast(array, targetMin, targetMax, 0, rows, 0, cols);
 	}
-
-	public static void setContrast(float[][] array, float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
+	
+	public static void setContrast(float[] array, float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
 	{
 		float min = Float.POSITIVE_INFINITY;
 		float max = Float.NEGATIVE_INFINITY;
@@ -393,7 +393,7 @@ public class ImageHelper
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				float value = array[r][c];
+				float value = array[r * cols + c];
 				if (value < min)
 					min = value;
 				if (value > max)
@@ -408,13 +408,13 @@ public class ImageHelper
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				float value = array[r][c];
-				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
+				float value = array[r * cols + c];
+				array[r * cols + c] = (((value - min) / (range))) * (targetRange) + targetMin;
 			}
 		}
 	}
 
-	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
+	public static void scaleLevels(float[] array, float scale, int rowStart, int rows, int colStart, int cols)
 	{
 		for (int r = rowStart; r < rowStart + rows; r++)
 		{
@@ -423,7 +423,7 @@ public class ImageHelper
 				// Make sure the value is above 0. In theory this shouldn't
 				// happen if the kernel is positive, but very small
 				// values below zero can happen I believe due to rounding error.
-				float value = Math.max(0f, array[r][c] * scale);
+				float value = Math.max(0f, array[r * cols + c] * scale);
 				if (value < 0f)
 				{
 					value = 0f;
@@ -433,7 +433,7 @@ public class ImageHelper
 					value = 1f;
 				}
 
-				array[r][c] = value;
+				array[r * cols + c] = value;
 			}
 		}
 	}
@@ -1177,12 +1177,17 @@ public class ImageHelper
 
 		return data;
 	}
+	
+	public static boolean shouldUseGpu(int rows, int cols)
+	{
+		return rows * cols >= 256 * 256;
+	}
 
 	private static Image realToImage(ComplexArray data, ImageType type, int imageWidth, int imageHeight, boolean setContrast,
 			float contrastMin, float contrastMax, boolean scaleLevels, float scale)
 	{
-		moveRealToLeftSide(data.getArrayJTransformsFormat());
-		swapQuadrantsOfLeftSideInPlace(data.getArrayJTransformsFormat());
+		data.moveRealToLeftSide();
+		data.swapQuadrantsOfLeftSideInPlace();
 
 		int imgRowPaddingOver2 = (data.getHeight() - imageHeight) / 2;
 		int imgColPaddingOver2 = (data.getWidth() - imageWidth) / 2;
@@ -1282,64 +1287,7 @@ public class ImageHelper
 		return data;
 	}
 
-	public static void swapQuadrantsOfLeftSideInPlace(float[][] data)
-	{
-		int rows = data.length;
-		int cols = data[0].length / 2;
-		for (int r = 0; r < rows / 2; r++)
-		{
-			for (int c = 0; c < cols; c++)
-			{
-				if (c < cols / 2)
-				{
-					float temp = data[r + rows / 2][c + cols / 2];
-					data[r + rows / 2][c + cols / 2] = data[r][c];
-					data[r][c] = temp;
-				}
-				else
-				{
-					float temp = data[r + rows / 2][c - cols / 2];
-					data[r + rows / 2][c - cols / 2] = data[r][c];
-					data[r][c] = temp;
-				}
-			}
-		}
-	}
-
-	public static void moveRealToLeftSide(float[][] data)
-	{
-		for (int r = 0; r < data.length; r++)
-		{
-			for (int c = 0; c < data[0].length / 2; c++)
-			{
-				data[r][c] = data[r][c * 2];
-			}
-		}
-	}
-
-	public static float[][] getRealPart(float[][] data)
-	{
-		float[][] result = new float[data.length][data[0].length / 2];
-		for (int r = 0; r < data.length; r++)
-			for (int c = 0; c < data[0].length / 2; c++)
-			{
-				result[r][c] = data[r][c * 2];
-			}
-		return result;
-	}
-
-	public static float[][] getImaginaryPart(float[][] data)
-	{
-		float[][] result = new float[data.length][data[0].length / 2];
-		for (int r = 0; r < data.length; r++)
-			for (int c = 0; c < data[0].length / 2; c++)
-			{
-				result[r][c] = data[r][c * 2 + 1];
-			}
-		return result;
-	}
-
-	public static Image arrayToImage(float[][] array, int rowStart, int rows, int colStart, int cols, ImageType imageType)
+	public static Image arrayToImage(float[] array, int rowStart, int rows, int colStart, int cols, ImageType imageType)
 	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
@@ -1347,7 +1295,7 @@ public class ImageHelper
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
+				int value = Math.min(maxPixelValue, (int) (array[r * cols + c] * maxPixelValue));
 				image.setGrayLevel(c - colStart, r - rowStart, value);
 			}
 		}
@@ -1407,52 +1355,6 @@ public class ImageHelper
 				result[r][c] = rand.nextFloat();
 			}
 		}
-		return result;
-	}
-
-	public static float[][] tile(float[][] array, int targetRows, int targetCols, int rowOffset, int colOffset)
-	{
-		float[][] result = new float[targetRows][targetCols];
-		for (int r = 0; r < result.length; r++)
-			for (int c = 0; c < result[0].length; c++)
-			{
-				int arrayRow = (r + rowOffset) % array.length;;
-				if (((r + rowOffset) / array.length) % 2 == 1)
-					arrayRow = array.length - 1 - arrayRow;
-
-				int arrayCol = (c + colOffset) % array[0].length;
-				if (((c + colOffset) / array[0].length) % 2 == 1)
-					arrayCol = array[0].length - 1 - arrayCol;
-
-				result[r][c] = array[arrayRow][arrayCol];
-
-			}
-
-		return result;
-	}
-
-	public static Image tile(Image image, int targetRows, int targetCols)
-	{
-		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0), image.getType());
-	}
-
-	public static Image tileNTimes(Image image, int n)
-	{
-		return tile(image, image.getWidth() * n, image.getHeight() * n);
-	}
-
-	public static float[][] convertToTransformsInputFormat(float[][] transformReal, float[][] transformImaginary)
-	{
-		if (transformReal.length != transformImaginary.length)
-			throw new IllegalArgumentException();
-		if (transformReal[0].length != transformImaginary[0].length)
-			throw new IllegalArgumentException();
-		float[][] result = new float[transformReal.length][transformReal[0].length * 2];
-		for (int r = 0; r < result.length; r++)
-			for (int c = 0; c < result[0].length; c++)
-			{
-				result[r][c] = c % 2 == 0 ? transformReal[r][c / 2] : transformImaginary[r][c / 2];
-			}
 		return result;
 	}
 

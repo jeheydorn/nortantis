@@ -38,18 +38,18 @@ public class FractalBGGenerator
 			rows = cols;
 
 		// Generate white noise and convert the input to the format required by JTransforms.
-		float[][] data = new float[rows][2 * cols];
+		ComplexArray data = new ComplexArray(cols, rows);
 
 		FloatFFT_2D fft = new FloatFFT_2D(rows, cols);
 		{
 			for (int r = 0; r < rows; r++)
 				for (int c = 0; c < cols; c++)
 				{
-					data[r][c] = rand.nextFloat();
+					data.setReal(c, r, rand.nextFloat());
 				}
 
 			// Do the forward FFT.
-			fft.realForwardFull(data);
+			fft.realForwardFull(data.getArrayJTransformsFormat());
 		}
 
 		final int rowsFinal = rows;
@@ -59,8 +59,8 @@ public class FractalBGGenerator
 		{
 			for (int c = 0; c < colsFinal; c++)
 			{
-				float dataR = data[r][c * 2];
-				float dataI = data[r][c * 2 + 1];
+				float dataR = data.getReal(c, r);
+				float dataI = data.getImaginary(c, r);
 
 				float rF = Math.min(r, rowsFinal - r);
 				float cF = Math.min(c, colsFinal - c);
@@ -78,21 +78,22 @@ public class FractalBGGenerator
 					real = dataR * scale;
 					imaginary = dataI * scale;
 				}
-				data[r][c * 2] = real;
-				data[r][c * 2 + 1] = imaginary;
+				data.setReal(c, r, real);
+				data.setImaginary(c, r, imaginary);
 			}
 		});
 
 		// ImageIO.write(ImageHelper.arrayToImage(data), "png", new File("frequencies.png"));
 
 		// Do the inverse DFT on the product.
-		fft.complexInverse(data, true);
-		ImageHelper.moveRealToLeftSide(data);
-		ImageHelper.swapQuadrantsOfLeftSideInPlace(data);
+		fft.complexInverse(data.getArrayJTransformsFormat(), true);
+		data.moveRealToLeftSide();
+		data.swapQuadrantsOfLeftSideInPlace();
 
-		ImageHelper.setContrast(data, 0.5f - contrast / 2f, 0.5f + contrast / 2f);
+		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f, data.getHeight(),
+				data.getWidth());
 
-		Image result = ImageHelper.arrayToImage(data, 0, height, 0, width, ImageType.Grayscale8Bit);
+		Image result = ImageHelper.arrayToImage(data.getArrayJTransformsFormat(), 0, height, 0, width, ImageType.Grayscale8Bit);
 		return result;
 
 	}
@@ -110,7 +111,6 @@ public class FractalBGGenerator
 
 		ImageHelper.openImageInSystemDefaultEditor(background, "cloud");
 		System.out.println("Done.");
-		System.exit(0);
 	}
 
 }
