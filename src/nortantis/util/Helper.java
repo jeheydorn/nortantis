@@ -273,4 +273,73 @@ public class Helper
 		return result;
 	}
 
+	public static float[] array2DTo1D(float[][] input)
+	{
+		if (input == null)
+		{
+			return null;
+		}
+		if (input.length == 0)
+		{
+			return new float[0];
+		}
+		float[] result = new float[input.length * input[0].length];
+
+		for (int r = 0; r < input.length; r++)
+		{
+			for (int c = 0; c < input[0].length; c++)
+			{
+				result[r * input[0].length + c] = input[r][c];
+			}
+		}
+		return result;
+	}
+
+	public static float[][] array1DTo2D(float[] input, int rows, int cols)
+	{
+		if (input == null)
+		{
+			return null;
+		}
+		if (input.length != rows * cols)
+		{
+			throw new IllegalArgumentException("Invalid input array length");
+		}
+		float[][] result = new float[rows][cols];
+
+		for (int r = 0; r < rows; r++)
+		{
+			for (int c = 0; c < cols; c++)
+			{
+				result[r][c] = input[r * cols + c];
+			}
+		}
+		return result;
+	}
+	
+	public static void copyArray1DTo2D(float[][] array2D, float[] array1D)
+	{
+		if (array2D == null)
+		{
+			return;
+		}
+		if (array2D.length == 0)
+		{
+			return;
+		}
+		
+		if (array1D.length != array2D.length * array2D[0].length)
+		{
+			throw new IllegalArgumentException("Invalid input array2D length");
+		}
+		
+		for (int r = 0; r < array2D.length; r++)
+		{
+			for (int c = 0; c < array2D[0].length; c++)
+			{
+				array2D[r][c] = array1D[r * array2D[0].length + c];
+			}
+		}
+	}
+
 }

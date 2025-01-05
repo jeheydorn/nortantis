@@ -88,10 +88,14 @@ public class FractalBGGenerator
 		// Do the inverse DFT on the product.
 		fft.complexInverse(data.getArrayJTransformsFormat(), true);
 		data.moveRealToLeftSide();
+		// TODO put back
 		data.swapQuadrantsOfLeftSideInPlace();
 
-		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f, data.getHeight(),
-				data.getWidth());
+		// TODO put back
+//		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f, data.getHeight(),
+//				data.getWidth());
+		// TODO take out the line below when I put the one above it back
+		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f);
 
 		Image result = ImageHelper.arrayToImage(data.getArrayJTransformsFormat(), 0, height, 0, width, ImageType.Grayscale8Bit);
 		return result;
@@ -105,7 +109,7 @@ public class FractalBGGenerator
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
-		Image background = generate(new Random(), 1.3f, 4096 * 2, 4096 * 2, 0.75f);
+		Image background = generate(new Random(), 1.3f, 4096 * 1, 4096 * 1, 0.75f);
 
 		sw.printElapsedTime();
 
