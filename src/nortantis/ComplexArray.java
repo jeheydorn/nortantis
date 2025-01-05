@@ -12,9 +12,10 @@ import nortantis.util.Helper;
  */
 public class ComplexArray
 {
-	private float[][] array;
+	private float[] array;
 	private final int width;
 	private final int height;
+	private final int rowSize;
 
 	/**
 	 * Creates a 2D array of complex numbers
@@ -23,7 +24,8 @@ public class ComplexArray
 	{
 		this.width = width;
 		this.height = height;
-		array = new float[height][width * 2];
+		rowSize = width * 2;
+		array = new float[height * rowSize];
 	}
 
 	/**
@@ -31,49 +33,38 @@ public class ComplexArray
 	 */
 	public void multiplyInPlace(ComplexArray other)
 	{
-		// TODO use only 1D array
-
-		assert other.getArrayJTransformsFormat().length == array.length;
-		assert other.getArrayJTransformsFormat()[0].length == array[0].length;
-
-		float[] otherArray = Helper.array2DTo1D(other.getArrayJTransformsFormat());
-		float[] array1D = Helper.array2DTo1D(array);
+		assert other.height == height;
+		assert other.width == width;
 
 		for (int r = 0; r < height; r++)
 			for (int c = 0; c < width; c++)
 			{
-				int index = ((r * width * 2) + c * 2);
-				float dataR = array1D[index];
-				float dataI = array1D[index + 1];
-				float otherR = otherArray[index];
-				float otherI = otherArray[index + 1];
+				int index = ((r * rowSize) + c * 2);
+				float dataR = array[index];
+				float dataI = array[index + 1];
+				float otherR = other.array[index];
+				float otherI = other.array[index + 1];
 
 				float real = dataR * otherR - dataI * otherI;
-				array1D[index] = real;
+				array[index] = real;
 				float imaginary = dataI * otherR + dataR * otherI;
-				array1D[index + 1] = imaginary;
+				array[index + 1] = imaginary;
 			}
-		Helper.copyArray1DTo2D(array, array1D);
 	}
-	
+
 	public void moveRealToLeftSide()
 	{
-		// TODO use only 1D array
-		float[] array1D = Helper.array2DTo1D(array);
 		for (int r = 0; r < height; r++)
 		{
 			for (int c = 0; c < width; c++)
 			{
-				array1D[(r * width * 2) + c] = array1D[(r * width * 2) + c * 2];
+				array[(r * rowSize) + c] = array[(r * rowSize) + c * 2];
 			}
 		}
-		Helper.copyArray1DTo2D(array, array1D);
 	}
 
 	public void swapQuadrantsOfLeftSideInPlace()
 	{
-		// TODO use only 1D array
-		float[] array1D = Helper.array2DTo1D(array);
 		int rows = height;
 		int cols = width;
 		int halfRows = rows / 2;
@@ -86,18 +77,17 @@ public class ComplexArray
 				int index2;
 				if (c < halfCols)
 				{
-					index2 = ((r + halfRows) * cols * 2 + (c + halfCols));
+					index2 = ((r + halfRows) * rowSize + (c + halfCols));
 				}
 				else
 				{
-					index2 = ((r + halfRows) * cols * 2 + (c - halfCols));
+					index2 = ((r + halfRows) * rowSize + (c - halfCols));
 				}
-				float temp = array1D[index2];
-				array1D[index2] = array1D[index1];
-				array1D[index1] = temp;
+				float temp = array[index2];
+				array[index2] = array[index1];
+				array[index1] = temp;
 			}
 		}
-		Helper.copyArray1DTo2D(array, array1D);
 	}
 
 	/**
@@ -106,46 +96,48 @@ public class ComplexArray
 	 */
 	public void setRealInput(int x, int y, float value)
 	{
-		array[y][x] = value;
+		array[y * rowSize + x] = value;
+		
+		//array[y * width * 2 + x] = value;
+		float[][] array2D = Helper.array1DTo2D(array, height, width * 2);
+		System.out.println("x=" + x + ", y=" + y + ". 2D value: " + array2D[y][x] + ", 1D value: " + array[y * rowSize + x] + ". Index: " + y * rowSize + x);
+		Assert.assertEquals(array2D[y][x], value, 0.0);
+
 	}
 
 	public void setReal(int x, int y, float value)
 	{
-		array[y][x * 2] = value;
+		array[(y * rowSize) + (x * 2)] = value;
 	}
 
 	public float getReal(int x, int y)
 	{
-		return array[y][x * 2];
+		return array[(y * rowSize) + (x * 2)];
 	}
 
 	public float getImaginary(int x, int y)
 	{
-		return array[y][(x * 2) + 1];
+		return array[(y * rowSize) + ((x * 2) + 1)];
 	}
 
 	public void setImaginary(int x, int y, float value)
 	{
-		array[y][(x * 2) + 1] = value;
+		array[(y * rowSize) + ((x * 2) + 1)] = value;
 	}
 
 	public float[][] getArrayJTransformsFormat()
 	{
-		return array;
+		// TODO change back to 1 dimensional array
+		return Helper.array1DTo2D(array, height, rowSize);
 	}
 
 	public int getWidth()
 	{
-		if (array.length == 0)
-		{
-			return 0;
-		}
-		return array[0].length / 2;
+		return width;
 	}
 
 	public int getHeight()
 	{
-		return array.length;
+		return height;
 	}
-
 }
