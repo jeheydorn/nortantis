@@ -341,5 +341,30 @@ public class Helper
 			}
 		}
 	}
+	
+	public static void copyArray2DTo1D(float[] array1D, float[][] array2D)
+	{
+		if (array2D == null)
+		{
+			return;
+		}
+		if (array2D.length == 0)
+		{
+			return;
+		}
+		
+		if (array1D.length != array2D.length * array2D[0].length)
+		{
+			throw new IllegalArgumentException("Invalid input array2D length");
+		}
+		
+		for (int r = 0; r < array2D.length; r++)
+		{
+			for (int c = 0; c < array2D[0].length; c++)
+			{
+				array1D[r * array2D[0].length + c] = array2D[r][c];
+			}
+		}
+	}
 
 }

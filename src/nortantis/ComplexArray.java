@@ -1,7 +1,13 @@
 package nortantis;
 
+import static org.junit.Assert.assertArrayEquals;
+
+import java.util.Objects;
+
 import org.junit.Assert;
 
+import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 import nortantis.util.Helper;
 
 /**
@@ -12,7 +18,7 @@ import nortantis.util.Helper;
  */
 public class ComplexArray
 {
-	private float[] array;
+	public float[][] array; // TODO set back to private
 	private final int width;
 	private final int height;
 	private final int rowSize;
@@ -25,7 +31,7 @@ public class ComplexArray
 		this.width = width;
 		this.height = height;
 		rowSize = width * 2;
-		array = new float[height * rowSize];
+		array = new float[height][width * 2];
 	}
 
 	/**
@@ -33,38 +39,49 @@ public class ComplexArray
 	 */
 	public void multiplyInPlace(ComplexArray other)
 	{
-		assert other.height == height;
-		assert other.width == width;
+		// TODO use only 1D array
+
+		assert height == other.height;
+		assert width == other.width;
+		
+		float[] otherArray = Helper.array2DTo1D(other.array);
+		float[] array1D = Helper.array2DTo1D(array);
 
 		for (int r = 0; r < height; r++)
 			for (int c = 0; c < width; c++)
 			{
-				int index = ((r * rowSize) + c * 2);
-				float dataR = array[index];
-				float dataI = array[index + 1];
-				float otherR = other.array[index];
-				float otherI = other.array[index + 1];
+				int index = ((r * width * 2) + c * 2);
+				float dataR = array1D[index];
+				float dataI = array1D[index + 1];
+				float otherR = otherArray[index];
+				float otherI = otherArray[index + 1];
 
 				float real = dataR * otherR - dataI * otherI;
-				array[index] = real;
+				array1D[index] = real;
 				float imaginary = dataI * otherR + dataR * otherI;
-				array[index + 1] = imaginary;
+				array1D[index + 1] = imaginary;
 			}
+		Helper.copyArray1DTo2D(array, array1D);
 	}
-
+	
 	public void moveRealToLeftSide()
 	{
+		// TODO use only 1D array
+		float[] array1D = Helper.array2DTo1D(array);
 		for (int r = 0; r < height; r++)
 		{
 			for (int c = 0; c < width; c++)
 			{
-				array[(r * rowSize) + c] = array[(r * rowSize) + c * 2];
+				array1D[(r * width * 2) + c] = array1D[(r * width * 2) + c * 2];
 			}
 		}
+		Helper.copyArray1DTo2D(array, array1D);
 	}
 
 	public void swapQuadrantsOfLeftSideInPlace()
 	{
+		// TODO use only 1D array
+		float[] array1D = Helper.array2DTo1D(array);
 		int rows = height;
 		int cols = width;
 		int halfRows = rows / 2;
@@ -77,18 +94,101 @@ public class ComplexArray
 				int index2;
 				if (c < halfCols)
 				{
-					index2 = ((r + halfRows) * rowSize + (c + halfCols));
+					index2 = ((r + halfRows) * cols * 2 + (c + halfCols));
 				}
 				else
 				{
-					index2 = ((r + halfRows) * rowSize + (c - halfCols));
+					index2 = ((r + halfRows) * cols * 2 + (c - halfCols));
 				}
-				float temp = array[index2];
-				array[index2] = array[index1];
-				array[index1] = temp;
+				float temp = array1D[index2];
+				array1D[index2] = array1D[index1];
+				array1D[index1] = temp;
 			}
 		}
+		Helper.copyArray1DTo2D(array, array1D);
 	}
+	
+	/*
+	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
+	 */
+	public void setContrast(float targetMin, float targetMax)
+	{
+		setContrast(targetMin, targetMax, 0, height, 0, rowSize);
+	}
+	
+	public void setContrast(float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
+	{
+		float[] array1D = Helper.array2DTo1D(array);
+		float min = Float.POSITIVE_INFINITY;
+		float max = Float.NEGATIVE_INFINITY;
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{
+				float value = array1D[r * rowSize + c];
+				if (value < min)
+					min = value;
+				if (value > max)
+					max = value;
+			}
+		}
+
+		float range = max - min;
+		float targetRange = targetMax - targetMin;
+
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{
+				float value = array1D[r * rowSize + c];
+				array1D[r * rowSize + c] = (((value - min) / (range))) * (targetRange) + targetMin;
+			}
+		}
+		Helper.copyArray1DTo2D(array, array1D);
+	}
+	
+	public void scale(float scale, int rowStart, int rows, int colStart, int cols)
+	{
+		float[] array1D = Helper.array2DTo1D(array);
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{
+				// Make sure the value is above 0. In theory this shouldn't
+				// happen if the kernel is positive, but very small
+				// values below zero can happen I believe due to rounding error.
+				float value = Math.max(0f, array1D[r * rowSize + c] * scale);
+				if (value < 0f)
+				{
+					value = 0f;
+				}
+				else if (value > 1f)
+				{
+					value = 1f;
+				}
+
+				array1D[r * rowSize + c] = value;
+			}
+		}
+		Helper.copyArray1DTo2D(array, array1D);
+	}
+
+	public Image toImage(int rowStart, int rows, int colStart, int cols, ImageType imageType)
+	{
+		float[] array1D = Helper.array2DTo1D(array);
+		Image image = Image.create(cols, rows, imageType);
+		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
+		for (int r = rowStart; r < rowStart + rows; r++)
+		{
+			for (int c = colStart; c < colStart + cols; c++)
+			{
+				int value = Math.min(maxPixelValue, (int) (array1D[r * rowSize + c] * maxPixelValue));
+				image.setGrayLevel(c - colStart, r - rowStart, value);
+			}
+		}
+		return image;
+	}
+	
 
 	/**
 	 * When the internal array is being prepared for a real forward FFT by JTransforms, JTransforms expects real inputs to all be on the
@@ -96,48 +196,48 @@ public class ComplexArray
 	 */
 	public void setRealInput(int x, int y, float value)
 	{
-		array[y * rowSize + x] = value;
-		
-		//array[y * width * 2 + x] = value;
-		float[][] array2D = Helper.array1DTo2D(array, height, width * 2);
-		System.out.println("x=" + x + ", y=" + y + ". 2D value: " + array2D[y][x] + ", 1D value: " + array[y * rowSize + x] + ". Index: " + y * rowSize + x);
-		Assert.assertEquals(array2D[y][x], value, 0.0);
-
+		array[y][x] = value;
+//		System.out.println("x=" + x + ", y=" + y);
+//		Assert.assertEquals(value, Helper.array2DTo1D(array)[(y * rowSize) + x], 0.0);
 	}
 
 	public void setReal(int x, int y, float value)
 	{
-		array[(y * rowSize) + (x * 2)] = value;
+		array[y][x * 2] = value;
 	}
 
 	public float getReal(int x, int y)
 	{
-		return array[(y * rowSize) + (x * 2)];
+		return array[y][x * 2];
 	}
 
 	public float getImaginary(int x, int y)
 	{
-		return array[(y * rowSize) + ((x * 2) + 1)];
+		return array[y][(x * 2) + 1];
 	}
 
 	public void setImaginary(int x, int y, float value)
 	{
-		array[(y * rowSize) + ((x * 2) + 1)] = value;
+		array[y][(x * 2) + 1] = value;
 	}
 
 	public float[][] getArrayJTransformsFormat()
 	{
-		// TODO change back to 1 dimensional array
-		return Helper.array1DTo2D(array, height, rowSize);
+		return array; 
 	}
 
 	public int getWidth()
 	{
-		return width;
+		if (array.length == 0)
+		{
+			return 0;
+		}
+		return array[0].length / 2;
 	}
 
 	public int getHeight()
 	{
-		return height;
+		return array.length;
 	}
+
 }

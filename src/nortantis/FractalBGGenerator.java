@@ -95,9 +95,9 @@ public class FractalBGGenerator
 //		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f, data.getHeight(),
 //				data.getWidth());
 		// TODO take out the line below when I put the one above it back
-		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f);
+		data.setContrast(0.5f - contrast / 2f, 0.5f + contrast / 2f);
 
-		Image result = ImageHelper.arrayToImage(data.getArrayJTransformsFormat(), 0, height, 0, width, ImageType.Grayscale8Bit);
+		Image result = data.toImage(0, height, 0, width, ImageType.Grayscale8Bit);
 		return result;
 
 	}
@@ -109,7 +109,7 @@ public class FractalBGGenerator
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
-		Image background = generate(new Random(), 1.3f, 4096 * 1, 4096 * 1, 0.75f);
+		Image background = generate(new Random(), 1.3f, 256 * 1, 256 * 1, 0.75f);
 
 		sw.printElapsedTime();
 

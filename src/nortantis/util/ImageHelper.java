@@ -377,67 +377,6 @@ public class ImageHelper
 		}
 	}
 
-	/*
-	 * Scales values in the given array such that the minimum is targetMin, and the maximum is targetMax.
-	 */
-	public static void setContrast(float[][] array, float targetMin, float targetMax)
-	{
-		setContrast(array, targetMin, targetMax, 0, array.length, 0, array[0].length);
-	}
-
-	public static void setContrast(float[][] array, float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
-	{
-		float min = Float.POSITIVE_INFINITY;
-		float max = Float.NEGATIVE_INFINITY;
-		for (int r = rowStart; r < rowStart + rows; r++)
-		{
-			for (int c = colStart; c < colStart + cols; c++)
-			{
-				float value = array[r][c];
-				if (value < min)
-					min = value;
-				if (value > max)
-					max = value;
-			}
-		}
-
-		float range = max - min;
-		float targetRange = targetMax - targetMin;
-
-		for (int r = rowStart; r < rowStart + rows; r++)
-		{
-			for (int c = colStart; c < colStart + cols; c++)
-			{
-				float value = array[r][c];
-				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
-			}
-		}
-	}
-
-	public static void scaleLevels(float[][] array, float scale, int rowStart, int rows, int colStart, int cols)
-	{
-		for (int r = rowStart; r < rowStart + rows; r++)
-		{
-			for (int c = colStart; c < colStart + cols; c++)
-			{
-				// Make sure the value is above 0. In theory this shouldn't
-				// happen if the kernel is positive, but very small
-				// values below zero can happen I believe due to rounding error.
-				float value = Math.max(0f, array[r][c] * scale);
-				if (value < 0f)
-				{
-					value = 0f;
-				}
-				else if (value > 1f)
-				{
-					value = 1f;
-				}
-
-				array[r][c] = value;
-			}
-		}
-	}
-
 	/**
 	 * Multiplies each pixel by the given scale. The image must be a supported grayscale type
 	 */
@@ -1189,15 +1128,15 @@ public class ImageHelper
 
 		if (setContrast)
 		{
-			setContrast(data.getArrayJTransformsFormat(), contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
+			data.setContrast(contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
 					imageWidth);
 		}
 		else if (scaleLevels)
 		{
-			scaleLevels(data.getArrayJTransformsFormat(), scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+			data.scale(scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		Image result = arrayToImage(data.getArrayJTransformsFormat(), imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth,
+		Image result = data.toImage(imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth,
 				type);
 		return result;
 	}
@@ -1281,44 +1220,7 @@ public class ImageHelper
 
 		return data;
 	}
-
-	public static float[][] getRealPart(float[][] data)
-	{
-		float[][] result = new float[data.length][data[0].length / 2];
-		for (int r = 0; r < data.length; r++)
-			for (int c = 0; c < data[0].length / 2; c++)
-			{
-				result[r][c] = data[r][c * 2];
-			}
-		return result;
-	}
-
-	public static float[][] getImaginaryPart(float[][] data)
-	{
-		float[][] result = new float[data.length][data[0].length / 2];
-		for (int r = 0; r < data.length; r++)
-			for (int c = 0; c < data[0].length / 2; c++)
-			{
-				result[r][c] = data[r][c * 2 + 1];
-			}
-		return result;
-	}
-
-	public static Image arrayToImage(float[][] array, int rowStart, int rows, int colStart, int cols, ImageType imageType)
-	{
-		Image image = Image.create(cols, rows, imageType);
-		int maxPixelValue = Image.getMaxPixelLevelForType(imageType);
-		for (int r = rowStart; r < rowStart + rows; r++)
-		{
-			for (int c = colStart; c < colStart + cols; c++)
-			{
-				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
-				image.setGrayLevel(c - colStart, r - rowStart, value);
-			}
-		}
-		return image;
-	}
-
+	
 	public static Image arrayToImage(float[][] array, ImageType imageType)
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
@@ -1331,19 +1233,6 @@ public class ImageHelper
 			}
 		}
 		return image;
-	}
-
-	public static float[][] imageToArray(Image img)
-	{
-		float[][] result = new float[img.getWidth()][img.getHeight()];
-		for (int r = 0; r < img.getWidth(); r++)
-		{
-			for (int c = 0; c < img.getHeight(); c++)
-			{
-				result[r][c] = img.getGrayLevel(r, c);
-			}
-		}
-		return result;
 	}
 
 	public static int getPowerOf2EqualOrLargerThan(int value)
@@ -1393,31 +1282,6 @@ public class ImageHelper
 
 			}
 
-		return result;
-	}
-
-	public static Image tile(Image image, int targetRows, int targetCols)
-	{
-		return arrayToImage(tile(imageToArray(image), targetRows, targetCols, 0, 0), image.getType());
-	}
-
-	public static Image tileNTimes(Image image, int n)
-	{
-		return tile(image, image.getWidth() * n, image.getHeight() * n);
-	}
-
-	public static float[][] convertToTransformsInputFormat(float[][] transformReal, float[][] transformImaginary)
-	{
-		if (transformReal.length != transformImaginary.length)
-			throw new IllegalArgumentException();
-		if (transformReal[0].length != transformImaginary[0].length)
-			throw new IllegalArgumentException();
-		float[][] result = new float[transformReal.length][transformReal[0].length * 2];
-		for (int r = 0; r < result.length; r++)
-			for (int c = 0; c < result[0].length; c++)
-			{
-				result[r][c] = c % 2 == 0 ? transformReal[r][c / 2] : transformImaginary[r][c / 2];
-			}
 		return result;
 	}
 
