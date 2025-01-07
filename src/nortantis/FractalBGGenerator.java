@@ -55,8 +55,36 @@ public class FractalBGGenerator
 		final int rowsFinal = rows;
 		final int colsFinal = cols;
 		// Multiply by 1/(f^p) in the frequency domain.
-		ThreadHelper.getInstance().processRowsInParallel(0, rows, (r) ->
-		{
+		// ThreadHelper.getInstance().processRowsInParallel(0, rows, (r) ->
+		// {
+		// for (int c = 0; c < colsFinal; c++)
+		// {
+		// float dataR = data.getReal(c, r);
+		// float dataI = data.getImaginary(c, r);
+		//
+		// float rF = Math.min(r, rowsFinal - r);
+		// float cF = Math.min(c, colsFinal - c);
+		// float f = (float) Math.sqrt(rF * rF + cF * cF);
+		// float real;
+		// float imaginary;
+		// if (f == 0f)
+		// {
+		// real = 0f;
+		// imaginary = 0f;
+		// }
+		// else
+		// {
+		// float scale = (float) (1.0 / (Math.pow(f, p)));
+		// real = dataR * scale;
+		// imaginary = dataI * scale;
+		// }
+		// data.setReal(c, r, real);
+		// data.setImaginary(c, r, imaginary);
+		// }
+		// });
+
+		// TODO put back paralelized version above
+		for (int r = 0; r < rows; r++)
 			for (int c = 0; c < colsFinal; c++)
 			{
 				float dataR = data.getReal(c, r);
@@ -81,20 +109,14 @@ public class FractalBGGenerator
 				data.setReal(c, r, real);
 				data.setImaginary(c, r, imaginary);
 			}
-		});
 
 		// ImageIO.write(ImageHelper.arrayToImage(data), "png", new File("frequencies.png"));
 
 		// Do the inverse DFT on the product.
 		fft.complexInverse(data.getArrayJTransformsFormat(), true);
 		data.moveRealToLeftSide();
-		// TODO put back
 		data.swapQuadrantsOfLeftSideInPlace();
 
-		// TODO put back
-//		ImageHelper.setContrast(data.getArrayJTransformsFormat(), 0.5f - contrast / 2f, 0.5f + contrast / 2f, data.getHeight(),
-//				data.getWidth());
-		// TODO take out the line below when I put the one above it back
 		data.setContrast(0.5f - contrast / 2f, 0.5f + contrast / 2f);
 
 		Image result = data.toImage(0, height, 0, width, ImageType.Grayscale8Bit);
@@ -109,7 +131,7 @@ public class FractalBGGenerator
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
-		Image background = generate(new Random(), 1.3f, 256 * 1, 256 * 1, 0.75f);
+		Image background = generate(new Random(16), 1.3f, 256 * 1, 256 * 1, 0.75f);
 
 		sw.printElapsedTime();
 

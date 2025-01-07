@@ -59,10 +59,29 @@ public class HelperTest
 	
 	@SuppressWarnings("deprecation")
 	@Test
+	public void testArray1DTo2D()
+	{
+		float[] input = { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6f};
+		float[][] expected = { { 1.0f, 2.0f, 3.0f }, { 4.0f, 5.0f, 6f }};
+		assertEquals(expected, Helper.array1DTo2D(input, 2, 3));
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Test
 	public void testArrayConversion()
 	{
 		float[][] expected = { { 1.0f, 2.0f, 3.0f }, { 4.0f, 5.0f, 6f }, {7f, 8f, 9f}};
 		float[][] actual = Helper.array1DTo2D(Helper.array2DTo1D(expected), expected.length, expected[0].length);
 		assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void testCopyArray2DTo1D()
+	{
+		float[][] input = { { 1.0f, 2.0f, 3.0f }, { 4.0f, 5.0f, 6f }, {7f, 8f, 9f}};
+		float[] expected = { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6f, 7f, 8f, 9f };
+		float[] actual = new float[input.length * input[0].length];
+		Helper.copyArray2DTo1D(actual, input);
+		assertArrayEquals(expected, actual, 0f);
 	}
 }
