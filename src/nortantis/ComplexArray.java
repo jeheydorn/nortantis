@@ -11,10 +11,9 @@ import nortantis.platform.ImageType;
  */
 public class ComplexArray
 {
-	private float[] array;
+	private float[][] array;
 	private final int width;
 	private final int height;
-	private final int rowSize;
 
 	/**
 	 * Creates a 2D array of complex numbers
@@ -23,8 +22,7 @@ public class ComplexArray
 	{
 		this.width = width;
 		this.height = height;
-		rowSize = width * 2;
-		array = new float[height * rowSize];
+		array = new float[height][width * 2];
 	}
 
 	/**
@@ -35,21 +33,21 @@ public class ComplexArray
 		assert height == other.height;
 		assert width == other.width;
 		
-		float[] otherArray = other.array;
+		float[][] otherArray = other.array;
 
 		for (int r = 0; r < height; r++)
 			for (int c = 0; c < width; c++)
 			{
-				int index = ((r * width * 2) + c * 2);
-				float dataR = array[index];
-				float dataI = array[index + 1];
-				float otherR = otherArray[index];
-				float otherI = otherArray[index + 1];
+				int colR = c * 2;
+				float dataR = array[r][colR];
+				float dataI = array[r][colR + 1];
+				float otherR = otherArray[r][colR];
+				float otherI = otherArray[r][colR + 1];
 
 				float real = dataR * otherR - dataI * otherI;
-				array[index] = real;
+				array[r][colR] = real;
 				float imaginary = dataI * otherR + dataR * otherI;
-				array[index + 1] = imaginary;
+				array[r][colR + 1] = imaginary;
 			}
 	}
 	
@@ -59,7 +57,7 @@ public class ComplexArray
 		{
 			for (int c = 0; c < width; c++)
 			{
-				array[(r * width * 2) + c] = array[(r * width * 2) + c * 2];
+				array[r][c] = array[r][c * 2];
 			}
 		}
 	}
@@ -74,19 +72,19 @@ public class ComplexArray
 		{
 			for (int c = 0; c < cols; c++)
 			{
-				int index1 = (r * cols * 2 + c);
-				int index2;
+				int r2 = r + halfRows;
+				int c2;
 				if (c < halfCols)
 				{
-					index2 = ((r + halfRows) * cols * 2 + (c + halfCols));
+					c2 = c + halfCols;
 				}
 				else
 				{
-					index2 = ((r + halfRows) * cols * 2 + (c - halfCols));
+					c2 = c - halfCols;
 				}
-				float temp = array[index2];
-				array[index2] = array[index1];
-				array[index1] = temp;
+				float temp = array[r2][c2];
+				array[r2][c2] = array[r][c];
+				array[r][c] = temp;
 			}
 		}
 	}
@@ -96,7 +94,7 @@ public class ComplexArray
 	 */
 	public void setContrast(float targetMin, float targetMax)
 	{
-		setContrast(targetMin, targetMax, 0, height, 0, rowSize);
+		setContrast(targetMin, targetMax, 0, height, 0, width);
 	}
 	
 	public void setContrast(float targetMin, float targetMax, int rowStart, int rows, int colStart, int cols)
@@ -107,7 +105,7 @@ public class ComplexArray
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				float value = array[r * rowSize + c];
+				float value = array[r][c];
 				if (value < min)
 					min = value;
 				if (value > max)
@@ -122,8 +120,8 @@ public class ComplexArray
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				float value = array[r * rowSize + c];
-				array[r * rowSize + c] = (((value - min) / (range))) * (targetRange) + targetMin;
+				float value = array[r][c];
+				array[r][c] = (((value - min) / (range))) * (targetRange) + targetMin;
 			}
 		}
 	}
@@ -137,7 +135,7 @@ public class ComplexArray
 				// Make sure the value is above 0. In theory this shouldn't
 				// happen if the kernel is positive, but very small
 				// values below zero can happen I believe due to rounding error.
-				float value = Math.max(0f, array[r * rowSize + c] * scale);
+				float value = Math.max(0f, array[r][c] * scale);
 				if (value < 0f)
 				{
 					value = 0f;
@@ -147,7 +145,7 @@ public class ComplexArray
 					value = 1f;
 				}
 
-				array[r * rowSize + c] = value;
+				array[r][c] = value;
 			}
 		}
 	}
@@ -160,7 +158,7 @@ public class ComplexArray
 		{
 			for (int c = colStart; c < colStart + cols; c++)
 			{
-				int value = Math.min(maxPixelValue, (int) (array[r * rowSize + c] * maxPixelValue));
+				int value = Math.min(maxPixelValue, (int) (array[r][c] * maxPixelValue));
 				image.setGrayLevel(c - colStart, r - rowStart, value);
 			}
 		}
@@ -173,30 +171,30 @@ public class ComplexArray
 	 */
 	public void setRealInput(int x, int y, float value)
 	{
-		array[y * width + x] = value;
+		array[y][x] = value;
 	}
 
 	public void setReal(int x, int y, float value)
 	{
-		array[((y * rowSize) + x * 2)] = value;
+		array[y][x * 2] = value;
 	}
 
 	public float getReal(int x, int y)
 	{
-		return array[((y * rowSize) + x * 2)];
+		return array[y][x * 2];
 	}
 
 	public float getImaginary(int x, int y)
 	{
-		return array[((y * rowSize) + (x * 2) + 1)];
+		return array[y][x * 2 + 1];
 	}
 
 	public void setImaginary(int x, int y, float value)
 	{
-		array[((y * rowSize) + (x * 2) + 1)] = value;
+		array[y][x * 2 + 1] = value;
 	}
 
-	public float[] getArrayJTransformsFormat()
+	public float[][] getArrayJTransformsFormat()
 	{
 		return array; 
 	}
