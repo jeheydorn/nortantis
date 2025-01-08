@@ -53,7 +53,7 @@ public class Background
 	private boolean hasInsetCorners;
 	private String customImagesPath;
 
-	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger, boolean isLowMemoryMode)
+	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
 		customImagesPath = settings.customImagesPath;
 		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
@@ -73,7 +73,7 @@ public class Background
 
 			final float fractalPower = 1.3f;
 			Image oceanGeneratedBackground = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed), fractalPower,
-					((int) mapBounds.width) + borderWidthScaled * 2, ((int) mapBounds.height) + borderWidthScaled * 2, 0.75f, isLowMemoryMode);
+					((int) mapBounds.width) + borderWidthScaled * 2, ((int) mapBounds.height) + borderWidthScaled * 2, 0.75f);
 			landGeneratedBackground = oceanGeneratedBackground;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
@@ -142,7 +142,7 @@ public class Background
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
 						ImageHelper.convertToGrayscale(texture), ((int) mapBounds.height) + borderWidthScaled * 2,
-						((int) mapBounds.width) + borderWidthScaled * 2, isLowMemoryMode);
+						((int) mapBounds.width) + borderWidthScaled * 2);
 
 				if (settings.borderColorOption == BorderColorOption.Ocean_color)
 				{
@@ -170,7 +170,7 @@ public class Background
 			else
 			{
 				oceanGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(settings.backgroundRandomSeed),
-						texture, ((int) mapBounds.height) + borderWidthScaled * 2, ((int) mapBounds.width) + borderWidthScaled * 2, isLowMemoryMode);
+						texture, ((int) mapBounds.height) + borderWidthScaled * 2, ((int) mapBounds.width) + borderWidthScaled * 2);
 				if (settings.drawBorder)
 				{
 					ocean = removeBorderPadding(oceanGeneratedBackground);
@@ -229,7 +229,7 @@ public class Background
 
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 							new Random(settings.backgroundRandomSeed), ImageHelper.convertToGrayscale(texture),
-							((int) mapBounds.height) + borderWidthScaled * 2, ((int) mapBounds.width) + borderWidthScaled * 2, isLowMemoryMode);
+							((int) mapBounds.height) + borderWidthScaled * 2, ((int) mapBounds.width) + borderWidthScaled * 2);
 					if (shouldDrawRegionColors)
 					{
 						// Drawing region colors must be done later because it
@@ -247,7 +247,7 @@ public class Background
 				{
 					landGeneratedBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(
 							new Random(settings.backgroundRandomSeed), texture, ((int) mapBounds.height) + borderWidthScaled * 2,
-							((int) mapBounds.width) + borderWidthScaled * 2, isLowMemoryMode);
+							((int) mapBounds.width) + borderWidthScaled * 2);
 					land = removeBorderPadding(landGeneratedBackground);
 					landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 				}

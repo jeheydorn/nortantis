@@ -27,11 +27,10 @@ public class FractalBGGenerator
 	 *            central value.
 	 * @throws IOException
 	 */
-	public static Image generate(Random rand, float p, int width, int height, float contrast, boolean isLowMemoryMode)
+	public static Image generate(Random rand, float p, int width, int height, float contrast)
 	{
-		// JTransforms is faster when the input is padded out to a power of two in each dimension, but doing so also takes much more memory.
-		int cols = isLowMemoryMode ? width : ImageHelper.getPowerOf2EqualOrLargerThan(width);
-		int rows = isLowMemoryMode ? height : ImageHelper.getPowerOf2EqualOrLargerThan(height);
+		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(width);
+		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(height);
 		// For some reason this algorithm only works for creating a square result.
 		if (cols < rows)
 			cols = rows;
@@ -53,7 +52,6 @@ public class FractalBGGenerator
 			fft.realForwardFull(data.getArrayJTransformsFormat());
 		}
 
-		Stopwatch sw = new Stopwatch("Filter in frequency domain.");
 		final int rowsFinal = rows;
 		final int colsFinal = cols;
 		// Multiply by 1/(f^p) in the frequency domain.
@@ -84,25 +82,17 @@ public class FractalBGGenerator
 				data.setImaginary(c, r, imaginary);
 			}
 		});
-		
-		sw.printElapsedTime();
+
+		// ImageIO.write(ImageHelper.arrayToImage(data), "png", new File("frequencies.png"));
 
 		// Do the inverse DFT on the product.
 		fft.complexInverse(data.getArrayJTransformsFormat(), true);
-		Stopwatch sw2 = new Stopwatch("moveRealToLeftSide");
 		data.moveRealToLeftSide();
-		sw2.printElapsedTime();
-		Stopwatch sw3 = new Stopwatch("swapQuadrantsOfLeftSideInPlace");
 		data.swapQuadrantsOfLeftSideInPlace();
-		sw3.printElapsedTime();
 
-		Stopwatch sw4 = new Stopwatch("setContrast");
 		data.setContrast(0.5f - contrast / 2f, 0.5f + contrast / 2f);
-		sw4.printElapsedTime();
 
-		Stopwatch sw5 = new Stopwatch("toImage");
 		Image result = data.toImage(0, height, 0, width, ImageType.Grayscale8Bit);
-		sw5.printElapsedTime();
 		return result;
 
 	}
@@ -114,8 +104,7 @@ public class FractalBGGenerator
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
-		final int size = 4096 * 1;
-		Image background = generate(new Random(), 1.3f, size, size, 0.75f, false);
+		Image background = generate(new Random(16), 1.3f, 256 * 1, 256 * 1, 0.75f);
 
 		sw.printElapsedTime();
 

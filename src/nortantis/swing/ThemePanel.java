@@ -1386,7 +1386,7 @@ public class ThemePanel extends JTabbedPane
 			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm2;
 
-			oceanBackground = landBackground = FractalBGGenerator.generate(new Random(seed), 1.3f, size.width, size.height, 0.75f, false);
+			oceanBackground = landBackground = FractalBGGenerator.generate(new Random(seed), 1.3f, size.width, size.height, 0.75f);
 		}
 		else if (isFromTexture)
 		{
@@ -1400,14 +1400,14 @@ public class ThemePanel extends JTabbedPane
 					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
 					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed),
-							ImageHelper.convertToGrayscale(texture), size.height, size.width, false);
+							ImageHelper.convertToGrayscale(texture), size.height, size.width);
 				}
 				else
 				{
 					oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 
 					oceanBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), texture, size.height,
-							size.width, false);
+							size.width);
 				}
 
 				if (colorizeLand == colorizeOcean)
@@ -1430,14 +1430,14 @@ public class ThemePanel extends JTabbedPane
 						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.algorithm3;
 
 						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed),
-								ImageHelper.convertToGrayscale(texture), size.height, size.width, false);
+								ImageHelper.convertToGrayscale(texture), size.height, size.width);
 					}
 					else
 					{
 						landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 
 						landBackground = BackgroundGenerator.generateUsingWhiteNoiseConvolution(new Random(seed), texture, size.height,
-								size.width, false);
+								size.width);
 					}
 				}
 			}

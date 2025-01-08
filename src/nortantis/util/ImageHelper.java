@@ -226,7 +226,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		NormalDistribution dist = createDistributionForSize(size);
@@ -282,7 +287,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		float[][] kernel = new float[size][size];
@@ -306,7 +316,12 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][] { { 1f } };
+			return new float[][]
+			{
+					{
+							1f
+					}
+			};
 		}
 
 		Sinc dist = new Sinc();
@@ -1023,14 +1038,11 @@ public class ImageHelper
 	 * @param paddImageToAvoidWrapping
 	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
-	 * @param isLowMemoryMode
-	 *            Whether to prioritize memory usage over speed.
 	 * @return The convolved image.
 	 */
-	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping,
-			boolean isLowMemoryMode)
+	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
-		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping, isLowMemoryMode);
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
@@ -1050,15 +1062,13 @@ public class ImageHelper
 	 * @param paddImageToAvoidWrapping
 	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
-	 * @param isLowMemoryMode
-	 *            Whether to prioritize memory usage over speed.
 	 * @return The convolved image.
 	 */
-	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping, boolean isLowMemoryMode)
+	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
 	{
 		// Only use 16 bit pixels if the input image used them, to save memory.
 		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType, isLowMemoryMode);
+		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
 
 	/**
@@ -1073,25 +1083,21 @@ public class ImageHelper
 	 * @param paddImageToAvoidWrapping
 	 *            Normally, in wage convolution done using fast Fourier transforms will do wrapping when calculating values of pixels along
 	 *            edges. Set this flag to add black padding pixels to the edge of the image to avoid this.
-	 * @param isLowMemoryMode
-	 *            Whether to prioritize memory usage over speed.
 	 * @return The convolved image.
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping,
-			ImageType resultType, boolean isLowMemoryMode)
+			ImageType resultType)
 	{
-		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping, isLowMemoryMode);
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
-	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping, boolean isLowMemoryMode)
+	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)
 	{
 		int colsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel[0].length / 2 : 0;
-		int cols = isLowMemoryMode ? Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length)
-				: getPowerOf2EqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
+		int cols = getPowerOf2EqualOrLargerThan(Math.max(img.getWidth() + colsPaddingToAvoidWrapping, kernel[0].length));
 		int rowsPaddingToAvoidWrapping = paddImageToAvoidWrapping ? kernel.length / 2 : 0;
-		int rows = isLowMemoryMode ? Math.max(img.getHeight() + rowsPaddingToAvoidWrapping, kernel.length)
-				: getPowerOf2EqualOrLargerThan(Math.max(img.getHeight() + rowsPaddingToAvoidWrapping, kernel.length));
+		int rows = getPowerOf2EqualOrLargerThan(Math.max(img.getHeight() + rowsPaddingToAvoidWrapping, kernel.length));
 		// Make sure rows and cols are greater than 1 for JTransforms.
 		if (cols < 2)
 			cols = 2;
@@ -1122,14 +1128,16 @@ public class ImageHelper
 
 		if (setContrast)
 		{
-			data.setContrast(contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
+			data.setContrast(contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
+					imageWidth);
 		}
 		else if (scaleLevels)
 		{
 			data.scale(scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		Image result = data.toImage(imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, type);
+		Image result = data.toImage(imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth,
+				type);
 		return result;
 	}
 
@@ -1212,7 +1220,7 @@ public class ImageHelper
 
 		return data;
 	}
-
+	
 	public static Image arrayToImage(float[][] array, ImageType imageType)
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
@@ -1262,8 +1270,7 @@ public class ImageHelper
 		for (int r = 0; r < result.length; r++)
 			for (int c = 0; c < result[0].length; c++)
 			{
-				int arrayRow = (r + rowOffset) % array.length;
-				;
+				int arrayRow = (r + rowOffset) % array.length;;
 				if (((r + rowOffset) / array.length) % 2 == 1)
 					arrayRow = array.length - 1 - arrayRow;
 
@@ -1602,13 +1609,13 @@ public class ImageHelper
 		return result;
 	}
 
-	public static Image blur(Image image, int blurLevel, boolean paddImageToAvoidWrapping, boolean isLowMemoryMode)
+	public static Image blur(Image image, int blurLevel, boolean paddImageToAvoidWrapping)
 	{
 		if (blurLevel == 0)
 		{
 			return image;
 		}
-		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, paddImageToAvoidWrapping, isLowMemoryMode);
+		return ImageHelper.convolveGrayscale(image, ImageHelper.createGaussianKernel(blurLevel), false, paddImageToAvoidWrapping);
 	}
 
 	/**
