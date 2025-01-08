@@ -166,11 +166,6 @@ public class ComplexArray
 		}
 		return image;
 	}
-	
-	private int getIndex(int y, int x)
-	{
-		return y * rowSize + x;
-	}
 
 	/**
 	 * When the internal array is being prepared for a real forward FFT by JTransforms, JTransforms expects real inputs to all be on the
@@ -183,22 +178,22 @@ public class ComplexArray
 
 	public void setReal(int x, int y, float value)
 	{
-		array[getIndex(y, x * 2)] = value;
+		array[((y * rowSize) + x * 2)] = value;
 	}
 
 	public float getReal(int x, int y)
 	{
-		return array[getIndex(y, x * 2)];
+		return array[((y * rowSize) + x * 2)];
 	}
 
 	public float getImaginary(int x, int y)
 	{
-		return array[getIndex(y, (x * 2) + 1)];
+		return array[((y * rowSize) + (x * 2) + 1)];
 	}
 
 	public void setImaginary(int x, int y, float value)
 	{
-		array[getIndex(y, (x * 2) + 1)] = value;
+		array[((y * rowSize) + (x * 2) + 1)] = value;
 	}
 
 	public float[] getArrayJTransformsFormat()
