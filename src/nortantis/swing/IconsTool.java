@@ -793,7 +793,7 @@ public class IconsTool extends EditorTool
 		p.dispose();
 
 		// Use convolution to make a hazy background for the text.
-		Image hazyBox = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(fadeWidth), true, false);
+		Image hazyBox = ImageHelper.convolveGrayscale(box, ImageHelper.createGaussianKernel(fadeWidth), true, false, false);
 
 		return ImageHelper.setAlphaFromMask(image, hazyBox, false);
 	}

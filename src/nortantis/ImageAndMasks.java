@@ -319,7 +319,7 @@ public class ImageAndMasks
 
 		// Blur the line up to a fraction of the height of the content
 		float[][] kernel = ImageHelper.createGaussianKernel(contentHeight / 3);
-		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
+		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true, false);
 
 		// Use the content mask to set non-content pixels to zero.
 		shadingMask = ImageHelper.maskWithColor(blurredLine, Color.black, contentMask, false);

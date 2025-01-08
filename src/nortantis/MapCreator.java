@@ -57,6 +57,7 @@ public class MapCreator implements WarningLogger
 	private static final double concentricWaveLineWidth = 1.1;
 	private boolean isCanceled;
 	private List<String> warningMessages;
+	private boolean isLowMemoryMode;
 	public ConcurrentHashMap<Integer, Center> centersToRedrawLowPriority;
 
 	public MapCreator()
@@ -528,7 +529,7 @@ public class MapCreator implements WarningLogger
 		// If we're within resolution buffer of our estimated maximum resolution, then be conservative about memory usage.
 		// My tests showed that running frayed edge and grunge calculation inline with other stuff gave a 22% speedup.
 		final double resolutionBuffer = 0.5;
-		boolean isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
+		isLowMemoryMode = settings.resolution >= calcMaxResolutionScale() - resolutionBuffer;
 		Logger.println("Using " + (isLowMemoryMode ? "low" : "high") + " memory mode.");
 
 		if (StringUtils.isNotEmpty(settings.customImagesPath))
@@ -573,7 +574,7 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Generating the background image.");
-			background = new Background(settings, mapBounds, this);
+			background = new Background(settings, mapBounds, this, isLowMemoryMode);
 		}
 
 		if (mapParts != null)
@@ -847,7 +848,7 @@ public class MapCreator implements WarningLogger
 				if (blurLevel > 0)
 				{
 					float[][] kernel = ImageHelper.createGaussianKernel(blurLevel);
-					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true, true);
+					frayedBorderBlur = ImageHelper.convolveGrayscale(frayedBorderMask, kernel, true, true, isLowMemoryMode);
 				}
 				else
 				{
@@ -880,7 +881,7 @@ public class MapCreator implements WarningLogger
 				// the background.
 				final float fractalPower = 1.3f;
 				grunge = FractalBGGenerator.generate(new Random(settings.backgroundRandomSeed + 104567), fractalPower,
-						((int) mapDimensions.width), ((int) mapDimensions.height), 0.75f);
+						((int) mapDimensions.width), ((int) mapDimensions.height), 0.75f, isLowMemoryMode);
 
 				checkForCancel();
 
@@ -1134,12 +1135,12 @@ public class MapCreator implements WarningLogger
 				{
 					p.setColor(Color.white);
 					graph.drawRegionBoundariesSolid(p, sizeMultiplier, false, centersToDraw, drawBounds);
-					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
+					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true, isLowMemoryMode);
 
 				}
 				else
 				{
-					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true);
+					coastShading = ImageHelper.convolveGrayscaleThenScale(coastlineAndLakeShoreMask, kernel, scale, true, isLowMemoryMode);
 				}
 			}
 
@@ -1212,7 +1213,7 @@ public class MapCreator implements WarningLogger
 				float scale = ((float) settings.oceanWavesColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, isLowMemoryMode);
 				if (settings.drawOceanEffectsInLakes)
 				{
 					oceanWaves = removeOceanEffectsFromLand(graph, oceanWaves, landMask, centersToDraw, drawBounds);
@@ -1237,7 +1238,7 @@ public class MapCreator implements WarningLogger
 				float scale = ((float) settings.oceanShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
-				oceanShading = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
+				oceanShading = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, isLowMemoryMode);
 				if (settings.drawOceanEffectsInLakes)
 				{
 					oceanShading = removeOceanEffectsFromLand(graph, oceanShading, landMask, centersToDraw, drawBounds);
@@ -1302,7 +1303,7 @@ public class MapCreator implements WarningLogger
 				}
 				float[][] kernel = ImageHelper.createGaussianKernel((int) whiteWidth);
 				// Use 16-bit grayscale for the blur because the thresholding for determining where the waves are needs that extra decision.
-				Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, ImageType.Grayscale16Bit);
+				Image blur = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true, ImageType.Grayscale16Bit, isLowMemoryMode);
 
 				double highThresholdInKernel = getKernelValueToThreholdWavesForWidth(kernel, scale, targetStrokeWidth, waveWidth,
 						blur.getMaxPixelLevel());
@@ -1707,7 +1708,7 @@ public class MapCreator implements WarningLogger
 		p.fillRect(lineWidth, lineWidth, blurBoxWidth, blurBoxWidth);
 
 		// Use Gaussian blur on the box.
-		blurBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true);
+		blurBox = ImageHelper.convolveGrayscale(blurBox, ImageHelper.createGaussianKernel(blurLevel), true, true, isLowMemoryMode);
 
 		// Remove what was the white lines from the top and left, so we're
 		// keeping only the blur that came off the white lines.
@@ -1870,13 +1871,6 @@ public class MapCreator implements WarningLogger
 		// To generate a map at resolution 225 takes 7GB, so 7×1024^3÷(225^2)
 		// = 148468.
 		int maxResolution = (int) Math.sqrt(maxBytes / 148468L);
-
-		// The FFT-based code will create arrays in powers of 2.
-		int nextPowerOf2 = ImageHelper.getPowerOf2EqualOrLargerThan(maxResolution / 100.0);
-		int resolutionAtNextPowerOf2 = nextPowerOf2 * 100;
-		// Average with the original prediction because not all code is
-		// FFT-based.
-		maxResolution = (maxResolution + resolutionAtNextPowerOf2) / 2;
 
 		if (maxResolution > 500)
 		{

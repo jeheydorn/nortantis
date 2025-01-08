@@ -19,9 +19,9 @@ public class BackgroundGenerator
 	/**
 	 * See generateUsingWhiteNoiseConvolution(Random, Image, int, int, boolean)
 	 */
-	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols)
+	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols, boolean isLowMemoryMode)
 	{
-		return generateUsingWhiteNoiseConvolution(rand, texture, targetRows, targetCols, true);
+		return generateUsingWhiteNoiseConvolution(rand, texture, targetRows, targetCols, true, isLowMemoryMode);
 	}
 
 	/**
@@ -43,10 +43,12 @@ public class BackgroundGenerator
 	 *            Number of columns in the result.
 	 * @param allowScalingTextureLarger
 	 *            If true, then if the texture is less than 1/4th the target height or width, then it will be scaled so that it is not.
+	 * @param isLowMemoryMode
+	 *            Whether to prioritize memory usage over speed.
 	 * @return A randomly generated texture.
 	 */
 	public static Image generateUsingWhiteNoiseConvolution(Random rand, Image texture, int targetRows, int targetCols,
-			boolean allowScalingTextureLarger)
+			boolean allowScalingTextureLarger, boolean isLowMemoryMode)
 	{
 		// The conditions under which the two calls below change the texture are mutually exclusive.
 		texture = cropTextureSmallerIfNeeded(texture, targetRows, targetCols);
@@ -55,8 +57,10 @@ public class BackgroundGenerator
 			texture = scaleTextureLargerIfNeeded(texture, targetRows, targetCols);
 		}
 
-		int rows = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
-		int cols = ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
+		int rows = isLowMemoryMode ? Math.max(texture.getHeight(), targetRows)
+				: ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getHeight(), targetRows));
+		int cols = isLowMemoryMode ? Math.max(texture.getWidth(), targetCols)
+				: ImageHelper.getPowerOf2EqualOrLargerThan(Math.max(texture.getWidth(), targetCols));
 
 		float alpha = 0.5f;
 		float textureArea = texture.getHeight() * texture.getHeight();
@@ -72,10 +76,7 @@ public class BackgroundGenerator
 		{
 			numberOfColorChannels = 1;
 			allChannels = null;
-			means = new float[]
-			{
-					ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue
-			};
+			means = new float[] { ImageHelper.calcMeanOfGrayscaleImage(texture) / maxPixelValue };
 		}
 		else
 		{
@@ -121,7 +122,7 @@ public class BackgroundGenerator
 				}
 			}
 
-			Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false);
+			Image grayImage = ImageHelper.convolveGrayscale(randomImage, kernel, true, false, isLowMemoryMode);
 			kernel = null;
 
 			if (numberOfColorChannels == 1)
