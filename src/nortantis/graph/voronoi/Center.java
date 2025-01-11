@@ -6,20 +6,14 @@ import java.util.List;
 import java.util.Set;
 
 import nortantis.Biome;
-import nortantis.IconDrawer;
 import nortantis.Region;
 import nortantis.TectonicPlate;
-import nortantis.TreeType;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
+import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
 
-/**
- * Center.java
- *
- * @author Connor
- */
 public class Center implements Comparable<Center>
 {
 
@@ -269,7 +263,7 @@ public class Center implements Comparable<Center>
 
 	public boolean isWellFormedForDrawingAsPolygon()
 	{
-		Counter<IntPoint> counter = new Counter<>();
+		Counter<IntPoint> counter = new ComparableCounter<>();
 		for (Edge edge : borders)
 		{
 			if (edge.v0 != null)

@@ -641,19 +641,10 @@ public class MapCreator implements WarningLogger
 		}
 
 		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
-		NameCreator nameCreator = null;
+		Future<NameCreator> nameCreatorTask = null;
 		if (mapParts == null || mapParts.nameCreator == null)
 		{
-			nameCreator = new NameCreator(settings);
-
-			if (mapParts != null)
-			{
-				mapParts.nameCreator = nameCreator;
-			}
-		}
-		else
-		{
-			nameCreator = mapParts.nameCreator;
+			nameCreatorTask = startNameCreatorCreation(settings);
 		}
 
 		TextDrawer textDrawer = new TextDrawer(settings);
@@ -666,6 +657,20 @@ public class MapCreator implements WarningLogger
 		}
 		else
 		{
+			NameCreator nameCreator;
+			if (mapParts != null && mapParts.nameCreator != null)
+			{
+				nameCreator = mapParts.nameCreator;
+			}
+			else
+			{
+				nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
+				if (mapParts != null)
+				{
+					mapParts.nameCreator = nameCreator;
+				}
+			}
+
 			// Generate text regardless off settings.drawText because
 			// the editor might be generating the map without text
 			// now, but want to show the text later, so in that case we would
@@ -810,6 +815,15 @@ public class MapCreator implements WarningLogger
 			// Add the grunge to the map.
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
 		}
+		
+		if (nameCreatorTask != null)
+		{
+			NameCreator nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
+			if (mapParts != null)
+			{
+				mapParts.nameCreator = nameCreator;
+			}
+		}
 
 		checkForCancel();
 
@@ -858,6 +872,14 @@ public class MapCreator implements WarningLogger
 			});
 		}
 		return null;
+	}
+
+	private Future<NameCreator> startNameCreatorCreation(MapSettings settings)
+	{
+		return ThreadHelper.getInstance().submit(() ->
+		{
+			return new NameCreator(settings);
+		});
 	}
 
 	private Future<Image> startGrungeCreation(MapSettings settings, MapParts mapParts, Dimension mapDimensions)

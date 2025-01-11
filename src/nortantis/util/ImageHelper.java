@@ -16,6 +16,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 import nortantis.geom.Dimension;
@@ -226,12 +227,7 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][]
-			{
-					{
-							1f
-					}
-			};
+			return new float[][] { { 1f } };
 		}
 
 		NormalDistribution dist = createDistributionForSize(size);
@@ -287,12 +283,7 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][]
-			{
-					{
-							1f
-					}
-			};
+			return new float[][] { { 1f } };
 		}
 
 		float[][] kernel = new float[size][size];
@@ -316,12 +307,7 @@ public class ImageHelper
 	{
 		if (size == 0)
 		{
-			return new float[][]
-			{
-					{
-							1f
-					}
-			};
+			return new float[][] { { 1f } };
 		}
 
 		Sinc dist = new Sinc();
@@ -1024,6 +1010,8 @@ public class ImageHelper
 		}
 	}
 
+	private static Stopwatch sw;
+
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 * 
@@ -1042,12 +1030,25 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
-		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
+		if (sw == null)
+		{
+			sw = new Stopwatch("convolution");
+		}
+		sw.startOrContinue();
+		try
+		{
+			ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
-		// Only use 16 bit pixels if the input image used them, to save memory.
-		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
+			// Only use 16 bit pixels if the input image used them, to save memory.
+			ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
-		return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
+			return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
+		}
+		finally
+		{
+			sw.pause();
+			sw.printElapsedTime();
+		}
 	}
 
 	/**
@@ -1066,9 +1067,23 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
 	{
-		// Only use 16 bit pixels if the input image used them, to save memory.
-		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
+		if (sw == null)
+		{
+			sw = new Stopwatch("convolution");
+		}
+		sw.startOrContinue();
+		try
+		{
+			// Only use 16 bit pixels if the input image used them, to save memory.
+			ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
+			return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
+		}
+		finally
+		{
+			sw.pause();
+			sw.printElapsedTime();
+		}
+
 	}
 
 	/**
@@ -1088,8 +1103,23 @@ public class ImageHelper
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping,
 			ImageType resultType)
 	{
-		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
-		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
+		if (sw == null)
+		{
+			sw = new Stopwatch("convolution");
+		}
+		sw.startOrContinue();
+		try
+		{
+
+			ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
+			return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
+		}
+		finally
+		{
+			sw.pause();
+			sw.printElapsedTime();
+		}
+
 	}
 
 	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)
@@ -1128,16 +1158,14 @@ public class ImageHelper
 
 		if (setContrast)
 		{
-			data.setContrast(contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2,
-					imageWidth);
+			data.setContrast(contrastMin, contrastMax, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 		else if (scaleLevels)
 		{
 			data.scale(scale, imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth);
 		}
 
-		Image result = data.toImage(imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth,
-				type);
+		Image result = data.toImage(imgRowPaddingOver2, imageHeight, imgColPaddingOver2, imageWidth, type);
 		return result;
 	}
 
@@ -1220,7 +1248,7 @@ public class ImageHelper
 
 		return data;
 	}
-	
+
 	public static Image arrayToImage(float[][] array, ImageType imageType)
 	{
 		Image image = Image.create(array[0].length, array.length, imageType);
@@ -1270,7 +1298,8 @@ public class ImageHelper
 		for (int r = 0; r < result.length; r++)
 			for (int c = 0; c < result[0].length; c++)
 			{
-				int arrayRow = (r + rowOffset) % array.length;;
+				int arrayRow = (r + rowOffset) % array.length;
+				;
 				if (((r + rowOffset) / array.length) % 2 == 1)
 					arrayRow = array.length - 1 - arrayRow;
 

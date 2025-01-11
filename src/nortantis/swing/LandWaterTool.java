@@ -42,6 +42,7 @@ import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.VoronoiGraph;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
+import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
 import nortantis.util.Tuple2;
 
@@ -467,7 +468,7 @@ public class LandWaterTool extends EditorTool
 				}
 				else
 				{
-					Counter<Integer> regionIdCounts = new Counter<>();
+					Counter<Integer> regionIdCounts = new ComparableCounter<>();
 					for (Center center : selected)
 					{
 						CenterEdit edit = mainWindow.edits.centerEdits.get(center.index);

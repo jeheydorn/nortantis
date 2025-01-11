@@ -12,9 +12,10 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import nortantis.util.Assets;
-import nortantis.util.Counter;
+import nortantis.util.ComparableCounter;
 import nortantis.util.Function;
 import nortantis.util.Helper;
+import nortantis.util.Counter;
 import nortantis.util.Pair;
 import nortantis.util.Range;
 
@@ -72,7 +73,7 @@ public class NameCompiler
 		nounAdjectivePairs = null;
 
 		this.r = r;
-		counter = new Counter<>();
+		counter = new ComparableCounter<>();
 		counter.addCount("adjectives", this.nounAdjectivePairs.size());
 		counter.addCount("verbs", this.nounVerbPairs.size());
 

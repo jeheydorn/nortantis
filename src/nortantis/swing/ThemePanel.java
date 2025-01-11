@@ -67,8 +67,9 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
-import nortantis.util.Counter;
+import nortantis.util.ComparableCounter;
 import nortantis.util.FileHelper;
+import nortantis.util.Counter;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Tuple2;
@@ -1145,7 +1146,7 @@ public class ThemePanel extends JTabbedPane
 
 	private Tuple2Comp<String, String> getMostCommonTreeType(List<FreeIcon> trees)
 	{
-		Counter<Tuple2Comp<String, String>> counter = new Counter<>();
+		Counter<Tuple2Comp<String, String>> counter = new ComparableCounter<>();
 		trees.stream().forEach(tree -> counter.incrementCount(new Tuple2Comp<>(tree.artPack, tree.groupId)));
 		return counter.argmax();
 	}

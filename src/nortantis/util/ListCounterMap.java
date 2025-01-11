@@ -13,7 +13,7 @@ import java.util.TreeMap;
  * @author joseph
  *
  */
-public class ListCounterMap<T extends Comparable<T>> implements Serializable
+public class ListCounterMap<T> implements Serializable
 {
 	private static final long serialVersionUID = 1L;
 	private Map<List<T>, Counter<T>> map;
@@ -33,7 +33,7 @@ public class ListCounterMap<T extends Comparable<T>> implements Serializable
 		Counter<T> counter = map.get(key);
 		if (counter == null)
 		{
-			counter = new Counter<T>();
+			counter = new HashCounter<T>();
 			map.put(key, counter);
 		}
 		counter.incrementCount(value);
@@ -74,16 +74,6 @@ public class ListCounterMap<T extends Comparable<T>> implements Serializable
 			result.append("value: " + counter + "\n\n");
 		}
 		return result.toString();
-	}
-
-	public static void main(String[] args)
-	{
-		ListCounterMap<Character> cMap = new ListCounterMap<>();
-		Random r = new Random();
-
-		cMap.increamentCount(Arrays.asList('a', 'b'), 'c');
-
-		cMap.sampleConditional(r, Arrays.asList('a', 'b'));
 	}
 
 }
