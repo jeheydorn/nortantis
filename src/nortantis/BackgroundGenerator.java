@@ -85,7 +85,7 @@ public class BackgroundGenerator
 		}
 
 		ImageType randomImageType = texture.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-		Image randomImage = ImageHelper.arrayToImage(ImageHelper.genWhiteNoise(rand, rows, cols), randomImageType);
+		Image randomImage = ImageHelper.genWhiteNoise(rand, rows, cols, randomImageType);
 
 		for (int channel : new Range(numberOfColorChannels))
 		{

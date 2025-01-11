@@ -1010,7 +1010,7 @@ public class ImageHelper
 		}
 	}
 
-	private static Stopwatch sw;
+	private static Stopwatch sw; // TODO take this out.
 
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
@@ -1279,17 +1279,18 @@ public class ImageHelper
 		return (int) Math.pow(2.0, ((int) logLength) + 1.0);
 	}
 
-	public static float[][] genWhiteNoise(Random rand, int rows, int cols)
-	{
-		float[][] result = new float[rows][cols];
-		for (int r : new Range(rows))
+	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
+	{	
+		Image image = Image.create(cols, rows, imageType);
+		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
+		for (int y = 0; y < image.getHeight(); y++)
 		{
-			for (int c : new Range(cols))
+			for (int x = 0; x < image.getWidth(); x++)
 			{
-				result[r][c] = rand.nextFloat();
+				image.setGrayLevel(x, y, (int) (rand.nextFloat() * maxPixelValue));
 			}
 		}
-		return result;
+		return image;
 	}
 
 	public static float[][] tile(float[][] array, int targetRows, int targetCols, int rowOffset, int colOffset)
