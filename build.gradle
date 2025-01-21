@@ -12,7 +12,6 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libraries', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
-    implementation 'com.aparapi:aparapi:2.0.0'
 }
 
 // Attaches javadocs to libraries in Eclipse.

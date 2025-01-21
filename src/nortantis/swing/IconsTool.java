@@ -367,7 +367,7 @@ public class IconsTool extends EditorTool
 		if (existing == null)
 		{
 			JPanel buttonsPanel = new JPanel();
-			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel("Type:", "", listToUse, buttonsPanel),
+			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel(iconType.getNameForGUI() + ":", "", listToUse, buttonsPanel),
 					radioButtons, buttonsPanel);
 		}
 		else
