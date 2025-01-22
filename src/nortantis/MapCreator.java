@@ -2014,19 +2014,8 @@ public class MapCreator implements WarningLogger
 		Painter p = mapOrSnippet.createPainter();
 		try
 		{
-			int mapWidth, mapHeight;
-			if (settings.drawOverlayOverBorder)
-			{
-				mapWidth = mapOrSnippet.getWidth();
-				mapHeight = mapOrSnippet.getHeight();
-			}
-			else
-			{
-				mapWidth = mapOrSnippet.getWidth() - borderWidthScaledByResolution * 2;
-				mapHeight = mapOrSnippet.getHeight() - borderWidthScaledByResolution * 2;
-				assert mapWidth > 0;
-				assert mapHeight > 0;
-			}
+				int mapWidth = mapOrSnippet.getWidth();
+				int mapHeight = mapOrSnippet.getHeight();
 
 			// Calculate the maximum size the overlay can be while still fitting within the map
 			double widthRatio = (double) mapWidth / overlayImage.getWidth();
@@ -2037,8 +2026,8 @@ public class MapCreator implements WarningLogger
 			int scaledOverlayHeight = (int) (overlayImage.getHeight() * scale);
 
 			// Calculate the position to center the overlay on the map
-			int x = (mapWidth - scaledOverlayWidth) / 2 + (settings.drawOverlayOverBorder ? 0 : borderWidthScaledByResolution);
-			int y = (mapHeight - scaledOverlayHeight) / 2 + (settings.drawOverlayOverBorder ? 0 : borderWidthScaledByResolution);
+			int x = (mapWidth - scaledOverlayWidth) / 2;
+			int y = (mapHeight - scaledOverlayHeight) / 2;
 
 			if (drawBounds != null)
 			{
