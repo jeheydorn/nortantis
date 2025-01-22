@@ -109,6 +109,16 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null, null, null);
 	}
 
+	public void createAndShowMapAddOverlayImage()
+	{
+		createAndShowMap(UpdateType.AddOverlayImage, null, null, null, null, null, null);
+	}
+	
+	public void createAndShowMapUpdateOrRemoveOverlayImageOverlayImage()
+	{
+		createAndShowMap(UpdateType.UpdateOrRemoveOverlayImage, null, null, null, null, null, null);
+	}
+	
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, null);
@@ -287,6 +297,10 @@ public abstract class MapUpdater
 		{
 
 		}
+		else if (updateType == UpdateType.AddOverlayImage || updateType == UpdateType.UpdateOrRemoveOverlayImage)
+		{
+			
+		}
 		else
 		{
 			throw new IllegalStateException("Unrecognized update type: " + updateType);
@@ -442,6 +456,35 @@ public abstract class MapUpdater
 
 						return new UpdateResult(map, combinedReplaceBounds, new ArrayList<>());
 					}
+					else if (updateType == UpdateType.AddOverlayImage)
+					{
+						Image map = getCurrentMapForIncrementalUpdate();
+						if (map == null || mapParts == null)
+						{
+							return fullDraw(settings);
+						}
+						mapParts.mapBeforeAddingOverlayImage = map;
+						MapCreator.drawOverlayImage(map, settings, null);
+						return new UpdateResult(map, null, new ArrayList<>());
+					}
+					else if (updateType == UpdateType.UpdateOrRemoveOverlayImage)
+					{
+						if (mapParts == null || mapParts.mapBeforeAddingOverlayImage == null)
+						{
+							fullDraw(settings);
+						}
+						Image map =  mapParts.mapBeforeAddingOverlayImage.deepCopy();
+						if (!settings.drawOverlayImage)
+						{
+							if (mapParts != null)
+							{
+								mapParts.mapBeforeAddingOverlayImage = null;
+							}
+							return new UpdateResult(map, null, new ArrayList<>());
+						}
+						MapCreator.drawOverlayImage(map, settings, null);
+						return new UpdateResult(map, null, new ArrayList<>());
+					}
 					else if (updateType == UpdateType.ReprocessBooks)
 					{
 						if (mapParts != null)
@@ -452,34 +495,7 @@ public abstract class MapUpdater
 					}
 					else
 					{
-						// Full draw
-
-						if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
-						{
-							return null;
-						}
-
-						if (mapParts == null && createEditsIfNotPresentAndUseMapParts)
-						{
-							mapParts = new MapParts();
-						}
-
-						centersToRedrawLowPriority.clear();
-
-						Image map;
-						try
-						{
-							currentMapCreator = new MapCreator();
-							map = currentMapCreator.createMap(settings, maxMapSize, mapParts);
-						}
-						catch (CancelledException e)
-						{
-							Logger.println("Map creation cancelled.");
-							return new UpdateResult(null, null, new ArrayList<>());
-						}
-
-						System.gc();
-						return new UpdateResult(map, null, currentMapCreator.getWarningMessages());
+						return fullDraw(settings);
 					}
 				} finally
 				{
@@ -568,6 +584,37 @@ public abstract class MapUpdater
 			}
 
 		});
+	}
+	
+	private UpdateResult fullDraw(MapSettings settings)
+	{
+
+		if (maxMapSize != null && (maxMapSize.width <= 0 || maxMapSize.height <= 0))
+		{
+			return null;
+		}
+
+		if (mapParts == null && createEditsIfNotPresentAndUseMapParts)
+		{
+			mapParts = new MapParts();
+		}
+
+		centersToRedrawLowPriority.clear();
+
+		Image map;
+		try
+		{
+			currentMapCreator = new MapCreator();
+			map = currentMapCreator.createMap(settings, maxMapSize, mapParts);
+		}
+		catch (CancelledException e)
+		{
+			Logger.println("Map creation cancelled.");
+			return new UpdateResult(null, null, new ArrayList<>());
+		}
+
+		System.gc();
+		return new UpdateResult(map, null, currentMapCreator.getWarningMessages());
 	}
 
 	private void addLowPriorityCentersToRedraw(Map<Integer, Center> toAdd)

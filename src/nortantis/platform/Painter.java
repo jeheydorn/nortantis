@@ -9,6 +9,10 @@ import nortantis.geom.Point;
 public abstract class Painter
 {
 	public abstract void drawImage(Image image, int x, int y);
+	
+	public abstract void drawImage(Image image, int x, int y, int width, int height);
+	
+	public abstract void setAlphaComposite(float alpha);
 
 	public abstract void setColor(Color color);
 

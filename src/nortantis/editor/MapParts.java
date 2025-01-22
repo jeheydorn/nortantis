@@ -60,9 +60,15 @@ public class MapParts
 	public Image grunge;
 
 	/**
-	 * These fields cache the map just before adding text and other values need for text drawing so that text changes in the editor can
-	 * re-draw quickly. This is also useful as a cache when re-drawing to hide text in the editor.
+	 * This field caches the map just before adding text and other values need for text drawing so that enabling/disabling text in the editor
+	 * is fast.
 	 */
 	public Image mapBeforeAddingText;
+
+	/**
+	 * This field caches the map just before adding the overlay image so that changing the overlay image in the editor can
+	 * re-draw quickly.
+	 */
+	public Image mapBeforeAddingOverlayImage;
 
 }

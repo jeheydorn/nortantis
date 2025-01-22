@@ -171,6 +171,13 @@ public class MapSettings implements Serializable
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
+	
+	public boolean drawOverlayImage;
+	public String overlayImagePath;
+	/**
+	 * An integer percentage between 0 and 100 inclusive.
+	 */
+	public int overlayImageTransparency;
 
 	public MapSettings()
 	{
@@ -403,6 +410,10 @@ public class MapSettings implements Serializable
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
 		root.put("defaultHeightmapExportAction",
 				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
+		
+		root.put("drawOverlayImage", drawOverlayImage);
+		root.put("overlayImagePath", overlayImagePath);
+		root.put("overlayImageTransparency", overlayImageTransparency);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -907,6 +918,17 @@ public class MapSettings implements Serializable
 		else
 		{
 			defaultHeightmapExportAction = defaultDefaultExportAction;
+		}
+		
+		if (root.containsKey("drawOverlayImage"))
+		{
+			drawOverlayImage = (boolean) root.get("drawOverlayImage");
+			overlayImagePath = (String) root.get("overlayImagePath");
+			overlayImageTransparency = (int)(long) root.get("overlayImageTransparency");
+		}
+		else
+		{
+			overlayImageTransparency = 50;
 		}
 
 		edits = new MapEdits();
@@ -1580,7 +1602,8 @@ public class MapSettings implements Serializable
 			return false;
 		}
 		MapSettings other = (MapSettings) obj;
-		return backgroundRandomSeed == other.backgroundRandomSeed && Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
+		return Objects.equals(artPack, other.artPack) && backgroundRandomSeed == other.backgroundRandomSeed
+				&& Objects.equals(backgroundTextureImage, other.backgroundTextureImage)
 				&& Objects.equals(backgroundTextureResource, other.backgroundTextureResource)
 				&& backgroundTextureSource == other.backgroundTextureSource
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
@@ -1602,8 +1625,9 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
-				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawRegionBoundaries == other.drawRegionBoundaries
-				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawOverlayImage == other.drawOverlayImage
+				&& drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors
+				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
@@ -1623,7 +1647,8 @@ public class MapSettings implements Serializable
 				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(oceanShadingColor, other.oceanShadingColor)
 				&& oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor)
 				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType
-				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& Objects.equals(otherMountainsFont, other.otherMountainsFont) && Objects.equals(overlayImagePath, other.overlayImagePath)
+				&& overlayImageTransparency == other.overlayImageTransparency
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
 				&& Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
@@ -1632,8 +1657,8 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
 				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
-				&& Objects.equals(artPack, other.artPack) && Objects.equals(textColor, other.textColor)
-				&& textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
+				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
+				&& Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}

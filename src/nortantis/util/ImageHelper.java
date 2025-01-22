@@ -1047,7 +1047,7 @@ public class ImageHelper
 		finally
 		{
 			sw.pause();
-			sw.printElapsedTime();
+			//sw.printElapsedTime();
 		}
 	}
 
@@ -1081,7 +1081,7 @@ public class ImageHelper
 		finally
 		{
 			sw.pause();
-			sw.printElapsedTime();
+			//sw.printElapsedTime();
 		}
 
 	}
@@ -1117,7 +1117,7 @@ public class ImageHelper
 		finally
 		{
 			sw.pause();
-			sw.printElapsedTime();
+			//sw.printElapsedTime();
 		}
 
 	}

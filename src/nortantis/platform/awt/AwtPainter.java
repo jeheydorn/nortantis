@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
@@ -26,6 +27,12 @@ class AwtPainter extends Painter
 	public void drawImage(Image image, int x, int y)
 	{
 		g.drawImage(((AwtImage) image).image, x, y, null);
+	}
+	
+	@Override
+	public void drawImage(Image image, int x, int y, int width, int height)
+	{
+		g.drawImage(((AwtImage) image).image, x, y, width, height, null);
 	}
 
 	@Override
@@ -211,5 +218,11 @@ class AwtPainter extends Painter
 	public int getFontDescent()
 	{
 		return g.getFontMetrics().getDescent();
+	}
+
+	@Override
+	public void setAlphaComposite(float alpha)
+	{
+		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 	}
 }

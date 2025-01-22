@@ -1,6 +1,8 @@
 package nortantis;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,6 +37,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.swing.MapEdits;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -403,6 +406,19 @@ public class MapCreator implements WarningLogger
 		}
 		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
+
+		if (settings.drawOverlayImage)
+		{
+			// Update the cached version of the map without an overlay image if present.
+			if (mapParts.mapBeforeAddingOverlayImage != null)
+			{
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingOverlayImage, mapSnippet,
+						replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
+			}
+
+			drawOverlayImage(mapSnippet, settings, drawBounds.toIntRectangle());
+		}
+
 		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
 				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
 				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
@@ -680,6 +696,22 @@ public class MapCreator implements WarningLogger
 
 		textBackground = null;
 
+		if (settings.drawOverlayImage)
+		{
+			if (mapParts != null)
+			{
+				mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
+			}
+			drawOverlayImage(map, settings, null);
+		}
+		else
+		{
+			if (mapParts != null)
+			{
+				mapParts.mapBeforeAddingOverlayImage = null;
+			}
+		}
+
 		if (DebugFlags.drawCorners())
 		{
 			graph.drawCorners(map.createPainter(), null, null);
@@ -815,7 +847,7 @@ public class MapCreator implements WarningLogger
 			// Add the grunge to the map.
 			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
 		}
-		
+
 		if (nameCreatorTask != null)
 		{
 			NameCreator nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
@@ -1932,5 +1964,70 @@ public class MapCreator implements WarningLogger
 	public List<String> getWarningMessages()
 	{
 		return warningMessages;
+	}
+
+	/**
+	 * Draws an overlay image on top of mapOrSnippet, scaled to the maximum size it can be and still fit into the center of mapOrSnippet.
+	 * 
+	 * @param mapOrSnippet
+	 *            Either the entire map, or a snippet out of the map whose bounds is drawBounds.
+	 * @param settings
+	 *            Map settings
+	 * @param drawBounds
+	 *            For incremental updates. When not null, mapOrSnippet should be a snippet from the main map, and this is the bounds of that
+	 *            snippet.
+	 */
+	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, IntRectangle drawBounds)
+	{
+		File file = new File(settings.overlayImagePath);
+		if (!file.exists())
+		{
+			throw new RuntimeException("The overlay image '" + settings.overlayImagePath + "' does not exist.");
+		}
+		if (file.isDirectory())
+		{
+			throw new RuntimeException(
+					"The overlay image '" + settings.overlayImagePath + "' is a folder. It should be a JPG or PNG image file.");
+		}
+
+		Image overlayImage = ImageCache.getInstance(settings.artPack, null).getImageFromFile(file.toPath());
+
+		// TODO test this
+		Painter p = mapOrSnippet.createPainter();
+		try
+		{
+			int overlayWidth = overlayImage.getWidth();
+			int overlayHeight = overlayImage.getHeight();
+			int mapWidth = mapOrSnippet.getWidth();
+			int mapHeight = mapOrSnippet.getHeight();
+
+			// Calculate the maximum size the overlay can be while still fitting within the map
+			double widthRatio = (double) mapWidth / overlayWidth;
+			double heightRatio = (double) mapHeight / overlayHeight;
+			double scale = Math.min(widthRatio, heightRatio);
+
+			int newOverlayWidth = (int) (overlayWidth * scale);
+			int newOverlayHeight = (int) (overlayHeight * scale);
+
+			// Calculate the position to center the overlay on the map
+			int x = (mapWidth - newOverlayWidth) / 2;
+			int y = (mapHeight - newOverlayHeight) / 2;
+
+			if (drawBounds != null)
+			{
+				x = drawBounds.x + (drawBounds.width - newOverlayWidth) / 2;
+				y = drawBounds.y + (drawBounds.height - newOverlayHeight) / 2;
+			}
+			
+			 // Set the transparency level
+	        float alpha = (100 - settings.overlayImageTransparency) / 100.0f;
+	        p.setAlphaComposite(alpha);
+
+			p.drawImage(overlayImage, x, y, newOverlayWidth, newOverlayHeight);
+		}
+		finally
+		{
+			p.dispose();
+		}
 	}
 }
