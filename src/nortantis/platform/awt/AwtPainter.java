@@ -223,6 +223,6 @@ class AwtPainter extends Painter
 	@Override
 	public void setAlphaComposite(float alpha)
 	{
-		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
 	}
 }

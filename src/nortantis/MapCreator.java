@@ -406,19 +406,6 @@ public class MapCreator implements WarningLogger
 		}
 		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
-
-		if (settings.drawOverlayImage)
-		{
-			// Update the cached version of the map without an overlay image if present.
-			if (mapParts.mapBeforeAddingOverlayImage != null)
-			{
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingOverlayImage, mapSnippet,
-						replaceBounds.upperLeftCorner().toIntPoint(), boundsInSourceToCopyFrom, 0);
-			}
-
-			drawOverlayImage(mapSnippet, settings, drawBounds.toIntRectangle());
-		}
-
 		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
 				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
 				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
@@ -457,6 +444,20 @@ public class MapCreator implements WarningLogger
 		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
 				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
 				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+
+		if (settings.drawOverlayImage)
+		{
+			// Update the cached version of the map without an overlay image if present.
+			if (mapParts.mapBeforeAddingOverlayImage != null)
+			{
+				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingOverlayImage, mapSnippet,
+						replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
+						mapParts.background.getBorderWidthScaledByResolution());
+			}
+
+			drawOverlayImage(mapSnippet, settings, drawBounds);
+		}
+
 		// Update the snippet in the main map.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
 				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
@@ -561,300 +562,295 @@ public class MapCreator implements WarningLogger
 		Dimension mapBounds = Background.calcMapBoundsAndAdjustResolutionIfNeeded(settings, maxDimensions);
 		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(settings.resolution);
 
-		// Kick of a job to create the graph while the background is being created.
-		Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
+		Image map;
+		if (mapParts == null || mapParts.mapBeforeAddingOverlayImage == null)
 		{
-			if (mapParts == null || mapParts.graph == null)
+			// Kick of a job to create the graph while the background is being created.
+			Future<WorldGraph> graphTask = ThreadHelper.getInstance().submit(() ->
 			{
-				Logger.println("Creating the graph.");
-				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution,
-						!settings.edits.isInitialized());
-				if (mapParts != null)
+				if (mapParts == null || mapParts.graph == null)
 				{
-					mapParts.graph = graphCreated;
+					Logger.println("Creating the graph.");
+					WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution,
+							!settings.edits.isInitialized());
+					if (mapParts != null)
+					{
+						mapParts.graph = graphCreated;
+					}
+					return graphCreated;
 				}
-				return graphCreated;
+				else
+				{
+					return mapParts.graph;
+				}
+			});
+
+			Background background;
+			if (mapParts != null && mapParts.background != null)
+			{
+				background = mapParts.background;
 			}
 			else
 			{
-				return mapParts.graph;
+				Logger.println("Generating the background image.");
+				background = new Background(settings, mapBounds, this);
 			}
-		});
 
-		Background background;
-		if (mapParts != null && mapParts.background != null)
-		{
-			background = mapParts.background;
-		}
-		else
-		{
-			Logger.println("Generating the background image.");
-			background = new Background(settings, mapBounds, this);
-		}
-
-		if (mapParts != null)
-		{
-			mapParts.background = background;
-		}
-
-		checkForCancel();
-
-		WorldGraph graph;
-		graph = ThreadHelper.getInstance().getResult(graphTask);
-
-		checkForCancel();
-
-		// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found
-		// where VoronoiGraph was not thread safe. I think I've fixed those, but I'm still avoiding creating graphs in
-		// parallel to be safe.
-		Dimension mapDimensions = background.borderBounds;
-		Future<Tuple2<Image, Image>> frayedBorderTask = null;
-		long frayedBorderSeed = r.nextLong();
-		if (!isLowMemoryMode)
-		{
-			frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
-		}
-
-		Image map;
-		Image textBackground;
-		List<Set<Center>> mountainGroups;
-		List<IconDrawTask> cities;
-		if (mapParts == null || mapParts.mapBeforeAddingText == null || !settings.edits.isInitialized())
-		{
-			Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph, background);
+			if (mapParts != null)
+			{
+				mapParts.background = background;
+			}
 
 			checkForCancel();
 
-			map = tuple.getFirst();
-			textBackground = tuple.getSecond();
-			mountainGroups = tuple.getThird();
-			cities = tuple.getFourth();
-		}
-		else
-		{
-			map = mapParts.mapBeforeAddingText.deepCopy();
-			textBackground = mapParts.textBackground;
-			mountainGroups = null;
-			cities = null;
-		}
+			WorldGraph graph;
+			graph = ThreadHelper.getInstance().getResult(graphTask);
 
-		checkForCancel();
+			checkForCancel();
 
-		Future<Image> grungeTask = null;
-		if (!isLowMemoryMode)
-		{
-			// Run the job now so it can run in parallel with other stuff.
-			grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
-		}
-
-		if (settings.drawText)
-		{
-			Logger.println("Adding text.");
-		}
-		else
-		{
-			Logger.println("Creating text but not drawing it.");
-		}
-
-		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
-		Future<NameCreator> nameCreatorTask = null;
-		if (mapParts == null || mapParts.nameCreator == null)
-		{
-			nameCreatorTask = startNameCreatorCreation(settings);
-		}
-
-		TextDrawer textDrawer = new TextDrawer(settings);
-
-		textDrawer.setMapTexts(settings.edits.text);
-
-		if (settings.edits.isInitialized())
-		{
-			textDrawer.drawTextFromEdits(map, textBackground, graph, null);
-		}
-		else
-		{
-			NameCreator nameCreator;
-			if (mapParts != null && mapParts.nameCreator != null)
-			{
-				nameCreator = mapParts.nameCreator;
-			}
-			else
-			{
-				nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
-				if (mapParts != null)
-				{
-					mapParts.nameCreator = nameCreator;
-				}
-			}
-
-			// Generate text regardless off settings.drawText because
-			// the editor might be generating the map without text
-			// now, but want to show the text later, so in that case we would
-			// want to generate the text but not show it.
-			textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes());
-		}
-
-		textBackground = null;
-
-		if (settings.drawOverlayImage)
-		{
-			if (mapParts != null)
-			{
-				mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
-			}
-			drawOverlayImage(map, settings, null);
-		}
-		else
-		{
-			if (mapParts != null)
-			{
-				mapParts.mapBeforeAddingOverlayImage = null;
-			}
-		}
-
-		if (DebugFlags.drawCorners())
-		{
-			graph.drawCorners(map.createPainter(), null, null);
-		}
-		if (DebugFlags.drawVoronoi())
-		{
-			graph.drawVoronoi(map.createPainter(), null, null);
-		}
-
-		if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
-		{
-			Painter p = map.createPainter();
-			Set<Center> toRender = new HashSet<>();
-			for (Integer index : DebugFlags.getIndexesOfCentersToHighlight())
-			{
-				toRender.add(graph.centers.get(index));
-			}
-			graph.drawPolygons(p, toRender, (c) -> Color.green);
-		}
-
-		if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)
-		{
-			Painter p = map.createPainter();
-			for (Integer index : DebugFlags.getIndexesOfEdgesToHighlight())
-			{
-				Edge e = graph.edges.get(index);
-
-				p.setColor(Color.blue);
-				p.setBasicStroke(1f * (float) settings.resolution);
-				final int diameter = (int) (6.0 * settings.resolution);
-
-				if (e.v0 != null)
-				{
-					p.drawOval((int) (e.v0.loc.x) - diameter / 2, (int) (e.v0.loc.y) - diameter / 2, diameter, diameter);
-				}
-
-				if (e.v1 != null)
-				{
-					p.drawOval((int) (e.v1.loc.x) - diameter / 2, (int) (e.v1.loc.y) - diameter / 2, diameter, diameter);
-				}
-
-				p.setColor(Color.cyan);
-				graph.drawEdge(p, e);
-			}
-		}
-
-		if (settings.drawBorder)
-		{
-			Logger.println("Adding border.");
-			map = background.addBorder(map);
-			if (mapParts == null)
-			{
-				background.borderBackground = null;
-			}
-		}
-		background = null;
-
-		checkForCancel();
-
-		if (settings.frayedBorder)
-		{
-			Image frayedBorderMask;
-			Image frayedBorderBlur;
-			if (isLowMemoryMode && frayedBorderTask == null)
+			// Kick off frayed border creation. This is started after the graph is created because of previous bugs I've found
+			// where VoronoiGraph was not thread safe. I think I've fixed those, but I'm still avoiding creating graphs in
+			// parallel to be safe.
+			Dimension mapDimensions = background.borderBounds;
+			Future<Tuple2<Image, Image>> frayedBorderTask = null;
+			long frayedBorderSeed = r.nextLong();
+			if (!isLowMemoryMode)
 			{
 				frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
 			}
 
-			if (frayedBorderTask != null)
+			Image textBackground;
+			List<Set<Center>> mountainGroups;
+			List<IconDrawTask> cities;
+			if (mapParts == null || mapParts.mapBeforeAddingText == null || !settings.edits.isInitialized())
 			{
-				Tuple2<Image, Image> tuple;
-				tuple = ThreadHelper.getInstance().getResult(frayedBorderTask);
+				Tuple4<Image, Image, List<Set<Center>>, List<IconDrawTask>> tuple = drawTerrainAndIcons(settings, mapParts, graph,
+						background);
 
-				Logger.println("Adding frayed edges.");
-				frayedBorderMask = tuple.getFirst();
-				frayedBorderBlur = tuple.getSecond();
-			}
-			else if (mapParts != null)
-			{
-				frayedBorderMask = mapParts.frayedBorderMask;
-				frayedBorderBlur = mapParts.frayedBorderBlur;
+				checkForCancel();
+
+				map = tuple.getFirst();
+				textBackground = tuple.getSecond();
+				mountainGroups = tuple.getThird();
+				cities = tuple.getFourth();
 			}
 			else
 			{
-				throw new IllegalStateException("Frayed border should have been created.");
+				map = mapParts.mapBeforeAddingText.deepCopy();
+				textBackground = mapParts.textBackground;
+				mountainGroups = null;
+				cities = null;
 			}
 
-			if (mapParts != null)
-			{
-				mapParts.frayedBorderMask = frayedBorderMask;
-				mapParts.frayedBorderBlur = frayedBorderBlur;
-				mapParts.frayedBorderColor = settings.frayedBorderColor;
-			}
+			checkForCancel();
 
-			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
-			if (frayedBorderBlur != null)
-			{
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
-			}
-		}
-
-		checkForCancel();
-
-		if (settings.drawGrunge && settings.grungeWidth > 0)
-		{
-			Logger.println("Adding grunge.");
-			Image grunge;
-
-			if (isLowMemoryMode && grungeTask == null)
+			Future<Image> grungeTask = null;
+			if (!isLowMemoryMode)
 			{
 				// Run the job now so it can run in parallel with other stuff.
 				grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
 			}
 
-			if (grungeTask != null)
+			if (settings.drawText)
 			{
-				grunge = ThreadHelper.getInstance().getResult(grungeTask);
-			}
-			else if (mapParts != null)
-			{
-				grunge = mapParts.grunge;
+				Logger.println("Adding text.");
 			}
 			else
 			{
-				throw new IllegalStateException("Grunge should have been created.");
+				Logger.println("Creating text but not drawing it.");
 			}
 
-			if (mapParts != null)
+			// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
+			Future<NameCreator> nameCreatorTask = null;
+			if (mapParts == null || mapParts.nameCreator == null)
 			{
-				mapParts.grunge = grunge;
+				nameCreatorTask = startNameCreatorCreation(settings);
 			}
 
-			// Add the grunge to the map.
-			map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+			TextDrawer textDrawer = new TextDrawer(settings);
+
+			textDrawer.setMapTexts(settings.edits.text);
+
+			if (settings.edits.isInitialized())
+			{
+				textDrawer.drawTextFromEdits(map, textBackground, graph, null);
+			}
+			else
+			{
+				NameCreator nameCreator;
+				if (mapParts != null && mapParts.nameCreator != null)
+				{
+					nameCreator = mapParts.nameCreator;
+				}
+				else
+				{
+					nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
+					if (mapParts != null)
+					{
+						mapParts.nameCreator = nameCreator;
+					}
+				}
+
+				// Generate text regardless off settings.drawText because
+				// the editor might be generating the map without text
+				// now, but want to show the text later, so in that case we would
+				// want to generate the text but not show it.
+				textDrawer.generateText(graph, map, nameCreator, textBackground, mountainGroups, cities, graph.getGeneratedLakes());
+			}
+
+			textBackground = null;
+
+			if (DebugFlags.drawCorners())
+			{
+				graph.drawCorners(map.createPainter(), null, null);
+			}
+			if (DebugFlags.drawVoronoi())
+			{
+				graph.drawVoronoi(map.createPainter(), null, null);
+			}
+
+			if (DebugFlags.getIndexesOfCentersToHighlight().length > 0)
+			{
+				Painter p = map.createPainter();
+				Set<Center> toRender = new HashSet<>();
+				for (Integer index : DebugFlags.getIndexesOfCentersToHighlight())
+				{
+					toRender.add(graph.centers.get(index));
+				}
+				graph.drawPolygons(p, toRender, (c) -> Color.green);
+			}
+
+			if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)
+			{
+				Painter p = map.createPainter();
+				for (Integer index : DebugFlags.getIndexesOfEdgesToHighlight())
+				{
+					Edge e = graph.edges.get(index);
+
+					p.setColor(Color.blue);
+					p.setBasicStroke(1f * (float) settings.resolution);
+					final int diameter = (int) (6.0 * settings.resolution);
+
+					if (e.v0 != null)
+					{
+						p.drawOval((int) (e.v0.loc.x) - diameter / 2, (int) (e.v0.loc.y) - diameter / 2, diameter, diameter);
+					}
+
+					if (e.v1 != null)
+					{
+						p.drawOval((int) (e.v1.loc.x) - diameter / 2, (int) (e.v1.loc.y) - diameter / 2, diameter, diameter);
+					}
+
+					p.setColor(Color.cyan);
+					graph.drawEdge(p, e);
+				}
+			}
+
+			if (settings.drawBorder)
+			{
+				Logger.println("Adding border.");
+				map = background.addBorder(map);
+				if (mapParts == null)
+				{
+					background.borderBackground = null;
+				}
+			}
+			background = null;
+
+			checkForCancel();
+
+			if (settings.frayedBorder)
+			{
+				Image frayedBorderMask;
+				Image frayedBorderBlur;
+				if (isLowMemoryMode && frayedBorderTask == null)
+				{
+					frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
+				}
+
+				if (frayedBorderTask != null)
+				{
+					Tuple2<Image, Image> tuple;
+					tuple = ThreadHelper.getInstance().getResult(frayedBorderTask);
+
+					Logger.println("Adding frayed edges.");
+					frayedBorderMask = tuple.getFirst();
+					frayedBorderBlur = tuple.getSecond();
+				}
+				else if (mapParts != null)
+				{
+					frayedBorderMask = mapParts.frayedBorderMask;
+					frayedBorderBlur = mapParts.frayedBorderBlur;
+				}
+				else
+				{
+					throw new IllegalStateException("Frayed border should have been created.");
+				}
+
+				if (mapParts != null)
+				{
+					mapParts.frayedBorderMask = frayedBorderMask;
+					mapParts.frayedBorderBlur = frayedBorderBlur;
+					mapParts.frayedBorderColor = settings.frayedBorderColor;
+				}
+
+				map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+				if (frayedBorderBlur != null)
+				{
+					map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
+				}
+			}
+
+			checkForCancel();
+
+			if (settings.drawGrunge && settings.grungeWidth > 0)
+			{
+				Logger.println("Adding grunge.");
+				Image grunge;
+
+				if (isLowMemoryMode && grungeTask == null)
+				{
+					// Run the job now so it can run in parallel with other stuff.
+					grungeTask = startGrungeCreation(settings, mapParts, mapDimensions);
+				}
+
+				if (grungeTask != null)
+				{
+					grunge = ThreadHelper.getInstance().getResult(grungeTask);
+				}
+				else if (mapParts != null)
+				{
+					grunge = mapParts.grunge;
+				}
+				else
+				{
+					throw new IllegalStateException("Grunge should have been created.");
+				}
+
+				if (mapParts != null)
+				{
+					mapParts.grunge = grunge;
+				}
+
+				// Add the grunge to the map.
+				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, grunge, true);
+			}
+
+			drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);
+
+			if (nameCreatorTask != null)
+			{
+				NameCreator nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
+				if (mapParts != null)
+				{
+					mapParts.nameCreator = nameCreator;
+				}
+			}
 		}
-
-		if (nameCreatorTask != null)
+		else
 		{
-			NameCreator nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
-			if (mapParts != null)
-			{
-				mapParts.nameCreator = nameCreator;
-			}
+			map = mapParts.mapBeforeAddingOverlayImage;
+			drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);
 		}
 
 		checkForCancel();
@@ -1966,6 +1962,26 @@ public class MapCreator implements WarningLogger
 		return warningMessages;
 	}
 
+	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings, MapParts mapParts)
+	{
+		if (settings.drawOverlayImage)
+		{
+			if (mapParts != null)
+			{
+				mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
+			}
+			drawOverlayImage(map, settings, null);
+		}
+		else
+		{
+			if (mapParts != null)
+			{
+				mapParts.mapBeforeAddingOverlayImage = null;
+			}
+		}
+
+	}
+
 	/**
 	 * Draws an overlay image on top of mapOrSnippet, scaled to the maximum size it can be and still fit into the center of mapOrSnippet.
 	 * 
@@ -1975,9 +1991,9 @@ public class MapCreator implements WarningLogger
 	 *            Map settings
 	 * @param drawBounds
 	 *            For incremental updates. When not null, mapOrSnippet should be a snippet from the main map, and this is the bounds of that
-	 *            snippet.
+	 *            snippet. Does not include border width.
 	 */
-	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, IntRectangle drawBounds)
+	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds)
 	{
 		File file = new File(settings.overlayImagePath);
 		if (!file.exists())
@@ -1989,6 +2005,8 @@ public class MapCreator implements WarningLogger
 			throw new RuntimeException(
 					"The overlay image '" + settings.overlayImagePath + "' is a folder. It should be a JPG or PNG image file.");
 		}
+		
+		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
 
 		Image overlayImage = ImageCache.getInstance(settings.artPack, null).getImageFromFile(file.toPath());
 
@@ -1996,34 +2014,48 @@ public class MapCreator implements WarningLogger
 		Painter p = mapOrSnippet.createPainter();
 		try
 		{
-			int overlayWidth = overlayImage.getWidth();
-			int overlayHeight = overlayImage.getHeight();
-			int mapWidth = mapOrSnippet.getWidth();
-			int mapHeight = mapOrSnippet.getHeight();
+			int mapWidth, mapHeight;
+			if (settings.drawOverlayOverBorder)
+			{
+				mapWidth = mapOrSnippet.getWidth();
+				mapHeight = mapOrSnippet.getHeight();
+			}
+			else
+			{
+				mapWidth = mapOrSnippet.getWidth() - borderWidthScaledByResolution * 2;
+				mapHeight = mapOrSnippet.getHeight() - borderWidthScaledByResolution * 2;
+				assert mapWidth > 0;
+				assert mapHeight > 0;
+			}
 
 			// Calculate the maximum size the overlay can be while still fitting within the map
-			double widthRatio = (double) mapWidth / overlayWidth;
-			double heightRatio = (double) mapHeight / overlayHeight;
+			double widthRatio = (double) mapWidth / overlayImage.getWidth();
+			double heightRatio = (double) mapHeight / overlayImage.getHeight();
 			double scale = Math.min(widthRatio, heightRatio);
 
-			int newOverlayWidth = (int) (overlayWidth * scale);
-			int newOverlayHeight = (int) (overlayHeight * scale);
+			int scaledOverlayWidth = (int) (overlayImage.getWidth() * scale);
+			int scaledOverlayHeight = (int) (overlayImage.getHeight() * scale);
 
 			// Calculate the position to center the overlay on the map
-			int x = (mapWidth - newOverlayWidth) / 2;
-			int y = (mapHeight - newOverlayHeight) / 2;
+			int x = (mapWidth - scaledOverlayWidth) / 2 + (settings.drawOverlayOverBorder ? 0 : borderWidthScaledByResolution);
+			int y = (mapHeight - scaledOverlayHeight) / 2 + (settings.drawOverlayOverBorder ? 0 : borderWidthScaledByResolution);
 
 			if (drawBounds != null)
 			{
-				x = drawBounds.x + (drawBounds.width - newOverlayWidth) / 2;
-				y = drawBounds.y + (drawBounds.height - newOverlayHeight) / 2;
-			}
-			
-			 // Set the transparency level
-	        float alpha = (100 - settings.overlayImageTransparency) / 100.0f;
-	        p.setAlphaComposite(alpha);
+				IntRectangle drawBoundsAdjustedForBorder = new IntRectangle(
+						drawBounds.upperLeftCorner().toIntPoint().x + borderWidthScaledByResolution,
+						drawBounds.upperLeftCorner().toIntPoint().y + borderWidthScaledByResolution, (int) drawBounds.width,
+						(int) drawBounds.height);
 
-			p.drawImage(overlayImage, x, y, newOverlayWidth, newOverlayHeight);
+				x = drawBoundsAdjustedForBorder.x + (drawBoundsAdjustedForBorder.width - scaledOverlayWidth) / 2;
+				y = drawBoundsAdjustedForBorder.y + (drawBoundsAdjustedForBorder.height - scaledOverlayHeight) / 2;
+			}
+
+			// Set the transparency level
+			float alpha = (100 - settings.overlayImageTransparency) / 100.0f;
+			p.setAlphaComposite(alpha);
+
+			p.drawImage(overlayImage, x, y, scaledOverlayWidth, scaledOverlayHeight);
 		}
 		finally
 		{

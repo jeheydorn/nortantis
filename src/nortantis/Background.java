@@ -64,7 +64,7 @@ public class Background
 		landColorifyAlgorithm = ColorifyAlgorithm.none;
 		this.mapBounds = mapBounds;
 
-		borderWidthScaled = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+		borderWidthScaled = calcBorderWidthScaledByResolution(settings);
 		borderResouce = settings.borderResource;
 
 		if (settings.generateBackground)
@@ -865,9 +865,14 @@ public class Background
 
 		return Assets.readImage(corners.get(0).toString());
 	}
-
+	
 	public int getBorderWidthScaledByResolution()
 	{
 		return borderWidthScaled;
+	}
+
+	public static int calcBorderWidthScaledByResolution(MapSettings settings)
+	{
+		return settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 	}
 }

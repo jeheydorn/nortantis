@@ -194,7 +194,7 @@ public class TextTool extends EditorTool
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.lineBreak = (LineBreak) lineBreakComboBox.getSelectedItem();
-					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
 			}
@@ -211,7 +211,7 @@ public class TextTool extends EditorTool
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.angle = 0;
-					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
@@ -232,7 +232,7 @@ public class TextTool extends EditorTool
 				{
 					lastSelected.colorOverride = null;
 					lastSelected.boldBackgroundColorOverride = null;
-					undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
 				}
 				else
@@ -261,7 +261,7 @@ public class TextTool extends EditorTool
 					if (lastSelected != null)
 					{
 						lastSelected.colorOverride = AwtFactory.wrap(colorOverrideDisplay.getBackground());
-						undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+						undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
 					}
 				});
@@ -281,7 +281,7 @@ public class TextTool extends EditorTool
 					if (lastSelected != null)
 					{
 						lastSelected.boldBackgroundColorOverride = AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground());
-						undoer.setUndoPoint(UpdateType.Text, TextTool.this);
+						undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
 						updater.createAndShowMapIncrementalUsingText(Arrays.asList(lastSelected));
 					}
 				});
@@ -439,7 +439,7 @@ public class TextTool extends EditorTool
 							getPointOnGraph(e.getPoint()), mainWindow.displayQualityScale);
 					mainWindow.edits.text.add(addedText);
 
-					undoer.setUndoPoint(UpdateType.Text, this);
+					undoer.setUndoPoint(UpdateType.Incremental, this);
 
 					lastSelected = addedText;
 					changeToEditModeAndSelectText(addedText, true);
@@ -569,7 +569,7 @@ public class TextTool extends EditorTool
 						(int) ((graphPointMouseLocation.y - graphPointMousePressedLocation.y) / mainWindow.displayQualityScale));
 				lastSelected.location = new nortantis.geom.Point(lastSelected.location.x + translation.x,
 						+lastSelected.location.y + translation.y);
-				undoer.setUndoPoint(UpdateType.Text, this);
+				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				isMoving = false;
 			}
@@ -594,7 +594,7 @@ public class TextTool extends EditorTool
 					angle += Math.PI;
 				}
 				lastSelected.angle = angle;
-				undoer.setUndoPoint(UpdateType.Text, this);
+				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				isRotating = false;
 			}
@@ -607,7 +607,7 @@ public class TextTool extends EditorTool
 
 			// This won't actually set an undo point unless text was deleted because Undoer is smart enough to discard undo points
 			// that didn't change anything.
-			undoer.setUndoPoint(UpdateType.Text, this);
+			undoer.setUndoPoint(UpdateType.Incremental, this);
 		}
 	}
 
@@ -641,8 +641,7 @@ public class TextTool extends EditorTool
 					? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground())
 					: null;
 
-			// Need to re-draw all of the text.
-			undoer.setUndoPoint(UpdateType.Text, this);
+			undoer.setUndoPoint(UpdateType.Incremental, this);
 			updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 		}
 

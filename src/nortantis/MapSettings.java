@@ -178,6 +178,7 @@ public class MapSettings implements Serializable
 	 * An integer percentage between 0 and 100 inclusive.
 	 */
 	public int overlayImageTransparency;
+	public boolean drawOverlayOverBorder;
 
 	public MapSettings()
 	{
@@ -414,6 +415,7 @@ public class MapSettings implements Serializable
 		root.put("drawOverlayImage", drawOverlayImage);
 		root.put("overlayImagePath", overlayImagePath);
 		root.put("overlayImageTransparency", overlayImageTransparency);
+		root.put("drawOverlayOverBorder", drawOverlayOverBorder);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -925,10 +927,12 @@ public class MapSettings implements Serializable
 			drawOverlayImage = (boolean) root.get("drawOverlayImage");
 			overlayImagePath = (String) root.get("overlayImagePath");
 			overlayImageTransparency = (int)(long) root.get("overlayImageTransparency");
+			drawOverlayOverBorder = (boolean) root.get("drawOverlayOverBorder");
 		}
 		else
 		{
 			overlayImageTransparency = 50;
+			drawOverlayOverBorder = false;
 		}
 
 		edits = new MapEdits();
@@ -1626,8 +1630,8 @@ public class MapSettings implements Serializable
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawOverlayImage == other.drawOverlayImage
-				&& drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors
-				&& drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawOverlayOverBorder == other.drawOverlayOverBorder && drawRegionBoundaries == other.drawRegionBoundaries
+				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
@@ -1662,5 +1666,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+
+	
 
 }

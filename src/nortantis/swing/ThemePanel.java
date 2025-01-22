@@ -180,6 +180,8 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox drawOverlayImageCheckbox;
 	private RowHider overlayImagePathHider;
 	private RowHider overlayImageTransparencySliderHider;
+	private JCheckBox drawOverlayOverBorderCheckbox;
+	private RowHider drawOverlayOverBorderCheckboxHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -975,6 +977,20 @@ public class ThemePanel extends JTabbedPane
 					(value) -> String.format("%s%%", value), null, 30);
 			overlayImageTransparencySliderHider = sliderWithDisplay.addToOrganizer(organizer, "Overlay image transparency:", "Transparency to add to the overlay image to help with seeing the map underneath it.");
 		}
+		
+		{
+			drawOverlayOverBorderCheckbox = new JCheckBox("Draw overlay over border");
+			drawOverlayOverBorderCheckbox.setToolTipText("Whether the overlay image should be drawn over the border or just over the land/ocean.");
+			drawOverlayOverBorderCheckbox.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					handleOverlayImageChange(false);
+				}
+			});
+			drawOverlayOverBorderCheckboxHider = organizer.addLeftAlignedComponent(drawOverlayOverBorderCheckbox);
+		}
 
 		organizer.addSeperator();
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -1077,6 +1093,10 @@ public class ThemePanel extends JTabbedPane
 		if (overlayImageTransparencySliderHider != null)
 		{
 			overlayImageTransparencySliderHider.setVisible(drawOverlayImageCheckbox.isSelected());
+		}
+		if (drawOverlayOverBorderCheckboxHider != null)
+		{
+			drawOverlayOverBorderCheckboxHider.setVisible(drawOverlayImageCheckbox.isSelected());
 		}
 	}
 
@@ -1756,6 +1776,7 @@ public class ThemePanel extends JTabbedPane
 		drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
 		overlayImagePath.setText(settings.overlayImagePath);
 		overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
+		drawOverlayOverBorderCheckbox.setSelected(settings.drawOverlayOverBorder);
 		updateOverlayImageFieldVisibility();
 
 		if (changeEffectsBackgroundImages)
@@ -1963,6 +1984,7 @@ public class ThemePanel extends JTabbedPane
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
 		settings.overlayImagePath = overlayImagePath.getText();
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
+		settings.drawOverlayOverBorder = drawOverlayOverBorderCheckbox.isSelected();
 	}
 
 	private boolean areRegionColorsVisible()
