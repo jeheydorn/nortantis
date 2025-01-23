@@ -37,7 +37,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.swing.MapEdits;
-import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -1995,6 +1994,11 @@ public class MapCreator implements WarningLogger
 	 */
 	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds)
 	{
+		if (StringUtils.isEmpty(settings.overlayImagePath))
+		{
+			return;
+		}
+		
 		File file = new File(settings.overlayImagePath);
 		if (!file.exists())
 		{

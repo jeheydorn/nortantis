@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.CancelledException;
 import nortantis.DebugFlags;
 import nortantis.MapCreator;
@@ -464,6 +466,7 @@ public abstract class MapUpdater
 						{
 							return fullDraw(settings);
 						}
+						
 						mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
 						MapCreator.drawOverlayImage(map, settings, null);
 						return new UpdateResult(map, null, new ArrayList<>());
@@ -472,7 +475,7 @@ public abstract class MapUpdater
 					{
 						if (mapParts == null || mapParts.mapBeforeAddingOverlayImage == null)
 						{
-							fullDraw(settings);
+							return fullDraw(settings);
 						}
 						Image map =  mapParts.mapBeforeAddingOverlayImage.deepCopy();
 						if (!settings.drawOverlayImage)

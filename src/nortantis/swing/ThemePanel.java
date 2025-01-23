@@ -180,6 +180,8 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox drawOverlayImageCheckbox;
 	private RowHider overlayImagePathHider;
 	private RowHider overlayImageTransparencySliderHider;
+	private RowHider oceanWavesLevelSliderHider;
+	private RowHider oceanWavesColorHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -821,6 +823,8 @@ public class ThemePanel extends JTabbedPane
 			{
 				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected() || fadingConcentricWavesButton.isSelected());
 				oceanWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
+				oceanWavesLevelSliderHider.setVisible(!noneRadioButton.isSelected());
+				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
 				handleTerrainChange();
 			}
 		};
@@ -858,7 +862,7 @@ public class ThemePanel extends JTabbedPane
 		oceanWavesLevelSlider.setMaximum(100);
 		createMapChangeListenerForTerrainChange(oceanWavesLevelSlider);
 		SwingHelper.setSliderWidthForSidePanel(oceanWavesLevelSlider);
-		organizer.addLabelAndComponentsVertical("Wave width:", "How far from coastlines waves should draw.",
+		oceanWavesLevelSliderHider = organizer.addLabelAndComponentsVertical("Wave width:", "How far from coastlines waves should draw.",
 				Arrays.asList(concentricWavesLevelSlider, oceanWavesLevelSlider));
 
 		{
@@ -873,7 +877,7 @@ public class ThemePanel extends JTabbedPane
 				}
 			});
 			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines. Transparency is supported.");
-			organizer.addLabelAndComponentsHorizontal("Wave color:", "The color of the ocean waves. Transparency is supported.",
+			oceanWavesColorHider = organizer.addLabelAndComponentsHorizontal("Wave color:", "The color of the ocean waves. Transparency is supported.",
 					Arrays.asList(oceanWavesColorDisplay, btnChooseOceanEffectsColor), SwingHelper.colorPickerLeftPadding);
 		}
 
@@ -906,7 +910,7 @@ public class ThemePanel extends JTabbedPane
 				public void actionPerformed(ActionEvent e)
 				{
 					updateOverlayImageFieldVisibility();
-					handleOverlayImageChange(drawOverlayImageCheckbox.isSelected());
+					handleOverlayImageChange(drawOverlayImageCheckbox.isSelected());				
 				}
 			});
 			organizer.addLeftAlignedComponent(drawOverlayImageCheckbox);
