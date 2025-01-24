@@ -30,6 +30,7 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
+import nortantis.platform.awt.AwtFactory;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
@@ -1047,7 +1048,7 @@ public class ImageHelper
 		finally
 		{
 			sw.pause();
-			//sw.printElapsedTime();
+			// sw.printElapsedTime();
 		}
 	}
 
@@ -1081,7 +1082,7 @@ public class ImageHelper
 		finally
 		{
 			sw.pause();
-			//sw.printElapsedTime();
+			// sw.printElapsedTime();
 		}
 
 	}
@@ -1117,7 +1118,7 @@ public class ImageHelper
 		finally
 		{
 			sw.pause();
-			//sw.printElapsedTime();
+			// sw.printElapsedTime();
 		}
 
 	}
@@ -1280,7 +1281,7 @@ public class ImageHelper
 	}
 
 	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
-	{	
+	{
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
 		for (int y = 0; y < image.getHeight(); y++)
@@ -1827,23 +1828,16 @@ public class ImageHelper
 	public static void copySnippetFromSourceAndPasteIntoTarget(Image target, Image source, IntPoint upperLeftCornerToPasteIntoInTarget,
 			IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
-		IntRectangle targetBounds = new IntRectangle(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn,
-				target.getWidth() - widthOfBorderToNotDrawOn * 2, target.getHeight() - widthOfBorderToNotDrawOn * 2);
-		for (int y = 0; y < boundsInSourceToCopyFrom.height; y++)
-		{
-			for (int x = 0; x < boundsInSourceToCopyFrom.width; x++)
-			{
-				int targetX = x + upperLeftCornerToPasteIntoInTarget.x;
-				int targetY = y + upperLeftCornerToPasteIntoInTarget.y;
-				if (!targetBounds.contains(targetX, targetY))
-				{
-					continue;
-				}
+		// Extract the snippet from the source image
+		Image snippet = source.crop(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width,
+				boundsInSourceToCopyFrom.height));
 
-				int value = source.getRGB(x + boundsInSourceToCopyFrom.x, y + boundsInSourceToCopyFrom.y);
-				target.setRGB(targetX, targetY, value);
-			}
-		}
+		// Paste the snippet into the target image
+		Painter p = target.createPainter();
+		p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2,
+				target.getHeight() - widthOfBorderToNotDrawOn * 2);
+		p.drawImage(snippet, upperLeftCornerToPasteIntoInTarget.x, upperLeftCornerToPasteIntoInTarget.y);
+		p.dispose();
 	}
 
 	public static Image createPlaceholderImage(String[] message)

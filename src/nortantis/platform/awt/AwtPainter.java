@@ -225,4 +225,11 @@ class AwtPainter extends Painter
 	{
 		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
 	}
+
+	@Override
+	public void setClip(int x, int y, int width, int height)
+	{
+		g.setClip(x, y, width, height);
+		
+	}
 }

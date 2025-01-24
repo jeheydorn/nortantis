@@ -26,6 +26,7 @@ import nortantis.editor.FreeIcon;
 import nortantis.editor.MapParts;
 import nortantis.editor.RegionEdit;
 import nortantis.geom.Dimension;
+import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
@@ -444,17 +445,16 @@ public class MapCreator implements WarningLogger
 				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
 				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
 
+		// Update the cached version of the map without an overlay image if present.
+		if (mapParts.mapBeforeAddingOverlayImage != null)
+		{
+			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingOverlayImage, mapSnippet,
+					replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
+		}
+
 		if (settings.drawOverlayImage)
 		{
-			// Update the cached version of the map without an overlay image if present.
-			if (mapParts.mapBeforeAddingOverlayImage != null)
-			{
-				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingOverlayImage, mapSnippet,
-						replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
-						mapParts.background.getBorderWidthScaledByResolution());
-			}
-
-			drawOverlayImage(mapSnippet, settings, drawBounds);
+			drawOverlayImage(mapSnippet, settings, drawBounds, fullSizedMap.size());
 		}
 
 		// Update the snippet in the main map.
@@ -1963,22 +1963,15 @@ public class MapCreator implements WarningLogger
 
 	private static void drawOverlayImageIfNeededAndUpdateMapParts(Image map, MapSettings settings, MapParts mapParts)
 	{
-		if (settings.drawOverlayImage)
+		if (mapParts != null)
 		{
-			if (mapParts != null)
-			{
-				mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
-			}
-			drawOverlayImage(map, settings, null);
-		}
-		else
-		{
-			if (mapParts != null)
-			{
-				mapParts.mapBeforeAddingOverlayImage = null;
-			}
+			mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
 		}
 
+		if (settings.drawOverlayImage)
+		{
+			drawOverlayImage(map, settings, null, map.size());
+		}
 	}
 
 	/**
@@ -1992,13 +1985,13 @@ public class MapCreator implements WarningLogger
 	 *            For incremental updates. When not null, mapOrSnippet should be a snippet from the main map, and this is the bounds of that
 	 *            snippet. Does not include border width.
 	 */
-	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds)
+	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds, IntDimension mapSize)
 	{
 		if (StringUtils.isEmpty(settings.overlayImagePath))
 		{
 			return;
 		}
-		
+
 		File file = new File(settings.overlayImagePath);
 		if (!file.exists())
 		{
@@ -2009,7 +2002,7 @@ public class MapCreator implements WarningLogger
 			throw new RuntimeException(
 					"The overlay image '" + settings.overlayImagePath + "' is a folder. It should be a JPG or PNG image file.");
 		}
-		
+
 		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
 
 		Image overlayImage = ImageCache.getInstance(settings.artPack, null).getImageFromFile(file.toPath());
@@ -2018,20 +2011,17 @@ public class MapCreator implements WarningLogger
 		Painter p = mapOrSnippet.createPainter();
 		try
 		{
-				int mapWidth = mapOrSnippet.getWidth();
-				int mapHeight = mapOrSnippet.getHeight();
-
 			// Calculate the maximum size the overlay can be while still fitting within the map
-			double widthRatio = (double) mapWidth / overlayImage.getWidth();
-			double heightRatio = (double) mapHeight / overlayImage.getHeight();
+			double widthRatio = (double) mapSize.width / overlayImage.getWidth();
+			double heightRatio = (double) mapSize.height / overlayImage.getHeight();
 			double scale = Math.min(widthRatio, heightRatio);
 
 			int scaledOverlayWidth = (int) (overlayImage.getWidth() * scale);
 			int scaledOverlayHeight = (int) (overlayImage.getHeight() * scale);
 
 			// Calculate the position to center the overlay on the map
-			int x = (mapWidth - scaledOverlayWidth) / 2;
-			int y = (mapHeight - scaledOverlayHeight) / 2;
+			int x = (mapSize.width - scaledOverlayWidth) / 2;
+			int y = (mapSize.height - scaledOverlayHeight) / 2;
 
 			if (drawBounds != null)
 			{
@@ -2040,8 +2030,8 @@ public class MapCreator implements WarningLogger
 						drawBounds.upperLeftCorner().toIntPoint().y + borderWidthScaledByResolution, (int) drawBounds.width,
 						(int) drawBounds.height);
 
-				x = drawBoundsAdjustedForBorder.x + (drawBoundsAdjustedForBorder.width - scaledOverlayWidth) / 2;
-				y = drawBoundsAdjustedForBorder.y + (drawBoundsAdjustedForBorder.height - scaledOverlayHeight) / 2;
+				x -= drawBoundsAdjustedForBorder.x;
+				y -= drawBoundsAdjustedForBorder.y;
 			}
 
 			// Set the transparency level

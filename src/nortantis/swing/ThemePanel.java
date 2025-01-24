@@ -877,7 +877,8 @@ public class ThemePanel extends JTabbedPane
 				}
 			});
 			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines. Transparency is supported.");
-			oceanWavesColorHider = organizer.addLabelAndComponentsHorizontal("Wave color:", "The color of the ocean waves. Transparency is supported.",
+			oceanWavesColorHider = organizer.addLabelAndComponentsHorizontal("Wave color:",
+					"The color of the ocean waves. Transparency is supported.",
 					Arrays.asList(oceanWavesColorDisplay, btnChooseOceanEffectsColor), SwingHelper.colorPickerLeftPadding);
 		}
 
@@ -898,8 +899,8 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
 				Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
-		
-		
+
+
 		organizer.addSeperator();
 		{
 			drawOverlayImageCheckbox = new JCheckBox("Add overlay image");
@@ -910,7 +911,7 @@ public class ThemePanel extends JTabbedPane
 				public void actionPerformed(ActionEvent e)
 				{
 					updateOverlayImageFieldVisibility();
-					handleOverlayImageChange(drawOverlayImageCheckbox.isSelected());				
+					handleOverlayImageChange(drawOverlayImageCheckbox.isSelected());
 				}
 			});
 			organizer.addLeftAlignedComponent(drawOverlayImageCheckbox);
@@ -977,9 +978,10 @@ public class ThemePanel extends JTabbedPane
 			SwingHelper.setSliderWidthForSidePanel(overlayImageTransparencySlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider,
 					(value) -> String.format("%s%%", value), null, 30);
-			overlayImageTransparencySliderHider = sliderWithDisplay.addToOrganizer(organizer, "Overlay image transparency:", "Transparency to add to the overlay image to help with seeing the map underneath it.");
+			overlayImageTransparencySliderHider = sliderWithDisplay.addToOrganizer(organizer, "Overlay image transparency:",
+					"Transparency to add to the overlay image to help with seeing the map underneath it.");
 		}
-		
+
 
 		organizer.addSeperator();
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -1066,13 +1068,13 @@ public class ThemePanel extends JTabbedPane
 			}
 		});
 		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
-		
+
 
 		organizer.addVerticalFillerRow();
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
 		return organizer.createScrollPane();
 	}
-	
+
 	private void updateOverlayImageFieldVisibility()
 	{
 		if (overlayImagePathHider != null)
@@ -1757,7 +1759,7 @@ public class ThemePanel extends JTabbedPane
 		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
 		cityScaleSlider.setValue(getSliderValueForScale(settings.cityScale));
 		enableSizeSliderListeners = true;
-		
+
 		drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
 		overlayImagePath.setText(settings.overlayImagePath);
 		overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
@@ -1964,7 +1966,7 @@ public class ThemePanel extends JTabbedPane
 		settings.hillScale = getScaleForSliderValue(hillScaleSlider.getValue());
 		settings.duneScale = getScaleForSliderValue(duneScaleSlider.getValue());
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
-		
+
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
 		settings.overlayImagePath = overlayImagePath.getText();
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
@@ -2049,7 +2051,7 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
 		mainWindow.updater.createAndShowMapFull();
 	}
-	
+
 	private void handleOverlayImageChange(boolean isOverlayImageBeingEnabled)
 	{
 		mainWindow.handleThemeChange(true);
@@ -2058,8 +2060,11 @@ public class ThemePanel extends JTabbedPane
 			mainWindow.undoer.setUndoPoint(UpdateType.AddOverlayImage, null);
 			mainWindow.updater.createAndShowMapAddOverlayImage();
 		}
-		mainWindow.undoer.setUndoPoint(UpdateType.UpdateOrRemoveOverlayImage, null);
-		mainWindow.updater.createAndShowMapUpdateOrRemoveOverlayImageOverlayImage();
+		else
+		{
+			mainWindow.undoer.setUndoPoint(UpdateType.UpdateOrRemoveOverlayImage, null);
+			mainWindow.updater.createAndShowMapUpdateOrRemoveOverlayImageOverlayImage();
+		}
 	}
 
 	private void createMapChangeListenerForFrayedEdgeOrGrungeChange(Component component)

@@ -628,8 +628,7 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset), new IntRectangle(
-							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()),
-					0);
+							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
 		}
 		Painter p = target.createPainter();
 		p.translate(-drawOffset.x, -drawOffset.y);
@@ -643,8 +642,7 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()),
-					0);
+					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
 
 		}
 		Painter p = target.createPainter();
@@ -660,8 +658,7 @@ public class Background
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth,
-							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()),
-					0);
+							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
 
 		}
 		Painter p = target.createPainter();

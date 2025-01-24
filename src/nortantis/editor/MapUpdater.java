@@ -459,36 +459,6 @@ public abstract class MapUpdater
 
 						return new UpdateResult(map, combinedReplaceBounds, new ArrayList<>());
 					}
-					else if (updateType == UpdateType.AddOverlayImage)
-					{
-						Image map = getCurrentMapForIncrementalUpdate();
-						if (map == null || mapParts == null)
-						{
-							return fullDraw(settings);
-						}
-						
-						mapParts.mapBeforeAddingOverlayImage = map.deepCopy();
-						MapCreator.drawOverlayImage(map, settings, null);
-						return new UpdateResult(map, null, new ArrayList<>());
-					}
-					else if (updateType == UpdateType.UpdateOrRemoveOverlayImage)
-					{
-						if (mapParts == null || mapParts.mapBeforeAddingOverlayImage == null)
-						{
-							return fullDraw(settings);
-						}
-						Image map =  mapParts.mapBeforeAddingOverlayImage.deepCopy();
-						if (!settings.drawOverlayImage)
-						{
-							if (mapParts != null)
-							{
-								mapParts.mapBeforeAddingOverlayImage = null;
-							}
-							return new UpdateResult(map, null, new ArrayList<>());
-						}
-						MapCreator.drawOverlayImage(map, settings, null);
-						return new UpdateResult(map, null, new ArrayList<>());
-					}
 					else if (updateType == UpdateType.ReprocessBooks)
 					{
 						if (mapParts != null)
