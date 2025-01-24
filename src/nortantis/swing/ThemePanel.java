@@ -911,7 +911,7 @@ public class ThemePanel extends JTabbedPane
 				public void actionPerformed(ActionEvent e)
 				{
 					updateOverlayImageFieldVisibility();
-					handleOverlayImageChange(drawOverlayImageCheckbox.isSelected());
+					handleOverlayImageChange();
 				}
 			});
 			organizer.addLeftAlignedComponent(drawOverlayImageCheckbox);
@@ -924,7 +924,7 @@ public class ThemePanel extends JTabbedPane
 				{
 					if (FileHelper.isFile(overlayImagePath.getText()))
 					{
-						handleOverlayImageChange(false);
+						handleOverlayImageChange();
 					}
 				}
 
@@ -932,7 +932,7 @@ public class ThemePanel extends JTabbedPane
 				{
 					if (FileHelper.isFile(overlayImagePath.getText()))
 					{
-						handleOverlayImageChange(false);
+						handleOverlayImageChange();
 					}
 				}
 
@@ -940,7 +940,7 @@ public class ThemePanel extends JTabbedPane
 				{
 					if (FileHelper.isFile(overlayImagePath.getText()))
 					{
-						handleOverlayImageChange(false);
+						handleOverlayImageChange();
 					}
 				}
 			});
@@ -974,7 +974,7 @@ public class ThemePanel extends JTabbedPane
 			overlayImageTransparencySlider.setValue(50);
 			overlayImageTransparencySlider.setMaximum(100);
 			overlayImageTransparencySlider.setMinimum(0);
-			SwingHelper.addListener(overlayImageTransparencySlider, () -> handleOverlayImageChange(false));
+			SwingHelper.addListener(overlayImageTransparencySlider, () -> handleOverlayImageChange());
 			SwingHelper.setSliderWidthForSidePanel(overlayImageTransparencySlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider,
 					(value) -> String.format("%s%%", value), null, 30);
@@ -1761,7 +1761,7 @@ public class ThemePanel extends JTabbedPane
 		enableSizeSliderListeners = true;
 
 		drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
-		overlayImagePath.setText(settings.overlayImagePath);
+		overlayImagePath.setText(FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath));
 		overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
 		updateOverlayImageFieldVisibility();
 
@@ -1968,7 +1968,7 @@ public class ThemePanel extends JTabbedPane
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
 
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
-		settings.overlayImagePath = overlayImagePath.getText();
+		settings.overlayImagePath =  FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
 	}
 
@@ -2052,19 +2052,12 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.updater.createAndShowMapFull();
 	}
 
-	private void handleOverlayImageChange(boolean isOverlayImageBeingEnabled)
+	private void handleOverlayImageChange()
 	{
 		mainWindow.handleThemeChange(true);
-		if (isOverlayImageBeingEnabled)
-		{
-			mainWindow.undoer.setUndoPoint(UpdateType.AddOverlayImage, null);
-			mainWindow.updater.createAndShowMapAddOverlayImage();
-		}
-		else
-		{
-			mainWindow.undoer.setUndoPoint(UpdateType.UpdateOrRemoveOverlayImage, null);
-			mainWindow.updater.createAndShowMapUpdateOrRemoveOverlayImageOverlayImage();
-		}
+
+		mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
+		mainWindow.updater.createAndShowMapOverlayImage();
 	}
 
 	private void createMapChangeListenerForFrayedEdgeOrGrungeChange(Component component)

@@ -38,6 +38,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.swing.MapEdits;
+import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -1992,20 +1993,21 @@ public class MapCreator implements WarningLogger
 			return;
 		}
 
-		File file = new File(settings.overlayImagePath);
+		String overlayPath = FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath);
+		File file = new File(overlayPath);
 		if (!file.exists())
 		{
-			throw new RuntimeException("The overlay image '" + settings.overlayImagePath + "' does not exist.");
+			throw new RuntimeException("The overlay image '" + overlayPath + "' does not exist.");
 		}
 		if (file.isDirectory())
 		{
 			throw new RuntimeException(
-					"The overlay image '" + settings.overlayImagePath + "' is a folder. It should be a JPG or PNG image file.");
+					"The overlay image '" + overlayPath + "' is a folder. It should be a JPG or PNG image file.");
 		}
 
 		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
 
-		Image overlayImage = ImageCache.getInstance(settings.artPack, null).getImageFromFile(file.toPath());
+		Image overlayImage = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(file.toPath());
 
 		// TODO test this
 		Painter p = mapOrSnippet.createPainter();

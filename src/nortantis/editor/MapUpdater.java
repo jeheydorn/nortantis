@@ -111,14 +111,9 @@ public abstract class MapUpdater
 		createAndShowMap(UpdateType.GrungeAndFray, null, null, null, null, null, null);
 	}
 
-	public void createAndShowMapAddOverlayImage()
+	public void createAndShowMapOverlayImage()
 	{
-		createAndShowMap(UpdateType.AddOverlayImage, null, null, null, null, null, null);
-	}
-	
-	public void createAndShowMapUpdateOrRemoveOverlayImageOverlayImage()
-	{
-		createAndShowMap(UpdateType.UpdateOrRemoveOverlayImage, null, null, null, null, null, null);
+		createAndShowMap(UpdateType.OverlayImage, null, null, null, null, null, null);
 	}
 	
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
@@ -300,7 +295,7 @@ public abstract class MapUpdater
 		{
 
 		}
-		else if (updateType == UpdateType.AddOverlayImage || updateType == UpdateType.UpdateOrRemoveOverlayImage)
+		else if (updateType == UpdateType.OverlayImage)
 		{
 			
 		}
