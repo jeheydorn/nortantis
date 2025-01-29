@@ -40,9 +40,6 @@ import nortantis.util.ImageHelper.ColorifyAlgorithm;
 public class MapEditingPanel extends UnscaledImagePanel
 {
 	private final Color highlightEditColor = new Color(255, 227, 74);
-	private final Color highlightEraseColor = highlightEditColor;// new Color(230, 230, 230); // Put this back if I decide if I want to keep
-																	// this feature.
-	private boolean isErasing;
 	private final Color waterHighlightColor = new Color(0, 193, 245);
 	private final Color artPackHighlightColor = Color.CYAN;
 	private final Color processingColor = Color.orange;
@@ -79,6 +76,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Set<String> artPacksToHighlight;
 	private FreeIconCollection freeIcons;
 	private IconDrawer iconDrawer;
+	EditToolsRelativePosition iconEditToolsRelativePosition;
+	private BufferedImage moveIconScaledLarge;
+	private BufferedImage scaleIconScaledLarge;
+	private boolean useLargeIconEditIcons;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -93,11 +94,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		resolution = 0.0;
 	}
 
-	public void showBrush(java.awt.Point location, int brushDiameter, boolean isErasing)
+	public void showBrush(java.awt.Point location, int brushDiameter)
 	{
 		brushLocation = location;
 		this.brushDiameter = brushDiameter;
-		this.isErasing = isErasing;
 	}
 
 	public void hideBrush()
@@ -106,16 +106,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		brushDiameter = 0;
 	}
 
-	public void addHighlightedEdges(Collection<Edge> edges, boolean isErasing)
+	public void addHighlightedEdges(Collection<Edge> edges)
 	{
 		highlightedEdges.addAll(edges);
-		this.isErasing = isErasing;
 	}
 
-	public void addHighlightedEdge(Edge edge, boolean isErasing)
+	public void addHighlightedEdge(Edge edge)
 	{
 		highlightedEdges.add(edge);
-		this.isErasing = isErasing;
 	}
 
 	public void clearHighlightedEdges()
@@ -148,7 +146,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxAngle = 0.0;
 	}
 
-	public void showIconEditToolsAt(FreeIcon icon)
+	public void showIconEditToolsAt(FreeIcon icon, EditToolsRelativePosition toolsLocation, boolean useLargeIcons)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -156,14 +154,21 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
-		iconToEditBounds = iconDrawer.toIconDrawTask(icon).createBounds();
-		this.isIconToEditInAValidPosition = true;
+		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).createBounds(), true, toolsLocation, useLargeIcons);
 	}
 
-	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition)
+	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, EditToolsRelativePosition toolsPosition,
+			boolean useLargeIcons)
 	{
 		iconToEditBounds = rectangle;
 		this.isIconToEditInAValidPosition = isValidPosition;
+		this.iconEditToolsRelativePosition = toolsPosition;
+		this.useLargeIconEditIcons = useLargeIcons;
+	}
+
+	public enum EditToolsRelativePosition
+	{
+		Outside, Inside
 	}
 
 	public void clearIconEditTools()
@@ -171,6 +176,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		iconToEditBounds = null;
 		scaleToolArea = null;
 		moveToolArea = null;
+		iconEditToolsRelativePosition = null;
 	}
 
 	public void setHighlightedAreasFromTexts(List<MapText> texts, boolean isErasing)
@@ -188,7 +194,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 				highlightedAreas.add(AwtFactory.toAwtArea(text.line2Area));
 			}
 		}
-		this.isErasing = isErasing;
 	}
 
 	public void setHighlightedAreasFromIcons(List<FreeIcon> icons, boolean isErasing)
@@ -209,7 +214,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 				highlightedAreas.add(AwtFactory.toAwtArea(bounds));
 			}
 		}
-		this.isErasing = isErasing;
 	}
 
 	public void clearHighlightedAreas()
@@ -447,9 +451,27 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the scale tool.
 		{
-			BufferedImage toolIcon = isIconToEditInAValidPosition ? scaleIconScaled : redScaleIconScaled;
-			int x = editBounds.x + editBounds.width + padding;
-			int y = editBounds.y - (toolIcon.getHeight());
+			BufferedImage toolIcon;
+			if (useLargeIconEditIcons)
+			{
+				toolIcon = scaleIconScaledLarge;
+			}
+			else
+			{
+				toolIcon = isIconToEditInAValidPosition ? scaleIconScaled : redScaleIconScaled;
+			}
+
+			int x, y;
+			if (iconEditToolsRelativePosition == EditToolsRelativePosition.Outside)
+			{
+				x = editBounds.x + editBounds.width + padding;
+				y = editBounds.y - (toolIcon.getHeight()) - padding;
+			}
+			else
+			{
+				x = editBounds.x + editBounds.width - toolIcon.getWidth() - padding;
+				y = editBounds.y + padding;
+			}
 
 			g.drawImage(toolIcon, x, y, null);
 			scaleToolArea = new Area(new Ellipse2D.Double(x, y, toolIcon.getWidth(), toolIcon.getHeight()));
@@ -458,9 +480,26 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			BufferedImage toolIcon = isIconToEditInAValidPosition ? moveIconScaled : redMoveIconScaled;
+			BufferedImage toolIcon;
+			if (useLargeIconEditIcons)
+			{
+				toolIcon = moveIconScaledLarge;
+			}
+			else
+			{
+				toolIcon = isIconToEditInAValidPosition ? moveIconScaled : redMoveIconScaled;
+			}
+			
 			int x = editBounds.x + (int) (Math.round(editBounds.width / 2.0)) - (int) (Math.round(toolIcon.getWidth() / 2.0));
-			int y = editBounds.y - (toolIcon.getHeight()) - padding;
+			int y;
+			if (iconEditToolsRelativePosition == EditToolsRelativePosition.Outside)
+			{
+				y = editBounds.y - (toolIcon.getHeight()) - padding;
+			}
+			else
+			{
+				y = editBounds.y + padding;
+			}
 			g.drawImage(toolIcon, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, toolIcon.getWidth(), toolIcon.getHeight()));
 			moveToolArea.transform(g.getTransform());
@@ -595,16 +634,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	private Color getHighlightColor()
 	{
-		if (isErasing)
-		{
-			return highlightEraseColor;
-		}
 		return highlightEditColor;
 	}
 
 	private Color getInvalidPositionColor()
 	{
-		return highlightEditColor.equals(highlightEraseColor) ? Color.red : highlightEraseColor;
+		return Color.red;
 	}
 
 	private void drawCenterOutlines(Graphics g, Set<Center> centers)
@@ -672,16 +707,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 			this.resolution = resolution;
 
 			// Determines the size at which the rotation and move tool icons appear.
-			final double iconScale = 0.2;
+			final double smallIconScale = 0.2;
+			final double largeIconScale = 0.8;
 
 			BufferedImage rotateIcon = AwtFactory
 					.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
 			rotateIconScaled = AwtFactory.unwrap(ImageHelper.scaleByWidth(AwtFactory.wrap(rotateIcon),
-					(int) (rotateIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY));
+					(int) (rotateIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY));
 
 			{
 				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
-				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * iconScale),
+				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * smallIconScale),
 						Method.ULTRA_QUALITY);
 				moveIconScaled = AwtFactory.unwrap(moveIconScaledWrapped);
 				redMoveIconScaled = AwtFactory
@@ -693,13 +729,27 @@ public class MapEditingPanel extends UnscaledImagePanel
 				BufferedImage scaleIcon = AwtFactory
 						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
 				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
-						(int) (scaleIcon.getWidth() * resolution * iconScale), Method.ULTRA_QUALITY);
+						(int) (scaleIcon.getWidth() * resolution * smallIconScale), Method.ULTRA_QUALITY);
 				scaleIconScaled = AwtFactory.unwrap(scaleIconScaledWrapped);
 				redScaleIconScaled = AwtFactory
 						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
 								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
 
+			{
+				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
+				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * largeIconScale),
+						Method.ULTRA_QUALITY);
+				moveIconScaledLarge = AwtFactory.unwrap(moveIconScaledWrapped);
+			}
+
+			{
+				BufferedImage scaleIcon = AwtFactory
+						.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "scale.png").toString()));
+				Image scaleIconScaledWrapped = ImageHelper.scaleByWidth(AwtFactory.wrap(scaleIcon),
+						(int) (scaleIcon.getWidth() * resolution * largeIconScale), Method.ULTRA_QUALITY);
+				scaleIconScaledLarge = AwtFactory.unwrap(scaleIconScaledWrapped);
+			}
 		}
 	}
 

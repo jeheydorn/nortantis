@@ -2006,7 +2006,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * Launch the application.
 	 */
 	public static void main(String[] args)
-	{
+	{		
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 

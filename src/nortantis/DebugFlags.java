@@ -12,7 +12,7 @@ public class DebugFlags
 	/**
 	 * Prints how long incremental updates take.
 	 */
-	private static boolean printIncrementalUpdateTimes = true;
+	private static boolean printIncrementalUpdateTimes = false;
 
 	/**
 	 * Causes the indexes of edges to be be printed to standard out when adding rivers in the Land and Water tool. This is useful when

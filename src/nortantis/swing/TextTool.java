@@ -785,7 +785,7 @@ public class TextTool extends EditorTool
 		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
 		if (brushDiameter > 1)
 		{
-			mapEditingPanel.showBrush(mouseLocation, brushDiameter, eraseButton.isSelected());
+			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			mapTextsSelected = mainWindow.edits.findTextSelectedByBrush(getPointOnGraph(mouseLocation),
 					(brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale);
 		}

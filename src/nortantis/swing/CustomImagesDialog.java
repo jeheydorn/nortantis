@@ -94,7 +94,7 @@ public class CustomImagesDialog extends JDialog
 						+ " width or height in the file name, such as width=&lt;number&gt;"
 						+ " (or w&lt;number&gt; for short) or height=&lt;number&gt; (or h&lt;number&gt; for short). For example, an image named \"large castle w28.png\" will draw"
 						+ " at 28 units wide (where a unit is a measurement based on the width of polygons in the map). Only width <em>or</em> height can be given, not"
-						+ " both, that way scaling respects the aspect ratio. If you specify the size of just one image in a folder, then the others will be"
+						+ " both; that way scaling respects the aspect ratio. If you specify the size of just one image in a folder, then the others will be"
 						+ " scaled proportionately to that one. Note that mountain and hill sizes vary based on the size of the polygons they are initially drawn on. "
 						+ " Also, any icon can be resized on the map by editing it using the Icons tool, and the Effects tab has slider bars to resize all icons of a type.</html>"),
 				space, space, false);

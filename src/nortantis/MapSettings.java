@@ -178,6 +178,11 @@ public class MapSettings implements Serializable
 	 * An integer percentage between 0 and 100 inclusive.
 	 */
 	public int overlayImageTransparency;
+	/** 
+	 * Stores the overlay image location as an offset from the default place it is drawn, which is in the center of the map.
+	 */
+	public Point overlayOffsetResolutionInvariant; // TODO use this
+	public double overlayScale; // TODO use this
 
 	public MapSettings()
 	{
@@ -414,6 +419,8 @@ public class MapSettings implements Serializable
 		root.put("drawOverlayImage", drawOverlayImage);
 		root.put("overlayImagePath", overlayImagePath);
 		root.put("overlayImageTransparency", overlayImageTransparency);
+		root.put("overlayScale", overlayScale);
+		root.put("overlayOffsetResolutionInvariant", overlayOffsetResolutionInvariant.toJson());
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -925,10 +932,14 @@ public class MapSettings implements Serializable
 			drawOverlayImage = (boolean) root.get("drawOverlayImage");
 			overlayImagePath = (String) root.get("overlayImagePath");
 			overlayImageTransparency = (int)(long) root.get("overlayImageTransparency");
+			overlayOffsetResolutionInvariant =  Point.fromJSonValue((String) root.get("overlayOffsetResolutionInvariant"));
+			overlayScale = (double) root.get("overlayScale");
 		}
 		else
 		{
 			overlayImageTransparency = 50;
+			overlayOffsetResolutionInvariant = new Point(0, 0);
+			overlayScale = 1.0;
 		}
 
 		edits = new MapEdits();
@@ -1626,8 +1637,8 @@ public class MapSettings implements Serializable
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawOverlayImage == other.drawOverlayImage
-				&& drawRegionBoundaries == other.drawRegionBoundaries
-				&& drawRegionColors == other.drawRegionColors && drawRoads == other.drawRoads && drawText == other.drawText
+				&& drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors
+				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
@@ -1649,6 +1660,8 @@ public class MapSettings implements Serializable
 				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType
 				&& Objects.equals(otherMountainsFont, other.otherMountainsFont) && Objects.equals(overlayImagePath, other.overlayImagePath)
 				&& overlayImageTransparency == other.overlayImageTransparency
+				&& Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)
+				&& Double.doubleToLongBits(overlayScale) == Double.doubleToLongBits(other.overlayScale)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
 				&& randomSeed == other.randomSeed && Objects.equals(regionBaseColor, other.regionBaseColor)
 				&& Objects.equals(regionBoundaryColor, other.regionBoundaryColor)
@@ -1662,7 +1675,6 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
 	
 
 }

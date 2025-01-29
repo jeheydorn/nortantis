@@ -8,7 +8,6 @@ import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 
 import com.formdev.flatlaf.FlatDarkLaf;
@@ -19,26 +18,23 @@ import nortantis.util.Tuple2;
 public class NamedIconSelector
 {
 	public RowHider hider;
-	private Map<String, List<Tuple2<String, JToggleButton>>> buttons;
+	private Map<String, List<Tuple2<String, UnscaledImageToggleButton>>> buttons;
 	public JPanel typesPanel;
-	private Map<String, CollapsiblePanel> panels;
 	public final IconType type;
 
 	public NamedIconSelector(IconType type)
 	{
 		this.type = type;
 		this.buttons = new TreeMap<>();
-		panels = new TreeMap<>();
 	}
 
 	public void clearButtons()
 	{
 		this.buttons = new TreeMap<>();
-		panels = new TreeMap<>();
 		typesPanel.removeAll();
 	}
 
-	public void addButton(String type, String iconFileNameWithoutWidthOrExtension, JToggleButton button)
+	public void addButton(String type, String iconFileNameWithoutWidthOrExtension, UnscaledImageToggleButton button)
 	{
 		if (!buttons.containsKey(type))
 		{
@@ -48,7 +44,7 @@ public class NamedIconSelector
 		buttons.get(type).add(new Tuple2<>(iconFileNameWithoutWidthOrExtension, button));
 	}
 
-	public List<Tuple2<String, JToggleButton>> getIconNamesAndButtons(String type)
+	public List<Tuple2<String, UnscaledImageToggleButton>> getIconNamesAndButtons(String type)
 	{
 		return buttons.get(type);
 	}
@@ -62,7 +58,7 @@ public class NamedIconSelector
 	{
 		for (String type : getTypes())
 		{
-			for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
+			for (Tuple2<String, UnscaledImageToggleButton> tuple : buttons.get(type))
 			{
 				if (tuple.getSecond().isSelected())
 				{
@@ -76,7 +72,7 @@ public class NamedIconSelector
 	public void selectFirstButton()
 	{
 		unselectAllButtons();
-		JToggleButton toggleButton = getIconNamesAndButtons(getTypes().iterator().next()).get(0).getSecond();
+		UnscaledImageToggleButton toggleButton = getIconNamesAndButtons(getTypes().iterator().next()).get(0).getSecond();
 		toggleButton.setSelected(true);
 		updateToggleButtonBorder(toggleButton);
 	}
@@ -85,7 +81,7 @@ public class NamedIconSelector
 	{
 		for (String type : getTypes())
 		{
-			for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
+			for (Tuple2<String, UnscaledImageToggleButton> tuple : buttons.get(type))
 			{
 				if (tuple.getSecond().isSelected())
 				{
@@ -96,11 +92,11 @@ public class NamedIconSelector
 		}
 	}
 
-	public void unselectAllButtonsExcept(JToggleButton buttonToIgnore)
+	public void unselectAllButtonsExcept(UnscaledImageToggleButton buttonToIgnore)
 	{
 		for (String type : getTypes())
 		{
-			for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
+			for (Tuple2<String, UnscaledImageToggleButton> tuple : buttons.get(type))
 			{
 				if (tuple.getSecond().isSelected() && tuple.getSecond() != buttonToIgnore)
 				{
@@ -120,7 +116,7 @@ public class NamedIconSelector
 			return false;
 		}
 
-		for (Tuple2<String, JToggleButton> tuple : buttons.get(type))
+		for (Tuple2<String, UnscaledImageToggleButton> tuple : buttons.get(type))
 		{
 			if (tuple.getFirst().equals(iconNameWithoutWidthOrExtension))
 			{
@@ -136,7 +132,7 @@ public class NamedIconSelector
 		return false;
 	}
 
-	public static void updateToggleButtonBorder(JToggleButton toggleButton)
+	public static void updateToggleButtonBorder(UnscaledImageToggleButton toggleButton)
 	{
 		if (UIManager.getLookAndFeel() instanceof FlatDarkLaf)
 		{
@@ -151,10 +147,5 @@ public class NamedIconSelector
 				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 			}
 		}
-	}
-
-	public void addCollapsiblePanel(String type, CollapsiblePanel panel)
-	{
-		panels.put(type, panel);
 	}
 }

@@ -175,11 +175,6 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<NamedResource> textureImageComboBox;
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
-	private JTextField overlayImagePath;
-	private JSlider overlayImageTransparencySlider;
-	private JCheckBox drawOverlayImageCheckbox;
-	private RowHider overlayImagePathHider;
-	private RowHider overlayImageTransparencySliderHider;
 	private RowHider oceanWavesLevelSliderHider;
 	private RowHider oceanWavesColorHider;
 
@@ -288,7 +283,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				String filename = chooseImageFile(backgroundPanel, FilenameUtils.getFullPath(textureImageFilename.getText()));
+				String filename = SwingHelper.chooseImageFile(backgroundPanel, FilenameUtils.getFullPath(textureImageFilename.getText()));
 				if (filename != null)
 				{
 					textureImageFilename.setText(filename);
@@ -902,88 +897,6 @@ public class ThemePanel extends JTabbedPane
 
 
 		organizer.addSeperator();
-		{
-			drawOverlayImageCheckbox = new JCheckBox("Add overlay image");
-			drawOverlayImageCheckbox.setToolTipText("Show or hide the selected overlay image, if any.");
-			drawOverlayImageCheckbox.addActionListener(new ActionListener()
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					updateOverlayImageFieldVisibility();
-					handleOverlayImageChange();
-				}
-			});
-			organizer.addLeftAlignedComponent(drawOverlayImageCheckbox);
-		}
-		{
-			overlayImagePath = new JTextField();
-			overlayImagePath.getDocument().addDocumentListener(new DocumentListener()
-			{
-				public void changedUpdate(DocumentEvent e)
-				{
-					if (FileHelper.isFile(overlayImagePath.getText()))
-					{
-						handleOverlayImageChange();
-					}
-				}
-
-				public void removeUpdate(DocumentEvent e)
-				{
-					if (FileHelper.isFile(overlayImagePath.getText()))
-					{
-						handleOverlayImageChange();
-					}
-				}
-
-				public void insertUpdate(DocumentEvent e)
-				{
-					if (FileHelper.isFile(overlayImagePath.getText()))
-					{
-						handleOverlayImageChange();
-					}
-				}
-			});
-
-			JButton btnsBrowseOverlayImage = new JButton("Browse");
-			btnsBrowseOverlayImage.addActionListener(new ActionListener()
-			{
-				public void actionPerformed(ActionEvent e)
-				{
-					String filename = chooseImageFile(effectsPanel, FilenameUtils.getFullPath(overlayImagePath.getText()));
-					if (filename != null)
-					{
-						overlayImagePath.setText(filename);
-					}
-				}
-			});
-
-			JPanel overlayImageChooseButtonPanel = new JPanel();
-			overlayImageChooseButtonPanel.setLayout(new BoxLayout(overlayImageChooseButtonPanel, BoxLayout.X_AXIS));
-			overlayImageChooseButtonPanel.add(btnsBrowseOverlayImage);
-			overlayImageChooseButtonPanel.add(Box.createHorizontalGlue());
-
-			overlayImagePathHider = organizer.addLabelAndComponentsVertical("Overlay image:",
-					"Image to draw over the map (not including borders). This is useful when drawing a map from a reference image.",
-					Arrays.asList(overlayImagePath, Box.createVerticalStrut(5), overlayImageChooseButtonPanel));
-		}
-
-		{
-			overlayImageTransparencySlider = new JSlider();
-			overlayImageTransparencySlider.setPaintLabels(false);
-			overlayImageTransparencySlider.setValue(50);
-			overlayImageTransparencySlider.setMaximum(100);
-			overlayImageTransparencySlider.setMinimum(0);
-			SwingHelper.addListener(overlayImageTransparencySlider, () -> handleOverlayImageChange());
-			SwingHelper.setSliderWidthForSidePanel(overlayImageTransparencySlider);
-			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider,
-					(value) -> String.format("%s%%", value), null, 30);
-			overlayImageTransparencySliderHider = sliderWithDisplay.addToOrganizer(organizer, "Overlay image transparency:",
-					"Transparency to add to the overlay image to help with seeing the map underneath it.");
-		}
-
-
-		organizer.addSeperator();
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
 		mountainScaleSlider.setMajorTickSpacing(2);
 		mountainScaleSlider.setMinorTickSpacing(1);
@@ -1075,17 +988,7 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	private void updateOverlayImageFieldVisibility()
-	{
-		if (overlayImagePathHider != null)
-		{
-			overlayImagePathHider.setVisible(drawOverlayImageCheckbox.isSelected());
-		}
-		if (overlayImageTransparencySliderHider != null)
-		{
-			overlayImageTransparencySliderHider.setVisible(drawOverlayImageCheckbox.isSelected());
-		}
-	}
+	
 
 	private void unselectAnyIconBeingEdited()
 	{
@@ -1565,34 +1468,6 @@ public class ThemePanel extends JTabbedPane
 		return new Tuple4<>(oceanBackground, oceanColorifyAlgorithm, landBackground, landColorifyAlgorithm);
 	}
 
-	private static String chooseImageFile(Component parent, String curFolder)
-	{
-		File currentFolder = new File(curFolder);
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(currentFolder);
-		fileChooser.setFileFilter(new FileFilter()
-		{
-			@Override
-			public String getDescription()
-			{
-				return null;
-			}
-
-			@Override
-			public boolean accept(File f)
-			{
-				String extension = FilenameUtils.getExtension(f.getName()).toLowerCase();
-				return f.isDirectory() || extension.equals("png") || extension.equals("jpg") || extension.equals("jpeg");
-			}
-		});
-		int status = fileChooser.showOpenDialog(parent);
-		if (status == JFileChooser.APPROVE_OPTION)
-		{
-			return fileChooser.getSelectedFile().toString();
-		}
-		return null;
-	}
-
 	private void handleLandColoringMethodChanged()
 	{
 		boolean colorRegions = areRegionColorsVisible();
@@ -1759,11 +1634,6 @@ public class ThemePanel extends JTabbedPane
 		duneScaleSlider.setValue(getSliderValueForScale(settings.duneScale));
 		cityScaleSlider.setValue(getSliderValueForScale(settings.cityScale));
 		enableSizeSliderListeners = true;
-
-		drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
-		overlayImagePath.setText(FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath));
-		overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
-		updateOverlayImageFieldVisibility();
 
 		if (changeEffectsBackgroundImages)
 		{
@@ -1966,10 +1836,6 @@ public class ThemePanel extends JTabbedPane
 		settings.hillScale = getScaleForSliderValue(hillScaleSlider.getValue());
 		settings.duneScale = getScaleForSliderValue(duneScaleSlider.getValue());
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
-
-		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
-		settings.overlayImagePath =  FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
-		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
 	}
 
 	private boolean areRegionColorsVisible()
@@ -2050,14 +1916,6 @@ public class ThemePanel extends JTabbedPane
 		mainWindow.handleThemeChange(true);
 		mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
 		mainWindow.updater.createAndShowMapFull();
-	}
-
-	private void handleOverlayImageChange()
-	{
-		mainWindow.handleThemeChange(true);
-
-		mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
-		mainWindow.updater.createAndShowMapOverlayImage();
 	}
 
 	private void createMapChangeListenerForFrayedEdgeOrGrungeChange(Component component)

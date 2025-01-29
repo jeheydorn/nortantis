@@ -27,6 +27,11 @@ public class UnscaledImagePanel extends JPanel
 		this.image = image;
 	}
 
+	public UnscaledImagePanel()
+	{
+
+	}
+
 	public void setImage(BufferedImage image)
 	{
 		this.image = image;
@@ -44,14 +49,17 @@ public class UnscaledImagePanel extends JPanel
 	{
 		super.paintComponent(g);
 
-		Graphics2D g2 = ((Graphics2D) g);
-		transformWithOsScaling = g2.getTransform();
+		if (image != null)
+		{
+			Graphics2D g2 = ((Graphics2D) g);
+			transformWithOsScaling = g2.getTransform();
 
-		// Undo the scaling the Java adds because of windows display resolution. It makes images look bad.
-		osScale = g2.getTransform().getScaleX();
-		g2.scale(1.0 / osScale, 1.0 / osScale);
+			// Undo the scaling Java adds because of Windows Display settings scaling apps. It makes images look bad.
+			osScale = g2.getTransform().getScaleX();
+			g2.scale(1.0 / osScale, 1.0 / osScale);
 
-		g.drawImage(image, 0, 0, null);
+			g.drawImage(image, 0, 0, null);
+		}
 	}
 
 	@Override

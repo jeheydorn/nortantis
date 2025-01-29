@@ -792,7 +792,7 @@ public class LandWaterTool extends EditorTool
 			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
 			if (brushDiameter > 1)
 			{
-				mapEditingPanel.showBrush(e.getPoint(), brushDiameter, true);
+				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
 			}
 			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
 
@@ -801,7 +801,7 @@ public class LandWaterTool extends EditorTool
 				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
 				if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 				{
-					mapEditingPanel.addHighlightedEdge(edge, true);
+					mapEditingPanel.addHighlightedEdge(edge);
 				}
 			}
 		}
@@ -819,7 +819,7 @@ public class LandWaterTool extends EditorTool
 				mapEditingPanel.clearHighlightedEdges();
 				Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 				Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
-				mapEditingPanel.addHighlightedEdges(river, false);
+				mapEditingPanel.addHighlightedEdges(river);
 				mapEditingPanel.repaint();
 			}
 		}

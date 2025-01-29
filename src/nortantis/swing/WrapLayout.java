@@ -121,7 +121,9 @@ public class WrapLayout extends FlowLayout
 			JScrollPane scrollPane = (JScrollPane) SwingUtilities.getAncestorOfClass(JScrollPane.class, target);
 			if (scrollPane != null && scrollPane.getVerticalScrollBar().isVisible() && target.isValid())
 			{
-				maxWidth -= scrollPane.getVerticalScrollBar().getWidth() + 1;
+				// JEH note - Changed +1 to +6 to fix issue where one icon in last row of a panel was hidden because the panel wasn't tall
+				// enough to show it.
+				maxWidth -= scrollPane.getVerticalScrollBar().getWidth() + 6;
 			}
 
 			// Fit components into the allowed width

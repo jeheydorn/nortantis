@@ -7,11 +7,18 @@ import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.Dialog;
 import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,6 +33,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -35,7 +43,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.text.JTextComponent;
+
+import org.apache.commons.io.FilenameUtils;
 
 import nortantis.util.Logger;
 
@@ -361,10 +372,7 @@ public class SwingHelper
 	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
-		Object[] options =
-		{
-				"OK"
-		};
+		Object[] options = { "OK" };
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		JLabel label = new JLabel("<html>" + message + "</html>");
@@ -422,5 +430,50 @@ public class SwingHelper
 			}
 		});
 		return link;
+	}
+
+	public static String chooseImageFile(Component parent, String curFolder)
+	{
+		File currentFolder = new File(curFolder);
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setCurrentDirectory(currentFolder);
+		fileChooser.setFileFilter(new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return null;
+			}
+
+			@Override
+			public boolean accept(File f)
+			{
+				String extension = FilenameUtils.getExtension(f.getName()).toLowerCase();
+				return f.isDirectory() || extension.equals("png") || extension.equals("jpg") || extension.equals("jpeg");
+			}
+		});
+		int status = fileChooser.showOpenDialog(parent);
+		if (status == JFileChooser.APPROVE_OPTION)
+		{
+			return fileChooser.getSelectedFile().toString();
+		}
+		return null;
+	}
+
+	/**
+	 * Finds the amount apps are being scaled by the operating system.
+	 * 
+	 * @return The scale. 1.0 means unscaled.
+	 */
+	public static double getOSScale()
+	{
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        GraphicsConfiguration gc = gd.getDefaultConfiguration();
+        AffineTransform transform = gc.getDefaultTransform();
+
+        double scaleX = transform.getScaleX();
+        double scaleY = transform.getScaleY();
+        return scaleX;
 	}
 }

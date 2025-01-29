@@ -2,6 +2,9 @@ package nortantis.swing;
 
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -61,7 +64,7 @@ public class ToolsPanel extends JPanel
 
 		// Setup tools
 		tools = Arrays.asList(new LandWaterTool(mainWindow, this, updater), new IconsTool(mainWindow, this, updater),
-				new TextTool(mainWindow, this, updater));
+				new TextTool(mainWindow, this, updater), new OverlayTool(mainWindow, null, updater));
 		currentTool = tools.get(0);
 
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
@@ -74,7 +77,17 @@ public class ToolsPanel extends JPanel
 		add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
-			JToggleButton toolButton = new JToggleButton();
+			JToggleButton toolButton = new JToggleButton()
+					{
+				 @Override
+				    protected void paintComponent(Graphics g) {
+				        Graphics2D g2d = (Graphics2D) g;
+
+				        // Set rendering hints
+				        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+				        super.paintComponent(g);
+				    }
+					};
 			try
 			{
 				BufferedImage icon = AwtFactory.unwrap(Assets.readImage(tool.getImageIconFilePath()));

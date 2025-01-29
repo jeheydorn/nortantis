@@ -29,7 +29,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
-import javax.swing.JToggleButton;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
@@ -59,6 +58,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.swing.MapEditingPanel.EditToolsRelativePosition;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.ImageHelper;
@@ -321,7 +321,7 @@ public class IconsTool extends EditorTool
 		else
 		{
 			java.awt.Point mouseLocation = e.getPoint();
-			mapEditingPanel.showBrush(mouseLocation, brushDiameter, modeWidget.isEraseMode());
+			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			mapEditingPanel.repaint();
 		}
 
@@ -485,7 +485,7 @@ public class IconsTool extends EditorTool
 		}
 		for (String groupId : ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(selector.type))
 		{
-			final List<Tuple2<String, JToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
+			final List<Tuple2<String, UnscaledImageToggleButton>> namesAndButtons = selector.getIconNamesAndButtons(groupId);
 
 			if (namesAndButtons != null)
 			{
@@ -498,7 +498,7 @@ public class IconsTool extends EditorTool
 						Map<String, ImageAndMasks> iconsInGroup = ImageCache
 								.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
 
-						for (Tuple2<String, JToggleButton> nameAndButton : namesAndButtons)
+						for (Tuple2<String, UnscaledImageToggleButton> nameAndButton : namesAndButtons)
 						{
 							String iconNameWithoutWidthOrExtension = nameAndButton.getFirst();
 							if (!iconsInGroup.containsKey(iconNameWithoutWidthOrExtension))
@@ -618,7 +618,7 @@ public class IconsTool extends EditorTool
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtension(selector.type, groupId))
 			{
-				JToggleButton toggleButton = new JToggleButton();
+				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
 				toggleButton.addActionListener(new ActionListener()
 				{
@@ -693,8 +693,11 @@ public class IconsTool extends EditorTool
 
 	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight, int padding, IconType iconType)
 	{
-		final int maxRowWidth = 168;
-		final int horizontalPaddingBetweenImages = 2;
+		final double osScaling = SwingHelper.getOSScale();
+		final int maxRowWidth = (int)(168 * osScaling);
+		final int horizontalPaddingBetweenImages = (int)(2 * osScaling);;
+		padding = (int)(padding * osScaling);
+		scaledHeight = (int)(scaledHeight * osScaling);
 
 		// Find the size needed for the preview
 		int rowCount = 1;
@@ -1098,7 +1101,7 @@ public class IconsTool extends EditorTool
 				iconToEdit = getLowestSelectedIcon(e.getPoint());
 				if (iconToEdit != null)
 				{
-					mapEditingPanel.showIconEditToolsAt(iconToEdit);
+					mapEditingPanel.showIconEditToolsAt(iconToEdit, EditToolsRelativePosition.Outside, false);
 					if (DebugFlags.printIconBeingEdited())
 					{
 						System.out.println("Selected icon for editing: " + iconToEdit);
@@ -1145,7 +1148,7 @@ public class IconsTool extends EditorTool
 				{
 					boolean isValidPosition = updated.type == IconType.decorations
 							|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
-					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition);
+					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition, EditToolsRelativePosition.Outside, false);
 				}
 			}
 		}
@@ -1217,7 +1220,7 @@ public class IconsTool extends EditorTool
 						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
 				if (isValidPosition)
 				{
-					mapEditingPanel.showIconEditToolsAt(updated);
+					mapEditingPanel.showIconEditToolsAt(updated, EditToolsRelativePosition.Outside, false);
 				}
 				else
 				{

@@ -2016,14 +2016,14 @@ public class MapCreator implements WarningLogger
 			// Calculate the maximum size the overlay can be while still fitting within the map
 			double widthRatio = (double) mapSize.width / overlayImage.getWidth();
 			double heightRatio = (double) mapSize.height / overlayImage.getHeight();
-			double scale = Math.min(widthRatio, heightRatio);
+			double scale = Math.min(widthRatio, heightRatio) * settings.overlayScale;
 
 			int scaledOverlayWidth = (int) (overlayImage.getWidth() * scale);
 			int scaledOverlayHeight = (int) (overlayImage.getHeight() * scale);
 
 			// Calculate the position to center the overlay on the map
-			int x = (mapSize.width - scaledOverlayWidth) / 2;
-			int y = (mapSize.height - scaledOverlayHeight) / 2;
+			int x = (mapSize.width - scaledOverlayWidth) / 2 + (int) (settings.overlayOffsetResolutionInvariant.x * settings.resolution);
+			int y = (mapSize.height - scaledOverlayHeight) / 2 + (int) (settings.overlayOffsetResolutionInvariant.y * settings.resolution);
 
 			if (drawBounds != null)
 			{
