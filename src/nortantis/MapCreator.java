@@ -29,6 +29,7 @@ import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -450,7 +451,8 @@ public class MapCreator implements WarningLogger
 		if (mapParts.mapBeforeAddingOverlayImage != null)
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.mapBeforeAddingOverlayImage, mapSnippet,
-					replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
+					replaceBoundsUpperLeftCornerAdjustedForBorder, boundsInSourceToCopyFrom,
+					mapParts.background.getBorderWidthScaledByResolution());
 		}
 
 		if (settings.drawOverlayImage)
@@ -1985,46 +1987,23 @@ public class MapCreator implements WarningLogger
 	 * @param drawBounds
 	 *            For incremental updates. When not null, mapOrSnippet should be a snippet from the main map, and this is the bounds of that
 	 *            snippet. Does not include border width.
+	 * @param mapSize
+	 *            The size of the entire map, including borders, as it is drawn.
 	 */
 	public static void drawOverlayImage(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds, IntDimension mapSize)
 	{
-		if (StringUtils.isEmpty(settings.overlayImagePath))
-		{
-			return;
-		}
-
-		String overlayPath = FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath);
-		File file = new File(overlayPath);
-		if (!file.exists())
-		{
-			throw new RuntimeException("The overlay image '" + overlayPath + "' does not exist.");
-		}
-		if (file.isDirectory())
-		{
-			throw new RuntimeException(
-					"The overlay image '" + overlayPath + "' is a folder. It should be a JPG or PNG image file.");
-		}
+		Tuple2<IntRectangle, Image> tuple = getOverlayPositionAndImage(settings.overlayImagePath, settings.overlayScale,
+				settings.overlayOffsetResolutionInvariant, settings.resolution, mapSize);
+		IntRectangle overlayPosition = tuple.getFirst();
+		Image overlayImage = tuple.getSecond();
 
 		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
 
-		Image overlayImage = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(file.toPath());
-
-		// TODO test this
 		Painter p = mapOrSnippet.createPainter();
 		try
 		{
-			// Calculate the maximum size the overlay can be while still fitting within the map
-			double widthRatio = (double) mapSize.width / overlayImage.getWidth();
-			double heightRatio = (double) mapSize.height / overlayImage.getHeight();
-			double scale = Math.min(widthRatio, heightRatio) * settings.overlayScale;
-
-			int scaledOverlayWidth = (int) (overlayImage.getWidth() * scale);
-			int scaledOverlayHeight = (int) (overlayImage.getHeight() * scale);
-
-			// Calculate the position to center the overlay on the map
-			int x = (mapSize.width - scaledOverlayWidth) / 2 + (int) (settings.overlayOffsetResolutionInvariant.x * settings.resolution);
-			int y = (mapSize.height - scaledOverlayHeight) / 2 + (int) (settings.overlayOffsetResolutionInvariant.y * settings.resolution);
-
+			int x = overlayPosition.x;
+			int y = overlayPosition.y;
 			if (drawBounds != null)
 			{
 				IntRectangle drawBoundsAdjustedForBorder = new IntRectangle(
@@ -2040,11 +2019,46 @@ public class MapCreator implements WarningLogger
 			float alpha = (100 - settings.overlayImageTransparency) / 100.0f;
 			p.setAlphaComposite(alpha);
 
-			p.drawImage(overlayImage, x, y, scaledOverlayWidth, scaledOverlayHeight);
+			p.drawImage(overlayImage, x, y, overlayPosition.width, overlayPosition.height);
 		}
 		finally
 		{
 			p.dispose();
 		}
+	}
+
+	public static Tuple2<IntRectangle, Image> getOverlayPositionAndImage(String overlayImagePath, double overlayScale,
+			Point overlayOffsetResolutionInvariant, double resolutionScale, IntDimension mapSize)
+	{
+		if (StringUtils.isEmpty(overlayImagePath))
+		{
+			return null;
+		}
+
+		String overlayPath = FileHelper.replaceHomeFolderPlaceholder(overlayImagePath);
+		File file = new File(overlayPath);
+		if (!file.exists())
+		{
+			throw new RuntimeException("The overlay image '" + overlayPath + "' does not exist.");
+		}
+		if (file.isDirectory())
+		{
+			throw new RuntimeException("The overlay image '" + overlayPath + "' is a folder. It should be a JPG or PNG image file.");
+		}
+
+		Image overlayImage = ImageCache.getInstance(Assets.installedArtPack, null).getImageFromFile(file.toPath());
+
+		// Calculate the maximum size the overlay can be while still fitting within the map
+		double widthRatio = (double) mapSize.width / overlayImage.getWidth();
+		double heightRatio = (double) mapSize.height / overlayImage.getHeight();
+		double scale = Math.min(widthRatio, heightRatio) * overlayScale;
+
+		int scaledOverlayWidth = (int) (overlayImage.getWidth() * scale);
+		int scaledOverlayHeight = (int) (overlayImage.getHeight() * scale);
+
+		// Calculate the position of the overlay on the map.
+		int x = (mapSize.width - scaledOverlayWidth) / 2 + (int) (overlayOffsetResolutionInvariant.x * resolutionScale);
+		int y = (mapSize.height - scaledOverlayHeight) / 2 + (int) (overlayOffsetResolutionInvariant.y * resolutionScale);
+		return new Tuple2<>(new IntRectangle(x, y, scaledOverlayWidth, scaledOverlayHeight), overlayImage);
 	}
 }

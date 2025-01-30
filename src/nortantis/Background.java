@@ -872,4 +872,9 @@ public class Background
 	{
 		return settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 	}
+	
+	public Dimension getMapBoundsIncludingBorder()
+	{
+		return borderBounds;
+	}
 }

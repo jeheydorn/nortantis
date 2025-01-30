@@ -58,7 +58,7 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.MapEditingPanel.EditToolsRelativePosition;
+import nortantis.swing.MapEditingPanel.IconEditToolsMode;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.ImageHelper;
@@ -1101,7 +1101,7 @@ public class IconsTool extends EditorTool
 				iconToEdit = getLowestSelectedIcon(e.getPoint());
 				if (iconToEdit != null)
 				{
-					mapEditingPanel.showIconEditToolsAt(iconToEdit, EditToolsRelativePosition.Outside, false);
+					mapEditingPanel.showIconEditToolsAt(iconToEdit, IconEditToolsMode.Icon, false);
 					if (DebugFlags.printIconBeingEdited())
 					{
 						System.out.println("Selected icon for editing: " + iconToEdit);
@@ -1127,8 +1127,8 @@ public class IconsTool extends EditorTool
 
 				if (isMoving)
 				{
-					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+					double deltaX = graphPointMouseLocation.x - graphPointMousePressedLocation.x;
+					double deltaY = graphPointMouseLocation.y - graphPointMousePressedLocation.y;
 					imageBounds = imageBounds.translate(deltaX, deltaY);
 
 					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
@@ -1148,7 +1148,7 @@ public class IconsTool extends EditorTool
 				{
 					boolean isValidPosition = updated.type == IconType.decorations
 							|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
-					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition, EditToolsRelativePosition.Outside, false);
+					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition, IconEditToolsMode.Icon, false);
 				}
 			}
 		}
@@ -1220,7 +1220,7 @@ public class IconsTool extends EditorTool
 						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
 				if (isValidPosition)
 				{
-					mapEditingPanel.showIconEditToolsAt(updated, EditToolsRelativePosition.Outside, false);
+					mapEditingPanel.showIconEditToolsAt(updated, IconEditToolsMode.Icon, false);
 				}
 				else
 				{
@@ -1240,6 +1240,7 @@ public class IconsTool extends EditorTool
 			iconToEdit = null;
 			isMoving = false;
 			isScaling = false;
+			editStart = null;
 			mapEditingPanel.clearIconEditTools();
 			mapEditingPanel.repaint();
 		}

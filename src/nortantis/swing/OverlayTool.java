@@ -19,11 +19,22 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import nortantis.Background;
+import nortantis.DebugFlags;
+import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.IntDimension;
+import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.platform.Image;
+import nortantis.swing.MapEditingPanel.IconEditToolsMode;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
+import nortantis.util.Tuple2;
 
 public class OverlayTool extends EditorTool
 {
@@ -31,6 +42,13 @@ public class OverlayTool extends EditorTool
 	private JSlider overlayImageTransparencySlider;
 	private JCheckBox drawOverlayImageCheckbox;
 	private JButton btnsBrowseOverlayImage;
+	private Point overlayOffset;
+	private double overlayScale;
+	
+	private java.awt.Point editStart;
+	private boolean isMoving;
+	private boolean isScaling;
+	private Point editStartLastUpdate; // TODO Decide what to do with this if I use it.
 
 	public OverlayTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -40,21 +58,18 @@ public class OverlayTool extends EditorTool
 	@Override
 	public String getToolbarName()
 	{
-		// TODO Auto-generated method stub
 		return "Overlay";
 	}
 
 	@Override
 	public int getMnemonic()
 	{
-		// TODO Auto-generated method stub
 		return KeyEvent.VK_V;
 	}
 
 	@Override
 	public String getKeyboardShortcutText()
 	{
-		// TODO Auto-generated method stub
 		return "(Alt+V)";
 	}
 
@@ -67,15 +82,66 @@ public class OverlayTool extends EditorTool
 	@Override
 	public void onBeforeSaving()
 	{
-		// TODO Auto-generated method stub
+	}
 
+	@Override
+	public void onSwitchingTo()
+	{
+		showOrHideEditorTools();
+	}
+
+	private void showOrHideEditorTools()
+	{
+		updater.doWhenMapIsReadyForInteractions(() -> 
+		{
+			if (drawOverlayImageCheckbox.isSelected() && !StringUtils.isEmpty(overlayImagePath.getText()) && updater != null
+					&& updater.mapParts != null && updater.mapParts.background != null)
+			{
+				IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
+				try
+				{
+					Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), overlayScale,
+							getOverlayOffsetResolutionInvariant(), mainWindow.displayQualityScale, mapSize);
+					if (tuple != null)
+					{
+						IntRectangle overlayPosition = tuple.getFirst();
+						// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
+						IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
+								overlayPosition.height);
+						mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsMode.Overlay, true);
+					}
+				}
+				catch (Exception ex)
+				{
+					mapEditingPanel.clearIconEditTools();
+				}
+			}
+			else
+			{
+				mapEditingPanel.clearIconEditTools();
+			}
+			mapEditingPanel.repaint();
+		});
+		
+	}
+
+	private Point getOverlayOffsetResolutionInvariant()
+	{
+		if (overlayOffset != null)
+		{
+			return overlayOffset.mult(1.0 / mainWindow.displayQualityScale);
+		}
+		return new Point(0, 0);
 	}
 
 	@Override
 	public void onSwitchingAway()
 	{
-		// TODO Auto-generated method stub
-
+		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
+		isMoving = false;
+		isScaling = false;
+		editStart = null;
+		editStartLastUpdate = null;
 	}
 
 	@Override
@@ -85,8 +151,8 @@ public class OverlayTool extends EditorTool
 
 		JPanel toolOptionsPanel = organizer.panel;
 		toolOptionsPanel.setBorder(BorderFactory.createEmptyBorder(3, 3, 3, 3));
-		
-		
+
+
 		{
 			drawOverlayImageCheckbox = new JCheckBox("Enable overlay image");
 			drawOverlayImageCheckbox.setToolTipText("Show or hide the selected overlay image, if any.");
@@ -167,75 +233,118 @@ public class OverlayTool extends EditorTool
 					"Transparency to add to the overlay image to help with seeing the map underneath it.");
 		}
 
-		
-		
+
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
 
 		return toolOptionsPanel;
 	}
-	
+
 	@Override
 	protected void handleMouseClickOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	protected void handleMousePressedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-
+		isMoving = mapEditingPanel.isInMoveTool(e.getPoint());
+		isScaling = mapEditingPanel.isInScaleTool(e.getPoint());
+		if (isMoving || isScaling)
+		{
+			editStart = e.getPoint();
+			editStartLastUpdate = new Point(overlayOffset);
+		}
+		else
+		{
+			editStart = null;
+			editStartLastUpdate = null;
+		}
 	}
 
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-
+		isMoving = false;
+		isScaling = false;
+		editStart = null;
+		editStartLastUpdate = null;
 	}
 
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
+		if (editStart != null && (isMoving || isScaling) && overlayOffset != null)
+		{
+			Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+			Point graphPointMousePressedLocation = getPointOnGraph(editStart);
 
+			if (isMoving)
+			{
+				double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+				double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+				overlayOffset = overlayOffset.add(deltaX, deltaY);
+				editStart = e.getPoint();
+			}
+			else if (isScaling)
+			{
+				double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation);
+				overlayScale *= scale;
+				editStart = e.getPoint();
+			}
+			
+			showOrHideEditorTools();
+			undoer.setUndoPoint(UpdateType.OverlayImage, this);
+			handleOverlayImageChange();
+		}
+	}
+	
+	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation)
+	{
+		IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
+		Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), overlayScale,
+				getOverlayOffsetResolutionInvariant(), mainWindow.displayQualityScale, mapSize);
+		if (tuple != null)
+		{
+			Rectangle overlayPosition = tuple.getFirst().toRectangle();
+			double scale = graphPointMouseLocation.distanceTo(overlayPosition.getCenter())
+					/ graphPointMousePressedLocation.distanceTo(overlayPosition.getCenter());
+
+			final double minSize = 50; // TODO Make sure this is big enough to keep icon edit tools from crossing.
+			double minSideLength = Math.min(overlayPosition.width, overlayPosition.height);
+			double minScale = minSize / minSideLength;
+			return Math.max(scale, minScale);
+		}
+		// Shouldn't happen since the user shouldn't be interacting with the overlay edit tools if they aren't being drawn.
+		assert false; 
+		return 1.0;
 	}
 
 	@Override
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	protected void onBeforeShowMap()
 	{
-		// TODO Auto-generated method stub
-
+		showOrHideEditorTools();
 	}
 
 	@Override
 	protected void onAfterUndoRedo()
 	{
-		// TODO Auto-generated method stub
-
+		showOrHideEditorTools();
 	}
 
 	@Override
 	protected void onBeforeUndoRedo()
 	{
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -245,16 +354,22 @@ public class OverlayTool extends EditorTool
 		drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
 		overlayImagePath.setText(FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath));
 		overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
-		// TODO 
+		overlayOffset = settings.overlayOffsetResolutionInvariant == null ? null
+				: settings.overlayOffsetResolutionInvariant.mult(mainWindow.displayQualityScale);
+		overlayScale = settings.overlayScale;
+		
+		showOrHideEditorTools();
 	}
 
 	@Override
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
-		settings.overlayImagePath =  FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
+		settings.overlayImagePath = FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
-		// TODO
+		settings.overlayOffsetResolutionInvariant = overlayOffset == null ? new Point(0, 0)
+				: overlayOffset.mult(1.0 / mainWindow.displayQualityScale);
+		settings.overlayScale = overlayScale;
 	}
 
 	@Override
@@ -277,8 +392,6 @@ public class OverlayTool extends EditorTool
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
-		// TODO Auto-generated method stub
-
 	}
 
 	private void handleOverlayImageChange()

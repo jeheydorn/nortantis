@@ -52,6 +52,11 @@ public abstract class EditorTool
 	public abstract String getImageIconFilePath();
 
 	public abstract void onBeforeSaving();
+	
+	public void onSwitchingTo()
+	{
+		
+	}
 
 	public abstract void onSwitchingAway();
 

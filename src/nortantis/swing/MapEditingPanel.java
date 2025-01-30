@@ -76,7 +76,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private Set<String> artPacksToHighlight;
 	private FreeIconCollection freeIcons;
 	private IconDrawer iconDrawer;
-	EditToolsRelativePosition iconEditToolsRelativePosition;
+	IconEditToolsMode imageEditMode;
 	private BufferedImage moveIconScaledLarge;
 	private BufferedImage scaleIconScaledLarge;
 	private boolean useLargeIconEditIcons;
@@ -146,7 +146,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxAngle = 0.0;
 	}
 
-	public void showIconEditToolsAt(FreeIcon icon, EditToolsRelativePosition toolsLocation, boolean useLargeIcons)
+	public void showIconEditToolsAt(FreeIcon icon, IconEditToolsMode toolsLocation, boolean useLargeIcons)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -157,18 +157,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).createBounds(), true, toolsLocation, useLargeIcons);
 	}
 
-	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, EditToolsRelativePosition toolsPosition,
+	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsMode imageEditMode,
 			boolean useLargeIcons)
 	{
 		iconToEditBounds = rectangle;
 		this.isIconToEditInAValidPosition = isValidPosition;
-		this.iconEditToolsRelativePosition = toolsPosition;
+		this.imageEditMode = imageEditMode;
 		this.useLargeIconEditIcons = useLargeIcons;
 	}
 
-	public enum EditToolsRelativePosition
+	public enum IconEditToolsMode
 	{
-		Outside, Inside
+		Icon, Overlay
 	}
 
 	public void clearIconEditTools()
@@ -176,7 +176,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		iconToEditBounds = null;
 		scaleToolArea = null;
 		moveToolArea = null;
-		iconEditToolsRelativePosition = null;
+		imageEditMode = null;
 	}
 
 	public void setHighlightedAreasFromTexts(List<MapText> texts, boolean isErasing)
@@ -355,7 +355,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (iconToEditBounds != null)
 		{
+			if (imageEditMode == IconEditToolsMode.Overlay)
+			{
+				((Graphics2D) g).translate(-borderWidth, -borderWidth);
+			}
+			
 			drawIconEditBox(((Graphics2D) g));
+			
+			if (imageEditMode == IconEditToolsMode.Overlay)
+			{
+				((Graphics2D) g).translate(borderWidth, borderWidth);
+			}
 		}
 
 		drawAreas(g);
@@ -462,13 +472,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 
 			int x, y;
-			if (iconEditToolsRelativePosition == EditToolsRelativePosition.Outside)
+			if (imageEditMode == IconEditToolsMode.Icon)
 			{
+				// Draw edit tools outside box
 				x = editBounds.x + editBounds.width + padding;
 				y = editBounds.y - (toolIcon.getHeight()) - padding;
 			}
 			else
 			{
+				// Draw edit tools inside box because overlays often reach to top of the map, and you wouldn't be able to get to the tools
+				// if they were drawn outside the map.
 				x = editBounds.x + editBounds.width - toolIcon.getWidth() - padding;
 				y = editBounds.y + padding;
 			}
@@ -489,10 +502,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				toolIcon = isIconToEditInAValidPosition ? moveIconScaled : redMoveIconScaled;
 			}
-			
+
 			int x = editBounds.x + (int) (Math.round(editBounds.width / 2.0)) - (int) (Math.round(toolIcon.getWidth() / 2.0));
 			int y;
-			if (iconEditToolsRelativePosition == EditToolsRelativePosition.Outside)
+			if (imageEditMode == IconEditToolsMode.Icon)
 			{
 				y = editBounds.y - (toolIcon.getHeight()) - padding;
 			}
