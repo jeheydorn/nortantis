@@ -1127,8 +1127,8 @@ public class IconsTool extends EditorTool
 
 				if (isMoving)
 				{
-					double deltaX = graphPointMouseLocation.x - graphPointMousePressedLocation.x;
-					double deltaY = graphPointMouseLocation.y - graphPointMousePressedLocation.y;
+					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 					imageBounds = imageBounds.translate(deltaX, deltaY);
 
 					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);

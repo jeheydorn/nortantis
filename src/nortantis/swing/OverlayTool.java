@@ -44,11 +44,14 @@ public class OverlayTool extends EditorTool
 	private JButton btnsBrowseOverlayImage;
 	private Point overlayOffset;
 	private double overlayScale;
-	
+
 	private java.awt.Point editStart;
 	private boolean isMoving;
 	private boolean isScaling;
-	private Point editStartLastUpdate; // TODO Decide what to do with this if I use it.
+	private Point overlayOffsetBeforeEdit;
+	private double overlayScaleBeforeEdit;
+	private JButton fitToMapButton;
+	private JButton fitInsideBorderButton;
 
 	public OverlayTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -88,27 +91,28 @@ public class OverlayTool extends EditorTool
 	public void onSwitchingTo()
 	{
 		showOrHideEditorTools();
+		super.onSwitchingTo();
 	}
 
 	private void showOrHideEditorTools()
 	{
-		updater.doWhenMapIsReadyForInteractions(() -> 
+		updater.doWhenMapIsReadyForInteractions(() ->
 		{
-			if (drawOverlayImageCheckbox.isSelected() && !StringUtils.isEmpty(overlayImagePath.getText()) && updater != null
-					&& updater.mapParts != null && updater.mapParts.background != null)
+			if (drawOverlayImageCheckbox.isSelected() && !StringUtils.isEmpty(overlayImagePath.getText()))
 			{
-				IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
 				try
 				{
-					Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), overlayScale,
-							getOverlayOffsetResolutionInvariant(), mainWindow.displayQualityScale, mapSize);
-					if (tuple != null)
+					IntRectangle overlayPosition = calcOverlayPositionForScale(overlayScale);
+					if (overlayPosition != null)
 					{
-						IntRectangle overlayPosition = tuple.getFirst();
 						// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
 						IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
 								overlayPosition.height);
 						mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsMode.Overlay, true);
+					}
+					else
+					{
+						mapEditingPanel.clearIconEditTools();
 					}
 				}
 				catch (Exception ex)
@@ -122,7 +126,7 @@ public class OverlayTool extends EditorTool
 			}
 			mapEditingPanel.repaint();
 		});
-		
+
 	}
 
 	private Point getOverlayOffsetResolutionInvariant()
@@ -138,10 +142,8 @@ public class OverlayTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
-		isMoving = false;
-		isScaling = false;
-		editStart = null;
-		editStartLastUpdate = null;
+		clearEditFields();
+		mapEditingPanel.repaint();
 	}
 
 	@Override
@@ -233,6 +235,48 @@ public class OverlayTool extends EditorTool
 					"Transparency to add to the overlay image to help with seeing the map underneath it.");
 		}
 
+		{
+			fitToMapButton = new JButton("Fit to Map");
+			fitToMapButton.setToolTipText("Resize and position the overlay image to fit the entire map, including borders.");
+			fitToMapButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					overlayOffset = new Point(0.0, 0.0);
+					overlayScale = 1.0;
+					handleOverlayImageChange();
+				}
+			});
+
+
+			fitInsideBorderButton = new JButton("Fit Inside Border");
+			fitInsideBorderButton.setToolTipText(
+					"Resize and position the overlay image to fit the drawable space on the map (the ocean/land), not including the border.");
+			fitInsideBorderButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					updater.doWhenMapIsReadyForInteractions(() ->
+					{
+						if (updater.mapParts == null || updater.mapParts.background == null)
+						{
+							// Should not happen because we just checked that the map is ready for user interactions, so it has been drawn.
+							assert false;
+							return;
+						}
+						double scaledBorderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
+						double mapWidthWithBorder = updater.mapParts.background.getMapBoundsIncludingBorder().width;
+						overlayOffset = new Point(0.0, 0.0);
+						overlayScale = (mapWidthWithBorder - (scaledBorderWidth * 2.0)) / mapWidthWithBorder;
+						handleOverlayImageChange();
+					});
+				}
+			});
+
+			organizer.addLeftAlignedComponents(Arrays.asList(fitToMapButton, fitInsideBorderButton));
+		}
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
@@ -253,22 +297,13 @@ public class OverlayTool extends EditorTool
 		if (isMoving || isScaling)
 		{
 			editStart = e.getPoint();
-			editStartLastUpdate = new Point(overlayOffset);
+			overlayOffsetBeforeEdit = new Point(overlayOffset);
+			overlayScaleBeforeEdit = overlayScale;
 		}
 		else
 		{
-			editStart = null;
-			editStartLastUpdate = null;
+			clearEditFields();
 		}
-	}
-
-	@Override
-	protected void handleMouseReleasedOnMap(MouseEvent e)
-	{
-		isMoving = false;
-		isScaling = false;
-		editStart = null;
-		editStartLastUpdate = null;
 	}
 
 	@Override
@@ -281,48 +316,115 @@ public class OverlayTool extends EditorTool
 	{
 		if (editStart != null && (isMoving || isScaling) && overlayOffset != null)
 		{
-			Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-			Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+			updateOveralyOffsetOrScaleForEdit(e);
 
-			if (isMoving)
-			{
-				double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-				double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-				overlayOffset = overlayOffset.add(deltaX, deltaY);
-				editStart = e.getPoint();
-			}
-			else if (isScaling)
-			{
-				double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation);
-				overlayScale *= scale;
-				editStart = e.getPoint();
-			}
-			
 			showOrHideEditorTools();
-			undoer.setUndoPoint(UpdateType.OverlayImage, this);
-			handleOverlayImageChange();
 		}
 	}
-	
+
+	@Override
+	protected void handleMouseReleasedOnMap(MouseEvent e)
+	{
+		if (editStart != null && (isMoving || isScaling) && overlayOffset != null)
+		{
+			updateOveralyOffsetOrScaleForEdit(e);
+
+			overlayOffsetBeforeEdit = null;
+			overlayScaleBeforeEdit = 0.0;
+
+			showOrHideEditorTools();
+			handleOverlayImageChange();
+
+		}
+
+		clearEditFields();
+	}
+
+	private void updateOveralyOffsetOrScaleForEdit(MouseEvent e)
+	{
+		Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+		Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+
+		if (isMoving)
+		{
+			double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+			double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+			overlayOffset = overlayOffsetBeforeEdit.add(deltaX, deltaY);
+		}
+		else if (isScaling)
+		{
+			double scaleDelta = calcScale(graphPointMouseLocation, graphPointMousePressedLocation);
+			final double minScale = calcMinScale();
+			if (overlayScaleBeforeEdit * scaleDelta < minScale)
+			{
+				overlayScale = minScale;
+			}
+			else
+			{
+				overlayScale = overlayScaleBeforeEdit * scaleDelta;
+			}
+		}
+	}
+
+	private double calcMinScale()
+	{
+		try
+		{
+			IntRectangle overlaySizeAt1Scale = calcOverlayPositionForScale(1.0);
+			if (overlaySizeAt1Scale != null)
+			{
+				final double minWidth = 375 * mainWindow.displayQualityScale;
+				return minWidth / overlaySizeAt1Scale.width;
+			}
+			else
+			{
+				assert false;
+				return 0.0;
+			}
+		}
+		catch (Exception ex)
+		{
+			return 0.0;
+		}
+	}
+
+	private void clearEditFields()
+	{
+		isMoving = false;
+		isScaling = false;
+		editStart = null;
+		overlayOffsetBeforeEdit = null;
+		overlayScaleBeforeEdit = 0.0;
+	}
+
 	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation)
 	{
-		IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
-		Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), overlayScale,
-				getOverlayOffsetResolutionInvariant(), mainWindow.displayQualityScale, mapSize);
-		if (tuple != null)
+		IntRectangle overlayPosition = calcOverlayPositionForScale(overlayScale);
+		if (overlayPosition != null)
 		{
-			Rectangle overlayPosition = tuple.getFirst().toRectangle();
-			double scale = graphPointMouseLocation.distanceTo(overlayPosition.getCenter())
-					/ graphPointMousePressedLocation.distanceTo(overlayPosition.getCenter());
+			double scale = graphPointMouseLocation.distanceTo(overlayPosition.toRectangle().getCenter())
+					/ graphPointMousePressedLocation.distanceTo(overlayPosition.toRectangle().getCenter());
 
-			final double minSize = 50; // TODO Make sure this is big enough to keep icon edit tools from crossing.
-			double minSideLength = Math.min(overlayPosition.width, overlayPosition.height);
-			double minScale = minSize / minSideLength;
-			return Math.max(scale, minScale);
+			return scale;
 		}
 		// Shouldn't happen since the user shouldn't be interacting with the overlay edit tools if they aren't being drawn.
-		assert false; 
+		assert false;
 		return 1.0;
+	}
+
+	private IntRectangle calcOverlayPositionForScale(double scale)
+	{
+		if (updater != null && updater.mapParts != null && updater.mapParts.background != null)
+		{
+			IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
+			Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), scale,
+					getOverlayOffsetResolutionInvariant(), mainWindow.displayQualityScale, mapSize);
+			if (tuple != null)
+			{
+				return tuple.getFirst();
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -358,7 +460,10 @@ public class OverlayTool extends EditorTool
 				: settings.overlayOffsetResolutionInvariant.mult(mainWindow.displayQualityScale);
 		overlayScale = settings.overlayScale;
 		
-		showOrHideEditorTools();
+		if (isSelected())
+		{
+			showOrHideEditorTools();
+		}
 	}
 
 	@Override
@@ -387,15 +492,33 @@ public class OverlayTool extends EditorTool
 		{
 			btnsBrowseOverlayImage.setEnabled(drawOverlayImageCheckbox.isSelected());
 		}
+		if (fitToMapButton != null)
+		{
+			fitToMapButton.setEnabled(drawOverlayImageCheckbox.isSelected());
+		}
+		if (fitInsideBorderButton != null)
+		{
+			fitInsideBorderButton.setEnabled(drawOverlayImageCheckbox.isSelected());
+		}
 	}
 
 	@Override
 	public void onBeforeLoadingNewMap()
 	{
+		onSwitchingAway();
 	}
 
 	private void handleOverlayImageChange()
 	{
+		if (overlayOffset != null)
+		{
+			double minScale = calcMinScale();
+			if (overlayScale < minScale)
+			{
+				overlayScale = minScale;
+			}
+		}
+
 		mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
 		mainWindow.updater.createAndShowMapOverlayImage();
 	}

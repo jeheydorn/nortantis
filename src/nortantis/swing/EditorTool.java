@@ -52,10 +52,13 @@ public abstract class EditorTool
 	public abstract String getImageIconFilePath();
 
 	public abstract void onBeforeSaving();
-	
+
 	public void onSwitchingTo()
 	{
-		
+		// This is needed so that highlights in the overlay tool clear all the way when switching to other tools. I don't know why, maybe a
+		// bug in Swing.
+		mainWindow.revalidate();
+		mainWindow.repaint();
 	}
 
 	public abstract void onSwitchingAway();
@@ -135,8 +138,8 @@ public abstract class EditorTool
 	{
 		Set<Center> selected = new HashSet<Center>();
 		int brushRadius = (int) ((double) ((brushDiameter / mainWindow.zoom)) * mapEditingPanel.osScale) / 2;
-		
-		if (!new RotatedRectangle(updater.mapParts.graph.bounds).overlapsCircle(getPointOnGraph(pointFromMouse), brushRadius) )
+
+		if (!new RotatedRectangle(updater.mapParts.graph.bounds).overlapsCircle(getPointOnGraph(pointFromMouse), brushRadius))
 		{
 			// The brush is off the map.
 			return selected;
@@ -290,5 +293,10 @@ public abstract class EditorTool
 	public void handleCustomImagesPathChanged(String customImagesPath)
 	{
 
+	}
+	
+	protected boolean isSelected()
+	{
+		return toggleButton.isSelected();
 	}
 }

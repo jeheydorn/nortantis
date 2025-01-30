@@ -1999,7 +1999,7 @@ public class MapCreator implements WarningLogger
 
 		int borderWidthScaledByResolution = Background.calcBorderWidthScaledByResolution(settings);
 
-		Painter p = mapOrSnippet.createPainter();
+		Painter p = mapOrSnippet.createPainter(DrawQuality.High);
 		try
 		{
 			int x = overlayPosition.x;

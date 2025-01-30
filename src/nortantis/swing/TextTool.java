@@ -217,7 +217,7 @@ public class TextTool extends EditorTool
 				}
 			}
 		});
-		clearRotationButtonHider = organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(clearRotationButton));
+		clearRotationButtonHider = organizer.addLeftAlignedComponents(Arrays.asList(clearRotationButton));
 
 		useDefaultColorCheckbox = new JCheckBox("Use default color");
 		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");

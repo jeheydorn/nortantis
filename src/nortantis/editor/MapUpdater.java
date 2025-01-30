@@ -906,6 +906,7 @@ public abstract class MapUpdater
 		}
 		tasksToRunWhenMapReady.clear();
 		centersToRedrawLowPriority.clear();
+		isMapReadyForInteractions = false;
 	}
 
 }

@@ -721,7 +721,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			// Determines the size at which the rotation and move tool icons appear.
 			final double smallIconScale = 0.2;
-			final double largeIconScale = 0.8;
+			final double largeIconScale = 0.6;
 
 			BufferedImage rotateIcon = AwtFactory
 					.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));

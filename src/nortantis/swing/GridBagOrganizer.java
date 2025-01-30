@@ -40,6 +40,7 @@ public class GridBagOrganizer
 	private final double componentWeight = 0.6;
 	private int curY = 0;
 	public static final int rowVerticalInset = 10;
+	private final int defaultHorizontalSpaceBetweenComponentsAddAsList = 10;
 
 	public GridBagOrganizer()
 	{
@@ -106,7 +107,7 @@ public class GridBagOrganizer
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
 			int componentLeftPadding)
 	{
-		return addLabelAndComponents(labelText, tooltip, BoxLayout.X_AXIS, components, componentLeftPadding, 10, null);
+		return addLabelAndComponents(labelText, tooltip, BoxLayout.X_AXIS, components, componentLeftPadding, defaultHorizontalSpaceBetweenComponentsAddAsList, null);
 	}
 
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
@@ -216,6 +217,25 @@ public class GridBagOrganizer
 	public RowHider addLeftAlignedComponent(Component component)
 	{
 		return addLeftAlignedComponent(component, rowVerticalInset, rowVerticalInset);
+	}
+	
+	public RowHider addLeftAlignedComponents(List<Component> components)
+	{
+		JPanel compPanel = new JPanel();
+		compPanel.setLayout(new BoxLayout(compPanel, BoxLayout.X_AXIS));
+		final int componentLeftPadding = 0;
+		compPanel.add(Box.createHorizontalStrut(componentLeftPadding));
+		for (Component comp : components)
+		{
+			compPanel.add(comp);
+			if (comp != components.get(components.size() - 1))
+			{
+				compPanel.add(Box.createHorizontalStrut(defaultHorizontalSpaceBetweenComponentsAddAsList));
+			}
+		}
+		compPanel.add(Box.createHorizontalGlue());
+		return addLeftAlignedComponent(compPanel);
+		
 	}
 
 	public RowHider addLeftAlignedComponent(Component component, boolean allowToExpandVertically)

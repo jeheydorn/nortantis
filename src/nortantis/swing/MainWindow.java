@@ -1827,6 +1827,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, true);
+		
 		exportResolution = settings.resolution;
 		imageExportPath = settings.imageExportPath;
 		heightmapExportResolution = settings.heightmapResolution;
@@ -1949,6 +1950,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingPanel.mapFromMapCreator = null;
 
 		mapEditingPanel.repaint();
+		
+		// Prevent a single-pixel column on the right side of the map from remaining. Not sure why that happens.
+		revalidate();
+		repaint();
 	}
 
 	void handleThemeChange(boolean changeEffectsBackgroundImages)

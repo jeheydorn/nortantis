@@ -171,14 +171,14 @@ public class MapSettings implements Serializable
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
 	private final Color defaultRoadColor = Color.black;
-	
+
 	public boolean drawOverlayImage;
 	public String overlayImagePath;
 	/**
 	 * An integer percentage between 0 and 100 inclusive.
 	 */
 	public int overlayImageTransparency;
-	/** 
+	/**
 	 * Stores the overlay image location as an offset from the default place it is drawn, which is in the center of the map.
 	 */
 	public Point overlayOffsetResolutionInvariant; // TODO use this
@@ -415,12 +415,13 @@ public class MapSettings implements Serializable
 				defaultMapExportAction != null ? defaultMapExportAction.toString() : defaultDefaultExportAction.toString());
 		root.put("defaultHeightmapExportAction",
 				defaultHeightmapExportAction != null ? defaultHeightmapExportAction.toString() : defaultDefaultExportAction.toString());
-		
+
 		root.put("drawOverlayImage", drawOverlayImage);
 		root.put("overlayImagePath", overlayImagePath);
 		root.put("overlayImageTransparency", overlayImageTransparency);
 		root.put("overlayScale", overlayScale);
-		root.put("overlayOffsetResolutionInvariant", overlayOffsetResolutionInvariant.toJson());
+		root.put("overlayOffsetResolutionInvariant",
+				overlayOffsetResolutionInvariant == null ? null : overlayOffsetResolutionInvariant.toJson());
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -926,13 +927,16 @@ public class MapSettings implements Serializable
 		{
 			defaultHeightmapExportAction = defaultDefaultExportAction;
 		}
-		
+
 		if (root.containsKey("drawOverlayImage"))
 		{
 			drawOverlayImage = (boolean) root.get("drawOverlayImage");
 			overlayImagePath = (String) root.get("overlayImagePath");
-			overlayImageTransparency = (int)(long) root.get("overlayImageTransparency");
-			overlayOffsetResolutionInvariant =  Point.fromJSonValue((String) root.get("overlayOffsetResolutionInvariant"));
+			overlayImageTransparency = (int) (long) root.get("overlayImageTransparency");
+			if (root.containsKey("overlayOffsetResolutionInvariant") && root.get("overlayOffsetResolutionInvariant") != null)
+			{
+				overlayOffsetResolutionInvariant = Point.fromJSonValue((String) root.get("overlayOffsetResolutionInvariant"));
+			}
 			overlayScale = (double) root.get("overlayScale");
 		}
 		else
@@ -961,14 +965,14 @@ public class MapSettings implements Serializable
 		runConversionOnBorderType();
 		runConversionToRemoveTrailingSpacesInImageNamesWithWidth();
 	}
-	
+
 	private void runConversionToRemoveTrailingSpacesInImageNamesWithWidth()
 	{
 		if (isVersionGreaterThanOrEqualTo(version, "3.01"))
 		{
 			return;
 		}
-		
+
 		for (FreeIcon icon : edits.freeIcons)
 		{
 			String trimmed = StringHelper.trimTrailingSpacesAndUnderscores(icon.iconName);
@@ -977,7 +981,7 @@ public class MapSettings implements Serializable
 				edits.freeIcons.replace(icon, icon.copyWithName(trimmed));
 			}
 		}
-		
+
 		for (Entry<Integer, CenterEdit> entry : edits.centerEdits.entrySet())
 		{
 			CenterEdit cEdit = entry.getValue();
@@ -1537,7 +1541,7 @@ public class MapSettings implements Serializable
 	 * @return Piece 1 - The path Piece 2 - An optional warning message.
 	 */
 	public Tuple2<Path, String> getBackgroundImagePath()
-	{	
+	{
 		if (backgroundTextureSource == TextureSource.File && StringUtils.isEmpty(backgroundTextureImage))
 		{
 			return new Tuple2<>(Assets.getBackgroundTextureResourcePath(backgroundTextureResource, customImagesPath),
@@ -1675,6 +1679,6 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
+
 
 }
