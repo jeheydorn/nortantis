@@ -42,7 +42,7 @@ public class OverlayTool extends EditorTool
 	private JSlider overlayImageTransparencySlider;
 	private JCheckBox drawOverlayImageCheckbox;
 	private JButton btnsBrowseOverlayImage;
-	private Point overlayOffset;
+	private Point overlayOffsetResolutionInvariant;
 	private double overlayScale;
 
 	private java.awt.Point editStart;
@@ -52,6 +52,13 @@ public class OverlayTool extends EditorTool
 	private double overlayScaleBeforeEdit;
 	private JButton fitToMapButton;
 	private JButton fitInsideBorderButton;
+	/**
+	 * This field keeps components from triggering re-draws while settings are being loaded into the tools panel. This helps avoid breaking
+	 * undo/redo because other components in the Theme panel triggering re-loading settings, which caused this tool to re-draw, which causes
+	 * this tool to set an undo point before the component that triggered the change set and undo point, which causes that undo point to
+	 * incorrectly be UpdateType.OverlayImage.
+	 */
+	private boolean enableRedraws = true;
 
 	public OverlayTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -98,44 +105,38 @@ public class OverlayTool extends EditorTool
 	{
 		updater.doWhenMapIsReadyForInteractions(() ->
 		{
-			if (drawOverlayImageCheckbox.isSelected() && !StringUtils.isEmpty(overlayImagePath.getText()))
+			if (isSelected())
 			{
-				try
+				if (drawOverlayImageCheckbox.isSelected() && !StringUtils.isEmpty(overlayImagePath.getText()))
 				{
-					IntRectangle overlayPosition = calcOverlayPositionForScale(overlayScale);
-					if (overlayPosition != null)
+					try
 					{
-						// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
-						IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
-								overlayPosition.height);
-						mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsMode.Overlay, true);
+						IntRectangle overlayPosition = calcOverlayPositionForScale(overlayScale);
+						if (overlayPosition != null)
+						{
+							// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
+							IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
+									overlayPosition.height);
+							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsMode.Overlay, true);
+						}
+						else
+						{
+							mapEditingPanel.clearIconEditTools();
+						}
 					}
-					else
+					catch (Exception ex)
 					{
 						mapEditingPanel.clearIconEditTools();
 					}
 				}
-				catch (Exception ex)
+				else
 				{
 					mapEditingPanel.clearIconEditTools();
 				}
+				mapEditingPanel.repaint();
 			}
-			else
-			{
-				mapEditingPanel.clearIconEditTools();
-			}
-			mapEditingPanel.repaint();
 		});
 
-	}
-
-	private Point getOverlayOffsetResolutionInvariant()
-	{
-		if (overlayOffset != null)
-		{
-			return overlayOffset.mult(1.0 / mainWindow.displayQualityScale);
-		}
-		return new Point(0, 0);
 	}
 
 	@Override
@@ -243,7 +244,7 @@ public class OverlayTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					overlayOffset = new Point(0.0, 0.0);
+					overlayOffsetResolutionInvariant = new Point(0.0, 0.0);
 					overlayScale = 1.0;
 					handleOverlayImageChange();
 				}
@@ -268,7 +269,7 @@ public class OverlayTool extends EditorTool
 						}
 						double scaledBorderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
 						double mapWidthWithBorder = updater.mapParts.background.getMapBoundsIncludingBorder().width;
-						overlayOffset = new Point(0.0, 0.0);
+						overlayOffsetResolutionInvariant = new Point(0.0, 0.0);
 						overlayScale = (mapWidthWithBorder - (scaledBorderWidth * 2.0)) / mapWidthWithBorder;
 						handleOverlayImageChange();
 					});
@@ -297,7 +298,7 @@ public class OverlayTool extends EditorTool
 		if (isMoving || isScaling)
 		{
 			editStart = e.getPoint();
-			overlayOffsetBeforeEdit = new Point(overlayOffset);
+			overlayOffsetBeforeEdit = new Point(overlayOffsetResolutionInvariant);
 			overlayScaleBeforeEdit = overlayScale;
 		}
 		else
@@ -314,7 +315,7 @@ public class OverlayTool extends EditorTool
 	@Override
 	protected void handleMouseDraggedOnMap(MouseEvent e)
 	{
-		if (editStart != null && (isMoving || isScaling) && overlayOffset != null)
+		if (editStart != null && (isMoving || isScaling) && overlayOffsetResolutionInvariant != null)
 		{
 			updateOveralyOffsetOrScaleForEdit(e);
 
@@ -325,7 +326,7 @@ public class OverlayTool extends EditorTool
 	@Override
 	protected void handleMouseReleasedOnMap(MouseEvent e)
 	{
-		if (editStart != null && (isMoving || isScaling) && overlayOffset != null)
+		if (editStart != null && (isMoving || isScaling) && overlayOffsetResolutionInvariant != null)
 		{
 			updateOveralyOffsetOrScaleForEdit(e);
 
@@ -349,7 +350,8 @@ public class OverlayTool extends EditorTool
 		{
 			double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 			double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-			overlayOffset = overlayOffsetBeforeEdit.add(deltaX, deltaY);
+			overlayOffsetResolutionInvariant = overlayOffsetBeforeEdit.add(deltaX / mainWindow.displayQualityScale,
+					deltaY / mainWindow.displayQualityScale);
 		}
 		else if (isScaling)
 		{
@@ -417,7 +419,7 @@ public class OverlayTool extends EditorTool
 		{
 			IntDimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder().toIntDimension();
 			Tuple2<IntRectangle, Image> tuple = MapCreator.getOverlayPositionAndImage(overlayImagePath.getText(), scale,
-					getOverlayOffsetResolutionInvariant(), mainWindow.displayQualityScale, mapSize);
+					overlayOffsetResolutionInvariant, mainWindow.displayQualityScale, mapSize);
 			if (tuple != null)
 			{
 				return tuple.getFirst();
@@ -452,17 +454,21 @@ public class OverlayTool extends EditorTool
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
 			boolean willDoImagesRefresh)
 	{
-		drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
-		overlayImagePath.setText(FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath));
-		overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
-		overlayOffset = settings.overlayOffsetResolutionInvariant == null ? null
-				: settings.overlayOffsetResolutionInvariant.mult(mainWindow.displayQualityScale);
-		overlayScale = settings.overlayScale;
-		
-		if (isSelected())
+		try
 		{
-			showOrHideEditorTools();
+			enableRedraws = false;
+			drawOverlayImageCheckbox.setSelected(settings.drawOverlayImage);
+			overlayImagePath.setText(FileHelper.replaceHomeFolderPlaceholder(settings.overlayImagePath));
+			overlayImageTransparencySlider.setValue(settings.overlayImageTransparency);
+			overlayOffsetResolutionInvariant = settings.overlayOffsetResolutionInvariant;
+			overlayScale = settings.overlayScale;
 		}
+		finally
+		{
+			enableRedraws = true;
+		}
+
+		handleEnablingAndDisabling(null);
 	}
 
 	@Override
@@ -471,8 +477,8 @@ public class OverlayTool extends EditorTool
 		settings.drawOverlayImage = drawOverlayImageCheckbox.isSelected();
 		settings.overlayImagePath = FileHelper.replaceHomeFolderWithPlaceholder(overlayImagePath.getText());
 		settings.overlayImageTransparency = overlayImageTransparencySlider.getValue();
-		settings.overlayOffsetResolutionInvariant = overlayOffset == null ? new Point(0, 0)
-				: overlayOffset.mult(1.0 / mainWindow.displayQualityScale);
+		settings.overlayOffsetResolutionInvariant = overlayOffsetResolutionInvariant == null ? new Point(0, 0)
+				: overlayOffsetResolutionInvariant;
 		settings.overlayScale = overlayScale;
 	}
 
@@ -509,17 +515,25 @@ public class OverlayTool extends EditorTool
 
 	private void handleOverlayImageChange()
 	{
-		if (overlayOffset != null)
+		if (enableRedraws)
 		{
-			double minScale = calcMinScale();
-			if (overlayScale < minScale)
+			if (overlayOffsetResolutionInvariant != null)
 			{
-				overlayScale = minScale;
+				double minScale = calcMinScale();
+				if (overlayScale < minScale)
+				{
+					overlayScale = minScale;
+				}
 			}
-		}
 
-		mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
-		mainWindow.updater.createAndShowMapOverlayImage();
+			mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
+			mainWindow.updater.createAndShowMapOverlayImage();
+		}
+		
+		if (isSelected())
+		{
+			showOrHideEditorTools();
+		}
 	}
 
 }

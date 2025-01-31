@@ -2064,6 +2064,7 @@ public class MapCreator implements WarningLogger
 		// Calculate the position of the overlay on the map.
 		int x = (mapSize.width - scaledOverlayWidth) / 2 + (int) (overlayOffsetResolutionInvariant.x * resolutionScale);
 		int y = (mapSize.height - scaledOverlayHeight) / 2 + (int) (overlayOffsetResolutionInvariant.y * resolutionScale);
-		return new Tuple2<>(new IntRectangle(x, y, scaledOverlayWidth, scaledOverlayHeight), overlayImage);
+		IntRectangle overlayPosition = new IntRectangle(x, y, scaledOverlayWidth, scaledOverlayHeight);
+		return new Tuple2<>(overlayPosition, overlayImage);
 	}
 }

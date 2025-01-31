@@ -174,15 +174,17 @@ public class MapSettings implements Serializable
 
 	public boolean drawOverlayImage;
 	public String overlayImagePath;
+	private final int overlayImageDefaultTransparency = 50;
 	/**
 	 * An integer percentage between 0 and 100 inclusive.
 	 */
-	public int overlayImageTransparency;
+	public int overlayImageTransparency = overlayImageDefaultTransparency;
 	/**
 	 * Stores the overlay image location as an offset from the default place it is drawn, which is in the center of the map.
 	 */
-	public Point overlayOffsetResolutionInvariant; // TODO use this
-	public double overlayScale; // TODO use this
+	public Point overlayOffsetResolutionInvariant = new Point(0, 0);
+	private final double overlayImageDefaultScale = 1.0;
+	public double overlayScale = overlayImageDefaultScale;
 
 	public MapSettings()
 	{
@@ -941,9 +943,9 @@ public class MapSettings implements Serializable
 		}
 		else
 		{
-			overlayImageTransparency = 50;
+			overlayImageTransparency = overlayImageDefaultTransparency;
 			overlayOffsetResolutionInvariant = new Point(0, 0);
-			overlayScale = 1.0;
+			overlayScale = overlayImageDefaultScale;
 		}
 
 		edits = new MapEdits();

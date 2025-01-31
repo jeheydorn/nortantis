@@ -1887,22 +1887,22 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleTerrainChange()
 	{
-		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.Terrain, null);
+		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapTerrainChange();
 	}
 
 	private void handleFontsChange()
 	{
-		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.Fonts, null);
+		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapFontsChange();
 	}
 
 	private void handleTextChange()
 	{
-		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.Text, null);
+		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapTextChange();
 	}
 
@@ -1913,8 +1913,8 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleFullRedraw()
 	{
-		mainWindow.handleThemeChange(true);
 		mainWindow.undoer.setUndoPoint(UpdateType.Full, null);
+		mainWindow.handleThemeChange(true);
 		mainWindow.updater.createAndShowMapFull();
 	}
 
@@ -1925,8 +1925,8 @@ public class ThemePanel extends JTabbedPane
 
 	private void handleFrayedEdgeOrGrungeChange()
 	{
-		mainWindow.handleThemeChange(false);
 		mainWindow.undoer.setUndoPoint(UpdateType.GrungeAndFray, null);
+		mainWindow.handleThemeChange(false);
 		mainWindow.updater.createAndShowMapGrungeOrFrayedEdgeChange();
 	}
 
