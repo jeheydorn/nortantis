@@ -378,7 +378,6 @@ public class OverlayTool extends EditorTool
 			}
 			else
 			{
-				assert false;
 				return 0.0;
 			}
 		}

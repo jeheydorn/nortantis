@@ -106,7 +106,7 @@ public class SwingHelper
 		// If the selection changed, trigger the action listener. I do this here instead of leaving the action listeners when doing
 		// the manipulations above to avoid triggering the action listener when adding and removing items.
 		String selectedNow = (String) comboBox.getSelectedItem();
-		if (!Objects.equals(selectedNow, selectedBefore))
+		if (selectedBefore != null && !Objects.equals(selectedNow, selectedBefore))
 		{
 			comboBox.setSelectedItem(comboBox.getSelectedItem());
 		}

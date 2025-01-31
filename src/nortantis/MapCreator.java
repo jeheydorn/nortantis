@@ -1994,6 +1994,11 @@ public class MapCreator implements WarningLogger
 	{
 		Tuple2<IntRectangle, Image> tuple = getOverlayPositionAndImage(settings.overlayImagePath, settings.overlayScale,
 				settings.overlayOffsetResolutionInvariant, settings.resolution, mapSize);
+		if (tuple == null)
+		{
+			return;
+		}
+		
 		IntRectangle overlayPosition = tuple.getFirst();
 		Image overlayImage = tuple.getSecond();
 
