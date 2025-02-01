@@ -217,11 +217,9 @@ public abstract class MapUpdater
 
 	private Collection<MapText> getTextWithChangesInEdits(MapEdits changeEdits)
 	{
-		Stopwatch sw = new Stopwatch("compare text for changes");
 		Set<MapText> fromEdits = new HashSet<>(changeEdits.text);
 		Set<MapText> curText = new HashSet<>(getEdits().text);
 		Collection<MapText> result = Helper.getElementsNotInIntersection(fromEdits, curText);
-		sw.printElapsedTime();
 		return result;
 	}
 
