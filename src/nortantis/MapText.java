@@ -84,7 +84,7 @@ public class MapText implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, location, type, value, colorOverride, boldBackgroundColorOverride);
+		return Objects.hash(angle, location, type, value, lineBreak, colorOverride, boldBackgroundColorOverride);
 	}
 
 	public MapText deepCopy()

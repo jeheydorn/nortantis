@@ -18,9 +18,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Helper
 {
@@ -367,4 +369,18 @@ public class Helper
 		}
 	}
 
+	public static <T> Set<T> getElementsNotInIntersection(Set<T> set1, Set<T> set2)
+	{
+		Set<T> result = new HashSet<>(set1);
+		// Union of both sets
+		result.addAll(set2);
+
+		Set<T> intersection = new HashSet<>(set1);
+		// Intersection of both sets
+		intersection.retainAll(set2);
+
+		// Remove elements in the intersection
+		result.removeAll(intersection);
+		return result;
+	}
 }

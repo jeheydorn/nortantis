@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 
 import nortantis.editor.FreeIcon;
 import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.Helper;
 
 /**
  * Allows fast lookup of FreeIcons.
@@ -337,7 +338,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		return other.doWithLockAndReturnResult(() ->
 		{
 			Set<FreeIcon> otherSet = other.asSet();
-			return getElementsNotInIntersection(thisSet, otherSet);
+			return Helper.getElementsNotInIntersection(thisSet, otherSet);
 		});
 	}
 
@@ -354,21 +355,6 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 			thisSet.add(icon);
 		}
 		return thisSet;
-	}
-
-	private static <T> Set<T> getElementsNotInIntersection(Set<T> set1, Set<T> set2)
-	{
-		Set<T> result = new HashSet<>(set1);
-		// Union of both sets
-		result.addAll(set2);
-
-		Set<T> intersection = new HashSet<>(set1);
-		// Intersection of both sets
-		intersection.retainAll(set2);
-
-		// Remove elements in the intersection
-		result.removeAll(intersection);
-		return result;
 	}
 
 	public synchronized void clear()

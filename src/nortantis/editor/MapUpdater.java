@@ -3,6 +3,7 @@ package nortantis.editor;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.swing.MapEdits;
 import nortantis.swing.UpdateType;
+import nortantis.util.Helper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
 
@@ -182,7 +184,7 @@ public abstract class MapUpdater
 		{
 			Set<Integer> centersChanged = getIdsOfCentersWithChangesInEdits(change.settings.edits);
 			Set<Integer> edgesChanged = getIdsOfEdgesWithChangesInEdits(change.settings.edits);
-			List<MapText> textChanged = getTextWithChangesInEdits(change.settings.edits);
+			Collection<MapText> textChanged = getTextWithChangesInEdits(change.settings.edits);
 			List<FreeIcon> iconsChanged = getIconsWithChangesInEdits(change.settings.edits);
 			createAndShowMapUsingIds(UpdateType.Incremental, centersChanged, edgesChanged, textChanged, iconsChanged, change.preRun, null);
 		}
@@ -213,34 +215,14 @@ public abstract class MapUpdater
 				.map(eEdit -> eEdit.index).collect(Collectors.toSet());
 	}
 
-	private List<MapText> getTextWithChangesInEdits(MapEdits changeEdits)
+	private Collection<MapText> getTextWithChangesInEdits(MapEdits changeEdits)
 	{
-		// Note this algorithm works because I never delete map texts; I only mark them as empty, which causes them to not draw.
-		List<MapText> changed = new ArrayList<>();
-		List<MapText> curTextList = getEdits().text;
-		for (int i : new Range(curTextList.size()))
-		{
-			MapText curText = curTextList.get(i);
-			if (i > changeEdits.text.size() - 1)
-			{
-				changed.add(curText);
-			}
-			else if (!curText.equals(changeEdits.text.get(i)))
-			{
-				changed.add(curText);
-				changed.add(changeEdits.text.get(i));
-			}
-		}
-
-		if (changeEdits.text.size() > curTextList.size())
-		{
-			for (int i : new Range(changeEdits.text.size() - curTextList.size()))
-			{
-				changed.add(changeEdits.text.get(i + curTextList.size()));
-			}
-		}
-
-		return changed;
+		Stopwatch sw = new Stopwatch("compare text for changes");
+		Set<MapText> fromEdits = new HashSet<>(changeEdits.text);
+		Set<MapText> curText = new HashSet<>(getEdits().text);
+		Collection<MapText> result = Helper.getElementsNotInIntersection(fromEdits, curText);
+		sw.printElapsedTime();
+		return result;
 	}
 
 	private List<FreeIcon> getIconsWithChangesInEdits(MapEdits changeEdits)
@@ -323,7 +305,7 @@ public abstract class MapUpdater
 	}
 
 	private void createAndShowMapUsingIds(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
-			List<MapText> textChanged, List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
+			Collection<MapText> textChanged, List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
 		List<Runnable> preRuns = new ArrayList<>();
 		if (preRun != null)

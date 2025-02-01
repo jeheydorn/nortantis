@@ -503,9 +503,10 @@ public class MapCreator implements WarningLogger
 		double concentricWaveWidth = settings.hasConcentricWaves()
 				? settings.concentricWaveCount
 						* (concentricWaveLineWidth * sizeMultiplier + concentricWaveWidthBetweenWaves * sizeMultiplier)
-						+ (8 * settings.resolution)
 				: 0;
-		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? settings.oceanWavesLevel * sizeMultiplier : 0;
+		// In theory I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a lot
+		// with performance.
+		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
 		// There shading from gaussian blur isn't visible very far out, so save performance by reducing the width
 		// contributed by it.
 		double oceanShadingWidth = 0.5 * (settings.oceanShadingLevel * sizeMultiplier);
@@ -513,17 +514,13 @@ public class MapCreator implements WarningLogger
 
 		double effectsPadding = Math
 				.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
-		// Increase effectsPadding by the width of a coastline, plus one pixel
-		// extra just to be safe.
-		effectsPadding += 2 * settings.resolution;
 
 		// Make sure effectsPadding is at least half the width of the maximum with any line can be drawn, which would probably be a very
 		// wide river. Since there is no easy way to know what that will be, just guess.
-		double buffer = 70;
+		double buffer = 10;
 		effectsPadding = Math.max(effectsPadding,
 				Math.max((buffer / 2.0) * settings.resolution, (SettingsGenerator.maxLineWidthInEditor / 2.0) * settings.resolution));
 
-		effectsPadding *= sizeMultiplier;
 		return effectsPadding;
 	}
 
@@ -1998,7 +1995,7 @@ public class MapCreator implements WarningLogger
 		{
 			return;
 		}
-		
+
 		IntRectangle overlayPosition = tuple.getFirst();
 		Image overlayImage = tuple.getSecond();
 
