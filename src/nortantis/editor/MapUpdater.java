@@ -252,16 +252,13 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.Text)
 		{
-			mapParts.mapBeforeAddingOverlayImage = null;
 		}
 		else if (updateType == UpdateType.Fonts)
 		{
-			mapParts.mapBeforeAddingOverlayImage = null;
 		}
 		else if (updateType == UpdateType.Terrain)
 		{
 			mapParts.mapBeforeAddingText = null;
-			mapParts.mapBeforeAddingOverlayImage = null;
 		}
 		else if (updateType == UpdateType.GrungeAndFray)
 		{
@@ -269,7 +266,6 @@ public abstract class MapUpdater
 			mapParts.frayedBorderColor = null;
 			mapParts.frayedBorderMask = null;
 			mapParts.grunge = null;
-			mapParts.mapBeforeAddingOverlayImage = null;
 		}
 		else if (updateType == UpdateType.ReprocessBooks)
 		{

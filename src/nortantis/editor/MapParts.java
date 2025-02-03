@@ -65,10 +65,4 @@ public class MapParts
 	 */
 	public Image mapBeforeAddingText;
 
-	/**
-	 * This field caches the map just before adding the overlay image so that changing the overlay image in the editor can
-	 * re-draw quickly.
-	 */
-	public Image mapBeforeAddingOverlayImage;
-
 }
