@@ -1,13 +1,14 @@
 package nortantis.swing;
 
-import javax.swing.*;
-
-import nortantis.util.ImageHelper;
-
-import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JToggleButton;
 
 @SuppressWarnings("serial")
 public class UnscaledImageToggleButton extends JToggleButton

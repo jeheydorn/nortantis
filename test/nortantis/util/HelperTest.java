@@ -1,6 +1,8 @@
 package nortantis.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

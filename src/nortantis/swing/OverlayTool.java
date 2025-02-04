@@ -21,15 +21,12 @@ import javax.swing.event.DocumentListener;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import nortantis.Background;
-import nortantis.DebugFlags;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
-import nortantis.geom.Rectangle;
 import nortantis.platform.Image;
 import nortantis.swing.MapEditingPanel.IconEditToolsMode;
 import nortantis.util.Assets;

@@ -13,9 +13,9 @@ import java.util.TreeSet;
 
 import nortantis.util.Assets;
 import nortantis.util.ComparableCounter;
+import nortantis.util.Counter;
 import nortantis.util.Function;
 import nortantis.util.Helper;
-import nortantis.util.Counter;
 import nortantis.util.Pair;
 import nortantis.util.Range;
 

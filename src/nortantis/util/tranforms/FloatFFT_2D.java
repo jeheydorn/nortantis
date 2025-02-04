@@ -29,12 +29,14 @@
  * */
 package nortantis.util.tranforms;
 
-import java.util.concurrent.Future;
+import static org.apache.commons.math3.util.FastMath.min;
+
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
-import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * Computes 2D Discrete Fourier Transform (DFT) of complex and real, single precision data. The sizes of both dimensions can be arbitrary

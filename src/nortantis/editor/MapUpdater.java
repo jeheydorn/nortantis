@@ -16,8 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-
 import nortantis.CancelledException;
 import nortantis.DebugFlags;
 import nortantis.MapCreator;
@@ -37,7 +35,6 @@ import nortantis.swing.MapEdits;
 import nortantis.swing.UpdateType;
 import nortantis.util.Helper;
 import nortantis.util.Logger;
-import nortantis.util.Range;
 
 public abstract class MapUpdater
 {

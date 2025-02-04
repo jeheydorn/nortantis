@@ -30,7 +30,6 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.platform.awt.AwtFactory;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper

@@ -29,7 +29,10 @@
  * */
 package nortantis.util.tranforms;
 
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.ceil;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.log;
+import static org.apache.commons.math3.util.FastMath.sin;
 
 /**
  * Computes 1D Discrete Fourier Transform (DFT) of complex and real, single precision data. The size of the data can be an arbitrary number.
