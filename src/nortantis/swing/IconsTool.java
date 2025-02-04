@@ -614,7 +614,7 @@ public class IconsTool extends EditorTool
 		{
 			JPanel typePanel = new JPanel();
 			typePanel.setLayout(new WrapLayout());
-			typePanel.setBorder(new LineBorder(UIManager.getColor("controlShadow"), 1));
+			typePanel.setBorder(new DynamicLineBorder("controlShadow", 1));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtension(selector.type, groupId))
 			{

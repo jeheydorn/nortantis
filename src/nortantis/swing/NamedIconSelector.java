@@ -13,6 +13,7 @@ import javax.swing.UIManager;
 import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.IconType;
+import nortantis.editor.UserPreferences;
 import nortantis.util.Tuple2;
 
 public class NamedIconSelector
@@ -134,18 +135,21 @@ public class NamedIconSelector
 
 	public static void updateToggleButtonBorder(UnscaledImageToggleButton toggleButton)
 	{
-		if (UIManager.getLookAndFeel() instanceof FlatDarkLaf)
+		final int width = 4;
+		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark || UserPreferences.getInstance().lookAndFeel == LookAndFeel.Light)
 		{
-			final int width = 4;
 			if (toggleButton.isSelected())
 			{
-				int shade = 180;
-				toggleButton.setBorder(BorderFactory.createLineBorder(new java.awt.Color(shade, shade, shade), width));
+				toggleButton.setBorder(BorderFactory.createLineBorder(ToolsPanel.getColorForToggledButtons(), width));
 			}
 			else
 			{
 				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 			}
+		}
+		else
+		{
+			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 		}
 	}
 }

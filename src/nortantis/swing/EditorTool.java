@@ -14,9 +14,11 @@ import javax.swing.JToggleButton;
 import javax.swing.UIManager;
 
 import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
+import nortantis.editor.UserPreferences;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
@@ -101,18 +103,21 @@ public abstract class EditorTool
 
 	public void updateBorder()
 	{
-		if (UIManager.getLookAndFeel() instanceof FlatDarkLaf)
+		final int width = 4;
+		
+		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
-			final int width = 4;
-			if (toggleButton.isSelected())
-			{
-				int shade = 140;
-				toggleButton.setBorder(BorderFactory.createLineBorder(new Color(shade, shade, shade), width));
-			}
-			else
-			{
-				toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
-			}
+			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
+			return;
+		}
+		
+		if (toggleButton.isSelected())
+		{
+			toggleButton.setBorder(BorderFactory.createLineBorder(ToolsPanel.getColorForToggledButtons(), width));
+		}
+		else
+		{
+			toggleButton.setBorder(BorderFactory.createEmptyBorder(width, width, width, width));
 		}
 	}
 

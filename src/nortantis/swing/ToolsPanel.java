@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
@@ -21,6 +22,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
 import javax.swing.border.LineBorder;
@@ -53,6 +55,7 @@ public class ToolsPanel extends JPanel
 	private Timer progressBarTimer;
 	MainWindow mainWindow;
 	MapUpdater updater;
+	private JPanel toolSelectPanel;
 
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
 	{
@@ -70,24 +73,23 @@ public class ToolsPanel extends JPanel
 		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
-		JPanel toolSelectPanel = new JPanel(new FlowLayout());
+		toolSelectPanel = new JPanel(new FlowLayout());
 		toolSelectPanel.setMaximumSize(new Dimension(toolSelectPanel.getMaximumSize().width, 20));
-		toolSelectPanel
-				.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
 		add(toolSelectPanel);
 		for (EditorTool tool : tools)
 		{
 			JToggleButton toolButton = new JToggleButton()
-					{
-				 @Override
-				    protected void paintComponent(Graphics g) {
-				        Graphics2D g2d = (Graphics2D) g;
+			{
+				@Override
+				protected void paintComponent(Graphics g)
+				{
+					Graphics2D g2d = (Graphics2D) g;
 
-				        // Set rendering hints
-				        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-				        super.paintComponent(g);
-				    }
-					};
+					// Set rendering hints
+					g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+					super.paintComponent(g);
+				}
+			};
 			try
 			{
 				BufferedImage icon = AwtFactory.unwrap(Assets.readImage(tool.getImageIconFilePath()));
@@ -120,9 +122,7 @@ public class ToolsPanel extends JPanel
 		toolsOptionsPanelContainer = new JScrollPane(currentToolOptionsPanel);
 
 		add(toolsOptionsPanelContainer);
-		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
-				currentTool.getToolbarName() + " Options");
-		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
+		updateBordersThatHaveColors();
 
 		JPanel progressAndBottomPanel = new JPanel();
 		progressAndBottomPanel.setLayout(new BoxLayout(progressAndBottomPanel, BoxLayout.Y_AXIS));
@@ -150,10 +150,7 @@ public class ToolsPanel extends JPanel
 		lblZoom.setToolTipText(
 				"Zoom the map in or out (mouse wheel). To view more details at higher zoom levels," + " adjust the 'Display quality'.");
 
-		zoomLevels = Arrays.asList(new String[]
-		{
-				fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%"
-		});
+		zoomLevels = Arrays.asList(new String[] { fitToWindowZoomLevel, "50%", "75%", "100%", "150%", "200%", "275%" });
 		zoomComboBox = new JComboBoxFixed<>();
 		for (String level : zoomLevels)
 		{
@@ -217,6 +214,16 @@ public class ToolsPanel extends JPanel
 		};
 		progressBarTimer = new Timer(50, listener);
 		progressBarTimer.setInitialDelay(500);
+	}
+	
+	private void updateBordersThatHaveColors()
+	{
+		toolSelectPanel
+		.setBorder(BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1), "Editing Tools"));
+		
+		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
+				currentTool.getToolbarName() + " Options");
+		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 	}
 
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
@@ -354,5 +361,36 @@ public class ToolsPanel extends JPanel
 			// Always enabled
 			displayQualityComboBox.setEnabled(true);
 		}
+	}
+
+	public void handleLookAndFeelChange(LookAndFeel lookAndFeel)
+	{
+		updateBordersThatHaveColors();
+		MapSettings settings = mainWindow.getSettingsFromGUI(false);
+		for (EditorTool tool : tools)
+		{
+			SwingUtilities.updateComponentTreeUI(tool.getToolOptionsPanel());
+			// Call this to make the icons tool update the borders on named-icon selectors.
+			tool.handleImagesRefresh(settings);
+			tool.updateBorder();
+		}
+	}
+	
+	public static Color getColorForToggledButtons()
+	{
+		int shade;
+		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark)
+		{
+			shade = 170;
+		}
+		else if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Light)
+		{
+			shade = 135;
+		}
+		else
+		{
+			throw new IllegalArgumentException("Unrecognized look and feel for getting color for toggle buttons: " + UserPreferences.getInstance().lookAndFeel);
+		}
+		return new Color(shade, shade, shade);
 	}
 }

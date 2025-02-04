@@ -19,10 +19,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 import nortantis.MapText;
+import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
 import nortantis.platform.awt.AwtFactory;
 
@@ -50,7 +52,7 @@ public class TextSearchDialog extends JDialog
 		container.setBorder(BorderFactory.createEmptyBorder(padding, padding, padding, padding));
 
 		notFoundLabel = new JLabel("Not found");
-		notFoundLabel.setForeground(new Color(255, 120, 120));
+		notFoundLabel.setForeground(getColorForNotFoundMessage());
 		notFoundLabel.setVisible(false);
 
 		searchField = new JTextField();
@@ -133,6 +135,18 @@ public class TextSearchDialog extends JDialog
 				search(false);
 			}
 		});
+	}
+	
+	private Color getColorForNotFoundMessage()
+	{
+		if (UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark)
+		{
+			return new Color(255, 120, 120);
+		}
+		else
+		{
+			return new Color(255, 0, 0);
+		}
 	}
 
 	private void onSearchFieldChanged()
@@ -260,5 +274,11 @@ public class TextSearchDialog extends JDialog
 	{
 		searchField.requestFocus();
 		searchField.selectAll();
+	}
+	
+	public void handleLookAndFeelChange()
+	{
+		notFoundLabel.setForeground(getColorForNotFoundMessage());
+		SwingUtilities.updateComponentTreeUI(this);
 	}
 }

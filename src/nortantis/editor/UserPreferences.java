@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
+import nortantis.swing.LookAndFeel;
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
 import nortantis.util.OSHelper;
@@ -33,6 +34,7 @@ public class UserPreferences
 	public Set<String> collapsedPanels = new TreeSet<>();
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
+	public LookAndFeel lookAndFeel;
 
 	public static UserPreferences instance;
 
@@ -102,6 +104,14 @@ public class UserPreferences
 					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"),
 							DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 				}
+				if (props.containsKey("lookAndFeel"))
+				{
+					lookAndFeel = LookAndFeel.valueOf(props.getProperty("lookAndFeel"));
+				}
+				else
+				{
+					lookAndFeel = LookAndFeel.Dark;
+				}
 			}
 		}
 		catch (Exception e)
@@ -137,6 +147,7 @@ public class UserPreferences
 		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
 		props.setProperty("lastVersionCheckTime",
 				(lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+		props.setProperty("lookAndFeel", lookAndFeel.name());
 
 		try
 		{

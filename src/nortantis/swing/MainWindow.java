@@ -37,6 +37,7 @@ import java.util.TreeSet;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -46,12 +47,14 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 
@@ -64,6 +67,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 
 import nortantis.CancelledException;
 import nortantis.DebugFlags;
@@ -188,10 +192,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 		if (!isMapOpen)
 		{
-			setPlaceholderImage(new String[]
-			{
-					"Welcome to Nortantis. To create or open a map,", "use the File menu."
-			});
+			setPlaceholderImage(new String[] { "Welcome to Nortantis. To create or open a map,", "use the File menu." });
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 
@@ -621,11 +622,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				showAsDrawing(false);
 				mapEditingPanel.clearAllSelectionsAndHighlights();
-				setPlaceholderImage(new String[]
-				{
-						"Map failed to draw due to an error.",
-						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "."
-				});
+				setPlaceholderImage(new String[] { "Map failed to draw due to an error.",
+						"To retry, use " + fileMenu.getText() + " -> " + refreshMenuItem.getText() + "." });
 
 				// In theory, enabling fields now could lead to the undoer not
 				// working quite right since edits might not have been created.
@@ -730,8 +728,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				if (cancelPressed)
 					return;
 
-				Path curPath = openSettingsFilePath == null
-						? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+				Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 						: openSettingsFilePath;
 				File currentFolder = new File(curPath.toString());
 				JFileChooser fileChooser = new JFileChooser();
@@ -926,6 +923,70 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		});
 		viewMenu.add(highlightRiversButton);
 
+		{
+			// Create the theme menu
+			JMenu themeMenu = new JMenu("Theme");
+
+			JRadioButtonMenuItem darkTheme = new JRadioButtonMenuItem("Dark");
+			JRadioButtonMenuItem lightTheme = new JRadioButtonMenuItem("Light");
+			JRadioButtonMenuItem systemTheme = new JRadioButtonMenuItem("System");
+
+			ButtonGroup themeGroup = new ButtonGroup();
+			themeGroup.add(darkTheme);
+			themeGroup.add(lightTheme);
+			themeGroup.add(systemTheme);
+			
+			LookAndFeel theme = UserPreferences.getInstance().lookAndFeel;
+			if (theme == LookAndFeel.Dark)
+			{
+				darkTheme.setSelected(true);
+			}
+			else if (theme == LookAndFeel.Light)
+			{
+				lightTheme.setSelected(true);
+			}
+			else
+			{
+				systemTheme.setSelected(true);
+			}
+
+			ActionListener listener = new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					LookAndFeel theme;
+					if (darkTheme.isSelected())
+					{
+						theme = LookAndFeel.Dark;
+					}
+					else if (lightTheme.isSelected())
+					{
+						theme = LookAndFeel.Light;
+					}
+					else
+					{
+						theme = LookAndFeel.System;
+					}
+					handleLookAndFeelChange(theme);
+				}
+			};
+
+			darkTheme.addActionListener(listener);
+
+			lightTheme.addActionListener(listener);
+
+			systemTheme.addActionListener(listener);
+
+			// Add the radio button menu items to the theme menu
+			themeMenu.add(darkTheme);
+			themeMenu.add(lightTheme);
+			themeMenu.add(systemTheme);
+
+			// Add the theme menu to the view menu
+			viewMenu.add(themeMenu);
+		}
+
 		toolsMenu = new JMenu("Tools");
 		menuBar.add(toolsMenu);
 
@@ -1011,6 +1072,46 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				showAboutNortantisDialog();
 			}
 		});
+	}
+
+	private void handleLookAndFeelChange(LookAndFeel lookAndFeel)
+	{
+		setLookAndFeel(lookAndFeel);
+		UserPreferences.getInstance().lookAndFeel = lookAndFeel;
+		SwingUtilities.updateComponentTreeUI(this);
+		toolsPanel.handleLookAndFeelChange(lookAndFeel);
+		if (textSearchDialog != null)
+		{
+			textSearchDialog.handleLookAndFeelChange();
+		}
+	}
+	
+	private static void setLookAndFeel(LookAndFeel lookAndFeel)
+	{
+		try
+		{
+			if (lookAndFeel == LookAndFeel.Dark)
+			{
+				UIManager.setLookAndFeel(new FlatDarkLaf());
+			}
+			else if (lookAndFeel == LookAndFeel.Light)
+			{
+				UIManager.setLookAndFeel(new FlatLightLaf());
+			}
+			else
+			{
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			}
+		}
+		catch (UnsupportedLookAndFeelException | ClassNotFoundException | InstantiationException | IllegalAccessException e)
+		{
+			String message = "Error while setting look and feel: " + e.getMessage();
+			System.out.println(message);
+			e.printStackTrace();
+			Logger.printError(message, e);
+			JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 	}
 
 	private void updateArtPackHighlightOptions()
@@ -1157,10 +1258,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				// Show the dialog
 				int response = JOptionPane.showOptionDialog(this,
 						"The art pack '" + artPackName + "' already exists. Do you wish to overwrite it?", "Overwrite Art Pack",
-						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[]
-						{
-								"Overwrite", "Cancel"
-						}, "Cancel");
+						JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, new Object[] { "Overwrite", "Cancel" }, "Cancel");
 
 				if (response == 0)
 				{
@@ -1718,8 +1816,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void saveSettingsAs(Component parent)
 	{
-		Path curPath = openSettingsFilePath == null
-				? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
+		Path curPath = openSettingsFilePath == null ? FileSystemView.getFileSystemView().getDefaultDirectory().toPath()
 				: openSettingsFilePath;
 		File currentFolder = openSettingsFilePath == null ? curPath.toFile() : new File(FilenameUtils.getFullPath(curPath.toString()));
 		JFileChooser fileChooser = new JFileChooser();
@@ -1827,16 +1924,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		updateLastSettingsLoadedOrSaved(settings);
 		toolsPanel.resetToolsForNewMap();
 		loadSettingsAndEditsIntoThemeAndToolsPanels(settings, false, true);
-		
+
 		exportResolution = settings.resolution;
 		imageExportPath = settings.imageExportPath;
 		heightmapExportResolution = settings.heightmapResolution;
 		heightmapExportPath = settings.heightmapExportPath;
 
-		setPlaceholderImage(new String[]
-		{
-				"Drawing map..."
-		});
+		setPlaceholderImage(new String[] { "Drawing map..." });
 
 		undoer.reset();
 
@@ -1950,7 +2044,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		mapEditingPanel.mapFromMapCreator = null;
 
 		mapEditingPanel.repaint();
-		
+
 		// Prevent a single-pixel column on the right side of the map from remaining. Not sure why that happens.
 		revalidate();
 		repaint();
@@ -2011,20 +2105,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 	 * Launch the application.
 	 */
 	public static void main(String[] args)
-	{		
+	{
 		// Tell drawing code to use AWT.
 		PlatformFactory.setInstance(new AwtFactory());
 
-		try
-		{
-			// UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			UIManager.setLookAndFeel(new FlatDarkLaf());
-		}
-		catch (Exception e)
-		{
-			System.out.println("Error while setting look and feel: " + e.getMessage());
-			e.printStackTrace();
-		}
+		setLookAndFeel(UserPreferences.getInstance().lookAndFeel);
 
 		String fileToOpen = args.length > 0 ? args[0] : "";
 		EventQueue.invokeLater(new Runnable()
