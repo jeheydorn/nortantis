@@ -1542,7 +1542,7 @@ public class IconsTool extends EditorTool
 		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
 		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem())
 				? (String) artPackComboBox.getSelectedItem()
-				: settings.artPack;
+				: (settings != null ? settings.artPack : Assets.installedArtPack);
 		updateArtPackOptions(artPackToSelect, customImagesPath);
 		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
