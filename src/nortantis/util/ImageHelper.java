@@ -1839,7 +1839,7 @@ public class ImageHelper
 		p.dispose();
 	}
 
-	public static Image createPlaceholderImage(String[] message)
+	public static Image createPlaceholderImage(String[] message, Color textColor)
 	{
 		if (message.length == 0)
 		{
@@ -1858,7 +1858,7 @@ public class ImageHelper
 		Image placeHolder = Image.create((textBounds.width + 15), (textBounds.height + 20), ImageType.ARGB);
 		Painter p = placeHolder.createPainter(DrawQuality.High);
 		p.setFont(font);
-		p.setColor(Color.create(168, 168, 168));
+		p.setColor(textColor);
 
 		int fontHeight = TextDrawer.getFontHeight(p);
 		for (int i : new Range(message.length))

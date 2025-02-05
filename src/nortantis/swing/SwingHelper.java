@@ -45,6 +45,7 @@ import javax.swing.text.JTextComponent;
 
 import org.apache.commons.io.FilenameUtils;
 
+import nortantis.editor.UserPreferences;
 import nortantis.util.Logger;
 import nortantis.util.OSHelper;
 
@@ -473,5 +474,11 @@ public class SwingHelper
 
         double scaleX = transform.getScaleX();
         return scaleX;
+	}
+	
+	public static Color getTextColorForPlaceholderImages()
+	{
+		int grayLevel = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark ? 168 : 128;
+		return new Color(grayLevel, grayLevel, grayLevel);
 	}
 }
