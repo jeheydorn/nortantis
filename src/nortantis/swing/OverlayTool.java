@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
+import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
@@ -139,6 +140,15 @@ public class OverlayTool extends EditorTool
 	@Override
 	public void onSwitchingAway()
 	{
+		if (isMoving && overlayOffsetBeforeEdit != null)
+		{
+			overlayOffsetResolutionInvariant = overlayOffsetBeforeEdit;
+		}
+		if (isScaling && overlayOffsetBeforeEdit != null)
+		{
+			overlayScale = overlayScaleBeforeEdit;
+		}
+
 		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
 		clearEditFields();
 		mapEditingPanel.repaint();
@@ -264,10 +274,22 @@ public class OverlayTool extends EditorTool
 							assert false;
 							return;
 						}
-						double scaledBorderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
-						double mapWidthWithBorder = updater.mapParts.background.getMapBoundsIncludingBorder().width;
 						overlayOffsetResolutionInvariant = new Point(0.0, 0.0);
-						overlayScale = (mapWidthWithBorder - (scaledBorderWidth * 2.0)) / mapWidthWithBorder;
+
+						Dimension mapSize = updater.mapParts.background.getMapBoundsIncludingBorder();
+						double scaledBorderWidth = updater.mapParts.background.getBorderWidthScaledByResolution();
+						IntRectangle overlayPositionAtScale1 = calcOverlayPositionForScale(1.0);
+						if (Math.abs(overlayPositionAtScale1.x) < Math.abs(overlayPositionAtScale1.y))
+						{
+							// The overlay image is wide and short, causing it to expand to the left and right sides of the map.
+							overlayScale = (mapSize.width - (scaledBorderWidth * 2.0)) / mapSize.width;
+						}
+						else
+						{
+							// The overlay images is narrow and tall, causing it to expand to the top and bottom of the map.
+							overlayScale = (mapSize.height - (scaledBorderWidth * 2.0)) / mapSize.height;
+						}
+
 						handleOverlayImageChange();
 					});
 				}
@@ -526,7 +548,7 @@ public class OverlayTool extends EditorTool
 			mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
 			mainWindow.updater.createAndShowMapOverlayImage();
 		}
-		
+
 		if (isSelected())
 		{
 			showOrHideEditorTools();

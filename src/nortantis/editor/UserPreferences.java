@@ -17,6 +17,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.lang3.StringUtils;
+
 import nortantis.swing.LookAndFeel;
 import nortantis.util.FileHelper;
 import nortantis.util.Logger;
@@ -34,7 +36,7 @@ public class UserPreferences
 	public Set<String> collapsedPanels = new TreeSet<>();
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
-	public LookAndFeel lookAndFeel;
+	public LookAndFeel lookAndFeel = LookAndFeel.Dark;
 	public int toolsPanelWidth;
 	public int themePanelWidth;
 
@@ -106,13 +108,10 @@ public class UserPreferences
 					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"),
 							DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 				}
-				if (props.containsKey("lookAndFeel"))
+				
+				if (props.containsKey("lookAndFeel") && !StringUtils.isEmpty(props.getProperty("lookAndFeel")))
 				{
 					lookAndFeel = LookAndFeel.valueOf(props.getProperty("lookAndFeel"));
-				}
-				else
-				{
-					lookAndFeel = LookAndFeel.Dark;
 				}
 				
 				if (props.containsKey("toolsPanelWidth"))
