@@ -46,12 +46,14 @@ import javax.swing.text.JTextComponent;
 import org.apache.commons.io.FilenameUtils;
 
 import nortantis.util.Logger;
+import nortantis.util.OSHelper;
 
 public class SwingHelper
 {
 	public static final int spaceBetweenRowsOfComponents = 8;
 	public static final int borderWidthBetweenComponents = 4;
-	public static final int sidePanelPreferredWidth = 314;
+	// Fonts in Linux are a little bigger, so make the side panels a little wider.
+	public static final int sidePanelPreferredWidth = OSHelper.isLinux() ? 340 : 314;
 	public static final int sidePanelMinimumWidth = sidePanelPreferredWidth;
 	private static final int sliderWidth = 160;
 	public static final int colorPickerLeftPadding = 2;

@@ -27,6 +27,7 @@ import nortantis.MapText;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.Rectangle;
 import nortantis.platform.awt.AwtFactory;
+import nortantis.util.OSHelper;
 
 @SuppressWarnings("serial")
 public class TextSearchDialog extends JDialog
@@ -107,10 +108,14 @@ public class TextSearchDialog extends JDialog
 		container.add(notFoundLabel);
 		container.add(Box.createRigidArea(new Dimension(padding, 1)));
 
+		boolean needsSpecialHandling = OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System;
 		final int fontSize = 24;
-		searchForward = new JButton("→");
+		searchForward = new JButton(needsSpecialHandling ? "Next" : "→");
 		searchForward.setToolTipText("Search forward (enter key)");
-		searchForward.setFont(new java.awt.Font(searchForward.getFont().getName(), searchForward.getFont().getStyle(), fontSize));
+		if (!needsSpecialHandling)
+		{
+			searchForward.setFont(new java.awt.Font(searchForward.getFont().getName(), searchForward.getFont().getStyle(), fontSize));
+		}
 		getRootPane().setDefaultButton(searchForward);
 		container.add(searchForward);
 		container.add(Box.createRigidArea(new Dimension(padding, 1)));
@@ -123,9 +128,12 @@ public class TextSearchDialog extends JDialog
 			}
 		});
 
-		searchBackward = new JButton("←");
+		searchBackward = new JButton(needsSpecialHandling ? "Prev" : "←");
 		searchBackward.setToolTipText("Search backward");
-		searchBackward.setFont(new java.awt.Font(searchBackward.getFont().getName(), searchBackward.getFont().getStyle(), fontSize));
+		if (!needsSpecialHandling)
+		{
+			searchBackward.setFont(new java.awt.Font(searchBackward.getFont().getName(), searchBackward.getFont().getStyle(), fontSize));
+		}
 		container.add(searchBackward);
 		searchBackward.addActionListener(new ActionListener()
 		{
