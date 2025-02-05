@@ -12,6 +12,8 @@ import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
+import nortantis.util.OSHelper;
+
 public class DrawModeWidget
 {
 	private JToggleButton drawModeButton;
@@ -83,30 +85,31 @@ public class DrawModeWidget
 			}
 		};
 
+		boolean isWindows = OSHelper.isWindows();
 		drawModeButton = new JToggleButton("<html><u>D</u>raw</html>");
 		drawModeButton.setToolTipText(drawTooltipWithoutKeyboardShortcut + " (Alt+D)");
 		drawModeButton.setSelected(true);
 		drawModeButton.addActionListener(modeListener);
 		drawModeButton.setMnemonic(KeyEvent.VK_D);
-		drawModeButton.setPreferredSize(new Dimension(57, drawModeButton.getPreferredSize().height));
+		drawModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 57, drawModeButton.getPreferredSize().height));
 
 		replaceModeButton = new JToggleButton("<html><u>R</u>eplace</html>");
 		replaceModeButton.setToolTipText(replaceTooltipWithoutKeyboardShortcut + " (Alt+R)");
 		replaceModeButton.addActionListener(modeListener);
 		replaceModeButton.setMnemonic(KeyEvent.VK_R);
-		replaceModeButton.setPreferredSize(new Dimension(75, replaceModeButton.getPreferredSize().height));
+		replaceModeButton.setPreferredSize(new Dimension(isWindows ? 65 : 75, replaceModeButton.getPreferredSize().height));
 
 		editModeButton = new JToggleButton("<html>Edi<u>t</u></html>");
 		editModeButton.setToolTipText(editTooltipWithoutKeyboardShortcut + " (Alt+T)");
 		editModeButton.addActionListener(modeListener);
 		editModeButton.setMnemonic(KeyEvent.VK_T);
-		editModeButton.setPreferredSize(new Dimension(53, editModeButton.getPreferredSize().height));
+		editModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 53, editModeButton.getPreferredSize().height));
 
 		eraseModeButton = new JToggleButton("<html><u>E</u>rase</html>");
 		eraseModeButton.setToolTipText(eraseTooltipWithoutKeyboardShortcut + " (Alt+E)");
 		eraseModeButton.addActionListener(modeListener);
 		eraseModeButton.setMnemonic(KeyEvent.VK_E);
-		eraseModeButton.setPreferredSize(new Dimension(61, eraseModeButton.getPreferredSize().height));
+		eraseModeButton.setPreferredSize(new Dimension(isWindows ? 51 : 61, eraseModeButton.getPreferredSize().height));
 	}
 
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String labelTooltip)
