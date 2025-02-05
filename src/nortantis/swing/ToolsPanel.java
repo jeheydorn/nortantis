@@ -59,9 +59,6 @@ public class ToolsPanel extends JPanel
 
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
 	{
-		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, getPreferredSize().height));
-		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
-
 		this.mainWindow = mainWindow;
 		this.updater = updater;
 

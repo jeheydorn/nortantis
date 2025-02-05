@@ -342,6 +342,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					boolean cancelPressed = checkForUnsavedChanges();
 					if (!cancelPressed)
 					{
+						UserPreferences.getInstance().toolsPanelWidth = toolsPanel.getWidth();
+						UserPreferences.getInstance().themePanelWidth = themePanel.getWidth();
 						UserPreferences.getInstance().save();
 						dispose();
 						System.exit(0);
@@ -369,6 +371,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		createMapEditingPanel();
 		createMapUpdater();
 		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
+		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth
+                ? UserPreferences.getInstance().toolsPanelWidth
+                : SwingHelper.sidePanelPreferredWidth;
+		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
+		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getMinimumSize().height));
 
 		createConsoleOutput();
 
@@ -381,6 +388,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane1, toolsPanel);
 		splitPane2.setResizeWeight(1.0);
 		splitPane2.setOneTouchExpandable(true);
+		
 		getContentPane().add(splitPane2, BorderLayout.CENTER);
 
 		pack();

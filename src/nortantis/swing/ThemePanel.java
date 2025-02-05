@@ -57,6 +57,7 @@ import nortantis.WorldGraph;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
+import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
@@ -179,7 +180,10 @@ public class ThemePanel extends JTabbedPane
 	{
 		this.mainWindow = mainWindow;
 
-		setPreferredSize(new Dimension(SwingHelper.sidePanelPreferredWidth, mainWindow.getContentPane().getHeight()));
+		int width = UserPreferences.getInstance().themePanelWidth > SwingHelper.sidePanelMinimumWidth
+				? UserPreferences.getInstance().themePanelWidth
+				: SwingHelper.sidePanelPreferredWidth;
+		setPreferredSize(new Dimension(width, mainWindow.getContentPane().getHeight()));
 		setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, getMinimumSize().height));
 
 		addTab("Background", createBackgroundPanel(mainWindow));
@@ -985,7 +989,6 @@ public class ThemePanel extends JTabbedPane
 		return organizer.createScrollPane();
 	}
 
-	
 
 	private void unselectAnyIconBeingEdited()
 	{

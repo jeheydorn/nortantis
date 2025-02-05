@@ -35,6 +35,8 @@ public class UserPreferences
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
 	public LookAndFeel lookAndFeel;
+	public int toolsPanelWidth;
+	public int themePanelWidth;
 
 	public static UserPreferences instance;
 
@@ -112,6 +114,16 @@ public class UserPreferences
 				{
 					lookAndFeel = LookAndFeel.Dark;
 				}
+				
+				if (props.containsKey("toolsPanelWidth"))
+				{
+					toolsPanelWidth = Integer.parseInt(props.getProperty("toolsPanelWidth"));
+				}
+				
+				if (props.containsKey("themePanelWidth"))
+				{
+					themePanelWidth = Integer.parseInt(props.getProperty("themePanelWidth"));
+				}
 			}
 		}
 		catch (Exception e)
@@ -148,6 +160,8 @@ public class UserPreferences
 		props.setProperty("lastVersionCheckTime",
 				(lastVersionCheckTime == null ? LocalDateTime.MIN : lastVersionCheckTime).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 		props.setProperty("lookAndFeel", lookAndFeel.name());
+		props.setProperty("toolsPanelWidth", toolsPanelWidth + "");
+		props.setProperty("themePanelWidth", themePanelWidth + "");
 
 		try
 		{
