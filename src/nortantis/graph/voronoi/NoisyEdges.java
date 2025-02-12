@@ -189,14 +189,9 @@ public class NoisyEdges
 				Point p1 = edge.v0.loc;
 				Point p2 = edge.v1.loc;
 				Point p3 = findPrevOrNextPointOnCurve(edge, edge.v1);
-				// Create enough points that you can't see the lines in the
-				// curves.
-				int numPoints = (int) (p1.distanceTo(p2) * 0.25);
+				
 				List<Point> curve = new LinkedList<>();
-				if (numPoints > 0)
-				{
-					curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3, numPoints));
-				}
+				curve.addAll(CurveCreator.createCurve(p0, p1, p2, p3));
 				if (curve.isEmpty() || !curve.get(0).equals(edge.v0.loc))
 				{
 					curve.add(0, edge.v0.loc);

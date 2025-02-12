@@ -8,9 +8,6 @@ import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
-
-import com.formdev.flatlaf.FlatDarkLaf;
 
 import nortantis.IconType;
 import nortantis.editor.UserPreferences;

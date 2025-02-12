@@ -17,7 +17,6 @@ public class Edge implements Comparable<Edge>
 	public Corner v0, v1; // Voronoi edge
 	public Point midpoint; // halfway between v0,v1
 	public int river;
-	public boolean isRoad;
 	/**
 	 * Used to deterministically create noisy edges so that edits don't cause changes in other edges.
 	 */

@@ -5,6 +5,7 @@ import java.util.List;
 import nortantis.Stroke;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
+import nortantis.util.Range;
 
 public abstract class Painter
 {
@@ -70,6 +71,18 @@ public abstract class Painter
 	public abstract void drawPolygon(int[] xPoints, int[] yPoints);
 
 	public abstract void drawPolyline(int[] xPoints, int[] yPoints);
+	
+	public void drawPolyline(List<IntPoint> points)
+	{
+		int[] xPoints = new int[points.size()];
+		int[] yPoints = new int[points.size()];
+		for (int i : new Range(points.size()))
+		{
+			xPoints[i] = points.get(i).x;
+			yPoints[i] = points.get(i).y;
+		}
+		drawPolyline(xPoints, yPoints);
+	}
 
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 

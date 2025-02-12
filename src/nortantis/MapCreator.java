@@ -1019,15 +1019,6 @@ public class MapCreator implements WarningLogger
 			cities = tuple.getSecond();
 		}
 
-		if (settings.drawRoads)
-		{
-			// TODO put back road drawer stuff
-			// RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph,
-			// iconDrawer);
-			// roadDrawer.markRoads();
-			// roadDrawer.drawRoads(map, sizeMultiplier);
-		}
-
 		checkForCancel();
 
 		Logger.println("Drawing ocean.");
@@ -1067,6 +1058,24 @@ public class MapCreator implements WarningLogger
 			graph.drawCoastlineWithLakeShores(g, settings.coastlineWidth * settings.resolution, null, null);
 		}
 
+		checkForCancel();
+		
+		if (settings.drawRoads)
+		{
+			RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph);
+			if (settings.edits == null || !settings.edits.isInitialized())
+			{
+				Logger.println("Adding roads.");
+				roadDrawer.createRoads();
+			}
+			else
+			{
+				Logger.println("Drawing roads.");
+			}
+			
+			roadDrawer.drawRoads(map);
+		}
+		
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");

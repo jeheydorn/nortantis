@@ -30,8 +30,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
-import javax.swing.border.LineBorder;
 
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;

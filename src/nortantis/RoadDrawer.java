@@ -1,16 +1,19 @@
 package nortantis;
 
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import nortantis.editor.Road;
+import nortantis.geom.IntPoint;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
+import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.Painter;
 import nortantis.util.OrderlessPair;
@@ -23,46 +26,65 @@ public class RoadDrawer
 	 * a positive number. A value of 1.0 means the road search algorithm will see an infinitely steep road as twice as long as it is without
 	 * considering steepness. a value of 0.0 means the road search algorithm will ignore the steepness of the road.
 	 */
-	final double roadElevationWeight = 1.0;
+	private final double roadElevationWeight = 1.0;
+	private final double defaultRoadWidth = 1.0;
+	private final Stroke defaultStroke = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
 
-	private MapSettings settings;
-	private IconDrawer iconDrawer;
 	private WorldGraph graph;
 	private Random rand;
+	private List<Road> roads;
+	private Color colorForNewRoads;
+	private double resolutionScale;
 
-	public RoadDrawer(Random rand, MapSettings settings, WorldGraph graph, IconDrawer iconDrawer)
+	public RoadDrawer(Random rand, MapSettings settings, WorldGraph graph)
 	{
-		this.settings = settings;
-		this.iconDrawer = iconDrawer;
 		this.graph = graph;
 		this.rand = rand;
+		if (settings.edits != null && settings.edits.roads != null)
+		{
+			this.roads = settings.edits.roads;
+		}
+
+		if (settings.edits != null)
+		{
+			if (!settings.edits.isInitialized())
+			{
+				roads = new ArrayList<>();
+				settings.edits.roads = roads;
+			}
+			else
+			{
+				roads = settings.edits.roads;
+			}
+		}
+		else
+		{
+			roads = new ArrayList<>();
+		}
+		colorForNewRoads = settings.roadColor;
+		resolutionScale = settings.resolution;
 	}
 
-	public void markRoads()
+	public void createRoads()
 	{
-		Function<Edge, Double> calculateRoadWeight = (edge) ->
-		{
-			if (edge.d0 == null || edge.d1 == null)
-			{
-				return Double.POSITIVE_INFINITY;
-			}
-			double distance = Center.distanceBetween(edge.d0, edge.d1);
-			// Wait the distance by how steep the road is so that roads favor less steep paths.
-			double lowerElevation = Math.min(edge.d0.elevation, edge.d1.elevation);
-			double higherElevation = Math.max(edge.d0.elevation, edge.d1.elevation);
-			double angle = Math.atan2(higherElevation, lowerElevation);
-			double angleNormalized = angle / Math.PI;
-			return distance + (distance * angleNormalized * roadElevationWeight);
-		};
+		Set<Center> citiesProcessed = new HashSet<>();
+		Set<Edge> edgesAddedRoadsFor = new HashSet<>();
 
 		// First, partition the centers by which ones aren't capable of connecting by roads
 		for (Center center : graph.centers)
 		{
 			if (center.isCity)
 			{
-				Set<Center> partition = graph.breadthFirstSearch((c) -> !c.isMountain && !c.isWater, center);
+				if (citiesProcessed.contains(center))
+				{
+					continue;
+				}
+				citiesProcessed.add(center);
+
+				Set<Center> partition = graph.breadthFirstSearch((c) -> !c.isWater, center);
 
 				Set<Center> connectedCities = partition.stream().filter((c) -> c.isCity).collect(Collectors.toSet());
+				citiesProcessed.addAll(connectedCities);
 
 				Set<OrderlessPair<Center>> roadsAttemptedToAdd = new HashSet<>();
 
@@ -72,7 +94,7 @@ public class RoadDrawer
 					OrderlessPair<Center> pair = new OrderlessPair<Center>(center, city);
 					if (!roadsAttemptedToAdd.contains(pair))
 					{
-						// Store which roads I have already drawn so that I don't redraw them later
+						// Store which roads I have already added so that I don't re-add them later
 						roadsAttemptedToAdd.add(pair);
 
 						int roadsToAddCount = (rand.nextInt() % 2) + 1;
@@ -99,87 +121,109 @@ public class RoadDrawer
 							}
 						}
 
-						// Mark the edges that will be roads between cities
-						List<Edge> path = graph.findShortestPath(center, city, calculateRoadWeight);
-						for (Edge edge : path)
+						for (Center destinationCity : connectedNeighbors)
 						{
-							edge.isRoad = true;
+							// Mark the edges that will be roads between cities
+							List<Edge> edges = graph.findShortestPath(city, destinationCity, this::calcRoadWeight, (c -> 
+							{
+								// Stop the search early if we run into a center that already has a road passing through it.
+								// TODO There is a bug in this code that seems to be causing some entire roads between cities to not be added when the should. 
+								// TODO I should only stop if the other road is going the same direction.
+								for (Edge e : c.borders)
+								{
+									if (edgesAddedRoadsFor.contains(e))
+									{
+										return true;
+									}
+								}
+								return false;
+							}));
+							
+							if (edges.isEmpty())
+							{
+								continue;
+							}
+							
+							// Add the edges as roads, making sure to not add roads for edges already added, since overlapping dotted/dashed lines don't look good.
+							List<Edge> soFar = new ArrayList<Edge>();
+							for (Edge edge : edges)
+							{
+								if (edgesAddedRoadsFor.contains(edge))
+								{
+									addEdgesToRoads(soFar);
+									soFar.clear();
+								}
+								else
+								{
+									soFar.add(edge);
+									edgesAddedRoadsFor.add(edge);
+								}
+							}
+							addEdgesToRoads(soFar);
 						}
 					}
 				}
 			}
 		}
 	}
+	
+	private void addEdgesToRoads(List<Edge> edges)
+	{
+		if (edges.isEmpty())
+		{
+			return;
+		}
+		
+		List<Point> path = graph.edgeListToDrawPointsDelaunay(edges);
+
+		if (path == null || path.size() <= 1)
+		{
+			return;
+		}
+		
+		List<Point> pathResolutionInvariant = path.stream().map(point -> point.mult(1.0 / resolutionScale)).toList();
+		roads.add(new Road(pathResolutionInvariant, defaultStroke, colorForNewRoads));
+	}
+
+	private double calcRoadWeight(Edge edge)
+	{
+		if (edge.d0 == null || edge.d1 == null)
+		{
+			return Double.POSITIVE_INFINITY;
+		}
+		if (edge.d0.isWater || edge.d1.isWater)
+		{
+			return Double.POSITIVE_INFINITY;
+		}
+		
+		double distance = Center.distanceBetween(edge.d0, edge.d1);
+		// Wait the distance by how steep the road is so that roads favor less steep paths.
+		double lowerElevation = Math.min(edge.d0.elevation, edge.d1.elevation);
+		double higherElevation = Math.max(edge.d0.elevation, edge.d1.elevation);
+		double angle = Math.atan2(higherElevation, lowerElevation);
+		double angleNormalized = angle / Math.PI;
+		return distance + (distance * angleNormalized * roadElevationWeight);
+	}
 
 	/**
-	 * Draws roads based on which edges have been marked as roads. This is done separate from marking so that roads can be redrawn in the
-	 * editor.
+	 * Draws the roads the were either loaded from settings or created by createRoads().
 	 * 
 	 * @param map
-	 * @param sizeMultiplier
+	 *            The image to draw on.
 	 */
-	public void drawRoads(Image map, double sizeMultiplier)
+	public void drawRoads(Image map)
 	{
 		Painter p = map.createPainter();
-		p.setColor(settings.roadColor);
-		// TODO Set stroke
 
-		for (Edge edge : graph.edges)
+		for (Road road : roads)
 		{
-			if (!edge.isRoad)
-			{
-				List<Edge> road = followRoad(edge, RoadDirection.d0);
-				List<Edge> d1Road = followRoad(edge, RoadDirection.d1);
-				// Remove edge so it's not drawn twice
-				d1Road.remove(0);
-				road.addAll(d1Road);
-
-				// Convert the road to a polyline
-				// TODO - Rather than use NoisyEdges, use CurveCreator to create a curve on the fly, as there is no need to store it.
-
-				// Draw the road
-				// g.drawPolyline();
-			}
-		}
-	}
-
-	private LinkedList<Edge> followRoad(Edge edge, RoadDirection direction)
-	{
-		if (edge == null)
-		{
-			// Edge of the map
-			return new LinkedList<Edge>();
-		}
-		Center currentCenter = direction == RoadDirection.d0 ? edge.d0 : edge.d1;
-		if (currentCenter == null)
-		{
-			// Edge of the map
-			return new LinkedList<Edge>();
+			p.setColor(road.color);
+			p.setStroke(road.style, resolutionScale);
+			List<Point> path = road.path; // CurveCreator.createCurve(road.path); TODO put back. There's a bug in this.
+			List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
+			p.drawPolyline(pathScaled);
 		}
 
-		List<Edge> nextRoads = currentCenter.borders.stream().filter(e -> !edge.equals(e) && e.isRoad).collect(Collectors.toList());
-
-		if (nextRoads.isEmpty())
-		{
-			// End of the road
-			LinkedList<Edge> result = new LinkedList<Edge>();
-			result.add(edge);
-			return result;
-		}
-
-		// If there is only one option the next road, follow it.
-		// If there is more than one option, then follow the second one so that if two roads cross, they will be drawn as crossing each
-		// other.
-		Edge next = (nextRoads.size() == 1) ? nextRoads.get(0) : nextRoads.get(1);
-		RoadDirection nextDirection = next.d0 == currentCenter ? RoadDirection.d1 : RoadDirection.d0;
-		LinkedList<Edge> result = followRoad(next, nextDirection);
-		result.push(edge);
-		return result;
-	}
-
-	private enum RoadDirection
-	{
-		d0, d1
 	}
 
 }

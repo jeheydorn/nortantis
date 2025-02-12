@@ -15,6 +15,7 @@ import nortantis.Region;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.RegionEdit;
+import nortantis.editor.Road;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -42,6 +43,7 @@ public class MapEdits implements Serializable
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
 	public FreeIconCollection freeIcons;
+	public List<Road> roads;
 
 	/**
 	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
@@ -177,6 +179,8 @@ public class MapEdits implements Serializable
 
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		copy.hasCreatedTextBounds = hasCreatedTextBounds;
+		
+		// TODO deep copy roads
 
 		return copy;
 	}
@@ -202,7 +206,8 @@ public class MapEdits implements Serializable
 		MapEdits other = (MapEdits) obj;
 		return bakeGeneratedTextAsEdits == other.bakeGeneratedTextAsEdits && Objects.equals(centerEdits, other.centerEdits)
 				&& Objects.equals(edgeEdits, other.edgeEdits) && Objects.equals(freeIcons, other.freeIcons)
-				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text);
+				&& hasIconEdits == other.hasIconEdits && Objects.equals(regionEdits, other.regionEdits) && Objects.equals(text, other.text)
+				&& Objects.equals(roads, other.roads);
 	}
 
 }

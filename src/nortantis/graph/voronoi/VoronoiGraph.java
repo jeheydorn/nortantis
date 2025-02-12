@@ -131,7 +131,8 @@ public abstract class VoronoiGraph
 
 		for (Edge e : edges)
 		{
-			e.noisyEdgesSeed = rand.nextLong();;
+			e.noisyEdgesSeed = rand.nextLong();
+			;
 		}
 	}
 
@@ -695,8 +696,7 @@ public abstract class VoronoiGraph
 
 						// One of the corners of the graph is the next point. Determine which corner that is.
 						x[2] = (int) (Math.abs(c.loc.x - bounds.x) < Math.abs(bounds.getRight() - c.loc.x) ? bounds.x : bounds.getRight());
-						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y)
-								? bounds.y
+						y[2] = (int) (Math.abs(c.loc.y - bounds.y) < Math.abs(bounds.getBottom() - c.loc.y) ? bounds.y
 								: bounds.getBottom());
 
 						x[3] = (int) edgeCorner2.loc.x;
@@ -1036,7 +1036,7 @@ public abstract class VoronoiGraph
 		p.fillPolygonDouble(vertices);
 	}
 
-	protected List<Point> edgeListToDrawPoints(List<Edge> edges)
+	public List<Point> edgeListToDrawPoints(List<Edge> edges)
 	{
 		if (edges.isEmpty())
 		{
@@ -1115,6 +1115,75 @@ public abstract class VoronoiGraph
 				Collections.reverse(noisyEdge);
 			}
 			points.addAll(noisyEdge);
+		}
+	}
+
+	public List<Point> edgeListToDrawPointsDelaunay(List<Edge> edges)
+	{
+		if (edges.isEmpty())
+		{
+			return Collections.emptyList();
+		}
+
+		List<Point> result = new ArrayList<Point>();
+		for (int i = 0; i < edges.size(); i++)
+		{
+			Edge current = edges.get(i);
+			if (current.d0 == null || current.d1 == null)
+			{
+				continue;
+			}
+
+			boolean reverse;
+			if (i == 0)
+			{
+				if (edges.size() == 1)
+				{
+					reverse = false;
+				}
+				else
+				{
+					Edge next = edges.get(i + 1);
+					if (current.d0 == next.d0 || current.d0 == next.d1)
+					{
+						reverse = true;
+					}
+					else
+					{
+						reverse = false;
+					}
+				}
+			}
+			else
+			{
+				Edge prev = edges.get(i - 1);
+				if (current.d1 == prev.d0 || current.d1 == prev.d1)
+				{
+					reverse = true;
+				}
+				else
+				{
+					reverse = false;
+				}
+			}
+
+			addEdgePointsDelaunay(result, current, reverse);
+		}
+
+		return result;
+	}
+
+	private void addEdgePointsDelaunay(List<Point> points, Edge edge, boolean reverse)
+	{
+		if (reverse)
+		{
+			points.add(edge.d1.loc);
+			points.add(edge.d0.loc);
+		}
+		else
+		{
+			points.add(edge.d0.loc);
+			points.add(edge.d1.loc);
 		}
 	}
 

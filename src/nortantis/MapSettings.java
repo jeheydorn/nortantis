@@ -31,6 +31,7 @@ import nortantis.editor.EdgeEdit;
 import nortantis.editor.ExportAction;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.RegionEdit;
+import nortantis.editor.Road;
 import nortantis.geom.Point;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
@@ -436,6 +437,7 @@ public class MapSettings implements Serializable
 			editsJson.put("regionEdits", regionEditsToJson());
 			editsJson.put("edgeEdits", edgeEditsToJson());
 			editsJson.put("hasIconEdits", edits.hasIconEdits);
+			editsJson.put("roads", roadsToJson());
 		}
 
 		return root.toJSONString();
@@ -525,6 +527,36 @@ public class MapSettings implements Serializable
 		}
 		return list;
 	}
+	
+	@SuppressWarnings("unchecked")
+	private JSONArray roadsToJson()
+	{
+		JSONArray roadsJson = new JSONArray();
+		if (edits.roads == null || edits.roads.isEmpty())
+		{
+			return roadsJson;
+		}
+		
+		for (Road road : edits.roads)
+		{
+			JSONObject roadObj = new JSONObject();
+			
+			JSONArray pathJson = new JSONArray();
+			if (road.path != null)
+			{
+				for (Point point : road.path)
+				{
+					pathJson.add(point.toJson());
+				}
+			}
+			roadObj.put("path", pathJson);
+			roadObj.put("style", strokeToJson(road.style));
+			roadObj.put("color", colorToString(road.color));
+			roadsJson.add(roadObj);
+		}
+		
+		return roadsJson;
+	}
 
 	@SuppressWarnings("unchecked")
 	private JSONArray regionEditsToJson()
@@ -540,12 +572,17 @@ public class MapSettings implements Serializable
 		return list;
 	}
 
-	@SuppressWarnings("unchecked")
 	private JSONObject regionBoundaryStyleToJson()
 	{
+		return strokeToJson(regionBoundaryStyle);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private JSONObject strokeToJson(Stroke stroke)
+	{
 		JSONObject obj = new JSONObject();
-		obj.put("type", regionBoundaryStyle.type.toString());
-		obj.put("width", regionBoundaryStyle.width);
+		obj.put("type", stroke.type.toString());
+		obj.put("width", stroke.width);
 		return obj;
 	}
 
@@ -959,6 +996,7 @@ public class MapSettings implements Serializable
 		edits.regionEdits = parseRegionEdits(editsJson);
 		edits.edgeEdits = parseEdgeEdits(editsJson);
 		edits.hasIconEdits = (boolean) editsJson.get("hasIconEdits");
+		edits.roads = parseRoads(editsJson);
 
 		runConversionForShadingAlphaChange();
 		runConversionForAllowingMultipleCityTypesInOneMap();
@@ -1306,6 +1344,36 @@ public class MapSettings implements Serializable
 
 		return result;
 	}
+	
+	private List<Road> parseRoads(JSONObject editsJson)
+	{
+		List<Road> roads = new ArrayList<>();
+		
+		if (!editsJson.containsKey("roads"))
+		{
+			return roads;
+		}
+		
+		JSONArray list = (JSONArray) editsJson.get("roads");
+		for (Object obj : list)
+		{
+			JSONObject roadJson = (JSONObject) obj;
+			List<Point> path = new ArrayList<Point>();
+			if (roadJson.containsKey("path"))
+			{
+				for (Object obj2 : (JSONArray) roadJson.get("path"))
+				{
+					String pointString = (String) obj2;
+					path.add(Point.fromJSonValue(pointString));
+				}
+			}
+			Stroke style = parseStroke((JSONObject) roadJson.get("style"));
+			Color color = parseColor((String) roadJson.get("color"));
+			Road road = new Road(path, style, color);
+			roads.add(road);
+		}
+		return roads;
+	}
 
 	private ConcurrentHashMap<Integer, RegionEdit> parseRegionEdits(JSONObject editsJson)
 	{
@@ -1328,9 +1396,20 @@ public class MapSettings implements Serializable
 
 	private Stroke parseRegionBoundaryStyle(JSONObject obj)
 	{
+		Stroke parsed = parseStroke(obj);
 		if (obj == null)
 		{
 			return new Stroke(StrokeType.Solid, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0)));
+		}
+		
+		return parsed;
+	}
+	
+	private Stroke parseStroke(JSONObject obj)
+	{
+		if (obj == null)
+		{
+			return null;
 		}
 
 		StrokeType type = Enum.valueOf(StrokeType.class, ((String) obj.get("type")).replace(" ", "_"));

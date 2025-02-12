@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,10 +10,6 @@ import java.util.Set;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
-import javax.swing.UIManager;
-
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 
 import nortantis.MapSettings;
 import nortantis.editor.MapUpdater;
