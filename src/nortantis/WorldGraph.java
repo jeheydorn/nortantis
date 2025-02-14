@@ -19,6 +19,7 @@ import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.apache.commons.lang3.function.TriFunction;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomGenerator;
@@ -407,7 +408,7 @@ public class WorldGraph extends VoronoiGraph
 
 	private Center findClosestLand(Center center, int maxDistanceInPolygons)
 	{
-		return breadthFirstSearchForGoal((c, distanceFromStart) ->
+		return breadthFirstSearchForGoal((prev, c, distanceFromStart) ->
 		{
 			return distanceFromStart < maxDistanceInPolygons;
 		}, (c) ->
@@ -719,7 +720,7 @@ public class WorldGraph extends VoronoiGraph
 		return explored;
 	}
 
-	public Center breadthFirstSearchForGoal(BiFunction<Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
+	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
 	{
 		if (isGoal.apply(start))
 		{
@@ -745,7 +746,7 @@ public class WorldGraph extends VoronoiGraph
 				// Add neighbors to the frontier.
 				for (Center n : c.neighbors)
 				{
-					if (!explored.contains(n) && !frontier.contains(n) && accept.apply(n, distanceFromStart))
+					if (!explored.contains(n) && !frontier.contains(n) && accept.apply(c, n, distanceFromStart))
 					{
 						nextFrontier.add(n);
 					}
@@ -1710,7 +1711,7 @@ public class WorldGraph extends VoronoiGraph
 	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
 	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
-	public List<Edge> findShortestPath(Center start, Center end, Function<Edge, Double> calculateWeight, Function<Center, Boolean> stopEarlyCondition)
+	public List<Edge> findShortestPath(Center start, Center end, BiFunction<Edge, Center, Double> calculateWeight, Function<Center, Boolean> stopEarlyCondition)
 	{
 		PriorityQueue<CenterSearchNode> explored = new PriorityQueue<>((n1, n2) -> Double.compare(n1.predictedScore, n2.predictedScore));
 		// Contains exactly those centers in explored, for faster checking if
@@ -1731,11 +1732,11 @@ public class WorldGraph extends VoronoiGraph
 			if (current.center.equals(end))
 			{
 				// The score so far doesn't matter for this case
-				return createPathFromBackPointers(new CenterSearchNode(end, current, 0, Center.distanceBetween(current.center, end)));
+				return createPathFromBackPointers(current);
 			}
 			else if (stopEarlyCondition.apply(current.center))
 			{
-				return createPathFromBackPointers(new CenterSearchNode(current.center, current, 0, 0.0));
+				return createPathFromBackPointers(current);
 			}
 
 			for (Edge edge : current.center.borders)
@@ -1743,7 +1744,7 @@ public class WorldGraph extends VoronoiGraph
 				Center neighbor = current.center.equals(edge.d0) ? edge.d1 : edge.d0;
 				if (neighbor != null)
 				{
-					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge);
+					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge, neighbor);
 					double neighborCurrentScore = centerNodeMap.containsKey(neighbor)
 							? centerNodeMap.get(neighbor).scoreSoFar
 							: Float.POSITIVE_INFINITY;

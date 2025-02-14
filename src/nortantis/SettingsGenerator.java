@@ -283,6 +283,25 @@ public class SettingsGenerator
 
 		settings.lineStyle = ProbabilityHelper.sampleEnumUniform(rand, LineStyle.class);
 
+		settings.drawRoads = true;
+		// Make sure the road line style is sufficiently different from region boundary style.
+		if (settings.regionBoundaryStyle.type == StrokeType.Dashes || settings.regionBoundaryStyle.type == StrokeType.Rounded_Dashes)
+		{
+			settings.roadStyle = new Stroke(StrokeType.Dots, settings.roadStyle.width);
+		}
+		else if (settings.regionBoundaryStyle.type == StrokeType.Dots)
+		{
+			settings.roadStyle = new Stroke(
+					ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes)),
+					settings.roadStyle.width);
+		}
+		else
+		{
+			settings.roadStyle = new Stroke(
+					ProbabilityHelper.sampleUniform(rand, Arrays.asList(StrokeType.Dashes, StrokeType.Rounded_Dashes, StrokeType.Dots)),
+					settings.roadStyle.width);
+		}
+
 		return settings;
 	}
 

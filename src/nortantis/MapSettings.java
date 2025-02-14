@@ -57,6 +57,9 @@ public class MapSettings implements Serializable
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
+	private final double defaultRoadWidth = 1.0;
+	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
+	private final Color defaultRoadColor = Color.black;
 
 	public String version;
 	public long randomSeed;
@@ -171,7 +174,7 @@ public class MapSettings implements Serializable
 	private final ExportAction defaultDefaultExportAction = ExportAction.SaveToFile;
 	public ExportAction defaultMapExportAction = defaultDefaultExportAction;
 	public ExportAction defaultHeightmapExportAction = defaultDefaultExportAction;
-	private final Color defaultRoadColor = Color.black;
+	public Stroke roadStyle;
 
 	public boolean drawOverlayImage;
 	public String overlayImagePath;
@@ -190,7 +193,6 @@ public class MapSettings implements Serializable
 	public MapSettings()
 	{
 		edits = new MapEdits();
-		roadColor = defaultRoadColor;
 	}
 
 	/**
@@ -324,6 +326,7 @@ public class MapSettings implements Serializable
 		root.put("worldSize", worldSize);
 		root.put("riverColor", colorToString(riverColor));
 		root.put("roadColor", colorToString(roadColor));
+		root.put("roadStyle", strokeToJson(roadStyle));
 		root.put("coastShadingColor", colorToString(coastShadingColor));
 		root.put("oceanEffectsColor", colorToString(oceanEffectsColor));
 		root.put("oceanWavesColor", colorToString(oceanWavesColor));
@@ -550,8 +553,6 @@ public class MapSettings implements Serializable
 				}
 			}
 			roadObj.put("path", pathJson);
-			roadObj.put("style", strokeToJson(road.style));
-			roadObj.put("color", colorToString(road.color));
 			roadsJson.add(roadObj);
 		}
 		
@@ -652,6 +653,14 @@ public class MapSettings implements Serializable
 		else
 		{
 			roadColor = defaultRoadColor;
+		}
+		if (root.containsKey("roadStyle"))
+		{
+			roadStyle = parseStroke((JSONObject) root.get("roadStyle"));
+		}
+		else
+		{
+			roadStyle = defaultRoadStyle;
 		}
 		coastShadingColor = parseColor((String) root.get("coastShadingColor"));
 
@@ -1367,9 +1376,7 @@ public class MapSettings implements Serializable
 					path.add(Point.fromJSonValue(pointString));
 				}
 			}
-			Stroke style = parseStroke((JSONObject) roadJson.get("style"));
-			Color color = parseColor((String) roadJson.get("color"));
-			Road road = new Road(path, style, color);
+			Road road = new Road(path);
 			roads.add(road);
 		}
 		return roads;
@@ -1495,7 +1502,8 @@ public class MapSettings implements Serializable
 		oceanWavesType = old.oceanEffect;
 		worldSize = old.worldSize;
 		riverColor = old.riverColor;
-		roadColor = old.roadColor;
+		roadColor = defaultRoadColor;
+		roadStyle = defaultRoadStyle;
 		coastShadingColor = old.coastShadingColor;
 		coastShadingLevel = old.coastShadingLevel;
 		oceanEffectsColor = old.oceanEffectsColor;
@@ -1718,6 +1726,8 @@ public class MapSettings implements Serializable
 				&& defaultDefaultExportAction == other.defaultDefaultExportAction
 				&& defaultHeightmapExportAction == other.defaultHeightmapExportAction
 				&& defaultMapExportAction == other.defaultMapExportAction && Objects.equals(defaultRoadColor, other.defaultRoadColor)
+				&& Objects.equals(defaultRoadStyle, other.defaultRoadStyle)
+				&& Double.doubleToLongBits(defaultRoadWidth) == Double.doubleToLongBits(other.defaultRoadWidth)
 				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
 				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
@@ -1743,8 +1753,10 @@ public class MapSettings implements Serializable
 				&& oceanEffectsLevel == other.oceanEffectsLevel && Objects.equals(oceanShadingColor, other.oceanShadingColor)
 				&& oceanShadingLevel == other.oceanShadingLevel && Objects.equals(oceanWavesColor, other.oceanWavesColor)
 				&& oceanWavesLevel == other.oceanWavesLevel && oceanWavesType == other.oceanWavesType
-				&& Objects.equals(otherMountainsFont, other.otherMountainsFont) && Objects.equals(overlayImagePath, other.overlayImagePath)
-				&& overlayImageTransparency == other.overlayImageTransparency
+				&& Objects.equals(otherMountainsFont, other.otherMountainsFont)
+				&& Double.doubleToLongBits(overlayImageDefaultScale) == Double.doubleToLongBits(other.overlayImageDefaultScale)
+				&& overlayImageDefaultTransparency == other.overlayImageDefaultTransparency
+				&& Objects.equals(overlayImagePath, other.overlayImagePath) && overlayImageTransparency == other.overlayImageTransparency
 				&& Objects.equals(overlayOffsetResolutionInvariant, other.overlayOffsetResolutionInvariant)
 				&& Double.doubleToLongBits(overlayScale) == Double.doubleToLongBits(other.overlayScale)
 				&& Double.doubleToLongBits(pointPrecision) == Double.doubleToLongBits(other.pointPrecision)
@@ -1754,12 +1766,13 @@ public class MapSettings implements Serializable
 				&& regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
 				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
-				&& Objects.equals(roadColor, other.roadColor) && saturationRange == other.saturationRange
-				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
-				&& Objects.equals(titleFont, other.titleFont)
+				&& Objects.equals(roadColor, other.roadColor) && Objects.equals(roadStyle, other.roadStyle)
+				&& saturationRange == other.saturationRange && Objects.equals(textColor, other.textColor)
+				&& textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
+	
 
 
 }

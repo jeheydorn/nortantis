@@ -2,6 +2,7 @@ package nortantis.editor;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import nortantis.Stroke;
 import nortantis.geom.Point;
@@ -14,16 +15,17 @@ public class Road
 	 * these values.
 	 */
 	public List<Point> path;
-	public Stroke style;
-	public Color color;
 
-	public Road(List<Point> path, Stroke style, Color color)
+	public Road(List<Point> path)
 	{
-		this.path = path;
-		this.style = style;
-		this.color = color;
+		this.path = new CopyOnWriteArrayList<Point>(path);
 	}
-
+	
+	public Road(Road other)
+	{
+		this(other.path);
+	}
+	
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -40,6 +42,8 @@ public class Road
 			return false;
 		}
 		Road other = (Road) obj;
-		return Objects.equals(color, other.color) && Objects.equals(path, other.path) && Objects.equals(style, other.style);
+		return Objects.equals(path, other.path);
 	}
+
+	
 }

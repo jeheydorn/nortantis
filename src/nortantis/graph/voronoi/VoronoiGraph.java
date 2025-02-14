@@ -1098,13 +1098,13 @@ public abstract class VoronoiGraph
 		{
 			if (reverse)
 			{
-				points.add(edge.v1.loc);
-				points.add(edge.v0.loc);
+				addPointIfNotSameAsLast(points, edge.v1.loc);
+				addPointIfNotSameAsLast(points, edge.v0.loc);
 			}
 			else
 			{
-				points.add(edge.v0.loc);
-				points.add(edge.v1.loc);
+				addPointIfNotSameAsLast(points, edge.v0.loc);
+				addPointIfNotSameAsLast(points, edge.v1.loc);
 			}
 		}
 		else
@@ -1177,13 +1177,25 @@ public abstract class VoronoiGraph
 	{
 		if (reverse)
 		{
-			points.add(edge.d1.loc);
-			points.add(edge.d0.loc);
+			addPointIfNotSameAsLast(points, edge.d1.loc);
+			addPointIfNotSameAsLast(points, edge.d0.loc);
 		}
 		else
 		{
-			points.add(edge.d0.loc);
-			points.add(edge.d1.loc);
+			addPointIfNotSameAsLast(points, edge.d0.loc);
+			addPointIfNotSameAsLast(points, edge.d1.loc);
+		}
+	}
+	
+	private void addPointIfNotSameAsLast(List<Point> points, Point toAdd)
+	{
+		if (points.isEmpty())
+		{
+			points.add(toAdd);
+		}
+		else if (!points.get(points.size() - 1).equals(toAdd))
+		{
+			points.add(toAdd);
 		}
 	}
 

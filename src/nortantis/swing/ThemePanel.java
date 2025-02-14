@@ -175,6 +175,13 @@ public class ThemePanel extends JTabbedPane
 	private RowHider textureImageComboBoxHider;
 	private RowHider oceanWavesLevelSliderHider;
 	private RowHider oceanWavesColorHider;
+	private JCheckBox drawRoadsCheckbox;
+	private JComboBox<StrokeType> roadStyleComboBox;
+	private RowHider roadStyleComboBoxHider;
+	private JSlider roadWidthSlider;
+	private RowHider roadWidthSliderHider;
+	private JPanel roadColorDisplay;
+	private RowHider roadColorHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -384,7 +391,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(backgroundPanel, regionBoundaryColorDisplay, "Coastline Color", () -> handleTerrainChange());
+				SwingHelper.showColorPicker(backgroundPanel, regionBoundaryColorDisplay, "Region Boundary Color", () -> handleTerrainChange());
 			}
 		});
 		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line color of region boundaries",
@@ -881,21 +888,68 @@ public class ThemePanel extends JTabbedPane
 		drawOceanEffectsInLakesCheckbox = new JCheckBox("Draw ocean waves/shading in lakes.");
 		createMapChangeListenerForTerrainChange(drawOceanEffectsInLakesCheckbox);
 		organizer.addLeftAlignedComponent(drawOceanEffectsInLakesCheckbox);
-		organizer.addSeperator();
 
-		riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
-
-		JButton riverColorChooseButton = new JButton("Choose");
-		riverColorChooseButton.addActionListener(new ActionListener()
 		{
-			public void actionPerformed(ActionEvent e)
-			{
-				SwingHelper.showColorPicker(effectsPanel, riverColorDisplay, "River Color", () -> handleTerrainChange());
-			}
-		});
-		organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
-				Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
+			organizer.addSeperator();
+			riverColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
+			JButton riverColorChooseButton = new JButton("Choose");
+			riverColorChooseButton.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					SwingHelper.showColorPicker(effectsPanel, riverColorDisplay, "River Color", () -> handleTerrainChange());
+				}
+			});
+			organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
+					Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
+		}
+		
+		{
+			organizer.addSeperator();
+			drawRoadsCheckbox = new JCheckBox("Draw roads");
+			drawRoadsCheckbox.setToolTipText("Whether to show/hide roads");
+			drawRoadsCheckbox.addItemListener(new ItemListener()
+			{
+				@Override
+				public void itemStateChanged(ItemEvent e)
+				{
+					updateRoadFieldVisibility();
+					handleTerrainChange();
+				}
+			});
+			organizer.addLeftAlignedComponent(drawRoadsCheckbox);
+
+			roadStyleComboBox = new JComboBox<>(StrokeType.values());
+			roadStyleComboBoxHider = organizer.addLabelAndComponent("Style:", "Line style for drawing roads",
+					roadStyleComboBox);
+			createMapChangeListenerForTerrainChange(roadStyleComboBox);
+
+			{
+				roadWidthSlider = new JSlider();
+				roadWidthSlider.setPaintLabels(false);
+				roadWidthSlider.setValue(10);
+				roadWidthSlider.setMaximum(100);
+				roadWidthSlider.setMinimum(10);
+				createMapChangeListenerForTerrainChange(roadWidthSlider);
+				SwingHelper.setSliderWidthForSidePanel(roadWidthSlider);
+				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(roadWidthSlider,
+						(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
+				roadWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of roads");
+			}
+
+			roadColorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			JButton buttonRoadColor = new JButton("Choose");
+			buttonRoadColor.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					SwingHelper.showColorPicker(effectsPanel, roadColorDisplay, "Road Color", () -> handleTerrainChange());
+				}
+			});
+			roadColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The color of roads",
+					Arrays.asList(roadColorDisplay, buttonRoadColor), SwingHelper.colorPickerLeftPadding);
+		}
 
 		organizer.addSeperator();
 		mountainScaleSlider = new JSlider(minScaleSliderValue, maxScaleSliderValue);
@@ -983,6 +1037,7 @@ public class ThemePanel extends JTabbedPane
 		});
 		organizer.addLabelAndComponent("City size:", "Changes the size of all cities on the map", cityScaleSlider);
 
+		updateRoadFieldVisibility();
 
 		organizer.addVerticalFillerRow();
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
@@ -1165,7 +1220,7 @@ public class ThemePanel extends JTabbedPane
 		MapEdits edits = mainWindow.edits;
 		WorldGraph graph = mainWindow.updater.mapParts.graph;
 		Center start = graph.centers.get(centerStartIndex);
-		Center found = graph.breadthFirstSearchForGoal((c, distanceFromStart) ->
+		Center found = graph.breadthFirstSearchForGoal((prev, c, distanceFromStart) ->
 		{
 			return distanceFromStart < maxSearchDistance;
 		}, (c) ->
@@ -1304,6 +1359,13 @@ public class ThemePanel extends JTabbedPane
 		regionBoundaryTypeComboBoxHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 		regionBoundaryWidthSliderHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 		regionBoundaryColorHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
+	}
+	
+	private void updateRoadFieldVisibility()
+	{
+		roadStyleComboBoxHider.setVisible(drawRoadsCheckbox.isSelected());
+		roadWidthSliderHider.setVisible(drawRoadsCheckbox.isSelected());
+		roadColorHider.setVisible(drawRoadsCheckbox.isSelected());
 	}
 
 	private void updateBackgroundAndRegionFieldStates()
@@ -1599,6 +1661,12 @@ public class ThemePanel extends JTabbedPane
 		regionBoundaryWidthSlider.setValue((int) (settings.regionBoundaryStyle.width * 10f));
 		regionBoundaryColorDisplay.setBackground(AwtFactory.unwrap(settings.regionBoundaryColor));
 
+		drawRoadsCheckbox.setSelected(settings.drawRoads);
+		roadStyleComboBox.setSelectedItem(settings.roadStyle.type);
+		roadWidthSlider.setValue((int) (settings.roadStyle.width * 10f));
+		roadColorDisplay.setBackground(AwtFactory.unwrap(settings.roadColor));
+		updateRoadFieldVisibility();
+
 		// Do a click to update other components on the panel as enabled or
 		// disabled.
 		enableTextCheckBox.setSelected(settings.drawText);
@@ -1836,6 +1904,11 @@ public class ThemePanel extends JTabbedPane
 		settings.hillScale = getScaleForSliderValue(hillScaleSlider.getValue());
 		settings.duneScale = getScaleForSliderValue(duneScaleSlider.getValue());
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
+		
+		settings.drawRoads = drawRoadsCheckbox.isSelected();
+		settings.roadStyle = new Stroke((StrokeType) roadStyleComboBox.getSelectedItem(),
+				roadWidthSlider.getValue() / 10f);
+		settings.roadColor = AwtFactory.wrap(roadColorDisplay.getBackground());
 	}
 
 	private boolean areRegionColorsVisible()
