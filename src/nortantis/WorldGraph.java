@@ -1713,8 +1713,7 @@ public class WorldGraph extends VoronoiGraph
 	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
 	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
-	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight,
-			Function<Center, Boolean> stopEarlyCondition)
+	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight)
 	{
 		PriorityQueue<CenterSearchNode> explored = new PriorityQueue<>((n1, n2) -> Double.compare(n1.predictedScore, n2.predictedScore));
 		// Maps from centers we have seen to their nodes, to allow fast lookup
@@ -1730,10 +1729,6 @@ public class WorldGraph extends VoronoiGraph
 			if (current.center.equals(end))
 			{
 				// The score so far doesn't matter for this case
-				return createPathFromBackPointers(current);
-			}
-			else if (stopEarlyCondition.apply(current.center))
-			{
 				return createPathFromBackPointers(current);
 			}
 

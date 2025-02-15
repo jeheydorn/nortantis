@@ -84,9 +84,9 @@ public class CurveCreator
 		{
 			// 3 points is too few for this method to create a curve because we need at least two draw points and two control points. To
 			// compensate for this, add 2 fake control points.
-			final double fakeControlPointWeight = 0.5;
-			Point p0 = path.get(0).add(path.get(1).subtract(path.get(0)).mult(fakeControlPointWeight));
-			Point p3 = path.get(2).add(path.get(1).subtract(path.get(2)).mult(fakeControlPointWeight));
+			final double fakeControlPointWeight = 1.0;
+			Point p0 = path.get(0).add(path.get(0).subtract(path.get(1)).mult(fakeControlPointWeight));
+			Point p3 = path.get(2).add(path.get(2).subtract(path.get(1)).mult(fakeControlPointWeight));
 
 			pathToUse = Arrays.asList(p0, path.get(0), path.get(1), path.get(2), p3);
 		}
@@ -98,7 +98,7 @@ public class CurveCreator
 		List<Point> curve = new ArrayList<>();
 
 		// Add the first point to the curve
-		curve.add(pathToUse.get(0));
+		curve.add(path.get(0));
 
 		for (int i = 0; i < pathToUse.size() - 1; i++)
 		{

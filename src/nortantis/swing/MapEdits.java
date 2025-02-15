@@ -179,11 +179,14 @@ public class MapEdits implements Serializable
 
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		copy.hasCreatedTextBounds = hasCreatedTextBounds;
-		
-		copy.roads = new ArrayList<>(roads.size());
-		for (Road road : roads)
+
+		if (roads != null)
 		{
-			copy.roads.add(new Road(road));
+			copy.roads = new ArrayList<>(roads.size());
+			for (Road road : roads)
+			{
+				copy.roads.add(new Road(road));
+			}
 		}
 
 		return copy;

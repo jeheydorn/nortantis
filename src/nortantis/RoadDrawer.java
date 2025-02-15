@@ -33,6 +33,10 @@ public class RoadDrawer
 	 */
 	private final double hillWeight = 1.5;
 	/**
+	 * Discourages roads from going through sand dunes.
+	 */
+	private final double dunesWeight = 4.0;
+	/**
 	 * Determines how much creating new roads favors following existing roads. Higher values means existing roads are less favored.
 	 */
 	private final double existingRoadWeight = 0.3;
@@ -219,44 +223,28 @@ public class RoadDrawer
 			// If there's already a road here, favor it so we don't make redundant roads that almost follow the same course.
 			boolean alreadyHasRoad = edgesAddedRoadsFor.contains(edge);
 
-			double mountainOrHillPenalty;
+			double terrianPenalty;
 			if (center.isMountain)
 			{
-				mountainOrHillPenalty = mountainWeight;
+				terrianPenalty = mountainWeight;
 			}
 			else if (center.isHill)
 			{
-				mountainOrHillPenalty = hillWeight;
+				terrianPenalty = hillWeight;
+			}
+			else if (center.biome == IconDrawer.sandDunesBiome)
+			{
+				terrianPenalty = dunesWeight;
 			}
 			else
 			{
-				mountainOrHillPenalty = 1.0;
+				terrianPenalty = 1.0;
 			}
 
 			double distanceNormalized = Center.distanceBetween(edge.d0, edge.d1) * (1.0 / resolutionScale);
 
-			return (distanceNormalized * mountainOrHillPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
-		}, (center ->
-		{
-			// TODO remove this if I don't use it.
-			// Stop the search early if we run into a center that already has a road passing through it and that road directly leads to the
-			// end we want.
-			// graph.breadthFirstSearchForGoal((prev, c, distance) ->
-			// {
-			// Edge e = graph.findConnectingEdge(prev, c);
-			// if (e == null)
-			// {
-			// assert false;
-			// return false;
-			// }
-			// return edgesAddedRoadsFor.contains(e);
-			// }, (c) ->
-			// {
-			// return c.equals(end);
-			// }, center);
-
-			return false;
-		}));
+			return (distanceNormalized * terrianPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
+		});
 
 		if (edges.isEmpty())
 		{

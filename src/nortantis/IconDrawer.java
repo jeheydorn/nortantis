@@ -82,6 +82,7 @@ public class IconDrawer
 	private double decorationScale;
 	private String customImagesPath;
 	private String artPackForNewMap;
+	public static final Biome sandDunesBiome = Biome.TEMPERATE_DESERT;
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
@@ -1473,7 +1474,7 @@ public class IconDrawer
 		{
 			public Boolean apply(Center center)
 			{
-				return center.biome.equals(Biome.TEMPERATE_DESERT);
+				return center.biome.equals(sandDunesBiome);
 			}
 		});
 
