@@ -1,6 +1,7 @@
 package nortantis;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import nortantis.geom.Point;
@@ -74,17 +75,37 @@ public class CurveCreator
 			return new ArrayList<>();
 		}
 
+		List<Point> pathToUse;
+		if (path.size() == 2)
+		{
+			return new ArrayList<>(path);
+		}
+		else if (path.size() == 3)
+		{
+			// 3 points is too few for this method to create a curve because we need at least two draw points and two control points. To
+			// compensate for this, add 2 fake control points.
+			final double fakeControlPointWeight = 0.5;
+			Point p0 = path.get(0).add(path.get(1).subtract(path.get(0)).mult(fakeControlPointWeight));
+			Point p3 = path.get(2).add(path.get(1).subtract(path.get(2)).mult(fakeControlPointWeight));
+
+			pathToUse = Arrays.asList(p0, path.get(0), path.get(1), path.get(2), p3);
+		}
+		else
+		{
+			pathToUse = path;
+		}
+
 		List<Point> curve = new ArrayList<>();
 
 		// Add the first point to the curve
-		curve.add(path.get(0));
+		curve.add(pathToUse.get(0));
 
-		for (int i = 0; i < path.size() - 1; i++)
+		for (int i = 0; i < pathToUse.size() - 1; i++)
 		{
-			Point p0 = (i == 0) ? path.get(0) : path.get(i - 1);
-			Point p1 = path.get(i);
-			Point p2 = path.get(i + 1);
-			Point p3 = (i == path.size() - 2) ? path.get(i + 1) : path.get(i + 2);
+			Point p0 = (i == 0) ? pathToUse.get(0) : pathToUse.get(i - 1);
+			Point p1 = pathToUse.get(i);
+			Point p2 = pathToUse.get(i + 1);
+			Point p3 = (i == pathToUse.size() - 2) ? pathToUse.get(i + 1) : pathToUse.get(i + 2);
 
 			List<Point> segment = createCurve(p0, p1, p2, p3);
 
@@ -94,7 +115,7 @@ public class CurveCreator
 				curve.add(segment.get(j));
 			}
 		}
-		
+
 		// Make sure the last point was added.
 		if (!curve.get(curve.size() - 1).equals(path.get(path.size() - 1)))
 		{

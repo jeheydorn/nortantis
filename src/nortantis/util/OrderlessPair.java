@@ -1,6 +1,7 @@
 package nortantis.util;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Like Pair except the equals function considers 2 of these objects equal if the order of first and 2nd have been swapped.
@@ -44,6 +45,18 @@ public class OrderlessPair<T> implements Serializable
 		return "(" + f.toString() + ", " + s.toString() + ")";
 	}
 
+	/**
+	 * Not generated code.
+	 */
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(f) + Objects.hash(s);
+	}
+
+	/**
+	 * Not generated code.
+	 */
 	@Override
 	public boolean equals(Object other)
 	{
@@ -52,16 +65,16 @@ public class OrderlessPair<T> implements Serializable
 
 		@SuppressWarnings("unchecked")
 		OrderlessPair<T> otherPair = (OrderlessPair<T>) other;
-		if (f.equals(otherPair.f) && s.equals(otherPair.s))
+		if (Objects.equals(f, otherPair.f) && Objects.equals(s, otherPair.s))
 		{
 			return true;
 		}
-		if (f.equals(otherPair.s) && s.equals(otherPair.f))
+		if (Objects.equals(f, otherPair.s) && Objects.equals(s, otherPair.f))
 		{
 			// Opposite order is considered equal
 			return true;
 		}
 		return false;
 	}
-
+	
 }

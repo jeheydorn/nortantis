@@ -1,6 +1,7 @@
 package nortantis;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -34,7 +35,9 @@ public class RoadDrawer
 	/**
 	 * Determines how much creating new roads favors following existing roads. Higher values means existing roads are less favored.
 	 */
-	private final double existingRoadWeight = 0.1;
+	private final double existingRoadWeight = 0.3;
+
+	private final int numberOfRandomRoadsToPerCity = 3;
 
 	private WorldGraph graph;
 	private Random rand;
@@ -108,7 +111,7 @@ public class RoadDrawer
 		// Determine which cities will have roads between them
 		for (Center city : connectedCities)
 		{
-			int roadsToAddCount = Math.abs(rand.nextInt() % 2) + 2;
+			int roadsToAddCount = Math.abs(rand.nextInt() % numberOfRandomRoadsToPerCity) + 1;
 
 			Set<Center> potentialNeighbors = new HashSet<>(connectedCities);
 			potentialNeighbors.remove(city);
@@ -126,7 +129,6 @@ public class RoadDrawer
 					if (!roadsAdded.contains(pair))
 					{
 						// Store which roads I have already added so that I don't re-add them later
-						roadsAdded.add(pair);
 						addRoadBetweenCenters(city, closestCity, roadsAdded, edgesAddedRoadsFor);
 					}
 				}
@@ -207,7 +209,7 @@ public class RoadDrawer
 	private void addRoadBetweenCenters(Center start, Center end, Set<OrderlessPair<Center>> roadsAdded, Set<Edge> edgesAddedRoadsFor)
 	{
 		// Mark the edges that will be roads between cities
-		List<Edge> edges = graph.findShortestPath(start, end, (edge, center) ->
+		List<Edge> edges = graph.findShortestPath(start, end, (edge, center, distanceToEnd) ->
 		{
 			if (center.isWater)
 			{
@@ -233,7 +235,7 @@ public class RoadDrawer
 
 			double distanceNormalized = Center.distanceBetween(edge.d0, edge.d1) * (1.0 / resolutionScale);
 
-			return distanceNormalized * mountainOrHillPenalty * (alreadyHasRoad ? existingRoadWeight : 1.0);
+			return (distanceNormalized * mountainOrHillPenalty + distanceToEnd) * (alreadyHasRoad ? existingRoadWeight : 1.0);
 		}, (center ->
 		{
 			// TODO remove this if I don't use it.
@@ -241,7 +243,7 @@ public class RoadDrawer
 			// end we want.
 			// graph.breadthFirstSearchForGoal((prev, c, distance) ->
 			// {
-			// Edge e = prev.findEdgeToNeighbor(c);
+			// Edge e = graph.findConnectingEdge(prev, c);
 			// if (e == null)
 			// {
 			// assert false;
@@ -279,6 +281,7 @@ public class RoadDrawer
 		}
 
 		addEdgesToRoads(soFar);
+		edgesAddedRoadsFor.addAll(soFar);
 
 		// Add this road so that the next call to findDisconnectedComponents detects this road.
 		roadsAdded.add(new OrderlessPair<>(start, end));

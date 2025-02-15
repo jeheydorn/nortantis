@@ -720,7 +720,8 @@ public class WorldGraph extends VoronoiGraph
 		return explored;
 	}
 
-	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal, Center start)
+	public Center breadthFirstSearchForGoal(TriFunction<Center, Center, Integer, Boolean> accept, Function<Center, Boolean> isGoal,
+			Center start)
 	{
 		if (isGoal.apply(start))
 		{
@@ -1199,7 +1200,8 @@ public class WorldGraph extends VoronoiGraph
 						}
 					}
 				}
-			} while (cornerFound);
+			}
+			while (cornerFound);
 
 		}
 	}
@@ -1711,24 +1713,20 @@ public class WorldGraph extends VoronoiGraph
 	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
 	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
-	public List<Edge> findShortestPath(Center start, Center end, BiFunction<Edge, Center, Double> calculateWeight, Function<Center, Boolean> stopEarlyCondition)
+	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight,
+			Function<Center, Boolean> stopEarlyCondition)
 	{
 		PriorityQueue<CenterSearchNode> explored = new PriorityQueue<>((n1, n2) -> Double.compare(n1.predictedScore, n2.predictedScore));
-		// Contains exactly those centers in explored, for faster checking if
-		// explored contains a center.
-		Set<Center> exploredCenters = new HashSet<>();
 		// Maps from centers we have seen to their nodes, to allow fast lookup
 		// of scores of previously seen centers.
 		Map<Center, CenterSearchNode> centerNodeMap = new HashMap<>();
 
 		explored.add(new CenterSearchNode(start, null, 0, Center.distanceBetween(start, end)));
-		exploredCenters.add(start);
 		centerNodeMap.put(start, explored.peek());
 
 		while (!explored.isEmpty())
 		{
 			CenterSearchNode current = explored.poll();
-			exploredCenters.remove(current.center);
 			if (current.center.equals(end))
 			{
 				// The score so far doesn't matter for this case
@@ -1744,20 +1742,17 @@ public class WorldGraph extends VoronoiGraph
 				Center neighbor = current.center.equals(edge.d0) ? edge.d1 : edge.d0;
 				if (neighbor != null)
 				{
-					double scoreFromStartToNeighbor = current.scoreSoFar + calculateWeight.apply(edge, neighbor);
-					double neighborCurrentScore = centerNodeMap.containsKey(neighbor)
-							? centerNodeMap.get(neighbor).scoreSoFar
+					double scoreFromStartToNeighbor = current.scoreSoFar
+							+ calculateWeight.apply(edge, neighbor, Center.distanceBetween(current.center, end));
+					double neighborCurrentScore = centerNodeMap.containsKey(neighbor) ? centerNodeMap.get(neighbor).scoreSoFar
 							: Float.POSITIVE_INFINITY;
 					if (scoreFromStartToNeighbor < neighborCurrentScore)
 					{
 						CenterSearchNode neighborNode = new CenterSearchNode(neighbor, current, scoreFromStartToNeighbor,
-								scoreFromStartToNeighbor + Center.distanceBetween(current.center, end));
-						if (!exploredCenters.contains(neighbor))
-						{
-							centerNodeMap.put(neighbor, neighborNode);
-							explored.add(neighborNode);
-							exploredCenters.add(neighbor);
-						}
+								scoreFromStartToNeighbor);
+
+						centerNodeMap.put(neighbor, neighborNode);
+						explored.add(neighborNode);
 					}
 				}
 			}
@@ -1767,7 +1762,7 @@ public class WorldGraph extends VoronoiGraph
 		return null;
 	}
 
-	private Edge findConnectingEdge(Center c1, Center c2)
+	public Edge findConnectingEdge(Center c1, Center c2)
 	{
 		for (Edge edge : c1.borders)
 		{
