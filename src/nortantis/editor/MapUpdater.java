@@ -25,6 +25,7 @@ import nortantis.NameCreator;
 import nortantis.Stopwatch;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
@@ -152,6 +153,33 @@ public abstract class MapUpdater
 			Set<Integer> centersToDrawIds = new HashSet<>(centersToRedrawLowPriority.keySet());
 			centersToRedrawLowPriority.clear();
 			innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null);
+		}
+	}
+	
+	public void addRoadsToRedrawLowPriority(List<Road> roads)
+	{
+		if (mapParts != null && mapParts.graph != null)
+		{
+			for (Road road : roads)
+			{
+				if (road == null)
+				{
+					continue;
+				}
+				
+				for (Point point : road.path)
+				{
+					Center center = mapParts.graph.findClosestCenter(point, true);
+					if (center != null)
+					{
+						centersToRedrawLowPriority.put(center.index, center);	
+					}
+				}
+			}
+		}
+		else
+		{
+			assert false;
 		}
 	}
 

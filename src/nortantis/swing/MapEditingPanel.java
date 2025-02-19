@@ -12,6 +12,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +26,9 @@ import nortantis.IconDrawTask;
 import nortantis.IconDrawer;
 import nortantis.MapText;
 import nortantis.WorldGraph;
+import nortantis.editor.EdgeType;
 import nortantis.editor.FreeIcon;
+import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
@@ -34,6 +37,7 @@ import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
+import nortantis.util.Range;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
 @SuppressWarnings("serial")
@@ -49,6 +53,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private WorldGraph graph;
 	private HighlightMode highlightMode;
 	private Collection<Edge> highlightedEdges;
+	private List<List<Point>> polylinesToHighlight;
+	private EdgeType edgeTypeToHighlight;
 	private boolean highlightLakes;
 	private boolean highlightRivers;
 	public BufferedImage mapFromMapCreator;
@@ -92,6 +98,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		artPacksToHighlight = new TreeSet<>();
 		zoom = 1.0;
 		resolution = 0.0;
+		polylinesToHighlight = new ArrayList<>();
 	}
 
 	public void showBrush(java.awt.Point location, int brushDiameter)
@@ -106,19 +113,31 @@ public class MapEditingPanel extends UnscaledImagePanel
 		brushDiameter = 0;
 	}
 
-	public void addHighlightedEdges(Collection<Edge> edges)
+	public void addHighlightedEdges(Collection<Edge> edges, EdgeType edgeType)
 	{
 		highlightedEdges.addAll(edges);
+		edgeTypeToHighlight = edgeType;
 	}
 
-	public void addHighlightedEdge(Edge edge)
+	public void addHighlightedEdge(Edge edge, EdgeType edgeType)
 	{
 		highlightedEdges.add(edge);
+		edgeTypeToHighlight = edgeType;
 	}
-
+	
 	public void clearHighlightedEdges()
 	{
 		highlightedEdges.clear();
+	}
+	
+	public void addPolylinesToHighlight(List<Point> lines)
+	{
+		polylinesToHighlight.add(lines);
+	}
+
+	public void clearHighlightedPolylines()
+	{
+		polylinesToHighlight.clear();
 	}
 
 	public void setTextBoxToDraw(nortantis.geom.Point location, nortantis.geom.Rectangle line1Bounds, nortantis.geom.Rectangle line2Bounds,
@@ -359,9 +378,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				((Graphics2D) g).translate(-borderWidth, -borderWidth);
 			}
-			
+
 			drawIconEditBox(((Graphics2D) g));
-			
+
 			if (imageEditMode == IconEditToolsMode.Overlay)
 			{
 				((Graphics2D) g).translate(borderWidth, borderWidth);
@@ -386,6 +405,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawCenterOutlines(g, highlightedCenters);
 			g.setColor(getHighlightColor());
 			drawEdges(g, highlightedEdges);
+			drawPolylines(g);
 
 			g.setColor(selectColor);
 			drawCenterOutlines(g, selectedCenters);
@@ -678,9 +698,36 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		for (Edge e : edges)
 		{
-			graph.drawEdge(AwtFactory.wrap((Graphics2D) g), e);
+			if (edgeTypeToHighlight == EdgeType.Delaunay)
+			{
+				graph.drawEdgeDeluanay(AwtFactory.wrap((Graphics2D) g), e);
+			}
+			else
+			{
+				graph.drawEdge(AwtFactory.wrap((Graphics2D) g), e);
+			}
 		}
 
+	}
+	
+	private void drawPolylines(Graphics g)
+	{
+		for (List<Point> line : polylinesToHighlight)
+		{
+			drawPolyline(g, line);
+		}
+	}
+	
+	private void drawPolyline(Graphics g, List<Point> points)
+	{
+		int[] xPoints = new int[points.size()];
+		int[] yPoints = new int[points.size()];
+		for (int i : new Range(points.size()))
+		{
+			xPoints[i] = (int) points.get(i).x;
+			yPoints[i] = (int) points.get(i).y;
+		}
+		g.drawPolyline(xPoints, yPoints, xPoints.length);
 	}
 
 	private void drawLakes(Graphics g)
@@ -792,6 +839,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		clearSelectedCenters();
 		clearHighlightedCenters();
 		clearHighlightedEdges();
+		clearHighlightedPolylines();
 		hideBrush();
 		clearHighlightedAreas();
 		clearProcessingAreas();

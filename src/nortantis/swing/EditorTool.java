@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
 import nortantis.MapSettings;
+import nortantis.editor.EdgeType;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.UserPreferences;
 import nortantis.geom.RotatedRectangle;
@@ -164,7 +165,7 @@ public abstract class EditorTool
 				center);
 	}
 
-	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter)
+	protected Set<Edge> getSelectedEdges(java.awt.Point pointFromMouse, int brushDiameter, EdgeType edgeType)
 	{
 		if (brushDiameter <= 1)
 		{
@@ -182,11 +183,23 @@ public abstract class EditorTool
 			{
 				for (Edge edge : center.borders)
 				{
-					if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius)
-							|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
+					if (edgeType == EdgeType.Delaunay)
 					{
-						selected.add(edge);
+						if ((edge.d0 != null && edge.d0.loc.distanceTo(graphPoint) <= brushRadius)
+								|| edge.d1 != null && edge.d1.loc.distanceTo(graphPoint) <= brushRadius)
+						{
+							selected.add(edge);
+						}
 					}
+					else
+					{
+						if ((edge.v0 != null && edge.v0.loc.distanceTo(graphPoint) <= brushRadius)
+								|| edge.v1 != null && edge.v1.loc.distanceTo(graphPoint) <= brushRadius)
+						{
+							selected.add(edge);
+						}
+					}
+					
 				}
 			}
 			return selected;

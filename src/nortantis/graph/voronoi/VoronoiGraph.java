@@ -412,12 +412,21 @@ public abstract class VoronoiGraph
 	 */
 	public void drawDelaunay(Painter g)
 	{
+		g.setBasicStroke(1);
+		g.setColor(Color.yellow);
 		for (Edge e : edges)
 		{
-			g.setBasicStroke(1);
-			g.setColor(Color.yellow);
 			g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
 		}
+	}
+	
+	public void drawEdgeDeluanay(Painter g, Edge e)
+	{
+		if (e.d0 == null || e.d1 == null)
+		{
+			return;
+		}
+		g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
 	}
 
 	/**

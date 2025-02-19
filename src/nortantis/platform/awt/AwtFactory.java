@@ -214,7 +214,7 @@ public class AwtFactory extends PlatformFactory
 		}
 		return new AwtColor(color);
 	}
-
+	
 	public static java.awt.Color unwrap(Color color)
 	{
 		if (color == null)

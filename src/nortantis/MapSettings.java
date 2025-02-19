@@ -1354,9 +1354,9 @@ public class MapSettings implements Serializable
 		return result;
 	}
 	
-	private List<Road> parseRoads(JSONObject editsJson)
+	private CopyOnWriteArrayList<Road> parseRoads(JSONObject editsJson)
 	{
-		List<Road> roads = new ArrayList<>();
+		CopyOnWriteArrayList<Road> roads = new CopyOnWriteArrayList<>();
 		
 		if (!editsJson.containsKey("roads"))
 		{

@@ -424,15 +424,15 @@ public class Background
 		{
 			if (rightEdge != null)
 			{
-				topEdge = createEdgeFromEdge(rightEdge, EdgeType.Right, EdgeType.Top);
+				topEdge = createEdgeFromEdge(rightEdge, BorderEdgeType.Right, BorderEdgeType.Top);
 			}
 			else if (leftEdge != null)
 			{
-				topEdge = createEdgeFromEdge(leftEdge, EdgeType.Left, EdgeType.Top);
+				topEdge = createEdgeFromEdge(leftEdge, BorderEdgeType.Left, BorderEdgeType.Top);
 			}
 			else if (bottomEdge != null)
 			{
-				topEdge = createEdgeFromEdge(bottomEdge, EdgeType.Bottom, EdgeType.Top);
+				topEdge = createEdgeFromEdge(bottomEdge, BorderEdgeType.Bottom, BorderEdgeType.Top);
 			}
 			else
 			{
@@ -441,15 +441,15 @@ public class Background
 		}
 		if (rightEdge == null)
 		{
-			rightEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Right);
+			rightEdge = createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Right);
 		}
 		if (leftEdge == null)
 		{
-			leftEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Left);
+			leftEdge = createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Left);
 		}
 		if (bottomEdge == null)
 		{
-			bottomEdge = createEdgeFromEdge(topEdge, EdgeType.Top, EdgeType.Bottom);
+			bottomEdge = createEdgeFromEdge(topEdge, BorderEdgeType.Top, BorderEdgeType.Bottom);
 		}
 
 		int cornerOriginalWidth = 0;
@@ -715,7 +715,7 @@ public class Background
 		return border;
 	}
 
-	private Image createEdgeFromEdge(Image edgeIn, EdgeType edgeTypeIn, EdgeType outputType)
+	private Image createEdgeFromEdge(Image edgeIn, BorderEdgeType edgeTypeIn, BorderEdgeType outputType)
 	{
 		switch (edgeTypeIn)
 		{
@@ -772,7 +772,7 @@ public class Background
 		throw new IllegalStateException("Unable to create a border edge from the edges given");
 	}
 
-	private enum EdgeType
+	private enum BorderEdgeType
 	{
 		Top, Bottom, Left, Right
 	}

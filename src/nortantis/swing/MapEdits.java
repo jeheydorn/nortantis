@@ -43,7 +43,7 @@ public class MapEdits implements Serializable
 	public boolean hasIconEdits;
 	public List<EdgeEdit> edgeEdits;
 	public FreeIconCollection freeIcons;
-	public List<Road> roads;
+	public CopyOnWriteArrayList<Road> roads;
 
 	/**
 	 * Not stored. A flag the editor uses to tell TextDrawer to generate text and store it as edits.
@@ -182,11 +182,9 @@ public class MapEdits implements Serializable
 
 		if (roads != null)
 		{
-			copy.roads = new ArrayList<>(roads.size());
-			for (Road road : roads)
-			{
-				copy.roads.add(new Road(road));
-			}
+			List<Road> deepCopyOfRoads = roads.stream().map(road -> new Road(road)).toList();
+			copy.roads = new CopyOnWriteArrayList<Road>();
+			copy.roads.addAll(deepCopyOfRoads);
 		}
 
 		return copy;

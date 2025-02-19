@@ -114,6 +114,12 @@ public class Point implements Comparable<Point>, Serializable
 
 		return 0;
 	}
+	
+	public boolean isCloseEnough(Point other)
+	{
+		final double threshold = 0.00001;
+		return Math.abs(x - other.x) <= threshold && Math.abs(y - other.y) <= threshold; 
+	}
 
 	@Override
 	public int hashCode()

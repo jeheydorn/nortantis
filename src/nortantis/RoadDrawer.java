@@ -2,17 +2,21 @@ package nortantis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 import nortantis.editor.Road;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.platform.Color;
@@ -45,7 +49,7 @@ public class RoadDrawer
 
 	private WorldGraph graph;
 	private Random rand;
-	private List<Road> roads;
+	private CopyOnWriteArrayList<Road> roads;
 	private double resolutionScale;
 	private Color roadColor;
 	private Stroke roadStyle;
@@ -63,7 +67,7 @@ public class RoadDrawer
 		{
 			if (!settings.edits.isInitialized())
 			{
-				roads = new ArrayList<>();
+				roads = new CopyOnWriteArrayList<>();
 				settings.edits.roads = roads;
 			}
 			else
@@ -73,7 +77,7 @@ public class RoadDrawer
 		}
 		else
 		{
-			roads = new ArrayList<>();
+			roads = new CopyOnWriteArrayList<>();
 		}
 		resolutionScale = settings.resolution;
 		this.roadColor = settings.roadColor;
@@ -85,7 +89,6 @@ public class RoadDrawer
 		Set<Center> citiesProcessed = new HashSet<>();
 		Set<Edge> edgesAddedRoadsFor = new HashSet<>();
 
-		// First, partition the centers by which ones aren't capable of connecting by roads
 		for (Center center : graph.centers)
 		{
 			if (center.isCity)
@@ -96,6 +99,7 @@ public class RoadDrawer
 				}
 				citiesProcessed.add(center);
 
+				// First, partition the centers by which ones are capable of connecting by roads
 				Set<Center> partition = graph.breadthFirstSearch((c) -> !c.isWater, center);
 
 				Set<Center> connectedCities = partition.stream().filter((c) -> c.isCity).collect(Collectors.toSet());
@@ -258,7 +262,7 @@ public class RoadDrawer
 		{
 			if (edgesAddedRoadsFor.contains(edge))
 			{
-				addEdgesToRoads(soFar);
+				addEdgesToRoads(soFar, graph, roads, resolutionScale);
 				soFar.clear();
 			}
 			else
@@ -268,13 +272,58 @@ public class RoadDrawer
 			}
 		}
 
-		addEdgesToRoads(soFar);
+		addEdgesToRoads(soFar, graph, roads, resolutionScale);
 		edgesAddedRoadsFor.addAll(soFar);
 
 		// Add this road so that the next call to findDisconnectedComponents detects this road.
 		roadsAdded.add(new OrderlessPair<>(start, end));
 	}
 
+	public static List<Road> addRoadsFromEdgesInEditor(List<Edge> edges, WorldGraph graph, List<Road> roads, double resolutionScale)
+	{
+		Set<OrderlessPair<Point>> existingRoadConnections = combineRoadConnections(roads);
+
+		List<Road> changed = new ArrayList<>();
+		// Make sure we don't add two of the same points so that we don't get roads that exactly overlap.
+		List<Edge> soFar = new ArrayList<Edge>();
+		for (Edge edge : edges)
+		{
+			if (edge.d0 == null || edge.d1 == null)
+			{
+				continue;
+			}
+
+			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc, edge.d1.loc);
+
+			if (existingRoadConnections.contains(pair))
+			{
+				changed.add(addEdgesToRoads(soFar, graph, roads, resolutionScale));
+				soFar.clear();
+			}
+			else
+			{
+				soFar.add(edge);
+				existingRoadConnections.add(pair);
+			}
+		}
+
+		changed.add(addEdgesToRoads(soFar, graph, roads, resolutionScale));
+		return changed;
+	}
+
+	private static Set<OrderlessPair<Point>> combineRoadConnections(List<Road> roads)
+	{
+		Set<OrderlessPair<Point>> existingRoadConnections = new HashSet<>();
+		for (Road road : roads)
+		{
+			for (int i = 0; i < road.path.size() - 1; i++)
+			{
+				existingRoadConnections.add(new OrderlessPair<Point>(road.path.get(i), road.path.get(i + 1)));
+			}
+		}
+
+		return existingRoadConnections;
+	}
 
 	/**
 	 * Finds the sets of disconnected components in the graph of connectedCities, where a node is a Center in connectedCities and an edge is
@@ -333,22 +382,80 @@ public class RoadDrawer
 		return disconnectedComponents;
 	}
 
-	private void addEdgesToRoads(List<Edge> edges)
+	/**
+	 * Either adds the given edges as a new road, or adds them to an existing road if the points from those edges connect to an existing road.
+	 * @return Either the new road, or the one the new road was added to.
+	 */
+	private static Road addEdgesToRoads(List<Edge> edges, WorldGraph graph, List<Road> roads, double resolutionScale)
 	{
 		if (edges.isEmpty())
 		{
-			return;
+			return null;
 		}
 
 		List<Point> path = graph.edgeListToDrawPointsDelaunay(edges);
 
 		if (path == null || path.size() <= 1)
 		{
-			return;
+			return null;
 		}
 
+		// TODO Connect the new road to other roads if their ends match up.
 		List<Point> pathResolutionInvariant = path.stream().map(point -> point.mult(1.0 / resolutionScale)).toList();
-		roads.add(new Road(pathResolutionInvariant));
+
+		// If another road starts or ends with the start or end of this road, then join this road to that one.
+		for (Road road : roads)
+		{
+			if (road.path.isEmpty())
+			{
+				continue;
+			}
+
+			if (road.path.get(0).isCloseEnough(path.get(0)))
+			{
+				path.remove(0);
+				Collections.reverse(path);
+				road.path.addAll(0, path);
+				return road;
+			}
+			if (road.path.get(0).isCloseEnough(path.get(path.size() - 1)))
+			{
+				path.remove(path.size() - 1);
+				road.path.addAll(0, path);
+				return road;
+			}
+			if (road.path.get(road.path.size() - 1).isCloseEnough(path.get(0)))
+			{
+				path.remove(0);
+				road.path.addAll(path);
+				return road;
+			}
+			if (road.path.get(road.path.size() - 1).isCloseEnough(path.get(path.size() - 1)))
+			{
+				path.remove(path.size() - 1);
+				Collections.reverse(path);
+				road.path.addAll(path);
+				return road;
+			}
+		}
+
+		// Add this road as a new road.
+		Road road = new Road(pathResolutionInvariant);
+		roads.add(road);
+		return road;
+	}
+
+	public static void removeEmptyRoads(List<Road> roadList)
+	{
+		Iterator<Road> iterator = roadList.iterator();
+		while (iterator.hasNext())
+		{
+			Road road = iterator.next();
+			if (road.path.isEmpty())
+			{
+				iterator.remove();
+			}
+		}
 	}
 
 	/**
@@ -357,19 +464,35 @@ public class RoadDrawer
 	 * @param map
 	 *            The image to draw on.
 	 */
-	public void drawRoads(Image map)
+	public void drawRoads(Image map, Rectangle drawBounds)
 	{
 		Painter p = map.createPainter(DrawQuality.High);
 
-		for (Road road : roads)
+		if (drawBounds != null)
 		{
-			p.setColor(roadColor);
-			p.setStroke(roadStyle, resolutionScale);
-			List<Point> path = CurveCreator.createCurve(road.path);
-			List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
-			p.drawPolyline(pathScaled);
+			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
+		Rectangle drawBoundsResolutionInvariant = drawBounds == null ? null
+				: new Rectangle(drawBounds.x * (1.0 / resolutionScale), drawBounds.y * (1.0 / resolutionScale),
+						drawBounds.width * (1.0 / resolutionScale), drawBounds.height * (1.0 / resolutionScale));
+		for (Road road : roads)
+		{
+			if (drawBounds == null || roadOverlapsRectangle(road, drawBoundsResolutionInvariant))
+			{
+				p.setColor(roadColor);
+				p.setStroke(roadStyle, resolutionScale);
+				List<Point> path = CurveCreator.createCurve(road.path);
+				List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
+				p.drawPolyline(pathScaled);
+			}
+
+		}
+	}
+
+	private boolean roadOverlapsRectangle(Road road, Rectangle drawBoundsResolutionInvariant)
+	{
+		return road.path.stream().anyMatch(p -> drawBoundsResolutionInvariant.contains(p));
 	}
 
 }

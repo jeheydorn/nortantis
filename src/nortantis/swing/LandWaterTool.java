@@ -8,6 +8,7 @@ import java.awt.event.MouseEvent;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -32,10 +33,14 @@ import nortantis.DebugFlags;
 import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.Region;
+import nortantis.RoadDrawer;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
+import nortantis.editor.EdgeType;
 import nortantis.editor.MapUpdater;
 import nortantis.editor.RegionEdit;
+import nortantis.editor.Road;
+import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Corner;
 import nortantis.graph.voronoi.Edge;
@@ -59,6 +64,7 @@ public class LandWaterTool extends EditorTool
 	private RowHider riverOptionHider;
 	private JSlider riverWidthSlider;
 	private Corner riverStart;
+	private Center roadStart;
 	private RowHider modeHider;
 	private JRadioButton fillRegionColorButton;
 	private JRadioButton paintRegionButton;
@@ -76,6 +82,7 @@ public class LandWaterTool extends EditorTool
 	private JSlider brightnessSlider;
 	private boolean areRegionColorsVisible;
 	private boolean areRegionBoundariesVisible;
+	private boolean areRoadsVisible;
 	private RowHider onlyUpdateLandCheckboxHider;
 	private RowHider generateColorButtonHider;
 	private RowHider colorGeneratorSettingsHider;
@@ -84,6 +91,7 @@ public class LandWaterTool extends EditorTool
 	private DrawModeWidget modeWidget;
 	private JToggleButton newRegionButton;
 	private RowHider newRegionButtonHider;
+	private JRadioButton roadsButton;
 	static String toolbarName = "Land and Water";
 	static String colorGeneratorSettingsName = "Color Generator Settings";
 
@@ -164,10 +172,11 @@ public class LandWaterTool extends EditorTool
 				if (brushSizeComboBox != null)
 				{
 					brushSizeHider.setVisible(paintRegionButton.isSelected() || oceanButton.isSelected() || lakesButton.isSelected()
-							|| landButton.isSelected() || (riversButton.isSelected() && modeWidget.isEraseMode()));
+							|| landButton.isSelected() || (riversButton.isSelected() && modeWidget.isEraseMode())
+							|| (roadsButton.isSelected() && modeWidget.isEraseMode()));
 				}
 
-				showOrHideRiverOptions();
+				showOrHideRoadAndRiverOptions();
 			}
 		};
 		oceanButton.addActionListener(brushActionListener);
@@ -188,6 +197,7 @@ public class LandWaterTool extends EditorTool
 		fillRegionColorButton = new JRadioButton("Fill region color");
 		mergeRegionsButton = new JRadioButton("Merge regions");
 		landButton = new JRadioButton("Land");
+		roadsButton = new JRadioButton("Roads");
 
 		group.add(paintRegionButton);
 		radioButtons.add(paintRegionButton);
@@ -204,6 +214,10 @@ public class LandWaterTool extends EditorTool
 		group.add(landButton);
 		radioButtons.add(landButton);
 		landButton.addActionListener(brushActionListener);
+
+		group.add(roadsButton);
+		radioButtons.add(roadsButton);
+		roadsButton.addActionListener(brushActionListener);
 
 		oceanButton.setSelected(true); // Selected by default
 		organizer.addLabelAndComponentsVertical("Brush:", "", radioButtons);
@@ -277,16 +291,16 @@ public class LandWaterTool extends EditorTool
 
 		colorGeneratorSettingsHider = organizer.addLeftAlignedComponent(createColorGeneratorOptionsPanel(toolOptionsPanel));
 
-		showOrHideRegionColoringOptions();
+		showOrHideBrushOptions();
 
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.66);
 		organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
 	}
 
-	private void showOrHideRiverOptions()
+	private void showOrHideRoadAndRiverOptions()
 	{
-		modeHider.setVisible(riversButton.isSelected());
+		modeHider.setVisible(riversButton.isSelected() || roadsButton.isSelected());
 		riverOptionHider.setVisible(riversButton.isSelected() && modeWidget.isDrawMode());
 	}
 
@@ -342,12 +356,13 @@ public class LandWaterTool extends EditorTool
 		return organizer.panel;
 	}
 
-	private void showOrHideRegionColoringOptions()
+	private void showOrHideBrushOptions()
 	{
 		paintRegionButton.setVisible(areRegionColorsVisible);
 		fillRegionColorButton.setVisible(areRegionColorsVisible);
 		mergeRegionsButton.setVisible(areRegionBoundariesVisible || areRegionColorsVisible);
 		landButton.setVisible(!areRegionColorsVisible);
+		roadsButton.setVisible(areRoadsVisible);
 
 		colorChooserHider.setVisible(areRegionColorsVisible);
 		selectColorHider.setVisible(areRegionColorsVisible);
@@ -368,6 +383,10 @@ public class LandWaterTool extends EditorTool
 		{
 			landButton.setSelected(true);
 		}
+		else if (roadsButton.isSelected() && !roadsButton.isVisible())
+		{
+			oceanButton.setSelected(true);
+		}
 
 		brushActionListener.actionPerformed(null);
 
@@ -385,6 +404,7 @@ public class LandWaterTool extends EditorTool
 	}
 
 	private Integer regionIdToExpand;
+
 	private void handleMousePressOrDrag(MouseEvent e, boolean isMouseDrag)
 	{
 
@@ -585,7 +605,8 @@ public class LandWaterTool extends EditorTool
 			{
 				// When deleting rivers with the single-point brush size,
 				// highlight the closest edge instead of a polygon.
-				Set<Edge> possibleRivers = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()));
+				Set<Edge> possibleRivers = getSelectedEdges(e.getPoint(), brushSizes.get(brushSizeComboBox.getSelectedIndex()),
+						EdgeType.Voronoi);
 				Set<Edge> changed = new HashSet<>();
 				for (Edge edge : possibleRivers)
 				{
@@ -600,6 +621,222 @@ public class LandWaterTool extends EditorTool
 				updater.createAndShowMapIncrementalUsingEdges(changed);
 			}
 		}
+		else if (roadsButton.isSelected())
+		{
+			if (modeWidget.isDrawMode())
+			{
+				return;
+			}
+			else
+			{
+				Set<Point> roadPointsToRemove = getSelectedRoadPoints(e.getPoint());
+				List<Road> changed = removePointsAndSplitRoads(mainWindow.edits.roads, roadPointsToRemove);
+				RoadDrawer.removeEmptyRoads(mainWindow.edits.roads);
+				mapEditingPanel.clearHighlightedPolylines();
+				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(roadPointsToRemove));
+				updater.addRoadsToRedrawLowPriority(changed);
+			}
+		}
+	}
+
+	private Set<Center> getCentersTouchingPoints(Set<Point> points)
+	{
+		if (updater.mapParts == null || updater.mapParts.graph == null)
+		{
+			assert false;
+			return Collections.emptySet();
+		}
+
+		Set<Center> result = new HashSet<>();
+		for (Point point : points)
+		{
+			Center c = updater.mapParts.graph.findClosestCenter(point, true);
+			if (c != null)
+			{
+				result.add(c);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Removes the given set of roadPointsToRemove from the roads in roadList.
+	 * 
+	 * @return Roads that have changed.
+	 */
+	public static List<Road> removePointsAndSplitRoads(List<Road> roadList, Set<Point> roadPointsToRemove)
+	{
+		List<Road> changed = new ArrayList<>();
+		List<Road> newRoads = new ArrayList<>();
+
+		for (Road road : roadList)
+		{
+			List<Point> path = road.path;
+			List<List<Point>> splitPaths = new ArrayList<>();
+			List<Point> currentPath = new ArrayList<>();
+			boolean roadChanged = false;
+
+			for (Point point : path)
+			{
+				if (roadPointsToRemove.contains(point))
+				{
+					roadChanged = true;
+					if (!currentPath.isEmpty())
+					{
+						splitPaths.add(new ArrayList<>(currentPath));
+						currentPath.clear();
+					}
+				}
+				else
+				{
+					currentPath.add(point);
+				}
+			}
+			if (!currentPath.isEmpty())
+			{
+				splitPaths.add(currentPath);
+			}
+
+			for (List<Point> splitPath : splitPaths)
+			{
+				if (splitPath.size() > 1)
+				{
+					newRoads.add(new Road(splitPath));
+				}
+			}
+
+			if (roadChanged)
+			{
+				changed.add(road);
+			}
+		}
+
+		roadList.clear();
+		roadList.addAll(newRoads);
+
+		return changed;
+	}
+
+	private final int singlePointRoadSelectionRadiusBeforeZoomAndScale = 5;
+
+	private Set<Point> getSelectedRoadPoints(java.awt.Point pointFromMouse)
+	{
+		nortantis.geom.Point graphPointResolutionInvariant = getPointOnGraph(pointFromMouse).mult(1.0 / mainWindow.displayQualityScale);
+		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		if (brushDiameter <= 1)
+		{
+			// Find the closest road point within a certain diameter.
+			int radius = (int) ((double) ((singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale));
+			Point closest = findClosestRoadPointWithinRadius(graphPointResolutionInvariant, radius);
+
+			HashSet<Point> result = new HashSet<>(1);
+			if (closest != null)
+			{
+				result.add(closest);
+			}
+			return result;
+		}
+		else
+		{
+			double brushRadiusResolutionInvariant = (double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)
+					/ (2 * mainWindow.displayQualityScale);
+			return findAllRoadPointsWithinRadius(graphPointResolutionInvariant, brushRadiusResolutionInvariant);
+		}
+	}
+
+	public Set<Point> findAllRoadPointsWithinRadius(Point targetPoint, double radius)
+	{
+		Set<Point> result = new HashSet<>();
+		for (Road road : mainWindow.edits.roads)
+		{
+			for (Point point : road.path)
+			{
+				double distance = point.distanceTo(targetPoint);
+				if (distance <= radius)
+				{
+					result.add(point);
+				}
+			}
+		}
+
+		return result;
+	}
+
+	private List<List<Point>> getSelectedRoadSegments(java.awt.Point pointFromMouse)
+	{
+		nortantis.geom.Point graphPointResolutionInvariant = getPointOnGraph(pointFromMouse).mult(1.0 / mainWindow.displayQualityScale);
+		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		if (brushDiameter <= 1)
+		{
+			// Find the closest road point within a certain diameter.
+			int radius = (int) ((double) ((singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale));
+			Point closest = findClosestRoadPointWithinRadius(graphPointResolutionInvariant, radius);
+
+			List<List<Point>> result = new ArrayList<>(1);
+			if (closest != null)
+			{
+				result.add(Arrays.asList(closest));
+			}
+			return result;
+		}
+		else
+		{
+			double brushRadiusResolutionInvariant = (double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)
+					/ (2 * mainWindow.displayQualityScale);
+			return findAllRoadSegmentsWithinRadius(graphPointResolutionInvariant, brushRadiusResolutionInvariant);
+		}
+	}
+
+	public List<List<Point>> findAllRoadSegmentsWithinRadius(Point targetPoint, double radius)
+	{
+		List<List<Point>> result = new ArrayList<>();
+		for (Road road : mainWindow.edits.roads)
+		{
+			List<Point> soFar = new ArrayList<>();
+			for (Point point : road.path)
+			{
+				if (point.distanceTo(targetPoint) <= radius)
+				{
+					soFar.add(point);
+				}
+				else
+				{
+					if (!soFar.isEmpty())
+					{
+						result.add(soFar);
+						soFar = new ArrayList<Point>();
+					}
+				}
+			}
+
+			if (!soFar.isEmpty())
+			{
+				result.add(soFar);
+			}
+		}
+
+		return result;
+	}
+
+	public Point findClosestRoadPointWithinRadius(Point targetPoint, double radius)
+	{
+		Point closestPoint = null;
+		double minDistance = Double.MAX_VALUE;
+
+		for (Road road : mainWindow.edits.roads)
+		{
+			for (Point point : road.path)
+			{
+				double distance = point.distanceTo(targetPoint);
+				if (distance <= radius && distance < minDistance)
+				{
+					minDistance = distance;
+					closestPoint = point;
+				}
+			}
+		}
+
+		return closestPoint;
 	}
 
 	private void selectColorFromMap(MouseEvent e)
@@ -699,6 +936,10 @@ public class LandWaterTool extends EditorTool
 		{
 			riverStart = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 		}
+		else if (roadsButton.isSelected() && modeWidget.isDrawMode())
+		{
+			roadStart = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
+		}
 	}
 
 	@Override
@@ -706,7 +947,7 @@ public class LandWaterTool extends EditorTool
 	{
 		regionIdToExpand = null;
 
-		if (riversButton.isSelected() && modeWidget.isDrawMode())
+		if (riversButton.isSelected() && modeWidget.isDrawMode() && riverStart != null)
 		{
 			Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 			Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
@@ -734,6 +975,21 @@ public class LandWaterTool extends EditorTool
 				updater.createAndShowMapIncrementalUsingEdges(river);
 			}
 		}
+		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && roadStart != null)
+		{
+			Center end = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
+			List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (edge, center, distance) -> distance);
+			List<Road> changed = RoadDrawer.addRoadsFromEdgesInEditor(edges, updater.mapParts.graph, mainWindow.edits.roads,
+					mainWindow.displayQualityScale);
+
+			mapEditingPanel.clearHighlightedEdges();
+			mapEditingPanel.clearHighlightedPolylines();
+			mapEditingPanel.repaint();
+
+			updater.addRoadsToRedrawLowPriority(changed);
+			updater.createAndShowMapIncrementalUsingEdges(new HashSet<Edge>(edges));
+
+		}
 
 		updater.dowWhenMapIsNotDrawing(() -> updater.createAndShowLowPriorityChanges());
 
@@ -755,6 +1011,7 @@ public class LandWaterTool extends EditorTool
 	{
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearHighlightedEdges();
+		mapEditingPanel.clearHighlightedPolylines();
 		mapEditingPanel.hideBrush();
 
 		if (oceanButton.isSelected() || lakesButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected()
@@ -794,19 +1051,51 @@ public class LandWaterTool extends EditorTool
 			{
 				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
 			}
-			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter);
+			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter, EdgeType.Voronoi);
 
 			for (Edge edge : candidates)
 			{
 				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
 				if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 				{
-					mapEditingPanel.addHighlightedEdge(edge);
+					mapEditingPanel.addHighlightedEdge(edge, EdgeType.Voronoi);
 				}
+			}
+		}
+		else if (roadsButton.isSelected() && modeWidget.isEraseMode())
+		{
+			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+			if (brushDiameter > 1)
+			{
+				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
+			}
+
+			List<List<Point>> roadSegments = getSelectedRoadSegments(e.getPoint());
+			for (List<Point> list : scalePoints(roadSegments, mainWindow.displayQualityScale))
+			{
+				mapEditingPanel.addPolylinesToHighlight(list);
 			}
 		}
 
 		mapEditingPanel.repaint();
+	}
+
+	private List<List<Point>> scalePoints(List<List<Point>> points, double scale)
+	{
+		List<List<Point>> scaledPoints = new ArrayList<>();
+
+		for (List<Point> pointList : points)
+		{
+			List<Point> scaledPointList = new ArrayList<>();
+			for (Point point : pointList)
+			{
+				Point scaledPoint = new Point(point.x * scale, point.y * scale);
+				scaledPointList.add(scaledPoint);
+			}
+			scaledPoints.add(scaledPointList);
+		}
+
+		return scaledPoints;
 	}
 
 	@Override
@@ -819,7 +1108,18 @@ public class LandWaterTool extends EditorTool
 				mapEditingPanel.clearHighlightedEdges();
 				Corner end = updater.mapParts.graph.findClosestCorner(getPointOnGraph(e.getPoint()));
 				Set<Edge> river = filterOutOceanAndCoastEdges(updater.mapParts.graph.findPathGreedy(riverStart, end));
-				mapEditingPanel.addHighlightedEdges(river);
+				mapEditingPanel.addHighlightedEdges(river, EdgeType.Voronoi);
+				mapEditingPanel.repaint();
+			}
+		}
+		else if (roadsButton.isSelected() && modeWidget.isDrawMode())
+		{
+			if (roadStart != null)
+			{
+				mapEditingPanel.clearHighlightedEdges();
+				Center end = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
+				List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (edge, center, distance) -> distance);
+				mapEditingPanel.addHighlightedEdges(edges, EdgeType.Delaunay);
 				mapEditingPanel.repaint();
 			}
 		}
@@ -833,9 +1133,10 @@ public class LandWaterTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		if (riversButton.isSelected() && modeWidget.isEraseMode())
+		if ((riversButton.isSelected() || roadsButton.isSelected()) && modeWidget.isEraseMode())
 		{
 			mapEditingPanel.clearHighlightedEdges();
+			mapEditingPanel.clearHighlightedPolylines();
 		}
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.repaint();
@@ -871,6 +1172,7 @@ public class LandWaterTool extends EditorTool
 	{
 		areRegionColorsVisible = settings.drawRegionColors;
 		areRegionBoundariesVisible = settings.drawRegionBoundaries;
+		areRoadsVisible = settings.drawRoads;
 
 		// These settings are part of MapSettings, so they get pulled in by undo/redo, but I exclude them here
 		// because it feels weird to me to have them change with undo/redo since they don't directly affect the map.
@@ -890,7 +1192,7 @@ public class LandWaterTool extends EditorTool
 		selectedRegion = null;
 		mapEditingPanel.clearSelectedCenters();
 
-		showOrHideRegionColoringOptions();
+		showOrHideBrushOptions();
 	}
 
 	@Override

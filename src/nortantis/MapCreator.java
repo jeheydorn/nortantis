@@ -374,6 +374,13 @@ public class MapCreator implements WarningLogger
 				p.setColor(settings.coastlineColor);
 				mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
 			}
+			
+			// Draw roads
+			if (settings.drawRoads)
+			{
+				RoadDrawer roadDrawer = new RoadDrawer(r, settings, mapParts.graph);
+				roadDrawer.drawRoads(mapSnippet, drawBounds);
+			}
 
 			// Draw icons
 			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet,
@@ -1073,7 +1080,7 @@ public class MapCreator implements WarningLogger
 				Logger.println("Drawing roads.");
 			}
 			
-			roadDrawer.drawRoads(map);
+			roadDrawer.drawRoads(map, null);
 		}
 		
 		checkForCancel();
