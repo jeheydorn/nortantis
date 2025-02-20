@@ -1,6 +1,8 @@
 package nortantis.util;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -165,4 +167,36 @@ public class FileHelper
 
 		return subFolders;
 	}
+	
+
+	public static void writeToFile(String fileName, String contents)
+	{
+		try
+		{
+			File file = new File(fileName);
+
+			if (!file.exists())
+			{
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			bw.write(contents);
+
+			bw.close();
+		}
+		catch (IOException ex)
+		{
+			throw new RuntimeException("Helper.writeToFile caught error: " + ex.getMessage(), ex);
+		}
+	}
+	
+	public static void createFolder(String folderName)
+	{
+		File folder = new File(folderName);
+		folder.mkdir();
+	}
+
 }

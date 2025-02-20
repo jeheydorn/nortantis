@@ -28,6 +28,7 @@ import nortantis.platform.PlatformFactory;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
+import nortantis.util.FileHelper;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
@@ -48,7 +49,7 @@ public class MapCreatorTest
 		// Note that this means that if you haven't already created the images, you run these tests before making changes that will need to
 		// be tested.
 
-		Helper.createFolder(Paths.get("unit test files", "expected maps").toString());
+		FileHelper.createFolder(Paths.get("unit test files", "expected maps").toString());
 		FileUtils.deleteDirectory(new File(Paths.get("unit test files", "failed maps").toString()));
 
 		// For each map in the 'unit test files/map settings' folder, create the associated map in 'unit test files/expected maps'.
@@ -134,7 +135,7 @@ public class MapCreatorTest
 		String comparisonErrorMessage = checkIfImagesEqual(drawnWithoutEdits, drawnWithEdits);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
-			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
 			drawnWithoutEdits.write(Paths.get("unit test files", "failed maps", "compareWithAndWithoutEdits_NoEdits.png").toString());
 			drawnWithEdits.write(Paths.get("unit test files", "failed maps", "compareWithAndWithoutEdits_WithEdits.png").toString());
 			createImageDiffIfImagesAreSameSize(drawnWithoutEdits, drawnWithEdits, "noOceanOrCoastEffects");
@@ -438,7 +439,7 @@ public class MapCreatorTest
 		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
-			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
 			ImageHelper.write(actual, getFailedMapFilePath(expectedFileName));
 			createImageDiffIfImagesAreSameSize(expected, actual, expectedFileName);
 			fail(comparisonErrorMessage);
@@ -482,7 +483,7 @@ public class MapCreatorTest
 		String comparisonErrorMessage = checkIfImagesEqual(expected, actual);
 		if (comparisonErrorMessage != null && !comparisonErrorMessage.isEmpty())
 		{
-			Helper.createFolder(Paths.get("unit test files", "failed maps").toString());
+			FileHelper.createFolder(Paths.get("unit test files", "failed maps").toString());
 			ImageHelper.write(actual, getFailedMapFilePath(settingsFileName));
 			createImageDiffIfImagesAreSameSize(expected, actual, settingsFileName);
 			fail(comparisonErrorMessage);

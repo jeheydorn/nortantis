@@ -180,36 +180,6 @@ public class Helper
 		return b.toString();
 	}
 
-	public static void writeToFile(String fileName, String contents)
-	{
-		try
-		{
-			File file = new File(fileName);
-
-			if (!file.exists())
-			{
-				file.createNewFile();
-			}
-
-			FileWriter fw = new FileWriter(file.getAbsoluteFile());
-			BufferedWriter bw = new BufferedWriter(fw);
-
-			bw.write(contents);
-
-			bw.close();
-		}
-		catch (IOException ex)
-		{
-			throw new RuntimeException("Helper.writeToFile caught error: " + ex.getMessage(), ex);
-		}
-	}
-
-	public static void createFolder(String folderName)
-	{
-		File folder = new File(folderName);
-		folder.mkdir();
-	}
-
 	/**
 	 * Creates a deep copy of an object using serialization.
 	 */

@@ -300,7 +300,7 @@ public class MapSettings implements Serializable
 	{
 		version = currentVersion;
 		String json = toJson();
-		Helper.writeToFile(filePath, json);
+		FileHelper.writeToFile(filePath, json);
 	}
 
 	private String toJson()

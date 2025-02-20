@@ -49,6 +49,8 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
+import nortantis.util.GeometryHelper;
+import nortantis.util.Pair;
 import nortantis.util.Tuple2;
 
 public class LandWaterTool extends EditorTool
@@ -629,9 +631,9 @@ public class LandWaterTool extends EditorTool
 			}
 			else
 			{
-				Set<Point> roadPointsToRemove = getSelectedRoadPoints(e.getPoint());
-				List<Road> changed = removePointsAndSplitRoads(mainWindow.edits.roads, roadPointsToRemove);
-				RoadDrawer.removeEmptyRoads(mainWindow.edits.roads);
+				List<List<Point>> roadPointsToRemove = getSelectedRoadSegments(e.getPoint());
+				List<Road> changed = removeSegmentsAndSplitRoads(mainWindow.edits.roads, roadPointsToRemove);
+				RoadDrawer.removeEmptyOrSinglePointRoads(mainWindow.edits.roads);
 				mapEditingPanel.clearHighlightedPolylines();
 				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(roadPointsToRemove));
 				updater.addRoadsToRedrawLowPriority(changed);
@@ -639,7 +641,7 @@ public class LandWaterTool extends EditorTool
 		}
 	}
 
-	private Set<Center> getCentersTouchingPoints(Set<Point> points)
+	private Set<Center> getCentersTouchingPoints(List<List<Point>> pointLists)
 	{
 		if (updater.mapParts == null || updater.mapParts.graph == null)
 		{
@@ -648,12 +650,15 @@ public class LandWaterTool extends EditorTool
 		}
 
 		Set<Center> result = new HashSet<>();
-		for (Point point : points)
+		for (List<Point> points : pointLists)
 		{
-			Center c = updater.mapParts.graph.findClosestCenter(point, true);
-			if (c != null)
+			for (Point point : points)
 			{
-				result.add(c);
+				Center c = updater.mapParts.graph.findClosestCenter(point, true);
+				if (c != null)
+				{
+					result.add(c);
+				}
 			}
 		}
 		return result;
@@ -664,10 +669,11 @@ public class LandWaterTool extends EditorTool
 	 * 
 	 * @return Roads that have changed.
 	 */
-	public static List<Road> removePointsAndSplitRoads(List<Road> roadList, Set<Point> roadPointsToRemove)
+	public static List<Road> removeSegmentsAndSplitRoads(List<Road> roadList, List<List<Point>> segmentsToRemove)
 	{
 		List<Road> changed = new ArrayList<>();
 		List<Road> newRoads = new ArrayList<>();
+		Set<Point> pointsFromSegmentsToRemove = roadsToPoints(segmentsToRemove);
 
 		for (Road road : roadList)
 		{
@@ -676,23 +682,29 @@ public class LandWaterTool extends EditorTool
 			List<Point> currentPath = new ArrayList<>();
 			boolean roadChanged = false;
 
-			for (Point point : path)
+			for (int i = 0; i < path.size(); i++)
 			{
-				if (roadPointsToRemove.contains(point))
+				Point point = path.get(i);
+				currentPath.add(point);
+				if (pointsFromSegmentsToRemove.contains(point))
 				{
 					roadChanged = true;
 					if (!currentPath.isEmpty())
 					{
-						splitPaths.add(new ArrayList<>(currentPath));
+						if (currentPath.size() > 1)
+						{
+							splitPaths.add(new ArrayList<>(currentPath));
+						}
 						currentPath.clear();
+						
+						if (i + 1 < path.size() && !pointsFromSegmentsToRemove.contains(path.get(i + 1)))
+						{
+							currentPath.add(point);
+						}
 					}
 				}
-				else
-				{
-					currentPath.add(point);
-				}
 			}
-			if (!currentPath.isEmpty())
+			if (currentPath.size() > 1)
 			{
 				splitPaths.add(currentPath);
 			}
@@ -717,50 +729,20 @@ public class LandWaterTool extends EditorTool
 		return changed;
 	}
 
-	private final int singlePointRoadSelectionRadiusBeforeZoomAndScale = 5;
-
-	private Set<Point> getSelectedRoadPoints(java.awt.Point pointFromMouse)
-	{
-		nortantis.geom.Point graphPointResolutionInvariant = getPointOnGraph(pointFromMouse).mult(1.0 / mainWindow.displayQualityScale);
-		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
-		if (brushDiameter <= 1)
-		{
-			// Find the closest road point within a certain diameter.
-			int radius = (int) ((double) ((singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale));
-			Point closest = findClosestRoadPointWithinRadius(graphPointResolutionInvariant, radius);
-
-			HashSet<Point> result = new HashSet<>(1);
-			if (closest != null)
-			{
-				result.add(closest);
-			}
-			return result;
-		}
-		else
-		{
-			double brushRadiusResolutionInvariant = (double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)
-					/ (2 * mainWindow.displayQualityScale);
-			return findAllRoadPointsWithinRadius(graphPointResolutionInvariant, brushRadiusResolutionInvariant);
-		}
-	}
-
-	public Set<Point> findAllRoadPointsWithinRadius(Point targetPoint, double radius)
+	private static Set<Point> roadsToPoints(List<List<Point>> roads)
 	{
 		Set<Point> result = new HashSet<>();
-		for (Road road : mainWindow.edits.roads)
+		for (List<Point> road : roads)
 		{
-			for (Point point : road.path)
+			for (Point p : road)
 			{
-				double distance = point.distanceTo(targetPoint);
-				if (distance <= radius)
-				{
-					result.add(point);
-				}
+				result.add(p);
 			}
 		}
-
 		return result;
 	}
+
+	private final int singlePointRoadSelectionRadiusBeforeZoomAndScale = 5;
 
 	private List<List<Point>> getSelectedRoadSegments(java.awt.Point pointFromMouse)
 	{
@@ -770,12 +752,12 @@ public class LandWaterTool extends EditorTool
 		{
 			// Find the closest road point within a certain diameter.
 			int radius = (int) ((double) ((singlePointRoadSelectionRadiusBeforeZoomAndScale / mainWindow.zoom) * mapEditingPanel.osScale));
-			Point closest = findClosestRoadPointWithinRadius(graphPointResolutionInvariant, radius);
+			List<Point> closest = findClosestRoadSegmentWithinRadius(graphPointResolutionInvariant, radius);
 
 			List<List<Point>> result = new ArrayList<>(1);
-			if (closest != null)
+			if (closest != null && !closest.isEmpty())
 			{
-				result.add(Arrays.asList(closest));
+				result.add(closest);
 			}
 			return result;
 		}
@@ -783,21 +765,70 @@ public class LandWaterTool extends EditorTool
 		{
 			double brushRadiusResolutionInvariant = (double) ((brushDiameter / mainWindow.zoom) * mapEditingPanel.osScale)
 					/ (2 * mainWindow.displayQualityScale);
-			return findAllRoadSegmentsWithinRadius(graphPointResolutionInvariant, brushRadiusResolutionInvariant);
+			return findRoadSegmentsWithinRadius(graphPointResolutionInvariant, brushRadiusResolutionInvariant);
 		}
 	}
 
-	public List<List<Point>> findAllRoadSegmentsWithinRadius(Point targetPoint, double radius)
+	private List<Point> findClosestRoadSegmentWithinRadius(Point targetPoint, double radius)
+	{
+		int mi = 0;
+		List<Point> segmentFoundIn = null;
+		double closestDistance = Double.POSITIVE_INFINITY;
+		List<List<Point>> withinRadius = findRoadSegmentsWithinRadius(targetPoint, radius);
+		for (List<Point> segment : withinRadius)
+		{
+			if (segment.size() < 2)
+			{
+				continue;
+			}
+			for (int i = 0; i < segment.size(); i++)
+			{
+				double d = segment.get(i).distanceTo(targetPoint);
+				if (d < closestDistance)
+				{
+					closestDistance = d;
+					segmentFoundIn = segment;
+					if (i == segment.size() - 1)
+					{
+						// Store the second to last index so that at the end of this method we can return the mi'th point and the one after
+						// it.
+						mi = i - 1;
+					}
+					else
+					{
+						mi = i;
+					}
+				}
+			}
+		}
+
+		if (closestDistance == Double.POSITIVE_INFINITY || segmentFoundIn == null)
+		{
+			return Collections.emptyList();
+		}
+
+		return Arrays.asList(segmentFoundIn.get(mi), segmentFoundIn.get(mi + 1));
+	}
+
+	private List<List<Point>> findRoadSegmentsWithinRadius(Point targetPoint, double radius)
 	{
 		List<List<Point>> result = new ArrayList<>();
 		for (Road road : mainWindow.edits.roads)
 		{
-			List<Point> soFar = new ArrayList<>();
-			for (Point point : road.path)
+			if (road.path.size() < 2)
 			{
-				if (point.distanceTo(targetPoint) <= radius)
+				continue;
+			}
+
+			List<Point> soFar = new ArrayList<>();
+			for (int i = 0; i < road.path.size() - 1; i++)
+			{
+				Point p1 = road.path.get(i);
+				Point p2 = road.path.get(i + 1);
+				if (GeometryHelper.doesLineOverlapCircle(p1, p2, targetPoint, radius))
 				{
-					soFar.add(point);
+					soFar.add(p1);
+					soFar.add(p2);
 				}
 				else
 				{
@@ -816,27 +847,6 @@ public class LandWaterTool extends EditorTool
 		}
 
 		return result;
-	}
-
-	public Point findClosestRoadPointWithinRadius(Point targetPoint, double radius)
-	{
-		Point closestPoint = null;
-		double minDistance = Double.MAX_VALUE;
-
-		for (Road road : mainWindow.edits.roads)
-		{
-			for (Point point : road.path)
-			{
-				double distance = point.distanceTo(targetPoint);
-				if (distance <= radius && distance < minDistance)
-				{
-					minDistance = distance;
-					closestPoint = point;
-				}
-			}
-		}
-
-		return closestPoint;
 	}
 
 	private void selectColorFromMap(MouseEvent e)

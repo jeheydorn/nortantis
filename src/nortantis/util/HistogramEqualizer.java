@@ -172,7 +172,7 @@ public class HistogramEqualizer
 			exportStr.append(histogram[pixelVal]);
 			exportStr.append("\n");
 		}
-		Helper.writeToFile(csvFileName, exportStr.toString());
+		FileHelper.writeToFile(csvFileName, exportStr.toString());
 	}
 
 	public Image equalize(Image inImage)
