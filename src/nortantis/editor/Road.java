@@ -14,7 +14,7 @@ public class Road
 	 * Points in the path are stored in a resolution-invariant way, meaning that changing the display quality in the editor does not change
 	 * these values.
 	 */
-	public List<Point> path;
+	public CopyOnWriteArrayList<Point> path;
 
 	public Road(List<Point> path)
 	{
@@ -25,7 +25,13 @@ public class Road
 	{
 		this(other.path);
 	}
-	
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(path);
+	}
+
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -45,5 +51,4 @@ public class Road
 		return Objects.equals(path, other.path);
 	}
 
-	
 }

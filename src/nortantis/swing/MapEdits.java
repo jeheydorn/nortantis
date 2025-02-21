@@ -62,6 +62,7 @@ public class MapEdits implements Serializable
 		regionEdits = new ConcurrentHashMap<>();
 		edgeEdits = new ArrayList<>();
 		freeIcons = new FreeIconCollection();
+		roads = new CopyOnWriteArrayList<Road>();
 	}
 
 	public boolean isInitialized()
@@ -180,12 +181,9 @@ public class MapEdits implements Serializable
 		copy.bakeGeneratedTextAsEdits = bakeGeneratedTextAsEdits;
 		copy.hasCreatedTextBounds = hasCreatedTextBounds;
 
-		if (roads != null)
-		{
-			List<Road> deepCopyOfRoads = roads.stream().map(road -> new Road(road)).toList();
-			copy.roads = new CopyOnWriteArrayList<Road>();
-			copy.roads.addAll(deepCopyOfRoads);
-		}
+		List<Road> deepCopyOfRoads = roads.stream().map(road -> new Road(road)).toList();
+		copy.roads = new CopyOnWriteArrayList<Road>();
+		copy.roads.addAll(deepCopyOfRoads);
 
 		return copy;
 	}

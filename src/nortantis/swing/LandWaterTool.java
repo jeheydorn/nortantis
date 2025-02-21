@@ -599,11 +599,7 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (riversButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
-			{
-				return;
-			}
-			else
+			if (modeWidget.isEraseMode())
 			{
 				// When deleting rivers with the single-point brush size,
 				// highlight the closest edge instead of a polygon.
@@ -625,18 +621,14 @@ public class LandWaterTool extends EditorTool
 		}
 		else if (roadsButton.isSelected())
 		{
-			if (modeWidget.isDrawMode())
+			if (modeWidget.isEraseMode())
 			{
-				return;
-			}
-			else
-			{
-				List<List<Point>> roadPointsToRemove = getSelectedRoadSegments(e.getPoint());
-				List<Road> changed = removeSegmentsAndSplitRoads(mainWindow.edits.roads, roadPointsToRemove);
+				List<List<Point>> roadSegmentsToRemove = getSelectedRoadSegments(e.getPoint());
+				List<Road> changed = removeSegmentsAndSplitRoads(mainWindow.edits.roads, roadSegmentsToRemove);
 				RoadDrawer.removeEmptyOrSinglePointRoads(mainWindow.edits.roads);
 				mapEditingPanel.clearHighlightedPolylines();
-				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(roadPointsToRemove));
-				updater.addRoadsToRedrawLowPriority(changed);
+				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(roadSegmentsToRemove));
+				updater.addRoadsToRedrawLowPriority(changed, mainWindow.displayQualityScale);
 			}
 		}
 	}
@@ -996,7 +988,7 @@ public class LandWaterTool extends EditorTool
 			mapEditingPanel.clearHighlightedPolylines();
 			mapEditingPanel.repaint();
 
-			updater.addRoadsToRedrawLowPriority(changed);
+			updater.addRoadsToRedrawLowPriority(changed, mainWindow.displayQualityScale);
 			updater.createAndShowMapIncrementalUsingEdges(new HashSet<Edge>(edges));
 
 		}

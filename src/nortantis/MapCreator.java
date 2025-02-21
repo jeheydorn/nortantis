@@ -251,9 +251,9 @@ public class MapCreator implements WarningLogger
 			if (settings.drawRegionBoundaries && settings.regionBoundaryStyle.type != StrokeType.Solid)
 			{
 				// When using non-solid region boundaries, expand the replace bounds to include region borders inside the replace bounds so
-				// that
-				// the dashed pattern is correct.
+				// that the dashed pattern is correct.
 				List<List<Edge>> regionBoundaries = mapParts.graph.findRegionBoundaries(centersChanged);
+
 				Set<Center> regionBoundaryCenters = new HashSet<>();
 				for (List<Edge> boundary : regionBoundaries)
 				{
@@ -374,7 +374,7 @@ public class MapCreator implements WarningLogger
 				p.setColor(settings.coastlineColor);
 				mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
 			}
-			
+
 			// Draw roads
 			if (settings.drawRoads)
 			{
@@ -1066,7 +1066,7 @@ public class MapCreator implements WarningLogger
 		}
 
 		checkForCancel();
-		
+
 		if (settings.drawRoads)
 		{
 			RoadDrawer roadDrawer = new RoadDrawer(r, settings, graph);
@@ -1079,10 +1079,10 @@ public class MapCreator implements WarningLogger
 			{
 				Logger.println("Drawing roads.");
 			}
-			
+
 			roadDrawer.drawRoads(map, null);
 		}
-		
+
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");

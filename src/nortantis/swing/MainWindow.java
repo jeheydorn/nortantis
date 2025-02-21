@@ -1673,6 +1673,9 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			// Erase free icons
 			edits.freeIcons.clear();
+			
+			// Erase roads.
+			edits.roads.clear();
 
 			undoer.setUndoPoint(UpdateType.Full, null);
 			updater.createAndShowMapTerrainChange();

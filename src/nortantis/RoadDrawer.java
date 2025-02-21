@@ -383,7 +383,9 @@ public class RoadDrawer
 	}
 
 	/**
-	 * Either adds the given edges as a new road, or adds them to an existing road if the points from those edges connect to an existing road.
+	 * Either adds the given edges as a new road, or adds them to an existing road if the points from those edges connect to an existing
+	 * road.
+	 * 
 	 * @return Either the new road, or the one the new road was added to.
 	 */
 	private static Road addEdgesToRoads(List<Edge> edges, WorldGraph graph, List<Road> roads, double resolutionScale)
@@ -482,7 +484,10 @@ public class RoadDrawer
 			{
 				p.setColor(roadColor);
 				p.setStroke(roadStyle, resolutionScale);
-				List<Point> path = CurveCreator.createCurve(road.path);
+				// Copy the road's path as an extra precaution to be thread safe because CurveCreator.createCurve accesses the path using
+				// list indexes, so if the list changed size in that method, it could cause an error.
+				List<Point> roadPathCopy = Arrays.asList(road.path.toArray(new Point[] {}));
+				List<Point> path = CurveCreator.createCurve(roadPathCopy);
 				List<IntPoint> pathScaled = path.stream().map(point -> point.mult(resolutionScale).toIntPoint()).toList();
 				p.drawPolyline(pathScaled);
 			}
@@ -494,5 +499,4 @@ public class RoadDrawer
 	{
 		return road.path.stream().anyMatch(p -> drawBoundsResolutionInvariant.contains(p));
 	}
-
 }

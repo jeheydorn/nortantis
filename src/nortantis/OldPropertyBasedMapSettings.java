@@ -105,7 +105,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 	public int frayedBorderSize;
 	public boolean drawIcons = true;
 	public boolean drawRivers = true; // Not saved
-	public boolean drawRoads = true;
+	public boolean drawRoads = false;
 	public double cityProbability;
 	public LineStyle lineStyle;
 	public String cityIconSetName;
@@ -469,14 +469,6 @@ public class OldPropertyBasedMapSettings implements Serializable
 			public Boolean apply()
 			{
 				String str = props.getProperty("drawIcons");
-				return str == null ? true : parseBoolean(str);
-			}
-		});
-		drawRoads = getProperty("drawRoads", new Function0<Boolean>()
-		{
-			public Boolean apply()
-			{
-				String str = props.getProperty("drawRoads");
 				return str == null ? true : parseBoolean(str);
 			}
 		});

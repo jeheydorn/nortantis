@@ -2042,6 +2042,8 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
 	 * 
+	 * @param found
+	 * 			  Edges that have already been searched, and so will not be searched again.
 	 * @param start
 	 *            Where to start to search. Not necessarily the start of the path we're searching for.
 	 * @param accept

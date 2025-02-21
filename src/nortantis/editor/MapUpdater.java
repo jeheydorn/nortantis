@@ -22,6 +22,7 @@ import nortantis.MapCreator;
 import nortantis.MapSettings;
 import nortantis.MapText;
 import nortantis.NameCreator;
+import nortantis.RoadDrawer;
 import nortantis.Stopwatch;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntRectangle;
@@ -115,7 +116,7 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.OverlayImage, null, null, null, null, null, null);
 	}
-	
+
 	public void createAndShowMapIncrementalUsingCenters(Set<Center> centersChanged)
 	{
 		createAndShowMap(UpdateType.Incremental, centersChanged, null, null, null, null, null);
@@ -155,8 +156,8 @@ public abstract class MapUpdater
 			innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null);
 		}
 	}
-	
-	public void addRoadsToRedrawLowPriority(List<Road> roads)
+
+	public void addRoadsToRedrawLowPriority(List<Road> roads, double resolutionScale)
 	{
 		if (mapParts != null && mapParts.graph != null)
 		{
@@ -166,13 +167,13 @@ public abstract class MapUpdater
 				{
 					continue;
 				}
-				
+
 				for (Point point : road.path)
 				{
-					Center center = mapParts.graph.findClosestCenter(point, true);
+					Center center = mapParts.graph.findClosestCenter(point.mult(resolutionScale), true);
 					if (center != null)
 					{
-						centersToRedrawLowPriority.put(center.index, center);	
+						centersToRedrawLowPriority.put(center.index, center);
 					}
 				}
 			}
@@ -211,8 +212,49 @@ public abstract class MapUpdater
 			Set<Integer> edgesChanged = getIdsOfEdgesWithChangesInEdits(change.settings.edits);
 			Collection<MapText> textChanged = getTextWithChangesInEdits(change.settings.edits);
 			List<FreeIcon> iconsChanged = getIconsWithChangesInEdits(change.settings.edits);
+			// I haven't bothered to add roads to the changes that can be passed in to createAndShowMapUsingIds, so I'm just passing in the
+			// id's of centers under those roads. The downside to doing this is that it will do a little extra drawing.
+			centersChanged.addAll(getCentersIdsOfRoadsChanged(change.settings.edits, getSettingsFromGUI().resolution));
 			createAndShowMapUsingIds(UpdateType.Incremental, centersChanged, edgesChanged, textChanged, iconsChanged, change.preRun, null);
 		}
+	}
+
+	private Collection<Integer> getCentersIdsOfRoadsChanged(MapEdits edits, double resolutionScale)
+	{
+		Set<List<Point>> changePaths = edits.roads.stream().map(road -> road.path).collect(Collectors.toSet());
+		Set<List<Point>> currentPaths = getEdits().roads.stream().map(road -> road.path).collect(Collectors.toSet());
+		Set<List<Point>> diff = Helper.getElementsNotInIntersection(changePaths, currentPaths);
+		Set<Integer> diffCenterIds = getIdsOfCentersPointsAreOn(pointListsToPointSet(diff), resolutionScale);
+		return diffCenterIds;
+	}
+	
+	public static Set<Point> pointListsToPointSet(Set<List<Point>> listSet)
+	{
+		Set<Point> result = new HashSet<>();
+		for (List<Point> list : listSet)
+		{
+			for (Point p : list)
+			{
+				result.add(p);
+			}
+		}
+		return result;
+	}
+
+
+	private Set<Integer> getIdsOfCentersPointsAreOn(Set<Point> pointsResolutionInvariant, double resolutionScale)
+	{
+		Set<Integer> result = new HashSet<>();
+		for (Point point : pointsResolutionInvariant)
+		{
+			Center center = mapParts.graph.findClosestCenter(point.mult(resolutionScale), true);
+			if (center != null)
+			{
+				centersToRedrawLowPriority.put(center.index, center);
+			}
+		}
+		
+		return result;
 	}
 
 	private Set<Integer> getIdsOfCentersWithChangesInEdits(MapEdits changeEdits)
@@ -298,7 +340,7 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.OverlayImage)
 		{
-			
+
 		}
 		else
 		{
@@ -315,8 +357,7 @@ public abstract class MapUpdater
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
 			List<FreeIcon> iconsChanged, Runnable preRun, Runnable postRun)
 	{
-		Set<Integer> centersChangedIds = centersChanged == null
-				? null
+		Set<Integer> centersChangedIds = centersChanged == null ? null
 				: centersChanged.stream().map(c -> c.index).collect(Collectors.toSet());
 		Set<Integer> edgesChangedIds = edgesChanged == null ? null : edgesChanged.stream().map(e -> e.index).collect(Collectors.toSet());
 
@@ -338,8 +379,7 @@ public abstract class MapUpdater
 			postRuns.add(postRun);
 		}
 
-		List<MapText> copiedText = textChanged == null
-				? null
+		List<MapText> copiedText = textChanged == null ? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
 		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns);
 	}
@@ -416,8 +456,7 @@ public abstract class MapUpdater
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 									centersChangedIds, edgesChangedIds);
-							combinedReplaceBounds = combinedReplaceBounds == null
-									? replaceBounds
+							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -430,8 +469,7 @@ public abstract class MapUpdater
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for text");
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateText(settings, mapParts, map, textChanged);
-							combinedReplaceBounds = combinedReplaceBounds == null
-									? replaceBounds
+							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -444,8 +482,7 @@ public abstract class MapUpdater
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map, iconsChanged);
-							combinedReplaceBounds = combinedReplaceBounds == null
-									? replaceBounds
+							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
 							{
@@ -467,7 +504,8 @@ public abstract class MapUpdater
 					{
 						return fullDraw(settings);
 					}
-				} finally
+				}
+				finally
 				{
 					drawLock.unlock();
 					if (!isUpdateTypeThatAllowsInteractions(updateType))
@@ -511,8 +549,7 @@ public abstract class MapUpdater
 						boolean anotherDrawIsQueued = next != null;
 						int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
-								replaceBounds == null
-										? null
+								replaceBounds == null ? null
 										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
 												replaceBounds.width, replaceBounds.height),
 								warningMessages);
@@ -555,7 +592,7 @@ public abstract class MapUpdater
 
 		});
 	}
-	
+
 	private UpdateResult fullDraw(MapSettings settings)
 	{
 
@@ -843,7 +880,8 @@ public abstract class MapUpdater
 			}
 			catch (InterruptedException e1)
 			{
-			} finally
+			}
+			finally
 			{
 				if (isLocked)
 				{
@@ -879,7 +917,8 @@ public abstract class MapUpdater
 			}
 			catch (InterruptedException e1)
 			{
-			} finally
+			}
+			finally
 			{
 				if (isLocked)
 				{
