@@ -293,7 +293,7 @@ public class RoadDrawer
 				continue;
 			}
 
-			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc, edge.d1.loc);
+			OrderlessPair<Point> pair = new OrderlessPair<Point>(edge.d0.loc.mult(1.0 / resolutionScale), edge.d1.loc.mult(1.0 / resolutionScale));
 
 			if (existingRoadConnections.contains(pair))
 			{
@@ -402,10 +402,29 @@ public class RoadDrawer
 			return null;
 		}
 
-		// TODO Connect the new road to other roads if their ends match up.
-		List<Point> pathResolutionInvariant = path.stream().map(point -> point.mult(1.0 / resolutionScale)).toList();
+		List<Point> pathResolutionInvariant = new ArrayList<>(path.stream().map(point -> point.mult(1.0 / resolutionScale)).toList());
+		Road newRoad = new Road(pathResolutionInvariant);
 
 		// If another road starts or ends with the start or end of this road, then join this road to that one.
+		Road joined = tryConnectingRoadToExistingRoad(newRoad, roads);
+		if (joined != null)
+		{
+			Road joined2 = tryConnectingRoadToExistingRoad(joined, roads);
+			if (joined2 != null)
+			{
+				roads.remove(joined);
+				return joined2;
+			}
+			return joined;
+		}
+
+		// Add this road as a new road.
+		roads.add(newRoad);
+		return newRoad;
+	}
+	
+	private static Road tryConnectingRoadToExistingRoad(Road roadToAdd, List<Road> roads)
+	{
 		for (Road road : roads)
 		{
 			if (road.path.isEmpty())
@@ -413,38 +432,41 @@ public class RoadDrawer
 				continue;
 			}
 
-			if (road.path.get(0).isCloseEnough(path.get(0)))
+			if (road == roadToAdd)
 			{
-				path.remove(0);
-				Collections.reverse(path);
-				road.path.addAll(0, path);
+				// Ignore same object.
+				continue;
+			}
+			
+			if (road.path.get(0).isCloseEnough(roadToAdd.path.get(0)))
+			{
+				roadToAdd.path.remove(0);
+				Collections.reverse(roadToAdd.path);
+				road.path.addAll(0, roadToAdd.path);
 				return road;
 			}
-			if (road.path.get(0).isCloseEnough(path.get(path.size() - 1)))
+			if (road.path.get(0).isCloseEnough(roadToAdd.path.get(roadToAdd.path.size() - 1)))
 			{
-				path.remove(path.size() - 1);
-				road.path.addAll(0, path);
+				roadToAdd.path.remove(roadToAdd.path.size() - 1);
+				road.path.addAll(0, roadToAdd.path);
 				return road;
 			}
-			if (road.path.get(road.path.size() - 1).isCloseEnough(path.get(0)))
+			if (road.path.get(road.path.size() - 1).isCloseEnough(roadToAdd.path.get(0)))
 			{
-				path.remove(0);
-				road.path.addAll(path);
+				roadToAdd.path.remove(0);
+				road.path.addAll(roadToAdd.path);
 				return road;
 			}
-			if (road.path.get(road.path.size() - 1).isCloseEnough(path.get(path.size() - 1)))
+			if (road.path.get(road.path.size() - 1).isCloseEnough(roadToAdd.path.get(roadToAdd.path.size() - 1)))
 			{
-				path.remove(path.size() - 1);
-				Collections.reverse(path);
-				road.path.addAll(path);
+				roadToAdd.path.remove(roadToAdd.path.size() - 1);
+				Collections.reverse(roadToAdd.path);
+				road.path.addAll(roadToAdd.path);
 				return road;
 			}
 		}
-
-		// Add this road as a new road.
-		Road road = new Road(pathResolutionInvariant);
-		roads.add(road);
-		return road;
+		
+		return null;
 	}
 
 	public static void removeEmptyOrSinglePointRoads(List<Road> roadList)
@@ -498,5 +520,32 @@ public class RoadDrawer
 	private boolean roadOverlapsRectangle(Road road, Rectangle drawBoundsResolutionInvariant)
 	{
 		return road.path.stream().anyMatch(p -> drawBoundsResolutionInvariant.contains(p));
+	}
+	
+	public void drawRoadDebugInfo(Image map)
+	{
+		Painter p = map.createPainter();
+		p.setColor(Color.create(0, 150, 0));
+		for (Road road : roads)
+		{
+			if (road.path.size() == 0)
+			{
+				throw new IllegalArgumentException();
+			}
+			if (road.path.size() == 1)
+			{
+				throw new IllegalArgumentException();
+			}
+			
+			for (int i = 0; i < road.path.size(); i++)
+			{
+				Point point = road.path.get(i).mult(resolutionScale);
+				int diameter = (int) Math.max(1, 3 * resolutionScale);
+				p.drawOval((int) point.x, (int) point.y, diameter, diameter);
+				
+				double yOffset = -9 * resolutionScale;
+				p.drawString(i + "", point.x, point.y + yOffset);
+			}
+		}
 	}
 }

@@ -4,9 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import nortantis.Stroke;
 import nortantis.geom.Point;
-import nortantis.platform.Color;
 
 public class Road
 {
@@ -49,6 +47,12 @@ public class Road
 		}
 		Road other = (Road) obj;
 		return Objects.equals(path, other.path);
+	}
+
+	@Override
+	public String toString()
+	{
+		return "Road [path=" + path + "]";
 	}
 
 }

@@ -1081,6 +1081,11 @@ public class MapCreator implements WarningLogger
 			}
 
 			roadDrawer.drawRoads(map, null);
+			
+			if (DebugFlags.drawRoadDebugInfo())
+			{
+				roadDrawer.drawRoadDebugInfo(map);
+			}
 		}
 
 		checkForCancel();

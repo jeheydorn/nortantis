@@ -1,7 +1,6 @@
 package nortantis;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import nortantis.geom.Point;
@@ -80,19 +79,19 @@ public class CurveCreator
 		{
 			return new ArrayList<>(path);
 		}
-		else if (path.size() == 3)
-		{
-			// 3 points is too few for this method to create a curve because we need at least two draw points and two control points. To
-			// compensate for this, add 2 fake control points.
-			final double fakeControlPointWeight = 1.0;
-			Point p0 = path.get(0).add(path.get(0).subtract(path.get(1)).mult(fakeControlPointWeight));
-			Point p3 = path.get(2).add(path.get(2).subtract(path.get(1)).mult(fakeControlPointWeight));
-
-			pathToUse = Arrays.asList(p0, path.get(0), path.get(1), path.get(2), p3);
-		}
 		else
 		{
-			pathToUse = path;
+			// Add control points at the beginnin and end to make the last connections curve.
+			// Note that for 3 point paths, 3 points is too few for this method to create a curve because we need at least two draw points
+			// and two control points. So in that case, this code is functionally required.
+			final double fakeControlPointWeight = 1.0;
+			Point p0 = path.get(0).add(path.get(0).subtract(path.get(1)).mult(fakeControlPointWeight));
+			Point p3 = path.get(path.size() - 1).add(path.get(path.size() - 1).subtract(path.get(path.size() - 2)).mult(fakeControlPointWeight));
+
+			pathToUse = new ArrayList<>();
+			pathToUse.add(p0);
+			pathToUse.addAll(path);
+			pathToUse.add(p3);
 		}
 
 		List<Point> curve = new ArrayList<>();

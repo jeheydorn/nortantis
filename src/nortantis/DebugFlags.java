@@ -41,6 +41,8 @@ public class DebugFlags
 	private static boolean drawCorners = false;
 
 	private static boolean drawVoronoi = false;
+	
+	private static boolean drawRoadDebugInfo = false;
 
 	public static boolean showIncrementalUpdateBounds()
 	{
@@ -107,4 +109,8 @@ public class DebugFlags
 		return !Assets.isRunningFromJar() && drawVoronoi;
 	}
 
+	public static boolean drawRoadDebugInfo()
+	{
+		return !Assets.isRunningFromJar() && drawRoadDebugInfo;
+	}
 }

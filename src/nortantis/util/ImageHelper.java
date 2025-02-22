@@ -1010,8 +1010,6 @@ public class ImageHelper
 		}
 	}
 
-	private static Stopwatch sw; // TODO take this out.
-
 	/**
 	 * Convolves a gray-scale image and with a kernel. The input image is unchanged.
 	 * 
@@ -1030,25 +1028,12 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscale(Image img, float[][] kernel, boolean maximizeContrast, boolean paddImageToAvoidWrapping)
 	{
-		if (sw == null)
-		{
-			sw = new Stopwatch("convolution");
-		}
-		sw.startOrContinue();
-		try
-		{
-			ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
 
-			// Only use 16 bit pixels if the input image used them, to save memory.
-			ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
+		// Only use 16 bit pixels if the input image used them, to save memory.
+		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
 
-			return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
-		}
-		finally
-		{
-			sw.pause();
-			// sw.printElapsedTime();
-		}
+		return realToImage(data, resultType, img.getWidth(), img.getHeight(), maximizeContrast, 0f, 1f, false, 0f);
 	}
 
 	/**
@@ -1067,23 +1052,9 @@ public class ImageHelper
 	 */
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping)
 	{
-		if (sw == null)
-		{
-			sw = new Stopwatch("convolution");
-		}
-		sw.startOrContinue();
-		try
-		{
-			// Only use 16 bit pixels if the input image used them, to save memory.
-			ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
-			return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
-		}
-		finally
-		{
-			sw.pause();
-			// sw.printElapsedTime();
-		}
-
+		// Only use 16 bit pixels if the input image used them, to save memory.
+		ImageType resultType = img.getType() == ImageType.Grayscale16Bit ? ImageType.Grayscale16Bit : ImageType.Grayscale8Bit;
+		return convolveGrayscaleThenScale(img, kernel, scale, paddImageToAvoidWrapping, resultType);
 	}
 
 	/**
@@ -1103,23 +1074,8 @@ public class ImageHelper
 	public static Image convolveGrayscaleThenScale(Image img, float[][] kernel, float scale, boolean paddImageToAvoidWrapping,
 			ImageType resultType)
 	{
-		if (sw == null)
-		{
-			sw = new Stopwatch("convolution");
-		}
-		sw.startOrContinue();
-		try
-		{
-
-			ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
-			return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
-		}
-		finally
-		{
-			sw.pause();
-			// sw.printElapsedTime();
-		}
-
+		ComplexArray data = convolveGrayscale(img, kernel, paddImageToAvoidWrapping);
+		return realToImage(data, resultType, img.getWidth(), img.getHeight(), false, 0f, 0f, true, scale);
 	}
 
 	private static ComplexArray convolveGrayscale(Image img, float[][] kernel, boolean paddImageToAvoidWrapping)

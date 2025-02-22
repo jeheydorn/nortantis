@@ -50,7 +50,6 @@ import nortantis.util.Assets;
 import nortantis.util.ComparableCounter;
 import nortantis.util.Counter;
 import nortantis.util.GeometryHelper;
-import nortantis.util.Pair;
 import nortantis.util.Tuple2;
 
 public class LandWaterTool extends EditorTool
@@ -627,13 +626,13 @@ public class LandWaterTool extends EditorTool
 				List<Road> changed = removeSegmentsAndSplitRoads(mainWindow.edits.roads, roadSegmentsToRemove);
 				RoadDrawer.removeEmptyOrSinglePointRoads(mainWindow.edits.roads);
 				mapEditingPanel.clearHighlightedPolylines();
-				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingPoints(roadSegmentsToRemove));
+				updater.createAndShowMapIncrementalUsingCenters(getCentersTouchingRoadPoints(roadSegmentsToRemove));
 				updater.addRoadsToRedrawLowPriority(changed, mainWindow.displayQualityScale);
 			}
 		}
 	}
 
-	private Set<Center> getCentersTouchingPoints(List<List<Point>> pointLists)
+	private Set<Center> getCentersTouchingRoadPoints(List<List<Point>> pointLists)
 	{
 		if (updater.mapParts == null || updater.mapParts.graph == null)
 		{
@@ -646,7 +645,7 @@ public class LandWaterTool extends EditorTool
 		{
 			for (Point point : points)
 			{
-				Center c = updater.mapParts.graph.findClosestCenter(point, true);
+				Center c = updater.mapParts.graph.findClosestCenter(point.mult(mainWindow.displayQualityScale), true);
 				if (c != null)
 				{
 					result.add(c);

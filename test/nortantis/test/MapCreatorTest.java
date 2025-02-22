@@ -29,7 +29,6 @@ import nortantis.platform.awt.AwtFactory;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
-import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Tuple1;

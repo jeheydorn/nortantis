@@ -28,7 +28,6 @@ import nortantis.MapText;
 import nortantis.WorldGraph;
 import nortantis.editor.EdgeType;
 import nortantis.editor.FreeIcon;
-import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.graph.voronoi.Center;
@@ -37,8 +36,8 @@ import nortantis.platform.Image;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
-import nortantis.util.Range;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
+import nortantis.util.Range;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends UnscaledImagePanel
