@@ -733,7 +733,7 @@ public class LandWaterTool extends EditorTool
 		return result;
 	}
 
-	private final int singlePointRoadSelectionRadiusBeforeZoomAndScale = 5;
+	private final int singlePointRoadSelectionRadiusBeforeZoomAndScale = 10;
 
 	private List<List<Point>> getSelectedRoadSegments(java.awt.Point pointFromMouse)
 	{
