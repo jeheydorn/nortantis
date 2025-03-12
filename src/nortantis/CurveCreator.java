@@ -30,7 +30,10 @@ public class CurveCreator
 
 		if (numPoints == 0)
 		{
-			return new ArrayList<Point>(0);
+			List<Point> result = new ArrayList<>(1);
+			result.add(p1);
+			result.add(p2);
+			return result;
 		}
 
 		List<Point> curve = new ArrayList<Point>(numPoints + 2);
@@ -81,7 +84,7 @@ public class CurveCreator
 		}
 		else
 		{
-			// Add control points at the beginnin and end to make the last connections curve.
+			// Add control points at the beginning and end to make the last connections curve.
 			// Note that for 3 point paths, 3 points is too few for this method to create a curve because we need at least two draw points
 			// and two control points. So in that case, this code is functionally required.
 			final double fakeControlPointWeight = 1.0;

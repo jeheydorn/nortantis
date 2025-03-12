@@ -149,6 +149,12 @@ class AwtPainter extends Painter
 		// Use CAP_ROUND to avoid corners sticking out of the sides of thick lines (like rivers) when drawn piecewise.
 		g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 1f, null, 0f));
 	}
+	
+	@Override
+	public void setStrokeToSolidLineWithNoEndDecorations(float width)
+	{
+		g.setStroke(new BasicStroke(width, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, null, 0f));
+	}
 
 	@Override
 	public void setStroke(nortantis.Stroke stroke, double resolutionScale)

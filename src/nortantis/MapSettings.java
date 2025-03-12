@@ -58,7 +58,8 @@ public class MapSettings implements Serializable
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 	private final double defaultRoadWidth = 1.0;
-	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
+	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots,
+			(float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
 	private final Color defaultRoadColor = Color.black;
 
 	public String version;
@@ -530,7 +531,7 @@ public class MapSettings implements Serializable
 		}
 		return list;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONArray roadsToJson()
 	{
@@ -539,11 +540,11 @@ public class MapSettings implements Serializable
 		{
 			return roadsJson;
 		}
-		
+
 		for (Road road : edits.roads)
 		{
 			JSONObject roadObj = new JSONObject();
-			
+
 			JSONArray pathJson = new JSONArray();
 			if (road.path != null)
 			{
@@ -555,7 +556,7 @@ public class MapSettings implements Serializable
 			roadObj.put("path", pathJson);
 			roadsJson.add(roadObj);
 		}
-		
+
 		return roadsJson;
 	}
 
@@ -577,7 +578,7 @@ public class MapSettings implements Serializable
 	{
 		return strokeToJson(regionBoundaryStyle);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONObject strokeToJson(Stroke stroke)
 	{
@@ -1353,16 +1354,16 @@ public class MapSettings implements Serializable
 
 		return result;
 	}
-	
+
 	private CopyOnWriteArrayList<Road> parseRoads(JSONObject editsJson)
 	{
 		CopyOnWriteArrayList<Road> roads = new CopyOnWriteArrayList<>();
-		
+
 		if (!editsJson.containsKey("roads"))
 		{
 			return roads;
 		}
-		
+
 		JSONArray list = (JSONArray) editsJson.get("roads");
 		for (Object obj : list)
 		{
@@ -1408,10 +1409,10 @@ public class MapSettings implements Serializable
 		{
 			return new Stroke(StrokeType.Solid, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0)));
 		}
-		
+
 		return parsed;
 	}
-	
+
 	private Stroke parseStroke(JSONObject obj)
 	{
 		if (obj == null)
@@ -1615,8 +1616,8 @@ public class MapSettings implements Serializable
 
 	public boolean hasConcentricWaves()
 	{
-		return (oceanWavesType == OceanWaves.ConcentricWaves || oceanWavesType == OceanWaves.FadingConcentricWaves)
-				&& concentricWaveCount > 0;
+		return (oceanWavesType == OceanWaves.ConcentricWaves || oceanWavesType == OceanWaves.FadingConcentricWaves
+				|| oceanWavesType == OceanWaves.SquigglyConcentricWaves) && concentricWaveCount > 0;
 	}
 
 	public boolean equalsIgnoringEdits(MapSettings other)
@@ -1684,7 +1685,7 @@ public class MapSettings implements Serializable
 	public enum OceanWaves
 	{
 		@Deprecated
-		Blur, Ripples, ConcentricWaves, FadingConcentricWaves, None
+		Blur, Ripples, ConcentricWaves, FadingConcentricWaves, SquigglyConcentricWaves, None
 	}
 
 	public static final String fileExtension = "nort";
@@ -1772,7 +1773,6 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
 
 
 }
