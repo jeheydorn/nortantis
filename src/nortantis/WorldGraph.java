@@ -1934,9 +1934,9 @@ public class WorldGraph extends VoronoiGraph
 		return cSize;
 	}
 
-	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, boolean includeLakeShores,
-			boolean forceUseCurvesWithinThreshold, double widthBetweenWaves, boolean addRandomBreaks, Collection<Center> centersToDraw,
-			Rectangle drawBounds, BiFunction<Boolean, Random, Double> getNewSkipDistance)
+	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, boolean forceUseCurvesWithinThreshold,
+			double widthBetweenWaves, boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
+			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
 		Transform orig = null;
 		if (drawBounds != null)
@@ -1945,23 +1945,14 @@ public class WorldGraph extends VoronoiGraph
 			p.translate(-drawBounds.x, -drawBounds.y);
 		}
 
-		List<List<Edge>> coastlines;
-		if (includeLakeShores)
-		{
-			coastlines = findCoastAndLakeShoreEdges(centersToDraw);
-		}
-		else
-		{
-			coastlines = findEdgesByDrawType(centersToDraw, EdgeDrawType.Coast);
-		}
-		for (List<Edge> coastline : coastlines)
+		for (List<Edge> coastline : shoreEdges)
 		{
 			if (coastline.size() == 0)
 			{
 				assert false;
 				continue;
 			}
-			
+
 			final double maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines = widthBetweenWaves * 0.5;
 			boolean isPolygon = false;
 			// Use a random seed that is unique per coastline.
@@ -1973,8 +1964,7 @@ public class WorldGraph extends VoronoiGraph
 				// Get the path without curves, except cases where jagged lines might overlap with waves when the coastlines use curves.
 				if (noisyEdges.getLineStyle() == LineStyle.Jagged)
 				{
-					drawPoints = edgeListToDrawPoints(coastline, true,
-							maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
+					drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				}
 				else
 				{
@@ -1982,17 +1972,18 @@ public class WorldGraph extends VoronoiGraph
 					drawPoints = edgeListToDrawPoints(coastline, true, Double.MAX_VALUE);
 				}
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
-				drawPoints = addRandomVariance(rand, drawPoints, variationRange);
+				drawPoints = addJitter(randomSeed, drawPoints, variationRange);
 			}
 			else
 			{
-				drawPoints = edgeListToDrawPoints(coastline, true,
-						maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
+				drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
 			}
-			
-			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look good.
-			double distanceBetweenPoints = Math.max(2.0, Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
+
+			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look
+			// good.
+			double distanceBetweenPoints = Math.max(2.0,
+					Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
 
 
@@ -2035,15 +2026,18 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	List<Point> addRandomVariance(Random rand, List<Point> points, double variationRange)
+	List<Point> addJitter(long randomSeed, List<Point> points, double variationRange)
 	{
-		return points.stream().map(p ->
+		List<Point> result = points.stream().map(p ->
 		{
+			// Use a random seed that is close to unique for each point so that incremental draws don't have to redraw the entire coastline.
+			Random rand = new Random(randomSeed + (long) ((p.x * resolutionScale + p.y * resolutionScale) * 100));
 			double radius = rand.nextDouble() * variationRange;
 			double angle = rand.nextDouble() * 2 * Math.PI;
 			Point toAdd = new Point(radius * Math.cos(angle), radius * Math.sin(angle));
 			return p.add(toAdd);
 		}).toList();
+		return result;
 	}
 
 	List<List<Point>> addRandomBreaks(Random rand, List<Point> points, BiFunction<Boolean, Random, Double> getNewSkipDistance)
@@ -2150,7 +2144,7 @@ public class WorldGraph extends VoronoiGraph
 
 		p.setStroke(stroke, resolutionScale);
 
-		List<List<Edge>> regionBoundaries = findEdgesByDrawType(centersToDraw, EdgeDrawType.Region);
+		List<List<Edge>> regionBoundaries = findEdgesByDrawType(centersToDraw, EdgeDrawType.Region, stroke.type != StrokeType.Solid);
 		for (List<Edge> regionBoundary : regionBoundaries)
 		{
 			List<Point> drawPoints = edgeListToDrawPoints(regionBoundary);
@@ -2194,35 +2188,43 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	public List<List<Edge>> findEdgesByDrawType(Collection<Center> centersToDraw, EdgeDrawType drawType)
+	public List<List<Edge>> findEdgesByDrawType(Collection<Center> centersToDraw, EdgeDrawType drawType, boolean searchEntireGraph)
 	{
-		List<List<Edge>> result = new ArrayList<>();
-		Set<Edge> explored = new HashSet<>();
-		for (Center center : (centersToDraw == null ? centers : centersToDraw))
-		{
-			for (Edge edge : center.borders)
-			{
-				if (explored.contains(edge))
-				{
-					continue;
-				}
-
-				List<Edge> regionBoundary = findPath(explored, edge, (e) -> noisyEdges.getEdgeDrawType(e) == drawType);
-				if (regionBoundary != null && !regionBoundary.isEmpty())
-				{
-					result.add(regionBoundary);
-				}
-			}
-		}
-
-		return result;
+		return findEdges(centersToDraw, (e) -> noisyEdges.getEdgeDrawType(e) == drawType, searchEntireGraph);
 	}
 
-	public List<List<Edge>> findCoastAndLakeShoreEdges(Collection<Center> centersToDraw)
+	public List<List<Edge>> findShoreEdges(Collection<Center> centersToDraw, boolean includeLakeShores, boolean searchEntireGraph)
+	{
+		if (includeLakeShores)
+		{
+			return findEdges(centersToDraw, (e) -> e.isCoast() || e.isLakeShore(), searchEntireGraph);
+		}
+		else
+		{
+			return findEdges(centersToDraw, (e) -> e.isCoast(), searchEntireGraph);
+		}
+	}
+
+	/**
+	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those
+	 * centers.
+	 * 
+	 * @param centersToDraw
+	 *            Only edges either in/touching this collection or connected to edges that are will be returned.
+	 * @param accept
+	 *            Function to determine what edge is to include in results.
+	 * @param searchEntireGraph
+	 *            When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false
+	 *            is much more performant, but can cause subtle differences in the results depending on which centers are passed in. Setting
+	 *            this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental
+	 *            for any edges that touch or pass through centersToDraw.
+	 * @return
+	 */
+	public List<List<Edge>> findEdges(Collection<Center> centersToDraw, Function<Edge, Boolean> accept, boolean searchEntireGraph)
 	{
 		List<List<Edge>> result = new ArrayList<>();
 		Set<Edge> explored = new HashSet<>();
-		for (Center center : (centersToDraw == null ? centers : centersToDraw))
+		for (Center center : (centersToDraw == null || searchEntireGraph ? centers : centersToDraw))
 		{
 			for (Edge edge : center.borders)
 			{
@@ -2231,10 +2233,21 @@ public class WorldGraph extends VoronoiGraph
 					continue;
 				}
 
-				List<Edge> regionBoundary = findPath(explored, edge, (e) -> e.isCoast());
-				if (regionBoundary != null && !regionBoundary.isEmpty())
+				List<Edge> edgePath = findPath(explored, edge, accept);
+				if (edgePath != null && !edgePath.isEmpty())
 				{
-					result.add(regionBoundary);
+					if (searchEntireGraph && centersToDraw != null)
+					{
+						if (edgePath.stream().anyMatch(
+								e -> e.d0 != null && centersToDraw.contains(e.d0) || e.d1 != null && centersToDraw.contains(e.d1)))
+						{
+							result.add(edgePath);
+						}
+					}
+					else
+					{
+						result.add(edgePath);
+					}
 				}
 			}
 		}

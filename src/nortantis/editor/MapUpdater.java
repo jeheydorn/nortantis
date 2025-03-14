@@ -152,7 +152,7 @@ public abstract class MapUpdater
 		{
 			Set<Integer> centersToDrawIds = new HashSet<>(centersToRedrawLowPriority.keySet());
 			centersToRedrawLowPriority.clear();
-			innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null);
+			innerCreateAndShowMap(UpdateType.Incremental, centersToDrawIds, null, null, null, null, null, true);
 		}
 	}
 
@@ -380,14 +380,14 @@ public abstract class MapUpdater
 
 		List<MapText> copiedText = textChanged == null ? null
 				: textChanged.stream().map(text -> text.deepCopy()).collect(Collectors.toList());
-		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns);
+		innerCreateAndShowMap(updateType, centersChangedIds, edgesChangedIds, copiedText, iconsChanged, preRuns, postRuns, false);
 	}
 
 	/**
 	 * Redraws the map, then displays it
 	 */
 	private void innerCreateAndShowMap(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds,
-			List<MapText> textChanged, List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
+			List<MapText> textChanged, List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns, boolean isLowPriorityChange)
 	{
 		if (!enabled)
 		{
@@ -398,7 +398,7 @@ public abstract class MapUpdater
 
 		if (isMapBeingDrawn)
 		{
-			updatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns));
+			updatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns, postRuns, isLowPriorityChange));
 			return;
 		}
 
@@ -454,7 +454,7 @@ public abstract class MapUpdater
 							Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
 							currentMapCreator = new MapCreator();
 							IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
-									centersChangedIds, edgesChangedIds);
+									centersChangedIds, edgesChangedIds, isLowPriorityChange);
 							combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
 									: combinedReplaceBounds.add(replaceBounds);
 							if (DebugFlags.printIncrementalUpdateTimes())
@@ -567,7 +567,7 @@ public abstract class MapUpdater
 					if (next != null)
 					{
 						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
-								next.iconsChanged, next.preRuns, next.postRuns);
+								next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriorityChange);
 					}
 
 					isMapReadyForInteractions = true;
@@ -730,9 +730,10 @@ public abstract class MapUpdater
 		UpdateType updateType;
 		List<Runnable> postRuns;
 		List<Runnable> preRuns;
+		boolean isLowPriorityChange;
 
 		public MapUpdate(UpdateType updateType, Set<Integer> centersChangedIds, Set<Integer> edgesChangedIds, List<MapText> textChanged,
-				List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns)
+				List<FreeIcon> iconsChanged, List<Runnable> preRuns, List<Runnable> postRuns, boolean isLowPriorityChange)
 		{
 			this.updateType = updateType;
 			if (centersChangedIds != null)
@@ -769,6 +770,8 @@ public abstract class MapUpdater
 			{
 				this.preRuns = new ArrayList<>();
 			}
+			
+			this.isLowPriorityChange = isLowPriorityChange;
 		}
 
 		public void add(MapUpdate other)
@@ -824,6 +827,8 @@ public abstract class MapUpdater
 					iconsChanged = new ArrayList<>(other.iconsChanged);
 				}
 			}
+			
+			isLowPriorityChange = isLowPriorityChange && other.isLowPriorityChange;
 		}
 	}
 

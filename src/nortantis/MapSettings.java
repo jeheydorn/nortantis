@@ -53,7 +53,7 @@ import nortantis.util.Tuple2;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "3.03";
+	public static final String currentVersion = "3.04";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -1033,10 +1033,35 @@ public class MapSettings implements Serializable
 		runConversionOnBorderType();
 		runConversionToRemoveTrailingSpacesInImageNamesWithWidth();
 		runConversionOnFadingConcentricWaves();
+		runConversionToRemoveRegionIdsOfEditsThatAreWater();
 	}
-	
+
+	/**
+	 * Fixes the aftermath of an issue where the Land and Water tool wasn't clearing region IDs when drawing ocean and lakes.
+	 */
+	private void runConversionToRemoveRegionIdsOfEditsThatAreWater()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.04"))
+		{
+			return;
+		}
+
+		for (CenterEdit cEdit : edits.centerEdits.values())
+		{
+			if ((cEdit.isWater || cEdit.isLake) && cEdit.regionId != null)
+			{
+				edits.centerEdits.put(cEdit.index, cEdit.copyWithRegionId(null));
+			}
+		}
+	}
+
 	private void runConversionOnFadingConcentricWaves()
 	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.04"))
+		{
+			return;
+		}
+
 		if (oceanWavesType == OceanWaves.FadingConcentricWaves)
 		{
 			oceanWavesType = OceanWaves.ConcentricWaves;
@@ -1712,8 +1737,7 @@ public class MapSettings implements Serializable
 	public enum OceanWaves
 	{
 		@Deprecated
-		Blur, Ripples, ConcentricWaves, 
-		@Deprecated
+		Blur, Ripples, ConcentricWaves, @Deprecated
 		FadingConcentricWaves, None
 	}
 

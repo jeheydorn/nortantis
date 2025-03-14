@@ -79,7 +79,7 @@ public class ThemePanel extends JTabbedPane
 {
 	private MainWindow mainWindow;
 	private JSlider coastShadingSlider;
-	private JSlider oceanWavesLevelSlider;
+	private JSlider rippleWavesLevelSlider;
 	private JSlider concentricWavesLevelSlider;
 	private JRadioButton ripplesRadioButton;
 	private JRadioButton noneRadioButton;
@@ -172,7 +172,7 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<NamedResource> textureImageComboBox;
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
-	private RowHider oceanWavesLevelSliderHider;
+	private RowHider rippleWavesLevelSliderHider;
 	private RowHider oceanWavesColorHider;
 	private JCheckBox drawRoadsCheckbox;
 	private JComboBox<StrokeType> roadStyleComboBox;
@@ -185,6 +185,7 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox jitterWavesCheckbox;
 	private JCheckBox brokenLinesCheckbox;
 	private RowHider concentricWavesOptionsHider;
+	private RowHider concentricWavesLevelSliderHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -830,8 +831,9 @@ public class ThemePanel extends JTabbedPane
 			{
 				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
 				concentricWavesOptionsHider.setVisible(concentricWavesButton.isSelected());
-				oceanWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
-				oceanWavesLevelSliderHider.setVisible(!noneRadioButton.isSelected());
+				concentricWavesLevelSliderHider.setVisible(concentricWavesButton.isSelected());
+				rippleWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
+				rippleWavesLevelSliderHider.setVisible(ripplesRadioButton.isSelected());
 				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
 				handleTerrainChange();
 			}
@@ -868,17 +870,19 @@ public class ThemePanel extends JTabbedPane
 		concentricWavesLevelSlider.setMajorTickSpacing(1);
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
 		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);
+		concentricWavesLevelSliderHider = organizer.addLabelAndComponent("Wave count:", "The number of concentric waves to draw.",
+				concentricWavesLevelSlider);
 
-		oceanWavesLevelSlider = new JSlider();
-		oceanWavesLevelSlider.setMinorTickSpacing(5);
-		oceanWavesLevelSlider.setPaintTicks(true);
-		oceanWavesLevelSlider.setPaintLabels(true);
-		oceanWavesLevelSlider.setMajorTickSpacing(20);
-		oceanWavesLevelSlider.setMaximum(100);
-		createMapChangeListenerForTerrainChange(oceanWavesLevelSlider);
-		SwingHelper.setSliderWidthForSidePanel(oceanWavesLevelSlider);
-		oceanWavesLevelSliderHider = organizer.addLabelAndComponentsVertical("Wave width:", "How far from coastlines waves should draw.",
-				Arrays.asList(concentricWavesLevelSlider, oceanWavesLevelSlider));
+		rippleWavesLevelSlider = new JSlider();
+		rippleWavesLevelSlider.setMinorTickSpacing(5);
+		rippleWavesLevelSlider.setPaintTicks(true);
+		rippleWavesLevelSlider.setPaintLabels(true);
+		rippleWavesLevelSlider.setMajorTickSpacing(20);
+		rippleWavesLevelSlider.setMaximum(100);
+		createMapChangeListenerForTerrainChange(rippleWavesLevelSlider);
+		SwingHelper.setSliderWidthForSidePanel(rippleWavesLevelSlider);
+		rippleWavesLevelSliderHider = organizer.addLabelAndComponent("Wave width:", "How far from coastlines waves should draw.",
+				rippleWavesLevelSlider);
 
 		{
 			oceanWavesColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -1565,7 +1569,7 @@ public class ThemePanel extends JTabbedPane
 
 		coastShadingSlider.setValue(settings.coastShadingLevel);
 		oceanShadingSlider.setValue(settings.oceanShadingLevel);
-		oceanWavesLevelSlider.setValue(settings.oceanWavesLevel);
+		rippleWavesLevelSlider.setValue(settings.oceanWavesLevel);
 		concentricWavesLevelSlider.setValue(settings.concentricWaveCount);
 		ripplesRadioButton.setSelected(settings.oceanWavesType == OceanWaves.Ripples);
 		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
@@ -1847,7 +1851,7 @@ public class ThemePanel extends JTabbedPane
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.coastShadingLevel = coastShadingSlider.getValue();
-		settings.oceanWavesLevel = oceanWavesLevelSlider.getValue();
+		settings.oceanWavesLevel = rippleWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
