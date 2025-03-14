@@ -84,7 +84,6 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton ripplesRadioButton;
 	private JRadioButton noneRadioButton;
 	private JRadioButton concentricWavesButton;
-	private JRadioButton fadingConcentricWavesButton;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
@@ -182,7 +181,10 @@ public class ThemePanel extends JTabbedPane
 	private RowHider roadWidthSliderHider;
 	private JPanel roadColorDisplay;
 	private RowHider roadColorHider;
-	private JRadioButton squigglyConcentricWavesButton;
+	private JCheckBox fadeWavesCheckbox;
+	private JCheckBox jitterWavesCheckbox;
+	private JCheckBox brokenLinesCheckbox;
+	private RowHider concentricWavesOptionsHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -826,8 +828,8 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected() || fadingConcentricWavesButton.isSelected()
-						|| squigglyConcentricWavesButton.isSelected());
+				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
+				concentricWavesOptionsHider.setVisible(concentricWavesButton.isSelected());
 				oceanWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
 				oceanWavesLevelSliderHider.setVisible(!noneRadioButton.isSelected());
 				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
@@ -836,14 +838,6 @@ public class ThemePanel extends JTabbedPane
 		};
 		concentricWavesButton.addActionListener(oceanEffectsListener);
 
-		fadingConcentricWavesButton = new JRadioButton("Fading concentric waves");
-		oceanEffectButtonGroup.add(fadingConcentricWavesButton);
-		fadingConcentricWavesButton.addActionListener(oceanEffectsListener);
-
-		squigglyConcentricWavesButton = new JRadioButton("Squiggly concentric waves");
-		oceanEffectButtonGroup.add(squigglyConcentricWavesButton);
-		squigglyConcentricWavesButton.addActionListener(oceanEffectsListener);
-
 		ripplesRadioButton = new JRadioButton("Ripples");
 		oceanEffectButtonGroup.add(ripplesRadioButton);
 		ripplesRadioButton.addActionListener(oceanEffectsListener);
@@ -851,8 +845,19 @@ public class ThemePanel extends JTabbedPane
 		noneRadioButton = new JRadioButton("None");
 		oceanEffectButtonGroup.add(noneRadioButton);
 		noneRadioButton.addActionListener(oceanEffectsListener);
-		organizer.addLabelAndComponentsVertical("Wave type:", "How to draw waves in the ocean along coastlines.", Arrays.asList(
-				concentricWavesButton, fadingConcentricWavesButton, squigglyConcentricWavesButton, ripplesRadioButton, noneRadioButton));
+		organizer.addLabelAndComponentsVertical("Wave type:", "How to draw waves in the ocean along coastlines.",
+				Arrays.asList(concentricWavesButton, ripplesRadioButton, noneRadioButton));
+
+		fadeWavesCheckbox = new JCheckBox("Fade outer waves");
+		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
+
+		jitterWavesCheckbox = new JCheckBox("Jitter");
+		createMapChangeListenerForTerrainChange(jitterWavesCheckbox);
+
+		brokenLinesCheckbox = new JCheckBox("Broken lines");
+		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
+		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Concentric wave options:", "",
+				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox));
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -1565,8 +1570,9 @@ public class ThemePanel extends JTabbedPane
 		ripplesRadioButton.setSelected(settings.oceanWavesType == OceanWaves.Ripples);
 		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
 		concentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.ConcentricWaves);
-		fadingConcentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.FadingConcentricWaves);
-		squigglyConcentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.SquigglyConcentricWaves);
+		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
+		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
+		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
@@ -1845,10 +1851,10 @@ public class ThemePanel extends JTabbedPane
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
-				: noneRadioButton.isSelected() ? OceanWaves.None
-						: concentricWavesButton.isSelected() ? OceanWaves.ConcentricWaves
-								: fadingConcentricWavesButton.isSelected() ? OceanWaves.FadingConcentricWaves
-										: OceanWaves.SquigglyConcentricWaves;
+				: noneRadioButton.isSelected() ? OceanWaves.None : OceanWaves.ConcentricWaves;
+		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
+		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
+		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
 		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());

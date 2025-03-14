@@ -13,11 +13,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import nortantis.MapSettings.OceanWaves;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.FreeIcon;
@@ -1263,14 +1263,7 @@ public class MapCreator implements WarningLogger
 			}
 			else if (settings.hasConcentricWaves())
 			{
-				if (settings.oceanWavesType == OceanWaves.SquigglyConcentricWaves)
-				{
-					oceanWaves = createSquigglyWavesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds);
-				}
-				else
-				{
-					oceanWaves = createConcentricWavesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds);
-				}
+				oceanWaves = createConcentricWavesMask(settings, graph, resolutionScale, landMask, centersToDraw, drawBounds);
 			}
 
 			if (settings.hasOceanShading(resolutionScale))
@@ -1297,8 +1290,8 @@ public class MapCreator implements WarningLogger
 		return new Tuple2<>(oceanWaves, oceanShading);
 	}
 
-	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth, boolean forceUseCurvesWithinThreshold,
-			double widthBetweenWaves, Collection<Center> centersToDraw, Rectangle drawBounds)
+	private Image createCoastlineMask(MapSettings settings, WorldGraph graph, double targetStrokeWidth,
+			boolean forceUseCurvesWithinThreshold, double widthBetweenWaves, Collection<Center> centersToDraw, Rectangle drawBounds)
 	{
 		Image coastlineMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
 		Painter g = coastlineMask.createPainter();
@@ -1306,91 +1299,10 @@ public class MapCreator implements WarningLogger
 
 
 		g.setBasicStroke((float) targetStrokeWidth);
-		graph.drawCoastlineWithVariation(g, 0, 0, settings.drawOceanEffectsInLakes, forceUseCurvesWithinThreshold, widthBetweenWaves,
-				false, centersToDraw, drawBounds);
+		graph.drawCoastlineWithVariation(g, 0, 0, settings.drawOceanEffectsInLakes, forceUseCurvesWithinThreshold, widthBetweenWaves, false,
+				centersToDraw, drawBounds, null);
 
 		return coastlineMask;
-	}
-
-	private Image createSquigglyWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
-			Collection<Center> centersToDraw, Rectangle drawBounds)
-	{
-		Image oceanEffects = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Grayscale8Bit);
-		double sizeMultiplier = calcSizeMultipilerFromResolutionScaleRounded(resolutionScaled);
-
-		double widthBetweenWaves = concentricWaveWidthBetweenWaves * sizeMultiplier;
-		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
-		double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + waveWidth);
-		final double opacityOfLastWave;
-		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
-		{
-			opacityOfLastWave = 1.0;
-		}
-		else
-		{
-			if (settings.concentricWaveCount == 1)
-			{
-				opacityOfLastWave = 1.0;
-			}
-			else if (settings.concentricWaveCount == 2)
-			{
-				opacityOfLastWave = 0.35;
-			}
-			else if (settings.concentricWaveCount == 3)
-			{
-				opacityOfLastWave = 0.22;
-			}
-			else
-			{
-				opacityOfLastWave = 0.2;
-			}
-		}
-
-		Painter p = oceanEffects.createPainter(DrawQuality.High);
-		for (int i : new Range(0, settings.concentricWaveCount))
-		{
-			double whiteWidth = largestLineWidth - (i * (widthBetweenWaves + waveWidth));
-			if (whiteWidth <= 0)
-			{
-				continue;
-			}
-
-			double waveOpacity;
-			if (settings.concentricWaveCount == 1)
-			{
-				waveOpacity = 1.0;
-			}
-			else
-			{
-				double percentDone = ((double) (settings.concentricWaveCount - 1 - i)) / (settings.concentricWaveCount - 1);
-				waveOpacity = (percentDone * opacityOfLastWave + (1.0 - percentDone));
-			}
-			assert waveOpacity <= 1.0;
-			assert waveOpacity >= 0.0;
-
-			int level = (int) (settings.oceanWavesColor.getAlpha() * waveOpacity);
-			p.setColor(Color.create(level, level, level));
-			double varianceRange = widthBetweenWaves * 0.25;
-			p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange,
-					settings.drawOceanEffectsInLakes, true, widthBetweenWaves, true, centersToDraw, drawBounds); // TODO Change add random breaks to true
-
-			p.setColor(Color.black);
-			p.setBasicStroke((float) (whiteWidth - waveWidth));
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange,
-					settings.drawOceanEffectsInLakes, true, widthBetweenWaves, false, centersToDraw, drawBounds);
-		}
-
-		if (settings.drawOceanEffectsInLakes)
-		{
-			oceanEffects = removeOceanEffectsFromLand(graph, oceanEffects, landMask, centersToDraw, drawBounds);
-		}
-		else
-		{
-			oceanEffects = removeOceanEffectsFromLandAndLandLockedLakes(graph, oceanEffects, centersToDraw, drawBounds);
-		}
-
-		return oceanEffects;
 	}
 
 	private Image createConcentricWavesMask(MapSettings settings, WorldGraph graph, double resolutionScaled, Image landMask,
@@ -1403,11 +1315,7 @@ public class MapCreator implements WarningLogger
 		double waveWidth = concentricWaveLineWidth * sizeMultiplier;
 		double largestLineWidth = settings.concentricWaveCount * (widthBetweenWaves + waveWidth);
 		final double opacityOfLastWave;
-		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
-		{
-			opacityOfLastWave = 1.0;
-		}
-		else
+		if (settings.fadeConcentricWaves)
 		{
 			if (settings.concentricWaveCount == 1)
 			{
@@ -1425,6 +1333,11 @@ public class MapCreator implements WarningLogger
 			{
 				opacityOfLastWave = 0.2;
 			}
+			
+		}
+		else
+		{
+			opacityOfLastWave = 1.0;
 		}
 
 		Painter p = oceanEffects.createPainter(DrawQuality.High);
@@ -1449,17 +1362,35 @@ public class MapCreator implements WarningLogger
 			assert waveOpacity <= 1.0;
 			assert waveOpacity >= 0.0;
 
+			BiFunction<Boolean, Random, Double> getNewSkipDistance = (isDrawing, rand) ->
+			{
+				int waveNumber = settings.concentricWaveCount - i;
+				double scaleToMakeFartherOutWavesShorter = ((((((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)
+						- (waveNumber - 1))) / ((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)));
+				final double scaleAtLastWave = 0.7;
+				scaleToMakeFartherOutWavesShorter = 1.0 - ((1.0 - scaleToMakeFartherOutWavesShorter) * (1.0 - scaleAtLastWave));
+				
+				final double scaleForAll = 4 * settings.resolution * scaleToMakeFartherOutWavesShorter;
+				final double maxNotDrawLength = 3 * scaleForAll;
+				final double minNotDrawLength = 2 * scaleForAll;
+				final double maxDrawLength = 20 * scaleForAll;
+				final double minDrawLength = 15 * scaleForAll;
+				return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1)
+						: rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
+			};
+
+			
 			int level = (int) (settings.oceanWavesColor.getAlpha() * waveOpacity);
 			p.setColor(Color.create(level, level, level));
-			double varianceRange = 0;// widthBetweenWaves * (settings.concentricWaveCount - i);
-			p.setBasicStroke((float) whiteWidth);
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange,
-					settings.drawOceanEffectsInLakes, true, widthBetweenWaves, false, centersToDraw, drawBounds);
+			double varianceRange = settings.jitterToConcentricWaves ? widthBetweenWaves * 0.25 : 0.0;
+			p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
+			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, settings.drawOceanEffectsInLakes, true,
+					widthBetweenWaves, settings.brokenLinesForConcentricWaves, centersToDraw, drawBounds, getNewSkipDistance);
 
 			p.setColor(Color.black);
 			p.setBasicStroke((float) (whiteWidth - waveWidth));
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange,
-					settings.drawOceanEffectsInLakes, true, widthBetweenWaves, false, centersToDraw, drawBounds);
+			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, settings.drawOceanEffectsInLakes, true,
+					widthBetweenWaves, false, centersToDraw, drawBounds, getNewSkipDistance);
 		}
 
 		if (settings.drawOceanEffectsInLakes)

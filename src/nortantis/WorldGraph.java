@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.function.TriFunction;
@@ -1935,7 +1936,7 @@ public class WorldGraph extends VoronoiGraph
 
 	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, boolean includeLakeShores,
 			boolean forceUseCurvesWithinThreshold, double widthBetweenWaves, boolean addRandomBreaks, Collection<Center> centersToDraw,
-			Rectangle drawBounds)
+			Rectangle drawBounds, BiFunction<Boolean, Random, Double> getNewSkipDistance)
 	{
 		Transform orig = null;
 		if (drawBounds != null)
@@ -1955,9 +1956,16 @@ public class WorldGraph extends VoronoiGraph
 		}
 		for (List<Edge> coastline : coastlines)
 		{
+			if (coastline.size() == 0)
+			{
+				assert false;
+				continue;
+			}
+			
 			final double maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines = widthBetweenWaves * 0.5;
-			boolean needToforceUseCurves = noisyEdges.getLineStyle() == LineStyle.Jagged && forceUseCurvesWithinThreshold;
 			boolean isPolygon = false;
+			// Use a random seed that is unique per coastline.
+			Random rand = new Random(randomSeed + coastline.get(0).index);
 
 			List<Point> drawPoints;
 			if (variationRange > 0)
@@ -1965,7 +1973,7 @@ public class WorldGraph extends VoronoiGraph
 				// Get the path without curves, except cases where jagged lines might overlap with waves when the coastlines use curves.
 				if (noisyEdges.getLineStyle() == LineStyle.Jagged)
 				{
-					drawPoints = edgeListToDrawPoints(coastline, needToforceUseCurves,
+					drawPoints = edgeListToDrawPoints(coastline, true,
 							maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				}
 				else
@@ -1974,19 +1982,19 @@ public class WorldGraph extends VoronoiGraph
 					drawPoints = edgeListToDrawPoints(coastline, true, Double.MAX_VALUE);
 				}
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
-				drawPoints = addRandomVariance(drawPoints, randomSeed, variationRange);
-				drawPoints = CurveCreator.createCurve(drawPoints);
+				drawPoints = addRandomVariance(rand, drawPoints, variationRange);
 			}
 			else
 			{
-				drawPoints = edgeListToDrawPoints(coastline, needToforceUseCurves,
+				drawPoints = edgeListToDrawPoints(coastline, true,
 						maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
-				if (needToforceUseCurves)
-				{
-					drawPoints = CurveCreator.createCurve(drawPoints);
-				}
 			}
+			
+			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look good.
+			double distanceBetweenPoints = Math.max(2.0, Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
+			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
+
 
 			if (drawPoints == null || drawPoints.size() <= 1)
 			{
@@ -1995,7 +2003,7 @@ public class WorldGraph extends VoronoiGraph
 
 			if (addRandomBreaks)
 			{
-				List<List<Point>> drawPointsWithBreaks = addRandomBreaks(drawPoints, randomSeed);
+				List<List<Point>> drawPointsWithBreaks = addRandomBreaks(rand, drawPoints, getNewSkipDistance);
 				for (List<Point> points : drawPointsWithBreaks)
 				{
 					if (isPolygon && !addRandomBreaks)
@@ -2027,22 +2035,19 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	List<Point> addRandomVariance(List<Point> points, long randomSeed, double variationRange)
+	List<Point> addRandomVariance(Random rand, List<Point> points, double variationRange)
 	{
 		return points.stream().map(p ->
 		{
-			// The 100 is to make the random seed more likely to be unique after converting to a long.
-			Random r = new Random(randomSeed + (long) ((p.x + p.y) * 100));
-			double radius = r.nextDouble() * variationRange;
-			double angle = r.nextDouble() * 2 * Math.PI;
+			double radius = rand.nextDouble() * variationRange;
+			double angle = rand.nextDouble() * 2 * Math.PI;
 			Point toAdd = new Point(radius * Math.cos(angle), radius * Math.sin(angle));
 			return p.add(toAdd);
 		}).toList();
 	}
 
-	List<List<Point>> addRandomBreaks(List<Point> points, long randomSeed)
+	List<List<Point>> addRandomBreaks(Random rand, List<Point> points, BiFunction<Boolean, Random, Double> getNewSkipDistance)
 	{
-		Random rand = new Random(randomSeed);
 		// Prime the random generator.
 		for (int i = 0; i < 100; i++)
 		{
@@ -2050,7 +2055,7 @@ public class WorldGraph extends VoronoiGraph
 		}
 		List<List<Point>> result = new ArrayList<>();
 		boolean isDrawing = rand.nextBoolean();
-		double skipDistance = getNewSkipDistance(isDrawing);
+		double skipDistance = getNewSkipDistance.apply(isDrawing, rand);
 		List<Point> curSegment = new ArrayList<>();
 		Point lastPoint = points.get(0);
 		for (Point point : points)
@@ -2071,7 +2076,7 @@ public class WorldGraph extends VoronoiGraph
 				}
 
 				isDrawing = !isDrawing;
-				skipDistance = getNewSkipDistance(isDrawing);
+				skipDistance = getNewSkipDistance.apply(isDrawing, rand);
 			}
 
 			lastPoint = point;
@@ -2083,16 +2088,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return result;
-	}
-
-	private double getNewSkipDistance(boolean isDrawing)
-	{
-		final double scaleForAll = 4;
-		final double maxNotDrawLength = 3 * resolutionScale * scaleForAll;
-		final double minNotDrawLength = 2 * resolutionScale * scaleForAll;
-		final double maxDrawLength = 15 * resolutionScale * scaleForAll;
-		final double minDrawLength = 10 * resolutionScale * scaleForAll;
-		return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1) : rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
 	}
 
 	public List<List<Edge>> findCoastlines(Collection<Center> centersToDraw)

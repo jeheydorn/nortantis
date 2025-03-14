@@ -74,6 +74,9 @@ public class MapSettings implements Serializable
 	public int oceanWavesLevel;
 	public int oceanShadingLevel;
 	public int concentricWaveCount;
+	public boolean jitterToConcentricWaves;
+	public boolean brokenLinesForConcentricWaves;
+	public boolean fadeConcentricWaves;
 	public OceanWaves oceanWavesType;
 	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
@@ -322,6 +325,9 @@ public class MapSettings implements Serializable
 		root.put("oceanShadingLevel", oceanShadingLevel);
 		root.put("oceanEffectsLevel", oceanEffectsLevel);
 		root.put("concentricWaveCount", concentricWaveCount);
+		root.put("fadeConcentricWaves", fadeConcentricWaves);
+		root.put("brokenLinesForConcentricWaves", brokenLinesForConcentricWaves);
+		root.put("jitterToConcentricWaves", jitterToConcentricWaves);
 		root.put("oceanEffect", oceanWavesType.toString());
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
@@ -645,6 +651,18 @@ public class MapSettings implements Serializable
 		coastShadingLevel = (int) (long) root.get("coastShadingLevel");
 
 		concentricWaveCount = (int) (long) root.get("concentricWaveCount");
+		if (root.containsKey("fadeConcentricWaves"))
+		{
+			fadeConcentricWaves = (boolean) root.get("fadeConcentricWaves");
+		}
+		if (root.containsKey("brokenLinesForConcentricWaves"))
+		{
+			brokenLinesForConcentricWaves = (boolean) root.get("brokenLinesForConcentricWaves");
+		}
+		if (root.containsKey("jitterToConcentricWaves"))
+		{
+			jitterToConcentricWaves = (boolean) root.get("jitterToConcentricWaves");
+		}
 		worldSize = (int) (long) root.get("worldSize");
 		riverColor = parseColor((String) root.get("riverColor"));
 		if (root.containsKey("roadColor"))
@@ -1014,6 +1032,16 @@ public class MapSettings implements Serializable
 		runConversionOnBackgroundTextureImagePaths();
 		runConversionOnBorderType();
 		runConversionToRemoveTrailingSpacesInImageNamesWithWidth();
+		runConversionOnFadingConcentricWaves();
+	}
+	
+	private void runConversionOnFadingConcentricWaves()
+	{
+		if (oceanWavesType == OceanWaves.FadingConcentricWaves)
+		{
+			oceanWavesType = OceanWaves.ConcentricWaves;
+			fadeConcentricWaves = true;
+		}
 	}
 
 	private void runConversionToRemoveTrailingSpacesInImageNamesWithWidth()
@@ -1616,8 +1644,7 @@ public class MapSettings implements Serializable
 
 	public boolean hasConcentricWaves()
 	{
-		return (oceanWavesType == OceanWaves.ConcentricWaves || oceanWavesType == OceanWaves.FadingConcentricWaves
-				|| oceanWavesType == OceanWaves.SquigglyConcentricWaves) && concentricWaveCount > 0;
+		return (oceanWavesType == OceanWaves.ConcentricWaves) && concentricWaveCount > 0;
 	}
 
 	public boolean equalsIgnoringEdits(MapSettings other)
@@ -1685,7 +1712,9 @@ public class MapSettings implements Serializable
 	public enum OceanWaves
 	{
 		@Deprecated
-		Blur, Ripples, ConcentricWaves, FadingConcentricWaves, SquigglyConcentricWaves, None
+		Blur, Ripples, ConcentricWaves, 
+		@Deprecated
+		FadingConcentricWaves, None
 	}
 
 	public static final String fileExtension = "nort";
@@ -1715,6 +1744,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
 				&& Objects.equals(borderResource, other.borderResource) && Objects.equals(borderType, other.borderType)
 				&& borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
+				&& brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
@@ -1737,16 +1767,16 @@ public class MapSettings implements Serializable
 				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
-				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
-				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
-				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
-				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
-				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
+				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
+				&& frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
+				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSize == other.frayedBorderSize
+				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture
+				&& generatedHeight == other.generatedHeight && generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
-				&& Objects.equals(imageExportPath, other.imageExportPath) && Objects.equals(landColor, other.landColor)
-				&& lineStyle == other.lineStyle
+				&& Objects.equals(imageExportPath, other.imageExportPath) && jitterToConcentricWaves == other.jitterToConcentricWaves
+				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
 				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
@@ -1773,6 +1803,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
 
 }
