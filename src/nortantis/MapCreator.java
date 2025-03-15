@@ -57,7 +57,7 @@ public class MapCreator implements WarningLogger
 
 	private Random r;
 
-	private static final double concentricWaveWidthBetweenWaves = 10;
+	private static final double concentricWaveWidthBetweenWaves = 11;
 	private static final double concentricWaveLineWidth = 1.8;
 	private boolean isCanceled;
 	private List<String> warningMessages;
@@ -1326,10 +1326,15 @@ public class MapCreator implements WarningLogger
 		g.setColor(Color.white);
 
 
-		g.setBasicStroke((float) targetStrokeWidth);
-		graph.drawCoastlineWithVariation(g, 0, 0, forceUseCurvesWithinThreshold, widthBetweenWaves, false, centersToDraw, drawBounds, null,
-				graph.findShoreEdges(centersToDraw, settings.drawOceanEffectsInLakes, false));
-
+		if (settings.drawOceanEffectsInLakes)
+		{
+			graph.drawCoastlineWithLakeShores(g, targetStrokeWidth, centersToDraw, drawBounds);
+		}
+		else
+		{
+			graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
+		}
+		
 		return coastlineMask;
 	}
 
@@ -1397,14 +1402,14 @@ public class MapCreator implements WarningLogger
 				int waveNumber = settings.concentricWaveCount - i;
 				double scaleToMakeFartherOutWavesShorter = ((((((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)
 						- (waveNumber - 1))) / ((double) SettingsGenerator.maxConcentricWaveCountInEditor - 1)));
-				final double scaleAtLastWave = 0.7;
+				final double scaleAtLastWave = 0.5;
 				scaleToMakeFartherOutWavesShorter = 1.0 - ((1.0 - scaleToMakeFartherOutWavesShorter) * (1.0 - scaleAtLastWave));
 
 				final double scaleForAll = 4 * settings.resolution * scaleToMakeFartherOutWavesShorter;
 				final double maxNotDrawLength = 3 * scaleForAll;
 				final double minNotDrawLength = 2 * scaleForAll;
-				final double maxDrawLength = 20 * scaleForAll;
-				final double minDrawLength = 15 * scaleForAll;
+				final double maxDrawLength = 24 * scaleForAll;
+				final double minDrawLength = 19 * scaleForAll;
 				return isDrawing ? rand.nextDouble(minDrawLength, maxDrawLength + 1)
 						: rand.nextDouble(minNotDrawLength, maxNotDrawLength + 1);
 			};
