@@ -196,7 +196,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			enableOrDisableFieldsThatRequireMap(false, null);
 		}
 
-		launchNewVersionCheck();
+		//launchNewVersionCheck(); TODO Put back
 	}
 
 	private void launchNewVersionCheck()

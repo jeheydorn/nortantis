@@ -1934,8 +1934,8 @@ public class WorldGraph extends VoronoiGraph
 		return cSize;
 	}
 
-	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, boolean forceUseCurvesWithinThreshold,
-			double widthBetweenWaves, boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
+	public void drawCoastlineWithVariation(Painter p, long randomSeed, double variationRange, double widthBetweenWaves,
+			boolean addRandomBreaks, Collection<Center> centersToDraw, Rectangle drawBounds,
 			BiFunction<Boolean, Random, Double> getNewSkipDistance, List<List<Edge>> shoreEdges)
 	{
 		Transform orig = null;
@@ -1972,12 +1972,20 @@ public class WorldGraph extends VoronoiGraph
 					drawPoints = edgeListToDrawPoints(coastline, true, Double.MAX_VALUE);
 				}
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
+				if (!isPolygon)
+				{
+					addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
+				}
 				drawPoints = addJitter(randomSeed, drawPoints, variationRange);
 			}
 			else
 			{
 				drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
+				if (!isPolygon)
+				{
+					addPointsOffMapToMakeWavesGoToEdgeOfMap(drawPoints);
+				}
 			}
 
 			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look
@@ -2026,7 +2034,57 @@ public class WorldGraph extends VoronoiGraph
 		}
 	}
 
-	List<Point> addJitter(long randomSeed, List<Point> points, double variationRange)
+	private void addPointsOffMapToMakeWavesGoToEdgeOfMap(List<Point> drawPoints)
+	{
+		if (drawPoints.size() < 2)
+		{
+			return;
+		}
+
+		{
+			Point point = getPointToAddToMakeWavesGoToEdgeOfMap(drawPoints.get(0));
+			if (point != null)
+			{
+				drawPoints.add(0, point);
+			}
+		}
+
+		{
+			Point point = getPointToAddToMakeWavesGoToEdgeOfMap(drawPoints.get(drawPoints.size() - 1));
+			if (point != null)
+			{
+				drawPoints.add(point);
+			}
+		}
+	}
+
+	private Point getPointToAddToMakeWavesGoToEdgeOfMap(Point fromLine)
+	{
+		double length = 50 * resolutionScale;
+		if (fromLine.x == 0.0)
+		{
+			return new Point(fromLine.x - length, fromLine.y);
+		}
+
+		if (fromLine.x == bounds.width)
+		{
+			return new Point(fromLine.x + length, fromLine.y);
+		}
+
+		if (fromLine.y == 0.0)
+		{
+			return new Point(fromLine.x, fromLine.y - length);
+		}
+
+		if (fromLine.y == bounds.width)
+		{
+			return new Point(fromLine.x, fromLine.y + length);
+		}
+
+		return null;
+	}
+
+	private List<Point> addJitter(long randomSeed, List<Point> points, double variationRange)
 	{
 		List<Point> result = points.stream().map(p ->
 		{
