@@ -847,7 +847,6 @@ public class ThemePanel extends JTabbedPane
 		noneRadioButton = new JRadioButton("None");
 		oceanEffectButtonGroup.add(noneRadioButton);
 		noneRadioButton.addActionListener(oceanEffectsListener);
-		final String brokenLinesCheckboxName = "Broken lines";
 		organizer.addLabelAndComponentsVertical("Wave type:", "Which type of wave to draw in the ocean along coastlines.",
 				Arrays.asList(concentricWavesButton, ripplesRadioButton, noneRadioButton));
 
@@ -857,10 +856,10 @@ public class ThemePanel extends JTabbedPane
 		jitterWavesCheckbox = new JCheckBox("Jitter");
 		createMapChangeListenerForTerrainChange(jitterWavesCheckbox);
 
-		brokenLinesCheckbox = new JCheckBox(brokenLinesCheckboxName);
+		brokenLinesCheckbox = new JCheckBox("Broken lines");
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
 		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Style options:",
-				"Options for how to draw concentric waves. Warning: '" + brokenLinesCheckboxName + "' significantly slows down drawing coastlines in the editor.",
+				"Options for how to draw concentric waves.",
 				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox));
 
 		concentricWavesLevelSlider = new JSlider();
