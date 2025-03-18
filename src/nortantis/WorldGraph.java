@@ -1990,7 +1990,7 @@ public class WorldGraph extends VoronoiGraph
 
 			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look
 			// good.
-			double distanceBetweenPoints = Math.max(2.0,
+			double distanceBetweenPoints = Math.max(1.0,
 					Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
 

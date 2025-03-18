@@ -337,8 +337,12 @@ public class MapCreator implements WarningLogger
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
 			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
+			
+			checkForCancel();
 
 			mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
+			
+			checkForCancel();
 
 			// Draw mask for land vs ocean.
 			Image landMask = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.Binary);
@@ -346,9 +350,13 @@ public class MapCreator implements WarningLogger
 				Painter p = landMask.createPainter();
 				mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
 			}
+			
+			checkForCancel();
 
 			Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
 			mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
+			
+			checkForCancel();
 
 			Image coastShading;
 			{
@@ -357,6 +365,8 @@ public class MapCreator implements WarningLogger
 				mapSnippet = tuple.getFirst();
 				coastShading = tuple.getSecond();
 			}
+			
+			checkForCancel();
 
 			// Store the current version of mapSnippet for a background when drawing icons later.
 			Image landBackground = mapSnippet.deepCopy();
@@ -367,9 +377,13 @@ public class MapCreator implements WarningLogger
 				p.setColor(settings.regionBoundaryColor);
 				mapParts.graph.drawRegionBoundaries(p, settings.regionBoundaryStyle, centersToDraw, drawBounds);
 			}
+			
+			checkForCancel();
 
 			Set<Edge> edgesToDraw = mapParts.graph.getEdgesFromCenters(centersToDraw);
 			drawRivers(settings, mapParts.graph, mapSnippet, edgesToDraw, drawBounds);
+			
+			checkForCancel();
 
 			// Draw ocean
 			Image oceanTextureSnippet;
@@ -377,6 +391,8 @@ public class MapCreator implements WarningLogger
 				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
 				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
 			}
+			
+			checkForCancel();
 
 			// Add shading and waves to ocean along coastlines
 			Image oceanWaves;
@@ -395,6 +411,8 @@ public class MapCreator implements WarningLogger
 					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
 				}
 			}
+			
+			checkForCancel();
 
 			// Draw coastlines.
 			{
@@ -402,6 +420,8 @@ public class MapCreator implements WarningLogger
 				p.setColor(settings.coastlineColor);
 				mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
 			}
+			
+			checkForCancel();
 
 			// Draw roads
 			if (settings.drawRoads)
@@ -409,6 +429,8 @@ public class MapCreator implements WarningLogger
 				RoadDrawer roadDrawer = new RoadDrawer(r, settings, mapParts.graph);
 				roadDrawer.drawRoads(mapSnippet, drawBounds);
 			}
+			
+			checkForCancel();
 
 			// Draw icons
 			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet,
@@ -417,6 +439,8 @@ public class MapCreator implements WarningLogger
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
 					drawBounds);
+			
+			checkForCancel();
 
 			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(mapParts.textBackground, textBackground,

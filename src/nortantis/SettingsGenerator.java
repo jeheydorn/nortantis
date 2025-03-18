@@ -16,6 +16,7 @@ import nortantis.platform.Color;
 import nortantis.util.Assets;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 /**
  * For randomly generating settings with which to generate a map.
@@ -69,9 +70,11 @@ public class SettingsGenerator
 		settings.artPack = artPack;
 		settings.customImagesPath = customImagesFolder;
 
-		int hueRange = 16;
-		int saturationRange = 25;
-		int brightnessRange = 25;
+		List<Tuple2<Double, OceanWaves>> oceanWaveOptions = new ArrayList<>(
+				Arrays.asList(new Tuple2<Double, OceanWaves>(1.0, OceanWaves.None), new Tuple2<Double, OceanWaves>(1.0, OceanWaves.Ripples),
+						new Tuple2<Double, OceanWaves>(2.0, OceanWaves.ConcentricWaves)));
+
+		settings.oceanWavesType = ProbabilityHelper.sampleCategorical(rand, oceanWaveOptions);
 
 		Color landColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		Color oceanColor;
@@ -88,18 +91,22 @@ public class SettingsGenerator
 			oceanColor = rand.nextInt(2) == 1 ? settings.landColor : settings.oceanColor;
 		}
 
-		List<OceanWaves> oceanWaveOptions = new ArrayList<>(Arrays.asList(OceanWaves.values()));
-		// Remove deprecated option.
-		oceanWaveOptions.remove(OceanWaves.Blur);
-
-		settings.oceanWavesType = ProbabilityHelper.sampleUniform(rand, oceanWaveOptions);
 		settings.drawOceanEffectsInLakes = true;
 		settings.oceanWavesLevel = 15 + Math.abs(rand.nextInt(35));
 		settings.oceanShadingLevel = 0;
+		if (settings.oceanWavesType == OceanWaves.ConcentricWaves)
+		{
+			settings.fadeConcentricWaves = rand.nextBoolean();
+			settings.jitterToConcentricWaves = rand.nextBoolean();
+			settings.brokenLinesForConcentricWaves = rand.nextBoolean();
+		}
 		settings.concentricWaveCount = Math.max(minConcentricWaveCountToGenerate,
 				Math.min(maxConcentricWaveCountToGenerate, Math.abs((rand.nextInt() % maxConcentricWaveCountInEditor)) + 1));
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 
+		int hueRange = 16;
+		int saturationRange = 25;
+		int brightnessRange = 25;
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
 

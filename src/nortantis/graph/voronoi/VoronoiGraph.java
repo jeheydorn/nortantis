@@ -19,6 +19,7 @@ import java.util.function.Function;
 import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 
 import nortantis.Biome;
+import nortantis.MapSettings.LineStyle;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
@@ -1050,7 +1051,7 @@ public abstract class VoronoiGraph
 		return edgeListToDrawPoints(edges, false, 0);
 	}
 
-	public List<Point> edgeListToDrawPoints(List<Edge> edges, boolean ignoreNoisyEdges, double maxDistanceToIgnoreNoisyEdges)
+	public List<Point> edgeListToDrawPoints(List<Edge> edges, boolean ignoreNoisyEdges, double maxDistanceToIgnoreNoisyEdgesForJaggedLines)
 	{
 		if (edges.isEmpty())
 		{
@@ -1099,16 +1100,16 @@ public abstract class VoronoiGraph
 				}
 			}
 
-			addEdgePoints(result, current, reverse, ignoreNoisyEdges, maxDistanceToIgnoreNoisyEdges);
+			addEdgePoints(result, current, reverse, ignoreNoisyEdges, maxDistanceToIgnoreNoisyEdgesForJaggedLines);
 		}
 
 		return result;
 	}
 
-	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse, boolean ignoreNoisyEdges, double maxDistanceToIgnoreNoisyEdges)
+	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse, boolean ignoreNoisyEdges, double maxDistanceToIgnoreNoisyEdgesForJaggedLines)
 	{
 		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
-		if (noisyEdge == null || (ignoreNoisyEdges && edge.v1.loc.distanceTo(edge.v0.loc) <= maxDistanceToIgnoreNoisyEdges))
+		if (noisyEdge == null || (ignoreNoisyEdges && (noisyEdges.getLineStyle() != LineStyle.Jagged || edge.v1.loc.distanceTo(edge.v0.loc) <= maxDistanceToIgnoreNoisyEdgesForJaggedLines)))
 		{
 			if (reverse)
 			{
