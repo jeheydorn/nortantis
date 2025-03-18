@@ -859,8 +859,8 @@ public class ThemePanel extends JTabbedPane
 
 		brokenLinesCheckbox = new JCheckBox(brokenLinesCheckboxName);
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
-		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Concentric wave options:",
-				"Options for adding effects to concentric waves. Warning: '" + brokenLinesCheckboxName + "' significantly slows down drawing coastlines in the editor.",
+		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Style options:",
+				"Options for how to draw concentric waves. Warning: '" + brokenLinesCheckboxName + "' significantly slows down drawing coastlines in the editor.",
 				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox));
 
 		concentricWavesLevelSlider = new JSlider();
