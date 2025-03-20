@@ -53,12 +53,13 @@ import nortantis.util.Tuple2;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "3.03";
+	public static final String currentVersion = "3.04";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
 	private final double defaultRoadWidth = 1.0;
-	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
+	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots,
+			(float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
 	private final Color defaultRoadColor = Color.black;
 
 	public String version;
@@ -73,6 +74,9 @@ public class MapSettings implements Serializable
 	public int oceanWavesLevel;
 	public int oceanShadingLevel;
 	public int concentricWaveCount;
+	public boolean jitterToConcentricWaves;
+	public boolean brokenLinesForConcentricWaves;
+	public boolean fadeConcentricWaves;
 	public OceanWaves oceanWavesType;
 	public boolean drawOceanEffectsInLakes;
 	public int worldSize;
@@ -321,6 +325,9 @@ public class MapSettings implements Serializable
 		root.put("oceanShadingLevel", oceanShadingLevel);
 		root.put("oceanEffectsLevel", oceanEffectsLevel);
 		root.put("concentricWaveCount", concentricWaveCount);
+		root.put("fadeConcentricWaves", fadeConcentricWaves);
+		root.put("brokenLinesForConcentricWaves", brokenLinesForConcentricWaves);
+		root.put("jitterToConcentricWaves", jitterToConcentricWaves);
 		root.put("oceanEffect", oceanWavesType.toString());
 		root.put("drawOceanEffectsInLakes", drawOceanEffectsInLakes);
 		root.put("worldSize", worldSize);
@@ -530,7 +537,7 @@ public class MapSettings implements Serializable
 		}
 		return list;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONArray roadsToJson()
 	{
@@ -539,11 +546,11 @@ public class MapSettings implements Serializable
 		{
 			return roadsJson;
 		}
-		
+
 		for (Road road : edits.roads)
 		{
 			JSONObject roadObj = new JSONObject();
-			
+
 			JSONArray pathJson = new JSONArray();
 			if (road.path != null)
 			{
@@ -555,7 +562,7 @@ public class MapSettings implements Serializable
 			roadObj.put("path", pathJson);
 			roadsJson.add(roadObj);
 		}
-		
+
 		return roadsJson;
 	}
 
@@ -577,7 +584,7 @@ public class MapSettings implements Serializable
 	{
 		return strokeToJson(regionBoundaryStyle);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private JSONObject strokeToJson(Stroke stroke)
 	{
@@ -644,6 +651,18 @@ public class MapSettings implements Serializable
 		coastShadingLevel = (int) (long) root.get("coastShadingLevel");
 
 		concentricWaveCount = (int) (long) root.get("concentricWaveCount");
+		if (root.containsKey("fadeConcentricWaves"))
+		{
+			fadeConcentricWaves = (boolean) root.get("fadeConcentricWaves");
+		}
+		if (root.containsKey("brokenLinesForConcentricWaves"))
+		{
+			brokenLinesForConcentricWaves = (boolean) root.get("brokenLinesForConcentricWaves");
+		}
+		if (root.containsKey("jitterToConcentricWaves"))
+		{
+			jitterToConcentricWaves = (boolean) root.get("jitterToConcentricWaves");
+		}
 		worldSize = (int) (long) root.get("worldSize");
 		riverColor = parseColor((String) root.get("riverColor"));
 		if (root.containsKey("roadColor"))
@@ -1013,6 +1032,41 @@ public class MapSettings implements Serializable
 		runConversionOnBackgroundTextureImagePaths();
 		runConversionOnBorderType();
 		runConversionToRemoveTrailingSpacesInImageNamesWithWidth();
+		runConversionOnFadingConcentricWaves();
+		runConversionToRemoveRegionIdsOfEditsThatAreWater();
+	}
+
+	/**
+	 * Fixes the aftermath of an issue where the Land and Water tool wasn't clearing region IDs when drawing ocean and lakes.
+	 */
+	private void runConversionToRemoveRegionIdsOfEditsThatAreWater()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.04"))
+		{
+			return;
+		}
+
+		for (CenterEdit cEdit : edits.centerEdits.values())
+		{
+			if ((cEdit.isWater || cEdit.isLake) && cEdit.regionId != null)
+			{
+				edits.centerEdits.put(cEdit.index, cEdit.copyWithRegionId(null));
+			}
+		}
+	}
+
+	private void runConversionOnFadingConcentricWaves()
+	{
+		if (isVersionGreaterThanOrEqualTo(version, "3.04"))
+		{
+			return;
+		}
+
+		if (oceanWavesType == OceanWaves.FadingConcentricWaves)
+		{
+			oceanWavesType = OceanWaves.ConcentricWaves;
+			fadeConcentricWaves = true;
+		}
 	}
 
 	private void runConversionToRemoveTrailingSpacesInImageNamesWithWidth()
@@ -1353,16 +1407,16 @@ public class MapSettings implements Serializable
 
 		return result;
 	}
-	
+
 	private CopyOnWriteArrayList<Road> parseRoads(JSONObject editsJson)
 	{
 		CopyOnWriteArrayList<Road> roads = new CopyOnWriteArrayList<>();
-		
+
 		if (!editsJson.containsKey("roads"))
 		{
 			return roads;
 		}
-		
+
 		JSONArray list = (JSONArray) editsJson.get("roads");
 		for (Object obj : list)
 		{
@@ -1408,10 +1462,10 @@ public class MapSettings implements Serializable
 		{
 			return new Stroke(StrokeType.Solid, (float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0)));
 		}
-		
+
 		return parsed;
 	}
-	
+
 	private Stroke parseStroke(JSONObject obj)
 	{
 		if (obj == null)
@@ -1615,8 +1669,7 @@ public class MapSettings implements Serializable
 
 	public boolean hasConcentricWaves()
 	{
-		return (oceanWavesType == OceanWaves.ConcentricWaves || oceanWavesType == OceanWaves.FadingConcentricWaves)
-				&& concentricWaveCount > 0;
+		return (oceanWavesType == OceanWaves.ConcentricWaves) && concentricWaveCount > 0;
 	}
 
 	public boolean equalsIgnoringEdits(MapSettings other)
@@ -1684,7 +1737,8 @@ public class MapSettings implements Serializable
 	public enum OceanWaves
 	{
 		@Deprecated
-		Blur, Ripples, ConcentricWaves, FadingConcentricWaves, None
+		Blur, Ripples, ConcentricWaves, @Deprecated
+		FadingConcentricWaves, None
 	}
 
 	public static final String fileExtension = "nort";
@@ -1714,6 +1768,7 @@ public class MapSettings implements Serializable
 				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
 				&& Objects.equals(borderResource, other.borderResource) && Objects.equals(borderType, other.borderType)
 				&& borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
+				&& brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)
@@ -1736,16 +1791,16 @@ public class MapSettings implements Serializable
 				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
-				&& Objects.equals(edits, other.edits) && frayedBorder == other.frayedBorder
-				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
-				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
-				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
-				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
+				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
+				&& frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
+				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSize == other.frayedBorderSize
+				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture
+				&& generatedHeight == other.generatedHeight && generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
-				&& Objects.equals(imageExportPath, other.imageExportPath) && Objects.equals(landColor, other.landColor)
-				&& lineStyle == other.lineStyle
+				&& Objects.equals(imageExportPath, other.imageExportPath) && jitterToConcentricWaves == other.jitterToConcentricWaves
+				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
 				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
@@ -1772,7 +1827,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
-
 
 }

@@ -69,6 +69,18 @@ public abstract class Painter
 	}
 
 	public abstract void drawPolygon(int[] xPoints, int[] yPoints);
+	
+	public void drawPolygon(List<Point> points)
+	{
+		int[] xPoints = new int[points.size()];
+		int[] yPoints = new int[points.size()];
+		for (int i : new Range(points.size()))
+		{
+			xPoints[i] = (int) points.get(i).x;
+			yPoints[i] = (int) points.get(i).y;
+		}
+		drawPolygon(xPoints, yPoints);
+	}
 
 	public abstract void drawPolyline(int[] xPoints, int[] yPoints);
 	
@@ -87,6 +99,8 @@ public abstract class Painter
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 
 	public abstract void setBasicStroke(float width);
+	
+	public abstract void setStrokeToSolidLineWithNoEndDecorations(float width);
 
 	public abstract void setStroke(Stroke stroke, double resolutionScale);
 

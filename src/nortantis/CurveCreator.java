@@ -10,6 +10,8 @@ import nortantis.geom.Point;
  */
 public class CurveCreator
 {
+	public static final double defaultDistanceBetweenPoints = 4.0;
+	
 	/**
 	 * Creates a curve from p1 to p2 inclusive by creating a centripetal Catmull-Rom spline.
 	 * 
@@ -23,14 +25,17 @@ public class CurveCreator
 	 *            Control point for controlling the curve shape
 	 * @return
 	 */
-	public static List<Point> createCurve(Point p0, Point p1, Point p2, Point p3)
+	public static List<Point> createCurve(Point p0, Point p1, Point p2, Point p3, double distanceBetweenPoints)
 	{
 		// Create enough points that you can't see the lines in the curves.
-		int numPoints = (int) (p1.distanceTo(p2) * 0.25);
+		int numPoints = (int) (p1.distanceTo(p2) * (1.0 / distanceBetweenPoints));
 
 		if (numPoints == 0)
 		{
-			return new ArrayList<Point>(0);
+			List<Point> result = new ArrayList<>(1);
+			result.add(p1);
+			result.add(p2);
+			return result;
 		}
 
 		List<Point> curve = new ArrayList<Point>(numPoints + 2);
@@ -59,7 +64,7 @@ public class CurveCreator
 
 		return curve;
 	}
-
+	
 	/**
 	 * Creates a curve that passes through the given points.
 	 * 
@@ -68,6 +73,20 @@ public class CurveCreator
 	 * @return the curve
 	 */
 	public static List<Point> createCurve(List<Point> path)
+	{
+		return createCurve(path, defaultDistanceBetweenPoints);
+	}
+
+	/**
+	 * Creates a curve that passes through the given points.
+	 * 
+	 * @param path
+	 *            List of points that defines where the curve should go.
+	 * @param distanceBetweenPoints
+	 * 			  Determines the number of points to add to the curve.
+	 * @return the curve
+	 */
+	public static List<Point> createCurve(List<Point> path, double distanceBetweenPoints)
 	{
 		if (path == null || path.size() < 2)
 		{
@@ -81,7 +100,7 @@ public class CurveCreator
 		}
 		else
 		{
-			// Add control points at the beginnin and end to make the last connections curve.
+			// Add control points at the beginning and end to make the last connections curve.
 			// Note that for 3 point paths, 3 points is too few for this method to create a curve because we need at least two draw points
 			// and two control points. So in that case, this code is functionally required.
 			final double fakeControlPointWeight = 1.0;
@@ -106,7 +125,7 @@ public class CurveCreator
 			Point p2 = pathToUse.get(i + 1);
 			Point p3 = (i == pathToUse.size() - 2) ? pathToUse.get(i + 1) : pathToUse.get(i + 2);
 
-			List<Point> segment = createCurve(p0, p1, p2, p3);
+			List<Point> segment = createCurve(p0, p1, p2, p3, distanceBetweenPoints);
 
 			// Add the points of the segment to the curve, excluding the first one to avoid duplicates
 			for (int j = 1; j < segment.size(); j++)

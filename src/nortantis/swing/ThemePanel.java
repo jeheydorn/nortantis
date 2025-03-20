@@ -79,12 +79,11 @@ public class ThemePanel extends JTabbedPane
 {
 	private MainWindow mainWindow;
 	private JSlider coastShadingSlider;
-	private JSlider oceanWavesLevelSlider;
+	private JSlider rippleWavesLevelSlider;
 	private JSlider concentricWavesLevelSlider;
 	private JRadioButton ripplesRadioButton;
 	private JRadioButton noneRadioButton;
 	private JRadioButton concentricWavesButton;
-	private JRadioButton fadingConcentricWavesButton;
 	private JPanel coastShadingColorDisplay;
 	private JPanel coastlineColorDisplay;
 	private JSlider coastShadingTransparencySlider;
@@ -173,7 +172,7 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<NamedResource> textureImageComboBox;
 	private RowHider textureSourceButtonsHider;
 	private RowHider textureImageComboBoxHider;
-	private RowHider oceanWavesLevelSliderHider;
+	private RowHider rippleWavesLevelSliderHider;
 	private RowHider oceanWavesColorHider;
 	private JCheckBox drawRoadsCheckbox;
 	private JComboBox<StrokeType> roadStyleComboBox;
@@ -182,6 +181,11 @@ public class ThemePanel extends JTabbedPane
 	private RowHider roadWidthSliderHider;
 	private JPanel roadColorDisplay;
 	private RowHider roadColorHider;
+	private JCheckBox fadeWavesCheckbox;
+	private JCheckBox jitterWavesCheckbox;
+	private JCheckBox brokenLinesCheckbox;
+	private RowHider concentricWavesOptionsHider;
+	private RowHider concentricWavesLevelSliderHider;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -391,7 +395,8 @@ public class ThemePanel extends JTabbedPane
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				SwingHelper.showColorPicker(backgroundPanel, regionBoundaryColorDisplay, "Region Boundary Color", () -> handleTerrainChange());
+				SwingHelper.showColorPicker(backgroundPanel, regionBoundaryColorDisplay, "Region Boundary Color",
+						() -> handleTerrainChange());
 			}
 		});
 		regionBoundaryColorHider = organizer.addLabelAndComponentsHorizontal("Color:", "The line color of region boundaries",
@@ -824,18 +829,16 @@ public class ThemePanel extends JTabbedPane
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected() || fadingConcentricWavesButton.isSelected());
-				oceanWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
-				oceanWavesLevelSliderHider.setVisible(!noneRadioButton.isSelected());
+				concentricWavesLevelSlider.setVisible(concentricWavesButton.isSelected());
+				concentricWavesOptionsHider.setVisible(concentricWavesButton.isSelected());
+				concentricWavesLevelSliderHider.setVisible(concentricWavesButton.isSelected());
+				rippleWavesLevelSlider.setVisible(ripplesRadioButton.isSelected());
+				rippleWavesLevelSliderHider.setVisible(ripplesRadioButton.isSelected());
 				oceanWavesColorHider.setVisible(!noneRadioButton.isSelected());
 				handleTerrainChange();
 			}
 		};
 		concentricWavesButton.addActionListener(oceanEffectsListener);
-
-		fadingConcentricWavesButton = new JRadioButton("Fading concentric waves");
-		oceanEffectButtonGroup.add(fadingConcentricWavesButton);
-		fadingConcentricWavesButton.addActionListener(oceanEffectsListener);
 
 		ripplesRadioButton = new JRadioButton("Ripples");
 		oceanEffectButtonGroup.add(ripplesRadioButton);
@@ -844,8 +847,20 @@ public class ThemePanel extends JTabbedPane
 		noneRadioButton = new JRadioButton("None");
 		oceanEffectButtonGroup.add(noneRadioButton);
 		noneRadioButton.addActionListener(oceanEffectsListener);
-		organizer.addLabelAndComponentsVertical("Wave type:", "How to draw waves in the ocean along coastlines.",
-				Arrays.asList(concentricWavesButton, fadingConcentricWavesButton, ripplesRadioButton, noneRadioButton));
+		organizer.addLabelAndComponentsVertical("Wave type:", "Which type of wave to draw in the ocean along coastlines.",
+				Arrays.asList(concentricWavesButton, ripplesRadioButton, noneRadioButton));
+
+		fadeWavesCheckbox = new JCheckBox("Fade outer waves");
+		createMapChangeListenerForTerrainChange(fadeWavesCheckbox);
+
+		jitterWavesCheckbox = new JCheckBox("Jitter");
+		createMapChangeListenerForTerrainChange(jitterWavesCheckbox);
+
+		brokenLinesCheckbox = new JCheckBox("Broken lines");
+		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
+		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Style options:",
+				"Options for how to draw concentric waves.",
+				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox));
 
 		concentricWavesLevelSlider = new JSlider();
 		concentricWavesLevelSlider.setMinimum(1);
@@ -856,17 +871,19 @@ public class ThemePanel extends JTabbedPane
 		concentricWavesLevelSlider.setMajorTickSpacing(1);
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
 		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);
+		concentricWavesLevelSliderHider = organizer.addLabelAndComponent("Wave count:", "The number of concentric waves to draw.",
+				concentricWavesLevelSlider);
 
-		oceanWavesLevelSlider = new JSlider();
-		oceanWavesLevelSlider.setMinorTickSpacing(5);
-		oceanWavesLevelSlider.setPaintTicks(true);
-		oceanWavesLevelSlider.setPaintLabels(true);
-		oceanWavesLevelSlider.setMajorTickSpacing(20);
-		oceanWavesLevelSlider.setMaximum(100);
-		createMapChangeListenerForTerrainChange(oceanWavesLevelSlider);
-		SwingHelper.setSliderWidthForSidePanel(oceanWavesLevelSlider);
-		oceanWavesLevelSliderHider = organizer.addLabelAndComponentsVertical("Wave width:", "How far from coastlines waves should draw.",
-				Arrays.asList(concentricWavesLevelSlider, oceanWavesLevelSlider));
+		rippleWavesLevelSlider = new JSlider();
+		rippleWavesLevelSlider.setMinorTickSpacing(5);
+		rippleWavesLevelSlider.setPaintTicks(true);
+		rippleWavesLevelSlider.setPaintLabels(true);
+		rippleWavesLevelSlider.setMajorTickSpacing(20);
+		rippleWavesLevelSlider.setMaximum(100);
+		createMapChangeListenerForTerrainChange(rippleWavesLevelSlider);
+		SwingHelper.setSliderWidthForSidePanel(rippleWavesLevelSlider);
+		rippleWavesLevelSliderHider = organizer.addLabelAndComponent("Wave width:", "How far from coastlines waves should draw.",
+				rippleWavesLevelSlider);
 
 		{
 			oceanWavesColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -904,7 +921,7 @@ public class ThemePanel extends JTabbedPane
 			organizer.addLabelAndComponentsHorizontal("River color:", "Rivers will be drawn this color.",
 					Arrays.asList(riverColorDisplay, riverColorChooseButton), SwingHelper.colorPickerLeftPadding);
 		}
-		
+
 		{
 			organizer.addSeperator();
 			drawRoadsCheckbox = new JCheckBox("Draw roads");
@@ -921,8 +938,7 @@ public class ThemePanel extends JTabbedPane
 			organizer.addLeftAlignedComponent(drawRoadsCheckbox);
 
 			roadStyleComboBox = new JComboBox<>(StrokeType.values());
-			roadStyleComboBoxHider = organizer.addLabelAndComponent("Style:", "Line style for drawing roads",
-					roadStyleComboBox);
+			roadStyleComboBoxHider = organizer.addLabelAndComponent("Style:", "Line style for drawing roads", roadStyleComboBox);
 			createMapChangeListenerForTerrainChange(roadStyleComboBox);
 
 			{
@@ -1360,7 +1376,7 @@ public class ThemePanel extends JTabbedPane
 		regionBoundaryWidthSliderHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 		regionBoundaryColorHider.setVisible(drawRegionBoundariesCheckbox.isSelected());
 	}
-	
+
 	private void updateRoadFieldVisibility()
 	{
 		roadStyleComboBoxHider.setVisible(drawRoadsCheckbox.isSelected());
@@ -1554,12 +1570,14 @@ public class ThemePanel extends JTabbedPane
 
 		coastShadingSlider.setValue(settings.coastShadingLevel);
 		oceanShadingSlider.setValue(settings.oceanShadingLevel);
-		oceanWavesLevelSlider.setValue(settings.oceanWavesLevel);
+		rippleWavesLevelSlider.setValue(settings.oceanWavesLevel);
 		concentricWavesLevelSlider.setValue(settings.concentricWaveCount);
 		ripplesRadioButton.setSelected(settings.oceanWavesType == OceanWaves.Ripples);
 		noneRadioButton.setSelected(settings.oceanWavesType == OceanWaves.None);
 		concentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.ConcentricWaves);
-		fadingConcentricWavesButton.setSelected(settings.oceanWavesType == OceanWaves.FadingConcentricWaves);
+		fadeWavesCheckbox.setSelected(settings.fadeConcentricWaves);
+		jitterWavesCheckbox.setSelected(settings.jitterToConcentricWaves);
+		brokenLinesCheckbox.setSelected(settings.brokenLinesForConcentricWaves);
 		drawOceanEffectsInLakesCheckbox.setSelected(settings.drawOceanEffectsInLakes);
 		oceanEffectsListener.actionPerformed(null);
 		coastShadingColorDisplay.setBackground(AwtFactory.unwrap(settings.coastShadingColor));
@@ -1834,12 +1852,14 @@ public class ThemePanel extends JTabbedPane
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.coastShadingLevel = coastShadingSlider.getValue();
-		settings.oceanWavesLevel = oceanWavesLevelSlider.getValue();
+		settings.oceanWavesLevel = rippleWavesLevelSlider.getValue();
 		settings.oceanShadingLevel = oceanShadingSlider.getValue();
 		settings.concentricWaveCount = concentricWavesLevelSlider.getValue();
 		settings.oceanWavesType = ripplesRadioButton.isSelected() ? OceanWaves.Ripples
-				: noneRadioButton.isSelected() ? OceanWaves.None
-						: concentricWavesButton.isSelected() ? OceanWaves.ConcentricWaves : OceanWaves.FadingConcentricWaves;
+				: noneRadioButton.isSelected() ? OceanWaves.None : OceanWaves.ConcentricWaves;
+		settings.fadeConcentricWaves = fadeWavesCheckbox.isSelected();
+		settings.jitterToConcentricWaves = jitterWavesCheckbox.isSelected();
+		settings.brokenLinesForConcentricWaves = brokenLinesCheckbox.isSelected();
 		settings.drawOceanEffectsInLakes = drawOceanEffectsInLakesCheckbox.isSelected();
 		settings.coastShadingColor = AwtFactory.wrap(coastShadingColorDisplay.getBackground());
 		settings.coastlineColor = AwtFactory.wrap(coastlineColorDisplay.getBackground());
@@ -1904,10 +1924,9 @@ public class ThemePanel extends JTabbedPane
 		settings.hillScale = getScaleForSliderValue(hillScaleSlider.getValue());
 		settings.duneScale = getScaleForSliderValue(duneScaleSlider.getValue());
 		settings.cityScale = getScaleForSliderValue(cityScaleSlider.getValue());
-		
+
 		settings.drawRoads = drawRoadsCheckbox.isSelected();
-		settings.roadStyle = new Stroke((StrokeType) roadStyleComboBox.getSelectedItem(),
-				roadWidthSlider.getValue() / 10f);
+		settings.roadStyle = new Stroke((StrokeType) roadStyleComboBox.getSelectedItem(), roadWidthSlider.getValue() / 10f);
 		settings.roadColor = AwtFactory.wrap(roadColorDisplay.getBackground());
 	}
 
