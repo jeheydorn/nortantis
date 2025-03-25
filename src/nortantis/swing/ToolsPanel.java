@@ -159,7 +159,7 @@ public class ToolsPanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				mainWindow.updateDisplayedMapFromGeneratedMap(true, null);
+				mainWindow.updateDisplayedMapFromGeneratedMap(true, null, true);
 			}
 		});
 

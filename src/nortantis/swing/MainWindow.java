@@ -372,8 +372,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		createMapUpdater();
 		toolsPanel = new ToolsPanel(this, mapEditingPanel, updater);
 		int toolsPanelWidth = UserPreferences.getInstance().toolsPanelWidth > SwingHelper.sidePanelMinimumWidth
-                ? UserPreferences.getInstance().toolsPanelWidth
-                : SwingHelper.sidePanelPreferredWidth;
+				? UserPreferences.getInstance().toolsPanelWidth
+				: SwingHelper.sidePanelPreferredWidth;
 		toolsPanel.setPreferredSize(new Dimension(toolsPanelWidth, toolsPanel.getPreferredSize().height));
 		toolsPanel.setMinimumSize(new Dimension(SwingHelper.sidePanelMinimumWidth, toolsPanel.getMinimumSize().height));
 
@@ -388,7 +388,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		JSplitPane splitPane2 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, splitPane1, toolsPanel);
 		splitPane2.setResizeWeight(1.0);
 		splitPane2.setOneTouchExpandable(true);
-		
+
 		getContentPane().add(splitPane2, BorderLayout.CENTER);
 
 		pack();
@@ -589,7 +589,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 					lastSettingsLoadedOrSaved.edits = edits.deepCopy();
 				}
 
-				updateDisplayedMapFromGeneratedMap(false, incrementalChangeArea);
+				updateDisplayedMapFromGeneratedMap(false, incrementalChangeArea, false);
 
 				if (!anotherDrawIsQueued)
 				{
@@ -943,7 +943,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			themeGroup.add(darkTheme);
 			themeGroup.add(lightTheme);
 			themeGroup.add(systemTheme);
-			
+
 			LookAndFeel theme = UserPreferences.getInstance().lookAndFeel;
 			if (theme == LookAndFeel.Dark)
 			{
@@ -1093,7 +1093,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			textSearchDialog.handleLookAndFeelChange();
 		}
 	}
-	
+
 	private static void setLookAndFeel(LookAndFeel lookAndFeel)
 	{
 		try
@@ -1436,7 +1436,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 		}
 	}
 
-	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, Rectangle incrementalChangeArea)
+	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, Rectangle incrementalChangeArea,
+			boolean isOnlyZoomChange)
 	{
 		double oldZoom = zoom;
 		zoom = translateZoomLevel((String) toolsPanel.zoomComboBox.getSelectedItem());
@@ -1469,9 +1470,13 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				}
 			}
 
-			toolsPanel.currentTool.onBeforeShowMap();
 			mapEditingPanel.setZoom(zoom);
-			mapEditingPanel.setResolution(displayQualityScale);
+			// Don't update the display quality when zoom is the only thing that changed because otherwise changing the zoom while the map
+			// is redrawing at a new display quality can cause tool highlights to draw in the wrong position temporarily.
+			if (!isOnlyZoomChange)
+			{
+				mapEditingPanel.setResolution(displayQualityScale);
+			}
 			Method method = zoom < 0.3 ? Method.QUALITY : Method.BALANCED;
 			int zoomedWidth = (int) (mapEditingPanel.mapFromMapCreator.getWidth() * zoom);
 			if (zoomedWidth <= 0)
@@ -1529,6 +1534,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.scrollRectToVisible(scrollTo);
 			}
 
+			toolsPanel.currentTool.onAfterShowMap();
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
 			mapEditingPanel.repaint();
@@ -1673,7 +1679,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 			// Erase free icons
 			edits.freeIcons.clear();
-			
+
 			// Erase roads.
 			edits.roads.clear();
 
@@ -2044,7 +2050,8 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	private void setPlaceholderImage(String[] message)
 	{
-		mapEditingPanel.setImage(AwtFactory.unwrap(ImageHelper.createPlaceholderImage(message, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages()))));
+		mapEditingPanel.setImage(AwtFactory
+				.unwrap(ImageHelper.createPlaceholderImage(message, AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages()))));
 
 		// Clear out the map from map creator so that causing the window to
 		// re-zoom while the placeholder image

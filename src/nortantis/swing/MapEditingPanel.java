@@ -143,16 +143,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 			double angle)
 	{
 		this.textBoxLocation = location == null ? null : new nortantis.geom.Point(location);
-		this.textBoxBoundsLine1 = line1Bounds == null ? null : AwtFactory.toAwtRectangle(line1Bounds);
-		this.textBoxBoundsLine2 = line2Bounds == null ? null : AwtFactory.toAwtRectangle(line2Bounds);
+		this.textBoxBoundsLine1 = line1Bounds == null ? null : AwtFactory.toAwtRectangle(line1Bounds.scaleAboutOrigin(resolution));
+		this.textBoxBoundsLine2 = line2Bounds == null ? null : AwtFactory.toAwtRectangle(line2Bounds.scaleAboutOrigin(resolution));
 		this.textBoxAngle = angle;
 	}
 
 	public void setTextBoxToDraw(MapText text)
 	{
 		this.textBoxLocation = text.location == null ? null : new nortantis.geom.Point(text.location);
-		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : AwtFactory.toAwtRectangle(text.line1Bounds);
-		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : AwtFactory.toAwtRectangle(text.line2Bounds);
+		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : AwtFactory.toAwtRectangle(text.line1Bounds.scaleAboutOrigin(resolution));
+		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : AwtFactory.toAwtRectangle(text.line2Bounds.scaleAboutOrigin(resolution));
 		this.textBoxAngle = text.angle;
 	}
 
@@ -178,7 +178,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsMode imageEditMode,
 			boolean useLargeIcons)
 	{
-		iconToEditBounds = rectangle;
+		iconToEditBounds = rectangle == null ? null : rectangle.scaleAboutOrigin(1.0 / resolution);
 		this.isIconToEditInAValidPosition = isValidPosition;
 		this.imageEditMode = imageEditMode;
 		this.useLargeIconEditIcons = useLargeIcons;
@@ -441,7 +441,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			g.setColor(getInvalidPositionColor());
 		}
-		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds);
+		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds.scaleAboutOrigin(resolution));
 
 		int padding = (int) (9 * resolution);
 		g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
