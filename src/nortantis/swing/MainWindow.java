@@ -1416,7 +1416,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 
 	public void handleMouseWheelChangingZoom(MouseWheelEvent e)
 	{
-		updater.doIfMapIsReadyForInteractions(() ->
+		if (toolsPanel.zoomComboBox.isEnabled())
 		{
 			int scrollDirection = e.getUnitsToScroll() > 0 ? -1 : 1;
 			int newIndex = toolsPanel.zoomComboBox.getSelectedIndex() + scrollDirection;
@@ -1430,10 +1430,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 			if (newIndex != toolsPanel.zoomComboBox.getSelectedIndex())
 			{
+				// The action listener on toolsPanel.zoomComboBox will update the map.
 				toolsPanel.zoomComboBox.setSelectedIndex(newIndex);
-				updateDisplayedMapFromGeneratedMap(true, null);
 			}
-		});
+		}
 	}
 
 	public void updateDisplayedMapFromGeneratedMap(boolean updateScrollLocationIfZoomChanged, Rectangle incrementalChangeArea)

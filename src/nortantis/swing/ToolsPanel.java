@@ -316,8 +316,6 @@ public class ToolsPanel extends JPanel
 
 	public void showAsDrawing(boolean isDrawing)
 	{
-		zoomComboBox.setEnabled(!isDrawing);
-
 		if (isDrawing)
 		{
 			progressBarTimer.start();
@@ -336,10 +334,7 @@ public class ToolsPanel extends JPanel
 
 		if (enable)
 		{
-			if (!mainWindow.updater.isMapBeingDrawn())
-			{
-				zoomComboBox.setEnabled(enable);
-			}
+			zoomComboBox.setEnabled(enable);
 
 			if (settings != null)
 			{
