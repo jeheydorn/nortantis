@@ -453,7 +453,7 @@ public class OverlayTool extends EditorTool
 	}
 
 	@Override
-	protected void onBeforeShowMap()
+	protected void onAfterShowMap()
 	{
 		showOrHideEditorTools();
 	}

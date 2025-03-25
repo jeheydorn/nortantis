@@ -1144,7 +1144,7 @@ public class LandWaterTool extends EditorTool
 	}
 
 	@Override
-	protected void onBeforeShowMap()
+	protected void onAfterShowMap()
 	{
 	}
 

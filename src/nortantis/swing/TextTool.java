@@ -395,7 +395,7 @@ public class TextTool extends EditorTool
 	}
 
 	@Override
-	protected void onBeforeShowMap()
+	protected void onAfterShowMap()
 	{
 		if (lastSelected == null)
 		{
@@ -406,10 +406,6 @@ public class TextTool extends EditorTool
 		{
 			mapEditingPanel.setTextBoxToDraw(lastSelected);
 		}
-
-		mapEditingPanel.repaint();
-		// Tell the scroll pane to update itself.
-		mapEditingPanel.revalidate();
 	}
 
 	@Override
@@ -642,7 +638,10 @@ public class TextTool extends EditorTool
 					: null;
 
 			undoer.setUndoPoint(UpdateType.Incremental, this);
-			updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+			if (!Objects.equals(before, selectedText))
+			{
+				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+			}
 		}
 
 		if (selectedText == null)

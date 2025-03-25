@@ -1369,7 +1369,7 @@ public class IconsTool extends EditorTool
 	}
 
 	@Override
-	protected void onBeforeShowMap()
+	protected void onAfterShowMap()
 	{
 	}
 

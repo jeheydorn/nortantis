@@ -272,7 +272,8 @@ public class TextDrawer
 			}
 
 			p.dispose();
-		} finally
+		}
+		finally
 		{
 			settings.drawText = drawTextPrev;
 		}
@@ -985,10 +986,7 @@ public class TextDrawer
 		SimpleRegression regression = new SimpleRegression();
 		for (Point point : locations)
 		{
-			regression.addObservation(new double[]
-			{
-					point.x
-			}, point.y);
+			regression.addObservation(new double[] { point.x }, point.y);
 		}
 		double angle;
 		try
@@ -1143,12 +1141,16 @@ public class TextDrawer
 
 			text.line1Area = area1;
 			text.line2Area = area2;
-			// Store the bounds centered at the origin so that the editor can use the bounds to draw the text boxes of text being moved
+			// Store the bounds centered at the origin, resolution invariant, so that the editor can use the bounds to draw the text boxes
+			// of text being moved
 			// before the text is redrawn.
-			text.line1Bounds = new Rectangle((int) (bounds1.x - pivot.x), (int) (bounds1.y - pivot.y), bounds1.width, bounds1.height);
-			text.line2Bounds = bounds2 == null
-					? null
-					: new Rectangle((int) (bounds2.x - pivot.x), (int) (bounds2.y - pivot.y), bounds2.width, bounds2.height);
+			text.line1Bounds = new Rectangle((int) ((bounds1.x - pivot.x) / settings.resolution),
+					(int) ((bounds1.y - pivot.y) / settings.resolution), bounds1.width / settings.resolution,
+					bounds1.height / settings.resolution);
+			text.line2Bounds = bounds2 == null ? null
+					: new Rectangle((int) ((bounds2.x - pivot.x) / settings.resolution),
+							(int) ((bounds2.y - pivot.y) / settings.resolution), bounds2.width / settings.resolution,
+							bounds2.height / settings.resolution);
 			if (riseOffset != 0)
 			{
 				// Update the text location with the offset. This only happens when generating new text, not when making changes in the
@@ -1188,7 +1190,8 @@ public class TextDrawer
 			}
 
 			return true;
-		} finally
+		}
+		finally
 		{
 			p.setTransform(orig);
 		}
@@ -1272,7 +1275,8 @@ public class TextDrawer
 			settings.drawText = false;
 			Image fakeMapThatNothingShouldDrawOn = Image.create(1, 1, ImageType.ARGB);
 			drawText(fakeMapThatNothingShouldDrawOn, graph, settings.edits.text, null);
-		} finally
+		}
+		finally
 		{
 			settings.drawText = originalDrawText;
 		}
