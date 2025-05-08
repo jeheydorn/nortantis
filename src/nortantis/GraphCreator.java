@@ -20,8 +20,6 @@ public class GraphCreator
 			double nonBorderPlateContinentalProbability, Random r, double resolutionScale, LineStyle lineStyle, double pointPrecision,
 			boolean createElevationBiomesLakesAndRegions, double lloydRelaxationsScale, boolean areRegionBoundariesVisible)
 	{
-		// double startTime = System.currentTimeMillis();
-
 		Dimension graphSize = getGraphDimensionsWithStandardWidth(new Dimension(width, height));
 		// make the initial underlying voronoi structure
 		final Voronoi v = new Voronoi(numSites, graphSize.width, graphSize.height, r);
@@ -30,13 +28,10 @@ public class GraphCreator
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, nonBorderPlateContinentalProbability,
 				borderPlateContinentalProbability, resolutionScale, lineStyle, pointPrecision, createElevationBiomesLakesAndRegions,
 				areRegionBoundariesVisible);
-		graph.scale(width, height);
+		graph.transform(width, height);
 		graph.buildNoisyEdges(lineStyle, false);
 
-		// Debug code to log elapsed time.
-		// double elapsedTime = System.currentTimeMillis() - startTime;
-		// Logger.println("Time to generate graph (in seconds): " + elapsedTime
-		// / 1000.0);
+		
 
 		return graph;
 	}
@@ -117,7 +112,7 @@ public class GraphCreator
 		// assemble the voronoi structure into a usable graph object representing a map
 		final WorldGraph graph = new WorldGraph(v, lloydRelaxationsScale, r, resolutionScale, MapSettings.defaultPointPrecision,
 				isForFrayedBorder);
-		graph.scale(width, height);
+		graph.transform(width, height);
 		graph.buildNoisyEdges(LineStyle.Jagged, isForFrayedBorder);
 
 		return graph;

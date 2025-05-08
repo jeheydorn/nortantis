@@ -194,6 +194,10 @@ public class MapSettings implements Serializable
 	private final double overlayImageDefaultScale = 1.0;
 	public double overlayScale = overlayImageDefaultScale;
 
+	public int rightRotationCount;
+	public boolean flipHorizontally;
+	public boolean flipVertically;
+
 	public MapSettings()
 	{
 		edits = new MapEdits();
@@ -435,6 +439,10 @@ public class MapSettings implements Serializable
 		root.put("overlayScale", overlayScale);
 		root.put("overlayOffsetResolutionInvariant",
 				overlayOffsetResolutionInvariant == null ? null : overlayOffsetResolutionInvariant.toJson());
+
+		root.put("rightRotationCount", rightRotationCount);
+		root.put("flipHorizontally", flipHorizontally);
+		root.put("flipVertically", flipVertically);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -1011,6 +1019,31 @@ public class MapSettings implements Serializable
 			overlayImageTransparency = overlayImageDefaultTransparency;
 			overlayOffsetResolutionInvariant = new Point(0, 0);
 			overlayScale = overlayImageDefaultScale;
+		}
+
+		if (root.containsKey("rightRotationCount"))
+		{
+			rightRotationCount = (int) (long) root.get("rightRotationCount");
+		}
+		else
+		{
+			rightRotationCount = 0;
+		}
+		if (root.containsKey(("flipHorizontally")))
+		{
+			flipHorizontally = (boolean) root.get("flipHorizontally");
+		}
+		else
+		{
+			flipHorizontally = false;
+		}
+		if (root.containsKey(("flipVertically")))
+		{
+			flipVertically = (boolean) root.get("flipVertically");
+		}
+		else
+		{
+			flipVertically = false;
 		}
 
 		edits = new MapEdits();
@@ -1743,6 +1776,7 @@ public class MapSettings implements Serializable
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+	
 
 	@Override
 	public boolean equals(Object obj)
@@ -1792,6 +1826,7 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
 				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
+				&& flipHorizontally == other.flipHorizontally && flipVertically == other.flipVertically
 				&& frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
 				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSize == other.frayedBorderSize
 				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture
@@ -1820,10 +1855,11 @@ public class MapSettings implements Serializable
 				&& Objects.equals(regionBoundaryStyle, other.regionBoundaryStyle) && Objects.equals(regionFont, other.regionFont)
 				&& regionsRandomSeed == other.regionsRandomSeed
 				&& Double.doubleToLongBits(resolution) == Double.doubleToLongBits(other.resolution)
-				&& Objects.equals(riverColor, other.riverColor) && Objects.equals(riverFont, other.riverFont)
-				&& Objects.equals(roadColor, other.roadColor) && Objects.equals(roadStyle, other.roadStyle)
-				&& saturationRange == other.saturationRange && Objects.equals(textColor, other.textColor)
-				&& textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
+				&& rightRotationCount == other.rightRotationCount && Objects.equals(riverColor, other.riverColor)
+				&& Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
+				&& Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange
+				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
+				&& Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}

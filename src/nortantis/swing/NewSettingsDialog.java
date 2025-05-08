@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -90,7 +91,8 @@ public class NewSettingsDialog extends JDialog
 			settings.heightmapExportPath = null;
 			randomizeLand();
 			settings.textRandomSeed = Math.abs(new Random().nextInt());
-			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath).getIconGroupNames(IconType.cities);
+			List<String> cityIconTypes = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
+					.getIconGroupNames(IconType.cities);
 			if (cityIconTypes.size() > 0)
 			{
 				settings.cityIconTypeName = ProbabilityHelper.sampleUniform(new Random(), new ArrayList<>(cityIconTypes));
@@ -138,29 +140,75 @@ public class NewSettingsDialog extends JDialog
 		JPanel bottomPanel = new JPanel();
 		bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.X_AXIS));
 
-		JButton randomizeThemeButton = new JButton("Randomize Theme");
-		randomizeThemeButton.addActionListener(new ActionListener()
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			JButton randomizeThemeButton = new JButton("Randomize Theme");
+			randomizeThemeButton.addActionListener(new ActionListener()
 			{
-				randomizeTheme();
-			}
-		});
-		bottomPanel.add(randomizeThemeButton);
-		bottomPanel.add(Box.createHorizontalStrut(5));
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					randomizeTheme();
+				}
+			});
+			bottomPanel.add(randomizeThemeButton);
+			bottomPanel.add(Box.createHorizontalStrut(5));
+		}
 
-		JButton randomizeLandButton = new JButton("Randomize Land");
-		randomizeLandButton.addActionListener(new ActionListener()
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			JButton randomizeLandButton = new JButton("Randomize Land");
+			randomizeLandButton.addActionListener(new ActionListener()
 			{
-				randomizeLand();
-			}
-		});
-		bottomPanel.add(randomizeLandButton);
-		bottomPanel.add(Box.createHorizontalStrut(10));
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					randomizeLand();
+				}
+			});
+			bottomPanel.add(randomizeLandButton);
+			bottomPanel.add(Box.createHorizontalStrut(40));
+		}
+		
+		{
+			JButton flipHorizontallyButton = new JButton("Flip Horizontally");
+			flipHorizontallyButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					// TODO
+				}
+			});
+			bottomPanel.add(flipHorizontallyButton);
+			bottomPanel.add(Box.createHorizontalStrut(10));
+		}
+		
+		{
+			JButton flipVerticallyButton = new JButton("Flip Vertically");
+			flipVerticallyButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					// TODO
+				}
+			});
+			bottomPanel.add(flipVerticallyButton);
+			bottomPanel.add(Box.createHorizontalStrut(10));
+		}
+
+		{
+			JButton rotateButton = new JButton("Rotate Right");
+			rotateButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					rotate();
+				}
+			});
+			bottomPanel.add(rotateButton);
+			bottomPanel.add(Box.createHorizontalStrut(10));
+		}
 
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
@@ -503,13 +551,16 @@ public class NewSettingsDialog extends JDialog
 		settings.randomSeed = randomSettings.randomSeed;
 		handleMapChange();
 	}
+	
+	private void rotate()
+	{
+		// TODO
+	}
 
 	private void createMapEditingPanel()
 	{
-		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[]
-		{
-				"Drawing..."
-		},  AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
+		BufferedImage placeHolder = AwtFactory.unwrap(ImageHelper.createPlaceholderImage(new String[] { "Drawing..." },
+				AwtFactory.wrap(SwingHelper.getTextColorForPlaceholderImages())));
 		mapEditingPanel = new MapEditingPanel(placeHolder);
 
 		mapEditingPanelContainer = new JPanel();

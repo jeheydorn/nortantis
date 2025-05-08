@@ -1835,12 +1835,15 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Scales the graph and everything in it to the target size.
+	 * Scales, rotates, and flips the graph and everything in it.
 	 */
-	public void scale(double targetWidth, double targetHeight)
+	public void transform(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
 	{
 		double widthScale = targetWidth / bounds.width;
 		double heightScale = targetHeight / bounds.height;
+		
+		// TODO Use Point.rotate
+		
 		for (Center center : centers)
 		{
 			center.loc = center.loc.mult(widthScale, heightScale);
@@ -1861,7 +1864,14 @@ public class WorldGraph extends VoronoiGraph
 			}
 		}
 
-		bounds = new Rectangle(0, 0, targetWidth, targetHeight);
+		if (rightRotationCount == 1 || rightRotationCount == 3)
+		{
+			bounds = new Rectangle(0, 0, targetHeight, targetWidth);
+		}
+		else
+		{
+			bounds = new Rectangle(0, 0, targetWidth, targetHeight);
+		}
 		meanCenterWidth = null;
 		getMeanCenterWidth();
 		meanCenterWidthBetweenNeighbors = null;
