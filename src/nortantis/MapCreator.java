@@ -337,11 +337,11 @@ public class MapCreator implements WarningLogger
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
 			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
-			
+
 			checkForCancel();
 
 			mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
-			
+
 			checkForCancel();
 
 			// Draw mask for land vs ocean.
@@ -350,12 +350,12 @@ public class MapCreator implements WarningLogger
 				Painter p = landMask.createPainter();
 				mapParts.graph.drawLandAndOceanBlackAndWhite(p, centersToDraw, drawBounds);
 			}
-			
+
 			checkForCancel();
 
 			Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
 			mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
-			
+
 			checkForCancel();
 
 			Image coastShading;
@@ -365,7 +365,7 @@ public class MapCreator implements WarningLogger
 				mapSnippet = tuple.getFirst();
 				coastShading = tuple.getSecond();
 			}
-			
+
 			checkForCancel();
 
 			// Store the current version of mapSnippet for a background when drawing icons later.
@@ -377,12 +377,12 @@ public class MapCreator implements WarningLogger
 				p.setColor(settings.regionBoundaryColor);
 				mapParts.graph.drawRegionBoundaries(p, settings.regionBoundaryStyle, centersToDraw, drawBounds);
 			}
-			
+
 			checkForCancel();
 
 			Set<Edge> edgesToDraw = mapParts.graph.getEdgesFromCenters(centersToDraw);
 			drawRivers(settings, mapParts.graph, mapSnippet, edgesToDraw, drawBounds);
-			
+
 			checkForCancel();
 
 			// Draw ocean
@@ -391,7 +391,7 @@ public class MapCreator implements WarningLogger
 				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
 				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
 			}
-			
+
 			checkForCancel();
 
 			// Add shading and waves to ocean along coastlines
@@ -411,7 +411,7 @@ public class MapCreator implements WarningLogger
 					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
 				}
 			}
-			
+
 			checkForCancel();
 
 			// Draw coastlines.
@@ -420,7 +420,7 @@ public class MapCreator implements WarningLogger
 				p.setColor(settings.coastlineColor);
 				mapParts.graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, centersToDraw, drawBounds);
 			}
-			
+
 			checkForCancel();
 
 			// Draw roads
@@ -429,7 +429,7 @@ public class MapCreator implements WarningLogger
 				RoadDrawer roadDrawer = new RoadDrawer(r, settings, mapParts.graph);
 				roadDrawer.drawRoads(mapSnippet, drawBounds);
 			}
-			
+
 			checkForCancel();
 
 			// Draw icons
@@ -439,7 +439,7 @@ public class MapCreator implements WarningLogger
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
 					drawBounds);
-			
+
 			checkForCancel();
 
 			// Update the snippet in textBackground because the Fonts tab uses that as part of speeding up text re-drawing.
@@ -619,7 +619,7 @@ public class MapCreator implements WarningLogger
 			{
 				Logger.println("Creating the graph.");
 				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution,
-						!settings.edits.isInitialized());
+						!settings.edits.isInitialized(), settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
 				if (mapParts != null)
 				{
 					mapParts.graph = graphCreated;
@@ -922,8 +922,20 @@ public class MapCreator implements WarningLogger
 				Image frayedBorderMask;
 				// The frayedBorderSize is on a logarithmic scale. 0 should be the minimum value, which will give 100 polygons.
 				int polygonCount = (int) (Math.pow(2, settings.frayedBorderSize) * 2 + 100);
-				WorldGraph frayGraph = GraphCreator.createSimpleGraph(mapDimensions.width, mapDimensions.height, polygonCount,
-						new Random(frayedBorderSeed), settings.resolution, true);
+				double widthToUse, heightToUse;
+				if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+				{
+					widthToUse = mapDimensions.height;
+					heightToUse = mapDimensions.width;
+				}
+				else
+				{
+					widthToUse = mapDimensions.width;
+					heightToUse = mapDimensions.height;
+				}
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount,
+						new Random(frayedBorderSeed), settings.resolution, true, settings.rightRotationCount, settings.flipHorizontally,
+						settings.flipVertically);
 				frayedBorderMask = Image.create(frayGraph.getWidth(), frayGraph.getHeight(), ImageType.Grayscale8Bit);
 				frayGraph.drawBorderWhite(frayedBorderMask.createPainter());
 				if (blurLevel > 0)
@@ -1358,7 +1370,7 @@ public class MapCreator implements WarningLogger
 		{
 			graph.drawCoastline(g, targetStrokeWidth, centersToDraw, drawBounds);
 		}
-		
+
 		return coastlineMask;
 	}
 
@@ -1443,8 +1455,8 @@ public class MapCreator implements WarningLogger
 			p.setColor(Color.create(level, level, level));
 			double varianceRange = settings.jitterToConcentricWaves ? calcJitterVarianceRange(resolutionScaled) : 0.0;
 			p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
-			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves, settings.brokenLinesForConcentricWaves,
-					centersToDraw, drawBounds, getNewSkipDistance, shoreEdges);
+			graph.drawCoastlineWithVariation(p, settings.backgroundRandomSeed + i, varianceRange, widthBetweenWaves,
+					settings.brokenLinesForConcentricWaves, centersToDraw, drawBounds, getNewSkipDistance, shoreEdges);
 
 			p.setColor(Color.black);
 			p.setBasicStroke((float) (whiteWidth - waveWidth));
@@ -1552,12 +1564,24 @@ public class MapCreator implements WarningLogger
 	}
 
 	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale,
-			boolean createElevationBiomesLakesAndRegions)
+			boolean createElevationBiomesLakesAndRegions, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
 	{
-		WorldGraph graph = GraphCreator.createGraph(width, height, settings.worldSize, settings.edgeLandToWaterProbability,
+		double widthToUse, heightToUse;
+		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+		{
+			widthToUse = height;
+			heightToUse = width;
+		}
+		else
+		{
+			widthToUse = width;
+			heightToUse = height;
+		}
+		
+		WorldGraph graph = GraphCreator.createGraph(widthToUse, heightToUse, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
 				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale,
-				settings.drawRegionBoundaries || settings.drawRegionColors);
+				settings.drawRegionBoundaries || settings.drawRegionColors, rightRotationCount, flipHorizontally, flipVertically);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
@@ -1884,7 +1908,8 @@ public class MapCreator implements WarningLogger
 		r = new Random(settings.randomSeed);
 		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution,
 				settings.generatedHeight * settings.heightmapResolution);
-		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true);
+		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true,
+				settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 

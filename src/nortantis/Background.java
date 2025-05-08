@@ -275,7 +275,17 @@ public class Background
 
 	static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
-		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.resolution, settings.generatedHeight * settings.resolution);
+		Dimension mapBounds;
+		Dimension sizeFromSettingsAt100PercentResolution;
+		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+		{
+			sizeFromSettingsAt100PercentResolution = new Dimension(settings.generatedHeight, settings.generatedWidth);
+		}
+		else
+		{
+			sizeFromSettingsAt100PercentResolution = new Dimension(settings.generatedWidth, settings.generatedHeight);
+		}
+		mapBounds = sizeFromSettingsAt100PercentResolution.mult(settings.resolution);
 		if (maxDimensions != null)
 		{
 			int borderWidth = 0;
@@ -290,8 +300,7 @@ public class Background
 			// Change the resolution to match the new bounds.
 			settings.resolution *= ((double) newBounds.width) / mapBoundsPlusBorder.width;
 
-			Dimension scaledMapBounds = new Dimension(settings.generatedWidth * settings.resolution,
-					settings.generatedHeight * settings.resolution);
+			Dimension scaledMapBounds = sizeFromSettingsAt100PercentResolution.mult(settings.resolution);
 			mapBounds = scaledMapBounds;
 		}
 		return mapBounds;
@@ -628,7 +637,8 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset), new IntRectangle(
-							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
+							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()),
+					0);
 		}
 		Painter p = target.createPainter();
 		p.translate(-drawOffset.x, -drawOffset.y);
@@ -642,7 +652,8 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
+					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()),
+					0);
 
 		}
 		Painter p = target.createPainter();
@@ -658,7 +669,8 @@ public class Background
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth,
-							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
+							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()),
+					0);
 
 		}
 		Painter p = target.createPainter();
@@ -862,7 +874,7 @@ public class Background
 
 		return Assets.readImage(corners.get(0).toString());
 	}
-	
+
 	public int getBorderWidthScaledByResolution()
 	{
 		return borderWidthScaled;
@@ -872,7 +884,7 @@ public class Background
 	{
 		return settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 	}
-	
+
 	public Dimension getMapBoundsIncludingBorder()
 	{
 		return borderBounds;

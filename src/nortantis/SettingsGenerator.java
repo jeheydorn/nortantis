@@ -48,7 +48,6 @@ public class SettingsGenerator
 		return generate(rand, artPack, customImageFolder);
 	}
 
-	@SuppressWarnings("deprecation")
 	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
 	{
 		// Prime the random number generator

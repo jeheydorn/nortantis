@@ -167,48 +167,95 @@ public class NewSettingsDialog extends JDialog
 			bottomPanel.add(randomizeLandButton);
 			bottomPanel.add(Box.createHorizontalStrut(40));
 		}
-		
+
 		{
-			JButton flipHorizontallyButton = new JButton("Flip Horizontally");
+			JButton flipHorizontallyButton = new JButton("↔ Flip");
+			flipHorizontallyButton.setToolTipText("Flip the land shape horizontally.");
 			flipHorizontallyButton.addActionListener(new ActionListener()
 			{
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					// TODO
+					// If the map is rotated on it's side, then flip vertically instead of horizontally.
+					if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+					{
+						settings.flipVertically = !settings.flipVertically;
+					}
+					else
+					{
+						settings.flipHorizontally = !settings.flipHorizontally;
+					}
+					handleMapChange();
 				}
 			});
 			bottomPanel.add(flipHorizontallyButton);
-			bottomPanel.add(Box.createHorizontalStrut(10));
+			bottomPanel.add(Box.createHorizontalStrut(5));
 		}
-		
+
 		{
-			JButton flipVerticallyButton = new JButton("Flip Vertically");
+			JButton flipVerticallyButton = new JButton("↕ Flip");
+			flipVerticallyButton.setToolTipText("Flip the land shape vertically.");
 			flipVerticallyButton.addActionListener(new ActionListener()
 			{
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					// TODO
+					// If the map is rotated on it's side, then flip horizontally instead of vertically.
+					if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+					{
+						settings.flipHorizontally = !settings.flipHorizontally;
+					}
+					else
+					{
+						settings.flipVertically = !settings.flipVertically;
+					}
+					handleMapChange();
 				}
 			});
 			bottomPanel.add(flipVerticallyButton);
-			bottomPanel.add(Box.createHorizontalStrut(10));
+			bottomPanel.add(Box.createHorizontalStrut(5));
 		}
 
 		{
-			JButton rotateButton = new JButton("Rotate Right");
+			JButton rotateButton = new JButton("↺ Left");
+			rotateButton.setToolTipText("Rotate the land shape counterclockwise by 90°.");
+
 			rotateButton.addActionListener(new ActionListener()
 			{
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					rotate();
+					if (settings.rightRotationCount == 0)
+					{
+						settings.rightRotationCount = 3;
+					}
+					else
+					{
+						settings.rightRotationCount--;
+					}
+					handleMapChange();
 				}
 			});
 			bottomPanel.add(rotateButton);
-			bottomPanel.add(Box.createHorizontalStrut(10));
+			bottomPanel.add(Box.createHorizontalStrut(5));
 		}
+
+		{
+			JButton rotateButton = new JButton("↻ Right");
+			rotateButton.setToolTipText("Rotate the land shape clockwise by 90°.");
+			rotateButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					settings.rightRotationCount = (settings.rightRotationCount + 1) % 4;
+					handleMapChange();
+				}
+			});
+			bottomPanel.add(rotateButton);
+			bottomPanel.add(Box.createHorizontalStrut(5));
+		}
+
 
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
@@ -550,11 +597,6 @@ public class NewSettingsDialog extends JDialog
 		MapSettings randomSettings = SettingsGenerator.generate(null);
 		settings.randomSeed = randomSettings.randomSeed;
 		handleMapChange();
-	}
-	
-	private void rotate()
-	{
-		// TODO
 	}
 
 	private void createMapEditingPanel()

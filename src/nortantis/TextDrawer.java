@@ -1304,7 +1304,12 @@ public class TextDrawer
 			return false;
 		}
 
-		Center middleCenter = graph.findClosestCenter(textBounds.getCenter());
+		Center middleCenter = graph.findClosestCenter(textBounds.getCenter(), true);
+
+		if (middleCenter == null)
+		{
+			return false;
+		}
 
 		final int checkFrequency = 10;
 		for (double x = 0; x < textBounds.width; x += checkFrequency * settings.resolution)
@@ -1324,11 +1329,14 @@ public class TextDrawer
 				}
 
 				Point point = rotate(new Point(textBounds.x + x, textBounds.y + y), pivot, angle);
-				Center c = graph.findClosestCenter(point);
+				Center c = graph.findClosestCenter(point, true);
 
-				if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
+				if (c != null)
 				{
-					return true;
+					if (doCentersHaveBoundaryBetweenThem(middleCenter, c, settings, type))
+					{
+						return true;
+					}
 				}
 			}
 		}

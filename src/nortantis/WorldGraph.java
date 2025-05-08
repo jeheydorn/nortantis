@@ -310,8 +310,7 @@ public class WorldGraph extends VoronoiGraph
 	 * @param center
 	 *            The center to rebuild noisy edges for.
 	 * @param centersInLoop
-	 *            For performance. The set of centers that the caller is already
-	 *            looping over, so that we don't rebuild noisy edges for
+	 *            For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for
 	 *            neighbors unnecessarily.
 	 */
 	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop)
@@ -431,8 +430,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Creates political regions. When done, all non-ocean centers will have a
-	 * political region assigned.
+	 * Creates political regions. When done, all non-ocean centers will have a political region assigned.
 	 */
 	private void createPoliticalRegions()
 	{
@@ -541,8 +539,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds the region closest (in terms of Cartesian distance) to the given
-	 * point.
+	 * Finds the region closest (in terms of Cartesian distance) to the given point.
 	 */
 	private Region findClosestRegion(Point point)
 	{
@@ -565,11 +562,6 @@ public class WorldGraph extends VoronoiGraph
 		Optional<Corner> optional = closestCenter.corners.stream()
 				.min((c1, c2) -> Double.compare(c1.loc.distanceTo(point), c2.loc.distanceTo(point)));
 		return optional.get();
-	}
-
-	public Center findClosestCenter(double x, double y)
-	{
-		return findClosestCenter(new Point(x, y));
 	}
 
 	public Center findClosestCenter(Point point)
@@ -623,9 +615,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Updates the center lookup table, which is used to lookup which center
-	 * draws at a given point. This needs to be done when a center potentially
-	 * changed its noisy edges, such as when it switched from inland to coast.
+	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
+	 * potentially changed its noisy edges, such as when it switched from inland to coast.
 	 * 
 	 * @param centersToUpdate
 	 *            Centers to update
@@ -667,11 +658,9 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Searches for any region touching and polygon in landMass and returns it
-	 * if found. Otherwise returns null.
+	 * Searches for any region touching and polygon in landMass and returns it if found. Otherwise returns null.
 	 * 
-	 * Assumes all Centers in landMass either all have the same region, or are
-	 * all null.
+	 * Assumes all Centers in landMass either all have the same region, or are all null.
 	 */
 	private Region findRegionTouching(Set<Center> landMass)
 	{
@@ -689,8 +678,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Splits apart a region by parts connect by land (not including land from
-	 * another region).
+	 * Splits apart a region by parts connect by land (not including land from another region).
 	 * 
 	 * @param region
 	 * @return
@@ -1441,8 +1429,7 @@ public class WorldGraph extends VoronoiGraph
 	 * @param c1Velocity
 	 *            The velocity of the plate c1 is on.
 	 * @param c2
-	 *            A center along a tectonic plate border: not the same tectonic
-	 *            plate as c1
+	 *            A center along a tectonic plate border: not the same tectonic plate as c1
 	 * @param c2Velocity
 	 *            The velocity of the plate c2 is on.
 	 */
@@ -1470,8 +1457,7 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Calculates the minimum distance (in radians) from angle a1 to angle a2.
-	 * The result will be in the range [0, pi].
+	 * Calculates the minimum distance (in radians) from angle a1 to angle a2. The result will be in the range [0, pi].
 	 * 
 	 * @param a1
 	 *            An angle in radians. This must be between 0 and 2*pi.
@@ -1551,41 +1537,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return bounds;
-	}
-
-	public Set<Center> getCentersInBounds(Rectangle bounds)
-	{
-		Set<Center> selected = new HashSet<Center>();
-
-		if (bounds == null)
-		{
-			return selected;
-		}
-
-		Center center = findClosestCenter(bounds.getCenter());
-		if (center == null)
-		{
-			return selected;
-		}
-		else
-		{
-			selected.add(center);
-		}
-
-		return breadthFirstSearch((c) -> isCenterOverlappingRectangle(c, bounds), center);
-	}
-
-	private boolean isCenterOverlappingRectangle(Center center, Rectangle rectangle)
-	{
-		for (Corner corner : center.corners)
-		{
-			if (rectangle.contains(corner.loc))
-			{
-				return true;
-			}
-		}
-
-		return rectangle.contains(center.loc);
 	}
 
 	/**
@@ -1728,20 +1679,16 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Uses A* search to find the shortest path between the 2 given centers
-	 * using Delaunay edges.
+	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
 	 * 
 	 * @param start
 	 *            Where to begin the search
 	 * @param end
 	 *            The goal
 	 * @param calculateWeight
-	 *            Finds the weight of an edge for determining whether to explore
-	 *            it. This should be the weight of it the Delaunay edge. Likely
-	 *            this will be calculated based on the distance from one end of
-	 *            the Delaunay age
-	 * @return A path if one is found; null if the and is unreachable from the
-	 *         start.
+	 *            Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge.
+	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
+	 * @return A path if one is found; null if the and is unreachable from the start.
 	 */
 	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight)
 	{
@@ -1867,32 +1814,56 @@ public class WorldGraph extends VoronoiGraph
 	/**
 	 * Scales, rotates, and flips the graph and everything in it.
 	 */
-	public void transform(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
+	public void scaleFlipAndRotate(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally,
+			boolean flipVertically)
 	{
 		double widthScale = targetWidth / bounds.width;
 		double heightScale = targetHeight / bounds.height;
 		double angle = (Math.PI / 2.0) * rightRotationCount;
-		Point pivot = new Rectangle(targetWidth, targetHeight).getCenter();
-
-		// TODO Use Point.rotate
+		Point mapCenter = new Point(targetWidth / 2.0, targetHeight / 2.0);
+		Point newOriginOffset;
+		assert rightRotationCount <= 3;
+		assert rightRotationCount >= 0;
+		
+		if (rightRotationCount == 0)
+		{
+			newOriginOffset = new Point(0, 0);
+		}
+		else if (rightRotationCount == 1)
+		{
+			// The lower-left corner will become the new origin.
+			newOriginOffset = new Point(0, targetHeight).rotate(mapCenter, angle);
+		}
+		else if (rightRotationCount == 2)
+		{
+			// The lower-right corner will become the new origin.
+			newOriginOffset = new Point(targetWidth, targetHeight).rotate(mapCenter, angle);
+		}
+		else 
+		{
+			// The upper-right corner will become the new origin.
+			newOriginOffset = new Point(targetWidth, 0).rotate(mapCenter, angle);
+		}
 
 		for (Center center : centers)
 		{
-			center.loc = scaleFlipAndRotate(center.loc, widthScale, heightScale, angle, mapCenter, flipHorizontally, flipVertically);
+			center.loc = scaleFlipAndRotatePoint(center.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 		}
 		for (Edge edge : edges)
 		{
 			if (edge.midpoint != null)
 			{
-				edge.midpoint = edge.midpoint.mult(widthScale, heightScale);
+				edge.midpoint = scaleFlipAndRotatePoint(edge.midpoint, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally,
+						flipVertically);
 			}
 		}
 		for (Corner corner : corners)
 		{
-			corner.loc = corner.loc.mult(widthScale, heightScale);
+			corner.loc = scaleFlipAndRotatePoint(corner.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			if (corner.originalLoc != null)
 			{
-				corner.originalLoc = corner.originalLoc.mult(widthScale, heightScale);
+				corner.originalLoc = scaleFlipAndRotatePoint(corner.originalLoc, widthScale, heightScale, angle, mapCenter, newOriginOffset,
+						flipHorizontally, flipVertically);
 			}
 		}
 
@@ -1910,25 +1881,27 @@ public class WorldGraph extends VoronoiGraph
 		getMeanCenterWidthBetweenNeighbors();
 	}
 
-	private Point scaleFlipAndRotate(Point point, double widthScale, double heightScale, double angle, Point mapCenter, boolean flipHorizontally,
-			boolean flipVertically)
+	private Point scaleFlipAndRotatePoint(Point point, double widthScale, double heightScale, double angle, Point mapCenter,
+			Point newOriginOffset, boolean flipHorizontally, boolean flipVertically)
 	{
 		Point result = point.mult(widthScale, heightScale);
-		
-		if (angle != 0.0)
-		{
-			result = result.rotate(mapCenter, angle);
-		}
-		
+
 		if (flipHorizontally)
 		{
-			
+			result = new Point(2 * mapCenter.x - result.x, result.y);
 		}
-		
+
 		if (flipVertically)
 		{
-			
+			result = new Point(result.x, 2 * mapCenter.y - result.y);
 		}
+
+		if (angle != 0.0)
+		{
+			result = result.rotate(mapCenter, angle).subtract(newOriginOffset);
+		}
+
+		return result;
 	}
 
 	public double getMeanCenterWidth()
@@ -2332,21 +2305,17 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds all edges that the 'accept' function accepts which are touching
-	 * centersToDraw or are connected to an edge that touches those centers.
+	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those
+	 * centers.
 	 * 
 	 * @param centersToDraw
-	 *            Only edges either in/touching this collection or connected to
-	 *            edges that are will be returned.
+	 *            Only edges either in/touching this collection or connected to edges that are will be returned.
 	 * @param accept
 	 *            Function to determine what edge is to include in results.
 	 * @param searchEntireGraph
-	 *            When false, only centers in centersToDraw will be searched.
-	 *            When true, all centers will be searched. Passing this as false
-	 *            is much more performant, but can cause subtle differences in
-	 *            the results depending on which centers are passed in. Setting
-	 *            this to true enforces that the lists of edges returned are
-	 *            ordered and found the same way for full redraws vs incremental
+	 *            When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false
+	 *            is much more performant, but can cause subtle differences in the results depending on which centers are passed in. Setting
+	 *            this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental
 	 *            for any edges that touch or pass through centersToDraw.
 	 * @return
 	 */
@@ -2386,18 +2355,14 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Given an edge to start at, this returns an ordered sequence of edges in
-	 * the path that edge is included in.
+	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
 	 * 
 	 * @param found
-	 *            Edges that have already been searched, and so will not be
-	 *            searched again.
+	 *            Edges that have already been searched, and so will not be searched again.
 	 * @param start
-	 *            Where to start to search. Not necessarily the start of the
-	 *            path we're searching for.
+	 *            Where to start to search. Not necessarily the start of the path we're searching for.
 	 * @param accept
-	 *            Used to test whether edges are part of the desired path. If
-	 *            "edge" returns false for this function, then an empty list is
+	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
 	 *            returned.
 	 * @return A list of edges forming a path.
 	 */
