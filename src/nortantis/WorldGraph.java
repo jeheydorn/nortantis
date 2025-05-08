@@ -102,7 +102,8 @@ public class WorldGraph extends VoronoiGraph
 		setupColors();
 		regions = new TreeMap<>();
 
-		// Switch the center locations the Voronoi centroids of each center because I think that
+		// Switch the center locations the Voronoi centroids of each center
+		// because I think that
 		// looks better for drawing, and it works better for smooth coastlines.
 		updateCenterLocationsToCentroids();
 
@@ -138,7 +139,8 @@ public class WorldGraph extends VoronoiGraph
 	{
 		if (centersToUpdate != centers)
 		{
-			// When doing incremental drawing, expand the centers to update to include neighbors so that and single-center islands or water
+			// When doing incremental drawing, expand the centers to update to
+			// include neighbors so that and single-center islands or water
 			// that were expanded by the last brush stroke get reevaluated.
 			addNeighbors(centersToUpdate);
 		}
@@ -183,7 +185,8 @@ public class WorldGraph extends VoronoiGraph
 		{
 			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, e -> e.isCoast());
 			boolean isCornerChanged = coastlineResult.isCornerChanged;
-			// Only smooth region boundaries for the corner if it is not a coastline, because otherwise we will clear the smoothing on that
+			// Only smooth region boundaries for the corner if it is not a
+			// coastline, because otherwise we will clear the smoothing on that
 			// spot on the coastline.
 			if (!coastlineResult.isSmoothed && smoothRegionBoundaries)
 			{
@@ -231,7 +234,8 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth == null || edgesToSmooth.size() == 0)
 		{
-			// This corner is not on an edge to smooth. Clear the override to set the corner's location back to how it was first
+			// This corner is not on an edge to smooth. Clear the override to
+			// set the corner's location back to how it was first
 			// generated.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.resetLocToOriginal();
@@ -240,7 +244,8 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth.size() == 2)
 		{
-			// Don't smooth edges on islands/regions made of only one center, because it tends to make the center very small.
+			// Don't smooth edges on islands/regions made of only one center,
+			// because it tends to make the center very small.
 			if (corner.touches.stream().anyMatch(center -> isSinglePolygonToSmooth(center, shouldSmoothEdge)))
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
@@ -260,7 +265,8 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			// 3 or more boundaries that should be smoothed intersect. Don't smooth because it's not clear what direction to smooth.
+			// 3 or more boundaries that should be smoothed intersect. Don't
+			// smooth because it's not clear what direction to smooth.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
@@ -304,7 +310,8 @@ public class WorldGraph extends VoronoiGraph
 	 * @param center
 	 *            The center to rebuild noisy edges for.
 	 * @param centersInLoop
-	 *            For performance. The set of centers that the caller is already looping over, so that we don't rebuild noisy edges for
+	 *            For performance. The set of centers that the caller is already
+	 *            looping over, so that we don't rebuild noisy edges for
 	 *            neighbors unnecessarily.
 	 */
 	public void rebuildNoisyEdgesForCenter(Center center, Set<Center> centersInLoop)
@@ -365,16 +372,22 @@ public class WorldGraph extends VoronoiGraph
 
 	public void drawRegionIndexes(Painter p, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
-		// As we draw, if ocean centers are close to land, use the region index from that land. That way
-		// if the option to allow icons to draw over coastlines is true, then region colors will
-		// draw inside transparent pixels of icons whose content extends over ocean.
+		// As we draw, if ocean centers are close to land, use the region index
+		// from that land. That way
+		// if the option to allow icons to draw over coastlines is true, then
+		// region colors will
+		// draw inside transparent pixels of icons whose content extends over
+		// ocean.
 		drawPolygons(p, centersToDraw, drawBounds, (c) ->
 		{
 			if (c.region == null)
 			{
-				// This needs to be far enough that no icon extends this far into the ocean. The farthest I've seen any of my mountains have
+				// This needs to be far enough that no icon extends this far
+				// into the ocean. The farthest I've seen any of my mountains
+				// have
 				// extend
-				// into the ocean is 3 polygons, but I'm adding a buffer to be safe. Note that increasing this is fairly expensive.
+				// into the ocean is 3 polygons, but I'm adding a buffer to be
+				// safe. Note that increasing this is fairly expensive.
 				final int maxDistanceToSearchForLand = 5;
 				Center closestLand = findClosestLand(c, maxDistanceToSearchForLand);
 				if (closestLand == null || closestLand.region == null)
@@ -418,7 +431,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Creates political regions. When done, all non-ocean centers will have a political region assigned.
+	 * Creates political regions. When done, all non-ocean centers will have a
+	 * political region assigned.
 	 */
 	private void createPoliticalRegions()
 	{
@@ -527,7 +541,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds the region closest (in terms of Cartesian distance) to the given point.
+	 * Finds the region closest (in terms of Cartesian distance) to the given
+	 * point.
 	 */
 	private Region findClosestRegion(Point point)
 	{
@@ -608,8 +623,9 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Updates the center lookup table, which is used to lookup which center draws at a given point. This needs to be done when a center
-	 * potentially changed its noisy edges, such as when it switched from inland to coast.
+	 * Updates the center lookup table, which is used to lookup which center
+	 * draws at a given point. This needs to be done when a center potentially
+	 * changed its noisy edges, such as when it switched from inland to coast.
 	 * 
 	 * @param centersToUpdate
 	 *            Centers to update
@@ -622,7 +638,8 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			// Include neighbors of each center because if a center changed, that will affect its neighbors as well.
+			// Include neighbors of each center because if a center changed,
+			// that will affect its neighbors as well.
 			Set<Center> centersWithNeighbors = new HashSet<>();
 			for (Center c : centersToUpdate)
 			{
@@ -650,9 +667,11 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Searches for any region touching and polygon in landMass and returns it if found. Otherwise returns null.
+	 * Searches for any region touching and polygon in landMass and returns it
+	 * if found. Otherwise returns null.
 	 * 
-	 * Assumes all Centers in landMass either all have the same region, or are all null.
+	 * Assumes all Centers in landMass either all have the same region, or are
+	 * all null.
 	 */
 	private Region findRegionTouching(Set<Center> landMass)
 	{
@@ -670,7 +689,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Splits apart a region by parts connect by land (not including land from another region).
+	 * Splits apart a region by parts connect by land (not including land from
+	 * another region).
 	 * 
 	 * @param region
 	 * @return
@@ -928,7 +948,8 @@ public class WorldGraph extends VoronoiGraph
 				return c.isWater;
 			}, center);
 
-			// The second condition excludes lakes that touch the edge of the map, since it's hard to tell whether those should be ocean or
+			// The second condition excludes lakes that touch the edge of the
+			// map, since it's hard to tell whether those should be ocean or
 			// lake,
 			// And the more conservative choice is to say it's not a lake.
 			if (potentialLake.size() <= maxLakeSize && !potentialLake.stream().anyMatch(c -> c.isBorder))
@@ -1376,8 +1397,10 @@ public class WorldGraph extends VoronoiGraph
 				for (Center n : neighbor.neighbors)
 					n.updateNeighborsNotInSamePlateCount();
 
-				// Stop if there are only nine plates left and one of them is getting too small. This will usually prevent
-				// creating a map this just ocean or has only tiny islands, although it isn't guaranteed since it's
+				// Stop if there are only nine plates left and one of them is
+				// getting too small. This will usually prevent
+				// creating a map this just ocean or has only tiny islands,
+				// although it isn't guaranteed since it's
 				// possible all 9 plates will be assigned to oceanic.
 				if (plateCounts.keySet().size() == 9 && Helper.min(plateCounts) <= minNinthtoLastPlateSize)
 				{
@@ -1418,7 +1441,8 @@ public class WorldGraph extends VoronoiGraph
 	 * @param c1Velocity
 	 *            The velocity of the plate c1 is on.
 	 * @param c2
-	 *            A center along a tectonic plate border: not the same tectonic plate as c1
+	 *            A center along a tectonic plate border: not the same tectonic
+	 *            plate as c1
 	 * @param c2Velocity
 	 *            The velocity of the plate c2 is on.
 	 */
@@ -1446,7 +1470,8 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Calculates the minimum distance (in radians) from angle a1 to angle a2. The result will be in the range [0, pi].
+	 * Calculates the minimum distance (in radians) from angle a1 to angle a2.
+	 * The result will be in the range [0, pi].
 	 * 
 	 * @param a1
 	 *            An angle in radians. This must be between 0 and 2*pi.
@@ -1513,7 +1538,8 @@ public class WorldGraph extends VoronoiGraph
 				bounds = bounds.add(neighbor.loc);
 			}
 
-			// For centers on the edge of the map, add the corners to the bounds because the center doesn't have neighbors in all
+			// For centers on the edge of the map, add the corners to the bounds
+			// because the center doesn't have neighbors in all
 			// directions.
 			if (center.isBorder)
 			{
@@ -1702,16 +1728,20 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Uses A* search to find the shortest path between the 2 given centers using Delaunay edges.
+	 * Uses A* search to find the shortest path between the 2 given centers
+	 * using Delaunay edges.
 	 * 
 	 * @param start
 	 *            Where to begin the search
 	 * @param end
 	 *            The goal
 	 * @param calculateWeight
-	 *            Finds the weight of an edge for determining whether to explore it. This should be the weight of it the Delaunay edge.
-	 *            Likely this will be calculated based on the distance from one end of the Delaunay age
-	 * @return A path if one is found; null if the and is unreachable from the start.
+	 *            Finds the weight of an edge for determining whether to explore
+	 *            it. This should be the weight of it the Delaunay edge. Likely
+	 *            this will be calculated based on the distance from one end of
+	 *            the Delaunay age
+	 * @return A path if one is found; null if the and is unreachable from the
+	 *         start.
 	 */
 	public List<Edge> findShortestPath(Center start, Center end, TriFunction<Edge, Center, Double, Double> calculateWeight)
 	{
@@ -1841,12 +1871,14 @@ public class WorldGraph extends VoronoiGraph
 	{
 		double widthScale = targetWidth / bounds.width;
 		double heightScale = targetHeight / bounds.height;
-		
+		double angle = (Math.PI / 2.0) * rightRotationCount;
+		Point pivot = new Rectangle(targetWidth, targetHeight).getCenter();
+
 		// TODO Use Point.rotate
-		
+
 		for (Center center : centers)
 		{
-			center.loc = center.loc.mult(widthScale, heightScale);
+			center.loc = scaleFlipAndRotate(center.loc, widthScale, heightScale, angle, mapCenter, flipHorizontally, flipVertically);
 		}
 		for (Edge edge : edges)
 		{
@@ -1876,6 +1908,27 @@ public class WorldGraph extends VoronoiGraph
 		getMeanCenterWidth();
 		meanCenterWidthBetweenNeighbors = null;
 		getMeanCenterWidthBetweenNeighbors();
+	}
+
+	private Point scaleFlipAndRotate(Point point, double widthScale, double heightScale, double angle, Point mapCenter, boolean flipHorizontally,
+			boolean flipVertically)
+	{
+		Point result = point.mult(widthScale, heightScale);
+		
+		if (angle != 0.0)
+		{
+			result = result.rotate(mapCenter, angle);
+		}
+		
+		if (flipHorizontally)
+		{
+			
+		}
+		
+		if (flipVertically)
+		{
+			
+		}
 	}
 
 	public double getMeanCenterWidth()
@@ -1971,14 +2024,16 @@ public class WorldGraph extends VoronoiGraph
 			List<Point> drawPoints;
 			if (variationRange > 0)
 			{
-				// Get the path without curves, except cases where jagged lines might overlap with waves when the coastlines use curves.
+				// Get the path without curves, except cases where jagged lines
+				// might overlap with waves when the coastlines use curves.
 				if (noisyEdges.getLineStyle() == LineStyle.Jagged)
 				{
 					drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				}
 				else
 				{
-					// Always ignore noisy edges because we will add the curves after adding the variance.
+					// Always ignore noisy edges because we will add the curves
+					// after adding the variance.
 					drawPoints = edgeListToDrawPoints(coastline, true, Double.MAX_VALUE);
 				}
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
@@ -1998,12 +2053,12 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 
-			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look
+			// When drawing concentric waves with random variation, we need more
+			// points in the curve at lower resolutions to make it look
 			// good.
 			double distanceBetweenPoints = Math.max(1.0,
 					Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
-
 
 			if (drawPoints == null || drawPoints.size() <= 1)
 			{
@@ -2098,7 +2153,8 @@ public class WorldGraph extends VoronoiGraph
 	{
 		List<Point> result = points.stream().map(p ->
 		{
-			// Use a random seed that is close to unique for each point so that incremental draws don't have to redraw the entire coastline.
+			// Use a random seed that is close to unique for each point so that
+			// incremental draws don't have to redraw the entire coastline.
 			Random rand = new Random(randomSeed + (long) ((p.x * resolutionScale + p.y * resolutionScale) * 100));
 			double radius = rand.nextDouble() * variationRange;
 			double angle = rand.nextDouble() * 2 * Math.PI;
@@ -2222,8 +2278,10 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
-			// Enforce an order in which the region boundary is drawn so that full versus incremental redraws don't draw dotted lines
-			// in the opposite order and so end up drawing the dashed pattern slightly differently.
+			// Enforce an order in which the region boundary is drawn so that
+			// full versus incremental redraws don't draw dotted lines
+			// in the opposite order and so end up drawing the dashed pattern
+			// slightly differently.
 			if (drawPoints.get(0).compareTo(drawPoints.get(drawPoints.size() - 1)) > 0)
 			{
 				Collections.reverse(drawPoints);
@@ -2274,17 +2332,21 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Finds all edges that the 'accept' function accepts which are touching centersToDraw or are connected to an edge that touches those
-	 * centers.
+	 * Finds all edges that the 'accept' function accepts which are touching
+	 * centersToDraw or are connected to an edge that touches those centers.
 	 * 
 	 * @param centersToDraw
-	 *            Only edges either in/touching this collection or connected to edges that are will be returned.
+	 *            Only edges either in/touching this collection or connected to
+	 *            edges that are will be returned.
 	 * @param accept
 	 *            Function to determine what edge is to include in results.
 	 * @param searchEntireGraph
-	 *            When false, only centers in centersToDraw will be searched. When true, all centers will be searched. Passing this as false
-	 *            is much more performant, but can cause subtle differences in the results depending on which centers are passed in. Setting
-	 *            this to true enforces that the lists of edges returned are ordered and found the same way for full redraws vs incremental
+	 *            When false, only centers in centersToDraw will be searched.
+	 *            When true, all centers will be searched. Passing this as false
+	 *            is much more performant, but can cause subtle differences in
+	 *            the results depending on which centers are passed in. Setting
+	 *            this to true enforces that the lists of edges returned are
+	 *            ordered and found the same way for full redraws vs incremental
 	 *            for any edges that touch or pass through centersToDraw.
 	 * @return
 	 */
@@ -2324,14 +2386,18 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Given an edge to start at, this returns an ordered sequence of edges in the path that edge is included in.
+	 * Given an edge to start at, this returns an ordered sequence of edges in
+	 * the path that edge is included in.
 	 * 
 	 * @param found
-	 *            Edges that have already been searched, and so will not be searched again.
+	 *            Edges that have already been searched, and so will not be
+	 *            searched again.
 	 * @param start
-	 *            Where to start to search. Not necessarily the start of the path we're searching for.
+	 *            Where to start to search. Not necessarily the start of the
+	 *            path we're searching for.
 	 * @param accept
-	 *            Used to test whether edges are part of the desired path. If "edge" returns false for this function, then an empty list is
+	 *            Used to test whether edges are part of the desired path. If
+	 *            "edge" returns false for this function, then an empty list is
 	 *            returned.
 	 * @return A list of edges forming a path.
 	 */
