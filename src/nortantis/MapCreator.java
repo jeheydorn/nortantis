@@ -619,7 +619,7 @@ public class MapCreator implements WarningLogger
 			{
 				Logger.println("Creating the graph.");
 				WorldGraph graphCreated = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution,
-						!settings.edits.isInitialized(), settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
+						!settings.edits.isInitialized());
 				if (mapParts != null)
 				{
 					mapParts.graph = graphCreated;
@@ -933,9 +933,8 @@ public class MapCreator implements WarningLogger
 					widthToUse = mapDimensions.width;
 					heightToUse = mapDimensions.height;
 				}
-				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount,
-						new Random(frayedBorderSeed), settings.resolution, true, settings.rightRotationCount, settings.flipHorizontally,
-						settings.flipVertically);
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount, new Random(frayedBorderSeed),
+						settings.resolution, true, settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
 				frayedBorderMask = Image.create(frayGraph.getWidth(), frayGraph.getHeight(), ImageType.Grayscale8Bit);
 				frayGraph.drawBorderWhite(frayedBorderMask.createPainter());
 				if (blurLevel > 0)
@@ -1564,7 +1563,7 @@ public class MapCreator implements WarningLogger
 	}
 
 	private static WorldGraph createGraph(MapSettings settings, double width, double height, Random r, double resolutionScale,
-			boolean createElevationBiomesLakesAndRegions, int rightRotationCount, boolean flipHorizontally, boolean flipVertically)
+			boolean createElevationBiomesLakesAndRegions)
 	{
 		double widthToUse, heightToUse;
 		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
@@ -1577,11 +1576,12 @@ public class MapCreator implements WarningLogger
 			widthToUse = width;
 			heightToUse = height;
 		}
-		
+
 		WorldGraph graph = GraphCreator.createGraph(widthToUse, heightToUse, settings.worldSize, settings.edgeLandToWaterProbability,
 				settings.centerLandToWaterProbability, new Random(r.nextLong()), resolutionScale, settings.lineStyle,
 				settings.pointPrecision, createElevationBiomesLakesAndRegions, settings.lloydRelaxationsScale,
-				settings.drawRegionBoundaries || settings.drawRegionColors, rightRotationCount, flipHorizontally, flipVertically);
+				settings.drawRegionBoundaries || settings.drawRegionColors, settings.rightRotationCount, settings.flipHorizontally,
+				settings.flipVertically);
 
 		// Setup region colors even if settings.drawRegionColors = false because
 		// edits need them in case someone edits a map without region colors,
@@ -1906,10 +1906,18 @@ public class MapCreator implements WarningLogger
 	public Image createHeightMap(MapSettings settings)
 	{
 		r = new Random(settings.randomSeed);
-		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution,
-				settings.generatedHeight * settings.heightmapResolution);
-		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true,
-				settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
+		Dimension mapBounds;
+		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+		{
+			mapBounds = new Dimension(settings.generatedHeight * settings.heightmapResolution,
+					settings.generatedWidth * settings.heightmapResolution);
+		}
+		else
+		{
+			mapBounds = new Dimension(settings.generatedWidth * settings.heightmapResolution,
+					settings.generatedHeight * settings.heightmapResolution);
+		}
+		WorldGraph graph = createGraph(settings, mapBounds.width, mapBounds.height, r, settings.resolution, true);
 		return GraphCreator.createHeightMap(graph, new Random(settings.randomSeed));
 	}
 

@@ -186,6 +186,18 @@ public class MapCreatorTest
 	}
 	
 	@Test
+	public void rotatedAndFlippedTwiceWithEditsTest()
+	{
+		generateAndCompare("rotatedAndFlippedTwiceWithEdits.nort");
+	}
+	
+	@Test
+	public void rotatedLeftTest()
+	{
+		generateAndCompare("rotedLeft.nort");
+	}
+
+	@Test
 	public void customImagesWithSizesInFileNames()
 	{
 		generateAndCompare("customImagesWithSizesInFileNames.nort");
