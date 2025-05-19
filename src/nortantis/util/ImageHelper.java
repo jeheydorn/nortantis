@@ -438,16 +438,17 @@ public class ImageHelper
 			throw new IllegalArgumentException("Region for masking is not contained within image2.");
 		}
 
-		if (image1.getType() != ImageType.RGB)
+		if (image1.getType() != ImageType.RGB && image1.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException("Image 1 must be type " + ImageType.RGB + ", but was type " + image1.getType() + ".");
+			throw new IllegalArgumentException("Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
 		}
-		if (image2.getType() != ImageType.RGB)
+		if (image2.getType() != ImageType.RGB && image2.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + ", but was type " + image2.getType() + ".");
+			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
-
-		Image result = Image.create(image1.getWidth(), image1.getHeight(), image1.getType());
+		
+		ImageType type = image1.getType() == ImageType.ARGB || image2.getType() == ImageType.ARGB ? ImageType.ARGB : image1.getType();
+		Image result = Image.create(image1.getWidth(), image1.getHeight(), type);
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
@@ -465,9 +466,9 @@ public class ImageHelper
 				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
 					for (int x = 0; x < image1.getWidth(); x++)
 					{
-						Color color1 = Color.create(image1.getRGB(image1Data, x, y));
+						Color color1 = Color.create(image1.getRGB(image1Data, x, y), image1.hasAlpha());
 						Color color2 = Color
-								.create(image2.getRGB(image2Data, x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
+								.create(image2.getRGB(image2Data, x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y), image2.hasAlpha());
 						float maskLevel = mask.getNormalizedPixelLevel(x, y);
 						if (mask.getType() == ImageType.Grayscale8Bit)
 						{
@@ -477,7 +478,8 @@ public class ImageHelper
 						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
 						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
 						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-						result.setRGB(resultData, x, y, r, g, b);
+						int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
+						result.setRGB(resultData, x, y, r, g, b, a);
 					}
 			});
 		}
@@ -755,7 +757,7 @@ public class ImageHelper
 
 				Color originalColor = image.getPixelColor(x, y);
 				result.setPixelColor(x, y,
-						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), maskLevel));
+						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), Math.min(maskLevel, originalColor.getAlpha())));
 			}
 		return result;
 	}
@@ -1346,18 +1348,34 @@ public class ImageHelper
 
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
-		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
+		ImageType resultType = color.getAlpha() < Image.getMaxPixelLevelForType(ImageType.ARGB) ? ImageType.ARGB : ImageType.RGB;
+		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
 		float[] hsb = color.getHSB();
 		final IntRectangle whereFinal = where;
-		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
+		if (resultType == ImageType.ARGB)
 		{
-			for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
+			ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
 			{
-				float level = image.getNormalizedPixelLevel(x, y);
-				result.setRGB(x, y, colorifyPixel(level, hsb, how));
-			}
-		});
+				for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
+				{
+					float level = image.getNormalizedPixelLevel(x, y);
+					result.setRGB(x, y, colorifyPixel(level, hsb, how));
+					result.setAlpha(x, y, color.getAlpha());
+				}
+			});
+		}
+		else
+		{
+			ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
+			{
+				for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
+				{
+					float level = image.getNormalizedPixelLevel(x, y);
+					result.setRGB(x, y, colorifyPixel(level, hsb, how));
+				}
+			});
+		}
 
 		return result;
 	}

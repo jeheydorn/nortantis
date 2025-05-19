@@ -279,7 +279,7 @@ class AwtImage extends Image
 	@Override
 	public void setAlpha(int x, int y, int alpha)
 	{
-		int newColor = image.getRGB(x, y) | (alpha << 24);
+		int newColor = (image.getRGB(x, y) & 0x00FFFFFF) | (alpha << 24);
 		setRGB(x, y, newColor);
 	}
 

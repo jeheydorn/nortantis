@@ -36,7 +36,6 @@ public class Background
 	Dimension mapBounds;
 	Dimension borderBounds;
 	Image borderBackground;
-	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
 	private ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
@@ -56,9 +55,7 @@ public class Background
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
 		customImagesPath = settings.customImagesPath;
-		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
-		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
-				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+		shouldDrawRegionColors = settings.drawRegionColors && (!settings.generateBackgroundFromTexture || settings.colorizeLand);
 
 		Image landGeneratedBackground;
 		landColorifyAlgorithm = ColorifyAlgorithm.none;
@@ -337,20 +334,6 @@ public class Background
 						(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(),
 						boundsInSourceToCopyFrom, 0);
-			}
-		}
-
-		// Fixes a bug where graph width or height is not exactly the same as
-		// image width and heights due to rounding issues.
-		if (backgroundFromFilesNotGenerated)
-		{
-			if (land.getWidth() != graph.getWidth())
-			{
-				land = ImageHelper.scaleByWidth(land, graph.getWidth());
-			}
-			if (ocean.getWidth() != graph.getWidth())
-			{
-				ocean = ImageHelper.scaleByWidth(ocean, graph.getWidth());
 			}
 		}
 	}

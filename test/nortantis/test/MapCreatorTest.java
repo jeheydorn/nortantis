@@ -194,7 +194,7 @@ public class MapCreatorTest
 	@Test
 	public void rotatedLeftTest()
 	{
-		generateAndCompare("rotedLeft.nort");
+		generateAndCompare("rotatedLeft.nort");
 	}
 
 	@Test
