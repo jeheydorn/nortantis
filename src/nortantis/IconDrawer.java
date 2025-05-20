@@ -1067,21 +1067,39 @@ public class IconDrawer
 					continue;
 				}
 
-				double bgAlpha = bgColor.getAlpha() / 255.0;
-				double mapAlpha = mapColor.getAlpha() / 255.0;
+				double landTextureAlpha = landTextureColor.getAlpha() / 255.0;
+				double landBackgroundColorScale;
+				if (landTextureAlpha == 1.0)
+				{
+					// Save some time since this is a simple and common case.
+					landBackgroundColorScale = 1.0;
+				}
+				else
+				{
+					// Use a curve that is 0 when landTextureAlpha is 0, 1 when landTextureAlpha is 1, and is mostly equal to 1 but dies off
+					// quickly as landTextureAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
+					// that are partially transparent.
+					landBackgroundColorScale = 1.0 - Math.pow(1.0 - landTextureAlpha, 10);
+				}
 
 				// Use the shading mask to blend the coastline shading with the land background texture for pixels with transparency in the
 				// icon and non-zero values in the content mask. This way coastline shading doesn't draw through icons, since that would
 				// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon draw
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
-				int red = (int) (linearCombo(iconAlpha, iconColor.getRed(), linearCombo(contentMaskLevel,
-						linearCombo(shadingMaskLevel, bgColor.getRed(), landTextureColor.getRed()), mapColor.getRed())));
-				int green = (int) (linearCombo(iconAlpha, iconColor.getGreen(), linearCombo(contentMaskLevel,
-						linearCombo(shadingMaskLevel, bgColor.getGreen(), landTextureColor.getGreen()), mapColor.getGreen())));
-				int blue = (int) (linearCombo(iconAlpha, iconColor.getBlue(), linearCombo(contentMaskLevel,
-						linearCombo(shadingMaskLevel, bgColor.getBlue(), landTextureColor.getBlue()), mapColor.getBlue())));
-				int alpha = (int) (iconAlphaInt + (1 - iconAlpha) * (linearCombo(contentMaskLevel,
+				int red = (int) (linearCombo(iconAlpha, iconColor.getRed(),
+						linearCombo(contentMaskLevel,
+								linearCombo(shadingMaskLevel, bgColor.getRed(), landBackgroundColorScale * landTextureColor.getRed()),
+								mapColor.getRed())));
+				int green = (int) (linearCombo(iconAlpha, iconColor.getGreen(),
+						linearCombo(contentMaskLevel,
+								linearCombo(shadingMaskLevel, bgColor.getGreen(), landBackgroundColorScale * landTextureColor.getGreen()),
+								mapColor.getGreen())));
+				int blue = (int) (linearCombo(iconAlpha, iconColor.getBlue(),
+						linearCombo(contentMaskLevel,
+								linearCombo(shadingMaskLevel, bgColor.getBlue(), landBackgroundColorScale * landTextureColor.getBlue()),
+								mapColor.getBlue())));
+				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (linearCombo(contentMaskLevel,
 						(linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
 				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());
 			}
