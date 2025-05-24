@@ -32,6 +32,7 @@ import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
 import nortantis.graph.voronoi.EdgeDrawType;
+import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
@@ -389,7 +390,7 @@ public class MapCreator implements WarningLogger
 			Image oceanTextureSnippet;
 			{
 				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
-				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
+				ImageHelper.maskWithImageInPlace(mapSnippet, oceanTextureSnippet, landMask);
 			}
 
 			checkForCancel();
@@ -1100,7 +1101,7 @@ public class MapCreator implements WarningLogger
 						"The given ocean background image does not" + " have the same aspect ratio as the given land background image.");
 			}
 
-			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
+			ImageHelper.maskWithImageInPlace(map, background.ocean, landMask);
 		}
 
 		checkForCancel();
@@ -1188,7 +1189,7 @@ public class MapCreator implements WarningLogger
 		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
 		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,
 				background, coastShading, centersToDraw, drawBounds, false).getFirst();
-		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
+		ImageHelper.maskWithImageInPlace(textBackground, oceanTexture, landMask);
 		if (oceanShading != null)
 		{
 			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);
@@ -2064,7 +2065,7 @@ public class MapCreator implements WarningLogger
 
 			// Set the transparency level
 			float alpha = (100 - settings.overlayImageTransparency) / 100.0f;
-			p.setAlphaComposite(alpha);
+			p.setAlphaComposite(AlphaComposite.SrcAtop, alpha);
 
 			p.drawImage(overlayImage, x, y, overlayPosition.width, overlayPosition.height);
 		}

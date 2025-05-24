@@ -36,6 +36,11 @@ public class IntRectangle
 	{
 		return contains(other.x, other.y) && contains(other.x + other.width, other.y + other.height);
 	}
+	
+	public IntPoint upperLeftCorner()
+	{
+		return new IntPoint(x, y);
+	}
 
 	/**
 	 * Returns a new IntRectangle with the same centroid as this one (if the paddings are even numbers) but with the width and height

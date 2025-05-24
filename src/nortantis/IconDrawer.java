@@ -1088,17 +1088,14 @@ public class IconDrawer
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
 				int red = (int) (linearCombo(iconAlpha, iconColor.getRed(),
-						linearCombo(contentMaskLevel,
-								linearCombo(shadingMaskLevel, bgColor.getRed(), landBackgroundColorScale * landTextureColor.getRed()),
-								mapColor.getRed())));
+						linearCombo(contentMaskLevel, linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getRed(),
+								landBackgroundColorScale * landTextureColor.getRed()), mapColor.getRed())));
 				int green = (int) (linearCombo(iconAlpha, iconColor.getGreen(),
-						linearCombo(contentMaskLevel,
-								linearCombo(shadingMaskLevel, bgColor.getGreen(), landBackgroundColorScale * landTextureColor.getGreen()),
-								mapColor.getGreen())));
+						linearCombo(contentMaskLevel, linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getGreen(),
+								landBackgroundColorScale * landTextureColor.getGreen()), mapColor.getGreen())));
 				int blue = (int) (linearCombo(iconAlpha, iconColor.getBlue(),
-						linearCombo(contentMaskLevel,
-								linearCombo(shadingMaskLevel, bgColor.getBlue(), landBackgroundColorScale * landTextureColor.getBlue()),
-								mapColor.getBlue())));
+						linearCombo(contentMaskLevel, linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getBlue(),
+								landBackgroundColorScale * landTextureColor.getBlue()), mapColor.getBlue())));
 				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (linearCombo(contentMaskLevel,
 						(linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
 				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());

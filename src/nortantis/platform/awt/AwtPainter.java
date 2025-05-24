@@ -227,11 +227,37 @@ class AwtPainter extends Painter
 	}
 
 	@Override
-	public void setAlphaComposite(float alpha)
+	public void setAlphaComposite(nortantis.platform.AlphaComposite composite)
 	{
-		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+		assert composite != nortantis.platform.AlphaComposite.SrcAtop; // Needs alpha input
+		setAlphaComposite(composite, 0);
 	}
 
+	@Override
+	public void setAlphaComposite(nortantis.platform.AlphaComposite composite, float alpha)
+	{
+		if (composite == nortantis.platform.AlphaComposite.Src)
+		{
+			g.setComposite(AlphaComposite.Src);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcAtop)
+		{
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcOver)
+		{
+			g.setComposite(AlphaComposite.SrcOver);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstIn)
+		{
+			g.setComposite(AlphaComposite.DstIn);
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Unimplemented alpha composite method: " + composite);
+		}
+	}
+	
 	@Override
 	public void setClip(int x, int y, int width, int height)
 	{

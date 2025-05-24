@@ -67,6 +67,11 @@ public abstract class Image
 	{
 		return new IntDimension(getWidth(), getHeight());
 	}
+	
+	public int getPixelCount()
+	{
+		return getWidth() * getHeight();
+	}
 
 	public ImageType getType()
 	{

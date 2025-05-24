@@ -13,7 +13,9 @@ public abstract class Painter
 
 	public abstract void drawImage(Image image, int x, int y, int width, int height);
 
-	public abstract void setAlphaComposite(float alpha);
+	public abstract void setAlphaComposite(nortantis.platform.AlphaComposite composite, float alpha);
+	
+	public abstract void setAlphaComposite(nortantis.platform.AlphaComposite composite);
 
 	public abstract void setColor(Color color);
 

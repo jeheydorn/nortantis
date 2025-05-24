@@ -81,6 +81,17 @@ public class ThreadHelper
 			}
 		}
 	}
+	
+	/**
+	 * Processes a list of jobs in the current thread.
+	 */
+	public void processSerial(List<Runnable> jobs)
+	{
+		for (Runnable job : jobs)
+		{
+			job.run();
+		}
+	}
 
 	/**
 	 * Processes a list of jobs in parallel that return results. Warning: Never submit a job that will submit more jobs using the methods in
