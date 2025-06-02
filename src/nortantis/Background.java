@@ -15,6 +15,7 @@ import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -84,7 +85,8 @@ public class Background
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm,
+							settings.oceanColor.hasTransparency());
 				}
 				ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 			}
@@ -150,7 +152,8 @@ public class Background
 				{
 					if (settings.drawBorder)
 					{
-						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm,
+								settings.oceanColor.hasTransparency());
 					}
 					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 				}
@@ -368,8 +371,14 @@ public class Background
 		}
 
 		Image result = borderBackground.deepCopy();
-		Painter p = result.createPainter();
-		p.drawImage(map, borderWidthScaled, borderWidthScaled);
+		{
+			Painter p = result.createPainter();
+			if (result.hasAlpha())
+			{
+				p.setAlphaComposite(AlphaComposite.Src);
+			}
+			p.drawImage(map, borderWidthScaled, borderWidthScaled);
+		}
 
 		Path artPackPath = Assets.getArtPackPath(borderResouce.artPack, customImagesPath);
 		if (artPackPath == null)
@@ -543,8 +552,10 @@ public class Background
 		drawLowerLeftCorner(result, new IntPoint(0, 0));
 		drawLowerRightCorner(result, new IntPoint(0, 0));
 
+
 		// Draw the edges
 
+		Painter p = result.createPainter();
 		// Top and bottom edges
 		for (int i : new Range(2))
 		{

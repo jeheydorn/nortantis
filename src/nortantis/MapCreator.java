@@ -390,7 +390,7 @@ public class MapCreator implements WarningLogger
 			Image oceanTextureSnippet;
 			{
 				oceanTextureSnippet = mapParts.background.createOceanSnippet(drawBounds);
-				ImageHelper.maskWithImageInPlace(mapSnippet, oceanTextureSnippet, landMask);
+				mapSnippet = ImageHelper.maskWithImage(mapSnippet, oceanTextureSnippet, landMask);
 			}
 
 			checkForCancel();
@@ -1101,7 +1101,7 @@ public class MapCreator implements WarningLogger
 						"The given ocean background image does not" + " have the same aspect ratio as the given land background image.");
 			}
 
-			ImageHelper.maskWithImageInPlace(map, background.ocean, landMask);
+			map = ImageHelper.maskWithImage(map, background.ocean, landMask);
 		}
 
 		checkForCancel();
@@ -1189,7 +1189,7 @@ public class MapCreator implements WarningLogger
 		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
 		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,
 				background, coastShading, centersToDraw, drawBounds, false).getFirst();
-		ImageHelper.maskWithImageInPlace(textBackground, oceanTexture, landMask);
+		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanShading != null)
 		{
 			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanShadingColor, oceanShading, true);

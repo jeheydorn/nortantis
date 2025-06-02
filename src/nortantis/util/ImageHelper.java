@@ -407,6 +407,93 @@ public class ImageHelper
 		}
 	}
 
+	/**
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
+	 * mask must be ImageType.Grayscale.
+	 * 
+	 * An advantage of this over maskWithImageInPlace is that since it creates a new image for the result, the result respects transparency
+	 * if image1 doesn't have alpha but image2 does.
+	 */
+	public static Image maskWithImage(Image image1, Image image2, Image mask)
+	{
+		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale" + " or TYPE_BYTE_BINARY.");
+
+		if (image1.getWidth() != image2.getWidth())
+			throw new IllegalArgumentException();
+		if (image1.getHeight() != image2.getHeight())
+			throw new IllegalArgumentException();
+
+		if (image1.getType() != ImageType.RGB && image1.getType() != ImageType.ARGB)
+		{
+			throw new IllegalArgumentException(
+					"Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
+		}
+		if (image2.getType() != ImageType.RGB && image2.getType() != ImageType.ARGB)
+		{
+			throw new IllegalArgumentException(
+					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
+		}
+
+		ImageType resultType;
+		if (image1.hasAlpha() || image2.hasAlpha())
+		{
+			resultType = ImageType.ARGB;
+		}
+		else
+		{
+			resultType = image1.getType();
+		}
+		Image result = Image.create(image1.getWidth(), image1.getHeight(), resultType);
+
+		IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
+
+		int numTasks = ThreadHelper.getInstance().getThreadCount();
+		List<Runnable> tasks = new ArrayList<>(numTasks);
+		int rowsPerJob = mask.getHeight() / numTasks;
+
+		int[] image1Data = image1.getDataIntBased();
+		int[] image2Data = image2.getDataIntBased();
+		int[] resultData = result.getDataIntBased();
+
+		for (int taskNumber : new Range(numTasks))
+		{
+			tasks.add(() ->
+			{
+				int endY = taskNumber == numTasks - 1 ? mask.getHeight() : ((taskNumber + 1) * rowsPerJob);
+				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
+					for (int x = 0; x < mask.getWidth(); x++)
+					{
+						if (!image1Bounds.contains(x, y))
+						{
+							continue;
+						}
+
+						Color color1 = Color.create(image1.getRGB(image1Data, x, y), image1.hasAlpha());
+						Color color2 = Color.create(image2.getRGB(image2Data, x, y), image2.hasAlpha());
+						double maskLevel = mask.getNormalizedPixelLevel(x, y);
+
+						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
+						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
+						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
+						int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
+						result.setRGB(resultData, x, y, r, g, b, a);
+					}
+			});
+		}
+
+		if (mask.getPixelCount() < minParallelSize)
+		{
+			ThreadHelper.getInstance().processSerial(tasks);
+		}
+		else
+		{
+			ThreadHelper.getInstance().processInParallel(tasks, true);
+		}
+
+		return result;
+	}
+
 	public static void maskWithImageInPlace(Image image1, Image image2, Image mask)
 	{
 		maskWithImageInPlace(image1, image2, mask, null, false);
@@ -1301,7 +1388,7 @@ public class ImageHelper
 	{
 		return matchHistogram(target, source, target.getType());
 	}
-
+	
 	/**
 	 * Creates a colored image from a grayscale one and a given color.
 	 * 
@@ -1315,7 +1402,7 @@ public class ImageHelper
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how)
 	{
-		return colorify(image, color, how, null);
+		return colorify(image, color, how, false);
 	}
 
 	/**
@@ -1327,34 +1414,27 @@ public class ImageHelper
 	 *            Color to use
 	 * @param how
 	 *            Algorithm to use when determining pixel colors
-	 * @param where
-	 *            Allows colorifying only a snippet of image. Null means colorify the whole image.
+	 * @param forceAddAlpha Forces the result to have an alpha channel, even when "color" is opaque.
 	 * @return
 	 */
-	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, IntRectangle where)
+	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
 	{
 		if (how == ColorifyAlgorithm.none)
 		{
 			return image;
 		}
 
-		if (where == null)
-		{
-			where = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
-		}
-
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
-		ImageType resultType = color.getAlpha() < Image.getMaxPixelLevelForType(ImageType.ARGB) ? ImageType.ARGB : ImageType.RGB;
+		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
 		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
 		float[] hsb = color.getHSB();
-		final IntRectangle whereFinal = where;
 		if (resultType == ImageType.ARGB)
 		{
-			ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
+			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 			{
-				for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
 					float level = image.getNormalizedPixelLevel(x, y);
 					result.setRGB(x, y, colorifyPixel(level, hsb, how));
@@ -1364,9 +1444,9 @@ public class ImageHelper
 		}
 		else
 		{
-			ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
+			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 			{
-				for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
+				for (int x = 0; x < image.getWidth(); x++)
 				{
 					float level = image.getNormalizedPixelLevel(x, y);
 					result.setRGB(x, y, colorifyPixel(level, hsb, how));
