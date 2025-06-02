@@ -626,9 +626,9 @@ public class ImageHelper
 								continue;
 							}
 
-							Color col = Color.create(image.getRGB(imageData, x, y));
+							Color col = Color.create(image.getRGB(imageData, x, y), image.hasAlpha());
 
-							int maskLevel = mask.getGrayLevel(xInMask, yInMask);
+							int maskLevel = (mask.getGrayLevel(xInMask, yInMask) * color.getAlpha()) / image.getMaxPixelLevel();
 							if (mask.getType() == ImageType.Grayscale8Bit)
 							{
 								if (invertMask)
@@ -674,9 +674,9 @@ public class ImageHelper
 								continue;
 							}
 
-							Color col = Color.create(image.getRGB(x, y));
+							Color col = Color.create(image.getRGB(x, y), image.hasAlpha());
 
-							int maskLevel = mask.getGrayLevel(xInMask, yInMask);
+							int maskLevel = (mask.getGrayLevel(xInMask, yInMask) * color.getAlpha()) / image.getMaxPixelLevel();
 							if (mask.getType() == ImageType.Grayscale8Bit)
 							{
 								if (invertMask)
@@ -685,7 +685,6 @@ public class ImageHelper
 								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
 								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
 								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								// result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
 								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
 								result.setRGB(x, y, combined.getRGB());
 							}
