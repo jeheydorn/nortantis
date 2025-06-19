@@ -53,7 +53,7 @@ import nortantis.util.Tuple2;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "3.04";
+	public static final String currentVersion = "3.05";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -95,6 +95,7 @@ public class MapSettings implements Serializable
 	public int frayedBorderSize;
 	public Color frayedBorderColor;
 	public int frayedBorderBlurLevel;
+	public long frayedBorderSeed;
 	public int grungeWidth;
 	public boolean drawGrunge;
 	/**
@@ -356,8 +357,9 @@ public class MapSettings implements Serializable
 		root.put("pointPrecision", pointPrecision);
 		root.put("lloydRelaxationsScale", lloydRelaxationsScale);
 
-		// Background image settings.
+		// Background settings.
 		root.put("backgroundRandomSeed", backgroundRandomSeed);
+		root.put("frayedBorderSeed", frayedBorderSeed);
 		root.put("generateBackground", generateBackground);
 		root.put("backgroundTextureImage", backgroundTextureImage);
 		if (backgroundTextureResource != null)
@@ -824,7 +826,8 @@ public class MapSettings implements Serializable
 		{
 			backgroundTextureResource = NamedResource.fromJson((JSONObject) root.get("backgroundTextureResource"));
 		}
-		backgroundRandomSeed = (long) (long) root.get("backgroundRandomSeed");
+		backgroundRandomSeed = (long) root.get("backgroundRandomSeed");
+		frayedBorderSeed = root.containsKey("frayedBorderSeed") ? (long) root.get("frayedBorderSeed") : backgroundRandomSeed;
 		oceanColor = parseColor((String) root.get("oceanColor"));
 		landColor = parseColor((String) root.get("landColor"));
 
@@ -1609,6 +1612,7 @@ public class MapSettings implements Serializable
 		colorizeLand = old.colorizeLand;
 		backgroundTextureImage = old.backgroundTextureImage;
 		backgroundRandomSeed = old.backgroundRandomSeed;
+		frayedBorderSeed = old.backgroundRandomSeed;
 		oceanColor = old.oceanColor;
 		landColor = old.landColor;
 		generatedWidth = old.generatedWidth;
@@ -1828,9 +1832,10 @@ public class MapSettings implements Serializable
 				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
 				&& flipHorizontally == other.flipHorizontally && flipVertically == other.flipVertically
 				&& frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
-				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSize == other.frayedBorderSize
-				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture
-				&& generatedHeight == other.generatedHeight && generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
+				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed
+				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
+				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
+				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
@@ -1863,5 +1868,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-
+	
 }

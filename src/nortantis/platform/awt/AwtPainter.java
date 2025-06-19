@@ -229,20 +229,13 @@ class AwtPainter extends Painter
 	@Override
 	public void setAlphaComposite(nortantis.platform.AlphaComposite composite)
 	{
-		assert composite != nortantis.platform.AlphaComposite.SrcAtop; // Needs alpha input
-		setAlphaComposite(composite, 0);
-	}
-
-	@Override
-	public void setAlphaComposite(nortantis.platform.AlphaComposite composite, float alpha)
-	{
 		if (composite == nortantis.platform.AlphaComposite.Src)
 		{
 			g.setComposite(AlphaComposite.Src);
 		}
 		else if (composite == nortantis.platform.AlphaComposite.SrcAtop)
 		{
-			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+			g.setComposite(AlphaComposite.SrcAtop);
 		}
 		else if (composite == nortantis.platform.AlphaComposite.SrcOver)
 		{
@@ -252,9 +245,30 @@ class AwtPainter extends Painter
 		{
 			g.setComposite(AlphaComposite.DstIn);
 		}
+		else if (composite == nortantis.platform.AlphaComposite.Dst)
+		{
+			g.setComposite(AlphaComposite.Dst);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstOver)
+		{
+			g.setComposite(AlphaComposite.DstOver);
+		}
 		else
 		{
 			throw new UnsupportedOperationException("Unimplemented alpha composite method: " + composite);
+		}
+	}
+
+	@Override
+	public void setAlphaComposite(nortantis.platform.AlphaComposite composite, float alpha)
+	{
+		if (composite == nortantis.platform.AlphaComposite.SrcAtop)
+		{
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Unimplemented alpha composite method with alpha parameter. Composite method: " + composite);
 		}
 	}
 	

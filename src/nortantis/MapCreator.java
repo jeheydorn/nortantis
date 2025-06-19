@@ -337,7 +337,7 @@ public class MapCreator implements WarningLogger
 		if (!onlyTextChanged)
 		{
 			Center searchStart = mapParts.graph.findClosestCenter(drawBounds.getCenter());
-			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBounds(drawBounds), searchStart);
+			centersToDraw = mapParts.graph.breadthFirstSearch(c -> c.isInBoundsIncludingNoisyEdges(drawBounds), searchStart);
 
 			checkForCancel();
 
@@ -661,10 +661,9 @@ public class MapCreator implements WarningLogger
 		// parallel to be safe.
 		Dimension mapDimensions = background.borderBounds;
 		Future<Tuple2<Image, Image>> frayedBorderTask = null;
-		long frayedBorderSeed = r.nextLong();
 		if (!isLowMemoryMode)
 		{
-			frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
+			frayedBorderTask = startFrayedBorderCreation(settings, mapDimensions, sizeMultiplier, mapParts);
 		}
 
 		Image textBackground;
@@ -806,50 +805,6 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		if (settings.frayedBorder)
-		{
-			Image frayedBorderMask;
-			Image frayedBorderBlur;
-			if (isLowMemoryMode && frayedBorderTask == null)
-			{
-				frayedBorderTask = startFrayedBorderCreation(frayedBorderSeed, settings, mapDimensions, sizeMultiplier, mapParts);
-			}
-
-			if (frayedBorderTask != null)
-			{
-				Tuple2<Image, Image> tuple;
-				tuple = ThreadHelper.getInstance().getResult(frayedBorderTask);
-
-				Logger.println("Adding frayed edges.");
-				frayedBorderMask = tuple.getFirst();
-				frayedBorderBlur = tuple.getSecond();
-			}
-			else if (mapParts != null)
-			{
-				frayedBorderMask = mapParts.frayedBorderMask;
-				frayedBorderBlur = mapParts.frayedBorderBlur;
-			}
-			else
-			{
-				throw new IllegalStateException("Frayed border should have been created.");
-			}
-
-			if (mapParts != null)
-			{
-				mapParts.frayedBorderMask = frayedBorderMask;
-				mapParts.frayedBorderBlur = frayedBorderBlur;
-				mapParts.frayedBorderColor = settings.frayedBorderColor;
-			}
-
-			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
-			if (frayedBorderBlur != null)
-			{
-				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
-			}
-		}
-
-		checkForCancel();
-
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
 			Logger.println("Adding grunge.");
@@ -885,6 +840,51 @@ public class MapCreator implements WarningLogger
 
 		drawOverlayImageIfNeededAndUpdateMapParts(map, settings, mapParts);
 
+		checkForCancel();
+
+		if (settings.frayedBorder)
+		{
+			Image frayedBorderMask;
+			Image frayedBorderBlur;
+			if (isLowMemoryMode && frayedBorderTask == null)
+			{
+				frayedBorderTask = startFrayedBorderCreation(settings, mapDimensions, sizeMultiplier, mapParts);
+			}
+
+			if (frayedBorderTask != null)
+			{
+				Tuple2<Image, Image> tuple;
+				tuple = ThreadHelper.getInstance().getResult(frayedBorderTask);
+
+				Logger.println("Adding frayed edges.");
+				frayedBorderMask = tuple.getFirst();
+				frayedBorderBlur = tuple.getSecond();
+			}
+			else if (mapParts != null)
+			{
+				frayedBorderMask = mapParts.frayedBorderMask;
+				frayedBorderBlur = mapParts.frayedBorderBlur;
+			}
+			else
+			{
+				throw new IllegalStateException("Frayed border should have been created.");
+			}
+
+			if (mapParts != null)
+			{
+				mapParts.frayedBorderMask = frayedBorderMask;
+				mapParts.frayedBorderBlur = frayedBorderBlur;
+				mapParts.frayedBorderColor = settings.frayedBorderColor;
+			}
+
+			if (frayedBorderBlur != null)
+			{
+				map = ImageHelper.maskWithColor(map, settings.frayedBorderColor, frayedBorderBlur, true);
+			}
+			map = ImageHelper.setAlphaFromMask(map, frayedBorderMask, true);
+		}
+
+
 		if (nameCreatorTask != null)
 		{
 			NameCreator nameCreator = ThreadHelper.getInstance().getResult(nameCreatorTask);
@@ -904,7 +904,7 @@ public class MapCreator implements WarningLogger
 		return map;
 	}
 
-	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(long frayedBorderSeed, MapSettings settings, Dimension mapDimensions,
+	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(MapSettings settings, Dimension mapDimensions,
 			double sizeMultiplier, MapParts mapParts)
 	{
 		// Use the random number generator the same whether or not we draw a frayed border.
@@ -934,7 +934,7 @@ public class MapCreator implements WarningLogger
 					widthToUse = mapDimensions.width;
 					heightToUse = mapDimensions.height;
 				}
-				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount, new Random(frayedBorderSeed),
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount, new Random(settings.frayedBorderSeed),
 						settings.resolution, true, settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
 				frayedBorderMask = Image.create(frayGraph.getWidth(), frayGraph.getHeight(), ImageType.Grayscale8Bit);
 				frayGraph.drawBorderWhite(frayedBorderMask.createPainter());

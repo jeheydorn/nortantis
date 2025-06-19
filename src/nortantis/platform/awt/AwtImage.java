@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -293,5 +294,27 @@ class AwtImage extends Image
 	public boolean isIntBased()
 	{
 		return raster.getDataBuffer() instanceof DataBufferInt;
+	}
+
+	@Override
+	public Image copyAndAddAlphaChanel()
+	{
+		if (hasAlpha())
+		{
+			return deepCopy();
+		}
+		
+        BufferedImage copy = new BufferedImage(
+        		image.getWidth(),
+        		image.getHeight(),
+                BufferedImage.TYPE_INT_ARGB
+            );
+
+            // Draw the original image onto the new image
+            Graphics2D g2d = copy.createGraphics();
+            g2d.drawImage(image, 0, 0, null);
+            g2d.dispose();
+            
+		return new AwtImage(copy);
 	}
 }

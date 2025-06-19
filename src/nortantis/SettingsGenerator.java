@@ -108,6 +108,7 @@ public class SettingsGenerator
 		int brightnessRange = 25;
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
+		settings.borderColor = settings.landColor;
 
 		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 
@@ -317,6 +318,7 @@ public class SettingsGenerator
 		settings.randomSeed = seed;
 		settings.regionsRandomSeed = seed;
 		settings.backgroundRandomSeed = seed;
+		settings.frayedBorderSeed = seed;
 		settings.textRandomSeed = seed;
 	}
 

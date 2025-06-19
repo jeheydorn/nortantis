@@ -34,6 +34,7 @@ import nortantis.platform.ImageType;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.Function;
+import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
@@ -1087,25 +1088,20 @@ public class IconDrawer
 				// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon draw
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
-				int red = (int) (linearCombo(iconAlpha, iconColor.getRed(),
-						linearCombo(contentMaskLevel, linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getRed(),
+				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(),
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getRed(),
 								landBackgroundColorScale * landTextureColor.getRed()), mapColor.getRed())));
-				int green = (int) (linearCombo(iconAlpha, iconColor.getGreen(),
-						linearCombo(contentMaskLevel, linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getGreen(),
+				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getGreen(),
 								landBackgroundColorScale * landTextureColor.getGreen()), mapColor.getGreen())));
-				int blue = (int) (linearCombo(iconAlpha, iconColor.getBlue(),
-						linearCombo(contentMaskLevel, linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getBlue(),
+				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getBlue(),
 								landBackgroundColorScale * landTextureColor.getBlue()), mapColor.getBlue())));
-				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (linearCombo(contentMaskLevel,
-						(linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
+				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
+						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
 				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());
 			}
 		}
-	}
-
-	private double linearCombo(double weight, double value1, double value2)
-	{
-		return (weight * value1) + ((1.0 - weight) * value2);
 	}
 
 	/**

@@ -16,7 +16,6 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
-import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 import nortantis.geom.Dimension;
@@ -599,115 +598,34 @@ public class ImageHelper
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
-		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
-
-		// Process rows in parallel to speed things up a little. In my tests, doing so was 41% faster
-		// (when only counting time in this method).
-		int numTasks = ThreadHelper.getInstance().getThreadCount();
-		List<Runnable> tasks = new ArrayList<>(numTasks);
-		int rowsPerJob = image.getHeight() / numTasks;
-		if (result.isIntBased())
+		Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
+		ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 		{
-			int[] resultData = result.getDataIntBased();
-			int[] imageData = image.getDataIntBased();
-			for (int taskNumber : new Range(numTasks))
+			int[] overlayData = overlay.getDataIntBased();
+			for (int x = 0; x < image.getWidth(); x++)
 			{
-				tasks.add(() ->
+				int xInMask = x + imageOffsetInMask.x;
+				int yInMask = y + imageOffsetInMask.y;
+				if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
 				{
-					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-					for (int y = taskNumber * rowsPerJob; y < endY; y++)
-					{
-						for (int x = 0; x < image.getWidth(); x++)
-						{
-							int xInMask = x + imageOffsetInMask.x;
-							int yInMask = y + imageOffsetInMask.y;
-							if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
-							{
-								continue;
-							}
+					continue;
+				}
 
-							Color col = Color.create(image.getRGB(imageData, x, y), image.hasAlpha());
+				int maskLevel = (int) (mask.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
+				if (invertMask)
+					maskLevel = 255 - maskLevel;
 
-							int maskLevel = (mask.getGrayLevel(xInMask, yInMask) * color.getAlpha()) / image.getMaxPixelLevel();
-							if (mask.getType() == ImageType.Grayscale8Bit)
-							{
-								if (invertMask)
-									maskLevel = 255 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
-							}
-							else
-							{
-								// TYPE_BYTE_BINARY
-
-								if (invertMask)
-									maskLevel = 1 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-								result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
-							}
-						}
-					}
-				});
+				int r = ((255 - maskLevel) * color.getRed()) / 255;
+				int g = ((255 - maskLevel) * color.getGreen()) / 255;
+				int b = ((255 - maskLevel) * color.getBlue()) / 255;
+				int a = 255 - maskLevel;
+				overlay.setRGB(overlayData, x, y, r, g, b, a);
 			}
-		}
-		else
-		{
-			for (int taskNumber : new Range(numTasks))
-			{
-				tasks.add(() ->
-				{
-					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-					for (int y = taskNumber * rowsPerJob; y < endY; y++)
-					{
-						for (int x = 0; x < image.getWidth(); x++)
-						{
-							int xInMask = x + imageOffsetInMask.x;
-							int yInMask = y + imageOffsetInMask.y;
-							if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
-							{
-								continue;
-							}
+		});
 
-							Color col = Color.create(image.getRGB(x, y), image.hasAlpha());
-
-							int maskLevel = (mask.getGrayLevel(xInMask, yInMask) * color.getAlpha()) / image.getMaxPixelLevel();
-							if (mask.getType() == ImageType.Grayscale8Bit)
-							{
-								if (invertMask)
-									maskLevel = 255 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
-								result.setRGB(x, y, combined.getRGB());
-							}
-							else
-							{
-								// TYPE_BYTE_BINARY
-
-								if (invertMask)
-									maskLevel = 1 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
-								result.setRGB(x, y, combined.getRGB());
-							}
-						}
-					}
-				});
-			}
-		}
-
-		ThreadHelper.getInstance().processInParallel(tasks, true);
+		Image result = image.deepCopy();
+		Painter p = result.createPainter();
+		p.drawImage(overlay, 0, 0);
 
 		return result;
 	}
@@ -1387,7 +1305,7 @@ public class ImageHelper
 	{
 		return matchHistogram(target, source, target.getType());
 	}
-	
+
 	/**
 	 * Creates a colored image from a grayscale one and a given color.
 	 * 
@@ -1413,7 +1331,8 @@ public class ImageHelper
 	 *            Color to use
 	 * @param how
 	 *            Algorithm to use when determining pixel colors
-	 * @param forceAddAlpha Forces the result to have an alpha channel, even when "color" is opaque.
+	 * @param forceAddAlpha
+	 *            Forces the result to have an alpha channel, even when "color" is opaque.
 	 * @return
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)

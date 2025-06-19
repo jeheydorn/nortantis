@@ -145,5 +145,7 @@ public abstract class Image
 	public abstract int[] getDataIntBased();
 
 	public abstract boolean isIntBased();
+	
+	public abstract Image copyAndAddAlphaChanel();
 
 }

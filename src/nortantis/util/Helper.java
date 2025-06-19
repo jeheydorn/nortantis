@@ -350,4 +350,9 @@ public class Helper
 		result.removeAll(intersection);
 		return result;
 	}
+	
+	public static double linearCombo(double weight, double value1, double value2)
+	{
+		return (weight * value1) + ((1.0 - weight) * value2);
+	}
 }

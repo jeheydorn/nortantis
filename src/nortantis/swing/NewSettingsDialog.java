@@ -557,6 +557,7 @@ public class NewSettingsDialog extends JDialog
 		settings.frayedBorderSize = randomSettings.frayedBorderSize;
 		settings.frayedBorderColor = randomSettings.frayedBorderColor;
 		settings.frayedBorderBlurLevel = randomSettings.frayedBorderBlurLevel;
+		settings.frayedBorderSeed = randomSettings.frayedBorderSeed;
 		settings.grungeWidth = randomSettings.grungeWidth;
 		settings.generateBackground = randomSettings.generateBackground;
 		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
@@ -566,6 +567,8 @@ public class NewSettingsDialog extends JDialog
 		settings.backgroundTextureImage = randomSettings.backgroundTextureImage;
 		settings.backgroundRandomSeed = randomSettings.backgroundRandomSeed;
 		settings.oceanColor = randomSettings.oceanColor;
+		settings.borderColorOption = randomSettings.borderColorOption;
+		settings.borderColor = randomSettings.borderColor;
 		settings.landColor = randomSettings.landColor;
 		settings.regionBaseColor = randomSettings.regionBaseColor;
 		settings.hueRange = randomSettings.hueRange;

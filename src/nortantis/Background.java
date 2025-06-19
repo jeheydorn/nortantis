@@ -370,7 +370,16 @@ public class Background
 			return map;
 		}
 
-		Image result = borderBackground.deepCopy();
+		Image result;
+		if (map.hasAlpha() && !borderBackground.hasAlpha())
+		{
+			result = borderBackground.copyAndAddAlphaChanel();
+		}
+		else
+		{
+			result = borderBackground.deepCopy();
+		}
+		
 		{
 			Painter p = result.createPainter();
 			if (result.hasAlpha())
@@ -556,6 +565,7 @@ public class Background
 		// Draw the edges
 
 		Painter p = result.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		// Top and bottom edges
 		for (int i : new Range(2))
 		{
@@ -610,6 +620,8 @@ public class Background
 
 		return result;
 	}
+	
+	private final AlphaComposite alphaCompositeForDrawingCornersAndEdges = AlphaComposite.SrcOver;
 
 	private void drawUpperLeftCorner(Image target, IntPoint drawOffset)
 	{
@@ -620,6 +632,7 @@ public class Background
 					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(upperLeftCorner, 0, 0);
 	}
@@ -635,6 +648,7 @@ public class Background
 					0);
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(upperRightCorner, ((int) borderBounds.width) - cornerWidth, 0);
 	}
@@ -651,6 +665,7 @@ public class Background
 
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(lowerLeftCorner, 0, ((int) borderBounds.height) - cornerWidth);
 	}
@@ -668,6 +683,7 @@ public class Background
 
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(lowerRightCorner, ((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth);
 	}

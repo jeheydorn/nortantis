@@ -186,6 +186,8 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox brokenLinesCheckbox;
 	private RowHider concentricWavesOptionsHider;
 	private RowHider concentricWavesLevelSliderHider;
+	private JTextField frayedEdgesSeedTextField;
+	private JButton newFrayedEdgesSeedButton;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -644,6 +646,43 @@ public class ThemePanel extends JTabbedPane
 		organizer.addLabelAndComponent("Fray size:",
 				"Determines the number of polygons used when creating the frayed border. Higher values make the fray larger.",
 				frayedEdgeSizeSlider);
+		
+		frayedEdgesSeedTextField = new JTextField();
+		frayedEdgesSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+		frayedEdgesSeedTextField.setColumns(10);
+		frayedEdgesSeedTextField.getDocument().addDocumentListener(new DocumentListener()
+		{
+			public void changedUpdate(DocumentEvent e)
+			{
+				handleFrayedEdgeOrGrungeChange();
+			}
+
+			public void removeUpdate(DocumentEvent e)
+			{
+				if (!frayedEdgesSeedTextField.getText().isEmpty())
+				{
+					handleFrayedEdgeOrGrungeChange();
+				}
+			}
+
+			public void insertUpdate(DocumentEvent e)
+			{
+				handleFrayedEdgeOrGrungeChange();
+			}
+		});
+		
+		newFrayedEdgesSeedButton = new JButton("New Seed");
+		newFrayedEdgesSeedButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent arg0)
+			{
+				frayedEdgesSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+			}
+		});
+		newFrayedEdgesSeedButton.setToolTipText("Generate a new random seed.");
+		organizer.addLabelAndComponentsHorizontal("Random seed:",
+				"The random seed used to generate the frayed edges.",
+				Arrays.asList(frayedEdgesSeedTextField, newFrayedEdgesSeedButton));
 
 		organizer.addSeperator();
 
@@ -1604,6 +1643,11 @@ public class ThemePanel extends JTabbedPane
 		grungeColorDisplay.setBackground(AwtFactory.unwrap(settings.frayedBorderColor));
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
+		// Only do this if there is a change so we don't trigger the document listeners unnecessarily.
+		if (!frayedEdgesSeedTextField.getText().equals(String.valueOf(settings.frayedBorderSeed)))
+		{
+			frayedEdgesSeedTextField.setText(String.valueOf(settings.frayedBorderSeed));
+		}
 		grungeSlider.setValue(settings.grungeWidth);
 		if (settings.lineStyle.equals(LineStyle.Jagged))
 		{
@@ -1848,6 +1892,18 @@ public class ThemePanel extends JTabbedPane
 			return 0;
 		}
 	}
+	
+	private long parseFrayedBorderSeed()
+	{
+		try
+		{
+			return Long.parseLong(frayedEdgesSeedTextField.getText());
+		}
+		catch (NumberFormatException e)
+		{
+			return 0;
+		}
+	}
 
 	public void getSettingsFromGUI(MapSettings settings)
 	{
@@ -1875,6 +1931,8 @@ public class ThemePanel extends JTabbedPane
 		// decrease so that the fray gets large with
 		// larger values of the slider.
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
+		settings.frayedBorderSeed = parseFrayedBorderSeed();
+
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
 		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
@@ -1888,14 +1946,7 @@ public class ThemePanel extends JTabbedPane
 		settings.backgroundTextureSource = assetsRadioButton.isSelected() ? TextureSource.Assets : TextureSource.File;
 		settings.backgroundTextureImage = FileHelper.replaceHomeFolderWithPlaceholder(textureImageFilename.getText());
 		settings.backgroundTextureResource = (NamedResource) textureImageComboBox.getSelectedItem();
-		try
-		{
-			settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
-		}
-		catch (NumberFormatException e)
-		{
-			settings.backgroundRandomSeed = 0;
-		}
+		settings.backgroundRandomSeed = parseBackgroundSeed();
 		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
 		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
@@ -2031,6 +2082,8 @@ public class ThemePanel extends JTabbedPane
 
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 		frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+		frayedEdgesSeedTextField.setEnabled(frayedEdgeCheckbox.isSelected());
+		newFrayedEdgesSeedButton.setEnabled(frayedEdgeCheckbox.isSelected());
 
 		grungeColorChooseButton.setEnabled(drawGrungeCheckbox.isSelected());
 		grungeSlider.setEnabled(drawGrungeCheckbox.isSelected());

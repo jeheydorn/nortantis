@@ -5,5 +5,5 @@ package nortantis.platform;
  */
 public enum AlphaComposite
 {
-	SrcOver, Src, SrcAtop, DstIn
+	SrcOver, Src, SrcAtop, DstIn, Dst, DstOver, SrcIn
 }
