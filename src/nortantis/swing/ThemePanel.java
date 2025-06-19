@@ -721,7 +721,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(borderPanel, grungeColorDisplay, "Grunge Color", () -> handleFrayedEdgeOrGrungeChange());
 			}
 		});
-		organizer.addLabelAndComponentsHorizontal("Edge/Grunge color:", "Grunge and frayed edge shading will be this color",
+		organizer.addLabelAndComponentsHorizontal("Grunge/frayed edge color:", "Grunge and frayed edge shading will be this color",
 				Arrays.asList(grungeColorDisplay, grungeColorChooseButton), SwingHelper.colorPickerLeftPadding);
 
 		organizer.addVerticalFillerRow();
