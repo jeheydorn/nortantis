@@ -187,7 +187,6 @@ public class SwingHelper
 		});
 	}
 
-	
 
 	public static JColorChooser createColorChooserWithOnlyGoodPanels(Color initialColor)
 	{
@@ -204,76 +203,86 @@ public class SwingHelper
 
 		if (OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
 		{
-			// Add transparency slider panel because, at least with the VM I use, Linux's System look and feel doesn't have an option for transparency.
+			// Add transparency slider panel because, at least with the VM I use, Linux's System look and feel doesn't have an option for
+			// transparency.
 			colorChooser.addChooserPanel(new AlphaChooserPanel(initialColor.getAlpha()));
 		}
-		
+
 		return colorChooser;
 	}
 
-	
+
 	@SuppressWarnings("serial")
-	private static class AlphaChooserPanel extends AbstractColorChooserPanel {
-	    private final JSlider transparencySlider;
-	    private int transparency;
+	private static class AlphaChooserPanel extends AbstractColorChooserPanel
+	{
+		private final JSlider transparencySlider;
+		private int transparency;
 
-	    public AlphaChooserPanel(int initialAlpha) {
-	        transparency = initialAlpha;
-	        transparencySlider = new JSlider(0, 255, transparency);
-	        transparencySlider.setMajorTickSpacing(64);
-	        transparencySlider.setPaintTicks(true);
-	        transparencySlider.setPaintLabels(true);
-	        transparencySlider.addChangeListener(e -> {
-	            transparency = transparencySlider.getValue();
-	            ColorSelectionModel model = getColorSelectionModel();
-	            Color base = model.getSelectedColor();
-	            if (base != null) {
-	                model.setSelectedColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), transparency));
-	            }
-	        });
-	    }
+		public AlphaChooserPanel(int initialAlpha)
+		{
+			transparency = initialAlpha;
+			transparencySlider = new JSlider(0, 255, transparency);
+			transparencySlider.setMajorTickSpacing(64);
+			transparencySlider.setPaintTicks(true);
+			transparencySlider.setPaintLabels(true);
+			transparencySlider.addChangeListener(e ->
+			{
+				transparency = transparencySlider.getValue();
+				ColorSelectionModel model = getColorSelectionModel();
+				Color base = model.getSelectedColor();
+				if (base != null)
+				{
+					model.setSelectedColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), transparency));
+				}
+			});
+		}
 
-	    @Override
-	    protected void buildChooser() {
-	        setLayout(new BorderLayout());
+		@Override
+		protected void buildChooser()
+		{
+			setLayout(new BorderLayout());
 
-	        JPanel labelPanel = new JPanel();
-	        labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
-	        labelPanel.add(new JLabel("Alpha:"));
-	        labelPanel.add(Box.createRigidArea(new Dimension(10, 0))); // Adds 10px horizontal space
+			JPanel labelPanel = new JPanel();
+			labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
+			labelPanel.add(new JLabel("Alpha:"));
+			labelPanel.add(Box.createRigidArea(new Dimension(10, 0))); // Adds 10px horizontal space
 
-	        JPanel centerPanel = new JPanel(new BorderLayout());
-	        centerPanel.add(labelPanel, BorderLayout.WEST);
-	        centerPanel.add(transparencySlider, BorderLayout.CENTER);
+			JPanel centerPanel = new JPanel(new BorderLayout());
+			centerPanel.add(labelPanel, BorderLayout.WEST);
+			centerPanel.add(transparencySlider, BorderLayout.CENTER);
 
-	        add(centerPanel, BorderLayout.CENTER);
-	    }
+			add(centerPanel, BorderLayout.CENTER);
+		}
 
 
-	    @Override
-	    public void updateChooser() {
-	        Color base = getColorFromModel();
-	        if (base != null) {
-	            transparencySlider.setValue(base.getAlpha());
-	        }
-	    }
+		@Override
+		public void updateChooser()
+		{
+			Color base = getColorFromModel();
+			if (base != null)
+			{
+				transparencySlider.setValue(base.getAlpha());
+			}
+		}
 
-	    @Override
-	    public String getDisplayName() {
-	        return "Transparency";
-	    }
+		@Override
+		public String getDisplayName()
+		{
+			return "Transparency";
+		}
 
-	    @Override
-	    public Icon getSmallDisplayIcon() {
-	        return null;
-	    }
+		@Override
+		public Icon getSmallDisplayIcon()
+		{
+			return null;
+		}
 
-	    @Override
-	    public Icon getLargeDisplayIcon() {
-	        return null;
-	    }
+		@Override
+		public Icon getLargeDisplayIcon()
+		{
+			return null;
+		}
 	}
-
 
 	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
 	{
@@ -543,14 +552,14 @@ public class SwingHelper
 	public static double getOSScale()
 	{
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        AffineTransform transform = gc.getDefaultTransform();
+		GraphicsDevice gd = ge.getDefaultScreenDevice();
+		GraphicsConfiguration gc = gd.getDefaultConfiguration();
+		AffineTransform transform = gc.getDefaultTransform();
 
-        double scaleX = transform.getScaleX();
-        return scaleX;
+		double scaleX = transform.getScaleX();
+		return scaleX;
 	}
-	
+
 	public static Color getTextColorForPlaceholderImages()
 	{
 		int grayLevel = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark ? 168 : 128;
