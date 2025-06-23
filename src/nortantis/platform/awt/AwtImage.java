@@ -174,7 +174,7 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public int getAlphaLevel(int x, int y)
+	public int getAlpha(int x, int y)
 	{
 		if (hasAlpha())
 		{
@@ -272,9 +272,18 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public Image crop(IntRectangle bounds)
+	public Image getSubImage(IntRectangle bounds)
 	{
 		return new AwtImage(image.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height));
+	}
+	
+	@Override
+	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
+	{
+		Image sub = getSubImage(bounds);
+		Image result = Image.create(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
+		result.createPainter().drawImage(sub, 0, 0);
+		return result;
 	}
 
 	@Override

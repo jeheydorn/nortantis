@@ -133,7 +133,9 @@ public class MapCreator implements WarningLogger
 
 		final int paddingToAccountForIntegerTruncation = 4;
 		IntRectangle bounds = null;
-		for (Rectangle change : changeBounds)
+
+		HashSet<Rectangle> noDuplicates = new HashSet<>(changeBounds);
+		for (Rectangle change : noDuplicates)
 		{
 			if (change == null)
 			{

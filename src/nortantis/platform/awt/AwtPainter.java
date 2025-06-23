@@ -253,6 +253,30 @@ class AwtPainter extends Painter
 		{
 			g.setComposite(AlphaComposite.DstOver);
 		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcIn)
+		{
+			g.setComposite(AlphaComposite.SrcIn);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcOut)
+		{
+			g.setComposite(AlphaComposite.SrcOut);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstOut)
+		{
+			g.setComposite(AlphaComposite.DstOut);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstAtop)
+		{
+			g.setComposite(AlphaComposite.DstAtop);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.Xor)
+		{
+			g.setComposite(AlphaComposite.Xor);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.Clear)
+		{
+			g.setComposite(AlphaComposite.Clear);
+		}
 		else
 		{
 			throw new UnsupportedOperationException("Unimplemented alpha composite method: " + composite);

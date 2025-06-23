@@ -189,7 +189,7 @@ public class ImageAndMasks
 	public Image cropToContent()
 	{
 		getOrCreateContentBounds();
-		return image.crop(contentBounds);
+		return image.getSubImage(contentBounds);
 	}
 
 	public IntRectangle getOrCreateContentBounds()

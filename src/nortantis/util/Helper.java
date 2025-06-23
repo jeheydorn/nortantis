@@ -355,4 +355,9 @@ public class Helper
 	{
 		return (weight * value1) + ((1.0 - weight) * value2);
 	}
+	
+	public static int linearComboBase255(int weightFrom0To255, int value1From0To255, int value2From0To255)
+	{
+		return ((weightFrom0To255 * value1From0To255) + ((255 - weightFrom0To255) * value2From0To255)) / 255;
+	}
 }

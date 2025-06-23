@@ -94,6 +94,23 @@ public class IntRectangle
 		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
 				other.y + other.height);
 	}
+	
+	public IntRectangle findIntersection(IntRectangle r2)
+	{
+		int x1 = Math.max(this.x, r2.x);
+		int y1 = Math.max(this.y, r2.y);
+		int x2 = Math.min(this.x + this.width, r2.x + r2.width);
+		int y2 = Math.min(this.y + this.height, r2.y + r2.height);
+
+		if (x1 < x2 && y1 < y2)
+		{
+			return new IntRectangle(x1, y1, x2 - x1, y2 - y1);
+		}
+		else
+		{
+			return null;
+		}
+	}
 
 	public Rectangle toRectangle()
 	{
