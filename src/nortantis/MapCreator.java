@@ -1127,9 +1127,9 @@ public class MapCreator implements WarningLogger
 
 		// Draw coastlines.
 		{
-			Painter g = map.createPainter(DrawQuality.High);
-			g.setColor(settings.coastlineColor);
-			graph.drawCoastlineWithLakeShores(g, settings.coastlineWidth * settings.resolution, null, null);
+			Painter p = map.createPainter(DrawQuality.High);
+			p.setColor(settings.coastlineColor);
+			graph.drawCoastlineWithLakeShores(p, settings.coastlineWidth * settings.resolution, null, null);
 		}
 
 		checkForCancel();

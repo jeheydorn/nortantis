@@ -16,6 +16,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 import nortantis.geom.Dimension;
@@ -510,10 +511,9 @@ public class ImageHelper
 		{
 			maskOffset = new IntPoint(0, 0);
 		}
-		final IntPoint maskOffsetNotNull = maskOffset == null ? new IntPoint(0, 0) : maskOffset;
 
-		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
-			throw new IllegalArgumentException("mask type must be ImageType.Grayscale" + " or TYPE_BYTE_BINARY.");
+		if (mask.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale");
 
 		if (image1.getWidth() != image2.getWidth())
 			throw new IllegalArgumentException();
@@ -530,11 +530,7 @@ public class ImageHelper
 			throw new IllegalArgumentException(
 					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
-
-		// TODO This doesn't work yet with incremental.
-		// TODO Try using getSubImage's ability to modify original with image2Snippet.
-		// TODO Use old code when image1 and image2 doesn't have transparency.
-		// TODO process single-threaded if the size is too small.
+		
 		IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
 		IntRectangle maskBounds = new IntRectangle(maskOffset.x, maskOffset.y, mask.getWidth(), mask.getHeight());
 		IntRectangle maskBoundsInImage1 = image1Bounds.findIntersection(maskBounds);
@@ -543,28 +539,9 @@ public class ImageHelper
 			return;
 		}
 		IntPoint diff = maskBoundsInImage1.upperLeftCorner().subtract(maskBounds.upperLeftCorner());
+		
 		Image image1Snippet = image1.copySubImage(maskBoundsInImage1, true);
-
-//		ThreadHelper.getInstance().processRowsInParallel(0, image1Snippet.getHeight(), (y) ->
-//		{
-//			for (int x = 0; x < image1Snippet.getWidth(); x++)
-//			{
-//				int image1SnippetAlpha = image1Snippet.getAlpha(x, y);
-//				// TODO handle ImageType.Binary mask
-//				
-//				int xInMask = x + diff.x;
-//				int yInMask = y + diff.y;
-//				int maskLevel = invertMask ? 255 - mask.getGrayLevel(xInMask, yInMask) : mask.getGrayLevel(xInMask, yInMask);
-//				image1Snippet.setAlpha(x, y, Math.min(image1SnippetAlpha, maskLevel));
-//			}
-//		});
-
 		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
-//		{
-//			Painter p = image2Snippet.createPainter();
-//			p.setAlphaComposite(AlphaComposite.SrcOver);
-//			p.drawImage(image1Snippet, 0, 0);
-//		}
 		
 		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
 		{
@@ -585,81 +562,11 @@ public class ImageHelper
 			}
 		});
 		
-		// TODO Remove attempt at writing my own SrcOver
-//		int r = ((c1.getRed() * c1.getAlpha()) / 255) + ((((c2.getRed() * c2.getAlpha()) / 255) * (255 - c1.getAlpha())) / 255);
-//		int g = ((c1.getGreen() * c1.getAlpha()) / 255) + ((((c2.getGreen() * c2.getAlpha()) / 255) * (255 - c1.getAlpha())) / 255);
-//		int b = ((c1.getBlue() * c1.getAlpha()) / 255) + ((((c2.getBlue() * c2.getAlpha()) / 255) * (255 - c1.getAlpha())) / 255);
-//		int a = c1.getAlpha() + ((c2.getAlpha() * (255 - c1.getAlpha())) / 255);
-//		image2Snippet.setRGB(x, y, r, g, b, a);
-		
-		// TODO remove
-//		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
-//		{
-//			for (int x = 0; x < image1Snippet.getWidth(); x++)
-//			{
-//				Color c1 = image1Snippet.getPixelColor(x, y);
-//				Color c2 = image2Snippet.getPixelColor(x, y);
-//				int alpha = c1.getAlpha();
-//				int r = Helper.linearComboBase255(alpha, c1.getRed(), c2.getRed());
-//				int g = Helper.linearComboBase255(alpha, c1.getGreen(), c2.getGreen());
-//				int b = Helper.linearComboBase255(alpha, c1.getBlue(), c2.getBlue());
-//				int a = Math.max(c1.getAlpha(), c2.getAlpha());
-//				
-//				image2Snippet.setRGB(x, y, r, g, b, a);
-//			}
-//		});
-		
 		{
 			Painter p = image1.createPainter();
 			p.setAlphaComposite(AlphaComposite.Src);
 			p.drawImage(image2Snippet, maskBoundsInImage1.x, maskBoundsInImage1.y);
 		}
-
-		// IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
-		//
-		// int numTasks = ThreadHelper.getInstance().getThreadCount();
-		// List<Runnable> tasks = new ArrayList<>(numTasks);
-		// int rowsPerJob = mask.getHeight() / numTasks;
-		//
-		// int[] image1Data = image1.getDataIntBased();
-		// int[] image2Data = image2.getDataIntBased();
-		//
-		// for (int taskNumber : new Range(numTasks))
-		// {
-		// tasks.add(() ->
-		// {
-		// int endY = taskNumber == numTasks - 1 ? mask.getHeight() : ((taskNumber + 1) * rowsPerJob);
-		// for (int y = (taskNumber * rowsPerJob); y < endY; y++)
-		// for (int x = 0; x < mask.getWidth(); x++)
-		// {
-		// if (!image1Bounds.contains(x + maskOffsetNotNull.x, y + maskOffsetNotNull.y))
-		// {
-		// continue;
-		// }
-		//
-		// Color color1 = Color.create(image1.getRGB(image1Data, x + maskOffsetNotNull.x, y + maskOffsetNotNull.y),
-		// image1.hasAlpha());
-		// Color color2 = Color.create(image2.getRGB(image2Data, x + maskOffsetNotNull.x, y + maskOffsetNotNull.y),
-		// image2.hasAlpha());
-		// double maskLevel = invertMask ? 1.0 - mask.getNormalizedPixelLevel(x, y) : mask.getNormalizedPixelLevel(x, y);
-		//
-		// int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
-		// int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
-		// int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-		// int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
-		// image1.setRGB(image1Data, x + maskOffsetNotNull.x, y + maskOffsetNotNull.y, r, g, b, a);
-		// }
-		// });
-		// }
-		//
-		// if (mask.getPixelCount() < minParallelSize)
-		// {
-		// ThreadHelper.getInstance().processSerial(tasks);
-		// }
-		// else
-		// {
-		// ThreadHelper.getInstance().processInParallel(tasks, true);
-		// }
 	}
 
 	/**

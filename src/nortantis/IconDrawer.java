@@ -989,7 +989,7 @@ public class IconDrawer
 		return groups;
 	}
 
-	private void drawIconWithBackgroundAndMask(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
+	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
 			Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
 	{
 		Image icon = imageAndMasks.image;
@@ -1082,6 +1082,21 @@ public class IconDrawer
 					// that are partially transparent.
 					landBackgroundColorScale = 1.0 - Math.pow(1.0 - landTextureAlpha, 10);
 				}
+				
+				double mapAlpha = mapColor.getAlpha() / 255.0;
+				double mapColorScale;
+				if (mapAlpha == 1.0)
+				{
+					// Save some time since this is a simple and common case.
+					mapColorScale = 1.0;
+				}
+				else
+				{
+					// Use a curve that is 0 when mapAlpha is 0, 1 when mapAlpha is 1, and is mostly equal to 1 but dies off
+					// quickly as mapAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
+					// that are partially transparent.
+					mapColorScale = 1.0 - Math.pow(1.0 - mapAlpha, 10);
+				}
 
 				// Use the shading mask to blend the coastline shading with the land background texture for pixels with transparency in the
 				// icon and non-zero values in the content mask. This way coastline shading doesn't draw through icons, since that would
@@ -1090,13 +1105,13 @@ public class IconDrawer
 				// behind them rather than the ocean texture.
 				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(),
 						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getRed(),
-								landBackgroundColorScale * landTextureColor.getRed()), mapColor.getRed())));
+								landBackgroundColorScale * landTextureColor.getRed()), mapColorScale * mapColor.getRed())));
 				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
 						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getGreen(),
-								landBackgroundColorScale * landTextureColor.getGreen()), mapColor.getGreen())));
+								landBackgroundColorScale * landTextureColor.getGreen()), mapColorScale * mapColor.getGreen())));
 				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
 						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getBlue(),
-								landBackgroundColorScale * landTextureColor.getBlue()), mapColor.getBlue())));
+								landBackgroundColorScale * landTextureColor.getBlue()), mapColorScale * mapColor.getBlue())));
 				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
 						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
 				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());
@@ -1155,7 +1170,7 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanTexture, task.type,
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanTexture, task.type,
 					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
 					(int) task.centerLoc.y);
 		}
