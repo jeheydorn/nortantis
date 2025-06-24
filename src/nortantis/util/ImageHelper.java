@@ -36,7 +36,8 @@ import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
 {
-	public final static int minParallelSize = 128 * 128;
+	public final static int minParallelRowCount = 128;
+	public final static int minParallelSize = minParallelRowCount * minParallelRowCount;
 
 	/**
 	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
@@ -544,27 +545,54 @@ public class ImageHelper
 		IntPoint diff = maskBoundsInImage1.upperLeftCorner().subtract(maskBounds.upperLeftCorner());
 		Image image1Snippet = image1.copySubImage(maskBoundsInImage1, true);
 
-		ThreadHelper.getInstance().processRowsInParallel(0, image1Snippet.getHeight(), (y) ->
+//		ThreadHelper.getInstance().processRowsInParallel(0, image1Snippet.getHeight(), (y) ->
+//		{
+//			for (int x = 0; x < image1Snippet.getWidth(); x++)
+//			{
+//				int image1SnippetAlpha = image1Snippet.getAlpha(x, y);
+//				// TODO handle ImageType.Binary mask
+//				
+//				int xInMask = x + diff.x;
+//				int yInMask = y + diff.y;
+//				int maskLevel = invertMask ? 255 - mask.getGrayLevel(xInMask, yInMask) : mask.getGrayLevel(xInMask, yInMask);
+//				image1Snippet.setAlpha(x, y, Math.min(image1SnippetAlpha, maskLevel));
+//			}
+//		});
+
+		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
+//		{
+//			Painter p = image2Snippet.createPainter();
+//			p.setAlphaComposite(AlphaComposite.SrcOver);
+//			p.drawImage(image1Snippet, 0, 0);
+//		}
+		
+		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
 		{
 			for (int x = 0; x < image1Snippet.getWidth(); x++)
 			{
-				int image1SnippetAlpha = image1Snippet.getAlpha(x, y);
-				// TODO handle ImageType.Binary mask
+				Color c1 = image1Snippet.getPixelColor(x, y);
+				Color c2 = image2Snippet.getPixelColor(x, y);
+				
 				int xInMask = x + diff.x;
 				int yInMask = y + diff.y;
-
 				int maskLevel = invertMask ? 255 - mask.getGrayLevel(xInMask, yInMask) : mask.getGrayLevel(xInMask, yInMask);
-				image1Snippet.setAlpha(x, y, Math.min(image1SnippetAlpha, maskLevel));
+				
+				int r = Helper.linearComboBase255(maskLevel, (c1.getRed()), (c2.getRed()));
+				int g = Helper.linearComboBase255(maskLevel, (c1.getGreen()), (c2.getGreen()));
+				int b = Helper.linearComboBase255(maskLevel, (c1.getBlue()), (c2.getBlue()));
+				int a = Helper.linearComboBase255(maskLevel, c1.getAlpha(), c2.getAlpha());
+				image2Snippet.setRGB(x, y, r, g, b, a);
 			}
 		});
-
-		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
-		{
-			Painter p = image2Snippet.createPainter();
-			p.setAlphaComposite(AlphaComposite.SrcOver);
-			p.drawImage(image1Snippet, 0, 0);	
-		}
 		
+		// TODO Remove attempt at writing my own SrcOver
+//		int r = ((c1.getRed() * c1.getAlpha()) / 255) + ((((c2.getRed() * c2.getAlpha()) / 255) * (255 - c1.getAlpha())) / 255);
+//		int g = ((c1.getGreen() * c1.getAlpha()) / 255) + ((((c2.getGreen() * c2.getAlpha()) / 255) * (255 - c1.getAlpha())) / 255);
+//		int b = ((c1.getBlue() * c1.getAlpha()) / 255) + ((((c2.getBlue() * c2.getAlpha()) / 255) * (255 - c1.getAlpha())) / 255);
+//		int a = c1.getAlpha() + ((c2.getAlpha() * (255 - c1.getAlpha())) / 255);
+//		image2Snippet.setRGB(x, y, r, g, b, a);
+		
+		// TODO remove
 //		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
 //		{
 //			for (int x = 0; x < image1Snippet.getWidth(); x++)
