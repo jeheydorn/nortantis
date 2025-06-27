@@ -561,6 +561,7 @@ public class NewSettingsDialog extends JDialog
 		settings.grungeWidth = randomSettings.grungeWidth;
 		settings.generateBackground = randomSettings.generateBackground;
 		settings.generateBackgroundFromTexture = randomSettings.generateBackgroundFromTexture;
+		settings.solidColorBackground = randomSettings.solidColorBackground;
 		settings.colorizeOcean = randomSettings.colorizeOcean;
 		settings.colorizeLand = randomSettings.colorizeLand;
 		settings.backgroundTextureResource = randomSettings.backgroundTextureResource;

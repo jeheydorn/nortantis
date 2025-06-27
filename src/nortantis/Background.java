@@ -253,6 +253,48 @@ public class Background
 				}
 			}
 		}
+		else if (settings.solidColorBackground)
+		{
+			Image background = Image.create(((int) mapBounds.width) + borderWidthScaled * 2,
+					((int) mapBounds.height) + borderWidthScaled * 2, ImageType.Grayscale8Bit);
+			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+
+			if (settings.borderColorOption == BorderColorOption.Ocean_color)
+			{
+				borderBackground = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = borderBackground;
+			}
+			else
+			{
+				if (settings.drawBorder)
+				{
+					borderBackground = ImageHelper.colorify(background, settings.borderColor, oceanColorifyAlgorithm,
+							settings.oceanColor.hasTransparency());
+				}
+				ocean = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+			}
+
+			if (settings.drawBorder)
+			{
+				ocean = removeBorderPadding(ocean);
+			}
+			else
+			{
+				borderBackground = null;
+			}
+
+			if (shouldDrawRegionColors)
+			{
+				// Drawing region colors must be done later because it depends on the graph.
+				land = removeBorderPadding(background);
+			}
+			else
+			{
+				land = ImageHelper.colorify(removeBorderPadding(background), settings.landColor, landColorifyAlgorithm);
+			}
+
+		}
 		else
 		{
 			throw new IllegalArgumentException("Creating maps from custom land and ocean background images is no longer supported.");
@@ -379,7 +421,7 @@ public class Background
 		{
 			result = borderBackground.deepCopy();
 		}
-		
+
 		{
 			Painter p = result.createPainter();
 			if (result.hasAlpha())
@@ -620,7 +662,7 @@ public class Background
 
 		return result;
 	}
-	
+
 	private final AlphaComposite alphaCompositeForDrawingCornersAndEdges = AlphaComposite.SrcOver;
 
 	private void drawUpperLeftCorner(Image target, IntPoint drawOffset)

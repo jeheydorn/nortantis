@@ -104,6 +104,7 @@ public class MapSettings implements Serializable
 	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with
 										// generateBackgroundFromTexture.
 	public boolean generateBackgroundFromTexture;
+	public boolean solidColorBackground;
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
 	public boolean colorizeLand; // For backgrounds generated from a texture.
 	public TextureSource backgroundTextureSource;
@@ -369,6 +370,7 @@ public class MapSettings implements Serializable
 		root.put("backgroundTextureSource",
 				backgroundTextureSource == null ? TextureSource.Assets.toString() : backgroundTextureSource.toString());
 		root.put("generateBackgroundFromTexture", generateBackgroundFromTexture);
+		root.put("solidColorBackground", solidColorBackground);
 		root.put("colorizeOcean", colorizeOcean);
 		root.put("colorizeLand", colorizeLand);
 		root.put("oceanColor", colorToString(oceanColor));
@@ -808,6 +810,14 @@ public class MapSettings implements Serializable
 		// Background image stuff.
 		generateBackground = (boolean) root.get("generateBackground");
 		generateBackgroundFromTexture = (boolean) root.get("generateBackgroundFromTexture");
+		if (root.containsKey("solidColorBackground"))
+		{
+			solidColorBackground = (boolean) root.get("solidColorBackground");
+		}
+		else
+		{
+			solidColorBackground = false;
+		}
 		colorizeOcean = (boolean) root.get("colorizeOcean");
 		colorizeLand = (boolean) root.get("colorizeLand");
 		if (root.containsKey("backgroundTextureSource"))
@@ -1608,6 +1618,7 @@ public class MapSettings implements Serializable
 		drawGrunge = true;
 		generateBackground = old.generateBackground;
 		generateBackgroundFromTexture = old.generateBackgroundFromTexture;
+		solidColorBackground = false;
 		colorizeOcean = old.colorizeOcean;
 		colorizeLand = old.colorizeLand;
 		backgroundTextureImage = old.backgroundTextureImage;
@@ -1863,8 +1874,8 @@ public class MapSettings implements Serializable
 				&& rightRotationCount == other.rightRotationCount && Objects.equals(riverColor, other.riverColor)
 				&& Objects.equals(riverFont, other.riverFont) && Objects.equals(roadColor, other.roadColor)
 				&& Objects.equals(roadStyle, other.roadStyle) && saturationRange == other.saturationRange
-				&& Objects.equals(textColor, other.textColor) && textRandomSeed == other.textRandomSeed
-				&& Objects.equals(titleFont, other.titleFont)
+				&& solidColorBackground == other.solidColorBackground && Objects.equals(textColor, other.textColor)
+				&& textRandomSeed == other.textRandomSeed && Objects.equals(titleFont, other.titleFont)
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}

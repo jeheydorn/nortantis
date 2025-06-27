@@ -528,7 +528,7 @@ public class ImageHelper
 			throw new IllegalArgumentException(
 					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
-		
+
 		IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
 		IntRectangle maskBounds = new IntRectangle(maskOffset.x, maskOffset.y, mask.getWidth(), mask.getHeight());
 		IntRectangle maskBoundsInImage1 = image1Bounds.findIntersection(maskBounds);
@@ -537,21 +537,21 @@ public class ImageHelper
 			return;
 		}
 		IntPoint diff = maskBoundsInImage1.upperLeftCorner().subtract(maskBounds.upperLeftCorner());
-		
+
 		Image image1Snippet = image1.copySubImage(maskBoundsInImage1, true);
 		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
-		
+
 		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
 		{
 			for (int x = 0; x < image1Snippet.getWidth(); x++)
 			{
 				Color c1 = image1Snippet.getPixelColor(x, y);
 				Color c2 = image2Snippet.getPixelColor(x, y);
-				
+
 				int xInMask = x + diff.x;
 				int yInMask = y + diff.y;
 				int maskLevel = invertMask ? 255 - mask.getGrayLevel(xInMask, yInMask) : mask.getGrayLevel(xInMask, yInMask);
-				
+
 				int r = Helper.linearComboBase255(maskLevel, (c1.getRed()), (c2.getRed()));
 				int g = Helper.linearComboBase255(maskLevel, (c1.getGreen()), (c2.getGreen()));
 				int b = Helper.linearComboBase255(maskLevel, (c1.getBlue()), (c2.getBlue()));
@@ -559,7 +559,7 @@ public class ImageHelper
 				image2Snippet.setRGB(x, y, r, g, b, a);
 			}
 		});
-		
+
 		{
 			Painter p = image1.createPainter();
 			p.setAlphaComposite(AlphaComposite.Src);
@@ -828,16 +828,6 @@ public class ImageHelper
 
 				result.setRGB(x, y, red, green, blue, maskLevel);
 			}
-		return result;
-	}
-
-	public static Image createBlackImage(int width, int height)
-	{
-		Image result = Image.create(width, height, ImageType.RGB);
-		Painter p = result.createPainter();
-		p.setColor(Color.black);
-		p.drawRect(0, 0, result.getWidth(), result.getHeight());
-		p.dispose();
 		return result;
 	}
 
@@ -1389,6 +1379,10 @@ public class ImageHelper
 			}
 			return Color.createFromHSB(hsb[0], hsb[1], resultLevel).getRGB();
 		}
+		else if (how == ColorifyAlgorithm.solidColor)
+		{
+			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
+		}
 		else if (how == ColorifyAlgorithm.none)
 		{
 			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
@@ -1402,8 +1396,9 @@ public class ImageHelper
 
 	public enum ColorifyAlgorithm
 	{
-		none, algorithm2, algorithm3 // algorithm3 preserves contrast a little
-										// better than algorithm2.
+		// algorithm3 preserves contrast a little better than algorithm2.
+		// solidColor paints the pixels one color.
+		none, algorithm2, algorithm3, solidColor
 	}
 
 	/**
