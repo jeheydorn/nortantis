@@ -400,6 +400,7 @@ public class MapCreator implements WarningLogger
 			// Add shading and waves to ocean along coastlines
 			Image oceanWaves;
 			Image oceanShading;
+			Image oceanWithWavesAndShading = oceanTextureSnippet;
 			{
 				Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, mapParts.graph, settings.resolution, landMask,
 						centersToDraw, drawBounds);
@@ -408,10 +409,12 @@ public class MapCreator implements WarningLogger
 				if (oceanShading != null)
 				{
 					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
+					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
 				}
 				if (oceanWaves != null)
 				{
 					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
+					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 				}
 			}
 
@@ -437,7 +440,7 @@ public class MapCreator implements WarningLogger
 
 			// Draw icons
 			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet,
-					oceanTextureSnippet, drawBounds);
+					oceanWithWavesAndShading, drawBounds);
 
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
@@ -560,10 +563,10 @@ public class MapCreator implements WarningLogger
 		// In theory I shouldn't multiply by 0.75 below, but realistically there doesn't seem to be any visual difference and it helps a lot
 		// with performance.
 		double rippleWaveWidth = settings.hasRippleWaves(settings.resolution) ? (settings.oceanWavesLevel * sizeMultiplier) * 0.75 : 0;
-		// There shading from gaussian blur isn't visible very far out, so save performance by reducing the width
+		// There shading from gaussian blur isn't visible all the way out, so save performance by reducing the width
 		// contributed by it.
-		double oceanShadingWidth = 0.5 * (settings.oceanShadingLevel * sizeMultiplier);
-		double coastShadingWidth = 0.5 * (settings.coastShadingLevel * sizeMultiplier);
+		double oceanShadingWidth = 0.9 * (settings.oceanShadingLevel * sizeMultiplier);
+		double coastShadingWidth = 0.9 * (settings.coastShadingLevel * sizeMultiplier);
 
 		double effectsPadding = Math
 				.ceil(Math.max(concentricWaveWidth, Math.max(rippleWaveWidth, Math.max(oceanShadingWidth, coastShadingWidth))));
@@ -1111,16 +1114,19 @@ public class MapCreator implements WarningLogger
 		Tuple2<Image, Image> oceanTuple = createOceanWavesAndShading(settings, graph, settings.resolution, landMask, null, null);
 		Image oceanWaves = oceanTuple.getFirst();
 		Image oceanShading = oceanTuple.getSecond();
+		Image oceanWithWavesAndShading = background.ocean;
 		if (oceanShading != null)
 		{
 			Logger.println("Adding shading to ocean along coastlines.");
 			map = ImageHelper.maskWithColor(map, settings.oceanShadingColor, oceanShading, true);
+			oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
 		}
 
 		if (oceanWaves != null)
 		{
 			Logger.println("Adding waves to ocean along coastlines.");
 			map = ImageHelper.maskWithColor(map, settings.oceanWavesColor, oceanWaves, true);
+			oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
 		}
 
 		checkForCancel();
@@ -1158,7 +1164,7 @@ public class MapCreator implements WarningLogger
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		List<IconDrawTask> iconsThatDrew = iconDrawer.drawAllIcons(map, landBackground, background.land, background.ocean, null);
+		List<IconDrawTask> iconsThatDrew = iconDrawer.drawAllIcons(map, landBackground, background.land, oceanWithWavesAndShading, null);
 		landBackground = null;
 
 		// Needed for drawing text

@@ -1127,7 +1127,7 @@ public class IconDrawer
 	 * 
 	 * @return The icons that drew.
 	 */
-	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanTexture,
+	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanWithWavesAndShading,
 			Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
@@ -1170,7 +1170,7 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanTexture, task.type,
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanWithWavesAndShading, task.type,
 					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
 					(int) task.centerLoc.y);
 		}
