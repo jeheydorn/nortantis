@@ -102,18 +102,36 @@ public class AwtFactory extends PlatformFactory
 				if (!writers.hasNext())
 					throw new IllegalStateException("No writers found for jpg format.");
 
-				ImageWriter writer = (ImageWriter) writers.next();
-				OutputStream os = new FileOutputStream(new File(filePath));
-				ImageOutputStream ios = ImageIO.createImageOutputStream(os);
-				writer.setOutput(ios);
+				ImageWriter writer = null;
+				OutputStream os = null;
+				try
+				{
+					writer = (ImageWriter) writers.next();
+					os = new FileOutputStream(new File(filePath));
+					ImageOutputStream ios = ImageIO.createImageOutputStream(os);
+					writer.setOutput(ios);
 
-				ImageWriteParam param = writer.getDefaultWriteParam();
+					ImageWriteParam param = writer.getDefaultWriteParam();
 
-				param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-				final float quality = 0.95f;
-				param.setCompressionQuality(quality);
+					param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+					final float quality = 0.95f;
+					param.setCompressionQuality(quality);
 
-				writer.write(null, new IIOImage(((AwtImage) convertARGBToRGB(image)).image, null, null), param);
+					writer.write(null, new IIOImage(((AwtImage) convertARGBToRGB(image)).image, null, null), param);
+
+				}
+				finally
+				{
+					if (writer != null)
+					{
+						writer.dispose();
+					}
+					if (os != null)
+					{
+						os.close();
+					}
+				}
+
 			}
 			else
 			{
@@ -214,7 +232,7 @@ public class AwtFactory extends PlatformFactory
 		}
 		return new AwtColor(color);
 	}
-	
+
 	public static java.awt.Color unwrap(Color color)
 	{
 		if (color == null)

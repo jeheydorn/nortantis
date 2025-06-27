@@ -16,7 +16,6 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
-import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 import nortantis.geom.Dimension;
@@ -32,7 +31,6 @@ import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.platform.awt.AwtFactory;
 import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
