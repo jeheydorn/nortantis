@@ -1162,29 +1162,37 @@ public class TextDrawer
 			{
 				p.setColor(text.colorOverride == null ? settings.textColor : text.colorOverride);
 
-				{
-					Point textStart = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + p.getFontAscent());
-					drawBackgroundBlendingForText(map, p, textStart, line1Size, text.angle, line1, pivotMinusDrawOffset);
-					if (boldBackground)
-					{
-						drawStringWithBoldBackground(p, line1, textStart, text.angle, pivot, text.boldBackgroundColorOverride);
-					}
-					else
-					{
-						p.drawString(line1, textStart.x, textStart.y);
-					}
-				}
+				// Draw background blending before drawing any lines of text so that the background blending for line 2 cannot erase the
+				// text from line 1.
+
+				Point textStartLine1 = new Point(bounds1.x - drawOffset.x, bounds1.y - drawOffset.y + p.getFontAscent());
+				drawBackgroundBlendingForText(map, p, textStartLine1, line1Size, text.angle, line1, pivotMinusDrawOffset);
+
+				Point textStartLine2 = null;
 				if (line2 != null)
 				{
-					Point textStart = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + p.getFontAscent());
-					drawBackgroundBlendingForText(map, p, textStart, line2Size, text.angle, line2, pivotMinusDrawOffset);
+					textStartLine2 = new Point(bounds2.x - drawOffset.x, bounds2.y - drawOffset.y + p.getFontAscent());
+					drawBackgroundBlendingForText(map, p, textStartLine2, line2Size, text.angle, line2, pivotMinusDrawOffset);
+				}
+
+				if (boldBackground)
+				{
+					drawStringWithBoldBackground(p, line1, textStartLine1, text.angle, pivot, text.boldBackgroundColorOverride);
+				}
+				else
+				{
+					p.drawString(line1, textStartLine1.x, textStartLine1.y);
+				}
+
+				if (line2 != null)
+				{
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(p, line2, textStart, text.angle, pivot, text.boldBackgroundColorOverride);
+						drawStringWithBoldBackground(p, line2, textStartLine2, text.angle, pivot, text.boldBackgroundColorOverride);
 					}
 					else
 					{
-						p.drawString(line2, textStart.x, textStart.y);
+						p.drawString(line2, textStartLine2.x, textStartLine2.y);
 					}
 				}
 			}
