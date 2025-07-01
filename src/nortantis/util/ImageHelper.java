@@ -606,9 +606,9 @@ public class ImageHelper
 				if (invertMask)
 					maskLevel = 255 - maskLevel;
 
-				int r = ((255 - maskLevel) * color.getRed()) / 255;
-				int g = ((255 - maskLevel) * color.getGreen()) / 255;
-				int b = ((255 - maskLevel) * color.getBlue()) / 255;
+				int r = color.getRed(); 
+				int g = color.getGreen();
+				int b = color.getBlue(); 
 				int a = 255 - maskLevel;
 				overlay.setRGB(overlayData, x, y, r, g, b, a);
 			}
@@ -874,11 +874,6 @@ public class ImageHelper
 
 		IntPoint maskOffset = rotatedBounds.upperLeftCorner();
 		maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
-	}
-
-	public static int getAlphaLevel(Image image, int x, int y)
-	{
-		return Color.create(image.getRGB(x, y), true).getAlpha();
 	}
 
 	/**

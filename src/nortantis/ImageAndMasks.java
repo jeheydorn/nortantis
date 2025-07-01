@@ -84,7 +84,7 @@ public class ImageAndMasks
 			{
 				for (int y = 0; y < contentMask.getHeight(); y++)
 				{
-					int alpha = ImageHelper.getAlphaLevel(image, x, y);
+					int alpha = image.getAlpha(x, y);
 					if (alpha >= opaqueThreshold)
 					{
 						contentMask.setGrayLevel(x, y, 255);
@@ -360,7 +360,7 @@ public class ImageAndMasks
 	{
 		for (int y = 0; y < icon.getHeight(); y++)
 		{
-			int alpha = ImageHelper.getAlphaLevel(icon, x, y);
+			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new Coordinate(x, y);
@@ -374,7 +374,7 @@ public class ImageAndMasks
 	{
 		for (int x = 0; x < icon.getWidth(); x++)
 		{
-			int alpha = ImageHelper.getAlphaLevel(icon, x, y);
+			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new Coordinate(x, y);
@@ -388,7 +388,7 @@ public class ImageAndMasks
 	{
 		for (int x = icon.getWidth() - 1; x >= 0; x--)
 		{
-			int alpha = ImageHelper.getAlphaLevel(icon, x, y);
+			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
 				return new Coordinate(x, y);

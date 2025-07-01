@@ -1240,7 +1240,7 @@ public class MapCreator implements WarningLogger
 				Logger.println("Darkening land near shores.");
 			}
 
-			float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+			float scale = scaleForDarkening
 					* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
 					* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 
@@ -1318,9 +1318,8 @@ public class MapCreator implements WarningLogger
 				float[][] kernel = ImageHelper.createPositiveSincKernel((int) (settings.oceanWavesLevel * sizeMultiplier),
 						1.0 / sizeMultiplier);
 
-				int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
 				final float scaleForDarkening = coastlineShadingScale;
-				float scale = ((float) settings.oceanWavesColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+				float scale = scaleForDarkening
 						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanWavesLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanWaves = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
@@ -1343,9 +1342,8 @@ public class MapCreator implements WarningLogger
 				Image coastlineMask = createCoastlineMask(settings, graph, targetStrokeWidth, false, 0, centersToDraw, drawBounds);
 				float[][] kernel = ImageHelper.createGaussianKernel((int) (settings.oceanShadingLevel * sizeMultiplier));
 
-				int maxPixelValue = Image.getMaxPixelLevelForType(ImageType.Grayscale8Bit);
 				final float scaleForDarkening = coastlineShadingScale;
-				float scale = ((float) settings.oceanShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+				float scale = scaleForDarkening
 						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.oceanShadingLevel, sizeMultiplier)
 						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 				oceanShading = ImageHelper.convolveGrayscaleThenScale(coastlineMask, kernel, scale, true);
@@ -1459,7 +1457,7 @@ public class MapCreator implements WarningLogger
 			};
 
 
-			int level = (int) (settings.oceanWavesColor.getAlpha() * waveOpacity);
+			int level = (int) (oceanEffects.getMaxPixelLevel() * waveOpacity);
 			p.setColor(Color.create(level, level, level));
 			double varianceRange = settings.jitterToConcentricWaves ? calcJitterVarianceRange(resolutionScaled) : 0.0;
 			p.setStrokeToSolidLineWithNoEndDecorations((float) whiteWidth);
@@ -1533,7 +1531,7 @@ public class MapCreator implements WarningLogger
 
 	private static void assignRandomRegionColors(WorldGraph graph, MapSettings settings)
 	{
-		float[] landHsb = settings.landColor.getHSB();
+		float[] landHsb = settings.regionBaseColor.getHSB();
 		List<Color> regionColorOptions = new ArrayList<>();
 		Random rand = new Random(settings.regionsRandomSeed);
 		for (@SuppressWarnings("unused")
