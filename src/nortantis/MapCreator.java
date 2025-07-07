@@ -1240,7 +1240,7 @@ public class MapCreator implements WarningLogger
 				Logger.println("Darkening land near shores.");
 			}
 
-			float scale = scaleForDarkening
+			float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
 					* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
 					* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
 

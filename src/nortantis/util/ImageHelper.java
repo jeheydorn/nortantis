@@ -23,6 +23,7 @@ import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
@@ -860,19 +861,19 @@ public class ImageHelper
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
-		IntRectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle,
-				pivot.subtract(new Point(xLoc, yLoc))).getBounds().toIntRectangle();
-		Image maskRotated = Image.create(rotatedMaskBounds.width, rotatedMaskBounds.height, mask.getType());
+		Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle,
+				pivot.subtract(new Point(xLoc, yLoc))).getBounds();
+		Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType());
 		{
 			Painter p = maskRotated.createPainter(DrawQuality.High);
 			p.rotate(angle, pivot.subtract(new Point(xLoc, yLoc).add(rotatedMaskBounds.upperLeftCorner())));
 			p.translate(-rotatedMaskBounds.x, -rotatedMaskBounds.y);
 			p.drawImage(mask, 0, 0);
 		}
-		IntRectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot)
-				.getBounds().toIntRectangle();
-
-		IntPoint maskOffset = rotatedBounds.upperLeftCorner();
+		
+		Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot)
+				.getBounds();
+		IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
 		maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
 	}
 

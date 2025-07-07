@@ -1,6 +1,7 @@
 package nortantis.geom;
 
 import java.io.Serializable;
+import java.math.MathContext;
 
 /**
  * Point.java
@@ -71,6 +72,11 @@ public class Point implements Comparable<Point>, Serializable
 	public IntPoint toIntPoint()
 	{
 		return new IntPoint((int) x, (int) y);
+	}
+	
+	public IntPoint toIntPointRounded()
+	{
+		return new IntPoint((int) Math.round(x), (int) Math.round(y));
 	}
 
 	@Override
