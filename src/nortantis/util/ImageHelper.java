@@ -607,9 +607,9 @@ public class ImageHelper
 				if (invertMask)
 					maskLevel = 255 - maskLevel;
 
-				int r = color.getRed(); 
+				int r = color.getRed();
 				int g = color.getGreen();
-				int b = color.getBlue(); 
+				int b = color.getBlue();
 				int a = 255 - maskLevel;
 				overlay.setRGB(overlayData, x, y, r, g, b, a);
 			}
@@ -861,20 +861,48 @@ public class ImageHelper
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
-		Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle,
-				pivot.subtract(new Point(xLoc, yLoc))).getBounds();
-		Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType());
+		if (image1.hasAlpha() || image2.hasAlpha())
 		{
-			Painter p = maskRotated.createPainter(DrawQuality.High);
-			p.rotate(angle, pivot.subtract(new Point(xLoc, yLoc).add(rotatedMaskBounds.upperLeftCorner())));
-			p.translate(-rotatedMaskBounds.x, -rotatedMaskBounds.y);
-			p.drawImage(mask, 0, 0);
+			Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle,
+					pivot.subtract(new Point(xLoc, yLoc))).getBounds();
+			Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType());
+			{
+				Painter p = maskRotated.createPainter(DrawQuality.High);
+				p.rotate(angle, pivot.subtract(new Point(xLoc, yLoc).add(rotatedMaskBounds.upperLeftCorner())));
+				p.translate(-rotatedMaskBounds.x, -rotatedMaskBounds.y);
+				p.drawImage(mask, 0, 0);
+			}
+
+			Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot)
+					.getBounds();
+			IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
+			maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
 		}
-		
-		Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot)
-				.getBounds();
-		IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
-		maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
+		else
+		{
+			// This version is a little more precise in where it places the mask, but doesn't work if the images already have alpha.
+			
+			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
+
+
+			for (int y = 0; y < region.getHeight(); y++)
+				for (int x = 0; x < region.getWidth(); x++)
+				{
+					int grayLevel = mask.getGrayLevel(x, y);
+					Color r = Color.create(region.getRGB(x, y), true);
+
+					// Don't clobber the alpha level from the region.
+					int alphaLevel = Math.min(r.getAlpha(), grayLevel);
+
+					// Only change the alpha channel of the region.
+					region.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
+				}
+
+			Painter p = image1.createPainter();
+			p.rotate(angle, pivot);
+			p.drawImage(region, xLoc, yLoc);
+		}
+
 	}
 
 	/**
