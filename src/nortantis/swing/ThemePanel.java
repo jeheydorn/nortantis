@@ -822,7 +822,7 @@ public class ThemePanel extends JTabbedPane
 			});
 			String coastShadingColorLabelText = "Coast shading color:";
 			coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText,
-					"Land near coastlines will be shaded this color. Transparency is supported.",
+					"Land near coastlines and political region boundaries will be shaded this color.",
 					Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor), SwingHelper.colorPickerLeftPadding);
 
 			final String message = "<html>Disabled because the land coloring" + " method is '" + LandColoringMethod.ColorPoliticalRegions
@@ -857,7 +857,7 @@ public class ThemePanel extends JTabbedPane
 				}
 			});
 			organizer.addLabelAndComponentsHorizontal("Ocean shading color:",
-					"Ocean near coastlines will be shaded this color. Transparency is supported.",
+					"Ocean near coastlines will be shaded this color.",
 					Arrays.asList(oceanShadingColorDisplay, btnChooseOceanShadingColor), SwingHelper.colorPickerLeftPadding);
 		}
 
@@ -938,9 +938,9 @@ public class ThemePanel extends JTabbedPane
 					SwingHelper.showColorPicker(effectsPanel, oceanWavesColorDisplay, "Wave Color", () -> handleTerrainChange());
 				}
 			});
-			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines. Transparency is supported.");
+			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines.");
 			oceanWavesColorHider = organizer.addLabelAndComponentsHorizontal("Wave color:",
-					"The color of the ocean waves. Transparency is supported.",
+					"The color of the ocean waves.",
 					Arrays.asList(oceanWavesColorDisplay, btnChooseOceanEffectsColor), SwingHelper.colorPickerLeftPadding);
 		}
 

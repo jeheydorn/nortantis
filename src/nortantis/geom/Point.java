@@ -1,7 +1,6 @@
 package nortantis.geom;
 
 import java.io.Serializable;
-import java.math.MathContext;
 
 /**
  * Point.java

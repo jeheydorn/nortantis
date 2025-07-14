@@ -1240,9 +1240,21 @@ public class MapCreator implements WarningLogger
 				Logger.println("Darkening land near shores.");
 			}
 
-			float scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
-					* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
-					* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+			boolean drawRegionColorShading = settings.drawRegionBoundaries && settings.drawRegionColors;
+			float scale;
+			
+			if (drawRegionColorShading)
+			{
+				scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening
+						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
+						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+			}
+			else
+			{
+				scale = scaleForDarkening
+						* calcScaleToMakeConvolutionEffectsLightnessInvariantToKernelSize(settings.coastShadingLevel, sizeMultiplier)
+						* calcScaleCompensateForCoastlineShadingDrawingAtAFullPixelWideAtLowerResolutions(targetStrokeWidth);
+			}
 
 			// coastShading can be passed in to save time when calling this method a second time for the text background image.
 			if (coastShading == null)
@@ -1267,7 +1279,7 @@ public class MapCreator implements WarningLogger
 				}
 			}
 
-			if (settings.drawRegionBoundaries && settings.drawRegionColors)
+			if (drawRegionColorShading)
 			{
 				// Color the blur according to each region's blur color.
 				Map<Integer, Color> colors = new HashMap<>();

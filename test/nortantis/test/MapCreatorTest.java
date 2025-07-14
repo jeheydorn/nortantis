@@ -186,15 +186,15 @@ public class MapCreatorTest
 	}
 	
 	@Test
-	public void rotatedAndFlippedTwiceWithEditsTest()
+	public void rotatedAndFlippedTwiceWithEditsAndTransparencyTest()
 	{
-		generateAndCompare("rotatedAndFlippedTwiceWithEdits.nort");
+		generateAndCompare("rotatedAndFlippedTwiceWithEditsAndTransparency.nort");
 	}
 	
 	@Test
-	public void rotatedLeftTest()
+	public void rotatedLeftWithTransparentOceanAndPartiallyGrungeTest()
 	{
-		generateAndCompare("rotatedLeft.nort");
+		generateAndCompare("rotatedLeftWithTransparentOceanAndPartiallyGrunge.nort");
 	}
 
 	@Test
