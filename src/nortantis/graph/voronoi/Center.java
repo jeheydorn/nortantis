@@ -194,7 +194,7 @@ public class Center implements Comparable<Center>
 		return c1.loc.distanceTo(c2.loc);
 	}
 
-	public boolean isInBounds(Rectangle bounds)
+	public boolean isInBoundsIncludingNoisyEdges(Rectangle bounds)
 	{
 		for (Corner corner : corners)
 		{
@@ -203,6 +203,16 @@ public class Center implements Comparable<Center>
 				return true;
 			}
 		}
+		
+		// Noisy edges can extend in theory as far as the center of neighboring centers.
+		for (Center neighbor : neighbors)
+		{
+			if (bounds.contains(neighbor.loc))
+			{
+				return true;
+			}
+		}
+		
 		return false;
 	}
 

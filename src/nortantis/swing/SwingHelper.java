@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -26,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
@@ -36,6 +38,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.colorchooser.ColorSelectionModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -184,6 +187,7 @@ public class SwingHelper
 		});
 	}
 
+
 	public static JColorChooser createColorChooserWithOnlyGoodPanels(Color initialColor)
 	{
 		JColorChooser colorChooser = new JColorChooser(initialColor);
@@ -197,7 +201,87 @@ public class SwingHelper
 			}
 		}
 
+		if (OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
+		{
+			// Add transparency slider panel because, at least with the VM I use, Linux's System look and feel doesn't have an option for
+			// transparency.
+			colorChooser.addChooserPanel(new AlphaChooserPanel(initialColor.getAlpha()));
+		}
+
 		return colorChooser;
+	}
+
+
+	@SuppressWarnings("serial")
+	private static class AlphaChooserPanel extends AbstractColorChooserPanel
+	{
+		private final JSlider transparencySlider;
+		private int transparency;
+
+		public AlphaChooserPanel(int initialAlpha)
+		{
+			transparency = initialAlpha;
+			transparencySlider = new JSlider(0, 255, transparency);
+			transparencySlider.setMajorTickSpacing(64);
+			transparencySlider.setPaintTicks(true);
+			transparencySlider.setPaintLabels(true);
+			transparencySlider.addChangeListener(e ->
+			{
+				transparency = transparencySlider.getValue();
+				ColorSelectionModel model = getColorSelectionModel();
+				Color base = model.getSelectedColor();
+				if (base != null)
+				{
+					model.setSelectedColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), transparency));
+				}
+			});
+		}
+
+		@Override
+		protected void buildChooser()
+		{
+			setLayout(new BorderLayout());
+
+			JPanel labelPanel = new JPanel();
+			labelPanel.setLayout(new BoxLayout(labelPanel, BoxLayout.X_AXIS));
+			labelPanel.add(new JLabel("Alpha:"));
+			labelPanel.add(Box.createRigidArea(new Dimension(10, 0))); // Adds 10px horizontal space
+
+			JPanel centerPanel = new JPanel(new BorderLayout());
+			centerPanel.add(labelPanel, BorderLayout.WEST);
+			centerPanel.add(transparencySlider, BorderLayout.CENTER);
+
+			add(centerPanel, BorderLayout.CENTER);
+		}
+
+
+		@Override
+		public void updateChooser()
+		{
+			Color base = getColorFromModel();
+			if (base != null)
+			{
+				transparencySlider.setValue(base.getAlpha());
+			}
+		}
+
+		@Override
+		public String getDisplayName()
+		{
+			return "Transparency";
+		}
+
+		@Override
+		public Icon getSmallDisplayIcon()
+		{
+			return null;
+		}
+
+		@Override
+		public Icon getLargeDisplayIcon()
+		{
+			return null;
+		}
 	}
 
 	public static void showColorPicker(JComponent parent, final JPanel colorDisplay, String title, Runnable okAction)
@@ -468,14 +552,14 @@ public class SwingHelper
 	public static double getOSScale()
 	{
 		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice gd = ge.getDefaultScreenDevice();
-        GraphicsConfiguration gc = gd.getDefaultConfiguration();
-        AffineTransform transform = gc.getDefaultTransform();
+		GraphicsDevice gd = ge.getDefaultScreenDevice();
+		GraphicsConfiguration gc = gd.getDefaultConfiguration();
+		AffineTransform transform = gc.getDefaultTransform();
 
-        double scaleX = transform.getScaleX();
-        return scaleX;
+		double scaleX = transform.getScaleX();
+		return scaleX;
 	}
-	
+
 	public static Color getTextColorForPlaceholderImages()
 	{
 		int grayLevel = UserPreferences.getInstance().lookAndFeel == LookAndFeel.Dark ? 168 : 128;

@@ -23,6 +23,9 @@ import nortantis.geom.IntDimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
+import nortantis.geom.Rectangle;
+import nortantis.geom.RotatedRectangle;
+import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Font;
@@ -33,6 +36,9 @@ import pl.edu.icm.jlargearrays.ConcurrencyUtils;
 
 public class ImageHelper
 {
+	public final static int minParallelRowCount = 128;
+	public final static int minParallelSize = minParallelRowCount * minParallelRowCount;
+
 	/**
 	 * This should be called before closing the program if methods have been called which use jTransforms or other thread pools.
 	 * 
@@ -402,26 +408,15 @@ public class ImageHelper
 		}
 	}
 
+	/**
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
+	 * mask must be ImageType.Grayscale.
+	 * 
+	 * An advantage of this over maskWithImageInPlace is that since it creates a new image for the result, the result respects transparency
+	 * if image1 doesn't have alpha but image2 does.
+	 */
 	public static Image maskWithImage(Image image1, Image image2, Image mask)
 	{
-		return maskWithImage(image1, image2, mask, null);
-	}
-
-	/**
-	 * Each pixel in the resulting image is a linear combination of that pixel from image1 and from image2 using the gray levels in the
-	 * given mask. The mask must be ImageType.Grayscale.
-	 * 
-	 * @param region
-	 *            Specifies only a region to create rather than masking the entire images.
-	 */
-	public static Image maskWithImage(Image image1, Image image2, Image mask, IntPoint image2OffsetInImage1)
-	{
-		if (image2OffsetInImage1 == null)
-		{
-			image2OffsetInImage1 = new IntPoint(0, 0);
-		}
-		final IntPoint image2OffsetInImage1Final = image2OffsetInImage1;
-
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale" + " or TYPE_BYTE_BINARY.");
 
@@ -429,61 +424,148 @@ public class ImageHelper
 			throw new IllegalArgumentException();
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
-		if (image1.getWidth() != mask.getWidth())
-			throw new IllegalArgumentException("Mask width is " + mask.getWidth() + " but image1 has width " + image1.getWidth() + ".");
-		if (image1.getHeight() != mask.getHeight())
-			throw new IllegalArgumentException();
-		if (!new IntRectangle(0, 0, image2.getWidth(), image2.getHeight()).contains(image2OffsetInImage1))
+
+		if (image1.getType() != ImageType.RGB && image1.getType() != ImageType.ARGB)
 		{
-			throw new IllegalArgumentException("Region for masking is not contained within image2.");
+			throw new IllegalArgumentException(
+					"Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
+		}
+		if (image2.getType() != ImageType.RGB && image2.getType() != ImageType.ARGB)
+		{
+			throw new IllegalArgumentException(
+					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
 		}
 
-		if (image1.getType() != ImageType.RGB)
+		ImageType resultType;
+		if (image1.hasAlpha() || image2.hasAlpha())
 		{
-			throw new IllegalArgumentException("Image 1 must be type " + ImageType.RGB + ", but was type " + image1.getType() + ".");
+			resultType = ImageType.ARGB;
 		}
-		if (image2.getType() != ImageType.RGB)
+		else
 		{
-			throw new IllegalArgumentException("Image 2 must be type " + ImageType.RGB + ", but was type " + image2.getType() + ".");
+			resultType = image1.getType();
 		}
+		Image result = Image.create(image1.getWidth(), image1.getHeight(), resultType);
 
-		Image result = Image.create(image1.getWidth(), image1.getHeight(), image1.getType());
+		IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
 
 		int numTasks = ThreadHelper.getInstance().getThreadCount();
 		List<Runnable> tasks = new ArrayList<>(numTasks);
-		int rowsPerJob = image1.getHeight() / numTasks;
+		int rowsPerJob = mask.getHeight() / numTasks;
 
-		int[] resultData = result.getDataIntBased();
 		int[] image1Data = image1.getDataIntBased();
 		int[] image2Data = image2.getDataIntBased();
+		int[] resultData = result.getDataIntBased();
 
 		for (int taskNumber : new Range(numTasks))
 		{
 			tasks.add(() ->
 			{
-				int endY = taskNumber == numTasks - 1 ? image1.getHeight() : ((taskNumber + 1) * rowsPerJob);
+				int endY = taskNumber == numTasks - 1 ? mask.getHeight() : ((taskNumber + 1) * rowsPerJob);
 				for (int y = (taskNumber * rowsPerJob); y < endY; y++)
-					for (int x = 0; x < image1.getWidth(); x++)
+					for (int x = 0; x < mask.getWidth(); x++)
 					{
-						Color color1 = Color.create(image1.getRGB(image1Data, x, y));
-						Color color2 = Color
-								.create(image2.getRGB(image2Data, x + image2OffsetInImage1Final.x, y + image2OffsetInImage1Final.y));
-						float maskLevel = mask.getNormalizedPixelLevel(x, y);
-						if (mask.getType() == ImageType.Grayscale8Bit)
+						if (!image1Bounds.contains(x, y))
 						{
-							maskLevel /= 255f;
+							continue;
 						}
+
+						Color color1 = Color.create(image1.getRGB(image1Data, x, y), image1.hasAlpha());
+						Color color2 = Color.create(image2.getRGB(image2Data, x, y), image2.hasAlpha());
+						double maskLevel = mask.getNormalizedPixelLevel(x, y);
 
 						int r = (int) (maskLevel * color1.getRed() + (1.0 - maskLevel) * color2.getRed());
 						int g = (int) (maskLevel * color1.getGreen() + (1.0 - maskLevel) * color2.getGreen());
 						int b = (int) (maskLevel * color1.getBlue() + (1.0 - maskLevel) * color2.getBlue());
-						result.setRGB(resultData, x, y, r, g, b);
+						int a = (int) (maskLevel * color1.getAlpha() + (1.0 - maskLevel) * color2.getAlpha());
+						result.setRGB(resultData, x, y, r, g, b, a);
 					}
 			});
 		}
-		ThreadHelper.getInstance().processInParallel(tasks, true);
+
+		if (mask.getPixelCount() < minParallelSize)
+		{
+			ThreadHelper.getInstance().processSerial(tasks);
+		}
+		else
+		{
+			ThreadHelper.getInstance().processInParallel(tasks, true);
+		}
 
 		return result;
+	}
+
+	public static void maskWithImageInPlace(Image image1, Image image2, Image mask)
+	{
+		maskWithImageInPlace(image1, image2, mask, null, false);
+	}
+
+	/**
+	 * Sets pixels in image1 to a linear combination of that pixel from image1 and from image2 using the gray levels in the given mask. The
+	 * mask must be ImageType.Grayscale.
+	 */
+	public static void maskWithImageInPlace(Image image1, Image image2, Image mask, IntPoint maskOffset, boolean invertMask)
+	{
+		if (maskOffset == null)
+		{
+			maskOffset = new IntPoint(0, 0);
+		}
+
+		if (mask.getType() != ImageType.Grayscale8Bit)
+			throw new IllegalArgumentException("mask type must be ImageType.Grayscale");
+
+		if (image1.getWidth() != image2.getWidth())
+			throw new IllegalArgumentException();
+		if (image1.getHeight() != image2.getHeight())
+			throw new IllegalArgumentException();
+
+		if (image1.getType() != ImageType.RGB && image1.getType() != ImageType.ARGB)
+		{
+			throw new IllegalArgumentException(
+					"Image 1 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image1.getType() + ".");
+		}
+		if (image2.getType() != ImageType.RGB && image2.getType() != ImageType.ARGB)
+		{
+			throw new IllegalArgumentException(
+					"Image 2 must be type " + ImageType.RGB + " or " + ImageType.ARGB + ", but was type " + image2.getType() + ".");
+		}
+
+		IntRectangle image1Bounds = new IntRectangle(0, 0, image1.getWidth(), image1.getHeight());
+		IntRectangle maskBounds = new IntRectangle(maskOffset.x, maskOffset.y, mask.getWidth(), mask.getHeight());
+		IntRectangle maskBoundsInImage1 = image1Bounds.findIntersection(maskBounds);
+		if (maskBoundsInImage1 == null)
+		{
+			return;
+		}
+		IntPoint diff = maskBoundsInImage1.upperLeftCorner().subtract(maskBounds.upperLeftCorner());
+
+		Image image1Snippet = image1.copySubImage(maskBoundsInImage1, true);
+		Image image2Snippet = image2.copySubImage(maskBoundsInImage1);
+
+		ThreadHelper.getInstance().processRowsInParallel(0, image2Snippet.getHeight(), (y) ->
+		{
+			for (int x = 0; x < image1Snippet.getWidth(); x++)
+			{
+				Color c1 = image1Snippet.getPixelColor(x, y);
+				Color c2 = image2Snippet.getPixelColor(x, y);
+
+				int xInMask = x + diff.x;
+				int yInMask = y + diff.y;
+				int maskLevel = invertMask ? 255 - mask.getGrayLevel(xInMask, yInMask) : mask.getGrayLevel(xInMask, yInMask);
+
+				int r = Helper.linearComboBase255(maskLevel, (c1.getRed()), (c2.getRed()));
+				int g = Helper.linearComboBase255(maskLevel, (c1.getGreen()), (c2.getGreen()));
+				int b = Helper.linearComboBase255(maskLevel, (c1.getBlue()), (c2.getBlue()));
+				int a = Helper.linearComboBase255(maskLevel, c1.getAlpha(), c2.getAlpha());
+				image2Snippet.setRGB(x, y, r, g, b, a);
+			}
+		});
+
+		{
+			Painter p = image1.createPainter();
+			p.setAlphaComposite(AlphaComposite.Src);
+			p.drawImage(image2Snippet, maskBoundsInImage1.x, maskBoundsInImage1.y);
+		}
 	}
 
 	/**
@@ -508,116 +590,34 @@ public class ImageHelper
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale.");
 
-		Image result = Image.create(image.getWidth(), image.getHeight(), image.getType());
-
-		// Process rows in parallel to speed things up a little. In my tests, doing so was 41% faster
-		// (when only counting time in this method).
-		int numTasks = ThreadHelper.getInstance().getThreadCount();
-		List<Runnable> tasks = new ArrayList<>(numTasks);
-		int rowsPerJob = image.getHeight() / numTasks;
-		if (result.isIntBased())
+		Image overlay = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
+		ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 		{
-			int[] resultData = result.getDataIntBased();
-			int[] imageData = image.getDataIntBased();
-			for (int taskNumber : new Range(numTasks))
+			int[] overlayData = overlay.getDataIntBased();
+			for (int x = 0; x < image.getWidth(); x++)
 			{
-				tasks.add(() ->
+				int xInMask = x + imageOffsetInMask.x;
+				int yInMask = y + imageOffsetInMask.y;
+				if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
 				{
-					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-					for (int y = taskNumber * rowsPerJob; y < endY; y++)
-					{
-						for (int x = 0; x < image.getWidth(); x++)
-						{
-							int xInMask = x + imageOffsetInMask.x;
-							int yInMask = y + imageOffsetInMask.y;
-							if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
-							{
-								continue;
-							}
+					continue;
+				}
 
-							Color col = Color.create(image.getRGB(imageData, x, y));
+				int maskLevel = (int) (mask.getNormalizedPixelLevel(xInMask, yInMask) * color.getAlpha());
+				if (invertMask)
+					maskLevel = 255 - maskLevel;
 
-							int maskLevel = mask.getGrayLevel(xInMask, yInMask);
-							if (mask.getType() == ImageType.Grayscale8Bit)
-							{
-								if (invertMask)
-									maskLevel = 255 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
-							}
-							else
-							{
-								// TYPE_BYTE_BINARY
-
-								if (invertMask)
-									maskLevel = 1 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-								result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
-							}
-						}
-					}
-				});
+				int r = color.getRed();
+				int g = color.getGreen();
+				int b = color.getBlue();
+				int a = 255 - maskLevel;
+				overlay.setRGB(overlayData, x, y, r, g, b, a);
 			}
-		}
-		else
-		{
-			for (int taskNumber : new Range(numTasks))
-			{
-				tasks.add(() ->
-				{
-					int endY = taskNumber == numTasks - 1 ? image.getHeight() : (taskNumber + 1) * rowsPerJob;
-					for (int y = taskNumber * rowsPerJob; y < endY; y++)
-					{
-						for (int x = 0; x < image.getWidth(); x++)
-						{
-							int xInMask = x + imageOffsetInMask.x;
-							int yInMask = y + imageOffsetInMask.y;
-							if (xInMask < 0 || yInMask < 0 || xInMask >= mask.getWidth() || yInMask >= mask.getHeight())
-							{
-								continue;
-							}
+		});
 
-							Color col = Color.create(image.getRGB(x, y));
-
-							int maskLevel = mask.getGrayLevel(xInMask, yInMask);
-							if (mask.getType() == ImageType.Grayscale8Bit)
-							{
-								if (invertMask)
-									maskLevel = 255 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (255 - maskLevel) * color.getRed()) / 255;
-								int g = ((maskLevel * col.getGreen()) + (255 - maskLevel) * color.getGreen()) / 255;
-								int b = ((maskLevel * col.getBlue()) + (255 - maskLevel) * color.getBlue()) / 255;
-								// result.setRGB(resultData, x, y, r, g, b, image.getAlphaLevel(x, y));
-								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
-								result.setRGB(x, y, combined.getRGB());
-							}
-							else
-							{
-								// TYPE_BYTE_BINARY
-
-								if (invertMask)
-									maskLevel = 1 - maskLevel;
-
-								int r = ((maskLevel * col.getRed()) + (1 - maskLevel) * color.getRed());
-								int g = ((maskLevel * col.getGreen()) + (1 - maskLevel) * color.getGreen());
-								int b = ((maskLevel * col.getBlue()) + (1 - maskLevel) * color.getBlue());
-								Color combined = Color.create(r, g, b, image.getAlphaLevel(x, y));
-								result.setRGB(x, y, combined.getRGB());
-							}
-						}
-					}
-				});
-			}
-		}
-
-		ThreadHelper.getInstance().processInParallel(tasks, true);
+		Image result = image.deepCopy();
+		Painter p = result.createPainter();
+		p.drawImage(overlay, 0, 0);
 
 		return result;
 	}
@@ -754,8 +754,8 @@ public class ImageHelper
 				}
 
 				Color originalColor = image.getPixelColor(x, y);
-				result.setPixelColor(x, y,
-						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), maskLevel));
+				result.setPixelColor(x, y, Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(),
+						Math.min(maskLevel, originalColor.getAlpha())));
 			}
 		return result;
 	}
@@ -777,7 +777,7 @@ public class ImageHelper
 			for (int x = 0; x < target.getWidth(); x++)
 			{
 
-				int alphaLevel = alphaSource.getAlphaLevel(x, y);
+				int alphaLevel = alphaSource.getAlpha(x, y);
 				Color originalColor = target.getPixelColor(x, y);
 				result.setPixelColor(x, y,
 						Color.create(originalColor.getRed(), originalColor.getGreen(), originalColor.getBlue(), alphaLevel));
@@ -832,16 +832,6 @@ public class ImageHelper
 		return result;
 	}
 
-	public static Image createBlackImage(int width, int height)
-	{
-		Image result = Image.create(width, height, ImageType.RGB);
-		Painter p = result.createPainter();
-		p.setColor(Color.black);
-		p.drawRect(0, 0, result.getWidth(), result.getHeight());
-		p.dispose();
-		return result;
-	}
-
 	/**
 	 * Extracts the specified region from image2, then makes the given mask be the alpha channel of that extracted region, then draws the
 	 * extracted region onto image1.
@@ -871,29 +861,48 @@ public class ImageHelper
 		if (image1.getHeight() != image2.getHeight())
 			throw new IllegalArgumentException();
 
-		Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
-
-		for (int y = 0; y < region.getHeight(); y++)
-			for (int x = 0; x < region.getWidth(); x++)
+		if (image1.hasAlpha() || image2.hasAlpha())
+		{
+			Rectangle rotatedMaskBounds = new RotatedRectangle(new Point(0, 0), mask.getWidth(), mask.getHeight(), angle,
+					pivot.subtract(new Point(xLoc, yLoc))).getBounds();
+			Image maskRotated = Image.create((int) rotatedMaskBounds.width, (int) rotatedMaskBounds.height, mask.getType());
 			{
-				int grayLevel = mask.getGrayLevel(x, y);
-				Color r = Color.create(region.getRGB(x, y), true);
-
-				// Don't clobber the alpha level from the region.
-				int alphaLevel = Math.min(r.getAlpha(), grayLevel);
-
-				// Only change the alpha channel of the region.
-				region.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
+				Painter p = maskRotated.createPainter(DrawQuality.High);
+				p.rotate(angle, pivot.subtract(new Point(xLoc, yLoc).add(rotatedMaskBounds.upperLeftCorner())));
+				p.translate(-rotatedMaskBounds.x, -rotatedMaskBounds.y);
+				p.drawImage(mask, 0, 0);
 			}
 
-		Painter p = image1.createPainter();
-		p.rotate(angle, pivot);
-		p.drawImage(region, xLoc, yLoc);
-	}
+			Rectangle rotatedBounds = new RotatedRectangle(new Point(xLoc, yLoc), mask.getWidth(), mask.getHeight(), angle, pivot)
+					.getBounds();
+			IntPoint maskOffset = rotatedBounds.upperLeftCorner().toIntPointRounded();
+			maskWithImageInPlace(image1, image2, maskRotated, maskOffset, true);
+		}
+		else
+		{
+			// This version is a little more precise in where it places the mask, but doesn't work if the images already have alpha.
+			
+			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
-	public static int getAlphaLevel(Image image, int x, int y)
-	{
-		return Color.create(image.getRGB(x, y), true).getAlpha();
+
+			for (int y = 0; y < region.getHeight(); y++)
+				for (int x = 0; x < region.getWidth(); x++)
+				{
+					int grayLevel = mask.getGrayLevel(x, y);
+					Color r = Color.create(region.getRGB(x, y), true);
+
+					// Don't clobber the alpha level from the region.
+					int alphaLevel = Math.min(r.getAlpha(), grayLevel);
+
+					// Only change the alpha channel of the region.
+					region.setRGB(x, y, Color.create(r.getRed(), r.getGreen(), r.getBlue(), alphaLevel).getRGB());
+				}
+
+			Painter p = image1.createPainter();
+			p.rotate(angle, pivot);
+			p.drawImage(region, xLoc, yLoc);
+		}
+
 	}
 
 	/**
@@ -905,7 +914,7 @@ public class ImageHelper
 	public static Image copySnippetRotated(Image image, int xLoc, int yLoc, int width, int height, double angle, Point pivot)
 	{
 		Image result = Image.create(width, height, ImageType.ARGB);
-		Painter pResult = result.createPainter();
+		Painter pResult = result.createPainter(DrawQuality.High);
 		pResult.rotate(-angle, pivot.x - xLoc, pivot.y - yLoc);
 		pResult.translate(-xLoc, -yLoc);
 		pResult.drawImage(image, 0, 0);
@@ -1316,7 +1325,7 @@ public class ImageHelper
 	 */
 	public static Image colorify(Image image, Color color, ColorifyAlgorithm how)
 	{
-		return colorify(image, color, how, null);
+		return colorify(image, color, how, false);
 	}
 
 	/**
@@ -1328,36 +1337,46 @@ public class ImageHelper
 	 *            Color to use
 	 * @param how
 	 *            Algorithm to use when determining pixel colors
-	 * @param where
-	 *            Allows colorifying only a snippet of image. Null means colorify the whole image.
+	 * @param forceAddAlpha
+	 *            Forces the result to have an alpha channel, even when "color" is opaque.
 	 * @return
 	 */
-	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, IntRectangle where)
+	public static Image colorify(Image image, Color color, ColorifyAlgorithm how, boolean forceAddAlpha)
 	{
 		if (how == ColorifyAlgorithm.none)
 		{
 			return image;
 		}
 
-		if (where == null)
-		{
-			where = new IntRectangle(0, 0, image.getWidth(), image.getHeight());
-		}
-
 		if (image.getType() != ImageType.Grayscale8Bit)
 			throw new IllegalArgumentException("The image must by type ImageType.Grayscale, but was type " + image.getType());
-		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.RGB);
+		ImageType resultType = forceAddAlpha || color.hasTransparency() ? ImageType.ARGB : ImageType.RGB;
+		Image result = Image.create(image.getWidth(), image.getHeight(), resultType);
 
 		float[] hsb = color.getHSB();
-		final IntRectangle whereFinal = where;
-		ThreadHelper.getInstance().processRowsInParallel(where.y, where.height, (y) ->
+		if (resultType == ImageType.ARGB)
 		{
-			for (int x = whereFinal.x; x < whereFinal.x + whereFinal.width; x++)
+			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
 			{
-				float level = image.getNormalizedPixelLevel(x, y);
-				result.setRGB(x, y, colorifyPixel(level, hsb, how));
-			}
-		});
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					float level = image.getNormalizedPixelLevel(x, y);
+					result.setRGB(x, y, colorifyPixel(level, hsb, how));
+					result.setAlpha(x, y, color.getAlpha());
+				}
+			});
+		}
+		else
+		{
+			ThreadHelper.getInstance().processRowsInParallel(0, image.getHeight(), (y) ->
+			{
+				for (int x = 0; x < image.getWidth(); x++)
+				{
+					float level = image.getNormalizedPixelLevel(x, y);
+					result.setRGB(x, y, colorifyPixel(level, hsb, how));
+				}
+			});
+		}
 
 		return result;
 	}
@@ -1384,6 +1403,10 @@ public class ImageHelper
 			}
 			return Color.createFromHSB(hsb[0], hsb[1], resultLevel).getRGB();
 		}
+		else if (how == ColorifyAlgorithm.solidColor)
+		{
+			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
+		}
 		else if (how == ColorifyAlgorithm.none)
 		{
 			return Color.createFromHSB(hsb[0], hsb[1], hsb[2]).getRGB();
@@ -1397,8 +1420,9 @@ public class ImageHelper
 
 	public enum ColorifyAlgorithm
 	{
-		none, algorithm2, algorithm3 // algorithm3 preserves contrast a little
-										// better than algorithm2.
+		// algorithm3 preserves contrast a little better than algorithm2.
+		// solidColor paints the pixels one color.
+		none, algorithm2, algorithm3, solidColor
 	}
 
 	/**
@@ -1783,13 +1807,14 @@ public class ImageHelper
 			IntRectangle boundsInSourceToCopyFrom, int widthOfBorderToNotDrawOn)
 	{
 		// Extract the snippet from the source image
-		Image snippet = source.crop(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width,
-				boundsInSourceToCopyFrom.height));
+		Image snippet = source.getSubImage(new IntRectangle(boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y,
+				boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height));
 
 		// Paste the snippet into the target image
 		Painter p = target.createPainter();
 		p.setClip(widthOfBorderToNotDrawOn, widthOfBorderToNotDrawOn, target.getWidth() - widthOfBorderToNotDrawOn * 2,
 				target.getHeight() - widthOfBorderToNotDrawOn * 2);
+		p.setAlphaComposite(AlphaComposite.Src);
 		p.drawImage(snippet, upperLeftCornerToPasteIntoInTarget.x, upperLeftCornerToPasteIntoInTarget.y);
 		p.dispose();
 	}

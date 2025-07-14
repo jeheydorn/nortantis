@@ -186,6 +186,18 @@ public class MapCreatorTest
 	}
 	
 	@Test
+	public void rotatedAndFlippedTwiceWithEditsAndTransparencyTest()
+	{
+		generateAndCompare("rotatedAndFlippedTwiceWithEditsAndTransparency.nort");
+	}
+	
+	@Test
+	public void rotatedLeftWithTransparentOceanAndPartiallyGrungeTest()
+	{
+		generateAndCompare("rotatedLeftWithTransparentOceanAndPartiallyGrunge.nort");
+	}
+
+	@Test
 	public void customImagesWithSizesInFileNames()
 	{
 		generateAndCompare("customImagesWithSizesInFileNames.nort");

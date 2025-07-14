@@ -227,11 +227,75 @@ class AwtPainter extends Painter
 	}
 
 	@Override
-	public void setAlphaComposite(float alpha)
+	public void setAlphaComposite(nortantis.platform.AlphaComposite composite)
 	{
-		g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+		if (composite == nortantis.platform.AlphaComposite.Src)
+		{
+			g.setComposite(AlphaComposite.Src);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcAtop)
+		{
+			g.setComposite(AlphaComposite.SrcAtop);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcOver)
+		{
+			g.setComposite(AlphaComposite.SrcOver);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstIn)
+		{
+			g.setComposite(AlphaComposite.DstIn);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.Dst)
+		{
+			g.setComposite(AlphaComposite.Dst);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstOver)
+		{
+			g.setComposite(AlphaComposite.DstOver);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcIn)
+		{
+			g.setComposite(AlphaComposite.SrcIn);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcOut)
+		{
+			g.setComposite(AlphaComposite.SrcOut);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstOut)
+		{
+			g.setComposite(AlphaComposite.DstOut);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.DstAtop)
+		{
+			g.setComposite(AlphaComposite.DstAtop);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.Xor)
+		{
+			g.setComposite(AlphaComposite.Xor);
+		}
+		else if (composite == nortantis.platform.AlphaComposite.Clear)
+		{
+			g.setComposite(AlphaComposite.Clear);
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Unimplemented alpha composite method: " + composite);
+		}
 	}
 
+	@Override
+	public void setAlphaComposite(nortantis.platform.AlphaComposite composite, float alpha)
+	{
+		if (composite == nortantis.platform.AlphaComposite.SrcAtop)
+		{
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Unimplemented alpha composite method with alpha parameter. Composite method: " + composite);
+		}
+	}
+	
 	@Override
 	public void setClip(int x, int y, int width, int height)
 	{

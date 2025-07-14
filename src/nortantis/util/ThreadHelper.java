@@ -73,12 +73,24 @@ public class ThreadHelper
 					throw new RuntimeException(e);
 				}
 			}
-		} finally
+		}
+		finally
 		{
 			if (useFixedThreadPool)
 			{
 				threadPool.shutdown();
 			}
+		}
+	}
+
+	/**
+	 * Processes a list of jobs in the current thread.
+	 */
+	public void processSerial(List<Runnable> jobs)
+	{
+		for (Runnable job : jobs)
+		{
+			job.run();
 		}
 	}
 
@@ -131,7 +143,8 @@ public class ThreadHelper
 					throw new RuntimeException(e);
 				}
 			}
-		} finally
+		}
+		finally
 		{
 			if (useFixedThreadPool)
 			{
@@ -167,7 +180,14 @@ public class ThreadHelper
 			});
 		}
 
-		ThreadHelper.getInstance().processInParallel(tasks, true);
+		if (numRows < ImageHelper.minParallelRowCount)
+		{
+			ThreadHelper.getInstance().processSerial(tasks);
+		}
+		else
+		{
+			ThreadHelper.getInstance().processInParallel(tasks, true);
+		}
 	}
 
 	public <T> Future<T> submit(Callable<T> job)

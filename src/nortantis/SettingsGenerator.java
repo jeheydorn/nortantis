@@ -29,7 +29,7 @@ public class SettingsGenerator
 	// This is larger than minWorldSize because, when someone opens the generator for the first time to a random map, very small world sizes
 	// can result to in a map that is all land or all ocean.
 	public static int minWorldSizeForRandomSettings = minWorldSize + 2000;
-	public static int maxWorldSize = 30000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
+	public static int maxWorldSize = 32000; // This must not be more than 2^16 or centerLookupTable in WorldGraph will not work.
 	public static int worldSizePrecision = 1000;
 	public static double maxCityProbabillity = 1.0 / 40.0;
 	public static int maxFrayedEdgeSizeForUI = 15;
@@ -48,7 +48,6 @@ public class SettingsGenerator
 		return generate(rand, artPack, customImageFolder);
 	}
 
-	@SuppressWarnings("deprecation")
 	public static MapSettings generate(Random rand, String artPack, String customImagesFolder)
 	{
 		// Prime the random number generator
@@ -109,6 +108,7 @@ public class SettingsGenerator
 		int brightnessRange = 25;
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
+		settings.borderColor = settings.landColor;
 
 		settings.oceanColor = MapCreator.generateColorFromBaseColor(rand, oceanColor, hueRange, saturationRange, brightnessRange);
 
@@ -229,8 +229,8 @@ public class SettingsGenerator
 		{
 			settings.generateBackground = false;
 			settings.generateBackgroundFromTexture = true;
-
 		}
+		settings.solidColorBackground = false;
 
 		// Always set a background texture even if it is not used so that the editor doesn't give an error when switching
 		// to the background texture file path field.
@@ -318,6 +318,7 @@ public class SettingsGenerator
 		settings.randomSeed = seed;
 		settings.regionsRandomSeed = seed;
 		settings.backgroundRandomSeed = seed;
+		settings.frayedBorderSeed = seed;
 		settings.textRandomSeed = seed;
 	}
 

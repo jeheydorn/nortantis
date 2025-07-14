@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
@@ -173,7 +174,7 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public int getAlphaLevel(int x, int y)
+	public int getAlpha(int x, int y)
 	{
 		if (hasAlpha())
 		{
@@ -271,15 +272,24 @@ class AwtImage extends Image
 	}
 
 	@Override
-	public Image crop(IntRectangle bounds)
+	public Image getSubImage(IntRectangle bounds)
 	{
 		return new AwtImage(image.getSubimage(bounds.x, bounds.y, bounds.width, bounds.height));
+	}
+	
+	@Override
+	public Image copySubImage(IntRectangle bounds, boolean addAlphaChanel)
+	{
+		Image sub = getSubImage(bounds);
+		Image result = Image.create(bounds.width, bounds.height, addAlphaChanel ? ImageType.ARGB : getType());
+		result.createPainter().drawImage(sub, 0, 0);
+		return result;
 	}
 
 	@Override
 	public void setAlpha(int x, int y, int alpha)
 	{
-		int newColor = image.getRGB(x, y) | (alpha << 24);
+		int newColor = (image.getRGB(x, y) & 0x00FFFFFF) | (alpha << 24);
 		setRGB(x, y, newColor);
 	}
 
@@ -293,5 +303,27 @@ class AwtImage extends Image
 	public boolean isIntBased()
 	{
 		return raster.getDataBuffer() instanceof DataBufferInt;
+	}
+
+	@Override
+	public Image copyAndAddAlphaChanel()
+	{
+		if (hasAlpha())
+		{
+			return deepCopy();
+		}
+		
+        BufferedImage copy = new BufferedImage(
+        		image.getWidth(),
+        		image.getHeight(),
+                BufferedImage.TYPE_INT_ARGB
+            );
+
+            // Draw the original image onto the new image
+            Graphics2D g2d = copy.createGraphics();
+            g2d.drawImage(image, 0, 0, null);
+            g2d.dispose();
+            
+		return new AwtImage(copy);
 	}
 }

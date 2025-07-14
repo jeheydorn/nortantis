@@ -48,6 +48,11 @@ public class Point implements Comparable<Point>, Serializable
 		return new Point(x + other.x, y + other.y);
 	}
 	
+	public Point add(IntPoint other)
+	{
+		return new Point(x + other.x, y + other.y);
+	}
+
 	public Point add(double x, double y)
 	{
 		return new Point(this.x + x, this.y + y);
@@ -66,6 +71,11 @@ public class Point implements Comparable<Point>, Serializable
 	public IntPoint toIntPoint()
 	{
 		return new IntPoint((int) x, (int) y);
+	}
+	
+	public IntPoint toIntPointRounded()
+	{
+		return new IntPoint((int) Math.round(x), (int) Math.round(y));
 	}
 
 	@Override
@@ -97,6 +107,15 @@ public class Point implements Comparable<Point>, Serializable
 		return new Point(c * (p1.x) + (1 - c) * p2.x, c * (p1.y) + (1 - c) * p2.y);
 	}
 
+	public Point rotate(Point pivot, double angle)
+	{
+		double dx = this.x - pivot.x;
+		double dy = this.y - pivot.y;
+		double newX = pivot.x + dx * Math.cos(angle) - dy * Math.sin(angle);
+		double newY = pivot.y + dx * Math.sin(angle) + dy * Math.cos(angle);
+		return new Point(newX, newY);
+	}
+
 	@Override
 	public int compareTo(Point other)
 	{
@@ -114,11 +133,11 @@ public class Point implements Comparable<Point>, Serializable
 
 		return 0;
 	}
-	
+
 	public boolean isCloseEnough(Point other)
 	{
 		final double threshold = 0.00001;
-		return Math.abs(x - other.x) <= threshold && Math.abs(y - other.y) <= threshold; 
+		return Math.abs(x - other.x) <= threshold && Math.abs(y - other.y) <= threshold;
 	}
 
 	@Override

@@ -186,6 +186,9 @@ public class ThemePanel extends JTabbedPane
 	private JCheckBox brokenLinesCheckbox;
 	private RowHider concentricWavesOptionsHider;
 	private RowHider concentricWavesLevelSliderHider;
+	private JTextField frayedEdgesSeedTextField;
+	private JButton newFrayedEdgesSeedButton;
+	private JRadioButton solidColorButton;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -228,12 +231,16 @@ public class ThemePanel extends JTabbedPane
 			rdbtnGeneratedFromTexture = new JRadioButton("Generated from texture");
 			rdbtnGeneratedFromTexture.addActionListener(backgroundImageButtonGroupListener);
 
-			ButtonGroup backgoundImageButtonGroup = new ButtonGroup();
-			backgoundImageButtonGroup.add(rdbtnGeneratedFromTexture);
-			backgoundImageButtonGroup.add(rdbtnFractal);
+			solidColorButton = new JRadioButton("Solid color");
+			solidColorButton.addActionListener(backgroundImageButtonGroupListener);
+
+			ButtonGroup backgroundImageButtonGroup = new ButtonGroup();
+			backgroundImageButtonGroup.add(rdbtnGeneratedFromTexture);
+			backgroundImageButtonGroup.add(rdbtnFractal);
+			backgroundImageButtonGroup.add(solidColorButton);
 
 			organizer.addLabelAndComponentsVertical("Background:", "Select how to generate the background image.",
-					Arrays.asList(rdbtnFractal, rdbtnGeneratedFromTexture));
+					Arrays.asList(rdbtnFractal, rdbtnGeneratedFromTexture, solidColorButton));
 		}
 
 		{
@@ -645,6 +652,42 @@ public class ThemePanel extends JTabbedPane
 				"Determines the number of polygons used when creating the frayed border. Higher values make the fray larger.",
 				frayedEdgeSizeSlider);
 
+		frayedEdgesSeedTextField = new JTextField();
+		frayedEdgesSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+		frayedEdgesSeedTextField.setColumns(10);
+		frayedEdgesSeedTextField.getDocument().addDocumentListener(new DocumentListener()
+		{
+			public void changedUpdate(DocumentEvent e)
+			{
+				handleFrayedEdgeOrGrungeChange();
+			}
+
+			public void removeUpdate(DocumentEvent e)
+			{
+				if (!frayedEdgesSeedTextField.getText().isEmpty())
+				{
+					handleFrayedEdgeOrGrungeChange();
+				}
+			}
+
+			public void insertUpdate(DocumentEvent e)
+			{
+				handleFrayedEdgeOrGrungeChange();
+			}
+		});
+
+		newFrayedEdgesSeedButton = new JButton("New Seed");
+		newFrayedEdgesSeedButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent arg0)
+			{
+				frayedEdgesSeedTextField.setText(String.valueOf(Math.abs(new Random().nextInt())));
+			}
+		});
+		newFrayedEdgesSeedButton.setToolTipText("Generate a new random seed.");
+		organizer.addLabelAndComponentsHorizontal("Random seed:", "The random seed used to generate the frayed edges.",
+				Arrays.asList(frayedEdgesSeedTextField, newFrayedEdgesSeedButton));
+
 		organizer.addSeperator();
 
 		drawGrungeCheckbox = new JCheckBox("Draw grunge");
@@ -682,7 +725,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(borderPanel, grungeColorDisplay, "Grunge Color", () -> handleFrayedEdgeOrGrungeChange());
 			}
 		});
-		organizer.addLabelAndComponentsHorizontal("Edge/Grunge color:", "Grunge and frayed edge shading will be this color",
+		organizer.addLabelAndComponentsHorizontal("Grunge/frayed edge color:", "Grunge and frayed edge shading will be this color",
 				Arrays.asList(grungeColorDisplay, grungeColorChooseButton), SwingHelper.colorPickerLeftPadding);
 
 		organizer.addVerticalFillerRow();
@@ -779,7 +822,7 @@ public class ThemePanel extends JTabbedPane
 			});
 			String coastShadingColorLabelText = "Coast shading color:";
 			coastShadingColorHider = organizer.addLabelAndComponentsHorizontal(coastShadingColorLabelText,
-					"Land near coastlines will be shaded this color. Transparency is supported.",
+					"Land near coastlines and political region boundaries will be shaded this color.",
 					Arrays.asList(coastShadingColorDisplay, btnChooseCoastShadingColor), SwingHelper.colorPickerLeftPadding);
 
 			final String message = "<html>Disabled because the land coloring" + " method is '" + LandColoringMethod.ColorPoliticalRegions
@@ -814,7 +857,7 @@ public class ThemePanel extends JTabbedPane
 				}
 			});
 			organizer.addLabelAndComponentsHorizontal("Ocean shading color:",
-					"Ocean near coastlines will be shaded this color. Transparency is supported.",
+					"Ocean near coastlines will be shaded this color.",
 					Arrays.asList(oceanShadingColorDisplay, btnChooseOceanShadingColor), SwingHelper.colorPickerLeftPadding);
 		}
 
@@ -858,8 +901,7 @@ public class ThemePanel extends JTabbedPane
 
 		brokenLinesCheckbox = new JCheckBox("Broken lines");
 		createMapChangeListenerForTerrainChange(brokenLinesCheckbox);
-		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Style options:",
-				"Options for how to draw concentric waves.",
+		concentricWavesOptionsHider = organizer.addLabelAndComponentsVertical("Style options:", "Options for how to draw concentric waves.",
 				Arrays.asList(fadeWavesCheckbox, jitterWavesCheckbox, brokenLinesCheckbox));
 
 		concentricWavesLevelSlider = new JSlider();
@@ -896,9 +938,9 @@ public class ThemePanel extends JTabbedPane
 					SwingHelper.showColorPicker(effectsPanel, oceanWavesColorDisplay, "Wave Color", () -> handleTerrainChange());
 				}
 			});
-			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines. Transparency is supported.");
+			btnChooseOceanEffectsColor.setToolTipText("Choose a color for waves near coastlines.");
 			oceanWavesColorHider = organizer.addLabelAndComponentsHorizontal("Wave color:",
-					"The color of the ocean waves. Transparency is supported.",
+					"The color of the ocean waves.",
 					Arrays.asList(oceanWavesColorDisplay, btnChooseOceanEffectsColor), SwingHelper.colorPickerLeftPadding);
 		}
 
@@ -1357,12 +1399,14 @@ public class ThemePanel extends JTabbedPane
 
 	private boolean landSupportsColoring()
 	{
-		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeLandCheckbox.isSelected());
+		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeLandCheckbox.isSelected())
+				|| solidColorButton.isSelected();
 	}
 
 	private boolean oceanSupportsColoring()
 	{
-		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeOceanCheckbox.isSelected());
+		return rdbtnFractal.isSelected() || (rdbtnGeneratedFromTexture.isSelected() && colorizeOceanCheckbox.isSelected())
+				|| solidColorButton.isSelected();
 	}
 
 	private void updateBackgroundAndRegionFieldVisibility()
@@ -1420,7 +1464,8 @@ public class ThemePanel extends JTabbedPane
 
 				long seed = parseBackgroundSeed();
 				return createBackgroundImageDisplaysImages(size, seed, colorizeOceanCheckbox.isSelected(),
-						colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(), rdbtnGeneratedFromTexture.isSelected(), texturePath);
+						colorizeLandCheckbox.isSelected(), rdbtnFractal.isSelected(), rdbtnGeneratedFromTexture.isSelected(),
+						solidColorButton.isSelected(), texturePath);
 			}
 
 			@Override
@@ -1461,7 +1506,7 @@ public class ThemePanel extends JTabbedPane
 
 	static Tuple4<Image, ImageHelper.ColorifyAlgorithm, Image, ImageHelper.ColorifyAlgorithm> createBackgroundImageDisplaysImages(
 			IntDimension size, long seed, boolean colorizeOcean, boolean colorizeLand, boolean isFractal, boolean isFromTexture,
-			String textureImageFileName)
+			boolean isSolidColor, String textureImageFileName)
 	{
 
 		Image oceanBackground;
@@ -1536,11 +1581,17 @@ public class ThemePanel extends JTabbedPane
 				oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.ARGB);
 			}
 		}
+		else if (isSolidColor)
+		{
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+			oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.Grayscale8Bit);
+		}
 		else
 		{
 			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
 			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.none;
-			oceanBackground = landBackground = ImageHelper.createBlackImage(size.width, size.height);
+			oceanBackground = landBackground = Image.create(size.width, size.height, ImageType.RGB);
 		}
 
 		return new Tuple4<>(oceanBackground, oceanColorifyAlgorithm, landBackground, landColorifyAlgorithm);
@@ -1604,6 +1655,11 @@ public class ThemePanel extends JTabbedPane
 		grungeColorDisplay.setBackground(AwtFactory.unwrap(settings.frayedBorderColor));
 		frayedEdgeShadingSlider.setValue(settings.frayedBorderBlurLevel);
 		frayedEdgeSizeSlider.setValue(frayedEdgeSizeSlider.getMaximum() - settings.frayedBorderSize);
+		// Only do this if there is a change so we don't trigger the document listeners unnecessarily.
+		if (!frayedEdgesSeedTextField.getText().equals(String.valueOf(settings.frayedBorderSeed)))
+		{
+			frayedEdgesSeedTextField.setText(String.valueOf(settings.frayedBorderSeed));
+		}
 		grungeSlider.setValue(settings.grungeWidth);
 		if (settings.lineStyle.equals(LineStyle.Jagged))
 		{
@@ -1628,6 +1684,7 @@ public class ThemePanel extends JTabbedPane
 		colorizeLandCheckbox.setSelected((settings.colorizeLand));
 		colorizeLandCheckbox.addItemListener(colorizeCheckboxListener);
 		rdbtnGeneratedFromTexture.setSelected(settings.generateBackgroundFromTexture);
+		solidColorButton.setSelected(settings.solidColorBackground);
 		rdbtnFractal.setSelected(settings.generateBackground);
 
 		// Only set radio buttons selected if there was a change in case doing so causes change listeners to fire.
@@ -1808,6 +1865,11 @@ public class ThemePanel extends JTabbedPane
 			return true;
 		}
 
+		if (solidColorButton.isSelected() != settings.solidColorBackground)
+		{
+			return true;
+		}
+
 		if (!textureImageFilename.getText().equals(FileHelper.replaceHomeFolderPlaceholder(settings.backgroundTextureImage)))
 		{
 			return true;
@@ -1849,6 +1911,18 @@ public class ThemePanel extends JTabbedPane
 		}
 	}
 
+	private long parseFrayedBorderSeed()
+	{
+		try
+		{
+			return Long.parseLong(frayedEdgesSeedTextField.getText());
+		}
+		catch (NumberFormatException e)
+		{
+			return 0;
+		}
+	}
+
 	public void getSettingsFromGUI(MapSettings settings)
 	{
 		settings.coastShadingLevel = coastShadingSlider.getValue();
@@ -1875,6 +1949,8 @@ public class ThemePanel extends JTabbedPane
 		// decrease so that the fray gets large with
 		// larger values of the slider.
 		settings.frayedBorderSize = frayedEdgeSizeSlider.getMaximum() - frayedEdgeSizeSlider.getValue();
+		settings.frayedBorderSeed = parseFrayedBorderSeed();
+
 		settings.drawGrunge = drawGrungeCheckbox.isSelected();
 		settings.grungeWidth = grungeSlider.getValue();
 		settings.lineStyle = jaggedLinesButton.isSelected() ? LineStyle.Jagged
@@ -1883,19 +1959,13 @@ public class ThemePanel extends JTabbedPane
 		// Background image settings
 		settings.generateBackground = rdbtnFractal.isSelected();
 		settings.generateBackgroundFromTexture = rdbtnGeneratedFromTexture.isSelected();
+		settings.solidColorBackground = solidColorButton.isSelected();
 		settings.colorizeOcean = colorizeOceanCheckbox.isSelected();
 		settings.colorizeLand = colorizeLandCheckbox.isSelected();
 		settings.backgroundTextureSource = assetsRadioButton.isSelected() ? TextureSource.Assets : TextureSource.File;
 		settings.backgroundTextureImage = FileHelper.replaceHomeFolderWithPlaceholder(textureImageFilename.getText());
 		settings.backgroundTextureResource = (NamedResource) textureImageComboBox.getSelectedItem();
-		try
-		{
-			settings.backgroundRandomSeed = Long.parseLong(backgroundSeedTextField.getText());
-		}
-		catch (NumberFormatException e)
-		{
-			settings.backgroundRandomSeed = 0;
-		}
+		settings.backgroundRandomSeed = parseBackgroundSeed();
 		settings.oceanColor = AwtFactory.wrap(oceanDisplayPanel.getColor());
 		settings.drawRegionColors = areRegionColorsVisible();
 		settings.drawRegionBoundaries = drawRegionBoundariesCheckbox.isSelected();
@@ -2031,6 +2101,8 @@ public class ThemePanel extends JTabbedPane
 
 		frayedEdgeShadingSlider.setEnabled(frayedEdgeCheckbox.isSelected());
 		frayedEdgeSizeSlider.setEnabled(frayedEdgeCheckbox.isSelected());
+		frayedEdgesSeedTextField.setEnabled(frayedEdgeCheckbox.isSelected());
+		newFrayedEdgesSeedButton.setEnabled(frayedEdgeCheckbox.isSelected());
 
 		grungeColorChooseButton.setEnabled(drawGrungeCheckbox.isSelected());
 		grungeSlider.setEnabled(drawGrungeCheckbox.isSelected());

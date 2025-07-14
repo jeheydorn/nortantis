@@ -34,6 +34,7 @@ import nortantis.platform.ImageType;
 import nortantis.swing.MapEdits;
 import nortantis.util.Assets;
 import nortantis.util.Function;
+import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
 import nortantis.util.Logger;
@@ -988,7 +989,7 @@ public class IconDrawer
 		return groups;
 	}
 
-	private void drawIconWithBackgroundAndMask(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
+	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
 			Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
 	{
 		Image icon = imageAndMasks.image;
@@ -1024,7 +1025,8 @@ public class IconDrawer
 			for (int y : new Range(icon.getHeight()))
 			{
 				Color iconColor = Color.create(icon.getRGB(x, y), true);
-				double alpha = iconColor.getAlpha() / 255.0;
+				int iconAlphaInt = iconColor.getAlpha();
+				double iconAlpha = iconAlphaInt / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
 				float contentMaskLevel = contentMask.getNormalizedPixelLevel(x, y);
 				float shadingMaskLevel = shadingMask.getNormalizedPixelLevel(x, y);
@@ -1046,18 +1048,18 @@ public class IconDrawer
 
 					if (type == IconType.decorations)
 					{
-						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
-								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
-						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc))
-								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
+						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc), backgroundOrSnippet.hasAlpha());
+						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc), backgroundOrSnippet.hasAlpha());
 					}
 					else
 					{
-						bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc));
-						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc));
+						bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc), backgroundOrSnippet.hasAlpha());
+						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc), landTexture.hasAlpha());
 					}
 
-					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc));
+					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc), mapOrSnippet.hasAlpha());
 
 				}
 				catch (IndexOutOfBoundsException e)
@@ -1066,27 +1068,53 @@ public class IconDrawer
 					continue;
 				}
 
-				// Use the shading mask to blend the coastline shading with the
-				// land background texture for pixels
-				// with transparency in the icon and non-zero values in the
-				// content mask. This way coastline shading
-				// doesn't draw through icons, since that would look weird when
-				// the icon extends over the coastline.
-				// It also makes the transparent pixels in the content of the
-				// icon draw the land background texture
-				// when the shading mask is white, so that icons extending into
-				// the ocean draw the land texture behind
-				// them rather than the ocean texture.
-				int red = (int) (alpha * (iconColor.getRed()) + (1 - alpha)
-						* (contentMaskLevel * ((1 - shadingMaskLevel) * landTextureColor.getRed() + (shadingMaskLevel * bgColor.getRed()))
-								+ (1 - contentMaskLevel) * mapColor.getRed()));
-				int green = (int) (alpha * (iconColor.getGreen()) + (1 - alpha) * (contentMaskLevel
-						* ((1 - shadingMaskLevel) * landTextureColor.getGreen() + (shadingMaskLevel * bgColor.getGreen()))
-						+ (1 - contentMaskLevel) * mapColor.getGreen()));
-				int blue = (int) (alpha * (iconColor.getBlue()) + (1 - alpha)
-						* (contentMaskLevel * ((1 - shadingMaskLevel) * landTextureColor.getBlue() + (shadingMaskLevel * bgColor.getBlue()))
-								+ (1 - contentMaskLevel) * mapColor.getBlue()));
-				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue).getRGB());
+				double landTextureAlpha = landTextureColor.getAlpha() / 255.0;
+				double landBackgroundColorScale;
+				if (landTextureAlpha == 1.0)
+				{
+					// Save some time since this is a simple and common case.
+					landBackgroundColorScale = 1.0;
+				}
+				else
+				{
+					// Use a curve that is 0 when landTextureAlpha is 0, 1 when landTextureAlpha is 1, and is mostly equal to 1 but dies off
+					// quickly as landTextureAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
+					// that are partially transparent.
+					landBackgroundColorScale = 1.0 - Math.pow(1.0 - landTextureAlpha, 10);
+				}
+				
+				double mapAlpha = mapColor.getAlpha() / 255.0;
+				double mapColorScale;
+				if (mapAlpha == 1.0)
+				{
+					// Save some time since this is a simple and common case.
+					mapColorScale = 1.0;
+				}
+				else
+				{
+					// Use a curve that is 0 when mapAlpha is 0, 1 when mapAlpha is 1, and is mostly equal to 1 but dies off
+					// quickly as mapAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
+					// that are partially transparent.
+					mapColorScale = 1.0 - Math.pow(1.0 - mapAlpha, 10);
+				}
+
+				// Use the shading mask to blend the coastline shading with the land background texture for pixels with transparency in the
+				// icon and non-zero values in the content mask. This way coastline shading doesn't draw through icons, since that would
+				// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon draw
+				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
+				// behind them rather than the ocean texture.
+				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(),
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getRed(),
+								landBackgroundColorScale * landTextureColor.getRed()), mapColorScale * mapColor.getRed())));
+				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getGreen(),
+								landBackgroundColorScale * landTextureColor.getGreen()), mapColorScale * mapColor.getGreen())));
+				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getBlue(),
+								landBackgroundColorScale * landTextureColor.getBlue()), mapColorScale * mapColor.getBlue())));
+				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
+						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
+				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());
 			}
 		}
 	}
@@ -1099,7 +1127,7 @@ public class IconDrawer
 	 * 
 	 * @return The icons that drew.
 	 */
-	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanTexture,
+	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanWithWavesAndShading,
 			Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
@@ -1142,7 +1170,7 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMask(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanTexture, task.type,
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanWithWavesAndShading, task.type,
 					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
 					(int) task.centerLoc.y);
 		}
@@ -1232,18 +1260,21 @@ public class IconDrawer
 			else
 			{
 				// Should never happen since there are installed cities.
-				Logger.println("The selected art pack, '" + artPackForNewMap + "', has no cities for the city type '" + cityIconTypeForNewMaps + ". There are also no cities in the " + Assets.installedArtPack + " art pack, so none will be drawn."); 
+				Logger.println(
+						"The selected art pack, '" + artPackForNewMap + "', has no cities for the city type '" + cityIconTypeForNewMaps
+								+ ". There are also no cities in the " + Assets.installedArtPack + " art pack, so none will be drawn.");
 				return new ArrayList<>(0);
 			}
 
-			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no cities for the city type '" + cityIconTypeForNewMaps + "'. Cities from the '" + Assets.installedArtPack + "' art pack will be used instead.");			
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no cities for the city type '" + cityIconTypeForNewMaps
+					+ "'. Cities from the '" + Assets.installedArtPack + "' art pack will be used instead.");
 		}
 		else
 		{
 			artPackForCities = artPackForNewMap;
 			cityTypeToUse = cityIconTypeForNewMaps;
 		}
-		
+
 		Map<String, ImageAndMasks> cityIcons = ImageCache.getInstance(artPackForCities, customImagesPath)
 				.getIconsByNameForGroup(IconType.cities, cityTypeToUse);
 		if (cityIcons.isEmpty())
@@ -1261,8 +1292,8 @@ public class IconDrawer
 			if (c.isCity)
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
-				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse,
-						cityName, c.index);
+				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName,
+						c.index);
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -1287,17 +1318,17 @@ public class IconDrawer
 	public void addOrUnmarkMountainsAndHills(List<Set<Center>> mountainAndHillGroups)
 	{
 		String artPackForMountains;
-		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
-				.getIconGroupsAsListsForType(IconType.mountains).isEmpty())
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupsAsListsForType(IconType.mountains).isEmpty())
 		{
-			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no mountains. Mountains from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no mountains. Mountains from the '"
+					+ Assets.installedArtPack + "' art pack will be used instead.");
 			artPackForMountains = Assets.installedArtPack;
 		}
 		else
 		{
 			artPackForMountains = artPackForNewMap;
 		}
-		
+
 		// Maps mountain range ids (the ids in the file names) to list of
 		// mountain images and their masks.
 		ListMap<String, ImageAndMasks> mountainImagesById = ImageCache.getInstance(artPackForMountains, customImagesPath)
@@ -1307,12 +1338,12 @@ public class IconDrawer
 		{
 			Logger.println("No mountains or hills will be added because there are no mountain images.");
 		}
-		
+
 		String artPackForHills;
-		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
-				.getIconGroupsAsListsForType(IconType.hills).isEmpty())
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupsAsListsForType(IconType.hills).isEmpty())
 		{
-			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no hills. Hills from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no hills. Hills from the '" + Assets.installedArtPack
+					+ "' art pack will be used instead.");
 			artPackForHills = Assets.installedArtPack;
 		}
 		else
@@ -1382,8 +1413,8 @@ public class IconDrawer
 						double scale = getWidthScaleForNewShuffledIcon(c, IconType.mountains);
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
-						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId, i,
-								c.index);
+						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId,
+								i, c.index);
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1415,10 +1446,10 @@ public class IconDrawer
 							// matter what resolution the map
 							// is drawn at.
 							int i = Math.abs(rand.nextInt());
-							
+
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
-							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId,
-									i, c.index);
+							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i,
+									c.index);
 
 							IconDrawTask task = toIconDrawTask(icon);
 
@@ -1440,17 +1471,17 @@ public class IconDrawer
 	public void addSandDunes()
 	{
 		String artPackForDunes;
-		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
-				.getIconGroupsAsListsForType(IconType.sand).isEmpty())
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupsAsListsForType(IconType.sand).isEmpty())
 		{
-			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no sand dune images. Sand dunes from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no sand dune images. Sand dunes from the '"
+					+ Assets.installedArtPack + "' art pack will be used instead.");
 			artPackForDunes = Assets.installedArtPack;
 		}
 		else
 		{
 			artPackForDunes = artPackForNewMap;
 		}
-		
+
 		ListMap<String, ImageAndMasks> sandGroups = ImageCache.getInstance(artPackForDunes, customImagesPath)
 				.getIconGroupsAsListsForType(IconType.sand);
 		if (sandGroups == null || sandGroups.isEmpty())
@@ -1507,17 +1538,17 @@ public class IconDrawer
 	public void addTrees()
 	{
 		String artPackForTrees;
-		if (ImageCache.getInstance(artPackForNewMap, customImagesPath)
-				.getIconGroupsAsListsForType(IconType.sand).isEmpty())
+		if (ImageCache.getInstance(artPackForNewMap, customImagesPath).getIconGroupsAsListsForType(IconType.sand).isEmpty())
 		{
-			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no trees. Trees from the '" + Assets.installedArtPack + "' art pack will be used instead.");
+			Logger.println("The selected art pack, '" + artPackForNewMap + "', has no trees. Trees from the '" + Assets.installedArtPack
+					+ "' art pack will be used instead.");
 			artPackForTrees = Assets.installedArtPack;
 		}
 		else
 		{
 			artPackForTrees = artPackForNewMap;
 		}
-		
+
 		Map<Integer, CenterTrees> treesByCenter = new HashMap<>();
 
 		for (final ForestType forest : forestTypes)

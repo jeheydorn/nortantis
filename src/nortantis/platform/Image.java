@@ -32,7 +32,7 @@ public abstract class Image
 
 	public abstract void setBandLevel(int x, int y, int band, int level);
 
-	public abstract int getAlphaLevel(int x, int y);
+	public abstract int getAlpha(int x, int y);
 
 	public abstract void setPixelColor(int x, int y, Color color);
 
@@ -66,6 +66,11 @@ public abstract class Image
 	public IntDimension size()
 	{
 		return new IntDimension(getWidth(), getHeight());
+	}
+
+	public int getPixelCount()
+	{
+		return getWidth() * getHeight();
 	}
 
 	public ImageType getType()
@@ -135,10 +140,27 @@ public abstract class Image
 
 	public abstract Image deepCopy();
 
-	public abstract Image crop(IntRectangle bounds);
+	/**
+	 * Creates an image with the given bounds in this image, backed by the same data as the original image. This means that modifications to
+	 * the result will modify the original image.
+	 */
+	public abstract Image getSubImage(IntRectangle bounds);
+
+	/**
+	 * Creates an image with the given bounds in this image, backed by a copy of the data from the original image. This means that
+	 * modifications to the result will NOT modify the original image.
+	 */
+	public Image copySubImage(IntRectangle bounds)
+	{
+		return copySubImage(bounds, false);
+	}
+	
+	public abstract Image copySubImage(IntRectangle bounds, boolean addAlphaChanel);
 
 	public abstract int[] getDataIntBased();
 
 	public abstract boolean isIntBased();
+
+	public abstract Image copyAndAddAlphaChanel();
 
 }

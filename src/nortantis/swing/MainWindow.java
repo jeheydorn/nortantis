@@ -533,7 +533,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				updateZoomOptionsBasedOnWindowSize();
 				if (ToolsPanel.fitToWindowZoomLevel.equals(toolsPanel.getZoomString()))
 				{
-					updater.createAndShowMapIncrementalUsingCenters(null);
+					updateDisplayedMapFromGeneratedMap(true, null, true);
 				}
 			}
 		});

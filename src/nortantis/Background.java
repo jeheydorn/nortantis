@@ -15,6 +15,7 @@ import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
+import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
@@ -36,7 +37,6 @@ public class Background
 	Dimension mapBounds;
 	Dimension borderBounds;
 	Image borderBackground;
-	private boolean backgroundFromFilesNotGenerated;
 	private boolean shouldDrawRegionColors;
 	private ImageHelper.ColorifyAlgorithm landColorifyAlgorithm;
 	private ImageHelper.ColorifyAlgorithm oceanColorifyAlgorithm;
@@ -56,9 +56,7 @@ public class Background
 	public Background(MapSettings settings, Dimension mapBounds, WarningLogger warningLogger)
 	{
 		customImagesPath = settings.customImagesPath;
-		backgroundFromFilesNotGenerated = !settings.generateBackground && !settings.generateBackgroundFromTexture;
-		shouldDrawRegionColors = settings.drawRegionColors && !backgroundFromFilesNotGenerated
-				&& (!settings.generateBackgroundFromTexture || settings.colorizeLand);
+		shouldDrawRegionColors = settings.drawRegionColors && (!settings.generateBackgroundFromTexture || settings.colorizeLand);
 
 		Image landGeneratedBackground;
 		landColorifyAlgorithm = ColorifyAlgorithm.none;
@@ -87,7 +85,8 @@ public class Background
 			{
 				if (settings.drawBorder)
 				{
-					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+					borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm,
+							settings.oceanColor.hasTransparency());
 				}
 				ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 			}
@@ -153,7 +152,8 @@ public class Background
 				{
 					if (settings.drawBorder)
 					{
-						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm);
+						borderBackground = ImageHelper.colorify(oceanGeneratedBackground, settings.borderColor, oceanColorifyAlgorithm,
+								settings.oceanColor.hasTransparency());
 					}
 					ocean = ImageHelper.colorify(oceanGeneratedBackground, settings.oceanColor, oceanColorifyAlgorithm);
 				}
@@ -253,6 +253,48 @@ public class Background
 				}
 			}
 		}
+		else if (settings.solidColorBackground)
+		{
+			Image background = Image.create(((int) mapBounds.width) + borderWidthScaled * 2,
+					((int) mapBounds.height) + borderWidthScaled * 2, ImageType.Grayscale8Bit);
+			landColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+			oceanColorifyAlgorithm = ImageHelper.ColorifyAlgorithm.solidColor;
+
+			if (settings.borderColorOption == BorderColorOption.Ocean_color)
+			{
+				borderBackground = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+				ocean = borderBackground;
+			}
+			else
+			{
+				if (settings.drawBorder)
+				{
+					borderBackground = ImageHelper.colorify(background, settings.borderColor, oceanColorifyAlgorithm,
+							settings.oceanColor.hasTransparency());
+				}
+				ocean = ImageHelper.colorify(background, settings.oceanColor, oceanColorifyAlgorithm);
+			}
+
+			if (settings.drawBorder)
+			{
+				ocean = removeBorderPadding(ocean);
+			}
+			else
+			{
+				borderBackground = null;
+			}
+
+			if (shouldDrawRegionColors)
+			{
+				// Drawing region colors must be done later because it depends on the graph.
+				land = removeBorderPadding(background);
+			}
+			else
+			{
+				land = ImageHelper.colorify(removeBorderPadding(background), settings.landColor, landColorifyAlgorithm);
+			}
+
+		}
 		else
 		{
 			throw new IllegalArgumentException("Creating maps from custom land and ocean background images is no longer supported.");
@@ -275,7 +317,17 @@ public class Background
 
 	static Dimension calcMapBoundsAndAdjustResolutionIfNeeded(MapSettings settings, Dimension maxDimensions)
 	{
-		Dimension mapBounds = new Dimension(settings.generatedWidth * settings.resolution, settings.generatedHeight * settings.resolution);
+		Dimension mapBounds;
+		Dimension sizeFromSettingsAt100PercentResolution;
+		if (settings.rightRotationCount == 1 || settings.rightRotationCount == 3)
+		{
+			sizeFromSettingsAt100PercentResolution = new Dimension(settings.generatedHeight, settings.generatedWidth);
+		}
+		else
+		{
+			sizeFromSettingsAt100PercentResolution = new Dimension(settings.generatedWidth, settings.generatedHeight);
+		}
+		mapBounds = sizeFromSettingsAt100PercentResolution.mult(settings.resolution);
 		if (maxDimensions != null)
 		{
 			int borderWidth = 0;
@@ -290,8 +342,7 @@ public class Background
 			// Change the resolution to match the new bounds.
 			settings.resolution *= ((double) newBounds.width) / mapBoundsPlusBorder.width;
 
-			Dimension scaledMapBounds = new Dimension(settings.generatedWidth * settings.resolution,
-					settings.generatedHeight * settings.resolution);
+			Dimension scaledMapBounds = sizeFromSettingsAt100PercentResolution.mult(settings.resolution);
 			mapBounds = scaledMapBounds;
 		}
 		return mapBounds;
@@ -330,20 +381,6 @@ public class Background
 						boundsInSourceToCopyFrom, 0);
 			}
 		}
-
-		// Fixes a bug where graph width or height is not exactly the same as
-		// image width and heights due to rounding issues.
-		if (backgroundFromFilesNotGenerated)
-		{
-			if (land.getWidth() != graph.getWidth())
-			{
-				land = ImageHelper.scaleByWidth(land, graph.getWidth());
-			}
-			if (ocean.getWidth() != graph.getWidth())
-			{
-				ocean = ImageHelper.scaleByWidth(ocean, graph.getWidth());
-			}
-		}
 	}
 
 	private Image drawRegionColors(WorldGraph graph, Image fractalBG, Image pixelColors, ImageHelper.ColorifyAlgorithm colorfiyAlgorithm,
@@ -375,9 +412,24 @@ public class Background
 			return map;
 		}
 
-		Image result = borderBackground.deepCopy();
-		Painter p = result.createPainter();
-		p.drawImage(map, borderWidthScaled, borderWidthScaled);
+		Image result;
+		if (map.hasAlpha() && !borderBackground.hasAlpha())
+		{
+			result = borderBackground.copyAndAddAlphaChanel();
+		}
+		else
+		{
+			result = borderBackground.deepCopy();
+		}
+
+		{
+			Painter p = result.createPainter();
+			if (result.hasAlpha())
+			{
+				p.setAlphaComposite(AlphaComposite.Src);
+			}
+			p.drawImage(map, borderWidthScaled, borderWidthScaled);
+		}
 
 		Path artPackPath = Assets.getArtPackPath(borderResouce.artPack, customImagesPath);
 		if (artPackPath == null)
@@ -551,8 +603,11 @@ public class Background
 		drawLowerLeftCorner(result, new IntPoint(0, 0));
 		drawLowerRightCorner(result, new IntPoint(0, 0));
 
+
 		// Draw the edges
 
+		Painter p = result.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		// Top and bottom edges
 		for (int i : new Range(2))
 		{
@@ -608,6 +663,8 @@ public class Background
 		return result;
 	}
 
+	private final AlphaComposite alphaCompositeForDrawingCornersAndEdges = AlphaComposite.SrcOver;
+
 	private void drawUpperLeftCorner(Image target, IntPoint drawOffset)
 	{
 		// If the corner protrudes into the map, then erase the map in the area the corner will be drawn on.
@@ -617,6 +674,7 @@ public class Background
 					new IntRectangle(0, 0, upperLeftCorner.getWidth(), upperLeftCorner.getHeight()), 0);
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(upperLeftCorner, 0, 0);
 	}
@@ -628,9 +686,11 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, 0).subtract(drawOffset), new IntRectangle(
-							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()), 0);
+							((int) borderBounds.width) - cornerWidth, 0, upperRightCorner.getWidth(), upperRightCorner.getHeight()),
+					0);
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(upperRightCorner, ((int) borderBounds.width) - cornerWidth, 0);
 	}
@@ -642,10 +702,12 @@ public class Background
 		{
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(0, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
-					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()), 0);
+					new IntRectangle(0, ((int) borderBounds.height) - cornerWidth, lowerLeftCorner.getWidth(), lowerLeftCorner.getHeight()),
+					0);
 
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(lowerLeftCorner, 0, ((int) borderBounds.height) - cornerWidth);
 	}
@@ -658,10 +720,12 @@ public class Background
 			ImageHelper.copySnippetFromSourceAndPasteIntoTarget(target, borderBackground,
 					new IntPoint(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth).subtract(drawOffset),
 					new IntRectangle(((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth,
-							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()), 0);
+							lowerRightCorner.getWidth(), lowerRightCorner.getHeight()),
+					0);
 
 		}
 		Painter p = target.createPainter();
+		p.setAlphaComposite(alphaCompositeForDrawingCornersAndEdges);
 		p.translate(-drawOffset.x, -drawOffset.y);
 		p.drawImage(lowerRightCorner, ((int) borderBounds.width) - cornerWidth, ((int) borderBounds.height) - cornerWidth);
 	}
@@ -862,7 +926,7 @@ public class Background
 
 		return Assets.readImage(corners.get(0).toString());
 	}
-	
+
 	public int getBorderWidthScaledByResolution()
 	{
 		return borderWidthScaled;
@@ -872,7 +936,7 @@ public class Background
 	{
 		return settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
 	}
-	
+
 	public Dimension getMapBoundsIncludingBorder()
 	{
 		return borderBounds;

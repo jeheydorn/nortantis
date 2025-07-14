@@ -102,7 +102,8 @@ public class WorldGraph extends VoronoiGraph
 		setupColors();
 		regions = new TreeMap<>();
 
-		// Switch the center locations the Voronoi centroids of each center because I think that
+		// Switch the center locations the Voronoi centroids of each center
+		// because I think that
 		// looks better for drawing, and it works better for smooth coastlines.
 		updateCenterLocationsToCentroids();
 
@@ -138,7 +139,8 @@ public class WorldGraph extends VoronoiGraph
 	{
 		if (centersToUpdate != centers)
 		{
-			// When doing incremental drawing, expand the centers to update to include neighbors so that and single-center islands or water
+			// When doing incremental drawing, expand the centers to update to
+			// include neighbors so that and single-center islands or water
 			// that were expanded by the last brush stroke get reevaluated.
 			addNeighbors(centersToUpdate);
 		}
@@ -183,7 +185,8 @@ public class WorldGraph extends VoronoiGraph
 		{
 			SmoothingResult coastlineResult = updateCornerLocationToSmoothEdges(corner, e -> e.isCoast());
 			boolean isCornerChanged = coastlineResult.isCornerChanged;
-			// Only smooth region boundaries for the corner if it is not a coastline, because otherwise we will clear the smoothing on that
+			// Only smooth region boundaries for the corner if it is not a
+			// coastline, because otherwise we will clear the smoothing on that
 			// spot on the coastline.
 			if (!coastlineResult.isSmoothed && smoothRegionBoundaries)
 			{
@@ -231,7 +234,8 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth == null || edgesToSmooth.size() == 0)
 		{
-			// This corner is not on an edge to smooth. Clear the override to set the corner's location back to how it was first
+			// This corner is not on an edge to smooth. Clear the override to
+			// set the corner's location back to how it was first
 			// generated.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.resetLocToOriginal();
@@ -240,7 +244,8 @@ public class WorldGraph extends VoronoiGraph
 
 		if (edgesToSmooth.size() == 2)
 		{
-			// Don't smooth edges on islands/regions made of only one center, because it tends to make the center very small.
+			// Don't smooth edges on islands/regions made of only one center,
+			// because it tends to make the center very small.
 			if (corner.touches.stream().anyMatch(center -> isSinglePolygonToSmooth(center, shouldSmoothEdge)))
 			{
 				boolean isChanged = !corner.loc.equals(corner.originalLoc);
@@ -260,7 +265,8 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			// 3 or more boundaries that should be smoothed intersect. Don't smooth because it's not clear what direction to smooth.
+			// 3 or more boundaries that should be smoothed intersect. Don't
+			// smooth because it's not clear what direction to smooth.
 			boolean isChanged = !corner.loc.equals(corner.originalLoc);
 			corner.resetLocToOriginal();
 			return new SmoothingResult(isChanged, false);
@@ -365,16 +371,22 @@ public class WorldGraph extends VoronoiGraph
 
 	public void drawRegionIndexes(Painter p, Set<Center> centersToDraw, Rectangle drawBounds)
 	{
-		// As we draw, if ocean centers are close to land, use the region index from that land. That way
-		// if the option to allow icons to draw over coastlines is true, then region colors will
-		// draw inside transparent pixels of icons whose content extends over ocean.
+		// As we draw, if ocean centers are close to land, use the region index
+		// from that land. That way
+		// if the option to allow icons to draw over coastlines is true, then
+		// region colors will
+		// draw inside transparent pixels of icons whose content extends over
+		// ocean.
 		drawPolygons(p, centersToDraw, drawBounds, (c) ->
 		{
 			if (c.region == null)
 			{
-				// This needs to be far enough that no icon extends this far into the ocean. The farthest I've seen any of my mountains have
+				// This needs to be far enough that no icon extends this far
+				// into the ocean. The farthest I've seen any of my mountains
+				// have
 				// extend
-				// into the ocean is 3 polygons, but I'm adding a buffer to be safe. Note that increasing this is fairly expensive.
+				// into the ocean is 3 polygons, but I'm adding a buffer to be
+				// safe. Note that increasing this is fairly expensive.
 				final int maxDistanceToSearchForLand = 5;
 				Center closestLand = findClosestLand(c, maxDistanceToSearchForLand);
 				if (closestLand == null || closestLand.region == null)
@@ -552,11 +564,6 @@ public class WorldGraph extends VoronoiGraph
 		return optional.get();
 	}
 
-	public Center findClosestCenter(double x, double y)
-	{
-		return findClosestCenter(new Point(x, y));
-	}
-
 	public Center findClosestCenter(Point point)
 	{
 		return findClosestCenter(point, false);
@@ -622,7 +629,8 @@ public class WorldGraph extends VoronoiGraph
 		}
 		else
 		{
-			// Include neighbors of each center because if a center changed, that will affect its neighbors as well.
+			// Include neighbors of each center because if a center changed,
+			// that will affect its neighbors as well.
 			Set<Center> centersWithNeighbors = new HashSet<>();
 			for (Center c : centersToUpdate)
 			{
@@ -928,7 +936,8 @@ public class WorldGraph extends VoronoiGraph
 				return c.isWater;
 			}, center);
 
-			// The second condition excludes lakes that touch the edge of the map, since it's hard to tell whether those should be ocean or
+			// The second condition excludes lakes that touch the edge of the
+			// map, since it's hard to tell whether those should be ocean or
 			// lake,
 			// And the more conservative choice is to say it's not a lake.
 			if (potentialLake.size() <= maxLakeSize && !potentialLake.stream().anyMatch(c -> c.isBorder))
@@ -1376,8 +1385,10 @@ public class WorldGraph extends VoronoiGraph
 				for (Center n : neighbor.neighbors)
 					n.updateNeighborsNotInSamePlateCount();
 
-				// Stop if there are only nine plates left and one of them is getting too small. This will usually prevent
-				// creating a map this just ocean or has only tiny islands, although it isn't guaranteed since it's
+				// Stop if there are only nine plates left and one of them is
+				// getting too small. This will usually prevent
+				// creating a map this just ocean or has only tiny islands,
+				// although it isn't guaranteed since it's
 				// possible all 9 plates will be assigned to oceanic.
 				if (plateCounts.keySet().size() == 9 && Helper.min(plateCounts) <= minNinthtoLastPlateSize)
 				{
@@ -1513,7 +1524,8 @@ public class WorldGraph extends VoronoiGraph
 				bounds = bounds.add(neighbor.loc);
 			}
 
-			// For centers on the edge of the map, add the corners to the bounds because the center doesn't have neighbors in all
+			// For centers on the edge of the map, add the corners to the bounds
+			// because the center doesn't have neighbors in all
 			// directions.
 			if (center.isBorder)
 			{
@@ -1525,41 +1537,6 @@ public class WorldGraph extends VoronoiGraph
 		}
 
 		return bounds;
-	}
-
-	public Set<Center> getCentersInBounds(Rectangle bounds)
-	{
-		Set<Center> selected = new HashSet<Center>();
-
-		if (bounds == null)
-		{
-			return selected;
-		}
-
-		Center center = findClosestCenter(bounds.getCenter());
-		if (center == null)
-		{
-			return selected;
-		}
-		else
-		{
-			selected.add(center);
-		}
-
-		return breadthFirstSearch((c) -> isCenterOverlappingRectangle(c, bounds), center);
-	}
-
-	private boolean isCenterOverlappingRectangle(Center center, Rectangle rectangle)
-	{
-		for (Corner corner : center.corners)
-		{
-			if (rectangle.contains(corner.loc))
-			{
-				return true;
-			}
-		}
-
-		return rectangle.contains(center.loc);
 	}
 
 	/**
@@ -1835,37 +1812,96 @@ public class WorldGraph extends VoronoiGraph
 	}
 
 	/**
-	 * Scales the graph and everything in it to the target size.
+	 * Scales, rotates, and flips the graph and everything in it.
 	 */
-	public void scale(double targetWidth, double targetHeight)
+	public void scaleFlipAndRotate(double targetWidth, double targetHeight, int rightRotationCount, boolean flipHorizontally,
+			boolean flipVertically)
 	{
 		double widthScale = targetWidth / bounds.width;
 		double heightScale = targetHeight / bounds.height;
+		double angle = (Math.PI / 2.0) * rightRotationCount;
+		Point mapCenter = new Point(targetWidth / 2.0, targetHeight / 2.0);
+		Point newOriginOffset;
+		assert rightRotationCount <= 3;
+		assert rightRotationCount >= 0;
+		
+		if (rightRotationCount == 0)
+		{
+			newOriginOffset = new Point(0, 0);
+		}
+		else if (rightRotationCount == 1)
+		{
+			// The lower-left corner will become the new origin.
+			newOriginOffset = new Point(0, targetHeight).rotate(mapCenter, angle);
+		}
+		else if (rightRotationCount == 2)
+		{
+			// The lower-right corner will become the new origin.
+			newOriginOffset = new Point(targetWidth, targetHeight).rotate(mapCenter, angle);
+		}
+		else 
+		{
+			// The upper-right corner will become the new origin.
+			newOriginOffset = new Point(targetWidth, 0).rotate(mapCenter, angle);
+		}
+
 		for (Center center : centers)
 		{
-			center.loc = center.loc.mult(widthScale, heightScale);
+			center.loc = scaleFlipAndRotatePoint(center.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 		}
 		for (Edge edge : edges)
 		{
 			if (edge.midpoint != null)
 			{
-				edge.midpoint = edge.midpoint.mult(widthScale, heightScale);
+				edge.midpoint = scaleFlipAndRotatePoint(edge.midpoint, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally,
+						flipVertically);
 			}
 		}
 		for (Corner corner : corners)
 		{
-			corner.loc = corner.loc.mult(widthScale, heightScale);
+			corner.loc = scaleFlipAndRotatePoint(corner.loc, widthScale, heightScale, angle, mapCenter, newOriginOffset, flipHorizontally, flipVertically);
 			if (corner.originalLoc != null)
 			{
-				corner.originalLoc = corner.originalLoc.mult(widthScale, heightScale);
+				corner.originalLoc = scaleFlipAndRotatePoint(corner.originalLoc, widthScale, heightScale, angle, mapCenter, newOriginOffset,
+						flipHorizontally, flipVertically);
 			}
 		}
 
-		bounds = new Rectangle(0, 0, targetWidth, targetHeight);
+		if (rightRotationCount == 1 || rightRotationCount == 3)
+		{
+			bounds = new Rectangle(0, 0, targetHeight, targetWidth);
+		}
+		else
+		{
+			bounds = new Rectangle(0, 0, targetWidth, targetHeight);
+		}
 		meanCenterWidth = null;
 		getMeanCenterWidth();
 		meanCenterWidthBetweenNeighbors = null;
 		getMeanCenterWidthBetweenNeighbors();
+	}
+
+	private Point scaleFlipAndRotatePoint(Point point, double widthScale, double heightScale, double angle, Point mapCenter,
+			Point newOriginOffset, boolean flipHorizontally, boolean flipVertically)
+	{
+		Point result = point.mult(widthScale, heightScale);
+
+		if (flipHorizontally)
+		{
+			result = new Point(2 * mapCenter.x - result.x, result.y);
+		}
+
+		if (flipVertically)
+		{
+			result = new Point(result.x, 2 * mapCenter.y - result.y);
+		}
+
+		if (angle != 0.0)
+		{
+			result = result.rotate(mapCenter, angle).subtract(newOriginOffset);
+		}
+
+		return result;
 	}
 
 	public double getMeanCenterWidth()
@@ -1961,14 +1997,16 @@ public class WorldGraph extends VoronoiGraph
 			List<Point> drawPoints;
 			if (variationRange > 0)
 			{
-				// Get the path without curves, except cases where jagged lines might overlap with waves when the coastlines use curves.
+				// Get the path without curves, except cases where jagged lines
+				// might overlap with waves when the coastlines use curves.
 				if (noisyEdges.getLineStyle() == LineStyle.Jagged)
 				{
 					drawPoints = edgeListToDrawPoints(coastline, true, maxDistanceToIgnoreNoisyEdgesWhenCoastlinesUseJaggedLines);
 				}
 				else
 				{
-					// Always ignore noisy edges because we will add the curves after adding the variance.
+					// Always ignore noisy edges because we will add the curves
+					// after adding the variance.
 					drawPoints = edgeListToDrawPoints(coastline, true, Double.MAX_VALUE);
 				}
 				isPolygon = drawPoints.size() > 2 && drawPoints.get(0).equals(drawPoints.get(drawPoints.size() - 1));
@@ -1988,12 +2026,12 @@ public class WorldGraph extends VoronoiGraph
 				}
 			}
 
-			// When drawing concentric waves with random variation, we need more points in the curve at lower resolutions to make it look
+			// When drawing concentric waves with random variation, we need more
+			// points in the curve at lower resolutions to make it look
 			// good.
 			double distanceBetweenPoints = Math.max(1.0,
 					Math.min(CurveCreator.defaultDistanceBetweenPoints, CurveCreator.defaultDistanceBetweenPoints * resolutionScale));
 			drawPoints = CurveCreator.createCurve(drawPoints, distanceBetweenPoints);
-
 
 			if (drawPoints == null || drawPoints.size() <= 1)
 			{
@@ -2088,7 +2126,8 @@ public class WorldGraph extends VoronoiGraph
 	{
 		List<Point> result = points.stream().map(p ->
 		{
-			// Use a random seed that is close to unique for each point so that incremental draws don't have to redraw the entire coastline.
+			// Use a random seed that is close to unique for each point so that
+			// incremental draws don't have to redraw the entire coastline.
 			Random rand = new Random(randomSeed + (long) ((p.x * resolutionScale + p.y * resolutionScale) * 100));
 			double radius = rand.nextDouble() * variationRange;
 			double angle = rand.nextDouble() * 2 * Math.PI;
@@ -2212,8 +2251,10 @@ public class WorldGraph extends VoronoiGraph
 				continue;
 			}
 
-			// Enforce an order in which the region boundary is drawn so that full versus incremental redraws don't draw dotted lines
-			// in the opposite order and so end up drawing the dashed pattern slightly differently.
+			// Enforce an order in which the region boundary is drawn so that
+			// full versus incremental redraws don't draw dotted lines
+			// in the opposite order and so end up drawing the dashed pattern
+			// slightly differently.
 			if (drawPoints.get(0).compareTo(drawPoints.get(drawPoints.size() - 1)) > 0)
 			{
 				Collections.reverse(drawPoints);
