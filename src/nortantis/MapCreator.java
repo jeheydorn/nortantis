@@ -409,12 +409,14 @@ public class MapCreator implements WarningLogger
 				if (oceanShading != null)
 				{
 					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanShadingColor, oceanShading, true);
-					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading, true);
+					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanShadingColor, oceanShading,
+							true);
 				}
 				if (oceanWaves != null)
 				{
 					mapSnippet = ImageHelper.maskWithColor(mapSnippet, settings.oceanWavesColor, oceanWaves, true);
-					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves, true);
+					oceanWithWavesAndShading = ImageHelper.maskWithColor(oceanWithWavesAndShading, settings.oceanWavesColor, oceanWaves,
+							true);
 				}
 			}
 
@@ -477,19 +479,6 @@ public class MapCreator implements WarningLogger
 
 		mapParts.background.drawInsetCornersIfBoundsTouchesThem(mapSnippet, drawBounds);
 
-		// Add frayed border
-		if (settings.frayedBorder)
-		{
-			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplierRounded);
-			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
-					drawBoundsUpperLeftCornerAdjustedForBorder);
-			if (blurLevel > 0)
-			{
-				mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true,
-						drawBoundsUpperLeftCornerAdjustedForBorder);
-			}
-		}
-
 		// Add grunge
 		if (settings.drawGrunge && settings.grungeWidth > 0)
 		{
@@ -513,6 +502,19 @@ public class MapCreator implements WarningLogger
 		if (settings.drawOverlayImage)
 		{
 			drawOverlayImage(mapSnippet, settings, drawBounds, fullSizedMap.size());
+		}
+
+		// Add frayed border
+		if (settings.frayedBorder)
+		{
+			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplierRounded);
+			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
+					drawBoundsUpperLeftCornerAdjustedForBorder);
+			if (blurLevel > 0)
+			{
+				mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true,
+						drawBoundsUpperLeftCornerAdjustedForBorder);
+			}
 		}
 
 		// Update the snippet in the main map.
@@ -909,8 +911,8 @@ public class MapCreator implements WarningLogger
 		return map;
 	}
 
-	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(MapSettings settings, Dimension mapDimensions,
-			double sizeMultiplier, MapParts mapParts)
+	private Future<Tuple2<Image, Image>> startFrayedBorderCreation(MapSettings settings, Dimension mapDimensions, double sizeMultiplier,
+			MapParts mapParts)
 	{
 		// Use the random number generator the same whether or not we draw a frayed border.
 		if (settings.frayedBorder)
@@ -939,8 +941,9 @@ public class MapCreator implements WarningLogger
 					widthToUse = mapDimensions.width;
 					heightToUse = mapDimensions.height;
 				}
-				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount, new Random(settings.frayedBorderSeed),
-						settings.resolution, true, settings.rightRotationCount, settings.flipHorizontally, settings.flipVertically);
+				WorldGraph frayGraph = GraphCreator.createSimpleGraph(widthToUse, heightToUse, polygonCount,
+						new Random(settings.frayedBorderSeed), settings.resolution, true, settings.rightRotationCount,
+						settings.flipHorizontally, settings.flipVertically);
 				frayedBorderMask = Image.create(frayGraph.getWidth(), frayGraph.getHeight(), ImageType.Grayscale8Bit);
 				frayGraph.drawBorderWhite(frayedBorderMask.createPainter());
 				if (blurLevel > 0)
@@ -1242,7 +1245,7 @@ public class MapCreator implements WarningLogger
 
 			boolean drawRegionColorShading = settings.drawRegionBoundaries && settings.drawRegionColors;
 			float scale;
-			
+
 			if (drawRegionColorShading)
 			{
 				scale = ((float) settings.coastShadingColor.getAlpha()) / ((float) (maxPixelValue)) * scaleForDarkening

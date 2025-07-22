@@ -48,7 +48,8 @@ public abstract class MapUpdater
 	private boolean enabled;
 	private boolean isMapReadyForInteractions;
 	private Queue<Runnable> tasksToRunWhenMapReady;
-	private ArrayDeque<MapUpdate> updatesToDraw;
+	private ArrayDeque<MapUpdate> nonIncrementalUpdatesToDraw;
+	private ArrayDeque<MapUpdate> incrementalUpdatesToDraw;
 	private ArrayDeque<MapUpdate> lowPriorityUpdatesToDraw;
 	private MapCreator currentMapCreator;
 	private MapUpdate currentUpdate;
@@ -67,7 +68,8 @@ public abstract class MapUpdater
 		interactionsLock = new ReentrantLock();
 		this.createEditsIfNotPresentAndUseMapParts = createEditsIfNotPresentAndUseMapParts;
 		tasksToRunWhenMapReady = new ConcurrentLinkedQueue<>();
-		updatesToDraw = new ArrayDeque<>();
+		nonIncrementalUpdatesToDraw = new ArrayDeque<>();
+		incrementalUpdatesToDraw = new ArrayDeque<>();
 		lowPriorityUpdatesToDraw = new ArrayDeque<>();
 		centersToRedrawLowPriority = new ConcurrentHashMap<>();
 	}
@@ -398,7 +400,7 @@ public abstract class MapUpdater
 		{
 			return;
 		}
-		
+
 		// Low-priority updates only support incremental updates.
 		assert !isLowPriorityChange || updateType == UpdateType.Incremental;
 
@@ -410,8 +412,17 @@ public abstract class MapUpdater
 			{
 				// Cancel the low priority change, then add the new update before it on the queue.
 				currentMapCreator.cancel();
-				updatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns,
-						postRuns, isLowPriorityChange));
+				if (updateType == UpdateType.Incremental)
+				{
+					incrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged,
+							preRuns, postRuns, isLowPriorityChange));
+				}
+				else
+				{
+					nonIncrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged,
+							preRuns, postRuns, isLowPriorityChange));
+				}
+
 				lowPriorityUpdatesToDraw.add(currentUpdate);
 				return;
 			}
@@ -424,8 +435,16 @@ public abstract class MapUpdater
 				}
 				else
 				{
-					updatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged, iconsChanged, preRuns,
-							postRuns, isLowPriorityChange));
+					if (updateType == UpdateType.Incremental)
+					{
+						incrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged,
+								iconsChanged, preRuns, postRuns, isLowPriorityChange));
+					}
+					else
+					{
+						nonIncrementalUpdatesToDraw.add(new MapUpdate(updateType, centersChangedIds, edgesChangedIds, textChanged,
+								iconsChanged, preRuns, postRuns, isLowPriorityChange));
+					}
 				}
 				return;
 			}
@@ -581,7 +600,7 @@ public abstract class MapUpdater
 					{
 						addLowPriorityCentersToRedraw(currentMapCreator.centersToRedrawLowPriority);
 					}
-					
+
 					currentMapCreator = null;
 					currentUpdate = null;
 
@@ -619,7 +638,7 @@ public abstract class MapUpdater
 				else
 				{
 					boolean isCanceled = currentMapCreator != null ? currentMapCreator.isCanceled() : false;
-					
+
 					if (updateType != UpdateType.ReprocessBooks && !isCanceled)
 					{
 						onFailedToDraw();
@@ -627,7 +646,7 @@ public abstract class MapUpdater
 					currentMapCreator = null;
 					currentUpdate = null;
 					isMapBeingDrawn = false;
-					
+
 					if (isCanceled)
 					{
 						MapUpdate next = combineAndGetNextUpdateToDraw();
@@ -724,39 +743,61 @@ public abstract class MapUpdater
 	 */
 	private MapUpdate combineAndGetNextUpdateToDraw()
 	{
-		if (updatesToDraw.isEmpty() && lowPriorityUpdatesToDraw.isEmpty())
+		if (nonIncrementalUpdatesToDraw.isEmpty() && incrementalUpdatesToDraw.isEmpty() && lowPriorityUpdatesToDraw.isEmpty())
 		{
 			return null;
 		}
 
-		Optional<MapUpdate> full = updatesToDraw.stream().filter(update -> update.updateType == UpdateType.Full).findFirst();
+		Optional<MapUpdate> full = nonIncrementalUpdatesToDraw.stream().filter(update -> update.updateType == UpdateType.Full).findFirst();
 		if (full.isPresent())
 		{
 			// There's a full update on the queue. We only need to do that one.
-			updatesToDraw.clear();
+			nonIncrementalUpdatesToDraw.clear();
+			incrementalUpdatesToDraw.clear();
+			lowPriorityUpdatesToDraw.clear();
 			return full.get();
 		}
 
-		if (!updatesToDraw.isEmpty())
+		// Always process non-incremental changes before incremental changes because the drawing code for incremental changes assumes
+		// mapParts is properly populated for the current settings in the GUI, which isn't always true if multiple changes are queued and
+		// you process them in the order received. Doing so could cause a crash, especially when undoing and redoing a bunch of changes that
+		// include incremental and non-incremental, but not full.
+		if (!nonIncrementalUpdatesToDraw.isEmpty())
 		{
 			// Combine other types updates until we hit one that isn't
 			// the same type.
-			MapUpdate update = updatesToDraw.poll();
-			while (updatesToDraw.size() > 0 && updatesToDraw.peek().updateType == update.updateType)
+			MapUpdate update = nonIncrementalUpdatesToDraw.poll();
+			while (nonIncrementalUpdatesToDraw.size() > 0 && nonIncrementalUpdatesToDraw.peek().updateType == update.updateType)
 			{
-				update.add(updatesToDraw.poll());
+				update.add(nonIncrementalUpdatesToDraw.poll());
 			}
 			return update;
 		}
 
-		// Combine other types updates until we hit one that isn't
-		// the same type.
-		MapUpdate update = lowPriorityUpdatesToDraw.poll();
-		while (lowPriorityUpdatesToDraw.size() > 0 && lowPriorityUpdatesToDraw.peek().updateType == update.updateType)
+		if (!incrementalUpdatesToDraw.isEmpty())
 		{
-			update.add(lowPriorityUpdatesToDraw.poll());
+			// Combine them all
+			MapUpdate update = incrementalUpdatesToDraw.poll();
+			while (incrementalUpdatesToDraw.size() > 0)
+			{
+				update.add(incrementalUpdatesToDraw.poll());
+			}
+			return update;
 		}
-		return update;
+
+		if (!lowPriorityUpdatesToDraw.isEmpty())
+		{
+			// Combine other types updates until we hit one that isn't
+			// the same type.
+			MapUpdate update = lowPriorityUpdatesToDraw.poll();
+			while (lowPriorityUpdatesToDraw.size() > 0 && lowPriorityUpdatesToDraw.peek().updateType == update.updateType)
+			{
+				update.add(lowPriorityUpdatesToDraw.poll());
+			}
+			return update;
+		}
+
+		return null;
 	}
 
 	private void initializeCenterEditsIfEmpty(MapEdits edits)
