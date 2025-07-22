@@ -53,7 +53,7 @@ import nortantis.util.Tuple2;
 @SuppressWarnings("serial")
 public class MapSettings implements Serializable
 {
-	public static final String currentVersion = "3.05";
+	public static final String currentVersion = "3.1";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
