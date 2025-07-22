@@ -727,7 +727,9 @@ public class ImageHelper
 	public static Image setAlphaFromMaskInRegion(Image image, Image alphaMask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (alphaMask.getType() != ImageType.Grayscale8Bit && alphaMask.getType() != ImageType.Binary)
+		{
 			throw new IllegalArgumentException("mask type must be ImageType.Grayscale or TYPE_BYTE_BINARY");
+		}
 
 		Image result = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
 		for (int y = 0; y < image.getHeight(); y++)
