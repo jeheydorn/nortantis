@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -20,7 +21,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -41,8 +41,7 @@ public class ToolsPanel extends JPanel
 {
 	EditorTool currentTool;
 	List<EditorTool> tools;
-	private JScrollPane toolsOptionsPanelContainer;
-	private JPanel currentToolOptionsPanel;
+	private JPanel toolOptionsPanelContainer;
 	JComboBox<String> zoomComboBox;
 	List<String> zoomLevels;
 	JComboBox<DisplayQuality> displayQualityComboBox;
@@ -56,6 +55,7 @@ public class ToolsPanel extends JPanel
 	MainWindow mainWindow;
 	MapUpdater updater;
 	private JPanel toolSelectPanel;
+	private CardLayout toolOptionsCardLayout;
 
 	public ToolsPanel(MainWindow mainWindow, MapEditingPanel mapEditingPanel, MapUpdater updater)
 	{
@@ -115,10 +115,15 @@ public class ToolsPanel extends JPanel
 
 		currentTool.setToggled(true);
 
-		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
-		toolsOptionsPanelContainer = new JScrollPane(currentToolOptionsPanel);
+		toolOptionsPanelContainer = new JPanel();
+		toolOptionsCardLayout = new CardLayout();
+		toolOptionsPanelContainer.setLayout(toolOptionsCardLayout);
+		for (EditorTool tool : tools)
+		{
+			toolOptionsPanelContainer.add(tool.getToolOptionsPane(), tool.getToolbarName());
+		}
 
-		add(toolsOptionsPanelContainer);
+		add(toolOptionsPanelContainer);
 		updateBordersThatHaveColors();
 
 		JPanel progressAndBottomPanel = new JPanel();
@@ -220,7 +225,7 @@ public class ToolsPanel extends JPanel
 		
 		toolOptionsPanelBorder = BorderFactory.createTitledBorder(new LineBorder(UIManager.getColor("controlShadow"), 1),
 				currentTool.getToolbarName() + " Options");
-		toolsOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
+		toolOptionsPanelContainer.setBorder(toolOptionsPanelBorder);
 	}
 
 	public void loadSettingsIntoGUI(MapSettings settings, boolean isUndoRedoOrAutomaticChange, boolean changeEffectsBackgroundImages,
@@ -275,10 +280,9 @@ public class ToolsPanel extends JPanel
 		// in MainWindow.createMapUpdater depends on it.
 		prevTool.onSwitchingAway();
 		toolOptionsPanelBorder.setTitle(currentTool.getToolbarName() + " Options");
-		currentToolOptionsPanel = currentTool.getToolOptionsPanel();
-		toolsOptionsPanelContainer.setViewportView(currentToolOptionsPanel);
-		toolsOptionsPanelContainer.revalidate();
-		toolsOptionsPanelContainer.repaint();
+		toolOptionsCardLayout.show(toolOptionsPanelContainer, currentTool.getToolbarName());
+		toolOptionsPanelContainer.revalidate();
+		toolOptionsPanelContainer.repaint();
 		currentTool.onSwitchingTo();
 
 		if (!updater.isMapBeingDrawn())

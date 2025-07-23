@@ -9,6 +9,7 @@ import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JToggleButton;
 
 import nortantis.MapSettings;
@@ -24,6 +25,7 @@ public abstract class EditorTool
 {
 	protected final MapEditingPanel mapEditingPanel;
 	private JPanel toolOptionsPanel;
+	private JScrollPane toolsOptionsPanelContainer;
 	protected MainWindow mainWindow;
 	private JToggleButton toggleButton;
 	protected Undoer undoer;
@@ -37,6 +39,8 @@ public abstract class EditorTool
 		this.toolsPanel = toolsPanel;
 		mapEditingPanel = parent.mapEditingPanel;
 		toolOptionsPanel = createToolOptionsPanel();
+		toolsOptionsPanelContainer = new JScrollPane(toolOptionsPanel);
+		toolsOptionsPanelContainer.setBorder(BorderFactory.createEmptyBorder());
 		undoer = parent.undoer;
 		this.updater = mapUpdater;
 	}
@@ -62,10 +66,15 @@ public abstract class EditorTool
 	public abstract void onSwitchingAway();
 
 	protected abstract JPanel createToolOptionsPanel();
-
+	
 	public JPanel getToolOptionsPanel()
 	{
 		return toolOptionsPanel;
+	}
+	
+	public JScrollPane getToolOptionsPane()
+	{
+		return toolsOptionsPanelContainer;
 	}
 
 	protected abstract void handleMouseClickOnMap(MouseEvent e);
