@@ -1464,18 +1464,18 @@ public class IconsTool extends EditorTool
 		}
 
 		FreeIcon lowest = null;
-		double lowestBottom = Double.NEGATIVE_INFINITY;
+		double lowestTop = Double.NEGATIVE_INFINITY;
 
 		for (FreeIcon icon : underMouse)
 		{
 			IconDrawTask task = updater.mapParts.iconDrawer.toIconDrawTask(icon);
 			if (task != null)
 			{
-				double bottom = task.createBounds().getBottom();
-				if (lowest == null || bottom > lowestBottom)
+				double top = task.createBounds().getTop();
+				if (lowest == null || top > lowestTop)
 				{
 					lowest = icon;
-					lowestBottom = bottom;
+					lowestTop = top;
 				}
 			}
 		}
