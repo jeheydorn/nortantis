@@ -508,13 +508,13 @@ public class MapCreator implements WarningLogger
 		if (settings.frayedBorder)
 		{
 			int blurLevel = (int) (settings.frayedBorderBlurLevel * sizeMultiplierRounded);
-			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
-					drawBoundsUpperLeftCornerAdjustedForBorder);
 			if (blurLevel > 0)
 			{
 				mapSnippet = ImageHelper.maskWithColorInRegion(mapSnippet, settings.frayedBorderColor, mapParts.frayedBorderBlur, true,
 						drawBoundsUpperLeftCornerAdjustedForBorder);
 			}
+			mapSnippet = ImageHelper.setAlphaFromMaskInRegion(mapSnippet, mapParts.frayedBorderMask, true,
+					drawBoundsUpperLeftCornerAdjustedForBorder);
 		}
 
 		// Update the snippet in the main map.
