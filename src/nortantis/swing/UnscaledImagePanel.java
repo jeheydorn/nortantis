@@ -70,6 +70,25 @@ public class UnscaledImagePanel extends JPanel
 			return super.getPreferredSize();
 		}
 
+		// Calculate size based on original image dimensions and current OS scaling factor. This is the "unscaled" size in terms of how
+		// Swing layout managers should perceive it.
 		return new Dimension((int) (image.getWidth() * (1.0 / osScale)), (int) (image.getHeight() * (1.0 / osScale)));
+	}
+
+	@Override
+	public Dimension getMinimumSize()
+	{
+		// For an image panel that you want to display at a fixed "unscaled" size,
+		// the minimum size can often be the same as the preferred size.
+		return getPreferredSize();
+	}
+
+
+	@Override
+	public Dimension getMaximumSize()
+	{
+		// Similarly, the maximum size can also be the same as the preferred size
+		// if you don't want the component to grow beyond its intended display size.
+		return getPreferredSize();
 	}
 }

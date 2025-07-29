@@ -103,9 +103,9 @@ public class MapSettings implements Serializable
 	public boolean drawGrunge;
 	/**
 	 * This setting actually means fractal generated as opposed to generated from texture.
+	 * It is mutually exclusive with generateBackgroundFromTexture
 	 */
-	public boolean generateBackground; // This means generate fractal background. It is mutually exclusive with
-										// generateBackgroundFromTexture.
+	public boolean generateBackground;
 	public boolean generateBackgroundFromTexture;
 	public boolean solidColorBackground;
 	public boolean colorizeOcean; // For backgrounds generated from a texture.
