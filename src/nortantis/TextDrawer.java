@@ -88,7 +88,7 @@ public class TextDrawer
 			// This makes it so that any edits done to the settings will
 			// automatically be reflected
 			// in the text drawer. Also, it is necessary because the TextDrawer
-			// adds the Areas to the
+			// adds the bounds to the
 			// map texts, which are needed to make them clickable to edit them.
 			mapTexts = settings.edits.text;
 		}
@@ -1139,18 +1139,8 @@ public class TextDrawer
 				}
 			}
 
-			text.line1Area = area1;
-			text.line2Area = area2;
-			// Store the bounds centered at the origin, resolution invariant, so that the editor can use the bounds to draw the text boxes
-			// of text being moved
-			// before the text is redrawn.
-			text.line1Bounds = new Rectangle((int) ((bounds1.x - pivot.x) / settings.resolution),
-					(int) ((bounds1.y - pivot.y) / settings.resolution), bounds1.width / settings.resolution,
-					bounds1.height / settings.resolution);
-			text.line2Bounds = bounds2 == null ? null
-					: new Rectangle((int) ((bounds2.x - pivot.x) / settings.resolution),
-							(int) ((bounds2.y - pivot.y) / settings.resolution), bounds2.width / settings.resolution,
-							bounds2.height / settings.resolution);
+			text.line1Bounds = area1;
+			text.line2Bounds = area2;
 			if (riseOffset != 0)
 			{
 				// Update the text location with the offset. This only happens when generating new text, not when making changes in the
@@ -1265,10 +1255,10 @@ public class TextDrawer
 	}
 
 	/**
-	 * Sets the bounds and areas of any texts for which those are null. This is needed because the editor allows making changes when a map
-	 * is loaded from a file before it draws the first time. Text bounds and areas aren't set until the text is drawn the first time, and
+	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map
+	 * is loaded from a file before it draws the first time. Text bounds aren't set until the text is drawn the first time, and
 	 * changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function
-	 * must be called each draw to make sure null bounds and areas don't get perpetuated from those undo points.
+	 * must be called each draw to make sure null bounds don't get perpetuated from those undo points.
 	 */
 	public void updateTextBoundsIfNeeded(WorldGraph graph)
 	{
@@ -1379,17 +1369,17 @@ public class TextDrawer
 			// Ignore empty text and ignore edited text.
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Area != null)
+				if (mp.line1Bounds != null)
 				{
-					if (doAreasIntersect(bounds, mp.line1Area))
+					if (doAreasIntersect(bounds, mp.line1Bounds))
 					{
 						return true;
 					}
 				}
 
-				if (mp.line2Area != null)
+				if (mp.line2Bounds != null)
 				{
-					if (doAreasIntersect(bounds, mp.line2Area))
+					if (doAreasIntersect(bounds, mp.line2Bounds))
 					{
 						return true;
 					}

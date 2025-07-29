@@ -51,6 +51,18 @@ public class RotatedRectangle
 		this(rect.x, rect.y, rect.width, rect.height, 0, rect.x + rect.width / 2f, rect.y + rect.height / 2f);
 	}
 
+	public RotatedRectangle translate(Point t)
+	{
+		// To translate a rotated rectangle, we need to translate its original position (x, y) and its pivot point (pivotX, pivotY) by the
+		// given translation vector (p.x, p.y). The width, height, and angle remain the same.
+		return new RotatedRectangle(this.x + t.x, this.y + t.y, this.width, this.height, this.angle, this.pivotX + t.x, this.pivotY + t.y);
+	}
+	
+	public RotatedRectangle rotateTo(double angle)
+	{
+		return new RotatedRectangle(x, y, width, height, angle, pivotX, pivotY);
+	}
+
 	public boolean contains(Point point)
 	{
 		return contains(point.x, point.y);
@@ -151,10 +163,7 @@ public class RotatedRectangle
 	// https://stackoverflow.com/questions/10962379/how-to-check-intersection-between-2-rotated-rectangles#:~:text=For%20each%20edge%20in%20both,found%2C%20you%20have%20an%20intersection.
 	private boolean isPolygonsIntersecting(Polygon a, Polygon b)
 	{
-		for (Polygon polygon : new Polygon[]
-		{
-				a, b
-		})
+		for (Polygon polygon : new Polygon[] { a, b })
 		{
 			for (int i1 = 0; i1 < polygon.points.size(); i1++)
 			{

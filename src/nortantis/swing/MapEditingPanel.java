@@ -62,9 +62,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private double zoom;
 	private double resolution;
 	private int borderWidth;
-	private Point textBoxLocation;
-	private Rectangle textBoxBoundsLine1;
-	private double textBoxAngle;
+	private RotatedRectangle textBoxBoundsLine1;
 	private nortantis.geom.Rectangle iconToEditBounds;
 	private boolean isIconToEditInAValidPosition;
 	private BufferedImage rotateIconScaled;
@@ -75,7 +73,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private BufferedImage redMoveIconScaled;
 	private BufferedImage redScaleIconScaled;
 	private Area moveToolArea;
-	private Rectangle textBoxBoundsLine2;
+	private RotatedRectangle textBoxBoundsLine2;
 	private Set<Area> highlightedAreas;
 	private Set<RotatedRectangle> processingAreas;
 	private Set<String> artPacksToHighlight;
@@ -139,29 +137,22 @@ public class MapEditingPanel extends UnscaledImagePanel
 		polylinesToHighlight.clear();
 	}
 
-	public void setTextBoxToDraw(nortantis.geom.Point location, nortantis.geom.Rectangle line1Bounds, nortantis.geom.Rectangle line2Bounds,
-			double angle)
+	public void setTextBoxToDraw(nortantis.geom.RotatedRectangle line1Bounds, nortantis.geom.RotatedRectangle line2Bounds)
 	{
-		this.textBoxLocation = location == null ? null : new nortantis.geom.Point(location);
-		this.textBoxBoundsLine1 = line1Bounds == null ? null : AwtFactory.toAwtRectangle(line1Bounds.scaleAboutOrigin(resolution));
-		this.textBoxBoundsLine2 = line2Bounds == null ? null : AwtFactory.toAwtRectangle(line2Bounds.scaleAboutOrigin(resolution));
-		this.textBoxAngle = angle;
+		this.textBoxBoundsLine1 = line1Bounds;
+		this.textBoxBoundsLine2 = line2Bounds;
 	}
 
 	public void setTextBoxToDraw(MapText text)
 	{
-		this.textBoxLocation = text.location == null ? null : new nortantis.geom.Point(text.location);
-		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : AwtFactory.toAwtRectangle(text.line1Bounds.scaleAboutOrigin(resolution));
-		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : AwtFactory.toAwtRectangle(text.line2Bounds.scaleAboutOrigin(resolution));
-		this.textBoxAngle = text.angle;
+		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : text.line1Bounds;
+		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : text.line2Bounds;
 	}
 
 	public void clearTextBox()
 	{
-		this.textBoxLocation = null;
 		this.textBoxBoundsLine1 = null;
 		this.textBoxBoundsLine2 = null;
-		this.textBoxAngle = 0.0;
 	}
 
 	public void showIconEditToolsAt(FreeIcon icon, IconEditToolsMode toolsLocation, boolean useLargeIcons)
@@ -202,14 +193,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedAreas.clear();
 		for (MapText text : texts)
 		{
-			if (text.line1Area != null)
+			if (text.line1Bounds != null)
 			{
-				highlightedAreas.add(AwtFactory.toAwtArea(text.line1Area));
+				highlightedAreas.add(AwtFactory.toAwtArea(text.line1Bounds));
 			}
 
-			if (text.line2Area != null)
+			if (text.line2Bounds != null)
 			{
-				highlightedAreas.add(AwtFactory.toAwtArea(text.line2Area));
+				highlightedAreas.add(AwtFactory.toAwtArea(text.line2Bounds));
 			}
 		}
 	}
@@ -243,14 +234,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		for (MapText text : texts)
 		{
-			if (text.line1Area != null)
+			if (text.line1Bounds != null)
 			{
-				processingAreas.add(text.line1Area);
+				processingAreas.add(text.line1Bounds);
 			}
 
-			if (text.line2Area != null)
+			if (text.line2Bounds != null)
 			{
-				processingAreas.add(text.line2Area);
+				processingAreas.add(text.line2Bounds);
 			}
 		}
 	}
@@ -543,37 +534,33 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setColor(highlightEditColor);
 		AffineTransform originalTransformCopy = g2.getTransform();
 
-		double centerX = textBoxLocation.x * resolution;
-		double centerY = textBoxLocation.y * resolution;
-
-		// Rotate the area
-		g2.rotate(textBoxAngle, centerX, centerY);
-
+		double centerX = textBoxBoundsLine1.pivotX;
+		double centerY = textBoxBoundsLine1.pivotY;
+		
 		int padding = (int) (9 * resolution);
-		g2.drawRect((int) (textBoxBoundsLine1.x + centerX), (int) (textBoxBoundsLine1.y + centerY), textBoxBoundsLine1.width,
-				textBoxBoundsLine1.height);
+		g2.draw(AwtFactory.toAwtArea(textBoxBoundsLine1));
 		if (textBoxBoundsLine2 != null)
 		{
-			g2.drawRect((int) (textBoxBoundsLine2.x + centerX), (int) (textBoxBoundsLine2.y + centerY), textBoxBoundsLine2.width,
-					textBoxBoundsLine2.height);
+			g2.draw(AwtFactory.toAwtArea(textBoxBoundsLine2));
 		}
-
+		
+		g2.rotate(textBoxBoundsLine1.angle, centerX, centerY);
 		// Place the image for the rotation tool.
 		{
 			int x;
 			if (textBoxBoundsLine2 == null)
 			{
-				x = (int) (textBoxBoundsLine1.x + centerX) + textBoxBoundsLine1.width + padding;
+				x = (int) ((textBoxBoundsLine1.x) + textBoxBoundsLine1.width + padding);
 			}
 			else
 			{
-				x = Math.max((int) (textBoxBoundsLine1.x + centerX) + textBoxBoundsLine1.width,
-						(int) (textBoxBoundsLine2.x + centerX) + textBoxBoundsLine2.width) + padding;
+				x = Math.max((int) (textBoxBoundsLine1.x + textBoxBoundsLine1.width),
+						(int) (textBoxBoundsLine2.x + textBoxBoundsLine2.width)) + padding;
 			}
 			int y;
 			if (textBoxBoundsLine2 == null)
 			{
-				y = (int) (textBoxBoundsLine1.y + centerY) + (textBoxBoundsLine1.height / 2) - (rotateIconScaled.getHeight() / 2);
+				y = (int) (textBoxBoundsLine1.y + (textBoxBoundsLine1.height / 2)) - (rotateIconScaled.getHeight() / 2);
 			}
 			else
 			{
@@ -586,9 +573,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			int x = (int) (textBoxBoundsLine1.x + centerX) + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
+			int x = (int) (textBoxBoundsLine1.x) + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
 					- (int) (Math.round(moveIconScaled.getWidth() / 2.0));
-			int y = (int) (textBoxBoundsLine1.y + centerY) - (moveIconScaled.getHeight()) - padding;
+			int y = (int) (textBoxBoundsLine1.y) - (moveIconScaled.getHeight()) - padding;
 			g2.drawImage(moveIconScaled, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaled.getWidth(), moveIconScaled.getHeight()));
 			moveToolArea.transform(g2.getTransform());

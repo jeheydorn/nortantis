@@ -109,15 +109,15 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Area != null)
+				if (mp.line1Bounds != null)
 				{
-					if (mp.line1Area.contains(point))
+					if (mp.line1Bounds.contains(point))
 						return mp;
 				}
 
-				if (mp.line2Area != null)
+				if (mp.line2Bounds != null)
 				{
-					if (mp.line2Area.contains(point))
+					if (mp.line2Bounds.contains(point))
 						return mp;
 				}
 			}
@@ -133,8 +133,8 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Area != null && mp.line1Area.overlapsCircle(point, brushDiameter / 2.0)
-						|| mp.line2Area != null && mp.line2Area.overlapsCircle(point, brushDiameter / 2.0))
+				if (mp.line1Bounds != null && mp.line1Bounds.overlapsCircle(point, brushDiameter / 2.0)
+						|| mp.line2Bounds != null && mp.line2Bounds.overlapsCircle(point, brushDiameter / 2.0))
 				{
 					result.add(mp);
 				}

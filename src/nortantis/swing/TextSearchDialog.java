@@ -187,14 +187,14 @@ public class TextSearchDialog extends JDialog
 			}
 			textTool.changeToEditModeAndSelectText(searchResult, false);
 
-			if (searchResult.line1Area != null)
+			if (searchResult.line1Bounds != null)
 			{
 				// Scroll to make the selected text visible
 
-				Rectangle scrollTo = searchResult.line1Area.getBounds();
-				if (searchResult.line2Area != null)
+				Rectangle scrollTo = searchResult.line1Bounds.getBounds();
+				if (searchResult.line2Bounds != null)
 				{
-					scrollTo = scrollTo.add(searchResult.line2Area.getBounds());
+					scrollTo = scrollTo.add(searchResult.line2Bounds.getBounds());
 				}
 				double borderWidth = mainWindow.mapEditingPanel.getBorderWidth();
 				scrollTo = scrollTo.translate(borderWidth, borderWidth);

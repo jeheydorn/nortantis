@@ -212,7 +212,7 @@ public class TextTool extends EditorTool
 					MapText before = lastSelected.deepCopy();
 					lastSelected.angle = 0;
 					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
-					mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, 0);
+					mapEditingPanel.setTextBoxToDraw(lastSelected.line1Bounds, lastSelected.line2Bounds);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
 			}
@@ -476,24 +476,24 @@ public class TextTool extends EditorTool
 		mapEditingPanel.repaint();
 		if (mapTextsSelected.size() > 0)
 		{
-			Set<RotatedRectangle> areasToRemove = new HashSet<>();
+			Set<RotatedRectangle> boundsToRemove = new HashSet<>();
 			for (MapText text : mapTextsSelected)
 			{
-				if (text.line1Area != null)
+				if (text.line1Bounds != null)
 				{
-					areasToRemove.add(text.line1Area);
+					boundsToRemove.add(text.line1Bounds);
 				}
 
-				if (text.line2Area != null)
+				if (text.line2Bounds != null)
 				{
-					areasToRemove.add(text.line2Area);
+					boundsToRemove.add(text.line2Bounds);
 				}
 			}
 
 			triggerPurgeEmptyText();
 			updater.createAndShowMapIncrementalUsingText(before, () ->
 			{
-				mapEditingPanel.removeProcessingAreas(areasToRemove);
+				mapEditingPanel.removeProcessingAreas(boundsToRemove);
 				mapEditingPanel.repaint();
 			});
 		}
@@ -518,10 +518,9 @@ public class TextTool extends EditorTool
 				int deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
-				nortantis.geom.Point location = new nortantis.geom.Point(
-						lastSelected.location.x + (deltaX / mainWindow.displayQualityScale),
-						lastSelected.location.y + (deltaY / mainWindow.displayQualityScale));
-				mapEditingPanel.setTextBoxToDraw(location, lastSelected.line1Bounds, lastSelected.line2Bounds, lastSelected.angle);
+				RotatedRectangle line1 = lastSelected.line1Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
+				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
+				mapEditingPanel.setTextBoxToDraw(line1, line2);
 				mapEditingPanel.repaint();
 			}
 			else if (isRotating)
@@ -531,7 +530,9 @@ public class TextTool extends EditorTool
 				double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
 				double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
 				double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX);
-				mapEditingPanel.setTextBoxToDraw(lastSelected.location, lastSelected.line1Bounds, lastSelected.line2Bounds, angle);
+				RotatedRectangle line1 = lastSelected.line1Bounds.rotateTo(angle);
+				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.rotateTo(angle);
+				mapEditingPanel.setTextBoxToDraw(line1, line2);
 				mapEditingPanel.repaint();
 			}
 		}
@@ -621,6 +622,8 @@ public class TextTool extends EditorTool
 
 	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
+		mapEditingPanel.clearHighlightedAreas();
+		
 		if (lastSelected != null && !(editTextField.getText().trim().equals(lastSelected.value)
 				&& textTypeComboBox.getSelectedItem().equals(lastSelected.type)
 				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())
@@ -771,6 +774,11 @@ public class TextTool extends EditorTool
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
 			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected, true);
 		}
+		else if (editButton.isSelected() && lastSelected == null)
+		{
+			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
+			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected, false);
+		}
 		else
 		{
 			mapEditingPanel.hideBrush();
@@ -781,7 +789,7 @@ public class TextTool extends EditorTool
 	private List<MapText> getMapTextsSelectedByCurrentBrushSizeAndShowBrush(java.awt.Point mouseLocation)
 	{
 		List<MapText> mapTextsSelected = null;
-		int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
+		int brushDiameter = editButton.isSelected() ? 1 : brushSizes.get(brushSizeComboBox.getSelectedIndex());
 		if (brushDiameter > 1)
 		{
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
