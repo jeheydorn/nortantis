@@ -46,9 +46,11 @@ public class MapText implements Serializable
 
 	public Color colorOverride;
 	public Color boldBackgroundColorOverride;
+	
+	public double curvature;
 
 	public MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds,
-			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride)
+			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature)
 	{
 		this.value = text;
 		this.line1Bounds = line1Bounds;
@@ -59,22 +61,15 @@ public class MapText implements Serializable
 		this.lineBreak = lineBreak;
 		this.colorOverride = colorOverride;
 		this.boldBackgroundColorOverride = boldBackgroundColorOverride;
+		this.curvature = curvature;
 	}
 
 	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, Color colorOverride,
-			Color boldBackgroundColorOverride)
+			Color boldBackgroundColorOverride, double curvature)
 	{
-		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride);
+		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature);
 	}
 
-	/**
-	 * See equals(...) for a list of fields to exclude.
-	 */
-	@Override
-	public int hashCode()
-	{
-		return Objects.hash(angle, location, type, value, lineBreak, colorOverride, boldBackgroundColorOverride);
-	}
 
 	public MapText deepCopy()
 	{
@@ -88,7 +83,16 @@ public class MapText implements Serializable
 		Color colorOverride = this.colorOverride;
 		Color boldBackgroundColorOverride = this.boldBackgroundColorOverride;
 
-		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride);
+		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature);
+	}
+
+	/**
+	 * See equals(...) for a list of fields to exclude.
+	 */
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(angle, boldBackgroundColorOverride, colorOverride, curvature, lineBreak, location, type, value);
 	}
 
 	/**
@@ -98,23 +102,31 @@ public class MapText implements Serializable
 	public boolean equals(Object obj)
 	{
 		if (this == obj)
+		{
 			return true;
+		}
 		if (obj == null)
+		{
 			return false;
+		}
 		if (getClass() != obj.getClass())
+		{
 			return false;
+		}
 		MapText other = (MapText) obj;
-		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle) && Objects.equals(location, other.location)
-				&& type == other.type && Objects.equals(value, other.value) && lineBreak == other.lineBreak
+		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle)
+				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride)
 				&& Objects.equals(colorOverride, other.colorOverride)
-				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride);
+				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature) && lineBreak == other.lineBreak
+				&& Objects.equals(location, other.location) && type == other.type && Objects.equals(value, other.value);
 	}
 
 	@Override
 	public String toString()
 	{
 		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location=" + location + ", lineBreak=" + lineBreak
-				+ ", colorOverride=" + colorOverride + ", boldBackgroundColorOverride=" + boldBackgroundColorOverride + "]";
+				+ ", colorOverride=" + colorOverride + ", boldBackgroundColorOverride=" + boldBackgroundColorOverride + ", curvature="
+				+ curvature + "]";
 	}
-
+	
 }

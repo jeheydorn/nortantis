@@ -1,5 +1,6 @@
 package nortantis.swing;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.util.Arrays;
 import java.util.function.Function;
@@ -18,7 +19,7 @@ public class SliderWithDisplayedValue
 	{
 		this(slider, null, null);
 	}
-	
+
 	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener)
 	{
 		this(slider, valueFormatter, changeListener, 24);
@@ -60,5 +61,12 @@ public class SliderWithDisplayedValue
 	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip)
 	{
 		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay));
+	}
+
+	public RowHider addToOrganizer(GridBagOrganizer organizer, String label, String toolTip, Component additionalComponent,
+			int componentLeftPadding, int horizontalSpaceBetweenComponents)
+	{
+		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay, additionalComponent),
+				componentLeftPadding, horizontalSpaceBetweenComponents);
 	}
 }

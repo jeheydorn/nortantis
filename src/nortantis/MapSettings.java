@@ -489,6 +489,7 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("boldBackgroundColorOverride", colorToString(text.boldBackgroundColorOverride));
 			}
+			mpObj.put("curvature", text.curvature);
 			list.add(mpObj);
 		}
 		return list;
@@ -1321,7 +1322,8 @@ public class MapSettings implements Serializable
 			Color boldBackgroundColorOverride = jsonObj.containsKey("boldBackgroundColorOverride")
 					? parseColor((String) jsonObj.get("boldBackgroundColorOverride"))
 					: null;
-			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride);
+			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
+			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature);
 			result.add(mp);
 		}
 

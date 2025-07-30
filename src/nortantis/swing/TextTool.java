@@ -26,11 +26,14 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import nortantis.LineBreak;
 import nortantis.MapSettings;
 import nortantis.MapText;
+import nortantis.SettingsGenerator;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
@@ -71,6 +74,10 @@ public class TextTool extends EditorTool
 	private JPanel boldBackgroundColorOverrideDisplay;
 	private RowHider boldBackgroundColorOverrideHider;
 	private boolean areBoldBackgroundsVisible;
+	private JSlider curvatureSlider;
+	private RowHider curvatureSliderHider;
+	private RowHider editToolsSeparatorHider;
+	private final int curvatureSliderDivider = 100;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -200,6 +207,8 @@ public class TextTool extends EditorTool
 			}
 		});
 
+		editToolsSeparatorHider = organizer.addSeperator();
+
 		JButton clearRotationButton = new JButton("Rotate to Horizontal");
 		clearRotationButton.setToolTipText("Set the rotation angle of the selected text to 0 degrees.");
 		clearRotationButton.addActionListener(new ActionListener()
@@ -218,6 +227,8 @@ public class TextTool extends EditorTool
 			}
 		});
 		clearRotationButtonHider = organizer.addLeftAlignedComponents(Arrays.asList(clearRotationButton));
+
+		editToolsSeparatorHider.add(organizer.addSeperator());
 
 		useDefaultColorCheckbox = new JCheckBox("Use default color");
 		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");
@@ -292,6 +303,39 @@ public class TextTool extends EditorTool
 				Arrays.asList(boldBackgroundColorOverrideDisplay, buttonChooseBoldBackgroundColorOverride),
 				SwingHelper.colorPickerLeftPadding);
 
+		editToolsSeparatorHider.add(organizer.addSeperator());
+
+		{
+			curvatureSlider = new JSlider();
+			curvatureSlider.setPaintLabels(false);
+			curvatureSlider.setMinimum(-curvatureSliderDivider);
+			curvatureSlider.setMaximum(curvatureSliderDivider);
+			curvatureSlider.setValue(0);
+			SwingHelper.setSliderWidthForSidePanel(curvatureSlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(curvatureSlider,
+					(value) -> String.format("%.2f", value / ((double) curvatureSliderDivider)), () ->
+					{
+						if (lastSelected != null)
+						{
+							MapText before = lastSelected.deepCopy();
+							lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
+							undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+							mapEditingPanel.setTextBoxToDraw(lastSelected.line1Bounds, lastSelected.line2Bounds);
+							updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+						}
+					}, 34);
+			JButton clearCurvatureButton = new JButton("x");
+			clearCurvatureButton.setToolTipText("Clear curvature");
+			SwingHelper.addListener(clearCurvatureButton, () ->
+			{
+				curvatureSlider.setValue(0);
+			});
+
+			curvatureSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text",
+					clearCurvatureButton, 0, 0);
+		}
+
+
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
@@ -305,7 +349,7 @@ public class TextTool extends EditorTool
 
 		editButton.doClick();
 
-		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.6);
+		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.64);
 		organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
 	}
@@ -341,6 +385,8 @@ public class TextTool extends EditorTool
 		editTextFieldHider.setVisible(false);
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
+		curvatureSliderHider.setVisible(false);
+		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
@@ -519,7 +565,8 @@ public class TextTool extends EditorTool
 				int deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
 
 				RotatedRectangle line1 = lastSelected.line1Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
-				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
+				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null
+						: lastSelected.line2Bounds.translate(new nortantis.geom.Point(deltaX, deltaY));
 				mapEditingPanel.setTextBoxToDraw(line1, line2);
 				mapEditingPanel.repaint();
 			}
@@ -623,7 +670,7 @@ public class TextTool extends EditorTool
 	private void handleSelectingTextToEdit(MapText selectedText, boolean grabFocus)
 	{
 		mapEditingPanel.clearHighlightedAreas();
-		
+
 		if (lastSelected != null && !(editTextField.getText().trim().equals(lastSelected.value)
 				&& textTypeComboBox.getSelectedItem().equals(lastSelected.type)
 				&& lastSelected.lineBreak.equals(lineBreakComboBox.getSelectedItem())
@@ -639,7 +686,8 @@ public class TextTool extends EditorTool
 			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideHider.isVisible()
 					? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground())
 					: null;
-
+			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
+			
 			undoer.setUndoPoint(UpdateType.Incremental, this);
 			if (!Objects.equals(before, selectedText))
 			{
@@ -671,6 +719,8 @@ public class TextTool extends EditorTool
 			lineBreakComboBox.setSelectedItem(selectedText.lineBreak);
 			lineBreakHider.setVisible(true);
 			useDefaultColorCheckboxHider.setVisible(true);
+			curvatureSliderHider.setVisible(true);
+			editToolsSeparatorHider.setVisible(true);
 			useDefaultColorCheckbox.setSelected(selectedText.colorOverride == null);
 			colorOverrideHider.setVisible(selectedText.colorOverride != null);
 			if (selectedText.colorOverride != null && selectedText.boldBackgroundColorOverride == null)
@@ -686,6 +736,7 @@ public class TextTool extends EditorTool
 			{
 				boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.boldBackgroundColorOverride));
 			}
+			curvatureSlider.setValue((int)(selectedText.curvature * curvatureSliderDivider));
 		}
 		mapEditingPanel.repaint();
 
@@ -701,6 +752,8 @@ public class TextTool extends EditorTool
 		textTypeHider.setVisible(false);
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
+		curvatureSliderHider.setVisible(false);
+		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);
 	}

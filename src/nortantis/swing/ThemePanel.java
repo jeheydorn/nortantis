@@ -756,9 +756,9 @@ public class ThemePanel extends JTabbedPane
 		{
 			coastlineWidthSlider = new JSlider();
 			coastlineWidthSlider.setPaintLabels(false);
-			coastlineWidthSlider.setValue(10);
-			coastlineWidthSlider.setMaximum(100);
 			coastlineWidthSlider.setMinimum(10);
+			coastlineWidthSlider.setMaximum(100);
+			coastlineWidthSlider.setValue(10);
 			createMapChangeListenerForTerrainChange(coastlineWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(coastlineWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastlineWidthSlider,

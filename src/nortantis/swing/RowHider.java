@@ -12,7 +12,8 @@ public class RowHider
 
 	public RowHider(Component... components)
 	{
-		this.components = Arrays.asList(components);
+		this.components = new ArrayList<>(components.length);
+		this.components.addAll(Arrays.asList(components));
 		isVisible = true;
 	}
 
@@ -21,6 +22,11 @@ public class RowHider
 		this.components = new ArrayList<>(other1.components);
 		this.components.addAll(other2.components);
 		isVisible = true;
+	}
+	
+	public void add(RowHider other)
+	{
+		components.addAll(other.components);
 	}
 
 	public void setVisible(boolean visible)

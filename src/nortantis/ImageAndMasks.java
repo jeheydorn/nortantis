@@ -15,7 +15,7 @@ import nortantis.util.Range;
 
 public class ImageAndMasks
 {
-	private static final int opaqueThreshold = 10;
+	private static final int opaqueThreshold = 60; // TODO Decide what this should be
 	public Image image;
 	/**
 	 * Used to linearly combine pixel values pulled from the background image without other icons vs the the map being drawn so far.

@@ -315,10 +315,11 @@ public class GridBagOrganizer
 		return new RowHider(labelHider, compHider);
 	}
 
-	public void addSeperator()
+	public RowHider addSeperator()
 	{
 		final int minHeight = 2;
 
+		JSeparator sep1;
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -327,11 +328,12 @@ public class GridBagOrganizer
 			c.weightx = 0.5;
 			c.anchor = GridBagConstraints.LINE_START;
 			c.insets = new Insets(0, 5, 0, 0);
-			JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
-			sep.setMinimumSize(new Dimension(0, minHeight));
-			panel.add(sep, c);
+			sep1 = new JSeparator(JSeparator.HORIZONTAL);
+			sep1.setMinimumSize(new Dimension(0, minHeight));
+			panel.add(sep1, c);
 		}
 
+		JSeparator sep2;
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -340,12 +342,13 @@ public class GridBagOrganizer
 			c.weightx = 0.5;
 			c.anchor = GridBagConstraints.LINE_START;
 			c.insets = new Insets(0, 0, 0, 5);
-			JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
-			sep.setMinimumSize(new Dimension(0, minHeight));
-			panel.add(sep, c);
+			sep2 = new JSeparator(JSeparator.HORIZONTAL);
+			sep2.setMinimumSize(new Dimension(0, minHeight));
+			panel.add(sep2, c);
 		}
 
 		curY++;
+		return new RowHider(sep1, sep2);
 	}
 
 	public Tuple2<JLabel, JButton> addFontChooser(String labelText, int height, Runnable okAction)
