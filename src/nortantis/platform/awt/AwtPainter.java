@@ -58,6 +58,12 @@ class AwtPainter extends Painter
 	{
 		g.rotate(angle, pivotX, pivotY);
 	}
+	
+	@Override
+	public void rotate(double angle)
+	{
+		g.rotate(angle);
+	}
 
 	@Override
 	public void translate(double x, double y)
@@ -70,7 +76,7 @@ class AwtPainter extends Painter
 	{
 		g.setFont(((AwtFont) font).font);
 	}
-
+	
 	@Override
 	public void drawString(String string, double x, double y)
 	{
@@ -212,6 +218,12 @@ class AwtPainter extends Painter
 	public int stringWidth(String string)
 	{
 		return g.getFontMetrics().stringWidth(string);
+	}
+	
+	@Override
+	public int charWidth(char c)
+	{
+		return g.getFontMetrics().charWidth(c);
 	}
 
 	@Override

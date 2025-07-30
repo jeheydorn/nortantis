@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -213,6 +214,15 @@ public class AwtFactory extends PlatformFactory
 			return null;
 		}
 		return ((AwtImage) image).image;
+	}
+	
+	public static Graphics2D unwrap(Painter p)
+	{
+		if (p == null)
+		{
+			return null;
+		}
+		return ((AwtPainter) p).g;
 	}
 
 	public static Image wrap(BufferedImage image)

@@ -27,13 +27,16 @@ public abstract class Painter
 	{
 		rotate(angle, pivot.x, pivot.y);
 	}
-
+	
+	// TODO Remove this if I don't use it
+	public abstract void rotate(double angle);
+	
 	public abstract void rotate(double angle, double pivotX, double pivotY);
 
 	public abstract void translate(double x, double y);
 
 	public abstract void setFont(Font font);
-
+	
 	public abstract void drawString(String string, double x, double y);
 
 	public abstract void setTransform(Transform transform);
@@ -115,6 +118,8 @@ public abstract class Painter
 	public abstract void fillRect(int x, int y, int width, int height);
 
 	public abstract int stringWidth(String string);
+	
+	public abstract int charWidth(char c);
 
 	public abstract int getFontAscent();
 

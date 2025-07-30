@@ -781,8 +781,7 @@ public class TextDrawer
 		return getBackgroundBlendingKernelSize(textSize);
 	}
 
-	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double angle, Point pivot,
-			Color boldBackgroundColorOverride)
+	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, Color boldBackgroundColorOverride)
 	{
 		if (name.length() == 0)
 			return;
@@ -795,21 +794,87 @@ public class TextDrawer
 		FontStyle style = original.isItalic() ? FontStyle.BoldItalic : FontStyle.Bold;
 		Font background = p.getFont().deriveFont(style, p.getFont().getSize());
 
-		Point curLocNotRotated = new Point(textStart);
+		Point curLoc = new Point(textStart);
 		for (int i : new Range(name.length()))
 		{
 			p.setFont(background);
 			p.setColor(boldBackgroundColorOverride != null ? boldBackgroundColorOverride : settings.boldBackgroundColor);
-			p.drawString("" + name.charAt(i), curLocNotRotated.x, curLocNotRotated.y);
+			p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
 
 			p.setFont(original);
 			p.setColor(originalColor);
-			p.drawString("" + name.charAt(i), curLocNotRotated.x, curLocNotRotated.y);
+			p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
 
-			int charWidth = p.stringWidth("" + name.charAt(i));
-			curLocNotRotated = new Point(curLocNotRotated.x + charWidth, curLocNotRotated.y);
+			int charWidth = p.charWidth(name.charAt(i));
+			curLoc = new Point(curLoc.x + charWidth, curLoc.y);
 		}
 	}
+
+	/**
+	 * Draws a curved string.
+	 * 
+	 * @param g
+	 *            Context for drawing.
+	 * @param text
+	 *            Text to draw
+	 * @param textStart
+	 *            location to start drawing the text at (before applying curvature)
+	 * @param curvature
+	 *            A value between -1 (for curved 90 degrees down at the edges) and 1 (for curved 90 degrees up at the edges).
+	 */
+	private void drawStringCurved(Painter p, String text, Point textStart, double curvature)
+	{
+		if (text == null || text.isEmpty())
+			return;
+
+		if (Math.abs(curvature) <= 0.001)
+		{
+			// Special case
+			p.drawString(text, textStart.x, textStart.y);
+			return;
+		}
+
+		Transform orig = p.getTransform();
+		try
+		{
+			// TODO Handle positive curvature
+
+			double totalWidth = p.stringWidth(text);
+
+			Point textCenter = textStart.add(new Point(totalWidth / 2.0, 0));
+
+			// Map [-1,1] to [-π/2, π/2]
+			double angleRange = Math.abs(curvature * (Math.PI / 2.0));
+
+			// Find circle radius and center.
+			double radius = (totalWidth / 2.0) / angleRange;
+			Point circleCenter = textCenter.add(new Point(0.0, radius));
+
+			double startAngle = -angleRange;
+			double widthSoFar = 0.0;
+
+			for (int i = 0; i < text.length(); i++)
+			{
+				char c = text.charAt(i);
+				double cWidth = p.charWidth(c);
+				// Add cWidth/2 and then add it back when placing the character because the character should rotate at it's center, not at
+				// the start of its baseline.
+				double theta = startAngle + ((widthSoFar + cWidth / 2.0) / totalWidth) * (angleRange * 2.0);
+
+				p.rotate(theta, circleCenter);
+				p.drawString(c + "", textCenter.x - (cWidth / 2.0), textCenter.y);
+				p.setTransform(orig);
+
+				widthSoFar += p.charWidth(c);
+			}
+
+		}
+		finally
+		{
+			p.setTransform(orig);
+		}
+	}
+
 
 	/**
 	 * 
@@ -1167,7 +1232,9 @@ public class TextDrawer
 
 				if (boldBackground)
 				{
-					drawStringWithBoldBackground(p, line1, textStartLine1, text.angle, pivot, text.boldBackgroundColorOverride);
+					// TODO integrate properly
+					//drawStringCurved(p, line1, textStartLine1, -1.0);
+					drawStringWithBoldBackground(p, line1, textStartLine1, text.boldBackgroundColorOverride);
 				}
 				else
 				{
@@ -1178,7 +1245,7 @@ public class TextDrawer
 				{
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(p, line2, textStartLine2, text.angle, pivot, text.boldBackgroundColorOverride);
+						drawStringWithBoldBackground(p, line2, textStartLine2, text.boldBackgroundColorOverride);
 					}
 					else
 					{
@@ -1255,10 +1322,10 @@ public class TextDrawer
 	}
 
 	/**
-	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map
-	 * is loaded from a file before it draws the first time. Text bounds aren't set until the text is drawn the first time, and
-	 * changing fields before the first draw will set an undo point, which will copy the map settings, including edits. So this function
-	 * must be called each draw to make sure null bounds don't get perpetuated from those undo points.
+	 * Sets the bounds of any texts for which those are null. This is needed because the editor allows making changes when a map is loaded
+	 * from a file before it draws the first time. Text bounds aren't set until the text is drawn the first time, and changing fields before
+	 * the first draw will set an undo point, which will copy the map settings, including edits. So this function must be called each draw
+	 * to make sure null bounds don't get perpetuated from those undo points.
 	 */
 	public void updateTextBoundsIfNeeded(WorldGraph graph)
 	{
