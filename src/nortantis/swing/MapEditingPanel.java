@@ -62,7 +62,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private double zoom;
 	private double resolution;
 	private int borderWidth;
-	private RotatedRectangle textBoxBoundsLine1;
 	private nortantis.geom.Rectangle iconToEditBounds;
 	private boolean isIconToEditInAValidPosition;
 	private BufferedImage rotateIconScaled;
@@ -73,7 +72,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private BufferedImage redMoveIconScaled;
 	private BufferedImage redScaleIconScaled;
 	private Area moveToolArea;
-	private RotatedRectangle textBoxBoundsLine2;
 	private Set<Area> highlightedAreas;
 	private Set<RotatedRectangle> processingAreas;
 	private Set<String> artPacksToHighlight;
@@ -83,6 +81,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private BufferedImage moveIconScaledLarge;
 	private BufferedImage scaleIconScaledLarge;
 	private boolean useLargeIconEditIcons;
+	private RotatedRectangle textBoxBounds;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -121,12 +120,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		highlightedEdges.add(edge);
 		edgeTypeToHighlight = edgeType;
 	}
-	
+
 	public void clearHighlightedEdges()
 	{
 		highlightedEdges.clear();
 	}
-	
+
 	public void addPolylinesToHighlight(List<Point> lines)
 	{
 		polylinesToHighlight.add(lines);
@@ -139,20 +138,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setTextBoxToDraw(nortantis.geom.RotatedRectangle line1Bounds, nortantis.geom.RotatedRectangle line2Bounds)
 	{
-		this.textBoxBoundsLine1 = line1Bounds;
-		this.textBoxBoundsLine2 = line2Bounds;
+		this.textBoxBounds = line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(line2Bounds);
 	}
 
 	public void setTextBoxToDraw(MapText text)
 	{
-		this.textBoxBoundsLine1 = text.line1Bounds == null ? null : text.line1Bounds;
-		this.textBoxBoundsLine2 = text.line2Bounds == null ? null : text.line2Bounds;
+		this.textBoxBounds = text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds);
 	}
 
 	public void clearTextBox()
 	{
-		this.textBoxBoundsLine1 = null;
-		this.textBoxBoundsLine2 = null;
+		this.textBoxBounds = null;
 	}
 
 	public void showIconEditToolsAt(FreeIcon icon, IconEditToolsMode toolsLocation, boolean useLargeIcons)
@@ -357,7 +353,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		highlightArtPacksIfNeeded(g2);
 
-		if (textBoxBoundsLine1 != null)
+		if (textBoxBounds != null)
 		{
 			drawTextBox(((Graphics2D) g));
 		}
@@ -534,38 +530,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 		g2.setColor(highlightEditColor);
 		AffineTransform originalTransformCopy = g2.getTransform();
 
-		double centerX = textBoxBoundsLine1.pivotX;
-		double centerY = textBoxBoundsLine1.pivotY;
-		
 		int padding = (int) (9 * resolution);
-		g2.draw(AwtFactory.toAwtArea(textBoxBoundsLine1));
-		if (textBoxBoundsLine2 != null)
-		{
-			g2.draw(AwtFactory.toAwtArea(textBoxBoundsLine2));
-		}
+		g2.draw(AwtFactory.toAwtArea(textBoxBounds));
 		
-		g2.rotate(textBoxBoundsLine1.angle, centerX, centerY);
+		g2.rotate(textBoxBounds.angle, textBoxBounds.pivotX, textBoxBounds.pivotY);
 		// Place the image for the rotation tool.
 		{
-			int x;
-			if (textBoxBoundsLine2 == null)
-			{
-				x = (int) ((textBoxBoundsLine1.x) + textBoxBoundsLine1.width + padding);
-			}
-			else
-			{
-				x = Math.max((int) (textBoxBoundsLine1.x + textBoxBoundsLine1.width),
-						(int) (textBoxBoundsLine2.x + textBoxBoundsLine2.width)) + padding;
-			}
-			int y;
-			if (textBoxBoundsLine2 == null)
-			{
-				y = (int) (textBoxBoundsLine1.y + (textBoxBoundsLine1.height / 2)) - (rotateIconScaled.getHeight() / 2);
-			}
-			else
-			{
-				y = (int) (centerY - (rotateIconScaled.getHeight() / 2.0));
-			}
+			int x = (int) ((textBoxBounds.x) + textBoxBounds.width + padding);
+
+			int y = (int) (textBoxBounds.y + (textBoxBounds.height / 2)) - (rotateIconScaled.getHeight() / 2);
+			
 			g2.drawImage(rotateIconScaled, x, y, null);
 			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateIconScaled.getWidth(), rotateIconScaled.getHeight()));
 			rotateToolArea.transform(g2.getTransform());
@@ -573,9 +547,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Place the image for the move tool.
 		{
-			int x = (int) (textBoxBoundsLine1.x) + (int) (Math.round(textBoxBoundsLine1.width / 2.0))
+			int x = (int) (textBoxBounds.x) + (int) (Math.round(textBoxBounds.width / 2.0))
 					- (int) (Math.round(moveIconScaled.getWidth() / 2.0));
-			int y = (int) (textBoxBoundsLine1.y) - (moveIconScaled.getHeight()) - padding;
+			int y = (int) (textBoxBounds.y) - (moveIconScaled.getHeight()) - padding;
 			g2.drawImage(moveIconScaled, x, y, null);
 			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIconScaled.getWidth(), moveIconScaled.getHeight()));
 			moveToolArea.transform(g2.getTransform());
@@ -695,7 +669,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 	}
-	
+
 	private void drawPolylines(Graphics g)
 	{
 		for (List<Point> line : polylinesToHighlight)
@@ -703,7 +677,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			drawPolyline(g, line);
 		}
 	}
-	
+
 	private void drawPolyline(Graphics g, List<Point> points)
 	{
 		int[] xPoints = new int[points.size()];

@@ -495,6 +495,7 @@ public class TextTool extends EditorTool
 			if (lastSelected != null && mapEditingPanel.isInRotateTool(e.getPoint()))
 			{
 				isRotating = true;
+				mousePressedLocation = e.getPoint();
 			}
 			else if (lastSelected != null && mapEditingPanel.isInMoveTool(e.getPoint()))
 			{
@@ -572,11 +573,7 @@ public class TextTool extends EditorTool
 			}
 			else if (isRotating)
 			{
-				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-
-				double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
-				double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
-				double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX);
+				double angle = calcRotationAngle(e);
 				RotatedRectangle line1 = lastSelected.line1Bounds.rotateTo(angle);
 				RotatedRectangle line2 = lastSelected.line2Bounds == null ? null : lastSelected.line2Bounds.rotateTo(angle);
 				mapEditingPanel.setTextBoxToDraw(line1, line2);
@@ -587,6 +584,32 @@ public class TextTool extends EditorTool
 		{
 			deleteTexts(e.getPoint());
 		}
+	}
+	
+	private double calcRotationAngle(MouseEvent e)
+	{
+		nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+		nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
+
+		// Find the bounding box currently displayed
+		RotatedRectangle boundingBox = lastSelected.line1Bounds
+				.addRotatedRectangleThatHasTheSameAngleAndPivot(lastSelected.line2Bounds);
+
+		// Find the angle between the mouse-down point with respect to the bounding box.
+		nortantis.geom.Point rotatedMouseDownPoint = graphPointMousePressedLocation.rotate(boundingBox.getPivot(), -boundingBox.angle);
+		double yDiffFromPivot = (boundingBox.y + boundingBox.height / 2.0) - boundingBox.pivotY;
+		double mouseDownAngleWithRespectToBounds = Math.atan2(rotatedMouseDownPoint.y - boundingBox.pivotY - yDiffFromPivot, rotatedMouseDownPoint.x - boundingBox.pivotX); 
+
+		// Find the angle between the edge of the bounding box where the rotation tool is and the edge of the bounding box where the
+		// rotation tool would be if it were aligned with the pivot. These can be different when text is curved.
+		// This y distance between the center of the rotation tool and the pivot when the text box is horizontal.
+		double xDiffFromMouseDownToEdgeOfBoundsWithRespectToBounds = rotatedMouseDownPoint.x - (boundingBox.x + boundingBox.width);
+		double angleToRotateTool = Math.atan2(yDiffFromPivot, (boundingBox.width / 2.0) + xDiffFromMouseDownToEdgeOfBoundsWithRespectToBounds);
+
+		double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
+		double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
+		double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX) - mouseDownAngleWithRespectToBounds - angleToRotateTool;
+		return angle;
 	}
 
 	@Override
@@ -619,24 +642,9 @@ public class TextTool extends EditorTool
 			}
 			else if (isRotating)
 			{
+				double angle = calcRotationAngle(e);
 				MapText before = lastSelected.deepCopy();
-				double centerX = lastSelected.location.x;
-				double centerY = lastSelected.location.y;
-				nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				// I'm dividing graphPointMouseLocation by mainWindow.displayQualityScale here because
-				// lastSelected.location is not multiplied by mainWindow.displayQualityScale. This is
-				// because MapTexts are always stored as if the map were generated at 100% resolution.
-				double angle = Math.atan2((graphPointMouseLocation.y / mainWindow.displayQualityScale) - centerY,
-						(graphPointMouseLocation.x / mainWindow.displayQualityScale) - centerX);
-				// No upside-down text.
-				if (angle > Math.PI / 2)
-				{
-					angle -= Math.PI;
-				}
-				else if (angle < -Math.PI / 2)
-				{
-					angle += Math.PI;
-				}
+
 				lastSelected.angle = angle;
 				undoer.setUndoPoint(UpdateType.Incremental, this);
 				updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
@@ -687,7 +695,7 @@ public class TextTool extends EditorTool
 					? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground())
 					: null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
-			
+
 			undoer.setUndoPoint(UpdateType.Incremental, this);
 			if (!Objects.equals(before, selectedText))
 			{
@@ -736,7 +744,7 @@ public class TextTool extends EditorTool
 			{
 				boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.boldBackgroundColorOverride));
 			}
-			curvatureSlider.setValue((int)(selectedText.curvature * curvatureSliderDivider));
+			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
 		}
 		mapEditingPanel.repaint();
 

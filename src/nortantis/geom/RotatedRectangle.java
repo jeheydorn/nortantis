@@ -255,6 +255,27 @@ public class RotatedRectangle
 		// and the difference between the maximum and minimum x and y values as the width and height, respectively.
 		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
 	}
+	
+	public Point getPivot()
+	{
+		return new Point(pivotX, pivotY);
+	}
+	
+	public RotatedRectangle addRotatedRectangleThatHasTheSameAngleAndPivot(RotatedRectangle other)
+	{
+		if (other == null)
+		{
+			return this;
+		}
+
+		assert other.angle == angle;
+		assert other.pivotX == pivotX;
+		assert other.pivotY == pivotY;
+
+		nortantis.geom.Rectangle boundsNotRotated = new Rectangle(x, y, width,
+				height).add(new Rectangle(other.x, other.y, other.width, other.height));
+		return new RotatedRectangle(boundsNotRotated, angle, new Point(pivotX, pivotY));
+	}
 
 	@Override
 	public int hashCode()
