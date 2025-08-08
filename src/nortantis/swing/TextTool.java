@@ -338,7 +338,7 @@ public class TextTool extends EditorTool
 		{
 			spacingSlider = new JSlider();
 			spacingSlider.setPaintLabels(false);
-			spacingSlider.setMinimum(-2);
+			spacingSlider.setMinimum(-5);
 			spacingSlider.setMaximum(30);
 			spacingSlider.setValue(0);
 			SwingHelper.setSliderWidthForSidePanel(spacingSlider);
@@ -416,7 +416,9 @@ public class TextTool extends EditorTool
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
 		curvatureSliderHider.setVisible(false);
+		curvatureSlider.setValue(0);
 		spacingSliderHider.setVisible(false);
+		spacingSlider.setValue(0);
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);

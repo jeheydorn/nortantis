@@ -68,7 +68,6 @@ public class TextDrawer
 	private Font citiesAndOtherMountainsFontScaled;
 	private Font riverFontScaled;
 	private Random r;
-	private double resolutionScale;
 	/**
 	 * The maximum angle that text can be curved. Note that changing this would require a conversion to existing maps because the editor
 	 * only stores a number between -1 and 1 for text curvature, so changing this would change the angle of curved text on existing maps.
@@ -125,8 +124,6 @@ public class TextDrawer
 				(float) (settings.otherMountainsFont.getSize() * sizeMultiplier));
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
 				(float) (settings.riverFont.getSize() * sizeMultiplier));
-
-		resolutionScale = settings.resolution;
 	}
 
 	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
@@ -848,7 +845,8 @@ public class TextDrawer
 
 		Font background = p.getFont().deriveFont(style, p.getFont().getSize());
 
-		double adjustedSpacing = spacing * resolutionScale;
+		double ascent = p.getFontAscent();
+		double adjustedSpacing = spacing * ascent * spacingScale;
 		double startXDiffFromSpacing = (adjustedSpacing * name.length() - 1) / 2.0;
 
 		if (Math.abs(curvature) <= 0.001)
@@ -857,9 +855,12 @@ public class TextDrawer
 			Point curLoc = new Point(textStart.x - startXDiffFromSpacing, textStart.y);
 			for (int i : new Range(name.length()))
 			{
-				p.setFont(background);
-				p.setColor(boldBackgroundColorOverride != null ? boldBackgroundColorOverride : settings.boldBackgroundColor);
-				p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
+				if (drawBoldBackground)
+				{
+					p.setFont(background);
+					p.setColor(boldBackgroundColorOverride != null ? boldBackgroundColorOverride : settings.boldBackgroundColor);
+					p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
+				}
 
 				p.setFont(original);
 				p.setColor(originalColor);
@@ -879,7 +880,6 @@ public class TextDrawer
 				double angleRange = Math.abs(curvature * maxTextCurveAngleRange);
 				double radius;
 				Point circleCenter;
-				double ascent = p.getFontAscent();
 				radius = (totalWidth / 2.0) / angleRange;
 
 
@@ -950,6 +950,8 @@ public class TextDrawer
 		}
 	}
 
+	private final double spacingScale = 1.0 / 20.0;
+
 	private Rectangle expandBoundsToIncludeCurvatureAndSpacing(Rectangle originalBounds, String text, Painter p, double curvature,
 			int spacing)
 	{
@@ -959,8 +961,11 @@ public class TextDrawer
 		}
 
 
+		double ascent = p.getFontAscent();
+		double descent = p.getFontDescent();
+
 		Point textStart = new Point(originalBounds.x, originalBounds.y + p.getFontAscent());
-		double adjustedSpacing = text.length() < 2 ? 0.0 : spacing * resolutionScale;
+		double adjustedSpacing = text.length() < 2 ? 0.0 : spacing * ascent * spacingScale;
 		double startXDiffFromSpacing = (adjustedSpacing * text.length() - 1) / 2.0;
 		double totalWidth = p.stringWidth(text) + (text.length() > 0 ? (text.length() - 1) * adjustedSpacing : 0.0);
 
@@ -974,8 +979,7 @@ public class TextDrawer
 			}
 			else
 			{
-				return new Rectangle(originalBounds.x - startXDiffFromSpacing, originalBounds.y, totalWidth,
-						originalBounds.height);
+				return new Rectangle(originalBounds.x - startXDiffFromSpacing, originalBounds.y, totalWidth, originalBounds.height);
 			}
 		}
 
@@ -984,8 +988,6 @@ public class TextDrawer
 		double angleRange = Math.abs(curvature * maxTextCurveAngleRange); // Assuming maxTextCurveAngleRange is defined
 		double radius;
 		Point circleCenter;
-		double ascent = p.getFontAscent();
-		double descent = p.getFontDescent();
 
 		Rectangle boundsSoFar = null;
 
