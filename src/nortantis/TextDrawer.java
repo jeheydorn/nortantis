@@ -68,6 +68,7 @@ public class TextDrawer
 	private Font citiesAndOtherMountainsFontScaled;
 	private Font riverFontScaled;
 	private Random r;
+	private double resolutionScale;
 	/**
 	 * The maximum angle that text can be curved. Note that changing this would require a conversion to existing maps because the editor
 	 * only stores a number between -1 and 1 for text curvature, so changing this would change the angle of curved text on existing maps.
@@ -125,6 +126,7 @@ public class TextDrawer
 		riverFontScaled = settings.riverFont.deriveFont(settings.riverFont.getStyle(),
 				(float) (settings.riverFont.getSize() * sizeMultiplier));
 
+		resolutionScale = settings.resolution;
 	}
 
 	public synchronized void drawTextFromEdits(Image map, Image landAndOceanBackground, WorldGraph graph, Rectangle drawBounds)
@@ -315,7 +317,7 @@ public class TextDrawer
 				Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 				Rectangle singleLineBounds = getLine1Bounds(text.value, textLocation, p, false);
-				singleLineBounds = expandBoundsToIncludeCurvature(singleLineBounds, text.value, p, text.curvature);
+				singleLineBounds = expandBoundsToIncludeCurvatureAndSpacing(singleLineBounds, text.value, p, text.curvature, text.spacing);
 				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds);
 
 				Rectangle textBoundsAllLines;
@@ -326,11 +328,11 @@ public class TextDrawer
 					Pair<String> lines = addLineBreakNearMiddle(text.value);
 
 					Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
-					line1Bounds = expandBoundsToIncludeCurvature(line1Bounds, lines.getFirst(), p, text.curvature);
+					line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, lines.getFirst(), p, text.curvature, text.spacing);
 					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
 
 					Rectangle line2Bounds = getLine2Bounds(lines.getSecond(), textLocation, p);
-					line2Bounds = expandBoundsToIncludeCurvature(line2Bounds, lines.getFirst(), p, text.curvature);
+					line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, lines.getFirst(), p, text.curvature, text.spacing);
 					line2Bounds = addBackgroundBlendingPadding(line2Bounds);
 
 					textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
@@ -359,7 +361,7 @@ public class TextDrawer
 
 		// Get bounds for when the text is on one line.
 		Rectangle bounds = getLine1Bounds(text.value, textLocation, p, false);
-		bounds = expandBoundsToIncludeCurvature(bounds, text.value, p, text.curvature);
+		bounds = expandBoundsToIncludeCurvatureAndSpacing(bounds, text.value, p, text.curvature, text.spacing);
 		bounds = addBackgroundBlendingPadding(bounds);
 		Rectangle boundingBox = new RotatedRectangle(bounds, text.angle, textLocation).getBounds();
 
@@ -370,13 +372,13 @@ public class TextDrawer
 			Pair<String> lines = addLineBreakNearMiddle(text.value);
 
 			Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
-			line1Bounds = expandBoundsToIncludeCurvature(line1Bounds, lines.getFirst(), p, text.curvature);
+			line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, lines.getFirst(), p, text.curvature, text.spacing);
 			line1Bounds = addBackgroundBlendingPadding(line1Bounds);
 
 			boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
 
 			Rectangle line2Bounds = getLine2Bounds(lines.getSecond(), textLocation, p);
-			line2Bounds = expandBoundsToIncludeCurvature(line2Bounds, lines.getSecond(), p, text.curvature);
+			line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, lines.getSecond(), p, text.curvature, text.spacing);
 			boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
 		}
 
@@ -752,7 +754,7 @@ public class TextDrawer
 	 * drawn on top of mountains or trees.
 	 */
 	private void drawBackgroundBlendingForText(Image map, Painter p, Point textStart, Dimension textSize, double angle, String text,
-			Point pivot, double curvature)
+			Point pivot, double curvature, int spacing)
 	{
 		int kernelSize = getBackgroundBlendingKernelSize(textSize);
 		if (kernelSize == 0)
@@ -766,7 +768,7 @@ public class TextDrawer
 		Painter bP = textBG.createPainter(DrawQuality.High);
 		bP.setFont(p.getFont());
 		bP.setColor(Color.white);
-		drawStringCurved(bP, text, new Point(padding, padding + p.getFontAscent()), curvature);
+		drawStringCurved(bP, text, new Point(padding, padding + p.getFontAscent()), curvature, spacing);
 
 		// Use convolution to make a hazy background for the text.
 		Image haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize), true, false);
@@ -802,29 +804,32 @@ public class TextDrawer
 	 *            location to start drawing the text at (before applying curvature)
 	 * @param curvature
 	 *            A value between -1 (for curved 90 degrees down at the edges) and 1 (for curved 90 degrees up at the edges).
+	 * @param spacing
+	 *            Integer values of space to add between letters
 	 */
-	private void drawStringCurved(Painter p, String name, Point textStart, double curvature)
+	private void drawStringCurved(Painter p, String name, Point textStart, double curvature, int spacing)
 	{
 		if (name == null || name.isEmpty())
 			return;
 
-		if (Math.abs(curvature) <= 0.001)
+		if (Math.abs(curvature) <= 0.001 && spacing == 0)
 		{
 			// Special case
 			p.drawString(name, textStart.x, textStart.y);
 			return;
 		}
 
-		drawStringWithOptionalBoldBackground(p, name, textStart, curvature, false, null);
+		drawStringWithOptionalBoldBackground(p, name, textStart, curvature, spacing, false, null);
 	}
 
-	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double curvature, Color boldBackgroundColorOverride)
-	{
-		drawStringWithOptionalBoldBackground(p, name, textStart, curvature, true, boldBackgroundColorOverride);
-	}
-
-	private void drawStringWithOptionalBoldBackground(Painter p, String name, Point textStart, double curvature, boolean drawBoldBackground,
+	private void drawStringWithBoldBackground(Painter p, String name, Point textStart, double curvature, int spacing,
 			Color boldBackgroundColorOverride)
+	{
+		drawStringWithOptionalBoldBackground(p, name, textStart, curvature, spacing, true, boldBackgroundColorOverride);
+	}
+
+	private void drawStringWithOptionalBoldBackground(Painter p, String name, Point textStart, double curvature, int spacing,
+			boolean drawBoldBackground, Color boldBackgroundColorOverride)
 
 	{
 		if (name.length() == 0)
@@ -843,11 +848,13 @@ public class TextDrawer
 
 		Font background = p.getFont().deriveFont(style, p.getFont().getSize());
 
+		double adjustedSpacing = spacing * resolutionScale;
+		double startXDiffFromSpacing = (adjustedSpacing * name.length() - 1) / 2.0;
 
 		if (Math.abs(curvature) <= 0.001)
 		{
 			// Special case: no curvature
-			Point curLoc = new Point(textStart);
+			Point curLoc = new Point(textStart.x - startXDiffFromSpacing, textStart.y);
 			for (int i : new Range(name.length()))
 			{
 				p.setFont(background);
@@ -859,7 +866,7 @@ public class TextDrawer
 				p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
 
 				int charWidth = p.charWidth(name.charAt(i));
-				curLoc = new Point(curLoc.x + charWidth, curLoc.y);
+				curLoc = new Point(curLoc.x + charWidth + adjustedSpacing, curLoc.y);
 			}
 		}
 		else
@@ -867,24 +874,23 @@ public class TextDrawer
 			Transform orig = p.getTransform();
 			try
 			{
-				double totalWidth = p.stringWidth(name);
-				Point textCenter = textStart.add(new Point(totalWidth / 2.0, 0));
+				double totalWidth = p.stringWidth(name) + (name.length() > 0 ? (name.length() - 1) * adjustedSpacing : 0.0);
+				Point textCenter = textStart.add(new Point((totalWidth / 2.0) - startXDiffFromSpacing, 0));
 				double angleRange = Math.abs(curvature * maxTextCurveAngleRange);
 				double radius;
 				Point circleCenter;
 				double ascent = p.getFontAscent();
+				radius = (totalWidth / 2.0) / angleRange;
 
 
 				if (curvature > 0)
 				{
 					// Concave down. Curve along the baseline of the text.
-					radius = (totalWidth / 2.0) / angleRange;
 					circleCenter = textCenter.add(new Point(0.0, radius));
 				}
 				else
 				{
 					// Concave up. Curve along the ascender line.
-					radius = (totalWidth / 2.0) / angleRange;
 					circleCenter = textCenter.add(new Point(0.0, -radius));
 				}
 
@@ -932,7 +938,7 @@ public class TextDrawer
 					}
 					p.setTransform(orig);
 
-					widthSoFar += p.charWidth(c);
+					widthSoFar += p.charWidth(c) + adjustedSpacing;
 				}
 			}
 			finally
@@ -944,7 +950,8 @@ public class TextDrawer
 		}
 	}
 
-	private static Rectangle expandBoundsToIncludeCurvature(Rectangle uncurvedBounds, String text, Painter p, double curvature)
+	private Rectangle expandBoundsToIncludeCurvatureAndSpacing(Rectangle originalBounds, String text, Painter p, double curvature,
+			int spacing)
 	{
 		if (text == null || text.isEmpty())
 		{
@@ -952,26 +959,35 @@ public class TextDrawer
 		}
 
 
-		Point textStart = new Point(uncurvedBounds.x, uncurvedBounds.y + p.getFontAscent());
+		Point textStart = new Point(originalBounds.x, originalBounds.y + p.getFontAscent());
+		double adjustedSpacing = text.length() < 2 ? 0.0 : spacing * resolutionScale;
+		double startXDiffFromSpacing = (adjustedSpacing * text.length() - 1) / 2.0;
+		double totalWidth = p.stringWidth(text) + (text.length() > 0 ? (text.length() - 1) * adjustedSpacing : 0.0);
+
+
 		if (Math.abs(curvature) <= 0.001)
 		{
 			// Special case: no curvature
-			return uncurvedBounds;
+			if (spacing == 0)
+			{
+				return originalBounds;
+			}
+			else
+			{
+				return new Rectangle(originalBounds.x - startXDiffFromSpacing, originalBounds.y, totalWidth,
+						originalBounds.height);
+			}
 		}
 
 
-		double totalWidth = p.stringWidth(text);
-		Point textCenter = textStart.add(new Point(totalWidth / 2.0, 0));
-		double angleRange = Math.abs(curvature * maxTextCurveAngleRange);
+		Point textCenter = textStart.add(new Point(totalWidth / 2.0 - startXDiffFromSpacing, 0));
+		double angleRange = Math.abs(curvature * maxTextCurveAngleRange); // Assuming maxTextCurveAngleRange is defined
 		double radius;
 		Point circleCenter;
 		double ascent = p.getFontAscent();
 		double descent = p.getFontDescent();
 
-		double minX = Double.MAX_VALUE;
-		double maxX = Double.MIN_VALUE;
-		double minY = Double.MAX_VALUE;
-		double maxY = Double.MIN_VALUE;
+		Rectangle boundsSoFar = null;
 
 		if (curvature > 0)
 		{
@@ -979,8 +995,10 @@ public class TextDrawer
 			radius = (totalWidth / 2.0) / angleRange;
 			circleCenter = textCenter.add(new Point(0.0, radius));
 
+
 			double startAngle = -angleRange;
 			double widthSoFar = 0.0;
+
 
 			for (int i = 0; i < text.length(); i++)
 			{
@@ -988,23 +1006,22 @@ public class TextDrawer
 				double cWidth = p.charWidth(c);
 				double theta = startAngle + ((widthSoFar + cWidth / 2.0) / totalWidth) * (angleRange * 2.0);
 
+
 				// Calculate the position of the character's bounding box
 				double charX = textCenter.x - (cWidth / 2.0);
 				double charY = textCenter.y - ascent; // y is baseline, so move up by ascent for top of char
 
+
 				// Create a temporary RotatedRectangle for the character
-				RotatedRectangle charRect = new RotatedRectangle(charX, charY, cWidth, ascent + descent, theta, circleCenter.x,
-						circleCenter.y);
+				RotatedRectangle charRect = new RotatedRectangle(charX, charY, cWidth + adjustedSpacing, ascent + descent, theta,
+						circleCenter.x, circleCenter.y);
+
 
 				// Get the axis-aligned bounding box of the rotated character
 				Rectangle charBounds = charRect.getBounds();
+				boundsSoFar = charBounds.add(boundsSoFar);
 
-				minX = Math.min(minX, charBounds.x);
-				maxX = Math.max(maxX, charBounds.x + charBounds.width);
-				minY = Math.min(minY, charBounds.y);
-				maxY = Math.max(maxY, charBounds.y + charBounds.height);
-
-				widthSoFar += p.charWidth(c);
+				widthSoFar += p.charWidth(c) + adjustedSpacing;
 			}
 		}
 		else
@@ -1013,8 +1030,10 @@ public class TextDrawer
 			radius = (totalWidth / 2.0) / angleRange;
 			circleCenter = textCenter.add(new Point(0.0, -radius));
 
+
 			double startAngle = -angleRange;
 			double widthSoFar = 0.0;
+
 
 			for (int i = 0; i < text.length(); i++)
 			{
@@ -1022,29 +1041,30 @@ public class TextDrawer
 				double cWidth = p.charWidth(c);
 				double theta = startAngle + ((widthSoFar + cWidth / 2.0) / totalWidth) * (angleRange * 2.0);
 
+
 				// Calculate the position of the character's bounding box
 				double charX = textCenter.x - (cWidth / 2.0);
 				double charY = textCenter.y - ascent;
 
+
 				// Create a temporary RotatedRectangle for the character
 				// Note: The rotation is -theta for concave up as per drawStringCurved
-				RotatedRectangle charRect = new RotatedRectangle(charX, charY, cWidth, ascent + descent, -theta, circleCenter.x,
-						circleCenter.y - ascent);
+				RotatedRectangle charRect = new RotatedRectangle(charX, charY, cWidth + adjustedSpacing, ascent + descent, -theta,
+						circleCenter.x, circleCenter.y - ascent);
+
 
 				// Get the axis-aligned bounding box of the rotated character
 				Rectangle charBounds = charRect.getBounds();
+				boundsSoFar = charBounds.add(boundsSoFar);
 
-				minX = Math.min(minX, charBounds.x);
-				maxX = Math.max(maxX, charBounds.x + charBounds.width);
-				minY = Math.min(minY, charBounds.y);
-				maxY = Math.max(maxY, charBounds.y + charBounds.height);
-
-				widthSoFar += p.charWidth(c);
+				widthSoFar += p.charWidth(c) + adjustedSpacing;
 			}
 		}
 
-		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+
+		return boundsSoFar;
 	}
+
 
 	/**
 	 * 
@@ -1148,7 +1168,7 @@ public class TextDrawer
 		{
 			Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
 			Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
-			line1Bounds = expandBoundsToIncludeCurvature(line1Bounds, text.value, p, text.curvature);
+			line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text.value, p, text.curvature, text.spacing);
 			if (hasMultipleWords && overlapsBoundaryThatShouldCauseLineSplit(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine,
 					text.angle, text.type, graph))
 			{
@@ -1284,10 +1304,10 @@ public class TextDrawer
 		Point pivotMinusDrawOffset = pivot.subtract(drawOffset);
 
 		Rectangle bounds1WithoutCurvature = getLine1Bounds(line1, pivot, p, line2 != null);
-		Rectangle bounds1 = expandBoundsToIncludeCurvature(bounds1WithoutCurvature, line1, p, text.curvature);
+		Rectangle bounds1 = expandBoundsToIncludeCurvatureAndSpacing(bounds1WithoutCurvature, line1, p, text.curvature, text.spacing);
 		Rectangle bounds2WithoutCurvature = getLine2Bounds(line2, pivot, p);
 		Rectangle bounds2 = bounds2WithoutCurvature == null ? null
-				: expandBoundsToIncludeCurvature(bounds2WithoutCurvature, line2, p, text.curvature);
+				: expandBoundsToIncludeCurvatureAndSpacing(bounds2WithoutCurvature, line2, p, text.curvature, text.spacing);
 
 		Dimension line1Size = bounds1.size();
 		if (line1Size.width == 0 || line1Size.height == 0)
@@ -1385,7 +1405,8 @@ public class TextDrawer
 				// on the text start.
 				Point textStartLine1 = new Point(bounds1WithoutCurvature.x - drawOffset.x,
 						bounds1WithoutCurvature.y - drawOffset.y + p.getFontAscent());
-				drawBackgroundBlendingForText(map, p, textStartLine1, line1Size, text.angle, line1, pivotMinusDrawOffset, text.curvature);
+				drawBackgroundBlendingForText(map, p, textStartLine1, line1Size, text.angle, line1, pivotMinusDrawOffset, text.curvature,
+						text.spacing);
 
 				Point textStartLine2 = null;
 				if (line2 != null)
@@ -1393,27 +1414,28 @@ public class TextDrawer
 					textStartLine2 = new Point(bounds2WithoutCurvature.x - drawOffset.x,
 							bounds2WithoutCurvature.y - drawOffset.y + p.getFontAscent());
 					drawBackgroundBlendingForText(map, p, textStartLine2, line2Size, text.angle, line2, pivotMinusDrawOffset,
-							text.curvature);
+							text.curvature, text.spacing);
 				}
 
 				if (boldBackground)
 				{
-					drawStringWithBoldBackground(p, line1, textStartLine1, text.curvature, text.boldBackgroundColorOverride);
+					drawStringWithBoldBackground(p, line1, textStartLine1, text.curvature, text.spacing, text.boldBackgroundColorOverride);
 				}
 				else
 				{
-					drawStringCurved(p, line1, textStartLine1, text.curvature);
+					drawStringCurved(p, line1, textStartLine1, text.curvature, text.spacing);
 				}
 
 				if (line2 != null)
 				{
 					if (boldBackground)
 					{
-						drawStringWithBoldBackground(p, line2, textStartLine2, text.curvature, text.boldBackgroundColorOverride);
+						drawStringWithBoldBackground(p, line2, textStartLine2, text.curvature, text.spacing,
+								text.boldBackgroundColorOverride);
 					}
 					else
 					{
-						drawStringCurved(p, line2, textStartLine2, text.curvature);
+						drawStringCurved(p, line2, textStartLine2, text.curvature, text.spacing);
 					}
 				}
 			}
@@ -1670,7 +1692,8 @@ public class TextDrawer
 	{
 		// Divide by settings.resolution so that the location does not depend on
 		// the resolution we're drawing at.
-		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, null, null, 0.0);
+		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, null, null, 0.0,
+				0);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

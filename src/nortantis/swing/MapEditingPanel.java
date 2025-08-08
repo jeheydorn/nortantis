@@ -143,7 +143,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 	public void setTextBoxToDraw(MapText text)
 	{
-		this.textBoxBounds = text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds);
+		if (text.line1Bounds != null)
+		{
+			this.textBoxBounds = text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds);
+		}
 	}
 
 	public void clearTextBox()
@@ -191,12 +194,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (text.line1Bounds != null)
 			{
-				highlightedAreas.add(AwtFactory.toAwtArea(text.line1Bounds));
-			}
-
-			if (text.line2Bounds != null)
-			{
-				highlightedAreas.add(AwtFactory.toAwtArea(text.line2Bounds));
+				highlightedAreas
+						.add(AwtFactory.toAwtArea(text.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(text.line2Bounds)));
 			}
 		}
 	}
@@ -532,14 +531,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		int padding = (int) (9 * resolution);
 		g2.draw(AwtFactory.toAwtArea(textBoxBounds));
-		
+
 		g2.rotate(textBoxBounds.angle, textBoxBounds.pivotX, textBoxBounds.pivotY);
 		// Place the image for the rotation tool.
 		{
 			int x = (int) ((textBoxBounds.x) + textBoxBounds.width + padding);
 
 			int y = (int) (textBoxBounds.y + (textBoxBounds.height / 2)) - (rotateIconScaled.getHeight() / 2);
-			
+
 			g2.drawImage(rotateIconScaled, x, y, null);
 			rotateToolArea = new Area(new Ellipse2D.Double(x, y, rotateIconScaled.getWidth(), rotateIconScaled.getHeight()));
 			rotateToolArea.transform(g2.getTransform());

@@ -28,12 +28,10 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 
 import nortantis.LineBreak;
 import nortantis.MapSettings;
 import nortantis.MapText;
-import nortantis.SettingsGenerator;
 import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
@@ -78,6 +76,8 @@ public class TextTool extends EditorTool
 	private RowHider curvatureSliderHider;
 	private RowHider editToolsSeparatorHider;
 	private final int curvatureSliderDivider = 100;
+	private JSlider spacingSlider;
+	private RowHider spacingSliderHider;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -334,6 +334,36 @@ public class TextTool extends EditorTool
 			curvatureSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text",
 					clearCurvatureButton, 0, 0);
 		}
+		
+		{
+			spacingSlider = new JSlider();
+			spacingSlider.setPaintLabels(false);
+			spacingSlider.setMinimum(-2);
+			spacingSlider.setMaximum(30);
+			spacingSlider.setValue(0);
+			SwingHelper.setSliderWidthForSidePanel(spacingSlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(spacingSlider,
+					null, () ->
+					{
+						if (lastSelected != null)
+						{
+							MapText before = lastSelected.deepCopy();
+							lastSelected.spacing = spacingSlider.getValue();
+							undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+							mapEditingPanel.setTextBoxToDraw(lastSelected.line1Bounds, lastSelected.line2Bounds);
+							updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+						}
+					}, 34);
+			JButton clearSpacingButton = new JButton("x");
+			clearSpacingButton.setToolTipText("Clear spacing");
+			SwingHelper.addListener(clearSpacingButton, () ->
+			{
+				spacingSlider.setValue(0);
+			});
+
+			spacingSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Spacing:", "How much space to add between letters",
+					clearSpacingButton, 0, 0);
+		}
 
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
@@ -386,6 +416,7 @@ public class TextTool extends EditorTool
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
 		curvatureSliderHider.setVisible(false);
+		spacingSliderHider.setVisible(false);
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);
@@ -695,6 +726,7 @@ public class TextTool extends EditorTool
 					? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground())
 					: null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
+			lastSelected.spacing = spacingSlider.getValue();
 
 			undoer.setUndoPoint(UpdateType.Incremental, this);
 			if (!Objects.equals(before, selectedText))
@@ -728,6 +760,7 @@ public class TextTool extends EditorTool
 			lineBreakHider.setVisible(true);
 			useDefaultColorCheckboxHider.setVisible(true);
 			curvatureSliderHider.setVisible(true);
+			spacingSliderHider.setVisible(true);
 			editToolsSeparatorHider.setVisible(true);
 			useDefaultColorCheckbox.setSelected(selectedText.colorOverride == null);
 			colorOverrideHider.setVisible(selectedText.colorOverride != null);
@@ -745,6 +778,7 @@ public class TextTool extends EditorTool
 				boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.boldBackgroundColorOverride));
 			}
 			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
+			spacingSlider.setValue(selectedText.spacing);
 		}
 		mapEditingPanel.repaint();
 
@@ -761,6 +795,7 @@ public class TextTool extends EditorTool
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
 		curvatureSliderHider.setVisible(false);
+		spacingSliderHider.setVisible(false);
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);

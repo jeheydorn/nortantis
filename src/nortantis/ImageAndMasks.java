@@ -223,6 +223,10 @@ public class ImageAndMasks
 			createContentYStarts();
 		}
 
+		if (x < 0 || x >= contentYStarts.length)
+		{
+			return 0;
+		}
 		return contentYStarts[x];
 	}
 

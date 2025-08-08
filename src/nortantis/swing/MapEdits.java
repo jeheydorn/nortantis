@@ -19,7 +19,6 @@ import nortantis.editor.Road;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
 import nortantis.graph.voronoi.Edge;
-import nortantis.util.Helper;
 import nortantis.util.Range;
 
 /**
