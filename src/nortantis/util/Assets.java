@@ -19,8 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -44,6 +46,10 @@ public class Assets
 	public final static List<String> reservedArtPacks = Collections.unmodifiableList(Arrays.asList(installedArtPack, customArtPack, "all"));
 	private static boolean disableAddedArtPacksForUnitTests;
 	private static List<CachedEntry> cachedEntries;
+	/**
+	 * Must be lower case
+	 */
+	public static Set<String> allowedImageExtensions = Collections.unmodifiableSet(new HashSet<>((Arrays.asList("png", "jpg", "jpeg"))));
 
 	static
 	{
@@ -142,7 +148,7 @@ public class Assets
 		Path artPackPath = getArtPackPath(artPack, customImagesFolder);
 
 		List<String> textureFiles;
-		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString());
+		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString(), allowedImageExtensions);
 		return textureFiles.stream().map(fileName -> new NamedResource(artPack, fileName)).toList();
 	}
 
@@ -217,18 +223,18 @@ public class Assets
 		return borderTypes.stream().map(bt -> new NamedResource(artPack, bt)).collect(Collectors.toList());
 	}
 
-	public static List<String> listFileNames(String path)
+	public static List<String> listFileNames(String path, Set<String> allowedExtensions)
 	{
-		return listFileNames(path, null, null);
+		return listFileNames(path, null, null, allowedExtensions);
 	}
 
-	public static List<String> listFileNames(String path, String containsText, String endingText)
+	public static List<String> listFileNames(String path, String containsText, String endingText, Set<String> allowedExtensions)
 	{
-		return listFiles(path, containsText, endingText).stream().map(filePath -> FilenameUtils.getName(filePath.toString()))
-				.collect(Collectors.toList());
+		return listFiles(path, containsText, endingText, allowedExtensions).stream()
+				.map(filePath -> FilenameUtils.getName(filePath.toString())).collect(Collectors.toList());
 	}
 
-	public static List<Path> listFiles(String folderPath, String containsText, String endingText)
+	public static List<Path> listFiles(String folderPath, String containsText, String endingText, Set<String> allowedExtensions)
 	{
 		if (isJarAsset(folderPath))
 		{
@@ -237,7 +243,8 @@ public class Assets
 
 		File[] files = new File(folderPath.toString())
 				.listFiles(file -> !file.isDirectory() && (StringUtils.isEmpty(containsText) || file.getName().contains(containsText))
-						&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText)));
+						&& (StringUtils.isEmpty(endingText) || file.getName().endsWith(endingText))
+						&& (allowedExtensions == null || allowedExtensions.contains(FilenameUtils.getExtension(file.getName()).toLowerCase())));
 		if (files == null)
 		{
 			return new ArrayList<>();

@@ -906,7 +906,7 @@ public class Background
 
 	private Image loadImageWithStringInFileName(Path path, String inFileName, boolean throwExceptionIfMissing)
 	{
-		List<Path> corners = Assets.listFiles(path.toString(), inFileName, null);
+		List<Path> corners = Assets.listFiles(path.toString(), inFileName, null, Assets.allowedImageExtensions);
 		if (corners.isEmpty())
 		{
 			if (throwExceptionIfMissing)

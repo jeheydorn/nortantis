@@ -52,7 +52,7 @@ public class ImageAndMasks
 		this.contentBounds = contentBounds;
 	}
 
-	public Image getOrCreateContentMask()
+	public synchronized Image getOrCreateContentMask()
 	{
 		if (image == null)
 		{
@@ -74,125 +74,137 @@ public class ImageAndMasks
 	 * that pixel. But if the map pixel is black, then there is no special handling when drawing that pixel, so whatever was drawn in that
 	 * place on the map before it will be visible.
 	 */
-	private void createContentMask()
+	private synchronized void createContentMask()
 	{
-		if (iconType == IconType.decorations)
+		try
 		{
-			// Decorations are special because they don't tend to have an interior in which the mask should be filled in.
-			contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-			for (int x = 0; x < contentMask.getWidth(); x++)
+			if (iconType == IconType.decorations)
 			{
-				for (int y = 0; y < contentMask.getHeight(); y++)
+				// Decorations are special because they don't tend to have an interior in which the mask should be filled in.
+				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+				for (int x = 0; x < contentMask.getWidth(); x++)
 				{
-					int alpha = image.getAlpha(x, y);
-					if (alpha >= opaqueThreshold)
+					for (int y = 0; y < contentMask.getHeight(); y++)
 					{
-						contentMask.setGrayLevel(x, y, 255);
-						addToContentBounds(new Coordinate(x, y));
-					}
-					else
-					{
-						contentMask.setGrayLevel(x, y, 0);
+						int alpha = image.getAlpha(x, y);
+						if (alpha >= opaqueThreshold)
+						{
+							contentMask.setGrayLevel(x, y, 255);
+							addToContentBounds(new Coordinate(x, y));
+						}
+						else
+						{
+							contentMask.setGrayLevel(x, y, 0);
+						}
 					}
 				}
 			}
-		}
-		else
-		{
-			// Top
-			Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+			else
 			{
-				List<Coordinate> points = new ArrayList<>();
-				for (int x = 0; x < image.getWidth(); x++)
+				// Top
+				Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 				{
-					Coordinate point = findUppermostOpaquePixel(image, x);
-					if (point != null)
+					List<Coordinate> points = new ArrayList<>();
+					for (int x = 0; x < image.getWidth(); x++)
 					{
+						Coordinate point = findUppermostOpaquePixel(image, x);
+						if (point != null)
+						{
+							addToContentBounds(point);
+							if (points.isEmpty())
+							{
+								points.add(new Coordinate(x, image.getHeight()));
+							}
+							points.add(point);
+						}
+					}
+
+					if (points.size() < 3)
+					{
+						contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+						return;
+					}
+					points.add(new Coordinate(points.get(points.size() - 1).x, image.getHeight()));
+					drawWhitePolygonFromPoints(topSilhouette, points);
+				}
+
+				// Left side
+				Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+				{
+					List<Coordinate> points = new ArrayList<>();
+					for (int y = 0; y < image.getHeight(); y++)
+					{
+						Coordinate point = findLeftmostOpaquePixel(image, y);
 						addToContentBounds(point);
-						if (points.isEmpty())
+						if (point != null)
 						{
-							points.add(new Coordinate(x, image.getHeight()));
+							if (points.isEmpty())
+							{
+								points.add(new Coordinate(image.getWidth(), y));
+							}
+							points.add(point);
 						}
-						points.add(point);
 					}
+
+					points.add(new Coordinate(image.getWidth(), points.get(points.size() - 1).y));
+					drawWhitePolygonFromPoints(leftSilhouette, points);
+
 				}
 
-				if (points.size() < 3)
+				// Right side
+				Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 				{
-					contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-					return;
+					List<Coordinate> points = new ArrayList<>();
+					for (int y = 0; y < image.getHeight(); y++)
+					{
+						Coordinate point = findRightmostOpaquePixel(image, y);
+						if (point != null)
+						{
+							if (points.isEmpty())
+							{
+								points.add(new Coordinate(0, y));
+							}
+							points.add(point);
+						}
+					}
+					points.add(new Coordinate(0, points.get(points.size() - 1).y));
+					drawWhitePolygonFromPoints(rightSilhouette, points);
 				}
-				points.add(new Coordinate(points.get(points.size() - 1).x, image.getHeight()));
-				drawWhitePolygonFromPoints(topSilhouette, points);
+
+				// The mask image is the intersection of the 3 silhouettes.
+
+				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+				for (int x = 0; x < contentMask.getWidth(); x++)
+				{
+					for (int y = 0; y < contentMask.getHeight(); y++)
+					{
+						if (topSilhouette.getGrayLevel(x, y) > 0 && leftSilhouette.getGrayLevel(x, y) > 0
+								&& rightSilhouette.getGrayLevel(x, y) > 0)
+						{
+							contentMask.setGrayLevel(x, y, 255);
+						}
+					}
+				}
 			}
 
-			// Left side
-			Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
+		}
+		finally
+		{
+			if (contentBounds == null)
 			{
-				List<Coordinate> points = new ArrayList<>();
-				for (int y = 0; y < image.getHeight(); y++)
-				{
-					Coordinate point = findLeftmostOpaquePixel(image, y);
-					addToContentBounds(point);
-					if (point != null)
-					{
-						if (points.isEmpty())
-						{
-							points.add(new Coordinate(image.getWidth(), y));
-						}
-						points.add(point);
-					}
-				}
-
-				points.add(new Coordinate(image.getWidth(), points.get(points.size() - 1).y));
-				drawWhitePolygonFromPoints(leftSilhouette, points);
-
-			}
-
-			// Right side
-			Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-			{
-				List<Coordinate> points = new ArrayList<>();
-				for (int y = 0; y < image.getHeight(); y++)
-				{
-					Coordinate point = findRightmostOpaquePixel(image, y);
-					if (point != null)
-					{
-						if (points.isEmpty())
-						{
-							points.add(new Coordinate(0, y));
-						}
-						points.add(point);
-					}
-				}
-				points.add(new Coordinate(0, points.get(points.size() - 1).y));
-				drawWhitePolygonFromPoints(rightSilhouette, points);
-			}
-
-			// The mask image is the intersection of the 3 silhouettes.
-
-			contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-			for (int x = 0; x < contentMask.getWidth(); x++)
-			{
-				for (int y = 0; y < contentMask.getHeight(); y++)
-				{
-					if (topSilhouette.getGrayLevel(x, y) > 0 && leftSilhouette.getGrayLevel(x, y) > 0
-							&& rightSilhouette.getGrayLevel(x, y) > 0)
-					{
-						contentMask.setGrayLevel(x, y, 255);
-					}
-				}
+				addToContentBounds(new Coordinate(0, 0));
+				addToContentBounds(new Coordinate(image.getWidth(), image.getHeight()));
 			}
 		}
 	}
 
-	public Image cropToContent()
+	public synchronized Image cropToContent()
 	{
 		getOrCreateContentBounds();
 		return image.getSubImage(contentBounds);
 	}
 
-	public IntRectangle getOrCreateContentBounds()
+	public synchronized IntRectangle getOrCreateContentBounds()
 	{
 		getOrCreateContentMask();
 		return contentBounds;
@@ -204,7 +216,7 @@ public class ImageAndMasks
 	 * @param x
 	 * @return A y value, or null if the content mask is black for all y values of the given x.
 	 */
-	public Integer getContentYStart(int x)
+	public synchronized Integer getContentYStart(int x)
 	{
 		if (contentYStarts == null)
 		{
@@ -214,7 +226,7 @@ public class ImageAndMasks
 		return contentYStarts[x];
 	}
 
-	private void createContentYStarts()
+	private synchronized void createContentYStarts()
 	{
 		getOrCreateContentMask();
 		contentYStarts = new Integer[image.getWidth()];
@@ -261,7 +273,7 @@ public class ImageAndMasks
 		}
 	}
 
-	public Image getOrCreateShadingMask()
+	public synchronized Image getOrCreateShadingMask()
 	{
 		if (image == null)
 		{
@@ -276,7 +288,7 @@ public class ImageAndMasks
 		return shadingMask;
 	}
 
-	private void createShadingMask()
+	private synchronized void createShadingMask()
 	{
 		getOrCreateContentMask();
 

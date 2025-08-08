@@ -492,8 +492,7 @@ public class ImageCache
 
 	public boolean hasNamedIcon(IconType iconType, String groupName, String iconName)
 	{
-		if (!getIconGroupNames(iconType).contains(groupName))
-		{
+		if (!getIconGroupNames(iconType).contains(groupName))		{
 			return false;
 		}
 
@@ -513,7 +512,7 @@ public class ImageCache
 	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String path = getIconGroupPath(iconType, groupName);
-		return Assets.listFileNames(path);
+		return Assets.listFileNames(path, Assets.allowedImageExtensions);
 	}
 
 	private String getIconGroupPath(IconType iconType, String groupName)
