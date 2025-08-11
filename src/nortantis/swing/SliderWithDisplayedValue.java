@@ -10,6 +10,9 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import nortantis.editor.UserPreferences;
+import nortantis.util.OSHelper;
+
 public class SliderWithDisplayedValue
 {
 	JSlider slider;
@@ -44,6 +47,13 @@ public class SliderWithDisplayedValue
 				}
 			}
 		});
+		
+		// I can't seem to shut off the default displayed value in Ubuntu with the System look and feel, so 
+		// hide my displayed value to avoid redundancy. 
+		if (OSHelper.isLinux() && UserPreferences.getInstance().lookAndFeel == LookAndFeel.System)
+		{
+			valueDisplay.setVisible(false);
+		}
 	}
 
 	private String getDisplayValue(Function<Integer, String> valueFormatter)
