@@ -825,11 +825,11 @@ public class TextDrawer
 		drawStringWithOptionalBoldBackground(p, name, textStart, curvature, spacing, true, boldBackgroundColorOverride);
 	}
 
-	private void drawStringWithOptionalBoldBackground(Painter p, String name, Point textStart, double curvature, int spacing,
+	private void drawStringWithOptionalBoldBackground(Painter p, String text, Point textStart, double curvature, int spacing,
 			boolean drawBoldBackground, Color boldBackgroundColorOverride)
 
 	{
-		if (name.length() == 0)
+		if (text.length() == 0)
 
 			return;
 
@@ -846,27 +846,27 @@ public class TextDrawer
 		Font background = p.getFont().deriveFont(style, p.getFont().getSize());
 
 		double ascent = p.getFontAscent();
-		double adjustedSpacing = spacing * ascent * spacingScale;
-		double startXDiffFromSpacing = (adjustedSpacing * name.length() - 1) / 2.0;
+		double adjustedSpacing = text.length() < 2 ? 0.0 : spacing * ascent * spacingScale;
+		double startXDiffFromSpacing = (adjustedSpacing * text.length() - 1) / 2.0;
 
 		if (Math.abs(curvature) <= 0.001)
 		{
 			// Special case: no curvature
 			Point curLoc = new Point(textStart.x - startXDiffFromSpacing, textStart.y);
-			for (int i : new Range(name.length()))
+			for (int i : new Range(text.length()))
 			{
 				if (drawBoldBackground)
 				{
 					p.setFont(background);
 					p.setColor(boldBackgroundColorOverride != null ? boldBackgroundColorOverride : settings.boldBackgroundColor);
-					p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
+					p.drawString("" + text.charAt(i), curLoc.x, curLoc.y);
 				}
 
 				p.setFont(original);
 				p.setColor(originalColor);
-				p.drawString("" + name.charAt(i), curLoc.x, curLoc.y);
+				p.drawString("" + text.charAt(i), curLoc.x, curLoc.y);
 
-				int charWidth = p.charWidth(name.charAt(i));
+				int charWidth = p.charWidth(text.charAt(i));
 				curLoc = new Point(curLoc.x + charWidth + adjustedSpacing, curLoc.y);
 			}
 		}
@@ -875,7 +875,7 @@ public class TextDrawer
 			Transform orig = p.getTransform();
 			try
 			{
-				double totalWidth = p.stringWidth(name) + (name.length() > 0 ? (name.length() - 1) * adjustedSpacing : 0.0);
+				double totalWidth = p.stringWidth(text) + (text.length() > 0 ? (text.length() - 1) * adjustedSpacing : 0.0);
 				Point textCenter = textStart.add(new Point((totalWidth / 2.0) - startXDiffFromSpacing, 0));
 				double angleRange = Math.abs(curvature * maxTextCurveAngleRange);
 				double radius;
@@ -897,9 +897,9 @@ public class TextDrawer
 				double startAngle = -angleRange;
 				double widthSoFar = 0.0;
 
-				for (int i = 0; i < name.length(); i++)
+				for (int i = 0; i < text.length(); i++)
 				{
-					char c = name.charAt(i);
+					char c = text.charAt(i);
 					double cWidth = p.charWidth(c);
 					double theta = startAngle + ((widthSoFar + cWidth / 2.0) / totalWidth) * (angleRange * 2.0);
 
