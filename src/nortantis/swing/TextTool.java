@@ -173,6 +173,7 @@ public class TextTool extends EditorTool
 				{
 					MapText before = lastSelected.deepCopy();
 					lastSelected.type = (TextType) textTypeComboBox.getSelectedItem();
+					showOrHideBoldBackgroundFields(lastSelected);
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
 				}
 			}

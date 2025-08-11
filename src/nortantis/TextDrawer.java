@@ -313,9 +313,9 @@ public class TextDrawer
 
 				Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
-				Rectangle singleLineBounds = getLine1Bounds(text.value, textLocation, p, false);
+				Rectangle singleLineBounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
 				singleLineBounds = expandBoundsToIncludeCurvatureAndSpacing(singleLineBounds, text.value, p, text.curvature, text.spacing);
-				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds);
+				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds, getFontHeight(p));
 
 				Rectangle textBoundsAllLines;
 				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
@@ -324,13 +324,13 @@ public class TextDrawer
 				{
 					Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-					Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
+					Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
 					line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, lines.getFirst(), p, text.curvature, text.spacing);
-					line1Bounds = addBackgroundBlendingPadding(line1Bounds);
+					line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p));
 
-					Rectangle line2Bounds = getLine2Bounds(lines.getSecond(), textLocation, p);
+					Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
 					line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, lines.getFirst(), p, text.curvature, text.spacing);
-					line2Bounds = addBackgroundBlendingPadding(line2Bounds);
+					line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p));
 
 					textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
 				}
@@ -357,9 +357,9 @@ public class TextDrawer
 		Point textLocation = new Point(text.location.x * settings.resolution, text.location.y * settings.resolution);
 
 		// Get bounds for when the text is on one line.
-		Rectangle bounds = getLine1Bounds(text.value, textLocation, p, false);
+		Rectangle bounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
 		bounds = expandBoundsToIncludeCurvatureAndSpacing(bounds, text.value, p, text.curvature, text.spacing);
-		bounds = addBackgroundBlendingPadding(bounds);
+		bounds = addBackgroundBlendingPadding(bounds, getFontHeight(p));
 		Rectangle boundingBox = new RotatedRectangle(bounds, text.angle, textLocation).getBounds();
 
 		// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also add
@@ -368,13 +368,13 @@ public class TextDrawer
 		{
 			Pair<String> lines = addLineBreakNearMiddle(text.value);
 
-			Rectangle line1Bounds = getLine1Bounds(lines.getFirst(), textLocation, p, true);
+			Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
 			line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, lines.getFirst(), p, text.curvature, text.spacing);
-			line1Bounds = addBackgroundBlendingPadding(line1Bounds);
+			line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p));
 
 			boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
 
-			Rectangle line2Bounds = getLine2Bounds(lines.getSecond(), textLocation, p);
+			Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
 			line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, lines.getSecond(), p, text.curvature, text.spacing);
 			boundingBox = boundingBox.add(new RotatedRectangle(line2Bounds, text.angle, textLocation).getBounds());
 		}
@@ -382,9 +382,9 @@ public class TextDrawer
 		return boundingBox;
 	}
 
-	private Rectangle addBackgroundBlendingPadding(Rectangle textBounds)
+	private Rectangle addBackgroundBlendingPadding(Rectangle textBounds, int fontHeight)
 	{
-		int padding = getBackgroundBlendingPadding(new Dimension(textBounds.width, textBounds.height));
+		int padding = getBackgroundBlendingPadding(fontHeight);
 		return new Rectangle(textBounds.x - padding, textBounds.y - padding, textBounds.width + padding * 2,
 				textBounds.height + padding * 2);
 	}
@@ -750,22 +750,25 @@ public class TextDrawer
 	 * Draws the given name to the map with the area around the name drawn from landAndOceanBackground to make it readable when the name is
 	 * drawn on top of mountains or trees.
 	 */
-	private void drawBackgroundBlendingForText(Image map, Painter p, Point textStart, Dimension textSize, double angle, String text,
-			Point pivot, double curvature, int spacing)
+	private void drawBackgroundBlendingForText(Image map, Painter p, Point textStart, Rectangle textBoundsBeforeCurvatureAndSpacing,
+			Rectangle textBounds, double angle, String text, Point pivot, double curvature, int spacing)
 	{
-		int kernelSize = getBackgroundBlendingKernelSize(textSize);
+		int kernelSize = getBackgroundBlendingKernelSize(getFontHeight(p));
 		if (kernelSize == 0)
 		{
 			return;
 		}
-		int padding = getBackgroundBlendingPadding(textSize);
+		int padding = getBackgroundBlendingPadding(getFontHeight(p));
 
-		Image textBG = Image.create((int) (textSize.width + padding * 2), (int) (textSize.height + padding * 2), ImageType.Grayscale8Bit);
+		Image textBG = Image.create((int) (textBounds.width + padding * 2), (int) (textBounds.height + padding * 2),
+				ImageType.Grayscale8Bit);
 
 		Painter bP = textBG.createPainter(DrawQuality.High);
 		bP.setFont(p.getFont());
 		bP.setColor(Color.white);
-		drawStringCurved(bP, text, new Point(padding, padding + p.getFontAscent()), curvature, spacing);
+		Point textStartDiffInMaskCausedByCurvatureAndSpacing =  textBoundsBeforeCurvatureAndSpacing.upperLeftCorner().subtract(textBounds.upperLeftCorner());
+		Point drawPointForMask = textStartDiffInMaskCausedByCurvatureAndSpacing.add(new Point(padding, padding + p.getFontAscent()));
+		drawStringCurved(bP, text, drawPointForMask, curvature, spacing);
 
 		// Use convolution to make a hazy background for the text.
 		Image haze = ImageHelper.convolveGrayscale(textBG, ImageHelper.createGaussianKernel(kernelSize), true, false);
@@ -773,21 +776,21 @@ public class TextDrawer
 		ImageHelper.threshold(haze, 1);
 		haze = ImageHelper.convolveGrayscale(haze, ImageHelper.createGaussianKernel(kernelSize), true, false);
 
-		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) Math.round(textStart.x)) - padding,
-				(int) Math.round(textStart.y) - p.getFontAscent() - padding, angle, pivot);
+		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
+				(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, angle, pivot);
 	}
 
-	private int getBackgroundBlendingKernelSize(Dimension textSize)
+	private int getBackgroundBlendingKernelSize(int fontHeight)
 	{
 		// This magic number below is a result of trial and error to get the
 		// blur levels to look right.
-		int kernelSize = (int) ((13.0 / 54.0) * textSize.height);
+		int kernelSize = (int) ((13.0 / 54.0) * fontHeight);
 		return kernelSize;
 	}
 
-	private int getBackgroundBlendingPadding(Dimension textSize)
+	private int getBackgroundBlendingPadding(int fontHeight)
 	{
-		return getBackgroundBlendingKernelSize(textSize);
+		return getBackgroundBlendingKernelSize(fontHeight);
 	}
 
 	/**
@@ -1169,7 +1172,8 @@ public class TextDrawer
 		if (text.lineBreak == LineBreak.Auto)
 		{
 			Point textLocationWithRiseOffsetIfDrawnInOneLine = getTextLocationWithRiseOffset(text, text.value, null, riseOffset, p);
-			Rectangle line1Bounds = getLine1Bounds(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p, false);
+			Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocationWithRiseOffsetIfDrawnInOneLine, p,
+					false);
 			line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text.value, p, text.curvature, text.spacing);
 			if (hasMultipleWords && overlapsBoundaryThatShouldCauseLineSplit(line1Bounds, textLocationWithRiseOffsetIfDrawnInOneLine,
 					text.angle, text.type, graph))
@@ -1305,9 +1309,9 @@ public class TextDrawer
 		Point pivot = getTextLocationWithRiseOffset(text, line1, line2, riseOffset, p);
 		Point pivotMinusDrawOffset = pivot.subtract(drawOffset);
 
-		Rectangle bounds1WithoutCurvature = getLine1Bounds(line1, pivot, p, line2 != null);
+		Rectangle bounds1WithoutCurvature = getLine1BoundsWithoutCurvatureOrSpacing(line1, pivot, p, line2 != null);
 		Rectangle bounds1 = expandBoundsToIncludeCurvatureAndSpacing(bounds1WithoutCurvature, line1, p, text.curvature, text.spacing);
-		Rectangle bounds2WithoutCurvature = getLine2Bounds(line2, pivot, p);
+		Rectangle bounds2WithoutCurvature = getLine2BoundsWithoutCurvatureOrSpacing(line2, pivot, p);
 		Rectangle bounds2 = bounds2WithoutCurvature == null ? null
 				: expandBoundsToIncludeCurvatureAndSpacing(bounds2WithoutCurvature, line2, p, text.curvature, text.spacing);
 
@@ -1407,16 +1411,16 @@ public class TextDrawer
 				// on the text start.
 				Point textStartLine1 = new Point(bounds1WithoutCurvature.x - drawOffset.x,
 						bounds1WithoutCurvature.y - drawOffset.y + p.getFontAscent());
-				drawBackgroundBlendingForText(map, p, textStartLine1, line1Size, text.angle, line1, pivotMinusDrawOffset, text.curvature,
-						text.spacing);
+				drawBackgroundBlendingForText(map, p, textStartLine1, bounds1WithoutCurvature, bounds1, text.angle, line1,
+						pivotMinusDrawOffset, text.curvature, text.spacing);
 
 				Point textStartLine2 = null;
 				if (line2 != null)
 				{
 					textStartLine2 = new Point(bounds2WithoutCurvature.x - drawOffset.x,
 							bounds2WithoutCurvature.y - drawOffset.y + p.getFontAscent());
-					drawBackgroundBlendingForText(map, p, textStartLine2, line2Size, text.angle, line2, pivotMinusDrawOffset,
-							text.curvature, text.spacing);
+					drawBackgroundBlendingForText(map, p, textStartLine2, bounds2WithoutCurvature, bounds2, text.angle, line2,
+							pivotMinusDrawOffset, text.curvature, text.spacing);
 				}
 
 				if (boldBackground)
@@ -1489,7 +1493,7 @@ public class TextDrawer
 		return new Point(textLocation.x - offset.x, textLocation.y - offset.y);
 	}
 
-	private Rectangle getLine1Bounds(String line1, Point pivot, Painter p, boolean hasLine2)
+	private Rectangle getLine1BoundsWithoutCurvatureOrSpacing(String line1, Point pivot, Painter p, boolean hasLine2)
 	{
 		int fontHeight = getFontHeight(p);
 		Dimension size = getTextDimensions(line1, p);
@@ -1497,7 +1501,7 @@ public class TextDrawer
 				size.height);
 	}
 
-	private Rectangle getLine2Bounds(String line2, Point pivot, Painter p)
+	private Rectangle getLine2BoundsWithoutCurvatureOrSpacing(String line2, Point pivot, Painter p)
 	{
 		if (line2 == null)
 		{

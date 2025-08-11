@@ -1477,7 +1477,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				mapEditingPanel.setResolution(displayQualityScale);
 			}
-			Method method = zoom < 0.3 ? Method.QUALITY : Method.BALANCED;
+			Method method = zoom < 0.34 ? Method.QUALITY : Method.BALANCED;
 			int zoomedWidth = (int) (mapEditingPanel.mapFromMapCreator.getWidth() * zoom);
 			if (zoomedWidth <= 0)
 			{
