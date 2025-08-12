@@ -474,9 +474,10 @@ public class MapCreator implements WarningLogger
 		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
 		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
-				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
-				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
+				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderPaddingScaledByResolution());
 
+		mapParts.background.drawEdgesIfBoundsTouchesThem(mapSnippet, drawBounds);
 		mapParts.background.drawInsetCornersIfBoundsTouchesThem(mapSnippet, drawBounds);
 
 		// Add grunge
@@ -496,8 +497,8 @@ public class MapCreator implements WarningLogger
 		}
 
 		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
-				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
-				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
+				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (settings.drawOverlayImage)
 		{
@@ -519,12 +520,14 @@ public class MapCreator implements WarningLogger
 
 		// Update the snippet in the main map.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
-				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
+				boundsInSourceToCopyFrom, mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (DebugFlags.showIncrementalUpdateBounds())
 		{
 			Painter p = fullSizedMap.createPainter();
-			int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+			int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
+					? (int) (settings.borderWidth * settings.resolution)
+					: 0;
 			p.setBasicStroke(4f);
 			p.setColor(Color.red);
 			{

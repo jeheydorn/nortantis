@@ -196,8 +196,8 @@ public class TextSearchDialog extends JDialog
 				{
 					scrollTo = scrollTo.add(searchResult.line2Bounds.getBounds());
 				}
-				double borderWidth = mainWindow.mapEditingPanel.getBorderWidth();
-				scrollTo = scrollTo.translate(borderWidth, borderWidth);
+				double borderPadding = mainWindow.mapEditingPanel.getBorderPadding();
+				scrollTo = scrollTo.translate(borderPadding, borderPadding);
 				scrollTo = scrollTo.scaleAboutOrigin(mainWindow.zoom * (1.0 / mainWindow.mapEditingPanel.osScale));
 				int padding = (int) (250 * (1.0 / mainWindow.mapEditingPanel.osScale));
 				scrollTo = scrollTo.pad(padding, padding);

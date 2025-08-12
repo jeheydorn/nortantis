@@ -850,7 +850,7 @@ public class TextDrawer
 
 		double ascent = p.getFontAscent();
 		double adjustedSpacing = text.length() < 2 ? 0.0 : spacing * ascent * spacingScale;
-		double startXDiffFromSpacing = (adjustedSpacing * text.length() - 1) / 2.0;
+		double startXDiffFromSpacing = (adjustedSpacing * (text.length() - 1)) / 2.0;
 
 		if (Math.abs(curvature) <= 0.001)
 		{

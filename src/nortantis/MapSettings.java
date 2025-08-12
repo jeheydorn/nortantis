@@ -153,6 +153,7 @@ public class MapSettings implements Serializable
 	public String borderType;
 	public NamedResource borderResource;
 	public int borderWidth;
+	public BorderPosition borderPosition;
 	public BorderColorOption borderColorOption;
 	public Color borderColor;
 	public boolean drawRoads = true;
@@ -420,6 +421,7 @@ public class MapSettings implements Serializable
 			root.put("borderResource", borderResource.toJSon());
 		}
 		root.put("borderWidth", borderWidth);
+		root.put("borderPosition", borderPosition.toString());
 		root.put("borderColorOption", borderColorOption.toString());
 		root.put("borderColor", colorToString(borderColor));
 		root.put("frayedBorderSize", frayedBorderSize);
@@ -925,6 +927,15 @@ public class MapSettings implements Serializable
 		else
 		{
 			borderWidth = 0;
+		}
+		
+		if (root.containsKey("borderPosition"))
+		{
+			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));;
+		}
+		else
+		{
+			borderPosition = BorderPosition.Outside_map;
 		}
 
 		if (root.containsKey("borderColorOption"))
@@ -1657,6 +1668,7 @@ public class MapSettings implements Serializable
 		drawBorder = old.drawBorder;
 		borderType = old.borderType;
 		borderWidth = old.borderWidth;
+		borderPosition = BorderPosition.Outside_map;
 		borderColorOption = BorderColorOption.Ocean_color;
 		borderColor = landColor;
 		frayedBorderSize = old.frayedBorderSize;
@@ -1798,7 +1810,6 @@ public class MapSettings implements Serializable
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
-	
 
 	@Override
 	public boolean equals(Object obj)
@@ -1822,9 +1833,9 @@ public class MapSettings implements Serializable
 				&& backgroundTextureSource == other.backgroundTextureSource
 				&& Objects.equals(boldBackgroundColor, other.boldBackgroundColor) && Objects.equals(books, other.books)
 				&& Objects.equals(borderColor, other.borderColor) && borderColorOption == other.borderColorOption
-				&& Objects.equals(borderResource, other.borderResource) && Objects.equals(borderType, other.borderType)
-				&& borderWidth == other.borderWidth && brightnessRange == other.brightnessRange
-				&& brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
+				&& borderPosition == other.borderPosition && Objects.equals(borderResource, other.borderResource)
+				&& Objects.equals(borderType, other.borderType) && borderWidth == other.borderWidth
+				&& brightnessRange == other.brightnessRange && brokenLinesForConcentricWaves == other.brokenLinesForConcentricWaves
 				&& Double.doubleToLongBits(centerLandToWaterProbability) == Double.doubleToLongBits(other.centerLandToWaterProbability)
 				&& Objects.equals(cityIconTypeName, other.cityIconTypeName)
 				&& Double.doubleToLongBits(cityProbability) == Double.doubleToLongBits(other.cityProbability)

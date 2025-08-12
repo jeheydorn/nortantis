@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import nortantis.BorderPosition;
 import nortantis.CancelledException;
 import nortantis.DebugFlags;
 import nortantis.MapCreator;
@@ -609,7 +610,9 @@ public abstract class MapUpdater
 					if (updateType != UpdateType.ReprocessBooks)
 					{
 						boolean anotherDrawIsQueued = next != null;
-						int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+						int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
+								? (int) (settings.borderWidth * settings.resolution)
+								: 0;
 						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
 								replaceBounds == null ? null
 										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
@@ -727,7 +730,7 @@ public abstract class MapUpdater
 
 	public abstract MapSettings getSettingsFromGUI();
 
-	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
 			Rectangle incrementalChangeArea, List<String> warningMessages);
 
 	protected abstract void onFailedToDraw();

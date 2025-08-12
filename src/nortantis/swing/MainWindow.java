@@ -562,11 +562,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
 					Rectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
-				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
+				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
 				mapEditingPanel.setIconDrawer(mapParts.iconDrawer);

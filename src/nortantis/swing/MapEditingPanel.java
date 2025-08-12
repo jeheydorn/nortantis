@@ -61,7 +61,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private int brushDiameter;
 	private double zoom;
 	private double resolution;
-	private int borderWidth;
+	private int borderPadding;
 	private nortantis.geom.Rectangle iconToEditBounds;
 	private boolean isIconToEditInAValidPosition;
 	private BufferedImage rotateIconScaled;
@@ -345,7 +345,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// space to image space.
 		AffineTransform transform = new AffineTransform();
 		transform.scale(zoom, zoom);
-		transform.translate(borderWidth, borderWidth);
+		transform.translate(borderPadding, borderPadding);
 		((Graphics2D) g).transform(transform);
 
 		// Handle drawing/highlighting
@@ -361,14 +361,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			if (imageEditMode == IconEditToolsMode.Overlay)
 			{
-				((Graphics2D) g).translate(-borderWidth, -borderWidth);
+				((Graphics2D) g).translate(-borderPadding, -borderPadding);
 			}
 
 			drawIconEditBox(((Graphics2D) g));
 
 			if (imageEditMode == IconEditToolsMode.Overlay)
 			{
-				((Graphics2D) g).translate(borderWidth, borderWidth);
+				((Graphics2D) g).translate(borderPadding, borderPadding);
 			}
 		}
 
@@ -772,14 +772,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 	}
 
-	public void setBorderWidth(int borderWidth)
+	public void setBorderPadding(int borderPadding)
 	{
-		this.borderWidth = borderWidth;
+		this.borderPadding = borderPadding;
 	}
 
-	public int getBorderWidth()
+	public int getBorderPadding()
 	{
-		return borderWidth;
+		return borderPadding;
 	}
 
 	public void clearAllSelectionsAndHighlights()
