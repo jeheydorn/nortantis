@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -22,6 +23,8 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -83,7 +86,6 @@ public class IconsTool extends EditorTool
 	private JSlider densitySlider;
 	private Random rand;
 	private RowHider densityHider;
-	private JRadioButton allButton;
 	private JRadioButton citiesButton;
 	private JRadioButton decorationsButton;
 	private DrawModeWidget modeWidget;
@@ -92,6 +94,14 @@ public class IconsTool extends EditorTool
 	private boolean isMoving;
 	private boolean isScaling;
 	private JComboBox<String> artPackComboBox;
+	private RowHider iconTypeButtonsHider;
+	private JCheckBox mountainsCheckbox;
+	private JCheckBox hillsCheckbox;
+	private JCheckBox dunesCheckbox;
+	private JCheckBox treesCheckbox;
+	private JCheckBox citiesCheckbox;
+	private JCheckBox decorationsCheckbox;
+	private RowHider iconTypeCheckboxesHider;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -159,7 +169,13 @@ public class IconsTool extends EditorTool
 				+ "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
 				artPackComboBox);
 
-		// Tools
+
+		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true,
+				"Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons",
+				() -> handleModeChanged());
+		modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
+
+		// Icon type radio buttons
 		{
 			ButtonGroup group = new ButtonGroup();
 			List<JComponent> radioButtons = new ArrayList<>();
@@ -237,26 +253,59 @@ public class IconsTool extends EditorTool
 				}
 			});
 
-			allButton = new JRadioButton("All");
-			group.add(allButton);
-			radioButtons.add(allButton);
-			allButton.addActionListener(new ActionListener()
+			iconTypeButtonsHider = organizer.addLabelAndComponentsVertical("Type:", "The type of icon to add/replace.", radioButtons);
+		}
+		
+		// Icon type checkboxes
+		{
+		    List<JCheckBox> checkBoxes = new ArrayList<>();
+
+		    mountainsCheckbox = new JCheckBox("Mountains");
+		    checkBoxes.add(mountainsCheckbox);
+
+		    hillsCheckbox = new JCheckBox("Hills");
+		    checkBoxes.add(hillsCheckbox);
+
+		    dunesCheckbox = new JCheckBox("Dunes");
+		    checkBoxes.add(dunesCheckbox);
+
+		    treesCheckbox = new JCheckBox("Trees");
+		    checkBoxes.add(treesCheckbox);
+
+		    citiesCheckbox = new JCheckBox("Cities");
+		    checkBoxes.add(citiesCheckbox);
+
+		    decorationsCheckbox = new JCheckBox("Decorations");
+		    checkBoxes.add(decorationsCheckbox);
+
+		    iconTypeCheckboxesHider = organizer.addLabelAndComponentsVertical("Types:", "Filters the type of icons to select.", checkBoxes);
+		    
+			JButton checkAll = new JButton("Check All");
+			checkAll.addActionListener(new ActionListener()
 			{
 				@Override
-				public void actionPerformed(ActionEvent event)
+				public void actionPerformed(ActionEvent e)
 				{
-					updateTypePanels();
+					checkBoxes.stream().forEach(button -> button.setSelected(true));
 				}
 			});
 
-			organizer.addLabelAndComponentsVertical("Type:", "The type of icon to add/edit.", radioButtons);
+			JButton uncheckAll = new JButton("Uncheck All");
+			uncheckAll.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					checkBoxes.stream().forEach(button -> button.setSelected(false));
+
+				}
+			});
+			checkBoxes.stream().forEach(button -> button.setSelected(true));
+			iconTypeCheckboxesHider.add(organizer.addLabelAndComponentsHorizontal("", "", Arrays.asList(checkAll, uncheckAll)));
+			iconTypeCheckboxesHider.setVisible(false);
 		}
 
-		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true,
-				"Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons",
-				() -> handleModeChanged());
-		modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
-
+		
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
@@ -307,6 +356,9 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.clearIconEditTools();
 		mapEditingPanel.repaint();
 		updateTypePanels();
+		
+		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
 	}
 
 	private void showOrHideBrush(MouseEvent e)
@@ -327,8 +379,6 @@ public class IconsTool extends EditorTool
 
 	private void updateTypePanels()
 	{
-		modeWidget.showOrHideOptions(!allButton.isSelected(), true, !allButton.isSelected(), true);
-
 		mountainTypes.hider.setVisible(mountainsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		hillTypes.hider.setVisible(hillsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		duneTypes.hider.setVisible(dunesButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
@@ -1046,7 +1096,7 @@ public class IconsTool extends EditorTool
 
 	private void handleEraseIcons(MouseEvent e)
 	{
-		if (allButton.isSelected() || treesButton.isSelected())
+		if (treesCheckbox.isSelected())
 		{
 			eraseTreesThatFailedToDrawDueToLowDensity(e);
 		}
@@ -1508,39 +1558,69 @@ public class IconsTool extends EditorTool
 
 	private boolean isSelectedType(FreeIcon icon)
 	{
-		if (mountainsButton.isSelected() && icon.type == IconType.mountains)
+		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
 		{
-			return true;
+			if (mountainsButton.isSelected() && icon.type == IconType.mountains)
+			{
+				return true;
+			}
+	
+			if (hillsButton.isSelected() && icon.type == IconType.hills)
+			{
+				return true;
+			}
+	
+			if (dunesButton.isSelected() && icon.type == IconType.sand)
+			{
+				return true;
+			}
+	
+			if (treesButton.isSelected() && icon.type == IconType.trees)
+			{
+				return true;
+			}
+	
+			if (decorationsButton.isSelected() && icon.type == IconType.decorations)
+			{
+				return true;
+			}
+	
+			if (citiesButton.isSelected() && icon.type == IconType.cities)
+			{
+				return true;
+			}
 		}
-
-		if (hillsButton.isSelected() && icon.type == IconType.hills)
+		else
 		{
-			return true;
-		}
-
-		if (dunesButton.isSelected() && icon.type == IconType.sand)
-		{
-			return true;
-		}
-
-		if (treesButton.isSelected() && icon.type == IconType.trees)
-		{
-			return true;
-		}
-
-		if (decorationsButton.isSelected() && icon.type == IconType.decorations)
-		{
-			return true;
-		}
-
-		if (citiesButton.isSelected() && icon.type == IconType.cities)
-		{
-			return true;
-		}
-
-		if (allButton.isSelected())
-		{
-			return true;
+			if (mountainsCheckbox.isSelected() && icon.type == IconType.mountains)
+			{
+				return true;
+			}
+	
+			if (hillsCheckbox.isSelected() && icon.type == IconType.hills)
+			{
+				return true;
+			}
+	
+			if (dunesCheckbox.isSelected() && icon.type == IconType.sand)
+			{
+				return true;
+			}
+	
+			if (treesCheckbox.isSelected() && icon.type == IconType.trees)
+			{
+				return true;
+			}
+	
+			if (decorationsCheckbox.isSelected() && icon.type == IconType.decorations)
+			{
+				return true;
+			}
+	
+			if (citiesCheckbox.isSelected() && icon.type == IconType.cities)
+			{
+				return true;
+			}
 		}
 
 		return false;
