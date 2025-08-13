@@ -357,15 +357,15 @@ public class IconsTool extends EditorTool
 			radioButtons.add(button);
 		}
 
-		List<? extends Component> listToUse = radioButtons.size() > 0
-				? radioButtons
+		List<? extends Component> listToUse = radioButtons.size() > 0 ? radioButtons
 				: Arrays.asList(
 						new JLabel("<html>The art pack '" + artPack + "' has no " + iconType.toString().toLowerCase() + ".</html>"));
 		IconTypeButtons result;
 		if (existing == null)
 		{
 			JPanel buttonsPanel = new JPanel();
-			result = new IconTypeButtons(organizer.addLabelAndComponentsVerticalWithComponentPanel(iconType.getNameForGUI() + ":", "", listToUse, buttonsPanel),
+			result = new IconTypeButtons(
+					organizer.addLabelAndComponentsVerticalWithComponentPanel(iconType.getNameForGUI() + ":", "", listToUse, buttonsPanel),
 					radioButtons, buttonsPanel);
 		}
 		else
@@ -493,8 +493,8 @@ public class IconsTool extends EditorTool
 					protected List<Image> doInBackground() throws Exception
 					{
 						List<Image> previewImages = new ArrayList<>();
-						Map<String, ImageAndMasks> iconsInGroup = ImageCache
-								.getInstance(settings.artPack, settings.customImagesPath).getIconsByNameForGroup(selector.type, groupId);
+						Map<String, ImageAndMasks> iconsInGroup = ImageCache.getInstance(settings.artPack, settings.customImagesPath)
+								.getIconsByNameForGroup(selector.type, groupId);
 
 						for (Tuple2<String, UnscaledImageToggleButton> nameAndButton : namesAndButtons)
 						{
@@ -692,10 +692,11 @@ public class IconsTool extends EditorTool
 	private Image createIconPreview(MapSettings settings, List<Image> images, int scaledHeight, int padding, IconType iconType)
 	{
 		final double osScaling = SwingHelper.getOSScale();
-		final int maxRowWidth = (int)(168 * osScaling);
-		final int horizontalPaddingBetweenImages = (int)(2 * osScaling);;
-		padding = (int)(padding * osScaling);
-		scaledHeight = (int)(scaledHeight * osScaling);
+		final int maxRowWidth = (int) (168 * osScaling);
+		final int horizontalPaddingBetweenImages = (int) (2 * osScaling);
+		;
+		padding = (int) (padding * osScaling);
+		scaledHeight = (int) (scaledHeight * osScaling);
 
 		// Find the size needed for the preview
 		int rowCount = 1;
@@ -1062,11 +1063,22 @@ public class IconsTool extends EditorTool
 			return iconsInner;
 		});
 
+
 		mapEditingPanel.clearHighlightedAreas();
+		mapEditingPanel.repaint();
 
 		if (icons != null && !icons.isEmpty())
 		{
-			updater.createAndShowMapIncrementalUsingIcons(icons);
+			Set<RotatedRectangle> processingAreas = icons.stream()
+					.map(icon -> new RotatedRectangle(updater.mapParts.iconDrawer.toIconDrawTask(icon).createBounds()))
+					.collect(Collectors.toSet());
+			mapEditingPanel.addProcessingAreas(processingAreas);
+			mapEditingPanel.repaint();
+			updater.createAndShowMapIncrementalUsingIcons(icons, () ->
+			{
+				mapEditingPanel.removeProcessingAreas(processingAreas);
+				mapEditingPanel.repaint();
+			});
 		}
 	}
 
@@ -1318,6 +1330,7 @@ public class IconsTool extends EditorTool
 		Set<Center> selected = getSelectedCenters(e.getPoint());
 		mapEditingPanel.addHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
+		mapEditingPanel.repaint();
 	}
 
 	private void highlightHoverIconsAndShowBrush(MouseEvent e)
@@ -1343,6 +1356,7 @@ public class IconsTool extends EditorTool
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
 			mapEditingPanel.setHighlightedAreasFromIcons(icons, modeWidget.isEraseMode());
 		}
+		mapEditingPanel.repaint();
 	}
 
 	@Override
