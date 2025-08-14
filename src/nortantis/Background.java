@@ -654,15 +654,7 @@ public class Background
 
 		// Top and bottom edges
 		Image edge = topVsBottom == 0 ? topEdge : bottomEdge;
-		int y;
-		if (isBorderOutsideMap)
-		{
-			y = topVsBottom == 0 ? 0 : ((int) mapBounds.height) - borderWidthScaled;
-		}
-		else
-		{
-			y = topVsBottom == 0 ? 0 : ((int) mapBounds.height) - borderWidthScaled;
-		}
+		final int y = topVsBottom == 0 ? 0 : ((int) borderBounds.height) - borderWidthScaled;
 
 		int xOffset = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yOffset = drawBounds == null ? 0 : (int) drawBounds.y;
@@ -721,15 +713,7 @@ public class Background
 		}
 
 		Image edge = leftVsRight == 0 ? leftEdge : rightEdge;
-		int x;
-		if (isBorderOutsideMap)
-		{
-			x = leftVsRight == 0 ? 0 : ((int) mapBounds.width) + borderWidthScaled;
-		}
-		else
-		{
-			x = leftVsRight == 0 ? 0 : ((int) mapBounds.width) - borderWidthScaled;
-		}
+		final int x = leftVsRight == 0 ? 0 : ((int) borderBounds.width) - borderWidthScaled;
 
 		int xOffset = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yOffset = drawBounds == null ? 0 : (int) drawBounds.y;
