@@ -1,5 +1,7 @@
 package nortantis.swing;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -7,9 +9,12 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import nortantis.IconType;
+import nortantis.ImageCache;
 import nortantis.editor.UserPreferences;
 import nortantis.util.Tuple2;
 
@@ -17,19 +22,93 @@ public class NamedIconSelector
 {
 	public RowHider hider;
 	private Map<String, List<Tuple2<String, UnscaledImageToggleButton>>> buttons;
-	public JPanel typesPanel;
+	private JPanel container;
 	public final IconType type;
 
 	public NamedIconSelector(IconType type)
 	{
 		this.type = type;
 		this.buttons = new TreeMap<>();
+		container = new JPanel();
+		container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+	}
+
+	public void updateButtonList(String artPack, String customImagesPath)
+	{
+		clearButtons();
+
+		Tuple2<String, String> selectedButton = getSelectedButton();
+		boolean hasAtLeastOneImage = false;
+		for (String groupId : ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(type))
+		{
+			JPanel buttonsPanel = new JPanel();
+			buttonsPanel.setLayout(new WrapLayout());
+			buttonsPanel.setBorder(new DynamicLineBorder("controlShadow", 1));
+			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
+					.getIconGroupFileNamesWithoutWidthOrExtension(type, groupId))
+			{
+				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
+				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
+				toggleButton.addActionListener(new ActionListener()
+				{
+
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						if (!toggleButton.isSelected())
+						{
+							toggleButton.setSelected(true);
+						}
+						unselectAllButtonsExcept(toggleButton);
+						NamedIconSelector.updateToggleButtonBorder(toggleButton);
+					}
+				});
+				NamedIconSelector.updateToggleButtonBorder(toggleButton);
+
+				addButton(groupId, fileNameWithoutWidthOrExtension, toggleButton);
+				buttonsPanel.add(toggleButton);
+				hasAtLeastOneImage = true;
+			}
+
+			// If at least one button was added for this group
+			if (getTypes().contains(groupId))
+			{	
+				CollapsiblePanel collapsiblePanel = new CollapsiblePanel(type.toString() + "Type", groupId, buttonsPanel);
+				container.add(collapsiblePanel);
+			}
+			
+		}
+
+		if (hasAtLeastOneImage)
+		{
+			if (selectedButton != null)
+			{
+				boolean found = selectButtonIfPresent(selectedButton.getFirst(), selectedButton.getSecond());
+				if (!found)
+				{
+					selectFirstButton();
+				}
+			}
+			else
+			{
+				selectFirstButton();
+			}
+		}
+		else
+		{
+			container.add(new JLabel("<html>The art pack '" + artPack + "' has no " + type + ".</html>"));
+		}
+	}
+
+	public void addtoOrganizer(GridBagOrganizer organizer, String labelText)
+	{
+		hider = organizer.addLeftAlignedComponentWithStackedLabel(labelText, "", container);
 	}
 
 	public void clearButtons()
 	{
 		this.buttons = new TreeMap<>();
-		typesPanel.removeAll();
+		container.removeAll();
 	}
 
 	public void addButton(String type, String iconFileNameWithoutWidthOrExtension, UnscaledImageToggleButton button)

@@ -35,6 +35,7 @@ public class ImageAndMasks
 	 * size of icons in the group.
 	 */
 	public final double widthFromFileName;
+	private Image colorMask;
 
 	public ImageAndMasks(Image image, IconType iconType, double widthFromFileName)
 	{
@@ -339,6 +340,35 @@ public class ImageAndMasks
 
 		// Use the content mask to set non-content pixels to zero.
 		shadingMask = ImageHelper.maskWithColor(blurredLine, Color.black, contentMask, false);
+	}
+	
+	public synchronized Image getOrCreateColorMask()
+	{
+		if (image == null)
+		{
+			return null;
+		}
+
+		if (colorMask == null)
+		{
+			createColorMask();
+		}
+
+		return colorMask;
+	}
+
+	private synchronized void createColorMask()
+	{
+		getOrCreateContentMask();
+		getOrCreateShadingMask();
+		
+		// Convert binary to 8-bit grayscale
+		colorMask = Image.create(contentMask.getWidth(), contentMask.getHeight(), ImageType.Grayscale8Bit);
+		Painter p = colorMask.createPainter();
+		p.drawImage(contentMask, 0, 0);
+		p.dispose();
+		// TODO decide if I want to get more fancy than this to avoid overwriting existing colors
+		ImageHelper.subtract(colorMask, shadingMask);
 	}
 
 	private static void drawWhitePolygonFromPoints(Image image, List<Coordinate> points)

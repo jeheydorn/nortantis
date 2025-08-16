@@ -19,6 +19,7 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
+import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
@@ -45,6 +46,11 @@ public class ImageCache
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
+	 * Maps original images, to color, colored images.
+	 */
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Color, Image>> coloredCache;
+
+	/**
 	 * Maps file path (or any string key) to images.
 	 */
 	private ConcurrentHashMapF<String, Image> fileCache;
@@ -67,6 +73,7 @@ public class ImageCache
 	{
 		this.imagesPath = imagesPath;
 		scaledCache = new ConcurrentHashMapF<>();
+		coloredCache = new ConcurrentHashMapF<>();
 		fileCache = new ConcurrentHashMapF<>();
 		iconsWithSizesCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
@@ -123,6 +130,20 @@ public class ImageCache
 		// problem.
 		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size,
 				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
+	}
+	
+	/**
+	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
+	 */
+	public Image getColoredImage(ImageAndMasks imageAndMasks, Color color)
+	{
+		// There is a small chance the 2 different threads might both add the
+		// same image at the same time,
+		// but if that did happen it would only results in a little bit of
+		// duplicated work, not a functional
+		// problem.
+		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color,
+				() -> ImageHelper.maskWithColor(imageAndMasks.image, color, imageAndMasks.getOrCreateColorMask(), true));
 	}
 
 	public Image getImageFromFile(Path path)

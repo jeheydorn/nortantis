@@ -23,7 +23,6 @@ import nortantis.platform.Painter;
 import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
-import nortantis.util.Range;
 import nortantis.util.Tuple2;
 
 /**

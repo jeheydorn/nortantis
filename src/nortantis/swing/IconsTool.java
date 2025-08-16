@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -16,11 +15,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -102,6 +101,9 @@ public class IconsTool extends EditorTool
 	private JCheckBox citiesCheckbox;
 	private JCheckBox decorationsCheckbox;
 	private RowHider iconTypeCheckboxesHider;
+	private RowHider colorPickerHider;
+	private JPanel colorDisplay;
+	private Map<IconType, Color> iconColorsByType;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -109,6 +111,7 @@ public class IconsTool extends EditorTool
 		rand = new Random();
 		namedIconPreviewCache = new ConcurrentHashMapF<>();
 		groupPreviewCache = new ConcurrentHashMapF<>();
+		iconColorsByType = new TreeMap<>();
 	}
 
 	@Override
@@ -255,31 +258,31 @@ public class IconsTool extends EditorTool
 
 			iconTypeButtonsHider = organizer.addLabelAndComponentsVertical("Type:", "The type of icon to add/replace.", radioButtons);
 		}
-		
+
 		// Icon type checkboxes
 		{
-		    List<JCheckBox> checkBoxes = new ArrayList<>();
+			List<JCheckBox> checkBoxes = new ArrayList<>();
 
-		    mountainsCheckbox = new JCheckBox("Mountains");
-		    checkBoxes.add(mountainsCheckbox);
+			mountainsCheckbox = new JCheckBox("Mountains");
+			checkBoxes.add(mountainsCheckbox);
 
-		    hillsCheckbox = new JCheckBox("Hills");
-		    checkBoxes.add(hillsCheckbox);
+			hillsCheckbox = new JCheckBox("Hills");
+			checkBoxes.add(hillsCheckbox);
 
-		    dunesCheckbox = new JCheckBox("Dunes");
-		    checkBoxes.add(dunesCheckbox);
+			dunesCheckbox = new JCheckBox("Dunes");
+			checkBoxes.add(dunesCheckbox);
 
-		    treesCheckbox = new JCheckBox("Trees");
-		    checkBoxes.add(treesCheckbox);
+			treesCheckbox = new JCheckBox("Trees");
+			checkBoxes.add(treesCheckbox);
 
-		    citiesCheckbox = new JCheckBox("Cities");
-		    checkBoxes.add(citiesCheckbox);
+			citiesCheckbox = new JCheckBox("Cities");
+			checkBoxes.add(citiesCheckbox);
 
-		    decorationsCheckbox = new JCheckBox("Decorations");
-		    checkBoxes.add(decorationsCheckbox);
+			decorationsCheckbox = new JCheckBox("Decorations");
+			checkBoxes.add(decorationsCheckbox);
 
-		    iconTypeCheckboxesHider = organizer.addLabelAndComponentsVertical("Types:", "Filters the type of icons to select.", checkBoxes);
-		    
+			iconTypeCheckboxesHider = organizer.addLabelAndComponentsVertical("Types:", "Filters the type of icons to select.", checkBoxes);
+
 			JButton checkAll = new JButton("Check All");
 			checkAll.addActionListener(new ActionListener()
 			{
@@ -297,7 +300,6 @@ public class IconsTool extends EditorTool
 				public void actionPerformed(ActionEvent e)
 				{
 					checkBoxes.stream().forEach(button -> button.setSelected(false));
-
 				}
 			});
 			checkBoxes.stream().forEach(button -> button.setSelected(true));
@@ -305,7 +307,7 @@ public class IconsTool extends EditorTool
 			iconTypeCheckboxesHider.setVisible(false);
 		}
 
-		
+
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
@@ -316,6 +318,29 @@ public class IconsTool extends EditorTool
 			SwingHelper.setSliderWidthForSidePanel(densitySlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(densitySlider);
 			densityHider = sliderWithDisplay.addToOrganizer(organizer, "Density:", "");
+		}
+
+		{
+			colorDisplay = SwingHelper.createColorPickerPreviewPanel();
+			JButton chooseColorButton = new JButton("Choose");
+			chooseColorButton.addActionListener(new ActionListener()
+			{
+				public void actionPerformed(ActionEvent e)
+				{
+					SwingHelper.showColorPicker(organizer.panel, colorDisplay, "Icon Color", () ->
+					{
+						if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+						{
+							IconType selectedType = getSelectedIconType();
+							iconColorsByType.put(selectedType, AwtFactory.wrap(colorDisplay.getBackground()));
+							updateIconTypeButtonPreviewImages(mainWindow.getSettingsFromGUI(false));
+						}
+					});
+				}
+			});
+			colorPickerHider = organizer.addLabelAndComponentsHorizontal("Color:",
+					"Color to fill transparent pixels in the icon with", Arrays.asList(colorDisplay, chooseColorButton));
+
 		}
 
 		mountainTypes = createOrUpdateRadioButtonsForIconType(organizer, IconType.mountains, mountainTypes, Assets.installedArtPack, null);
@@ -334,6 +359,42 @@ public class IconsTool extends EditorTool
 		organizer.addVerticalFillerRow();
 
 		return toolOptionsPanel;
+	}
+	
+	private void setColorPickerColorForSelectedType()
+	{
+		if (iconColorsByType == null)
+		{
+			return;
+		}
+		
+		if (modeWidget.isDrawMode() || modeWidget.isReplaceMode())
+		{
+			if (mountainsButton.isSelected())
+			{
+				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.mountains)));
+			}
+			else if (hillsButton.isSelected())
+			{
+				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.hills)));			
+			}
+			else if (dunesButton.isSelected())
+			{
+				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.sand)));			
+			}
+			else if (treesButton.isSelected())
+			{
+				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.trees)));			
+			}
+			else if (citiesButton.isSelected())
+			{
+				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.cities)));			
+			}
+			else if (decorationsButton.isSelected())
+			{
+				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.decorations)));			
+			}
+		}
 	}
 
 	/**
@@ -356,7 +417,7 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.clearIconEditTools();
 		mapEditingPanel.repaint();
 		updateTypePanels();
-		
+
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
 	}
@@ -388,6 +449,9 @@ public class IconsTool extends EditorTool
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
 		brushSizeHider.setVisible((modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected())
 				|| modeWidget.isReplaceMode() || modeWidget.isEraseMode());
+		colorPickerHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode());
+		setColorPickerColorForSelectedType();
+
 		toolsPanel.revalidate();
 		toolsPanel.repaint();
 	}
@@ -586,12 +650,19 @@ public class IconsTool extends EditorTool
 
 						for (int i : new Range(previewImages.size()))
 						{
-							// Checking for null because I hit a crash once when the below returned null. There didn't seem to be any
-							// functional impact from the crash though.
-							if (selector.getIconNamesAndButtons(groupId) != null)
+							// TODO Fix this case so these crashes don't happen. They're causing icon previews to not load correctly.
+							try
 							{
 								selector.getIconNamesAndButtons(groupId).get(i).getSecond()
-										.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+								.setIcon(new ImageIcon(AwtFactory.unwrap(previewImages.get(i))));
+							}
+							catch (NullPointerException ex)
+							{
+								Logger.println("While updating icon preview images, the image selectors did not contain group ID: " + groupId + ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
+							}
+							catch (IndexOutOfBoundsException ex)
+							{
+								Logger.println("While updating icon preview images, the image selectors did not have the correct expected of buttons for: " + groupId + ". If icon previews don't update correctly, try refreshing the map (ctrl+R).");
 							}
 						}
 					}
@@ -602,125 +673,34 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String artPack, String customImagesPath)
-	{
-		boolean isNew;
-		Tuple2<String, String> selectedCity = null;
-		if (cityButtons == null)
-		{
-			// This is the first time to create the city buttons.
-			cityButtons = new NamedIconSelector(IconType.cities);
-			JPanel typesPanel = new JPanel();
-			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
-			cityButtons.typesPanel = typesPanel;
-			isNew = true;
-		}
-		else
-		{
-			selectedCity = cityButtons.getSelectedButton();
-			cityButtons.clearButtons();
-			isNew = false;
-		}
-
-		updateNamedIconSelector(organizer, artPack, customImagesPath, cityButtons, isNew, selectedCity, "Cities: ");
-	}
-
 	private void updateArtPackOptions(String selectedArtPack, String customImagesPath)
 	{
 		SwingHelper.initializeComboBoxItems(artPackComboBox, Assets.listArtPacks(!StringUtils.isEmpty(customImagesPath)), selectedArtPack,
 				false);
 	}
 
-	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String artPack, String customImagesPath)
+	private void createOrUpdateButtonsForCities(GridBagOrganizer organizer, String artPack, String customImagesPath)
 	{
-		boolean isNew;
-		Tuple2<String, String> selectedButton = null;
-		if (decorationButtons == null)
+		if (cityButtons == null)
 		{
-			// This is the first time to create the buttons.
-			decorationButtons = new NamedIconSelector(IconType.decorations);
-			JPanel typesPanel = new JPanel();
-			typesPanel.setLayout(new BoxLayout(typesPanel, BoxLayout.Y_AXIS));
-			decorationButtons.typesPanel = typesPanel;
-			isNew = true;
-		}
-		else
-		{
-			selectedButton = decorationButtons.getSelectedButton();
-			decorationButtons.clearButtons();
-			isNew = false;
+			// This is the first time to create the city buttons.
+			cityButtons = new NamedIconSelector(IconType.cities);
+			cityButtons.addtoOrganizer(organizer, "Cities: ");
 		}
 
-		updateNamedIconSelector(organizer, artPack, customImagesPath, decorationButtons, isNew, selectedButton, "Decorations: ");
+		cityButtons.updateButtonList(artPack, customImagesPath);
 	}
 
-	private static void updateNamedIconSelector(GridBagOrganizer organizer, String artPack, String customImagesPath,
-			NamedIconSelector selector, boolean isNew, Tuple2<String, String> selectedCity, String labelText)
+	private void createOrUpdateDecorationButtons(GridBagOrganizer organizer, String artPack, String customImagesPath)
 	{
-		boolean hasAtLeastOneImage = false;
-		for (String groupId : ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(selector.type))
+		if (decorationButtons == null)
 		{
-			JPanel typePanel = new JPanel();
-			typePanel.setLayout(new WrapLayout());
-			typePanel.setBorder(new DynamicLineBorder("controlShadow", 1));
-			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtension(selector.type, groupId))
-			{
-				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
-				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);
-				toggleButton.addActionListener(new ActionListener()
-				{
-
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						if (!toggleButton.isSelected())
-						{
-							toggleButton.setSelected(true);
-						}
-						selector.unselectAllButtonsExcept(toggleButton);
-						NamedIconSelector.updateToggleButtonBorder(toggleButton);
-					}
-				});
-				NamedIconSelector.updateToggleButtonBorder(toggleButton);
-
-				selector.addButton(groupId, fileNameWithoutWidthOrExtension, toggleButton);
-				typePanel.add(toggleButton);
-				hasAtLeastOneImage = true;
-			}
-
-			// If at least one button was added for this group
-			if (selector.getTypes().contains(groupId))
-			{
-				CollapsiblePanel panel = new CollapsiblePanel(selector.type.toString() + "Type", groupId, typePanel);
-				selector.typesPanel.add(panel);
-			}
+			// This is the first time to create the city buttons.
+			decorationButtons = new NamedIconSelector(IconType.decorations);
+			decorationButtons.addtoOrganizer(organizer, "Decorations: ");
 		}
 
-		if (isNew)
-		{
-			selector.hider = organizer.addLeftAlignedComponentWithStackedLabel(labelText, "", selector.typesPanel);
-		}
-
-		if (hasAtLeastOneImage)
-		{
-			if (selectedCity != null)
-			{
-				boolean found = selector.selectButtonIfPresent(selectedCity.getFirst(), selectedCity.getSecond());
-				if (!found)
-				{
-					selector.selectFirstButton();
-				}
-			}
-			else
-			{
-				selector.selectFirstButton();
-			}
-		}
-		else
-		{
-			selector.typesPanel.add(new JLabel("<html>The art pack '" + artPack + "' has no " + selector.type + ".</html>"));
-		}
+		decorationButtons.updateButtonList(artPack, customImagesPath);
 	}
 
 	private ConcurrentHashMapF<Tuple3<String, IconType, String>, Image> groupPreviewCache;
@@ -980,10 +960,48 @@ public class IconsTool extends EditorTool
 				String iconName = selectedButton.getSecond();
 				nortantis.geom.Point point = getPointOnGraph(e.getPoint());
 				FreeIcon icon = new FreeIcon(mainWindow.displayQualityScale, point, 1.0, IconType.decorations,
-						(String) artPackComboBox.getSelectedItem(), groupId, iconName, null);
+						(String) artPackComboBox.getSelectedItem(), groupId, iconName, null, getSelectedIconTypeColor());
 				mainWindow.edits.freeIcons.addOrReplace(icon);
 				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(icon));
 			}
+		}
+	}
+	
+	private Color getSelectedIconTypeColor()
+	{
+		IconType selectedType = getSelectedIconType();
+		return iconColorsByType.get(selectedType);
+	}
+	
+	private IconType getSelectedIconType()
+	{
+		if (mountainsButton.isSelected())
+		{
+			return IconType.mountains;
+		}
+		else if (hillsButton.isSelected())
+		{
+			return IconType.hills;
+		}
+		else if (dunesButton.isSelected())
+		{
+			return IconType.sand;
+		}
+		else if (treesButton.isSelected())
+		{
+			return IconType.trees;
+		}
+		else if (citiesButton.isSelected())
+		{
+			return IconType.cities;
+		}
+		else if (decorationsButton.isSelected())
+		{
+			return IconType.decorations;
+		}
+		else
+		{
+			throw new UnsupportedOperationException("Unrecognized icon type button.");
 		}
 	}
 
@@ -1564,27 +1582,27 @@ public class IconsTool extends EditorTool
 			{
 				return true;
 			}
-	
+
 			if (hillsButton.isSelected() && icon.type == IconType.hills)
 			{
 				return true;
 			}
-	
+
 			if (dunesButton.isSelected() && icon.type == IconType.sand)
 			{
 				return true;
 			}
-	
+
 			if (treesButton.isSelected() && icon.type == IconType.trees)
 			{
 				return true;
 			}
-	
+
 			if (decorationsButton.isSelected() && icon.type == IconType.decorations)
 			{
 				return true;
 			}
-	
+
 			if (citiesButton.isSelected() && icon.type == IconType.cities)
 			{
 				return true;
@@ -1596,27 +1614,27 @@ public class IconsTool extends EditorTool
 			{
 				return true;
 			}
-	
+
 			if (hillsCheckbox.isSelected() && icon.type == IconType.hills)
 			{
 				return true;
 			}
-	
+
 			if (dunesCheckbox.isSelected() && icon.type == IconType.sand)
 			{
 				return true;
 			}
-	
+
 			if (treesCheckbox.isSelected() && icon.type == IconType.trees)
 			{
 				return true;
 			}
-	
+
 			if (decorationsCheckbox.isSelected() && icon.type == IconType.decorations)
 			{
 				return true;
 			}
-	
+
 			if (citiesCheckbox.isSelected() && icon.type == IconType.cities)
 			{
 				return true;
@@ -1647,6 +1665,12 @@ public class IconsTool extends EditorTool
 				artPackComboBox.setSelectedItem(Assets.installedArtPack);
 			}
 		}
+		
+		iconColorsByType.clear();
+		for (IconType iconType : IconType.values())
+		{
+			iconColorsByType.put(iconType, settings.getIconColorForType(iconType));
+		}
 
 		updateTypePanels();
 		// Skip updating icon previews now if there will be an images refresh in
@@ -1663,6 +1687,12 @@ public class IconsTool extends EditorTool
 	{
 		settings.artPack = (String) artPackComboBox.getSelectedItem();
 		assert !StringUtils.isEmpty(settings.artPack);
+
+		// Selected colors per icon type
+		for (Map.Entry<IconType, Color> entry : iconColorsByType.entrySet())
+		{
+			settings.setIconColorForType(entry.getKey(), entry.getValue());
+		}
 	}
 
 	@Override

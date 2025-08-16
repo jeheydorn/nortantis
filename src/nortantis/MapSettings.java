@@ -7,10 +7,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -64,6 +67,7 @@ public class MapSettings implements Serializable
 	private final Stroke defaultRoadStyle = new Stroke(StrokeType.Dots,
 			(float) (MapCreator.calcSizeMultipilerFromResolutionScaleRounded(1.0) * defaultRoadWidth));
 	private final Color defaultRoadColor = Color.black;
+	public static final Color defaultIconColor = Color.create(0, 0, 0, 0);
 
 	public String version;
 	public long randomSeed;
@@ -102,8 +106,8 @@ public class MapSettings implements Serializable
 	public int grungeWidth;
 	public boolean drawGrunge;
 	/**
-	 * This setting actually means fractal generated as opposed to generated from texture.
-	 * It is mutually exclusive with generateBackgroundFromTexture
+	 * This setting actually means fractal generated as opposed to generated from texture. It is mutually exclusive with
+	 * generateBackgroundFromTexture
 	 */
 	public boolean generateBackground;
 	public boolean generateBackgroundFromTexture;
@@ -204,8 +208,11 @@ public class MapSettings implements Serializable
 	public boolean flipHorizontally;
 	public boolean flipVertically;
 
+	private ConcurrentHashMap<IconType, Color> iconColorsByType;
+
 	public MapSettings()
 	{
+		iconColorsByType = new ConcurrentHashMap<IconType, Color>();
 		edits = new MapEdits();
 	}
 
@@ -218,6 +225,7 @@ public class MapSettings implements Serializable
 	 */
 	public MapSettings(String filePath)
 	{
+		this();
 		if (FilenameUtils.getExtension(filePath).toLowerCase().equals("nort"))
 		{
 			String fileContents = Assets.readFileAsString(filePath);
@@ -453,6 +461,17 @@ public class MapSettings implements Serializable
 		root.put("flipHorizontally", flipHorizontally);
 		root.put("flipVertically", flipVertically);
 
+		JSONObject iconColorsObj = new JSONObject();
+		for (Map.Entry<IconType, Color> entry : iconColorsByType.entrySet())
+		{
+			IconType key = entry.getKey();
+			Color value = entry.getValue();
+
+			// JSONSimple will handle most basic types
+			iconColorsObj.put(key, colorToString(value));
+		}
+		root.put("iconColorsByType", iconColorsObj);
+
 		// User edits.
 		if (edits != null && !skipEdits)
 		{
@@ -552,6 +571,7 @@ public class MapSettings implements Serializable
 			iconObj.put("scale", icon.scale);
 			iconObj.put("centerIndex", icon.centerIndex);
 			iconObj.put("density", icon.density);
+			iconObj.put("color", colorToString(icon.color));
 			list.add(iconObj);
 		}
 		return list;
@@ -928,10 +948,11 @@ public class MapSettings implements Serializable
 		{
 			borderWidth = 0;
 		}
-		
+
 		if (root.containsKey("borderPosition"))
 		{
-			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));;
+			borderPosition = Enum.valueOf(BorderPosition.class, ((String) root.get("borderPosition")).replace(" ", "_"));
+			;
 		}
 		else
 		{
@@ -1073,6 +1094,28 @@ public class MapSettings implements Serializable
 		else
 		{
 			flipVertically = false;
+		}
+
+		iconColorsByType.clear();
+		if (root.containsKey("iconColorsByType"))
+		{
+			JSONObject mapObj = (JSONObject) root.get("iconColorsByType");
+			for (Object key : mapObj.keySet())
+			{
+				String keyString = (String) key;
+				IconType iconType = IconType.valueOf(keyString);
+				Color color = parseColor((String) mapObj.get(key));
+				iconColorsByType.put(iconType, color);
+			}
+		}
+		
+		// Make they are all populated with transparent values.
+		for (IconType iconType : IconType.values())
+		{
+			if (!iconColorsByType.containsKey(iconType))
+			{
+				iconColorsByType.put(iconType, defaultIconColor);
+			}
 		}
 
 		edits = new MapEdits();
@@ -1335,8 +1378,9 @@ public class MapSettings implements Serializable
 					? parseColor((String) jsonObj.get("boldBackgroundColorOverride"))
 					: null;
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
-			int spacing = jsonObj.containsKey("spacing") ? (int)(long) jsonObj.get("spacing") : 0;
-			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing);
+			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
+			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature,
+					spacing);
 			result.add(mp);
 		}
 
@@ -1464,9 +1508,10 @@ public class MapSettings implements Serializable
 				centerIndex = (int) (long) iconObj.get("centerIndex");
 			}
 			double density = (double) iconObj.get("density");
+			Color color = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : defaultIconColor;
 
-			result.addOrReplace(
-					new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density));
+			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex,
+					density, color));
 		}
 
 		return result;
@@ -1768,6 +1813,25 @@ public class MapSettings implements Serializable
 		}
 	}
 
+	public Color getIconColorForType(IconType iconType)
+	{
+		if (iconColorsByType.containsKey(iconType))
+		{
+			return iconColorsByType.get(iconType);
+		}
+		return defaultIconColor;
+	}
+	
+	public Map<IconType, Color> copyIconColorsByType()
+	{
+		return Collections.unmodifiableMap(iconColorsByType);
+	}
+
+	public void setIconColorForType(IconType iconType, Color color)
+	{
+		iconColorsByType.put(iconType, color);
+	}
+
 	/**
 	 * Creates a deep copy of this. Note - This is not thread safe because it temporarily changes the edits pointer in this.
 	 */
@@ -1868,8 +1932,9 @@ public class MapSettings implements Serializable
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
-				&& Objects.equals(imageExportPath, other.imageExportPath) && jitterToConcentricWaves == other.jitterToConcentricWaves
-				&& Objects.equals(landColor, other.landColor) && lineStyle == other.lineStyle
+				&& Objects.equals(iconColorsByType, other.iconColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)
+				&& jitterToConcentricWaves == other.jitterToConcentricWaves && Objects.equals(landColor, other.landColor)
+				&& lineStyle == other.lineStyle
 				&& Double.doubleToLongBits(lloydRelaxationsScale) == Double.doubleToLongBits(other.lloydRelaxationsScale)
 				&& Objects.equals(mountainRangeFont, other.mountainRangeFont)
 				&& Double.doubleToLongBits(mountainScale) == Double.doubleToLongBits(other.mountainScale)
@@ -1897,5 +1962,5 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(treeHeightScale) == Double.doubleToLongBits(other.treeHeightScale)
 				&& Objects.equals(version, other.version) && worldSize == other.worldSize;
 	}
-	
+
 }

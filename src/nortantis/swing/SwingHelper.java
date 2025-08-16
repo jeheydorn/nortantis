@@ -177,6 +177,7 @@ public class SwingHelper
 		JPanel panel = new JPanel();
 		panel.setPreferredSize(new Dimension(50, 25));
 		panel.setBackground(Color.BLACK);
+		panel.setBorder(new DynamicLineBorder("controlShadow", 1));
 		return panel;
 	}
 
@@ -491,6 +492,26 @@ public class SwingHelper
 		stackPanel.add(component);
 
 		return stackPanel;
+	}
+	
+	public static JPanel placeLabelToLeftOfComponents(JLabel label, Component... components)
+	{
+		JPanel panel = new JPanel();
+		panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+		panel.add(label);
+		panel.add(Box.createRigidArea(new Dimension(5, 2)));
+		panel.add(Box.createHorizontalGlue());
+		panel.add(Box.createRigidArea(new Dimension(5, 2)));
+		for (int i = 0; i < components.length; i++)
+		{
+			panel.add(components[i]);
+			if (i < components.length - 1)
+			{
+				panel.add(Box.createRigidArea(new Dimension(5, 2)));
+			}
+		}
+
+		return panel;
 	}
 
 	public static JLabel createHyperlink(String text, String URL)

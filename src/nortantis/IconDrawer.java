@@ -84,6 +84,7 @@ public class IconDrawer
 	private String customImagesPath;
 	private String artPackForNewMap;
 	public static final Biome sandDunesBiome = Biome.TEMPERATE_DESERT;
+	private Map<IconType, Color> iconColorsByType;
 
 	public IconDrawer(WorldGraph graph, Random rand, MapSettings settings)
 	{
@@ -121,6 +122,7 @@ public class IconDrawer
 		averageCenterWidthBetweenNeighbors = graph.getMeanCenterWidthBetweenNeighbors();
 		maxSizeToDrawGeneratedMountainOrHill = averageCenterWidthBetweenNeighbors
 				* maxAverageCenterWidthsBetweenNeighborsToDrawGeneratedMountainOrHill;
+		iconColorsByType = settings.copyIconColorsByType();
 	}
 
 	public void markMountains()
@@ -279,8 +281,9 @@ public class IconDrawer
 						String groupId = artPackAndGroupAndName.getSecond();
 						String name = artPackAndGroupAndName.getThird();
 
-						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, centerIconTypeToIconType(cEdit.icon.iconType),
-								artPack, groupId, name, cEdit.index);
+						IconType type = centerIconTypeToIconType(cEdit.icon.iconType);
+						FreeIcon icon = new FreeIcon(resolutionScale, center.loc, 1.0, type, artPack, groupId, name, cEdit.index,
+								iconColorsByType.get(type));
 						IconDrawTask drawTask = toIconDrawTask(icon);
 
 						if (!isContentBottomTouchingWater(drawTask))
@@ -367,7 +370,8 @@ public class IconDrawer
 			loc = center.loc;
 		}
 		double scale = getWidthScaleForNewShuffledIcon(center, type);
-		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, cEdit.icon.artPack, groupId, cEdit.icon.iconIndex, cEdit.index);
+		FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, type, cEdit.icon.artPack, groupId, cEdit.icon.iconIndex, cEdit.index,
+				iconColorsByType.get(type));
 		Rectangle changeBounds = null;
 		IconDrawTask drawTask = toIconDrawTask(icon);
 		if (!isContentBottomTouchingWater(drawTask))
@@ -1082,7 +1086,7 @@ public class IconDrawer
 					// that are partially transparent.
 					landBackgroundColorScale = 1.0 - Math.pow(1.0 - landTextureAlpha, 10);
 				}
-				
+
 				double mapAlpha = mapColor.getAlpha() / 255.0;
 				double mapColorScale;
 				if (mapAlpha == 1.0)
@@ -1104,14 +1108,17 @@ public class IconDrawer
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
 				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(),
-						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getRed(),
-								landBackgroundColorScale * landTextureColor.getRed()), mapColorScale * mapColor.getRed())));
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel,
+								landBackgroundColorScale * bgColor.getRed(), landBackgroundColorScale * landTextureColor.getRed()),
+								mapColorScale * mapColor.getRed())));
 				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
-						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getGreen(),
-								landBackgroundColorScale * landTextureColor.getGreen()), mapColorScale * mapColor.getGreen())));
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel,
+								landBackgroundColorScale * bgColor.getGreen(), landBackgroundColorScale * landTextureColor.getGreen()),
+								mapColorScale * mapColor.getGreen())));
 				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
-						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel, landBackgroundColorScale * bgColor.getBlue(),
-								landBackgroundColorScale * landTextureColor.getBlue()), mapColorScale * mapColor.getBlue())));
+						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel,
+								landBackgroundColorScale * bgColor.getBlue(), landBackgroundColorScale * landTextureColor.getBlue()),
+								mapColorScale * mapColor.getBlue())));
 				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
 						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
 				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());
@@ -1146,6 +1153,7 @@ public class IconDrawer
 		{
 			task.unScaledImageAndMasks.getOrCreateContentMask();
 			task.unScaledImageAndMasks.getOrCreateShadingMask();
+			task.unScaledImageAndMasks.getOrCreateColorMask();
 		}
 
 		// Scale the icons in parallel.
@@ -1158,7 +1166,7 @@ public class IconDrawer
 					@Override
 					public void run()
 					{
-						task.scaleIcon();
+						task.colorAndScaleIcon();
 					}
 				});
 			}
@@ -1170,8 +1178,8 @@ public class IconDrawer
 
 		for (final IconDrawTask task : tasks)
 		{
-			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanWithWavesAndShading, task.type,
-					((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanWithWavesAndShading,
+					task.type, ((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
 					(int) task.centerLoc.y);
 		}
 
@@ -1293,7 +1301,7 @@ public class IconDrawer
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
 				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName,
-						c.index);
+						c.index, iconColorsByType.get(IconType.cities));
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -1414,7 +1422,7 @@ public class IconDrawer
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId,
-								i, c.index);
+								i, c.index, iconColorsByType.get(IconType.mountains));
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1449,7 +1457,7 @@ public class IconDrawer
 
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i,
-									c.index);
+									c.index, iconColorsByType.get(IconType.hills));
 
 							IconDrawTask task = toIconDrawTask(icon);
 
@@ -1524,7 +1532,7 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = Math.abs(rand.nextInt());
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index);
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, iconColorsByType.get(IconType.sand));
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -1865,7 +1873,7 @@ public class IconDrawer
 			y += rand.nextGaussian() * scale;
 
 			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, artPack, groupId, index, center.index,
-					forestDensity);
+					forestDensity, iconColorsByType.get(IconType.trees));
 
 			if (!isContentBottomTouchingWater(icon))
 			{

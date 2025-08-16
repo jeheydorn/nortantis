@@ -107,7 +107,8 @@ public class GridBagOrganizer
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
 			int componentLeftPadding)
 	{
-		return addLabelAndComponents(labelText, tooltip, BoxLayout.X_AXIS, components, componentLeftPadding, defaultHorizontalSpaceBetweenComponentsAddAsList, null);
+		return addLabelAndComponents(labelText, tooltip, BoxLayout.X_AXIS, components, componentLeftPadding,
+				defaultHorizontalSpaceBetweenComponentsAddAsList, null);
 	}
 
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
@@ -218,7 +219,7 @@ public class GridBagOrganizer
 	{
 		return addLeftAlignedComponent(component, rowVerticalInset, rowVerticalInset);
 	}
-	
+
 	public RowHider addLeftAlignedComponents(List<Component> components)
 	{
 		JPanel compPanel = new JPanel();
@@ -235,7 +236,7 @@ public class GridBagOrganizer
 		}
 		compPanel.add(Box.createHorizontalGlue());
 		return addLeftAlignedComponent(compPanel);
-		
+
 	}
 
 	public RowHider addLeftAlignedComponent(Component component, boolean allowToExpandVertically)
@@ -279,6 +280,25 @@ public class GridBagOrganizer
 		}
 		cc.anchor = GridBagConstraints.LINE_START;
 		cc.insets = new Insets(topInset, 5, bottomInset, 5);
+		panel.add(component, cc);
+
+		curY++;
+
+		return new RowHider(component);
+	}
+
+	public RowHider addExpandableRowComponent(Component component, int topInset, int bottomInset, double verticalWeight)
+	{
+		GridBagConstraints cc = new GridBagConstraints();
+		cc.fill = GridBagConstraints.BOTH;
+
+		cc.gridx = 0;
+		cc.gridwidth = 2;
+		cc.gridy = curY;
+		cc.weightx = 1;
+		cc.weighty = verticalWeight;
+		cc.anchor = GridBagConstraints.LINE_START;
+		cc.insets = new Insets(topInset, 0, bottomInset, 0);
 		panel.add(component, cc);
 
 		curY++;

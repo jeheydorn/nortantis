@@ -13,6 +13,7 @@ import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
+import nortantis.platform.Color;
 
 public class FreeIcon
 {
@@ -40,21 +41,23 @@ public class FreeIcon
 	 * If this icon is attached to a Center, then this is the Center's index.
 	 */
 	public final Integer centerIndex;
+	
+	public final Color color;
 
 	/**
 	 * For icons that add multiple per center (currently only trees), this is the density of the icons.
 	 */
 	public final double density;
 
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex)
+	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, null, 0.0);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, null, 0.0, color);
 	}
 
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			Integer centerIndex)
+			Integer centerIndex, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, 0.0);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, 0.0, color);
 	}
 
 	/**
@@ -64,9 +67,9 @@ public class FreeIcon
 	 *            The art pack the image is from.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			Integer centerIndex, double density)
+			Integer centerIndex, double density, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, density);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, density, color);
 	}
 
 	/**
@@ -74,13 +77,13 @@ public class FreeIcon
 	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, String iconName,
-			Integer centerIndex)
+			Integer centerIndex, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, -1, iconName, centerIndex, 0.0);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, -1, iconName, centerIndex, 0.0, color);
 	}
 
 	public FreeIcon(Point locationResolutionInvariant, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			String iconName, Integer centerIndex, double density)
+			String iconName, Integer centerIndex, double density, Color color)
 	{
 		this.type = type;
 		this.locationResolutionInvariant = locationResolutionInvariant;
@@ -92,46 +95,53 @@ public class FreeIcon
 		this.iconName = iconName;
 		this.density = density;
 		this.centerIndex = centerIndex;
+		this.color = color;
 	}
 
 	public FreeIcon copyWithGroupId(String groupId)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 	
 	public FreeIcon copyWithName(String iconName)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, String iconName)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, int iconIndex)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
 	public FreeIcon copyWithArtPack(String artPack)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
 	public FreeIcon copyWithScale(double scale)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
 	public FreeIcon copyWithLocation(double resolutionScale, Point loc)
 	{
-		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density);
+		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
+	
+	public FreeIcon copyWithColor(double resolutionScale, Color color)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+	}
+
 
 	public FreeIcon copyUnanchored()
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, null, density);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, null, density, color);
 	}
 
 	/**
@@ -176,7 +186,7 @@ public class FreeIcon
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), Math.round(typeLevelScale * scale * baseWidth))
 					.toIntDimension();
-			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName);
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, iconName, color);
 		}
 		else
 		{
@@ -188,14 +198,14 @@ public class FreeIcon
 			ImageAndMasks imageAndMasks = groupImages.get(iconIndex % groupImages.size());
 			IntDimension drawSize = IconDrawer
 					.getDimensionsWhenScaledByWidth(imageAndMasks.image.size(), typeLevelScale * scale * baseWidth).roundToIntDimension();
-			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize);
+			return new IconDrawTask(imageAndMasks, type, getScaledLocation(resolutionScale), drawSize, color);
 		}
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(artPack, centerIndex, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
+		return Objects.hash(artPack, centerIndex, color, density, groupId, iconIndex, iconName, locationResolutionInvariant, scale, type);
 	}
 
 	@Override
@@ -215,8 +225,8 @@ public class FreeIcon
 		}
 		FreeIcon other = (FreeIcon) obj;
 		return Objects.equals(artPack, other.artPack) && Objects.equals(centerIndex, other.centerIndex)
-				&& Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density) && Objects.equals(groupId, other.groupId)
-				&& iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
+				&& Objects.equals(color, other.color) && Double.doubleToLongBits(density) == Double.doubleToLongBits(other.density)
+				&& Objects.equals(groupId, other.groupId) && iconIndex == other.iconIndex && Objects.equals(iconName, other.iconName)
 				&& Objects.equals(locationResolutionInvariant, other.locationResolutionInvariant)
 				&& Double.doubleToLongBits(scale) == Double.doubleToLongBits(other.scale) && type == other.type;
 	}
@@ -226,7 +236,6 @@ public class FreeIcon
 	{
 		return "FreeIcon [type=" + type + ", artPack=" + artPack + ", groupId=" + groupId + ", iconIndex=" + iconIndex + ", iconName="
 				+ iconName + ", locationResolutionInvariant=" + locationResolutionInvariant + ", scale=" + scale + ", centerIndex="
-				+ centerIndex + ", density=" + density + "]";
+				+ centerIndex + ", color=" + color + ", density=" + density + "]";
 	}
-
 }
