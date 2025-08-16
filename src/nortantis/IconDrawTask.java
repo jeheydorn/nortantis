@@ -5,9 +5,13 @@ import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.geom.RotatedRectangle;
+import nortantis.platform.AlphaComposite;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
+import nortantis.platform.Painter;
 import nortantis.util.Assets;
+import nortantis.util.ImageHelper;
+import nortantis.util.ImageHelper.ColorifyAlgorithm;
 
 /**
  * Stores things needed to draw an icon onto the map.

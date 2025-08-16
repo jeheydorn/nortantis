@@ -21,6 +21,7 @@ import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
 import nortantis.platform.Color;
 import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
@@ -132,6 +133,7 @@ public class ImageCache
 				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
 	}
 	
+	// TODO remove this if I don't end up using it.
 	/**
 	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
 	 */
@@ -143,7 +145,23 @@ public class ImageCache
 		// duplicated work, not a functional
 		// problem.
 		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color,
-				() -> ImageHelper.maskWithColor(imageAndMasks.image, color, imageAndMasks.getOrCreateColorMask(), true));
+				() -> {
+				
+					Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
+					for (int y = 0; y < result.getHeight(); y++)
+						for (int x = 0; x < result.getWidth(); x++)
+						{
+							Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+							int alpha = originalColor.getAlpha();
+							int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
+							int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
+							int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
+							int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
+
+							result.setPixelColor(x, y, Color.create(r, g, b, a));
+						}
+					return result;
+				});
 	}
 
 	public Image getImageFromFile(Path path)
