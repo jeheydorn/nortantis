@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import nortantis.geom.Dimension;
 import nortantis.geom.IntPoint;
 import nortantis.geom.IntRectangle;
+import nortantis.geom.Point;
 import nortantis.geom.Rectangle;
 import nortantis.graph.voronoi.Center;
 import nortantis.platform.AlphaComposite;
@@ -370,8 +371,8 @@ public class Background
 				(int) (image.getHeight() - borderWidthScaled * 2));
 	}
 
-	public void doSetupThatNeedsGraph(MapSettings settings, WorldGraph graph, Set<Center> centersToDraw, Rectangle drawBounds,
-			Rectangle replaceBounds)
+	public void doSetupThatNeedsGraphAndIcons(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks, Set<Center> centersToDraw,
+			Rectangle drawBounds, Rectangle replaceBounds)
 	{
 		if (shouldDrawRegionColors)
 		{
@@ -381,6 +382,7 @@ public class Background
 			{
 				regionIndexes = Image.create(land.getWidth(), land.getHeight(), ImageType.RGB);
 				graph.drawRegionIndexes(regionIndexes.createPainter(), null, null);
+				updateRegionIndexesAndLandWithIconShapesIfNeeded(settings, graph, tasks, drawBounds);
 
 				land = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm, null);
 			}
@@ -389,12 +391,58 @@ public class Background
 				// Update only a piece of the land
 				regionIndexes = Image.create((int) drawBounds.width, (int) drawBounds.height, ImageType.RGB);
 				graph.drawRegionIndexes(regionIndexes.createPainter(), centersToDraw, drawBounds);
+				updateRegionIndexesAndLandWithIconShapesIfNeeded(settings, graph, tasks, drawBounds);
 				Image landSnippet = drawRegionColors(graph, landBeforeRegionColoring, regionIndexes, landColorifyAlgorithm,
 						new IntPoint((int) drawBounds.x, (int) drawBounds.y));
 				IntRectangle boundsInSourceToCopyFrom = new IntRectangle((int) replaceBounds.x - (int) drawBounds.x,
 						(int) replaceBounds.y - (int) drawBounds.y, (int) replaceBounds.width, (int) replaceBounds.height);
 				ImageHelper.copySnippetFromSourceAndPasteIntoTarget(land, landSnippet, replaceBounds.upperLeftCorner().toIntPoint(),
 						boundsInSourceToCopyFrom, 0);
+			}
+		}
+	}
+
+	/***
+	 * Draws icons onto regionIndexes and the land background so that the color of icons is determined by the place they draw at at their
+	 * base, rather than letting them be multicolored when they cross region boundaries.
+	 */
+	private void updateRegionIndexesAndLandWithIconShapesIfNeeded(MapSettings settings, WorldGraph graph, List<IconDrawTask> tasks,
+			Rectangle drawBounds)
+	{
+		if (shouldDrawRegionColors)
+		{
+			// The image "land" is generated but doesn't yet have colors.
+			for (final IconDrawTask task : tasks)
+			{
+				// Skip decorations
+				if (task.type != IconType.decorations && (drawBounds == null || task.overlaps(drawBounds)))
+				{
+					IntRectangle contentBounds = task.scaledImageAndMasks.getOrCreateContentBounds();
+					Point nearBottom = new Point(
+							(task.centerLoc.x - task.scaledSize.width / 2) + (contentBounds.x + contentBounds.width / 2),
+							(task.centerLoc.y - task.scaledSize.height / 2) + (contentBounds.y + contentBounds.height));
+					Center center = graph.findClosestCenter(nearBottom, true);
+					if (center == null)
+					{
+						continue;
+					}
+					if (center.region == null)
+					{
+						assert false;
+						continue;
+					}
+					int regionIndex = center.region.id;
+					Color regionIdColor = WorldGraph.storeValueAsColor(regionIndex);
+
+					int xLoc = (int) task.centerLoc.x - task.scaledSize.width / 2;
+					int yLoc = (int) task.centerLoc.y - task.scaledSize.height / 2;
+
+					Point drawLocation = drawBounds == null ? new Point(xLoc, yLoc)
+							: new Point(xLoc, yLoc).subtract(drawBounds.upperLeftCorner());
+
+					ImageHelper.drawMaskOntoImage(regionIndexes, task.scaledImageAndMasks.getOrCreateContentMask(), regionIdColor,
+							drawLocation.toIntPoint());
+				}
 			}
 		}
 	}
@@ -669,8 +717,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, increment, borderWidthScaled), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
+								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, increment, borderWidthScaled), 0);
 					}
 
 					Painter p = result.createPainter();
@@ -686,8 +734,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, distanceRemaining, borderWidthScaled), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
+								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, distanceRemaining, borderWidthScaled), 0);
 					}
 
 					// The image is too long/tall to draw in the remaining
@@ -729,9 +777,7 @@ public class Background
 					{
 						// Clear out the part of the map that is there.
 						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
-								new IntPoint(x - xOffset,
-										y - yOffset),
-								new IntRectangle(x, y, borderWidthScaled, increment), 0);
+								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, increment), 0);
 					}
 
 					Painter p = result.createPainter();
@@ -747,8 +793,8 @@ public class Background
 					if (!isBorderOutsideMap)
 					{
 						// Clear out the part of the map that is there.
-						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground, new IntPoint(x - xOffset, y - yOffset),
-								new IntRectangle(x, y, borderWidthScaled, distanceRemaining), 0);
+						ImageHelper.copySnippetFromSourceAndPasteIntoTarget(result, borderBackground,
+								new IntPoint(x - xOffset, y - yOffset), new IntRectangle(x, y, borderWidthScaled, distanceRemaining), 0);
 					}
 
 					// The image is too long/tall to draw in the remaining
@@ -837,7 +883,7 @@ public class Background
 		{
 			return;
 		}
-		
+
 		int borderPaddingScaled = isBorderOutsideMap ? borderWidthScaled : 0;
 
 		IntPoint drawOffset = new IntPoint(drawBoundsBeforeBorder.toIntRectangle().x + borderPaddingScaled,

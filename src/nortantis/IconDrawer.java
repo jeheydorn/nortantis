@@ -1149,16 +1149,7 @@ public class IconDrawer
 		}
 	}
 
-	/**
-	 * Draws all icons in iconsToDraw that touch drawBounds.
-	 * 
-	 * I draw all the icons at once this way so that I can sort the icons by the y-coordinate of the base of each icon. This way icons lower
-	 * on the map are drawn in front of those that are higher.
-	 * 
-	 * @return The icons that drew.
-	 */
-	public List<IconDrawTask> drawAllIcons(Image mapOrSnippet, Image background, Image landTexture, Image oceanWithWavesAndShading,
-			Rectangle drawBounds)
+	List<IconDrawTask> getTasksInDrawBoundsSortedAndScaled(Rectangle drawBounds)
 	{
 		List<IconDrawTask> tasks = new ArrayList<IconDrawTask>(iconsToDraw.size());
 		for (IconDrawTask task : iconsToDraw)
@@ -1199,17 +1190,29 @@ public class IconDrawer
 			ThreadHelper.getInstance().processInParallel(jobs, true);
 		}
 
+
+		return tasks;
+	}
+
+	/**
+	 * Draws all icons in tasksToDrawSorted. This assumes getTasksInDrawBoundsSorted was called to create tasksToDrawSorted.
+	 * 
+	 * I draw all the icons at once this way so that I can draw them sorted by the y-coordinate of the base of each icon. This way icons
+	 * lower on the map are drawn in front of those that are higher.
+	 * 
+	 */
+	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image background, Image landTexture,
+			Image oceanWithWavesAndShading, Rectangle drawBounds)
+	{
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
-		for (final IconDrawTask task : tasks)
+		for (final IconDrawTask task : tasksToDrawSorted)
 		{
 			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanWithWavesAndShading,
 					task.type, ((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
 					(int) task.centerLoc.y);
 		}
-
-		return tasks;
 	}
 
 	/**

@@ -582,9 +582,6 @@ public class ImageHelper
 		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 	}
 
-	/**
-	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
-	 */
 	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
@@ -620,6 +617,31 @@ public class ImageHelper
 		p.drawImage(overlay, 0, 0);
 
 		return result;
+	}
+
+	public static void drawMaskOntoImage(Image image, Image mask, Color color, IntPoint maskOffsetInImage)
+	{
+		if (mask.getType() != ImageType.Binary)
+		{
+			throw new IllegalArgumentException("Mask must be of type ImageType.Binary.");
+		}
+
+		ThreadHelper.getInstance().processRowsInParallel(0, mask.getHeight(), (yInMask) ->
+		{
+			for (int xInMask = 0; xInMask < mask.getWidth(); xInMask++)
+			{
+				if (mask.getGrayLevel(xInMask, yInMask) > 0) // Check if the mask pixel is "on"
+				{
+					int xInImage = xInMask + maskOffsetInImage.x;
+					int yInImage = yInMask + maskOffsetInImage.y;
+
+					if (xInImage >= 0 && xInImage < image.getWidth() && yInImage >= 0 && yInImage < image.getHeight())
+					{
+						image.setPixelColor(xInImage, yInImage, color);
+					}
+				}
+			}
+		});
 	}
 
 	/**
@@ -883,7 +905,7 @@ public class ImageHelper
 		else
 		{
 			// This version is a little more precise in where it places the mask, but doesn't work if the images already have alpha.
-			
+
 			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
 

@@ -343,7 +343,8 @@ public class MapCreator implements WarningLogger
 
 			checkForCancel();
 
-			mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
+			List<IconDrawTask> iconsToDraw = mapParts.iconDrawer.getTasksInDrawBoundsSortedAndScaled(drawBounds);
+			mapParts.background.doSetupThatNeedsGraphAndIcons(settings, mapParts.graph, iconsToDraw, centersToDraw, drawBounds, replaceBounds);
 
 			checkForCancel();
 
@@ -441,10 +442,10 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Draw icons
-			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet,
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet,
 					oceanWithWavesAndShading, drawBounds);
 
-			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
 					drawBounds);
 
@@ -1020,12 +1021,6 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		background.doSetupThatNeedsGraph(settings, graph, null, null, null);
-		if (mapParts == null)
-		{
-			background.landBeforeRegionColoring = null;
-		}
-
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
 		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
@@ -1036,16 +1031,32 @@ public class MapCreator implements WarningLogger
 		needToAddIcons = !settings.edits.hasIconEdits;
 
 		List<Set<Center>> mountainAndHillGroups = null;
+		List<Set<Center>> mountainGroups = null;
+		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
 		{
+			Logger.println("Adding icons.");
 			iconDrawer.markMountains();
 			iconDrawer.markHills();
 			iconDrawer.markCities(settings.cityProbability);
 			mountainAndHillGroups = iconDrawer.findMountainAndHillGroups();
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> tuple = iconDrawer.addIcons(mountainAndHillGroups, this);
+			mountainGroups = tuple.getFirst();
+			cities = tuple.getSecond();
 		}
 		else
 		{
+			Logger.println("Adding icons from edits.");
 			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, this);
+		}
+		
+		checkForCancel();
+		
+		List<IconDrawTask> iconsToDraw = iconDrawer.getTasksInDrawBoundsSortedAndScaled(null);
+		background.doSetupThatNeedsGraphAndIcons(settings, graph, iconsToDraw, null, null, null);
+		if (mapParts == null)
+		{
+			background.landBeforeRegionColoring = null;
 		}
 
 		checkForCancel();
@@ -1090,17 +1101,6 @@ public class MapCreator implements WarningLogger
 		// Add rivers.
 		Logger.println("Adding rivers.");
 		drawRivers(settings, graph, map, null, null);
-
-		checkForCancel();
-
-		List<Set<Center>> mountainGroups = null;
-		List<IconDrawTask> cities = null;
-		if (needToAddIcons)
-		{
-			Tuple2<List<Set<Center>>, List<IconDrawTask>> tuple = iconDrawer.addIcons(mountainAndHillGroups, this);
-			mountainGroups = tuple.getFirst();
-			cities = tuple.getSecond();
-		}
 
 		checkForCancel();
 
@@ -1166,15 +1166,17 @@ public class MapCreator implements WarningLogger
 				roadDrawer.drawRoadDebugInfo(map);
 			}
 		}
-
+		
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		List<IconDrawTask> iconsThatDrew = iconDrawer.drawAllIcons(map, landBackground, background.land, oceanWithWavesAndShading, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, null);
 		landBackground = null;
 
+		checkForCancel();
+
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsThatDrew, background.land,
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw, background.land,
 				background.ocean, background, oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
