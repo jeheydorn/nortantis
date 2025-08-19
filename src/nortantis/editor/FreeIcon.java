@@ -108,12 +108,12 @@ public class FreeIcon
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
-	public FreeIcon copyWith(String artPack, String groupId, String iconName)
+	public FreeIcon copyWith(String artPack, String groupId, String iconName, Color color)
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 
-	public FreeIcon copyWith(String artPack, String groupId, int iconIndex)
+	public FreeIcon copyWith(String artPack, String groupId, int iconIndex, Color color)
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
@@ -133,7 +133,7 @@ public class FreeIcon
 		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
 	
-	public FreeIcon copyWithColor(double resolutionScale, Color color)
+	public FreeIcon copyWithColor(Color color)
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}

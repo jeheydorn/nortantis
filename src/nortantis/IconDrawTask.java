@@ -65,9 +65,9 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		if (scaledImageAndMasks == null)
 		{
 			Image coloredIcon;
-			if (MapSettings.defaultIconColor.equals(color))
+			if (color.getAlpha() == 0)
 			{
-				// Do nothing since the default color is transparent.
+				// Do nothing since the color is transparent.
 				coloredIcon = unScaledImageAndMasks.image;
 			}
 			else

@@ -353,6 +353,10 @@ public abstract class MapUpdater
 		{
 
 		}
+		else if (updateType == UpdateType.NoDraw)
+		{
+			
+		}
 		else
 		{
 			throw new IllegalStateException("Unrecognized update type: " + updateType);
@@ -362,7 +366,7 @@ public abstract class MapUpdater
 
 	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
 	{
-		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
+		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks || updateType == UpdateType.NoDraw;
 	}
 
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
@@ -409,6 +413,11 @@ public abstract class MapUpdater
 
 		// Low-priority updates only support incremental updates.
 		assert !isLowPriorityChange || updateType == UpdateType.Incremental;
+		
+		if (updateType == UpdateType.NoDraw)
+		{
+			return;
+		}
 
 		onDrawSubmitted(updateType);
 

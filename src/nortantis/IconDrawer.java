@@ -533,7 +533,7 @@ public class IconDrawer
 				if (artPackAndGroupAndName != null)
 				{
 					FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(),
-							artPackAndGroupAndName.getThird());
+							artPackAndGroupAndName.getThird(), icon.color);
 
 					IconDrawTask task = toIconDrawTask(updated);
 					if (!isContentBottomTouchingWater(task))
@@ -561,7 +561,7 @@ public class IconDrawer
 				if (artPackAndGroupAndName != null)
 				{
 					FreeIcon updated = icon.copyWith(artPackAndGroupAndName.getFirst(), artPackAndGroupAndName.getSecond(),
-							artPackAndGroupAndName.getThird());
+							artPackAndGroupAndName.getThird(), icon.color);
 
 					IconDrawTask task = toIconDrawTask(updated);
 
@@ -583,10 +583,6 @@ public class IconDrawer
 				{
 					toRemove.add(icon);
 				}
-			}
-			else if (icon.type == IconType.decorations)
-			{
-
 			}
 			else if (icon.type == IconType.trees)
 			{
@@ -703,6 +699,33 @@ public class IconDrawer
 
 	private double getBaseWidth(IconType type, ImageAndMasks imageAndMasks)
 	{
+		// TODO If I do this, I need to create a conversion for older maps and decide what to do about mountains being too crowded.
+		// double scale;
+		// if (type == IconType.mountains || type == IconType.hills)
+		// {
+		// scale = 1.5;
+		// }
+		// else if (type == IconType.sand)
+		// {
+		// scale = 1.4;
+		// }
+		// else if (type == IconType.cities)
+		// {
+		// scale = 1.2;
+		// }
+		// else if (type == IconType.trees)
+		// {
+		// scale = 1.2;
+		// }
+		// else if (type == IconType.decorations)
+		// {
+		// scale = 1.0;
+		// }
+		// else
+		// {
+		// throw new IllegalArgumentException("Unrecognized icon type for getting base width: " + type);
+		// }
+		// return meanPolygonWidth * (1.0 / 11.0) * scale * imageAndMasks.widthFromFileName;
 		return meanPolygonWidth * (1.0 / 11.0) * imageAndMasks.widthFromFileName;
 	}
 
@@ -1153,7 +1176,10 @@ public class IconDrawer
 		{
 			task.unScaledImageAndMasks.getOrCreateContentMask();
 			task.unScaledImageAndMasks.getOrCreateShadingMask();
-			task.unScaledImageAndMasks.getOrCreateColorMask();
+			if (task.color.getAlpha() > 0)
+			{
+				task.unScaledImageAndMasks.getOrCreateColorMask();
+			}
 		}
 
 		// Scale the icons in parallel.
@@ -1532,7 +1558,8 @@ public class IconDrawer
 						c.isSandDunes = true;
 
 						int i = Math.abs(rand.nextInt());
-						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index, iconColorsByType.get(IconType.sand));
+						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index,
+								iconColorsByType.get(IconType.sand));
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);

@@ -114,7 +114,7 @@ public class ImageCache
 	}
 
 	/**
-	 * Either looks up in the cache, or creates, a version of the given icon with the given width.
+	 * Either looks up in the cache, or creates, a version of the given icon with the given size.
 	 * 
 	 * @param icon
 	 *            Original image (not scaled)
@@ -293,6 +293,13 @@ public class ImageCache
 		for (Tuple3<String, Double, String> nameAndWidth : namesAndWidths.values())
 		{
 			Image icon = loadIconFromDiskOrCache(iconType, groupName, nameAndWidth.getThird());
+			
+			if (icon == null)
+			{
+				// I think this happened once, but I haven't figured out how.
+				assert false;
+				continue;
+			}
 
 			double width;
 			// If any don't have an encoded width, then calculate the width relative to the largest image that does have an encoded width.

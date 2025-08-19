@@ -143,6 +143,10 @@ public class Undoer
 			mainWindow.toolsPanel.currentTool.onAfterUndoRedo();
 		}
 
+		if (changeToUndo.preRun != null)
+		{
+			changeToUndo.preRun.run();
+		}
 		mainWindow.updater.createAndShowMapFromChange(changeToUndo);
 		mainWindow.updater.dowWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
 		updateUndoRedoEnabled();
@@ -187,6 +191,10 @@ public class Undoer
 
 		MapChange changeWithPrevSettings = new MapChange(currentSettings, changeToRedo.updateType, changeToRedo.toolThatMadeChange,
 				changeToRedo.preRun);
+		if (changeToRedo.preRun != null)
+		{
+			changeToRedo.preRun.run();
+		}
 		mainWindow.updater.createAndShowMapFromChange(changeWithPrevSettings);
 		mainWindow.updater.dowWhenMapIsNotDrawing(() -> mainWindow.updater.createAndShowLowPriorityChanges());
 		updateUndoRedoEnabled();
