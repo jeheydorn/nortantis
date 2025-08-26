@@ -242,10 +242,10 @@ public class ImageHelper
 		float[][] kernel = new float[resultSize][resultSize];
 		for (int x = 0; x < resultSize; x++)
 		{
-			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - (x));
+			double xDistanceFromCenter = Math.abs(size - x - 0.5);
 			for (int y = 0; y < resultSize; y++)
 			{
-				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - (y));
+				double yDistanceFromCenter = Math.abs(size - y - 0.5);
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math
 						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
@@ -321,10 +321,10 @@ public class ImageHelper
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
-			double xDistanceFromCenter = Math.abs(size / 2.0 - x);
+			double xDistanceFromCenter = Math.abs(size / 2.0 - x - 0.5);
 			for (int y : new Range(size))
 			{
-				double yDistanceFromCenter = Math.abs(size / 2.0 - y);
+				double yDistanceFromCenter = Math.abs(size / 2.0 - y - 0.5);
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math
 						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);

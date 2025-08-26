@@ -78,6 +78,7 @@ public class TextTool extends EditorTool
 	private final int curvatureSliderDivider = 100;
 	private JSlider spacingSlider;
 	private RowHider spacingSliderHider;
+	private RowHider actionsSeperatorHider;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -133,6 +134,8 @@ public class TextTool extends EditorTool
 
 			organizer.addLabelAndComponentsVertical("Action:", "", radioButtons);
 		}
+		
+		actionsSeperatorHider = organizer.addSeperator();
 
 		editTextField = new JTextField();
 		editTextField.addFocusListener(new FocusAdapter()
@@ -429,6 +432,7 @@ public class TextTool extends EditorTool
 			editTextField.setText(lastSelected.value);
 			editTextField.requestFocus();
 		}
+		actionsSeperatorHider.setVisible((editButton.isSelected() && lastSelected != null) || addButton.isSelected() || eraseButton.isSelected());
 
 		// For some reason this is necessary to prevent the text editing field
 		// from flattening sometimes.
@@ -783,6 +787,7 @@ public class TextTool extends EditorTool
 			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
 			spacingSlider.setValue(selectedText.spacing);
 		}
+		actionsSeperatorHider.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;

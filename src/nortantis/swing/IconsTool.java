@@ -1,6 +1,7 @@
 package nortantis.swing;
 
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -32,6 +33,8 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.SwingWorker;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
@@ -106,6 +109,8 @@ public class IconsTool extends EditorTool
 	private Map<IconType, Color> iconColorsByType;
 	private RowHider artPackComboBoxHider;
 	private boolean disableImageRefreshes;
+	private RowHider modeOptionsAndBrushSeperatorHider;
+	private RowHider deleteIconButtonHider;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -298,6 +303,9 @@ public class IconsTool extends EditorTool
 		brushSizeComboBox = brushSizeTuple.getFirst();
 		brushSizeHider = brushSizeTuple.getSecond();
 
+
+		modeOptionsAndBrushSeperatorHider = organizer.addSeperator();
+
 		{
 			densitySlider = new JSlider(1, 50);
 			densitySlider.setValue(7);
@@ -334,6 +342,42 @@ public class IconsTool extends EditorTool
 		}
 
 		{
+			JButton deleteIconButton = new JButton("Delete");
+			deleteIconButton.setToolTipText("Delete the selected icon (DELETE key)");
+
+			// Define the action to perform
+			@SuppressWarnings("serial")
+			Action deleteAction = new AbstractAction()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					deleteIconButton.doClick();
+				}
+			};
+
+			// Bind DELETE key to the button
+			InputMap inputMap = deleteIconButton.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+			ActionMap actionMap = deleteIconButton.getActionMap();
+			inputMap.put(KeyStroke.getKeyStroke("DELETE"), "deleteAction");
+			actionMap.put("deleteAction", deleteAction);
+
+			deleteIconButton.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					deleteSelectedIcon();
+				}
+			});
+			
+			JPanel container = new JPanel();
+			container.setLayout(new FlowLayout(FlowLayout.LEFT));
+			container.add(deleteIconButton);
+			deleteIconButtonHider = organizer.addLeftAlignedComponent(container);
+		}
+
+		{
 			artPackComboBox = new JComboBox<String>();
 			updateArtPackOptions(Assets.installedArtPack, null);
 			artPackComboBox.addActionListener(new ActionListener()
@@ -366,6 +410,18 @@ public class IconsTool extends EditorTool
 		organizer.addVerticalFillerRow();
 
 		return toolOptionsPanel;
+	}
+
+	private void deleteSelectedIcon()
+	{
+		if (modeWidget.isEditMode() && iconToEdit != null)
+		{
+			FreeIcon deleted = iconToEdit;
+			mainWindow.edits.freeIcons.remove(iconToEdit);
+			unselectAnyIconBeingEdited();
+			undoer.setUndoPoint(UpdateType.Incremental, this);
+			updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(deleted));
+		}
 	}
 
 	private void handleColorChange()
@@ -444,12 +500,18 @@ public class IconsTool extends EditorTool
 
 	private void handleModeChanged()
 	{
-		mapEditingPanel.clearIconEditTools();
+		unselectAnyIconBeingEdited();
 		mapEditingPanel.repaint();
 		updateTypePanels();
 
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
+	}
+
+	private void showOrHideModeOptionsAndBrushSeperatorHider()
+	{
+		modeOptionsAndBrushSeperatorHider
+				.setVisible((modeWidget.isEditMode() && iconToEdit != null) || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 	}
 
 	private void showOrHideBrush(MouseEvent e)
@@ -482,6 +544,7 @@ public class IconsTool extends EditorTool
 		colorPickerHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		setColorPickerColorForSelectedType();
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+		deleteIconButtonHider.setVisible(false);
 
 		toolsPanel.revalidate();
 		toolsPanel.repaint();
@@ -1230,6 +1293,7 @@ public class IconsTool extends EditorTool
 					colorPickerHider.setVisible(true);
 					colorDisplay.setBackground(AwtFactory.unwrap(iconToEdit.color));
 					colorDisplay.repaint();
+					deleteIconButtonHider.setVisible(true);
 					getToolOptionsPane().repaint();
 				}
 				else
@@ -1240,6 +1304,7 @@ public class IconsTool extends EditorTool
 					isScaling = false;
 					colorPickerHider.setVisible(false);
 					colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
+					deleteIconButtonHider.setVisible(false);
 				}
 			}
 		}
@@ -1279,6 +1344,8 @@ public class IconsTool extends EditorTool
 				}
 			}
 		}
+		mapEditingPanel.clearHighlightedAreas();
+		showOrHideModeOptionsAndBrushSeperatorHider();
 		mapEditingPanel.repaint();
 
 	}
@@ -1362,15 +1429,13 @@ public class IconsTool extends EditorTool
 
 	public void unselectAnyIconBeingEdited()
 	{
-		if (modeWidget.isEditMode() && iconToEdit != null)
-		{
-			iconToEdit = null;
-			isMoving = false;
-			isScaling = false;
-			editStart = null;
-			mapEditingPanel.clearIconEditTools();
-			mapEditingPanel.repaint();
-		}
+		iconToEdit = null;
+		isMoving = false;
+		isScaling = false;
+		editStart = null;
+		mapEditingPanel.clearIconEditTools();
+		mapEditingPanel.repaint();
+		showOrHideModeOptionsAndBrushSeperatorHider();
 	}
 
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
@@ -1711,7 +1776,7 @@ public class IconsTool extends EditorTool
 		{
 			disableImageRefreshes = false;
 		}
-		
+
 		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
 			if (Assets.artPackExists(artPack, customImagesPath))

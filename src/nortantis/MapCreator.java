@@ -364,18 +364,21 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			Image coastShading;
-			Image landBackgroundColoredBeforeAddingIconColorsWithShading;
+			Image landBackgroundColoredBeforeAddingIconColorsWithShading = null;
 			{
 				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
 						mapSnippet, landMask, mapParts.background, null, centersToDraw, drawBounds, false);
 				mapSnippet = tuple.getFirst();
 				coastShading = tuple.getSecond();
 
-				Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
-						drawBounds.toIntRectangle());
-				landBackgroundColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph,
-						settings.resolution, landColoredBeforeAddingIconColors, landMask, mapParts.background, coastShading, centersToDraw,
-						drawBounds, false).getFirst();
+				if (settings.drawRegionColors)
+				{
+					Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
+							drawBounds.toIntRectangle());
+					landBackgroundColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings,
+							mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, landMask, mapParts.background,
+							coastShading, centersToDraw, drawBounds, false).getFirst();
+				}
 
 			}
 
@@ -1082,7 +1085,7 @@ public class MapCreator implements WarningLogger
 		Image map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
 		Image coastShading;
-		Image landColoredBeforeAddingIconColorsWithShading;
+		Image landColoredBeforeAddingIconColorsWithShading = null;
 		{
 			{
 				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
@@ -1090,8 +1093,12 @@ public class MapCreator implements WarningLogger
 				map = tuple.getFirst();
 				coastShading = tuple.getSecond();
 			}
-			landColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution,
-					background.landColoredBeforeAddingIconColors, landMask, background, coastShading, null, null, true).getFirst();
+			if (settings.drawRegionColors)
+			{
+				landColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph,
+						settings.resolution, background.landColoredBeforeAddingIconColors, landMask, background, coastShading, null, null,
+						true).getFirst();
+			}
 		}
 
 		checkForCancel();
@@ -1195,7 +1202,7 @@ public class MapCreator implements WarningLogger
 		// TODO If I want to make icons that change the region background color to draw that color behind text, change
 		// background.landColoredBeforeAddingIconColors to background.land. But I lean toward not doing that.
 		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw,
-				background.landColoredBeforeAddingIconColors, background.ocean, background, oceanWaves, oceanShading, coastShading,
+				settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land, background.ocean, background, oceanWaves, oceanShading, coastShading,
 				iconDrawer, null, null);
 
 		if (mapParts != null)
