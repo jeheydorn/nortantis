@@ -132,8 +132,7 @@ public class ImageCache
 		return scaledCache.getOrCreate(icon, () -> new ConcurrentHashMapF<>()).getOrCreate(size,
 				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
 	}
-	
-	// TODO remove this if I don't end up using it.
+
 	/**
 	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
 	 */
@@ -144,36 +143,39 @@ public class ImageCache
 		// but if that did happen it would only results in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color,
-				() -> {
-				
-					Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
-					for (int y = 0; y < result.getHeight(); y++)
-						for (int x = 0; x < result.getWidth(); x++)
-						{
-							Color originalColor = imageAndMasks.image.getPixelColor(x, y);
-							int alpha = originalColor.getAlpha();
-							int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
-							int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
-							int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
-							int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
+		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color, () ->
+		{
 
-							result.setPixelColor(x, y, Color.create(r, g, b, a));
-						}
-					return result;
-				});
+			Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
+			for (int y = 0; y < result.getHeight(); y++)
+				for (int x = 0; x < result.getWidth(); x++)
+				{
+					Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+					int alpha = originalColor.getAlpha();
+					int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
+					int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
+					int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
+					int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
+
+					result.setPixelColor(x, y, Color.create(r, g, b, a));
+				}
+			return result;
+		});
 	}
 
 	public Image getImageFromFile(Path path)
 	{
-		return fileCache.getOrCreate(path.toString(), () -> Assets.readImage(path.toString()));
+		return fileCache.getOrCreateWithLock(path.toString().intern(), () ->
+		{
+			return Assets.readImage(path.toString());
+		});
 	}
 
-	public boolean containsImageFile(Path path)
+	public boolean cacheContainsImageFile(Path path)
 	{
 		return fileCache.containsKey(path.toString());
 	}
-	
+
 	public ImageAndMasks getImageAndMasks(FreeIcon icon)
 	{
 		if (!StringUtils.isEmpty(icon.iconName))
@@ -183,7 +185,7 @@ public class ImageCache
 			{
 				return null;
 			}
-			
+
 			return map.get(icon.iconName);
 		}
 		else
@@ -193,7 +195,7 @@ public class ImageCache
 			{
 				return null;
 			}
-			
+
 			return imagesInGroup.get(icon.iconIndex % imagesInGroup.size());
 		}
 	}
@@ -233,8 +235,8 @@ public class ImageCache
 	 */
 	public Map<String, ImageAndMasks> getIconsByNameForGroup(IconType iconType, String groupName)
 	{
-		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupName == null ? "" : groupName,
-				() -> loadIconsWithSizes(iconType, groupName));
+		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>())
+				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizes(iconType, groupName));
 	}
 
 	private Map<String, ImageAndMasks> loadIconsWithSizes(IconType iconType, String groupName)
@@ -293,7 +295,7 @@ public class ImageCache
 		for (Tuple3<String, Double, String> nameAndWidth : namesAndWidths.values())
 		{
 			Image icon = loadIconFromDiskOrCache(iconType, groupName, nameAndWidth.getThird());
-			
+
 			if (icon == null)
 			{
 				// I think this happened once, but I haven't figured out how.
@@ -369,13 +371,13 @@ public class ImageCache
 			return new Tuple2<>(icon, width);
 		}
 	}
-	
-	
+
+
 	private boolean isDefaultSizeByWidth(IconType type)
 	{
 		return type != IconType.trees;
 	}
-	
+
 	private static double getDefaultWidthOrHeight(IconType type)
 	{
 		if (type == IconType.mountains)
@@ -413,7 +415,7 @@ public class ImageCache
 	private Image loadIconFromDiskOrCache(IconType iconType, String groupName, String fileName)
 	{
 		Path path = Paths.get(getIconGroupPath(iconType, groupName), fileName);
-		if (!containsImageFile(path))
+		if (!cacheContainsImageFile(path))
 		{
 			Logger.println("Loading icon: " + path);
 		}
@@ -468,7 +470,7 @@ public class ImageCache
 			{
 				throw new RuntimeException("The image '" + fileName + "' has an encoded width or height of 0.");
 			}
-			
+
 			return new Tuple2<>(nameWithoutWidth, size);
 		}
 
@@ -538,7 +540,8 @@ public class ImageCache
 
 	public boolean hasNamedIcon(IconType iconType, String groupName, String iconName)
 	{
-		if (!getIconGroupNames(iconType).contains(groupName))		{
+		if (!getIconGroupNames(iconType).contains(groupName))
+		{
 			return false;
 		}
 

@@ -58,12 +58,6 @@ class AwtPainter extends Painter
 	{
 		g.rotate(angle, pivotX, pivotY);
 	}
-	
-	@Override
-	public void rotate(double angle)
-	{
-		g.rotate(angle);
-	}
 
 	@Override
 	public void translate(double x, double y)

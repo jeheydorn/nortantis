@@ -344,7 +344,8 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			List<IconDrawTask> iconsToDraw = mapParts.iconDrawer.getTasksInDrawBoundsSortedAndScaled(drawBounds);
-			mapParts.background.doSetupThatNeedsGraphAndIcons(settings, mapParts.graph, iconsToDraw, centersToDraw, drawBounds, replaceBounds);
+			mapParts.background.doSetupThatNeedsGraphAndIcons(settings, mapParts.graph, iconsToDraw, centersToDraw, drawBounds,
+					replaceBounds);
 
 			checkForCancel();
 
@@ -363,11 +364,19 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			Image coastShading;
+			Image landBackgroundColoredBeforeAddingIconColorsWithShading;
 			{
 				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
 						mapSnippet, landMask, mapParts.background, null, centersToDraw, drawBounds, false);
 				mapSnippet = tuple.getFirst();
 				coastShading = tuple.getSecond();
+
+				Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
+						drawBounds.toIntRectangle());
+				landBackgroundColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph,
+						settings.resolution, landColoredBeforeAddingIconColors, landMask, mapParts.background, coastShading, centersToDraw,
+						drawBounds, false).getFirst();
+
 			}
 
 			checkForCancel();
@@ -442,8 +451,8 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Draw icons
-			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet,
-					oceanWithWavesAndShading, drawBounds);
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackgroundColoredBeforeAddingIconColorsWithShading, landBackground,
+					landTextureSnippet, oceanWithWavesAndShading, drawBounds);
 
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
@@ -1049,9 +1058,9 @@ public class MapCreator implements WarningLogger
 			Logger.println("Adding icons from edits.");
 			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, this);
 		}
-		
+
 		checkForCancel();
-		
+
 		List<IconDrawTask> iconsToDraw = iconDrawer.getTasksInDrawBoundsSortedAndScaled(null);
 		background.doSetupThatNeedsGraphAndIcons(settings, graph, iconsToDraw, null, null, null);
 		if (mapParts == null)
@@ -1073,11 +1082,16 @@ public class MapCreator implements WarningLogger
 		Image map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
 		Image coastShading;
+		Image landColoredBeforeAddingIconColorsWithShading;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
-					background, null, null, null, true);
-			map = tuple.getFirst();
-			coastShading = tuple.getSecond();
+			{
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
+						background, null, null, null, true);
+				map = tuple.getFirst();
+				coastShading = tuple.getSecond();
+			}
+			landColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution,
+					background.landColoredBeforeAddingIconColors, landMask, background, coastShading, null, null, true).getFirst();
 		}
 
 		checkForCancel();
@@ -1166,18 +1180,23 @@ public class MapCreator implements WarningLogger
 				roadDrawer.drawRoadDebugInfo(map);
 			}
 		}
-		
+
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landColoredBeforeAddingIconColorsWithShading, landBackground, background.land,
+				oceanWithWavesAndShading, null);
 		landBackground = null;
+		landColoredBeforeAddingIconColorsWithShading = null;
 
 		checkForCancel();
 
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw, background.land,
-				background.ocean, background, oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
+		// TODO If I want to make icons that change the region background color to draw that color behind text, change
+		// background.landColoredBeforeAddingIconColors to background.land. But I lean toward not doing that.
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw,
+				background.landColoredBeforeAddingIconColors, background.ocean, background, oceanWaves, oceanShading, coastShading,
+				iconDrawer, null, null);
 
 		if (mapParts != null)
 		{

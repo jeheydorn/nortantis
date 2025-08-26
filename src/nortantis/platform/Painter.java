@@ -28,9 +28,6 @@ public abstract class Painter
 		rotate(angle, pivot.x, pivot.y);
 	}
 	
-	// TODO Remove this if I don't use it
-	public abstract void rotate(double angle);
-	
 	public abstract void rotate(double angle, double pivotX, double pivotY);
 
 	public abstract void translate(double x, double y);

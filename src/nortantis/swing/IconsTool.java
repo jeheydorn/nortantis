@@ -105,6 +105,7 @@ public class IconsTool extends EditorTool
 	private JPanel colorDisplay;
 	private Map<IconType, Color> iconColorsByType;
 	private RowHider artPackComboBoxHider;
+	private boolean disableImageRefreshes;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -343,8 +344,8 @@ public class IconsTool extends EditorTool
 					refreshImagesWithoutClearingCache(mainWindow.getSettingsFromGUI(false));
 				}
 			});
-			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '" + Assets.installedArtPack
-					+ "' selects art that comes with Nortantis. '" + Assets.customArtPack
+			artPackComboBoxHider = organizer.addLabelAndComponent("Art pack:", "For filtering the icons shown in this tool. '"
+					+ Assets.installedArtPack + "' selects art that comes with Nortantis. '" + Assets.customArtPack
 					+ "' selects images from this map's custom images folder, if it has one. Other options are art packs installed on this machine.",
 					artPackComboBox);
 		}
@@ -387,7 +388,7 @@ public class IconsTool extends EditorTool
 			undoer.setUndoPoint(UpdateType.Incremental, this);
 			updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(updatedIcon));
 		}
-		
+
 	}
 
 	private void setColorPickerColorForSelectedType()
@@ -548,6 +549,11 @@ public class IconsTool extends EditorTool
 
 	private void refreshImagesWithoutClearingCache(MapSettings settings)
 	{
+		if (disableImageRefreshes)
+		{
+			return;
+		}
+
 		String customImagesPath = settings == null ? null : settings.customImagesPath;
 		String artPack = settings == null ? Assets.installedArtPack : settings.artPack;
 		mountainTypes = createOrUpdateRadioButtonsForIconType(null, IconType.mountains, mountainTypes, artPack, customImagesPath);
@@ -563,7 +569,7 @@ public class IconsTool extends EditorTool
 		unselectAnyIconBeingEdited();
 	}
 
-	private void updateIconTypeButtonPreviewImages(MapSettings settings)
+	private synchronized void updateIconTypeButtonPreviewImages(MapSettings settings)
 	{
 		if (settings == null)
 		{
@@ -649,8 +655,8 @@ public class IconsTool extends EditorTool
 										"No '" + selector.type + "' icon exists for the button '" + iconNameWithoutWidthOrExtension + "'");
 							}
 							ImageAndMasks imageAndMasks = iconsInGroup.get(iconNameWithoutWidthOrExtension);
-							Image preview = namedIconPreviewCache
-									.getOrCreate(new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension), () ->
+							Image preview = namedIconPreviewCache.getOrCreateWithLock(
+									new Tuple3<>(settings.artPack, selector.type, iconNameWithoutWidthOrExtension), () ->
 									{
 										return createIconPreview(settings, Collections.singletonList(imageAndMasks), 45, 0, selector.type);
 									});
@@ -740,7 +746,7 @@ public class IconsTool extends EditorTool
 
 	private Image createIconPreviewForGroup(MapSettings settings, IconType iconType, String groupName, String customImagesPath)
 	{
-		return groupPreviewCache.getOrCreate(new Tuple3<>(settings.artPack, iconType, groupName), () ->
+		return groupPreviewCache.getOrCreateWithLock(new Tuple3<>(settings.artPack, iconType, groupName), () ->
 		{
 			List<ImageAndMasks> images = ImageCache.getInstance(settings.artPack, customImagesPath).getIconsInGroup(iconType, groupName);
 			return createIconPreview(settings, images, 30, 9, iconType);
@@ -1066,7 +1072,8 @@ public class IconsTool extends EditorTool
 					String groupId = mountainTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
+								getSelectedIconTypeColor());
 					}
 				}
 				else if (hillsButton.isSelected())
@@ -1074,7 +1081,8 @@ public class IconsTool extends EditorTool
 					String groupId = hillTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
+								getSelectedIconTypeColor());
 					}
 				}
 				else if (dunesButton.isSelected())
@@ -1082,7 +1090,8 @@ public class IconsTool extends EditorTool
 					String groupId = duneTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(groupId))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()), getSelectedIconTypeColor());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), groupId, Math.abs(rand.nextInt()),
+								getSelectedIconTypeColor());
 					}
 				}
 				else if (treesButton.isSelected())
@@ -1090,7 +1099,8 @@ public class IconsTool extends EditorTool
 					String treeType = treeTypes.getSelectedOption();
 					if (!StringUtils.isEmpty(treeType))
 					{
-						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()), getSelectedIconTypeColor());
+						after = before.copyWith((String) artPackComboBox.getSelectedItem(), treeType, Math.abs(rand.nextInt()),
+								getSelectedIconTypeColor());
 					}
 				}
 				else if (citiesButton.isSelected())
@@ -1692,7 +1702,16 @@ public class IconsTool extends EditorTool
 		String artPackToSelect = isUndoRedoOrAutomaticChange && !StringUtils.isEmpty((String) artPackComboBox.getSelectedItem())
 				? (String) artPackComboBox.getSelectedItem()
 				: (settings != null ? settings.artPack : Assets.installedArtPack);
-		updateArtPackOptions(artPackToSelect, customImagesPath);
+		try
+		{
+			disableImageRefreshes = willDoImagesRefresh;
+			updateArtPackOptions(artPackToSelect, customImagesPath);
+		}
+		finally
+		{
+			disableImageRefreshes = false;
+		}
+		
 		if (!Objects.equals(artPackComboBox.getSelectedItem(), artPack) && !isUndoRedoOrAutomaticChange)
 		{
 			if (Assets.artPackExists(artPack, customImagesPath))

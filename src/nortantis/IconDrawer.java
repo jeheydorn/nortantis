@@ -43,6 +43,7 @@ import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple3;
+import nortantis.IconType;
 
 public class IconDrawer
 {
@@ -1016,16 +1017,24 @@ public class IconDrawer
 		return groups;
 	}
 
-	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundOrSnippet,
-			Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
+	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundColoredBeforeAddingIcons,
+			Image background, Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter,
+			int graphYCenter)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
 
-		if (mapOrSnippet.getWidth() != backgroundOrSnippet.getWidth())
+		if (mapOrSnippet.getWidth() != background.getWidth())
 			throw new IllegalArgumentException();
-		if (mapOrSnippet.getHeight() != backgroundOrSnippet.getHeight())
+		if (mapOrSnippet.getHeight() != background.getHeight())
 			throw new IllegalArgumentException();
+		if (backgroundColoredBeforeAddingIcons != null)
+		{
+			if (mapOrSnippet.getWidth() != backgroundColoredBeforeAddingIcons.getWidth())
+				throw new IllegalArgumentException();
+			if (mapOrSnippet.getHeight() != backgroundColoredBeforeAddingIcons.getHeight())
+				throw new IllegalArgumentException();
+		}
 		if (contentMask.getWidth() != icon.getWidth())
 			throw new IllegalArgumentException("The given content mask's width does not match the icon's width.");
 		if (contentMask.getHeight() != icon.getHeight())
@@ -1058,6 +1067,7 @@ public class IconDrawer
 				float contentMaskLevel = contentMask.getNormalizedPixelLevel(x, y);
 				float shadingMaskLevel = shadingMask.getNormalizedPixelLevel(x, y);
 				Color bgColor;
+				Color bgColorNoIcons;
 				Color mapColor;
 				Color landTextureColor;
 				// Find the location on the background and map where this pixel
@@ -1076,13 +1086,32 @@ public class IconDrawer
 					if (type == IconType.decorations)
 					{
 						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc), backgroundOrSnippet.hasAlpha());
+								: Color.create(background.getRGB(xLoc, yLoc), background.hasAlpha());
+						if (backgroundColoredBeforeAddingIcons != null)
+						{
+							bgColorNoIcons = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
+									: Color.create(backgroundColoredBeforeAddingIcons.getRGB(xLoc, yLoc),
+											backgroundColoredBeforeAddingIcons.hasAlpha());
+						}
+						else
+						{
+							bgColorNoIcons = bgColor;
+						}
 						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc), backgroundOrSnippet.hasAlpha());
+								: Color.create(background.getRGB(xLoc, yLoc), background.hasAlpha());
 					}
 					else
 					{
-						bgColor = Color.create(backgroundOrSnippet.getRGB(xLoc, yLoc), backgroundOrSnippet.hasAlpha());
+						bgColor = Color.create(background.getRGB(xLoc, yLoc), background.hasAlpha());
+						if (backgroundColoredBeforeAddingIcons != null)
+						{
+							bgColorNoIcons = Color.create(backgroundColoredBeforeAddingIcons.getRGB(xLoc, yLoc),
+									backgroundColoredBeforeAddingIcons.hasAlpha());
+						}
+						else
+						{
+							bgColorNoIcons = bgColor;
+						}
 						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc), landTexture.hasAlpha());
 					}
 
@@ -1131,16 +1160,19 @@ public class IconDrawer
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
 				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(),
-						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel,
-								landBackgroundColorScale * bgColor.getRed(), landBackgroundColorScale * landTextureColor.getRed()),
+						Helper.linearCombo(contentMaskLevel,
+								landBackgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getRed(),
+										Helper.linearCombo(shadingMaskLevel, bgColor.getRed(), landTextureColor.getRed())),
 								mapColorScale * mapColor.getRed())));
 				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
-						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel,
-								landBackgroundColorScale * bgColor.getGreen(), landBackgroundColorScale * landTextureColor.getGreen()),
+						Helper.linearCombo(contentMaskLevel,
+								landBackgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getGreen(),
+										Helper.linearCombo(shadingMaskLevel, bgColor.getGreen(), landTextureColor.getGreen())),
 								mapColorScale * mapColor.getGreen())));
 				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
-						Helper.linearCombo(contentMaskLevel, Helper.linearCombo(shadingMaskLevel,
-								landBackgroundColorScale * bgColor.getBlue(), landBackgroundColorScale * landTextureColor.getBlue()),
+						Helper.linearCombo(contentMaskLevel,
+								landBackgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getBlue(),
+										Helper.linearCombo(shadingMaskLevel, bgColor.getBlue(), landTextureColor.getBlue())),
 								mapColorScale * mapColor.getBlue())));
 				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
 						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
@@ -1201,17 +1233,17 @@ public class IconDrawer
 	 * lower on the map are drawn in front of those that are higher.
 	 * 
 	 */
-	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image background, Image landTexture,
-			Image oceanWithWavesAndShading, Rectangle drawBounds)
+	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image backgroundColoredBeforeAddingIcons,
+			Image background, Image landTexture, Image oceanWithWavesAndShading, Rectangle drawBounds)
 	{
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
 		for (final IconDrawTask task : tasksToDrawSorted)
 		{
-			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, background, landTexture, oceanWithWavesAndShading,
-					task.type, ((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x,
-					(int) task.centerLoc.y);
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, backgroundColoredBeforeAddingIcons, background,
+					landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
+					((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
 		}
 	}
 

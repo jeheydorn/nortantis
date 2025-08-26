@@ -16,6 +16,7 @@ import org.jtransforms.fft.FloatFFT_2D;
 
 import nortantis.ComplexArray;
 import nortantis.MapSettings;
+import nortantis.Stopwatch;
 import nortantis.TextDrawer;
 import nortantis.WorldGraph;
 import nortantis.geom.Dimension;
@@ -1269,6 +1270,7 @@ public class ImageHelper
 
 	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
 	{
+		// Note - I tried having this method process rows in parallel, but it was slower.
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
 		for (int y = 0; y < image.getHeight(); y++)

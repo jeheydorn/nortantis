@@ -1,6 +1,5 @@
 package nortantis;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -12,14 +11,12 @@ import nortantis.platform.Color;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
-import nortantis.util.Coordinate;
 import nortantis.util.ImageHelper;
-import nortantis.util.Logger;
 import nortantis.util.Range;
 
 public class ImageAndMasks
 {
-	private static final int opaqueThreshold = 60; // TODO Decide what this should be
+	private static final int opaqueThreshold = 60;
 	public final Image image;
 	/**
 	 * Used to linearly combine pixel values pulled from the background image without other icons vs the the map being drawn so far.
@@ -33,7 +30,7 @@ public class ImageAndMasks
 	 * blend coastline shading into icons when icons are allowed to draw over coastlines.
 	 */
 	private Image shadingMask;
-	private IconType iconType;
+	public final IconType iconType;
 	/**
 	 * Either the width encoded in the icons' file name, or a width calculated based on the size of other icons in the group and the default
 	 * size of icons in the group.
@@ -96,7 +93,7 @@ public class ImageAndMasks
 						if (alpha >= opaqueThreshold)
 						{
 							contentMask.setGrayLevel(x, y, 255);
-							addToContentBounds(new Coordinate(x, y));
+							addToContentBounds(new IntPoint(x, y));
 						}
 						else
 						{
@@ -119,8 +116,8 @@ public class ImageAndMasks
 		{
 			if (contentBounds == null)
 			{
-				addToContentBounds(new Coordinate(0, 0));
-				addToContentBounds(new Coordinate(image.getWidth(), image.getHeight()));
+				addToContentBounds(new IntPoint(0, 0));
+				addToContentBounds(new IntPoint(image.getWidth(), image.getHeight()));
 			}
 		}
 	}
@@ -139,7 +136,7 @@ public class ImageAndMasks
 			return;
 		}
 
-		final int narrowPassageThreshold = 4; // TODO Decide what this should be.
+		final int narrowPassageThreshold = 4;
 
 		floodFillContentMask(narrowPassageThreshold);
 
@@ -151,24 +148,24 @@ public class ImageAndMasks
 
 	private void floodFillContentMask(int narrowPassageThreshold)
 	{
-		Stack<Coordinate> q = new Stack<>();
+		Stack<IntPoint> q = new Stack<>();
 
 		// Add the 4 corners of contentMask to q if their alpha is below opaqueThreshold.
 		if (image.getAlpha(0, 0) < opaqueThreshold)
 		{
-			q.push(new Coordinate(0, 0));
+			q.push(new IntPoint(0, 0));
 		}
 		if (image.getAlpha(contentMask.getWidth() - 1, 0) < opaqueThreshold)
 		{
-			q.push(new Coordinate(contentMask.getWidth() - 1, 0));
+			q.push(new IntPoint(contentMask.getWidth() - 1, 0));
 		}
 		if (image.getAlpha(0, contentMask.getHeight() - 1) < opaqueThreshold)
 		{
-			q.push(new Coordinate(0, contentMask.getHeight() - 1));
+			q.push(new IntPoint(0, contentMask.getHeight() - 1));
 		}
 		if (image.getAlpha(contentMask.getWidth() - 1, contentMask.getHeight() - 1) < opaqueThreshold)
 		{
-			q.push(new Coordinate(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
+			q.push(new IntPoint(contentMask.getWidth() - 1, contentMask.getHeight() - 1));
 		}
 
 		Painter p = contentMask.createPainter();
@@ -180,7 +177,7 @@ public class ImageAndMasks
 		boolean[][] visited = new boolean[image.getWidth()][image.getHeight()];
 		while (!q.isEmpty())
 		{
-			Coordinate next = q.pop();
+			IntPoint next = q.pop();
 
 			int x = next.x;
 			int y = next.y;
@@ -207,10 +204,10 @@ public class ImageAndMasks
 				if (!isNarrowPassage(image, x, y, narrowPassageThreshold))
 				{
 					// Add neighbors to the queue
-					q.push(new Coordinate(x + 1, y));
-					q.push(new Coordinate(x - 1, y));
-					q.push(new Coordinate(x, y + 1));
-					q.push(new Coordinate(x, y - 1));
+					q.push(new IntPoint(x + 1, y));
+					q.push(new IntPoint(x - 1, y));
+					q.push(new IntPoint(x, y + 1));
+					q.push(new IntPoint(x, y - 1));
 				}
 			}
 			else
@@ -368,16 +365,16 @@ public class ImageAndMasks
 		// Top
 		Image topSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		{
-			List<Coordinate> points = new ArrayList<>();
+			List<IntPoint> points = new ArrayList<>();
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				Coordinate point = findUppermostOpaquePixel(image, x);
+				IntPoint point = findUppermostOpaquePixel(image, x);
 				if (point != null)
 				{
 					addToContentBounds(point);
 					if (points.isEmpty())
 					{
-						points.add(new Coordinate(x, image.getHeight()));
+						points.add(new IntPoint(x, image.getHeight()));
 					}
 					points.add(point);
 				}
@@ -388,7 +385,7 @@ public class ImageAndMasks
 				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 				return;
 			}
-			points.add(new Coordinate(points.get(points.size() - 1).x, image.getHeight()));
+			points.add(new IntPoint(points.get(points.size() - 1).x, image.getHeight()));
 			drawWhitePolygonFromPoints(topSilhouette, points);
 		}
 
@@ -397,16 +394,16 @@ public class ImageAndMasks
 		if (iconType == IconType.cities)
 		{
 			bottomSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
-			List<Coordinate> points = new ArrayList<>();
+			List<IntPoint> points = new ArrayList<>();
 			for (int x = 0; x < image.getWidth(); x++)
 			{
-				Coordinate point = findLowestOpaquePixel(image, x);
+				IntPoint point = findLowestOpaquePixel(image, x);
 				if (point != null)
 				{
 					addToContentBounds(point);
 					if (points.isEmpty())
 					{
-						points.add(new Coordinate(x, 0));
+						points.add(new IntPoint(x, 0));
 					}
 					points.add(point);
 				}
@@ -417,29 +414,29 @@ public class ImageAndMasks
 				contentMask = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 				return;
 			}
-			points.add(new Coordinate(points.get(points.size() - 1).x, 0));
+			points.add(new IntPoint(points.get(points.size() - 1).x, 0));
 			drawWhitePolygonFromPoints(bottomSilhouette, points);
 		}
 
 		// Left side
 		Image leftSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		{
-			List<Coordinate> points = new ArrayList<>();
+			List<IntPoint> points = new ArrayList<>();
 			for (int y = 0; y < image.getHeight(); y++)
 			{
-				Coordinate point = findLeftmostOpaquePixel(image, y);
+				IntPoint point = findLeftmostOpaquePixel(image, y);
 				addToContentBounds(point);
 				if (point != null)
 				{
 					if (points.isEmpty())
 					{
-						points.add(new Coordinate(image.getWidth(), y));
+						points.add(new IntPoint(image.getWidth(), y));
 					}
 					points.add(point);
 				}
 			}
 
-			points.add(new Coordinate(image.getWidth(), points.get(points.size() - 1).y));
+			points.add(new IntPoint(image.getWidth(), points.get(points.size() - 1).y));
 			drawWhitePolygonFromPoints(leftSilhouette, points);
 
 		}
@@ -447,20 +444,20 @@ public class ImageAndMasks
 		// Right side
 		Image rightSilhouette = Image.create(image.getWidth(), image.getHeight(), ImageType.Binary);
 		{
-			List<Coordinate> points = new ArrayList<>();
+			List<IntPoint> points = new ArrayList<>();
 			for (int y = 0; y < image.getHeight(); y++)
 			{
-				Coordinate point = findRightmostOpaquePixel(image, y);
+				IntPoint point = findRightmostOpaquePixel(image, y);
 				if (point != null)
 				{
 					if (points.isEmpty())
 					{
-						points.add(new Coordinate(0, y));
+						points.add(new IntPoint(0, y));
 					}
 					points.add(point);
 				}
 			}
-			points.add(new Coordinate(0, points.get(points.size() - 1).y));
+			points.add(new IntPoint(0, points.get(points.size() - 1).y));
 			drawWhitePolygonFromPoints(rightSilhouette, points);
 		}
 
@@ -535,7 +532,7 @@ public class ImageAndMasks
 			}
 			else
 			{
-				Coordinate point = findLowermostOpaquePixelOnMask(contentMask, x);
+				IntPoint point = findLowermostOpaquePixelOnMask(contentMask, x);
 				if (point != null)
 				{
 					assert point.x == x;
@@ -549,7 +546,7 @@ public class ImageAndMasks
 		}
 	}
 
-	private void addToContentBounds(Coordinate point)
+	private void addToContentBounds(IntPoint point)
 	{
 		if (point == null)
 		{
@@ -573,9 +570,12 @@ public class ImageAndMasks
 			return null;
 		}
 
-		if (shadingMask == null)
+		synchronized (image)
 		{
-			createShadingMask();
+			if (shadingMask == null)
+			{
+				createShadingMask();
+			}
 		}
 
 		return shadingMask;
@@ -585,19 +585,19 @@ public class ImageAndMasks
 	{
 		getOrCreateContentMask();
 
-		if (iconType == IconType.trees || iconType == IconType.decorations)
+		if (iconType == IconType.trees || iconType == IconType.decorations || iconType == IconType.cities)
 		{
-			// Trees, in my opinion, look better without they feathered shading along the bottom that the shading mask gives.
+			// These icons, in my opinion, look better without the feathered shading along the bottom that the shading mask gives.
 			// Use a solid black image.
 			shadingMask = Image.create(contentMask.getWidth(), contentMask.getHeight(), ImageType.Grayscale8Bit);
 			return;
 		}
 
 		// Draw a line along the bottom of the content of the image.
-		List<Coordinate> points = new ArrayList<>();
+		List<IntPoint> points = new ArrayList<>();
 		for (int x = 0; x < contentMask.getWidth(); x++)
 		{
-			Coordinate point = findLowermostOpaquePixelOnMask(contentMask, x);
+			IntPoint point = findLowermostOpaquePixelOnMask(contentMask, x);
 			if (point != null)
 			{
 				if (points.isEmpty())
@@ -607,27 +607,37 @@ public class ImageAndMasks
 				points.add(point);
 			}
 		}
-		Image bottomSilhouette = Image.create(contentMask.getWidth(), contentMask.getHeight(), ImageType.Binary);
-		Painter p = bottomSilhouette.createPainter();
-		p.setColor(Color.white);
+
 		int contentHeight = contentBounds.height;
-		assert contentHeight >= 0;
-		p.setBasicStroke(Math.max(1f, contentHeight * 0.01f));
-		int[] xPoints = new int[points.size()];
-		int[] yPoints = new int[points.size()];
-		for (int i : new Range(points.size()))
+		float lineWidth = contentHeight * 0.01f;
+
+		// Make the line extend to the edges of the image so that the edges of the shading mask aren't darker.
+		if (points.size() > 0)
 		{
-			xPoints[i] = points.get(i).x;
-			yPoints[i] = points.get(i).y;
+			points.add(0, new IntPoint((int) (-Math.ceil(lineWidth)), points.get(0).y));
+			points.add(new IntPoint(contentMask.getWidth() - 1 + (int) (Math.ceil(lineWidth)), points.get(points.size() - 1).y));
 		}
-		p.drawPolyline(xPoints, yPoints);
+
+		int blurSize = contentHeight / 3;
+		int padding = blurSize;
+		Image bottomSilhouette = Image.create(contentMask.getWidth() + padding * 2, contentMask.getHeight() + padding, ImageType.Binary);
+		{
+			Painter p = bottomSilhouette.createPainter();
+			p.setColor(Color.white);
+			assert contentHeight >= 0;
+			p.setBasicStroke(Math.max(1f, lineWidth));
+			p.translate(padding, 0);
+			p.drawPolyline(points);
+			p.dispose();
+		}
 
 		// Blur the line up to a fraction of the height of the content
-		float[][] kernel = ImageHelper.createGaussianKernel(contentHeight / 3);
+		float[][] kernel = ImageHelper.createGaussianKernel(blurSize);
 		Image blurredLine = ImageHelper.convolveGrayscale(bottomSilhouette, kernel, true, true);
 
+		Image withoutPadding = blurredLine.copySubImage(new IntRectangle(padding, 0, contentMask.getWidth(), contentMask.getHeight()));
 		// Use the content mask to set non-content pixels to zero.
-		shadingMask = ImageHelper.maskWithColor(blurredLine, Color.black, contentMask, false);
+		shadingMask = ImageHelper.maskWithColor(withoutPadding, Color.black, contentMask, false);
 	}
 
 	public synchronized Image getOrCreateColorMask()
@@ -655,8 +665,6 @@ public class ImageAndMasks
 		p.drawImage(contentMask, 0, 0);
 		p.dispose();
 
-		// TODO decide if I want to get more fancy than this to avoid overwriting existing colors
-
 		// Only these types use the shading mask in creating the color mask.
 		if (iconType == IconType.mountains || iconType == IconType.hills || iconType == IconType.sand)
 		{
@@ -664,13 +672,13 @@ public class ImageAndMasks
 		}
 	}
 
-	private static void drawWhitePolygonFromPoints(Image image, List<Coordinate> points)
+	private static void drawWhitePolygonFromPoints(Image image, List<IntPoint> points)
 	{
 		int[] xPoints = new int[points.size()];
 		int[] yPoints = new int[points.size()];
 		for (int i : new Range(points.size()))
 		{
-			Coordinate point = points.get(i);
+			IntPoint point = points.get(i);
 			xPoints[i] = point.x;
 			yPoints[i] = point.y;
 		}
@@ -680,7 +688,7 @@ public class ImageAndMasks
 		p.fillPolygon(xPoints, yPoints);
 	}
 
-	private static Coordinate findLowermostOpaquePixelOnMask(Image contentMask, int x)
+	private static IntPoint findLowermostOpaquePixelOnMask(Image contentMask, int x)
 	{
 		assert contentMask.isGrayscaleOrBinary();
 
@@ -688,63 +696,63 @@ public class ImageAndMasks
 		{
 			if (contentMask.getGrayLevel(x, y) > 0)
 			{
-				return new Coordinate(x, y);
+				return new IntPoint(x, y);
 			}
 		}
 
 		return null;
 	}
 
-	private static Coordinate findUppermostOpaquePixel(Image icon, int x)
+	private static IntPoint findUppermostOpaquePixel(Image icon, int x)
 	{
 		for (int y = 0; y < icon.getHeight(); y++)
 		{
 			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
-				return new Coordinate(x, y);
+				return new IntPoint(x, y);
 			}
 		}
 
 		return null;
 	}
 
-	private static Coordinate findLowestOpaquePixel(Image icon, int x)
+	private static IntPoint findLowestOpaquePixel(Image icon, int x)
 	{
 		for (int y = icon.getHeight() - 1; y >= 0; y--)
 		{
 			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
-				return new Coordinate(x, y);
+				return new IntPoint(x, y);
 			}
 		}
 
 		return null;
 	}
 
-	private static Coordinate findLeftmostOpaquePixel(Image icon, int y)
+	private static IntPoint findLeftmostOpaquePixel(Image icon, int y)
 	{
 		for (int x = 0; x < icon.getWidth(); x++)
 		{
 			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
-				return new Coordinate(x, y);
+				return new IntPoint(x, y);
 			}
 		}
 
 		return null;
 	}
 
-	private static Coordinate findRightmostOpaquePixel(Image icon, int y)
+	private static IntPoint findRightmostOpaquePixel(Image icon, int y)
 	{
 		for (int x = icon.getWidth() - 1; x >= 0; x--)
 		{
 			int alpha = icon.getAlpha(x, y);
 			if (alpha >= opaqueThreshold)
 			{
-				return new Coordinate(x, y);
+				return new IntPoint(x, y);
 			}
 		}
 
