@@ -482,10 +482,31 @@ public class ImageCache
 		Width, Height
 	}
 
-	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
+	public Set<String> getIconGroupFileNamesWithoutWidthOrExtensionAsSet(IconType iconType, String groupName)
 	{
 		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
 		Set<String> result = new TreeSet<String>();
+		for (int i : new Range(fileNames.size()))
+		{
+			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Width);
+			if (nameAndWidth.getSecond() == null)
+			{
+				Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Height);
+				result.add(nameAndHeight.getFirst());
+			}
+			else
+			{
+				result.add(nameAndWidth.getFirst());
+			}
+
+		}
+		return result;
+	}
+	
+	public List<String> getIconGroupFileNamesWithoutWidthOrExtensionAsList(IconType iconType, String groupName)
+	{
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
+		List<String> result = new ArrayList<String>();
 		for (int i : new Range(fileNames.size()))
 		{
 			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Width);
@@ -545,7 +566,7 @@ public class ImageCache
 			return false;
 		}
 
-		return getIconGroupFileNamesWithoutWidthOrExtension(iconType, groupName).contains(iconName);
+		return getIconGroupFileNamesWithoutWidthOrExtensionAsSet(iconType, groupName).contains(iconName);
 	}
 
 	public boolean hasGroupName(IconType iconType, String groupName)

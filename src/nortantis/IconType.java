@@ -27,6 +27,15 @@ public enum IconType
 		}
 	}
 	
+	public String getSingularNameForGUILowerCase()
+	{
+		if (this == sand)
+		{
+			return "dunes";
+		}
+		return getSingularName();
+	}
+	
 	public String getNameForGUI()
 	{
 		if (this == sand)

@@ -45,7 +45,7 @@ public class NamedIconSelector
 			buttonsPanel.setLayout(new WrapLayout());
 			buttonsPanel.setBorder(new DynamicLineBorder("controlShadow", 1));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
-					.getIconGroupFileNamesWithoutWidthOrExtension(type, groupId))
+					.getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
 			{
 				UnscaledImageToggleButton toggleButton = new UnscaledImageToggleButton();
 				toggleButton.setToolTipText(fileNameWithoutWidthOrExtension);

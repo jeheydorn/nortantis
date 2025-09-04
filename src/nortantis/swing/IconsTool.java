@@ -111,6 +111,12 @@ public class IconsTool extends EditorTool
 	private boolean disableImageRefreshes;
 	private RowHider modeOptionsAndBrushSeperatorHider;
 	private RowHider deleteIconButtonHider;
+	private RowHider editOptionsSeperatorHider;
+	private JLabel groupLabel;
+	private JLabel nameLabel;
+	private RowHider iconMetadataHider;
+	private JLabel artPackLabel;
+	private JLabel typeLabel;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -313,6 +319,18 @@ public class IconsTool extends EditorTool
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(densitySlider);
 			densityHider = sliderWithDisplay.addToOrganizer(organizer, "Density:", "");
 		}
+		
+		{
+			// TODO Show art pack / group / icon for edit mode
+			typeLabel = new JLabel();
+			iconMetadataHider = organizer.addLabelAndComponent("Type: ", "The type of this icon.", typeLabel);
+			artPackLabel = new JLabel();
+			iconMetadataHider.add(organizer.addLabelAndComponent("Art pack: ", "The art pack this icon is from.", artPackLabel, 0));
+			groupLabel = new JLabel();
+			iconMetadataHider.add(organizer.addLabelAndComponent("Group: ", "The icon group folder this icon is from.", groupLabel, 0));
+			nameLabel = new JLabel();
+			iconMetadataHider.add(organizer.addLabelAndComponent("Name: ", "The icon's file name, not including modifiers or the extension.", nameLabel, 0));
+		}
 
 		{
 			colorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -341,6 +359,8 @@ public class IconsTool extends EditorTool
 
 		}
 
+		editOptionsSeperatorHider = organizer.addSeperator();
+		
 		{
 			JButton deleteIconButton = new JButton("Delete");
 			deleteIconButton.setToolTipText("Delete the selected icon (DELETE key)");
@@ -512,6 +532,16 @@ public class IconsTool extends EditorTool
 	{
 		modeOptionsAndBrushSeperatorHider
 				.setVisible((modeWidget.isEditMode() && iconToEdit != null) || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+	}
+	
+	private void showOrHideEditOptionsSeperatorHider()
+	{
+		editOptionsSeperatorHider.setVisible((modeWidget.isEditMode() && iconToEdit != null));
+	}
+	
+	private void showOrHideIconMetadata()
+	{
+		iconMetadataHider.setVisible((modeWidget.isEditMode() && iconToEdit != null));
 	}
 
 	private void showOrHideBrush(MouseEvent e)
@@ -1290,6 +1320,21 @@ public class IconsTool extends EditorTool
 					{
 						System.out.println("Selected icon for editing: " + iconToEdit);
 					}
+					
+					typeLabel.setText(iconToEdit.type.getSingularNameForGUILowerCase());
+					artPackLabel.setText(iconToEdit.artPack);
+					groupLabel.setText(iconToEdit.groupId);
+					if (!StringUtils.isEmpty(iconToEdit.iconName))
+					{
+						nameLabel.setText(iconToEdit.iconName);
+					}
+					else
+					{
+						List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type, iconToEdit.groupId);
+						String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
+						nameLabel.setText(iconName);
+					}
+
 					colorPickerHider.setVisible(true);
 					colorDisplay.setBackground(AwtFactory.unwrap(iconToEdit.color));
 					colorDisplay.repaint();
@@ -1299,6 +1344,12 @@ public class IconsTool extends EditorTool
 				else
 				{
 					editStart = null;
+					
+					typeLabel.setText(null);
+					artPackLabel.setText(null);
+					groupLabel.setText(null);
+					nameLabel.setText(null);
+					
 					mapEditingPanel.clearIconEditTools();
 					isMoving = false;
 					isScaling = false;
@@ -1346,6 +1397,8 @@ public class IconsTool extends EditorTool
 		}
 		mapEditingPanel.clearHighlightedAreas();
 		showOrHideModeOptionsAndBrushSeperatorHider();
+		showOrHideEditOptionsSeperatorHider();
+		showOrHideIconMetadata();
 		mapEditingPanel.repaint();
 
 	}
@@ -1436,6 +1489,8 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.clearIconEditTools();
 		mapEditingPanel.repaint();
 		showOrHideModeOptionsAndBrushSeperatorHider();
+		showOrHideEditOptionsSeperatorHider();
+		showOrHideIconMetadata();
 	}
 
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
