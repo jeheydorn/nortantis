@@ -160,6 +160,9 @@ public class IconsTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
+		unselectAnyIconBeingEdited();
+		mapEditingPanel.repaint();
+		updateTypePanels();
 	}
 
 	@Override
@@ -523,9 +526,6 @@ public class IconsTool extends EditorTool
 		unselectAnyIconBeingEdited();
 		mapEditingPanel.repaint();
 		updateTypePanels();
-
-		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
-		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
 	}
 
 	private void showOrHideModeOptionsAndBrushSeperatorHider()
@@ -575,6 +575,8 @@ public class IconsTool extends EditorTool
 		setColorPickerColorForSelectedType();
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		deleteIconButtonHider.setVisible(false);
+		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
 
 		toolsPanel.revalidate();
 		toolsPanel.repaint();

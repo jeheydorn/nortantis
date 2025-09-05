@@ -145,21 +145,27 @@ public class ImageCache
 		// problem.
 		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color, () ->
 		{
+			if (color.getAlpha() > 0)
+			{
+				Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
+				for (int y = 0; y < result.getHeight(); y++)
+					for (int x = 0; x < result.getWidth(); x++)
+					{
+						Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+						int alpha = originalColor.getAlpha();
+						int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
+						int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
+						int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
+						int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
 
-			Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
-			for (int y = 0; y < result.getHeight(); y++)
-				for (int x = 0; x < result.getWidth(); x++)
-				{
-					Color originalColor = imageAndMasks.image.getPixelColor(x, y);
-					int alpha = originalColor.getAlpha();
-					int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
-					int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
-					int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
-					int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
-
-					result.setPixelColor(x, y, Color.create(r, g, b, a));
-				}
-			return result;
+						result.setPixelColor(x, y, Color.create(r, g, b, a));
+					}
+				return result;
+			}
+			else
+			{
+				return imageAndMasks.image;
+			}
 		});
 	}
 
@@ -502,7 +508,7 @@ public class ImageCache
 		}
 		return result;
 	}
-	
+
 	public List<String> getIconGroupFileNamesWithoutWidthOrExtensionAsList(IconType iconType, String groupName)
 	{
 		List<String> fileNames = getIconGroupFileNames(iconType, groupName);

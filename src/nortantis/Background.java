@@ -344,7 +344,7 @@ public class Background
 		if (maxDimensions != null)
 		{
 			int borderPadding = 0;
-			if (settings.drawBorder && settings.borderPosition == BorderPosition.Over_map)
+			if (settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map)
 			{
 				borderPadding = (int) (settings.borderWidth * settings.resolution);
 			}

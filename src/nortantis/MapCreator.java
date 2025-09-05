@@ -710,6 +710,11 @@ public class MapCreator implements WarningLogger
 			mountainGroups = null;
 			cities = null;
 		}
+		
+		if (mapParts == null)
+		{
+			background.landColoredBeforeAddingIconColors = null;
+		}
 
 		checkForCancel();
 
