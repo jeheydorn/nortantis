@@ -29,7 +29,7 @@ import nortantis.geom.IntDimension;
 import nortantis.geom.IntRectangle;
 import nortantis.geom.Point;
 import nortantis.platform.Image;
-import nortantis.swing.MapEditingPanel.IconEditToolsMode;
+import nortantis.swing.MapEditingPanel.IconEditToolsLocation;
 import nortantis.util.Assets;
 import nortantis.util.FileHelper;
 import nortantis.util.Tuple2;
@@ -115,21 +115,21 @@ public class OverlayTool extends EditorTool
 							// Reduce width by 1 pixel so that right side draws inside the map when the overlay is the size of the map.
 							IntRectangle adjusted = new IntRectangle(overlayPosition.x, overlayPosition.y, overlayPosition.width - 1,
 									overlayPosition.height);
-							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsMode.Overlay, true);
+							mapEditingPanel.showIconEditToolsAt(adjusted.toRectangle(), true, IconEditToolsLocation.InsideBox, true, true, false);
 						}
 						else
 						{
-							mapEditingPanel.clearIconEditTools();
+							mapEditingPanel.hideIconEditTools();
 						}
 					}
 					catch (Exception ex)
 					{
-						mapEditingPanel.clearIconEditTools();
+						mapEditingPanel.hideIconEditTools();
 					}
 				}
 				else
 				{
-					mapEditingPanel.clearIconEditTools();
+					mapEditingPanel.hideIconEditTools();
 				}
 				mapEditingPanel.repaint();
 			}
@@ -394,7 +394,7 @@ public class OverlayTool extends EditorTool
 			IntRectangle overlaySizeAt1Scale = calcOverlayPositionForScale(1.0);
 			if (overlaySizeAt1Scale != null)
 			{
-				final double minWidth = 375 * mainWindow.displayQualityScale;
+				final double minWidth = mapEditingPanel.calcMinWidthForIconEditToolsOnInside(true);
 				return minWidth / overlaySizeAt1Scale.width;
 			}
 			else

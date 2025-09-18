@@ -876,12 +876,12 @@ public class TextTool extends EditorTool
 		if (eraseButton.isSelected())
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected, true);
+			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
 		}
 		else if (editButton.isSelected() && lastSelected == null)
 		{
 			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected, false);
+			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
 		}
 		else
 		{

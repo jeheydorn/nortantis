@@ -1121,7 +1121,7 @@ public class ThemePanel extends JTabbedPane
 		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null
 				&& mainWindow.toolsPanel.currentTool instanceof IconsTool)
 		{
-			((IconsTool) mainWindow.toolsPanel.currentTool).unselectAnyIconBeingEdited();
+			((IconsTool) mainWindow.toolsPanel.currentTool).unselectAnyIconsBeingEdited();
 		}
 	}
 

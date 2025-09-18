@@ -73,15 +73,18 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private BufferedImage redScaleIconScaled;
 	private Area moveToolArea;
 	private Set<Area> highlightedAreas;
+	private Set<Area> redHighlightedAreas;
 	private Set<RotatedRectangle> processingAreas;
 	private Set<String> artPacksToHighlight;
 	private FreeIconCollection freeIcons;
 	private IconDrawer iconDrawer;
-	IconEditToolsMode imageEditMode;
+	IconEditToolsLocation toolsLocation;
 	private BufferedImage moveIconScaledLarge;
 	private BufferedImage scaleIconScaledLarge;
-	private boolean useLargeIconEditIcons;
+	private boolean useLargeIcons;
 	private RotatedRectangle textBoxBounds;
+	private boolean showEditBox;
+	private boolean editBoxIsInMapSpace;
 
 	public MapEditingPanel(BufferedImage image)
 	{
@@ -90,6 +93,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		selectedCenters = new HashSet<>();
 		highlightedEdges = new HashSet<>();
 		highlightedAreas = new HashSet<>();
+		redHighlightedAreas = new HashSet<>();
 		processingAreas = new HashSet<>();
 		artPacksToHighlight = new TreeSet<>();
 		zoom = 1.0;
@@ -154,7 +158,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxBounds = null;
 	}
 
-	public void showIconEditToolsAt(FreeIcon icon, IconEditToolsMode toolsLocation, boolean useLargeIcons)
+	public void showBulkIconEditTools(Collection<FreeIcon> icons, boolean isValidPosition, boolean useLargeIcons)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -162,32 +166,94 @@ public class MapEditingPanel extends UnscaledImagePanel
 			return;
 		}
 
-		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).createBounds(), true, toolsLocation, useLargeIcons);
+		if (icons.size() == 0)
+		{
+			hideIconEditTools();
+			return;
+		}
+
+		if (icons.size() == 1)
+		{
+			showIconEditToolsAt(icons.iterator().next(), isValidPosition, IconEditToolsLocation.OutsideBox, useLargeIcons, false);
+			return;
+		}
+
+		// Multiple icons. Show the edit box around them.
+
+		nortantis.geom.Rectangle bounds = null;
+		for (FreeIcon icon : icons)
+		{
+			nortantis.geom.Rectangle iconBounds = iconDrawer.toIconDrawTask(icon).createBounds();
+			if (bounds == null)
+			{
+				bounds = iconBounds;
+			}
+			else
+			{
+				bounds = bounds.add(iconBounds);
+			}
+		}
+
+		assert bounds != null;
+		if (bounds == null)
+		{
+			return;
+		}
+
+		IconEditToolsLocation toolsLocation = IconEditToolsLocation.OutsideBox;
+		showIconEditToolsAt(bounds, true, toolsLocation, useLargeIcons, true, true);
 	}
 
-	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsMode imageEditMode,
-			boolean useLargeIcons)
+	public void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation, boolean useLargeIcons,
+			boolean showEditBox)
+	{
+		assert iconDrawer != null;
+		if (iconDrawer == null)
+		{
+			return;
+		}
+
+		showIconEditToolsAt(iconDrawer.toIconDrawTask(icon).createBounds(), isValidPosition, toolsLocation, useLargeIcons, showEditBox, true);
+	}
+
+	public void showIconEditToolsAt(nortantis.geom.Rectangle rectangle, boolean isValidPosition, IconEditToolsLocation toolsLocation,
+			boolean useLargeIcons, boolean showEditBox, boolean editBoxIsInMapSpace)
 	{
 		iconToEditBounds = rectangle == null ? null : rectangle.scaleAboutOrigin(1.0 / resolution);
 		this.isIconToEditInAValidPosition = isValidPosition;
-		this.imageEditMode = imageEditMode;
-		this.useLargeIconEditIcons = useLargeIcons;
+		this.toolsLocation = toolsLocation;
+		this.useLargeIcons = useLargeIcons;
+		this.showEditBox = showEditBox;
+		this.editBoxIsInMapSpace = editBoxIsInMapSpace;
 	}
 
-	public enum IconEditToolsMode
+	public enum IconEditToolsLocation
 	{
-		Icon, Overlay
+		OutsideBox, InsideBox
 	}
 
-	public void clearIconEditTools()
+	public void hideIconEditTools()
 	{
 		iconToEditBounds = null;
 		scaleToolArea = null;
 		moveToolArea = null;
-		imageEditMode = null;
+		toolsLocation = null;
+		useLargeIcons = false;
+		showEditBox = false;
+		editBoxIsInMapSpace = false;
 	}
 
-	public void setHighlightedAreasFromTexts(List<MapText> texts, boolean isErasing)
+	public final double calcMinWidthForIconEditToolsOnInside(boolean useLargeIcons)
+	{
+		final double toolImageSize = 256;
+		if (useLargeIcons)
+		{
+			return (toolImageSize * largeIconScale * 2 + 69) * resolution;
+		}
+		return (toolImageSize * smallIconScale * 2 + 20) * resolution;
+	}
+
+	public void setHighlightedAreasFromTexts(List<MapText> texts)
 	{
 		highlightedAreas.clear();
 		for (MapText text : texts)
@@ -200,7 +266,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 	}
 
-	public void setHighlightedAreasFromIcons(List<FreeIcon> icons, boolean isErasing)
+	public void setHighlightedAreasFromIcons(List<FreeIcon> icons)
+	{
+		setHighlightedAreasFromIconsValidAndInvalid(icons, null);
+	}
+
+	public void setHighlightedAreasFromIconsValidAndInvalid(List<FreeIcon> validIcons, List<FreeIcon> invalidIcons)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -209,13 +280,30 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		highlightedAreas.clear();
-		for (FreeIcon icon : icons)
+		if (validIcons != null)
 		{
-			IconDrawTask task = iconDrawer.toIconDrawTask(icon);
-			if (task != null)
+			for (FreeIcon icon : validIcons)
 			{
-				nortantis.geom.Rectangle bounds = task.createBounds();
-				highlightedAreas.add(AwtFactory.toAwtArea(bounds));
+				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+				if (task != null)
+				{
+					nortantis.geom.Rectangle bounds = task.createBounds();
+					highlightedAreas.add(AwtFactory.toAwtArea(bounds));
+				}
+			}
+		}
+
+		redHighlightedAreas.clear();
+		if (invalidIcons != null)
+		{
+			for (FreeIcon icon : invalidIcons)
+			{
+				IconDrawTask task = iconDrawer.toIconDrawTask(icon);
+				if (task != null)
+				{
+					nortantis.geom.Rectangle bounds = task.createBounds();
+					redHighlightedAreas.add(AwtFactory.toAwtArea(bounds));
+				}
 			}
 		}
 	}
@@ -223,6 +311,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearHighlightedAreas()
 	{
 		highlightedAreas.clear();
+		redHighlightedAreas.clear();
 	}
 
 	public void addProcessingAreasFromTexts(List<MapText> texts)
@@ -359,14 +448,14 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (iconToEditBounds != null)
 		{
-			if (imageEditMode == IconEditToolsMode.Overlay)
+			if (!editBoxIsInMapSpace)
 			{
 				((Graphics2D) g).translate(-borderPadding, -borderPadding);
 			}
 
 			drawIconEditBox(((Graphics2D) g));
 
-			if (imageEditMode == IconEditToolsMode.Overlay)
+			if (!editBoxIsInMapSpace)
 			{
 				((Graphics2D) g).translate(borderPadding, borderPadding);
 			}
@@ -430,7 +519,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		Rectangle editBounds = AwtFactory.toAwtRectangle(iconToEditBounds.scaleAboutOrigin(resolution));
 
 		int padding = (int) (9 * resolution);
-		g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
+		if (showEditBox)
+		{
+			g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
+		}
 
 		if (!isIconToEditInAValidPosition)
 		{
@@ -467,7 +559,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Place the image for the scale tool.
 		{
 			BufferedImage toolIcon;
-			if (useLargeIconEditIcons)
+			if (useLargeIcons)
 			{
 				toolIcon = scaleIconScaledLarge;
 			}
@@ -477,7 +569,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			}
 
 			int x, y;
-			if (imageEditMode == IconEditToolsMode.Icon)
+			if (toolsLocation == IconEditToolsLocation.OutsideBox)
 			{
 				// Draw edit tools outside box
 				x = editBounds.x + editBounds.width + padding;
@@ -499,7 +591,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		// Place the image for the move tool.
 		{
 			BufferedImage toolIcon;
-			if (useLargeIconEditIcons)
+			if (useLargeIcons)
 			{
 				toolIcon = moveIconScaledLarge;
 			}
@@ -510,7 +602,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 			int x = editBounds.x + (int) (Math.round(editBounds.width / 2.0)) - (int) (Math.round(toolIcon.getWidth() / 2.0));
 			int y;
-			if (imageEditMode == IconEditToolsMode.Icon)
+			if (toolsLocation == IconEditToolsLocation.OutsideBox)
 			{
 				y = editBounds.y - (toolIcon.getHeight()) - padding;
 			}
@@ -607,6 +699,15 @@ public class MapEditingPanel extends UnscaledImagePanel
 		{
 			g.setColor(getHighlightColor());
 			for (Area area : highlightedAreas)
+			{
+				((Graphics2D) g).draw(area);
+			}
+		}
+
+		if (!redHighlightedAreas.isEmpty())
+		{
+			g.setColor(getInvalidPositionColor());
+			for (Area area : redHighlightedAreas)
 			{
 				((Graphics2D) g).draw(area);
 			}
@@ -719,6 +820,9 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.zoom = zoom;
 	}
 
+	private final double smallIconScale = 0.2;
+	private final double largeIconScale = 0.6;
+
 	public void setResolution(double resolution)
 	{
 		if (this.resolution == 0.0 || this.resolution != resolution)
@@ -726,8 +830,6 @@ public class MapEditingPanel extends UnscaledImagePanel
 			this.resolution = resolution;
 
 			// Determines the size at which the rotation and move tool icons appear.
-			final double smallIconScale = 0.2;
-			final double largeIconScale = 0.6;
 
 			BufferedImage rotateIcon = AwtFactory
 					.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "rotate text.png").toString()));
@@ -794,7 +896,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	public void clearAllToolSpecificSelectionsAndHighlights()
 	{
 		clearTextBox();
-		clearIconEditTools();
+		hideIconEditTools();
 		clearSelectedCenters();
 		clearHighlightedCenters();
 		clearHighlightedEdges();

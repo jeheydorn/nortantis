@@ -26,7 +26,7 @@ public class DebugFlags
 	 */
 	private static boolean printCenterIndexes = false;
 
-	private static boolean printIconBeingEdited = false;
+	private static boolean printIconsBeingEdited = false;
 
 	private static boolean writeBeforeAndAfterJsonWhenSavePromptShows = false;
 
@@ -89,9 +89,9 @@ public class DebugFlags
 		return !Assets.isRunningFromJar() && writeBeforeAndAfterJsonWhenSavePromptShows;
 	}
 
-	public static boolean printIconBeingEdited()
+	public static boolean printIconsBeingEdited()
 	{
-		return !Assets.isRunningFromJar() && printIconBeingEdited;
+		return !Assets.isRunningFromJar() && printIconsBeingEdited;
 	}
 
 	public static boolean drawRegionBoundaryPathJoins()

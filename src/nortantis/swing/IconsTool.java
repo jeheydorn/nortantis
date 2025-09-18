@@ -4,13 +4,16 @@ import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -61,9 +64,11 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.MapEditingPanel.IconEditToolsMode;
+import nortantis.swing.MapEditingPanel.IconEditToolsLocation;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
+import nortantis.util.Counter;
+import nortantis.util.HashCounter;
 import nortantis.util.ImageHelper;
 import nortantis.util.Logger;
 import nortantis.util.Range;
@@ -91,7 +96,7 @@ public class IconsTool extends EditorTool
 	private JRadioButton citiesButton;
 	private JRadioButton decorationsButton;
 	private DrawModeWidget modeWidget;
-	private FreeIcon iconToEdit;
+	private ArrayDeque<FreeIcon> iconsToEdit;
 	private java.awt.Point editStart;
 	private boolean isMoving;
 	private boolean isScaling;
@@ -125,6 +130,7 @@ public class IconsTool extends EditorTool
 		namedIconPreviewCache = new ConcurrentHashMapF<>();
 		groupPreviewCache = new ConcurrentHashMapF<>();
 		iconColorsByType = new TreeMap<>();
+		iconsToEdit = new ArrayDeque<>();
 	}
 
 	@Override
@@ -160,11 +166,12 @@ public class IconsTool extends EditorTool
 	public void onSwitchingAway()
 	{
 		mapEditingPanel.clearAllToolSpecificSelectionsAndHighlights();
-		unselectAnyIconBeingEdited();
+		unselectAnyIconsBeingEdited();
 		mapEditingPanel.repaint();
 		updateTypePanels();
 	}
 
+	@SuppressWarnings("serial")
 	@Override
 	protected JPanel createToolOptionsPanel()
 	{
@@ -322,7 +329,7 @@ public class IconsTool extends EditorTool
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(densitySlider);
 			densityHider = sliderWithDisplay.addToOrganizer(organizer, "Density:", "");
 		}
-		
+
 		{
 			// TODO Show art pack / group / icon for edit mode
 			typeLabel = new JLabel();
@@ -332,7 +339,8 @@ public class IconsTool extends EditorTool
 			groupLabel = new JLabel();
 			iconMetadataHider.add(organizer.addLabelAndComponent("Group: ", "The icon group folder this icon is from.", groupLabel, 0));
 			nameLabel = new JLabel();
-			iconMetadataHider.add(organizer.addLabelAndComponent("Name: ", "The icon's file name, not including modifiers or the extension.", nameLabel, 0));
+			iconMetadataHider.add(organizer.addLabelAndComponent("Name: ",
+					"The icon's file name, not including modifiers or the extension.", nameLabel, 0));
 		}
 
 		{
@@ -363,7 +371,7 @@ public class IconsTool extends EditorTool
 		}
 
 		editOptionsSeperatorHider = organizer.addSeperator();
-		
+
 		{
 			JButton deleteIconButton = new JButton("Delete");
 			deleteIconButton.setToolTipText("Delete the selected icon (DELETE key)");
@@ -390,10 +398,10 @@ public class IconsTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					deleteSelectedIcon();
+					deleteSelectedIcons();
 				}
 			});
-			
+
 			JPanel container = new JPanel();
 			container.setLayout(new FlowLayout(FlowLayout.LEFT));
 			container.add(deleteIconButton);
@@ -435,15 +443,17 @@ public class IconsTool extends EditorTool
 		return toolOptionsPanel;
 	}
 
-	private void deleteSelectedIcon()
+	private void deleteSelectedIcons()
 	{
-		if (modeWidget.isEditMode() && iconToEdit != null)
+		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			FreeIcon deleted = iconToEdit;
-			mainWindow.edits.freeIcons.remove(iconToEdit);
-			unselectAnyIconBeingEdited();
-			undoer.setUndoPoint(UpdateType.Incremental, this);
-			updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(deleted));
+			for (FreeIcon icon : iconsToEdit)
+			{
+				mainWindow.edits.freeIcons.remove(icon);
+				unselectAnyIconsBeingEdited();
+				undoer.setUndoPoint(UpdateType.Incremental, this);
+			}
+			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit));
 		}
 	}
 
@@ -459,13 +469,16 @@ public class IconsTool extends EditorTool
 				updateIconTypeButtonPreviewImages(mainWindow.getSettingsFromGUI(false));
 			});
 		}
-		else if (modeWidget.isEditMode() && iconToEdit != null)
+		else if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			FreeIcon updatedIcon = iconToEdit.copyWithColor(AwtFactory.wrap(colorDisplay.getBackground()));
-			mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
-			iconToEdit = updatedIcon;
-			undoer.setUndoPoint(UpdateType.Incremental, this);
-			updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(updatedIcon));
+			for (FreeIcon iconToEdit : iconsToEdit)
+			{
+				FreeIcon updatedIcon = iconToEdit.copyWithColor(AwtFactory.wrap(colorDisplay.getBackground()));
+				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+				iconToEdit = updatedIcon;
+				undoer.setUndoPoint(UpdateType.Incremental, this);
+			}
+			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit));
 		}
 
 	}
@@ -523,31 +536,32 @@ public class IconsTool extends EditorTool
 
 	private void handleModeChanged()
 	{
-		unselectAnyIconBeingEdited();
+		unselectAnyIconsBeingEdited();
 		mapEditingPanel.repaint();
 		updateTypePanels();
 	}
 
 	private void showOrHideModeOptionsAndBrushSeperatorHider()
 	{
-		modeOptionsAndBrushSeperatorHider
-				.setVisible((modeWidget.isEditMode() && iconToEdit != null) || modeWidget.isDrawMode() || modeWidget.isReplaceMode());
+		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
+				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 	}
-	
+
 	private void showOrHideEditOptionsSeperatorHider()
 	{
-		editOptionsSeperatorHider.setVisible((modeWidget.isEditMode() && iconToEdit != null));
+		editOptionsSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty()));
 	}
-	
+
 	private void showOrHideIconMetadata()
 	{
-		iconMetadataHider.setVisible((modeWidget.isEditMode() && iconToEdit != null));
+		iconMetadataHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1));
 	}
 
 	private void showOrHideBrush(MouseEvent e)
 	{
 		int brushDiameter = getBrushDiameter();
-		if (modeWidget.isDrawMode() || modeWidget.isEditMode() || brushDiameter <= 1)
+		if (modeWidget.isDrawMode() || brushDiameter <= 1
+				|| (modeWidget.isEditMode() && (mapEditingPanel.isInMoveTool(e.getPoint()) || mapEditingPanel.isInScaleTool(e.getPoint()))))
 		{
 			mapEditingPanel.hideBrush();
 		}
@@ -570,7 +584,7 @@ public class IconsTool extends EditorTool
 		decorationButtons.hider.setVisible(decorationsButton.isSelected() && (modeWidget.isDrawMode() || modeWidget.isReplaceMode()));
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
 		brushSizeHider.setVisible((modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected())
-				|| modeWidget.isReplaceMode() || modeWidget.isEraseMode());
+				|| modeWidget.isReplaceMode() || modeWidget.isEraseMode() || modeWidget.isEditMode());
 		colorPickerHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		setColorPickerColorForSelectedType();
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
@@ -661,7 +675,7 @@ public class IconsTool extends EditorTool
 
 		// Trigger re-creation of image previews
 		loadSettingsIntoGUI(settings, false, true, false);
-		unselectAnyIconBeingEdited();
+		unselectAnyIconsBeingEdited();
 	}
 
 	private synchronized void updateIconTypeButtonPreviewImages(MapSettings settings)
@@ -1242,7 +1256,7 @@ public class IconsTool extends EditorTool
 			return iconsBeforeAndAfter;
 		});
 
-		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter, false);
+		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter);
 
 		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
 		{
@@ -1292,7 +1306,7 @@ public class IconsTool extends EditorTool
 	{
 		if (isPress)
 		{
-			if (iconToEdit != null)
+			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
 				isMoving = mapEditingPanel.isInMoveTool(e.getPoint());
 				isScaling = mapEditingPanel.isInScaleTool(e.getPoint());
@@ -1311,18 +1325,101 @@ public class IconsTool extends EditorTool
 				isScaling = false;
 				editStart = null;
 			}
+		}
 
-			if (!isMoving && !isScaling)
+
+		if (isMoving || isScaling)
+		{
+			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
-				iconToEdit = getLowestSelectedIcon(e.getPoint());
-				if (iconToEdit != null)
+				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconsToEdit.getLast()).createBounds();
+				List<FreeIcon> updated = new ArrayList<>();
+				List<FreeIcon> valid = new ArrayList<>();
+				List<FreeIcon> invalid = new ArrayList<>();
+
+				if (isMoving)
 				{
-					mapEditingPanel.showIconEditToolsAt(iconToEdit, IconEditToolsMode.Icon, false);
-					if (DebugFlags.printIconBeingEdited())
+					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+					imageBounds = imageBounds.translate(deltaX, deltaY);
+
+					for (FreeIcon iconToEdit : iconsToEdit)
 					{
-						System.out.println("Selected icon for editing: " + iconToEdit);
+						Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
+						updated.add(iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
+								new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)));
 					}
-					
+
+				}
+				else if (isScaling)
+				{
+					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
+					imageBounds = imageBounds.scaleAboutCenter(scale);
+
+					for (FreeIcon iconToEdit : iconsToEdit)
+					{
+						updated.add(iconToEdit.copyWithScale(iconToEdit.scale * scale));
+					}
+				}
+
+				if (!updated.isEmpty())
+				{
+					for (FreeIcon updatedIcon : updated)
+					{
+						boolean isValidPosition = updatedIcon.type == IconType.decorations
+								|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updatedIcon);
+						if (isValidPosition)
+						{
+							valid.add(updatedIcon);
+						}
+						else
+						{
+							invalid.add(updatedIcon);
+						}
+					}
+					mapEditingPanel.setHighlightedAreasFromIconsValidAndInvalid(valid, invalid);
+					boolean isValidPosition = iconsToEdit.size() == 1 ? iconsToEdit.getLast().type == IconType.decorations
+							|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(iconsToEdit.getLast()) : true;
+					mapEditingPanel.showBulkIconEditTools(updated, isValidPosition, false);
+				}
+			}
+		}
+		else
+		{
+			// Not moving or scaling.
+
+			if (!e.isControlDown() && isPress)
+			{
+				mapEditingPanel.clearHighlightedAreas();
+				iconsToEdit.clear();
+				mapEditingPanel.hideIconEditTools();
+			}
+
+			List<FreeIcon> selectedIcons = getSelectedIcons(e.getPoint());
+			if (e.isControlDown())
+			{
+				// Add all without duplicates and keeping the last selected icon last.
+				Set<FreeIcon> intersection = new HashSet<>();
+				intersection.addAll(iconsToEdit);
+				intersection.removeAll(selectedIcons);
+				iconsToEdit.clear();
+				iconsToEdit.addAll(intersection);
+				iconsToEdit.addAll(selectedIcons);
+			}
+			else
+			{
+				iconsToEdit.addAll(selectedIcons);
+			}
+
+			if (iconsToEdit != null && !iconsToEdit.isEmpty())
+			{
+				if (iconsToEdit.size() == 1)
+				{
+					FreeIcon iconToEdit = iconsToEdit.getFirst();
+					mapEditingPanel.showBulkIconEditTools(iconsToEdit, true, false);
+
 					typeLabel.setText(iconToEdit.type.getSingularNameForGUILowerCase());
 					artPackLabel.setText(iconToEdit.artPack);
 					groupLabel.setText(iconToEdit.groupId);
@@ -1332,72 +1429,58 @@ public class IconsTool extends EditorTool
 					}
 					else
 					{
-						List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customImagesPath).getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type, iconToEdit.groupId);
+						List<String> fileNames = ImageCache.getInstance(iconToEdit.artPack, mainWindow.customImagesPath)
+								.getIconGroupFileNamesWithoutWidthOrExtensionAsList(iconToEdit.type, iconToEdit.groupId);
 						String iconName = fileNames.get(iconToEdit.iconIndex % fileNames.size());
 						nameLabel.setText(iconName);
 					}
-
-					colorPickerHider.setVisible(true);
 					colorDisplay.setBackground(AwtFactory.unwrap(iconToEdit.color));
-					colorDisplay.repaint();
-					deleteIconButtonHider.setVisible(true);
-					getToolOptionsPane().repaint();
 				}
 				else
 				{
-					editStart = null;
-					
+					mapEditingPanel.showBulkIconEditTools(iconsToEdit, true, false);
 					typeLabel.setText(null);
 					artPackLabel.setText(null);
 					groupLabel.setText(null);
 					nameLabel.setText(null);
-					
-					mapEditingPanel.clearIconEditTools();
-					isMoving = false;
-					isScaling = false;
-					colorPickerHider.setVisible(false);
-					colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
-					deleteIconButtonHider.setVisible(false);
+
+					Counter<Color> counter = new HashCounter<Color>();
+					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.color));
+					colorDisplay.setBackground(AwtFactory.unwrap(counter.argmax()));
 				}
+
+				if (DebugFlags.printIconsBeingEdited())
+				{
+					for (FreeIcon iconToEdit : iconsToEdit)
+					{
+						System.out.println("Icon being edited: " + iconToEdit);
+					}
+				}
+
+				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit));
+				colorPickerHider.setVisible(true);
+				colorDisplay.repaint();
+				deleteIconButtonHider.setVisible(true);
+				getToolOptionsPane().repaint();
+
 			}
-		}
-		else
-		{
-			if (iconToEdit != null && (isMoving || isScaling))
+			else
 			{
-				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
-				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
-				FreeIcon updated = null;
+				editStart = null;
 
-				if (isMoving)
-				{
-					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-					imageBounds = imageBounds.translate(deltaX, deltaY);
+				typeLabel.setText(null);
+				artPackLabel.setText(null);
+				groupLabel.setText(null);
+				nameLabel.setText(null);
 
-					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
-					updated = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
-							new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY));
-
-				}
-				else if (isScaling)
-				{
-					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
-					imageBounds = imageBounds.scaleAboutCenter(scale);
-
-					updated = iconToEdit.copyWithScale(iconToEdit.scale * scale);
-				}
-
-				if (updated != null)
-				{
-					boolean isValidPosition = updated.type == IconType.decorations
-							|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
-					mapEditingPanel.showIconEditToolsAt(imageBounds, isValidPosition, IconEditToolsMode.Icon, false);
-				}
+				mapEditingPanel.hideIconEditTools();
+				isMoving = false;
+				isScaling = false;
+				colorPickerHider.setVisible(false);
+				colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
+				deleteIconButtonHider.setVisible(false);
 			}
 		}
-		mapEditingPanel.clearHighlightedAreas();
 		showOrHideModeOptionsAndBrushSeperatorHider();
 		showOrHideEditOptionsSeperatorHider();
 		showOrHideIconMetadata();
@@ -1416,64 +1499,73 @@ public class IconsTool extends EditorTool
 		return Math.max(scale, minScale);
 	}
 
-	private void handleFinishEditingIconIfNeeded(MouseEvent e)
+	private void handleFinishEditingIconsIfNeeded(MouseEvent e)
 	{
-		if (iconToEdit != null && (isMoving || isScaling))
+		if (iconsToEdit != null && !iconsToEdit.isEmpty() && (isMoving || isScaling))
 		{
 			Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 			Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+			List<FreeIcon> updated = new ArrayList<>();
 
-			Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
-
-			FreeIcon updated = null;
-			if (isMoving)
+			for (FreeIcon iconToEdit : iconsToEdit)
 			{
-				double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-				double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-				Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
-				FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
-						new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
-				updated = updatedIcon;
-				mainWindow.edits.freeIcons.doWithLock(() ->
-				{
-					mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
-				});
+				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
 
-				if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
+				if (isMoving)
 				{
-					// The user moved the last tree out of that polygon. Remove
-					// the invisible CenterTree so that if someone resizes all
-					// trees later, trees don't appear out of nowhere on this
-					// Center.
-					mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
-							mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
+					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
+					FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
+							new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
+					updated.add(updatedIcon);
+					mainWindow.edits.freeIcons.doWithLock(() ->
+					{
+						mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+					});
+
+					if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
+					{
+						// The user moved the last tree out of that polygon. Remove
+						// the invisible CenterTree so that if someone resizes all
+						// trees later, trees don't appear out of nowhere on this
+						// Center.
+						mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
+								mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
+					}
 				}
-			}
-			else if (isScaling)
-			{
-				double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
-				FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * scale);
-				updated = updatedIcon;
-				mainWindow.edits.freeIcons.doWithLock(() ->
+				else if (isScaling)
 				{
-					mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
-				});
+					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
+					FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * scale);
+					updated.add(updatedIcon);
+					mainWindow.edits.freeIcons.doWithLock(() ->
+					{
+						mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+					});
+				}
 			}
 
 			if (updated != null)
 			{
 				undoer.setUndoPoint(UpdateType.Incremental, this);
-				updater.createAndShowMapIncrementalUsingIcons(Arrays.asList(iconToEdit, updated));
-				iconToEdit = updated;
-				boolean isValidPosition = updated.type == IconType.decorations
-						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updated);
+				Set<FreeIcon> beforeAndAfter = new HashSet<>();
+				beforeAndAfter.addAll(iconsToEdit);
+				beforeAndAfter.addAll(updated);
+				updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(beforeAndAfter));
+
+				iconsToEdit.clear();
+				iconsToEdit.addAll(updated);
+
+				boolean isValidPosition = iconsToEdit.size() == 1 ? iconsToEdit.getLast().type == IconType.decorations
+						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(iconsToEdit.getLast()) : true;
 				if (isValidPosition)
 				{
-					mapEditingPanel.showIconEditToolsAt(updated, IconEditToolsMode.Icon, false);
+					mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition, false);
 				}
 				else
 				{
-					mapEditingPanel.clearIconEditTools();
+					mapEditingPanel.hideIconEditTools();
 				}
 				isMoving = false;
 				isScaling = false;
@@ -1482,13 +1574,14 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	public void unselectAnyIconBeingEdited()
+	public void unselectAnyIconsBeingEdited()
 	{
-		iconToEdit = null;
+		iconsToEdit.clear();
 		isMoving = false;
 		isScaling = false;
 		editStart = null;
-		mapEditingPanel.clearIconEditTools();
+		mapEditingPanel.hideIconEditTools();
+		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
 		showOrHideModeOptionsAndBrushSeperatorHider();
 		showOrHideEditOptionsSeperatorHider();
@@ -1539,7 +1632,7 @@ public class IconsTool extends EditorTool
 	{
 		if (modeWidget.isEditMode())
 		{
-			handleFinishEditingIconIfNeeded(e);
+			handleFinishEditingIconsIfNeeded(e);
 		}
 		else
 		{
@@ -1581,19 +1674,33 @@ public class IconsTool extends EditorTool
 
 		if (modeWidget.isEditMode())
 		{
-			if (iconToEdit == null)
+			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
-				FreeIcon selected = getLowestSelectedIcon(e.getPoint());
-				if (selected != null)
+				Set<FreeIcon> toHighlight = new HashSet<>();
+				toHighlight.addAll(iconsToEdit);
+				if (e.isControlDown())
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(Arrays.asList(selected), modeWidget.isEraseMode());
+					List<FreeIcon> selected = getSelectedIcons(e.getPoint());
+					if (selected != null && selected.size() > 0)
+					{
+						toHighlight.addAll(selected);
+					}
+				}
+				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(toHighlight));
+			}
+			else
+			{
+				List<FreeIcon> selected = getSelectedIcons(e.getPoint());
+				if (selected != null && selected.size() > 0)
+				{
+					mapEditingPanel.setHighlightedAreasFromIcons(selected);
 				}
 			}
 		}
 		else if (!(modeWidget.isDrawMode() && decorationsButton.isSelected()))
 		{
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromIcons(icons, modeWidget.isEraseMode());
+			mapEditingPanel.setHighlightedAreasFromIcons(icons);
 		}
 		mapEditingPanel.repaint();
 	}
@@ -1616,7 +1723,14 @@ public class IconsTool extends EditorTool
 	protected void handleMouseExitedMap(MouseEvent e)
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		mapEditingPanel.clearHighlightedAreas();
+		if (iconsToEdit != null && !iconsToEdit.isEmpty())
+		{
+			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit));
+		}
+		else
+		{
+			mapEditingPanel.clearHighlightedAreas();
+		}
 		mapEditingPanel.hideBrush();
 		mapEditingPanel.repaint();
 	}
@@ -1630,7 +1744,7 @@ public class IconsTool extends EditorTool
 	protected void onAfterUndoRedo()
 	{
 		mapEditingPanel.clearHighlightedCenters();
-		unselectAnyIconBeingEdited();
+		unselectAnyIconsBeingEdited();
 		mapEditingPanel.repaint();
 	}
 
