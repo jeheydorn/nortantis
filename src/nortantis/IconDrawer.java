@@ -43,7 +43,6 @@ import nortantis.util.Range;
 import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
 import nortantis.util.Tuple3;
-import nortantis.IconType;
 
 public class IconDrawer
 {

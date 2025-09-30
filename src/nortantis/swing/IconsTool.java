@@ -6,12 +6,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -23,9 +25,13 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -35,9 +41,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
+import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
-import java.awt.event.ActionEvent;
-import javax.swing.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
@@ -64,7 +69,6 @@ import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.platform.awt.AwtFactory;
-import nortantis.swing.MapEditingPanel.IconEditToolsLocation;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.Counter;
@@ -122,6 +126,8 @@ public class IconsTool extends EditorTool
 	private RowHider iconMetadataHider;
 	private JLabel artPackLabel;
 	private JLabel typeLabel;
+	private ControlClickBehaviorWidget controlClickBehavior;
+	private RowHider controlClickBehaviorHider;
 
 	public IconsTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -320,6 +326,12 @@ public class IconsTool extends EditorTool
 		brushSizeHider = brushSizeTuple.getSecond();
 
 
+		{
+			controlClickBehavior = new ControlClickBehaviorWidget();
+			controlClickBehaviorHider = controlClickBehavior.addToOrganizer(organizer);
+		}
+
+
 		modeOptionsAndBrushSeperatorHider = organizer.addSeperator();
 
 		{
@@ -331,7 +343,6 @@ public class IconsTool extends EditorTool
 		}
 
 		{
-			// TODO Show art pack / group / icon for edit mode
 			typeLabel = new JLabel();
 			iconMetadataHider = organizer.addLabelAndComponent("Type: ", "The type of this icon.", typeLabel);
 			artPackLabel = new JLabel();
@@ -377,7 +388,6 @@ public class IconsTool extends EditorTool
 			deleteIconButton.setToolTipText("Delete the selected icon (DELETE key)");
 
 			// Define the action to perform
-			@SuppressWarnings("serial")
 			Action deleteAction = new AbstractAction()
 			{
 				@Override
@@ -440,6 +450,48 @@ public class IconsTool extends EditorTool
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
 
+		{
+			class ControlPressedAction extends AbstractAction
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					if (isSelected() && modeWidget.isEditMode())
+					{
+						addOrRemoveIconHoverHighlightSelection(true);
+					}
+				}
+			}
+
+			class ControlReleasedAction extends AbstractAction
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					if (isSelected() && modeWidget.isEditMode())
+					{
+						addOrRemoveIconHoverHighlightSelection(false);
+					}
+				}
+			}
+
+			// For Control pressed
+			KeyStroke controlPressed = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, InputEvent.CTRL_DOWN_MASK, false);
+			// For Control released
+			KeyStroke controlReleased = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, 0, true);
+
+			InputMap inputMap = toolsPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+			ActionMap actionMap = toolsPanel.getActionMap();
+
+			// Bind the pressed event
+			inputMap.put(controlPressed, "controlPressedAction");
+			actionMap.put("controlPressedAction", new ControlPressedAction());
+
+			// Bind the released event
+			inputMap.put(controlReleased, "controlReleasedAction");
+			actionMap.put("controlReleasedAction", new ControlReleasedAction());
+		}
+
 		return toolOptionsPanel;
 	}
 
@@ -450,10 +502,10 @@ public class IconsTool extends EditorTool
 			for (FreeIcon icon : iconsToEdit)
 			{
 				mainWindow.edits.freeIcons.remove(icon);
-				unselectAnyIconsBeingEdited();
 				undoer.setUndoPoint(UpdateType.Incremental, this);
 			}
 			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit));
+			unselectAnyIconsBeingEdited();
 		}
 	}
 
@@ -591,6 +643,7 @@ public class IconsTool extends EditorTool
 		deleteIconButtonHider.setVisible(false);
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
+		controlClickBehaviorHider.setVisible(modeWidget.isEditMode());
 
 		toolsPanel.revalidate();
 		toolsPanel.repaint();
@@ -868,7 +921,7 @@ public class IconsTool extends EditorTool
 		final double osScaling = SwingHelper.getOSScale();
 		final int maxRowWidth = (int) (168 * osScaling);
 		final int horizontalPaddingBetweenImages = (int) (2 * osScaling);
-		;
+
 		padding = (int) (padding * osScaling);
 		scaledHeight = (int) (scaledHeight * osScaling);
 
@@ -1256,7 +1309,7 @@ public class IconsTool extends EditorTool
 			return iconsBeforeAndAfter;
 		});
 
-		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter);
+		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter, updater.mapParts.iconDrawer);
 
 		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
 		{
@@ -1334,16 +1387,13 @@ public class IconsTool extends EditorTool
 			{
 				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
-				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconsToEdit.getLast()).createBounds();
+
 				List<FreeIcon> updated = new ArrayList<>();
-				List<FreeIcon> valid = new ArrayList<>();
-				List<FreeIcon> invalid = new ArrayList<>();
 
 				if (isMoving)
 				{
 					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
 					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-					imageBounds = imageBounds.translate(deltaX, deltaY);
 
 					for (FreeIcon iconToEdit : iconsToEdit)
 					{
@@ -1355,34 +1405,22 @@ public class IconsTool extends EditorTool
 				}
 				else if (isScaling)
 				{
-					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
-					imageBounds = imageBounds.scaleAboutCenter(scale);
+					Rectangle iconEditBounds = mapEditingPanel.getIconEditBoundsResolutionInvariant(iconsToEdit);
+					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
 
 					for (FreeIcon iconToEdit : iconsToEdit)
 					{
-						updated.add(iconToEdit.copyWithScale(iconToEdit.scale * scale));
+						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+						updated.add(iconToEdit.copyWithScale(floorWithMinScale(iconToEdit.scale * scale, imageBounds)));
 					}
 				}
 
 				if (!updated.isEmpty())
 				{
-					for (FreeIcon updatedIcon : updated)
-					{
-						boolean isValidPosition = updatedIcon.type == IconType.decorations
-								|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(updatedIcon);
-						if (isValidPosition)
-						{
-							valid.add(updatedIcon);
-						}
-						else
-						{
-							invalid.add(updatedIcon);
-						}
-					}
-					mapEditingPanel.setHighlightedAreasFromIconsValidAndInvalid(valid, invalid);
+					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer);
 					boolean isValidPosition = iconsToEdit.size() == 1 ? iconsToEdit.getLast().type == IconType.decorations
 							|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(iconsToEdit.getLast()) : true;
-					mapEditingPanel.showBulkIconEditTools(updated, isValidPosition, false);
+					mapEditingPanel.showBulkIconEditTools(updated, isValidPosition);
 				}
 			}
 		}
@@ -1397,19 +1435,23 @@ public class IconsTool extends EditorTool
 				mapEditingPanel.hideIconEditTools();
 			}
 
-			List<FreeIcon> selectedIcons = getSelectedIcons(e.getPoint());
+		
 			if (e.isControlDown())
 			{
-				// Add all without duplicates and keeping the last selected icon last.
+				List<FreeIcon> selectedIcons = getSelectedIcons(e.getPoint(), controlClickBehavior.isSelectMode() ? null : iconsToEdit);
 				Set<FreeIcon> intersection = new HashSet<>();
 				intersection.addAll(iconsToEdit);
 				intersection.removeAll(selectedIcons);
 				iconsToEdit.clear();
 				iconsToEdit.addAll(intersection);
-				iconsToEdit.addAll(selectedIcons);
+				if (controlClickBehavior.isSelectMode())
+				{
+					iconsToEdit.addAll(selectedIcons);
+				}
 			}
 			else
 			{
+				List<FreeIcon> selectedIcons = getSelectedIcons(e.getPoint());
 				iconsToEdit.addAll(selectedIcons);
 			}
 
@@ -1418,7 +1460,7 @@ public class IconsTool extends EditorTool
 				if (iconsToEdit.size() == 1)
 				{
 					FreeIcon iconToEdit = iconsToEdit.getFirst();
-					mapEditingPanel.showBulkIconEditTools(iconsToEdit, true, false);
+					mapEditingPanel.showBulkIconEditTools(iconsToEdit, true);
 
 					typeLabel.setText(iconToEdit.type.getSingularNameForGUILowerCase());
 					artPackLabel.setText(iconToEdit.artPack);
@@ -1438,7 +1480,7 @@ public class IconsTool extends EditorTool
 				}
 				else
 				{
-					mapEditingPanel.showBulkIconEditTools(iconsToEdit, true, false);
+					mapEditingPanel.showBulkIconEditTools(iconsToEdit, true);
 					typeLabel.setText(null);
 					artPackLabel.setText(null);
 					groupLabel.setText(null);
@@ -1457,7 +1499,7 @@ public class IconsTool extends EditorTool
 					}
 				}
 
-				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit));
+				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer);
 				colorPickerHider.setVisible(true);
 				colorDisplay.repaint();
 				deleteIconButtonHider.setVisible(true);
@@ -1488,11 +1530,16 @@ public class IconsTool extends EditorTool
 
 	}
 
-	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation, Rectangle imageBounds)
+	private double calcScale(Point graphPointMouseLocation, Point graphPointMousePressedLocation, Rectangle iconEditBounds)
 	{
-		double scale = graphPointMouseLocation.distanceTo(imageBounds.getCenter())
-				/ graphPointMousePressedLocation.distanceTo(imageBounds.getCenter());
+		double scale = graphPointMouseLocation.distanceTo(iconEditBounds.getCenter())
+				/ graphPointMousePressedLocation.distanceTo(iconEditBounds.getCenter());
 
+		return floorWithMinScale(scale, iconEditBounds);
+	}
+
+	private double floorWithMinScale(double scale, Rectangle imageBounds)
+	{
 		final double minSize = 5;
 		double minSideLength = Math.min(imageBounds.width, imageBounds.height);
 		double minScale = minSize / minSideLength;
@@ -1506,11 +1553,10 @@ public class IconsTool extends EditorTool
 			Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 			Point graphPointMousePressedLocation = getPointOnGraph(editStart);
 			List<FreeIcon> updated = new ArrayList<>();
+			Rectangle iconEditBounds = mapEditingPanel.getIconEditBoundsResolutionInvariant(iconsToEdit);
 
 			for (FreeIcon iconToEdit : iconsToEdit)
 			{
-				Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
-
 				if (isMoving)
 				{
 					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
@@ -1526,18 +1572,17 @@ public class IconsTool extends EditorTool
 
 					if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
 					{
-						// The user moved the last tree out of that polygon. Remove
-						// the invisible CenterTree so that if someone resizes all
-						// trees later, trees don't appear out of nowhere on this
-						// Center.
+						// The user moved the last tree out of the polygon it was anchored to. Remove the invisible CenterTree so that if
+						// someone resizes all trees later, trees don't appear out of nowhere on this Center.
 						mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
 								mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
 					}
 				}
 				else if (isScaling)
 				{
-					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, imageBounds);
-					FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * scale);
+					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
+					Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+					FreeIcon updatedIcon = iconToEdit.copyWithScale(floorWithMinScale(iconToEdit.scale * scale, imageBounds));
 					updated.add(updatedIcon);
 					mainWindow.edits.freeIcons.doWithLock(() ->
 					{
@@ -1561,7 +1606,8 @@ public class IconsTool extends EditorTool
 						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(iconsToEdit.getLast()) : true;
 				if (isValidPosition)
 				{
-					mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition, false);
+					mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition);
+					mapEditingPanel.setHighlightedAreasFromIcons(iconsToEdit, updater.mapParts.iconDrawer);
 				}
 				else
 				{
@@ -1667,7 +1713,6 @@ public class IconsTool extends EditorTool
 
 	private void highlightHoverIconsAndShowBrush(MouseEvent e)
 	{
-		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearHighlightedCenters();
 
 		showOrHideBrush(e);
@@ -1676,32 +1721,55 @@ public class IconsTool extends EditorTool
 		{
 			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
-				Set<FreeIcon> toHighlight = new HashSet<>();
-				toHighlight.addAll(iconsToEdit);
-				if (e.isControlDown())
-				{
-					List<FreeIcon> selected = getSelectedIcons(e.getPoint());
-					if (selected != null && selected.size() > 0)
-					{
-						toHighlight.addAll(selected);
-					}
-				}
-				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(toHighlight));
+				addOrRemoveIconHoverHighlightSelection(e.isControlDown());
 			}
 			else
 			{
+				mapEditingPanel.clearHighlightedAreas();
 				List<FreeIcon> selected = getSelectedIcons(e.getPoint());
 				if (selected != null && selected.size() > 0)
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(selected);
+					mapEditingPanel.setHighlightedAreasFromIcons(selected, updater.mapParts.iconDrawer);
 				}
 			}
 		}
 		else if (!(modeWidget.isDrawMode() && decorationsButton.isSelected()))
 		{
+			mapEditingPanel.clearHighlightedAreas();
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromIcons(icons);
+			mapEditingPanel.setHighlightedAreasFromIcons(icons, updater.mapParts.iconDrawer);
 		}
+		mapEditingPanel.repaint();
+	}
+
+	private void addOrRemoveIconHoverHighlightSelection(boolean isControlDown)
+	{
+		Set<FreeIcon> toHighlight = new HashSet<>();
+		toHighlight.addAll(iconsToEdit);
+		if (isControlDown)
+		{
+			java.awt.Point pointOnMap = mapEditingPanel.getMousePosition();
+			if (pointOnMap != null)
+			{
+				if (controlClickBehavior.isSelectMode())
+				{
+					List<FreeIcon> selected = getSelectedIcons(pointOnMap);
+					if (selected != null && selected.size() > 0)
+					{
+						toHighlight.addAll(selected);
+					}
+				}
+				else
+				{
+					List<FreeIcon> selected = getSelectedIcons(pointOnMap, iconsToEdit);
+					if (selected != null && selected.size() > 0)
+					{
+						toHighlight.removeAll(selected);
+					}
+				}
+			}
+		}
+		mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(toHighlight), updater.mapParts.iconDrawer);
 		mapEditingPanel.repaint();
 	}
 
@@ -1725,7 +1793,7 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.clearHighlightedCenters();
 		if (iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit));
+			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer);
 		}
 		else
 		{
@@ -1752,14 +1820,19 @@ public class IconsTool extends EditorTool
 	{
 		return getSelectedCenters(pointFromMouse, getBrushDiameter());
 	}
+	
+	private List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
+	{
+		return getSelectedIcons(pointFromMouse, null);
+	}
 
-	protected List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
+	private List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse, Collection<FreeIcon> allowList)
 	{
 		int brushDiameter = getBrushDiameter();
 
 		if (brushDiameter <= 1)
 		{
-			FreeIcon selected = getLowestSelectedIcon(pointFromMouse);
+			FreeIcon selected = getLowestSelectedIcon(pointFromMouse, allowList);
 			if (selected != null)
 			{
 				return Arrays.asList(selected);
@@ -1768,16 +1841,18 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			return getMultipleSelectedIcons(pointFromMouse);
+			return getMultipleSelectedIcons(pointFromMouse, allowList);
 		}
 	}
 
-	private List<FreeIcon> getMultipleSelectedIcons(java.awt.Point pointFromMouse)
+	private List<FreeIcon> getMultipleSelectedIcons(java.awt.Point pointFromMouse, Collection<FreeIcon> allowList)
 	{
 		List<FreeIcon> selected = new ArrayList<>();
 		mainWindow.edits.freeIcons.doWithLock(() ->
 		{
-			for (FreeIcon icon : mainWindow.edits.freeIcons)
+			Iterable<FreeIcon> iterable = allowList == null ? mainWindow.edits.freeIcons : allowList; 
+			
+			for (FreeIcon icon : iterable)
 			{
 				if (isSelected(pointFromMouse, icon))
 				{
@@ -1822,9 +1897,9 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	protected FreeIcon getLowestSelectedIcon(java.awt.Point pointFromMouse)
+	protected FreeIcon getLowestSelectedIcon(java.awt.Point pointFromMouse, Collection<FreeIcon> allowList)
 	{
-		List<FreeIcon> underMouse = getMultipleSelectedIcons(pointFromMouse);
+		List<FreeIcon> underMouse = getMultipleSelectedIcons(pointFromMouse, allowList);
 		if (underMouse.isEmpty())
 		{
 			return null;

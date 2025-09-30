@@ -435,7 +435,6 @@ public class Background
 				}
 				if (center.region == null)
 				{
-					assert false;
 					continue;
 				}
 				int regionIndex = center.region.id;
