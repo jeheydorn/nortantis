@@ -456,9 +456,11 @@ public class IconsTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					if (isSelected() && modeWidget.isEditMode())
+					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
 					{
 						addOrRemoveIconHoverHighlightSelection(true);
+						mapEditingPanel.hideIconEditToolsControls();
+						mapEditingPanel.repaint();
 					}
 				}
 			}
@@ -468,9 +470,11 @@ public class IconsTool extends EditorTool
 				@Override
 				public void actionPerformed(ActionEvent e)
 				{
-					if (isSelected() && modeWidget.isEditMode())
+					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
 					{
 						addOrRemoveIconHoverHighlightSelection(false);
+						mapEditingPanel.unhideIconEditToolsControls();
+						mapEditingPanel.repaint();
 					}
 				}
 			}
@@ -502,8 +506,8 @@ public class IconsTool extends EditorTool
 			for (FreeIcon icon : iconsToEdit)
 			{
 				mainWindow.edits.freeIcons.remove(icon);
-				undoer.setUndoPoint(UpdateType.Incremental, this);
 			}
+			undoer.setUndoPoint(UpdateType.Incremental, this);
 			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit));
 			unselectAnyIconsBeingEdited();
 		}
@@ -1309,7 +1313,7 @@ public class IconsTool extends EditorTool
 			return iconsBeforeAndAfter;
 		});
 
-		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter, updater.mapParts.iconDrawer);
+		mapEditingPanel.setHighlightedAreasFromIcons(iconsSelectedAfter, updater.mapParts.iconDrawer, true);
 
 		if (iconsBeforeAndAfterOuter != null && !iconsBeforeAndAfterOuter.isEmpty())
 		{
@@ -1417,9 +1421,9 @@ public class IconsTool extends EditorTool
 
 				if (!updated.isEmpty())
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer);
-					boolean isValidPosition = iconsToEdit.size() == 1 ? iconsToEdit.getLast().type == IconType.decorations
-							|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(iconsToEdit.getLast()) : true;
+					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+					boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations
+							 || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showBulkIconEditTools(updated, isValidPosition);
 				}
 			}
@@ -1499,7 +1503,7 @@ public class IconsTool extends EditorTool
 					}
 				}
 
-				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer);
+				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, true);
 				colorPickerHider.setVisible(true);
 				colorDisplay.repaint();
 				deleteIconButtonHider.setVisible(true);
@@ -1602,17 +1606,10 @@ public class IconsTool extends EditorTool
 				iconsToEdit.clear();
 				iconsToEdit.addAll(updated);
 
-				boolean isValidPosition = iconsToEdit.size() == 1 ? iconsToEdit.getLast().type == IconType.decorations
-						|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(iconsToEdit.getLast()) : true;
-				if (isValidPosition)
-				{
-					mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition);
-					mapEditingPanel.setHighlightedAreasFromIcons(iconsToEdit, updater.mapParts.iconDrawer);
-				}
-				else
-				{
-					mapEditingPanel.hideIconEditTools();
-				}
+				boolean isValidPosition = updated.stream().anyMatch(icon -> icon.type == IconType.decorations
+						 || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+				mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition);
+				mapEditingPanel.setHighlightedAreasFromIcons(iconsToEdit, updater.mapParts.iconDrawer, false);
 				isMoving = false;
 				isScaling = false;
 			}
@@ -1729,7 +1726,7 @@ public class IconsTool extends EditorTool
 				List<FreeIcon> selected = getSelectedIcons(e.getPoint());
 				if (selected != null && selected.size() > 0)
 				{
-					mapEditingPanel.setHighlightedAreasFromIcons(selected, updater.mapParts.iconDrawer);
+					mapEditingPanel.setHighlightedAreasFromIcons(selected, updater.mapParts.iconDrawer, false);
 				}
 			}
 		}
@@ -1737,7 +1734,7 @@ public class IconsTool extends EditorTool
 		{
 			mapEditingPanel.clearHighlightedAreas();
 			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
-			mapEditingPanel.setHighlightedAreasFromIcons(icons, updater.mapParts.iconDrawer);
+			mapEditingPanel.setHighlightedAreasFromIcons(icons, updater.mapParts.iconDrawer, true);
 		}
 		mapEditingPanel.repaint();
 	}
@@ -1769,7 +1766,7 @@ public class IconsTool extends EditorTool
 				}
 			}
 		}
-		mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(toHighlight), updater.mapParts.iconDrawer);
+		mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(toHighlight), updater.mapParts.iconDrawer, false);
 		mapEditingPanel.repaint();
 	}
 
@@ -1793,7 +1790,7 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.clearHighlightedCenters();
 		if (iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer);
+			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
 		}
 		else
 		{

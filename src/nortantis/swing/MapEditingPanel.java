@@ -93,6 +93,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	private final double smallIconScale = 0.2;
 	private final double mediumIconScale = 0.4;
 	private final double largeIconScale = 0.6;
+	private boolean hideIconEditToolsControls;
 
 
 	public MapEditingPanel(BufferedImage image)
@@ -167,6 +168,16 @@ public class MapEditingPanel extends UnscaledImagePanel
 		this.textBoxBounds = null;
 	}
 
+	public void hideIconEditToolsControls()
+	{
+		hideIconEditToolsControls = true;
+	}
+
+	public void unhideIconEditToolsControls()
+	{
+		hideIconEditToolsControls = false;
+	}
+
 	public void showBulkIconEditTools(Collection<FreeIcon> icons, boolean isValidPosition)
 	{
 		assert iconDrawer != null;
@@ -198,7 +209,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 
 		IconEditToolsLocation toolsLocation = IconEditToolsLocation.OutsideBox;
-		showIconEditToolsAt(bounds, true, toolsLocation, IconEditToolsSize.Medium, true, true);
+		showIconEditToolsAt(bounds, isValidPosition, toolsLocation, IconEditToolsSize.Medium, true, true);
 	}
 
 	public nortantis.geom.Rectangle getIconEditBoundsResolutionInvariant(Collection<FreeIcon> icons)
@@ -219,8 +230,8 @@ public class MapEditingPanel extends UnscaledImagePanel
 		return bounds;
 	}
 
-	public void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation, IconEditToolsSize editToolsSize,
-			boolean showEditBox)
+	public void showIconEditToolsAt(FreeIcon icon, boolean isValidPosition, IconEditToolsLocation toolsLocation,
+			IconEditToolsSize editToolsSize, boolean showEditBox)
 	{
 		assert iconDrawer != null;
 		if (iconDrawer == null)
@@ -247,7 +258,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 	{
 		OutsideBox, InsideBox
 	}
-	
+
 	public enum IconEditToolsSize
 	{
 		Small, Medium, Large
@@ -291,21 +302,27 @@ public class MapEditingPanel extends UnscaledImagePanel
 		}
 	}
 
-	public void setHighlightedAreasFromIcons(Collection<FreeIcon> icons, IconDrawer iconDrawer)
+	public void setHighlightedAreasFromIcons(Collection<FreeIcon> icons, IconDrawer iconDrawer, boolean assumeValid)
 	{
 		List<FreeIcon> valid = new ArrayList<>();
 		List<FreeIcon> invalid = new ArrayList<>();
-		for (FreeIcon icon : icons)
+		if (assumeValid)
 		{
-			boolean isValidPosition = icon.type == IconType.decorations
-					|| !iconDrawer.isContentBottomTouchingWater(icon);
-			if (isValidPosition)
+			valid.addAll(icons);
+		}
+		else
+		{
+			for (FreeIcon icon : icons)
 			{
-				valid.add(icon);
-			}
-			else
-			{
-				invalid.add(icon);
+				boolean isValidPosition = icon.type == IconType.decorations || !iconDrawer.isContentBottomTouchingWater(icon);
+				if (isValidPosition)
+				{
+					valid.add(icon);
+				}
+				else
+				{
+					invalid.add(icon);
+				}
 			}
 		}
 
@@ -628,9 +645,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 				y = editBounds.y + padding;
 			}
 
-			g.drawImage(scaleIcon, x, y, null);
-			scaleToolArea = new Area(new Ellipse2D.Double(x, y, scaleIcon.getWidth(), scaleIcon.getHeight()));
-			scaleToolArea.transform(g.getTransform());
+			if (!hideIconEditToolsControls)
+			{
+				g.drawImage(scaleIcon, x, y, null);
+				scaleToolArea = new Area(new Ellipse2D.Double(x, y, scaleIcon.getWidth(), scaleIcon.getHeight()));
+				scaleToolArea.transform(g.getTransform());
+			}
+			else
+			{
+				scaleToolArea = null;
+			}
+			
 		}
 
 		// Place the image for the move tool.
@@ -659,9 +684,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				y = editBounds.y + padding;
 			}
-			g.drawImage(moveIcon, x, y, null);
-			moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIcon.getWidth(), moveIcon.getHeight()));
-			moveToolArea.transform(g.getTransform());
+			if (!hideIconEditToolsControls)
+			{
+				g.drawImage(moveIcon, x, y, null);
+				moveToolArea = new Area(new Ellipse2D.Double(x, y, moveIcon.getWidth(), moveIcon.getHeight()));
+				moveToolArea.transform(g.getTransform());
+			}
+			else
+			{
+				moveToolArea = null;
+			}
+			
 		}
 	}
 
@@ -902,7 +935,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 						.unwrap(ImageHelper.copyAlphaTo(ImageHelper.colorify(ImageHelper.convertToGrayscale(scaleIconScaledWrapped),
 								AwtFactory.wrap(getInvalidPositionColor()), ColorifyAlgorithm.algorithm2), scaleIconScaledWrapped));
 			}
-			
+
 			{
 				Image moveIcon = Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "move text.png").toString());
 				Image moveIconScaledWrapped = ImageHelper.scaleByWidth(moveIcon, (int) (moveIcon.getWidth() * resolution * mediumIconScale),

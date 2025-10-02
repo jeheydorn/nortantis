@@ -210,7 +210,8 @@ public class ImageCache
 	{
 		Map<String, ImageAndMasks> map = getIconsByNameForGroup(iconType, groupName);
 		List<ImageAndMasks> result = new ArrayList<>();
-		TreeSet<String> namesSorted = new TreeSet<>(map.keySet());
+		List<String> namesSorted = new ArrayList<>(map.keySet());
+		Collections.sort(namesSorted);
 		for (String name : namesSorted)
 		{
 			result.add(map.get(name));

@@ -19,11 +19,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -50,10 +53,12 @@ public class Assets
 	 * Must be lower case
 	 */
 	public static Set<String> allowedImageExtensions = Collections.unmodifiableSet(new HashSet<>((Arrays.asList("png", "jpg", "jpeg"))));
+	private static ConcurrentHashMap<Pair<String>, Path> artPackPathCache;
 
 	static
 	{
 		initializeEntryCache();
+		artPackPathCache = new ConcurrentHashMap<>();
 	}
 
 	public static String getAssetsPath()
@@ -125,6 +130,7 @@ public class Assets
 	public static void clearArtPackCache()
 	{
 		ArtPacksFromArtPacksFolderCache.clearCache();
+		artPackPathCache.clear();
 		// Don't clear cachedEntires because it's values never change while the program is running.
 	}
 
@@ -151,7 +157,7 @@ public class Assets
 		textureFiles = listFileNames(Paths.get(artPackPath.toString(), "background textures").toString(), allowedImageExtensions);
 		return textureFiles.stream().map(fileName -> new NamedResource(artPack, fileName)).toList();
 	}
-
+	
 	/**
 	 * Gets the path to the assets of an art pack.
 	 * 
@@ -162,6 +168,20 @@ public class Assets
 	 * @return A path to a the art pack assets, which may be in the jar file the program is running from.
 	 */
 	public static Path getArtPackPath(String artPack, String customImagesFolder)
+	{
+		Pair<String> key = new Pair<>(artPack, customImagesFolder);
+		Path inMap = artPackPathCache.get(key);
+		if (inMap != null)
+		{
+			return inMap;
+		}
+		
+		Path result = getArtPackPathNoCache(artPack, customImagesFolder);
+		artPackPathCache.put(key, result);
+		return result;
+	}
+	
+	private static Path getArtPackPathNoCache(String artPack, String customImagesFolder)
 	{
 		if (artPack.equals(customArtPack))
 		{
