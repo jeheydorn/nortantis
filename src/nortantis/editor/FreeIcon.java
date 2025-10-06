@@ -132,7 +132,12 @@ public class FreeIcon
 	{
 		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
 	}
-	
+
+	public FreeIcon copyWithLocationResolutionInvariant(Point locationResolutionInvariant)
+	{
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+	}
+
 	public FreeIcon copyWithColor(Color color)
 	{
 		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);

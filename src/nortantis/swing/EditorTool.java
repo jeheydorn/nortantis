@@ -128,6 +128,11 @@ public abstract class EditorTool
 
 	public nortantis.geom.Point getPointOnGraph(java.awt.Point pointOnMapEditingPanel)
 	{
+		if (pointOnMapEditingPanel == null)
+		{
+			return null;
+		}
+		
 		int borderWidth = updater.mapParts.background.getBorderPaddingScaledByResolution();
 		double zoom = mainWindow.zoom;
 		double osScale = mapEditingPanel.osScale;

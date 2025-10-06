@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.MouseInfo;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
@@ -18,6 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+
+import javax.swing.SwingUtilities;
 
 import org.imgscalr.Scalr.Method;
 
@@ -39,6 +42,7 @@ import nortantis.util.Assets;
 import nortantis.util.ImageHelper;
 import nortantis.util.ImageHelper.ColorifyAlgorithm;
 import nortantis.util.Range;
+import nortantis.util.Tuple2;
 
 @SuppressWarnings("serial")
 public class MapEditingPanel extends UnscaledImagePanel
@@ -200,7 +204,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		// Multiple icons. Show the edit box around them.
 
-		nortantis.geom.Rectangle bounds = getIconEditBoundsResolutionInvariant(icons);
+		nortantis.geom.Rectangle bounds = getIconEditBounds(icons);
 
 		assert bounds != null;
 		if (bounds == null)
@@ -212,9 +216,12 @@ public class MapEditingPanel extends UnscaledImagePanel
 		showIconEditToolsAt(bounds, isValidPosition, toolsLocation, IconEditToolsSize.Medium, true, true);
 	}
 
-	public nortantis.geom.Rectangle getIconEditBoundsResolutionInvariant(Collection<FreeIcon> icons)
+	public nortantis.geom.Rectangle getIconEditBounds(
+			Collection<FreeIcon> icons)
 	{
 		nortantis.geom.Rectangle bounds = null;
+		nortantis.geom.Dimension averageSize = null;
+		int n = 0;
 		for (FreeIcon icon : icons)
 		{
 			nortantis.geom.Rectangle iconBounds = iconDrawer.toIconDrawTask(icon).createBounds();
@@ -225,6 +232,17 @@ public class MapEditingPanel extends UnscaledImagePanel
 			else
 			{
 				bounds = bounds.add(iconBounds);
+			}
+
+			n++;
+			if (averageSize == null)
+			{
+				averageSize = iconBounds.size();
+			}
+			else
+			{
+				averageSize = new nortantis.geom.Dimension((iconBounds.size().width + averageSize.width * (n - 1)) / n,
+						(iconBounds.size().height + averageSize.height * (n - 1)) / n);
 			}
 		}
 		return bounds;
@@ -655,7 +673,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				scaleToolArea = null;
 			}
-			
+
 		}
 
 		// Place the image for the move tool.
@@ -694,7 +712,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 			{
 				moveToolArea = null;
 			}
-			
+
 		}
 	}
 
