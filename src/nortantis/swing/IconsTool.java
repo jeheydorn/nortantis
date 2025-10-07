@@ -528,7 +528,7 @@ public class IconsTool extends EditorTool
 					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
 					{
 						addOrRemoveIconHoverHighlightSelection(true);
-						mapEditingPanel.hideIconEditToolsControls();
+						mapEditingPanel.hideIconEditTools();
 						mapEditingPanel.repaint();
 					}
 				}
@@ -542,7 +542,9 @@ public class IconsTool extends EditorTool
 					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
 					{
 						addOrRemoveIconHoverHighlightSelection(false);
-						mapEditingPanel.unhideIconEditToolsControls();
+						boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations
+								|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+						mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 						mapEditingPanel.repaint();
 					}
 				}
@@ -598,7 +600,8 @@ public class IconsTool extends EditorTool
 		// TODO
 		List<FreeIcon> pasted = new ArrayList<>();
 		double resolutionScale = mainWindow.displayQualityScale;
-		Point graphPointMouseLocation = getPointOnGraph(mapEditingPanel.getMousePosition()).mult(1.0 / resolutionScale);
+		Point temp = getPointOnGraph(mapEditingPanel.getMousePosition());
+		Point graphPointMouseLocation = temp == null ? null : temp.mult(1.0 / resolutionScale);
 		if (graphPointMouseLocation != null)
 		{
 			Rectangle bounds = mapEditingPanel.getIconEditBounds(copied);
@@ -636,11 +639,11 @@ public class IconsTool extends EditorTool
 		updater.createAndShowMapIncrementalUsingIcons(pasted);
 		iconsToEdit.clear();
 		iconsToEdit.addAll(pasted);
-		handleIconSelectionChange(false);
+		handleIconSelectionChange(true);
 		mapEditingPanel.repaint();
 	}
 
-	private void handleIconSelectionChange(boolean assumeIsValidPosition)
+	private void handleIconSelectionChange(boolean showEditTools)
 	{
 		mapEditingPanel.clearHighlightedAreas();
 
@@ -649,17 +652,13 @@ public class IconsTool extends EditorTool
 			if (iconsToEdit.size() == 1)
 			{
 				FreeIcon iconToEdit = iconsToEdit.iterator().next();
-				boolean isValidPosition;
-				if (assumeIsValidPosition)
+				if (showEditTools)
 				{
-					isValidPosition = true;
-				}
-				else
-				{
+					boolean isValidPosition;
 					isValidPosition = iconsToEdit.stream().anyMatch(
 							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 				}
-				mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition);
 
 				typeLabel.setText(iconToEdit.type.getSingularNameForGUILowerCase());
 				artPackLabel.setText(iconToEdit.artPack);
@@ -679,17 +678,13 @@ public class IconsTool extends EditorTool
 			}
 			else
 			{
-				boolean isValidPosition;
-				if (assumeIsValidPosition)
+				if (showEditTools)
 				{
-					isValidPosition = true;
-				}
-				else
-				{
+					boolean isValidPosition;
 					isValidPosition = iconsToEdit.stream().anyMatch(
 							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
 				}
-				mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition);
 				typeLabel.setText(null);
 				artPackLabel.setText(null);
 				groupLabel.setText(null);
@@ -707,13 +702,11 @@ public class IconsTool extends EditorTool
 					System.out.println("Icon being edited: " + iconToEdit);
 				}
 			}
-
-			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, true);
-			colorPickerHider.setVisible(true);
 			colorDisplay.repaint();
-			deleteCopyPasteIconButtonsHider.setVisible(true);
 			getToolOptionsPane().repaint();
 
+			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
+			mapEditingPanel.repaint();
 		}
 		else
 		{
@@ -727,12 +720,11 @@ public class IconsTool extends EditorTool
 			mapEditingPanel.hideIconEditTools();
 			isMoving = false;
 			isScaling = false;
-			colorPickerHider.setVisible(false);
 			colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
-			deleteCopyPasteIconButtonsHider.setVisible(false);
+			colorDisplay.repaint();
 		}
 
-		showOrHideEditComponents();
+		showOrHideEditComponents(showEditTools);
 	}
 
 	private void handleColorChange()
@@ -749,13 +741,17 @@ public class IconsTool extends EditorTool
 		}
 		else if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
+			List<FreeIcon> updated = new ArrayList<>();
 			for (FreeIcon iconToEdit : iconsToEdit)
 			{
 				FreeIcon updatedIcon = iconToEdit.copyWithColor(AwtFactory.wrap(colorDisplay.getBackground()));
 				mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
-				iconToEdit = updatedIcon;
-				undoer.setUndoPoint(UpdateType.Incremental, this);
+				updated.add(updatedIcon);
+
 			}
+			iconsToEdit.clear();
+			iconsToEdit.addAll(updated);
+			undoer.setUndoPoint(UpdateType.Incremental, this);
 			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit));
 		}
 
@@ -794,6 +790,7 @@ public class IconsTool extends EditorTool
 			{
 				colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(IconType.decorations)));
 			}
+			colorDisplay.repaint();
 		}
 	}
 
@@ -819,30 +816,15 @@ public class IconsTool extends EditorTool
 		updateTypePanels();
 	}
 
-	private void showOrHideModeOptionsAndBrushSeperator()
+	private void showOrHideEditComponents(boolean showEditTools)
 	{
 		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
-	}
-
-	private void showOrHideEditComponents()
-	{
-		showOrHideModeOptionsAndBrushSeperator();
-		showOrHideEditOptionsSeperatorHider();
-		showOrHideIconMetadata();
+		editOptionsSeperatorHider.setVisible(modeWidget.isEditMode());
+		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1 && showEditTools);
 		colorPickerHider
 				.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());
-	}
-
-	private void showOrHideEditOptionsSeperatorHider()
-	{
-		editOptionsSeperatorHider.setVisible(modeWidget.isEditMode());
-	}
-
-	private void showOrHideIconMetadata()
-	{
-		iconMetadataHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1));
 	}
 
 	private void showOrHideBrush(MouseEvent e)
@@ -878,7 +860,7 @@ public class IconsTool extends EditorTool
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
 		controlClickBehaviorHider.setVisible(modeWidget.isEditMode());
-		showOrHideEditComponents();
+		showOrHideEditComponents(false);
 
 		toolsPanel.revalidate();
 		toolsPanel.repaint();
@@ -1655,11 +1637,11 @@ public class IconsTool extends EditorTool
 					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
 					boolean isValidPosition = updated.stream().anyMatch(
 							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
-					mapEditingPanel.showBulkIconEditTools(updated, isValidPosition);
+					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
 				}
 			}
 
-			showOrHideEditComponents();
+			showOrHideEditComponents(true);
 		}
 		else
 		{
@@ -1692,7 +1674,7 @@ public class IconsTool extends EditorTool
 				iconsToEdit.addAll(selectedIcons);
 			}
 
-			handleIconSelectionChange(true);
+			handleIconSelectionChange(false);
 		}
 
 		mapEditingPanel.repaint();
@@ -1716,70 +1698,82 @@ public class IconsTool extends EditorTool
 		return Math.max(scale, minScale);
 	}
 
-	private void handleFinishEditingIconsIfNeeded(MouseEvent e)
+	private void handleFinishSelectingOrEditingIconsIfNeeded(MouseEvent e)
 	{
-		if (iconsToEdit != null && !iconsToEdit.isEmpty() && (isMoving || isScaling))
+		if (iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
-			Point graphPointMousePressedLocation = getPointOnGraph(editStart);
-			List<FreeIcon> updated = new ArrayList<>();
-			Rectangle iconEditBounds = mapEditingPanel.getIconEditBounds(iconsToEdit);
-
-			for (FreeIcon iconToEdit : iconsToEdit)
+			if (isMoving || isScaling)
 			{
-				if (isMoving)
-				{
-					double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
-					double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
-					Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
-					FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
-							new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
-					updated.add(updatedIcon);
-					mainWindow.edits.freeIcons.doWithLock(() ->
-					{
-						mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
-					});
+				Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
+				Point graphPointMousePressedLocation = getPointOnGraph(editStart);
+				List<FreeIcon> updated = new ArrayList<>();
+				Rectangle iconEditBounds = mapEditingPanel.getIconEditBounds(iconsToEdit);
 
-					if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
+				for (FreeIcon iconToEdit : iconsToEdit)
+				{
+					if (isMoving)
 					{
-						// The user moved the last tree out of the polygon it was anchored to. Remove the invisible CenterTree so that if
-						// someone resizes all trees later, trees don't appear out of nowhere on this Center.
-						mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
-								mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
+						double deltaX = (int) (graphPointMouseLocation.x - graphPointMousePressedLocation.x);
+						double deltaY = (int) (graphPointMouseLocation.y - graphPointMousePressedLocation.y);
+						Point scaledOldLocation = iconToEdit.getScaledLocation(mainWindow.displayQualityScale);
+						FreeIcon updatedIcon = iconToEdit.copyWithLocation(mainWindow.displayQualityScale,
+								new Point(scaledOldLocation.x + deltaX, scaledOldLocation.y + deltaY)).copyUnanchored();
+						updated.add(updatedIcon);
+						mainWindow.edits.freeIcons.doWithLock(() ->
+						{
+							mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+						});
+
+						if (iconToEdit.centerIndex != null && !mainWindow.edits.freeIcons.hasTrees(iconToEdit.centerIndex))
+						{
+							// The user moved the last tree out of the polygon it was anchored to. Remove the invisible CenterTree so that
+							// if
+							// someone resizes all trees later, trees don't appear out of nowhere on this Center.
+							mainWindow.edits.centerEdits.put(iconToEdit.centerIndex,
+									mainWindow.edits.centerEdits.get(iconToEdit.centerIndex).copyWithTrees(null));
+						}
+					}
+					else if (isScaling)
+					{
+						double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
+						Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
+						FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * floorWithMinScale(scale, imageBounds));
+						updated.add(updatedIcon);
+						mainWindow.edits.freeIcons.doWithLock(() ->
+						{
+							mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
+						});
 					}
 				}
-				else if (isScaling)
+
+				if (updated != null)
 				{
-					double scale = calcScale(graphPointMouseLocation, graphPointMousePressedLocation, iconEditBounds);
-					Rectangle imageBounds = updater.mapParts.iconDrawer.toIconDrawTask(iconToEdit).createBounds();
-					FreeIcon updatedIcon = iconToEdit.copyWithScale(iconToEdit.scale * floorWithMinScale(scale, imageBounds));
-					updated.add(updatedIcon);
-					mainWindow.edits.freeIcons.doWithLock(() ->
-					{
-						mainWindow.edits.freeIcons.replace(iconToEdit, updatedIcon);
-					});
+					undoer.setUndoPoint(UpdateType.Incremental, this);
+					Set<FreeIcon> beforeAndAfter = new HashSet<>();
+					beforeAndAfter.addAll(iconsToEdit);
+					beforeAndAfter.addAll(updated);
+					updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(beforeAndAfter));
+
+					iconsToEdit.clear();
+					iconsToEdit.addAll(updated);
+
+					boolean isValidPosition = updated.stream().anyMatch(
+							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
+					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+					isMoving = false;
+					isScaling = false;
 				}
+				mapEditingPanel.repaint();
 			}
-
-			if (updated != null)
+			else
 			{
-				undoer.setUndoPoint(UpdateType.Incremental, this);
-				Set<FreeIcon> beforeAndAfter = new HashSet<>();
-				beforeAndAfter.addAll(iconsToEdit);
-				beforeAndAfter.addAll(updated);
-				updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(beforeAndAfter));
-
-				iconsToEdit.clear();
-				iconsToEdit.addAll(updated);
-
-				boolean isValidPosition = updated.stream().anyMatch(
+				boolean isValidPosition = iconsToEdit.stream().anyMatch(
 						icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
-				mapEditingPanel.showBulkIconEditTools(iconsToEdit, isValidPosition);
-				mapEditingPanel.setHighlightedAreasFromIcons(iconsToEdit, updater.mapParts.iconDrawer, false);
-				isMoving = false;
-				isScaling = false;
+				mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
+				mapEditingPanel.repaint();
+				showOrHideEditComponents(true);
 			}
-			mapEditingPanel.repaint();
 		}
 	}
 
@@ -1792,7 +1786,7 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.hideIconEditTools();
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
-		showOrHideEditComponents();
+		showOrHideEditComponents(false);
 	}
 
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
@@ -1839,7 +1833,7 @@ public class IconsTool extends EditorTool
 	{
 		if (modeWidget.isEditMode())
 		{
-			handleFinishEditingIconsIfNeeded(e);
+			handleFinishSelectingOrEditingIconsIfNeeded(e);
 		}
 		else
 		{
@@ -1967,6 +1961,10 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
+		{
+			handleIconSelectionChange(true);
+		}
 	}
 
 	@Override
