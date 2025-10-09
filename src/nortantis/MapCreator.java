@@ -1204,8 +1204,6 @@ public class MapCreator implements WarningLogger
 		checkForCancel();
 
 		// Needed for drawing text
-		// TODO If I want to make icons that change the region background color to draw that color behind text, change
-		// background.landColoredBeforeAddingIconColors to background.land. But I lean toward not doing that.
 		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw,
 				settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land, background.ocean, background, oceanWaves, oceanShading, coastShading,
 				iconDrawer, null, null);

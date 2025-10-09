@@ -414,7 +414,7 @@ public class LandWaterTool extends EditorTool
 			return;
 		}
 
-		highlightHoverCentersOrEdgesAndBrush(e);
+		highlightHoverCentersOrEdgesAndBrush(e.getPoint());
 
 		if (oceanButton.isSelected() || lakesButton.isSelected())
 		{
@@ -1005,11 +1005,16 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
-		highlightHoverCentersOrEdgesAndBrush(e);
+		highlightHoverCentersOrEdgesAndBrush(e.getPoint());
 	}
 
-	protected void highlightHoverCentersOrEdgesAndBrush(MouseEvent e)
+	protected void highlightHoverCentersOrEdgesAndBrush(java.awt.Point mouseLocation)
 	{
+		if (mouseLocation == null)
+		{
+			return;
+		}
+		
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearHighlightedEdges();
 		mapEditingPanel.clearHighlightedPolylines();
@@ -1018,7 +1023,7 @@ public class LandWaterTool extends EditorTool
 		if (oceanButton.isSelected() || lakesButton.isSelected() || paintRegionButton.isSelected() && !selectColorFromMapButton.isSelected()
 				|| landButton.isSelected())
 		{
-			Set<Center> selected = getSelectedCenters(e.getPoint());
+			Set<Center> selected = getSelectedCenters(mouseLocation);
 
 			if (DebugFlags.printCenterIndexes())
 			{
@@ -1035,7 +1040,7 @@ public class LandWaterTool extends EditorTool
 		else if (paintRegionButton.isSelected() && selectColorFromMapButton.isSelected() || mergeRegionsButton.isSelected()
 				|| fillRegionColorButton.isSelected())
 		{
-			Center center = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()), true);
+			Center center = updater.mapParts.graph.findClosestCenter(getPointOnGraph(mouseLocation), true);
 			if (center != null)
 			{
 				if (center.region != null)
@@ -1050,9 +1055,9 @@ public class LandWaterTool extends EditorTool
 			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
 			if (brushDiameter > 1)
 			{
-				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
+				mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			}
-			Set<Edge> candidates = getSelectedEdges(e.getPoint(), brushDiameter, EdgeType.Voronoi);
+			Set<Edge> candidates = getSelectedEdges(mouseLocation, brushDiameter, EdgeType.Voronoi);
 
 			for (Edge edge : candidates)
 			{
@@ -1068,10 +1073,10 @@ public class LandWaterTool extends EditorTool
 			int brushDiameter = brushSizes.get(brushSizeComboBox.getSelectedIndex());
 			if (brushDiameter > 1)
 			{
-				mapEditingPanel.showBrush(e.getPoint(), brushDiameter);
+				mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			}
 
-			List<List<Point>> roadSegments = getSelectedRoadSegments(e.getPoint());
+			List<List<Point>> roadSegments = getSelectedRoadSegments(mouseLocation);
 			for (List<Point> list : scalePoints(roadSegments, mainWindow.displayQualityScale))
 			{
 				mapEditingPanel.addPolylinesToHighlight(list);
@@ -1146,6 +1151,7 @@ public class LandWaterTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		highlightHoverCentersOrEdgesAndBrush(mapEditingPanel.getMousePosition());
 	}
 
 	@Override

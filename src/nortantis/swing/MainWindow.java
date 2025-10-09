@@ -1534,7 +1534,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.scrollRectToVisible(scrollTo);
 			}
 
-			toolsPanel.currentTool.onAfterShowMap();
+			updater.doWhenMapIsReadyForInteractions(() -> 
+			{
+				toolsPanel.currentTool.onAfterShowMap();
+			});
+	
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
 			mapEditingPanel.repaint();

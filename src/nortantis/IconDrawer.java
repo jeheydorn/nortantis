@@ -699,33 +699,6 @@ public class IconDrawer
 
 	private double getBaseWidth(IconType type, ImageAndMasks imageAndMasks)
 	{
-		// TODO If I do this, I need to create a conversion for older maps and decide what to do about mountains being too crowded.
-		// double scale;
-		// if (type == IconType.mountains || type == IconType.hills)
-		// {
-		// scale = 1.5;
-		// }
-		// else if (type == IconType.sand)
-		// {
-		// scale = 1.4;
-		// }
-		// else if (type == IconType.cities)
-		// {
-		// scale = 1.2;
-		// }
-		// else if (type == IconType.trees)
-		// {
-		// scale = 1.2;
-		// }
-		// else if (type == IconType.decorations)
-		// {
-		// scale = 1.0;
-		// }
-		// else
-		// {
-		// throw new IllegalArgumentException("Unrecognized icon type for getting base width: " + type);
-		// }
-		// return meanPolygonWidth * (1.0 / 11.0) * scale * imageAndMasks.widthFromFileName;
 		return meanPolygonWidth * (1.0 / 11.0) * imageAndMasks.widthFromFileName;
 	}
 

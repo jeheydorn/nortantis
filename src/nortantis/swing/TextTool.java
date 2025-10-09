@@ -485,11 +485,13 @@ public class TextTool extends EditorTool
 		{
 			mapEditingPanel.clearTextBox();
 		}
-		// Only set the text box if the user didn't select another text while the draw was happening.
 		else if (!isMoving && !isRotating)
 		{
 			mapEditingPanel.setTextBoxToDraw(lastSelected);
 		}
+		
+		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition());
+		mapEditingPanel.repaint();
 	}
 
 	@Override
@@ -868,6 +870,16 @@ public class TextTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
+		innerHandleMouseMovedOnMap(e.getPoint());
+	}
+	
+	private void innerHandleMouseMovedOnMap(java.awt.Point mouseLocation)
+	{
+		if (mouseLocation == null)
+		{
+			return;
+		}
+		
 		if (drawTextDisabledLabel.isVisible())
 		{
 			return;
@@ -875,12 +887,12 @@ public class TextTool extends EditorTool
 
 		if (eraseButton.isSelected())
 		{
-			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
+			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation);
 			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
 		}
 		else if (editButton.isSelected() && lastSelected == null)
 		{
-			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(e.getPoint());
+			List<MapText> mapTextsSelected = getMapTextsSelectedByCurrentBrushSizeAndShowBrush(mouseLocation);
 			mapEditingPanel.setHighlightedAreasFromTexts(mapTextsSelected);
 		}
 		else

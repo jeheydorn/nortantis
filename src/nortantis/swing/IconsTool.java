@@ -527,9 +527,12 @@ public class IconsTool extends EditorTool
 				{
 					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
 					{
-						addOrRemoveIconHoverHighlightSelection(true);
-						mapEditingPanel.hideIconEditTools();
-						mapEditingPanel.repaint();
+						updater.doWhenMapIsReadyForInteractions(() ->
+						{
+							addOrRemoveIconHoverHighlightSelection(true);
+							mapEditingPanel.hideIconEditTools();
+							mapEditingPanel.repaint();
+						});
 					}
 				}
 			}
@@ -541,11 +544,14 @@ public class IconsTool extends EditorTool
 				{
 					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
 					{
-						addOrRemoveIconHoverHighlightSelection(false);
-						boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations
-								|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
-						mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-						mapEditingPanel.repaint();
+						updater.doWhenMapIsReadyForInteractions(() ->
+						{
+							addOrRemoveIconHoverHighlightSelection(false);
+							boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations
+									|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+							mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
+							mapEditingPanel.repaint();
+						});
 					}
 				}
 			}
@@ -597,7 +603,6 @@ public class IconsTool extends EditorTool
 			return;
 		}
 
-		// TODO
 		List<FreeIcon> pasted = new ArrayList<>();
 		double resolutionScale = mainWindow.displayQualityScale;
 		Point temp = getPointOnGraph(mapEditingPanel.getMousePosition());
@@ -722,6 +727,7 @@ public class IconsTool extends EditorTool
 			isScaling = false;
 			colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
 			colorDisplay.repaint();
+			mapEditingPanel.repaint();
 		}
 
 		showOrHideEditComponents(showEditTools);
@@ -816,28 +822,27 @@ public class IconsTool extends EditorTool
 		updateTypePanels();
 	}
 
-	private void showOrHideEditComponents(boolean showEditTools)
+	private void showOrHideEditComponents(boolean showIconMetadata)
 	{
 		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		editOptionsSeperatorHider.setVisible(modeWidget.isEditMode());
-		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1 && showEditTools);
+		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1 && showIconMetadata);
 		colorPickerHider
 				.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());
 	}
 
-	private void showOrHideBrush(MouseEvent e)
+	private void showOrHideBrush(java.awt.Point mouseLocation)
 	{
 		int brushDiameter = getBrushDiameter();
-		if (modeWidget.isDrawMode() || brushDiameter <= 1
-				|| (modeWidget.isEditMode() && (mapEditingPanel.isInMoveTool(e.getPoint()) || mapEditingPanel.isInScaleTool(e.getPoint()))))
+		if (modeWidget.isDrawMode() || brushDiameter <= 1 || (modeWidget.isEditMode()
+				&& (mapEditingPanel.isInMoveTool(mouseLocation) || mapEditingPanel.isInScaleTool(mouseLocation))))
 		{
 			mapEditingPanel.hideBrush();
 		}
 		else
 		{
-			java.awt.Point mouseLocation = e.getPoint();
 			mapEditingPanel.showBrush(mouseLocation, brushDiameter);
 			mapEditingPanel.repaint();
 		}
@@ -994,6 +999,15 @@ public class IconsTool extends EditorTool
 						return;
 					}
 
+					// TODO remove test code
+					if (iconType == IconType.mountains)
+					{
+						System.out.println("In updateOneIconTypeButtonPreviewImages for type " + iconType);
+						System.out.println("settings.artPack: " + settings.artPack);
+						System.out.println("button.getText(): " + button.getText());
+					}
+
+
 					button.setImage(AwtFactory.unwrap(previewImage));
 				}
 			};
@@ -1065,7 +1079,6 @@ public class IconsTool extends EditorTool
 
 						for (int i : new Range(previewImages.size()))
 						{
-							// TODO Fix this case so these crashes don't happen. They're causing icon previews to not load correctly.
 							try
 							{
 								selector.getIconNamesAndButtons(groupId).get(i).getSecond()
@@ -1255,7 +1268,7 @@ public class IconsTool extends EditorTool
 
 	private void handleMousePressOrDrag(MouseEvent e, boolean isPress)
 	{
-		showOrHideBrush(e);
+		showOrHideBrush(e.getPoint());
 		if (modeWidget.isDrawMode())
 		{
 			handleDrawIcons(e, isPress);
@@ -1674,7 +1687,7 @@ public class IconsTool extends EditorTool
 				iconsToEdit.addAll(selectedIcons);
 			}
 
-			handleIconSelectionChange(false);
+			handleIconSelectionChange(!e.isControlDown());
 		}
 
 		mapEditingPanel.repaint();
@@ -1768,10 +1781,13 @@ public class IconsTool extends EditorTool
 			}
 			else
 			{
-				boolean isValidPosition = iconsToEdit.stream().anyMatch(
-						icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
-				mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-				mapEditingPanel.repaint();
+				if (!e.isControlDown())
+				{
+					boolean isValidPosition = iconsToEdit.stream().anyMatch(
+							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
+					mapEditingPanel.repaint();
+				}
 				showOrHideEditComponents(true);
 			}
 		}
@@ -1844,44 +1860,54 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void handleMouseMovedOnMap(MouseEvent e)
 	{
+		innerHandleMouseMovedOnMap(e.getPoint(), e.isControlDown());
+	}
+
+	private void innerHandleMouseMovedOnMap(java.awt.Point mouseLocation, boolean isControlDown)
+	{
+		if (mouseLocation == null)
+		{
+			return;
+		}
+
 		if (modeWidget.isDrawMode() && !decorationsButton.isSelected())
 		{
-			highlightHoverCenters(e);
+			highlightHoverCenters(mouseLocation);
 		}
 		else
 		{
-			highlightHoverIconsAndShowBrush(e);
+			highlightHoverIconsAndShowBrush(mouseLocation, isControlDown);
 		}
 		mapEditingPanel.repaint();
 	}
 
-	private void highlightHoverCenters(MouseEvent e)
+	private void highlightHoverCenters(java.awt.Point mouseLocation)
 	{
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.clearHighlightedCenters();
 
-		Set<Center> selected = getSelectedCenters(e.getPoint());
+		Set<Center> selected = getSelectedCenters(mouseLocation);
 		mapEditingPanel.addHighlightedCenters(selected);
 		mapEditingPanel.setCenterHighlightMode(HighlightMode.outlineEveryCenter);
 		mapEditingPanel.repaint();
 	}
 
-	private void highlightHoverIconsAndShowBrush(MouseEvent e)
+	private void highlightHoverIconsAndShowBrush(java.awt.Point mouseLocation, boolean isControlDown)
 	{
 		mapEditingPanel.clearHighlightedCenters();
 
-		showOrHideBrush(e);
+		showOrHideBrush(mouseLocation);
 
 		if (modeWidget.isEditMode())
 		{
 			if (iconsToEdit != null && !iconsToEdit.isEmpty())
 			{
-				addOrRemoveIconHoverHighlightSelection(e.isControlDown());
+				addOrRemoveIconHoverHighlightSelection(isControlDown);
 			}
 			else
 			{
 				mapEditingPanel.clearHighlightedAreas();
-				List<FreeIcon> selected = getSelectedIcons(e.getPoint());
+				List<FreeIcon> selected = getSelectedIcons(mouseLocation);
 				if (selected != null && selected.size() > 0)
 				{
 					mapEditingPanel.setHighlightedAreasFromIcons(selected, updater.mapParts.iconDrawer, false);
@@ -1891,7 +1917,7 @@ public class IconsTool extends EditorTool
 		else if (!(modeWidget.isDrawMode() && decorationsButton.isSelected()))
 		{
 			mapEditingPanel.clearHighlightedAreas();
-			List<FreeIcon> icons = getSelectedIcons(e.getPoint());
+			List<FreeIcon> icons = getSelectedIcons(mouseLocation);
 			mapEditingPanel.setHighlightedAreasFromIcons(icons, updater.mapParts.iconDrawer, true);
 		}
 		mapEditingPanel.repaint();
@@ -1933,11 +1959,11 @@ public class IconsTool extends EditorTool
 	{
 		if (modeWidget.isDrawMode() && !decorationsButton.isSelected())
 		{
-			highlightHoverCenters(e);
+			highlightHoverCenters(e.getPoint());
 		}
 		else
 		{
-			highlightHoverIconsAndShowBrush(e);
+			highlightHoverIconsAndShowBrush(e.getPoint(), e.isControlDown());
 		}
 		handleMousePressOrDrag(e, false);
 	}
@@ -1961,10 +1987,13 @@ public class IconsTool extends EditorTool
 	@Override
 	protected void onAfterShowMap()
 	{
+		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition(), false);
+
 		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
 			handleIconSelectionChange(true);
 		}
+		mapEditingPanel.repaint();
 	}
 
 	@Override
@@ -1975,23 +2004,23 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.repaint();
 	}
 
-	private Set<Center> getSelectedCenters(java.awt.Point pointFromMouse)
+	private Set<Center> getSelectedCenters(java.awt.Point mouseLocation)
 	{
-		return getSelectedCenters(pointFromMouse, getBrushDiameter());
+		return getSelectedCenters(mouseLocation, getBrushDiameter());
 	}
 
-	private List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse)
+	private List<FreeIcon> getSelectedIcons(java.awt.Point mouseLocation)
 	{
-		return getSelectedIcons(pointFromMouse, null);
+		return getSelectedIcons(mouseLocation, null);
 	}
 
-	private List<FreeIcon> getSelectedIcons(java.awt.Point pointFromMouse, Collection<FreeIcon> allowList)
+	private List<FreeIcon> getSelectedIcons(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
 	{
 		int brushDiameter = getBrushDiameter();
 
 		if (brushDiameter <= 1)
 		{
-			FreeIcon selected = getLowestSelectedIcon(pointFromMouse, allowList);
+			FreeIcon selected = getLowestSelectedIcon(mouseLocation, allowList);
 			if (selected != null)
 			{
 				return Arrays.asList(selected);
@@ -2000,11 +2029,11 @@ public class IconsTool extends EditorTool
 		}
 		else
 		{
-			return getMultipleSelectedIcons(pointFromMouse, allowList);
+			return getMultipleSelectedIcons(mouseLocation, allowList);
 		}
 	}
 
-	private List<FreeIcon> getMultipleSelectedIcons(java.awt.Point pointFromMouse, Collection<FreeIcon> allowList)
+	private List<FreeIcon> getMultipleSelectedIcons(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
 	{
 		List<FreeIcon> selected = new ArrayList<>();
 		mainWindow.edits.freeIcons.doWithLock(() ->
@@ -2013,7 +2042,7 @@ public class IconsTool extends EditorTool
 
 			for (FreeIcon icon : iterable)
 			{
-				if (isSelected(pointFromMouse, icon))
+				if (isSelected(mouseLocation, icon))
 				{
 					selected.add(icon);
 				}
@@ -2023,10 +2052,10 @@ public class IconsTool extends EditorTool
 		return selected;
 	}
 
-	private boolean isSelected(java.awt.Point pointFromMouse, FreeIcon icon)
+	private boolean isSelected(java.awt.Point mouseLocation, FreeIcon icon)
 	{
 		int brushDiameter = getBrushDiameter();
-		Point graphPoint = getPointOnGraph(pointFromMouse);
+		Point graphPoint = getPointOnGraph(mouseLocation);
 
 		if (brushDiameter <= 1)
 		{
@@ -2056,9 +2085,9 @@ public class IconsTool extends EditorTool
 		}
 	}
 
-	protected FreeIcon getLowestSelectedIcon(java.awt.Point pointFromMouse, Collection<FreeIcon> allowList)
+	protected FreeIcon getLowestSelectedIcon(java.awt.Point mouseLocation, Collection<FreeIcon> allowList)
 	{
-		List<FreeIcon> underMouse = getMultipleSelectedIcons(pointFromMouse, allowList);
+		List<FreeIcon> underMouse = getMultipleSelectedIcons(mouseLocation, allowList);
 		if (underMouse.isEmpty())
 		{
 			return null;
@@ -2191,6 +2220,10 @@ public class IconsTool extends EditorTool
 			else
 			{
 				artPackComboBox.setSelectedItem(Assets.installedArtPack);
+				// Setting this fixes a bug where icon previews for shuffled icons don't show up right after an images refresh when the
+				// selected art pack no longer exists. It seems to be because the call to updateIconTypeButtonPreviewImages below was given
+				// the wrong art pack when it changed here and wasn't updated.
+				settings.artPack = Assets.installedArtPack;
 			}
 		}
 

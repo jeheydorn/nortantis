@@ -63,6 +63,25 @@ public class SwingHelper
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 
+	// TODO Decide if I want to keep this
+	public static <T> void setComboBoxSelectedItemWithoutTriggeringActionListeners(JComboBox<T> comboBox, T selectedItem)
+	{
+		// Remove all action listeners
+		ActionListener[] listeners = comboBox.getActionListeners();
+		for (ActionListener listener : listeners)
+		{
+			comboBox.removeActionListener(listener);
+		}
+
+		comboBox.setSelectedItem(selectedItem);
+
+		// Re-add the action listeners
+		for (ActionListener listener : listeners)
+		{
+			comboBox.addActionListener(listener);
+		}
+	}
+
 	public static void initializeComboBoxItems(JComboBox<String> comboBox, Collection<String> items, String selectedItem,
 			boolean forceAddSelectedItem)
 	{
@@ -493,7 +512,7 @@ public class SwingHelper
 
 		return stackPanel;
 	}
-	
+
 	public static JPanel placeLabelToLeftOfComponents(JLabel label, Component... components)
 	{
 		JPanel panel = new JPanel();
