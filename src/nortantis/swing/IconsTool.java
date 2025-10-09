@@ -999,15 +999,6 @@ public class IconsTool extends EditorTool
 						return;
 					}
 
-					// TODO remove test code
-					if (iconType == IconType.mountains)
-					{
-						System.out.println("In updateOneIconTypeButtonPreviewImages for type " + iconType);
-						System.out.println("settings.artPack: " + settings.artPack);
-						System.out.println("button.getText(): " + button.getText());
-					}
-
-
 					button.setImage(AwtFactory.unwrap(previewImage));
 				}
 			};
