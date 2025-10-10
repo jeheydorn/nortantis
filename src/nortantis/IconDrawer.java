@@ -1011,8 +1011,7 @@ public class IconDrawer
 			throw new IllegalArgumentException("The given content mask's width does not match the icon's width.");
 		if (contentMask.getHeight() != icon.getHeight())
 			throw new IllegalArgumentException("The given content mask's height does not match the icon's height.");
-		Image shadingMask = null;
-		shadingMask = imageAndMasks.getOrCreateShadingMask();
+		Image shadingMask = imageAndMasks.getOrCreateShadingMask();
 		if (shadingMask.getWidth() != icon.getWidth())
 		{
 			throw new IllegalArgumentException("The given shading mask's width does not match the icon's width.");
