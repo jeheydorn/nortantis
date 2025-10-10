@@ -557,9 +557,6 @@ public class MapCreator implements WarningLogger
 			}
 		}
 
-		// Print run time
-		// updateSW.printElapsedTime();
-
 		return replaceBounds.toIntRectangle();
 	}
 

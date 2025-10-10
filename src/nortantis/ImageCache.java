@@ -39,7 +39,7 @@ import nortantis.util.Tuple3;
  */
 public class ImageCache
 {
-	private static HashMapF<String, ImageCache> instances = new HashMapF<>();
+	private static ConcurrentHashMapF<String, ImageCache> instances = new ConcurrentHashMapF<>();
 
 	/**
 	 * Maps original images, to scaled width, to scaled images.
@@ -602,5 +602,14 @@ public class ImageCache
 		instances.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
+	}
+	
+	public static void clearColoredAndScaledImageCaches()
+	{
+		for (ImageCache cache : instances.values())
+		{
+			cache.coloredCache.clear();
+			cache.scaledCache.clear();
+		}
 	}
 }

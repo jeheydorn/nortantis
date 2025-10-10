@@ -644,11 +644,11 @@ public class IconsTool extends EditorTool
 		updater.createAndShowMapIncrementalUsingIcons(pasted);
 		iconsToEdit.clear();
 		iconsToEdit.addAll(pasted);
-		handleIconSelectionChange(true);
+		handleIconSelectionChange(true, true);
 		mapEditingPanel.repaint();
 	}
 
-	private void handleIconSelectionChange(boolean showEditTools)
+	private void handleIconSelectionChange(boolean showEditTools, boolean showIconDetails)
 	{
 		mapEditingPanel.clearHighlightedAreas();
 
@@ -730,7 +730,7 @@ public class IconsTool extends EditorTool
 			mapEditingPanel.repaint();
 		}
 
-		showOrHideEditComponents(showEditTools);
+		showOrHideEditComponents(showIconDetails);
 	}
 
 	private void handleColorChange()
@@ -739,6 +739,7 @@ public class IconsTool extends EditorTool
 		{
 			IconType selectedType = getSelectedIconType();
 			iconColorsByType.put(selectedType, AwtFactory.wrap(colorDisplay.getBackground()));
+			ImageCache.clearColoredAndScaledImageCaches();
 			updateIconTypeButtonPreviewImages(mainWindow.getSettingsFromGUI(false));
 			undoer.setUndoPoint(UpdateType.NoDraw, IconsTool.this, () ->
 			{
@@ -758,7 +759,8 @@ public class IconsTool extends EditorTool
 			iconsToEdit.clear();
 			iconsToEdit.addAll(updated);
 			undoer.setUndoPoint(UpdateType.Incremental, this);
-			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit));
+			updater.createAndShowMapIncrementalUsingIcons(new ArrayList<>(iconsToEdit),
+					() -> ImageCache.clearColoredAndScaledImageCaches());
 		}
 
 	}
@@ -1678,7 +1680,7 @@ public class IconsTool extends EditorTool
 				iconsToEdit.addAll(selectedIcons);
 			}
 
-			handleIconSelectionChange(!e.isControlDown());
+			handleIconSelectionChange(false, false);
 		}
 
 		mapEditingPanel.repaint();
@@ -1982,7 +1984,7 @@ public class IconsTool extends EditorTool
 
 		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			handleIconSelectionChange(true);
+			handleIconSelectionChange(true, true);
 		}
 		mapEditingPanel.repaint();
 	}
