@@ -25,7 +25,6 @@ import nortantis.platform.ImageType;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
-import nortantis.util.HashMapF;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
@@ -50,6 +49,8 @@ public class ImageCache
 	 * Maps original images, to color, colored images.
 	 */
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Color, Image>> coloredCache;
+	
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Integer, Image>> alphaCache;
 
 	/**
 	 * Maps file path (or any string key) to images.
@@ -79,6 +80,7 @@ public class ImageCache
 		iconsWithSizesCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
 		iconGroupNames = new ConcurrentHashMapF<>();
+		alphaCache = new ConcurrentHashMapF<>();
 	}
 
 	/**
@@ -168,7 +170,29 @@ public class ImageCache
 			}
 		});
 	}
-
+	
+	/**
+	 * Creates a new image whose alpha is between 0 and the given alpha, by scaling all the alpha values in the image to be between that range,
+	 * essentially making the given alpha be the transparency of the image, plus the transparency it already had.
+	 * 
+	 * The image will be cached for future calls using alphaCache.
+	 * @param image Original image
+	 * @param alpha Alpha to apply
+	 * @return image with added transparency
+	 */
+	public Image getImageWithAppliedAlpha(Image image, Integer alpha)
+	{
+		if (alpha == null || alpha == 255)
+		{
+			return image;
+		}
+		
+		return alphaCache.getOrCreate(image, () -> new ConcurrentHashMapF<>()).getOrCreate(alpha, () -> 
+		{
+			return ImageHelper.applyAlpha(image, alpha);
+		});
+	}
+	
 	public Image getImageFromFile(Path path)
 	{
 		return fileCache.getOrCreateWithLock(path.toString().intern(), () ->
@@ -243,10 +267,10 @@ public class ImageCache
 	public Map<String, ImageAndMasks> getIconsByNameForGroup(IconType iconType, String groupName)
 	{
 		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>())
-				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizes(iconType, groupName));
+				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizesAndAlphas(iconType, groupName));
 	}
 
-	private Map<String, ImageAndMasks> loadIconsWithSizes(IconType iconType, String groupName)
+	private Map<String, ImageAndMasks> loadIconsWithSizesAndAlphas(IconType iconType, String groupName)
 	{
 		Map<String, ImageAndMasks> imagesAndMasks = new HashMap<>();
 		if (groupName == null || groupName.isEmpty())
@@ -262,10 +286,13 @@ public class ImageCache
 
 		// Maps from image base name without width to (image base name without width, width, file name).
 		Map<String, Tuple3<String, Double, String>> namesAndWidths = new TreeMap<>();
+		// Maps from image base name without width to alpha (possibly null).
+		Map<String, Integer> alphas = new TreeMap<>();
 		for (String fileName : fileNames)
 		{
 			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileName, WhichDimension.Width);
 			Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileName, WhichDimension.Height);
+			Integer alpha = parseAlpha(fileName);
 			if (nameAndWidth.getSecond() == null)
 			{
 				// Check if height is stored in the file name.
@@ -293,9 +320,14 @@ public class ImageCache
 			}
 
 			namesAndWidths.put(fileNameBaseWithoutWidth, new Tuple3<>(nameAndWidth.getFirst(), nameAndWidth.getSecond(), fileName));
+			if (alpha != null)
+			{
+				alphas.put(fileNameBaseWithoutWidth, alpha);	
+			}
 		}
 
 		Tuple2<Image, Double> tuple = findIconToUseForReferenceWhenSizingOtherIcons(iconType, groupName, namesAndWidths);
+		int defaultAlpha = findDefaultAlphaForGroup(alphas);
 		Image widest = tuple.getFirst();
 		double widthOfWidest = tuple.getSecond();
 
@@ -309,7 +341,18 @@ public class ImageCache
 				assert false;
 				continue;
 			}
-
+			
+			Integer alpha;
+			if (alphas.containsKey(nameAndWidth.getFirst()))
+			{
+				alpha = alphas.get(nameAndWidth.getFirst());
+			}
+			else
+			{
+				alpha = defaultAlpha;
+			}
+			icon = getImageWithAppliedAlpha(icon, alpha);
+			
 			double width;
 			// If any don't have an encoded width, then calculate the width relative to the largest image that does have an encoded width.
 			if (nameAndWidth.getSecond() == null)
@@ -377,6 +420,16 @@ public class ImageCache
 					: IconDrawer.getDimensionsWhenScaledByHeight(icon.size(), widthOrHeight).width;
 			return new Tuple2<>(icon, width);
 		}
+	}
+
+	private Integer findDefaultAlphaForGroup(Map<String, Integer> alphas)
+	{
+		Integer max = Helper.maxElement(alphas);
+		if (max == null)
+		{
+			return 255;
+		}
+		return max;
 	}
 
 
@@ -482,6 +535,43 @@ public class ImageCache
 		}
 
 		return new Tuple2<>(baseName, null);
+	}
+	
+	/**
+	 * Given a file name (without the path), this parses out the encoded alpha value, if present.
+	 */
+	public static Integer parseAlpha(String fileName)
+	{
+		if (fileName == null || fileName.isEmpty())
+		{
+			return null;
+		}
+
+		// Remove the file extension
+		int dotIndex = fileName.lastIndexOf('.');
+		String baseName = (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
+
+		// Define the regex pattern for width
+		Pattern pattern = Pattern.compile("(.*?)(?:\\s|_)(?:alpha=|a)(\\d+)");
+		Matcher matcher = pattern.matcher(baseName);
+
+		if (matcher.find())
+		{
+			int alpha = Integer.parseInt(matcher.group(2));
+			if (alpha > 255)
+			{
+				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha greater than 255.");
+			}
+
+			if (alpha < 0)
+			{
+				// Not possible to hit with my regex.
+				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha less than 0.");
+			}
+
+			return alpha;
+		}
+		return null;
 	}
 
 	public enum WhichDimension

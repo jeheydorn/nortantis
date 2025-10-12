@@ -1390,7 +1390,7 @@ public class WorldGraph extends VoronoiGraph
 				// creating a map this just ocean or has only tiny islands,
 				// although it isn't guaranteed since it's
 				// possible all 9 plates will be assigned to oceanic.
-				if (plateCounts.keySet().size() == 9 && Helper.min(plateCounts) <= minNinthtoLastPlateSize)
+				if (plateCounts.keySet().size() == 9 && Helper.minElement(plateCounts) <= minNinthtoLastPlateSize)
 				{
 					break;
 				}

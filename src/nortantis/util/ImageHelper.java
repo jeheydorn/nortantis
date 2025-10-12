@@ -735,6 +735,32 @@ public class ImageHelper
 	}
 
 	/**
+	 * Returns a new Image with adjusted transparency.
+	 *
+	 * @param original
+	 *            The original Image.
+	 * @param alpha
+	 *            The alpha value (0 = fully transparent, 255 = fully opaque).
+	 * @return A new Image with the specified transparency applied.
+	 */
+	public static Image applyAlpha(Image original, Integer alpha)
+	{
+		if (alpha == null || alpha == 255)
+		{
+			throw new IllegalArgumentException("Alpha must be between 0.0 and 1.0");
+		}
+
+		Image transparentImage = Image.create(original.getWidth(), original.getHeight(), ImageType.ARGB);
+
+		Painter p = transparentImage.createPainter();
+		p.setAlphaComposite(AlphaComposite.SrcOver, alpha / 255f);
+		p.drawImage(original, 0, 0);
+		p.dispose();
+
+		return transparentImage;
+	}
+
+	/**
 	 * Creates a new Image in which the values of the given alphaMask to be the alpha channel in image.
 	 * 
 	 * @param image

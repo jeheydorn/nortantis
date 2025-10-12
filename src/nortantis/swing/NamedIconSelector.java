@@ -35,9 +35,9 @@ public class NamedIconSelector
 
 	public void updateButtonList(String artPack, String customImagesPath)
 	{
+		Tuple2<String, String> selectedButton = getSelectedButton();
 		clearButtons();
 
-		Tuple2<String, String> selectedButton = getSelectedButton();
 		boolean hasAtLeastOneImage = false;
 		for (String groupId : ImageCache.getInstance(artPack, customImagesPath).getIconGroupNames(type))
 		{

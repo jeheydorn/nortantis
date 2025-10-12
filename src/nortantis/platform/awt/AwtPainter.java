@@ -296,6 +296,10 @@ class AwtPainter extends Painter
 		{
 			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
 		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcOver)
+		{
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+		}
 		else
 		{
 			throw new UnsupportedOperationException("Unimplemented alpha composite method with alpha parameter. Composite method: " + composite);
