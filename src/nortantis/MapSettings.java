@@ -180,6 +180,7 @@ public class MapSettings implements Serializable
 	 */
 	public String artPack;
 	public double treeHeightScale;
+	// Default scale values below are for old maps from properties files. For current defaults, see SettingsGenerator.
 	public double mountainScale = 1.0;
 	public double hillScale = 1.0;
 	public double duneScale = 1.0;

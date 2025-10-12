@@ -1,7 +1,6 @@
 package nortantis.swing;
 
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -58,7 +57,6 @@ import nortantis.editor.CenterIconType;
 import nortantis.editor.CenterTrees;
 import nortantis.editor.FreeIcon;
 import nortantis.editor.MapUpdater;
-import nortantis.geom.Dimension;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
 import nortantis.geom.Rectangle;

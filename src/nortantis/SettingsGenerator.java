@@ -158,7 +158,11 @@ public class SettingsGenerator
 
 		settings.grungeWidth = 100 + rand.nextInt(1400);
 
-		settings.treeHeightScale = 0.35;
+		settings.treeHeightScale = 0.4;
+		settings.mountainScale = 1.2;
+		settings.hillScale = 1.2;
+		settings.duneScale = 1.2;
+		settings.cityScale = 1.2;
 
 		final double drawBorderProbability = 0.75;
 		settings.drawBorder = rand.nextDouble() <= drawBorderProbability;
