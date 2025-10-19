@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -223,18 +224,17 @@ public class GridBagOrganizer
 	public RowHider addLeftAlignedComponents(List<Component> components)
 	{
 		JPanel compPanel = new JPanel();
-		compPanel.setLayout(new BoxLayout(compPanel, BoxLayout.X_AXIS));
-		final int componentLeftPadding = 0;
-		compPanel.add(Box.createHorizontalStrut(componentLeftPadding));
+		compPanel.setLayout(new WrapLayout(WrapLayout.LEFT));
+		// Remove the horizontal and vertical gaps from the border around the elements.
+		compPanel.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
 		for (Component comp : components)
 		{
 			compPanel.add(comp);
 			if (comp != components.get(components.size() - 1))
 			{
-				compPanel.add(Box.createHorizontalStrut(defaultHorizontalSpaceBetweenComponentsAddAsList));
+				compPanel.add(Box.createHorizontalStrut(0));
 			}
 		}
-		compPanel.add(Box.createHorizontalGlue());
 		return addLeftAlignedComponent(compPanel);
 
 	}

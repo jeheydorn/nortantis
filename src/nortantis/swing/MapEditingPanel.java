@@ -183,7 +183,7 @@ public class MapEditingPanel extends UnscaledImagePanel
 
 		if (icons.size() == 1)
 		{
-			showIconEditToolsAt(icons.iterator().next(), isValidPosition, IconEditToolsLocation.OutsideBox, IconEditToolsSize.Small, false);
+			showIconEditToolsAt(icons.iterator().next(), isValidPosition, IconEditToolsLocation.OutsideBox, IconEditToolsSize.Small, true);
 			return;
 		}
 
@@ -581,7 +581,10 @@ public class MapEditingPanel extends UnscaledImagePanel
 		int padding = (int) (9 * resolution);
 		if (showEditBox)
 		{
-			g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
+			if (highlightedAreas != null && highlightedAreas.size() != 1)
+			{
+				g.drawRect(editBounds.x, editBounds.y, editBounds.width, editBounds.height);
+			}
 		}
 
 		if (!isIconToEditInAValidPosition)

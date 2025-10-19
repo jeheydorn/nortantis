@@ -480,9 +480,23 @@ public class IconsTool extends EditorTool
 					}
 				});
 			}
+			
+			JButton clearScaleButton;
+			{
+				clearScaleButton = new JButton("Clear Scale");
+				clearScaleButton.setToolTipText("Remove icon-specific scaling for the selected icons");
+				clearScaleButton.addActionListener(new ActionListener()
+				{
+					
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						clearScaleOnSelectedIcons();
+					}
+				});
+			}
 
-			deleteCopyPasteIconButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton));
-
+			deleteCopyPasteIconButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
 		}
 
 		{
@@ -645,6 +659,31 @@ public class IconsTool extends EditorTool
 		handleIconSelectionChange(true, true);
 		mapEditingPanel.repaint();
 	}
+	
+	private void clearScaleOnSelectedIcons()
+	{
+		if (iconsToEdit == null || iconsToEdit.isEmpty())
+		{
+			return;
+		}
+		
+		List<FreeIcon> updated = new ArrayList<>();
+		Set<FreeIcon> unscaled = new HashSet<>();
+		for (FreeIcon icon : iconsToEdit)
+		{
+			FreeIcon withoutScale = icon.copyWithScale(1.0);
+			mainWindow.edits.freeIcons.remove(icon);
+			mainWindow.edits.freeIcons.addOrReplace(withoutScale);
+			updated.add(icon);
+			updated.add(withoutScale);
+			unscaled.add(withoutScale);
+		}
+		iconsToEdit.clear();
+		iconsToEdit.addAll(unscaled);
+		undoer.setUndoPoint(UpdateType.Incremental, this);
+		updater.createAndShowMapIncrementalUsingIcons(updated);
+		handleIconSelectionChange(true, true);
+	}
 
 	private void handleIconSelectionChange(boolean showEditTools, boolean showIconDetails)
 	{
@@ -708,7 +747,12 @@ public class IconsTool extends EditorTool
 			colorDisplay.repaint();
 			getToolOptionsPane().repaint();
 
-			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
+			// TODO Test to see if I need to handle this better.
+			if (!showEditTools)
+			{
+				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
+			}
+
 			mapEditingPanel.repaint();
 		}
 		else
@@ -1694,7 +1738,7 @@ public class IconsTool extends EditorTool
 
 	private double floorWithMinScale(double scale, Rectangle imageBounds)
 	{
-		final double minWidth = 15 * mainWindow.displayQualityScale;
+		final double minWidth = 8 * mainWindow.displayQualityScale;
 		final double minHeight = 6 * mainWindow.displayQualityScale;
 		final double minWidthByHeight = IconDrawer.getDimensionsWhenScaledByHeight(imageBounds.size().toIntDimension(), minHeight).width;
 
@@ -1764,7 +1808,14 @@ public class IconsTool extends EditorTool
 					boolean isValidPosition = updated.stream().anyMatch(
 							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(updated, isValidPosition);
-					mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+					if (e.isControlDown())
+					{
+						mapEditingPanel.setHighlightedAreasFromIcons(updated, updater.mapParts.iconDrawer, false);
+					}
+					else
+					{
+						mapEditingPanel.clearHighlightedAreas();
+					}
 					isMoving = false;
 					isScaling = false;
 				}
@@ -1917,9 +1968,10 @@ public class IconsTool extends EditorTool
 	private void addOrRemoveIconHoverHighlightSelection(boolean isControlDown)
 	{
 		Set<FreeIcon> toHighlight = new HashSet<>();
-		toHighlight.addAll(iconsToEdit);
 		if (isControlDown)
 		{
+			toHighlight.addAll(iconsToEdit);
+
 			java.awt.Point pointOnMap = mapEditingPanel.getMousePosition();
 			if (pointOnMap != null)
 			{
@@ -1965,7 +2017,10 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.clearHighlightedCenters();
 		if (iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
+			if (e.isControlDown() || e.getButton() == MouseEvent.BUTTON1)
+			{
+				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
+			}
 		}
 		else
 		{

@@ -355,7 +355,7 @@ public abstract class MapUpdater
 		}
 		else if (updateType == UpdateType.NoDraw)
 		{
-			
+
 		}
 		else
 		{
@@ -366,7 +366,8 @@ public abstract class MapUpdater
 
 	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
 	{
-		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks || updateType == UpdateType.NoDraw;
+		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks
+				|| updateType == UpdateType.NoDraw;
 	}
 
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
@@ -413,7 +414,7 @@ public abstract class MapUpdater
 
 		// Low-priority updates only support incremental updates.
 		assert !isLowPriorityChange || updateType == UpdateType.Incremental;
-		
+
 		if (updateType == UpdateType.NoDraw)
 		{
 			return;
@@ -649,8 +650,15 @@ public abstract class MapUpdater
 						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
 								next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
 					}
+					else
+					{
+						isMapReadyForInteractions = true;
 
-					isMapReadyForInteractions = true;
+						while (tasksToRunWhenMapReady.size() > 0)
+						{
+							tasksToRunWhenMapReady.poll().run();
+						}
+					}
 				}
 				else
 				{
@@ -672,13 +680,16 @@ public abstract class MapUpdater
 							innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
 									next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
 						}
+						else
+						{
+							while (tasksToRunWhenMapReady.size() > 0)
+							{
+								tasksToRunWhenMapReady.poll().run();
+							}
+						}
 					}
 				}
 
-				while (tasksToRunWhenMapReady.size() > 0)
-				{
-					tasksToRunWhenMapReady.poll().run();
-				}
 			}
 
 		});
