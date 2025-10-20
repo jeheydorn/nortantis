@@ -41,7 +41,7 @@ public class FreeIcon
 	 * If this icon is attached to a Center, then this is the Center's index.
 	 */
 	public final Integer centerIndex;
-	
+
 	public final Color color;
 
 	/**
@@ -49,18 +49,27 @@ public class FreeIcon
 	 */
 	public final double density;
 
-	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex, Color color)
-	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, null, 0.0, color);
-	}
+	public final double originalScale;
 
+	/**
+	 * For creating a new FreeIcon. 
+	 * <p>
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially
+	 * change the scale) because that would throw off originalScale.
+	 * </p>
+	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex,
 			Integer centerIndex, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, 0.0, color);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, 0.0, color, scale);
 	}
 
 	/**
+	 * For creating a new FreeIcon. 
+	 * <p>
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially
+	 * change the scale) because that would throw off originalScale.
+	 * </p>
 	 * @param scale
 	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 * @param artPack
@@ -69,21 +78,33 @@ public class FreeIcon
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, int iconIndex,
 			Integer centerIndex, double density, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, density, color);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, null, centerIndex, density, color, scale);
 	}
 
 	/**
+	 * For creating a new FreeIcon. 
+	 * <p>
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially
+	 * change the scale) because that would throw off originalScale.
+	 * </p>
 	 * @param scale
 	 *            Scale before applying resolutionScale or icon-type level scaling.
 	 */
 	public FreeIcon(double resolutionScale, Point loc, double scale, IconType type, String artPack, String groupId, String iconName,
 			Integer centerIndex, Color color)
 	{
-		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, -1, iconName, centerIndex, 0.0, color);
+		this(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, -1, iconName, centerIndex, 0.0, color, scale);
 	}
 
+	/**
+	 * For creating a new FreeIcon. 
+	 * <p>
+	 * Note - this constructor must never be used to re-create a FreeIcon with a new scale (to essentially
+	 * change the scale) because that would throw off originalScale.
+	 * </p>
+	 */
 	public FreeIcon(Point locationResolutionInvariant, double scale, IconType type, String artPack, String groupId, int iconIndex,
-			String iconName, Integer centerIndex, double density, Color color)
+			String iconName, Integer centerIndex, double density, Color color, double originalScale)
 	{
 		this.type = type;
 		this.locationResolutionInvariant = locationResolutionInvariant;
@@ -96,57 +117,68 @@ public class FreeIcon
 		this.density = density;
 		this.centerIndex = centerIndex;
 		this.color = color;
+		this.originalScale = originalScale;
 	}
 
 	public FreeIcon copyWithGroupId(String groupId)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
-	
+
 	public FreeIcon copyWithName(String iconName)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, String iconName, Color color)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 	public FreeIcon copyWith(String artPack, String groupId, int iconIndex, Color color)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 	public FreeIcon copyWithArtPack(String artPack)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 	public FreeIcon copyWithScale(double scale)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 	public FreeIcon copyWithLocation(double resolutionScale, Point loc)
 	{
-		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(loc.mult((1.0 / resolutionScale)), scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density,
+				color, originalScale);
 	}
 
 	public FreeIcon copyWithLocationResolutionInvariant(Point locationResolutionInvariant)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 	public FreeIcon copyWithColor(Color color)
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex, density, color,
+				originalScale);
 	}
 
 
 	public FreeIcon copyUnanchored()
 	{
-		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, null, density, color);
+		return new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, null, density, color,
+				originalScale);
 	}
 
 	/**
@@ -169,16 +201,15 @@ public class FreeIcon
 	 * @param typeLevelScale
 	 *            The scaling from the sliders that scale all icons of a type.
 	 * @param baseWidth
-	 *            The width of the icon before type-level scaling. Should already be
-	 *            adjusted for resolution.
+	 *            The width of the icon before type-level scaling. Should already be adjusted for resolution.
 	 * @return a new IconDrawTask.
 	 */
 	public IconDrawTask toIconDrawTask(String customImagesFolder, double resolutionScale, double typeLevelScale, double baseWidth)
 	{
 		if (iconName != null && !iconName.isEmpty())
 		{
-			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder)
-					.getIconsByNameForGroup(type, groupId);
+			Map<String, ImageAndMasks> iconsWithWidths = ImageCache.getInstance(artPack, customImagesFolder).getIconsByNameForGroup(type,
+					groupId);
 			if (iconsWithWidths == null || iconsWithWidths.isEmpty())
 			{
 				return null;

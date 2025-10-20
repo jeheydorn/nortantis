@@ -572,6 +572,7 @@ public class MapSettings implements Serializable
 			iconObj.put("centerIndex", icon.centerIndex);
 			iconObj.put("density", icon.density);
 			iconObj.put("color", colorToString(icon.color));
+			iconObj.put("originalScale", icon.originalScale);
 			list.add(iconObj);
 		}
 		return list;
@@ -1108,7 +1109,7 @@ public class MapSettings implements Serializable
 				iconColorsByType.put(iconType, color);
 			}
 		}
-		
+
 		// Make they are all populated with transparent values.
 		for (IconType iconType : IconType.values())
 		{
@@ -1509,9 +1510,26 @@ public class MapSettings implements Serializable
 			}
 			double density = (double) iconObj.get("density");
 			Color color = iconObj.containsKey("color") ? parseColor((String) iconObj.get("color")) : defaultIconColor;
+			double originalScale;
+			if (iconObj.containsKey("originalScale") && iconObj.get("originalScale") != null)
+			{
+				originalScale = (double) iconObj.get("originalScale");
+			}
+			else
+			{
+				// Older maps don't have this setting, so guess at what it should be.
+				if (type == IconType.mountains || type == IconType.hills)
+				{
+					originalScale = scale;
+				}
+				else
+				{
+					originalScale = 1.0;
+				}
+			}
 
 			result.addOrReplace(new FreeIcon(locationResolutionInvariant, scale, type, artPack, groupId, iconIndex, iconName, centerIndex,
-					density, color));
+					density, color, originalScale));
 		}
 
 		return result;
@@ -1821,7 +1839,7 @@ public class MapSettings implements Serializable
 		}
 		return defaultIconColor;
 	}
-	
+
 	public Map<IconType, Color> copyIconColorsByType()
 	{
 		return Collections.unmodifiableMap(iconColorsByType);

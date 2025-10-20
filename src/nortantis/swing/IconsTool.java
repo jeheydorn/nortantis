@@ -1,6 +1,8 @@
 package nortantis.swing;
 
 import java.awt.Component;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
@@ -480,14 +482,15 @@ public class IconsTool extends EditorTool
 					}
 				});
 			}
-			
+
 			JButton clearScaleButton;
 			{
-				clearScaleButton = new JButton("Clear Scale");
-				clearScaleButton.setToolTipText("Remove icon-specific scaling for the selected icons");
+				clearScaleButton = new JButton("Reset Scale");
+				clearScaleButton
+						.setToolTipText("Set the icon-specific scaling for the selected icons back to the scale they were created at");
 				clearScaleButton.addActionListener(new ActionListener()
 				{
-					
+
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
@@ -496,7 +499,8 @@ public class IconsTool extends EditorTool
 				});
 			}
 
-			deleteCopyPasteIconButtonsHider = organizer.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
+			deleteCopyPasteIconButtonsHider = organizer
+					.addLeftAlignedComponents(Arrays.asList(copyButton, pasteButton, deleteButton, clearScaleButton));
 		}
 
 		{
@@ -531,59 +535,37 @@ public class IconsTool extends EditorTool
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.666);
 		organizer.addVerticalFillerRow();
 
+		// I'm using a KeyEventDispatcher instead of toolsPanel's input map because I need to capture control release events when the focus
+		// on is not on the main window. For example, when pressing ctrl+f to search text, the control release action happens when the focus
+		// is on the text search box.
+		KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(new KeyEventDispatcher()
 		{
-			class ControlPressedAction extends AbstractAction
+
+			@Override
+			public boolean dispatchKeyEvent(KeyEvent e)
 			{
-				@Override
-				public void actionPerformed(ActionEvent e)
+				if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling && e.getKeyCode() == KeyEvent.VK_CONTROL)
 				{
-					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
+					if (e.getID() == KeyEvent.KEY_PRESSED)
 					{
-						updater.doWhenMapIsReadyForInteractions(() ->
-						{
-							addOrRemoveIconHoverHighlightSelection(true);
-							mapEditingPanel.hideIconEditTools();
-							mapEditingPanel.repaint();
-						});
+						addOrRemoveIconHoverHighlightSelection(true);
+						mapEditingPanel.hideIconEditTools();
+						mapEditingPanel.repaint();
+					}
+					else if (e.getID() == KeyEvent.KEY_RELEASED)
+					{
+						addOrRemoveIconHoverHighlightSelection(false);
+						boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations
+								|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
+						mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
+						mapEditingPanel.repaint();
 					}
 				}
+
+				// Return false to allow other KeyEventDispatchers to process the event
+				return false;
 			}
-
-			class ControlReleasedAction extends AbstractAction
-			{
-				@Override
-				public void actionPerformed(ActionEvent e)
-				{
-					if (isSelected() && modeWidget.isEditMode() && !isMoving && !isScaling)
-					{
-						updater.doWhenMapIsReadyForInteractions(() ->
-						{
-							addOrRemoveIconHoverHighlightSelection(false);
-							boolean isValidPosition = iconsToEdit.stream().anyMatch(icon -> icon.type == IconType.decorations
-									|| !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
-							mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
-							mapEditingPanel.repaint();
-						});
-					}
-				}
-			}
-
-			// For Control pressed
-			KeyStroke controlPressed = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, InputEvent.CTRL_DOWN_MASK, false);
-			// For Control released
-			KeyStroke controlReleased = KeyStroke.getKeyStroke(KeyEvent.VK_CONTROL, 0, true);
-
-			InputMap inputMap = toolsPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-			ActionMap actionMap = toolsPanel.getActionMap();
-
-			// Bind the pressed event
-			inputMap.put(controlPressed, "controlPressedAction");
-			actionMap.put("controlPressedAction", new ControlPressedAction());
-
-			// Bind the released event
-			inputMap.put(controlReleased, "controlReleasedAction");
-			actionMap.put("controlReleasedAction", new ControlReleasedAction());
-		}
+		});
 
 		return toolOptionsPanel;
 	}
@@ -659,19 +641,19 @@ public class IconsTool extends EditorTool
 		handleIconSelectionChange(true, true);
 		mapEditingPanel.repaint();
 	}
-	
+
 	private void clearScaleOnSelectedIcons()
 	{
 		if (iconsToEdit == null || iconsToEdit.isEmpty())
 		{
 			return;
 		}
-		
+
 		List<FreeIcon> updated = new ArrayList<>();
 		Set<FreeIcon> unscaled = new HashSet<>();
 		for (FreeIcon icon : iconsToEdit)
 		{
-			FreeIcon withoutScale = icon.copyWithScale(1.0);
+			FreeIcon withoutScale = icon.copyWithScale(icon.originalScale);
 			mainWindow.edits.freeIcons.remove(icon);
 			mainWindow.edits.freeIcons.addOrReplace(withoutScale);
 			updated.add(icon);
@@ -1828,6 +1810,7 @@ public class IconsTool extends EditorTool
 					boolean isValidPosition = iconsToEdit.stream().anyMatch(
 							icon -> icon.type == IconType.decorations || !updater.mapParts.iconDrawer.isContentBottomTouchingWater(icon));
 					mapEditingPanel.showIconEditToolsAt(iconsToEdit, isValidPosition);
+					mapEditingPanel.clearHighlightedAreas();
 					mapEditingPanel.repaint();
 				}
 				showOrHideEditComponents(true);
