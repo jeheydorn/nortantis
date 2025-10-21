@@ -192,7 +192,7 @@ public class IconsTool extends EditorTool
 		modeWidget = new DrawModeWidget("Draw using the selected brush", "Erase using the selected brush", true,
 				"Use the selected brush to replace existing icons of the same type", true, "Move or scale individual icons",
 				() -> handleModeChanged());
-		modeWidget.addToOrganizer(organizer, "Whether to draw or erase using the selected brush type");
+		modeWidget.addToOrganizer(organizer, "");
 
 		// Icon type radio buttons
 		{

@@ -233,6 +233,7 @@ public class ImageAndMasks
 				}
 				else
 				{
+					addToContentBounds(new IntPoint(x, y));
 					break;
 				}
 			}
@@ -250,6 +251,7 @@ public class ImageAndMasks
 				}
 				else
 				{
+					addToContentBounds(new IntPoint(x, y));
 					break;
 				}
 			}
@@ -267,6 +269,7 @@ public class ImageAndMasks
 				}
 				else
 				{
+					addToContentBounds(new IntPoint(x, y));
 					break;
 				}
 			}
@@ -284,6 +287,7 @@ public class ImageAndMasks
 				}
 				else
 				{
+					addToContentBounds(new IntPoint(x, y));
 					break;
 				}
 			}

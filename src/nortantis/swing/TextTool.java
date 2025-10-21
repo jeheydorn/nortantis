@@ -132,7 +132,7 @@ public class TextTool extends EditorTool
 			eraseButton.setMnemonic(KeyEvent.VK_E);
 			eraseButton.setToolTipText("Erase text (Alt+E)");
 
-			organizer.addLabelAndComponentsVertical("Action:", "", radioButtons);
+			organizer.addLabelAndComponentsVertical("Mode:", "", radioButtons);
 		}
 		
 		actionsSeperatorHider = organizer.addSeperator();
