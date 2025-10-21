@@ -729,7 +729,6 @@ public class IconsTool extends EditorTool
 			colorDisplay.repaint();
 			getToolOptionsPane().repaint();
 
-			// TODO Test to see if I need to handle this better.
 			if (!showEditTools)
 			{
 				mapEditingPanel.setHighlightedAreasFromIcons(new ArrayList<>(iconsToEdit), updater.mapParts.iconDrawer, false);
