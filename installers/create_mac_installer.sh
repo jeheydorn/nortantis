@@ -20,10 +20,9 @@ jpackage \
 --name "$exeName" \
 --main-jar "Nortantis.jar" \
 --main-class nortantis.swing.MainWindow \
---type deb \
---linux-shortcut \
---icon "taskbar icon.png" \
---file-associations file_associations_linux.txt \
+--type pkg \
+--icon "taskbar icon.icns" \
+--file-associations file_associations_mac.txt \
 --vendor "Joseph Heydorn" \
 --app-version "$nortantis_version" \
 --java-options -XX:MaxRAMPercentage=50.0 \

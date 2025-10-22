@@ -180,7 +180,6 @@ public class IconsTool extends EditorTool
 		updateTypePanels();
 	}
 
-	@SuppressWarnings("serial")
 	@Override
 	protected JPanel createToolOptionsPanel()
 	{

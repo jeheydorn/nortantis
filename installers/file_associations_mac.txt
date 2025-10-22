@@ -1,0 +1,4 @@
+extension=nort
+mime-type=application/json
+icon=taskbar icon.ico
+description=Nortantis Fantasy Map
