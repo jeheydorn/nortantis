@@ -12,6 +12,7 @@ repositories {
 dependencies {
     implementation fileTree(dir: 'libraries', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
+    implementation 'com.formdev:flatlaf:3.6.2' 
 }
 
 // Attaches javadocs to libraries in Eclipse.
@@ -35,7 +36,7 @@ application {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_25
+    sourceCompatibility = JavaVersion.VERSION_24
     targetCompatibility = JavaVersion.VERSION_25
 }
 

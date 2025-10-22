@@ -979,7 +979,7 @@ public class LandWaterTool extends EditorTool
 		else if (roadsButton.isSelected() && modeWidget.isDrawMode() && roadStart != null)
 		{
 			Center end = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
-			List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (edge, center, distance) -> distance);
+			List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (_, _, distance) -> distance);
 			List<Road> changed = RoadDrawer.addRoadsFromEdgesInEditor(edges, updater.mapParts.graph, mainWindow.edits.roads,
 					mainWindow.displayQualityScale);
 
@@ -1124,7 +1124,7 @@ public class LandWaterTool extends EditorTool
 			{
 				mapEditingPanel.clearHighlightedEdges();
 				Center end = updater.mapParts.graph.findClosestCenter(getPointOnGraph(e.getPoint()));
-				List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (edge, center, distance) -> distance);
+				List<Edge> edges = updater.mapParts.graph.findShortestPath(roadStart, end, (_, _, distance) -> distance);
 				mapEditingPanel.addHighlightedEdges(edges, EdgeType.Delaunay);
 				mapEditingPanel.repaint();
 			}

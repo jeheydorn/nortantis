@@ -420,7 +420,7 @@ public class WorldGraph extends VoronoiGraph
 
 	private Center findClosestLand(Center center, int maxDistanceInPolygons)
 	{
-		return breadthFirstSearchForGoal((prev, c, distanceFromStart) ->
+		return breadthFirstSearchForGoal((_, _, distanceFromStart) ->
 		{
 			return distanceFromStart < maxDistanceInPolygons;
 		}, (c) ->

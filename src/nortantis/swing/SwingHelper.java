@@ -226,7 +226,7 @@ public class SwingHelper
 			transparencySlider.setMajorTickSpacing(64);
 			transparencySlider.setPaintTicks(true);
 			transparencySlider.setPaintLabels(true);
-			transparencySlider.addChangeListener(e ->
+			transparencySlider.addChangeListener(_ ->
 			{
 				transparency = transparencySlider.getValue();
 				ColorSelectionModel model = getColorSelectionModel();

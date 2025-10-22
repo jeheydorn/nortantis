@@ -783,7 +783,7 @@ public class MapCreator implements WarningLogger
 			{
 				toRender.add(graph.centers.get(index));
 			}
-			graph.drawPolygons(p, toRender, (c) -> Color.green);
+			graph.drawPolygons(p, toRender, (_) -> Color.green);
 		}
 
 		if (DebugFlags.getIndexesOfEdgesToHighlight().length > 0)

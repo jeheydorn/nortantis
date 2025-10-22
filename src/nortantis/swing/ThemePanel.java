@@ -1291,7 +1291,7 @@ public class ThemePanel extends JTabbedPane
 		MapEdits edits = mainWindow.edits;
 		WorldGraph graph = mainWindow.updater.mapParts.graph;
 		Center start = graph.centers.get(centerStartIndex);
-		Center found = graph.breadthFirstSearchForGoal((prev, c, distanceFromStart) ->
+		Center found = graph.breadthFirstSearchForGoal((_, _, distanceFromStart) ->
 		{
 			return distanceFromStart < maxSearchDistance;
 		}, (c) ->
