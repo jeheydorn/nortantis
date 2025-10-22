@@ -194,14 +194,6 @@ public class MapCreator implements WarningLogger
 			centersChanged = new HashSet<>();
 		}
 
-		// If any of the centers changed are are touching a lake, add the lake too since adding the change could have
-		// changed whether the lake is land-locked, which will change how it's drawn.
-		Set<Center> neighboringLakes = mapParts.graph.getNeighboringLakes(centersChanged);
-		if (!neighboringLakes.isEmpty())
-		{
-			centersChanged.addAll(neighboringLakes);
-		}
-
 		if (edgesChangedIds != null)
 		{
 			centersChanged.addAll(mapParts.graph.getCentersFromEdgeIds(edgesChangedIds));
@@ -298,9 +290,12 @@ public class MapCreator implements WarningLogger
 
 			// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
 			// to two or vice versa.
-			Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
-					settings);
-			replaceBounds = replaceBounds.add(textChangeBounds);
+			if (settings.drawText)
+			{
+				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
+						settings);
+				replaceBounds = replaceBounds.add(textChangeBounds);
+			}
 		}
 
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
@@ -707,7 +702,7 @@ public class MapCreator implements WarningLogger
 			mountainGroups = null;
 			cities = null;
 		}
-		
+
 		if (mapParts == null)
 		{
 			background.landColoredBeforeAddingIconColors = null;
@@ -1202,8 +1197,8 @@ public class MapCreator implements WarningLogger
 
 		// Needed for drawing text
 		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw,
-				settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land, background.ocean, background, oceanWaves, oceanShading, coastShading,
-				iconDrawer, null, null);
+				settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land, background.ocean, background,
+				oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
 		{
@@ -1551,7 +1546,7 @@ public class MapCreator implements WarningLogger
 		// centers with noisy edges over them. Thus I must draw both the land and lakes, and their ocean neighbors, so I need to do the
 		// drawing as a mask and then apply it onto oceanEffects.
 		Image landAndLakeMask = Image.create(oceanEffects.getWidth(), oceanEffects.getHeight(), ImageType.Grayscale8Bit);
-		graph.drawLandAndLandLockedLakesBlackAndOceanWhite(landAndLakeMask.createPainter(), centersToDraw, drawBounds);
+		graph.drawLandAndLakesBlackAndOceanWhite(landAndLakeMask.createPainter(), centersToDraw, drawBounds);
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 

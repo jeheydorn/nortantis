@@ -411,7 +411,10 @@ public class TextDrawer
 
 		doForEachTextInBounds(mapTexts, graph, bounds, (text, area) ->
 		{
-			wrapperToMakeCompilerHappy.set(wrapperToMakeCompilerHappy.get().add(area.getBounds()));
+			if (text.lineBreak == LineBreak.Auto)
+			{
+				wrapperToMakeCompilerHappy.set(wrapperToMakeCompilerHappy.get().add(area.getBounds()));
+			}
 		});
 		return wrapperToMakeCompilerHappy.get();
 	}
@@ -766,7 +769,8 @@ public class TextDrawer
 		Painter bP = textBG.createPainter(DrawQuality.High);
 		bP.setFont(p.getFont());
 		bP.setColor(Color.white);
-		Point textStartDiffInMaskCausedByCurvatureAndSpacing =  textBoundsBeforeCurvatureAndSpacing.upperLeftCorner().subtract(textBounds.upperLeftCorner());
+		Point textStartDiffInMaskCausedByCurvatureAndSpacing = textBoundsBeforeCurvatureAndSpacing.upperLeftCorner()
+				.subtract(textBounds.upperLeftCorner());
 		Point drawPointForMask = textStartDiffInMaskCausedByCurvatureAndSpacing.add(new Point(padding, padding + p.getFontAscent()));
 		drawStringCurved(bP, text, drawPointForMask, curvature, spacing);
 
@@ -777,8 +781,10 @@ public class TextDrawer
 		ImageHelper.threshold(haze, 1);
 		haze = ImageHelper.convolveGrayscale(haze, kernel, true, false);
 
-		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze, ((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
-				(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, angle, pivot);
+		ImageHelper.combineImagesWithMaskInRegion(map, landAndOceanBackground, haze,
+				((int) Math.round(textStart.x - textStartDiffInMaskCausedByCurvatureAndSpacing.x)) - padding,
+				(int) Math.round(textStart.y - textStartDiffInMaskCausedByCurvatureAndSpacing.y) - p.getFontAscent() - padding, angle,
+				pivot);
 	}
 
 	private int getBackgroundBlendingKernelSize(int fontHeight)
