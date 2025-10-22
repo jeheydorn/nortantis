@@ -50,9 +50,7 @@ public class CollapsiblePanel extends JPanel
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				isCollapsed = !isCollapsed;
-				updateCollapsed();
-				storeCollapsedState();
+				toggleCollapsed();
 			}
 		});
 		toggleButton.setBorder(BorderFactory.createEmptyBorder());
@@ -77,6 +75,13 @@ public class CollapsiblePanel extends JPanel
 		northPanel.add(new JLabel(name), BorderLayout.NORTH);
 
 		add(contentPanel, BorderLayout.CENTER);
+	}
+	
+	public void toggleCollapsed()
+	{
+		isCollapsed = !isCollapsed;
+		updateCollapsed();
+		storeCollapsedState();
 	}
 
 	private void updateCollapsed()

@@ -10,23 +10,44 @@ import javax.swing.JOptionPane;
 
 public class OSHelper
 {
+	private static Boolean isLinuxCache;
 	public static boolean isLinux()
 	{
-		String OS = System.getProperty("os.name").toUpperCase();
-		return OS.contains("NUX");
+		if (isLinuxCache == null)
+		{
+			String OS = System.getProperty("os.name").toUpperCase();
+			boolean result = OS.contains("NUX");
+			isLinuxCache = result;
+			return result;
+		}
+		return isLinuxCache;
 	}
 
+	private static Boolean isWindowsCache;
 	public static boolean isWindows()
 	{
-		String OS = System.getProperty("os.name").toUpperCase();
-		// Return true if either this is Windows or this is a system on which we can't tell (meaning Windows is the default).
-		return OS.contains("WIN") || (!isLinux() && !isMac());
+		if (isWindowsCache == null)
+		{
+			String OS = System.getProperty("os.name").toUpperCase();
+			// Return true if either this is Windows or this is a system on which we can't tell (meaning Windows is the default).
+			boolean result = OS.contains("WIN") || (!isLinux() && !isMac());
+			isWindowsCache = result;
+			return result;
+		}
+		return isWindowsCache;
 	}
-
+	
+	private static Boolean isMacCache;
 	public static boolean isMac()
 	{
-		String OS = System.getProperty("os.name").toUpperCase();
-		return OS.contains("MAC");
+		if (isMacCache == null)
+		{
+			String OS = System.getProperty("os.name").toUpperCase();
+			boolean result = OS.contains("MAC");
+			isMacCache = result;
+			return result;
+		}
+		return isMacCache;
 	}
 
 	public static Path getAppDataPath()

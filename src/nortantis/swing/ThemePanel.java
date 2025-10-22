@@ -39,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import nortantis.BackgroundGenerator;
 import nortantis.BorderColorOption;
+import nortantis.BorderPosition;
 import nortantis.FractalBGGenerator;
 import nortantis.FreeIconCollection;
 import nortantis.IconDrawer;
@@ -189,6 +190,7 @@ public class ThemePanel extends JTabbedPane
 	private JTextField frayedEdgesSeedTextField;
 	private JButton newFrayedEdgesSeedButton;
 	private JRadioButton solidColorButton;
+	private JComboBox<BorderPosition> borderPositionComboBox;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -558,7 +560,7 @@ public class ThemePanel extends JTabbedPane
 
 		borderTypeComboBox = new JComboBox<>();
 		createMapChangeListenerForFullRedraw(borderTypeComboBox);
-		organizer.addLabelAndComponent("Border type:", "The set of images to draw for the border", borderTypeComboBox);
+		organizer.addLabelAndComponent("Type:", "The set of images to draw for the border", borderTypeComboBox);
 
 		{
 			borderWidthSlider = new JSlider();
@@ -572,8 +574,19 @@ public class ThemePanel extends JTabbedPane
 			borderWidthSlider.setMajorTickSpacing(200);
 			createMapChangeListenerForFullRedraw(borderWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
-			organizer.addLabelAndComponent("Border width:",
+			organizer.addLabelAndComponent("Width:",
 					"Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
+		}
+		
+		{
+			borderPositionComboBox = new JComboBox<BorderPosition>();
+			for (BorderPosition option : BorderPosition.values())
+			{
+				borderPositionComboBox.addItem(option);
+			}
+			createMapChangeListenerForFullRedraw(borderPositionComboBox);
+			organizer.addLabelAndComponent("Position:",
+					"Whether the border should draw outside the map or cover the map. Covering avoids changing the exported map's aspect ratio.", borderPositionComboBox);
 		}
 
 		borderColorOptionComboBox = new JComboBox<BorderColorOption>();
@@ -594,7 +607,7 @@ public class ThemePanel extends JTabbedPane
 		{
 			borderColorOptionComboBox.addItem(option);
 		}
-		organizer.addLabelAndComponent("Border color:",
+		organizer.addLabelAndComponent("Color:",
 				"Transparent pixels in the border will show the background texture drawn with this color.", borderColorOptionComboBox);
 
 		borderColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -636,7 +649,7 @@ public class ThemePanel extends JTabbedPane
 		frayedEdgeShadingSlider.setMajorTickSpacing(100);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeShadingSlider);
 		SwingHelper.setSliderWidthForSidePanel(frayedEdgeShadingSlider);
-		organizer.addLabelAndComponent("Fray shading width:",
+		organizer.addLabelAndComponent("Shading width:",
 				"The width of shading drawn around frayed edges. The color used is the grunge color.", frayedEdgeShadingSlider);
 
 		frayedEdgeSizeSlider = new JSlider();
@@ -712,7 +725,7 @@ public class ThemePanel extends JTabbedPane
 		grungeSlider.setMajorTickSpacing(1000);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
 		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
-		organizer.addLabelAndComponent("Grunge width:", "Determines the width of grunge on the edges of the map. 0 means none.",
+		organizer.addLabelAndComponent("Width:", "Determines the width of grunge on the edges of the map. 0 means none.",
 				grungeSlider);
 
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -756,9 +769,9 @@ public class ThemePanel extends JTabbedPane
 		{
 			coastlineWidthSlider = new JSlider();
 			coastlineWidthSlider.setPaintLabels(false);
-			coastlineWidthSlider.setValue(10);
-			coastlineWidthSlider.setMaximum(100);
 			coastlineWidthSlider.setMinimum(10);
+			coastlineWidthSlider.setMaximum(100);
+			coastlineWidthSlider.setValue(10);
 			createMapChangeListenerForTerrainChange(coastlineWidthSlider);
 			SwingHelper.setSliderWidthForSidePanel(coastlineWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastlineWidthSlider,
@@ -1108,7 +1121,7 @@ public class ThemePanel extends JTabbedPane
 		if (mainWindow.toolsPanel != null && mainWindow.toolsPanel.currentTool != null
 				&& mainWindow.toolsPanel.currentTool instanceof IconsTool)
 		{
-			((IconsTool) mainWindow.toolsPanel.currentTool).unselectAnyIconBeingEdited();
+			((IconsTool) mainWindow.toolsPanel.currentTool).unselectAnyIconsBeingEdited();
 		}
 	}
 
@@ -1767,6 +1780,7 @@ public class ThemePanel extends JTabbedPane
 		borderWidthSlider.setValue(settings.borderWidth);
 		drawBorderCheckbox.setSelected(settings.drawBorder);
 		drawBorderCheckbox.getActionListeners()[0].actionPerformed(null);
+		borderPositionComboBox.setSelectedItem(settings.borderPosition);
 		borderColorOptionComboBox.setSelectedItem(settings.borderColorOption);
 		borderColorDisplay.setBackground(AwtFactory.unwrap(settings.borderColor));
 
@@ -1986,6 +2000,7 @@ public class ThemePanel extends JTabbedPane
 		settings.drawBorder = drawBorderCheckbox.isSelected();
 		settings.borderResource = (NamedResource) borderTypeComboBox.getSelectedItem();
 		settings.borderWidth = borderWidthSlider.getValue();
+		settings.borderPosition = (BorderPosition) borderPositionComboBox.getSelectedItem();
 		settings.borderColorOption = (BorderColorOption) borderColorOptionComboBox.getSelectedItem();
 		settings.borderColor = AwtFactory.wrap(borderColorDisplay.getBackground());
 
@@ -2096,6 +2111,7 @@ public class ThemePanel extends JTabbedPane
 	{
 		borderWidthSlider.setEnabled(drawBorderCheckbox.isSelected());
 		borderTypeComboBox.setEnabled(drawBorderCheckbox.isSelected());
+		borderPositionComboBox.setEnabled(drawBorderCheckbox.isSelected());
 		borderColorOptionComboBox.setEnabled(drawBorderCheckbox.isSelected());
 		borderColorChooseButton.setEnabled(drawBorderCheckbox.isSelected());
 

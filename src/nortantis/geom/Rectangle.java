@@ -118,6 +118,10 @@ public class Rectangle
 	 */
 	public Rectangle add(Rectangle other)
 	{
+		if (other == null)
+		{
+			return this;
+		}
 		return add(other.x, other.y).add(other.x, other.y + other.height).add(other.x + other.width, other.y).add(other.x + other.width,
 				other.y + other.height);
 	}
@@ -219,6 +223,11 @@ public class Rectangle
 	public double getTop()
 	{
 		return y;
+	}
+	
+	public Dimension size()
+	{
+		return new Dimension(width, height);
 	}
 
 	@Override

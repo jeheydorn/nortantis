@@ -79,7 +79,7 @@ public class FreeIconCollection implements Iterable<FreeIcon>
 		{
 			if (icon.type == IconType.trees)
 			{
-				anchoredTreeIcons.getOrCreate(icon.centerIndex, () -> new CopyOnWriteArrayList<FreeIcon>()).add(icon);
+				anchoredTreeIcons.getOrCreateWithLock(icon.centerIndex, () -> new CopyOnWriteArrayList<FreeIcon>()).add(icon);
 			}
 			else
 			{

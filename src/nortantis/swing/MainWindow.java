@@ -433,7 +433,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
+				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					mouseLocationForMiddleButtonDrag = e.getPoint();
 				}
@@ -465,7 +465,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			@Override
 			public void mouseDragged(MouseEvent e)
 			{
-				if (e.isControlDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
+				if (e.isShiftDown() && SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))
 				{
 					if (mouseLocationForMiddleButtonDrag != null)
 					{
@@ -562,11 +562,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			}
 
 			@Override
-			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+			protected void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
 					Rectangle incrementalChangeArea, List<String> warningMessages)
 			{
 				mapEditingPanel.mapFromMapCreator = AwtFactory.unwrap(map);
-				mapEditingPanel.setBorderWidth(borderWidthAsDrawn);
+				mapEditingPanel.setBorderPadding(borderPaddingAsDrawn);
 				mapEditingPanel.setGraph(mapParts.graph);
 				mapEditingPanel.setFreeIcons(edits == null ? null : edits.freeIcons);
 				mapEditingPanel.setIconDrawer(mapParts.iconDrawer);
@@ -1063,7 +1063,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			public void actionPerformed(ActionEvent e)
 			{
 				JOptionPane.showMessageDialog(MainWindow.this, "<html>Keyboard shortcuts for navigating the map:" + "<ul>"
-						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button or CTRL and mouse left click, then drag</li>"
+						+ "<li>Zoom: Mouse wheel</li>" + "<li>Pan: Hold mouse middle button, or Shift and mouse left click, then drag</li>"
 						+ "</ul>"
 						+ "<br>Each editor tool has a keyboard shortcut for switching to it. Hover over the tool's icon to see the shortcut."
 						+ "</html>", "Keyboard Shortcuts", JOptionPane.INFORMATION_MESSAGE);
@@ -1477,7 +1477,7 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			{
 				mapEditingPanel.setResolution(displayQualityScale);
 			}
-			Method method = zoom < 0.3 ? Method.QUALITY : Method.BALANCED;
+			Method method = zoom < 0.34 ? Method.QUALITY : Method.BALANCED;
 			int zoomedWidth = (int) (mapEditingPanel.mapFromMapCreator.getWidth() * zoom);
 			if (zoomedWidth <= 0)
 			{
@@ -1534,7 +1534,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.scrollRectToVisible(scrollTo);
 			}
 
-			toolsPanel.currentTool.onAfterShowMap();
+			updater.doWhenMapIsReadyForInteractions(() -> 
+			{
+				toolsPanel.currentTool.onAfterShowMap();
+			});
+	
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
 			mapEditingPanel.repaint();

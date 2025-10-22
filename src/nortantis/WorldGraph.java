@@ -822,85 +822,24 @@ public class WorldGraph extends VoronoiGraph
 		// }
 	}
 
-	public void drawLandAndLandLockedLakesBlackAndOceanWhite(Painter p, Collection<Center> centersToRender, Rectangle drawBounds)
+	public void drawLandAndLakesBlackAndOceanWhite(Painter p, Collection<Center> centersToRender, Rectangle drawBounds)
 	{
 		if (centersToRender == null)
 		{
 			centersToRender = centers;
 		}
 
-		Set<Center> landAndLandLockedLakes = findLandAndLandLockedLakes(centersToRender);
 		drawPolygons(p, centersToRender, drawBounds, new Function<Center, Color>()
 		{
 			public Color apply(Center c)
 			{
-				if (landAndLandLockedLakes.contains(c))
+				if (!c.isWater || c.isLake)
 				{
 					return Color.black;
 				}
 				return Color.white;
 			}
 		});
-	}
-
-	private Set<Center> findLandAndLandLockedLakes(Collection<Center> centersToSearch)
-	{
-		Set<Center> result = new HashSet<>();
-		Set<Center> explored = new HashSet<>();
-		for (Center center : centersToSearch)
-		{
-			if (explored.contains(center))
-			{
-				continue;
-			}
-
-			if (!center.isWater)
-			{
-				result.add(center);
-			}
-
-			if (center.isLake)
-			{
-				Set<Center> lake = breadthFirstSearch((c) -> c.isLake, center);
-				if (!isLakeTouchingOcean(lake))
-				{
-					result.addAll(lake);
-				}
-
-				explored.addAll(lake);
-			}
-		}
-
-		return result;
-	}
-
-	private boolean isLakeTouchingOcean(Set<Center> lake)
-	{
-		for (Center lc : lake)
-		{
-			if (lc.neighbors.stream().anyMatch((neighbor) -> neighbor.isWater && !neighbor.isLake))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public Set<Center> getNeighboringLakes(Set<Center> centersToSearch)
-	{
-		Set<Center> result = new HashSet<>();
-		for (Center center : centersToSearch)
-		{
-			for (Center neighbor : center.neighbors)
-			{
-				if (neighbor.isLake && !result.contains(neighbor) && !centersToSearch.contains(neighbor))
-				{
-					Set<Center> lake = breadthFirstSearch((c) -> c.isLake && !centersToSearch.contains(c), neighbor);
-					result.addAll(lake);
-				}
-			}
-		}
-		return result;
 	}
 
 	private void markLakes()
@@ -1390,7 +1329,7 @@ public class WorldGraph extends VoronoiGraph
 				// creating a map this just ocean or has only tiny islands,
 				// although it isn't guaranteed since it's
 				// possible all 9 plates will be assigned to oceanic.
-				if (plateCounts.keySet().size() == 9 && Helper.min(plateCounts) <= minNinthtoLastPlateSize)
+				if (plateCounts.keySet().size() == 9 && Helper.minElement(plateCounts) <= minNinthtoLastPlateSize)
 				{
 					break;
 				}
@@ -1952,6 +1891,12 @@ public class WorldGraph extends VoronoiGraph
 
 	public double findCenterWidthBetweenNeighbors(Center c)
 	{
+		if (c.neighbors == null || c.neighbors.isEmpty())
+		{
+			// I hit a crash somehow where c.neighbors was empty, so I'm being extra safe and handling it here.
+			return 0.0;
+		}
+		
 		Center eastMostNeighbor = Collections.max(c.neighbors, new Comparator<Center>()
 		{
 			public int compare(Center c1, Center c2)

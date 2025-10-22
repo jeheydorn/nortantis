@@ -241,10 +241,10 @@ public class ImageHelper
 		float[][] kernel = new float[resultSize][resultSize];
 		for (int x = 0; x < resultSize; x++)
 		{
-			double xDistanceFromCenter = Math.abs(resultSize / 2.0 - (x));
+			double xDistanceFromCenter = Math.abs(size - x - 0.5);
 			for (int y = 0; y < resultSize; y++)
 			{
-				double yDistanceFromCenter = Math.abs(resultSize / 2.0 - (y));
+				double yDistanceFromCenter = Math.abs(size - y - 0.5);
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math
 						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
@@ -320,10 +320,10 @@ public class ImageHelper
 		float[][] kernel = new float[size][size];
 		for (int x : new Range(size))
 		{
-			double xDistanceFromCenter = Math.abs(size / 2.0 - x);
+			double xDistanceFromCenter = Math.abs(size / 2.0 - x - 0.5);
 			for (int y : new Range(size))
 			{
-				double yDistanceFromCenter = Math.abs(size / 2.0 - y);
+				double yDistanceFromCenter = Math.abs(size / 2.0 - y - 0.5);
 				// Find the distance from the center (0,0).
 				double distanceFromCenter = Math
 						.sqrt(xDistanceFromCenter * xDistanceFromCenter + yDistanceFromCenter * yDistanceFromCenter);
@@ -582,9 +582,6 @@ public class ImageHelper
 		return maskWithColorInRegion(image, color, mask, invertMask, new IntPoint(0, 0));
 	}
 
-	/**
-	 * Equivalent to combining a solid color image with an image and a mask in maskWithImage(...) except this way is more efficient.
-	 */
 	public static Image maskWithColorInRegion(Image image, Color color, Image mask, boolean invertMask, IntPoint imageOffsetInMask)
 	{
 		if (mask.getType() != ImageType.Grayscale8Bit && mask.getType() != ImageType.Binary)
@@ -620,6 +617,31 @@ public class ImageHelper
 		p.drawImage(overlay, 0, 0);
 
 		return result;
+	}
+
+	public static void drawMaskOntoImage(Image image, Image mask, Color color, IntPoint maskOffsetInImage)
+	{
+		if (mask.getType() != ImageType.Binary)
+		{
+			throw new IllegalArgumentException("Mask must be of type ImageType.Binary.");
+		}
+
+		ThreadHelper.getInstance().processRowsInParallel(0, mask.getHeight(), (yInMask) ->
+		{
+			for (int xInMask = 0; xInMask < mask.getWidth(); xInMask++)
+			{
+				if (mask.getGrayLevel(xInMask, yInMask) > 0) // Check if the mask pixel is "on"
+				{
+					int xInImage = xInMask + maskOffsetInImage.x;
+					int yInImage = yInMask + maskOffsetInImage.y;
+
+					if (xInImage >= 0 && xInImage < image.getWidth() && yInImage >= 0 && yInImage < image.getHeight())
+					{
+						image.setPixelColor(xInImage, yInImage, color);
+					}
+				}
+			}
+		});
 	}
 
 	/**
@@ -710,6 +732,32 @@ public class ImageHelper
 			throw new IllegalArgumentException();
 
 		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
+	}
+
+	/**
+	 * Returns a new Image with adjusted transparency.
+	 *
+	 * @param original
+	 *            The original Image.
+	 * @param alpha
+	 *            The alpha value (0 = fully transparent, 255 = fully opaque).
+	 * @return A new Image with the specified transparency applied.
+	 */
+	public static Image applyAlpha(Image original, Integer alpha)
+	{
+		if (alpha == null || alpha == 255)
+		{
+			throw new IllegalArgumentException("Alpha must be between 0.0 and 1.0");
+		}
+
+		Image transparentImage = Image.create(original.getWidth(), original.getHeight(), ImageType.ARGB);
+
+		Painter p = transparentImage.createPainter();
+		p.setAlphaComposite(AlphaComposite.SrcOver, alpha / 255f);
+		p.drawImage(original, 0, 0);
+		p.dispose();
+
+		return transparentImage;
 	}
 
 	/**
@@ -883,7 +931,7 @@ public class ImageHelper
 		else
 		{
 			// This version is a little more precise in where it places the mask, but doesn't work if the images already have alpha.
-			
+
 			Image region = copySnippetRotated(image2, xLoc, yLoc, mask.getWidth(), mask.getHeight(), angle, pivot);
 
 
@@ -1247,6 +1295,7 @@ public class ImageHelper
 
 	public static Image genWhiteNoise(Random rand, int rows, int cols, ImageType imageType)
 	{
+		// Note - I tried having this method process rows in parallel, but it was slower.
 		Image image = Image.create(cols, rows, imageType);
 		int maxPixelValue = Image.getMaxPixelLevelForType(image.getType());
 		for (int y = 0; y < image.getHeight(); y++)

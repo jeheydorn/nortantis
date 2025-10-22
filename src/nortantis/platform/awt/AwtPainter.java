@@ -70,7 +70,7 @@ class AwtPainter extends Painter
 	{
 		g.setFont(((AwtFont) font).font);
 	}
-
+	
 	@Override
 	public void drawString(String string, double x, double y)
 	{
@@ -213,6 +213,12 @@ class AwtPainter extends Painter
 	{
 		return g.getFontMetrics().stringWidth(string);
 	}
+	
+	@Override
+	public int charWidth(char c)
+	{
+		return g.getFontMetrics().charWidth(c);
+	}
 
 	@Override
 	public int getFontAscent()
@@ -289,6 +295,10 @@ class AwtPainter extends Painter
 		if (composite == nortantis.platform.AlphaComposite.SrcAtop)
 		{
 			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_ATOP, alpha));
+		}
+		else if (composite == nortantis.platform.AlphaComposite.SrcOver)
+		{
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 		}
 		else
 		{

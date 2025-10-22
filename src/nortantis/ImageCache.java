@@ -19,11 +19,12 @@ import org.imgscalr.Scalr.Method;
 
 import nortantis.editor.FreeIcon;
 import nortantis.geom.IntDimension;
+import nortantis.platform.Color;
 import nortantis.platform.Image;
+import nortantis.platform.ImageType;
 import nortantis.util.Assets;
 import nortantis.util.ConcurrentHashMapF;
 import nortantis.util.FileHelper;
-import nortantis.util.HashMapF;
 import nortantis.util.Helper;
 import nortantis.util.ImageHelper;
 import nortantis.util.ListMap;
@@ -37,12 +38,19 @@ import nortantis.util.Tuple3;
  */
 public class ImageCache
 {
-	private static HashMapF<String, ImageCache> instances = new HashMapF<>();
+	private static ConcurrentHashMapF<String, ImageCache> instances = new ConcurrentHashMapF<>();
 
 	/**
 	 * Maps original images, to scaled width, to scaled images.
 	 */
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
+
+	/**
+	 * Maps original images, to color, colored images.
+	 */
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Color, Image>> coloredCache;
+	
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Integer, Image>> alphaCache;
 
 	/**
 	 * Maps file path (or any string key) to images.
@@ -67,10 +75,12 @@ public class ImageCache
 	{
 		this.imagesPath = imagesPath;
 		scaledCache = new ConcurrentHashMapF<>();
+		coloredCache = new ConcurrentHashMapF<>();
 		fileCache = new ConcurrentHashMapF<>();
 		iconsWithSizesCache = new ConcurrentHashMapF<>();
 		iconGroupFilesNamesCache = new ConcurrentHashMapF<>();
 		iconGroupNames = new ConcurrentHashMapF<>();
+		alphaCache = new ConcurrentHashMapF<>();
 	}
 
 	/**
@@ -106,7 +116,7 @@ public class ImageCache
 	}
 
 	/**
-	 * Either looks up in the cache, or creates, a version of the given icon with the given width.
+	 * Either looks up in the cache, or creates, a version of the given icon with the given size.
 	 * 
 	 * @param icon
 	 *            Original image (not scaled)
@@ -125,16 +135,77 @@ public class ImageCache
 				() -> ImageHelper.scale(icon, size.width, size.height, Method.QUALITY));
 	}
 
+	/**
+	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
+	 */
+	public Image getColoredImage(ImageAndMasks imageAndMasks, Color color)
+	{
+		// There is a small chance the 2 different threads might both add the
+		// same image at the same time,
+		// but if that did happen it would only results in a little bit of
+		// duplicated work, not a functional
+		// problem.
+		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color, () ->
+		{
+			if (color.getAlpha() > 0)
+			{
+				Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
+				for (int y = 0; y < result.getHeight(); y++)
+					for (int x = 0; x < result.getWidth(); x++)
+					{
+						Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+						int alpha = originalColor.getAlpha();
+						int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
+						int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
+						int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
+						int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
+
+						result.setPixelColor(x, y, Color.create(r, g, b, a));
+					}
+				return result;
+			}
+			else
+			{
+				return imageAndMasks.image;
+			}
+		});
+	}
+	
+	/**
+	 * Creates a new image whose alpha is between 0 and the given alpha, by scaling all the alpha values in the image to be between that range,
+	 * essentially making the given alpha be the transparency of the image, plus the transparency it already had.
+	 * 
+	 * The image will be cached for future calls using alphaCache.
+	 * @param image Original image
+	 * @param alpha Alpha to apply
+	 * @return image with added transparency
+	 */
+	public Image getImageWithAppliedAlpha(Image image, Integer alpha)
+	{
+		if (alpha == null || alpha == 255)
+		{
+			return image;
+		}
+		
+		return alphaCache.getOrCreate(image, () -> new ConcurrentHashMapF<>()).getOrCreate(alpha, () -> 
+		{
+			return ImageHelper.applyAlpha(image, alpha);
+		});
+	}
+	
 	public Image getImageFromFile(Path path)
 	{
-		return fileCache.getOrCreate(path.toString(), () -> Assets.readImage(path.toString()));
+		return fileCache.getOrCreateWithLock(path.toString().intern(), () ->
+		{
+			return Assets.readImage(path.toString());
+		});
 	}
 
-	public boolean containsImageFile(Path path)
+	public boolean cacheContainsImageFile(Path path)
 	{
 		return fileCache.containsKey(path.toString());
 	}
-	
+
 	public ImageAndMasks getImageAndMasks(FreeIcon icon)
 	{
 		if (!StringUtils.isEmpty(icon.iconName))
@@ -144,7 +215,7 @@ public class ImageCache
 			{
 				return null;
 			}
-			
+
 			return map.get(icon.iconName);
 		}
 		else
@@ -154,7 +225,7 @@ public class ImageCache
 			{
 				return null;
 			}
-			
+
 			return imagesInGroup.get(icon.iconIndex % imagesInGroup.size());
 		}
 	}
@@ -163,7 +234,8 @@ public class ImageCache
 	{
 		Map<String, ImageAndMasks> map = getIconsByNameForGroup(iconType, groupName);
 		List<ImageAndMasks> result = new ArrayList<>();
-		TreeSet<String> namesSorted = new TreeSet<>(map.keySet());
+		List<String> namesSorted = new ArrayList<>(map.keySet());
+		Collections.sort(namesSorted);
 		for (String name : namesSorted)
 		{
 			result.add(map.get(name));
@@ -194,11 +266,11 @@ public class ImageCache
 	 */
 	public Map<String, ImageAndMasks> getIconsByNameForGroup(IconType iconType, String groupName)
 	{
-		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>()).getOrCreate(groupName == null ? "" : groupName,
-				() -> loadIconsWithSizes(iconType, groupName));
+		return iconsWithSizesCache.getOrCreate(iconType, () -> new ConcurrentHashMapF<>())
+				.getOrCreate((groupName == null ? "" : groupName).intern(), () -> loadIconsWithSizesAndAlphas(iconType, groupName));
 	}
 
-	private Map<String, ImageAndMasks> loadIconsWithSizes(IconType iconType, String groupName)
+	private Map<String, ImageAndMasks> loadIconsWithSizesAndAlphas(IconType iconType, String groupName)
 	{
 		Map<String, ImageAndMasks> imagesAndMasks = new HashMap<>();
 		if (groupName == null || groupName.isEmpty())
@@ -214,10 +286,13 @@ public class ImageCache
 
 		// Maps from image base name without width to (image base name without width, width, file name).
 		Map<String, Tuple3<String, Double, String>> namesAndWidths = new TreeMap<>();
+		// Maps from image base name without width to alpha (possibly null).
+		Map<String, Integer> alphas = new TreeMap<>();
 		for (String fileName : fileNames)
 		{
 			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileName, WhichDimension.Width);
 			Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileName, WhichDimension.Height);
+			Integer alpha = parseAlpha(fileName);
 			if (nameAndWidth.getSecond() == null)
 			{
 				// Check if height is stored in the file name.
@@ -245,9 +320,14 @@ public class ImageCache
 			}
 
 			namesAndWidths.put(fileNameBaseWithoutWidth, new Tuple3<>(nameAndWidth.getFirst(), nameAndWidth.getSecond(), fileName));
+			if (alpha != null)
+			{
+				alphas.put(fileNameBaseWithoutWidth, alpha);	
+			}
 		}
 
 		Tuple2<Image, Double> tuple = findIconToUseForReferenceWhenSizingOtherIcons(iconType, groupName, namesAndWidths);
+		int defaultAlpha = findDefaultAlphaForGroup(alphas);
 		Image widest = tuple.getFirst();
 		double widthOfWidest = tuple.getSecond();
 
@@ -255,6 +335,24 @@ public class ImageCache
 		{
 			Image icon = loadIconFromDiskOrCache(iconType, groupName, nameAndWidth.getThird());
 
+			if (icon == null)
+			{
+				// I think this happened once, but I haven't figured out how.
+				assert false;
+				continue;
+			}
+			
+			Integer alpha;
+			if (alphas.containsKey(nameAndWidth.getFirst()))
+			{
+				alpha = alphas.get(nameAndWidth.getFirst());
+			}
+			else
+			{
+				alpha = defaultAlpha;
+			}
+			icon = getImageWithAppliedAlpha(icon, alpha);
+			
 			double width;
 			// If any don't have an encoded width, then calculate the width relative to the largest image that does have an encoded width.
 			if (nameAndWidth.getSecond() == null)
@@ -323,13 +421,23 @@ public class ImageCache
 			return new Tuple2<>(icon, width);
 		}
 	}
-	
-	
+
+	private Integer findDefaultAlphaForGroup(Map<String, Integer> alphas)
+	{
+		Integer max = Helper.maxElement(alphas);
+		if (max == null)
+		{
+			return 255;
+		}
+		return max;
+	}
+
+
 	private boolean isDefaultSizeByWidth(IconType type)
 	{
 		return type != IconType.trees;
 	}
-	
+
 	private static double getDefaultWidthOrHeight(IconType type)
 	{
 		if (type == IconType.mountains)
@@ -367,7 +475,7 @@ public class ImageCache
 	private Image loadIconFromDiskOrCache(IconType iconType, String groupName, String fileName)
 	{
 		Path path = Paths.get(getIconGroupPath(iconType, groupName), fileName);
-		if (!containsImageFile(path))
+		if (!cacheContainsImageFile(path))
 		{
 			Logger.println("Loading icon: " + path);
 		}
@@ -422,11 +530,48 @@ public class ImageCache
 			{
 				throw new RuntimeException("The image '" + fileName + "' has an encoded width or height of 0.");
 			}
-			
+
 			return new Tuple2<>(nameWithoutWidth, size);
 		}
 
 		return new Tuple2<>(baseName, null);
+	}
+	
+	/**
+	 * Given a file name (without the path), this parses out the encoded alpha value, if present.
+	 */
+	public static Integer parseAlpha(String fileName)
+	{
+		if (fileName == null || fileName.isEmpty())
+		{
+			return null;
+		}
+
+		// Remove the file extension
+		int dotIndex = fileName.lastIndexOf('.');
+		String baseName = (dotIndex == -1) ? fileName : fileName.substring(0, dotIndex);
+
+		// Define the regex pattern for width
+		Pattern pattern = Pattern.compile("(.*?)(?:\\s|_)(?:alpha=|a)(\\d+)");
+		Matcher matcher = pattern.matcher(baseName);
+
+		if (matcher.find())
+		{
+			int alpha = Integer.parseInt(matcher.group(2));
+			if (alpha > 255)
+			{
+				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha greater than 255.");
+			}
+
+			if (alpha < 0)
+			{
+				// Not possible to hit with my regex.
+				throw new RuntimeException("The image '" + fileName + "' has an encoded alpha less than 0.");
+			}
+
+			return alpha;
+		}
+		return null;
 	}
 
 	public enum WhichDimension
@@ -434,10 +579,31 @@ public class ImageCache
 		Width, Height
 	}
 
-	public Set<String> getIconGroupFileNamesWithoutWidthOrExtension(IconType iconType, String groupName)
+	public Set<String> getIconGroupFileNamesWithoutWidthOrExtensionAsSet(IconType iconType, String groupName)
 	{
 		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
 		Set<String> result = new TreeSet<String>();
+		for (int i : new Range(fileNames.size()))
+		{
+			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Width);
+			if (nameAndWidth.getSecond() == null)
+			{
+				Tuple2<String, Double> nameAndHeight = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Height);
+				result.add(nameAndHeight.getFirst());
+			}
+			else
+			{
+				result.add(nameAndWidth.getFirst());
+			}
+
+		}
+		return result;
+	}
+
+	public List<String> getIconGroupFileNamesWithoutWidthOrExtensionAsList(IconType iconType, String groupName)
+	{
+		List<String> fileNames = getIconGroupFileNames(iconType, groupName);
+		List<String> result = new ArrayList<String>();
 		for (int i : new Range(fileNames.size()))
 		{
 			Tuple2<String, Double> nameAndWidth = parseBaseNameAndSize(fileNames.get(i), WhichDimension.Width);
@@ -497,7 +663,7 @@ public class ImageCache
 			return false;
 		}
 
-		return getIconGroupFileNamesWithoutWidthOrExtension(iconType, groupName).contains(iconName);
+		return getIconGroupFileNamesWithoutWidthOrExtensionAsSet(iconType, groupName).contains(iconName);
 	}
 
 	public boolean hasGroupName(IconType iconType, String groupName)
@@ -513,7 +679,7 @@ public class ImageCache
 	private List<String> loadIconGroupFileNames(IconType iconType, String groupName)
 	{
 		String path = getIconGroupPath(iconType, groupName);
-		return Assets.listFileNames(path);
+		return Assets.listFileNames(path, Assets.allowedImageExtensions);
 	}
 
 	private String getIconGroupPath(IconType iconType, String groupName)
@@ -526,5 +692,14 @@ public class ImageCache
 		instances.clear();
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
+	}
+	
+	public static void clearColoredAndScaledImageCaches()
+	{
+		for (ImageCache cache : instances.values())
+		{
+			cache.coloredCache.clear();
+			cache.scaledCache.clear();
+		}
 	}
 }

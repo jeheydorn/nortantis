@@ -101,28 +101,35 @@ public class MapEdits implements Serializable
 	}
 
 	/**
-	 * If the given point lands within the bounding box of a piece of text, this returns the first one found. Else null is returned.
+	 * If the given point lands within the bounding box of a piece of text, this returns one with the lowest top. Else null is returned.
 	 */
 	public MapText findTextPicked(Point point)
 	{
+		List<MapText> textAtPoint = findAllTextAtPoint(point);
+		if (textAtPoint.isEmpty())
+		{
+			return null;
+		}
+
+		return textAtPoint.stream().max((t1, t2) -> Double.compare(t1.line1Bounds == null ? Double.POSITIVE_INFINITY : t1.line1Bounds.y,
+				t2.line1Bounds == null ? Double.POSITIVE_INFINITY : t2.line1Bounds.y)).get();
+	}
+
+	public List<MapText> findAllTextAtPoint(Point point)
+	{
+		List<MapText> result = new ArrayList<>();
+
 		for (MapText mp : text)
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Area != null)
+				if (mp.line1Bounds != null && mp.line1Bounds.contains(point) || mp.line2Bounds != null && mp.line2Bounds.contains(point))
 				{
-					if (mp.line1Area.contains(point))
-						return mp;
-				}
-
-				if (mp.line2Area != null)
-				{
-					if (mp.line2Area.contains(point))
-						return mp;
+					result.add(mp);
 				}
 			}
 		}
-		return null;
+		return result;
 	}
 
 	public List<MapText> findTextSelectedByBrush(Point point, double brushDiameter)
@@ -133,8 +140,8 @@ public class MapEdits implements Serializable
 		{
 			if (mp.value.length() > 0)
 			{
-				if (mp.line1Area != null && mp.line1Area.overlapsCircle(point, brushDiameter / 2.0)
-						|| mp.line2Area != null && mp.line2Area.overlapsCircle(point, brushDiameter / 2.0))
+				if (mp.line1Bounds != null && mp.line1Bounds.overlapsCircle(point, brushDiameter / 2.0)
+						|| mp.line2Bounds != null && mp.line2Bounds.overlapsCircle(point, brushDiameter / 2.0))
 				{
 					result.add(mp);
 				}

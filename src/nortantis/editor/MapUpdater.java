@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
+import nortantis.BorderPosition;
 import nortantis.CancelledException;
 import nortantis.DebugFlags;
 import nortantis.MapCreator;
@@ -145,6 +146,11 @@ public abstract class MapUpdater
 	public void createAndShowMapIncrementalUsingText(List<MapText> textChanged, Runnable postRun)
 	{
 		createAndShowMap(UpdateType.Incremental, null, null, textChanged, null, null, postRun);
+	}
+
+	public void createAndShowMapIncrementalUsingIcons(List<FreeIcon> iconsChanged, Runnable postRun)
+	{
+		createAndShowMap(UpdateType.Incremental, null, null, null, iconsChanged, null, postRun);
 	}
 
 	public void createAndShowMapIncrementalUsingIcons(List<FreeIcon> iconsChanged)
@@ -347,6 +353,10 @@ public abstract class MapUpdater
 		{
 
 		}
+		else if (updateType == UpdateType.NoDraw)
+		{
+
+		}
 		else
 		{
 			throw new IllegalStateException("Unrecognized update type: " + updateType);
@@ -356,7 +366,8 @@ public abstract class MapUpdater
 
 	private boolean isUpdateTypeThatAllowsInteractions(UpdateType updateType)
 	{
-		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks;
+		return updateType == UpdateType.Incremental || updateType == UpdateType.Text || updateType == UpdateType.ReprocessBooks
+				|| updateType == UpdateType.NoDraw;
 	}
 
 	private void createAndShowMap(UpdateType updateType, Set<Center> centersChanged, Set<Edge> edgesChanged, List<MapText> textChanged,
@@ -403,6 +414,11 @@ public abstract class MapUpdater
 
 		// Low-priority updates only support incremental updates.
 		assert !isLowPriorityChange || updateType == UpdateType.Incremental;
+
+		if (updateType == UpdateType.NoDraw)
+		{
+			return;
+		}
 
 		onDrawSubmitted(updateType);
 
@@ -505,7 +521,7 @@ public abstract class MapUpdater
 							if (centersChangedIds != null && centersChangedIds.size() > 0
 									|| edgesChangedIds != null && edgesChangedIds.size() > 0)
 							{
-								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for centers and edges");
+								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for centers and edges");
 								currentMapCreator = new MapCreator();
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateForCentersAndEdges(settings, mapParts, map,
 										centersChangedIds, edgesChangedIds, isLowPriorityChange);
@@ -519,7 +535,7 @@ public abstract class MapUpdater
 
 							if (textChanged != null && textChanged.size() > 0)
 							{
-								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for text");
+								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for text");
 								currentMapCreator = new MapCreator();
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateText(settings, mapParts, map, textChanged);
 								combinedReplaceBounds = combinedReplaceBounds == null ? replaceBounds
@@ -532,7 +548,7 @@ public abstract class MapUpdater
 
 							if (iconsChanged != null && iconsChanged.size() > 0)
 							{
-								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update of for icons");
+								Stopwatch incrementalUpdateTimer = new Stopwatch("do incremental update for icons");
 								currentMapCreator = new MapCreator();
 								IntRectangle replaceBounds = currentMapCreator.incrementalUpdateIcons(settings, mapParts, map,
 										iconsChanged);
@@ -609,7 +625,9 @@ public abstract class MapUpdater
 					if (updateType != UpdateType.ReprocessBooks)
 					{
 						boolean anotherDrawIsQueued = next != null;
-						int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+						int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
+								? (int) (settings.borderWidth * settings.resolution)
+								: 0;
 						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
 								replaceBounds == null ? null
 										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
@@ -632,8 +650,15 @@ public abstract class MapUpdater
 						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
 								next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
 					}
+					else
+					{
+						isMapReadyForInteractions = true;
 
-					isMapReadyForInteractions = true;
+						while (tasksToRunWhenMapReady.size() > 0)
+						{
+							tasksToRunWhenMapReady.poll().run();
+						}
+					}
 				}
 				else
 				{
@@ -655,13 +680,16 @@ public abstract class MapUpdater
 							innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
 									next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
 						}
+						else
+						{
+							while (tasksToRunWhenMapReady.size() > 0)
+							{
+								tasksToRunWhenMapReady.poll().run();
+							}
+						}
 					}
 				}
 
-				while (tasksToRunWhenMapReady.size() > 0)
-				{
-					tasksToRunWhenMapReady.poll().run();
-				}
 			}
 
 		});
@@ -727,7 +755,7 @@ public abstract class MapUpdater
 
 	public abstract MapSettings getSettingsFromGUI();
 
-	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderWidthAsDrawn,
+	protected abstract void onFinishedDrawing(Image map, boolean anotherDrawIsQueued, int borderPaddingAsDrawn,
 			Rectangle incrementalChangeArea, List<String> warningMessages);
 
 	protected abstract void onFailedToDraw();

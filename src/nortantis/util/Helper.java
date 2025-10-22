@@ -70,7 +70,7 @@ public class Helper
 		return minEntry.getKey();
 	}
 
-	public static <K, V extends Comparable<V>> V min(Map<K, V> map)
+	public static <K, V extends Comparable<V>> V minElement(Map<K, V> map)
 	{
 		Map.Entry<K, V> minEntry = null;
 
@@ -96,6 +96,25 @@ public class Helper
 			}
 		}
 		return maxEntry.getKey();
+	}
+	
+	public static <K, V extends Comparable<V>> V maxElement(Map<K, V> map)
+	{
+		Map.Entry<K, V> maxEntry = null;
+
+		for (Map.Entry<K, V> entry : map.entrySet())
+		{
+			if (entry.getValue() == null)
+			{
+				continue;
+			}
+			
+			if (maxEntry == null || entry.getValue().compareTo(maxEntry.getValue()) > 0)
+			{
+				maxEntry = entry;
+			}
+		}
+		return maxEntry == null ? null : maxEntry.getValue();
 	}
 
 	public static <K, V> K argmax(Map<K, V> map, Comparator<V> comparator)

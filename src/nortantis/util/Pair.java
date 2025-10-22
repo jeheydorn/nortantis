@@ -1,6 +1,7 @@
 package nortantis.util;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * A 2-tuple of objects which are the same type and don't have to be comparable.
@@ -45,14 +46,29 @@ public class Pair<T> implements Serializable
 	}
 
 	@Override
-	public boolean equals(Object other)
+	public int hashCode()
 	{
-		if (!(other instanceof Pair))
-			return false;
+		return Objects.hash(f, s);
+	}
 
-		@SuppressWarnings("unchecked")
-		Pair<T> otherPair = (Pair<T>) other;
-		return f.equals(otherPair.f) && s.equals(otherPair.s);
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj)
+		{
+			return true;
+		}
+		if (obj == null)
+		{
+			return false;
+		}
+		if (getClass() != obj.getClass())
+		{
+			return false;
+		}
+		@SuppressWarnings("rawtypes")
+		Pair other = (Pair) obj;
+		return Objects.equals(f, other.f) && Objects.equals(s, other.s);
 	}
 
 }

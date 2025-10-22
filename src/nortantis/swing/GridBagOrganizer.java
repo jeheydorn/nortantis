@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
@@ -107,7 +108,8 @@ public class GridBagOrganizer
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
 			int componentLeftPadding)
 	{
-		return addLabelAndComponents(labelText, tooltip, BoxLayout.X_AXIS, components, componentLeftPadding, defaultHorizontalSpaceBetweenComponentsAddAsList, null);
+		return addLabelAndComponents(labelText, tooltip, BoxLayout.X_AXIS, components, componentLeftPadding,
+				defaultHorizontalSpaceBetweenComponentsAddAsList, null);
 	}
 
 	public <T extends Component> RowHider addLabelAndComponentsHorizontal(String labelText, String tooltip, List<T> components,
@@ -218,24 +220,23 @@ public class GridBagOrganizer
 	{
 		return addLeftAlignedComponent(component, rowVerticalInset, rowVerticalInset);
 	}
-	
+
 	public RowHider addLeftAlignedComponents(List<Component> components)
 	{
 		JPanel compPanel = new JPanel();
-		compPanel.setLayout(new BoxLayout(compPanel, BoxLayout.X_AXIS));
-		final int componentLeftPadding = 0;
-		compPanel.add(Box.createHorizontalStrut(componentLeftPadding));
+		compPanel.setLayout(new WrapLayout(WrapLayout.LEFT));
+		// Remove the horizontal and vertical gaps from the border around the elements.
+		compPanel.setBorder(BorderFactory.createEmptyBorder(-5, -5, -5, -5));
 		for (Component comp : components)
 		{
 			compPanel.add(comp);
 			if (comp != components.get(components.size() - 1))
 			{
-				compPanel.add(Box.createHorizontalStrut(defaultHorizontalSpaceBetweenComponentsAddAsList));
+				compPanel.add(Box.createHorizontalStrut(0));
 			}
 		}
-		compPanel.add(Box.createHorizontalGlue());
 		return addLeftAlignedComponent(compPanel);
-		
+
 	}
 
 	public RowHider addLeftAlignedComponent(Component component, boolean allowToExpandVertically)
@@ -286,6 +287,25 @@ public class GridBagOrganizer
 		return new RowHider(component);
 	}
 
+	public RowHider addExpandableRowComponent(Component component, int topInset, int bottomInset, double verticalWeight)
+	{
+		GridBagConstraints cc = new GridBagConstraints();
+		cc.fill = GridBagConstraints.BOTH;
+
+		cc.gridx = 0;
+		cc.gridwidth = 2;
+		cc.gridy = curY;
+		cc.weightx = 1;
+		cc.weighty = verticalWeight;
+		cc.anchor = GridBagConstraints.LINE_START;
+		cc.insets = new Insets(topInset, 0, bottomInset, 0);
+		panel.add(component, cc);
+
+		curY++;
+
+		return new RowHider(component);
+	}
+
 	public RowHider addLeftAlignedComponentWithStackedLabel(String labelText, String toolTip, JComponent component)
 	{
 		return addLeftAlignedComponentWithStackedLabel(labelText, toolTip, component, true, 1.0);
@@ -315,10 +335,11 @@ public class GridBagOrganizer
 		return new RowHider(labelHider, compHider);
 	}
 
-	public void addSeperator()
+	public RowHider addSeperator()
 	{
 		final int minHeight = 2;
 
+		JSeparator sep1;
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -327,11 +348,12 @@ public class GridBagOrganizer
 			c.weightx = 0.5;
 			c.anchor = GridBagConstraints.LINE_START;
 			c.insets = new Insets(0, 5, 0, 0);
-			JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
-			sep.setMinimumSize(new Dimension(0, minHeight));
-			panel.add(sep, c);
+			sep1 = new JSeparator(JSeparator.HORIZONTAL);
+			sep1.setMinimumSize(new Dimension(0, minHeight));
+			panel.add(sep1, c);
 		}
 
+		JSeparator sep2;
 		{
 			GridBagConstraints c = new GridBagConstraints();
 			c.fill = GridBagConstraints.HORIZONTAL;
@@ -340,12 +362,13 @@ public class GridBagOrganizer
 			c.weightx = 0.5;
 			c.anchor = GridBagConstraints.LINE_START;
 			c.insets = new Insets(0, 0, 0, 5);
-			JSeparator sep = new JSeparator(JSeparator.HORIZONTAL);
-			sep.setMinimumSize(new Dimension(0, minHeight));
-			panel.add(sep, c);
+			sep2 = new JSeparator(JSeparator.HORIZONTAL);
+			sep2.setMinimumSize(new Dimension(0, minHeight));
+			panel.add(sep2, c);
 		}
 
 		curY++;
+		return new RowHider(sep1, sep2);
 	}
 
 	public Tuple2<JLabel, JButton> addFontChooser(String labelText, int height, Runnable okAction)

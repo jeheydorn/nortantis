@@ -1,5 +1,6 @@
 package nortantis.platform.awt;
 
+import java.awt.Graphics2D;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -215,6 +216,15 @@ public class AwtFactory extends PlatformFactory
 		return ((AwtImage) image).image;
 	}
 
+	public static Graphics2D unwrap(Painter p)
+	{
+		if (p == null)
+		{
+			return null;
+		}
+		return ((AwtPainter) p).g;
+	}
+
 	public static Image wrap(BufferedImage image)
 	{
 		if (image == null)
@@ -281,10 +291,7 @@ public class AwtFactory extends PlatformFactory
 
 	public static java.awt.geom.Area toAwtArea(Rectangle rect)
 	{
-		AffineTransform transform = new AffineTransform();
-		java.awt.Shape rotatedRect = transform
-				.createTransformedShape(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
-		return new java.awt.geom.Area(rotatedRect);
+		return new java.awt.geom.Area(new java.awt.Rectangle((int) rect.x, (int) rect.y, (int) rect.width, (int) rect.height));
 	}
 
 	public static Painter wrap(java.awt.Graphics2D g)

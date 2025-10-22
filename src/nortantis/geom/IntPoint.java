@@ -10,7 +10,7 @@ public class IntPoint implements Comparable<IntPoint>
 		return Math.sqrt((_coord.x - _coord0.x) * (_coord.x - _coord0.x) + (_coord.y - _coord0.y) * (_coord.y - _coord0.y));
 	}
 
-	public int x, y;
+	public final int x, y;
 
 	public IntPoint(int x, int y)
 	{

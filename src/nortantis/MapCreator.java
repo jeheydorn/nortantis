@@ -194,14 +194,6 @@ public class MapCreator implements WarningLogger
 			centersChanged = new HashSet<>();
 		}
 
-		// If any of the centers changed are are touching a lake, add the lake too since adding the change could have
-		// changed whether the lake is land-locked, which will change how it's drawn.
-		Set<Center> neighboringLakes = mapParts.graph.getNeighboringLakes(centersChanged);
-		if (!neighboringLakes.isEmpty())
-		{
-			centersChanged.addAll(neighboringLakes);
-		}
-
 		if (edgesChangedIds != null)
 		{
 			centersChanged.addAll(mapParts.graph.getCentersFromEdgeIds(edgesChangedIds));
@@ -298,9 +290,12 @@ public class MapCreator implements WarningLogger
 
 			// Expand the replace bounds to include text that touches the centers that changed because that text could switch from one line
 			// to two or vice versa.
-			Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
-					settings);
-			replaceBounds = replaceBounds.add(textChangeBounds);
+			if (settings.drawText)
+			{
+				Rectangle textChangeBounds = textDrawer.expandBoundsToIncludeText(settings.edits.text, mapParts.graph, centersChangedBounds,
+						settings);
+				replaceBounds = replaceBounds.add(textChangeBounds);
+			}
 		}
 
 		mapParts.iconDrawer = new IconDrawer(mapParts.graph, new Random(), settings);
@@ -343,7 +338,9 @@ public class MapCreator implements WarningLogger
 
 			checkForCancel();
 
-			mapParts.background.doSetupThatNeedsGraph(settings, mapParts.graph, centersToDraw, drawBounds, replaceBounds);
+			List<IconDrawTask> iconsToDraw = mapParts.iconDrawer.getTasksInDrawBoundsSortedAndScaled(drawBounds);
+			mapParts.background.doSetupThatNeedsGraphAndIcons(settings, mapParts.graph, iconsToDraw, centersToDraw, drawBounds,
+					replaceBounds);
 
 			checkForCancel();
 
@@ -362,11 +359,22 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			Image coastShading;
+			Image landBackgroundColoredBeforeAddingIconColorsWithShading = null;
 			{
 				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
 						mapSnippet, landMask, mapParts.background, null, centersToDraw, drawBounds, false);
 				mapSnippet = tuple.getFirst();
 				coastShading = tuple.getSecond();
+
+				if (settings.drawRegionColors)
+				{
+					Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
+							drawBounds.toIntRectangle());
+					landBackgroundColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings,
+							mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, landMask, mapParts.background,
+							coastShading, centersToDraw, drawBounds, false).getFirst();
+				}
+
 			}
 
 			checkForCancel();
@@ -441,10 +449,10 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Draw icons
-			List<IconDrawTask> iconsThatDrew = mapParts.iconDrawer.drawAllIcons(mapSnippet, landBackground, landTextureSnippet,
-					oceanWithWavesAndShading, drawBounds);
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackgroundColoredBeforeAddingIconColorsWithShading, landBackground,
+					landTextureSnippet, oceanWithWavesAndShading, drawBounds);
 
-			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsThatDrew, landTextureSnippet,
+			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
 					drawBounds);
 
@@ -474,9 +482,10 @@ public class MapCreator implements WarningLogger
 		textDrawer.updateTextBoundsIfNeeded(mapParts.graph);
 
 		IntPoint drawBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
-				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
-				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+				drawBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
+				drawBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderPaddingScaledByResolution());
 
+		mapParts.background.drawEdgesIfBoundsTouchesThem(mapSnippet, drawBounds);
 		mapParts.background.drawInsetCornersIfBoundsTouchesThem(mapSnippet, drawBounds);
 
 		// Add grunge
@@ -496,8 +505,8 @@ public class MapCreator implements WarningLogger
 		}
 
 		IntPoint replaceBoundsUpperLeftCornerAdjustedForBorder = new IntPoint(
-				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderWidthScaledByResolution(),
-				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderWidthScaledByResolution());
+				replaceBounds.upperLeftCorner().toIntPoint().x + mapParts.background.getBorderPaddingScaledByResolution(),
+				replaceBounds.upperLeftCorner().toIntPoint().y + mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (settings.drawOverlayImage)
 		{
@@ -519,12 +528,14 @@ public class MapCreator implements WarningLogger
 
 		// Update the snippet in the main map.
 		ImageHelper.copySnippetFromSourceAndPasteIntoTarget(fullSizedMap, mapSnippet, replaceBoundsUpperLeftCornerAdjustedForBorder,
-				boundsInSourceToCopyFrom, mapParts.background.getBorderWidthScaledByResolution());
+				boundsInSourceToCopyFrom, mapParts.background.getBorderPaddingScaledByResolution());
 
 		if (DebugFlags.showIncrementalUpdateBounds())
 		{
 			Painter p = fullSizedMap.createPainter();
-			int scaledBorderWidth = settings.drawBorder ? (int) (settings.borderWidth * settings.resolution) : 0;
+			int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
+					? (int) (settings.borderWidth * settings.resolution)
+					: 0;
 			p.setBasicStroke(4f);
 			p.setColor(Color.red);
 			{
@@ -540,9 +551,6 @@ public class MapCreator implements WarningLogger
 				p.drawRect(rect.x, rect.y, rect.width, rect.height);
 			}
 		}
-
-		// Print run time
-		// updateSW.printElapsedTime();
 
 		return replaceBounds.toIntRectangle();
 	}
@@ -693,6 +701,11 @@ public class MapCreator implements WarningLogger
 			textBackground = mapParts.textBackground;
 			mountainGroups = null;
 			cities = null;
+		}
+
+		if (mapParts == null)
+		{
+			background.landColoredBeforeAddingIconColors = null;
 		}
 
 		checkForCancel();
@@ -1017,12 +1030,6 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 
-		background.doSetupThatNeedsGraph(settings, graph, null, null, null);
-		if (mapParts == null)
-		{
-			background.landBeforeRegionColoring = null;
-		}
-
 		IconDrawer iconDrawer;
 		boolean needToAddIcons;
 		iconDrawer = new IconDrawer(graph, new Random(r.nextLong()), settings);
@@ -1033,16 +1040,32 @@ public class MapCreator implements WarningLogger
 		needToAddIcons = !settings.edits.hasIconEdits;
 
 		List<Set<Center>> mountainAndHillGroups = null;
+		List<Set<Center>> mountainGroups = null;
+		List<IconDrawTask> cities = null;
 		if (needToAddIcons)
 		{
+			Logger.println("Adding icons.");
 			iconDrawer.markMountains();
 			iconDrawer.markHills();
 			iconDrawer.markCities(settings.cityProbability);
 			mountainAndHillGroups = iconDrawer.findMountainAndHillGroups();
+			Tuple2<List<Set<Center>>, List<IconDrawTask>> tuple = iconDrawer.addIcons(mountainAndHillGroups, this);
+			mountainGroups = tuple.getFirst();
+			cities = tuple.getSecond();
 		}
 		else
 		{
+			Logger.println("Adding icons from edits.");
 			iconDrawer.addOrUpdateIconsFromEdits(settings.edits, graph.centers, this);
+		}
+
+		checkForCancel();
+
+		List<IconDrawTask> iconsToDraw = iconDrawer.getTasksInDrawBoundsSortedAndScaled(null);
+		background.doSetupThatNeedsGraphAndIcons(settings, graph, iconsToDraw, null, null, null);
+		if (mapParts == null)
+		{
+			background.landBeforeRegionColoring = null;
 		}
 
 		checkForCancel();
@@ -1059,11 +1082,20 @@ public class MapCreator implements WarningLogger
 		Image map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
 		Image coastShading;
+		Image landColoredBeforeAddingIconColorsWithShading = null;
 		{
-			Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
-					background, null, null, null, true);
-			map = tuple.getFirst();
-			coastShading = tuple.getSecond();
+			{
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
+						background, null, null, null, true);
+				map = tuple.getFirst();
+				coastShading = tuple.getSecond();
+			}
+			if (settings.drawRegionColors)
+			{
+				landColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph,
+						settings.resolution, background.landColoredBeforeAddingIconColors, landMask, background, coastShading, null, null,
+						true).getFirst();
+			}
 		}
 
 		checkForCancel();
@@ -1087,17 +1119,6 @@ public class MapCreator implements WarningLogger
 		// Add rivers.
 		Logger.println("Adding rivers.");
 		drawRivers(settings, graph, map, null, null);
-
-		checkForCancel();
-
-		List<Set<Center>> mountainGroups = null;
-		List<IconDrawTask> cities = null;
-		if (needToAddIcons)
-		{
-			Tuple2<List<Set<Center>>, List<IconDrawTask>> tuple = iconDrawer.addIcons(mountainAndHillGroups, this);
-			mountainGroups = tuple.getFirst();
-			cities = tuple.getSecond();
-		}
 
 		checkForCancel();
 
@@ -1167,12 +1188,17 @@ public class MapCreator implements WarningLogger
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		List<IconDrawTask> iconsThatDrew = iconDrawer.drawAllIcons(map, landBackground, background.land, oceanWithWavesAndShading, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landColoredBeforeAddingIconColorsWithShading, landBackground, background.land,
+				oceanWithWavesAndShading, null);
 		landBackground = null;
+		landColoredBeforeAddingIconColorsWithShading = null;
+
+		checkForCancel();
 
 		// Needed for drawing text
-		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsThatDrew, background.land,
-				background.ocean, background, oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
+		Image textBackground = updateLandMaskAndCreateTextBackground(settings, graph, landMask, iconsToDraw,
+				settings.drawRegionColors ? background.landColoredBeforeAddingIconColors : background.land, background.ocean, background,
+				oceanWaves, oceanShading, coastShading, iconDrawer, null, null);
 
 		if (mapParts != null)
 		{
@@ -1520,7 +1546,7 @@ public class MapCreator implements WarningLogger
 		// centers with noisy edges over them. Thus I must draw both the land and lakes, and their ocean neighbors, so I need to do the
 		// drawing as a mask and then apply it onto oceanEffects.
 		Image landAndLakeMask = Image.create(oceanEffects.getWidth(), oceanEffects.getHeight(), ImageType.Grayscale8Bit);
-		graph.drawLandAndLandLockedLakesBlackAndOceanWhite(landAndLakeMask.createPainter(), centersToDraw, drawBounds);
+		graph.drawLandAndLakesBlackAndOceanWhite(landAndLakeMask.createPainter(), centersToDraw, drawBounds);
 		return ImageHelper.maskWithColor(oceanEffects, Color.black, landAndLakeMask, false);
 	}
 
