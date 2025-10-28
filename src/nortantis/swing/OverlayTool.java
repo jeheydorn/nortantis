@@ -547,7 +547,7 @@ public class OverlayTool extends EditorTool
 			}
 
 			mainWindow.undoer.setUndoPoint(UpdateType.OverlayImage, null);
-			mainWindow.updater.createAndShowMapOverlayImage();
+			mainWindow.updater.createAndShowMapOverlayImageChange();
 		}
 
 		if (isSelected())

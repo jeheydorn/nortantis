@@ -3,6 +3,7 @@ package nortantis.platform;
 import java.util.List;
 
 import nortantis.Stroke;
+import nortantis.geom.FloatPoint;
 import nortantis.geom.IntPoint;
 import nortantis.geom.Point;
 import nortantis.util.Range;
@@ -97,6 +98,8 @@ public abstract class Painter
 		}
 		drawPolyline(xPoints, yPoints);
 	}
+	
+	public abstract void drawPolygonFloat(List<FloatPoint> points);
 
 	public abstract void setGradient(float x1, float y1, Color color1, float x2, float y2, Color color2);
 
@@ -107,6 +110,8 @@ public abstract class Painter
 	public abstract void setStroke(Stroke stroke, double resolutionScale);
 
 	public abstract void drawLine(int x1, int y1, int x2, int y2);
+	
+	public abstract void drawLine(float x1, float y1, float x2, float y2);
 
 	public abstract void drawOval(int x, int y, int width, int height);
 

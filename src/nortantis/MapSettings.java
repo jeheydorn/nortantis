@@ -209,6 +209,13 @@ public class MapSettings implements Serializable
 	public boolean flipVertically;
 
 	private ConcurrentHashMap<IconType, Color> iconColorsByType;
+	
+	public boolean drawGridOverlay;
+	public GridOverlayShape gridOverlayShape = GridOverlayShape.Horizontal_hexes;
+	public int gridOverlayColCount = 36;
+	public int gridOverlayTransparency = 30;
+	public GridOverlayOffset gridOverlayXOffset = GridOverlayOffset.zero;
+	public GridOverlayOffset gridOverlayYOffset = GridOverlayOffset.zero;
 
 	public MapSettings()
 	{
@@ -471,6 +478,13 @@ public class MapSettings implements Serializable
 			iconColorsObj.put(key, colorToString(value));
 		}
 		root.put("iconColorsByType", iconColorsObj);
+		
+		root.put("drawGridOverlay", drawGridOverlay);
+		root.put("gridOverlayShape", gridOverlayShape.toString());
+		root.put("gridOverlayColCount", gridOverlayColCount);
+		root.put("gridOverlayTransparency", gridOverlayTransparency);
+		root.put("gridOverlayXOffset", gridOverlayXOffset.toString());
+		root.put("gridOverlayYOffset", gridOverlayYOffset.toString());
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -1118,7 +1132,17 @@ public class MapSettings implements Serializable
 				iconColorsByType.put(iconType, defaultIconColor);
 			}
 		}
-
+		
+		if (root.containsKey("drawGridOverlay"))
+		{
+			drawGridOverlay = (boolean) root.get("drawGridOverlay");
+			gridOverlayShape = Enum.valueOf(GridOverlayShape.class, ((String) root.get("gridOverlayShape")).replace(" ", "_"));
+			gridOverlayTransparency = (int) (long) root.get("gridOverlayTransparency");
+			gridOverlayColCount = (int) (long) root.get("gridOverlayColCount");
+			gridOverlayXOffset = GridOverlayOffset.parse((String) root.get("gridOverlayXOffset"));
+			gridOverlayYOffset = GridOverlayOffset.parse((String) root.get("gridOverlayYOffset"));
+		}
+		
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
 
@@ -1940,13 +1964,16 @@ public class MapSettings implements Serializable
 				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
-				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
-				&& flipHorizontally == other.flipHorizontally && flipVertically == other.flipVertically
-				&& frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
-				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed
-				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
-				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
-				&& generatedWidth == other.generatedWidth && grungeWidth == other.grungeWidth
+				&& Objects.equals(edits, other.edits) && drawGridOverlay == other.drawGridOverlay
+				&& fadeConcentricWaves == other.fadeConcentricWaves && flipHorizontally == other.flipHorizontally
+				&& flipVertically == other.flipVertically && frayedBorder == other.frayedBorder
+				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
+				&& frayedBorderSeed == other.frayedBorderSeed && frayedBorderSize == other.frayedBorderSize
+				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture
+				&& generatedHeight == other.generatedHeight && generatedWidth == other.generatedWidth
+				&& gridOverlayColCount == other.gridOverlayColCount && gridOverlayShape == other.gridOverlayShape
+				&& gridOverlayTransparency == other.gridOverlayTransparency && gridOverlayXOffset == other.gridOverlayXOffset
+				&& gridOverlayYOffset == other.gridOverlayYOffset && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange

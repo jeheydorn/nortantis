@@ -4,10 +4,14 @@ import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Graphics2D;
 import java.awt.Stroke;
+import java.awt.geom.Line2D;
+import java.awt.geom.Path2D;
+import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import nortantis.StrokeType;
+import nortantis.geom.FloatPoint;
 import nortantis.platform.Color;
 import nortantis.platform.Font;
 import nortantis.platform.Image;
@@ -124,6 +128,13 @@ class AwtPainter extends Painter
 	{
 		g.drawLine(x1, y1, x2, y2);
 	}
+	
+	@Override
+	public void drawLine(float x1, float y1, float x2, float y2)
+	{
+		g.draw(new Line2D.Float(x1, y1, x2, y2));
+	}
+
 
 	@Override
 	public void fillOval(int x, int y, int width, int height)
@@ -135,6 +146,26 @@ class AwtPainter extends Painter
 	public void drawPolyline(int[] xPoints, int[] yPoints)
 	{
 		g.drawPolyline(xPoints, yPoints, xPoints.length);
+	}
+	
+	@Override
+	public void drawPolygonFloat(List<FloatPoint> points)
+	{
+		Path2D.Float path = new Path2D.Float();
+		for (int i = 0; i < points.size(); i++)
+		{
+			FloatPoint point = points.get(i);
+			if (i == 0)
+			{
+				path.moveTo(point.x, point.y);
+			}
+			else
+			{
+				path.lineTo(point.x, point.y);
+			}
+		}
+		path.closePath();
+		g.draw(path);
 	}
 
 	@Override

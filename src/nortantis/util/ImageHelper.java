@@ -733,6 +733,14 @@ public class ImageHelper
 
 		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
 	}
+	
+	public static void setAlphaOfAllPixels(Image image, int alpha)
+	{
+		Painter p = image.createPainter();
+		p.setAlphaComposite(AlphaComposite.Clear);
+		p.fillRect(0, 0, image.getWidth(), image.getHeight());
+		p.dispose();
+	}
 
 	/**
 	 * Returns a new Image with adjusted transparency.
@@ -745,9 +753,14 @@ public class ImageHelper
 	 */
 	public static Image applyAlpha(Image original, Integer alpha)
 	{
-		if (alpha == null || alpha == 255)
+		if (alpha == null)
 		{
 			throw new IllegalArgumentException("Alpha must be between 0.0 and 1.0");
+		}
+		
+		if (alpha == 255)
+		{
+			return original;
 		}
 
 		Image transparentImage = Image.create(original.getWidth(), original.getHeight(), ImageType.ARGB);

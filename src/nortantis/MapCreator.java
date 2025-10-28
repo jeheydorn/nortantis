@@ -1186,6 +1186,13 @@ public class MapCreator implements WarningLogger
 		}
 
 		checkForCancel();
+		
+		if (settings.drawGridOverlay)
+		{
+			drawGridOverlay(map, settings, null);
+		}
+
+		checkForCancel();
 
 		Logger.println("Drawing all icons.");
 		iconDrawer.drawIcons(iconsToDraw, map, landColoredBeforeAddingIconColorsWithShading, landBackground, background.land,
@@ -1235,6 +1242,11 @@ public class MapCreator implements WarningLogger
 		{
 			textBackground = ImageHelper.maskWithColor(textBackground, settings.oceanWavesColor, oceanWaves, true);
 		}
+		if (settings.drawGridOverlay)
+		{
+			drawGridOverlay(textBackground, settings, null);
+		}
+		
 		return textBackground;
 	}
 
@@ -2157,4 +2169,12 @@ public class MapCreator implements WarningLogger
 		IntRectangle overlayPosition = new IntRectangle(x, y, scaledOverlayWidth, scaledOverlayHeight);
 		return new Tuple2<>(overlayPosition, overlayImage);
 	}
+
+	public void drawGridOverlay(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds)
+	{
+		int alpha = 255 - (int) (((float) settings.gridOverlayTransparency / 100.0) * 255);
+		GridDrawer.drawGrid(mapOrSnippet, settings.gridOverlayShape, alpha, settings.gridOverlayColCount, settings.gridOverlayXOffset,
+				settings.gridOverlayYOffset, settings.resolution);
+	}
+
 }
