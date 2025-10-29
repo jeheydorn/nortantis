@@ -195,15 +195,18 @@ public class ThemePanel extends JTabbedPane
 	private JComboBox<BorderPosition> borderPositionComboBox;
 	private JCheckBox drawGridOverlayCheckbox;
 	private JComboBox<GridOverlayShape> gridOverlayShapeComboBox;
-	private JSlider gridOverlayColCountSlider;
+	private JSlider gridOverlayRowOrColCountSlider;
 	private JSlider gridOverlayTransparencySlider;
 	private RowHider gridOverlayTransparencySliderHider;
-	private RowHider gridOverlayColCountSliderHider;
+	private RowHider gridOverlayRowOrColCountSliderHider;
 	private RowHider gridOverlayShapeComboBoxHider;
 	private JComboBox<GridOverlayOffset> gridOverlayXOffsetComboBox;
 	private RowHider gridOverlayXOffsetComboBoxHider;
 	private JComboBox<GridOverlayOffset> gridOverlayYOffsetComboBox;
 	private RowHider gridOverlayYOffsetComboBoxHider;
+	private JSlider gridOverlayLineWidthSlider;
+	private RowHider gridOverlayLineWidthSliderHider;
+	private JLabel gridOverlayRowOrColLabel;
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -568,20 +571,40 @@ public class ThemePanel extends JTabbedPane
 				gridOverlayShapeComboBox.addItem(option);
 			}
 			gridOverlayShapeComboBoxHider = organizer.addLabelAndComponent("Shape:", "Cell shape", gridOverlayShapeComboBox);
-			createMapChangeListenerForGridOverlayChange(gridOverlayShapeComboBox);
+			gridOverlayShapeComboBox.addActionListener(new ActionListener()
+			{	
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					gridOverlayRowOrColLabel.setText(((GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem()) == GridOverlayShape.Horizontal_hexes ? "Rows:" : "Columns:");
+					handleGridOverlayChange();
+				}
+			});
 
 			{
-				gridOverlayColCountSlider = new JSlider();
-				gridOverlayColCountSlider.setPaintLabels(false);
-				gridOverlayColCountSlider.setMinimum(2);
-				gridOverlayColCountSlider.setMaximum(70);
-				createMapChangeListenerForGridOverlayChange(gridOverlayColCountSlider);
-				SwingHelper.setSliderWidthForSidePanel(gridOverlayColCountSlider);
-				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(gridOverlayColCountSlider, null, () -> 
+				gridOverlayRowOrColCountSlider = new JSlider();
+				gridOverlayRowOrColCountSlider.setPaintLabels(false);
+				gridOverlayRowOrColCountSlider.setMinimum(2);
+				gridOverlayRowOrColCountSlider.setMaximum(70);
+				createMapChangeListenerForGridOverlayChange(gridOverlayRowOrColCountSlider);
+				SwingHelper.setSliderWidthForSidePanel(gridOverlayRowOrColCountSlider);
+				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(gridOverlayRowOrColCountSlider, null, () -> 
 				{
 					handleGridOverlayChange();
 				});
-				gridOverlayColCountSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Columns:", "");
+				gridOverlayRowOrColLabel = GridBagOrganizer.createWrappingLabel("Columns: ", "");
+				gridOverlayRowOrColCountSliderHider = sliderWithDisplay.addToOrganizer(organizer, gridOverlayRowOrColLabel);
+			}
+			
+			{
+				gridOverlayLineWidthSlider = new JSlider(1, 20);
+				SwingHelper.setSliderWidthForSidePanel(gridOverlayLineWidthSlider);
+				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(gridOverlayLineWidthSlider, null, () -> 
+				{
+					handleGridOverlayChange();
+				});
+				gridOverlayLineWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Line width:",
+						"Width of grid lines");
 			}
 
 			{
@@ -614,7 +637,7 @@ public class ThemePanel extends JTabbedPane
 				gridOverlayYOffsetComboBoxHider = organizer.addLabelAndComponent("Y offset:", "", gridOverlayYOffsetComboBox);
 				createMapChangeListenerForGridOverlayChange(gridOverlayYOffsetComboBox);
 			}
-			
+						
 			updateGridOverlayFieldVisibility();
 		}
 
@@ -1507,10 +1530,11 @@ public class ThemePanel extends JTabbedPane
 	private void updateGridOverlayFieldVisibility()
 	{
 		gridOverlayShapeComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
-		gridOverlayColCountSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
+		gridOverlayRowOrColCountSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayTransparencySliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayXOffsetComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
 		gridOverlayYOffsetComboBoxHider.setVisible(drawGridOverlayCheckbox.isSelected());
+		gridOverlayLineWidthSliderHider.setVisible(drawGridOverlayCheckbox.isSelected());
 	}
 
 	private void updateBackgroundAndRegionFieldVisibility()
@@ -1885,10 +1909,11 @@ public class ThemePanel extends JTabbedPane
 
 		drawGridOverlayCheckbox.setSelected(settings.drawGridOverlay);
 		gridOverlayShapeComboBox.setSelectedItem(settings.gridOverlayShape);
-		gridOverlayColCountSlider.setValue(settings.gridOverlayColCount);
+		gridOverlayRowOrColCountSlider.setValue(settings.gridOverlayRowOrColCount);
 		gridOverlayTransparencySlider.setValue(settings.gridOverlayTransparency);
 		gridOverlayXOffsetComboBox.setSelectedItem(settings.gridOverlayXOffset);
 		gridOverlayYOffsetComboBox.setSelectedItem(settings.gridOverlayYOffset);
+		gridOverlayLineWidthSlider.setValue(settings.gridOverlayLineWidth);
 		updateGridOverlayFieldVisibility();
 
 		if (changeEffectsBackgroundImages)
@@ -2115,10 +2140,11 @@ public class ThemePanel extends JTabbedPane
 
 		settings.drawGridOverlay = drawGridOverlayCheckbox.isSelected();
 		settings.gridOverlayShape = (GridOverlayShape) gridOverlayShapeComboBox.getSelectedItem();
-		settings.gridOverlayColCount = gridOverlayColCountSlider.getValue();
+		settings.gridOverlayRowOrColCount = gridOverlayRowOrColCountSlider.getValue();
 		settings.gridOverlayTransparency = gridOverlayTransparencySlider.getValue();
 		settings.gridOverlayXOffset = (GridOverlayOffset) gridOverlayXOffsetComboBox.getSelectedItem();
 		settings.gridOverlayYOffset = (GridOverlayOffset) gridOverlayYOffsetComboBox.getSelectedItem();
+		settings.gridOverlayLineWidth = gridOverlayLineWidthSlider.getValue();
 	}
 
 	private boolean areRegionColorsVisible()

@@ -2172,9 +2172,7 @@ public class MapCreator implements WarningLogger
 
 	public void drawGridOverlay(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds)
 	{
-		int alpha = 255 - (int) (((float) settings.gridOverlayTransparency / 100.0) * 255);
-		GridDrawer.drawGrid(mapOrSnippet, settings.gridOverlayShape, alpha, settings.gridOverlayColCount, settings.gridOverlayXOffset,
-				settings.gridOverlayYOffset, settings.resolution);
+		GridDrawer.drawGrid(mapOrSnippet, settings);
 	}
 
 }

@@ -212,10 +212,11 @@ public class MapSettings implements Serializable
 	
 	public boolean drawGridOverlay;
 	public GridOverlayShape gridOverlayShape = GridOverlayShape.Horizontal_hexes;
-	public int gridOverlayColCount = 36;
-	public int gridOverlayTransparency = 30;
+	public int gridOverlayRowOrColCount = 16;
+	public int gridOverlayTransparency = 70;
 	public GridOverlayOffset gridOverlayXOffset = GridOverlayOffset.zero;
 	public GridOverlayOffset gridOverlayYOffset = GridOverlayOffset.zero;
+	public int gridOverlayLineWidth = 3;
 
 	public MapSettings()
 	{
@@ -481,10 +482,11 @@ public class MapSettings implements Serializable
 		
 		root.put("drawGridOverlay", drawGridOverlay);
 		root.put("gridOverlayShape", gridOverlayShape.toString());
-		root.put("gridOverlayColCount", gridOverlayColCount);
+		root.put("gridOverlayRowOrColCount", gridOverlayRowOrColCount);
 		root.put("gridOverlayTransparency", gridOverlayTransparency);
 		root.put("gridOverlayXOffset", gridOverlayXOffset.toString());
 		root.put("gridOverlayYOffset", gridOverlayYOffset.toString());
+		root.put("gridOverlayLineWidth", gridOverlayLineWidth);
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -1138,9 +1140,10 @@ public class MapSettings implements Serializable
 			drawGridOverlay = (boolean) root.get("drawGridOverlay");
 			gridOverlayShape = Enum.valueOf(GridOverlayShape.class, ((String) root.get("gridOverlayShape")).replace(" ", "_"));
 			gridOverlayTransparency = (int) (long) root.get("gridOverlayTransparency");
-			gridOverlayColCount = (int) (long) root.get("gridOverlayColCount");
+			gridOverlayRowOrColCount = (int) (long) root.get("gridOverlayRowOrColCount");
 			gridOverlayXOffset = GridOverlayOffset.parse((String) root.get("gridOverlayXOffset"));
 			gridOverlayYOffset = GridOverlayOffset.parse((String) root.get("gridOverlayYOffset"));
+			gridOverlayLineWidth = (int) (long) root.get("gridOverlayLineWidth");
 		}
 		
 		edits = new MapEdits();
@@ -1916,6 +1919,7 @@ public class MapSettings implements Serializable
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
+	
 
 	@Override
 	public boolean equals(Object obj)
@@ -1958,20 +1962,21 @@ public class MapSettings implements Serializable
 				&& Double.doubleToLongBits(defaultRoadWidth) == Double.doubleToLongBits(other.defaultRoadWidth)
 				&& Double.doubleToLongBits(defaultTreeHeightScaleForOldMaps) == Double
 						.doubleToLongBits(other.defaultTreeHeightScaleForOldMaps)
-				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder && drawGrunge == other.drawGrunge
+				&& drawBoldBackground == other.drawBoldBackground && drawBorder == other.drawBorder
+				&& drawGridOverlay == other.drawGridOverlay && drawGrunge == other.drawGrunge
 				&& drawOceanEffectsInLakes == other.drawOceanEffectsInLakes && drawOverlayImage == other.drawOverlayImage
 				&& drawRegionBoundaries == other.drawRegionBoundaries && drawRegionColors == other.drawRegionColors
 				&& drawRoads == other.drawRoads && drawText == other.drawText
 				&& Double.doubleToLongBits(duneScale) == Double.doubleToLongBits(other.duneScale)
 				&& Double.doubleToLongBits(edgeLandToWaterProbability) == Double.doubleToLongBits(other.edgeLandToWaterProbability)
-				&& Objects.equals(edits, other.edits) && drawGridOverlay == other.drawGridOverlay
-				&& fadeConcentricWaves == other.fadeConcentricWaves && flipHorizontally == other.flipHorizontally
-				&& flipVertically == other.flipVertically && frayedBorder == other.frayedBorder
-				&& frayedBorderBlurLevel == other.frayedBorderBlurLevel && Objects.equals(frayedBorderColor, other.frayedBorderColor)
-				&& frayedBorderSeed == other.frayedBorderSeed && frayedBorderSize == other.frayedBorderSize
-				&& generateBackground == other.generateBackground && generateBackgroundFromTexture == other.generateBackgroundFromTexture
-				&& generatedHeight == other.generatedHeight && generatedWidth == other.generatedWidth
-				&& gridOverlayColCount == other.gridOverlayColCount && gridOverlayShape == other.gridOverlayShape
+				&& Objects.equals(edits, other.edits) && fadeConcentricWaves == other.fadeConcentricWaves
+				&& flipHorizontally == other.flipHorizontally && flipVertically == other.flipVertically
+				&& frayedBorder == other.frayedBorder && frayedBorderBlurLevel == other.frayedBorderBlurLevel
+				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed
+				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
+				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
+				&& generatedWidth == other.generatedWidth && gridOverlayRowOrColCount == other.gridOverlayRowOrColCount
+				&& gridOverlayLineWidth == other.gridOverlayLineWidth && gridOverlayShape == other.gridOverlayShape
 				&& gridOverlayTransparency == other.gridOverlayTransparency && gridOverlayXOffset == other.gridOverlayXOffset
 				&& gridOverlayYOffset == other.gridOverlayYOffset && grungeWidth == other.grungeWidth
 				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)

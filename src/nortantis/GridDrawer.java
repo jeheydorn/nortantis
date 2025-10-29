@@ -11,33 +11,42 @@ import nortantis.platform.ImageType;
 import nortantis.platform.Painter;
 import nortantis.util.ImageHelper;
 
-// TODO Convert to wrapper classes
+
 public class GridDrawer
 {
-	public static void drawGrid(Image image, GridOverlayShape type, int alpha, int columns, GridOverlayOffset xOffset,
-			GridOverlayOffset yOffset, double resolutionScale)
+	public static void drawGrid(Image image, MapSettings settings)
 	{
+
+		int alpha = 255 - (int) (((float) settings.gridOverlayTransparency / 100.0) * 255);
+
+
 		Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
 		ImageHelper.setAlphaOfAllPixels(hexImage, 0);
 
 		{
 			Painter p = hexImage.createPainter(DrawQuality.High);
 			p.setColor(Color.black);
-			p.setBasicStroke(10f * (float) resolutionScale); // TODO make the width a parameter
-
-			int width = image.getWidth();
-			int height = image.getHeight();
-
-			float cellWidth = (float) width / columns;
-
-			float xOffsetToUse = cellWidth * xOffset.getScale();
-			float yOffsetToUse = cellWidth * yOffset.getScale();
-
-			switch (type)
+			float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
+			if (settings.gridOverlayShape == GridOverlayShape.Squares)
 			{
-			case Squares -> drawSquareGrid(p, width, height, cellWidth, xOffsetToUse, yOffsetToUse);
-			case Vertical_hexes -> drawVerticalHexGrid(p, width, height, cellWidth, xOffsetToUse, yOffsetToUse);
-			case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, cellWidth, xOffsetToUse, yOffsetToUse);
+				p.setStrokeToSolidLineWithNoEndDecorations(lineWidth);
+			}
+			else
+			{
+				p.setBasicStroke(lineWidth);
+			}
+
+			float width = image.getWidth();
+			float height = image.getHeight();
+
+			switch (settings.gridOverlayShape)
+			{
+			case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
+					settings.gridOverlayYOffset);
+			case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
+					settings.gridOverlayYOffset);
+			case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
+					settings.gridOverlayYOffset);
 			}
 
 			p.dispose();
@@ -51,58 +60,80 @@ public class GridDrawer
 
 	}
 
-	private static void drawSquareGrid(Painter p, int width, int height, float cellWidth, float xOffset, float yOffset)
+	private static void drawSquareGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,
+			GridOverlayOffset yOffset)
 	{
-		for (float x = xOffset; x < width; x += cellWidth)
+		float cellWidth = width / colCount;
+		float xOffsetFloat = xOffset.getScale() * cellWidth - cellWidth;
+		float yOffsetFloat = yOffset.getScale() * cellWidth - cellWidth;
+
+		for (float x = xOffsetFloat; x <= width + 1; x += cellWidth)
 		{
 			p.drawLine(x, 0, x, height);
 		}
-		for (float y = yOffset; y < height; y += cellWidth)
+		for (float y = yOffsetFloat; y <= height + 1; y += cellWidth)
 		{
 			p.drawLine(0, y, width, y);
 		}
 	}
 
-	private static void drawVerticalHexGrid(Painter p, int width, int height, float cellWidth, float xOffset, float yOffset)
+	private static void drawVerticalHexGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,
+			GridOverlayOffset yOffset)
 	{
-		float size = cellWidth / (float) Math.sqrt(3);
-		float hexHeight = size * 2;
-		float hexWidth = (float) Math.sqrt(3) * size;
+		float hexWidth = width / colCount;
+		float hexHeight = (hexWidth / (float) Math.sqrt(3)) * 2;
 		float vertSpacing = 0.75f * hexHeight;
+		float xOffsetFloat = xOffset.getScale() * hexWidth - hexWidth;
+		float yOffsetFloat = yOffset.getScale() * hexHeight + hexHeight / 2f - vertSpacing * 2f;
+		int rowNumber = 0;
 
-		for (float y = yOffset; y < height + hexHeight; y += vertSpacing)
+		for (float y = yOffsetFloat; y < height + hexHeight; y += vertSpacing)
 		{
-			boolean offset = ((int) ((y - yOffset) / vertSpacing)) % 2 == 1;
-			for (float x = xOffset + (offset ? hexWidth / 2 : 0); x < width + hexWidth; x += hexWidth)
+			rowNumber++;
+			boolean offset = rowNumber % 2 == 1;
+			for (float x = xOffsetFloat + (offset ? hexWidth / 2 : 0); x < width + hexWidth; x += hexWidth)
 			{
-				drawHex(p, x, y, size, true);
+				if (x <= 0 || !(x + hexWidth < width + hexWidth))
+				{
+					continue;
+				}
+				drawHex(p, x, y, hexHeight / 2f, true);
 			}
 		}
 	}
 
-	private static void drawHorizontalHexGrid(Painter p, int width, int height, float cellWidth, float xOffset, float yOffset)
+	private static void drawHorizontalHexGrid(Painter p, float width, float height, int rowCount, GridOverlayOffset xOffset,
+			GridOverlayOffset yOffset)
 	{
-		float size = cellWidth / 2f;
-		float hexWidth = size * 2;
-		float hexHeight = (float) Math.sqrt(3) * size;
+		float hexHeight = height / rowCount;
+		float hexWidth = (hexHeight / (float) Math.sqrt(3)) * 2;
 		float horizSpacing = 0.75f * hexWidth;
+		float yOffsetFloat = yOffset.getScale() * hexHeight - hexHeight;
+		float xOffsetFloat = xOffset.getScale() * hexWidth + hexWidth / 2f - horizSpacing * 2f;
+		int colNumber = 0;
 
-		for (float x = xOffset; x < width + hexWidth; x += horizSpacing)
+		for (float x = xOffsetFloat; x < width + hexWidth; x += horizSpacing)
 		{
-			boolean offset = ((int) ((x - xOffset) / horizSpacing)) % 2 == 1;
-			for (float y = yOffset + (offset ? hexHeight / 2 : 0); y < height + hexHeight; y += hexHeight)
+			colNumber++;
+			boolean offset = colNumber % 2 == 1;
+			for (float y = yOffsetFloat + (offset ? hexHeight / 2 : 0); y < height + hexHeight; y += hexHeight)
 			{
-				drawHex(p, x, y, size, false);
+				if (y <= 0 || !(y + hexHeight < height + hexHeight))
+				{
+					continue;
+				}
+				drawHex(p, x, y, hexWidth / 2f, false);
 			}
 		}
 	}
+
 
 	private static void drawHex(Painter p, float cx, float cy, float size, boolean vertical)
 	{
 		List<FloatPoint> hex = new ArrayList<>(6);
 		for (int i = 0; i < 6; i++)
 		{
-			double angle = Math.toRadians((!vertical ? 60 : 30) + i * 60);
+			double angle = Math.toRadians((vertical ? 30 : 60) + i * 60);
 			float x = (float) (cx + size * Math.cos(angle));
 			float y = (float) (cy + size * Math.sin(angle));
 			hex.add(new FloatPoint(x, y));

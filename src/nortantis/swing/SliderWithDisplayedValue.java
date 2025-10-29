@@ -79,4 +79,9 @@ public class SliderWithDisplayedValue
 		return organizer.addLabelAndComponentsHorizontal(label, toolTip, Arrays.asList(slider, valueDisplay, additionalComponent),
 				componentLeftPadding, horizontalSpaceBetweenComponents);
 	}
+
+	public RowHider addToOrganizer(GridBagOrganizer organizer, JLabel label)
+	{
+		return organizer.addLabelAndComponentsHorizontal(label, Arrays.asList(slider, valueDisplay));
+	}
 }
