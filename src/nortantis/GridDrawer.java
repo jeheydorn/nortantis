@@ -20,7 +20,6 @@ public class GridDrawer
 	{
 		int alpha = settings.gridOverlayColor.getAlpha();
 
-
 		Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
 		ImageHelper.setAlphaOfAllPixels(hexImage, 0);
 
@@ -43,9 +42,9 @@ public class GridDrawer
 			case Squares -> drawSquareGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
 					settings.gridOverlayYOffset);
 			case Vertical_hexes -> drawVerticalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-					settings.gridOverlayYOffset);
+					settings.gridOverlayYOffset, drawBounds, lineWidth);
 			case Horizontal_hexes -> drawHorizontalHexGrid(p, width, height, settings.gridOverlayRowOrColCount, settings.gridOverlayXOffset,
-					settings.gridOverlayYOffset);
+					settings.gridOverlayYOffset, drawBounds, lineWidth);
 			}
 
 			p.dispose();
@@ -76,7 +75,7 @@ public class GridDrawer
 	}
 
 	private static void drawVerticalHexGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,
-			GridOverlayOffset yOffset)
+			GridOverlayOffset yOffset, Rectangle drawBounds, float lineWidth)
 	{
 		float hexWidth = width / colCount;
 		float hexHeight = (hexWidth / (float) Math.sqrt(3)) * 2;
@@ -95,13 +94,17 @@ public class GridDrawer
 				{
 					continue;
 				}
+				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
+				{
+					continue;
+				}
 				drawHex(p, x, y, hexHeight / 2f, true);
 			}
 		}
 	}
 
 	private static void drawHorizontalHexGrid(Painter p, float width, float height, int rowCount, GridOverlayOffset xOffset,
-			GridOverlayOffset yOffset)
+			GridOverlayOffset yOffset, Rectangle drawBounds, float lineWidth)
 	{
 		float hexHeight = height / rowCount;
 		float hexWidth = (hexHeight / (float) Math.sqrt(3)) * 2;
@@ -117,6 +120,10 @@ public class GridDrawer
 			for (float y = yOffsetFloat + (offset ? hexHeight / 2 : 0); y < height + hexHeight; y += hexHeight)
 			{
 				if (y <= 0 || !(y + hexHeight < height + hexHeight))
+				{
+					continue;
+				}
+				if (drawBounds != null && !drawBounds.overlaps(new Rectangle(x - hexWidth / 2.0, y - hexWidth / 2.0, hexWidth, hexHeight).pad(lineWidth, lineWidth)))
 				{
 					continue;
 				}
