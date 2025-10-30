@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import nortantis.MapSettings.GridOverlayLayer;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.EdgeEdit;
 import nortantis.editor.FreeIcon;
@@ -447,10 +448,26 @@ public class MapCreator implements WarningLogger
 			}
 
 			checkForCancel();
+			
+			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
+			{
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
+			}
+
+			checkForCancel();
 
 			// Draw icons
 			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackgroundColoredBeforeAddingIconColorsWithShading, landBackground,
 					landTextureSnippet, oceanWithWavesAndShading, drawBounds);
+			
+			checkForCancel();
+
+			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
+			{
+				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
+			}
+
+			checkForCancel();
 
 			textBackground = updateLandMaskAndCreateTextBackground(settings, mapParts.graph, landMask, iconsToDraw, landTextureSnippet,
 					oceanTextureSnippet, mapParts.background, oceanWaves, oceanShading, coastShading, mapParts.iconDrawer, centersToDraw,
@@ -1187,9 +1204,9 @@ public class MapCreator implements WarningLogger
 
 		checkForCancel();
 		
-		if (settings.drawGridOverlay)
+		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 		{
-			drawGridOverlay(map, settings, null);
+			GridDrawer.drawGrid(map, settings, null, map.size());
 		}
 
 		checkForCancel();
@@ -1199,6 +1216,13 @@ public class MapCreator implements WarningLogger
 				oceanWithWavesAndShading, null);
 		landBackground = null;
 		landColoredBeforeAddingIconColorsWithShading = null;
+
+		checkForCancel();
+		
+		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
+		{
+			GridDrawer.drawGrid(map, settings, null, map.size());
+		}
 
 		checkForCancel();
 
@@ -1244,7 +1268,7 @@ public class MapCreator implements WarningLogger
 		}
 		if (settings.drawGridOverlay)
 		{
-			drawGridOverlay(textBackground, settings, null);
+			GridDrawer.drawGrid(textBackground, settings, drawBounds, background.mapBounds.toIntDimension());
 		}
 		
 		return textBackground;
@@ -2169,10 +2193,4 @@ public class MapCreator implements WarningLogger
 		IntRectangle overlayPosition = new IntRectangle(x, y, scaledOverlayWidth, scaledOverlayHeight);
 		return new Tuple2<>(overlayPosition, overlayImage);
 	}
-
-	public void drawGridOverlay(Image mapOrSnippet, MapSettings settings, Rectangle drawBounds)
-	{
-		GridDrawer.drawGrid(mapOrSnippet, settings);
-	}
-
 }

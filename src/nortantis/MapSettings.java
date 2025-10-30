@@ -58,7 +58,7 @@ public class MapSettings implements Serializable
 	/**
 	 * When updating this, also update installers/version.txt
 	 */
-	public static final String currentVersion = "3.13";
+	public static final String currentVersion = "3.14";
 	public static final double defaultPointPrecision = 2.0;
 	public static final double defaultLloydRelaxationsScale = 0.1;
 	private final double defaultTreeHeightScaleForOldMaps = 0.5;
@@ -209,14 +209,15 @@ public class MapSettings implements Serializable
 	public boolean flipVertically;
 
 	private ConcurrentHashMap<IconType, Color> iconColorsByType;
-	
+
 	public boolean drawGridOverlay;
 	public GridOverlayShape gridOverlayShape = GridOverlayShape.Horizontal_hexes;
 	public int gridOverlayRowOrColCount = 16;
-	public int gridOverlayTransparency = 70;
+	public Color gridOverlayColor = Color.create(0, 0, 0, (int) (0.3 * 255.0));
 	public GridOverlayOffset gridOverlayXOffset = GridOverlayOffset.zero;
 	public GridOverlayOffset gridOverlayYOffset = GridOverlayOffset.zero;
 	public int gridOverlayLineWidth = 3;
+	public GridOverlayLayer gridOverlayLayer = GridOverlayLayer.Under_icons;
 
 	public MapSettings()
 	{
@@ -479,14 +480,15 @@ public class MapSettings implements Serializable
 			iconColorsObj.put(key, colorToString(value));
 		}
 		root.put("iconColorsByType", iconColorsObj);
-		
+
 		root.put("drawGridOverlay", drawGridOverlay);
 		root.put("gridOverlayShape", gridOverlayShape.toString());
 		root.put("gridOverlayRowOrColCount", gridOverlayRowOrColCount);
-		root.put("gridOverlayTransparency", gridOverlayTransparency);
+		root.put("gridOverlayColor", colorToString(gridOverlayColor));
 		root.put("gridOverlayXOffset", gridOverlayXOffset.toString());
 		root.put("gridOverlayYOffset", gridOverlayYOffset.toString());
 		root.put("gridOverlayLineWidth", gridOverlayLineWidth);
+		root.put("gridOverlayLayer", gridOverlayLayer.toString());
 
 		// User edits.
 		if (edits != null && !skipEdits)
@@ -1134,18 +1136,19 @@ public class MapSettings implements Serializable
 				iconColorsByType.put(iconType, defaultIconColor);
 			}
 		}
-		
+
 		if (root.containsKey("drawGridOverlay"))
 		{
 			drawGridOverlay = (boolean) root.get("drawGridOverlay");
 			gridOverlayShape = Enum.valueOf(GridOverlayShape.class, ((String) root.get("gridOverlayShape")).replace(" ", "_"));
-			gridOverlayTransparency = (int) (long) root.get("gridOverlayTransparency");
+			gridOverlayColor = parseColor((String) root.get("gridOverlayColor"));
 			gridOverlayRowOrColCount = (int) (long) root.get("gridOverlayRowOrColCount");
 			gridOverlayXOffset = GridOverlayOffset.parse((String) root.get("gridOverlayXOffset"));
 			gridOverlayYOffset = GridOverlayOffset.parse((String) root.get("gridOverlayYOffset"));
 			gridOverlayLineWidth = (int) (long) root.get("gridOverlayLineWidth");
+			gridOverlayLayer = Enum.valueOf(GridOverlayLayer.class, ((String) root.get("gridOverlayLayer")).replace(" ", "_"));
 		}
-		
+
 		edits = new MapEdits();
 		// hiddenTextIds is a comma delimited list.
 
@@ -1916,10 +1919,43 @@ public class MapSettings implements Serializable
 		Blur, Ripples, ConcentricWaves, @Deprecated
 		FadingConcentricWaves, None
 	}
+	
+	public enum GridOverlayLayer
+	{
+		Under_icons, Over_icons;
+		
+		public String toString()
+		{
+			return name().replace("_", " ");
+		}
+	}
 
 	public static final String fileExtension = "nort";
 	public static final String fileExtensionWithDot = "." + fileExtension;
-	
+
+	@Override
+	public int hashCode()
+	{
+		return Objects.hash(artPack, backgroundRandomSeed, backgroundTextureImage, backgroundTextureResource, backgroundTextureSource,
+				boldBackgroundColor, books, borderColor, borderColorOption, borderPosition, borderResource, borderType, borderWidth,
+				brightnessRange, brokenLinesForConcentricWaves, centerLandToWaterProbability, cityIconTypeName, cityProbability, cityScale,
+				coastShadingColor, coastShadingLevel, coastlineColor, coastlineWidth, colorizeLand, colorizeOcean, concentricWaveCount,
+				customImagesPath, defaultDefaultExportAction, defaultHeightmapExportAction, defaultMapExportAction, defaultRoadColor,
+				defaultRoadStyle, defaultRoadWidth, defaultTreeHeightScaleForOldMaps, drawBoldBackground, drawBorder, drawGridOverlay,
+				drawGrunge, drawOceanEffectsInLakes, drawOverlayImage, drawRegionBoundaries, drawRegionColors, drawRoads, drawText,
+				duneScale, edgeLandToWaterProbability, edits, fadeConcentricWaves, flipHorizontally, flipVertically, frayedBorder,
+				frayedBorderBlurLevel, frayedBorderColor, frayedBorderSeed, frayedBorderSize, generateBackground,
+				generateBackgroundFromTexture, generatedHeight, generatedWidth, gridOverlayColor, gridOverlayLayer, gridOverlayLineWidth,
+				gridOverlayRowOrColCount, gridOverlayShape, gridOverlayXOffset, gridOverlayYOffset, grungeWidth, heightmapExportPath,
+				heightmapResolution, hillScale, hueRange, iconColorsByType, imageExportPath, jitterToConcentricWaves, landColor, lineStyle,
+				lloydRelaxationsScale, mountainRangeFont, mountainScale, oceanColor, oceanEffectsColor, oceanEffectsLevel,
+				oceanShadingColor, oceanShadingLevel, oceanWavesColor, oceanWavesLevel, oceanWavesType, otherMountainsFont,
+				overlayImageDefaultScale, overlayImageDefaultTransparency, overlayImagePath, overlayImageTransparency,
+				overlayOffsetResolutionInvariant, overlayScale, pointPrecision, randomSeed, regionBaseColor, regionBoundaryColor,
+				regionBoundaryStyle, regionFont, regionsRandomSeed, resolution, rightRotationCount, riverColor, riverFont, roadColor,
+				roadStyle, saturationRange, solidColorBackground, textColor, textRandomSeed, titleFont, treeHeightScale, version,
+				worldSize);
+	}
 
 	@Override
 	public boolean equals(Object obj)
@@ -1975,11 +2011,11 @@ public class MapSettings implements Serializable
 				&& Objects.equals(frayedBorderColor, other.frayedBorderColor) && frayedBorderSeed == other.frayedBorderSeed
 				&& frayedBorderSize == other.frayedBorderSize && generateBackground == other.generateBackground
 				&& generateBackgroundFromTexture == other.generateBackgroundFromTexture && generatedHeight == other.generatedHeight
-				&& generatedWidth == other.generatedWidth && gridOverlayRowOrColCount == other.gridOverlayRowOrColCount
-				&& gridOverlayLineWidth == other.gridOverlayLineWidth && gridOverlayShape == other.gridOverlayShape
-				&& gridOverlayTransparency == other.gridOverlayTransparency && gridOverlayXOffset == other.gridOverlayXOffset
-				&& gridOverlayYOffset == other.gridOverlayYOffset && grungeWidth == other.grungeWidth
-				&& Objects.equals(heightmapExportPath, other.heightmapExportPath)
+				&& generatedWidth == other.generatedWidth && Objects.equals(gridOverlayColor, other.gridOverlayColor)
+				&& gridOverlayLayer == other.gridOverlayLayer && gridOverlayLineWidth == other.gridOverlayLineWidth
+				&& gridOverlayRowOrColCount == other.gridOverlayRowOrColCount && gridOverlayShape == other.gridOverlayShape
+				&& gridOverlayXOffset == other.gridOverlayXOffset && gridOverlayYOffset == other.gridOverlayYOffset
+				&& grungeWidth == other.grungeWidth && Objects.equals(heightmapExportPath, other.heightmapExportPath)
 				&& Double.doubleToLongBits(heightmapResolution) == Double.doubleToLongBits(other.heightmapResolution)
 				&& Double.doubleToLongBits(hillScale) == Double.doubleToLongBits(other.hillScale) && hueRange == other.hueRange
 				&& Objects.equals(iconColorsByType, other.iconColorsByType) && Objects.equals(imageExportPath, other.imageExportPath)

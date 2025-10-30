@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nortantis.geom.FloatPoint;
+import nortantis.geom.IntDimension;
+import nortantis.geom.Rectangle;
 import nortantis.platform.Color;
 import nortantis.platform.DrawQuality;
 import nortantis.platform.Image;
@@ -14,10 +16,9 @@ import nortantis.util.ImageHelper;
 
 public class GridDrawer
 {
-	public static void drawGrid(Image image, MapSettings settings)
+	public static void drawGrid(Image image, MapSettings settings, Rectangle drawBounds, IntDimension mapDimensions)
 	{
-
-		int alpha = 255 - (int) (((float) settings.gridOverlayTransparency / 100.0) * 255);
+		int alpha = settings.gridOverlayColor.getAlpha();
 
 
 		Image hexImage = Image.create(image.getWidth(), image.getHeight(), ImageType.ARGB);
@@ -25,19 +26,17 @@ public class GridDrawer
 
 		{
 			Painter p = hexImage.createPainter(DrawQuality.High);
-			p.setColor(Color.black);
+			p.setColor(Color.create(settings.gridOverlayColor.getRed(), settings.gridOverlayColor.getGreen(),
+					settings.gridOverlayColor.getBlue()));
 			float lineWidth = settings.gridOverlayLineWidth * (float) settings.resolution;
-			if (settings.gridOverlayShape == GridOverlayShape.Squares)
+			p.setBasicStroke(lineWidth);
+			if (drawBounds != null)
 			{
-				p.setStrokeToSolidLineWithNoEndDecorations(lineWidth);
-			}
-			else
-			{
-				p.setBasicStroke(lineWidth);
+				p.translate(-drawBounds.x, -drawBounds.y);
 			}
 
-			float width = image.getWidth();
-			float height = image.getHeight();
+			float width = mapDimensions.width;
+			float height = mapDimensions.height;
 
 			switch (settings.gridOverlayShape)
 			{
@@ -57,7 +56,6 @@ public class GridDrawer
 			p.drawImage(ImageHelper.applyAlpha(hexImage, alpha), 0, 0);
 			p.dispose();
 		}
-
 	}
 
 	private static void drawSquareGrid(Painter p, float width, float height, int colCount, GridOverlayOffset xOffset,

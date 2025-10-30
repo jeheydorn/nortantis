@@ -454,7 +454,7 @@ public class SwingHelper
 	 * 
 	 * @return True if the message should be hidden in the future. False if not.
 	 */
-	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, Component parentComponent)
+	public static boolean showDismissibleMessage(String title, String message, Dimension popupSize, int JOptionPaneMessageType, Component parentComponent)
 	{
 		JCheckBox checkBox = new JCheckBox("Don't show this message again.");
 		Object[] options = { "OK" };
@@ -466,7 +466,7 @@ public class SwingHelper
 		panel.add(Box.createVerticalGlue());
 		panel.add(checkBox);
 		panel.setPreferredSize(popupSize);
-		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPane.PLAIN_MESSAGE, null,
+		int result = JOptionPane.showOptionDialog(parentComponent, panel, title, JOptionPane.YES_NO_OPTION, JOptionPaneMessageType, null,
 				options, options[0]);
 		if (result == JOptionPane.YES_OPTION)
 		{

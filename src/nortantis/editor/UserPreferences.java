@@ -33,6 +33,7 @@ public class UserPreferences
 	private final int maxRecentMaps = 15;
 	public String defaultCustomImagesPath;
 	public boolean hideNewMapWithSameThemeRegionColorsMessage;
+	public boolean hideGridOverlaySeizureWarning;
 	public Set<String> collapsedPanels = new TreeSet<>();
 	public String lastVersionFromCheck;
 	public LocalDateTime lastVersionCheckTime;
@@ -85,6 +86,9 @@ public class UserPreferences
 				{
 					defaultCustomImagesPath = FileHelper.replaceHomeFolderWithPlaceholder(props.getProperty("defaultCustomImagesPath"));
 				}
+				
+				// I used the wrong name when creating this property, but changing it now would make the popup show up for existing users,
+				// and there is no functional problem with just leaving it.
 				if (props.containsKey("showNewMapWithSameThemeRegionColorsMessage"))
 				{
 					String value = props.getProperty("showNewMapWithSameThemeRegionColorsMessage");
@@ -108,21 +112,28 @@ public class UserPreferences
 					lastVersionCheckTime = LocalDateTime.parse(props.getProperty("lastVersionCheckTime"),
 							DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 				}
-				
+
 				if (props.containsKey("lookAndFeel") && !StringUtils.isEmpty(props.getProperty("lookAndFeel")))
 				{
 					lookAndFeel = LookAndFeel.valueOf(props.getProperty("lookAndFeel"));
 				}
-				
+
 				if (props.containsKey("toolsPanelWidth"))
 				{
 					toolsPanelWidth = Integer.parseInt(props.getProperty("toolsPanelWidth"));
 				}
-				
+
 				if (props.containsKey("themePanelWidth"))
 				{
 					themePanelWidth = Integer.parseInt(props.getProperty("themePanelWidth"));
 				}
+
+				if (props.containsKey("hideGridOverlaySeizureWarning"))
+				{
+					String value = props.getProperty("hideGridOverlaySeizureWarning");
+					hideGridOverlaySeizureWarning = Boolean.parseBoolean(value);
+				}
+
 			}
 		}
 		catch (Exception e)
@@ -154,6 +165,7 @@ public class UserPreferences
 		props.setProperty("recentMapFilePaths", String.join("\t", recentMapFilePaths));
 		props.setProperty("defaultCustomImagesPath", defaultCustomImagesPath == null ? "" : defaultCustomImagesPath);
 		props.setProperty("showNewMapWithSameThemeRegionColorsMessage", hideNewMapWithSameThemeRegionColorsMessage + "");
+		props.setProperty("hideGridOverlaySeizureWarning", hideGridOverlaySeizureWarning + "");
 		props.setProperty("collapsedPanels", String.join("\t", collapsedPanels));
 		props.setProperty("lastVersionFromCheck", lastVersionFromCheck == null ? "" : lastVersionFromCheck);
 		props.setProperty("lastVersionCheckTime",
