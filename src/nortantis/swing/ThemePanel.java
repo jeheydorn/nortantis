@@ -571,7 +571,7 @@ public class ThemePanel extends JTabbedPane
 							UserPreferences.getInstance().hideGridOverlaySeizureWarning = SwingHelper.showDismissibleMessage("Seizure Risk",
 									"The grid feature can create patterns which for some people can trigger headaches or seizures if used with"
 									+ " a high number of rows or columns and a low color transparency, especially with a thick line width.",
-									new Dimension(300, 110), JOptionPane.WARNING_MESSAGE, ThemePanel.this.mainWindow);
+									new Dimension(340, 115), JOptionPane.WARNING_MESSAGE, ThemePanel.this.mainWindow);
 						}
 					}
 				});
