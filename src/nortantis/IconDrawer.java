@@ -1027,9 +1027,9 @@ public class IconDrawer
 		int graphXLeft = graphXCenter - icon.getWidth() / 2;
 		int graphYTop = graphYCenter - icon.getHeight() / 2;
 
-		for (int x : new Range(icon.getWidth()))
+		for (int y : new Range(icon.getHeight()))
 		{
-			for (int y : new Range(icon.getHeight()))
+			for (int x = 0; x < icon.getWidth(); x++)
 			{
 				Color iconColor = Color.create(icon.getRGB(x, y), true);
 				int iconAlphaInt = iconColor.getAlpha();
@@ -1124,7 +1124,7 @@ public class IconDrawer
 					// that are partially transparent.
 					landBackgroundColorScale = 1.0 - Math.pow(1.0 - landTextureAlpha, 10);
 				}
-				
+
 				double mapAlpha = mapColor.getAlpha() / 255.0;
 				double mapColorScale;
 				if (mapAlpha == 1.0)
@@ -1145,20 +1145,23 @@ public class IconDrawer
 				// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon draw
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
-				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(),
-						Helper.linearCombo(contentMaskLevel,
-								Helper.linearCombo(shadingMaskLevel, backgroundColorScale * bgColorNoIcons.getRed(),
-										Helper.linearCombo(shadingMaskLevel, backgroundColorScale * bgColor.getRed(), landBackgroundColorScale * landTextureColor.getRed())),
-								mapColorScale * mapColor.getRed())));
+				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(), Helper.linearCombo(
+						contentMaskLevel, Helper
+								.linearCombo(shadingMaskLevel, backgroundColorScale * bgColorNoIcons.getRed(),
+										Helper.linearCombo(shadingMaskLevel, backgroundColorScale * bgColor.getRed(),
+												landBackgroundColorScale * landTextureColor.getRed())),
+						mapColorScale * mapColor.getRed())));
 				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
 						Helper.linearCombo(contentMaskLevel,
 								backgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getGreen(),
-										Helper.linearCombo(shadingMaskLevel, bgColor.getGreen(), landBackgroundColorScale * landTextureColor.getGreen())),
+										Helper.linearCombo(shadingMaskLevel, bgColor.getGreen(),
+												landBackgroundColorScale * landTextureColor.getGreen())),
 								mapColorScale * mapColor.getGreen())));
 				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
 						Helper.linearCombo(contentMaskLevel,
 								backgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getBlue(),
-										Helper.linearCombo(shadingMaskLevel, bgColor.getBlue(), landBackgroundColorScale * landTextureColor.getBlue())),
+										Helper.linearCombo(shadingMaskLevel, bgColor.getBlue(),
+												landBackgroundColorScale * landTextureColor.getBlue())),
 								mapColorScale * mapColor.getBlue())));
 				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
 						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
