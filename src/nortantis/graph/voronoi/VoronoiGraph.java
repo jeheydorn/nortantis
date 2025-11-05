@@ -530,16 +530,7 @@ public abstract class VoronoiGraph
 		{
 			if (e.isRiver() && !e.isOceanOrLakeOrShore())
 			{
-				// If a river is also a region boundary, and region boundaries are visible, then draw the river with the region boundary
-				// color.
-				if (areRegionBoundariesVisible && e.isRegionBoundary())
-				{
-					p.setColor(regionBoundaryColor);
-				}
-				else
-				{
-					p.setColor(riverColor);
-				}
+				p.setColor(riverColor);
 
 				float currentWidth = calcRiverStrokeWidth(e);
 
