@@ -426,7 +426,7 @@ public class LandWaterTool extends EditorTool
 				for (Edge edge : center.borders)
 				{
 					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-					if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+					if (eEdit != null && eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 					{
 						eEdit.riverLevel = 0;
 					}
@@ -608,7 +608,7 @@ public class LandWaterTool extends EditorTool
 				for (Edge edge : possibleRivers)
 				{
 					EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-					if (eEdit.riverLevel > 0)
+					if (eEdit != null && eEdit.riverLevel > 0)
 					{
 						eEdit.riverLevel = 0;
 						changed.add(edge);
@@ -956,7 +956,15 @@ public class LandWaterTool extends EditorTool
 			{
 				int base = (riverWidthSlider.getValue() - 1);
 				int riverLevel = (base * base * 2) + VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn + 1;
-				mainWindow.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
+				if (mainWindow.edits.edgeEdits.containsKey(edge.index))
+				{
+					mainWindow.edits.edgeEdits.get(edge.index).riverLevel = riverLevel;
+				}
+				else
+				{
+					mainWindow.edits.edgeEdits.put(edge.index, new EdgeEdit(edge.index, riverLevel));
+				}
+				
 			}
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
@@ -1062,7 +1070,7 @@ public class LandWaterTool extends EditorTool
 			for (Edge edge : candidates)
 			{
 				EdgeEdit eEdit = mainWindow.edits.edgeEdits.get(edge.index);
-				if (eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
+				if (eEdit != null && eEdit.riverLevel > VoronoiGraph.riversThisSizeOrSmallerWillNotBeDrawn)
 				{
 					mapEditingPanel.addHighlightedEdge(edge, EdgeType.Voronoi);
 				}

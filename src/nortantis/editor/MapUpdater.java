@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -122,7 +123,7 @@ public abstract class MapUpdater
 	{
 		createAndShowMap(UpdateType.OverlayImage, null, null, null, null, null, null);
 	}
-	
+
 	public void createAndShowMapGridOverlayChange()
 	{
 		createAndShowMap(UpdateType.GridOverlay, null, null, null, null, null, null);
@@ -294,8 +295,19 @@ public abstract class MapUpdater
 
 	private Set<Integer> getIdsOfEdgesWithChangesInEdits(MapEdits changeEdits)
 	{
-		return getEdits().edgeEdits.stream().filter(eEdit -> !eEdit.equals(changeEdits.edgeEdits.get(eEdit.index)))
-				.map(eEdit -> eEdit.index).collect(Collectors.toSet());
+		Map<Integer, EdgeEdit> original = getEdits().edgeEdits;
+		Map<Integer, EdgeEdit> changed = changeEdits.edgeEdits;
+
+		Set<Integer> allIndices = new HashSet<>();
+		allIndices.addAll(original.keySet());
+		allIndices.addAll(changed.keySet());
+
+		return allIndices.stream().filter(index ->
+		{
+			EdgeEdit originalEdit = original.get(index);
+			EdgeEdit changedEdit = changed.get(index);
+			return !Objects.equals(originalEdit, changedEdit);
+		}).collect(Collectors.toSet());
 	}
 
 	private Collection<MapText> getTextWithChangesInEdits(MapEdits changeEdits)

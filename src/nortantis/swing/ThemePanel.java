@@ -66,6 +66,7 @@ import nortantis.editor.UserPreferences;
 import nortantis.geom.IntDimension;
 import nortantis.geom.Point;
 import nortantis.graph.voronoi.Center;
+import nortantis.platform.Font;
 import nortantis.platform.Image;
 import nortantis.platform.ImageType;
 import nortantis.platform.awt.AwtFactory;
@@ -124,11 +125,12 @@ public class ThemePanel extends JTabbedPane
 	private JRadioButton splinesLinesButton;
 	private JRadioButton splinesWithSmoothedCoastlinesButton;
 	private ActionListener oceanEffectsListener;
-	private JLabel titleFontDisplay;
-	private JLabel regionFontDisplay;
-	private JLabel mountainRangeFontDisplay;
-	private JLabel otherMountainsFontDisplay;
-	private JLabel riverFontDisplay;
+	private FontChooser titleFontChooser;
+	private FontChooser regionFontChooser;
+	private FontChooser mountainRangeFontChooser;
+	private FontChooser otherMountainsFontChooser;
+	private FontChooser citiesFontChooser;
+	private FontChooser riverFontChooser;
 	private JPanel textColorDisplay;
 	private JPanel boldBackgroundColorDisplay;
 	private JCheckBox drawBoldBackgroundCheckbox;
@@ -137,11 +139,6 @@ public class ThemePanel extends JTabbedPane
 	private RowHider colorizeLandCheckboxHider;
 	private RowHider landColorHider;
 	private JButton btnChooseBoldBackgroundColor;
-	private JButton btnTitleFont;
-	private JButton btnRegionFont;
-	private JButton btnMountainRangeFont;
-	private JButton btnOtherMountainsFont;
-	private JButton btnRiverFont;
 	private JButton btnChooseTextColor;
 	private ActionListener enableTextCheckboxActionListener;
 	private ActionListener frayedEdgeCheckboxActionListener;
@@ -211,6 +208,7 @@ public class ThemePanel extends JTabbedPane
 	private JLabel gridOverlayRowOrColLabel;
 	private JComboBox<GridOverlayLayer> gridOverlayLayerComboBox;
 	private RowHider gridOverlayLayerComboBoxHider;
+
 
 	public ThemePanel(MainWindow mainWindow)
 	{
@@ -1439,7 +1437,6 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	private boolean disableCoastShadingColorDisplayHandler = false;
-
 	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
 	{
 		if (!disableCoastShadingColorDisplayHandler)
@@ -1465,26 +1462,19 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setToolTipText("Enable/disable drawing text. When unselected, text will still exist, but will not be shown.");
 		organizer.addLeftAlignedComponent(enableTextCheckBox);
 		organizer.addSeperator();
-
-		Tuple2<JLabel, JButton> tupleTitle = organizer.addFontChooser("Title font:", 70, () -> handleFontsChange());
-		titleFontDisplay = tupleTitle.getFirst();
-		btnTitleFont = tupleTitle.getSecond();
-
-		Tuple2<JLabel, JButton> tupleRegion = organizer.addFontChooser("Region font:", 40, () -> handleFontsChange());
-		regionFontDisplay = tupleRegion.getFirst();
-		btnRegionFont = tupleRegion.getSecond();
-
-		Tuple2<JLabel, JButton> tupleMountainRange = organizer.addFontChooser("Mountain range font:", 30, () -> handleFontsChange());
-		mountainRangeFontDisplay = tupleMountainRange.getFirst();
-		btnMountainRangeFont = tupleMountainRange.getSecond();
-
-		Tuple2<JLabel, JButton> tupleCitiesMountains = organizer.addFontChooser("Cities/mountains font:", 30, () -> handleFontsChange());
-		otherMountainsFontDisplay = tupleCitiesMountains.getFirst();
-		btnOtherMountainsFont = tupleCitiesMountains.getSecond();
-
-		Tuple2<JLabel, JButton> tupleRiver = organizer.addFontChooser("River/lake font:", 30, () -> handleFontsChange());
-		riverFontDisplay = tupleRiver.getFirst();
-		btnRiverFont = tupleRiver.getSecond();
+		
+		titleFontChooser = new FontChooser("Title font:", 70, 50, () -> handleFontsChange());
+		titleFontChooser.addToOrganizer(organizer);
+		regionFontChooser = new FontChooser("Region font:", 40, 50, () -> handleFontsChange());
+		regionFontChooser.addToOrganizer(organizer);
+		mountainRangeFontChooser = new FontChooser("Mountain range font:", 30, 40, () -> handleFontsChange());
+		mountainRangeFontChooser.addToOrganizer(organizer);
+		otherMountainsFontChooser = new FontChooser("Other mountains font:", 30, 40, () -> handleFontsChange());
+		otherMountainsFontChooser.addToOrganizer(organizer);
+		citiesFontChooser = new FontChooser("Cities font:", 30, 40, () -> handleFontsChange());
+		citiesFontChooser.addToOrganizer(organizer);
+		riverFontChooser = new FontChooser("River/lake font:", 30, 40, () -> handleFontsChange());
+		riverFontChooser.addToOrganizer(organizer);
 
 		organizer.addSeperator();
 		textColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -1907,16 +1897,12 @@ public class ThemePanel extends JTabbedPane
 		enableTextCheckBox.setSelected(settings.drawText);
 		enableTextCheckboxActionListener.actionPerformed(null);
 
-		titleFontDisplay.setFont(AwtFactory.unwrap(settings.titleFont));
-		titleFontDisplay.setText(settings.titleFont.getName());
-		regionFontDisplay.setFont(AwtFactory.unwrap(settings.regionFont));
-		regionFontDisplay.setText(settings.regionFont.getName());
-		mountainRangeFontDisplay.setFont(AwtFactory.unwrap(settings.mountainRangeFont));
-		mountainRangeFontDisplay.setText(settings.mountainRangeFont.getName());
-		otherMountainsFontDisplay.setFont(AwtFactory.unwrap(settings.otherMountainsFont));
-		otherMountainsFontDisplay.setText(settings.otherMountainsFont.getName());
-		riverFontDisplay.setFont(AwtFactory.unwrap(settings.riverFont));
-		riverFontDisplay.setText(settings.riverFont.getName());
+		titleFontChooser.setFont(AwtFactory.unwrap(settings.titleFont));
+		regionFontChooser.setFont(AwtFactory.unwrap(settings.regionFont));
+		mountainRangeFontChooser.setFont(AwtFactory.unwrap(settings.mountainRangeFont));
+		otherMountainsFontChooser.setFont(AwtFactory.unwrap(settings.otherMountainsFont));
+		citiesFontChooser.setFont(AwtFactory.unwrap(settings.citiesFont));
+		riverFontChooser.setFont(AwtFactory.unwrap(settings.riverFont));
 		textColorDisplay.setBackground(AwtFactory.unwrap(settings.textColor));
 		boldBackgroundColorDisplay.setBackground(AwtFactory.unwrap(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
@@ -2145,11 +2131,12 @@ public class ThemePanel extends JTabbedPane
 		settings.regionBoundaryColor = AwtFactory.wrap(regionBoundaryColorDisplay.getBackground());
 		settings.landColor = AwtFactory.wrap(landDisplayPanel.getColor());
 
-		settings.titleFont = AwtFactory.wrap(titleFontDisplay.getFont());
-		settings.regionFont = AwtFactory.wrap(regionFontDisplay.getFont());
-		settings.mountainRangeFont = AwtFactory.wrap(mountainRangeFontDisplay.getFont());
-		settings.otherMountainsFont = AwtFactory.wrap(otherMountainsFontDisplay.getFont());
-		settings.riverFont = AwtFactory.wrap(riverFontDisplay.getFont());
+		settings.titleFont = getTitleFont();
+		settings.regionFont = getRegionFont();
+		settings.mountainRangeFont = getMountainRangeFont();
+		settings.otherMountainsFont = getOtherMountainsFont();
+		settings.citiesFont = getCitiesFont();
+		settings.riverFont = getRiverFont();
 		settings.textColor = AwtFactory.wrap(textColorDisplay.getBackground());
 		settings.boldBackgroundColor = AwtFactory.wrap(boldBackgroundColorDisplay.getBackground());
 		settings.drawBoldBackground = drawBoldBackgroundCheckbox.isSelected();
@@ -2180,6 +2167,38 @@ public class ThemePanel extends JTabbedPane
 		settings.gridOverlayLineWidth = gridOverlayLineWidthSlider.getValue();
 		settings.gridOverlayLayer = (GridOverlayLayer) gridOverlayLayerComboBox.getSelectedItem();
 	}
+	
+	public Font getTitleFont()
+	{
+		return AwtFactory.wrap(titleFontChooser.getFont());
+	}
+	
+	public Font getRegionFont()
+	{
+		return AwtFactory.wrap(regionFontChooser.getFont());
+	}
+
+	
+	public Font getMountainRangeFont()
+	{
+		return AwtFactory.wrap(mountainRangeFontChooser.getFont());
+	}
+
+	public Font getOtherMountainsFont()
+	{
+		return AwtFactory.wrap(otherMountainsFontChooser.getFont());
+	}
+
+	public Font getCitiesFont()
+	{
+		return AwtFactory.wrap(citiesFontChooser.getFont());
+	}
+
+	public Font getRiverFont()
+	{
+		return AwtFactory.wrap(riverFontChooser.getFont());
+	}
+
 
 	private boolean areRegionColorsVisible()
 	{
@@ -2301,11 +2320,12 @@ public class ThemePanel extends JTabbedPane
 		grungeColorChooseButton.setEnabled(drawGrungeCheckbox.isSelected());
 		grungeSlider.setEnabled(drawGrungeCheckbox.isSelected());
 
-		btnTitleFont.setEnabled(enableTextCheckBox.isSelected());
-		btnRegionFont.setEnabled(enableTextCheckBox.isSelected());
-		btnMountainRangeFont.setEnabled(enableTextCheckBox.isSelected());
-		btnOtherMountainsFont.setEnabled(enableTextCheckBox.isSelected());
-		btnRiverFont.setEnabled(enableTextCheckBox.isSelected());
+		titleFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		regionFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		mountainRangeFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		otherMountainsFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		citiesFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
+		riverFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected() && drawBoldBackgroundCheckbox.isSelected());

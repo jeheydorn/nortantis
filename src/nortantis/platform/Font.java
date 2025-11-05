@@ -32,4 +32,12 @@ public abstract class Font
 	{
 		return PlatformFactory.getInstance().isFontInstalled(fontFamily);
 	}
+
+	@Override
+	public String toString()
+	{
+		return "Font [getName()=" + getName() + ", getSize()=" + getSize() + "]";
+	}
+	
+	
 }

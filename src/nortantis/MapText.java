@@ -6,6 +6,7 @@ import java.util.Objects;
 import nortantis.geom.Point;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.Font;
 
 /**
  * Stores a piece of text (and data about it) drawn onto a map.
@@ -46,12 +47,14 @@ public class MapText implements Serializable
 
 	public Color colorOverride;
 	public Color boldBackgroundColorOverride;
-	
+
 	public double curvature;
 	public int spacing;
 
-	public MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds,
-			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing)
+	public Font fontOverride;
+
+	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds,
+			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride)
 	{
 		this.value = text;
 		this.line1Bounds = line1Bounds;
@@ -64,12 +67,14 @@ public class MapText implements Serializable
 		this.boldBackgroundColorOverride = boldBackgroundColorOverride;
 		this.curvature = curvature;
 		this.spacing = spacing;
+		this.fontOverride = fontOverride;
 	}
 
 	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, Color colorOverride,
-			Color boldBackgroundColorOverride, double curvature, int spacing)
+			Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride)
 	{
-		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing);
+		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
+				fontOverride);
 	}
 
 
@@ -84,10 +89,11 @@ public class MapText implements Serializable
 		LineBreak lineBreak = this.lineBreak;
 		Color colorOverride = this.colorOverride;
 		Color boldBackgroundColorOverride = this.boldBackgroundColorOverride;
+		Font fontOverride = this.fontOverride;
 
-		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing);
+		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride,
+				curvature, spacing, fontOverride);
 	}
-
 
 	/**
 	 * See equals(...) for a list of fields to exclude.
@@ -95,13 +101,13 @@ public class MapText implements Serializable
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, boldBackgroundColorOverride, colorOverride, curvature, lineBreak, location, spacing, type, value);
+		return Objects.hash(angle, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, lineBreak,
+				location, spacing, type, value);
 	}
 
 	/**
 	 * Excludes fields that get filled in on the fly during map creation: line1Bounds, line2Bounds
 	 */
-
 	@Override
 	public boolean equals(Object obj)
 	{
@@ -121,7 +127,9 @@ public class MapText implements Serializable
 		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle)
 				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride)
 				&& Objects.equals(colorOverride, other.colorOverride)
-				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature) && lineBreak == other.lineBreak
+				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature)
+				&& Objects.equals(fontOverride, other.fontOverride)
+				&& lineBreak == other.lineBreak
 				&& Objects.equals(location, other.location) && spacing == other.spacing && type == other.type
 				&& Objects.equals(value, other.value);
 	}
@@ -129,9 +137,10 @@ public class MapText implements Serializable
 	@Override
 	public String toString()
 	{
-		return "MapText [value=" + value + ", type=" + type + ", angle=" + angle + ", location=" + location + ", lineBreak=" + lineBreak
-				+ ", colorOverride=" + colorOverride + ", boldBackgroundColorOverride=" + boldBackgroundColorOverride + ", curvature="
-				+ curvature + ", spacing=" + spacing + "]";
+		return "MapText [value=" + value + ", line1Bounds=" + line1Bounds + ", line2Bounds=" + line2Bounds + ", type=" + type + ", angle="
+				+ angle + ", location=" + location + ", lineBreak=" + lineBreak + ", colorOverride=" + colorOverride
+				+ ", boldBackgroundColorOverride=" + boldBackgroundColorOverride + ", curvature=" + curvature + ", spacing=" + spacing
+				+ ", fontOverride=" + fontOverride + "]";
 	}
-	
+
 }
