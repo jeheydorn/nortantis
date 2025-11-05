@@ -36,6 +36,7 @@ import nortantis.TextType;
 import nortantis.editor.MapUpdater;
 import nortantis.geom.RotatedRectangle;
 import nortantis.platform.Color;
+import nortantis.platform.Font;
 import nortantis.platform.awt.AwtFactory;
 import nortantis.util.Assets;
 import nortantis.util.Tuple2;
@@ -79,6 +80,10 @@ public class TextTool extends EditorTool
 	private JSlider spacingSlider;
 	private RowHider spacingSliderHider;
 	private RowHider actionsSeperatorHider;
+	private JCheckBox useDefaultFontCheckbox;
+	private RowHider useDefaultFontCheckboxHider;
+	private RowHider fontHider;
+	private FontChooser fontChooser;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -134,7 +139,7 @@ public class TextTool extends EditorTool
 
 			organizer.addLabelAndComponentsVertical("Mode:", "", radioButtons);
 		}
-		
+
 		actionsSeperatorHider = organizer.addSeperator();
 
 		editTextField = new JTextField();
@@ -234,6 +239,54 @@ public class TextTool extends EditorTool
 
 		editToolsSeparatorHider.add(organizer.addSeperator());
 
+		{
+			useDefaultFontCheckbox = new JCheckBox("Use default font");
+			useDefaultFontCheckbox.setToolTipText("When checked, this text uses the font for its type in the Fonts tab.");
+			useDefaultFontCheckbox.addActionListener(new ActionListener()
+			{
+				@Override
+				public void actionPerformed(ActionEvent e)
+				{
+					fontHider.setVisible(!useDefaultFontCheckbox.isSelected());
+					if (useDefaultFontCheckbox.isSelected())
+					{
+						MapText old = lastSelected.deepCopy();
+						lastSelected.fontOverride = null;
+						undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+						updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
+					}
+					else
+					{
+						// I'm not setting an undo point here because, although this is a change to the map settings, it doesn't change the
+						// appearance of the map, so I think it could be confusing to then hit the undo button and nothing seems to change
+						// unless you know which text to look at to see this checkbox flip.
+
+						MapText old = lastSelected.deepCopy();
+						lastSelected.fontOverride = getFontForType(lastSelected.type);
+						fontChooser.setFont(AwtFactory.unwrap(lastSelected.fontOverride));
+						updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
+					}
+
+				}
+			});
+			useDefaultFontCheckboxHider = organizer.addLeftAlignedComponent(useDefaultFontCheckbox);
+
+			fontChooser = new FontChooser("Font: ", 30, 40, () ->
+			{
+				if (lastSelected != null)
+				{
+					MapText old = lastSelected.deepCopy();
+					lastSelected.fontOverride = AwtFactory.wrap(fontChooser.getFont());
+					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(old, lastSelected));
+				}
+			});
+			fontHider = fontChooser.addToOrganizer(organizer);
+		}
+
+
+		editToolsSeparatorHider.add(organizer.addSeperator());
+
 		useDefaultColorCheckbox = new JCheckBox("Use default color");
 		useDefaultColorCheckbox.setToolTipText("When checked, this text uses the text color in the Fonts tab.");
 		useDefaultColorCheckbox.addActionListener(new ActionListener()
@@ -255,6 +308,7 @@ public class TextTool extends EditorTool
 					// I'm not setting an undo point here because, although this is a change to the map settings, it doesn't change the
 					// appearance of the map, so I think it could be confusing to then hit the undo button and nothing seems to change
 					// unless you know which text to look at to see this checkbox flip.
+
 					lastSelected.colorOverride = defaultTextColor;
 					colorOverrideDisplay.setBackground(AwtFactory.unwrap(defaultTextColor));
 					lastSelected.boldBackgroundColorOverride = defaultBoldBackgroundColor;
@@ -338,7 +392,7 @@ public class TextTool extends EditorTool
 			curvatureSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text",
 					clearCurvatureButton, 0, 0);
 		}
-		
+
 		{
 			spacingSlider = new JSlider();
 			spacingSlider.setPaintLabels(false);
@@ -346,18 +400,17 @@ public class TextTool extends EditorTool
 			spacingSlider.setMaximum(30);
 			spacingSlider.setValue(0);
 			SwingHelper.setSliderWidthForSidePanel(spacingSlider);
-			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(spacingSlider,
-					null, () ->
-					{
-						if (lastSelected != null)
-						{
-							MapText before = lastSelected.deepCopy();
-							lastSelected.spacing = spacingSlider.getValue();
-							undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
-							mapEditingPanel.setTextBoxToDraw(lastSelected.line1Bounds, lastSelected.line2Bounds);
-							updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
-						}
-					}, 34);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(spacingSlider, null, () ->
+			{
+				if (lastSelected != null)
+				{
+					MapText before = lastSelected.deepCopy();
+					lastSelected.spacing = spacingSlider.getValue();
+					undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+					mapEditingPanel.setTextBoxToDraw(lastSelected.line1Bounds, lastSelected.line2Bounds);
+					updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+				}
+			}, 34);
 			JButton clearSpacingButton = new JButton("x");
 			clearSpacingButton.setToolTipText("Clear spacing");
 			SwingHelper.addListener(clearSpacingButton, () ->
@@ -386,6 +439,21 @@ public class TextTool extends EditorTool
 		organizer.addHorizontalSpacerRowToHelpComponentAlignment(0.64);
 		organizer.addVerticalFillerRow();
 		return toolOptionsPanel;
+	}
+
+	private Font getFontForType(TextType type)
+	{
+		return switch (type)
+		{
+		case Title -> mainWindow.themePanel.getTitleFont();
+		case Region -> mainWindow.themePanel.getRegionFont();
+		case Mountain_range -> mainWindow.themePanel.getMountainRangeFont();
+		case Other_mountains -> mainWindow.themePanel.getOtherMountainsFont();
+		case City -> mainWindow.themePanel.getCitiesFont();
+		// Lakes don't have their own font.
+		case Lake -> mainWindow.themePanel.getRiverFont();
+		case River -> mainWindow.themePanel.getRiverFont();
+		};
 	}
 
 	protected void showOrHideBoldBackgroundFields(MapText selectedText)
@@ -419,6 +487,7 @@ public class TextTool extends EditorTool
 		editTextFieldHider.setVisible(false);
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
+		useDefaultFontCheckboxHider.setVisible(false);
 		curvatureSliderHider.setVisible(false);
 		curvatureSlider.setValue(0);
 		spacingSliderHider.setVisible(false);
@@ -426,13 +495,15 @@ public class TextTool extends EditorTool
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);
+		fontHider.setVisible(false);
 		clearRotationButtonHider.setVisible(false);
 		if (editButton.isSelected() && lastSelected != null)
 		{
 			editTextField.setText(lastSelected.value);
 			editTextField.requestFocus();
 		}
-		actionsSeperatorHider.setVisible((editButton.isSelected() && lastSelected != null) || addButton.isSelected() || eraseButton.isSelected());
+		actionsSeperatorHider
+				.setVisible((editButton.isSelected() && lastSelected != null) || addButton.isSelected() || eraseButton.isSelected());
 
 		// For some reason this is necessary to prevent the text editing field
 		// from flattening sometimes.
@@ -489,7 +560,7 @@ public class TextTool extends EditorTool
 		{
 			mapEditingPanel.setTextBoxToDraw(lastSelected);
 		}
-		
+
 		innerHandleMouseMovedOnMap(mapEditingPanel.getMousePosition());
 		mapEditingPanel.repaint();
 	}
@@ -625,30 +696,32 @@ public class TextTool extends EditorTool
 			deleteTexts(e.getPoint());
 		}
 	}
-	
+
 	private double calcRotationAngle(MouseEvent e)
 	{
 		nortantis.geom.Point graphPointMouseLocation = getPointOnGraph(e.getPoint());
 		nortantis.geom.Point graphPointMousePressedLocation = getPointOnGraph(mousePressedLocation);
 
 		// Find the bounding box currently displayed
-		RotatedRectangle boundingBox = lastSelected.line1Bounds
-				.addRotatedRectangleThatHasTheSameAngleAndPivot(lastSelected.line2Bounds);
+		RotatedRectangle boundingBox = lastSelected.line1Bounds.addRotatedRectangleThatHasTheSameAngleAndPivot(lastSelected.line2Bounds);
 
 		// Find the angle between the mouse-down point with respect to the bounding box.
 		nortantis.geom.Point rotatedMouseDownPoint = graphPointMousePressedLocation.rotate(boundingBox.getPivot(), -boundingBox.angle);
 		double yDiffFromPivot = (boundingBox.y + boundingBox.height / 2.0) - boundingBox.pivotY;
-		double mouseDownAngleWithRespectToBounds = Math.atan2(rotatedMouseDownPoint.y - boundingBox.pivotY - yDiffFromPivot, rotatedMouseDownPoint.x - boundingBox.pivotX); 
+		double mouseDownAngleWithRespectToBounds = Math.atan2(rotatedMouseDownPoint.y - boundingBox.pivotY - yDiffFromPivot,
+				rotatedMouseDownPoint.x - boundingBox.pivotX);
 
 		// Find the angle between the edge of the bounding box where the rotation tool is and the edge of the bounding box where the
 		// rotation tool would be if it were aligned with the pivot. These can be different when text is curved.
 		// This y distance between the center of the rotation tool and the pivot when the text box is horizontal.
 		double xDiffFromMouseDownToEdgeOfBoundsWithRespectToBounds = rotatedMouseDownPoint.x - (boundingBox.x + boundingBox.width);
-		double angleToRotateTool = Math.atan2(yDiffFromPivot, (boundingBox.width / 2.0) + xDiffFromMouseDownToEdgeOfBoundsWithRespectToBounds);
+		double angleToRotateTool = Math.atan2(yDiffFromPivot,
+				(boundingBox.width / 2.0) + xDiffFromMouseDownToEdgeOfBoundsWithRespectToBounds);
 
 		double centerX = lastSelected.location.x * mainWindow.displayQualityScale;
 		double centerY = lastSelected.location.y * mainWindow.displayQualityScale;
-		double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX) - mouseDownAngleWithRespectToBounds - angleToRotateTool;
+		double angle = Math.atan2(graphPointMouseLocation.y - centerY, graphPointMouseLocation.x - centerX)
+				- mouseDownAngleWithRespectToBounds - angleToRotateTool;
 		return angle;
 	}
 
@@ -734,6 +807,7 @@ public class TextTool extends EditorTool
 			lastSelected.boldBackgroundColorOverride = boldBackgroundColorOverrideHider.isVisible()
 					? AwtFactory.wrap(boldBackgroundColorOverrideDisplay.getBackground())
 					: null;
+			lastSelected.fontOverride = fontHider.isVisible() ? AwtFactory.wrap(fontChooser.getFont()) : null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
 			lastSelected.spacing = spacingSlider.getValue();
 
@@ -768,6 +842,7 @@ public class TextTool extends EditorTool
 			lineBreakComboBox.setSelectedItem(selectedText.lineBreak);
 			lineBreakHider.setVisible(true);
 			useDefaultColorCheckboxHider.setVisible(true);
+			useDefaultFontCheckboxHider.setVisible(true);
 			curvatureSliderHider.setVisible(true);
 			spacingSliderHider.setVisible(true);
 			editToolsSeparatorHider.setVisible(true);
@@ -786,10 +861,17 @@ public class TextTool extends EditorTool
 			{
 				boldBackgroundColorOverrideDisplay.setBackground(AwtFactory.unwrap(selectedText.boldBackgroundColorOverride));
 			}
+			fontHider.setVisible(selectedText.fontOverride != null);
+			useDefaultFontCheckbox.setSelected(selectedText.fontOverride == null);
+			if (selectedText.fontOverride != null)
+			{
+				fontChooser.setFont(AwtFactory.unwrap(selectedText.fontOverride));
+			}
 			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
 			spacingSlider.setValue(selectedText.spacing);
 		}
-		actionsSeperatorHider.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
+		actionsSeperatorHider
+				.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
 		mapEditingPanel.repaint();
 
 		lastSelected = selectedText;
@@ -804,11 +886,13 @@ public class TextTool extends EditorTool
 		textTypeHider.setVisible(false);
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
+		useDefaultFontCheckboxHider.setVisible(false);
 		curvatureSliderHider.setVisible(false);
 		spacingSliderHider.setVisible(false);
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);
+		fontHider.setVisible(false);
 	}
 
 	private void triggerPurgeEmptyText()
@@ -872,14 +956,14 @@ public class TextTool extends EditorTool
 	{
 		innerHandleMouseMovedOnMap(e.getPoint());
 	}
-	
+
 	private void innerHandleMouseMovedOnMap(java.awt.Point mouseLocation)
 	{
 		if (mouseLocation == null)
 		{
 			return;
 		}
-		
+
 		if (drawTextDisabledLabel.isVisible())
 		{
 			return;

@@ -1,6 +1,5 @@
 package nortantis.swing;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -12,10 +11,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,7 +19,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -389,47 +384,6 @@ public class GridBagOrganizer
 
 		curY++;
 		return new RowHider(sep1, sep2);
-	}
-
-	public Tuple2<JLabel, JButton> addFontChooser(String labelText, int height, Runnable okAction)
-	{
-		final int spaceUnderFontDisplays = 4;
-		JLabel fontDisplay = new JLabel("");
-		JPanel displayHolder = new JPanel();
-		displayHolder.setLayout(new BorderLayout());
-		displayHolder.add(fontDisplay);
-		displayHolder.setPreferredSize(new Dimension(displayHolder.getPreferredSize().width, height));
-
-		final JButton chooseButton = new JButton("Choose");
-		chooseButton.addActionListener(new ActionListener()
-		{
-			public void actionPerformed(ActionEvent arg0)
-			{
-				runFontChooser(panel, fontDisplay, okAction);
-			}
-		});
-		JPanel chooseButtonHolder = new JPanel();
-		chooseButtonHolder.setLayout(new BoxLayout(chooseButtonHolder, BoxLayout.X_AXIS));
-		chooseButtonHolder.add(chooseButton);
-		chooseButtonHolder.add(Box.createHorizontalGlue());
-		addLabelAndComponentsVertical(labelText, "",
-				Arrays.asList(displayHolder, Box.createVerticalStrut(spaceUnderFontDisplays), chooseButtonHolder));
-
-		return new Tuple2<>(fontDisplay, chooseButton);
-	}
-
-	private void runFontChooser(JComponent parent, JLabel fontDisplay, Runnable okAction)
-	{
-		JFontChooser fontChooser = new JFontChooser();
-		fontChooser.setSelectedFont(fontDisplay.getFont());
-		int status = fontChooser.showDialog(parent);
-		if (status == JFontChooser.OK_OPTION)
-		{
-			Font font = fontChooser.getSelectedFont();
-			fontDisplay.setText(font.getFontName());
-			fontDisplay.setFont(font);
-			okAction.run();
-		}
 	}
 
 	public Tuple2<JComboBox<ImageIcon>, RowHider> addBrushSizeComboBox(List<Integer> brushSizes)

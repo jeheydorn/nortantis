@@ -2,11 +2,12 @@ package nortantis;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -648,7 +649,7 @@ public class OldPropertyBasedMapSettings implements Serializable
 					Point location = new Point((Double) jsonObj.get("locationX"), (Double) jsonObj.get("locationY"));
 					double angle = (Double) jsonObj.get("angle");
 					TextType type = Enum.valueOf(TextType.class, ((String) jsonObj.get("type")).replace(" ", "_"));
-					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, null, null, 0.0, 0);
+					MapText mp = new MapText(text, location, angle, type, LineBreak.Auto, null, null, 0.0, 0, null);
 					result.add(mp);
 				}
 
@@ -740,21 +741,21 @@ public class OldPropertyBasedMapSettings implements Serializable
 			}
 		});
 
-		edits.edgeEdits = getProperty("edgeEdits", new Function0<List<EdgeEdit>>()
+		edits.edgeEdits = getProperty("edgeEdits", new Function0<Map<Integer, EdgeEdit>>()
 		{
-			public List<EdgeEdit> apply()
+			public Map<Integer, EdgeEdit> apply()
 			{
 				String str = props.getProperty("edgeEdits");
 				if (str == null || str.isEmpty())
-					return new ArrayList<>();
+					return new TreeMap<>();
 				JSONArray array = (JSONArray) JSONValue.parse(str);
-				List<EdgeEdit> result = new ArrayList<>();
+				Map<Integer, EdgeEdit> result = new TreeMap<>();
 				for (Object obj : array)
 				{
 					JSONObject jsonObj = (JSONObject) obj;
 					int riverLevel = (int) (long) jsonObj.get("riverLevel");
 					int index = (int) (long) jsonObj.get("index");
-					result.add(new EdgeEdit(index, riverLevel));
+					result.put(index, new EdgeEdit(index, riverLevel));
 				}
 
 				return result;

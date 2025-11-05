@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -41,7 +42,7 @@ public class MapEdits implements Serializable
 	public ConcurrentHashMap<Integer, CenterEdit> centerEdits;
 	public ConcurrentHashMap<Integer, RegionEdit> regionEdits;
 	public boolean hasIconEdits;
-	public List<EdgeEdit> edgeEdits;
+	public Map<Integer, EdgeEdit> edgeEdits;
 	public FreeIconCollection freeIcons;
 	public CopyOnWriteArrayList<Road> roads;
 
@@ -60,7 +61,7 @@ public class MapEdits implements Serializable
 		text = new CopyOnWriteArrayList<>();
 		centerEdits = new ConcurrentHashMap<>();
 		regionEdits = new ConcurrentHashMap<>();
-		edgeEdits = new ArrayList<>();
+		edgeEdits = new TreeMap<>();
 		freeIcons = new FreeIconCollection();
 		roads = new CopyOnWriteArrayList<Road>();
 	}
@@ -84,10 +85,13 @@ public class MapEdits implements Serializable
 
 	public void initializeEdgeEdits(List<Edge> edges)
 	{
-		edgeEdits = new ArrayList<>(edges.size());
+		edgeEdits = new TreeMap<Integer, EdgeEdit>();
 		for (Edge edge : edges)
 		{
-			edgeEdits.add(new EdgeEdit(edge.index, edge.river));
+			if (edge.river > 0)
+			{
+				edgeEdits.put(edge.index, new EdgeEdit(edge.index, edge.river));
+			}
 		}
 	}
 
@@ -178,9 +182,9 @@ public class MapEdits implements Serializable
 
 		copy.hasIconEdits = hasIconEdits;
 
-		for (EdgeEdit eEdit : edgeEdits)
+		for (EdgeEdit eEdit : edgeEdits.values())
 		{
-			copy.edgeEdits.add(eEdit.deepCopy());
+			copy.edgeEdits.put(eEdit.index, eEdit.deepCopy());
 		}
 
 		copy.freeIcons = new FreeIconCollection(freeIcons);

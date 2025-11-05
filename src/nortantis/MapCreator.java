@@ -1817,15 +1817,10 @@ public class MapCreator implements WarningLogger
 		{
 			return;
 		}
-		if (edits.edgeEdits.size() != graph.edges.size())
-		{
-			throw new IllegalArgumentException(
-					"The map edits have " + edits.edgeEdits.size() + " edges, but graph has " + graph.edges.size() + " edges.");
-		}
 
 		if (edgeChanges == null)
 		{
-			edgeChanges = edits.edgeEdits;
+			edgeChanges = edits.edgeEdits.values();
 		}
 
 		for (EdgeEdit eEdit : edgeChanges)
@@ -2012,7 +2007,7 @@ public class MapCreator implements WarningLogger
 
 	private Set<EdgeEdit> getEdgeEditsForEdgeIds(MapEdits edits, Collection<Integer> edgeIds)
 	{
-		return edgeIds.stream().map(id -> edits.edgeEdits.get(id)).collect(Collectors.toSet());
+		return edgeIds.stream().map(id -> edits.edgeEdits.containsKey(id) ? edits.edgeEdits.get(id) : new EdgeEdit(id, 0)).collect(Collectors.toSet());
 	}
 
 	private Set<EdgeEdit> getEdgeEditsForCenters(MapEdits edits, Collection<Center> centers)
