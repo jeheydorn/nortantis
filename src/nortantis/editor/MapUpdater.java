@@ -35,6 +35,7 @@ import nortantis.platform.BackgroundTask;
 import nortantis.platform.Image;
 import nortantis.platform.PlatformFactory;
 import nortantis.swing.MapEdits;
+import nortantis.swing.SwingHelper;
 import nortantis.swing.UpdateType;
 import nortantis.util.Helper;
 import nortantis.util.Logger;
@@ -614,88 +615,60 @@ public abstract class MapUpdater
 			@Override
 			public void done(UpdateResult result)
 			{
-				Image map = null;
-				IntRectangle replaceBounds = null;
-				List<String> warningMessages = null;
-				if (result != null)
+				try
 				{
-					map = result.map;
-					replaceBounds = result.replaceBounds;
-					warningMessages = result.warningMessages;
-				}
-
-				if (map != null)
-				{
-					if (createEditsIfNotPresentAndUseMapParts)
+					Image map = null;
+					IntRectangle replaceBounds = null;
+					List<String> warningMessages = null;
+					if (result != null)
 					{
-						initializeCenterEditsIfEmpty(settings.edits);
-						initializeRegionEditsIfEmpty(settings.edits);
-						initializeEdgeEditsIfEmpty(settings.edits);
+						map = result.map;
+						replaceBounds = result.replaceBounds;
+						warningMessages = result.warningMessages;
 					}
 
-					if (currentMapCreator != null)
+					if (map != null)
 					{
-						addLowPriorityCentersToRedraw(currentMapCreator.centersToRedrawLowPriority);
-					}
-
-					currentMapCreator = null;
-					currentUpdate = null;
-
-					MapUpdate next = combineAndGetNextUpdateToDraw();
-
-					if (updateType != UpdateType.ReprocessBooks)
-					{
-						boolean anotherDrawIsQueued = next != null;
-						int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
-								? (int) (settings.borderWidth * settings.resolution)
-								: 0;
-						onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
-								replaceBounds == null ? null
-										: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
-												replaceBounds.width, replaceBounds.height),
-								warningMessages);
-					}
-
-					isMapBeingDrawn = false;
-
-					if (postRuns != null)
-					{
-						for (Runnable runnable : postRuns)
+						if (createEditsIfNotPresentAndUseMapParts)
 						{
-							runnable.run();
+							initializeCenterEditsIfEmpty(settings.edits);
+							initializeRegionEditsIfEmpty(settings.edits);
+							initializeEdgeEditsIfEmpty(settings.edits);
 						}
-					}
 
-					if (next != null)
-					{
-						innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
-								next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
-					}
-					else
-					{
-						isMapReadyForInteractions = true;
-
-						while (tasksToRunWhenMapReady.size() > 0)
+						if (currentMapCreator != null)
 						{
-							tasksToRunWhenMapReady.poll().run();
+							addLowPriorityCentersToRedraw(currentMapCreator.centersToRedrawLowPriority);
 						}
-					}
-				}
-				else
-				{
-					boolean isCanceled = currentMapCreator != null ? currentMapCreator.isCanceled() : false;
 
-					if (updateType != UpdateType.ReprocessBooks && !isCanceled)
-					{
-						onFailedToDraw();
-					}
-					currentMapCreator = null;
-					currentUpdate = null;
-					isMapBeingDrawn = false;
+						currentMapCreator = null;
+						currentUpdate = null;
 
-					if (isCanceled)
-					{
 						MapUpdate next = combineAndGetNextUpdateToDraw();
+
+						if (updateType != UpdateType.ReprocessBooks)
+						{
+							boolean anotherDrawIsQueued = next != null;
+							int scaledBorderWidth = settings.drawBorder && settings.borderPosition == BorderPosition.Outside_map
+									? (int) (settings.borderWidth * settings.resolution)
+									: 0;
+							onFinishedDrawing(map, anotherDrawIsQueued, scaledBorderWidth,
+									replaceBounds == null ? null
+											: new Rectangle(replaceBounds.x + scaledBorderWidth, replaceBounds.y + scaledBorderWidth,
+													replaceBounds.width, replaceBounds.height),
+									warningMessages);
+						}
+
+						isMapBeingDrawn = false;
+
+						if (postRuns != null)
+						{
+							for (Runnable runnable : postRuns)
+							{
+								runnable.run();
+							}
+						}
+
 						if (next != null)
 						{
 							innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
@@ -703,14 +676,48 @@ public abstract class MapUpdater
 						}
 						else
 						{
+							isMapReadyForInteractions = true;
+
 							while (tasksToRunWhenMapReady.size() > 0)
 							{
 								tasksToRunWhenMapReady.poll().run();
 							}
 						}
 					}
-				}
+					else
+					{
+						boolean isCanceled = currentMapCreator != null ? currentMapCreator.isCanceled() : false;
 
+						if (updateType != UpdateType.ReprocessBooks && !isCanceled)
+						{
+							onFailedToDraw();
+						}
+						currentMapCreator = null;
+						currentUpdate = null;
+						isMapBeingDrawn = false;
+
+						if (isCanceled)
+						{
+							MapUpdate next = combineAndGetNextUpdateToDraw();
+							if (next != null)
+							{
+								innerCreateAndShowMap(next.updateType, next.centersChangedIds, next.edgesChangedIds, next.textChanged,
+										next.iconsChanged, next.preRuns, next.postRuns, next.isLowPriority);
+							}
+							else
+							{
+								while (tasksToRunWhenMapReady.size() > 0)
+								{
+									tasksToRunWhenMapReady.poll().run();
+								}
+							}
+						}
+					}
+				}
+				catch (RuntimeException ex)
+				{
+					SwingHelper.handleException(ex, null, false);
+				}
 			}
 
 		});
@@ -1042,6 +1049,10 @@ public abstract class MapUpdater
 			}
 			catch (InterruptedException e1)
 			{
+			}
+			catch(RuntimeException ex)
+			{
+				SwingHelper.handleException(ex, null, false);
 			}
 			finally
 			{

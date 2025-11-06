@@ -462,7 +462,7 @@ public class ImageExportDialog extends JDialog
 				}
 				catch (Exception ex)
 				{
-					SwingHelper.handleBackgroundThreadException(ex, getContentPane(), true);
+					SwingHelper.handleException(ex, getContentPane(), true);
 					isError = true;
 				}
 

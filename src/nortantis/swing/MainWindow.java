@@ -1534,11 +1534,11 @@ public class MainWindow extends JFrame implements ILoggerTarget
 				mapEditingPanel.scrollRectToVisible(scrollTo);
 			}
 
-			updater.doWhenMapIsReadyForInteractions(() -> 
+			updater.doWhenMapIsReadyForInteractions(() ->
 			{
 				toolsPanel.currentTool.onAfterShowMap();
 			});
-	
+
 			mapEditingPanel.revalidate();
 			mapEditingScrollPane.revalidate();
 			mapEditingPanel.repaint();
@@ -1678,7 +1678,10 @@ public class MainWindow extends JFrame implements ILoggerTarget
 			for (Edge edge : updater.mapParts.graph.edges)
 			{
 				EdgeEdit eEdit = edits.edgeEdits.get(edge.index);
-				eEdit.riverLevel = 0;
+				if (eEdit != null)
+				{
+					eEdit.riverLevel = 0;
+				}
 			}
 
 			// Erase free icons

@@ -8,7 +8,6 @@ import java.util.Random;
 import java.util.Set;
 
 import nortantis.util.ComparableList;
-import nortantis.util.ListCounterMap;
 import nortantis.util.Range;
 import nortantis.util.StringCounterMap;
 
