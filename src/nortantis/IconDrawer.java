@@ -1027,11 +1027,22 @@ public class IconDrawer
 		int graphXLeft = graphXCenter - icon.getWidth() / 2;
 		int graphYTop = graphYCenter - icon.getHeight() / 2;
 
+		// Retrieve full image data into primitive arrays once outside the loop for performance
+		int[] iconData = icon.getDataIntBased(); // Assuming this method exists and is efficient
+		int[] backgroundData = background.getDataIntBased();
+		int[] mapOrSnippetData = mapOrSnippet.getDataIntBased();
+		int[] landTextureData = landTexture.getDataIntBased();
+		int[] oceanTextureData = oceanTexture.getDataIntBased();
+		int[] backgroundColoredBeforeAddingIconsData = (backgroundColoredBeforeAddingIcons != null)
+				? backgroundColoredBeforeAddingIcons.getDataIntBased()
+				: null;
+		IntDimension mapOrSnippetSize = mapOrSnippet.size();
+
 		for (int y : new Range(icon.getHeight()))
 		{
 			for (int x = 0; x < icon.getWidth(); x++)
 			{
-				Color iconColor = Color.create(icon.getRGB(x, y), true);
+				Color iconColor = Color.create(icon.getRGB(iconData, x, y), true);
 				int iconAlphaInt = iconColor.getAlpha();
 				double iconAlpha = iconAlphaInt / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
@@ -1045,55 +1056,60 @@ public class IconDrawer
 				// will be drawn.
 				int xLoc = xLeft + x;
 				int yLoc = yTop + y;
-				try
+				if (xLoc < 0 || xLoc >= mapOrSnippetSize.width)
 				{
-					Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
-					if (closest == null)
-					{
-						// The pixel isn't on the map.
-						continue;
-					}
+					continue;
+				}
+				if (yLoc < 0 || yLoc >= mapOrSnippetSize.height)
+				{
+					continue;
+				}
 
-					if (type == IconType.decorations)
+				Center closest = graph.findClosestCenter(new Point(graphXLeft + x, graphYTop + y), true);
+				if (closest == null)
+				{
+					// The pixel isn't on the map.
+					continue;
+				}
+
+				if (type == IconType.decorations)
+				{
+					bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
+							: Color.create(background.getRGB(backgroundData, xLoc, yLoc), background.hasAlpha());
+					if (backgroundColoredBeforeAddingIcons != null)
 					{
-						bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(background.getRGB(xLoc, yLoc), background.hasAlpha());
-						if (backgroundColoredBeforeAddingIcons != null)
-						{
-							bgColorNoIcons = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-									: Color.create(backgroundColoredBeforeAddingIcons.getRGB(xLoc, yLoc),
-											backgroundColoredBeforeAddingIcons.hasAlpha());
-						}
-						else
-						{
-							bgColorNoIcons = bgColor;
-						}
-						landTextureColor = closest.isWater ? Color.create(oceanTexture.getRGB(xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(background.getRGB(xLoc, yLoc), background.hasAlpha());
+						bgColorNoIcons = closest.isWater
+								? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
+								: Color.create(
+										backgroundColoredBeforeAddingIcons.getRGB(backgroundColoredBeforeAddingIconsData, xLoc, yLoc),
+										backgroundColoredBeforeAddingIcons.hasAlpha());
 					}
 					else
 					{
-						bgColor = Color.create(background.getRGB(xLoc, yLoc), background.hasAlpha());
-						if (backgroundColoredBeforeAddingIcons != null)
-						{
-							bgColorNoIcons = Color.create(backgroundColoredBeforeAddingIcons.getRGB(xLoc, yLoc),
-									backgroundColoredBeforeAddingIcons.hasAlpha());
-						}
-						else
-						{
-							bgColorNoIcons = bgColor;
-						}
-						landTextureColor = Color.create(landTexture.getRGB(xLoc, yLoc), landTexture.hasAlpha());
+						bgColorNoIcons = bgColor;
 					}
-
-					mapColor = Color.create(mapOrSnippet.getRGB(xLoc, yLoc), mapOrSnippet.hasAlpha());
-
+					landTextureColor = closest.isWater
+							? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
+							: Color.create(background.getRGB(backgroundData, xLoc, yLoc), background.hasAlpha());
 				}
-				catch (IndexOutOfBoundsException e)
+				else
 				{
-					// Skip this pixel.
-					continue;
+					bgColor = Color.create(background.getRGB(backgroundData, xLoc, yLoc), background.hasAlpha());
+					if (backgroundColoredBeforeAddingIcons != null)
+					{
+						bgColorNoIcons = Color.create(
+								backgroundColoredBeforeAddingIcons.getRGB(backgroundColoredBeforeAddingIconsData, xLoc, yLoc),
+								backgroundColoredBeforeAddingIcons.hasAlpha());
+					}
+					else
+					{
+						bgColorNoIcons = bgColor;
+					}
+					landTextureColor = Color.create(landTexture.getRGB(landTextureData, xLoc, yLoc), landTexture.hasAlpha());
 				}
+
+				mapColor = Color.create(mapOrSnippet.getRGB(mapOrSnippetData, xLoc, yLoc), mapOrSnippet.hasAlpha());
+
 
 				double bgColorAlpha = bgColor.getAlpha() / 255.0;
 				double backgroundColorScale;
@@ -1165,7 +1181,7 @@ public class IconDrawer
 								mapColorScale * mapColor.getBlue())));
 				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
 						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
-				mapOrSnippet.setRGB(xLoc, yLoc, Color.create(red, green, blue, alpha).getRGB());
+				mapOrSnippet.setRGB(mapOrSnippetData, xLoc, yLoc, red, green, blue, alpha);
 			}
 		}
 	}

@@ -12,6 +12,7 @@ import java.util.TreeMap;
  * @author joseph
  *
  */
+// TODO remove this class if not used
 public class ListCounterMap<T> implements Serializable
 {
 	private static final long serialVersionUID = 1L;

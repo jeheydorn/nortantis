@@ -697,6 +697,13 @@ public class MapCreator implements WarningLogger
 		{
 			frayedBorderTask = startFrayedBorderCreation(settings, mapDimensions, sizeMultiplier, mapParts);
 		}
+		
+		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
+		Future<NameCreator> nameCreatorTask = null;
+		if (mapParts == null || mapParts.nameCreator == null)
+		{
+			nameCreatorTask = startNameCreatorCreation(settings);
+		}
 
 		Image textBackground;
 		List<Set<Center>> mountainGroups;
@@ -741,13 +748,6 @@ public class MapCreator implements WarningLogger
 		else
 		{
 			Logger.println("Creating text but not drawing it.");
-		}
-
-		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
-		Future<NameCreator> nameCreatorTask = null;
-		if (mapParts == null || mapParts.nameCreator == null)
-		{
-			nameCreatorTask = startNameCreatorCreation(settings);
 		}
 
 		TextDrawer textDrawer = new TextDrawer(settings);

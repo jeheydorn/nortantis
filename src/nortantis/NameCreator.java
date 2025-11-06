@@ -6,6 +6,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import nortantis.geom.Point;
 import nortantis.util.Assets;
@@ -13,6 +16,7 @@ import nortantis.util.Function0;
 import nortantis.util.Pair;
 import nortantis.util.ProbabilityHelper;
 import nortantis.util.Range;
+import nortantis.util.ThreadHelper;
 import nortantis.util.Tuple2;
 
 public class NameCreator
@@ -136,8 +140,7 @@ public class NameCreator
 			{
 				result.add(CityType.Town);
 			}
-			if (words.contains("homestead") || words.contains("building") || words.contains("house")
-					|| words.contains("windmill"))
+			if (words.contains("homestead") || words.contains("building") || words.contains("house") || words.contains("windmill"))
 			{
 				result.add(CityType.Homestead);
 			}
