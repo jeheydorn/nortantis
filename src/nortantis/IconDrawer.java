@@ -1028,7 +1028,8 @@ public class IconDrawer
 		int graphYTop = graphYCenter - icon.getHeight() / 2;
 
 		// Retrieve full image data into primitive arrays once outside the loop for performance
-		int[] iconData = icon.getDataIntBased(); // Assuming this method exists and is efficient
+		boolean isIconIntBased = icon.isIntBased();
+		int[] iconData = isIconIntBased ? icon.getDataIntBased() : null;
 		int[] backgroundData = background.getDataIntBased();
 		int[] mapOrSnippetData = mapOrSnippet.getDataIntBased();
 		int[] landTextureData = landTexture.getDataIntBased();
@@ -1037,12 +1038,12 @@ public class IconDrawer
 				? backgroundColoredBeforeAddingIcons.getDataIntBased()
 				: null;
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
-
+		
 		for (int y : new Range(icon.getHeight()))
 		{
 			for (int x = 0; x < icon.getWidth(); x++)
 			{
-				Color iconColor = Color.create(icon.getRGB(iconData, x, y), true);
+				Color iconColor = isIconIntBased ? Color.create(icon.getRGB(iconData, x, y), true) : Color.create(icon.getRGB(x, y), true);
 				int iconAlphaInt = iconColor.getAlpha();
 				double iconAlpha = iconAlphaInt / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
