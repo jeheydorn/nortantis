@@ -545,6 +545,10 @@ public class MapSettings implements Serializable
 			{
 				mpObj.put("spacing", text.spacing);
 			}
+			if (text.backgroundFade != MapText.defaultBackgroundFade)
+			{
+				mpObj.put("backgroundFade", text.backgroundFade);
+			}
 			if (text.fontOverride != null)
 			{
 				mpObj.put("fontOverride", fontToString(text.fontOverride));
@@ -1446,8 +1450,10 @@ public class MapSettings implements Serializable
 			double curvature = jsonObj.containsKey("curvature") ? (Double) jsonObj.get("curvature") : 0.0;
 			int spacing = jsonObj.containsKey("spacing") ? (int) (long) jsonObj.get("spacing") : 0;
 			Font fontOverride = jsonObj.containsKey("fontOverride") ? parseFont((String) jsonObj.get("fontOverride")) : null;
+			double backgroundFade = jsonObj.containsKey("backgroundFade") ? (Double) jsonObj.get("backgroundFade")
+					: MapText.defaultBackgroundFade;
 			MapText mp = new MapText(text, location, angle, type, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
-					fontOverride);
+					fontOverride, backgroundFade);
 			result.add(mp);
 		}
 

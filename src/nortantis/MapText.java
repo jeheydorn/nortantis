@@ -50,11 +50,13 @@ public class MapText implements Serializable
 
 	public double curvature;
 	public int spacing;
+	public double backgroundFade;
+	public static final double defaultBackgroundFade = 1.0;
 
 	public Font fontOverride;
 
 	private MapText(String text, Point location, double angle, TextType type, RotatedRectangle line1Bounds, RotatedRectangle line2Bounds,
-			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride)
+			LineBreak lineBreak, Color colorOverride, Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride, double backgroundFade)
 	{
 		this.value = text;
 		this.line1Bounds = line1Bounds;
@@ -68,13 +70,14 @@ public class MapText implements Serializable
 		this.curvature = curvature;
 		this.spacing = spacing;
 		this.fontOverride = fontOverride;
+		this.backgroundFade = backgroundFade;
 	}
 
 	public MapText(String text, Point location, double angle, TextType type, LineBreak lineBreak, Color colorOverride,
-			Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride)
+			Color boldBackgroundColorOverride, double curvature, int spacing, Font fontOverride, double backgroundFade)
 	{
 		this(text, location, angle, type, null, null, lineBreak, colorOverride, boldBackgroundColorOverride, curvature, spacing,
-				fontOverride);
+				fontOverride, backgroundFade);
 	}
 
 
@@ -92,17 +95,18 @@ public class MapText implements Serializable
 		Font fontOverride = this.fontOverride;
 
 		return new MapText(value, location, angle, type, line1Bounds, line2Bounds, lineBreak, colorOverride, boldBackgroundColorOverride,
-				curvature, spacing, fontOverride);
+				curvature, spacing, fontOverride, backgroundFade);
 	}
 
 	/**
 	 * See equals(...) for a list of fields to exclude.
 	 */
+
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(angle, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, lineBreak,
-				location, spacing, type, value);
+		return Objects.hash(angle, backgroundFade, boldBackgroundColorOverride, colorOverride, curvature, fontOverride, lineBreak, location,
+				spacing, type, value);
 	}
 
 	/**
@@ -125,11 +129,11 @@ public class MapText implements Serializable
 		}
 		MapText other = (MapText) obj;
 		return Double.doubleToLongBits(angle) == Double.doubleToLongBits(other.angle)
+				&& Double.doubleToLongBits(backgroundFade) == Double.doubleToLongBits(other.backgroundFade)
 				&& Objects.equals(boldBackgroundColorOverride, other.boldBackgroundColorOverride)
 				&& Objects.equals(colorOverride, other.colorOverride)
 				&& Double.doubleToLongBits(curvature) == Double.doubleToLongBits(other.curvature)
-				&& Objects.equals(fontOverride, other.fontOverride)
-				&& lineBreak == other.lineBreak
+				&& Objects.equals(fontOverride, other.fontOverride) && lineBreak == other.lineBreak
 				&& Objects.equals(location, other.location) && spacing == other.spacing && type == other.type
 				&& Objects.equals(value, other.value);
 	}
