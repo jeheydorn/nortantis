@@ -317,7 +317,7 @@ public class TextDrawer
 
 				Rectangle singleLineBounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
 				singleLineBounds = expandBoundsToIncludeCurvatureAndSpacing(singleLineBounds, text, text.value, p);
-				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds, getFontHeight(p));
+				singleLineBounds = addBackgroundBlendingPadding(singleLineBounds, getFontHeight(p), text);
 
 				Rectangle textBoundsAllLines;
 				// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, combine
@@ -328,11 +328,11 @@ public class TextDrawer
 
 					Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
 					line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
-					line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p));
+					line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
 
 					Rectangle line2Bounds = getLine2BoundsWithoutCurvatureOrSpacing(lines.getSecond(), textLocation, p);
 					line2Bounds = expandBoundsToIncludeCurvatureAndSpacing(line2Bounds, text, lines.getFirst(), p);
-					line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p));
+					line2Bounds = addBackgroundBlendingPadding(line2Bounds, getFontHeight(p), text);
 
 					textBoundsAllLines = singleLineBounds.add(line1Bounds.add(line2Bounds));
 				}
@@ -361,7 +361,7 @@ public class TextDrawer
 		// Get bounds for when the text is on one line.
 		Rectangle bounds = getLine1BoundsWithoutCurvatureOrSpacing(text.value, textLocation, p, false);
 		bounds = expandBoundsToIncludeCurvatureAndSpacing(bounds, text, text.value, p);
-		bounds = addBackgroundBlendingPadding(bounds, getFontHeight(p));
+		bounds = addBackgroundBlendingPadding(bounds, getFontHeight(p), text);
 		Rectangle boundingBox = new RotatedRectangle(bounds, text.angle, textLocation).getBounds();
 
 		// Since it wouldn't be easy from here to figure out whether the text will draw onto one line or two, also add
@@ -372,7 +372,7 @@ public class TextDrawer
 
 			Rectangle line1Bounds = getLine1BoundsWithoutCurvatureOrSpacing(lines.getFirst(), textLocation, p, true);
 			line1Bounds = expandBoundsToIncludeCurvatureAndSpacing(line1Bounds, text, lines.getFirst(), p);
-			line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p));
+			line1Bounds = addBackgroundBlendingPadding(line1Bounds, getFontHeight(p), text);
 
 			boundingBox = boundingBox.add(new RotatedRectangle(line1Bounds, text.angle, textLocation).getBounds());
 
@@ -384,9 +384,9 @@ public class TextDrawer
 		return boundingBox;
 	}
 
-	private Rectangle addBackgroundBlendingPadding(Rectangle textBounds, int fontHeight)
+	private Rectangle addBackgroundBlendingPadding(Rectangle textBounds, int fontHeight, MapText text)
 	{
-		int padding = getBackgroundBlendingPadding(fontHeight);
+		int padding = getBackgroundBlendingPadding(fontHeight, text);
 		return new Rectangle(textBounds.x - padding, textBounds.y - padding, textBounds.width + padding * 2,
 				textBounds.height + padding * 2);
 	}
@@ -770,12 +770,12 @@ public class TextDrawer
 	private void drawBackgroundBlendingForText(Image map, Painter p, MapText text, Point textStart, Rectangle textBoundsBeforeCurvatureAndSpacing,
 			Rectangle textBounds, String name, Point pivot)
 	{
-		int kernelSize = getBackgroundBlendingKernelSize(getFontHeight(p));
+		int kernelSize = getBackgroundBlendingKernelSize(getFontHeight(p), text);
 		if (kernelSize == 0)
 		{
 			return;
 		}
-		int padding = getBackgroundBlendingPadding(getFontHeight(p));
+		int padding = getBackgroundBlendingPadding(getFontHeight(p), text);
 
 		Image textBG = Image.create((int) (textBounds.width + padding * 2), (int) (textBounds.height + padding * 2),
 				ImageType.Grayscale8Bit);
@@ -801,17 +801,17 @@ public class TextDrawer
 				pivot);
 	}
 
-	private int getBackgroundBlendingKernelSize(int fontHeight)
+	private int getBackgroundBlendingKernelSize(int fontHeight, MapText text)
 	{
 		// This magic number below is a result of trial and error to get the
 		// blur levels to look right.
-		int kernelSize = (int) ((13.0 / 54.0) * fontHeight);
+		int kernelSize = (int) ((13.0 / 54.0) * text.backgroundFade * fontHeight);
 		return kernelSize;
 	}
 
-	private int getBackgroundBlendingPadding(int fontHeight)
+	private int getBackgroundBlendingPadding(int fontHeight, MapText text)
 	{
-		return getBackgroundBlendingKernelSize(fontHeight);
+		return getBackgroundBlendingKernelSize(fontHeight, text);
 	}
 
 	/**
@@ -1701,7 +1701,7 @@ public class TextDrawer
 		// Divide by settings.resolution so that the location does not depend on
 		// the resolution we're drawing at.
 		return new MapText(text, new Point(location.x / resolution, location.y / resolution), angle, type, LineBreak.Auto, null, null, 0.0,
-				0, null);
+				0, null, MapText.defaultBackgroundFade);
 	}
 
 	public void setMapTexts(CopyOnWriteArrayList<MapText> text)

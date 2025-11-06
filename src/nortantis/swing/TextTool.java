@@ -74,16 +74,17 @@ public class TextTool extends EditorTool
 	private RowHider boldBackgroundColorOverrideHider;
 	private boolean areBoldBackgroundsVisible;
 	private JSlider curvatureSlider;
-	private RowHider curvatureSliderHider;
+	private RowHider editSlidersHider;
 	private RowHider editToolsSeparatorHider;
 	private final int curvatureSliderDivider = 100;
 	private JSlider spacingSlider;
-	private RowHider spacingSliderHider;
 	private RowHider actionsSeperatorHider;
 	private JCheckBox useDefaultFontCheckbox;
 	private RowHider useDefaultFontCheckboxHider;
 	private RowHider fontHider;
 	private FontChooser fontChooser;
+	private final int backgroundFadeDivider = 10;
+	private JSlider backgroundFadeSlider;
 
 	public TextTool(MainWindow parent, ToolsPanel toolsPanel, MapUpdater mapUpdater)
 	{
@@ -389,7 +390,7 @@ public class TextTool extends EditorTool
 				curvatureSlider.setValue(0);
 			});
 
-			curvatureSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text",
+			editSlidersHider = sliderWithDisplay.addToOrganizer(organizer, "Curvature:", "How much to curve the text",
 					clearCurvatureButton, 0, 0);
 		}
 
@@ -418,10 +419,38 @@ public class TextTool extends EditorTool
 				spacingSlider.setValue(0);
 			});
 
-			spacingSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Spacing:", "How much space to add between letters",
-					clearSpacingButton, 0, 0);
+			editSlidersHider.add(sliderWithDisplay.addToOrganizer(organizer, "Spacing:", "How much space to add between letters",
+					clearSpacingButton, 0, 0));
 		}
 
+		{
+			backgroundFadeSlider = new JSlider();
+			backgroundFadeSlider.setPaintLabels(false);
+			backgroundFadeSlider.setMinimum(0);
+			backgroundFadeSlider.setMaximum(backgroundFadeDivider);
+			SwingHelper.setSliderWidthForSidePanel(backgroundFadeSlider);
+			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(backgroundFadeSlider,
+					(value) -> String.format("%.1f", value / ((double) backgroundFadeDivider)), () ->
+					{
+						if (lastSelected != null)
+						{
+							MapText before = lastSelected.deepCopy();
+							lastSelected.backgroundFade = backgroundFadeSlider.getValue() / ((double) backgroundFadeDivider);
+							undoer.setUndoPoint(UpdateType.Incremental, TextTool.this);
+							mapEditingPanel.setTextBoxToDraw(lastSelected.line1Bounds, lastSelected.line2Bounds);
+							updater.createAndShowMapIncrementalUsingText(Arrays.asList(before, lastSelected));
+						}
+					}, 34);
+			JButton clearBackgroundFadeButton = new JButton("x");
+			clearBackgroundFadeButton.setToolTipText("Clear background fading");
+			SwingHelper.addListener(clearBackgroundFadeButton, () ->
+			{
+				backgroundFadeSlider.setValue(0);
+			});
+
+			editSlidersHider.add(sliderWithDisplay.addToOrganizer(organizer, "Background fade:", "How much to fade out icons, rivers, roads, and coastlines around this text.",
+					clearBackgroundFadeButton, 0, 0));
+		}
 
 		Tuple2<JComboBox<ImageIcon>, RowHider> brushSizeTuple = organizer.addBrushSizeComboBox(brushSizes);
 		brushSizeComboBox = brushSizeTuple.getFirst();
@@ -488,9 +517,9 @@ public class TextTool extends EditorTool
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
 		useDefaultFontCheckboxHider.setVisible(false);
-		curvatureSliderHider.setVisible(false);
+		editSlidersHider.setVisible(false);
 		curvatureSlider.setValue(0);
-		spacingSliderHider.setVisible(false);
+		backgroundFadeSlider.setValue(0);
 		spacingSlider.setValue(0);
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
@@ -594,7 +623,6 @@ public class TextTool extends EditorTool
 
 					undoer.setUndoPoint(UpdateType.Incremental, this);
 
-					lastSelected = addedText;
 					changeToEditModeAndSelectText(addedText, true);
 
 					updater.createAndShowMapIncrementalUsingText(Arrays.asList(addedText));
@@ -810,6 +838,7 @@ public class TextTool extends EditorTool
 			lastSelected.fontOverride = fontHider.isVisible() ? AwtFactory.wrap(fontChooser.getFont()) : null;
 			lastSelected.curvature = curvatureSlider.getValue() / ((double) curvatureSliderDivider);
 			lastSelected.spacing = spacingSlider.getValue();
+			lastSelected.backgroundFade = backgroundFadeSlider.getValue() / (double) backgroundFadeDivider;
 
 			undoer.setUndoPoint(UpdateType.Incremental, this);
 			if (!Objects.equals(before, selectedText))
@@ -843,8 +872,7 @@ public class TextTool extends EditorTool
 			lineBreakHider.setVisible(true);
 			useDefaultColorCheckboxHider.setVisible(true);
 			useDefaultFontCheckboxHider.setVisible(true);
-			curvatureSliderHider.setVisible(true);
-			spacingSliderHider.setVisible(true);
+			editSlidersHider.setVisible(true);
 			editToolsSeparatorHider.setVisible(true);
 			useDefaultColorCheckbox.setSelected(selectedText.colorOverride == null);
 			colorOverrideHider.setVisible(selectedText.colorOverride != null);
@@ -869,6 +897,7 @@ public class TextTool extends EditorTool
 			}
 			curvatureSlider.setValue((int) (selectedText.curvature * curvatureSliderDivider));
 			spacingSlider.setValue(selectedText.spacing);
+			backgroundFadeSlider.setValue((int)(selectedText.backgroundFade * backgroundFadeDivider));
 		}
 		actionsSeperatorHider
 				.setVisible((editButton.isSelected() && selectedText != null) || addButton.isSelected() || eraseButton.isSelected());
@@ -887,8 +916,7 @@ public class TextTool extends EditorTool
 		lineBreakHider.setVisible(false);
 		useDefaultColorCheckboxHider.setVisible(false);
 		useDefaultFontCheckboxHider.setVisible(false);
-		curvatureSliderHider.setVisible(false);
-		spacingSliderHider.setVisible(false);
+		editSlidersHider.setVisible(false);
 		editToolsSeparatorHider.setVisible(false);
 		colorOverrideHider.setVisible(false);
 		boldBackgroundColorOverrideHider.setVisible(false);
