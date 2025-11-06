@@ -138,7 +138,6 @@ public class ThemePanel extends JTabbedPane
 	private RowHider colorizeOceanCheckboxHider;
 	private RowHider colorizeLandCheckboxHider;
 	private RowHider landColorHider;
-	private JButton btnChooseBoldBackgroundColor;
 	private JButton btnChooseTextColor;
 	private ActionListener enableTextCheckboxActionListener;
 	private ActionListener frayedEdgeCheckboxActionListener;
@@ -1437,6 +1436,7 @@ public class ThemePanel extends JTabbedPane
 	}
 
 	private boolean disableCoastShadingColorDisplayHandler = false;
+	private RowHider boldBackgroundColorHider;
 	private void updateCoastShadingColorDisplayFromCoastShadingTransparencySlider()
 	{
 		if (!disableCoastShadingColorDisplayHandler)
@@ -1497,7 +1497,7 @@ public class ThemePanel extends JTabbedPane
 
 		boldBackgroundColorDisplay = SwingHelper.createColorPickerPreviewPanel();
 
-		btnChooseBoldBackgroundColor = new JButton("Choose");
+		JButton btnChooseBoldBackgroundColor = new JButton("Choose");
 		btnChooseBoldBackgroundColor.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -1505,7 +1505,7 @@ public class ThemePanel extends JTabbedPane
 				SwingHelper.showColorPicker(fontsPanel, boldBackgroundColorDisplay, "Bold Background Color", () -> handleFontsChange());
 			}
 		});
-		organizer.addLabelAndComponentsHorizontal("Bold background color:",
+		boldBackgroundColorHider = organizer.addLabelAndComponentsHorizontal("Bold background color:",
 				"If '" + drawBoldBackgroundCheckbox.getText()
 						+ "' is checked, title and region names will be given a bold background in this color.",
 				Arrays.asList(boldBackgroundColorDisplay, btnChooseBoldBackgroundColor), SwingHelper.colorPickerLeftPadding);
@@ -1516,6 +1516,7 @@ public class ThemePanel extends JTabbedPane
 			public void actionPerformed(ActionEvent e)
 			{
 				handleEnablingAndDisabling();
+				showOrHideBoldBackgroundColorChooser();
 				handleFontsChange();
 			}
 		});
@@ -1534,6 +1535,11 @@ public class ThemePanel extends JTabbedPane
 		organizer.addVerticalFillerRow();
 		organizer.addLeftAlignedComponent(Box.createHorizontalStrut(100));
 		return organizer.createScrollPane();
+	}
+	
+	private void showOrHideBoldBackgroundColorChooser()
+	{
+		boldBackgroundColorHider.setVisible(enableTextCheckBox.isSelected() && drawBoldBackgroundCheckbox.isSelected());
 	}
 
 	private boolean landSupportsColoring()
@@ -1907,6 +1913,7 @@ public class ThemePanel extends JTabbedPane
 		boldBackgroundColorDisplay.setBackground(AwtFactory.unwrap(settings.boldBackgroundColor));
 		drawBoldBackgroundCheckbox.setSelected(settings.drawBoldBackground);
 		drawBoldBackgroundCheckbox.getActionListeners()[0].actionPerformed(null);
+		showOrHideBoldBackgroundColorChooser();
 
 		// Borders
 		initializeComboBoxItems(settings);
@@ -2328,7 +2335,6 @@ public class ThemePanel extends JTabbedPane
 		riverFontChooser.chooseButton.setEnabled(enableTextCheckBox.isSelected());
 		btnChooseTextColor.setEnabled(enableTextCheckBox.isSelected());
 		drawBoldBackgroundCheckbox.setEnabled(enableTextCheckBox.isSelected());
-		btnChooseBoldBackgroundColor.setEnabled(enableTextCheckBox.isSelected() && drawBoldBackgroundCheckbox.isSelected());
 
 		btnChooseOceanColor.setEnabled(oceanSupportsColoring());
 		btnChooseLandColor.setEnabled(landSupportsColoring());
