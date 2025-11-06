@@ -184,6 +184,8 @@ public class ImageHelper
 					Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
 					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
+		
+		int[] targetData = target.getDataIntBased();
 
 		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
 		{
@@ -205,11 +207,11 @@ public class ImageHelper
 				if (targetHasAlpha)
 				{
 					int a0 = interpolate(c00.getAlpha(), c01.getAlpha(), c10.getAlpha(), c11.getAlpha(), dx, dy);
-					target.setRGB(x, y, Color.create(r0, g0, b0, a0).getRGB());
+					target.setRGB(targetData, x, y, r0, g0, b0, a0);
 				}
 				else
 				{
-					target.setRGB(x, y, Color.create(r0, g0, b0).getRGB());
+					target.setRGB(targetData, x, y, r0, g0, b0);
 				}
 			}
 		}

@@ -342,7 +342,7 @@ public class AwtFactory extends PlatformFactory
 				}
 				catch (Exception ex)
 				{
-					SwingHelper.handleBackgroundThreadException(ex, null, false);
+					SwingHelper.handleException(ex, null, false);
 				}
 
 				task.done(result);

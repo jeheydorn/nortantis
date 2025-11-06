@@ -387,7 +387,7 @@ public class SwingHelper
 		}
 	}
 
-	public static void handleBackgroundThreadException(Exception ex, Component parent, boolean isExport)
+	public static void handleException(Exception ex, Component parent, boolean isExport)
 	{
 		if (ex instanceof ExecutionException)
 		{
