@@ -209,7 +209,7 @@ public class Edge implements Comparable<Edge>
 	public String toString()
 	{
 		StringBuilder b = new StringBuilder();
-		b.append("Edge: { v0: ");
+		b.append("Edge: index: " + index + " { v0: ");
 		b.append(v0);
 		b.append(", v1: ");
 		b.append(v1);

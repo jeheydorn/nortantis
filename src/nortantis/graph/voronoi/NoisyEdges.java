@@ -316,6 +316,25 @@ public class NoisyEdges
 		assert false;
 		return null;
 	}
+	
+	
+	public boolean hasLargerProtrodudingRiverEdge(Corner corner, Edge source, Edge follow)
+	{
+		assert source.isRiver();
+		assert follow.isRiver();
+		
+		// The river continues to nextRiverEdge, but the curve should only follow that edge if the river doesn't have a larger
+		// branch another direction. That way small branches off a river don't widen or cause the main river to curve that
+		// direction.
+		Optional<Edge> optionalLargerRiver = corner.protrudes.stream().filter((other) -> other != source && other != follow
+				&& getEdgeDrawType(other) == EdgeDrawType.River && other.river > source.river && other.river >= follow.river).findFirst();
+		if (optionalLargerRiver.isPresent())
+		{
+			return true;
+		}
+
+		return false;
+	}
 
 	/**
 	 * Determines how small lines should be segmented to when drawing noisy edges.
