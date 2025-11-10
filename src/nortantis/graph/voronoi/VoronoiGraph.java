@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
@@ -420,7 +421,7 @@ public abstract class VoronoiGraph
 			g.drawLine((int) e.d0.loc.x, (int) e.d0.loc.y, (int) e.d1.loc.x, (int) e.d1.loc.y);
 		}
 	}
-	
+
 	public void drawEdgeDeluanay(Painter g, Edge e)
 	{
 		if (e.d0 == null || e.d1 == null)
@@ -539,14 +540,18 @@ public abstract class VoronoiGraph
 				{
 					fromEdge = noisyEdges.findEdgeToFollow(e.v0, e);
 				}
-				float fromWidth = (fromEdge == null || !fromEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(fromEdge);
+				float fromWidth = (fromEdge == null || !fromEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v0, e, fromEdge))
+						? currentWidth
+						: calcRiverStrokeWidth(fromEdge);
 
 				Edge toEdge = null;
 				if (e.v1 != null)
 				{
 					toEdge = noisyEdges.findEdgeToFollow(e.v1, e);
 				}
-				float toWidth = (toEdge == null || !toEdge.isRiver()) ? currentWidth : calcRiverStrokeWidth(toEdge);
+				float toWidth = (toEdge == null || !toEdge.isRiver() || noisyEdges.hasLargerProtrodudingRiverEdge(e.v1, e, toEdge))
+						? currentWidth
+						: calcRiverStrokeWidth(toEdge);
 
 				drawPathWithSmoothLineTransitions(p, noisyEdges.getNoisyEdge(e.index), fromWidth, currentWidth, toWidth);
 
@@ -1036,7 +1041,7 @@ public abstract class VoronoiGraph
 		List<Point> vertices = edgeListToDrawPoints(edges, false, 0.0);
 		p.fillPolygonDouble(vertices);
 	}
-	
+
 	public List<Point> edgeListToDrawPoints(List<Edge> edges)
 	{
 		return edgeListToDrawPoints(edges, false, 0);
@@ -1097,10 +1102,12 @@ public abstract class VoronoiGraph
 		return result;
 	}
 
-	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse, boolean ignoreNoisyEdges, double maxDistanceToIgnoreNoisyEdgesForJaggedLines)
+	private void addEdgePoints(List<Point> points, Edge edge, boolean reverse, boolean ignoreNoisyEdges,
+			double maxDistanceToIgnoreNoisyEdgesForJaggedLines)
 	{
 		List<Point> noisyEdge = noisyEdges.getNoisyEdge(edge.index);
-		if (noisyEdge == null || (ignoreNoisyEdges && (noisyEdges.getLineStyle() != LineStyle.Jagged || edge.v1.loc.distanceTo(edge.v0.loc) <= maxDistanceToIgnoreNoisyEdgesForJaggedLines)))
+		if (noisyEdge == null || (ignoreNoisyEdges && (noisyEdges.getLineStyle() != LineStyle.Jagged
+				|| edge.v1.loc.distanceTo(edge.v0.loc) <= maxDistanceToIgnoreNoisyEdgesForJaggedLines)))
 		{
 			if (reverse)
 			{
@@ -1192,7 +1199,7 @@ public abstract class VoronoiGraph
 			addPointIfNotSameAsLast(points, edge.d1.loc);
 		}
 	}
-	
+
 	private void addPointIfNotSameAsLast(List<Point> points, Point toAdd)
 	{
 		if (points.isEmpty())
