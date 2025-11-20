@@ -24,6 +24,7 @@ public class NamedIconSelector
 	private Map<String, List<Tuple2<String, UnscaledImageToggleButton>>> buttons;
 	private JPanel container;
 	public final IconType type;
+	public String artPack; // TODO remove
 
 	public NamedIconSelector(IconType type)
 	{
@@ -35,6 +36,7 @@ public class NamedIconSelector
 
 	public void updateButtonList(String artPack, String customImagesPath)
 	{
+		this.artPack = artPack;
 		Tuple2<String, String> selectedButton = getSelectedButton();
 		clearButtons();
 
@@ -43,7 +45,6 @@ public class NamedIconSelector
 		{
 			JPanel buttonsPanel = new JPanel();
 			buttonsPanel.setLayout(new WrapLayout());
-			buttonsPanel.setBorder(new DynamicLineBorder("controlShadow", 1));
 			for (String fileNameWithoutWidthOrExtension : ImageCache.getInstance(artPack, customImagesPath)
 					.getIconGroupFileNamesWithoutWidthOrExtensionAsSet(type, groupId))
 			{

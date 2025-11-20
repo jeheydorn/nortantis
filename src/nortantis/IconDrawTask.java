@@ -29,20 +29,22 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	IconType type;
 	String fileName;
 	final Color color;
+	final HSBColor filterColor;
+	boolean maximizeOpacity;
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color, HSBColor filterColor)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor);
 	}
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName,
-			Color color)
+			Color color, HSBColor filterColor)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
-			IntDimension scaledSize, String fileName, Color color)
+			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -54,6 +56,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 
 		this.fileName = fileName;
 		this.color = color;
+		this.filterColor = filterColor;
 	}
 
 	public void colorAndScaleIcon()
@@ -68,7 +71,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 			}
 			else
 			{
-				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredImage(unScaledImageAndMasks, color);
+				coloredIcon = ImageCache.getInstance(Assets.installedArtPack, null).getColoredIcon(unScaledImageAndMasks, color, filterColor, maximizeOpacity);
 			}
 
 			// The path passed to ImageCache.getInstance isn't important so long as other calls to getScaledImageByWidth

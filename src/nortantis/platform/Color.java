@@ -1,5 +1,7 @@
 package nortantis.platform;
 
+import nortantis.HSBColor;
+
 public abstract class Color
 {
 	public abstract int getRGB();
@@ -60,7 +62,7 @@ public abstract class Color
 	 * Converts this color to HSB
 	 * 
 	 * @param color
-	 * @return An array with 3 elements: result[0] = hue result[1] = saturation result[3] = value
+	 * @return An array with 3 elements: result[0] = hue result[1] = saturation result[3] = brightness
 	 * 
 	 */
 	public abstract float[] getHSB();
@@ -73,5 +75,11 @@ public abstract class Color
 	public static Color createFromHSB(float hue, float saturation, float brightness)
 	{
 		return PlatformFactory.getInstance().createColorFromHSB(hue, saturation, brightness);
+	}
+	
+	public HSBColor toHSB()
+	{
+		float[] hsb = getHSB();
+		return new HSBColor((int)(hsb[0] * 360f), (int)(hsb[1] * 100f), (int)(hsb[2] * 100f), (int)((getAlpha() / 255f) * 100f));
 	}
 }

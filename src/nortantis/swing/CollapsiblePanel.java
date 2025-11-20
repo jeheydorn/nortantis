@@ -41,6 +41,7 @@ public class CollapsiblePanel extends JPanel
 		this.name = name;
 		this.contentPanel = contentPanel;
 		setLayout(new BorderLayout());
+		contentPanel.setBorder(new DynamicLineBorder("controlShadow", 1));
 
 		// Create the button with an arrow icon (you can customize this)
 		toggleButton = new JButton(); // Downward arrow initially
