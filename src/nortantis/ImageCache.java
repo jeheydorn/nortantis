@@ -46,10 +46,10 @@ public class ImageCache
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<IntDimension, Image>> scaledCache;
 
 	/**
-	 * Maps original images, to color, colored images.
+	 * Maps original images, to maps from (color, filterColor, maximizeContrast) to colored images.
 	 */
-	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Color, Image>> coloredCache;
-	
+	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Tuple3<Color, HSBColor, Boolean>, Image>> coloredCache;
+
 	private ConcurrentHashMapF<Image, ConcurrentHashMapF<Integer, Image>> alphaCache;
 
 	/**
@@ -138,46 +138,106 @@ public class ImageCache
 	/**
 	 * Either looks up in the cache, or creates, a version of the given icon colored the given color.
 	 */
-	public Image getColoredImage(ImageAndMasks imageAndMasks, Color color)
+	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color color, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
 		// but if that did happen it would only results in a little bit of
 		// duplicated work, not a functional
 		// problem.
-		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>()).getOrCreate(color, () ->
-		{
-			if (color.getAlpha() > 0)
-			{
-				Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
-				for (int y = 0; y < result.getHeight(); y++)
-					for (int x = 0; x < result.getWidth(); x++)
+		return coloredCache.getOrCreate(imageAndMasks.image, () -> new ConcurrentHashMapF<>())
+				.getOrCreate(new Tuple3<>(color, filterColor, maximizeOpacity), () ->
+				{
+					float alphaScale = 0;
 					{
-						Color originalColor = imageAndMasks.image.getPixelColor(x, y);
-						int alpha = originalColor.getAlpha();
-						int r = Helper.linearComboBase255(alpha, originalColor.getRed(), color.getRed());
-						int g = Helper.linearComboBase255(alpha, originalColor.getGreen(), color.getGreen());
-						int b = Helper.linearComboBase255(alpha, originalColor.getBlue(), color.getBlue());
-						int a = Math.max(alpha, Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
-
-						result.setPixelColor(x, y, Color.create(r, g, b, a));
+						if (maximizeOpacity)
+						{
+							int highestAlpha = 0;
+							for (int y = 0; y < imageAndMasks.image.getHeight(); y++)
+							{
+								for (int x = 0; x < imageAndMasks.image.getWidth(); x++)
+								{
+									Color imageColor = imageAndMasks.image.getPixelColor(x, y);
+									if (imageColor.getAlpha() > highestAlpha)
+									{
+										highestAlpha = imageColor.getAlpha();
+									}
+								}
+							}
+							alphaScale = 255f / highestAlpha;
+						}
 					}
-				return result;
-			}
-			else
-			{
-				return imageAndMasks.image;
-			}
-		});
+
+					float filterAlphaScale = filterColor.getAlpha() / 255f;
+
+					if (color.getAlpha() > 0 || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
+					{
+						Image result = Image.create(imageAndMasks.image.getWidth(), imageAndMasks.image.getHeight(), ImageType.ARGB);
+						for (int y = 0; y < result.getHeight(); y++)
+						{
+							for (int x = 0; x < result.getWidth(); x++)
+							{
+								Color originalColor = imageAndMasks.image.getPixelColor(x, y);
+
+								int alpha;
+								if (maximizeOpacity)
+								{
+									// I'm clamping the value to 255 in case of truncation errors, although I doubt that's possible.
+									alpha = Math.min(255, (int) (originalColor.getAlpha() * alphaScale));
+								}
+								else
+								{
+									alpha = originalColor.getAlpha();
+								}
+
+								Color imageColor;
+								int filteredAlpha;
+								if (!filterColor.equals(MapSettings.defaultIconFilterColor))
+								{
+									// Use filter color
+									float[] hsb = originalColor.getHSB();
+									Color filtered = Color.createFromHSB(
+											hsb[0] + filterColor.hue - (float) Math.floor(hsb[0] + filterColor.hue),
+											(float) Math.min(hsb[1] + filterColor.saturation, 1.0),
+											(float) Math.min(hsb[2] + filterColor.brightness, 1.0));
+									imageColor = Color.create(filtered.getRed(), filtered.getGreen(), filtered.getBlue(), alpha);
+									filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
+								}
+								else
+								{
+									// Don't use filter color
+									imageColor = originalColor;
+									filteredAlpha = alpha;
+								}
+
+								int r = Helper.linearComboBase255(alpha, imageColor.getRed(), color.getRed());
+								int g = Helper.linearComboBase255(alpha, imageColor.getGreen(), color.getGreen());
+								int b = Helper.linearComboBase255(alpha, imageColor.getBlue(), color.getBlue());
+								int a = Math.max(filteredAlpha,
+										Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
+
+								result.setRGB(x, y, r, g, b, a);
+							}
+						}
+						return result;
+					}
+					else
+					{
+						return imageAndMasks.image;
+					}
+				});
 	}
-	
+
 	/**
-	 * Creates a new image whose alpha is between 0 and the given alpha, by scaling all the alpha values in the image to be between that range,
-	 * essentially making the given alpha be the transparency of the image, plus the transparency it already had.
+	 * Creates a new image whose alpha is between 0 and the given alpha, by scaling all the alpha values in the image to be between that
+	 * range, essentially making the given alpha be the transparency of the image, plus the transparency it already had.
 	 * 
 	 * The image will be cached for future calls using alphaCache.
-	 * @param image Original image
-	 * @param alpha Alpha to apply
+	 * 
+	 * @param image
+	 *            Original image
+	 * @param alpha
+	 *            Alpha to apply
 	 * @return image with added transparency
 	 */
 	public Image getImageWithAppliedAlpha(Image image, Integer alpha)
@@ -186,13 +246,13 @@ public class ImageCache
 		{
 			return image;
 		}
-		
-		return alphaCache.getOrCreate(image, () -> new ConcurrentHashMapF<>()).getOrCreate(alpha, () -> 
+
+		return alphaCache.getOrCreate(image, () -> new ConcurrentHashMapF<>()).getOrCreate(alpha, () ->
 		{
 			return ImageHelper.applyAlpha(image, alpha);
 		});
 	}
-	
+
 	public Image getImageFromFile(Path path)
 	{
 		return fileCache.getOrCreateWithLock(path.toString().intern(), () ->
@@ -322,7 +382,7 @@ public class ImageCache
 			namesAndWidths.put(fileNameBaseWithoutWidth, new Tuple3<>(nameAndWidth.getFirst(), nameAndWidth.getSecond(), fileName));
 			if (alpha != null)
 			{
-				alphas.put(fileNameBaseWithoutWidth, alpha);	
+				alphas.put(fileNameBaseWithoutWidth, alpha);
 			}
 		}
 
@@ -341,7 +401,7 @@ public class ImageCache
 				assert false;
 				continue;
 			}
-			
+
 			Integer alpha;
 			if (alphas.containsKey(nameAndWidth.getFirst()))
 			{
@@ -352,7 +412,7 @@ public class ImageCache
 				alpha = defaultAlpha;
 			}
 			icon = getImageWithAppliedAlpha(icon, alpha);
-			
+
 			double width;
 			// If any don't have an encoded width, then calculate the width relative to the largest image that does have an encoded width.
 			if (nameAndWidth.getSecond() == null)
@@ -536,7 +596,7 @@ public class ImageCache
 
 		return new Tuple2<>(baseName, null);
 	}
-	
+
 	/**
 	 * Given a file name (without the path), this parses out the encoded alpha value, if present.
 	 */
@@ -693,7 +753,7 @@ public class ImageCache
 		// Also clear the assets cache so that any change to the list of art packs becomes visible.
 		Assets.clearArtPackCache();
 	}
-	
+
 	public static void clearColoredAndScaledImageCaches()
 	{
 		for (ImageCache cache : instances.values())

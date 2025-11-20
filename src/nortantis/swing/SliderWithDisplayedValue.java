@@ -28,12 +28,15 @@ public class SliderWithDisplayedValue
 		this(slider, valueFormatter, changeListener, 24);
 	}
 
-	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, int preferredWidth)
+	public SliderWithDisplayedValue(JSlider slider, Function<Integer, String> valueFormatter, Runnable changeListener, Integer preferredWidth)
 	{
 		this.slider = slider;
 
 		valueDisplay = new JLabel(getDisplayValue(valueFormatter));
+		if (preferredWidth != null)
+		{
 		valueDisplay.setPreferredSize(new Dimension(preferredWidth, valueDisplay.getPreferredSize().height));
+		}
 		slider.addChangeListener(new ChangeListener()
 		{
 			@Override
