@@ -140,6 +140,10 @@ public class ImageCache
 	 */
 	public Image getColoredIcon(ImageAndMasks imageAndMasks, Color color, HSBColor filterColor, boolean maximizeOpacity)
 	{
+		assert imageAndMasks != null;
+		assert color != null;
+		assert filterColor != null;
+		
 		// There is a small chance the 2 different threads might both add the
 		// same image at the same time,
 		// but if that did happen it would only results in a little bit of
@@ -168,6 +172,7 @@ public class ImageCache
 						}
 					}
 
+					float[] filterHSB = filterColor.toArray();
 					float filterAlphaScale = filterColor.getAlpha() / 255f;
 
 					if (color.getAlpha() > 0 || !filterColor.equals(MapSettings.defaultIconFilterColor) || maximizeOpacity)
@@ -197,9 +202,9 @@ public class ImageCache
 									// Use filter color
 									float[] hsb = originalColor.getHSB();
 									Color filtered = Color.createFromHSB(
-											hsb[0] + filterColor.hue - (float) Math.floor(hsb[0] + filterColor.hue),
-											(float) Math.min(hsb[1] + filterColor.saturation, 1.0),
-											(float) Math.min(hsb[2] + filterColor.brightness, 1.0));
+											hsb[0] + filterHSB[0] - (float) Math.floor(hsb[0] + filterHSB[0]),
+											Helper.clamp(hsb[1] + filterHSB[1], 0f, 1f),
+											Helper.clamp(hsb[2] + filterHSB[2], 0f, 1f));
 									imageColor = Color.create(filtered.getRed(), filtered.getGreen(), filtered.getBlue(), alpha);
 									filteredAlpha = Math.min(255, (int) (alpha * filterAlphaScale));
 								}
@@ -210,9 +215,9 @@ public class ImageCache
 									filteredAlpha = alpha;
 								}
 
-								int r = Helper.linearComboBase255(alpha, imageColor.getRed(), color.getRed());
-								int g = Helper.linearComboBase255(alpha, imageColor.getGreen(), color.getGreen());
-								int b = Helper.linearComboBase255(alpha, imageColor.getBlue(), color.getBlue());
+								int r = Helper.linearComboBase255(filteredAlpha, imageColor.getRed(), color.getRed());
+								int g = Helper.linearComboBase255(filteredAlpha, imageColor.getGreen(), color.getGreen());
+								int b = Helper.linearComboBase255(filteredAlpha, imageColor.getBlue(), color.getBlue());
 								int a = Math.max(filteredAlpha,
 										Math.min(color.getAlpha(), imageAndMasks.getOrCreateColorMask().getGrayLevel(x, y)));
 

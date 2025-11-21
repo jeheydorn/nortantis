@@ -32,19 +32,19 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 	final HSBColor filterColor;
 	boolean maximizeOpacity;
 
-	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color, HSBColor filterColor)
+	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, Color color, HSBColor filterColor, boolean maximizeOpacity)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, null, color, filterColor, maximizeOpacity);
 	}
 
 	public IconDrawTask(ImageAndMasks unScaledImageAndMasks, IconType type, Point centerLoc, IntDimension scaledSize, String fileName,
-			Color color, HSBColor filterColor)
+			Color color, HSBColor filterColor, boolean maximizeOpacity)
 	{
-		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor);
+		this(unScaledImageAndMasks, null, type, centerLoc, scaledSize, fileName, color, filterColor, maximizeOpacity);
 	}
 
 	private IconDrawTask(ImageAndMasks unScaledImageAndMasks, ImageAndMasks scaledImageAndMasks, IconType type, Point centerLoc,
-			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor)
+			IntDimension scaledSize, String fileName, Color color, HSBColor filterColor, boolean maximizeOpacity)
 	{
 		this.unScaledImageAndMasks = unScaledImageAndMasks;
 		this.scaledImageAndMasks = scaledImageAndMasks;
@@ -57,6 +57,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		this.fileName = fileName;
 		this.color = color;
 		this.filterColor = filterColor;
+		this.maximizeOpacity = maximizeOpacity;
 	}
 
 	public void colorAndScaleIcon()
@@ -64,7 +65,7 @@ public class IconDrawTask implements Comparable<IconDrawTask>
 		if (scaledImageAndMasks == null)
 		{
 			Image coloredIcon;
-			if (color.getAlpha() == 0)
+			if (color.getAlpha() == 0 && filterColor.equals(MapSettings.defaultIconFilterColor) && !maximizeOpacity)
 			{
 				// Do nothing since the color is transparent.
 				coloredIcon = unScaledImageAndMasks.image;

@@ -167,11 +167,6 @@ public class SwingHelper
 		}
 	}
 
-	public static void setSliderWidthForSidePanel(JSlider slider)
-	{
-		slider.setPreferredSize(new Dimension(sliderWidth, slider.getPreferredSize().height));
-	}
-
 	public static JPanel createColorPickerPreviewPanel()
 	{
 		JPanel panel = new JPanel();

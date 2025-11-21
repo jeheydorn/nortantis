@@ -379,4 +379,9 @@ public class Helper
 	{
 		return ((weightFrom0To255 * value1From0To255) + ((255 - weightFrom0To255) * value2From0To255)) / 255;
 	}
+	
+	public static float clamp(float value, float min, float max)
+	{
+		return Math.min(Math.max(value, min), max);
+	}
 }
