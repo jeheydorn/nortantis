@@ -1635,9 +1635,9 @@ public class MapCreator implements WarningLogger
 	private static Color generateRegionColor(Random rand, float[] landHsb, float hueRange, float saturationRange, float brightnessRange)
 	{
 		float hue = (float) (landHsb[0] * 360 + (rand.nextDouble() - 0.5) * hueRange);
-		float saturation = ImageHelper.bound((int) (landHsb[1] * 255 + (rand.nextDouble() - 0.5) * saturationRange));
-		float brightness = ImageHelper.bound((int) (landHsb[2] * 255 + (rand.nextDouble() - 0.5) * brightnessRange));
-		return Color.createFromHSB(hue / 360f, saturation / 255f, brightness / 255f);
+		float saturation = ImageHelper.bound((int) (landHsb[1] * 100 + (rand.nextDouble() - 0.5) * saturationRange));
+		float brightness = ImageHelper.bound((int) (landHsb[2] * 100 + (rand.nextDouble() - 0.5) * brightnessRange));
+		return Color.createFromHSB(hue / 360f, saturation / 100f, brightness / 100f);
 	}
 
 	public static Color generateColorFromBaseColor(Random rand, Color base, float hueRange, float saturationRange, float brightnessRange)

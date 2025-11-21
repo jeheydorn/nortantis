@@ -104,8 +104,8 @@ public class SettingsGenerator
 		settings.coastShadingLevel = 15 + Math.abs(rand.nextInt(35));
 
 		int hueRange = 16;
-		int saturationRange = 25;
-		int brightnessRange = 25;
+		int saturationRange = 10;
+		int brightnessRange = 10;
 		settings.landColor = MapCreator.generateColorFromBaseColor(rand, landColor, hueRange, saturationRange, brightnessRange);
 		settings.regionBaseColor = settings.landColor;
 		settings.borderColor = settings.landColor;

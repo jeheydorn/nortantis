@@ -409,7 +409,6 @@ public class ThemePanel extends JTabbedPane
 			regionBoundaryWidthSlider.setMaximum(100);
 			regionBoundaryWidthSlider.setMinimum(10);
 			createMapChangeListenerForTerrainChange(regionBoundaryWidthSlider);
-			SwingHelper.setSliderWidthForSidePanel(regionBoundaryWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(regionBoundaryWidthSlider,
 					(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
 			regionBoundaryWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of region boundaries");
@@ -602,7 +601,6 @@ public class ThemePanel extends JTabbedPane
 				gridOverlayRowOrColCountSlider.setMinimum(2);
 				gridOverlayRowOrColCountSlider.setMaximum(70);
 				createMapChangeListenerForGridOverlayChange(gridOverlayRowOrColCountSlider);
-				SwingHelper.setSliderWidthForSidePanel(gridOverlayRowOrColCountSlider);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(gridOverlayRowOrColCountSlider, null, () ->
 				{
 					handleGridOverlayChange();
@@ -613,7 +611,6 @@ public class ThemePanel extends JTabbedPane
 
 			{
 				gridOverlayLineWidthSlider = new JSlider(1, 20);
-				SwingHelper.setSliderWidthForSidePanel(gridOverlayLineWidthSlider);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(gridOverlayLineWidthSlider, null, () ->
 				{
 					handleGridOverlayChange();
@@ -708,7 +705,6 @@ public class ThemePanel extends JTabbedPane
 			borderWidthSlider.setMaximum(600);
 			borderWidthSlider.setMajorTickSpacing(200);
 			createMapChangeListenerForFullRedraw(borderWidthSlider);
-			SwingHelper.setSliderWidthForSidePanel(borderWidthSlider);
 			organizer.addLabelAndComponent("Width:",
 					"Width of the border in pixels, scaled according to the resolution the map is drawn at.", borderWidthSlider);
 		}
@@ -784,7 +780,6 @@ public class ThemePanel extends JTabbedPane
 		frayedEdgeShadingSlider.setMaximum(500);
 		frayedEdgeShadingSlider.setMajorTickSpacing(100);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeShadingSlider);
-		SwingHelper.setSliderWidthForSidePanel(frayedEdgeShadingSlider);
 		organizer.addLabelAndComponent("Shading width:",
 				"The width of shading drawn around frayed edges. The color used is the grunge color.", frayedEdgeShadingSlider);
 
@@ -796,7 +791,6 @@ public class ThemePanel extends JTabbedPane
 		frayedEdgeSizeSlider.setMinimum(1);
 		frayedEdgeSizeSlider.setMajorTickSpacing(2);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(frayedEdgeSizeSlider);
-		SwingHelper.setSliderWidthForSidePanel(frayedEdgeSizeSlider);
 		organizer.addLabelAndComponent("Fray size:",
 				"Determines the number of polygons used when creating the frayed border. Higher values make the fray larger.",
 				frayedEdgeSizeSlider);
@@ -860,7 +854,6 @@ public class ThemePanel extends JTabbedPane
 		grungeSlider.setMaximum(2000);
 		grungeSlider.setMajorTickSpacing(1000);
 		createMapChangeListenerForFrayedEdgeOrGrungeChange(grungeSlider);
-		SwingHelper.setSliderWidthForSidePanel(grungeSlider);
 		organizer.addLabelAndComponent("Width:", "Determines the width of grunge on the edges of the map. 0 means none.", grungeSlider);
 
 		grungeColorDisplay = SwingHelper.createColorPickerPreviewPanel();
@@ -908,7 +901,6 @@ public class ThemePanel extends JTabbedPane
 			coastlineWidthSlider.setMaximum(100);
 			coastlineWidthSlider.setValue(10);
 			createMapChangeListenerForTerrainChange(coastlineWidthSlider);
-			SwingHelper.setSliderWidthForSidePanel(coastlineWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastlineWidthSlider,
 					(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
 			sliderWithDisplay.addToOrganizer(organizer, "Coastline width:", "Line width of coastlines");
@@ -935,7 +927,6 @@ public class ThemePanel extends JTabbedPane
 		coastShadingSlider.setMaximum(100);
 		coastShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(coastShadingSlider);
-		SwingHelper.setSliderWidthForSidePanel(coastShadingSlider);
 		organizer.addLabelAndComponent("Coast shading width:",
 				"How far in from coastlines to shade land. Also applies to region boundaries if regions are drawn.", coastShadingSlider);
 
@@ -943,7 +934,6 @@ public class ThemePanel extends JTabbedPane
 			coastShadingTransparencySlider = new JSlider(0, 100);
 			final int initialValue = 0;
 			coastShadingTransparencySlider.setValue(initialValue);
-			SwingHelper.setSliderWidthForSidePanel(coastShadingTransparencySlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(coastShadingTransparencySlider, null, () ->
 			{
 				updateCoastShadingColorDisplayFromCoastShadingTransparencySlider();
@@ -988,7 +978,6 @@ public class ThemePanel extends JTabbedPane
 		oceanShadingSlider.setMaximum(100);
 		oceanShadingSlider.setMajorTickSpacing(20);
 		createMapChangeListenerForTerrainChange(oceanShadingSlider);
-		SwingHelper.setSliderWidthForSidePanel(oceanShadingSlider);
 		organizer.addLabelAndComponent("Ocean shading width:", "How far from coastlines to shade ocean.", oceanShadingSlider);
 
 		{
@@ -1059,7 +1048,6 @@ public class ThemePanel extends JTabbedPane
 		concentricWavesLevelSlider.setMaximum(SettingsGenerator.maxConcentricWaveCountInEditor);
 		concentricWavesLevelSlider.setMajorTickSpacing(1);
 		createMapChangeListenerForTerrainChange(concentricWavesLevelSlider);
-		SwingHelper.setSliderWidthForSidePanel(concentricWavesLevelSlider);
 		concentricWavesLevelSliderHider = organizer.addLabelAndComponent("Wave count:", "The number of concentric waves to draw.",
 				concentricWavesLevelSlider);
 
@@ -1070,7 +1058,6 @@ public class ThemePanel extends JTabbedPane
 		rippleWavesLevelSlider.setMajorTickSpacing(20);
 		rippleWavesLevelSlider.setMaximum(100);
 		createMapChangeListenerForTerrainChange(rippleWavesLevelSlider);
-		SwingHelper.setSliderWidthForSidePanel(rippleWavesLevelSlider);
 		rippleWavesLevelSliderHider = organizer.addLabelAndComponent("Wave width:", "How far from coastlines waves should draw.",
 				rippleWavesLevelSlider);
 
@@ -1136,7 +1123,6 @@ public class ThemePanel extends JTabbedPane
 				roadWidthSlider.setMaximum(100);
 				roadWidthSlider.setMinimum(10);
 				createMapChangeListenerForTerrainChange(roadWidthSlider);
-				SwingHelper.setSliderWidthForSidePanel(roadWidthSlider);
 				SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(roadWidthSlider,
 						(value) -> String.format("%.1f", value / SettingsGenerator.maxLineWidthInEditor), null);
 				roadWidthSliderHider = sliderWithDisplay.addToOrganizer(organizer, "Width:", "Line width of roads");
@@ -1161,7 +1147,6 @@ public class ThemePanel extends JTabbedPane
 		mountainScaleSlider.setMinorTickSpacing(1);
 		mountainScaleSlider.setPaintTicks(true);
 		mountainScaleSlider.setPaintLabels(true);
-		SwingHelper.setSliderWidthForSidePanel(mountainScaleSlider);
 		SwingHelper.addListener(mountainScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1178,7 +1163,6 @@ public class ThemePanel extends JTabbedPane
 		hillScaleSlider.setMinorTickSpacing(1);
 		hillScaleSlider.setPaintTicks(true);
 		hillScaleSlider.setPaintLabels(true);
-		SwingHelper.setSliderWidthForSidePanel(hillScaleSlider);
 		SwingHelper.addListener(hillScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1194,7 +1178,6 @@ public class ThemePanel extends JTabbedPane
 		duneScaleSlider.setMinorTickSpacing(1);
 		duneScaleSlider.setPaintTicks(true);
 		duneScaleSlider.setPaintLabels(true);
-		SwingHelper.setSliderWidthForSidePanel(duneScaleSlider);
 		SwingHelper.addListener(duneScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1211,7 +1194,6 @@ public class ThemePanel extends JTabbedPane
 		treeHeightSlider.setMinorTickSpacing(1);
 		treeHeightSlider.setPaintTicks(true);
 		treeHeightSlider.setPaintLabels(true);
-		SwingHelper.setSliderWidthForSidePanel(treeHeightSlider);
 		SwingHelper.addListener(treeHeightSlider, () ->
 		{
 			if (enableSizeSliderListeners)
@@ -1230,7 +1212,6 @@ public class ThemePanel extends JTabbedPane
 		cityScaleSlider.setMinorTickSpacing(1);
 		cityScaleSlider.setPaintTicks(true);
 		cityScaleSlider.setPaintLabels(true);
-		SwingHelper.setSliderWidthForSidePanel(cityScaleSlider);
 		SwingHelper.addListener(cityScaleSlider, () ->
 		{
 			if (enableSizeSliderListeners)

@@ -237,7 +237,6 @@ public class OverlayTool extends EditorTool
 			overlayImageTransparencySlider.setMaximum(100);
 			overlayImageTransparencySlider.setMinimum(0);
 			SwingHelper.addListener(overlayImageTransparencySlider, () -> handleOverlayImageChange());
-			SwingHelper.setSliderWidthForSidePanel(overlayImageTransparencySlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(overlayImageTransparencySlider,
 					(value) -> String.format("%s%%", value), null, 30);
 			sliderWithDisplay.addToOrganizer(organizer, "Transparency:",

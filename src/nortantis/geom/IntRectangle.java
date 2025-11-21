@@ -17,6 +17,11 @@ public class IntRectangle
 	{
 		this(location.x, location.y, size.width, size.height);
 	}
+	
+	public IntDimension size()
+	{
+		return new IntDimension(width, height);
+	}
 
 	public boolean contains(int x0, int y0)
 	{

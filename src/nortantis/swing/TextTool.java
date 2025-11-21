@@ -370,7 +370,6 @@ public class TextTool extends EditorTool
 			curvatureSlider.setMinimum(-curvatureSliderDivider);
 			curvatureSlider.setMaximum(curvatureSliderDivider);
 			curvatureSlider.setValue(0);
-			SwingHelper.setSliderWidthForSidePanel(curvatureSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(curvatureSlider,
 					(value) -> String.format("%.2f", value / ((double) curvatureSliderDivider)), () ->
 					{
@@ -400,7 +399,6 @@ public class TextTool extends EditorTool
 			spacingSlider.setMinimum(-5);
 			spacingSlider.setMaximum(30);
 			spacingSlider.setValue(0);
-			SwingHelper.setSliderWidthForSidePanel(spacingSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(spacingSlider, null, () ->
 			{
 				if (lastSelected != null)
@@ -428,7 +426,6 @@ public class TextTool extends EditorTool
 			backgroundFadeSlider.setPaintLabels(false);
 			backgroundFadeSlider.setMinimum(0);
 			backgroundFadeSlider.setMaximum(backgroundFadeDivider);
-			SwingHelper.setSliderWidthForSidePanel(backgroundFadeSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(backgroundFadeSlider,
 					(value) -> String.format("%.1f", value / ((double) backgroundFadeDivider)), () ->
 					{

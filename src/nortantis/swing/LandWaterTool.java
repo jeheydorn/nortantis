@@ -239,7 +239,6 @@ public class LandWaterTool extends EditorTool
 			riverWidthSlider = new JSlider(1, 15);
 			final int initialValue = 1;
 			riverWidthSlider.setValue(initialValue);
-			SwingHelper.setSliderWidthForSidePanel(riverWidthSlider);
 			SliderWithDisplayedValue sliderWithDisplay = new SliderWithDisplayedValue(riverWidthSlider);
 			riverOptionHider = sliderWithDisplay.addToOrganizer(organizer, "Width:",
 					"River width to draw. Note that different widths might look the same depending on the resolution the map is drawn at.");
@@ -325,34 +324,25 @@ public class LandWaterTool extends EditorTool
 				"The base color for generating new region colors. This is the map's land color when not coloring regions.",
 				Arrays.asList(baseColorPanel, baseColorChooseButton), SwingHelper.borderWidthBetweenComponents);
 
+		final int labelWidth = 30;
+
 		hueSlider = new JSlider();
-		hueSlider.setPaintTicks(true);
-		hueSlider.setPaintLabels(true);
-		hueSlider.setMinorTickSpacing(20);
-		hueSlider.setMajorTickSpacing(100);
 		hueSlider.setMaximum(360);
-		organizer.addLabelAndComponent("Hue range:",
-				"The possible range of hue values for generated region colors. The range is centered at the base color hue.", hueSlider);
+		SliderWithDisplayedValue hueSliderWithDisplay = new SliderWithDisplayedValue(hueSlider, null, null, labelWidth);
+		hueSliderWithDisplay.addToOrganizer(organizer, "Hue range:",
+				"The possible range of hue values for generated region colors. The range is centered at the base color hue.");
 
 		saturationSlider = new JSlider();
-		saturationSlider.setPaintTicks(true);
-		saturationSlider.setPaintLabels(true);
-		saturationSlider.setMinorTickSpacing(20);
-		saturationSlider.setMaximum(255);
-		saturationSlider.setMajorTickSpacing(100);
-		organizer.addLabelAndComponent("Saturation range:",
-				"The possible range of saturation values for generated region colors. The range is centered at the land color saturation.",
-				saturationSlider);
+		saturationSlider.setMaximum(100);
+		SliderWithDisplayedValue saturationSliderWithDisplay = new SliderWithDisplayedValue(saturationSlider, null, null, labelWidth);
+		saturationSliderWithDisplay.addToOrganizer(organizer, "Saturation range:",
+				"The possible range of saturation values for generated region colors. The range is centered at the land color saturation.");
 
 		brightnessSlider = new JSlider();
-		brightnessSlider.setPaintTicks(true);
-		brightnessSlider.setPaintLabels(true);
-		brightnessSlider.setMinorTickSpacing(20);
-		brightnessSlider.setMaximum(255);
-		brightnessSlider.setMajorTickSpacing(100);
-		organizer.addLabelAndComponent("Brightness range:",
-				"The possible range of brightness values for generated region colors. The range is centered at the land color brightness.",
-				brightnessSlider);
+		brightnessSlider.setMaximum(100);
+		SliderWithDisplayedValue brightnessSliderWithDisplay = new SliderWithDisplayedValue(brightnessSlider, null, null, labelWidth);
+		brightnessSliderWithDisplay.addToOrganizer(organizer, "Brightness range:",
+				"The possible range of brightness values for generated region colors. The range is centered at the land color brightness.");
 
 		return organizer.panel;
 	}
@@ -687,7 +677,7 @@ public class LandWaterTool extends EditorTool
 							splitPaths.add(new ArrayList<>(currentPath));
 						}
 						currentPath.clear();
-						
+
 						if (i + 1 < path.size() && !pointsFromSegmentsToRemove.contains(path.get(i + 1)))
 						{
 							currentPath.add(point);
@@ -964,7 +954,7 @@ public class LandWaterTool extends EditorTool
 				{
 					mainWindow.edits.edgeEdits.put(edge.index, new EdgeEdit(edge.index, riverLevel));
 				}
-				
+
 			}
 			riverStart = null;
 			mapEditingPanel.clearHighlightedEdges();
@@ -1022,7 +1012,7 @@ public class LandWaterTool extends EditorTool
 		{
 			return;
 		}
-		
+
 		mapEditingPanel.clearHighlightedCenters();
 		mapEditingPanel.clearHighlightedEdges();
 		mapEditingPanel.clearHighlightedPolylines();
