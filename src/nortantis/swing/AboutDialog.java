@@ -4,6 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -36,7 +39,20 @@ public class AboutDialog extends JDialog
 		content.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 		BufferedImage nortantisImage = AwtFactory
 				.unwrap(Assets.readImage(Paths.get(Assets.getAssetsPath(), "internal", "taskbar icon medium size.png").toString()));
-		content.add(new ImagePanel(nortantisImage), BorderLayout.WEST);
+		ImagePanel nortantisImagePanel = new ImagePanel(nortantisImage)
+		{
+			@Override
+			protected void paintComponent(Graphics g)
+			{
+				Graphics2D g2d = (Graphics2D) g;
+
+				// Set rendering hints
+				g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+				super.paintComponent(g);
+			}
+		};
+
+		content.add(nortantisImagePanel, BorderLayout.WEST);
 
 		JPanel rightPanel = new JPanel();
 		rightPanel.setLayout(new BoxLayout(rightPanel, BoxLayout.Y_AXIS));
