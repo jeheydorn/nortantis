@@ -503,7 +503,7 @@ public class IconsTool extends EditorTool
 
 		CollapsiblePanel colorPanel = new CollapsiblePanel("color_options", "Color", colorOrganizer.panel);
 		colorPickerHider = organizer.addLeftAlignedComponent(colorPanel);
-		
+
 		modeOptionsAndBrushSeperatorHider.add(organizer.addSeperator());
 
 		{
@@ -821,7 +821,7 @@ public class IconsTool extends EditorTool
 					nameLabel.setText(iconName);
 				}
 				colorDisplay.setBackground(AwtFactory.unwrap(iconToEdit.color));
-				setColorFilterValues(iconToEdit.filterColor);
+				setColorFilterValuesWithoutRunningListeners(iconToEdit.filterColor);
 			}
 			else
 			{
@@ -846,7 +846,7 @@ public class IconsTool extends EditorTool
 				{
 					Counter<HSBColor> counter = new HashCounter<>();
 					iconsToEdit.stream().forEach(iconToEdit -> counter.incrementCount(iconToEdit.filterColor));
-					setColorFilterValues(counter.argmax());
+					setColorFilterValuesWithoutRunningListeners(counter.argmax());
 				}
 			}
 
@@ -881,24 +881,33 @@ public class IconsTool extends EditorTool
 			isScaling = false;
 			colorDisplay.setBackground(AwtFactory.unwrap(MapSettings.defaultIconColor));
 			colorDisplay.repaint();
-			setColorFilterValues(MapSettings.defaultIconFilterColor);
+			setColorFilterValuesWithoutRunningListeners(MapSettings.defaultIconFilterColor);
 			mapEditingPanel.repaint();
 		}
 
 		showOrHideEditComponents(showIconDetails);
 	}
 
-	private void setColorFilterValues(HSBColor color)
+	private void setColorFilterValuesWithoutRunningListeners(HSBColor color)
 	{
 		if (color == null)
 		{
 			color = MapSettings.defaultIconFilterColor;
 		}
 
-		hueSlider.setValue(color.hue);
-		saturationSlider.setValue(color.saturation);
-		brightnessSlider.setValue(color.brightness);
-		transparencySlider.setValue(color.transparency);
+		try
+		{
+			disableColorChangeHandlers = true;
+			hueSlider.setValue(color.hue);
+			saturationSlider.setValue(color.saturation);
+			brightnessSlider.setValue(color.brightness);
+			transparencySlider.setValue(color.transparency);
+		}
+		finally
+		{
+			disableColorChangeHandlers = false;
+		}
+
 	}
 
 	private HSBColor getFilterColor()
@@ -967,7 +976,7 @@ public class IconsTool extends EditorTool
 			IconType selectedType = getSelectedIconType();
 			colorDisplay.setBackground(AwtFactory.unwrap(iconColorsByType.get(selectedType)));
 			colorDisplay.repaint();
-			setColorFilterValues(iconFilterColorsByType.get(selectedType));
+			setColorFilterValuesWithoutRunningListeners(iconFilterColorsByType.get(selectedType));
 			maximizeOpacityCheckbox.setSelected(maximizeOpacityByType.get(selectedType));
 		}
 	}
@@ -994,11 +1003,11 @@ public class IconsTool extends EditorTool
 		updateTypePanels();
 	}
 
-	private void showOrHideEditComponents(boolean showIconMetadata)
+	private void showOrHideEditComponents()
 	{
 		modeOptionsAndBrushSeperatorHider.setVisible((modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 				|| modeWidget.isDrawMode() || modeWidget.isReplaceMode());
-		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1 && showIconMetadata);
+		iconMetadataHider.setVisible(modeWidget.isEditMode() && iconsToEdit != null && iconsToEdit.size() == 1);
 		colorPickerHider
 				.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode() || modeWidget.isEditMode() && !iconsToEdit.isEmpty());
 		deleteCopyPasteIconButtonsHider.setVisible(modeWidget.isEditMode());
@@ -1031,16 +1040,8 @@ public class IconsTool extends EditorTool
 		densityHider.setVisible(treesButton.isSelected() && (modeWidget.isDrawMode()));
 		brushSizeHider.setVisible((modeWidget.isDrawMode() && !citiesButton.isSelected() && !decorationsButton.isSelected())
 				|| modeWidget.isReplaceMode() || modeWidget.isEraseMode() || modeWidget.isEditMode());
-		try
-		{
-			// Disable color change handlers so they don't set undo points because of automatic changes.
-			disableColorChangeHandlers = true;
-			setColorForSelectedType();
-		}
-		finally
-		{
-			disableColorChangeHandlers = false;
-		}
+		// Disable color change handlers so they don't set undo points because of automatic changes.
+		setColorForSelectedType();
 		artPackComboBoxHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
@@ -1365,7 +1366,7 @@ public class IconsTool extends EditorTool
 				{
 					xPaddingBetweenImages = horizontalPaddingBetweenImages;
 				}
-				
+
 				if (rowWidth + scaledWidth + xPaddingBetweenImages > maxRowWidth)
 				{
 					rowCount++;
