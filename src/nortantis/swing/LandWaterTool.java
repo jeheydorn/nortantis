@@ -307,7 +307,7 @@ public class LandWaterTool extends EditorTool
 	private JPanel createColorGeneratorOptionsPanel(JPanel toolOptionsPanel)
 	{
 		GridBagOrganizer organizer = new GridBagOrganizer();
-		organizer.panel.setBorder(BorderFactory.createTitledBorder(new EtchedBorder(EtchedBorder.LOWERED), colorGeneratorSettingsName));
+		organizer.panel.setBorder(BorderFactory.createTitledBorder(new DynamicLineBorder("controlShadow", 1), colorGeneratorSettingsName));
 
 		baseColorPanel = SwingHelper.createColorPickerPreviewPanel();
 		final JButton baseColorChooseButton = new JButton("Choose");
