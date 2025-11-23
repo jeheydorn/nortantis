@@ -42,9 +42,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.KeyStroke;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.LineBorder;
 
 import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr.Method;
@@ -57,7 +54,6 @@ import nortantis.IconType;
 import nortantis.ImageAndMasks;
 import nortantis.ImageCache;
 import nortantis.MapSettings;
-import nortantis.MapText;
 import nortantis.editor.CenterEdit;
 import nortantis.editor.CenterIcon;
 import nortantis.editor.CenterIconType;
@@ -760,7 +756,7 @@ public class IconsTool extends EditorTool
 		updater.createAndShowMapIncrementalUsingIcons(pasted);
 		iconsToEdit.clear();
 		iconsToEdit.addAll(pasted);
-		handleIconSelectionChange(true, true);
+		handleIconSelectionChange(true);
 		mapEditingPanel.repaint();
 	}
 
@@ -786,10 +782,10 @@ public class IconsTool extends EditorTool
 		iconsToEdit.addAll(unscaled);
 		undoer.setUndoPoint(UpdateType.Incremental, this);
 		updater.createAndShowMapIncrementalUsingIcons(updated);
-		handleIconSelectionChange(true, true);
+		handleIconSelectionChange(true);
 	}
 
-	private void handleIconSelectionChange(boolean showEditTools, boolean showIconDetails)
+	private void handleIconSelectionChange(boolean showEditTools)
 	{
 		mapEditingPanel.clearHighlightedAreas();
 
@@ -885,7 +881,7 @@ public class IconsTool extends EditorTool
 			mapEditingPanel.repaint();
 		}
 
-		showOrHideEditComponents(showIconDetails);
+		showOrHideEditComponents();
 	}
 
 	private void setColorFilterValuesWithoutRunningListeners(HSBColor color)
@@ -1046,7 +1042,7 @@ public class IconsTool extends EditorTool
 		iconTypeButtonsHider.setVisible(modeWidget.isDrawMode() || modeWidget.isReplaceMode());
 		iconTypeCheckboxesHider.setVisible(modeWidget.isEditMode() || modeWidget.isEraseMode());
 		controlClickBehaviorHider.setVisible(modeWidget.isEditMode());
-		showOrHideEditComponents(false);
+		showOrHideEditComponents();
 
 		toolsPanel.revalidate();
 		toolsPanel.repaint();
@@ -1865,7 +1861,7 @@ public class IconsTool extends EditorTool
 				}
 			}
 
-			showOrHideEditComponents(true);
+			showOrHideEditComponents();
 		}
 		else
 		{
@@ -1898,7 +1894,7 @@ public class IconsTool extends EditorTool
 				iconsToEdit.addAll(selectedIcons);
 			}
 
-			handleIconSelectionChange(false, false);
+			handleIconSelectionChange(false);
 		}
 
 		mapEditingPanel.repaint();
@@ -2007,7 +2003,7 @@ public class IconsTool extends EditorTool
 					mapEditingPanel.clearHighlightedAreas();
 					mapEditingPanel.repaint();
 				}
-				showOrHideEditComponents(true);
+				showOrHideEditComponents();
 			}
 		}
 	}
@@ -2021,7 +2017,7 @@ public class IconsTool extends EditorTool
 		mapEditingPanel.hideIconEditTools();
 		mapEditingPanel.clearHighlightedAreas();
 		mapEditingPanel.repaint();
-		showOrHideEditComponents(false);
+		showOrHideEditComponents();
 	}
 
 	private void eraseTreesThatFailedToDrawDueToLowDensity(MouseEvent e)
@@ -2214,7 +2210,7 @@ public class IconsTool extends EditorTool
 
 		if (modeWidget.isEditMode() && iconsToEdit != null && !iconsToEdit.isEmpty())
 		{
-			handleIconSelectionChange(true, true);
+			handleIconSelectionChange(true);
 		}
 		mapEditingPanel.repaint();
 	}

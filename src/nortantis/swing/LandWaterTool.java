@@ -27,7 +27,6 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JSlider;
 import javax.swing.JToggleButton;
-import javax.swing.border.EtchedBorder;
 
 import nortantis.DebugFlags;
 import nortantis.MapCreator;

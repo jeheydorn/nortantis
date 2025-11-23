@@ -59,7 +59,6 @@ public class SwingHelper
 	// Fonts in Linux are a little bigger, so make the side panels a little wider.
 	public static final int sidePanelPreferredWidth = OSHelper.isLinux() ? 340 : 314;
 	public static final int sidePanelMinimumWidth = sidePanelPreferredWidth;
-	private static final int sliderWidth = 160;
 	public static final int colorPickerLeftPadding = 2;
 	public static final int sidePanelScrollSpeed = 30;
 
