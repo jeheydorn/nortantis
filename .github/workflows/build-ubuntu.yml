@@ -18,6 +18,11 @@ jobs:
       with:
         java-version: '25'
         distribution: 'temurin'
+        
+    - name: Print Ubuntu Version
+      run: |
+        echo "Ubuntu version info:"
+        lsb_release -a || cat /etc/os-release
 
     - name: Get Version
       id: extract_version_linux
