@@ -354,34 +354,42 @@ public class MapCreator implements WarningLogger
 
 			checkForCancel();
 
-			Image landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
-			mapSnippet = ImageHelper.maskWithColor(landTextureSnippet, Color.black, landMask, false);
+			Image landTextureSnippet;
+			if (settings.landColor.hasTransparency())
+			{
+				landTextureSnippet = ImageHelper.copySnippetPreservingAlphaOfTransparentPixels(mapParts.background.land, drawBounds.toIntRectangle());
+			}
+			else
+			{
+				landTextureSnippet = ImageHelper.copySnippet(mapParts.background.land, drawBounds.toIntRectangle());
+			}
 
 			checkForCancel();
 
 			Image coastShading;
-			Image landBackgroundColoredBeforeAddingIconColorsWithShading = null;
+			Image landBackground = null;
 			{
 				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
-						mapSnippet, landMask, mapParts.background, null, centersToDraw, drawBounds, false);
-				mapSnippet = tuple.getFirst();
+						landTextureSnippet, mapParts.background, null, centersToDraw, drawBounds, false);
+				Image landBackgroundWithLandInOcean = tuple.getFirst();
 				coastShading = tuple.getSecond();
+				mapSnippet = ImageHelper.maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
 
 				if (settings.drawRegionColors)
 				{
 					Image landColoredBeforeAddingIconColors = ImageHelper.copySnippet(mapParts.background.landColoredBeforeAddingIconColors,
 							drawBounds.toIntRectangle());
-					landBackgroundColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings,
-							mapParts.graph, settings.resolution, landColoredBeforeAddingIconColors, landMask, mapParts.background,
-							coastShading, centersToDraw, drawBounds, false).getFirst();
+					landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, mapParts.graph, settings.resolution,
+							landColoredBeforeAddingIconColors, mapParts.background, coastShading, centersToDraw, drawBounds, false)
+									.getFirst();
 				}
-
+				else
+				{
+					landBackground = landBackgroundWithLandInOcean;
+				}
 			}
 
 			checkForCancel();
-
-			// Store the current version of mapSnippet for a background when drawing icons later.
-			Image landBackground = mapSnippet.deepCopy();
 
 			if (settings.drawRegionBoundaries)
 			{
@@ -448,7 +456,7 @@ public class MapCreator implements WarningLogger
 			}
 
 			checkForCancel();
-			
+
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 			{
 				GridDrawer.drawGrid(mapSnippet, settings, drawBounds, mapParts.background.mapBounds.toIntDimension());
@@ -457,9 +465,9 @@ public class MapCreator implements WarningLogger
 			checkForCancel();
 
 			// Draw icons
-			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackgroundColoredBeforeAddingIconColorsWithShading, landBackground,
-					landTextureSnippet, oceanWithWavesAndShading, drawBounds);
-			
+			mapParts.iconDrawer.drawIcons(iconsToDraw, mapSnippet, landBackground, landTextureSnippet, oceanWithWavesAndShading,
+					drawBounds);
+
 			checkForCancel();
 
 			if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
@@ -697,7 +705,7 @@ public class MapCreator implements WarningLogger
 		{
 			frayedBorderTask = startFrayedBorderCreation(settings, mapDimensions, sizeMultiplier, mapParts);
 		}
-		
+
 		// Create the NameCreator regardless of whether we're going to use it here because the text tools needs it to be in mapParts.
 		Future<NameCreator> nameCreatorTask = null;
 		if (mapParts == null || mapParts.nameCreator == null)
@@ -1095,30 +1103,27 @@ public class MapCreator implements WarningLogger
 			graph.drawLandAndOceanBlackAndWhite(g, graph.centers, null);
 		}
 
-		// Combine land and ocean images.
-		Image map = ImageHelper.maskWithColor(background.land, Color.black, landMask, false);
 
 		Image coastShading;
-		Image landColoredBeforeAddingIconColorsWithShading = null;
+		Image landBackground = null;
+		Image map;
 		{
-			{
-				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, map, landMask,
-						background, null, null, null, true);
-				map = tuple.getFirst();
+				Tuple2<Image, Image> tuple = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, background.land, background,
+						null, null, null, true);
+				Image landBackgroundWithLandInOcean = tuple.getFirst();
 				coastShading = tuple.getSecond();
-			}
+				map = ImageHelper.maskWithColor(landBackgroundWithLandInOcean, Color.black, landMask, false);
+
 			if (settings.drawRegionColors)
 			{
-				landColoredBeforeAddingIconColorsWithShading = darkenLandNearCoastlinesAndRegionBorders(settings, graph,
-						settings.resolution, background.landColoredBeforeAddingIconColors, landMask, background, coastShading, null, null,
-						true).getFirst();
+				landBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution,
+						background.landColoredBeforeAddingIconColors, background, coastShading, null, null, true).getFirst();
+			}
+			else
+			{
+				landBackground = landBackgroundWithLandInOcean;
 			}
 		}
-
-		checkForCancel();
-
-		// Store the current version of the map for a background when drawing icons later.
-		Image landBackground = map.deepCopy();
 
 		checkForCancel();
 
@@ -1203,7 +1208,7 @@ public class MapCreator implements WarningLogger
 		}
 
 		checkForCancel();
-		
+
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Under_icons)
 		{
 			GridDrawer.drawGrid(map, settings, null, map.size());
@@ -1212,13 +1217,11 @@ public class MapCreator implements WarningLogger
 		checkForCancel();
 
 		Logger.println("Drawing all icons.");
-		iconDrawer.drawIcons(iconsToDraw, map, landColoredBeforeAddingIconColorsWithShading, landBackground, background.land,
-				oceanWithWavesAndShading, null);
+		iconDrawer.drawIcons(iconsToDraw, map, landBackground, background.land, oceanWithWavesAndShading, null);
 		landBackground = null;
-		landColoredBeforeAddingIconColorsWithShading = null;
 
 		checkForCancel();
-		
+
 		if (settings.drawGridOverlay && settings.gridOverlayLayer == GridOverlayLayer.Over_icons)
 		{
 			GridDrawer.drawGrid(map, settings, null, map.size());
@@ -1255,8 +1258,8 @@ public class MapCreator implements WarningLogger
 		iconDrawer.drawNondecorationContentMasksOntoLandMask(landMask, iconsThatDrew, drawBounds);
 
 		Image textBackground = ImageHelper.maskWithColor(landTexture, Color.black, landMask, false);
-		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, landMask,
-				background, coastShading, centersToDraw, drawBounds, false).getFirst();
+		textBackground = darkenLandNearCoastlinesAndRegionBorders(settings, graph, settings.resolution, textBackground, background,
+				coastShading, centersToDraw, drawBounds, false).getFirst();
 		textBackground = ImageHelper.maskWithImage(textBackground, oceanTexture, landMask);
 		if (oceanShading != null)
 		{
@@ -1270,7 +1273,7 @@ public class MapCreator implements WarningLogger
 		{
 			GridDrawer.drawGrid(textBackground, settings, drawBounds, background.mapBounds.toIntDimension());
 		}
-		
+
 		return textBackground;
 	}
 
@@ -1288,8 +1291,8 @@ public class MapCreator implements WarningLogger
 	 * be re-used for performance.
 	 */
 	private Tuple2<Image, Image> darkenLandNearCoastlinesAndRegionBorders(MapSettings settings, WorldGraph graph, double resolutionScaled,
-			Image mapOrSnippet, Image landMask, Background background, Image coastShading, Collection<Center> centersToDraw,
-			Rectangle drawBounds, boolean addLoggingEntry)
+			Image mapOrSnippet, Background background, Image coastShading, Collection<Center> centersToDraw, Rectangle drawBounds,
+			boolean addLoggingEntry)
 	{
 		double sizeMultiplier = calcSizeMultipilerFromResolutionScale(resolutionScaled);
 		int blurLevel = (int) (settings.coastShadingLevel * sizeMultiplier);
@@ -2007,7 +2010,8 @@ public class MapCreator implements WarningLogger
 
 	private Set<EdgeEdit> getEdgeEditsForEdgeIds(MapEdits edits, Collection<Integer> edgeIds)
 	{
-		return edgeIds.stream().map(id -> edits.edgeEdits.containsKey(id) ? edits.edgeEdits.get(id) : new EdgeEdit(id, 0)).collect(Collectors.toSet());
+		return edgeIds.stream().map(id -> edits.edgeEdits.containsKey(id) ? edits.edgeEdits.get(id) : new EdgeEdit(id, 0))
+				.collect(Collectors.toSet());
 	}
 
 	private Set<EdgeEdit> getEdgeEditsForCenters(MapEdits edits, Collection<Center> centers)

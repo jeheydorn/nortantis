@@ -994,24 +994,16 @@ public class IconDrawer
 		return groups;
 	}
 
-	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image backgroundColoredBeforeAddingIcons,
-			Image background, Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter,
-			int graphYCenter)
+	private void drawIconWithBackgroundAndMasks(Image mapOrSnippet, ImageAndMasks imageAndMasks, Image landBackground,
+			Image landTexture, Image oceanTexture, IconType type, int xCenter, int yCenter, int graphXCenter, int graphYCenter)
 	{
 		Image icon = imageAndMasks.image;
 		Image contentMask = imageAndMasks.getOrCreateContentMask();
 
-		if (mapOrSnippet.getWidth() != background.getWidth())
+		if (mapOrSnippet.getWidth() != landBackground.getWidth())
 			throw new IllegalArgumentException();
-		if (mapOrSnippet.getHeight() != background.getHeight())
+		if (mapOrSnippet.getHeight() != landBackground.getHeight())
 			throw new IllegalArgumentException();
-		if (backgroundColoredBeforeAddingIcons != null)
-		{
-			if (mapOrSnippet.getWidth() != backgroundColoredBeforeAddingIcons.getWidth())
-				throw new IllegalArgumentException();
-			if (mapOrSnippet.getHeight() != backgroundColoredBeforeAddingIcons.getHeight())
-				throw new IllegalArgumentException();
-		}
 		if (contentMask.getWidth() != icon.getWidth())
 			throw new IllegalArgumentException("The given content mask's width does not match the icon's width.");
 		if (contentMask.getHeight() != icon.getHeight())
@@ -1033,28 +1025,20 @@ public class IconDrawer
 		int graphYTop = graphYCenter - icon.getHeight() / 2;
 
 		// Retrieve full image data into primitive arrays once outside the loop for performance
-		boolean isIconIntBased = icon.isIntBased();
-		int[] iconData = isIconIntBased ? icon.getDataIntBased() : null;
-		int[] backgroundData = background.getDataIntBased();
 		int[] mapOrSnippetData = mapOrSnippet.getDataIntBased();
 		int[] landTextureData = landTexture.getDataIntBased();
 		int[] oceanTextureData = oceanTexture.getDataIntBased();
-		int[] backgroundColoredBeforeAddingIconsData = (backgroundColoredBeforeAddingIcons != null)
-				? backgroundColoredBeforeAddingIcons.getDataIntBased()
-				: null;
+		int[] landBackgroundData = landBackground.getDataIntBased();
+
 		IntDimension mapOrSnippetSize = mapOrSnippet.size();
-		
+
 		for (int y : new Range(icon.getHeight()))
 		{
 			for (int x = 0; x < icon.getWidth(); x++)
 			{
-				Color iconColor = isIconIntBased ? Color.create(icon.getRGB(iconData, x, y), true) : Color.create(icon.getRGB(x, y), true);
-				int iconAlphaInt = iconColor.getAlpha();
-				double iconAlpha = iconAlphaInt / 255.0;
 				// grey level of mask at the corresponding pixel in mask.
 				float contentMaskLevel = contentMask.getNormalizedPixelLevel(x, y);
 				float shadingMaskLevel = shadingMask.getNormalizedPixelLevel(x, y);
-				Color bgColor;
 				Color bgColorNoIcons;
 				Color mapColor;
 				Color landTextureColor;
@@ -1080,116 +1064,46 @@ public class IconDrawer
 
 				if (type == IconType.decorations)
 				{
-					bgColor = closest.isWater ? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
-							: Color.create(background.getRGB(backgroundData, xLoc, yLoc), background.hasAlpha());
-					if (backgroundColoredBeforeAddingIcons != null)
-					{
-						bgColorNoIcons = closest.isWater
-								? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
-								: Color.create(
-										backgroundColoredBeforeAddingIcons.getRGB(backgroundColoredBeforeAddingIconsData, xLoc, yLoc),
-										backgroundColoredBeforeAddingIcons.hasAlpha());
-					}
-					else
-					{
-						bgColorNoIcons = bgColor;
-					}
+					bgColorNoIcons = closest.isWater
+							? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
+							: Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc),
+									landBackground.hasAlpha());
+
 					landTextureColor = closest.isWater
 							? Color.create(oceanTexture.getRGB(oceanTextureData, xLoc, yLoc), oceanTexture.hasAlpha())
-							: Color.create(background.getRGB(backgroundData, xLoc, yLoc), background.hasAlpha());
+							: Color.create(landBackground.getRGB(landBackgroundData, xLoc, yLoc),
+									landBackground.hasAlpha());
 				}
 				else
 				{
-					bgColor = Color.create(background.getRGB(backgroundData, xLoc, yLoc), background.hasAlpha());
-					if (backgroundColoredBeforeAddingIcons != null)
-					{
-						bgColorNoIcons = Color.create(
-								backgroundColoredBeforeAddingIcons.getRGB(backgroundColoredBeforeAddingIconsData, xLoc, yLoc),
-								backgroundColoredBeforeAddingIcons.hasAlpha());
-					}
-					else
-					{
-						bgColorNoIcons = bgColor;
-					}
+					bgColorNoIcons = Color.create(
+							landBackground.getRGB(landBackgroundData, xLoc, yLoc),
+							landBackground.hasAlpha());
+					
 					landTextureColor = Color.create(landTexture.getRGB(landTextureData, xLoc, yLoc), landTexture.hasAlpha());
 				}
 
 				mapColor = Color.create(mapOrSnippet.getRGB(mapOrSnippetData, xLoc, yLoc), mapOrSnippet.hasAlpha());
-
-
-				double bgColorAlpha = bgColor.getAlpha() / 255.0;
-				double backgroundColorScale;
-				if (bgColorAlpha == 1.0)
-				{
-					// Save some time since this is a simple and common case.
-					backgroundColorScale = 1.0;
-				}
-				else
-				{
-					// Use a curve that is 0 when landTextureAlpha is 0, 1 when landTextureAlpha is 1, and is mostly equal to 1 but dies off
-					// quickly as landTextureAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
-					// that are partially transparent.
-					backgroundColorScale = 1.0 - Math.pow(1.0 - bgColorAlpha, 10);
-				}
-
-				double landTextureAlpha = landTextureColor.getAlpha() / 255.0;
-				double landBackgroundColorScale;
-				if (landTextureAlpha == 1.0)
-				{
-					// Save some time since this is a simple and common case.
-					landBackgroundColorScale = 1.0;
-				}
-				else
-				{
-					// Use a curve that is 0 when landTextureAlpha is 0, 1 when landTextureAlpha is 1, and is mostly equal to 1 but dies off
-					// quickly as landTextureAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
-					// that are partially transparent.
-					landBackgroundColorScale = 1.0 - Math.pow(1.0 - landTextureAlpha, 10);
-				}
-
-				double mapAlpha = mapColor.getAlpha() / 255.0;
-				double mapColorScale;
-				if (mapAlpha == 1.0)
-				{
-					// Save some time since this is a simple and common case.
-					mapColorScale = 1.0;
-				}
-				else
-				{
-					// Use a curve that is 0 when mapAlpha is 0, 1 when mapAlpha is 1, and is mostly equal to 1 but dies off
-					// quickly as mapAlpha reaches 0. That way when the land color is transparent, it doesn't mix with icon pixels
-					// that are partially transparent.
-					mapColorScale = 1.0 - Math.pow(1.0 - mapAlpha, 50);
-				}
 
 				// Use the shading mask to blend the coastline shading with the land background texture for pixels with transparency in the
 				// icon and non-zero values in the content mask. This way coastline shading doesn't draw through icons, since that would
 				// look weird when the icon extends over the coastline. It also makes the transparent pixels in the content of the icon draw
 				// the land background texture when the shading mask is white, so that icons extending into the ocean draw the land texture
 				// behind them rather than the ocean texture.
-				int red = (int) (Helper.linearCombo(iconAlpha, iconColor.getRed(), Helper.linearCombo(
-						contentMaskLevel, Helper
-								.linearCombo(shadingMaskLevel, backgroundColorScale * bgColorNoIcons.getRed(),
-										Helper.linearCombo(shadingMaskLevel, backgroundColorScale * bgColor.getRed(),
-												landBackgroundColorScale * landTextureColor.getRed())),
-						mapColorScale * mapColor.getRed())));
-				int green = (int) (Helper.linearCombo(iconAlpha, iconColor.getGreen(),
-						Helper.linearCombo(contentMaskLevel,
-								backgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getGreen(),
-										Helper.linearCombo(shadingMaskLevel, bgColor.getGreen(),
-												landBackgroundColorScale * landTextureColor.getGreen())),
-								mapColorScale * mapColor.getGreen())));
-				int blue = (int) (Helper.linearCombo(iconAlpha, iconColor.getBlue(),
-						Helper.linearCombo(contentMaskLevel,
-								backgroundColorScale * Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getBlue(),
-										Helper.linearCombo(shadingMaskLevel, bgColor.getBlue(),
-												landBackgroundColorScale * landTextureColor.getBlue())),
-								mapColorScale * mapColor.getBlue())));
-				int alpha = (int) (iconAlphaInt + (1.0 - iconAlpha) * (Helper.linearCombo(contentMaskLevel,
-						(Helper.linearCombo(shadingMaskLevel, bgColor.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha())));
+				int red = (int) (Helper.linearCombo(contentMaskLevel,
+						Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getRed(), landTextureColor.getRed()), mapColor.getRed()));
+				int green = (int) (Helper.linearCombo(contentMaskLevel,
+						Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getGreen(), landTextureColor.getGreen()), mapColor.getGreen()));
+				int blue = (int) (Helper.linearCombo(contentMaskLevel,
+						Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getBlue(), landTextureColor.getBlue()), mapColor.getBlue()));
+				int alpha = (int) (Helper.linearCombo(contentMaskLevel,
+						(Helper.linearCombo(shadingMaskLevel, bgColorNoIcons.getAlpha(), landTextureColor.getAlpha())), mapColor.getAlpha()));
 				mapOrSnippet.setRGB(mapOrSnippetData, xLoc, yLoc, red, green, blue, alpha);
 			}
 		}
+
+		mapOrSnippet.createPainter().drawImage(imageAndMasks.image, xLeft, yTop);
+
 	}
 
 	List<IconDrawTask> getTasksInDrawBoundsSortedAndScaled(Rectangle drawBounds)
@@ -1244,17 +1158,17 @@ public class IconDrawer
 	 * lower on the map are drawn in front of those that are higher.
 	 * 
 	 */
-	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image backgroundColoredBeforeAddingIcons,
-			Image background, Image landTexture, Image oceanWithWavesAndShading, Rectangle drawBounds)
+	public void drawIcons(List<IconDrawTask> tasksToDrawSorted, Image mapOrSnippet, Image landBackground,
+			Image landTexture, Image oceanWithWavesAndShading, Rectangle drawBounds)
 	{
 		int xToSubtract = drawBounds == null ? 0 : (int) drawBounds.x;
 		int yToSubtract = drawBounds == null ? 0 : (int) drawBounds.y;
 
 		for (final IconDrawTask task : tasksToDrawSorted)
 		{
-			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, backgroundColoredBeforeAddingIcons, background,
-					landTexture, oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract,
-					((int) task.centerLoc.y) - yToSubtract, (int) task.centerLoc.x, (int) task.centerLoc.y);
+			drawIconWithBackgroundAndMasks(mapOrSnippet, task.scaledImageAndMasks, landBackground, landTexture,
+					oceanWithWavesAndShading, task.type, ((int) task.centerLoc.x) - xToSubtract, ((int) task.centerLoc.y) - yToSubtract,
+					(int) task.centerLoc.x, (int) task.centerLoc.y);
 		}
 	}
 
@@ -1373,7 +1287,8 @@ public class IconDrawer
 			{
 				String cityName = cityNames.get(rand.nextInt(cityNames.size()));
 				FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.cities, artPackForCities, cityTypeToUse, cityName,
-						c.index, iconColorsByType.get(IconType.cities), iconFilterColorsByType.get(IconType.cities), maximizeOpacityByType.get(IconType.cities));
+						c.index, iconColorsByType.get(IconType.cities), iconFilterColorsByType.get(IconType.cities),
+						maximizeOpacityByType.get(IconType.cities));
 				IconDrawTask task = toIconDrawTask(icon);
 				if (!isContentBottomTouchingWater(icon) && !isNeighborACity(c))
 				{
@@ -1494,7 +1409,8 @@ public class IconDrawer
 						Point loc = getAnchoredMountainDrawPoint(c, fileNameRangeId, i, mountainScale, mountainImagesById);
 
 						FreeIcon icon = new FreeIcon(resolutionScale, loc, scale, IconType.mountains, artPackForMountains, fileNameRangeId,
-								i, c.index, iconColorsByType.get(IconType.mountains), iconFilterColorsByType.get(IconType.mountains), maximizeOpacityByType.get(IconType.mountains));
+								i, c.index, iconColorsByType.get(IconType.mountains), iconFilterColorsByType.get(IconType.mountains),
+								maximizeOpacityByType.get(IconType.mountains));
 
 						IconDrawTask task = toIconDrawTask(icon);
 
@@ -1529,7 +1445,8 @@ public class IconDrawer
 
 							double scale = getWidthScaleForNewShuffledIcon(c, IconType.hills);
 							FreeIcon icon = new FreeIcon(resolutionScale, c.loc, scale, IconType.hills, artPackForHills, fileNameRangeId, i,
-									c.index, iconColorsByType.get(IconType.hills), iconFilterColorsByType.get(IconType.hills), maximizeOpacityByType.get(IconType.hills));
+									c.index, iconColorsByType.get(IconType.hills), iconFilterColorsByType.get(IconType.hills),
+									maximizeOpacityByType.get(IconType.hills));
 
 							IconDrawTask task = toIconDrawTask(icon);
 
@@ -1605,7 +1522,8 @@ public class IconDrawer
 
 						int i = Math.abs(rand.nextInt());
 						FreeIcon icon = new FreeIcon(resolutionScale, c.loc, 1.0, IconType.sand, artPackForDunes, groupId, i, c.index,
-								iconColorsByType.get(IconType.sand), iconFilterColorsByType.get(IconType.sand), maximizeOpacityByType.get(IconType.sand));
+								iconColorsByType.get(IconType.sand), iconFilterColorsByType.get(IconType.sand),
+								maximizeOpacityByType.get(IconType.sand));
 						if (!isContentBottomTouchingWater(icon))
 						{
 							freeIcons.addOrReplace(icon);
@@ -1946,7 +1864,8 @@ public class IconDrawer
 			y += rand.nextGaussian() * scale;
 
 			FreeIcon icon = new FreeIcon(resolutionScale, new Point(x, y), 1.0, IconType.trees, artPack, groupId, index, center.index,
-					forestDensity, iconColorsByType.get(IconType.trees), iconFilterColorsByType.get(IconType.trees), maximizeOpacityByType.get(IconType.trees));
+					forestDensity, iconColorsByType.get(IconType.trees), iconFilterColorsByType.get(IconType.trees),
+					maximizeOpacityByType.get(IconType.trees));
 
 			if (!isContentBottomTouchingWater(icon))
 			{

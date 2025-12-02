@@ -167,5 +167,16 @@ public abstract class Image
 	public abstract boolean isIntBased();
 
 	public abstract Image copyAndAddAlphaChanel();
+	
+	public Image copyAndRemoveAlphaChanel()
+	{
+		Image result = Image.create(getWidth(), getHeight(), ImageType.RGB);
+		for (int y = 0; y < getHeight(); y++)
+			for (int x = 0; x < getWidth(); x++)
+			{
+				result.setRGB(x, y, getRGB(x, y));
+			}
+		return result;
+	}
 
 }

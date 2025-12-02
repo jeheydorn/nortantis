@@ -184,7 +184,7 @@ public class ImageHelper
 					Math.min((int) (boundsInSource.width * scale) + 1, target.getWidth() - 1 - upperLeftX),
 					Math.min((int) (boundsInSource.height * scale) + 1, target.getHeight() - 1 - upperLeftY));
 		}
-		
+
 		int[] targetData = target.getDataIntBased();
 
 		for (int y = pixelsToUpdate.y; y < pixelsToUpdate.y + pixelsToUpdate.height; y++)
@@ -735,7 +735,7 @@ public class ImageHelper
 
 		return setAlphaFromMaskInRegion(image, alphaMask, invertMask, new IntPoint(0, 0));
 	}
-	
+
 	public static void setAlphaOfAllPixels(Image image, int alpha)
 	{
 		Painter p = image.createPainter();
@@ -759,7 +759,7 @@ public class ImageHelper
 		{
 			throw new IllegalArgumentException("Alpha must be between 0.0 and 1.0");
 		}
-		
+
 		if (alpha == 255)
 		{
 			return original;
@@ -993,12 +993,12 @@ public class ImageHelper
 	 * 
 	 * It is important the the result is a copy even if the desired region is exactly the input.
 	 */
-	public static Image copySnippet(Image image, int xLoc, int yLoc, int width, int height)
+	public static Image copySnippet(Image source, int xLoc, int yLoc, int width, int height)
 	{
-		Image result = Image.create(width, height, image.getType());
+		Image result = Image.create(width, height, source.getType());
 		Painter pResult = result.createPainter();
 		pResult.translate(-xLoc, -yLoc);
-		pResult.drawImage(image, 0, 0);
+		pResult.drawImage(source, 0, 0);
 
 		return result;
 	}
@@ -1007,6 +1007,41 @@ public class ImageHelper
 	{
 		return copySnippet(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y, boundsInSourceToCopyFrom.width,
 				boundsInSourceToCopyFrom.height);
+	}
+
+	/**
+	 * 
+	 * Creates a copy of a piece of an image, preserving the color of transparent pixels. This is the same as copySnippet if
+	 * the snippet is only for being displayed, but when combining with layers with alpha later, it can make a difference. Also,
+	 * this version is much slower.
+	 * 
+	 * It is important the the result is a copy even if the desired region is exactly the input.
+	 */
+	public static Image copySnippetPreservingAlphaOfTransparentPixels(Image source, int xLoc, int yLoc, int width, int height)
+	{
+		IntRectangle sourceBounds = new IntRectangle(0, 0, source.size().width, source.size().height);
+		Image result = Image.create(width, height, source.getType());
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				int xInSource = xLoc + x;
+				int yInSource = yLoc + y;
+				if (sourceBounds.contains(xInSource, yInSource))
+				{
+					int rgb = source.getRGB(xInSource, yInSource);
+					result.setRGB(x, y, rgb);
+				}
+			}
+		}
+
+		return result;
+	}
+
+	public static Image copySnippetPreservingAlphaOfTransparentPixels(Image source, IntRectangle boundsInSourceToCopyFrom)
+	{
+		return copySnippetPreservingAlphaOfTransparentPixels(source, boundsInSourceToCopyFrom.x, boundsInSourceToCopyFrom.y,
+				boundsInSourceToCopyFrom.width, boundsInSourceToCopyFrom.height);
 	}
 
 	/**
